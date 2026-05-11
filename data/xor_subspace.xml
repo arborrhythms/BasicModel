@@ -8,14 +8,9 @@
 -->
 <model>
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <useSubspaceActivation>true</useSubspaceActivation>
     <weightsPath>xor_subspace_weights.ckpt</weightsPath>
-
-    <data>
-      <dataset>xor</dataset>
-    </data>
 
     <training>
       <numEpochs>200</numEpochs>
@@ -26,27 +21,22 @@
 
   <InputSpace>
     <nOutput>2</nOutput>
-    <nDim>1</nDim>
     <nVectors>2</nVectors>
   </InputSpace>
 
   <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=true. -->
   <PerceptualSpace>
     <nOutput>4</nOutput>
-    <nDim>1</nDim>
     <nVectors>16</nVectors>
     <codebook>true</codebook>
-    <invertible>false</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=true. -->
   <ConceptualSpace>
     <nOutput>3</nOutput>
-    <nDim>1</nDim>
     <nVectors>16</nVectors>
     <codebook>true</codebook>
-    <invertible>false</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -56,7 +46,6 @@
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

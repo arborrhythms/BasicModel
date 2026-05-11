@@ -25,10 +25,12 @@ class _BinaryGrammarOpAdapter(nn.Module):
     """
 
     def __init__(self, gl):
+        """Wrap a GrammarLayer ``gl`` so it can act as a binary callable."""
         super().__init__()
         self.gl = gl
 
     def forward(self, left, right):
+        """Forward ``(left, right)`` to the wrapped grammar layer's compose."""
         return self.gl.compose(left, right)
 
 
@@ -44,6 +46,12 @@ class SignalRouter(nn.Module):
 
     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
                  max_depth, temperature=1.0):
+        """Initialize empty unary / binary ModuleDicts; ops are attached later.
+
+        ``feature_dim`` is the slab D; ``temperature`` divides logits in
+        the inner soft DP. ``max_depth`` caps the number of binary
+        reduction rounds; the actual cap is min(N-1, max_depth).
+        """
         super().__init__()
         self.n_input = int(n_input)
         self.n_output = int(n_output)
@@ -64,6 +72,12 @@ class SignalRouter(nn.Module):
         self._last_tier_routings = {}
 
     def attach_unary_ops(self, *, ops, rule_ids=None, r_copy=1, tier="S"):
+        """Attach a unary tier; ops fire per-position with one selection.
+
+        ``rule_ids`` parallels ``ops`` and maps local op_id to the
+        grammar's global rule_id (defaults to identity range). Mutates
+        ``self._unary_layers[tier]`` and ``self._unary_rule_ids[tier]``.
+        """
         tier = str(tier)
         layer = UnaryStructuredLayer(
             d_model=self.feature_dim,
@@ -82,6 +96,12 @@ class SignalRouter(nn.Module):
         self._unary_rule_ids[tier] = rule_ids
 
     def attach_layer_ops(self, *, ops, rule_ids=None, r_copy=1, tier="S"):
+        """Attach a binary tier; ops reduce adjacent pairs via Viterbi DP.
+
+        ``rule_ids`` parallels ``ops`` and maps local op_id to grammar
+        global rule_id. Mutates ``self._binary_layers[tier]`` and
+        ``self._binary_rule_ids[tier]``.
+        """
         tier = str(tier)
         layer = BinaryStructuredReductionLayer(
             d_model=self.feature_dim,
@@ -100,6 +120,13 @@ class SignalRouter(nn.Module):
         self._binary_rule_ids[tier] = rule_ids
 
     def compose(self, data, word_space, subspace=None):
+        """Run tiered unary then recursive binary reductions; return rule list.
+
+        ``data`` is ``[B, N, D]``. For each tier in sorted order, unary
+        fires per position then binary reduces adjacent pairs until N
+        collapses to a single S-state. Returns ``{tier: list[list[rule_id]]}``
+        and caches the root state + length-N expansion on ``self``.
+        """
         if not self._unary_layers and not self._binary_layers:
             raise RuntimeError(
                 "SignalRouter.compose called before attach_layer_ops() / "
@@ -183,6 +210,12 @@ class SignalRouter(nn.Module):
         return rules
 
     def generate(self, target, word_space, subspace=None):
+        """Reverse-pass mirror: emit the compose-order rule list reversed.
+
+        If compose has not yet been called for ``target``, run it now.
+        Tier order is reversed (innermost first) and each row's rule
+        sequence is reversed so the inverse pass pops last-applied first.
+        """
         if not self._unary_layers and not self._binary_layers:
             raise RuntimeError(
                 "SignalRouter.generate called before attach_layer_ops() / "
@@ -198,6 +231,12 @@ class SignalRouter(nn.Module):
                 for tier in all_tiers}
 
     def _compose_rules_from_routings(self):
+        """Rebuild per-row compose-order rule lists from cached routings.
+
+        Walks ``self._last_tier_routings`` and translates each routing's
+        ``(action_kind, action_op)`` tensors back into global rule_ids
+        via the per-tier ``_unary_rule_ids`` / ``_binary_rule_ids`` tables.
+        """
         rules = {}
         for tier, tier_routing in self._last_tier_routings.items():
             tier_rules_per_row = None
@@ -260,6 +299,11 @@ class SignalRouter(nn.Module):
         return self._last_output
 
     def _collect_binary_rule_selections(self, routing):
+        """Extract per-row binary-op id lists from a single routing dict.
+
+        Returns ``[B][L_b]`` lists of *local* op ids (no rule_id mapping),
+        skipping non-reduce action kinds. Helper for diagnostics.
+        """
         kind = routing["action_kind"]
         op = routing["action_op"]
         lengths = routing["lengths"]
@@ -490,6 +534,11 @@ class ComparatorMixer(nn.Module):
 
     def __init__(self, d_model: int, hidden: int = None,
                  temperature: float = 1.0):
+        """Build the gate MLP (d_model -> hidden -> 4 branches).
+
+        ``hidden`` defaults to ``d_model``. ``temperature`` divides
+        gate logits before softmax; lower = harder routing.
+        """
         super().__init__()
         hidden = hidden if hidden is not None else d_model
         self.temperature = float(temperature)
@@ -643,7 +692,13 @@ def compact_soft(
 
 
 class _IdentityContext(nn.Module):
+    """Default context net for the structured layers: pass-through.
+
+    Used when no explicit contextualizer is supplied so the routing
+    score sees raw ``x``.
+    """
     def forward(self, x):
+        """Return ``x`` unchanged."""
         return x
 
 
@@ -663,6 +718,13 @@ class BinaryStructuredReductionLayer(nn.Module):
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
                  temperature=1.0):
+        """Wire ops list, per-rule anchor params, and the comparator mixer.
+
+        Builds learnable ``copy_anchor`` ``[r_copy, D]`` and
+        ``reduce_anchor`` ``[r_reduce, D]`` for anchor-based placement
+        scoring (no separate scorer MLP). ``context_net`` defaults to
+        identity if None.
+        """
         super().__init__()
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(list(ops))
@@ -701,7 +763,12 @@ class BinaryStructuredReductionLayer(nn.Module):
         return gathered
 
     def _gather_branches(self, x, reduced_chosen):
-        """Build [B, N, 4, D] in branch order (keep, reduce, shift, pad)."""
+        """Build [B, N, 4, D] in branch order (keep, reduce, shift, pad).
+
+        ``reduced_chosen`` is the per-pair reduction result, length N-1;
+        it gets pad-extended to N at the last position so all four
+        branches share an N-length axis for the comparator mixer.
+        """
         B, N, D = x.shape
         pad_slab = x.new_zeros(B, 1, D)
         x_shift = torch.cat([x[:, 1:, :], pad_slab], dim=1)
@@ -713,6 +780,14 @@ class BinaryStructuredReductionLayer(nn.Module):
             [x, r_padded, x_shift, pad_slab.expand_as(x)], dim=2)
 
     def forward(self, x, *, span_start=None, span_end=None):
+        """Score, route via Viterbi, compact; return (hard, soft, routing).
+
+        Returns:
+            hard_slab: [B, N, D] argmax-selected per-position action.
+            soft_slab: [B, N, D] DP-marginal-weighted blend (gradient surrogate).
+            routing:   dict with masks, scores, marginals, lengths, gates.
+        Degenerate N<=1 returns the input twice with a stub routing.
+        """
         B, N, D = x.shape
         if N <= 1:
             routing = {
@@ -846,6 +921,12 @@ class UnaryStructuredLayer(nn.Module):
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
                  temperature=1.0):
+        """Wire ops list and per-(copy/apply) anchor params.
+
+        Action space is ``R_copy + R_apply`` choices per position with
+        anchor-based scoring; positions are independent (no DP). Builds
+        ``copy_anchor`` ``[r_copy, D]`` and ``apply_anchor`` ``[r_apply, D]``.
+        """
         super().__init__()
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(list(ops))
@@ -867,6 +948,12 @@ class UnaryStructuredLayer(nn.Module):
         return torch.stack(per_op, dim=2)
 
     def forward(self, x):
+        """Score, choose per-position action, return (hard, soft, routing).
+
+        Hard slab argmax-selects one branch per position; soft slab is
+        the softmax-weighted blend over (copy_branch + applied_ops).
+        Straight-through gradient connects the hard-forward / soft-backward.
+        """
         B, N, D = x.shape
         h = self.context_net(x)
         applied = self._stacked_applied(x)                 # [B, N, R_apply, D]
@@ -934,6 +1021,12 @@ class UnaryStructuredLayer(nn.Module):
 
 
 def copy_penalty(route_traces, lambda_copy: float = 1e-3):
+    """Penalty proportional to mean copy_marginal across route traces.
+
+    Encourages the router to commit to non-copy actions (apply / reduce)
+    rather than passing positions through unchanged. Returns scalar 0
+    if ``lambda_copy`` is zero or no trace carries a copy_marginal.
+    """
     if lambda_copy == 0.0:
         return torch.tensor(0.0)
     total = 0.0
@@ -948,6 +1041,12 @@ def copy_penalty(route_traces, lambda_copy: float = 1e-3):
 
 
 def length_penalty(route_traces, lambda_len: float = 1e-4):
+    """Penalty proportional to mean post-reduction length across traces.
+
+    Pressures the router toward shorter derivations (more reduces).
+    Returns scalar 0 if ``lambda_len`` is zero or no trace carries a
+    lengths tensor.
+    """
     if lambda_len == 0.0:
         return torch.tensor(0.0)
     total = 0.0

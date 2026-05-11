@@ -17,8 +17,15 @@ from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 
 class _LazyPlt:
-    """Defers ``import matplotlib.pyplot`` until the first plotting call."""
+    """Defers ``import matplotlib.pyplot`` until the first plotting call.
+
+    Headless / GPU-only training runs that never plot avoid loading
+    matplotlib (and pulling in its slow font cache build). On the first
+    attribute access the proxy installs the real module into ``globals``
+    so subsequent lookups skip the proxy.
+    """
     def __getattr__(self, name):
+        """Import matplotlib on first access; replace the proxy in globals."""
         import matplotlib.pyplot as _m
         globals()['plt'] = _m  # replace proxy with the real module
         return getattr(_m, name)
@@ -48,16 +55,25 @@ def _output_stem(stem):
 class Report:
     """Collects timestamped SVG figures and XML configs, then writes an HTML report.
 
-    Set ``enabled = False`` to suppress all figure generation and report output.
+    Default ``enabled`` follows ``TheDevice.optimized()`` -- accelerator
+    runs (CUDA / MPS) disable reporting by default to keep training
+    fast; CPU debug runs auto-enable. Set ``enabled = False`` to
+    suppress all figure generation and report output.
     """
     def __init__(self):
+        """Build an empty report; pick a timestamp + default enabled flag."""
         self.enabled = not TheDevice.optimized()
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.figures = []       # list of (title, svg_path)
         self.xml_configs = []   # list of (name, xml_content)
 
     def show_figure(self, fig=None):
-        """Display figures only on interactive backends; otherwise close them."""
+        """Display figures only on interactive backends; otherwise close them.
+
+        Closes the passed figure on non-interactive backends (Agg /
+        template) to avoid leaking matplotlib state. Non-blocking
+        show otherwise so the loop continues.
+        """
         if not self.enabled:
             if fig is not None:
                 plt.close(fig)
@@ -70,7 +86,12 @@ class Report:
         plt.show(block=False)
 
     def save_figure(self, fig, title):
-        """Save a matplotlib figure as a timestamped SVG and register it."""
+        """Save a matplotlib figure as a timestamped SVG and register it.
+
+        Filename slug is ``{timestamp}_{safe_title}.svg``. Appends a
+        ``(title, filename)`` pair to ``self.figures`` so the HTML
+        writer can embed it later. No-op when ``enabled`` is False.
+        """
         if not self.enabled:
             plt.close(fig)
             return None
@@ -82,7 +103,11 @@ class Report:
         return path
 
     def add_xml(self, config_path):
-        """Register an XML config file for inclusion in the report."""
+        """Register an XML config file for inclusion in the report.
+
+        Reads the file contents into memory; the basename is used as
+        the section heading in the rendered HTML.
+        """
         if not self.enabled:
             return
         name = os.path.basename(config_path)
@@ -90,7 +115,12 @@ class Report:
             self.xml_configs.append((name, f.read()))
 
     def write_html(self):
-        """Write the collected figures and configs into a single HTML file."""
+        """Write the collected figures and configs into a single HTML file.
+
+        Returns ``None`` when reporting is disabled or there's nothing
+        to render. Prints the saved file's URL and triggers a VS Code
+        open (best-effort) when content was written.
+        """
         if not self.enabled:
             return None
         has_tables = hasattr(self, 'tables') and self.tables
@@ -164,7 +194,12 @@ class Report:
         self.tables.append((title, headers, rows))
 
     def classificationReport(self, model, min_value=0, max_value=1, **kwargs):
-        """Run a model test pass and print a sklearn classification report."""
+        """Run a model test pass and print a sklearn classification report.
+
+        Saturates predictions into ``[min_value, max_value]`` before
+        rounding. Accepts legacy ``min`` / ``max`` kwargs as aliases;
+        any other unknown kwarg raises ``TypeError``.
+        """
         if not self.enabled:
             return
         if "min" in kwargs:
@@ -202,7 +237,12 @@ class Report:
 
     @staticmethod
     def _open_in_vscode(html_path):
-        """Open the report file in VS Code, falling back to the default browser."""
+        """Open the report file in VS Code, falling back to the default browser.
+
+        Tries the ``vscode://file/...`` URL via ``open``; on failure
+        falls back to ``webbrowser.open`` with a plain ``file://`` URL.
+        Best-effort -- silently swallows OSError.
+        """
         import os
         import subprocess
         import webbrowser
@@ -228,7 +268,14 @@ class Report:
     # ----- Plotting methods -----
 
     def mnistReport(self, model):
-        """Run test epoch, compute per-digit accuracy, and plot."""
+        """Run test epoch, compute per-digit accuracy, and plot.
+
+        Skips gracefully when the model has masked-prediction enabled,
+        no test split is configured, or training was zero-epoch
+        (structural scaffold runs). Dispatches to
+        ``plotAccuracyAndCertainty`` when ``model.certainty`` else
+        ``plotAccuracy``.
+        """
         if hasattr(model, 'masked_prediction') and model.masked_prediction != 'NONE':
             return torch.zeros(1)  # no classification report for masked prediction
         # Configs that exercise the model architecturally without a real
@@ -304,7 +351,11 @@ class Report:
         return rCorrect
 
     def plotAccuracy(self, model_name, rCorrect):
-        """Plot per-class accuracy."""
+        """Plot per-class accuracy.
+
+        Renders a single line plot of accuracy vs. class index and
+        registers the figure for the HTML report.
+        """
         if not self.enabled:
             return
         nClasses = len(rCorrect)
@@ -320,7 +371,12 @@ class Report:
 
     def plotAccuracyAndCertainty(self, model_name, rCorrect, reversible=False,
                                  last_x_pred=None, test_output=None):
-        """Plot per-class accuracy with certainty, and optionally reconstruction images."""
+        """Plot per-class accuracy with certainty, and optionally reconstruction images.
+
+        For reversible models, also dumps up to 10 reverse-pass
+        reconstructions as 28x28 image plots so the visual quality
+        of the inverse can be eyeballed.
+        """
         if not self.enabled:
             return
         nClasses = len(rCorrect)
@@ -347,7 +403,12 @@ class Report:
                 self.show_figure(fig)
 
     def plotLoss(self, model_name, trainErr, valErr, testErr):
-        """Plots the training, validation, and test losses over time."""
+        """Plots the training, validation, and test losses over time.
+
+        ``trainErr`` / ``testErr`` are 2-tuples of (output-loss series,
+        reconstruction-loss series); the reconstruction line is drawn
+        only when populated. Training is offset by +2 (epoch 1 is test-only).
+        """
         if not self.enabled:
             return
         fig = plt.figure(figsize=(10, 5))
@@ -372,6 +433,12 @@ class Report:
         self.show_figure(fig)
 
     def plotActivations(self, figure=1, percepts=None, concepts=None, symbols=None):
+        """Plot per-position activation norms for percepts / concepts / symbols.
+
+        Each non-None tensor is rendered as a single norm-vs-position
+        curve sharing a 12x4 inch figure. Reuses ``figure`` index if
+        already open so live-update workflows don't accumulate windows.
+        """
         if not self.enabled:
             return
         if plt.fignum_exists(figure):
@@ -409,7 +476,12 @@ class Report:
         self.show_figure(fig)
 
     def plotSpace(self, model):
-        """Visualizes learned weight parameters via PCA projections."""
+        """Visualizes learned weight parameters via PCA projections.
+
+        Reduces ``model.prototypes`` (and downstream space weights) to
+        2D via sklearn PCA and scatters them; useful for eyeballing
+        codebook geometry after training.
+        """
         if not self.enabled:
             return
         perc_weights = model.prototypes.data.cpu().numpy()
@@ -460,7 +532,12 @@ class Report:
         self.show_figure(fig)
 
     def plotNetwork(self, model):
-        """Uses Torchviz to visualize the computation graph."""
+        """Uses Torchviz to visualize the computation graph.
+
+        Runs one test sample through the model to capture the autograd
+        graph, renders it as a PNG via torchviz, and prints the saved
+        path. Requires torchviz to have imported successfully.
+        """
         if not self.enabled:
             return
         try:
@@ -475,6 +552,12 @@ class Report:
         print(f"Saved network graph as {graph_path}")
 
     def plotErrorbars(self, model_name, acc):
+        """Add an errorbar series for ``model_name`` to the current figure.
+
+        ``acc`` is a [trials, epochs] array; mean and std along trials
+        are plotted as the y-value and error bar. Does not call show /
+        save -- caller composes a multi-series figure.
+        """
         if not self.enabled:
             return
         x = list(range(1, len(acc[0]) + 1))
@@ -483,7 +566,12 @@ class Report:
         plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model_name, capsize=4)
 
     def plotErrorbarsFromFile(self, fn):
-        """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
+        """Load a CSV of trial accuracies and add an errorbar series to the current plot.
+
+        Reads ``OUTPUT_DIR/<fn>.csv`` as a 2D array (rows = trials,
+        cols = epochs). Useful for stitching together comparison plots
+        from previously saved per-model CSVs.
+        """
         if not self.enabled:
             return
         acc = np.loadtxt(_output_path(f"{fn}.csv"), delimiter=",")
@@ -612,7 +700,12 @@ class Report:
         self.show_figure(fig)
 
     def plotEpochComparison(self):
-        """Plot epoch-level accuracy comparison from saved CSV files."""
+        """Plot epoch-level accuracy comparison from saved CSV files.
+
+        Hardcoded list of model-name stems; each is loaded via
+        ``plotErrorbarsFromFile`` if its CSV exists in OUTPUT_DIR.
+        Output is saved as a single SVG.
+        """
         if not self.enabled:
             return
         fig = plt.figure(figsize=(10, 5))
@@ -640,7 +733,12 @@ TheReport = Report()
 _subplot_index = 0
 
 def plot_things(things=None):
-    """Reset the figure or append a new subplot for the given vectors."""
+    """Reset the figure or append a new subplot for the given vectors.
+
+    Called with ``None`` to start a fresh four-panel figure (resets
+    ``_subplot_index``). Subsequent calls draw one panel each:
+    1D arrays as line plots, 2D arrays as origin-anchored rays.
+    """
     global _subplot_index
 
     if things is None:
@@ -665,7 +763,12 @@ def plot_things(things=None):
 
 
 def metrics():
-    """Explore several distance metrics in perceptual and conceptual spaces."""
+    """Explore several distance metrics in perceptual and conceptual spaces.
+
+    Generates synthetic physical / perceptual / conceptual / symbolic
+    rays and renders them in a stacked four-panel figure so the
+    transforms between spaces are visible side by side.
+    """
     plot_things()  # Initialize figure
     dim = 2
     k = 5
@@ -706,16 +809,24 @@ def metrics():
 # ---------------------------------------------------------------------------
 
 def distances():
-    """Plot three toy similarity/distance surfaces over a 2D grid."""
+    """Plot three toy similarity/distance surfaces over a 2D grid.
+
+    Renders cosine-like, Euclidean, and pi (norm-normalised) surfaces
+    over a 2D mesh. Useful for visual debugging of which metric the
+    model is implicitly learning at the symbolic head.
+    """
     def cos_distance(w, X, Y):
+        """Inner-product surface (cosine numerator) parameterized by ``w``."""
         norms = np.sqrt(X ** 2 + Y ** 2) + 1e-8
         dot = w[0] * Y + w[1] * X
         return dot
 
     def euclid_distance(w, X, Y):
+        """Euclidean distance from ``w`` to each grid point ``(X, Y)``."""
         return np.sqrt((X - w[1]) ** 2 + (Y - w[0]) ** 2)
 
     def pi_distance(w, X, Y):
+        """Soft pi-like surface using tanh-saturated axis contributions."""
         return (1 + np.tanh(w[0] * Y)) * (1 + np.tanh(w[1] * X))
 
     x = np.linspace(-4, 4, 100)
@@ -737,7 +848,11 @@ def distances():
 
 
 def plot_surface_3d(X, Y, Z, title):
-    """Render one surface in its own 3D figure for side-by-side comparison."""
+    """Render one surface in its own 3D figure for side-by-side comparison.
+
+    Each call creates a new matplotlib figure so multiple surfaces can
+    be inspected together rather than overlaid.
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(X, Y, Z, cmap='viridis')

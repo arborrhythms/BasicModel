@@ -94,6 +94,12 @@ class _MultiOptimizer:
     """
 
     def __init__(self, optimizers):
+        """Wrap the optimizer list and expose a flattened param_groups view.
+
+        The flat ``param_groups`` lets callers that read or set
+        ``param_groups[i]['lr']`` (rebuild_optimizer, LR scheduling)
+        see every group across the underlying optimizers.
+        """
         self.optimizers = list(optimizers)
         # Synthesize a flat param_groups view so callers reading
         # `optimizer.param_groups[0]['lr']` (e.g. rebuild_optimizer)
@@ -104,19 +110,27 @@ class _MultiOptimizer:
         self.param_groups = pg
 
     def step(self, closure=None):
+        """Call ``step`` on every underlying optimizer; return their results.
+
+        Forwards ``closure`` only when not None so opts without closure
+        support don't choke on the extra keyword.
+        """
         results = []
         for o in self.optimizers:
             results.append(o.step(closure=closure) if closure is not None else o.step())
         return results
 
     def zero_grad(self, set_to_none=True):
+        """Forward ``zero_grad`` to every underlying optimizer."""
         for o in self.optimizers:
             o.zero_grad(set_to_none=set_to_none)
 
     def state_dict(self):
+        """Return a dict with one entry per underlying optimizer."""
         return {'optimizers': [o.state_dict() for o in self.optimizers]}
 
     def load_state_dict(self, state):
+        """Restore each underlying optimizer from the matching slot in ``state``."""
         for o, s in zip(self.optimizers, state.get('optimizers', [])):
             o.load_state_dict(s)
 
@@ -131,12 +145,15 @@ class Normalizer:
     """
 
     def __init__(self, source):
+        """Hold the underlying TheData-like object as ``_source``."""
         self._source = source
 
     def normalize(self, x, which="input"):
+        """Forward to ``_source.normalize``; ``which`` selects input/output bounds."""
         return self._source.normalize(x, which=which)
 
     def denormalize(self, x, which="input"):
+        """Forward to ``_source.denormalize``; ``which`` selects input/output bounds."""
         return self._source.denormalize(x, which=which)
 
 
@@ -337,7 +354,12 @@ class BaseModel(Mereology, nn.Module):
 
     @staticmethod
     def from_config(config_path=None, model_type=None, data=None):
-        """Factory: create the right model type from XML config."""
+        """Factory: create the right model type from XML config.
+
+        Defaults to ``data/xor.xml`` for smoke runs; resolves relative
+        paths via ``ModelFactory.resolve_xml``. Returns ``(model, cfg)``
+        where ``cfg`` is the parsed dict.
+        """
         if config_path is None:
             config_path = os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         resolved_path = ModelFactory.resolve_xml(config_path)
@@ -356,7 +378,13 @@ class BaseModel(Mereology, nn.Module):
         return os.path.join(config_dir, relpath)
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
-        """Create the model using settings from an XML config file."""
+        """Create the model using settings from an XML config file.
+
+        Initializes ``TheXMLConfig`` from ``config_path`` (overlaying
+        ``data/model.xml`` defaults), validates the schema, then walks
+        through space construction, optimizer setup, and embedding load.
+        Mutates ``self`` extensively; returns the parsed config dict.
+        """
         self._config_path = config_path
         self._config_data = data
 
@@ -546,7 +574,11 @@ class BaseModel(Mereology, nn.Module):
         return cfg
 
     def create(self, **kwargs):
-        """Override in subclasses to build model architecture."""
+        """Override in subclasses to build model architecture.
+
+        ``BaseModel.create`` is a no-op; ``BasicModel.create`` wires
+        the actual space stack.
+        """
         pass
 
     def getOptimizer(self, lr=0.01):
@@ -603,14 +635,25 @@ class BaseModel(Mereology, nn.Module):
         return optim.Adam(params, lr=lr)
 
     def rebuild_optimizer(self):
-        """Rebuild the main optimizer after codebook expansion."""
+        """Rebuild the main optimizer after codebook expansion.
+
+        Reads the learning rate from the existing optimizer's first
+        param group and constructs a fresh ``getOptimizer`` over the
+        current parameter set, picking up any newly added rows.
+        """
         if self._optimizer is None:
             return
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
 
     def _checkpoint_path(self, suffix=None):
-        """Resolve the configured checkpoint path, optionally adding a suffix."""
+        """Resolve the configured checkpoint path, optionally adding a suffix.
+
+        Falls back to ``output/<name>.ckpt`` when no ``weightsPath`` is
+        set in the XML. The ``suffix`` is inserted before the extension
+        so emergency / autosave variants can coexist with the canonical
+        checkpoint.
+        """
         path = TheXMLConfig.get("architecture.weightsPath", None)
         if path:
             path = self._resolve_artifact_path(path)
@@ -622,7 +665,12 @@ class BaseModel(Mereology, nn.Module):
         return path
 
     def save_training_checkpoint(self, reason="checkpoint", suffix=None):
-        """Save model weights and embeddings during or after training."""
+        """Save model weights and embeddings during or after training.
+
+        Resolves the checkpoint path (with optional suffix), writes
+        weights then embeddings, and prints a labeled message. ``reason``
+        appears in the log only -- the on-disk filename is unaffected.
+        """
         path = self._checkpoint_path(suffix=suffix)
         TheMessage(f"[{self.name}] Saving training checkpoint ({reason})")
         self.save_weights(path)
@@ -717,12 +765,22 @@ class BaseModel(Mereology, nn.Module):
         return acc
 
     def paramUpdate(self):
-        """Delegate ergodic in-place parameter updates to all spaces."""
+        """Delegate ergodic in-place parameter updates to all spaces.
+
+        Each space's ``paramUpdate`` performs its own annealing /
+        renormalization step (e.g. codebook re-projection); not all
+        parameter motion is gradient-driven.
+        """
         for s in self.spaces:
             s.paramUpdate()
 
     def set_sigma(self, sigma):
-        """Propagate exploration meta-parameters to all spaces."""
+        """Propagate exploration meta-parameters to all spaces.
+
+        ``sigma`` controls per-space exploration noise (typically the
+        Gaussian sample width in codebook lookup). Spaces that don't
+        use exploration may treat this as a no-op.
+        """
         for s in self.spaces:
             s.set_sigma(sigma)
 
@@ -1191,7 +1249,13 @@ class BaseModel(Mereology, nn.Module):
                 TheMessage(f"    {key:<50s}  {list(tensor.shape)}")
 
     def load_embeddings(self, path=None):
-        """Load embedding weights and vocab from a .pt artifact."""
+        """Load embedding weights and vocab from a .pt artifact.
+
+        Falls back to ``self.embedding_path`` when ``path`` is None;
+        returns False on absence rather than raising. Also restores
+        the LTM truth-layer payload when present and the embedding
+        layer supports it.
+        """
         if path is None:
             path = getattr(self, 'embedding_path', None)
         if path is None:
@@ -1423,7 +1487,12 @@ class BaseModel(Mereology, nn.Module):
         return "".join(chars).rstrip("\x00")
 
     def _reconstructionReport(self):
-        """Run a test pass with reverse and report input vs reconstructed text."""
+        """Run a test pass with reverse and report input vs reconstructed text.
+
+        Skipped under masked-prediction or zero-epoch structural-scaffold
+        configs (e.g. idempotent.xml) where reverse-pass shape assumptions
+        don't hold. Prints input / reconstruction pairs for visual inspection.
+        """
         if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
             return  # masked prediction has variable batch sizes; skip reconstruction report
         # Skip when the config is a structural scaffold (no training, no
@@ -1575,7 +1644,12 @@ class BasicModel(BaseModel):
     name = "BasicModel"
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
-        """Delegate XML-driven construction to BaseModel."""
+        """Delegate XML-driven construction to BaseModel.
+
+        Thin override that exists only to ensure the BasicModel
+        instance handles the call (subclass dispatch); the actual
+        construction logic lives in ``BaseModel.create_from_config``.
+        """
         return super().create_from_config(config_path, model_type=model_type, data=data)
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
@@ -2031,7 +2105,13 @@ class BasicModel(BaseModel):
         return x
 
     def _symbol_feedback_from_vectors(self, sym_vectors, n_feedback, feedback_dim):
-        """Project symbolic state back to the percept-shaped feedback tensor."""
+        """Project symbolic state back to the percept-shaped feedback tensor.
+
+        Truncates / right-pads ``sym_vectors`` to ``n_feedback`` rows.
+        If dims already match ``feedback_dim``, returns the bounded
+        tensor; otherwise expands per-row norms to fill the feedback
+        dim so a scalar symbolic signal still drives every channel.
+        """
         feedback = sym_vectors
         if feedback.shape[1] >= n_feedback:
             feedback = feedback[:, -n_feedback:, :]
@@ -2108,7 +2188,13 @@ class BasicModel(BaseModel):
                 space.End()
 
     def StartReverse(self, symbols):
-        """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
+        """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction).
+
+        Drives the reverse direction through each space in turn,
+        materializing intermediate states for MODEL_DEBUG diagnostics.
+        Returns ``(inputData, input)`` -- the rebuilt byte/text and the
+        post-perceptual-reverse state respectively.
+        """
         if isinstance(symbols, torch.Tensor):
             self.symbolicSpace.subspace.set_event(symbols)
             symbols = self.symbolicSpace.subspace
@@ -2325,7 +2411,13 @@ class BasicModel(BaseModel):
         return tokens
 
     def _infer_ir(self, text):
-        """IR-mode parallel-infill inference. See ``infer(mode='IR')``."""
+        """IR-mode parallel-infill inference. See ``infer(mode='IR')``.
+
+        Runs one forward + reverse pass under no_grad, reads back the
+        positions the mask marked as predict-here, and returns the
+        decoded token list for those positions. Requires the model
+        to be reversible.
+        """
         if not self.reversible:
             raise ValueError("infer(mode='IR') requires reversible=True.")
         self.eval()
@@ -2698,6 +2790,14 @@ class BasicModel(BaseModel):
     ])
 
     def trainEmbeddings(self, trainMod, index, split):
+        """Run one SBOW training step on the sample at (index, split).
+
+        ``trainMod`` is the iterable of training-embedding modes that
+        should fire (e.g. {'SBOW'}); the call is a no-op when the
+        configured ``train_embedding`` isn't in that set or when the
+        lexer is byte-mode (perceptual SBOW replaces InputSpace SBOW).
+        Returns the per-step loss or None.
+        """
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
@@ -3650,6 +3750,12 @@ class BasicModel(BaseModel):
         _SENTINEL = object()
 
         def __init__(self, ds, queue_size):
+            """Spawn the prefetch worker and size the bounded queue.
+
+            ``queue_size`` of N permits up to N-1 in-flight ticks buffered
+            ahead of the consumer. The worker is a daemon thread so it
+            does not block process exit on abrupt termination.
+            """
             from queue import Queue
             from threading import Thread, Event
             self._ds = ds
@@ -3661,6 +3767,12 @@ class BasicModel(BaseModel):
             self._thread.start()
 
         def _produce(self):
+            """Worker loop: call ``ds.next_tick`` and enqueue results.
+
+            Honours the ``_stop`` event, captures any exception into
+            ``_exc`` so the consumer can re-raise it, and always enqueues
+            ``_SENTINEL`` on exit so the consumer doesn't deadlock.
+            """
             try:
                 while not self._stop.is_set() and not self._ds.all_done():
                     tick = self._ds.next_tick()
@@ -3689,6 +3801,11 @@ class BasicModel(BaseModel):
             return item
 
         def close(self):
+            """Signal stop, drain the queue, and join the worker.
+
+            Bounded ``thread.join`` with a 2s timeout so a stuck worker
+            can't block process exit indefinitely.
+            """
             self._stop.set()
             while not self._queue.empty():
                 try:
@@ -3759,7 +3876,13 @@ class BasicModel(BaseModel):
         inErr = 0.0
 
         def record(result):
-            """Book-keep one runBatch result into the shared accumulators."""
+            """Book-keep one runBatch result into the shared accumulators.
+
+            Updates ``outErr`` / ``inErr`` from the result's loss tensors
+            (kept 0-dim to avoid a GPU sync). Appends per-batch
+            prediction clones into ``outputChunks`` / ``inputChunks``
+            only during eval -- training discards them.
+            """
             nonlocal outErr, inErr
             # Note: do NOT call outputSpace.putBatch(result).  The list it
             # would append to has no readers, and each BatchResult retains
@@ -4009,7 +4132,14 @@ class BasicModel(BaseModel):
                reverse_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
                masked_prediction='NONE', **kwargs):
+        """Wire the full per-stage space stack from architecture parameters.
 
+        Builds Input / Perceptual / Conceptual stages (one per
+        ``conceptualOrder`` step) / Symbolic / Output, plus the optional
+        WordSpace, subsymbolic, and pipeline modules. Mutates ``self``
+        extensively (sets every ``self.*Space`` attribute, ``self.spaces``,
+        ``self.wordSpace``, ``self.reversible``, etc.).
+        """
         self.spaces = []
         self.wordSpace = None  # wired below once the home spaces exist
         self.reversible = True
@@ -4426,6 +4556,42 @@ class BasicModel(BaseModel):
 
     # -- Phase 2: Sequential pipeline ----------------------------------
 
+    def _flatten_k(self, sub):
+        """Collapse [B, K, N, D] -> [B*K, N, D]; mutates ``sub`` in place.
+
+        Returns ``(B, K)`` so the caller can restore the K axis later.
+        Returns ``(None, None)`` for ``k_axis=False`` subspaces (already flat).
+        Hoisted from FlattenKWrapper so per-stage body/head can run on a
+        flat batch dim without per-module wrappers.
+        """
+        if sub is None or not sub.k_axis:
+            return None, None
+        x = sub.materialize()
+        assert x.dim() == 4, (
+            f"_flatten_k expects [B,K,N,D], got shape {tuple(x.shape)}"
+        )
+        B, K, N, D = x.shape
+        sub.set_event(x.reshape(B * K, N, D))
+        sub.k_axis = False
+        return B, K
+
+    def _restore_k(self, sub, B, K):
+        """Reshape [B*K, N, D] -> [B, K, N, D] in place on ``sub``.
+
+        ``(B, K) == (None, None)`` is the pass-through case (the subspace
+        was already flat on entry to _flatten_k).
+        """
+        if sub is None or B is None:
+            return sub
+        y = sub.materialize()
+        BK, Nout, Dout = y.shape
+        assert BK == B * K, (
+            f"_restore_k batch dim drift: expected B*K={B * K}, got {BK} "
+            f"(out shape {tuple(y.shape)})"
+        )
+        sub.set_event(y.view(B, K, Nout, Dout))
+        sub.k_axis = True
+        return sub
 
     def _build_pipelines_per_stage(self):
         """Phase 2: stem/body/head pipelines for BasicModel.
@@ -4853,6 +5019,13 @@ class BasicModel(BaseModel):
 
 
     def _reverse_per_stage(self, symbols, outputData):
+        """Walk the per-stage Symbol -> Concept -> Percept -> Input reverse path.
+
+        Handles butterfly and flat layouts. For each conceptual stage
+        in reverse order, runs the symbolic and conceptual reverse,
+        then re-injects into the next stage's symbolic subspace.
+        Returns the reconstructed input data.
+        """
         sym_vec = self.symbolicSpace.subspace.materialize()
         concepts_state = self.concepts
 
@@ -5034,6 +5207,12 @@ class BasicModel(BaseModel):
             per_leaf_text = None
 
         def _decode_token(b, pos):
+            """Return the surface text for batch row ``b`` at slot ``pos``.
+
+            Prefers the decoded UTF-8 text from ``per_leaf_text``, falls
+            back to the codebook key via ``per_leaf_atom`` / index_to_key,
+            and finally to a ``slot_<pos>`` placeholder.
+            """
             if (per_leaf_text is not None and b < len(per_leaf_text)
                     and pos < len(per_leaf_text[b])
                     and per_leaf_text[b][pos]):
@@ -5068,6 +5247,12 @@ class BasicModel(BaseModel):
             cat_ids = None
 
         def _pos_at(b, pos):
+            """Return the POS tag name for batch row ``b`` at slot ``pos``.
+
+            Prefers the chart's per-leaf POS distribution
+            (``chart_pos[b, pos, pos+1, :].argmax``); falls back to the
+            possibly-stale codebook ``category_ids`` and finally ``'?'``.
+            """
             # Prefer chart_pos[b, pos, pos+1, :].argmax() — what the
             # chart actually believed at this leaf during this parse.
             if chart_pos is not None:
@@ -5123,6 +5308,13 @@ class BasicModel(BaseModel):
                     span_to_entry.setdefault((i_e, j_e), entry)
 
                 def _build(span, parent_el, _b=b):
+                    """Recursively emit XML nodes/leaves for chart ``span``.
+
+                    Looks up the chart entry at ``(si, sj)``; emits a
+                    ``<node>`` element with category + rule then recurses
+                    into the left/right children. Spans without an entry
+                    become a run of ``<leaf>`` elements.
+                    """
                     entry = span_to_entry.get(span)
                     si, sj = span
                     if entry is None:
@@ -5350,7 +5542,12 @@ class ModelFactory:
 
     @staticmethod
     def model_name(ergodic, certainty, codebook, normed=False, reverse=False, invert=False):
-        """Generate a human-readable model name from its flags."""
+        """Generate a human-readable model name from its flags.
+
+        Returns ``"SimpleModel"`` when no flags are set; otherwise
+        concatenates the matching flag names with ``" + "``. Reverse /
+        invert are mutually exclusive in the rendered name (invert wins).
+        """
         if not ergodic and not certainty and not codebook:
             return "SimpleModel"
         parts = []
@@ -5397,6 +5594,12 @@ class ModelFactory:
         # Attention is incompatible with reshape that changes vector count
         # (attention expects multi-vector 3D, reshape to 1 vector collapses it).
         def _has_reshape(space_name):
+            """True if ``space_name`` reshapes its input (nInputDim != 0 or flatten).
+
+            Used to detect the attention-vs-reshape incompatibility:
+            attention expects 3D multi-vector input, reshape collapses
+            to a single vector.
+            """
             try:
                 nid = gsp(cfg, space_name, "nInputDim")
             except KeyError:
@@ -5522,7 +5725,13 @@ class ModelFactory:
 
     @staticmethod
     def resolve_xml(path):
-        """Resolve an XML config path relative to the project directory."""
+        """Resolve an XML config path relative to the project directory.
+
+        Tries the absolute path first, then ``PROJECT_DIR/path``, then
+        ``PROJECT_DIR/data/path``. Returns the input unchanged if none
+        of the candidates exist so the eventual open() surfaces the
+        original argument in its error.
+        """
         if os.path.isabs(path):
             return path
         # Try relative to project root first (handles "data/simple.xml")
@@ -5537,7 +5746,14 @@ class ModelFactory:
 
     @staticmethod
     def run(config_path):
-        """Main entry point -- create, train, and evaluate a model from XML config."""
+        """Main entry point -- create, train, and evaluate a model from XML config.
+
+        Loads the dataset via ``TheData.load``, constructs the model
+        through ``BaseModel.from_config``, compiles it, then runs
+        training (optionally under cProfile). Returns
+        ``[(name, rCorrect, model)]``. Honors a handful of ``BASIC_*``
+        env vars for runtime overrides.
+        """
         # Pre-read config for dataset loading (needed before create_from_config)
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
         init_config(path=config_path, defaults_path=defaults_path)
@@ -5613,7 +5829,11 @@ class ModelFactory:
 BasicModelFactory = ModelFactory
 
 def test():
-    """Smoke test: verify encodings and run the XOR config end-to-end."""
+    """Smoke test: verify encodings and run the XOR config end-to-end.
+
+    Touches ``WhereEncoding`` / ``WhenEncoding`` self-tests, then runs
+    the XOR XML config to exercise the full model factory path.
+    """
     WhereEncoding.test()
     WhenEncoding.test()
     ModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))

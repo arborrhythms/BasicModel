@@ -24,33 +24,15 @@
          compositional commitment instead of recombining per-
          position copies via its own nonlinearity. -->
     <conceptualWidth>uniform</conceptualWidth>
-    <useButterflies>false</useButterflies>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>NONE</maskedPrediction>
-    <truthBiasScale>0.1</truthBiasScale>
-    <LuminosityWeight>0.1</LuminosityWeight>
-    <UniversalityWeight>0.1</UniversalityWeight>
-    <weightsPath></weightsPath>
-
-    <data>
-      <dataset>xor</dataset>
-    </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>400</numEpochs>
-      <batchSize>64</batchSize>
       <learningRate>0.01</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>
-      <autosave>false</autosave>
-      <certainty>false</certainty>
     </training>
   </architecture>
 
@@ -72,50 +54,37 @@
     <nDim>4</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <lexer>word</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>6</nOutput>
     <nDim>4</nDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
     <nVectors>200</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
-    <chunking>lexicon</chunking>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
     <nDim>4</nDim>
     <nVectors>6</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
     <nOutput>6</nOutput>
     <nDim>4</nDim>
     <nVectors>6</nVectors>
-    <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
     <useVQVAE>true</useVQVAE>
-    <commitmentBeta>0.25</commitmentBeta>
   </SymbolicSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>1</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
   <WordSpace>
@@ -137,7 +106,6 @@
           </symbols>
         </compose>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 

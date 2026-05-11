@@ -34,7 +34,12 @@ import urllib.request
 # --- HTTP client --------------------------------------------------------
 
 def chat_http(text, host="127.0.0.1", port=8001):
-    """Send a chat query to a running serve.py and return the response."""
+    """Send a chat query to a running serve.py and return the response.
+
+    POSTs a single-message OpenAI-style payload to ``/chat/completions``
+    and extracts the assistant text. Returns an ``[error] ...`` string
+    on URL failure rather than raising.
+    """
     url = f"http://{host}:{port}/chat/completions"
     payload = json.dumps({
         "messages": [{"role": "user", "content": text}]
@@ -52,7 +57,14 @@ def chat_http(text, host="127.0.0.1", port=8001):
 # --- In-process client --------------------------------------------------
 
 def _load_model_in_process(config_path, max_length=64):
-    """Load the XML-selected model class; return a callable `chat(text)`."""
+    """Load the XML-selected model class; return a callable ``chat(text)``.
+
+    Reads the XML config, loads the configured dataset into ``TheData``
+    (forwarding only the shard / maxDocs / shardDir keys actually
+    present), constructs the model via ``BaseModel.from_config``, runs
+    it through ``util.compile`` and returns a closure that invokes
+    ``model.infer`` in autoregressive mode.
+    """
     # Ensure bin/ is importable when run as a script
     bin_dir = os.path.dirname(os.path.abspath(__file__))
     if bin_dir not in sys.path:
@@ -88,6 +100,7 @@ def _load_model_in_process(config_path, max_length=64):
     model = compile(model)
 
     def chat_inproc(text):
+        """In-process chat closure: tokenize, run AR inference, join."""
         tokens = model.infer(text, mode="AR", max_length=max_length)
         return " ".join(tokens) if tokens else ""
 
@@ -106,6 +119,13 @@ DEMO_QUERIES = [
 
 
 def main():
+    """CLI entry point: parse args and dispatch to demo / one-shot / REPL.
+
+    Selects in-process mode when ``--config`` is given, HTTP mode
+    otherwise. Three flow modes: ``--demo`` cycles fixed prompts,
+    positional ``query`` is one-shot, default is an interactive REPL
+    that prints full tracebacks instead of swallowing exceptions.
+    """
     parser = argparse.ArgumentParser(description="BasicModel chat client")
     parser.add_argument("query", nargs="?", help="Single query to send")
     parser.add_argument(
@@ -127,6 +147,7 @@ def main():
         print("[bm] model ready.")
     else:
         def chat(text):
+            """HTTP chat closure bound to the parsed --host / --port."""
             return chat_http(text, args.host, args.port)
 
     if args.demo:

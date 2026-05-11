@@ -48,17 +48,28 @@ class DeviceHandle(str):
 
     @property
     def type(self):
-        """Device type string, e.g. 'cpu', 'cuda', 'mps'."""
+        """Device type string, e.g. 'cpu', 'cuda', 'mps'.
+
+        Strips any trailing ``:N`` index suffix.
+        """
         return self.split(":")[0]
 
     @property
     def index(self):
-        """Device index, or None for devices without an index."""
+        """Device index, or None for devices without an index.
+
+        Parses the ``:N`` suffix when present; bare device strings
+        (e.g. ``cpu``, ``mps``) return None.
+        """
         parts = self.split(":")
         return int(parts[1]) if len(parts) > 1 else None
 
     def optimized(self):
-        """Return True when running on a real accelerator (cuda or mps), False on cpu."""
+        """True when running on a real accelerator (cuda or mps), False on cpu.
+
+        Cheap check used to gate accelerator-only fast paths so a CPU
+        run does not pay autocast / cuDNN-prep overhead.
+        """
         return self.type != "cpu"
 
 
@@ -106,7 +117,12 @@ def resolve_device(name=""):
 
 @lru_cache(maxsize=1)
 def _visible_nvidia_gpu_present():
-    """Best-effort check for a process-visible NVIDIA GPU on non-macOS hosts."""
+    """Best-effort check for a process-visible NVIDIA GPU on non-macOS hosts.
+
+    Inspects ``CUDA_VISIBLE_DEVICES`` (returns False for ``-1`` /
+    ``none``), checks for ``/dev/nvidia*`` device nodes, and falls
+    back to ``nvidia-smi -L``. Cached so the probe runs at most once.
+    """
     if platform.system() == "Darwin":
         return False
 
@@ -137,7 +153,12 @@ def _visible_nvidia_gpu_present():
 
 @lru_cache(maxsize=1)
 def _warn_if_cuda_unavailable_but_nvidia_visible():
-    """Warn once when an NVIDIA GPU appears visible but PyTorch CUDA is unavailable."""
+    """Warn once when an NVIDIA GPU appears visible but PyTorch CUDA is unavailable.
+
+    Diagnoses the common "PyTorch built without CUDA, falling back to
+    CPU silently" trap. ``@lru_cache`` ensures only one warning fires
+    per process even if multiple device resolves attempt it.
+    """
     if platform.system() == "Darwin" or torch.cuda.is_available():
         return
     if _visible_nvidia_gpu_present():
@@ -151,7 +172,12 @@ def _warn_if_cuda_unavailable_but_nvidia_visible():
 
 
 def auto_device():
-    """Select the runtime device using the same policy as resolve_device()."""
+    """Select the runtime device using the same policy as resolve_device().
+
+    Honors ``BASICMODEL_DEVICE`` when set; otherwise falls back to the
+    'gpu' alias (cuda > mps > cpu). Returns a DeviceHandle so callers
+    can ``.optimized()`` on the result.
+    """
     override = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
     target = override if override else "gpu"
     return DeviceHandle(str(resolve_device(target)))
@@ -170,34 +196,49 @@ class _DeviceHolder:
     __slots__ = ('_device',)
 
     def __init__(self, device):
+        """Hold the initial device; later changes use ``set``."""
         self._device = device
 
     def get(self):
-        """Return the current DeviceHandle."""
+        """Return the current DeviceHandle.
+
+        Callers should use this rather than reading ``_device`` so the
+        module-level singleton remains the single source of truth.
+        """
         return self._device
 
     def set(self, device):
-        """Update the held device."""
+        """Update the held device.
+
+        Any importer that re-reads ``TheDevice.get()`` will see the
+        change immediately; existing references to the prior handle
+        are not updated.
+        """
         self._device = device
 
     # Convenience: str(TheDevice) returns the device string so existing
     # code like ``f"Device: {TheDevice}"`` still works.
     def __str__(self):
+        """Delegate to the held device's string form."""
         return str(self._device)
 
     def __repr__(self):
+        """Repr including the wrapping holder name."""
         return f"TheDevice({self._device!r})"
 
     # Delegate DeviceHandle properties for direct access
     @property
     def type(self):
+        """Delegate to the held DeviceHandle's ``type``."""
         return self._device.type
 
     @property
     def index(self):
+        """Delegate to the held DeviceHandle's ``index``."""
         return self._device.index
 
     def optimized(self):
+        """Delegate to the held DeviceHandle's ``optimized()``."""
         return self._device.optimized()
 
 
@@ -207,13 +248,21 @@ torch.set_default_device(str(TheDevice.get()))
 
 
 def init_device(device=None):
-    """Override the process-wide device.  None re-runs auto-detection."""
+    """Override the process-wide device.  None re-runs auto-detection.
+
+    Updates both the ``TheDevice`` holder and PyTorch's default device
+    so subsequent tensor constructors land on the right backend.
+    """
     TheDevice.set(auto_device() if device is None else DeviceHandle(str(device)))
     torch.set_default_device(str(TheDevice.get()))
 
 
 def buffer(*size, **kwargs):
-    """Allocate a zero tensor on TheDevice.  Accepts the same args as torch.zeros."""
+    """Allocate a zero tensor on TheDevice.  Accepts the same args as torch.zeros.
+
+    Saves boilerplate at every call site that wants a scratch tensor
+    on the active device without repeating ``device=TheDevice.get()``.
+    """
     return torch.zeros(*size, **kwargs, device=TheDevice.get())
 
 
@@ -332,7 +381,11 @@ TheCompileBackend = auto_compile_backend()
 
 
 def init_compile_backend(backend=None):
-    """Override the process-wide compilation backend.  None re-runs auto-detection."""
+    """Override the process-wide compilation backend.  None re-runs auto-detection.
+
+    Mutates the module-level ``TheCompileBackend`` global. Subsequent
+    calls to ``compile()`` use the new value.
+    """
     global TheCompileBackend
     TheCompileBackend = auto_compile_backend() if backend is None else backend
 
@@ -391,7 +444,11 @@ TheCompileMode = auto_compile_mode()
 
 
 def init_compile_mode(mode=None):
-    """Override the process-wide torch.compile mode. None re-runs env detection."""
+    """Override the process-wide torch.compile mode. None re-runs env detection.
+
+    Mutates the module-level ``TheCompileMode`` global so subsequent
+    ``compile()`` calls pick up the new mode.
+    """
     global TheCompileMode
     TheCompileMode = auto_compile_mode() if mode is None else mode
 
@@ -422,7 +479,11 @@ MODEL_DEBUG = _read_model_debug()
 
 
 def init_model_debug(enabled=None):
-    """Override the process-wide debug flag.  None re-reads MODEL_DEBUG."""
+    """Override the process-wide debug flag.  None re-reads MODEL_DEBUG.
+
+    Mutates the module-level ``MODEL_DEBUG`` global. Truthy value
+    enables expensive in-training stat / finite checks.
+    """
     global MODEL_DEBUG
     MODEL_DEBUG = _read_model_debug() if enabled is None else bool(enabled)
 
@@ -433,7 +494,12 @@ def init_model_debug(enabled=None):
 
 @lru_cache(maxsize=1)
 def _inductor_space_prefixes():
-    """Collect path prefixes that need quoting in inductor shell commands."""
+    """Collect path prefixes that need quoting in inductor shell commands.
+
+    Returns absolute, normalized paths containing spaces, sorted longest-
+    first so the longer match in ``_rewrite_inductor_cmd_line`` wins
+    over a shorter prefix. Cached because the set is process-stable.
+    """
     candidates = {
         os.getcwd(),
         sys.prefix,
@@ -456,7 +522,11 @@ def _inductor_space_prefixes():
 
 
 def _rewrite_inductor_cmd_line(cmd_line, prefixes=None):
-    """Quote known path prefixes so shlex.split keeps them intact."""
+    """Quote known path prefixes so shlex.split keeps them intact.
+
+    Wraps each unquoted occurrence of a known space-bearing prefix in
+    double quotes. Defaults ``prefixes`` to ``_inductor_space_prefixes()``.
+    """
     if prefixes is None:
         prefixes = _inductor_space_prefixes()
     for prefix in prefixes:
@@ -469,7 +539,13 @@ def _rewrite_inductor_cmd_line(cmd_line, prefixes=None):
 
 
 def _patch_inductor_paths():
-    """Monkey-patch torch inductor to quote path prefixes containing spaces."""
+    """Monkey-patch torch inductor to quote path prefixes containing spaces.
+
+    Wraps ``cpp_builder._run_compile_cmd`` to pre-rewrite the command
+    line. Idempotent (sets ``_basicmodel_path_patch``). Silently
+    suppresses any patch failure so the import side effect cannot
+    break callers that don't compile.
+    """
     try:
         from torch._inductor import cpp_builder
         if getattr(cpp_builder, "_basicmodel_path_patch", False):
@@ -559,6 +635,12 @@ _AMP_FIRST_LOGGED = False
 
 
 def _read_model_amp():
+    """Parse ``MODEL_AMP`` env var into a canonical ``'off'``/``'fp16'``/``'bf16'``.
+
+    Treats empty / common falsy spellings as ``'off'``. Raises
+    ``ValueError`` on an unrecognized value so misconfigs surface
+    loudly rather than silently disabling autocast.
+    """
     raw = os.environ.get("MODEL_AMP", "").strip().lower()
     if raw in _AMP_OFF:
         return "off"
@@ -575,7 +657,11 @@ TheAmpScaler = None  # lazily constructed on first fp16+cuda call
 
 
 def init_model_amp(mode=None):
-    """Override the process-wide AMP mode.  None re-reads MODEL_AMP."""
+    """Override the process-wide AMP mode.  None re-reads MODEL_AMP.
+
+    Resets the GradScaler singleton and the one-shot warning / log
+    flags so the next ``amp_context()`` call reports the new mode.
+    """
     global MODEL_AMP, TheAmpScaler, _AMP_WARNED, _AMP_FIRST_LOGGED
     MODEL_AMP = _read_model_amp() if mode is None else mode
     TheAmpScaler = None
@@ -676,6 +762,7 @@ class Message():
     a 4-8 KB block fills).
     """
     def __call__(self, txt, newline="\r\n"):
+        """Emit ``txt`` with a CRLF terminator, flushed for live logs."""
         print(txt, end=newline, flush=True)
 
 TheMessage = Message()
@@ -700,6 +787,12 @@ class XMLConfig:
     """
 
     def __init__(self, path=None, defaults_path=None):
+        """Build an empty config; optionally seed from defaults and overlay path.
+
+        ``defaults_path`` populates the base; ``path`` is overlay-merged
+        on top. ``_requirements`` collects the keys callers declare as
+        required so misconfigs raise rather than return None.
+        """
         self._data = {}
         self._sources = []
         self._requirements = []
@@ -711,7 +804,11 @@ class XMLConfig:
     # --- Loading ---
 
     def load(self, path):
-        """Parse an XML file, replacing current data."""
+        """Parse an XML file, replacing current data.
+
+        Resets ``_sources`` to ``[path]``. Use ``overlay`` to merge
+        instead of replacing.
+        """
         self._data = self._parse_xml(path)
         self._sources = [path]
 
@@ -744,7 +841,12 @@ class XMLConfig:
         self._sources.append(path)
 
     def reload(self):
-        """Re-parse all previously loaded sources in order."""
+        """Re-parse all previously loaded sources in order.
+
+        Discards the in-memory ``_data`` and replays ``load`` /
+        ``overlay`` for each recorded source. Useful when a source
+        file is edited at runtime.
+        """
         paths = list(self._sources)
         if not paths:
             return
@@ -776,7 +878,11 @@ class XMLConfig:
         return node
 
     def set(self, dotted_path, value):
-        """Dot-path setter for runtime overrides."""
+        """Dot-path setter for runtime overrides.
+
+        Creates intermediate dicts along the path when missing so the
+        caller doesn't have to pre-build the nesting structure.
+        """
         keys = dotted_path.split(".")
         node = self._data
         for k in keys[:-1]:
@@ -796,7 +902,11 @@ class XMLConfig:
 
     @property
     def data(self):
-        """Raw dict access for backward compatibility."""
+        """Raw dict access for backward compatibility.
+
+        Returns the live ``_data`` dict (not a copy); callers must
+        treat it as read-only.
+        """
         return self._data
 
     # --- Requirements ---
@@ -830,12 +940,19 @@ class XMLConfig:
 
     @property
     def objectSize(self):
-        """nWhere + nWhen encoding overhead per vector."""
+        """nWhere + nWhen encoding overhead per vector.
+
+        Pulled from InputSpace's nWhere / nWhen scalars.
+        """
         return self.space("InputSpace", "nWhere") + self.space("InputSpace", "nWhen")
 
     @property
     def nObjects(self):
-        """Total codebook vectors across all spaces."""
+        """Total codebook vectors across all spaces.
+
+        Sums ``nVectors`` across the five canonical spaces; absent
+        sections are skipped (no error).
+        """
         total = 0
         for s in ("InputSpace", "PerceptualSpace", "ConceptualSpace",
                   "SymbolicSpace", "OutputSpace"):
@@ -846,7 +963,11 @@ class XMLConfig:
         return total
 
     def encodingSize(self, nDim):
-        """Full vector width: nDim + objectSize."""
+        """Full vector width: nDim + objectSize.
+
+        Used by spaces to allocate their per-row buffers including
+        the nWhere / nWhen encoding tail.
+        """
         return nDim + self.objectSize
 
     # --- BasicModel convenience ---
@@ -918,7 +1039,11 @@ class XMLConfig:
         )
 
     def nOutput(self, space_name):
-        """Return raw nOutput for a space (0 = sentinel meaning 'same as nInput')."""
+        """Return raw nOutput for a space (0 = sentinel meaning 'same as nInput').
+
+        Thin wrapper around ``self.space(space_name, 'nOutput')``;
+        keeps sentinel handling at the call site.
+        """
         return self.space(space_name, "nOutput")
 
     def tetralemma_policy(self, space_name):
@@ -949,16 +1074,25 @@ class XMLConfig:
         )
 
     def nInput(self, space_name):
-        """Return raw nInput for a space (0 = sentinel meaning 'derive from previous space')."""
+        """Return raw nInput for a space (0 = sentinel meaning 'derive from previous space').
+
+        Thin wrapper around ``self.space(space_name, 'nInput')``.
+        """
         return self.space(space_name, "nInput")
 
     # --- Serialization ---
 
     def to_xml(self):
-        """Serialize back to XML string."""
+        """Serialize back to XML string.
+
+        Round-trips ``_data`` into an ``<model>`` root. Lists become
+        repeated sibling tags; booleans render lowercase ``true``/
+        ``false``; ``"_"`` keys (text payloads) are dropped.
+        """
         import xml.etree.ElementTree as ET
 
         def _dict_to_elem(tag, value):
+            """Build an ET element (or list of elements) from a nested config value."""
             elem = ET.Element(tag)
             if isinstance(value, dict):
                 for k, v in value.items():
@@ -998,6 +1132,12 @@ class XMLConfig:
         import xml.etree.ElementTree as ET
 
         def _parse_element(elem):
+            """Recursively coerce one element into a Python value or dict.
+
+            Leaves return scalar (bool/int/float/str), or ``{"_": val, ...attrs}``
+            when XML attributes are present. Element trees with children
+            return a dict whose duplicate tags aggregate into lists.
+            """
             children = list(elem)
             if not children:
                 text = elem.text.strip() if elem.text else ""
@@ -1050,7 +1190,12 @@ class XMLConfig:
 
     @staticmethod
     def _validate_against_schema(xml_path):
-        """Soft-validate xml_path against data/model.xsd (warn on mismatch)."""
+        """Soft-validate xml_path against data/model.xsd (warn on mismatch).
+
+        No-op when ``model.xsd`` is absent or lxml is missing. Schema
+        failures are reported to stderr but do not block parsing -- the
+        config still loads.
+        """
         xsd_path = os.path.join(os.path.dirname(os.path.abspath(xml_path)),
                                 "model.xsd")
         if not os.path.exists(xsd_path):
@@ -1103,7 +1248,12 @@ TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults
 
 
 def init_config(path=None, defaults_path=None):
-    """Load (or reload) TheXMLConfig from file(s)."""
+    """Load (or reload) TheXMLConfig from file(s).
+
+    Clears any stale requirements then re-runs ``load`` on the
+    defaults and ``overlay`` on the main path. Mutates the
+    process-wide ``TheXMLConfig`` singleton.
+    """
     global TheXMLConfig
     TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
     if defaults_path:
@@ -1117,7 +1267,12 @@ def init_config(path=None, defaults_path=None):
 # ---------------------------------------------------------------------------
 
 class ProjectPaths:
-    """Centralized path resolution for the basicmodel project."""
+    """Centralized path resolution for the basicmodel project.
+
+    Class-level constants for the project root and standard
+    subdirectories (data, output). Helper classmethods resolve
+    relative paths and ensure output dirs exist before write.
+    """
     BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
     PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
     DATA_DIR    = os.path.join(PROJECT_DIR, "data")
@@ -1125,20 +1280,27 @@ class ProjectPaths:
 
     @classmethod
     def ensure_output_dir(cls):
+        """Create ``OUTPUT_DIR`` if missing; return the absolute path."""
         os.makedirs(cls.OUTPUT_DIR, exist_ok=True)
         return cls.OUTPUT_DIR
 
     @classmethod
     def output_path(cls, filename):
+        """Absolute path to ``OUTPUT_DIR/<filename>`` (creates the dir)."""
         return os.path.join(cls.ensure_output_dir(), filename)
 
     @classmethod
     def output_stem(cls, stem):
+        """Absolute path to ``OUTPUT_DIR/<stem>`` (no extension joined)."""
         return os.path.join(cls.ensure_output_dir(), stem)
 
     @classmethod
     def resolve_xml(cls, path):
-        """Resolve an XML path relative to PROJECT_DIR if not absolute."""
+        """Resolve an XML path relative to PROJECT_DIR if not absolute.
+
+        Lets call sites accept either short ``data/foo.xml`` or full
+        absolute paths without branching at every entry point.
+        """
         if not os.path.isabs(path):
             return os.path.join(cls.PROJECT_DIR, path)
         return path
@@ -1171,7 +1333,12 @@ _VALID_USE_GRAMMAR = ("all", "thoughtFree", "none")
 
 
 def parse_use_grammar(value) -> str:
-    """Normalize useGrammar config into the tri-state {"all", "thoughtFree", "none"}."""
+    """Normalize useGrammar config into the tri-state {"all", "thoughtFree", "none"}.
+
+    Raises ``ValueError`` for any non-string or unknown value so XML
+    typos surface at config-load time rather than silently disabling
+    grammar dispatch downstream.
+    """
     if not isinstance(value, str):
         raise ValueError(
             f"useGrammar must be a string, got {type(value).__name__}"

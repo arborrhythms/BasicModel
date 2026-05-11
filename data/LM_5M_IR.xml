@@ -17,20 +17,12 @@
   -->
   <architecture>
     <conceptualOrder>3</conceptualOrder>
-    <useButterflies>false</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <truthBiasScale>0.1</truthBiasScale>
-    <LuminosityWeight>0.1</LuminosityWeight>
-    <UniversalityWeight>0.1</UniversalityWeight>
-    <maxResponseLength>4096</maxResponseLength>
     <weightsPath>LM_5M_IR.ckpt</weightsPath>
     <embeddingPath>LM_5M_IR.kv</embeddingPath>
-    <reconstruct>symbols</reconstruct>
     <amp>bf16</amp>
 
     <!-- MereologicalTree size matches SymbolicSpace nVectors. -->
@@ -42,35 +34,23 @@
 
     <data>
       <shardDir>data/fineweb</shardDir>
-      <numShards>1</numShards>
-      <maxDocs>10000</maxDocs>
       <minFrequency>0.00001</minFrequency>
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
       <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>1.0</reverseScale>
       <maskedPrediction>IR</maskedPrediction>
-      <maskRate>0.15</maskRate>
-      <trainEmbedding>NONE</trainEmbedding>
-      <autoload>true</autoload>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
       <sentenceContextWindow>5</sentenceContextWindow>
-      <sentenceCentroidHistory>3</sentenceCentroidHistory>
-      <sentenceLambda>1.01</sentenceLambda>
-      <sentencePredictionScale>0.1</sentencePredictionScale>
-      <certainty>false</certainty>
     </training>
 
     <server>
-      <host>127.0.0.1</host>
       <port>8006</port>
-      <timeout>120</timeout>
     </server>
 
   </architecture>

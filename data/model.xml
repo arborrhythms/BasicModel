@@ -6,69 +6,161 @@
   Model-specific XML files (XOR_exact.xml, BasicModel.xml, …) override
   individual values; anything they omit inherits from this file.
 
-  nInput=0  sentinel: for InputSpace, derive from TheData; for other spaces,
-            derive from the previous space's outputShape[0].
-  nOutput=0 sentinel: same as nInput for this space (passthrough count).
-  nVectors=0 sentinel: same as nOutput (used for non-codebook spaces).
+  Sentinels:
+    nInput=0   InputSpace: derive from TheData; other spaces: derive
+               from the previous space's outputShape[0].
+    nOutput=0  Same as nInput for this space (passthrough count).
+    nVectors=0 Same as nOutput (used for non-codebook spaces).
 -->
 <model>
   <architecture>
+    <!-- Model archetype: simple (feedforward), embedding (LM/chat),
+         passthrough (identity bench), vq (VQ-only). -->
     <modelType>simple</modelType>
+
+    <!-- Reverse-pass mode: NONE | symbols | concepts | output | both. -->
     <reconstruct>symbols</reconstruct>
+
+    <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
+         the symbolic codebook geometrically (see Reasoning.md). -->
     <conceptualOrder>1</conceptualOrder>
+
+    <!-- Butterfly-mode Pi / Sigma layers (N-halving per order).
+         Mutually exclusive with WordSpace.useGrammar='all'. -->
     <useButterflies>false</useButterflies>
+
+    <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
+
+    <!-- Constrain invertible Sigma / Pi to W ≥ 0 so the lift / lower
+         chain is order-preserving on the parthood cone (Spaces.md). -->
+    <monotonic>false</monotonic>
+
+    <!-- Ergodic exploration: every Layer uses
+         W_eff = bias * W + temp * noise. -->
     <ergodic>false</ergodic>
+
+    <!-- Materialise W_eff densely in InvertibleLinearLayer (slower;
+         debugging only).  False uses sequential L/D/U triangular solves. -->
     <naive>false</naive>
 
+    <!-- Positional / temporal encoding dimensions appended to each
+         vector.  > 0 enables PositionalEncoding / TemporalEncoding
+         across the whole model. -->
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
+
+    <!-- gensim KeyedVectors path; empty disables embedding load. -->
     <embeddingPath></embeddingPath>
+    <!-- Checkpoint path for the neural model weights. -->
     <weightsPath></weightsPath>
+
+    <!-- Inference token budget (characters / bytes / tokens).  Caps
+         output alongside InputSpace.nActive. -->
     <maxResponseLength>4096</maxResponseLength>
+
+    <!-- AMP autocast mode: off | fp16 | bf16. -->
+    <amp>off</amp>
+
+    <!-- TruthLayer integration (see Reasoning.md, Ethics.md).
+         truthBiasScale: luminosity bias on concept input during forward.
+         LuminosityWeight: multiplicative loss penalty for incoherent truths.
+         UniversalityWeight: multiplicative loss penalty for unkind props. -->
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+
+    <!-- Quaternary-corner balance (catuskoti / tetralemma).
+         allowExcludedMiddle:  1=permit NEITHER (default), -1=classical LEM
+         allowContradiction:   0=forbid BOTH (default), 1=paraconsistent
+         See BuddhistParallels.md for the 4-valued truth semantics. -->
+    <allowExcludedMiddle>1</allowExcludedMiddle>
+    <allowContradiction>0</allowContradiction>
+
+    <!-- L1 sparsity penalty on lift / lower gates.  Opt-in; 0 disables. -->
+    <gateL1Lambda>0.0</gateL1Lambda>
+
+    <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
+         Active only when WordSpace.chartTopK > 0; 0 disables. -->
+    <loadBalanceWeight>0.0</loadBalanceWeight>
+
+    <!-- Architecture-wide L1 / discontinuity penalties (legacy hooks).
+         Most configs leave these at 0 and use SymbolicSpace.l1Lambda. -->
+    <l1Lambda>0.0</l1Lambda>
+    <discontinuityLambda>0.0</discontinuityLambda>
+
+    <!-- Symbol-partition geometry for conceptualOrder > 1.
+         tapered = geometrically narrowing slices (default);
+         uniform = equal-width slices. -->
+    <conceptualWidth>tapered</conceptualWidth>
 
 
     <data>
-      <!-- dataset: xor | mnist | tomatoes | text | inline | (omit for inference-only) -->
+      <!-- Dataset key: xor | mnist | tomatoes | text | inline.
+           Omit for inference-only models. -->
       <dataset>xor</dataset>
+      <!-- Shard count and per-shard document cap (streaming datasets). -->
       <numShards>1</numShards>
       <maxDocs>10000</maxDocs>
+      <!-- Directory containing text shards (e.g. data/fineweb). -->
       <shardDir></shardDir>
+      <!-- Vocabulary admission threshold (fraction of corpus).
+           0.0 admits all words immediately. -->
       <minFrequency>0.0</minFrequency>
+      <!-- Optional bounds for classification-accuracy reporting. -->
       <classificationMin></classificationMin>
       <classificationMax></classificationMax>
     </data>
 
     <training>
+      <!-- Number of independent training runs per invocation. -->
       <numTrials>1</numTrials>
+      <!-- Training epochs per trial. -->
       <numEpochs>3</numEpochs>
+      <!-- Contiguous streams through the dataset; each row b receives
+           the next item from stream b so context stays coherent. -->
       <batchSize>64</batchSize>
+      <!-- DataLoader prefetch workers; 0 = synchronous in-process. -->
       <numWorkers>0</numWorkers>
+      <!-- Adam learning rate. -->
       <learningRate>0.001</learningRate>
+      <!-- Weight of reconstruction loss vs prediction loss in [0,1]:
+           total = (1-r)*output + r*recon. -->
       <reverseScale>0.5</reverseScale>
+      <!-- Per-channel triple loss scales (what / where / when). -->
       <whatScale>0.7</whatScale>
       <whereScale>0.2</whereScale>
       <whenScale>0.1</whenScale>
+      <!-- Negative samples per positive for CBOW / SBOW training. -->
       <negSamples>64</negSamples>
+      <!-- Additive penalty for propositions contradicting the TruthSet;
+           uses union-norm reduction.  0 disables. -->
       <TruthLoss>0.0</TruthLoss>
 
+      <!-- Masked / autoregressive mode: NONE | IR | AR | ARUS | ARIR.
+           See Training.md. -->
       <maskedPrediction>NONE</maskedPrediction>
-      <!-- IR-mode: per-position Bernoulli probability that a percept is
-           replaced by NULL_PERCEPT for masked reconstruction. Range [0,1];
-           BERT default 0.15. Ignored when maskedPrediction != IR. -->
+      <!-- IR-mode Bernoulli probability that a percept is replaced by
+           NULL_PERCEPT.  Range [0,1]; BERT default 0.15.  Ignored when
+           maskedPrediction != IR. -->
       <maskRate>0.15</maskRate>
 
-      <!-- Embedding training mode: NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT -->
+      <!-- Embedding update mode:
+           NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT. -->
       <trainEmbedding>NONE</trainEmbedding>
-      <!-- Embedding loss weight in JOINT mode -->
+      <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
       <embeddingScale>0.25</embeddingScale>
 
+      <!-- Load weights from weightsPath at construction (false for fresh
+           training runs). -->
       <autoload>true</autoload>
+      <!-- Persist weights when training completes. -->
       <autosave>false</autosave>
-      <!-- Save an in-progress weights/embedding checkpoint every N training
-           optimizer steps. 0 disables periodic checkpoints. -->
+      <!-- Mid-training checkpoint cadence (optimizer steps).  0 disables. -->
       <checkpointEveryBatches>0</checkpointEveryBatches>
+      <!-- cProfile the training loop. -->
       <profile>false</profile>
+      <!-- Per-neuron certainty tracking in ergodic layers. -->
       <certainty>false</certainty>
 
       <!-- Inter-sentence contrastive loss (DiscourseSpace).  Off by
@@ -77,15 +169,20 @@
            context centroid, repulsive from older centroids.  No
            learnable parameters. -->
       <sentencePrediction>false</sentencePrediction>
+      <!-- Recent-sentence context window length (in sentences). -->
       <sentenceContextWindow>12</sentenceContextWindow>
+      <!-- Number of historical centroids retained for repulsion. -->
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <!-- Geometric decay base for older centroids' repulsive weight. -->
       <sentenceLambda>1.01</sentenceLambda>
+      <!-- Legacy combined-loss scale; also fallback for the contrastive term. -->
       <sentencePredictionScale>0.1</sentencePredictionScale>
       <!-- AR predictive loss: cosine distance between the AR
            sentence predictor's output and the actual current [S|W]
            snapshot.  Paired with the contrastive loss as a
-           collapse/expand tension on the snapshot geometry. -->
+           collapse / expand tension on the snapshot geometry. -->
       <sentencePredictiveScale>0.1</sentencePredictiveScale>
+      <!-- Contrastive-only scale (split from sentencePredictionScale). -->
       <sentenceContrastiveScale>0.1</sentenceContrastiveScale>
       <!-- Priming: AR prediction cast into concept_dim and added as
            a bias to concept_input before the sigma-pi loop.  Scaled
@@ -94,14 +191,18 @@
     </training>
 
     <server>
+      <!-- HTTP serve.py bind address. -->
       <host>127.0.0.1</host>
+      <!-- HTTP serve.py port (override per model to run in parallel). -->
       <port>8001</port>
+      <!-- Per-request timeout in seconds. -->
       <timeout>120</timeout>
     </server>
 
   </architecture>
 
   <WordSpace>
+    <!-- Grammar dispatch mode: none | all | thoughtFree. -->
     <useGrammar>none</useGrammar>
 
     <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
@@ -116,11 +217,11 @@
 
     <!-- Soft-superposition CKY chart's output behavior:
            root      = chart returns the single root sentence node;
-                       other output positions are zero. Forces the
+                       other output positions are zero.  Forces the
                        OutputLayer to read the chart's compositional
                        commitment, not a per-position recombination.
            broadcast = legacy: replicate the root vector across all
-                       N output positions. Lets downstream nonlinear
+                       N output positions.  Lets downstream nonlinear
                        readouts recombine the copies.
          Default ``root`` because that's the structurally-correct
          single-sentence-node bottleneck for a CKY-derived
@@ -134,7 +235,7 @@
     <language>
       <grammar>
         <!-- Default grammar: trivial unary pi / sigma folds at every
-             tier. PiLayer and SigmaLayer are first-class arity=1
+             tier.  PiLayer and SigmaLayer are first-class arity=1
              GrammarLayer subclasses; their forward(x) is the
              always-on multiplicative AND-fold (concepts) and OR-fold
              (percepts / symbols) respectively.
@@ -144,19 +245,19 @@
              skips the chart's CKY-style inside pass entirely.
 
              Per the 2026-05-07 rollback, the grammar XML is the sole
-             source of truth for which rule fires at each tier. There
-             is no ``default_rule`` code-level fallback. WordSpace
+             source of truth for which rule fires at each tier.  There
+             is no ``default_rule`` code-level fallback.  WordSpace
              populates ``current_rules`` / ``generate_rules`` from the
              rules listed below in the default-only and
              useGrammar='none' fast paths so per-space SyntacticLayer
              dispatch resolves to the PiLayer / SigmaLayer registered
-             at space construction. End-to-end cost matches the legacy
+             at space construction.  End-to-end cost matches the legacy
              y = self.pi(x) call site.
 
              Configs that need real grammar (constituency / negation /
              min-max ops) override this entire block via
              _NON_MERGING_PATHS (util.py); their grammar block fully
-             replaces this one. Configs that previously relied on the
+             replaces this one.  Configs that previously relied on the
              default_rule code-level fallback for sigma / pi at any
              tier need explicit ``S = sigma(S)``, ``C = pi(C)``,
              ``P = sigma(P)`` (and matching ``.reverse`` rules)
@@ -184,19 +285,27 @@
           </symbols>
         </generate>
       </grammar>
+      <!-- Soft-interpolation weight between forward and generation. -->
       <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 
 
   <InputSpace>
+    <!-- Sequence-length sentinels; create_from_config() resolves
+         nOutput=0 -> data-derived; nInput=0 -> data-derived. -->
     <nInput>0</nInput>
     <nOutput>0</nOutput>
+    <!-- Per-vector content dimensionality. -->
     <nDim>1</nDim>
+    <!-- Raw data dims; 0 = use the loader's native dim. -->
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
+    <!-- Codebook size; 0 means defer to nOutput. -->
     <nVectors>0</nVectors>
+    <!-- Discrete (codebook) input values. -->
     <codebook>false</codebook>
+    <!-- Tokenization for text inputs: word | sentence | byte. -->
     <lexer>word</lexer>
   </InputSpace>
 
@@ -207,11 +316,17 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
+    <!-- Attention reweighting of percepts before the Pi fold. -->
     <hasAttention>true</hasAttention>
+    <!-- Shared invertible PiLayer (vs separate pi1 / pi2). -->
     <invertible>false</invertible>
+    <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
+    <!-- Discrete (codebook) percepts; false = passthrough Tensor. -->
     <codebook>false</codebook>
+    <!-- Multi-token chunking strategy: lexicon | bpe. -->
     <chunking>lexicon</chunking>
+    <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <chunkingFrequency>2</chunkingFrequency>
   </PerceptualSpace>
 
@@ -222,8 +337,11 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
+    <!-- Modal-channel attention. -->
     <hasAttention>true</hasAttention>
+    <!-- Shared invertible layer for the modal mux / demux. -->
     <invertible>false</invertible>
+    <!-- Codebook quantization on the modal output. -->
     <codebook>false</codebook>
   </ModalSpace>
 
@@ -234,9 +352,14 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
+    <!-- Attention on ConceptualSpace violates position locality
+         required by serial_mode; keep false unless a config opts in. -->
     <hasAttention>false</hasAttention>
+    <!-- Shared invertible SigmaLayer (vs separate sigma1 / sigma2). -->
     <invertible>false</invertible>
+    <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
+    <!-- Codebook quantization of concept directions. -->
     <codebook>false</codebook>
   </ConceptualSpace>
 
@@ -247,17 +370,30 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
+    <!-- Tanh-bound the symbolic activation. -->
     <nonlinear>true</nonlinear>
+    <!-- Discrete symbol prototypes (required for the full symbolic
+         pipeline). -->
     <codebook>false</codebook>
+    <!-- Bitonic-sort regularizer on the codebook ordering. -->
     <sortNetwork>false</sortNetwork>
+    <!-- Sort-network depth; 0 disables. -->
     <sortPasses>0</sortPasses>
+    <!-- L1 sparsity penalty on the symbolic activation. -->
     <l1Lambda>0.01</l1Lambda>
+    <!-- Symbol-residual injection scales (legacy mereology hooks). -->
     <symbolResidualScale>1.0</symbolResidualScale>
     <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
+    <!-- VQ-VAE commitment-loss β (when useVQVAE=true). -->
     <commitmentBeta>0.25</commitmentBeta>
+    <!-- Enable VQ-VAE-style quantization rather than EMA codebook. -->
     <useVQVAE>false</useVQVAE>
+    <!-- ImpenetrableLayer regularizers (decorrelation / spectral
+         flatness on codebook rows).  0 disables. -->
     <decorrelationWeight>0.0</decorrelationWeight>
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
+    <!-- Minimum magnitude before a SymbolicSpace activation contributes
+         to TruthLayer commit. -->
     <truthMinMagnitude>0.3</truthMinMagnitude>
   </SymbolicSpace>
 
@@ -268,8 +404,11 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
+    <!-- Invertible projection (rarely set on OutputSpace). -->
     <invertible>false</invertible>
+    <!-- Codebook quantization of the output. -->
     <codebook>false</codebook>
+    <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
     <nonlinear>false</nonlinear>
   </OutputSpace>
 

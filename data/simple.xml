@@ -1,34 +1,27 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <modelType>simple</modelType>
-
     <data>
       <dataset>mnist</dataset>
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>10</numEpochs>
-      <batchSize>64</batchSize>
     </training>
   </architecture>
 
   <InputSpace>
     <nOutput>784</nOutput>
-    <nDim>1</nDim>
     <nVectors>784</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>784</nOutput>
-    <nDim>1</nDim>
     <nVectors>784</nVectors>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>20</nOutput>
-    <nDim>1</nDim>
     <nVectors>20</nVectors>
   </ConceptualSpace>
 
@@ -40,7 +33,6 @@
 
   <OutputSpace>
     <nOutput>10</nOutput>
-    <nDim>1</nDim>
     <nVectors>10</nVectors>
   </OutputSpace>
 </model>

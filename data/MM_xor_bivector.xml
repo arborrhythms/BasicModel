@@ -18,7 +18,6 @@
          - subsymbolicEnabled marker (documentation-only; loopback is
            unconditional under bivector regime). -->
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
     <!-- Documentation marker: the symbolic loopback (P_event || S_event
          concat into ConceptualSpace's PiLayer) is unconditional under
          the bivector regime per
@@ -26,47 +25,28 @@
          Stage 2. The actual gate is <ConceptualSpace><bivectorOutput>;
          no code reads this flag. -->
     <subsymbolicEnabled>true</subsymbolicEnabled>
-    <useButterflies>false</useButterflies>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>NONE</maskedPrediction>
+    <!-- Pure forward-only smoke: zero out truth weights and learning so
+         the bivector decode path is the only thing exercised. -->
     <truthBiasScale>0.0</truthBiasScale>
     <LuminosityWeight>0.0</LuminosityWeight>
     <UniversalityWeight>0.0</UniversalityWeight>
-    <weightsPath></weightsPath>
-
-    <data>
-      <dataset>xor</dataset>
-    </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
       <batchSize>4</batchSize>
       <learningRate>0.0</learningRate>
       <reverseScale>0.0</reverseScale>
-      <trainEmbedding>NONE</trainEmbedding>
       <autoload>false</autoload>
-      <autosave>false</autosave>
-      <certainty>false</certainty>
     </training>
 
   </architecture>
 
   <InputSpace>
-    <nInput>0</nInput>
-    <nInputDim>0</nInputDim>
     <nVectors>8</nVectors>
     <nDim>4</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>4</nOutputDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <lexer>word</lexer>
-    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -79,11 +59,8 @@
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
   </PerceptualSpace>
@@ -102,7 +79,6 @@
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
     <nonlinear>false</nonlinear>
@@ -116,11 +92,11 @@
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
+    <!-- Bivector smoke: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
+    <commitmentBeta>0.0</commitmentBeta>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
-    <useVQVAE>false</useVQVAE>
-    <commitmentBeta>0.0</commitmentBeta>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
@@ -129,15 +105,10 @@
     <nInput>8</nInput>
     <nInputDim>2</nInputDim>
     <nVectors>1</nVectors>
-    <nDim>1</nDim>
     <nOutput>1</nOutput>
-    <nOutputDim>1</nOutputDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
     <language>
       <start>S</start>
       <grammar>
@@ -145,7 +116,6 @@
         <S>S = intersection(S, S)</S>
         <S>S = union(S, S)</S>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 

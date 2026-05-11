@@ -98,6 +98,10 @@ class Lexicon(nn.Embedding):
                  *, ball: bool = True, torus: Optional[bool] = None,
                  init: str = "uniform_ball",
                  padding_idx=None, **kwargs):
+        """Initialize Lexicon; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(num_embeddings, embedding_dim,
                          padding_idx=padding_idx, **kwargs)
         # ``ball=True`` (default) selects the projective unit-ball
@@ -123,10 +127,18 @@ class Lexicon(nn.Embedding):
     # working unchanged. Prefer ``self.ball`` in new code.
     @property
     def torus(self) -> bool:
+        """Torus.
+        
+        See class docstring for the operation contract.
+        """
         return not self.ball
 
     @torus.setter
     def torus(self, value: bool) -> None:
+        """Torus.
+        
+        See class docstring for the operation contract.
+        """
         self.ball = not bool(value)
 
     # -- Unit-ball geometry --------------------------------------------------
@@ -616,6 +628,10 @@ class Layer(nn.Module):
     paramUpdate are automatically forwarded to them.
     """
     def __init__(self, nInput, nOutput):
+        """Initialize Layer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super(Layer, self).__init__()
         self.nInput       = nInput
         self.nOutput      = nOutput
@@ -627,20 +643,31 @@ class Layer(nn.Module):
         for param in self.parameters():
             param.requires_grad = not learn
     def getParameters(self):
+        """Return optimizable parameters owned by this module."""
         params = [p for n, p in self.named_parameters()]
         return params
 
     # --- Ergodic interface: dispatched to self.layers automatically ---
     def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
         for layer in self.layers:
             layer.paramUpdate()
     def set_sigma(self, sigma):
+        """Set the exploration sigma scale on this module."""
         for layer in self.layers:
             layer.set_sigma(sigma)
     def observe_sigma(self):
+        """Observe sigma.
+        
+        See class docstring for the operation contract.
+        """
         for layer in self.layers:
             layer.observe_sigma()
     def sigma_to_ergodic(self):
+        """Sigma to ergodic.
+        
+        See class docstring for the operation contract.
+        """
         for layer in self.layers:
             layer.sigma_to_ergodic()
 
@@ -704,6 +731,10 @@ class ErgodicLayer(Layer):
     sigma_to_ergodic / paramUpdate are no-ops, keeping bias=1, var=0.
     """
     def __init__(self, nInput, nOutput, ergodic=False):
+        """Initialize ErgodicLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput)
         self.ergodic = ergodic
 
@@ -780,6 +811,7 @@ class ErgodicLayer(Layer):
         self.bias.copy_((1.0 - self.var).clamp(min=0.05))
 
     def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
         if not self.ergodic:
             return
         self.observe_sigma()
@@ -795,6 +827,10 @@ class LinearLayer(ErgodicLayer):
     uses the learned weights directly.
     """
     def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
+        """Initialize LinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super(LinearLayer, self).__init__(nInput, nOutput, ergodic=ergodic)
         self.stable  = stable
         self.hasBias = hasBias
@@ -829,6 +865,10 @@ class LinearLayer(ErgodicLayer):
         return self.W
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.ergodic:
             self.resample_noise()
             W = self.bias * self.W + self.var * self.noise
@@ -837,6 +877,10 @@ class LinearLayer(ErgodicLayer):
         output = x @ W
         return output
     def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             if self.ergodic:
                 x = x + self.bias * self.biasWeight + self.var * self.biasNoise
@@ -854,6 +898,7 @@ class LinearLayer(ErgodicLayer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         nInput, nOutput = 3, 4
         layer = LinearLayer(nInput=nInput, nOutput=nOutput)
         input = torch.rand((1, nInput), device=TheDevice.get())
@@ -874,6 +919,10 @@ class NonNegativeLinearLayer(LinearLayer):
     """
 
     def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
+        """Initialize NonNegativeLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput, hasBias=hasBias, naive=naive, stable=stable, ergodic=ergodic)
         with torch.no_grad():
             self.W.fill_(math.log(math.e - 1))  # softplus_inverse(1.0)
@@ -883,11 +932,19 @@ class NonNegativeLinearLayer(LinearLayer):
         return nn.functional.softplus(self.W)
 
     def compute_W_current(self):
+        """Compute w current.
+        
+        See class docstring for the operation contract.
+        """
         if self.ergodic:
             return nn.functional.softplus(self.bias * self.W + self.var * self.noise)
         return self._get_W()
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.ergodic:
             self.resample_noise()
             W = nn.functional.softplus(self.bias * self.W + self.var * self.noise)
@@ -905,6 +962,10 @@ class NonNegativeLinearLayer(LinearLayer):
         return F.softplus(self.biasWeight)
 
     def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             x = x + self._effective_bias()
         return x
@@ -934,6 +995,10 @@ class InvertibleLinearLayer(ErgodicLayer):
     """
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
                  hasBias=True, stable=False):
+        """Initialize InvertibleLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput, ergodic=ergodic)
         self.naive   = naive
         self.hasBias = hasBias
@@ -995,6 +1060,10 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     # --- Noise resampling ---
     def resample_noise(self):
+        """Resample noise.
+        
+        See class docstring for the operation contract.
+        """
         if not self.ergodic:
             return
         # Mask to the entries that survive tril/triu, then unit-normalise so
@@ -1184,6 +1253,10 @@ class InvertibleLinearLayer(ErgodicLayer):
         return self.biasWeight
 
     def forwardBias(self, x):
+        """Forward bias.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             if self.ergodic:
                 x = x + self.bias * self.biasWeight + self.var * self.biasNoise
@@ -1191,6 +1264,10 @@ class InvertibleLinearLayer(ErgodicLayer):
                 x = x + self.biasWeight
         return x
     def forwardBiasInterleaved(self, x):
+        """Forward bias interleaved.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
             signs = x.new_ones(x.shape[-2], 1)
@@ -1204,6 +1281,10 @@ class InvertibleLinearLayer(ErgodicLayer):
         return x
 
     def reverseBias(self, y):
+        """Reverse bias.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             if self.ergodic:
                 y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
@@ -1212,6 +1293,10 @@ class InvertibleLinearLayer(ErgodicLayer):
         return y
 
     def reverseBiasInterleaved(self, y):
+        """Reverse bias interleaved.
+        
+        See class docstring for the operation contract.
+        """
         if self.hasBias:
             # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
             signs = y.new_ones(y.shape[-2], 1)
@@ -1266,6 +1351,7 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         torch.manual_seed(42)
         device = TheDevice.get()
         nInput, nOutput = 7, 11
@@ -1328,6 +1414,10 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
 
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
                  hasBias=True, stable=False):
+        """Initialize NonNegativeInvertibleLinearLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
                          hasBias=hasBias, stable=stable)
         # Re-initialise so softplus(raw) gives near-identity W.
@@ -1469,6 +1559,10 @@ class GrammarLayer(Layer):
     _chart_authority = None
 
     def __init__(self, nInput=0, nOutput=0):
+        """Initialize GrammarLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput)
         # Auto-register with the chart authority (if any). Only
         # layers that carry a non-empty rule_name participate; the
@@ -1650,6 +1744,10 @@ class ButterflyLayer(GrammarLayer):
     """
 
     def __init__(self, nInput, nOutput):
+        """Initialize ButterflyLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput)
         self.butterfly = False
         self.butterfly_stage_idx = None
@@ -1783,6 +1881,10 @@ class SigmaLayer(ButterflyLayer):
                  invertible=False, nonlinear=True, stable=False,
                  monotonic=False,
                  stage_idx=None, n_t=None, is_last=False):
+        """Initialize SigmaLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
@@ -1983,6 +2085,7 @@ class SigmaLayer(ButterflyLayer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         nInput, nOutput = 3, 4
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
 
@@ -2036,6 +2139,10 @@ class NegationLayer(Layer):
     """
 
     def __init__(self, nInput, ternary=False):
+        """Initialize NegationLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         ternary = bool(ternary)
         super().__init__(nInput, (3 if ternary else 2) * nInput)
         self.ternary = ternary
@@ -2090,9 +2197,17 @@ class NotLayer(GrammarLayer):
     tier       = 'S'
 
     def __init__(self):
+        """Initialize NotLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self._check_bivector_shape(x)
         bivector = x[..., :2].flip(dims=(-1,))
         rest     = x[..., 2:]
@@ -2101,6 +2216,10 @@ class NotLayer(GrammarLayer):
         return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return self.forward(y)
 
 class NonLayer(GrammarLayer):
@@ -2129,9 +2248,17 @@ class NonLayer(GrammarLayer):
     invertible = True
 
     def __init__(self):
+        """Initialize NonLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self._check_bivector_shape(x)
         bivector = 1.0 - x[..., :2]
         rest     = x[..., 2:]
@@ -2140,6 +2267,10 @@ class NonLayer(GrammarLayer):
         return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return self.forward(y)
 
 
@@ -2174,19 +2305,33 @@ class IntersectionLayer(GrammarLayer):
     reads_activation = True
 
     def __init__(self, monotonic=False):
+        """Initialize IntersectionLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.monotonic = bool(monotonic)
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2216,19 +2361,33 @@ class UnionLayer(GrammarLayer):
     reads_activation = True
 
     def __init__(self, monotonic=False):
+        """Initialize UnionLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.monotonic = bool(monotonic)
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return Ops.union(left, right, monotonic=self.monotonic)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2296,6 +2455,10 @@ class LiftLayer(GrammarLayer):
     tier       = 'S'
 
     def __init__(self, sigma_layer=None):
+        """Initialize LiftLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.sigma = sigma_layer
         if sigma_layer is not None:
@@ -2309,19 +2472,29 @@ class LiftLayer(GrammarLayer):
         return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.sigma is not None:
             return self.sigma.compose(left, right, gate=self._gate())
         return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         if self.sigma is not None:
             return self.sigma.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2339,6 +2512,10 @@ class LowerLayer(GrammarLayer):
     tier       = 'S'
 
     def __init__(self, pi_layer=None):
+        """Initialize LowerLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.pi = pi_layer
         if pi_layer is not None:
@@ -2351,19 +2528,29 @@ class LowerLayer(GrammarLayer):
         return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.pi is not None:
             return self.pi.compose(left, right, gate=self._gate())
         return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         if self.pi is not None:
             return self.pi.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2404,20 +2591,34 @@ class ConjunctionLayer(GrammarLayer):
     reads_activation = True
 
     def __init__(self):
+        """Initialize ConjunctionLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, left, right):
         # Post-codebook activation is monotonic-only -- no negative
         # pole to manage, so RadMin would be wrong.
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return Ops.intersection(left, right, monotonic=True)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2449,18 +2650,32 @@ class DisjunctionLayer(GrammarLayer):
     reads_activation = True
 
     def __init__(self):
+        """Initialize DisjunctionLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return Ops.union(left, right, monotonic=True)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -2519,6 +2734,10 @@ class MereologicalTree(nn.Module):
     """
 
     def __init__(self, V, device=None, dtype=torch.float32):
+        """Initialize MereologicalTree; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.V = int(V)
         self.register_buffer(
@@ -2735,6 +2954,10 @@ class MereologicalTree(nn.Module):
         counter = [0]
 
         def dfs(node):
+            """Dfs.
+            
+            See class docstring for the operation contract.
+            """
             new_start[node] = counter[0]
             counter[0] += 1
             for ch in sorted(children[node]):
@@ -2959,10 +3182,18 @@ class EqualsLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
+        """Initialize EqualsLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.tree = tree
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.tree is not None:
             with torch.no_grad():
                 self.tree.add_equal(_argmax_prototype(left),
@@ -2970,12 +3201,18 @@ class EqualsLayer(GrammarLayer):
         return torch.maximum(left, right)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -3009,10 +3246,18 @@ class PartLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
+        """Initialize PartLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.tree = tree
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.tree is not None:
             with torch.no_grad():
                 self.tree.add_part(_argmax_prototype(left),
@@ -3020,12 +3265,18 @@ class PartLayer(GrammarLayer):
         return right
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -3051,9 +3302,17 @@ class TrueLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self):
+        """Initialize TrueLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self._check_bivector_shape(x)
         pos    = x[..., 0:1]
         zeros  = torch.zeros_like(pos)
@@ -3064,6 +3323,10 @@ class TrueLayer(GrammarLayer):
         return torch.cat([bivec, rest], dim=-1)
 
     def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return y
 
 
@@ -3084,9 +3347,17 @@ class FalseLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self):
+        """Initialize FalseLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self._check_bivector_shape(x)
         neg    = x[..., 1:2]
         zeros  = torch.zeros_like(neg)
@@ -3097,6 +3368,10 @@ class FalseLayer(GrammarLayer):
         return torch.cat([bivec, rest], dim=-1)
 
     def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return y
 
 
@@ -3122,18 +3397,32 @@ class SwapLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self):
+        """Initialize SwapLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return right
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -3163,18 +3452,32 @@ class CopyLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self):
+        """Initialize CopyLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return left
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -3220,10 +3523,18 @@ class QueryLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
+        """Initialize QueryLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.tree = tree
 
     def forward(self, left, right):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if self.tree is None:
             return left
         with torch.no_grad():
@@ -3248,12 +3559,18 @@ class QueryLayer(GrammarLayer):
         return truth.unsqueeze(1).expand(-1, V, -1)
 
     def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return parent, parent
 
     def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
         return self.forward(left, right)
 
     def generate(self, parent):
+        """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
 
@@ -3343,6 +3660,10 @@ class PiLayer(ButterflyLayer):
                  invertible=False, hasBias=True, stable=True,
                  monotonic=False, nonlinear=True,
                  stage_idx=None, n_t=None, is_last=False):
+        """Initialize PiLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
@@ -3381,6 +3702,10 @@ class PiLayer(ButterflyLayer):
     def var(self):  return self.layer.var
 
     def resample_noise(self):
+        """Resample noise.
+        
+        See class docstring for the operation contract.
+        """
         self.layer.resample_noise()
 
     # -- Symmetric domain transforms ----------------------------------
@@ -3584,6 +3909,7 @@ class PiLayer(ButterflyLayer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         nBatch, nInput, nOutput = 5, 3, 4
         layer = PiLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
         device = next(layer.parameters()).device
@@ -3597,6 +3923,10 @@ class PiLayer(ButterflyLayer):
         print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
 
         def check_roundtrip(desc, **kwargs):
+            """Check roundtrip.
+            
+            See class docstring for the operation contract.
+            """
             kw = dict(nInput=3, nOutput=6, invertible=True, nonlinear=True)
             kw.update(kwargs)
             layer = PiLayer(**kw)
@@ -3614,6 +3944,10 @@ class PiLayer(ButterflyLayer):
             print(f"  {desc}: OK")
 
         def check_stability(desc, **kwargs):
+            """Check stability.
+            
+            See class docstring for the operation contract.
+            """
             kw = dict(nInput=3, nOutput=6, invertible=True, stable=True,
                       nonlinear=True)
             kw.update(kwargs)
@@ -3660,8 +3994,18 @@ class PiLayer(ButterflyLayer):
         print("PiLayer tests passed.")
 
 class MapppingLayer(InvertibleLinearLayer):
-    """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
+    """Bias-free, stable reversible linear layer for mapping between row/column spaces.
+
+    Thin wrapper that pins ``hasBias=False`` and ``stable=True`` on
+    the parent ``InvertibleLinearLayer`` so reversibility is exact.
+    Used by spaces that need a clean row<->column rotation without an
+    additive offset.
+    """
     def __init__(self, nInput, nOutput, init='orthogonal'):
+        """Initialize MapppingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
 class SortingLayer(Layer):
     """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
@@ -3682,6 +4026,10 @@ class SortingLayer(Layer):
     """
 
     def __init__(self, symbol_dim, n_passes=None):
+        """Initialize SortingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(symbol_dim, symbol_dim)
         self.symbol_dim = symbol_dim
         # n_passes accepted for config compat but unused by NeuralSort
@@ -3713,6 +4061,7 @@ class SortingLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         nBatch, nSeq, nDim = 4, 8, 16
         layer = SortingLayer(symbol_dim=nDim, n_passes=None)
         device = next(layer.parameters()).device
@@ -3762,12 +4111,20 @@ class DecisionBoundaryLayer(Layer):
     on which side it falls.
     """
     def __init__(self, nInput, nOutput, learning_rate=0.01):
+        """Initialize DecisionBoundaryLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super(DecisionBoundaryLayer, self).__init__(nInput, nOutput)
         self.learning_rate = learning_rate
         self.weight        = nn.Parameter(torch.zeros(nInput, nOutput))
         self.register_buffer('noise', torch.randn(nInput, nOutput))
 
     def forward(self, x, t=0):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if t != 0:
             self.noise = torch.randn(
                 self.weight.shape,
@@ -3782,6 +4139,10 @@ class DecisionBoundaryLayer(Layer):
         return decision
 
     def update(self, x, t=0):
+        """Update.
+        
+        See class docstring for the operation contract.
+        """
         d1 = torch.norm(x - self.weight) ** 2
         d2 = torch.norm(x + self.weight) ** 2
         if d1 < d2:
@@ -3791,6 +4152,7 @@ class DecisionBoundaryLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         import matplotlib.pyplot as plt
         n_points = 100
         data = torch.randn(n_points, 2, device=TheDevice.get())
@@ -3842,6 +4204,10 @@ class AttentionLayer(Layer):
     All modes require 3D input [batch, nObj, dim].
     """
     def __init__(self, nInput, nOutput, nHidden=None, type="asymmetric", nHeads=1):
+        """Initialize AttentionLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super(AttentionLayer, self).__init__(nInput, nOutput)
         self.nHidden = nOutput if not nHidden else nHidden
         self.type = type
@@ -3881,6 +4247,10 @@ class AttentionLayer(Layer):
         return x.transpose(1, 2)
 
     def _normalize_mask(self, mask, batch, n_obj):
+        """Normalize mask.
+        
+        See class docstring for the operation contract.
+        """
         if mask is None:
             return None
         if mask.dtype != torch.bool:
@@ -3913,6 +4283,10 @@ class AttentionLayer(Layer):
     # --- Forward dispatch ---
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         assert x.ndim == 3, f"AttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
         if self.type == "transformer":
             return self._forward_transformer(x)
@@ -3922,6 +4296,10 @@ class AttentionLayer(Layer):
             return self._forward_asymmetric(x)
 
     def _forward_symmetric(self, x):
+        """Forward symmetric.
+        
+        See class docstring for the operation contract.
+        """
         a2     = self.A(x)
         value  = x if self.nHidden == self.nInput else self.V(x)
         scores = torch.matmul(a2.transpose(-2, -1), a2) / (self.nInput ** 0.5)
@@ -3934,6 +4312,10 @@ class AttentionLayer(Layer):
         return output
 
     def _forward_asymmetric(self, x):
+        """Forward asymmetric.
+        
+        See class docstring for the operation contract.
+        """
         query  = self.Q(x)
         key    = self.K(x)
         value  = x if self.nHidden == self.nInput else self.V(x)
@@ -3947,6 +4329,10 @@ class AttentionLayer(Layer):
         return output
 
     def _forward_transformer(self, x):
+        """Forward transformer.
+        
+        See class docstring for the operation contract.
+        """
         batch, n_obj, _ = x.shape
         query = self._reshape_heads(self.Q(x))
         key   = self._reshape_heads(self.K(x))
@@ -3972,6 +4358,7 @@ class AttentionLayer(Layer):
     @staticmethod
     def test():
         # Test all three types with 3D input
+        """Self-test; verifies the round-trip / invariant."""
         for atype in ["symmetric", "asymmetric", "transformer"]:
             kwargs = {"nInput": 8, "nOutput": 8, "type": atype}
             if atype == "transformer":
@@ -4005,6 +4392,10 @@ class AssociationLayer(Layer):
 
     def __init__(self, nInput, nOutput=None, nHidden=None,
                  type="symmetric", beta=10.0):
+        """Initialize AssociationLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         nOutput = nOutput or nInput
         super().__init__(nInput, nOutput)
         self.nHidden = nHidden or nInput
@@ -4071,6 +4462,7 @@ class AssociationLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         for atype in ["symmetric", "hopfield"]:
             layer = AssociationLayer(nInput=8, type=atype)
             x = torch.randn(4, 8, device=TheDevice.get())
@@ -4098,6 +4490,10 @@ class LiftingLayer(Layer):
         VP_eff @ C1 -> self-attention added to C1
     """
     def __init__(self, nVerbs, nDim, ergodic=False):
+        """Initialize LiftingLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nDim, nDim)
         self.nVerbs = nVerbs
         self.nDim = nDim
@@ -4211,6 +4607,7 @@ class LiftingLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         device = TheDevice.get()
         B, N, D, V = 4, 8, 16, 6
         layer = LiftingLayer(nVerbs=V, nDim=D)
@@ -4243,18 +4640,36 @@ class LiftingLayer(Layer):
         # -- Ternary SVO ------------------------------------------
         # Mock symbolic space: PiLayer maps on nDim axis [B, N, D] -> [B, N, D]
         class _MockSubspace:
+            """Test double for SubSpace; just stores the event tensor.
+
+            Implements the minimal subset of SubSpace's API that
+            LiftingLayer.test exercises (set_event / materialize).
+            """
             def __init__(self):
+                """Start with no event tensor."""
                 self._event = None
                 self.batch = 0
             def set_event(self, t, compute_activation=False):
+                """Stash the event tensor."""
                 self._event = t
             def materialize(self):
+                """Return the stashed event tensor."""
                 return self._event
         class _MockSymSpace:
+            """Test double for SymbolicSpace bound to a PiLayer.
+
+            Implements just enough of SymbolicSpace's API for
+            LiftingLayer.test to exercise the ternary SVO lift path.
+            """
             def __init__(self, pi):
+                """Hold the bound PiLayer and a fresh _MockSubspace."""
                 self.layer = pi
                 self.subspace = _MockSubspace()
             def forward(self, vspace):
+                """Forward pass.
+                
+                See class docstring for the operation this layer applies.
+                """
                 act = vspace.materialize()
                 act = self.layer.forward(act)
                 vspace.set_event(act)
@@ -4287,6 +4702,10 @@ class LoweringLayer(Layer):
     instance from the set represented by the first argument.
     """
     def __init__(self, nDim, bottleneck=None):
+        """Initialize LoweringLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         if bottleneck is None:
             bottleneck = max(4, nDim // 4)
         super().__init__(nDim, nDim)
@@ -4313,6 +4732,7 @@ class LoweringLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         device = TheDevice.get()
         B, N, D = 4, 8, 16
         layer = LoweringLayer(nDim=D, bottleneck=4)
@@ -4353,11 +4773,19 @@ class SparsityRegLayer(Layer):
     def __init__(self, l1_lambda: float = 0.0, enabled: bool = True):
         # nInput/nOutput are unused -- this is a pointwise op -- but the
         # Layer base contract requires both. Pass zeros; dim-agnostic.
+        """Initialize SparsityRegLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.l1_lambda = float(l1_lambda)
         self.enabled = bool(enabled)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if not self.enabled or self.l1_lambda <= 0.0:
             return x
         return torch.sign(x) * torch.clamp(
@@ -4383,11 +4811,19 @@ class SmoothingRegLayer(Layer):
     """
 
     def __init__(self, lam: float = 0.0, enabled: bool = True):
+        """Initialize SmoothingRegLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.lam = float(lam)
         self.enabled = bool(enabled)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if not self.enabled or self.lam <= 0.0:
             return x.new_tensor(0.0) if torch.is_tensor(x) else torch.tensor(0.0)
         if x.shape[-1] >= 2 and x.shape[-1] % 2 == 0:
@@ -4437,6 +4873,10 @@ class ImpenetrableLayer(Layer):
                  full_part_threshold: float = 0.9,
                  disjoint_threshold: float = 0.1,
                  equal_suppression: float = 4.0):
+        """Initialize ImpenetrableLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(0, 0)
         self.overlap_weight = float(overlap_weight)
         self.variance_floor = float(variance_floor)
@@ -4492,6 +4932,10 @@ class ImpenetrableLayer(Layer):
         }
 
     def forward(self, codebook: torch.Tensor, basis=None) -> torch.Tensor:
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         zero = (codebook.new_tensor(0.0) if isinstance(codebook, torch.Tensor)
                 else torch.tensor(0.0))
         self.last_overlap_loss = None
@@ -4623,6 +5067,10 @@ class TruthLayer(Layer):
     """
 
     def __init__(self, nDim: int, max_truths: int = 1024):
+        """Initialize TruthLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nDim, nDim)
         self.nDim = nDim
         self.max_truths = max_truths
@@ -5566,9 +6014,11 @@ class TruthLayer(Layer):
         return torch.relu(conjunction).norm().item()
 
     def __len__(self):
+        """Number of stored elements."""
         return self.count.item()
 
     def __repr__(self):
+        """Debug-friendly representation."""
         return (f"TruthLayer(nDim={self.nDim}, "
                 f"truths={self.count.item()}/{self.max_truths})")
 
@@ -5576,6 +6026,7 @@ class TruthLayer(Layer):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         D = 32
         tl = TruthLayer(D, max_truths=64)
         assert len(tl) == 0
@@ -5657,6 +6108,13 @@ class TruthLayer(Layer):
         _sigma = SigmaLayer(N, nSym, monotonic=True, invertible=True,
                             nonlinear=True)
         class _MockSS:
+            """Test double for SymbolicSpace exposing only a ``sigma`` attribute.
+
+            TruthLayer's record / record_svo path reads
+            ``symbolic_space.sigma`` to project SVO vectors into the
+            symbolic activation space; this mock supplies a real
+            ``SigmaLayer`` for those tests.
+            """
             sigma = _sigma
         mock_ss = _MockSS()
         lifting = LiftingLayer(nVerbs=8, nDim=D)
@@ -5726,6 +6184,10 @@ class InterSentenceLayer(Layer):
         # n_sentence rows * n_dim cols is the shape of a single
         # snapshot; Layer's nInput / nOutput fields carry the
         # flattened count for any legacy consumers that read them.
+        """Initialize InterSentenceLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         n_sentence = int(n_symbols) + int(max_depth)
         flat = n_sentence * int(n_dim)
         super().__init__(flat, flat)
@@ -6297,6 +6759,10 @@ class ChunkLayer(Layer):
     def __init__(self, nDim, bpe=False,
                  n_vectors=1024, chunking_frequency=2,
                  cold_start_floor=300):
+        """Initialize ChunkLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(nDim, nDim)
         self.nDim = nDim
         # -- BPE state (active only when ``bpe`` is True) ------------------
@@ -6853,30 +7319,54 @@ class Ops:
 
     @staticmethod
     def true():
+        """True.
+        
+        See class docstring for the operation contract.
+        """
         return 1
 
     @staticmethod
     def false():
+        """False.
+        
+        See class docstring for the operation contract.
+        """
         return -1
 
     @staticmethod
     def unknown():
+        """Unknown.
+        
+        See class docstring for the operation contract.
+        """
         return 0
 
     # ---- Scalar / elementwise primitives ---------------------------------
 
     @staticmethod
     def positive(x):
+        """Positive.
+        
+        See class docstring for the operation contract.
+        """
         t = torch.as_tensor(x)
         return torch.relu(t)
 
     @staticmethod
     def negative(x):
+        """Negative.
+        
+        See class docstring for the operation contract.
+        """
         t = torch.as_tensor(x)
         return -torch.relu(-t)
 
     @staticmethod
     def neutral(x):
+        """Neutral.
+        
+        See class docstring for the operation contract.
+        """
         return 1 - torch.as_tensor(x).abs()
 
     @staticmethod
@@ -6894,43 +7384,79 @@ class Ops:
 
     @staticmethod
     def threshold(x, activationThreshold=0.01):
+        """Threshold.
+        
+        See class docstring for the operation contract.
+        """
         t = torch.as_tensor(x)
         return torch.where(t.abs() < activationThreshold, torch.zeros_like(t), t)
 
     @staticmethod
     def complement(x):
+        """Complement.
+        
+        See class docstring for the operation contract.
+        """
         t = torch.as_tensor(x)
         return Ops.sign(t) - t
 
     @staticmethod
     def convertSensation(x):
+        """Convert sensation.
+        
+        See class docstring for the operation contract.
+        """
         return 2 * torch.as_tensor(x) - 1
 
     @staticmethod
     def minMag(x1, x2):
+        """Min mag.
+        
+        See class docstring for the operation contract.
+        """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
         return torch.where(t1.abs() <= t2.abs(), t1, t2)
 
     @staticmethod
     def maxMag(x1, x2):
+        """Max mag.
+        
+        See class docstring for the operation contract.
+        """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
         return torch.where(t1.abs() >= t2.abs(), t1, t2)
 
     @staticmethod
     def error(x1, x2):
+        """Error.
+        
+        See class docstring for the operation contract.
+        """
         t1, t2 = torch.as_tensor(x1).float(), torch.as_tensor(x2).float()
         return torch.linalg.norm(t1 - t2)
 
     @staticmethod
     def isActive(x, activationThreshold=0.01):
+        """Is active.
+        
+        See class docstring for the operation contract.
+        """
         return torch.as_tensor(x).abs() >= activationThreshold
 
     @staticmethod
     def isEqual(x1, x2):
+        """Is equal.
+        
+        See class docstring for the operation contract.
+        """
         return torch.equal(torch.as_tensor(x1), torch.as_tensor(x2))
 
     @staticmethod
     def isReducer(x1, x2):
+        """Is reducer.
+        
+        See class docstring for the operation contract.
+        """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
         return ((t2 - t1).abs().sum() < t2.abs().sum()).item()
 
@@ -7766,7 +8292,13 @@ class Loss(nn.Module):
         """Compute loss between pred and target. Override in subclasses."""
         return nn.functional.mse_loss(pred, target)
 class ModelLoss(Loss):
-    """Weighted reconstruction loss with separate scales for what/where/when."""
+    """Weighted reconstruction loss with separate scales for what/where/when.
+
+    Combines a forward task-output loss with a reverse-reconstruction
+    loss; the reverse term is decomposed into per-modality slices so
+    each (what / where / when) modality carries its own weight. Used
+    as the canonical training criterion across the model factory.
+    """
 
     def __init__(self, reverse_scale=0.5,
                  what_scale=0.7, where_scale=0.2, when_scale=0.1,
@@ -7774,6 +8306,10 @@ class ModelLoss(Loss):
                  certainty=False, nOutput=2,
                  conceptualOrder=0,
                  nWhere=None, nWhen=None):
+        """Initialize ModelLoss; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.reverse_scale = float(reverse_scale or 0.5)
         self.what_scale = float(what_scale or 0.7)
@@ -7815,6 +8351,10 @@ class ModelLoss(Loss):
             self.output_criterion = nn.CrossEntropyLoss()
 
     def output(self, pred, target):
+        """Output.
+        
+        See class docstring for the operation contract.
+        """
         return self.output_criterion(pred, target)
 
     def compute(self, pred, target):
@@ -7893,6 +8433,10 @@ class ModelLoss(Loss):
         return accuracy + coverage
 
     def forward(self, lossOut, lossIn=None, sbow=None):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         total = lossOut
         if lossIn is not None and torch.isfinite(lossIn).all():
             rr = self.reverse_scale
@@ -7902,6 +8446,10 @@ class ModelLoss(Loss):
         return total
 
     def total(self, lossOut, lossIn=None, sbow=None):
+        """Total.
+        
+        See class docstring for the operation contract.
+        """
         return self(lossOut, lossIn, sbow)
 
 class Error:
@@ -7952,6 +8500,10 @@ class Error:
     )
 
     def __init__(self, loss: Loss = None, history_max: int = 1024):
+        """Initialize Error; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         self._loss: Loss = loss
         self._terms: dict = {}   # name -> {weight, value, space, category, count}
         self._history: list = []  # each entry is {name: weighted_scalar}
@@ -8004,10 +8556,18 @@ class Error:
         self._disabled.add(category)
 
     def enable(self, category: str):
+        """Enable.
+        
+        See class docstring for the operation contract.
+        """
         self._disabled.discard(category)
 
     @property
     def disabled_categories(self):
+        """Disabled categories.
+        
+        See class docstring for the operation contract.
+        """
         return frozenset(self._disabled)
 
     # ---- accumulation --------------------------------------------------
@@ -8168,10 +8728,18 @@ class CertaintyWeightedMAELoss(Loss):
     blended with unweighted MAE via ``alpha``.
     """
     def __init__(self, alpha=0.5):
+        """Initialize CertaintyWeightedMAELoss; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.alpha = alpha
 
     def forward(self, predictions, targets):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         abs_error = torch.abs(targets - predictions)
         certainty = torch.abs(predictions)
         loss = abs_error * (self.alpha * certainty + (1 - self.alpha))
@@ -8180,12 +8748,21 @@ class CertaintyWeightedMSELoss(Loss):
     """MSE loss weighted by prediction magnitude (certainty).
 
     Hybrid of certainty-weighted MSE and plain MSE, blended by ``alpha``.
+    ``alpha=0`` collapses to plain MSE; ``alpha=1`` is purely weighted.
     """
     def __init__(self, alpha=0.5):
+        """Initialize CertaintyWeightedMSELoss; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.alpha = alpha
 
     def forward(self, outputs, targets):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         certainty = outputs.abs().sum(dim=1)                # per-sample confidence
         mse_loss = ((outputs - targets) ** 2).sum(dim=1)
         cw_mse_loss = mse_loss * certainty
@@ -8195,14 +8772,24 @@ class CertaintyWeightedCrossEntropy(Loss):
     """Cross-entropy weighted by predicted probability of the true class.
 
     Hybrid of certainty-weighted CE and plain CE, blended by ``alpha``.
+    ``alpha=0`` collapses to plain CE; ``alpha=1`` is purely weighted.
+    ``epsilon`` floors log inputs to keep gradients finite.
     """
     def __init__(self, alpha=0.5, epsilon=1e-8):
+        """Initialize CertaintyWeightedCrossEntropy; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.alpha = alpha
         self.epsilon = epsilon
 
     def forward(self, logits, targets):
         # If targets are one-hot, convert to indices
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         if targets.dim() == 2 and targets.size(1) == logits.size(1):
             targets = targets.argmax(dim=1)
         # Ensure targets are int64 and on the same device as logits
@@ -8231,6 +8818,10 @@ class Mem:
     of the output matrix (1-indexed for legacy compatibility).
     """
     def __init__(self, sz=None):
+        """Initialize Mem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         self.lr = 0.01
         self.nTrials = 0
         self.output = None
@@ -8333,16 +8924,41 @@ class Mem:
         plt.show(block=False)
 # ZOHMem subclass: Zero-Order Hold memory.
 class ZOHMem(Mem):
+    """Zero-Order Hold memory: ``output`` is whatever was last written.
+
+    Simplest memory primitive in the family -- every ``delta(in1)``
+    call overwrites ``self.output`` with ``in1``, ignoring trial count.
+    Useful as a baseline / control in memory comparisons.
+    """
     def __init__(self, sz=1):
+        """Initialize ZOHMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
 
     def delta(self, in1, in2=None):
         # Call the base class delta and then set output to in1.
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta()
         self.output = in1
 # StateMem subclass: adds a 'state' property.
 class StateMem(Mem):
+    """Memory primitive with a parallel ``state`` tensor alongside ``output``.
+
+    Subclasses that need a recurrent / hidden state (RLSMem, GammaMem)
+    inherit from this. ``reset`` / ``removeRC`` / ``insertRC`` /
+    ``setRC`` all mirror their changes into the state tensor so it
+    stays shape-aligned with output.
+    """
     def __init__(self, sz=1):
+        """Initialize StateMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
         self.state = None
         self.reset(sz)
@@ -8361,6 +8977,10 @@ class StateMem(Mem):
 
     def delta(self, *args):
         # Just call the base class delta.
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta(*args)
 
     def removeRC(self, r=None, c=None):
@@ -8394,12 +9014,26 @@ class StateMem(Mem):
         self.state[c - 1, r - 1] = val
 # RLSMem subclass: Recursive Least Squares memory.
 class RLSMem(StateMem):
+    """Recursive least-squares memory: ``output += L2(output - in1) * in1``.
+
+    Adaptive update keyed off the residual norm; large errors move the
+    output toward ``in1`` more aggressively. ``momLR`` is the optional
+    momentum learning rate for the (currently unused) state update path.
+    """
     def __init__(self, sz=1):
+        """Initialize RLSMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
         self.momLR = 0.2
 
     def delta(self, in1, in2=None):
         # Call the base class (Mem) delta.
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         Mem.delta(self)
         # Compute error using the L2 norm.
         err = np.linalg.norm(self.output - in1, 2)
@@ -8409,10 +9043,24 @@ class RLSMem(StateMem):
         # self.output = self.output + self.state
 # ProbMem subclass: probabilistic memory update.
 class ProbMem(Mem):
+    """Conditional-probability memory: each cell tracks P(in1_r | in2_c).
+
+    On each ``delta(in1, in2)`` step, the per-cell value is updated as a
+    running-mean toward +1 / -1 / 0 depending on the sign agreement of
+    the corresponding inputs. Encodes positive vs negative co-occurrence.
+    """
     def __init__(self, sz=1):
+        """Initialize ProbMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
 
     def delta(self, in1, in2):
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta()
         # Iterate over the indices of in1 and in2.
         for r in range(len(in1)):
@@ -8424,40 +9072,84 @@ class ProbMem(Mem):
                     self.output[r, c] = ((self.nTrials - 1) / self.nTrials) * self.output[r, c] + (1 / self.nTrials) * -1
 # MeanMem subclass: computes a running mean.
 class MeanMem(Mem):
+    """Running arithmetic mean of all inputs seen so far.
+
+    ``delta(in1)`` updates ``output`` toward ``in1`` with weight
+    ``1 / nTrials``, so the result is the exact unweighted mean of the
+    sequence. Bias-free; new samples have diminishing influence.
+    """
     def __init__(self, sz=1):
+        """Initialize MeanMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
 
     def delta(self, in1, in2=None):
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta()
         self.output = ((self.nTrials - 1) / self.nTrials) * self.output + (1 / self.nTrials) * in1
 # GammaMem subclass: blends state with output using a second learning rate.
 class GammaMem(StateMem):
+    """Two-stage exponential filter: state then output.
+
+    ``state`` integrates ``in1`` at rate ``self.lr``; ``output``
+    integrates ``state`` at rate ``self.lr2``. Effectively a cascaded
+    low-pass with separately tunable bandwidths.
+    """
     def __init__(self, sz=1, lr2=0.05):
+        """Initialize GammaMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
         self.lr2 = lr2
 
     def delta(self, in1, in2=None):
         # Call the StateMem delta method.
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         StateMem.delta(self)
         self.state = (1 - self.lr) * self.state + self.lr * in1
         self.output = (1 - self.lr2) * self.output + self.lr2 * self.state
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         Mem.testOne(GammaMem())
 # ExponentialMem subclass: exponential memory update.
 class ExponentialMem(Mem):
+    """Exponential-moving-average memory: ``output = (1-lr)*output + lr*in1``.
+
+    Single-rate IIR low-pass; equivalent to MeanMem at lr=1/n but with
+    a fixed lr that gives exponentially decaying weight on old samples.
+    Default lr inherits from the base ``Mem`` class.
+    """
     def __init__(self, sz=1, lr=None):
+        """Initialize ExponentialMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
         if lr is not None:
             self.lr = lr
 
     def delta(self, in1, in2=None):
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta()
         self.output = (1 - self.lr) * self.output + self.lr * in1
     @staticmethod
     def test():
         # Create an instance of ExponentialMem and run a test.
+        """Self-test; verifies the round-trip / invariant."""
         m_exp = ExponentialMem(sz=(5, 5), lr=0.1)
         # Simulate a delta update with an input (for example, a 5x5 array).
         x = np.ones((5, 5))
@@ -8468,10 +9160,25 @@ class ExponentialMem(Mem):
         print(m_exp.get())
 # CorrMem subclass: correlational memory update.
 class CorrMem(Mem):
+    """Correlation matrix memory; tracks normalized product of two streams.
+
+    On each ``delta(in1, in2)`` step, per-cell ``output[r, c]`` is
+    updated toward ``saturate(in1[r]*in2[c] / (|in1[r]|*|in2[c]|))``
+    with weight ``max(|in1[r]|, |in2[c]|) / nTrials`` -- favours
+    high-amplitude updates.
+    """
     def __init__(self, sz=1):
+        """Initialize CorrMem; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__(sz)
 
     def delta(self, in1, in2):
+        """Delta.
+        
+        See class docstring for the operation contract.
+        """
         super().delta()
         for r in range(len(in1)):
             for c in range(len(in2)):
@@ -8514,6 +9221,15 @@ class CorrMem(Mem):
 #
 # See doc/Spaces.md "Codebook similarity metric" for the full theory.
 class VectorQuantize(nn.Module):
+    """Vector-quantization codebook with EMA / cosine / rotation-trick updates.
+
+    Standard VQ-VAE building block: matches each input vector to its
+    nearest codebook entry under Euclidean or cosine distance, returns
+    a straight-through quantized output, and tracks a commitment loss.
+    EMA decay smooths the codebook; dead-code revival rotates unused
+    rows toward fresh inputs. See module comment for the two distance
+    modes and ``doc/Spaces.md`` "Codebook similarity metric".
+    """
     def __init__(
         self,
         dim,
@@ -8527,6 +9243,10 @@ class VectorQuantize(nn.Module):
         codebook_retire=False,
         **kwargs,
     ):
+        """Initialize VectorQuantize; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.dim = dim
         self.codebook_size = codebook_size
@@ -8569,10 +9289,18 @@ class VectorQuantize(nn.Module):
 
     @property
     def codebook(self):
+        """Codebook.
+        
+        See class docstring for the operation contract.
+        """
         return self._parameters["_codebook"]
 
     @codebook.setter
     def codebook(self, value):
+        """Codebook.
+        
+        See class docstring for the operation contract.
+        """
         param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
         if "_codebook" in self._parameters:
             self._parameters["_codebook"] = param
@@ -8669,6 +9397,10 @@ class VectorQuantize(nn.Module):
     _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
 
     def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         original_shape = x.shape
         flat = x.reshape(-1, original_shape[-1])
         codebook = self.codebook
@@ -8840,6 +9572,7 @@ class VectorQuantize(nn.Module):
 
 
 def test():
+    """Self-test; verifies the round-trip / invariant."""
     torch.autograd.set_detect_anomaly(True)
 
     TruthLayer.test()
@@ -8856,6 +9589,10 @@ def test():
     DecisionBoundaryLayer.test()
 
 def main():
+    """Main.
+    
+    See class docstring for the operation contract.
+    """
     try:
         test()
     except ImportError as exc:
@@ -8884,22 +9621,37 @@ class _OpHandle:
     (forward/reverse/compose/generate)."""
 
     def __init__(self, kernel, layer):
+        """Initialize _OpHandle; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         self._kernel = kernel
         self._layer = layer
 
     def __call__(self, *args, **kwargs):
+        """Invoke this callable."""
         return self._kernel(*args, **kwargs)
 
     def forward(self, *args, **kwargs):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         return self._layer.forward(*args, **kwargs)
 
     def reverse(self, *args, **kwargs):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         return self._layer.reverse(*args, **kwargs)
 
     def compose(self, *args, **kwargs):
+        """Compose the input via this layer's parse contract."""
         return self._layer.compose(*args, **kwargs)
 
     def generate(self, *args, **kwargs):
+        """Drive the reverse / generation pass."""
         return self._layer.generate(*args, **kwargs)
 
     @property

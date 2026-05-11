@@ -2,25 +2,14 @@
 <model>
   <!-- Step 3: Step 2 + grammar -->
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>
-    <naive>false</naive>
     <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
-    <weightsPath></weightsPath>
-
-    <data>
-      <dataset>xor</dataset>
-    </data>
 
     <training>
       <numEpochs>200</numEpochs>
       <learningRate>0.01</learningRate>
-      <autosave>false</autosave>
       <autoload>false</autoload>
-      <reverseScale>0.5</reverseScale>
-      <maskedPrediction>NONE</maskedPrediction>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
     </training>
@@ -28,7 +17,6 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
     <language>
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
@@ -42,7 +30,6 @@
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 

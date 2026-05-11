@@ -78,6 +78,19 @@
       <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
+      <!-- L1 penalty on lift / lower gates. 0 disables. -->
+      <xs:element name="gateL1Lambda" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Sparse-MoE load-balance loss weight (active when chartTopK > 0). -->
+      <xs:element name="loadBalanceWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Symbol-partition geometry for conceptualOrder > 1:
+           tapered = geometrically narrowing slices (default);
+           uniform = equal-width slices. -->
+      <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
+      <!-- Per-stage chart re-parse (LM_5M-style): chart runs once per
+           conceptualOrder stage, compounding compositional capacity. -->
+      <xs:element name="perStageChartReparse" type="xs:boolean" minOccurs="0"/>
+      <!-- MereologicalTree capacity (matches SymbolicSpace.nVectors). -->
+      <xs:element name="mereologicalTreeSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Optional: dump POS-labelled syntax tree at end of every
            MentalModel.forward(); see doc/Language.md "POS side-channel". -->
       <xs:element name="writeSyntax" type="xs:boolean" minOccurs="0"/>
@@ -124,6 +137,20 @@
       <xs:enumeration value="off"/>
       <xs:enumeration value="fp16"/>
       <xs:enumeration value="bf16"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="conceptualWidthEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="tapered"/>
+      <xs:enumeration value="uniform"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="chartCollapseEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="root"/>
+      <xs:enumeration value="broadcast"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -434,6 +461,21 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="chartCompose" type="xs:boolean" minOccurs="0"/>
+      <!-- Soft-superposition chart output behavior: root (single root
+           sentence node, other positions zero) or broadcast (replicate
+           root across all positions). Default 'root'. -->
+      <xs:element name="chartCollapse" type="chartCollapseEnum" minOccurs="0"/>
+      <!-- Soft (differentiable) chart compose: CKY inside pass
+           populates current_rules via top-K mixing. -->
+      <xs:element name="softChartCompose" type="xs:boolean" minOccurs="0"/>
+      <!-- Temperature for the soft-chart rule-score softmax. -->
+      <xs:element name="chartTau" type="positiveFloat" minOccurs="0"/>
+      <!-- Max span width considered by the chart. -->
+      <xs:element name="wMax" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Sparse-MoE: keep top-K rules per (cell, split); 0 disables. -->
+      <xs:element name="chartTopK" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Gaussian noise epsilon for chartTopK gating. -->
+      <xs:element name="chartNoiseEps" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Downward generation: when true, MentalModel.forward() emits a
            codebook head via WordSpace.reconstruct() and stashes it on
            self._predicted_head for downstream (e.g. loss) consumption. -->

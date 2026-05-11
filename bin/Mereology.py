@@ -40,7 +40,12 @@ from util import TheXMLConfig
 
 @dataclass(frozen=True)
 class RuleSpec:
-    """One node in the derivation path: rule_name + arity + tier."""
+    """One node in the derivation path: rule_name + arity + tier.
+
+    Immutable record consumed by ``Mereology.hoc_shape`` when walking
+    the reverse derivation. Tier is one of 'P' / 'C' / 'S' / 'L';
+    arity is 1 for unary ops and 2 for binary fold operators.
+    """
     rule_name: str
     arity:     int
     tier:      str
@@ -212,7 +217,14 @@ class Mereology:
         out = []
 
         def rebuild(prev_contig: bool):
-            """Mirror _walk_reverse's recursion shape using per_step."""
+            """Mirror _walk_reverse's recursion shape using per_step.
+
+            Walks the DFS pre-order ``per_step`` list using the shared
+            ``idx`` cursor and emits one boolean per reconstructed
+            leaf into ``out``. Maintains a cumulative-AND of contiguity
+            flags down the path so the emitted leaf flag matches
+            "every step on the path preserved contiguity".
+            """
             if idx[0] >= len(per_step):
                 # No more steps: this is a leaf.
                 out.append(prev_contig)

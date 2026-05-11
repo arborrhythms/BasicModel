@@ -135,6 +135,12 @@ class Grammar:
     RuleDef.__new__.__defaults__ = (0, 0)  # width_min=0, width_max=0 default
 
     def __init__(self):
+        """Initialize an empty rule catalog; XML configuration happens lazily.
+
+        Rules are populated on first access via ``_ensure_configured``.
+        Holds tier-tagged rule lists, the upward / downward / reverse
+        derivations, and the default start symbol ``"S"``.
+        """
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
@@ -157,23 +163,29 @@ class Grammar:
     # -- Rule catalog --------------------------------------------------
 
     def __len__(self):
+        """Total rule count after lazy configuration."""
         self._ensure_configured()
         return len(self.rules)
 
     def __getitem__(self, idx):
+        """Return the canonical name string for rule ``idx``."""
         self._ensure_configured()
         return self.rules[idx].canonical
 
     def arity(self, rule_id):
+        """Return the arity (1 or 2) of rule ``rule_id``."""
         return self.rules[rule_id].arity
 
     def method_name(self, rule_id):
+        """Return the Python method name implementing rule ``rule_id``."""
         return self.rules[rule_id].method_name
 
     def tier(self, rule_id):
+        """Return the tier tag ('P' / 'C' / 'S' / 'L') of rule ``rule_id``."""
         return self.rules[rule_id].tier
 
     def binary_rules(self):
+        """Return the list of rule_ids that have arity 2."""
         return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
 
     # -- Configuration from XML ----------------------------------------
@@ -264,6 +276,13 @@ class Grammar:
             self._fill_rule_list(target, direct, tier='S')
 
     def _fill_rule_list(self, target, rules_dict, tier='S'):
+        """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
+
+        Handles both the canonical ``<rule>head = body</rule>`` form
+        (with optional ``width="MIN..MAX"`` gate) and the legacy
+        ``<S>body</S>`` form. Each parsed rule is tagged with the
+        supplied tier letter.
+        """
         # New syntax: <rule>head = body</rule> — head may be a comma-
         # separated tuple of categories (for multi-output downward rules
         # like `S,S = intersection_inv(VO)`). Body is a function call
@@ -340,6 +359,11 @@ class Grammar:
         else:
             lo_s = hi_s = s
         def _one(v):
+            """Coerce one bound from the width attribute to an int sentinel.
+
+            Empty / unparseable -> 0 (no bound). ``'N'`` -> -1 sentinel
+            meaning "use the live N from data.shape". Else integer.
+            """
             v = v.strip()
             if not v:
                 return 0
@@ -352,6 +376,13 @@ class Grammar:
         return (_one(lo_s), _one(hi_s))
 
     def _parse_rule(self, lhs, rhs, tier='S'):
+        """Parse one ``lhs = rhs`` rule string into a ``RuleDef`` namedtuple.
+
+        ``rhs`` can be a function call (``f(A, B)``), a bare-symbol
+        sequence (``A B``), or a single category. Accepts the explicit-
+        direction suffixes ``.forward`` / ``.reverse`` on the function
+        name. ``tier`` is the per-rule routing tag.
+        """
         # `tier` may be 'S' (symbols, default), 'C' (concepts), or
         # 'P' (percepts). Set by `_fill_section` from <symbols> /
         # <concepts> / <percepts> sub-sections under <parse> /
@@ -618,6 +649,13 @@ class Grammar:
         self._fired_bodies = set()
 
     def _ensure_configured(self):
+        """Lazily configure the grammar from XML on first use.
+
+        Resolves the start symbol, looks up the inline XML grammar or
+        a ``grammarCfg`` file path, and dispatches to ``configure`` or
+        ``load_from_cfg``. Subsequent calls are no-ops via the
+        ``_configured`` guard.
+        """
         if self._configured:
             return
         # <start>S</start> in WordSpace.language: the canonical name of
@@ -671,10 +709,16 @@ class Grammar:
     # -- Rule queries --------------------------------------------------
 
     def symbolic(self):
+        """Return rule_ids whose tier is 'S' (symbolic-tier rules)."""
         self._ensure_configured()
         return [i for i, r in enumerate(self.rules) if r.tier == 'S']
 
     def symbolic_transition(self):
+        """Return rule_id of the unary tier-S transition rule, or None.
+
+        Used by the symbolic head to find the unary-transition rule
+        when the grammar exposes one (typically the no-op identity).
+        """
         self._ensure_configured()
         for i, r in enumerate(self.rules):
             if r.tier == 'S' and r.method_name is None and r.arity == 1:
@@ -683,7 +727,10 @@ class Grammar:
 
     @property
     def s_methods(self):
-        """Set of method names available on the S (symbolic) tier."""
+        """Set of method names available on the S (symbolic) tier.
+
+        Excludes rules without a method_name (e.g. pure transitions).
+        """
         return {r.method_name for r in self.rules if r.tier == 'S' and r.method_name}
 
     @property
@@ -882,6 +929,13 @@ class Chart(nn.Module):
                  hidden_dim=256, D_rule=32, chart_tau=None, w_max=None,
                  unary_max_depth=2, feature_dim=None,
                  router_kind=None):
+        """Build the CKY chart parser owned by WordSpace.
+
+        Resolves ``w_max`` (span width bound) and ``chart_tau`` from
+        XML when not explicitly set. ``router_kind`` selects between
+        the legacy CKY chart and the SignalRouter alternative.
+        Allocates rule-embedding params and unary / binary scoring nets.
+        """
         super().__init__()
         nOutput = nOutput if nOutput is not None else nInput
         self.nInput = int(nInput)
@@ -1330,6 +1384,12 @@ class Chart(nn.Module):
         return len(table['_cat_names'])
 
     def _ensure_category_table(self):
+        """Lazily build the chart's category-name ordering and reverse index.
+
+        Walks every rule's lhs and rhs symbols, dedupes, prepends a
+        ``'?'`` placeholder at index 0, and stores both the ordered
+        list and a name -> index map for fast lookups.
+        """
         if self._category_names is not None:
             return
         names = set()
@@ -1345,6 +1405,13 @@ class Chart(nn.Module):
         self._category_index = {n: i for i, n in enumerate(ordered)}
 
     def _ensure_soft_chart_built(self, D, device):
+        """Lazily allocate the soft-chart scoring modules for the given D.
+
+        Rebuilds when ``D`` / ``D_rule`` change or when the grammar's
+        ``rule_table_version`` increments (rule catalog edit). Allocates
+        the compat-score MLP, unary-compat module, and per-rule
+        embedding / bias tensors on ``device``.
+        """
         version = getattr(TheGrammar, 'rule_table_version', 0)
         if (self._soft_chart_built
                 and self._soft_chart_version == version
@@ -2235,6 +2302,13 @@ class Chart(nn.Module):
                                bin_idx, R_bin, rl_bin, rr_bin, lhs_bin,
                                mmask_bin_bool, rE_bin, rB_bin, mB_bin,
                                mmask_bin, bin_methods, NEG_INF, *, hard):
+        """Outside pass: compute outside scores / vectors over the chart.
+
+        Mirrors the inside pass but drives top-down from the start
+        symbol. ``hard`` selects between Viterbi (eval) and soft-DP
+        (training). Returns ``(outside_score, outside_vec)`` shaped
+        ``[B, N+1, N+1, C]`` and ``[B, N+1, N+1, C, D]``.
+        """
         C = self._category_names_count()
 
         outside_score = torch.full((B, N + 1, N + 1, C), NEG_INF,
@@ -2376,6 +2450,13 @@ class Chart(nn.Module):
     # ------------------------------------------------------------------
     def _signal_sentence_completed_chart(self, subspace, chart_score,
                                          word_space):
+        """Set per-row sentence-completed flags when the root reaches start_symbol.
+
+        Reads the root cell's argmax category for every row and sets
+        ``word_space._sentence_completed[b_source]`` when it equals the
+        start symbol's category id. Handles the K microbatch axis by
+        mapping each flat row b_flat back to its source row b_source.
+        """
         ws = word_space if word_space is not None else (
             getattr(subspace, 'wordSpace', None) if subspace else None)
         if ws is None:
@@ -2410,6 +2491,12 @@ class Chart(nn.Module):
     # Viterbi backtrace (also used by reverse / generate path).
     # ------------------------------------------------------------------
     def _viterbi_extract(self, chart_score, chart_vec, B, N):
+        """Walk the Viterbi backtrace and emit one derivation trace per row.
+
+        Returns ``[B]`` lists of ``(rule_id, i, k, j, cat_id)`` tuples
+        in DFS pre-order. Logs one warning when the root span exceeds
+        ``w_max`` (the silent-truncation failure mode).
+        """
         device = chart_score.device
         table = TheGrammar._ensure_packed_table(device=device)
         R = int(table['lhs'].numel())
@@ -2533,6 +2620,12 @@ class Chart(nn.Module):
         rules = TheGrammar.rules
 
         def _matches(gid, lhs, method, rhs):
+            """True iff rule ``gid`` has the given lhs/method/rhs signature.
+
+            Used by ``extract_svo`` to locate the canonical
+            ``S = lift(NP, VP)`` / ``VP = intersection(V, O)`` rules in
+            the derivation trace.
+            """
             try:
                 r = rules[gid]
             except (IndexError, AttributeError):
@@ -2597,6 +2690,11 @@ class _CompatScore(nn.Module):
     """
 
     def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
+        """Build the 2-layer compat MLP and init weights via Xavier normal.
+
+        ``hidden`` defaults to ``max(D, 64)``. ``compat_scale`` bounds
+        the output magnitude so the per-cell softmax cannot saturate.
+        """
         super().__init__()
         h = hidden or max(D, 64)
         self.lin1 = nn.Linear(2 * D + D_rule, h)
@@ -2609,6 +2707,12 @@ class _CompatScore(nn.Module):
         nn.init.zeros_(self.lin2.bias)
 
     def forward(self, left, right, rule_embed, marker_mask):
+        """Return a bounded compat score for ``(left, right, rule)`` merges.
+
+        Zeros out marker-mask slots in left / right, concatenates with
+        the rule embed, runs through the 2-layer MLP, and returns
+        ``compat_scale * tanh(raw)``.
+        """
         keep = (~marker_mask).to(left.dtype)
         kL = keep[..., 0:1]
         kR = keep[..., 1:2]
@@ -2620,9 +2724,13 @@ class _CompatScore(nn.Module):
 class _UnaryCompat(nn.Module):
     """Score for a unary closure step. Bounded the same way as
     ``_CompatScore``.
+
+    Used by the chart's unary closure pass to score ``(child, rule)``
+    pairs. Two-layer MLP with tanh-bounded output.
     """
 
     def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
+        """Build the 2-layer unary MLP and init weights via Xavier normal."""
         super().__init__()
         h = hidden or max(D, 64)
         self.lin1 = nn.Linear(D + D_rule, h)
@@ -2635,6 +2743,7 @@ class _UnaryCompat(nn.Module):
         nn.init.zeros_(self.lin2.bias)
 
     def forward(self, child, rule_embed):
+        """Return ``compat_scale * tanh(MLP([child, rule_embed]))``."""
         x = torch.cat([child, rule_embed], dim=-1)
         raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
         return self.compat_scale * torch.tanh(raw)
@@ -2677,6 +2786,15 @@ class SyntacticLayer(Layer):
     """
 
     def __init__(self, tier, word_space, host_layers, host_space=None):
+        """Register host layers with the WordSpace dispatch table.
+
+        ``host_layers`` is a name -> Layer mapping; each is registered
+        under ``(tier, rule_name)`` on the WordSpace so the chart can
+        dispatch into the right parametrized fold. WordSpace / host_space
+        are stashed via ``object.__setattr__`` to avoid the nn.Module
+        ownership cycle (WordSpace owns the chart -> chart references
+        this layer -> this layer references WordSpace).
+        """
         super().__init__(0, 0)
         self.tier = str(tier)
         # Stash host_layers in two parallel structures: ModuleList for
@@ -3018,12 +3136,21 @@ class CategoryStack:
     """
 
     def __init__(self, dim, batch=1, max_depth=64):
+        """Allocate per-row empty lists sized for ``batch`` rows.
+
+        ``dim`` is the embedding dim; ``max_depth`` caps per-row depth
+        (push asserts on overflow).
+        """
         self._dim = int(dim)
         self._batch = int(batch)
         self._max_depth = int(max_depth)
         self._entries = [[] for _ in range(self._batch)]
 
     def ensure_batch(self, batch):
+        """Reset per-row state to ``batch`` empty stacks.
+
+        Cheap no-op when ``batch`` already matches the current width.
+        """
         batch = int(batch)
         if batch == self._batch:
             return
@@ -3031,6 +3158,7 @@ class CategoryStack:
         self._entries = [[] for _ in range(self._batch)]
 
     def push(self, b, vec):
+        """Append ``vec`` to row ``b``'s stack; assert shape + depth bound."""
         assert vec.shape == (self._dim,), (
             f"CategoryStack dim={self._dim}, got vec shape {tuple(vec.shape)}"
         )
@@ -3040,18 +3168,29 @@ class CategoryStack:
         self._entries[b].append(vec)
 
     def pop(self, b):
+        """Pop and return row ``b``'s top embedding."""
         return self._entries[b].pop()
 
     def depth(self, b):
+        """Return current stack depth for row ``b``."""
         return len(self._entries[b])
 
     def flatten(self, b):
+        """Concatenate row ``b``'s stack into a single 1D tensor.
+
+        Empty rows return a zero-length tensor. Uses ``torch.cat`` so
+        autograd flows back through any param-bearing entries.
+        """
         if not self._entries[b]:
             return torch.zeros(0)
         return torch.cat(self._entries[b], dim=0)
 
     def clear_rows(self, start, end):
-        """Empty rows ``[start, end)``. Used by per-row hard reset."""
+        """Empty rows ``[start, end)``. Used by per-row hard reset.
+
+        Drops all pushed embeddings for the row range; subsequent
+        ``depth(b)`` returns 0. Does not free the backing list slot.
+        """
         for b in range(int(start), min(int(end), self._batch)):
             self._entries[b] = []
 
@@ -3065,6 +3204,7 @@ class ReconstructionStack:
     """
 
     def __init__(self, batch=1, max_depth=64):
+        """Allocate ``[B, max_depth, 2]`` long storage plus per-row top index."""
         self._batch = int(batch)
         self._max_depth = int(max_depth)
         self._entries = torch.zeros(self._batch, self._max_depth, 2,
@@ -3072,6 +3212,7 @@ class ReconstructionStack:
         self._top = torch.zeros(self._batch, dtype=torch.long)
 
     def ensure_batch(self, batch):
+        """Reallocate backing tensors if ``batch`` width changed."""
         batch = int(batch)
         if batch == self._batch:
             return
@@ -3081,6 +3222,10 @@ class ReconstructionStack:
         self._top = torch.zeros(batch, dtype=torch.long)
 
     def push(self, b, rule_id, word_id):
+        """Push ``(rule_id, word_id)`` onto row ``b``'s stack.
+
+        Asserts the depth bound and advances the row's top index.
+        """
         idx = int(self._top[b].item())
         assert idx < self._max_depth, (
             f"ReconstructionStack overflow at row {b}: max_depth={self._max_depth}"
@@ -3090,18 +3235,24 @@ class ReconstructionStack:
         self._top[b] += 1
 
     def peek(self, b):
+        """Return the top (rule_id, word_id) tuple for row ``b`` without popping."""
         idx = int(self._top[b].item()) - 1
         return (int(self._entries[b, idx, 0].item()),
                 int(self._entries[b, idx, 1].item()))
 
     def pop(self, b):
+        """Pop and return the top (rule_id, word_id) tuple from row ``b``."""
         self._top[b] -= 1
         idx = int(self._top[b].item())
         return (int(self._entries[b, idx, 0].item()),
                 int(self._entries[b, idx, 1].item()))
 
     def clear_rows(self, start, end):
-        """Reset rows ``[start, end)`` to empty stacks. Per-row hard reset."""
+        """Reset rows ``[start, end)`` to empty stacks. Per-row hard reset.
+
+        Zeros the (rule_id, word_id) backing tensor slice and the
+        per-row top index; no-op when the range is empty / past end.
+        """
         s, e = int(start), min(int(end), self._batch)
         if e <= s:
             return
@@ -3109,6 +3260,7 @@ class ReconstructionStack:
         self._top[s:e] = 0
 
     def depth(self, b):
+        """Return current stack depth for row ``b`` (number of entries)."""
         return int(self._top[b].item())
 
 class WordSpace(Space):
@@ -3150,6 +3302,15 @@ class WordSpace(Space):
     def __init__(self, perceptualSpace, conceptualSpace, symbolicSpace,
                  nPercepts, nConcepts, nSymbols,
                  concept_dim, symbol_dim):
+        """Build the chart, grammar layer, truth store, and per-tier dispatch.
+
+        WordSpace bypasses the Space factory because its construction
+        crosses tier boundaries (it needs references to Perceptual /
+        Conceptual / Symbolic spaces). Detects the default-only grammar
+        case so compose/generate can skip the CKY pass entirely.
+        Mutates ``self`` to install ``syntacticLayer``, ``chart``,
+        ``truthLayer``, the host_layer registry, and per-row buffers.
+        """
         # Bypass Space.__init__ -- WordSpace doesn't fit the factory
         # style. Call nn.Module directly and populate the Space-contract
         # fields by hand.
@@ -3454,23 +3615,39 @@ class WordSpace(Space):
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):
-        """Write the SVO triple for batch row ``b``."""
+        """Write the SVO triple for batch row ``b``.
+
+        Stamps the three vectors into the ``[B, 3, svo_dim]`` buffer
+        and marks the row's valid flag True. Subsequent reads via
+        ``get_last_svo`` until ``clear_last_svo`` fires.
+        """
         self._last_svo[b, 0] = subj
         self._last_svo[b, 1] = verb
         self._last_svo[b, 2] = obj
         self._svo_valid[b] = True
 
     def get_last_svo(self, b):
-        """Return ``(subj, verb, obj)`` tensors for batch row ``b``."""
+        """Return ``(subj, verb, obj)`` tensors for batch row ``b``.
+
+        Caller is responsible for checking ``svo_valid(b)`` first;
+        otherwise the returned vectors may be stale or zero.
+        """
         e = self._last_svo[b]
         return e[0], e[1], e[2]
 
     def svo_valid(self, b):
-        """True iff set_last_svo has fired for row ``b`` since last clear."""
+        """True iff set_last_svo has fired for row ``b`` since last clear.
+
+        Cheap CPU sync via ``.item()``; do not call inside tight loops.
+        """
         return bool(self._svo_valid[b].item())
 
     def clear_last_svo(self, b=None):
-        """Clear the SVO valid mask for row ``b`` (or all rows when None)."""
+        """Clear the SVO valid mask for row ``b`` (or all rows when None).
+
+        Does not zero the underlying tensor -- subsequent ``get_last_svo``
+        will return stale data unless re-stamped by ``set_last_svo``.
+        """
         if b is None:
             self._svo_valid.zero_()
         else:
@@ -3478,15 +3655,26 @@ class WordSpace(Space):
 
     # -- per-row STM-fired accessors --------------------------------------
     def stm_fired(self, b):
-        """True iff stm_residual(b) has fired since last arm."""
+        """True iff stm_residual(b) has fired since last arm.
+
+        Single-shot per sentence: re-armed by ``arm_stm`` or ``Reset``.
+        """
         return bool(self._stm_fired[b].item())
 
     def mark_stm_fired(self, b):
-        """Mark row ``b`` as having fired its STM residual this sentence."""
+        """Mark row ``b`` as having fired its STM residual this sentence.
+
+        Subsequent ``stm_residual`` calls for ``b`` return None until
+        ``arm_stm`` re-arms the row.
+        """
         self._stm_fired[b] = True
 
     def arm_stm(self, b=None):
-        """Re-arm row ``b`` (or all rows when None) for the next sentence."""
+        """Re-arm row ``b`` (or all rows when None) for the next sentence.
+
+        Resets the per-row single-shot flag so the next ``stm_residual``
+        call can fire and stamp a new prediction bias.
+        """
         if b is None:
             self._stm_fired.zero_()
         else:
@@ -4272,7 +4460,12 @@ class WordSpace(Space):
         return self.subspace.read()
 
     def clear_sentence(self):
-        """Reset the stack at sentence boundaries."""
+        """Reset the stack at sentence boundaries.
+
+        Forwards to the subspace's clear hook; called by ``BasicModel``
+        on sentence boundary signals so the next sentence's parse
+        starts with an empty word buffer.
+        """
         self.subspace.clear()
 
     def Reset(self, batch=None, hard=True):
@@ -4456,7 +4649,12 @@ class WordSpace(Space):
         return completed
 
     def get_blocks(self, b=0):
-        """Return the parse-tree ledger for batch row `b`."""
+        """Return the parse-tree ledger for batch row ``b``.
+
+        Forwards to ``self.subspace.get_blocks``. The ledger records the
+        per-cell rule applications fired during the last compose, used
+        for derivation-trace debugging.
+        """
         return self.subspace.get_blocks(b)
 
     def ensure_batch(self, batch):

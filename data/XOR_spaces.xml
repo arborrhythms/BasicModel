@@ -3,9 +3,7 @@
   <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
        Architecture is perfectly invertible (invertible=true everywhere). -->
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
-    <ergodic>false</ergodic>
     <weightsPath>XOR_spaces.ckpt</weightsPath>
 
     <data>
@@ -19,7 +17,6 @@
     <training>
       <numEpochs>200</numEpochs>
       <learningRate>0.01</learningRate>
-      <autosave>false</autosave>
       <autoload>false</autoload>
     </training>
   </architecture>
@@ -61,7 +58,6 @@
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

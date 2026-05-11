@@ -403,19 +403,31 @@ class WordVectors(nn.Module):
 
     @property
     def vectors(self) -> nn.Parameter:
-        """Trainable embedding matrix (vocab_size, vector_size)."""
+        """Trainable embedding matrix (vocab_size, vector_size).
+
+        Returns the live ``nn.Parameter`` -- callers training the
+        embedding share this tensor and see optimizer updates.
+        """
         return self._vectors
 
     @property
     def vector_size(self) -> int:
-        """Dimensionality of each vector."""
+        """Dimensionality of each vector.
+
+        Convenience wrapper around ``_vectors.shape[1]``.
+        """
         return self._vectors.shape[1]
 
     # -- Factory methods --
 
     @classmethod
     def from_vocab(cls, words: List[str], vector_size: int = 20) -> "WordVectors":
-        """Build random embeddings for a vocabulary list."""
+        """Build random embeddings for a vocabulary list.
+
+        Deduplicates ``words`` while preserving first-seen order and
+        samples each row uniformly from the unit ball. Used to seed
+        SBOW training from scratch.
+        """
         unique = list(dict.fromkeys(words))  # preserve order, deduplicate
         vecs = _random_unit_ball((len(unique), vector_size))
         return cls(vecs, unique)
@@ -543,9 +555,11 @@ class WordVectors(nn.Module):
     # -- Vector access --
 
     def __len__(self) -> int:
+        """Number of vocabulary entries."""
         return len(self.index_to_key)
 
     def __contains__(self, word: str) -> bool:
+        """Membership check by word string."""
         return word in self.key_to_index
 
     def __getitem__(self, word: str) -> torch.Tensor:
@@ -561,7 +575,11 @@ class WordVectors(nn.Module):
 
     def most_similar(self, positive,
                      topn: int = 1) -> List[Tuple[str, float]]:
-        """Find the *topn* words closest to *positive* under wrapped MSE."""
+        """Find the *topn* words closest to *positive* under wrapped MSE.
+
+        Accepts a tensor or array-like query; returns a list of
+        ``(word, score)`` pairs sorted by descending score.
+        """
         if not isinstance(positive, torch.Tensor):
             positive = torch.as_tensor(positive, dtype=torch.float32)
         vectors = self.get_normed_vectors()
@@ -574,7 +592,11 @@ class WordVectors(nn.Module):
         return [(self.index_to_key[i], float(sims[i].detach())) for i in top_idx]
 
     def similarity(self, word1: str, word2: str) -> float:
-        """Return wrapped-MSE similarity (larger is closer)."""
+        """Return wrapped-MSE similarity (larger is closer).
+
+        Both words must already be in the vocabulary; raises ``KeyError``
+        otherwise.
+        """
         v1 = self[word1].detach()
         v2 = self[word2].detach()
         return float(_wrapped_mse_score(v1, v2))
@@ -582,14 +604,21 @@ class WordVectors(nn.Module):
     # -- Exploration / CLI helpers --
 
     def neighbors(self, word: str, topn: int = 10) -> List[Tuple[str, float]]:
-        """Return nearest neighbors of *word*, excluding itself."""
+        """Return nearest neighbors of *word*, excluding itself.
+
+        Returns an empty list when ``word`` is out-of-vocabulary, so
+        callers can check membership and lookup in a single call.
+        """
         if word not in self:
             return []
         results = self.most_similar(self[word], topn=topn + 1)
         return [(w, s) for w, s in results if w != word][:topn]
 
     def random_word(self) -> str:
-        """Return a random word from the vocabulary."""
+        """Return a random word from the vocabulary.
+
+        Uniform draw from ``index_to_key`` via ``random.choice``.
+        """
         import random
         return random.choice(self.index_to_key)
 
@@ -828,14 +857,25 @@ class PretrainModel:
 
 
 class _CBOWModule(nn.Module):
-    """CBOW forward pass as an nn.Module for torch.compile."""
+    """CBOW forward pass as an nn.Module for torch.compile.
+
+    Wraps the embed-lookup -> masked-mean -> linear step in a Module
+    so torch.compile can fuse it. Used by the legacy CBOW path; the
+    canonical embedding pipeline now uses SBOW.
+    """
 
     def __init__(self, vocab_size, vector_size):
+        """Build an embedding table and a vocab-projection linear head."""
         super().__init__()
         self.embeddings = nn.Embedding(vocab_size, vector_size)
         self.linear = nn.Linear(vector_size, vocab_size)
 
     def forward(self, ctx_padded, ctx_mask):
+        """Masked-mean of context embeddings, then project to vocab logits.
+
+        ``ctx_padded`` is ``[B, ctx_len]`` long; ``ctx_mask`` is the
+        matching ``[B, ctx_len]`` float mask of valid positions.
+        """
         ctx_embeds = self.embeddings(ctx_padded)
         masked = ctx_embeds * ctx_mask.unsqueeze(-1)
         ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
@@ -851,6 +891,12 @@ class _SBOWEmbedding(nn.Module):
     """
 
     def __init__(self, vocab_size, vector_size):
+        """Build a ``Lexicon`` embedding table on the flat torus.
+
+        Uses ``ball=False`` because SBOW's pode/antipode gradient
+        structure assumes torus geometry; migration to the projective
+        ball is documented but not yet implemented (see doc/Spaces.md).
+        """
         super().__init__()
         from Layers import Lexicon
         # SBOW pode/antipode pair structure operates on the legacy
@@ -872,6 +918,13 @@ class StreamingSBOWTrainer:
 
     def __init__(self, vector_size=100, min_count=5, learning_rate=0.001,
                  sigma=5.0, normalize=True):
+        """Initialize the streaming SBOW trainer state.
+
+        ``sigma`` is the Gaussian inner-kernel scale (Mikolov-style
+        local window); ``min_count`` is the vocabulary inclusion
+        threshold. ``normalize`` re-wraps weights into the periodic
+        unit cell after every optimizer step.
+        """
         self.vector_size = vector_size
         self.min_count = min_count
         self.learning_rate = learning_rate
@@ -901,10 +954,12 @@ class StreamingSBOWTrainer:
 
     @property
     def vocab_size(self):
+        """Live vocabulary size (grows as ``build_vocab`` adds entries)."""
         return len(self.idx_to_word)
 
     @property
     def avg_loss(self):
+        """Mean SBOW loss across all training calls so far; 0 if none."""
         return self._total_loss / self._loss_count if self._loss_count else 0.0
 
     # -- Pass 1: vocabulary building ------------------------------------------
@@ -1030,7 +1085,12 @@ class StreamingSBOWTrainer:
     # -- Pass 2: streaming SBOW training --------------------------------------
 
     def process_document(self, text):
-        """Parse one document, train SBOW on each sentence immediately."""
+        """Parse one document, train SBOW on each sentence immediately.
+
+        Splits the doc into sentences and the sentences into non-
+        whitespace words, then trains one step per sentence. Mutates
+        the embedding weights and loss accumulators in place.
+        """
         for sent_text, _ in parse(text, lex='sentences'):
             words = [w for w, _ in parse(sent_text, lex='words')
                      if not w.isspace()]
@@ -1120,7 +1180,12 @@ class StreamingSBOWTrainer:
         self._loss_count += N
 
     def finish(self):
-        """Return trained WordVectors (wrapped into the unit cell)."""
+        """Return trained WordVectors (wrapped into the unit cell).
+
+        Detaches the live embedding weights, re-wraps them into the
+        canonical torus domain, and packages them as a fresh
+        ``WordVectors`` keyed by the trained vocabulary.
+        """
         n = self.vocab_size
         if n == 0:
             return WordVectors.from_vocab([], vector_size=self.vector_size)
@@ -1476,6 +1541,12 @@ class StreamingChunkSBOWTrainer:
                  learning_rate: float = 0.001,
                  max_seq: int = 2048,
                  neg_samples: int = 64):
+        """Allocate the BPE-vocab embedding model and freeze the codebook.
+
+        Forces ``chunk_layer.chunking_frequency = 0`` so Phase B only
+        shifts vectors -- the BPE codebook is held constant. Vocabulary
+        size is fixed at ``chunk_layer.n_vectors``.
+        """
         self.chunk_layer = chunk_layer
         self.vector_size = vector_size
         self.learning_rate = learning_rate
@@ -1509,6 +1580,7 @@ class StreamingChunkSBOWTrainer:
 
     @property
     def avg_loss(self):
+        """Mean SBOW loss across all training calls so far; 0 if none."""
         return self._total_loss / self._loss_count if self._loss_count else 0.0
 
     def _tokenize(self, text: str) -> List[int]:
@@ -1519,7 +1591,11 @@ class StreamingChunkSBOWTrainer:
         return chunks_per_row[0]
 
     def process_document(self, text: str) -> None:
-        """Train SBOW per sentence over BPE-tokenized text."""
+        """Train SBOW per sentence over BPE-tokenized text.
+
+        Tokenizes each sentence into chunk ids via ``chunk_layer`` and
+        runs one training step per sentence with at least 2 chunks.
+        """
         for sent_text, _ in parse(text, lex='sentences'):
             chunk_ids = self._tokenize(sent_text)
             if len(chunk_ids) >= 2:
@@ -1562,7 +1638,12 @@ class StreamingChunkSBOWTrainer:
         self._loss_count += int(N)
 
     def finish(self) -> "WordVectors":
-        """Return a chunk-keyed WordVectors (wrapped into the unit cell)."""
+        """Return a chunk-keyed WordVectors (wrapped into the unit cell).
+
+        Keys are latin-1 decodes of each BPE chunk's byte tuple, so
+        the saved artifact is human-readable even though the codebook
+        is byte-tuple-indexed at training time.
+        """
         with torch.no_grad():
             vectors = _wrap_unit_ball(self.model.embeddings.weight).detach().cpu()
         return WordVectors(vectors, list(self.idx_to_key))
@@ -1683,7 +1764,12 @@ def train_bpe(shard_paths, output_path, *,
               max_docs=10000, n_vectors=4096,
               chunking_frequency=2, vector_size=100, epochs=10,
               batch_size=32, max_seq=2048, learning_rate=0.001):
-    """Convenience: Phase A then Phase B in one invocation."""
+    """Convenience: Phase A then Phase B in one invocation.
+
+    Runs ``discover_bpe`` (codebook discovery) followed by ``embed_bpe``
+    (vector training over the discovered codebook). Returns the final
+    chunk-keyed WordVectors.
+    """
     discover_bpe(shard_paths, output_path,
                  max_docs=max_docs, n_vectors=n_vectors,
                  chunking_frequency=chunking_frequency,
@@ -1724,7 +1810,12 @@ def prune_embeddings(path, min_frequency, output=None):
 
 
 def _find_embeddings(path=None):
-    """Locate and load a .pt embedding file from standard paths."""
+    """Locate and load a .pt embedding file from standard paths.
+
+    With ``path`` set, tries just that file. Without it, walks a
+    fixed list of common output locations. Exits with a hint on
+    failure rather than raising, since this is a CLI entry helper.
+    """
     candidates = [path] if path else [
         "output/BasicModel.kv",
         "output/embeddings/sentence.pt",

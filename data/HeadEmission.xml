@@ -6,14 +6,10 @@
        plumbing fixture referenced from test_head_emission.py. -->
   <architecture>
     <modelType>embedding</modelType>
-    <conceptualOrder>1</conceptualOrder>
-    <useButterflies>false</useButterflies>
     <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).
-         Setting nWhere/nWhen=0 keeps D = nDim so the SyntacticLayer's
-         pair_scorer linear is shape-compatible with the live tensor
-         during chart compose. -->
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+         model.xml's default nWhere=nWhen=0 already keeps D=nDim, so the
+         SyntacticLayer's pair_scorer linear is shape-compatible with the
+         live tensor during chart compose. -->
 
     <data>
       <dataset>inline</dataset>
@@ -24,12 +20,9 @@
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
       <batchSize>4</batchSize>
-      <learningRate>0.001</learningRate>
       <autoload>false</autoload>
-      <autosave>false</autosave>
     </training>
   </architecture>
 
@@ -44,9 +37,6 @@
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <lexer>word</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
@@ -55,17 +45,13 @@
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
-    <codebook>false</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -78,13 +64,9 @@
     <nOutput>1</nOutput>
     <nDim>8</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <nonlinear>false</nonlinear>
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
     <chartCompose>true</chartCompose>
     <downwardGeneration>true</downwardGeneration>
     <language>
@@ -97,7 +79,6 @@
           <rule>S = C</rule>
         </generate>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 

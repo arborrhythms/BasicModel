@@ -64,6 +64,12 @@ class ReverseAdapter(nn.Module):
     """
 
     def __init__(self, wrapped):
+        """Hold ``wrapped`` as a submodule when it is an nn.Module.
+
+        Non-Module wrapped objects are stashed via object.__setattr__ to
+        avoid nn.Module's auto-registration of attributes that aren't
+        modules / tensors.
+        """
         super().__init__()
         if isinstance(wrapped, nn.Module):
             self.wrapped = wrapped
@@ -72,6 +78,11 @@ class ReverseAdapter(nn.Module):
             self.wrapped = None
 
     def forward(self, subspace):
+        """Delegate to ``wrapped.reverse(subspace)``.
+
+        Resolves to the nn.Module submodule when present, otherwise
+        falls back to the non-Module attribute stashed at __init__.
+        """
         target = self.wrapped if self.wrapped is not None else self._wrapped_nonmodule
         return target.reverse(subspace)
 
@@ -94,10 +105,17 @@ class SubsymbolicTee(nn.Module):
     """
 
     def __init__(self, subsymbolicSpace):
+        """Hold the optional subsymbolic space. None = pure pass-through."""
         super().__init__()
         self.subsymbolicSpace = subsymbolicSpace
 
     def forward(self, subspace):
+        """Invoke subsymbolicSpace as a side effect; return subspace unchanged.
+
+        No-op when the subsymbolic space wasn't constructed or the
+        input subspace is empty. The subsymbolic event is consumed at
+        the *next* conceptual order, not here.
+        """
         if self.subsymbolicSpace is None or subspace is None:
             return subspace
         if hasattr(subspace, 'is_empty') and subspace.is_empty():
@@ -106,6 +124,7 @@ class SubsymbolicTee(nn.Module):
         return subspace
 
     def reverse(self, subspace):
+        """Identity on the reverse path; subsymbolic is forward-only."""
         return subspace
 
 
@@ -118,14 +137,17 @@ class CachePoint(nn.Module):
     """
 
     def __init__(self):
+        """Initialize the cache slot to ``None``."""
         super().__init__()
         self.last = None
 
     def forward(self, subspace):
+        """Cache the subspace in ``self.last`` and pass through unchanged."""
         self.last = subspace
         return subspace
 
     def reverse(self, subspace):
+        """Identity on reverse: the cached value already lives in ``last``."""
         return subspace
 
 
@@ -144,6 +166,12 @@ class ChartCompose(nn.Module):
     """
 
     def __init__(self, word_space):
+        """Hold a non-owning reference to the word space.
+
+        Bypasses nn.Module's auto-registration to avoid a wordSpace ->
+        chart -> ... -> wordSpace ownership cycle. The word space lives
+        at the model level.
+        """
         super().__init__()
         # Stash as a non-Module attribute to avoid the wordSpace -> chart
         # -> ... -> wordSpace cycle that nn.Module ownership would
@@ -151,6 +179,14 @@ class ChartCompose(nn.Module):
         object.__setattr__(self, '_word_space', word_space)
 
     def forward(self, subspace):
+        """Run the chart's compose pass; write rule cursors as side effect.
+
+        Materializes the subspace, flattens any K microbatch axis,
+        invokes ``wordSpace.compose``, and (signal router mode) writes
+        the router's transformed slab back into ``subspace.event`` so
+        the differentiable signal reaches downstream spaces. Failures
+        are logged advisory-style and do not break the forward pass.
+        """
         ws = self._word_space
         if ws is None or subspace is None:
             return subspace
@@ -205,10 +241,17 @@ class ChartGenerate(nn.Module):
     """
 
     def __init__(self, word_space):
+        """Hold a non-owning reference to the word space (see ChartCompose)."""
         super().__init__()
         object.__setattr__(self, '_word_space', word_space)
 
     def forward(self, subspace):
+        """Run the chart's outside / generation pass on the subspace.
+
+        Symmetric to ChartCompose.forward, but invokes ``generate``
+        and does not write back into subspace.event. Same K-axis
+        flatten convention, same advisory-error handling.
+        """
         ws = self._word_space
         if ws is None or subspace is None:
             return subspace
@@ -241,6 +284,11 @@ class GrammarMergeGlue(nn.Module):
     """
 
     def __init__(self, stage_idx: int, initial_n: int, is_last: bool):
+        """Record stage index, initial N, and the last-stage flag.
+
+        ``is_last`` makes this glue a transparent pass-through (the
+        deepest conceptual stage shouldn't halve again).
+        """
         super().__init__()
         self.stage_idx = int(stage_idx)
         self.initial_n = int(initial_n)
@@ -248,6 +296,12 @@ class GrammarMergeGlue(nn.Module):
         self._merge_diff = None
 
     def forward(self, subspace):
+        """Average adjacent pairs along the N axis; cache the difference.
+
+        Halves N from 2K to K and writes the cached ``left - right``
+        difference to ``self._merge_diff`` so ``reverse`` can rebuild
+        the unmerged pair. No-op on empty / last-stage subspaces.
+        """
         if subspace.is_empty():
             return subspace
         if self.is_last:
@@ -260,6 +314,12 @@ class GrammarMergeGlue(nn.Module):
         return subspace
 
     def reverse(self, subspace):
+        """Invert the average-merge using the cached difference.
+
+        Reconstructs left/right from ``mid +/- diff/2`` and re-interleaves
+        them along N. Clears the cache after use. Asserts the matching
+        forward already populated ``_merge_diff``.
+        """
         if subspace.is_empty():
             return subspace
         if self.is_last:
@@ -294,10 +354,18 @@ class FlattenKWrapper(nn.Module):
     """
 
     def __init__(self, body):
+        """Wrap the inner body that operates on [B*K, N, D] tensors."""
         super().__init__()
         self.body = body
 
     def forward(self, subspace):
+        """Flatten K -> batch, run the body, restore the K axis.
+
+        Pass-through when the subspace has no K axis. Otherwise reshapes
+        [B, K, N, D] -> [B*K, N, D] before the body call and reshapes
+        the body's [B*K, N, Dout] back to [B, K, N, Dout]. Mutates
+        ``subspace.k_axis`` across the call to keep the body honest.
+        """
         # Pass-through for non-microbatch paths (k_axis=False subspaces).
         if not subspace.k_axis:
             return self.body(subspace)

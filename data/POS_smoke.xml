@@ -10,17 +10,6 @@
        the chart picked. -->
   <architecture>
     <modelType>embedding</modelType>
-    <conceptualOrder>1</conceptualOrder>
-    <useButterflies>false</useButterflies>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
-    <maskedPrediction>NONE</maskedPrediction>
-    <truthBiasScale>0.1</truthBiasScale>
-    <LuminosityWeight>0.1</LuminosityWeight>
-    <UniversalityWeight>0.1</UniversalityWeight>
-    <weightsPath></weightsPath>
 
     <writeSyntax>true</writeSyntax>
     <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>
@@ -47,7 +36,6 @@
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>80</numEpochs>
       <batchSize>16</batchSize>
       <learningRate>0.005</learningRate>
@@ -55,8 +43,6 @@
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>
-      <autosave>false</autosave>
-      <certainty>false</certainty>
     </training>
   </architecture>
 
@@ -68,7 +54,6 @@
     <!-- Default w_max is now nInput; explicit override here documents
          that we want the chart to span the full padded sentence. -->
     <wMax>8</wMax>
-    <downwardGeneration>false</downwardGeneration>
     <language>
       <start>S</start>
       <grammar>
@@ -110,7 +95,6 @@
           </symbols>
         </compose>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 
@@ -118,9 +102,6 @@
     <nOutput>8</nOutput>
     <nDim>16</nDim>
     <nVectors>128</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <lexer>word</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
@@ -129,36 +110,26 @@
     <nDim>16</nDim>
     <nVectors>128</nVectors>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
-    <codebook>false</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>16</nDim>
     <nVectors>128</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
     <nOutput>8</nOutput>
     <nDim>16</nDim>
     <nVectors>128</nVectors>
-    <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
     <useVQVAE>true</useVQVAE>
-    <commitmentBeta>0.25</commitmentBeta>
   </SymbolicSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>1</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <nonlinear>false</nonlinear>
   </OutputSpace>
 </model>

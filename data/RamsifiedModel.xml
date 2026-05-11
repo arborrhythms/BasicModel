@@ -8,37 +8,26 @@
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maskedPrediction>AR</maskedPrediction>
-    <maxResponseLength>4096</maxResponseLength>
     <weightsPath>RamsifiedModel.ckpt</weightsPath>
     <embeddingPath>MentalModel.kv</embeddingPath>
 
     <data>
       <shardDir>data/fineweb</shardDir>
-      <numShards>1</numShards>
-      <maxDocs>10000</maxDocs>
       <minFrequency>0.00001</minFrequency>
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
-      <batchSize>64</batchSize>
-      <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>AR</trainEmbedding>
       <autoload>false</autoload>
-      <autosave>false</autosave>
-      <certainty>false</certainty>
     </training>
 
   </architecture>
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
     <language>
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
@@ -58,7 +47,6 @@
         <S>lift(S, S)</S>
         <S>lift(S, S, S)</S>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 
@@ -77,17 +65,13 @@
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
-    <codebook>false</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -101,9 +85,6 @@
     <nOutput>1</nOutput>
     <nDim>100</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <nonlinear>false</nonlinear>
   </OutputSpace>
 
 </model>

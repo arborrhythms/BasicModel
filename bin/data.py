@@ -39,7 +39,12 @@ def _shard_filename(index):
     return f"shard_{index:05d}.parquet"
 
 def download_shard(index, data_dir):
-    """Download a single shard if not already present. Returns filepath or None."""
+    """Download a single shard if not already present. Returns filepath or None.
+
+    Retries up to 5 times with exponential backoff. Uses a ``.tmp``
+    file rename to avoid leaving a partial parquet on disk on failure.
+    Returns ``None`` after all retries fail (logs to stdout).
+    """
     filename = _shard_filename(index)
     filepath = os.path.join(data_dir, filename)
     if os.path.exists(filepath):
@@ -72,7 +77,13 @@ def download_shard(index, data_dir):
     return None
 
 def get_shard_paths(data_dir, num_shards=1, random_select=False):
-    """Ensure shards are downloaded and return their file paths."""
+    """Ensure shards are downloaded and return their file paths.
+
+    ``random_select`` picks ``num_shards`` distinct indices from the
+    valid range for variety across runs; otherwise indices are
+    contiguous from 0. Creates ``data_dir`` if missing. Skips any
+    index whose download fails.
+    """
     os.makedirs(data_dir, exist_ok=True)
     if random_select and num_shards <= MAX_SHARD:
         import random as _rng
@@ -88,7 +99,12 @@ def get_shard_paths(data_dir, num_shards=1, random_select=False):
     return paths
 
 def iter_documents(shard_paths, max_docs=None):
-    """Yield text documents from parquet shard files."""
+    """Yield text documents from parquet shard files.
+
+    Reads each shard row-group at a time to avoid materializing the
+    entire shard in memory. Stops after ``max_docs`` documents when
+    set; otherwise yields everything.
+    """
     count = 0
     for filepath in shard_paths:
         pf = pq.ParquetFile(filepath)
@@ -145,6 +161,13 @@ class SentenceStreamDataset(IterableDataset):
     """
 
     def __init__(self, inputs, num_streams, outputs=None, slab_bytes=None):
+        """Split ``inputs`` into ``num_streams`` contiguous slabs.
+
+        ``slab_bytes`` selects byte-cursor mode (UTF-8 walk over text
+        rows) when set; ``None`` selects trial-cursor mode (one tick =
+        one batch of trials). Tail items past ``num_streams *
+        stream_length`` are dropped so every step is rectangular.
+        """
         n = (inputs.shape[0] if isinstance(inputs, torch.Tensor)
              else len(inputs))
         if n == 0:
@@ -176,6 +199,7 @@ class SentenceStreamDataset(IterableDataset):
             self._trial_step = 0
 
     def __len__(self):
+        """Number of timesteps in one epoch (per-stream length)."""
         return self.stream_length
 
     @staticmethod
@@ -187,6 +211,13 @@ class SentenceStreamDataset(IterableDataset):
         return [data[i] for i in indices]
 
     def __iter__(self):
+        """Back-compat trial iterator: yield one batch per timestep.
+
+        Iterates the trial-cursor logic sharded across DataLoader
+        workers so ``num_workers>0`` doesn't replay the same batches.
+        Canonical access is ``next_tick``; ``__iter__`` exists for tests
+        that hold a DataLoader directly.
+        """
         # Back-compat path for callers that hold the ``DataLoader``
         # directly (existing tests, e.g. test_stream_smoke). The
         # canonical dispatch under the brick-vectorization handoff
@@ -285,6 +316,13 @@ class SentenceStreamDataset(IterableDataset):
         return self._byte_next_tick()
 
     def _byte_next_tick(self):
+        """Read one byte-cursor tick of ``slab_bytes`` bytes per row.
+
+        Returns ``(slab[B, slab_bytes] uint8, None, hard_eos[B])``.
+        Rows that finished their assigned window emit pure NULL pads.
+        Rows that crossed a doc boundary set hard_eos True and advance
+        to the next doc; mutates per-row ``doc_idx`` / ``offset`` state.
+        """
         slab = torch.zeros(
             self.num_streams, self.slab_bytes, dtype=torch.uint8)
         hard_eos = [False] * self.num_streams
@@ -312,6 +350,13 @@ class SentenceStreamDataset(IterableDataset):
         return slab, None, hard_eos
 
     def _trial_next_tick(self):
+        """Read one trial-cursor tick (one trial per row).
+
+        Returns ``(input, output, hard_eos=[True]*B)`` -- every trial is
+        atomic so hard_eos fires every tick. Past-end ticks emit empty
+        batches with all-True hard_eos so callers can drain cleanly.
+        Advances ``self._trial_step``.
+        """
         if self._trial_step >= self.stream_length:
             # Defensive: callers should check all_done() first; emit an
             # empty batch with all-True hard_eos so the outer loop's
@@ -412,6 +457,12 @@ class Data():
     combinedTokens    = []
 
     def __init__(self):
+        """Initialize empty train / validation / test splits.
+
+        Populates per-split input / output lists, the combined-tokens
+        vocabulary slot, reconstruction buffers, and the global min/max
+        scaling values (filled later by ``_compute_ranges``).
+        """
         self.train_input       = []
         self.train_output      = []
         self.validation_input  = []
@@ -430,21 +481,31 @@ class Data():
 
     @property
     def nInput(self):
-        """Number of input features, derived from train_input shape."""
+        """Number of input features, derived from train_input shape.
+
+        Tensor inputs: dim 1; list inputs (LM): list length.
+        """
         if isinstance(self.train_input, torch.Tensor):
             return self.train_input.shape[1]
         return len(self.train_input)  # list of strings for LM
 
     @property
     def inputDim(self):
-        """Dimensionality per input feature, derived from train_input shape."""
+        """Dimensionality per input feature, derived from train_input shape.
+
+        Returns ``train_input.shape[2]`` for 3D tensor data, else 1.
+        """
         if isinstance(self.train_input, torch.Tensor) and self.train_input.ndim >= 3:
             return self.train_input.shape[2]
         return 1
 
     @property
     def nOutput(self):
-        """Number of output features, derived from train_output shape."""
+        """Number of output features, derived from train_output shape.
+
+        Tensor outputs: dim 1; list-of-tensor outputs: length of the
+        first item; empty list: 0.
+        """
         if isinstance(self.train_output, torch.Tensor):
             return self.train_output.shape[1]
         if isinstance(self.train_output, list) and len(self.train_output) > 0:
@@ -453,12 +514,22 @@ class Data():
 
     @property
     def outputDim(self):
-        """Dimensionality per output feature, derived from train_output shape."""
+        """Dimensionality per output feature, derived from train_output shape.
+
+        Returns ``train_output.shape[2]`` for 3D tensor data, else 1.
+        """
         if isinstance(self.train_output, torch.Tensor) and self.train_output.ndim >= 3:
             return self.train_output.shape[2]
         return 1
 
     def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None, dat=None):
+        """Dispatch to the per-dataset loader, then compute ranges + move to device.
+
+        ``dataset`` selects ``mnist`` / ``xor`` / ``tomatoes`` / ``text``
+        (FineWeb-EDU shards) / ``inline`` (XML payload). Mutates the
+        train / validation / test attributes and the min/max scaling
+        values; finally moves tensors to ``TheDevice``.
+        """
         if dataset == "mnist":
             self.loadMNist()
         if dataset == "xor":
@@ -631,6 +702,12 @@ class Data():
             raise TypeError(f"pushOutput: unsupported train_output type {type(self.train_output)}")
 
     def shuffle(self):
+        """Permute training inputs and outputs in unison.
+
+        Uses a single random permutation so input / output pairs stay
+        aligned. Works for both list and tensor data; validation /
+        test splits are untouched.
+        """
         rand_indx = torch.randperm(len(self.train_output))
         if isinstance(self.train_input, list):
             self.train_input  = [self.train_input[i] for i in rand_indx]
@@ -639,6 +716,12 @@ class Data():
             self.train_input = self.train_input[rand_indx]
             self.train_output = self.train_output[rand_indx]
     def loadMNist(self):
+        """Read MNIST train/test CSVs into per-pixel float tensors.
+
+        Normalizes pixels by mean and std of the train split, builds
+        one-hot label tensors, and mirrors the test split into the
+        validation slot. Sets ``inputLength = 28 * 28``.
+        """
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
         train = df.values
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_test.csv'))
@@ -662,6 +745,12 @@ class Data():
             self.validation_output[i][ndx:ndx+1] = 1.0
         self.inputLength = 28 * 28
     def loadXOR(self):
+        """Load a 4-sentence XOR toy dataset and hand off to ``processLM``.
+
+        All three splits share the same four sentences and ``[0,1,1,0]``
+        XOR labels. Used as the smallest end-to-end smoke test for the
+        text pipeline.
+        """
         data = {
             "train": {
                 "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
@@ -772,6 +861,11 @@ class Data():
             labels.append([float(i % 2)])
         return texts, labels
     def loadTomatoes(self):
+        """Load the rotten_tomatoes HuggingFace dataset (cached on disk).
+
+        Downloads on first call, then caches as a single ``.data``
+        pickle for fast reload. Forwards the splits to ``processLM``.
+        """
         cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
 
         # Load or cache the pre-trained Word2Vec model
@@ -845,6 +939,14 @@ class Data():
               f"({n_train} train, {n_val} val, {n_test} test)")
         self.processLM(data)
     def processLM(self, data):
+        """Stash text splits as lists; tensorize labels eagerly when numeric.
+
+        Inputs are kept as raw strings (tensorized lazily in
+        ``prepInput``). Labels with string values become an LM target
+        deferral (``_lm_labels``), numeric labels become per-row float
+        tensors. Missing labels produce zero-tensor sentinels sized
+        for OutputSpace.
+        """
         train_tokens      = data["train"]["text"]
         train_labels      = data["train"]["label"]
         validation_tokens = data["validation"]["text"]
@@ -890,6 +992,12 @@ class Data():
             self.test_output = [torch.as_tensor(l, dtype=torch.float) for l in test_labels]
 
     def tokenize(self, TheLanguageModel):
+        """Replace each split's text with ``TheLanguageModel.tokenize`` output.
+
+        Used when the consumer wants per-document token id lists rather
+        than raw strings (e.g., when the embedding pipeline does the
+        tokenization upstream of the model).
+        """
         self.train_input      = TheLanguageModel.tokenize(self.train_input)
         self.validation_input = TheLanguageModel.tokenize(self.validation_input)
         self.test_input       = TheLanguageModel.tokenize(self.test_input)
@@ -934,6 +1042,11 @@ class Data():
             kwargs["prefetch_factor"] = prefetch_factor
         return DataLoader(ds, **kwargs)
     def data(self):
+        """Return the train / validation / test splits as a nested dict.
+
+        Mirrors the input layout that ``processLM`` consumes. Useful for
+        debugging or for handing the structured view to another loader.
+        """
         data = {
             "train": {
                 "text": self.train_input,
@@ -949,13 +1062,23 @@ class Data():
             }
         }
     def getEmbeddingSize(self):
+        """Return ``(input_size, output_size)`` for embedding layer sizing."""
         return self.getInputSize(), self.getOutputSize()
     def getInputSize(self):
+        """Return per-input vector length (string -> inputLength; else dim 0).
+
+        Strings use the fixed ``self.inputLength`` byte buffer; tensor
+        rows report their leading dim. Assumes the split is non-empty.
+        """
         if self.train_input and isinstance(self.train_input[0], str):
             return self.inputLength
         inputEmbeddingSize  = self.train_input[0].shape[0]
         return inputEmbeddingSize
     def getOutputSize(self):
+        """Return per-output vector length (first item's leading dim).
+
+        Assumes ``self.train_output`` is a non-empty list of tensors.
+        """
         outShape = len(self.train_output)
         outputEmbeddingSize = self.train_output[0].shape[0]
         return outputEmbeddingSize
@@ -976,6 +1099,12 @@ class Data():
         vocab_size = weights.shape[0]
 
         def words_to_embeddings(word_list):
+            """Look up each word in the CBOW vocabulary, return L2-normalized vectors.
+
+            Unknown words emit a zero vector. The lookup is detached and
+            cloned so later optimizer steps cannot move the targets out
+            from under the loss.
+            """
             targets = []
             for word in word_list:
                 w = word.lower()
@@ -1000,6 +1129,12 @@ class Data():
         self._lm_labels = None  # free memory
 
     def stringTensor(self, string):
+        """ASCII-encode ``string`` into a fixed-length ``int8`` tensor.
+
+        Non-ASCII chars (smart quotes, accents) are replaced. The
+        result is truncated or NULL-padded to ``self.inputLength`` so
+        downstream callers can stack across rows.
+        """
         # Encode to ASCII, replacing non-ASCII chars (smart quotes, accents, etc.)
         ascii_values = list(string.encode('ascii', errors='replace'))[:self.inputLength]
         tensor = torch.tensor(ascii_values, dtype=torch.int8)

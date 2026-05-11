@@ -50,7 +50,12 @@ _rate_limit = int(os.getenv("BASICMODEL_RATE_LIMIT", "60"))  # requests per minu
 _rate_window: dict[str, list[float]] = {}
 
 def _check_rate_limit(ip: str) -> bool:
-    """Return True if request is within rate limit, False if exceeded."""
+    """Return True if request is within rate limit, False if exceeded.
+
+    Uses a 60-second sliding window keyed on client IP. ``_rate_limit``
+    of 0 disables the cap. Mutates ``_rate_window[ip]`` in place: prunes
+    entries older than the window and appends ``now`` on accept.
+    """
     if _rate_limit <= 0:
         return True
     now = time.monotonic()
@@ -70,7 +75,12 @@ _api_token = os.getenv("BASICMODEL_API_TOKEN", "")
 
 @app.before_request
 def auth_and_rate_check():
-    """Check bearer token and rate limit on all endpoints except /health."""
+    """Check bearer token and rate limit on all endpoints except /health.
+
+    Flask ``before_request`` hook. Returns a JSON error response (401 or
+    429) on rejection; returns ``None`` to let the request continue.
+    Bearer auth is skipped when ``BASICMODEL_API_TOKEN`` is unset.
+    """
     if request.path == "/health":
         return None
 
@@ -92,7 +102,12 @@ def auth_and_rate_check():
 
 @app.after_request
 def add_security_headers(response):
-    """Restrict CORS to localhost (BasicModel only serves WikiOracle locally)."""
+    """Restrict CORS to localhost (BasicModel only serves WikiOracle locally).
+
+    Flask ``after_request`` hook. Echoes the ``Origin`` header back only
+    for 127.0.0.1 / localhost callers and sets the allow-methods /
+    allow-headers pair on every response.
+    """
     origin = request.headers.get("Origin", "")
     if origin.startswith(("http://127.0.0.1", "https://127.0.0.1",
                           "http://localhost", "https://localhost")):
@@ -105,7 +120,13 @@ def add_security_headers(response):
 # --- Model loading ---
 
 def _load_model(config_path=None):
-    """Load the XML-selected model class."""
+    """Load the XML-selected model class.
+
+    Defaults to ``../data/BasicModel.xml`` when ``config_path`` is None.
+    Loads any configured dataset into ``TheData``, constructs the model
+    via ``BaseModel.from_config``, evaluates and compiles it. Returns
+    ``(model, cfg)``.
+    """
     from Models import BaseModel
     from data import TheData
 
@@ -240,7 +261,12 @@ def chat_completions():
 
 @app.route("/health", methods=["GET"])
 def health():
-    """Health check endpoint."""
+    """Health check endpoint.
+
+    Returns a JSON body with ``ok`` (True once the model is loaded),
+    the model name, and a flattened copy of the architecture config so
+    monitors can sanity-check what is actually running.
+    """
     return jsonify({
         "ok": _model is not None,
         "model": "BasicModel",
@@ -250,6 +276,13 @@ def health():
 
 
 def main():
+    """CLI entry point: parse args, load model, warm up, run Flask app.
+
+    Resolves the config path from ``--config``, ``$BASIC_XML`` or the
+    XML default. Pays the ``torch.compile`` warmup cost up-front so the
+    first real request does not trip the client's read timeout. Mutates
+    the module-level ``_model`` and ``_model_config`` globals.
+    """
     global _model, _model_config
 
     parser = argparse.ArgumentParser(

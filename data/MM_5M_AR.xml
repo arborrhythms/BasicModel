@@ -10,26 +10,17 @@
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <processSymbols>false</processSymbols>
-    <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <truthBiasScale>0.1</truthBiasScale>
-    <LuminosityWeight>0.1</LuminosityWeight>
-    <UniversalityWeight>0.1</UniversalityWeight>
-    <maxResponseLength>4096</maxResponseLength>
     <weightsPath>MM_5M_AR.ckpt</weightsPath>
     <embeddingPath>MM_5M_AR.kv</embeddingPath>
     <amp>bf16</amp>
 
     <data>
       <shardDir>data/fineweb</shardDir>
-      <numShards>1</numShards>
-      <maxDocs>10000</maxDocs>
       <minFrequency>0.00001</minFrequency>
     </data>
 
     <training>
-      <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
       <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
@@ -37,20 +28,13 @@
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
       <trainEmbedding>AR</trainEmbedding>
-      <autoload>true</autoload>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
       <sentenceContextWindow>5</sentenceContextWindow>
-      <sentenceCentroidHistory>3</sentenceCentroidHistory>
-      <sentenceLambda>1.01</sentenceLambda>
-      <sentencePredictionScale>0.1</sentencePredictionScale>
-      <certainty>false</certainty>
     </training>
 
     <server>
-      <host>127.0.0.1</host>
       <port>8005</port>
-      <timeout>120</timeout>
     </server>
 
   </architecture>
@@ -61,9 +45,6 @@
     <nVectors>4096</nVectors>
     <nOutput>4096</nOutput>
     <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
-    <lexer>word</lexer>
-    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -71,12 +52,9 @@
     <nVectors>1000000</nVectors>
     <nDim>6</nDim>
     <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
     <codebook>true</codebook>
-    <chunking>lexicon</chunking>
     <chunkingFrequency>1</chunkingFrequency>
   </PerceptualSpace>
 
@@ -86,10 +64,6 @@
     <nOutput>8</nOutput>
     <nDim>1024</nDim>
     <nVectors>512</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
     <codebook>true</codebook>
     <chunking>lexicon</chunking>
   </ConceptualSpace>
@@ -100,7 +74,6 @@
     <nVectors>1024</nVectors>
     <nDim>6</nDim>
     <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <codebook>true</codebook>
     <accumulateTruth>0</accumulateTruth>
@@ -110,14 +83,10 @@
     <nOutput>1</nOutput>
     <nDim>4</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
-
     <language>
       <!-- Start nonterminal: SyntacticLayer.compose marks a soft sentence
            boundary when row b's parse stack reduces to a single live leaf
@@ -128,7 +97,6 @@
         <S>S = intersection(S, S)</S>
         <S>S = union(S, S)</S>
       </grammar>
-      <interpretation>0.5</interpretation>
     </language>
   </WordSpace>
 

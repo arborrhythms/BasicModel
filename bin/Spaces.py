@@ -96,20 +96,38 @@ class Encoding(nn.Module):
     nDim = 0  # subclasses must set
 
     def __init__(self, index, maxVal):
+        """Record the encoding's slot positions and value bound.
+
+        ``index`` is the tuple of negative offsets into the embedding
+        tail; ``maxVal`` parameterizes the per-encoding scale (e.g.
+        the period of a quadrature encoding).
+        """
         super().__init__()
         self.index = index
         self.maxVal = maxVal
 
     def encode(self, value):
-        """Encode a value into nDim-wide representation. Subclass must override."""
+        """Encode a value into nDim-wide representation. Subclass must override.
+
+        Raises ``NotImplementedError`` -- subclasses define the actual
+        encoding (quadrature, identity, etc.).
+        """
         raise NotImplementedError
 
     def decode(self, encoded):
-        """Decode nDim-wide representation back to a value. Subclass must override."""
+        """Decode nDim-wide representation back to a value. Subclass must override.
+
+        Inverse of ``encode``; the round-trip is exact for invertible
+        encodings.
+        """
         raise NotImplementedError
 
     def resolve(self, embSize):
-        """Resolve negative index offsets to absolute indices for a given embedding size."""
+        """Resolve negative index offsets to absolute indices for a given embedding size.
+
+        Converts the per-encoding ``[-k, -(k-1), ...]`` slot offsets into
+        positive indices that ``y[:, :, index]`` can use directly.
+        """
         return np.add([embSize] * len(self.index), self.index)
 
     def reverse(self, y):
@@ -139,6 +157,7 @@ class QuadratureEncoding(Encoding):
     nDim = 2
 
     def __init__(self, index, maxVal):
+        """Set up the per-call frequency ``div_term = 2 * pi / maxVal``."""
         super().__init__(index, maxVal)
         self.div_term = 2 * math.pi / maxVal
 
@@ -199,16 +218,25 @@ class ActiveEncoding(Encoding):
     nDim = 2
 
     def __init__(self, maxVal=1.0):
+        """Initialize ActiveEncoding at slot ``[-5]`` with bivector width."""
         super().__init__([-5], maxVal)
 
     def encode(self, activation):
-        """Identity encode: activation values pass through."""
+        """Identity encode: activation values pass through.
+
+        Wraps scalar activations into a 1D tensor so downstream
+        consumers always see a tensor (never a Python float).
+        """
         if not isinstance(activation, torch.Tensor):
             activation = torch.tensor(float(activation))
         return activation.unsqueeze(-1) if activation.dim() == 0 else activation
 
     def decode(self, encoded):
-        """Identity decode: return activation tensor."""
+        """Identity decode: return activation tensor.
+
+        ActiveEncoding is a carrier -- the producing Space owns the
+        semantics; encode/decode are pure pass-through.
+        """
         return encoded
 class WhereEncoding(QuadratureEncoding):
     """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
@@ -272,10 +300,21 @@ class WhereEncoding(QuadratureEncoding):
 
     @classmethod
     def reset_codebook_registry(cls):
-        """Clear the registry (test/teardown helper)."""
+        """Clear the registry (test/teardown helper).
+
+        Drops every recorded ``(offset, n_vectors)`` entry so the next
+        ``allocate_codebook_slice`` starts at 0. Intended for test
+        isolation only.
+        """
         cls._codebook_registry = []
 
     def __init__(self, maxP=0, nWhere=2, nWhen=0):
+        """Place the where-encoding's slots dynamically before the when slots.
+
+        When ``nWhere`` is 0 the encoding is disabled (zero-width carrier),
+        otherwise the slot index is computed so it stays adjacent to the
+        when slots in the muxed ``[what, where, when]`` layout.
+        """
         if nWhere > 0:
             # Dynamic: where sits at [-(nWhere+nWhen), ..., -(nWhen+1)]
             index = [-(nWhere + nWhen) + i for i in range(nWhere)]
@@ -286,7 +325,12 @@ class WhereEncoding(QuadratureEncoding):
         self.p = 0
 
     def forward(self, x):
-        """Stamp sin/cos positional values into reserved embedding slots."""
+        """Stamp sin/cos positional values into reserved embedding slots.
+
+        Advances the per-batch counter ``self.p`` by ``batch``; asserts
+        before wrap so an overflow is loud. No-op when the encoding is
+        disabled (``nDim == 0``).
+        """
         if self.nDim == 0:
             return x
         batch = x.shape[0]
@@ -303,6 +347,7 @@ class WhereEncoding(QuadratureEncoding):
 
     @staticmethod
     def test():
+        """Self-test: encode then decode positions; print round-trip values."""
         pe = WhereEncoding(100, nWhere=2, nWhen=0)
         pe.p = 0
         x = torch.zeros([2, 4, 12], device=TheDevice.get())
@@ -325,6 +370,7 @@ class WhenEncoding(QuadratureEncoding):
     t = 0
 
     def __init__(self, maxT=10000, nWhen=2):
+        """Allocate the two when slots at the tail; disable when ``nWhen=0``."""
         if nWhen > 0:
             super().__init__([-2, -1], maxT)
         else:
@@ -333,7 +379,12 @@ class WhenEncoding(QuadratureEncoding):
         self.t = 0
 
     def forward(self, x):
-        """Stamp sin/cos temporal values into reserved embedding slots."""
+        """Stamp sin/cos temporal values into reserved embedding slots.
+
+        Reads the per-call ``self.t`` counter and writes the encoded
+        (sin, cos) pair for ``[t, t+batch)`` into the when slots.
+        Caller must invoke ``increment(batch)`` to advance ``t``.
+        """
         if self.nDim == 0:
             return x
         batch = x.shape[0]
@@ -347,11 +398,16 @@ class WhenEncoding(QuadratureEncoding):
         return y
 
     def increment(self, batch):
-        """Advance the global time counter by `batch` steps (called per forward pass)."""
+        """Advance the global time counter by `batch` steps (called per forward pass).
+
+        Mutates ``self.t`` in place. Should be called exactly once
+        per forward pass; redundant calls drift the temporal index.
+        """
         self.t += batch
 
     @staticmethod
     def test():
+        """Self-test: encode then decode times; print round-trip values."""
         te = WhenEncoding(10000)
         te.t = 0
         x = torch.zeros([2, 4, 10], device=TheDevice.get())
@@ -369,6 +425,12 @@ class WordEncoding(Encoding):
     nDim = 4  # (batch, vector, rule, order)
 
     def __init__(self, nBatch=0, nActive=0):
+        """Build a non-muxed Word encoding (no embedding slot allocation).
+
+        Word entries live in a side list, so this encoding has no
+        index. ``nBatch`` / ``nActive`` carry batch and per-row context
+        bounds for downstream consumers.
+        """
         super().__init__([], maxVal=0)  # no index slots -- not muxed
         self.nBatch = nBatch
         self.nActive = nActive
@@ -387,7 +449,11 @@ class WordEncoding(Encoding):
 
     def encode(self, batch, vector, rule, order=0,
                leaf1=-1, leaf2=-1, leaf3=-1):
-        """Validate and return a 7-tuple word."""
+        """Validate and return a 7-tuple word.
+
+        Asserts batch >= 0, vector >= 0, and rule is a valid global rule
+        id. ``leafN = -1`` means the leaf slot is unused.
+        """
         from Language import TheGrammar
         assert 0 <= batch, f"batch {batch} must be >= 0"
         assert 0 <= vector, f"vector {vector} must be >= 0"
@@ -395,7 +461,11 @@ class WordEncoding(Encoding):
         return (batch, vector, order, rule, leaf1, leaf2, leaf3)
 
     def decode(self, word):
-        """Unpack a word tuple into (batch, vector, rule)."""
+        """Unpack a word tuple into (batch, vector, rule).
+
+        Discards the order / leaf metadata; callers that need them
+        should index the raw tuple by the BATCH / RULE / LEAF1 / ... constants.
+        """
         return word[self.BATCH], word[self.VECTOR], word[self.RULE]
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
@@ -410,35 +480,56 @@ class WhatEncoding(Encoding):
     nDim = 0  # WhatEncoding does not occupy fixed index slots
 
     def __init__(self, inputShape=None, outputShape=None):
+        """Record the input / output shapes so per-call shape asserts can fire."""
         super().__init__([], 0)
         self.inputShape = inputShape
         self.outputShape = outputShape
 
     def forward(self, objects, **kwargs):
-        """Identity content pass-through."""
+        """Identity content pass-through.
+
+        WhatEncoding's role is shape bookkeeping; subclasses override
+        ``forward`` to apply the actual content transform.
+        """
         return objects
 
     def forwardBegin(self, x, batch):
-        """Validate or flatten input at the start of a forward pass."""
+        """Validate or flatten input at the start of a forward pass.
+
+        Asserts the [batch, inputShape[0], inputShape[1]] shape and
+        returns ``x`` unchanged so callers can chain.
+        """
         input_size = self.inputShape[1]
         assert list(x.shape) == [batch, self.inputShape[0], input_size]
         return x
 
     def forwardEnd(self, x, batch):
-        """Validate or unflatten output at the end of a forward pass."""
+        """Validate or unflatten output at the end of a forward pass.
+
+        Asserts the [batch, outputShape[0], outputShape[1]] shape;
+        any mismatch reports the actual vs. expected shapes in the message.
+        """
         output_size = self.outputShape[1]
         assert list(x.shape) == [batch, self.outputShape[0], output_size], \
             f"forwardEnd: got {list(x.shape)}, expected {[batch, self.outputShape[0], output_size]}"
         return x
 
     def reverseBegin(self, y, batch):
-        """Validate or flatten output-side state at the start of reverse()."""
+        """Validate or flatten output-side state at the start of reverse().
+
+        Mirror of ``forwardEnd``: ensures the reverse path receives
+        the shape it expects to invert.
+        """
         output_size = self.outputShape[1]
         assert list(y.shape) == [batch, self.outputShape[0], output_size]
         return y
 
     def reverseEnd(self, y, batch):
-        """Validate or unflatten input-side state at the end of reverse()."""
+        """Validate or unflatten input-side state at the end of reverse().
+
+        Mirror of ``forwardBegin``: confirms the reverse path produced
+        the original input shape.
+        """
         input_size = self.inputShape[1]
         assert list(y.shape) == [batch, self.inputShape[0], input_size]
         return y
@@ -510,12 +601,18 @@ class EventEncoding(Encoding):
     nDim = 0  # EventEncoding does not occupy fixed index slots
 
     def __init__(self, inputShape=None, outputShape=None):
+        """Record the optional input / output shapes used by split_aux helpers."""
         super().__init__([], 0)
         self.inputShape = inputShape
         self.outputShape = outputShape
 
     def forward(self, objects, **kwargs):
-        """Identity content pass-through."""
+        """Identity content pass-through.
+
+        EventEncoding is a no-op carrier; per-space subclasses do the
+        actual event transformation. Defined here so the base contract
+        is non-throwing.
+        """
         return objects
 
     def split_aux(self, y, nWhat):
@@ -568,6 +665,13 @@ class Basis(nn.Module):
     """
 
     def __init__(self):
+        """Initialize empty Basis state; subclasses own the weight tensor.
+
+        Sets the per-basis shape descriptors to defaults; ``create``
+        populates them. W is NOT stored on Basis itself -- subclasses
+        either ``register_buffer`` (Tensor / Codebook) or hand off to
+        ``wv._vectors`` (Embedding).
+        """
         super().__init__()
         # W is NOT stored here -- subclasses own the storage.
         # Tensor/Codebook use register_buffer; Embedding uses wv._vectors.
@@ -601,6 +705,10 @@ class Basis(nn.Module):
         raise NotImplementedError(f"{self.__class__.__name__} must implement setW()")
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True):
+        """Construct the module's submodules and parameters.
+        
+        Mutates ``self`` to install the layers and tensor buffers.
+        """
         self.nInput = nInput
         self.nVectors = nVectors
         self.nDim = nDim or 0
@@ -609,11 +717,19 @@ class Basis(nn.Module):
 
     @property
     def size(self):
+        """Size.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         return 0 if w is None else w.shape[0]
 
     @property
     def width(self):
+        """Width.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         return 0 if w is None else w.shape[-1]
 
@@ -623,25 +739,49 @@ class Basis(nn.Module):
 
     @property
     def activeIndices(self):
+        """Active indices.
+        
+        See class docstring for the operation contract.
+        """
         if self.activation is None:
             return None
         return self.activation != 0
 
     def clearActivation(self):
+        """Clear activation.
+        
+        See class docstring for the operation contract.
+        """
         self.activation = None
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         self.setW(y)
         return y
 
     def reverse_raw(self, y):
+        """Reverse raw.
+        
+        See class docstring for the operation contract.
+        """
         return y
 
     def quantize(self, x):
+        """Quantize.
+        
+        See class docstring for the operation contract.
+        """
         raise RuntimeError(f"{self.__class__.__name__} does not support quantize()")
 
     def _coerce_rows(self, value):
@@ -650,16 +790,28 @@ class Basis(nn.Module):
         return value
 
     def replace(self, new_W):
+        """Replace.
+        
+        See class docstring for the operation contract.
+        """
         self.setW(self._coerce_rows(new_W))
         return self.getW()
 
     def insert(self, new_W):
+        """Insert.
+        
+        See class docstring for the operation contract.
+        """
         new_W = self._coerce_rows(new_W)
         w = self.getW()
         self.setW(new_W if w is None else torch.cat([w, new_W], dim=0))
         return self.getW()
 
     def remove(self, indices):
+        """Remove.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         if w is None:
             return None
@@ -669,6 +821,10 @@ class Basis(nn.Module):
         return self.getW()
 
     def parameters_for_optimizer(self):
+        """Parameters for optimizer.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         return [w] if isinstance(w, nn.Parameter) else []
 
@@ -682,6 +838,10 @@ class Basis(nn.Module):
         return weight
 
     def _snap_content(self, content, weight=None, nWhat=None):
+        """Snap content.
+        
+        See class docstring for the operation contract.
+        """
         weight = self._prototype_weight(weight, context="reverse")
         nWhat = self.nDim if nWhat is None else nWhat
         snapped = content.clone()
@@ -710,6 +870,10 @@ class Basis(nn.Module):
         return snapped
 
     def norm(self, x):
+        """Norm.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.norm(x)
 
     def normalize(self, x=None):
@@ -843,9 +1007,17 @@ class Basis(nn.Module):
         )
 
     def pos(self, x):
+        """Pos.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.pos(x)
 
     def distance(self, x, y, monotonic=False, dim=-1):
+        """Distance.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.distance(x, y, monotonic=monotonic, dim=dim)
 
     def codebookDistance(self, x):
@@ -868,27 +1040,59 @@ class Basis(nn.Module):
     # Formulas live in Ops (Layers.py); see Ops docstrings for semantics.
 
     def part(self, x, y, monotonic=False, scalar=False):
+        """Part.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.part(x, y, monotonic=monotonic, scalar=scalar)
 
     def whole(self, x, y, monotonic=False, scalar=False):
+        """Whole.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.whole(x, y, monotonic=monotonic, scalar=scalar)
 
     def equal(self, x, y, monotonic=False, scalar=False):
+        """Equal.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.equal(x, y, monotonic=monotonic, scalar=scalar)
 
     def overlap(self, x, y, monotonic=False, scalar=False):
+        """Overlap.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.overlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def underlap(self, x, y, monotonic=False, scalar=False):
+        """Underlap.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.underlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def boundary(self, x, y, monotonic=False, scalar=False):
+        """Boundary.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.boundary(x, y, monotonic=monotonic, scalar=scalar)
 
     def copart(self, x, y, monotonic=False, scalar=False):
+        """Copart.
+        
+        See class docstring for the operation contract.
+        """
         return Ops.copart(x, y, monotonic=monotonic, scalar=scalar)
 
     def active_dense(self):
+        """Active dense.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         if self.activation is None or w is None:
             return None
@@ -919,6 +1123,10 @@ class Tensor(Basis):
     """
 
     def __init__(self, nVectors=0, nDim=0, W=None):
+        """Initialize Tensor; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.W = None
         self._active_payload = None
@@ -930,6 +1138,7 @@ class Tensor(Basis):
             self.W = torch.zeros(nVectors, nDim)
 
     def getW(self):
+        """Return the current weight tensor."""
         if self._active_payload is not None:
             return self._active_payload
         return self.W
@@ -961,10 +1170,18 @@ class Tensor(Basis):
         self._active_payload = None
 
     def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
         self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         self.setW(y)
         return y
 
@@ -998,11 +1215,19 @@ class Codebook(Basis):
 
         @staticmethod
         def forward(ctx, e, q):
+            """Forward pass.
+            
+            See class docstring for the operation this layer applies.
+            """
             ctx.save_for_backward(e.detach(), q.detach())
             return q
 
         @staticmethod
         def backward(ctx, grad_q):
+            """Backward.
+            
+            See class docstring for the operation contract.
+            """
             e, q = ctx.saved_tensors
             eps = 1e-8
             flat_shape = (-1, e.shape[-1])
@@ -1025,6 +1250,10 @@ class Codebook(Basis):
             return grad_e, None
 
     def __init__(self):
+        """Initialize Codebook; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.W = None
         # Transient per-forward activation payload. Held separately from
@@ -1083,6 +1312,7 @@ class Codebook(Basis):
     def getW(self):
         # While an activation payload is cached, callers see it; otherwise
         # they see the codebook Parameter.
+        """Return the current weight tensor."""
         if self._active_payload is not None:
             return self._active_payload
         return self.W
@@ -1126,11 +1356,19 @@ class Codebook(Basis):
         self._svd_dirty = True
 
     def getSize(self):
+        """Get size.
+        
+        See class docstring for the operation contract.
+        """
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
                polarity=False, category=False,
                invertible=False, STE=False, svdOrthogonal=False):
+        """Construct the module's submodules and parameters.
+        
+        Mutates ``self`` to install the layers and tensor buffers.
+        """
         super().create(
             nInput,
             nVectors,
@@ -1300,6 +1538,10 @@ class Codebook(Basis):
             self.category_logits.index_copy_(0, atom_idx, new)
 
     def updateWeights(self, embed_sum, cluster_size):
+        """Update weights.
+        
+        See class docstring for the operation contract.
+        """
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
 
     def addVectors(self, nVec=1, decay=0.9):
@@ -1389,6 +1631,10 @@ class Codebook(Basis):
         return self.getW()
 
     def quantize(self, x):
+        """Quantize.
+        
+        See class docstring for the operation contract.
+        """
         if self.customVQ:
             quantized, indices, commit_loss = self.vq(
                 x,
@@ -1467,6 +1713,10 @@ class Codebook(Basis):
 
     def _record_codebook_grad(self, grad):
         # grad shape: (nVectors, nDim)
+        """Record codebook grad.
+        
+        See class docstring for the operation contract.
+        """
         per_entry = grad.detach().norm(dim=-1).cpu()
         n = per_entry.shape[0]
         self._ensure_freezing_buffers(n)
@@ -1868,6 +2118,10 @@ class Codebook(Basis):
         return content
 
     def replace(self, new_vectors):
+        """Replace.
+        
+        See class docstring for the operation contract.
+        """
         new_vectors = self._coerce_rows(new_vectors)
         if self.customVQ and self.vq is not None:
             self.vq.codebook = new_vectors
@@ -1877,6 +2131,10 @@ class Codebook(Basis):
         return w
 
     def insert(self, new_vectors):
+        """Insert.
+        
+        See class docstring for the operation contract.
+        """
         new_vectors = self._coerce_rows(new_vectors)
         new_vectors = self.normalize(new_vectors)
         if new_vectors.ndim == 1:
@@ -1889,6 +2147,10 @@ class Codebook(Basis):
         return self.getW()
 
     def remove(self, indices):
+        """Remove.
+        
+        See class docstring for the operation contract.
+        """
         w = self.getW()
         if w is None:
             return None
@@ -1898,6 +2160,10 @@ class Codebook(Basis):
         return self.getW()
 
     def learn(self, x, target_idx, lr=0.01):
+        """Learn.
+        
+        See class docstring for the operation contract.
+        """
         x = F.normalize(x, p=2, dim=-1)
         w = self.getW()
         selected_vectors = w[target_idx]
@@ -1907,6 +2173,10 @@ class Codebook(Basis):
 
     @staticmethod
     def conceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
+        """Concept parthood.
+        
+        See class docstring for the operation contract.
+        """
         A_norm = A / A.norm()
         B_norm = B / B.norm()
         cross_prod = torch.linalg.cross(A_norm, B_norm)
@@ -1916,6 +2186,10 @@ class Codebook(Basis):
 
     @staticmethod
     def perceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
+        """Percept parthood.
+        
+        See class docstring for the operation contract.
+        """
         A, B = A.clamp(0, 1), B.clamp(0, 1)
         ratio = torch.minimum(A / (B + epsilon), torch.ones_like(A))
         return torch.prod(ratio).item()
@@ -1949,6 +2223,10 @@ class Embedding(Basis):
     _LEXICON_DEFAULT_CAPACITY = 65536
 
     def __init__(self):
+        """Initialize Embedding; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         self.pretrain = None       # PretrainModel, created in create()
         self.wv = None             # WordVectors (nn.Module with nn.Parameter)
@@ -2021,6 +2299,10 @@ class Embedding(Basis):
         return "".join(chr(int(c) & 0xFF) for c in buf).rstrip("\x00")
 
     def _token_stream(self, text):
+        """Token stream.
+        
+        See class docstring for the operation contract.
+        """
         if getattr(self, 'byte_mode', False):
             # Pass raw bytes / byte tensors directly to parse so
             # ``lex='bytes'`` produces exactly one token per input byte.
@@ -2179,6 +2461,10 @@ class Embedding(Basis):
         # W is managed by wv._vectors; getW() returns live data
 
     def replace(self, new_W):
+        """Replace.
+        
+        See class docstring for the operation contract.
+        """
         new_W = self._coerce_rows(new_W).to(TheDevice.get())
         with torch.no_grad():
             self.wv._vectors = nn.Parameter(new_W, requires_grad=True)
@@ -2328,7 +2614,14 @@ class Embedding(Basis):
                 # Build a synthetic ChunkLayer-shaped object just for
                 # bpe_to_lexicon_keys (it only needs ``id_to_bytes``).
                 class _Shim:
+                    """Minimal ChunkLayer-shaped adapter for bpe_to_lexicon_keys.
+
+                    Holds only the ``id_to_bytes`` dict that the key
+                    builder reads; avoids constructing a full ChunkLayer
+                    just to recover vocabulary strings.
+                    """
                     def __init__(self, id_to_bytes):
+                        """Store the chunk_id -> bytes_tuple mapping."""
                         self.id_to_bytes = id_to_bytes
                 id_to_bytes = {int(v): tuple(int(x) for x in k)
                                for k, v in vocab.items()}
@@ -2425,10 +2718,20 @@ class Embedding(Basis):
         return self.sparse_grad
 
     def parameters_for_optimizer(self):
+        """Parameters for optimizer.
+        
+        See class docstring for the operation contract.
+        """
         return self.embedding_parameters()
 
     def _ergodic_var(self, token_idx, device, dtype):
-        """Map CBOW's per-word sigma to a noise scale in [0, 1]."""
+        """Map CBOW's per-word sigma to a noise scale in [0, 1].
+
+        Returns None when ergodic mode is off, the model is in eval,
+        or the embedding has no pre-train metadata. Otherwise reads the
+        per-token sigma table and clamps to the [0, 1] interval the
+        downstream lookup expects.
+        """
         if (not self.ergodic) or (not self.training) or self.pretrain is None:
             return None
         sigma = getattr(self.pretrain, 'sigma', None)
@@ -2521,6 +2824,10 @@ class Embedding(Basis):
         return base_vec
 
     def _nearest_idx(self, vec, codebook=None):
+        """Nearest idx.
+        
+        See class docstring for the operation contract.
+        """
         if codebook is None:
             codebook = self.getW().detach()
         vec = vec.to(TheDevice.get())
@@ -2663,6 +2970,10 @@ class Embedding(Basis):
         return y
 
     def _decode_offset(self, positions, batch_idx, vector_idx, subspace=None):
+        """Decode offset.
+        
+        See class docstring for the operation contract.
+        """
         where_encoding = None if subspace is None else subspace.whereEncoding
         if where_encoding is None:
             return None
@@ -2675,6 +2986,10 @@ class Embedding(Basis):
         return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
 
     def _render_tokens(self, batch_tokens, buf_size=None):
+        """Render tokens.
+        
+        See class docstring for the operation contract.
+        """
         has_positions = any(offset is not None for _, offset in batch_tokens)
         if not has_positions:
             text = []
@@ -2750,7 +3065,13 @@ class Embedding(Basis):
         return content
 
     def decode_reverse_meta(self, vectors, subspace=None):
-        """Recover lexical metadata from restored reverse-path vectors."""
+        """Recover lexical metadata from restored reverse-path vectors.
+
+        Decodes the where / when slot encodings off the reverse-pass
+        tail of each vector, then runs the lexicon's nearest-neighbor
+        lookup to recover the original token string. Returns the
+        decoded position / time tensors and per-row token lists.
+        """
         # Collapse any spurious singleton dims so vectors ends up 3-D
         # [B, N, D]. Model output can arrive as [B, N, 1, D] from certain
         # OutputSpace configurations; the inner unit dim is vestigial.
@@ -3002,6 +3323,10 @@ class SubSpace(nn.Module):
                  whereEncoding=None, whenEncoding=None, wordEncoding=None,
                  object=None, what=None, where=None, when=None, activation=None,
                  word=None):
+        """Initialize SubSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super().__init__()
         # Phase 1: default normalizer uses the global TheData. Model
         # construction overrides this with its own Normalizer instance
@@ -3234,6 +3559,10 @@ class SubSpace(nn.Module):
         self.set_activation(act)
 
     def _coerce_basis(self, value, role):
+        """Coerce basis.
+        
+        See class docstring for the operation contract.
+        """
         if isinstance(value, Basis):
             return value
         if value is not None and not isinstance(value, torch.Tensor):
@@ -4576,6 +4905,10 @@ class WordSubSpace(SubSpace):
         # `whereEncoding.nDim` / `whenEncoding.nDim` to compute
         # `self.nWhere` / `self.nWhen`, and derives `self.nWhat` as
         # `outputShape[1] - nWhere - nWhen`.
+        """Initialize WordSubSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         _muxed = int(nWhat) + int(nWhere) + int(nWhen)
         assert _muxed <= int(nDim), (
             f"WordSubSpace columns exceed nDim: "
@@ -4915,6 +5248,10 @@ class Space(nn.Module):
     config_section = None  # set by subclasses
 
     def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
+        """Initialize Space; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         super(Space, self).__init__()
         # Phase 1: set by the model after construction. Spaces call
         # self.normalizer.{normalize,denormalize} instead of reaching into
@@ -5020,6 +5357,10 @@ class Space(nn.Module):
         object.__setattr__(self, 'wordSpace', wordSpace)
 
     def _build_object_basis(self):
+        """Build object basis.
+        
+        See class docstring for the operation contract.
+        """
         if not self.codebook:
             # No codebook configured: build a passthrough Tensor sized to
             # the muxed event width. Tensor.forward / .reverse are the
@@ -5195,6 +5536,10 @@ class Space(nn.Module):
     # _2d/_3d removed -- all layers now operate on [..., D] natively.
 
     def lookup(self, x):
+        """Lookup.
+        
+        See class docstring for the operation contract.
+        """
         activation = x[0]
         x = x.unsqueeze(0).unsqueeze(0)
         x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice.get()), x[:,:,1:]], dim=2)
@@ -5204,6 +5549,10 @@ class Space(nn.Module):
     def dereference(self, symbols):
         # we get [ batch x nConcepts x symbolEmbedding ],
         # and must compute [ batch x nConcepts x conceptEmbedding ]
+        """Dereference.
+        
+        See class docstring for the operation contract.
+        """
         batch = symbols.shape[0]
         nActive = self.outputShape[0]
         assert list(symbols.shape) == [batch, nActive, TheXMLConfig.space("SymbolicSpace", "nDim") + self.muxedSize - self.nWhat], "Incorrect input size for dereference"
@@ -5218,6 +5567,10 @@ class Space(nn.Module):
     def stats(self, x):
         #codebookUse = self.subspace.get_vectors().codebookUse
         #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.get_vectors().codebookAct.get()) }")
+        """Stats.
+        
+        See class docstring for the operation contract.
+        """
         return
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all layers and Basis slots.
@@ -5239,8 +5592,10 @@ class Space(nn.Module):
                 basis.set_sigma(sigma)
 
     def getParameters(self):
+        """Return optimizable parameters owned by this module."""
         return self.params
     def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
         for l in self.layers:
             if hasattr(l, 'paramUpdate'):
                 l.paramUpdate()
@@ -5384,6 +5739,10 @@ class InputSpace(Space):
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type="simple"):
 
+        """Initialize InputSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         lexer = TheXMLConfig.space(section, "lexer")
@@ -5459,13 +5818,25 @@ class InputSpace(Space):
             self.layers = nn.ModuleList([self.lift])
     # Data client interface
     def getTrainData(self):
+        """Get train data.
+        
+        See class docstring for the operation contract.
+        """
         return self.data.train_input, self.data.train_output
     def getTestData(self):
+        """Get test data.
+        
+        See class docstring for the operation contract.
+        """
         return self.data.test_input, self.data.test_output
     def prepInput(self, inputBatch):
         # Stash raw sentence strings for the AR outer loop in
         # BasicModel.forward() -- lets it compute N without rewiring
         # inp_items through runBatch's call signature.
+        """Prep input.
+        
+        See class docstring for the operation contract.
+        """
         if (isinstance(inputBatch, list) and inputBatch
                 and isinstance(inputBatch[0], str)):
             self._last_sentences = list(inputBatch)
@@ -5574,6 +5945,10 @@ class InputSpace(Space):
         return what_buf, where_idx, when_idx
 
     def shuffle(self):
+        """Shuffle.
+        
+        See class docstring for the operation contract.
+        """
         self.data.shuffle()
 
     def Start(self):
@@ -5883,6 +6258,10 @@ class InputSpace(Space):
         return self.subspace
 
     def reverse(self, subspace):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
         if hasattr(subspace, "is_empty") and subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -6095,6 +6474,10 @@ class PerceptualSpace(Space):
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
+        """Initialize PerceptualSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -6244,7 +6627,13 @@ class PerceptualSpace(Space):
                         f"({type(e).__name__}: {e}); starting cold.")
 
     def _register_requirements(self):
-        """Register PerceptualSpace-specific config requirements."""
+        """Register PerceptualSpace-specific config requirements.
+
+        Adds Config.require predicates that enforce codebook /
+        invertibility / butterfly shape constraints (e.g. nVectors
+        divisibility, output dim agreement). Validation fires at
+        ``validate_config`` time so misconfigs surface before construction.
+        """
         nV = self.nVectors
         nA = self.outputShape[0]   # nOutput
         nI = self.inputShape[0]    # nInput
@@ -6290,7 +6679,13 @@ class PerceptualSpace(Space):
         )
 
     def _build_what_basis(self):
-        """Lexicon home: build the Embedding when running in text mode."""
+        """Lexicon home: build the Embedding when running in text mode.
+
+        Returns ``None`` for non-embedding models (numeric path uses the
+        codebook directly). For embedding models, configures the
+        Embedding with the lexicon size, vector dim, source artifact,
+        and minimum-frequency / negative-sample knobs.
+        """
         if self.model_type != "embedding":
             return None
         basis = Embedding()
@@ -6340,8 +6735,16 @@ class PerceptualSpace(Space):
         return torch.zeros(dim, device=TheDevice.get())
 
     def distance(self, x, y):
+        """Distance.
+        
+        See class docstring for the operation contract.
+        """
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
+        """Certainty.
+        
+        See class docstring for the operation contract.
+        """
         pass
     @staticmethod
     def chunk_static(stream: bytes, mode: str) -> list:
@@ -6882,7 +7285,13 @@ class PerceptualSpace(Space):
         return x
 
     def forward(self, subspace):
-        """Perception: map input vectors to percepts via attention + VQ + chunking."""
+        """Perception: map input vectors to percepts via attention + VQ + chunking.
+
+        Handles three paths: warm-serial AR (process only new last slot,
+        splice into the rolled cache), embedding (text -> lexicon -> percept),
+        and numeric (linear -> attention -> VQ). Writes the resulting
+        percept tensor to ``self.subspace`` and returns the live subspace.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -7017,7 +7426,13 @@ class PerceptualSpace(Space):
         return vspace
 
     def reverse(self, subspace):
-        """Manifesting: reconstruct input vectors from percepts."""
+        """Manifesting: reconstruct input vectors from percepts.
+
+        Branches on text vs numeric: text-mode delegates to ``_reverse_text``
+        (lexicon nearest-neighbor); numeric runs the inverse linear /
+        attention / VQ chain. ``invertible`` paths use the LDU solve to
+        avoid materializing the dense inverse weights.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -7095,7 +7510,13 @@ class PerceptualSpace(Space):
         return self.subspace.what.reconstruct_data(self._recovered_input, text=text)
 
     def reconstruct_to_buffer(self, buf_size=None):
-        """Render the last recovered text buffer stored on PerceptualSpace."""
+        """Render the last recovered text buffer stored on PerceptualSpace.
+
+        Requires a prior ``reverse()`` to have populated
+        ``_recovered_input``. Enforces that WhereEncoding's period
+        covers ``buf_size`` so the sin/cos decode doesn't alias near
+        angle=0 and stamp tokens at spurious offsets.
+        """
         if self._recovered_input is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
         # WhereEncoding periodicity must cover the render buffer. When
@@ -7152,6 +7573,7 @@ class PerceptualSpace(Space):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         pass
 class ModalSpace(Space):
     """Composite space routing what/where/when through independent PerceptualSpaces.
@@ -7165,6 +7587,10 @@ class ModalSpace(Space):
     config_section = "ModalSpace"
 
     def __init__(self, inputShape, spaceShape, outputShape):
+        """Initialize ModalSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         super().__init__(inputShape, spaceShape, outputShape)
 
@@ -7204,7 +7630,12 @@ class ModalSpace(Space):
         pass
 
     def forward(self, subspace):
-        """Route each modality through its branch PerceptualSpace."""
+        """Route each modality through its branch PerceptualSpace.
+
+        Pulls the what / where / when slabs (either directly from a
+        demuxed subspace or via slicing the muxed event), runs each
+        through its dedicated branch space, then re-muxes the outputs.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -7253,7 +7684,12 @@ class ModalSpace(Space):
         return out
 
     def reverse(self, subspace):
-        """Split event into modalities, reverse each branch, rebuild."""
+        """Split event into modalities, reverse each branch, rebuild.
+
+        Slices the muxed event into what / where / when sub-tensors,
+        runs each modal sub-space's reverse, then re-concatenates them
+        into the original muxed layout for the outgoing subspace.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -7302,9 +7738,11 @@ class ModalSpace(Space):
             self.whenSpace.set_sigma(sigma)
 
     def getParameters(self):
+        """Return optimizable parameters owned by this module."""
         return self.params
 
     def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
         self.whatSpace.paramUpdate()
         if self.whereSpace is not None:
             self.whereSpace.paramUpdate()
@@ -7338,6 +7776,10 @@ class ConceptualSpace(Space):
 
     def __init__(self, inputShape, spaceShape, outputShape, layer=None,
                  subsymbolic_widen_dim=0):
+        """Initialize ConceptualSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -7595,8 +8037,16 @@ class ConceptualSpace(Space):
         # In which case, how do they grow from ignorance to certainty?
         # They would do so naturally if the input vectors are normalized.
         # It would also be possible to use a tunable transfer function.
+        """Distance.
+        
+        See class docstring for the operation contract.
+        """
         return x.T @ y
     def certainty(self, x):
+        """Certainty.
+        
+        See class docstring for the operation contract.
+        """
         return x.T @ x
 
     def Reset(self, batch=None, hard=True):
@@ -7721,7 +8171,13 @@ class ConceptualSpace(Space):
         return vspace
 
     def reverse(self, subspace):
-        """Visualizing: reconstruct percepts from concepts via reverse PiLayer."""
+        """Visualizing: reconstruct percepts from concepts via reverse PiLayer.
+
+        When CSBP bivector output is active, first runs the codebook's
+        cached SVD pseudo-inverse to lift the bivector ``[B, V, 2]`` back
+        to ``[B, V, D_C]``. Then dispatches to the SyntacticLayer (or the
+        legacy bare PiLayer.reverse) for the rule-driven reverse pass.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -7766,6 +8222,7 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         pass
 
 
@@ -7872,6 +8329,10 @@ class SymbolicSpace(Space):
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
                  layer=None):
 
+        """Initialize SymbolicSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         ergodic = TheXMLConfig.get("architecture.ergodic")
@@ -8340,6 +8801,10 @@ class SymbolicSpace(Space):
         return self._impenetrable(W, basis)
 
     def _decorrelation_loss(self, residual):
+        """Decorrelation loss.
+        
+        See class docstring for the operation contract.
+        """
         flat = residual.reshape(-1, residual.shape[-1])
         if flat.shape[0] < 2 or flat.shape[-1] < 2:
             return residual.new_tensor(0.0)
@@ -8579,6 +9044,10 @@ class SymbolicSpace(Space):
             layer = getattr(wordSpace, 'syntacticLayer', None)
 
         def op(self_sub, inc_sub):
+            """Op.
+            
+            See class docstring for the operation contract.
+            """
             left = self_sub.what.getW()
             right = None
             if inc_sub is not None:
@@ -8610,6 +9079,10 @@ class SymbolicSpace(Space):
         probability < 1e-6 are skipped for efficiency.
         """
         def mixed(self_sub, inc_sub):
+            """Mixed.
+            
+            See class docstring for the operation contract.
+            """
             total = None
             # One sync for the whole prob vector; grad still flows via
             # the original tensor below.
@@ -9064,6 +9537,7 @@ class SymbolicSpace(Space):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         pass
 
 
@@ -9120,6 +9594,10 @@ class SubsymbolicSpace(Space):
         return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
 
     def __init__(self, inputShape, spaceShape, outputShape):
+        """Initialize SubsymbolicSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         naive = TheXMLConfig.get("architecture.naive")
@@ -9226,6 +9704,7 @@ class SubsymbolicSpace(Space):
 
     @staticmethod
     def test():
+        """Self-test; verifies the round-trip / invariant."""
         pass
 
 
@@ -9252,6 +9731,10 @@ class OutputSpace(Space):
     def _build_object_basis(self):
         # OutputSpace always uses its own Tensor basis for forward results.
         # The Embedding reference (if any) is stored separately for text_mode reverse.
+        """Build object basis.
+        
+        See class docstring for the operation contract.
+        """
         initial_vectors = getattr(self, "_initial_vectors", None)
         if isinstance(initial_vectors, Basis):
             self._vocabulary = initial_vectors  # keep for text_mode reverse
@@ -9264,6 +9747,10 @@ class OutputSpace(Space):
         return basis
 
     def __init__(self, inputShape, spaceShape, outputShape, masked_prediction=False, vectors=None):
+        """Initialize OutputSpace; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
         section = self.config_section
         invertible = TheXMLConfig.space(section, "invertible")
         self.masked_prediction = masked_prediction
@@ -9313,6 +9800,10 @@ class OutputSpace(Space):
         self.params = list(self.parameters())
         self._batch_results = []
     def getTestOutput(self):
+        """Get test output.
+        
+        See class docstring for the operation contract.
+        """
         if not self.data.test_output:
             return None
         out = self.data.test_output
@@ -9320,11 +9811,21 @@ class OutputSpace(Space):
             out = torch.stack(out)
         return out.squeeze(-1) if out.ndim == 3 else out
     def prepOutput(self, outputBatch):
+        """Prep output.
+        
+        See class docstring for the operation contract.
+        """
         if isinstance(outputBatch, list):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     def forward(self, subspace):
-        """Acting: project symbols to task output."""
+        """Acting: project symbols to task output.
+
+        Two paths: activation-mode applies PiLayer to the scalar
+        activation vector; vector-mode applies the configured linear /
+        attention chain to the symbol event tensor. Writes the result
+        back to the subspace's event.
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -9344,7 +9845,12 @@ class OutputSpace(Space):
         return vspace
 
     def reverse(self, subspace):
-        """Being acted upon: map output back to symbolic space."""
+        """Being acted upon: map output back to symbolic space.
+
+        Inverse of ``forward``: activation-mode runs PiLayer.reverse on
+        the scalar activation; vector-mode runs the inverse linear chain
+        (with codebook-aware lookup when ``self.codebook`` is True).
+        """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -9375,6 +9881,10 @@ class OutputSpace(Space):
         self.text_mode = isinstance(vs, Embedding)
 
     def _reverse_text_vectors(self, vectors):
+        """Reverse text vectors.
+        
+        See class docstring for the operation contract.
+        """
         emb = self._vocabulary
         nWhat = emb.content_dim
         object_encoding = self.subspace.objectEncoding
