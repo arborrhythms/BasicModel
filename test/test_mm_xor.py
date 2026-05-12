@@ -477,11 +477,16 @@ class TestMMXorConvergence(unittest.TestCase):
                         "symbol_commitment must stay finite over training")
 
     def test_convergence(self):
-        """Train for up to 200 epochs; output loss should drop below 0.15.
+        """Train for up to 200 epochs; output loss should drop below 0.20.
 
         Uses full-batch training (all 4 XOR samples at once) because the
         hierarchical butterfly merge halves gradient magnitude per level,
         making SGD (batchSize=1) too noisy to converge reliably.
+
+        Threshold relaxed from 0.15 -> 0.20 after the SS-tier sigma layer
+        was removed: the butterfly cascade now has T learned PiLayers
+        (CS only) instead of 2T (CS + SS), so 200 epochs reaches a
+        higher floor on this synthetic task.
         """
         import torch
 
@@ -526,14 +531,14 @@ class TestMMXorConvergence(unittest.TestCase):
 
                     if loss.item() < best_loss:
                         best_loss = loss.item()
-                    if best_loss < 0.15:
+                    if best_loss < 0.20:
                         return  # pass
 
-                if best_loss < 0.15:
+                if best_loss < 0.20:
                     return  # pass
 
-            self.assertLess(best_loss, 0.15,
-                            f"BasicModel XOR should converge below 0.15, best was {best_loss:.4f}")
+            self.assertLess(best_loss, 0.20,
+                            f"BasicModel XOR should converge below 0.20, best was {best_loss:.4f}")
 
 
 if __name__ == '__main__':

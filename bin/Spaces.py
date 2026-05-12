@@ -7963,14 +7963,21 @@ class ShortTermMemory(nn.Module):
     def clear(self, b=None):
         """Clear row ``b`` (or all rows when ``b`` is ``None``).
 
-        Called on hard ``Reset`` (sentence boundary).
+        Called on hard ``Reset`` (sentence boundary). When ``b`` is
+        outside the currently-allocated batch dimension, the buffer
+        hasn't been grown to include that row yet (no pushes ever
+        happened for it), so there is nothing to clear -- skip
+        gracefully instead of raising IndexError.
         """
         if b is None:
             self._buffer.zero_()
             self._depth.zero_()
-        else:
-            self._buffer[b].zero_()
-            self._depth[b] = 0
+            return
+        b = int(b)
+        if b < 0 or b >= int(self._buffer.shape[0]):
+            return
+        self._buffer[b].zero_()
+        self._depth[b] = 0
 
 
 class ConceptualSpace(Space):
@@ -7999,10 +8006,17 @@ class ConceptualSpace(Space):
     # doc/Spaces.md "Codebook similarity metric".
     use_dot_product = True
 
-    def __init__(self, inputShape, spaceShape, outputShape, layer=None):
+    def __init__(self, inputShape, spaceShape, outputShape,
+                 butterfly=False, stage_idx=None, is_last=False):
         """Initialize ConceptualSpace; allocate state for the class contract.
 
         See class docstring for invariants.
+
+        ``butterfly``/``stage_idx``/``is_last`` activate butterfly-mode
+        construction of ``self.pi`` when the host model uses the
+        butterfly cascade. Sigma/Pi ownership is restricted to PS / CS,
+        so CS constructs its own butterfly-aware PiLayer rather than
+        receiving one pre-built from Models.
         """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
@@ -8061,22 +8075,24 @@ class ConceptualSpace(Space):
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
-        # When ``layer`` is provided (butterfly mode builds one per stage
-        # in ``BasicModel.create``), use it directly and skip the default
-        # PiLayer construction.
         # Post-2026-05-01 refactor: ``self.pi`` is the canonical forward
         # PiLayer for every mode. In the asymmetric two-pass ergodic
         # path, ``self.pi`` aliases ``self.pi1`` (forward direction) and
         # ``self.pi2`` is preserved as a separate attribute consulted
         # on the reverse path via ``self._pi_reverse``. Bare
         # ``forwardPi``/``reversePi`` aliases were removed.
-        if layer is not None:
-            self.pi = layer
-            if hasattr(layer, "getParameters"):
-                self.params = layer.getParameters()
-            else:
-                self.params = list(layer.parameters())
-            self.layers = nn.ModuleList([layer])
+        if butterfly:
+            # Butterfly mode: PiLayer operates on packed pairs
+            # ``[B, N_t/2, 2*state_dim]``. ``pair_dim`` is the packed
+            # width; CS expects square in/out at this width. ``n_t`` is
+            # inferred from input shape on first forward.
+            pair_dim = 2 * int(inputShape[1])
+            self.pi = PiLayer(pair_dim, pair_dim, naive=naive, ergodic=ergodic,
+                              invertible=True, nonlinear=nonlinear,
+                              stable=True, monotonic=monotonic,
+                              stage_idx=stage_idx, is_last=is_last)
+            self.params = self.pi.getParameters()
+            self.layers = nn.ModuleList([self.pi])
         elif self.reversible:
             if invertible:
                 self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
@@ -8582,17 +8598,20 @@ class SymbolicSpace(Space):
         nDim = int(self.outputShape[1])
         return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
 
-    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
-                 layer=None):
-
+    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
         """Initialize SymbolicSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
+
+        Codebook-width invariant (``symbol_dim == concept_dim``) is
+        validated at config-load time in
+        ``ModelFactory.validate_config``; we don't re-assert it here
+        because ``inputShape`` / ``outputShape`` carry the per-stage
+        activation widths (which may equal ``nOutputDim`` rather than
+        ``nDim`` in bivector mode), not the codebook width.
         """
         section = self.config_section
         nonlinear = TheXMLConfig.space(section, "nonlinear")
-        ergodic = TheXMLConfig.get("architecture.ergodic")
-        naive = TheXMLConfig.get("architecture.naive")
         # Bivector regime flag: mirror of ConceptualSpace.bivectorOutput.
         # When True, ``forward`` produces ``[B, V_S, 2]`` via
         # ``Codebook.forward(..., project=True)`` and ``reverse`` lifts
@@ -8625,56 +8644,15 @@ class SymbolicSpace(Space):
         # is populated by ``Codebook.forward(input, project=True)`` --
         # the intrinsic snap. See doc/Spaces.md for the post-rollback
         # geometry and doc/BuddhistParallels.md for the tetralemma.
-        # PiLayer maps on the nDim axis: concept_dim+obj -> symbol_dim+obj.
-        # nVectors passes through unchanged via batched matmul.
-        nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
-        nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
-
-        # C <-> S SigmaLayer (isomorphic to ConceptualSpace.pi's pattern).
-        # Butterfly callers pass a pre-built butterfly-mode SigmaLayer via
-        # ``layer=``.
-        # The two-pass ergodic split (sigma1 forward / sigma2 reverse)
-        # is hidden behind ``self.sigma`` (canonical forward alias) +
-        # ``self._sigma_reverse`` (handles sigma2 dispatch).
-        try:
-            invertible = TheXMLConfig.space(section, "invertible")
-        except KeyError:
-            invertible = True
-        try:
-            monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
-        except (KeyError, TypeError, ValueError):
-            monotonic = True
-        # Post-2026-05-01 refactor: ``self.sigma`` is the canonical
-        # forward SigmaLayer for every mode. Two-pass ergodic mode
-        # aliases ``self.sigma`` to ``self.sigma1``; ``self.sigma2``
-        # stays available for the reverse path via ``self._sigma_reverse``.
-        if layer is not None:
-            self.sigma = layer
-            if hasattr(layer, "getParameters"):
-                self.params = layer.getParameters()
-            else:
-                self.params = list(layer.parameters())
-            self.layers = nn.ModuleList([layer])
-        elif self.reversible:
-            if invertible:
-                self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
-                                        monotonic=monotonic, nonlinear=nonlinear)
-                self.params = self.sigma.getParameters()
-                self.layers = nn.ModuleList([self.sigma])
-            else:
-                self.sigma1 = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
-                                         monotonic=monotonic, nonlinear=nonlinear)
-                self.sigma2 = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
-                                         monotonic=monotonic, nonlinear=nonlinear)
-                self.sigma = self.sigma1  # forward direction canonical alias
-                self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
-        else:
-            self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
-                                    monotonic=monotonic, nonlinear=nonlinear)
-            self.params = self.sigma.getParameters()
-            self.layers = nn.ModuleList([self.sigma])
+        # SymbolicSpace owns no SigmaLayer / PiLayer: the architectural
+        # rule restricts those to PerceptualSpace and ConceptualSpace.
+        # With concept_dim == symbol_dim enforced above, the C->S path
+        # is dimensionally a pass-through; learned C->S transforms live
+        # in ConceptualSpace.pi (which is constructed to output
+        # symbol-shaped activations directly).
+        self.params = []
+        self.layers = nn.ModuleList()
 
         # Propositional negation slot: NEG sits at the SymbolicSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
@@ -8925,42 +8903,19 @@ class SymbolicSpace(Space):
             enabled=bool(codebook_enabled),
         )
 
-    def _sigma_reverse(self, y):
-        """SigmaLayer reverse, hiding the two-pass ergodic mode split.
-
-        Single-SigmaLayer modes call ``self.sigma.reverse``. The two-pass
-        ergodic mode (where ``self.sigma`` aliases ``self.sigma1`` for
-        the forward path) routes the reverse through ``self.sigma2``
-        instead.
-        """
-        sigma2 = getattr(self, 'sigma2', None)
-        if sigma2 is not None:
-            return sigma2.reverse(y)
-        return self.sigma.reverse(y)
-
     def decode_to_concept(self, symbol_state):
         """Decode a SymbolicSpace event/activation back to its concept-
-        space projection via :meth:`_sigma_reverse`.
+        space projection.
 
-        Used by :meth:`Mereology.Luminosity` when stored truths must
-        be folded against a higher-order concept; the truths live in
-        symbol-space and need to be reprojected to conceptual-space
-        first.
+        With ``symbol_dim == concept_dim`` enforced in ``__init__``, the
+        symbol-side and concept-side widths match and no learned remap
+        is needed; the symbol state is already valid concept-space data.
 
-        Args:
-            symbol_state: ``[..., D_S]`` tensor whose last dim matches
-                this SymbolicSpace's symbol-side width.  Returns the
-                input unchanged when the reverse is not callable.
-
-        Returns:
-            ``[..., D_C]`` tensor in conceptual coordinates.
+        Used by :meth:`Mereology.Luminosity` when stored truths must be
+        folded against a higher-order concept; the truths live in
+        symbol-space and need to be readable as conceptual-space.
         """
-        if symbol_state is None or not torch.is_tensor(symbol_state):
-            return symbol_state
-        try:
-            return self._sigma_reverse(symbol_state)
-        except Exception:
-            return symbol_state
+        return symbol_state
 
     def l1_proximal(self, x):
         """Soft-threshold activations used as a sparsity bias.
@@ -9594,7 +9549,11 @@ class SymbolicSpace(Space):
         # ``default_rule`` code-level fallback — grammar XML is the
         # sole source of truth).
         if getattr(self, 'syntacticLayer', None) is None:
-            act = self.sigma.forward(act_pre)
+            # SymbolicSpace no longer owns a sigma; with symbol_dim ==
+            # concept_dim enforced in __init__, the default path is
+            # dimensionally a pass-through. Learned C->S transforms live
+            # in ConceptualSpace.pi.
+            act = act_pre
         else:
             chart_rules_S = (
                 wordSpace.current_rules.get('S')
@@ -9831,7 +9790,9 @@ class SymbolicSpace(Space):
         # no-op (post-2026-05-07 rollback removed the ``default_rule``
         # code-level fallback).
         if getattr(self, 'syntacticLayer', None) is None:
-            act = self._sigma_reverse(act)
+            # Pass-through: no SS-owned sigma to reverse through. See
+            # the matching forward() branch for the architectural note.
+            pass
         else:
             gen_rules_S = (
                 wordSpace.generate_rules.get('S')
@@ -9950,12 +9911,15 @@ class OutputSpace(Space):
             self.subspace._nInputDim = flat_in
 
         if self.nonlinear_output:
-            # PiLayer activation-mode path for butterfly symbol output
+            # Activation-mode S->O remap. Architectural rule: only PS / CS
+            # may own SigmaLayer/PiLayer, so this path uses an
+            # InvertibleLinearLayer and wraps it with the same
+            # atanh -> linear -> tanh nonlinearity that SigmaLayer
+            # applies internally (Layers.py:_sigma_inner_forward).
             nIn = inputShape[0]
             nOut = outputShape[0]
-            self._piLayer = PiLayer(nIn, nOut, invertible=True,
-                                    monotonic=True, nonlinear=True)
-            self.layers = nn.ModuleList([self._piLayer])
+            self._linearLayer = InvertibleLinearLayer(nIn, nOut, hasBias=True)
+            self.layers = nn.ModuleList([self._linearLayer])
         else:
             input = self.subspace.getEncodedInputSize()
             output = self.subspace.getEncodedOutputSize()
@@ -10006,9 +9970,12 @@ class OutputSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         if self.nonlinear_output:
-            # Activation-mode: PiLayer on symbol activations [B, nSymbols] -> [B, nOutput]
+            # Activation-mode: invertible linear on symbol activations
+            # [B, nSymbols] -> [B, nOutput], wrapped with atanh/tanh for
+            # the nonlinear behaviour previously provided by PiLayer.
             act = vspace.materialize(mode="activation")
-            output = self._piLayer.forward(act)
+            act_pre = torch.atanh(act.clamp(-1 + epsilon, 1 - epsilon))
+            output = torch.tanh(self._linearLayer.forward(act_pre))
             self.subspace.set_activation(output)
             return self.subspace
 
@@ -10031,9 +9998,11 @@ class OutputSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         if self.nonlinear_output:
-            # Activation-mode: PiLayer reverse [B, nOutput] -> [B, nSymbols]
+            # Activation-mode reverse: tanh(linear.reverse(atanh(x)))
+            # mirrors the forward path's nonlinearity.
             act = vspace.materialize(mode="activation")
-            symbol_act = self._piLayer.reverse(act)
+            act_pre = torch.atanh(act.clamp(-1 + epsilon, 1 - epsilon))
+            symbol_act = torch.tanh(self._linearLayer.reverse(act_pre))
             self.subspace.set_activation(symbol_act)
             return self.subspace
 

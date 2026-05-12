@@ -1776,8 +1776,26 @@ class ButterflyLayer(GrammarLayer):
         return perm, inv
 
     def _init_butterfly_buffers(self, stage_idx, n_t, is_last):
-        """Pre-compute and register this layer's butterfly permutations."""
-        perm_list, inv_list = self._butterfly_index_lists(n_t, stage_idx)
+        """Mark this layer as butterfly-mode; build buffers eagerly if n_t given.
+
+        When ``n_t`` is ``None`` the permutation buffers are deferred until the
+        first forward call sees the actual input shape (see
+        ``_ensure_butterfly_buffers``).
+        """
+        self.butterfly = True
+        self.butterfly_stage_idx = int(stage_idx)
+        self.butterfly_n_t = int(n_t) if n_t is not None else None
+        self.butterfly_is_last = bool(is_last)
+        self._merge_diff = None
+        if n_t is not None:
+            self._ensure_butterfly_buffers(int(n_t))
+
+    def _ensure_butterfly_buffers(self, n_t):
+        """Build / rebuild the permutation buffers for the given ``n_t``."""
+        if self.butterfly_n_t == int(n_t) and hasattr(self, "_butterfly_perm"):
+            return
+        perm_list, inv_list = self._butterfly_index_lists(
+            int(n_t), int(self.butterfly_stage_idx))
         self.register_buffer(
             "_butterfly_perm",
             torch.tensor(perm_list, dtype=torch.long),
@@ -1786,11 +1804,7 @@ class ButterflyLayer(GrammarLayer):
             "_butterfly_inv_perm",
             torch.tensor(inv_list, dtype=torch.long),
             persistent=False)
-        self.butterfly = True
-        self.butterfly_stage_idx = int(stage_idx)
         self.butterfly_n_t = int(n_t)
-        self.butterfly_is_last = bool(is_last)
-        self._merge_diff = None
 
     def _butterfly_pack(self, x):
         """``[B, N, D]`` -> ``[B, N/2, 2D]`` via the cached permutation."""
@@ -1903,12 +1917,9 @@ class SigmaLayer(ButterflyLayer):
         # Optional butterfly mode: when stage_idx is provided, forward
         # treats its [B, N_t, D] input as halves of the packed (2D)
         # features, with D = nInput // 2. ``n_t`` is the actual per-stage
-        # vector count this layer sees at runtime; the caller computes
-        # it (it depends on which earlier stages were is_last and so
-        # cannot be derived from stage_idx alone).
+        # vector count this layer sees at runtime; when omitted, it is
+        # inferred from input.shape[1] on the first forward call.
         if stage_idx is not None:
-            assert n_t is not None, (
-                "SigmaLayer butterfly mode requires n_t")
             assert nInput == nOutput, (
                 f"SigmaLayer butterfly mode requires nInput == nOutput "
                 f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
@@ -1966,6 +1977,7 @@ class SigmaLayer(ButterflyLayer):
         """
         if self.butterfly:
             B, N, D = x.shape
+            self._ensure_butterfly_buffers(N)
             packed = self._butterfly_pack(x)
             packed_out = self._sigma_inner_forward(packed, binary=binary, gate=gate)
             x_out = self._butterfly_unpack(packed_out, B, N, D)
@@ -1994,6 +2006,7 @@ class SigmaLayer(ButterflyLayer):
         if self.butterfly:
             x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
+            self._ensure_butterfly_buffers(N)
             packed = self._butterfly_pack(x_out)
             packed_in = self._sigma_inner_reverse(packed, gate=gate)
             return self._butterfly_unpack(packed_in, B, N, D)
@@ -3264,10 +3277,9 @@ class PiLayer(ButterflyLayer):
         self.layers.append(self.layer)
         # Optional butterfly mode -- see SigmaLayer docstring; identical
         # construction-time semantics (nInput == nOutput == 2*state_dim,
-        # forward sees [B, n_t, state_dim]).
+        # forward sees [B, n_t, state_dim]). ``n_t`` may be omitted; it
+        # is inferred from input.shape[1] on the first forward call.
         if stage_idx is not None:
-            assert n_t is not None, (
-                "PiLayer butterfly mode requires n_t")
             assert nInput == nOutput, (
                 f"PiLayer butterfly mode requires nInput == nOutput "
                 f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
@@ -3322,6 +3334,7 @@ class PiLayer(ButterflyLayer):
         """
         if self.butterfly:
             B, N, D = x.shape
+            self._ensure_butterfly_buffers(N)
             packed = self._butterfly_pack(x)
         else:
             packed = x
@@ -3364,6 +3377,7 @@ class PiLayer(ButterflyLayer):
         if self.butterfly:
             x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
+            self._ensure_butterfly_buffers(N)
             packed = self._butterfly_pack(x_out)
         else:
             packed = y
@@ -4172,8 +4186,9 @@ class LiftingLayer(Layer):
         # 2. Intersect: restrict verb by object (monotonic -> min)
         restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
 
-        # 3. Map restricted symbols back to concept space.
-        restricted = ss._sigma_reverse(restricted_syms)       # [B, N, D]
+        # 3. Symbols are already in concept-space coordinates
+        # (symbol_dim == concept_dim is enforced in SymbolicSpace).
+        restricted = restricted_syms                          # [B, N, D]
 
         # 4. Weight verb by restricted concept norms -> query
         rw = restricted.norm(dim=-1, keepdim=True)            # [B, N, 1]

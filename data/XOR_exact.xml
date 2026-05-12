@@ -73,9 +73,9 @@
        2-wide prototypes (no need to span content space). -->
   <SymbolicSpace>
     <nInput>8</nInput>
+    <nDim>2</nDim>
     <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace

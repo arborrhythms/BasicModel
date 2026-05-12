@@ -1162,6 +1162,8 @@ class TestBaseModelFactory(unittest.TestCase):
     def test_factory_creates_basic_model(self):
         # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
         # and nPercepts must be 2*nConcepts (PiLayer invertibility).
+        # symbol_dim must equal concept_dim (SymbolicSpace owns no
+        # SigmaLayer/PiLayer post 2026-05 ownership rule).
         xml = """<model>
   <architecture>
     <type>basic</type>
@@ -1173,7 +1175,7 @@ class TestBaseModelFactory(unittest.TestCase):
   <InputSpace><nOutput>32</nOutput><nDim>8</nDim></InputSpace>
   <PerceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors></PerceptualSpace>
   <ConceptualSpace><nOutput>2</nOutput><nDim>8</nDim><nVectors>2</nVectors></ConceptualSpace>
-  <SymbolicSpace><nOutput>2</nOutput><nDim>1</nDim></SymbolicSpace>
+  <SymbolicSpace><nOutput>2</nOutput></SymbolicSpace>
   <OutputSpace><nOutput>2</nOutput><nDim>4</nDim></OutputSpace>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:

@@ -366,7 +366,11 @@
   <SymbolicSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <nDim>1</nDim>
+    <!-- symbol_dim must equal concept_dim under the ownership rule
+         (SymbolicSpace owns no SigmaLayer/PiLayer). nDim=0 means
+         "inherit from ConceptualSpace.nDim". Concrete configs may set
+         a positive value, but it must match ConceptualSpace.nDim. -->
+    <nDim>0</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>

@@ -289,7 +289,9 @@ class TestWriteMask(unittest.TestCase):
         model = _make_model('RamsifiedModel.xml')
 
         truth_layer = model._get_truth_layer()
-        D = model.symbolicSpace.sigma.nOutput
+        # Post 2026-05 SS no longer owns a sigma; the activation width
+        # flowing through SS is its outputShape[1] (codebook D).
+        D = int(model.symbolicSpace.outputShape[1])
 
         sentences = ['test sentence one', 'test sentence two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]

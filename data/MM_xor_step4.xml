@@ -62,8 +62,8 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nInputDim>-1</nInputDim>
   </SymbolicSpace>

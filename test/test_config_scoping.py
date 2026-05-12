@@ -185,7 +185,12 @@ class TestValidateConfig(unittest.TestCase):
             Models.BasicModelFactory.validate_config(cfg)
         self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
 
-    def test_butterfly_requires_latent_symbol_volume_match(self):
+    def test_butterfly_requires_symbol_dim_matches_concept_dim(self):
+        """Post 2026-05 ownership rule: SymbolicSpace owns no SigmaLayer,
+        so symbol_dim must match the ConceptualSpace effective output
+        dim. The old butterfly-specific latent/symbol-volume-equality
+        check is subsumed by this stricter dim-match invariant.
+        """
         cfg = {
             "architecture": {
                 "useButterflies": True,
@@ -194,13 +199,13 @@ class TestValidateConfig(unittest.TestCase):
             "InputSpace": {"nOutput": 8, "nDim": 4},
             "PerceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,
                                 "invertible": True},
-            "SymbolicSpace": {"nOutput": 5, "nDim": 4},
+            "SymbolicSpace": {"nOutput": 5, "nDim": 3},
             "ConceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False},
             "OutputSpace": {"nOutput": 1, "nDim": 1},
         }
         with self.assertRaises(ValueError) as ctx:
             Models.BasicModelFactory.validate_config(cfg)
-        self.assertIn("latent/symbol volume equality", str(ctx.exception))
+        self.assertIn("symbol_dim", str(ctx.exception))
 
 
 class TestInferValidation(unittest.TestCase):

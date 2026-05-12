@@ -51,9 +51,9 @@
   <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
   <SymbolicSpace>
     <nInput>8</nInput>
+    <nDim>2</nDim>
     <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <codebook>true</codebook>

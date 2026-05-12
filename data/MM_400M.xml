@@ -79,9 +79,9 @@
 
   <SymbolicSpace>
     <nInput>1</nInput>
+    <nDim>2048</nDim>
     <nInputDim>-1</nInputDim>
     <nVectors>8192</nVectors>
-    <nDim>4</nDim>
     <nWhere>2</nWhere>
     <nOutput>2048</nOutput>
     <nOutputDim>6</nOutputDim>

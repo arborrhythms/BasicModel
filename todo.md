@@ -1,14 +1,8 @@
 
-* No space should construct a sigma or pi layer outside of the SyntacticLayer that creates those when specified in the grammar.
   
-* Wire where into the codebook lookup path (encode offset + prototype_index → sin/cos, decode the inverse)
-
 * Enforce use of Mereonomy (per-symbol DoT graph).
 
 * Ensure correct sentence-prediction
-
-* Figure out where chart parser lives 
-* Incorporate lexicon with SymbolicSpace
 
 * Remove all random seeds from the tests, they are a crutch that defends against learning robustness
 

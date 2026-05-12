@@ -70,9 +70,9 @@
 
   <SymbolicSpace>
     <nInput>1024</nInput>
+    <nDim>1024</nDim>
     <nInputDim>8</nInputDim>
     <nVectors>1024</nVectors>
-    <nDim>6</nDim>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>true</codebook>

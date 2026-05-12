@@ -82,8 +82,8 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nDim>12</nDim>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
     <nVectors>8</nVectors>
     <accumulateTruth>0</accumulateTruth>
     <!-- codebook=true is required so the SparsityRegLayer / VQ-VAE

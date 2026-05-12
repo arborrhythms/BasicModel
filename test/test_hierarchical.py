@@ -242,19 +242,21 @@ class TestPerLevelLayers(unittest.TestCase):
         self.assertEqual(stage0.nInput, pair_dim)
         self.assertEqual(stage0.nOutput, pair_dim)
 
-    def test_pair_pi_layers_created(self):
-        """Butterfly path: T independent SymbolicSpace instances, each
-        carrying a butterfly-mode SigmaLayer on pair-dim inputs."""
+    def test_symbolic_spaces_have_no_sigma(self):
+        """Butterfly path: post-2026-05 ownership rule, SymbolicSpace
+        owns no SigmaLayer. The per-stage butterfly cascade lives
+        entirely on ConceptualSpace.pi (see test_per_level_pi_layers_created
+        above). This test asserts the absence so a regression that
+        re-introduces SS-tier butterfly layers is caught."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
-        pair_dim = 2 * model._butterfly_state_dim
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
-        stage0 = model.symbolicSpaces[0].sigma
-        self.assertTrue(getattr(stage0, "butterfly", False),
-                        "SymbolicSpace.sigma should be in butterfly mode")
-        self.assertEqual(stage0.nInput, pair_dim)
-        self.assertEqual(stage0.nOutput, pair_dim)
+        for s in model.symbolicSpaces:
+            self.assertFalse(hasattr(s, 'sigma'),
+                             "SymbolicSpace must not own a sigma layer.")
+            self.assertFalse(hasattr(s, 'pi'),
+                             "SymbolicSpace must not own a pi layer.")
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""

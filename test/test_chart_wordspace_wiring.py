@@ -134,7 +134,12 @@ def test_wordspace_owns_chart_and_registry():
     # "disjunction" are separate GrammarLayer subclasses, lazy-built
     # only when the grammar references them.
     keys = list(m.wordSpace._host_layer_registry.keys())
-    assert ('S', 'sigma') in keys
+    # SymbolicSpace owns no SigmaLayer post-2026-05 ownership rule, so
+    # ('S', 'sigma') is no longer registered. The remaining builtins are
+    # the substrate-level rule layers carried by PS / CS / SS:
+    assert ('P', 'sigma') in keys, f"missing ('P', 'sigma'); have {keys!r}"
+    assert ('C', 'pi') in keys, f"missing ('C', 'pi'); have {keys!r}"
+    assert ('S', 'not') in keys, f"missing ('S', 'not'); have {keys!r}"
     # Each space carries a per-space SyntacticLayer with its tier.
     p_sl = m.perceptualSpace.syntacticLayer
     c_sl = m.conceptualSpace.syntacticLayer

@@ -1232,7 +1232,6 @@ class BaseModel(Mereology, nn.Module):
 
         ss = getattr(self, 'symbolicSpace', None)
         cs = getattr(self, 'conceptualSpace', None)
-        pi_layer = ss.sigma if ss is not None else None
         # Two-argument grammar ops route through `GRAMMAR_LAYER_CLASSES`
         # post the 2026-05-01 syntactic-layer refactor (was: legacy
         # SyntacticLayer.<rule>Forward).
@@ -4428,43 +4427,19 @@ class BasicModel(BaseModel):
         # has a concreteSpace/symbolicSpace to populate. The j-iteration
         # count reported to runBatch is still the configured value.
         T = max(1, int(n_stages))
-        naive = TheXMLConfig.get("architecture.naive")
-        symbol_nonlinear = TheXMLConfig.space("SymbolicSpace", "nonlinear")
         self.conceptualSpaces = nn.ModuleList()
         self.symbolicSpaces = nn.ModuleList()
         for t in range(T):
             is_last = (t == T - 1)
             if self.useButterflies:
-                # Butterfly: ConceptualSpace's PiLayer operates on packed
-                # pairs [B, N_t/2, 2*state_dim] internally. The butterfly
-                # access pattern (permute / pack / unpack / merge) lives
-                # in ButterflyLayer, inherited by PiLayer/SigmaLayer. Pass
-                # stage_idx/n_t/is_last and the layer's forward becomes
-                # the butterfly-aware version with pre-cached permutation
-                # buffers.
-                pair_dim = 2 * state_dim
-                # Conceptual sees N = state_vectors >> t at its input.
-                # Symbolic sees N = state_vectors >> (t+1) when Conceptual
-                # halved (not is_last), or N = state_vectors >> t when
-                # Conceptual was is_last (no halve).
+                # Butterfly cascade: only ConceptualSpace's PiLayer
+                # carries butterfly mode now (SymbolicSpace no longer
+                # owns a sigma layer; symbol_dim == concept_dim is
+                # enforced and the C->S transform is dimensionally a
+                # pass-through). CS self-constructs the butterfly PiLayer
+                # using ``stage_idx`` / ``is_last`` -- ``n_t`` is inferred
+                # from the input shape on first forward.
                 cs_n_t = state_vectors >> t
-                ss_n_t = cs_n_t if is_last else (state_vectors >> (t + 1))
-                cs_layer = PiLayer(
-                    pair_dim, pair_dim,
-                    naive=naive, ergodic=self.ergodic,
-                    invertible=True, nonlinear=True,
-                    monotonic=self.monotonic,
-                    stage_idx=t, n_t=cs_n_t,
-                    is_last=is_last)
-                cs_layer.saturate = False
-                # SymbolicSpace sees the post-conceptual N. Its sigma
-                # operates on pairs packed from that stream and skips
-                # further merge (is_last=True).
-                ss_layer = SigmaLayer(
-                    pair_dim, pair_dim, invertible=True,
-                    monotonic=self.monotonic, nonlinear=symbol_nonlinear,
-                    stage_idx=t, n_t=ss_n_t,
-                    is_last=True)
                 cs_in = [cs_n_t, state_dim]
                 cs_out = cs_in[:] if is_last else [state_vectors >> (t + 1), state_dim]
                 ss_in = cs_out[:]
@@ -4479,8 +4454,6 @@ class BasicModel(BaseModel):
                 cs_out = [n_t, d_t] if is_last else [n_t >> 1, d_t]
                 ss_in = cs_out[:]
                 ss_out = cs_out[:]
-                cs_layer = None
-                ss_layer = None
             else:
                 # Plain path: all stages share the legacy conceptInputShape /
                 # conceptOutputShape. No N-halving.
@@ -4488,33 +4461,21 @@ class BasicModel(BaseModel):
                 cs_out = list(conceptOutputShape)
                 ss_in = list(conceptOutputShape)
                 ss_out = list(symbolShape)
-                cs_layer = None
-                ss_layer = None
 
             # Non-codebook spaces require nVectors (spaceShape[0]) ==
             # nActive (outputShape[0]); resize the per-stage codebook shape
             # to match the halved N.
             stage_space_concept = [cs_out[0], spaceShape_concept[1]]
             stage_space_symbol = [ss_out[0], spaceShape_symbol[1]]
-            # Subsymbolic widening on stage 0 only: the first
-            # ConceptualSpace reads ``perceptual || (symbolic +
-            # subsymbolic)`` per the subsymbolic plan. Later stages
-            # see the previous stage's symbolic output, so no widen.
-            # Stage 3: every stage's ConceptualSpace is widened so its
-            # input PiLayer reads ``[P_event || S_event_{t-1}]`` when
-            # the bivector regime is configured. Butterfly mode shares
-            # a pre-built layer whose dim was set by the butterfly
-            # schedule (Note A in the spec keeps butterflies for legacy
-            # configs); skip widening there. Legacy non-bivector configs
-            # also skip widening so the in==out invertibility constraint
-            # on the C PiLayer still holds.
             # Right-half loopback widening retired (see ConceptualSpace
             # docstring): per-order input sourcing replaces the concat,
             # so the C-tier PiLayer input width is just nInputDim.
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
-                                 layer=cs_layer)
+                                 butterfly=self.useButterflies,
+                                 stage_idx=t,
+                                 is_last=is_last)
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
-                               conceptualSpace=cs, layer=ss_layer)
+                               conceptualSpace=cs)
             # Per-stage flags consumed by build_pipelines / forward.
             ss.is_last = is_last
             ss.quantize = True if self.useButterflies else (not is_last)
@@ -5638,7 +5599,6 @@ class BasicModel(BaseModel):
             return {'proved': False, 'confidence': 0.0,
                     'steps': 0, 'trace': []}
 
-        pi_layer = getattr(self.symbolicSpace, 'layer', None)
         trace = []
 
         if direction == 'forward':
@@ -5771,6 +5731,11 @@ class ModelFactory:
         gsp = ModelFactory.get_space_param
         arch = cfg.get("architecture", {})
         errors = []
+        # Clear any requirements left over from a previous validate_config
+        # call (e.g. one that bailed via ``errors`` before reaching
+        # ``TheXMLConfig.validate()``). Otherwise stale ``require()``
+        # closures from one test leak into the next.
+        TheXMLConfig._requirements.clear()
 
         # Attention is incompatible with reshape that changes vector count
         # (attention expects multi-vector 3D, reshape to 1 vector collapses it).
@@ -5811,64 +5776,55 @@ class ModelFactory:
                 "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
+        def _resolve_dim(space_name, prev_dim):
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+            except KeyError:
+                return prev_dim
+            return prev_dim if raw == 0 else raw
+
+        def _resolve_count(space_name, prev_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+            except KeyError:
+                return prev_count
+            return prev_count if raw == 0 else raw
+
+        input_dim = _resolve_dim("InputSpace", 1)
+        percept_dim = _resolve_dim("PerceptualSpace", input_dim)
+        concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
+        symbol_dim = _resolve_dim("SymbolicSpace", concept_dim)
+
+        # Bivector / projection configs let ConceptualSpace output a
+        # narrower activation via ``<nOutputDim>``. The width that
+        # actually flows into SymbolicSpace is that nOutputDim (when
+        # set), not nDim. Compare against the effective width.
+        try:
+            cs_out_dim = int(gsp(cfg, "ConceptualSpace", "nOutputDim"))
+        except KeyError:
+            cs_out_dim = 0
+        effective_concept_dim = cs_out_dim if cs_out_dim > 0 else concept_dim
+
+        # SymbolicSpace owns no SigmaLayer/PiLayer; the C->S transform
+        # was previously a learned ``SigmaLayer(concept_dim, symbol_dim)``
+        # inside SS. With SS.sigma retired, the path is dimensionally a
+        # pass-through and the configured dims must match.
+        TheXMLConfig.require(
+            lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
+            f"SymbolicSpace requires symbol_dim == "
+            f"ConceptualSpace effective output dim "
+            f"(got concept_out_dim={effective_concept_dim}, "
+            f"symbol_dim={symbol_dim}). Fix: set <SymbolicSpace><nDim> "
+            f"to match <ConceptualSpace><nOutputDim> if present, else "
+            f"<ConceptualSpace><nDim>."
+        )
+
         use_butterflies = bool(arch.get("useButterflies", False))
         if use_butterflies:
-            def _resolve_dim(space_name, prev_dim):
-                try:
-                    raw = gsp(cfg, space_name, "nDim")
-                except KeyError:
-                    return prev_dim
-                return prev_dim if raw == 0 else raw
-
-            def _resolve_count(space_name, prev_count):
-                try:
-                    raw = gsp(cfg, space_name, "nOutput")
-                except KeyError:
-                    return prev_count
-                return prev_count if raw == 0 else raw
-
-            def _obj_size(space_name):
-                total = 0
-                for key in ("nWhere", "nWhen"):
-                    try:
-                        total += gsp(cfg, space_name, key)
-                    except KeyError:
-                        pass
-                return total
-
             n_input = _resolve_count("InputSpace", 0)
             n_percepts = _resolve_count("PerceptualSpace", n_input)
-            n_concepts = _resolve_count("ConceptualSpace", n_percepts)
-            n_symbols = _resolve_count("SymbolicSpace", n_concepts)
 
-            input_dim = _resolve_dim("InputSpace", 1)
-            percept_dim = _resolve_dim("PerceptualSpace", input_dim)
-            concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
-            symbol_dim = _resolve_dim("SymbolicSpace", concept_dim)
-
-            state_dim = percept_dim + _obj_size("PerceptualSpace")
-            symbol_width = symbol_dim + _obj_size("SymbolicSpace")
-
-            if n_percepts > 0 and n_symbols > 0 and state_dim > 0 and symbol_width > 0:
-                state_volume = n_percepts * state_dim
-                symbol_volume = n_symbols * symbol_width
-                TheXMLConfig.require(
-                    lambda cfg, _sv=state_volume, _yv=symbol_volume: _sv == _yv,
-                    f"useButterflies=true requires latent/symbol volume equality: "
-                    f"nPercepts*state_dim ({state_volume}) must equal "
-                    f"nSymbols*symbol_width ({symbol_volume}). Fix: adjust "
-                    f"PerceptualSpace.nOutput/nDim/nWhere/nWhen or "
-                    f"SymbolicSpace.nOutput/nDim/nWhere/nWhen so the two "
-                    f"volumes match."
-                )
-                TheXMLConfig.require(
-                    lambda cfg, _d=state_dim, _s=symbol_width: _s > 0 and _d % _s == 0,
-                    f"useButterflies=true requires state_dim to be divisible by "
-                    f"symbol_width so n = D/S is integral (got D={state_dim}, "
-                    f"S={symbol_width}). Fix: set PerceptualSpace muxed width "
-                    f"(nDim+nWhere+nWhen) to a multiple of SymbolicSpace muxed "
-                    f"width (nDim+nWhere+nWhen)."
-                )
+            if n_percepts > 0:
                 TheXMLConfig.require(
                     lambda cfg, _np=n_percepts: _np > 0 and (_np & (_np - 1)) == 0,
                     f"useButterflies=true butterfly schedule requires nPercepts "
