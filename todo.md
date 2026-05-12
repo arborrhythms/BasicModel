@@ -7,6 +7,10 @@
 
 * Ensure correct sentence-prediction
 
+
+* Figure out where chart parser lives 
+* incorporate lexicon with SymbolicSpace
+
 * Remove all random seeds from the tests, they are a crutch that defends against learning robustness
 
 Sentences are sometimes composites of ideas.

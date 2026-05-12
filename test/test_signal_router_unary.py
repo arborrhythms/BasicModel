@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 import torch
 import torch.nn as nn
 
-from SignalRouter import UnaryStructuredLayer
+from Language import UnaryStructuredLayer
 
 
 class _NegateOp(nn.Module):

@@ -65,6 +65,8 @@
     <nOutput>1</nOutput>
     <nDim>104</nDim>
     <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
   </OutputSpace>
 
 </model>

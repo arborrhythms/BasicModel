@@ -53,30 +53,43 @@ def test_sequential_non_ar_forward_shape():
     assert isinstance(out[2], torch.Tensor)
 
 
-def test_sequential_builds_pipeline_fwd_and_rev():
-    """Construction produces both pipeline_fwd and pipeline_rev (Case A, invertible spaces)."""
+def test_sequential_builds_body_stages_and_invertible_path():
+    """Construction produces body_stages + invertible-case reverse path.
+
+    Replaces the prior pipeline_fwd / pipeline_rev nn.Sequential checks:
+    the body is now an explicit nn.ModuleList of ModuleDicts driven by
+    ``_forward_body``; the reverse pipeline is a method (``_run_pipeline_rev``)
+    instead of an attribute Sequential. MM_xor.xml has invertible spaces,
+    so any_invertible should be True and midpoint_cache should be None.
+    """
     import torch.nn as nn_
     model = _model()
-    assert isinstance(model.pipeline_fwd, nn_.Sequential)
-    assert model.pipeline_rev is not None, (
-        "MM_xor.xml has invertible spaces; Case A should produce pipeline_rev")
-    assert model.pipeline_rt is None
+    assert isinstance(model.body_stages, nn_.ModuleList)
+    assert model.any_invertible is True, (
+        "MM_xor.xml has invertible spaces; expected any_invertible=True")
     assert model.midpoint_cache is None
+    # Methods replace the stored Sequentials.
+    assert callable(getattr(model, '_run_pipeline_rev', None))
+    assert callable(getattr(model, '_forward_body', None))
 
 
 def test_sequential_unrolls_conceptual_order():
-    """Pipeline has T (conceptualOrder) conceptual+symbolic stage pairs.
+    """body_stages has T (conceptualOrder) per-stage ModuleDicts.
 
-    The microbatch-AR pipeline buries the per-stage modules inside a
-    FlattenKWrapper-wrapped Sequential body, so this walks the module
-    tree rather than the top-level pipeline list.
+    Replaces the prior pipeline_fwd.modules() walk: the per-stage
+    structure is now first-class in ``body_stages`` (no more buried
+    Sequential).
     """
     model = _model()
     T = len(model.conceptualSpaces)
     from Spaces import ConceptualSpace, SymbolicSpace
-    all_modules = list(model.pipeline_fwd.modules())
-    cs_count = sum(1 for m in all_modules if isinstance(m, ConceptualSpace))
-    ss_count = sum(1 for m in all_modules if isinstance(m, SymbolicSpace))
+    assert len(model.body_stages) == T
+    cs_count = sum(
+        1 for stage in model.body_stages
+        if isinstance(stage["cs"], ConceptualSpace))
+    ss_count = sum(
+        1 for stage in model.body_stages
+        if isinstance(stage["ss"], SymbolicSpace))
     assert cs_count == T, f"expected {T} ConceptualSpaces, got {cs_count}"
     assert ss_count == T, f"expected {T} SymbolicSpaces, got {ss_count}"
 

@@ -7,7 +7,7 @@ import math
 
 import torch
 
-from SignalRouter import binary_tiling_viterbi
+from Language import binary_tiling_viterbi
 from test_signal_router_brute_force import best_tiling
 
 

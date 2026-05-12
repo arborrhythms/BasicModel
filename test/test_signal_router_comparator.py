@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import torch
 
-from SignalRouter import ComparatorMixer
+from Language import ComparatorMixer
 
 
 def _gather_branches(x, reduced):

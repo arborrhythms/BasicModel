@@ -6,6 +6,7 @@ and outputs.  The same module also carries the project utilities used to
 load datasets, resolve config paths, plot results, and save reports.
 """
 
+import logging
 import math, os, warnings
 from collections import namedtuple
 from contextlib import contextmanager, nullcontext
@@ -76,10 +77,225 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SubsymbolicSpace, OutputSpace
 from Language import WordSpace
 from util import parse
-from Pipeline import (
-    CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
-    ChartCompose, ChartGenerate,
-)
+# -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
+# Previously in basicmodel/bin/Pipeline.py; inlined here when the body
+# Sequential refactor reduced Pipeline.py to a handful of classes that
+# Models.py was the sole consumer of. SubsymbolicTee dropped as dead
+# code (zero construction sites).
+
+# Process-global dedupe set for advisory pipeline-stage exceptions.
+# Key: (exception_type_name, file, line). Value: count.
+_PIPELINE_EXC_SEEN: dict = {}
+_DEDUPE_FLUSH_EVERY = 1000
+
+
+def _log_advisory_exception(stage: str, exc: BaseException) -> None:
+    """Log a caught pipeline-stage exception once with traceback,
+    then deduped counts. Surfacing a silent fall-through to the
+    fallback path is important: the chart's contribution becomes a
+    no-op and you stop training what the config says you train.
+    """
+    tb = exc.__traceback__
+    while tb is not None and tb.tb_next is not None:
+        tb = tb.tb_next
+    file = tb.tb_frame.f_code.co_filename if tb else "?"
+    line = tb.tb_lineno if tb else 0
+    key = (type(exc).__name__, file, line)
+    log = logging.getLogger(__name__)
+    seen = _PIPELINE_EXC_SEEN.get(key, 0)
+    _PIPELINE_EXC_SEEN[key] = seen + 1
+    if seen == 0:
+        log.warning(
+            "%s failed (%s: %s) at %s:%d -- "
+            "the chart's contribution is now a no-op. "
+            "Subsequent occurrences of this exact failure will be deduped.",
+            stage, type(exc).__name__, exc, file, line,
+            exc_info=True,
+        )
+    elif (seen + 1) % _DEDUPE_FLUSH_EVERY == 0:
+        log.warning(
+            "%s: %s at %s:%d has now fired %d times.",
+            stage, type(exc).__name__, file, line, seen + 1,
+        )
+
+
+class ReverseAdapter(nn.Module):
+    """Wrap a module so its reverse() method is called via forward().
+
+    Retained for backwards-compat (tests reference it); the live
+    BasicModel reverse path no longer uses it -- explicit
+    ``module.reverse(x)`` calls inside ``_run_pipeline_rev`` do the job.
+    """
+
+    def __init__(self, wrapped):
+        super().__init__()
+        if isinstance(wrapped, nn.Module):
+            self.wrapped = wrapped
+        else:
+            object.__setattr__(self, "_wrapped_nonmodule", wrapped)
+            self.wrapped = None
+
+    def forward(self, subspace):
+        target = self.wrapped if self.wrapped is not None else self._wrapped_nonmodule
+        return target.reverse(subspace)
+
+
+class CachePoint(nn.Module):
+    """Identity module that caches the last subspace it saw.
+
+    Retained for backwards-compat (tests reference it); the live
+    BasicModel midpoint cache is now a plain attribute populated
+    inside ``_run_pipeline_rt``.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.last = None
+
+    def forward(self, subspace):
+        self.last = subspace
+        return subspace
+
+    def reverse(self, subspace):
+        return subspace
+
+
+class ChartCompose(nn.Module):
+    """Pipeline step that runs ``wordSpace.compose(...)`` on the
+    incoming subspace, then passes the subspace through unchanged.
+
+    Inserted into ``pipeline_stem`` between PerceptualSpace and the
+    body so the chart's per-(tier, step) rule selections are
+    available before the per-stage forward iterations consume them.
+    No-op when ``word_space`` is ``None``.
+    """
+
+    def __init__(self, word_space):
+        super().__init__()
+        # Stash as non-Module attr to avoid the wordSpace -> chart
+        # -> ... -> wordSpace cycle nn.Module ownership would create.
+        object.__setattr__(self, '_word_space', word_space)
+
+    def forward(self, subspace):
+        ws = self._word_space
+        if ws is None or subspace is None:
+            return subspace
+        if hasattr(subspace, 'is_empty') and subspace.is_empty():
+            return subspace
+        data = subspace.materialize() if hasattr(
+            subspace, 'materialize') else None
+        if data is None:
+            return subspace
+        try:
+            # ARIR microbatch path: data may arrive as [B, K, N, D].
+            # Flatten K into batch for the chart's compose; downstream
+            # consumes the per-row cursors at the same flat indexing.
+            if data.dim() == 4:
+                B, K, N, D = data.shape
+                flat = data.reshape(B * K, N, D)
+                ws.compose(flat, subspace=subspace)
+            else:
+                ws.compose(data, subspace=subspace)
+            # Signal-router mode: propagate the router's transformed
+            # slab back into subspace.event so downstream spaces
+            # receive the differentiable signal (otherwise the
+            # router's gates / scorer never see task-loss gradient).
+            if ws.chart.router_kind == "signal":
+                router = ws.chart._signal_router
+                if router is not None and router._last_output is not None:
+                    out = router._last_output
+                    if out.shape == data.shape:
+                        subspace.set_event(out)
+        except Exception as exc:
+            _log_advisory_exception("ChartCompose.forward", exc)
+        return subspace
+
+
+class ChartGenerate(nn.Module):
+    """Reverse-pipeline mirror of ``ChartCompose``: runs
+    ``wordSpace.generate(...)`` on the incoming subspace before the
+    spaces' reverse passes fire.
+    """
+
+    def __init__(self, word_space):
+        super().__init__()
+        object.__setattr__(self, '_word_space', word_space)
+
+    def forward(self, subspace):
+        ws = self._word_space
+        if ws is None or subspace is None:
+            return subspace
+        if hasattr(subspace, 'is_empty') and subspace.is_empty():
+            return subspace
+        data = subspace.materialize() if hasattr(
+            subspace, 'materialize') else None
+        if data is None:
+            return subspace
+        try:
+            if data.dim() == 4:
+                B, K, N, D = data.shape
+                flat = data.reshape(B * K, N, D)
+                ws.generate(flat, subspace=subspace)
+            else:
+                ws.generate(data, subspace=subspace)
+        except Exception as exc:
+            _log_advisory_exception("ChartGenerate.forward", exc)
+        return subspace
+
+
+class GrammarMergeGlue(nn.Module):
+    """Progressive-bottleneck glue for ``useGrammar == 'all'``.
+
+    Average-merge of adjacent pairs along the N axis, halving N per
+    stage. Caches pairwise differences (``_merge_diff``) for exact
+    reverse. ``is_last=True`` makes the glue a pass-through (deepest
+    conceptual stage doesn't halve again).
+    """
+
+    def __init__(self, stage_idx: int, initial_n: int, is_last: bool):
+        super().__init__()
+        self.stage_idx = int(stage_idx)
+        self.initial_n = int(initial_n)
+        self.is_last = bool(is_last)
+        self._merge_diff = None
+
+    def forward(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        if self.is_last:
+            return subspace
+        x = subspace.materialize()
+        left = x[:, 0::2, :]
+        right = x[:, 1::2, :]
+        self._merge_diff = left - right
+        subspace.set_event((left + right) / 2)
+        return subspace
+
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        if self.is_last:
+            return subspace
+        diff = self._merge_diff
+        assert diff is not None, (
+            "GrammarMergeGlue.reverse called without prior forward")
+        y = subspace.materialize()
+        left = y + diff / 2
+        right = y - diff / 2
+        B, N_half, D = left.shape
+        expanded = torch.zeros(B, N_half * 2, D, device=y.device, dtype=y.dtype)
+        expanded[:, 0::2, :] = left
+        expanded[:, 1::2, :] = right
+        subspace.set_event(expanded)
+        self._merge_diff = None
+        return subspace
+
+
+# FlattenKWrapper retired 2026-05-11: K-axis flatten/restore is now
+# handled inline by ``BasicModel._flatten_k`` / ``_restore_k`` around
+# each stem/body/head boundary in the pipeline methods.
+
+# -- End inlined-from-Pipeline section -------------------------------
 
 
 class _MultiOptimizer:
@@ -1981,81 +2197,6 @@ class BasicModel(BaseModel):
         single per-stage construction path).
         """
         return self._build_pipelines_per_stage()
-        # Cache the subspace flowing out of symbolicSpace so forward()
-        # can recover it after pipeline_fwd. Needed because passthrough
-        # symbolicSpace doesn't populate its own .subspace.
-        self.symbol_cache = CachePoint()
-
-        # Set per-stage attributes used by the single-arg forward() wrappers.
-        self.symbolicSpace.is_last = True
-        self.symbolicSpace.quantize = False
-        if self.wordSpace is not None:
-            self.symbolicSpace.wordSpace = self.wordSpace
-
-        # Stem: inputSpace produces the K-extended subspace (in AR mode);
-        # perceptualSpace's per-window work runs flat via FlattenKWrapper.
-        # ChartCompose runs the chart's inside pass on the post-embedding
-        # subspace (originally placed BEFORE perceptualSpace, but text-mode
-        # inputs need perceptualSpace to embed before the chart can
-        # materialize the slab). PerceptualSpace's own forward doesn't
-        # consume current_rules, so the post-embed placement is safe.
-        self.pipeline_stem = nn.Sequential(
-            self.inputSpace,
-            FlattenKWrapper(self.perceptualSpace),
-            ChartCompose(self.wordSpace),
-        )
-
-        # Body: pure transforms wrapped to flatten K.
-        body_modules = [self.conceptualSpace,
-                        self.symbolicSpace, self.symbol_cache]
-        self._body_inner = nn.Sequential(*body_modules)
-        self.pipeline_body = FlattenKWrapper(self._body_inner)
-
-        # Head: output projection wrapped to flatten K.
-        self.pipeline_head = FlattenKWrapper(self.outputSpace)
-
-        self.pipeline_fwd = nn.Sequential(
-            self.pipeline_stem, self.pipeline_body, self.pipeline_head,
-        )
-
-        all_spaces = [self.inputSpace, self.perceptualSpace,
-                      self.conceptualSpace, self.symbolicSpace, self.outputSpace]
-        any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
-
-        # ChartGenerate is the reverse-pipeline mirror of ChartCompose:
-        # runs the chart's outside pass on the symbol-side subspace
-        # before the spaces' reverse passes fire, populating
-        # ``wordSpace.generate_rules``.
-        if any_invertible:
-            self.pipeline_rev = nn.Sequential(
-                FlattenKWrapper(ReverseAdapter(self.outputSpace)),
-                ChartGenerate(self.wordSpace),
-                FlattenKWrapper(nn.Sequential(
-                    ReverseAdapter(self.symbol_cache),
-                    ReverseAdapter(self.symbolicSpace),
-                    ReverseAdapter(self.conceptualSpace),
-                )),
-                FlattenKWrapper(ReverseAdapter(self.perceptualSpace)),
-                ReverseAdapter(self.inputSpace),
-            )
-            self.pipeline_rt = None
-            self.midpoint_cache = None
-        else:
-            self.midpoint_cache = CachePoint()
-            self.pipeline_rt = nn.Sequential(
-                self.pipeline_stem, self.pipeline_body, self.pipeline_head,
-                self.midpoint_cache,
-                FlattenKWrapper(ReverseAdapter(self.outputSpace)),
-                ChartGenerate(self.wordSpace),
-                FlattenKWrapper(nn.Sequential(
-                    ReverseAdapter(self.symbol_cache),
-                    ReverseAdapter(self.symbolicSpace),
-                    ReverseAdapter(self.conceptualSpace),
-                )),
-                FlattenKWrapper(ReverseAdapter(self.perceptualSpace)),
-                ReverseAdapter(self.inputSpace),
-            )
-            self.pipeline_rev = None
 
     # -- Per-stage / butterfly / AR helpers ----------------------------
     # Shared by BasicModel's flat pipeline and BasicModel's per-stage
@@ -2172,10 +2313,10 @@ class BasicModel(BaseModel):
         return self.masked_prediction == 'ARIR'
 
     def _run_reverse_sequential(self, last_forward_result):
-        """Case A reconstruction: run pipeline_rev once after the forward loop."""
-        if self.pipeline_rev is None or last_forward_result is None:
+        """Case A reconstruction: run the reverse pipeline once after forward."""
+        if not self.any_invertible or last_forward_result is None:
             return None
-        return self.pipeline_rev(last_forward_result)
+        return self._run_pipeline_rev(last_forward_result)
 
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
@@ -2531,84 +2672,6 @@ class BasicModel(BaseModel):
         per-stage forward path).
         """
         return self._forward_per_stage(inputData)
-        if isinstance(inputData, torch.Tensor):
-            inputData = inputData.to(TheDevice.get())
-        self._ar_valid_pos = None
-
-        # Keep InputSpace's AR gate in sync with the model's masked_prediction.
-        self.inputSpace.masked_prediction = self.masked_prediction
-
-        is_runtime_arir = (
-            self.inputSpace.data is not None
-            and self.inputSpace.data._runtime_mode == 'ARIR'
-        )
-        is_ar_mode = (
-            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-            and not is_runtime_arir
-        )
-        is_ir_mode = (self.masked_prediction == 'IR' and not is_runtime_arir)
-
-        if is_ir_mode:
-            # IR splits stem from body so we can inject NULL_PERCEPT at
-            # random embedded positions before the body sees them.
-            stem_out = self.pipeline_stem(inputData)
-            if stem_out is None or (hasattr(stem_out, 'is_empty')
-                                    and stem_out.is_empty()):
-                self.inputs = self.inputSpace.subspace
-                return None, None, None, None
-            self.create_ir_mask(stem_out)
-            body_out = self.pipeline_body(stem_out)
-            result = self.pipeline_head(body_out)
-        else:
-            result = self.pipeline_fwd(inputData)
-        # Empty/sentinel passthrough: nothing to predict.
-        if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
-            self.inputs = self.inputSpace.subspace
-            return None, None, None, None
-
-        self.inputs = self.inputSpace.subspace
-
-        if self.outputSpace.nonlinear_output:
-            pred = result.materialize(mode="activation")
-        else:
-            pred = result.materialize()
-        if pred is not None:
-            pred = self.normalizer.denormalize(pred, which="output")
-
-        # AR path: head emits [B, K, N, predDim]; runBatch flattens K.
-        # Non-AR path: head emits [B, N, predDim] -- pass through.
-        sym_sub = self.symbol_cache.last
-        symbols = sym_sub.materialize() if sym_sub is not None else None
-
-        # forwardInput contract for runBatch:
-        #   * AR modes: [B, T, D] embedded input (T == K cursors).
-        #   * Non-AR:   [B, N, D] inputSpace event.
-        # In AR mode the inputSpace.subspace event was flattened to
-        # [B*K, N, D] by the body's FlattenKWrapper; expose the original
-        # embedding instead so the AR loss in runBatch can compare
-        # per-cursor predictions against per-cursor targets.
-        if is_ar_mode:
-            last_input_state = self.inputSpace._ar_embedded
-            if last_input_state is None:
-                last_input_state = self.perceptualSpace._embedded_input
-        else:
-            last_input_state = self.inputSpace.subspace.materialize()
-            if last_input_state is None:
-                last_input_state = self.perceptualSpace._embedded_input
-
-        # Expose the [B, K] valid mask for runBatch.
-        if is_ar_mode and self.inputSpace.subspace.valid_mask is not None:
-            self._ar_valid_pos = self.inputSpace.subspace.valid_mask
-
-        # nWhere bookkeeping: advance positional counter once per cursor
-        # (K times per call) to match legacy serial-AR semantics where each
-        # cursor iteration was a separate forward call.
-        if last_input_state is not None:
-            batch = last_input_state.shape[0]
-            K = pred.shape[1] if (is_ar_mode and pred is not None and pred.dim() == 4) else 1
-            self.inputSpace.subspace.whenEncoding.increment(batch * K)
-
-        return last_input_state, symbols, pred, None
 
     def reverse(self, symbols, outputData):
         """Full reverse pass: symbols -> concepts -> percepts -> input.
@@ -4449,7 +4512,6 @@ class BasicModel(BaseModel):
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
                                  layer=cs_layer,
                                  subsymbolic_widen_dim=0)
-            cs._stage_idx = t
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs, layer=ss_layer)
             # Per-stage flags consumed by build_pipelines / forward.
@@ -4467,20 +4529,25 @@ class BasicModel(BaseModel):
         # PerceptualSpace serves as the subsymbolic substrate.
         self.subsymbolicSpace = None
 
-        # Wire ``symbolicSpace_ref`` on every stage's ConceptualSpace so
-        # ``_build_combined_input`` can pull the previous stage's
-        # symbolic event into the right half. Stage 0 cold-starts with
-        # the same-stage SymbolicSpace (its event is None at first
-        # call, treated as zero); stages t>=1 read stage t-1's
-        # SymbolicSpace. ``object.__setattr__`` bypasses nn.Module
-        # submodule tracking so the SymbolicSpace isn't registered as
-        # a child of multiple parents in the module tree (would break
-        # ``.to(device)`` and double-count parameters).
+        # Wire sibling refs on every stage's ConceptualSpace.
+        # ``_sourced_input`` reads BOTH perceptual (stem-cached) AND
+        # the active grammar/parallel sibling (previous stage's
+        # symbolic event) at every stage, combining them additively
+        # after a bivector lift on the symbolic side.
+        # Stage 0 cold-starts with the same-stage SymbolicSpace (its
+        # event is None at first call, treated as zero); stages t>=1
+        # read stage t-1's SymbolicSpace. ``object.__setattr__``
+        # bypasses nn.Module submodule tracking so the SymbolicSpace
+        # isn't registered as a child of multiple parents (would
+        # double-count parameters and break ``.to(device)``). The
+        # perceptual ref points to the single stem PerceptualSpace
+        # instance for every stage.
         for t, cs in enumerate(self.conceptualSpaces):
             ref = (self.symbolicSpaces[0] if t == 0
                    else self.symbolicSpaces[t - 1])
             object.__setattr__(cs, 'symbolicSpace_ref', ref)
             object.__setattr__(cs, 'subsymbolicSpace_ref', None)
+            object.__setattr__(cs, 'perceptualSpace_ref', self.perceptualSpace)
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -4597,18 +4664,20 @@ class BasicModel(BaseModel):
         """Phase 2: stem/body/head pipelines for BasicModel.
 
         Pipeline shape (microbatch AR):
-            stem  : inputSpace -> FlattenK(perceptualSpace)
-            body  : FlattenK( (conceptualSpaces[t] -> [GrammarMergeGlue?]
-                              -> symbolicSpaces[t] -> ss_cache[t])×T
-                              -> symbol_cache )
+            stem  : nn.Sequential(inputSpace, FlattenK(perceptualSpace),
+                                  ChartCompose)
+            body  : explicit for-loop over ``self.body_stages``
+                    (ModuleList of ModuleDicts), one dict per stage:
+                      [reparse?] -> cs -> [merge?] -> ss
+                    K-axis flatten/restore is hoisted into _forward_body.
             head  : FlattenK(outputSpace)
 
         T = len(self.conceptualSpaces). Each per-stage SymbolicSpace
-        gets its own CachePoint (``self.ss_caches[t]``) inserted
-        immediately after it inside the body. ``forward()`` reads them
-        to rebuild ``symbol_states`` (un-flattened back to [B,K,N,D]).
-        ``self.symbol_cache`` is the terminal cache (after the last
-        SymbolicSpace) — same role as in BasicModel.
+        output is captured into ``self._ss_cache[t]`` (plain Python list)
+        by ``_forward_body``. ``_forward_per_stage`` reads them to
+        rebuild ``symbol_states`` (un-flattened back to [B,K,N,D]).
+        ``self.symbol_cache`` is a property returning the terminal
+        entry — same role as before, no longer a CachePoint module.
         """
         T = len(self.conceptualSpaces)
         use_grammar_merge = (self.useGrammar == "all")
@@ -4624,13 +4693,11 @@ class BasicModel(BaseModel):
         # ``self.symbolicSpaces[-1]``.
         self.symbolicSpace.wordSpace = self.wordSpace
 
-        # Per-stage symbol_states capture lives in CachePoints inside
-        # the body. The terminal one doubles as ``self.symbol_cache``
-        # for the BasicModel-style head/symbols read.
-        self.ss_caches = nn.ModuleList(
-            [CachePoint() for _ in range(T)]
-        )
-        self.symbol_cache = self.ss_caches[T - 1] if T > 0 else CachePoint()
+        # Per-stage symbol output capture. Plain Python list populated
+        # by ``_forward_body`` each call; ``symbol_cache`` property
+        # resolves to the terminal entry. Replaces the prior CachePoint
+        # ModuleList (CachePoints existed only to fit nn.Sequential).
+        self._ss_cache = [None] * T
 
         # Determine initial_n per stage for the N-halving GrammarMergeGlue.
         try:
@@ -4670,71 +4737,58 @@ class BasicModel(BaseModel):
                 "Use maskedPrediction=IR if you want per-stage re-parse.")
             per_stage_reparse = False
 
-        body_modules = []
+        # Per-stage body: ModuleList of ModuleDicts, driven by an
+        # explicit for-loop in ``_forward_body`` / ``_reverse_body``.
+        # Replaces ``_body_inner = nn.Sequential(*body_modules)``; the
+        # adapter classes (FlattenKWrapper, ReverseAdapter, CachePoint)
+        # that existed only to fit Sequential's one-arg contract go
+        # away. Each stage's dict contains:
+        #   "reparse": ChartCompose      (optional, t>0 + per_stage_reparse)
+        #   "cs":      ConceptualSpace   (required)
+        #   "merge":   GrammarMergeGlue  (optional, useGrammar=="all")
+        #   "ss":      SymbolicSpace     (required)
+        self.body_stages = nn.ModuleList()
         for t in range(T):
+            stage = nn.ModuleDict()
             if per_stage_reparse and t > 0:
-                # Re-parse the previous stage's symbolic output before
-                # this stage's ConceptualSpace consumes it.
-                body_modules.append(ChartCompose(self.wordSpace))
-            body_modules.append(self.conceptualSpaces[t])
+                stage["reparse"] = ChartCompose(self.wordSpace)
+            stage["cs"] = self.conceptualSpaces[t]
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
-                body_modules.append(
-                    GrammarMergeGlue(stage_idx=t, initial_n=stage_n,
-                                     is_last=(t == T - 1))
-                )
-            body_modules.append(self.symbolicSpaces[t])
-            body_modules.append(self.ss_caches[t])
+                stage["merge"] = GrammarMergeGlue(
+                    stage_idx=t, initial_n=stage_n,
+                    is_last=(t == T - 1))
+            stage["ss"] = self.symbolicSpaces[t]
+            self.body_stages.append(stage)
 
-        self._body_inner = nn.Sequential(*body_modules)
-
-        # Stem / body / head wrappers — same shape as BasicModel.
-        # ChartCompose / ChartGenerate run the chart's inside / outside
-        # passes around the body (2026-05-01 syntactic-layer refactor).
-        self.pipeline_stem = nn.Sequential(
-            self.inputSpace,
-            FlattenKWrapper(self.perceptualSpace),
-            ChartCompose(self.wordSpace),
-        )
-        self.pipeline_body = FlattenKWrapper(self._body_inner)
-        self.pipeline_head = FlattenKWrapper(self.outputSpace)
-        self.pipeline_fwd = nn.Sequential(
-            self.pipeline_stem, self.pipeline_body, self.pipeline_head,
-        )
+        # Stem/head are methods (``_forward_stem`` / ``_forward_head``)
+        # rather than stored Sequentials -- K-axis flatten/restore is
+        # hoisted into them via ``_flatten_k`` / ``_restore_k`` helpers,
+        # so FlattenKWrapper is no longer needed anywhere. ChartCompose
+        # is stored as a module attribute so the chart-compose step
+        # participates in parameter discovery (the host_layer registry
+        # hangs off WordSpace, but ChartCompose itself can hold buffers).
+        self._chart_compose = ChartCompose(self.wordSpace)
 
         all_spaces = ([self.inputSpace, self.perceptualSpace]
                       + list(self.conceptualSpaces)
                       + list(self.symbolicSpaces)
                       + [self.outputSpace])
-        any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
+        self.any_invertible = any(
+            s.invertible if hasattr(s, "invertible") else False
+            for s in all_spaces)
 
-        # Reverse adapters for each forward module, in reverse order.
-        rev_body_inner = nn.Sequential(
-            *[ReverseAdapter(m) for m in reversed(body_modules)]
-        )
-        rev_body = FlattenKWrapper(rev_body_inner)
-        rev_head = FlattenKWrapper(ReverseAdapter(self.outputSpace))
-        rev_perceptual = FlattenKWrapper(ReverseAdapter(self.perceptualSpace))
-        rev_input = ReverseAdapter(self.inputSpace)
-
-        if any_invertible:
-            self.pipeline_rev = nn.Sequential(
-                rev_head,
-                ChartGenerate(self.wordSpace),
-                rev_body, rev_perceptual, rev_input,
-            )
-            self.pipeline_rt = None
-            self.midpoint_cache = None
-        else:
-            self.midpoint_cache = CachePoint()
-            self.pipeline_rt = nn.Sequential(
-                self.pipeline_stem, self.pipeline_body, self.pipeline_head,
-                self.midpoint_cache,
-                rev_head,
-                ChartGenerate(self.wordSpace),
-                rev_body, rev_perceptual, rev_input,
-            )
-            self.pipeline_rev = None
+        # Reverse-pipeline pieces. The reverse path is composed of
+        # methods (``_reverse_head``, ``_reverse_body``,
+        # ``_reverse_perceptual``, direct ``inputSpace.reverse``) so
+        # ReverseAdapter goes away. ChartGenerate stays as a module
+        # since it's a real side-effect stage.
+        self._chart_generate = ChartGenerate(self.wordSpace)
+        # Forward midpoint cache. None for invertible (Case A); for
+        # non-invertible (Case B) the forward result is stored here so
+        # the round-trip path can rebuild from it. Plain attribute --
+        # used to be a CachePoint module.
+        self.midpoint_cache = None
 
     # BasicModel.End and BasicModel.Finish were dropped 2026-05-05:
     # End() was identical to BasicModel.End; Finish() differed only in
@@ -4742,6 +4796,127 @@ class BasicModel(BaseModel):
     # ``self.plot`` (False by default) so inheriting BasicModel.Finish
     # is a no-op behavior change for the per-stage path.
 
+    @property
+    def symbol_cache(self):
+        """Terminal stage's captured symbolic subspace, or None if not yet set.
+
+        Replaces the prior ``self.symbol_cache = self.ss_caches[T-1]``
+        CachePoint. Read-only — populated by ``_forward_body``.
+        """
+        return self._ss_cache[-1] if self._ss_cache else None
+
+    def _forward_stem(self, inputData):
+        """Stem: inputSpace -> perceptualSpace -> ChartCompose.
+
+        Hoists K-axis flatten/restore around perceptualSpace so the
+        per-Space FlattenKWrapper is no longer needed. Replaces the
+        prior ``self.pipeline_stem = nn.Sequential(inputSpace,
+        FlattenKWrapper(perceptualSpace), ChartCompose(wordSpace))``.
+        """
+        sub = self.inputSpace(inputData)
+        if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
+            return sub
+        B, K = self._flatten_k(sub)
+        sub = self.perceptualSpace(sub)
+        self._restore_k(sub, B, K)
+        sub = self._chart_compose(sub)
+        return sub
+
+    def _forward_head(self, sub):
+        """Head: outputSpace with K-axis flatten/restore.
+
+        Replaces ``self.pipeline_head = FlattenKWrapper(outputSpace)``.
+        """
+        B, K = self._flatten_k(sub)
+        sub = self.outputSpace(sub)
+        self._restore_k(sub, B, K)
+        return sub
+
+    def _forward_body(self, sub):
+        """Per-stage body forward. Replaces nn.Sequential(*body_modules).
+
+        Hoists K-axis flatten/restore around the loop (was inside the
+        old ``FlattenKWrapper(_body_inner)``). The body sees a flat
+        [B*K, N, D] batch dim and operates as if K=1. Captures each
+        stage's SymbolicSpace output into ``self._ss_cache[t]``.
+        """
+        B, K = self._flatten_k(sub)
+        for t, stage in enumerate(self.body_stages):
+            if "reparse" in stage:
+                sub = stage["reparse"](sub)
+            sub = stage["cs"](sub)
+            if "merge" in stage:
+                sub = stage["merge"](sub)
+            sub = stage["ss"](sub)
+            self._ss_cache[t] = sub
+        self._restore_k(sub, B, K)
+        return sub
+
+    def _reverse_body(self, sub):
+        """Per-stage body reverse. Mirrors ``_forward_body`` order.
+
+        Hoists K-axis flatten/restore around the loop just like the
+        forward path. Replaces ReverseAdapter-wrapped reversed
+        Sequential.
+        """
+        B, K = self._flatten_k(sub)
+        for t in reversed(range(len(self.body_stages))):
+            stage = self.body_stages[t]
+            sub = stage["ss"].reverse(sub)
+            if "merge" in stage:
+                sub = stage["merge"].reverse(sub)
+            sub = stage["cs"].reverse(sub)
+            if "reparse" in stage:
+                sub = stage["reparse"].reverse(sub)
+        self._restore_k(sub, B, K)
+        return sub
+
+    def _reverse_head(self, sub):
+        """Reverse the head: K-flatten, outputSpace.reverse, K-restore.
+
+        Replaces the prior ``FlattenKWrapper(ReverseAdapter(outputSpace))``
+        wrapper attribute.
+        """
+        B, K = self._flatten_k(sub)
+        sub = self.outputSpace.reverse(sub)
+        return self._restore_k(sub, B, K)
+
+    def _reverse_perceptual(self, sub):
+        """Reverse the perceptualSpace boundary with K-flatten/restore.
+
+        Replaces ``FlattenKWrapper(ReverseAdapter(perceptualSpace))``.
+        """
+        B, K = self._flatten_k(sub)
+        sub = self.perceptualSpace.reverse(sub)
+        return self._restore_k(sub, B, K)
+
+    def _run_pipeline_rev(self, x):
+        """Case A reverse pipeline (any_invertible=True).
+
+        Replaces ``self.pipeline_rev = nn.Sequential(rev_head,
+        ChartGenerate, rev_body, rev_perceptual, rev_input)``.
+        """
+        if x is None:
+            return None
+        x = self._reverse_head(x)
+        x = self._chart_generate(x)
+        x = self._reverse_body(x)
+        x = self._reverse_perceptual(x)
+        x = self.inputSpace.reverse(x)
+        return x
+
+    def _run_pipeline_rt(self, inputData):
+        """Case B round-trip (any_invertible=False).
+
+        Forward, cache midpoint, reverse. Replaces the prior
+        ``self.pipeline_rt`` nn.Sequential.
+        """
+        sub = self._forward_stem(inputData)
+        sub = self._forward_body(sub)
+        sub = self._forward_head(sub)
+        # Plain-attribute midpoint cache (was a CachePoint module).
+        self.midpoint_cache = sub
+        return self._run_pipeline_rev(sub)
 
     def _forward_per_stage(self, inputData):
         """Microbatch AR forward via stem/body/head pipeline.
@@ -4749,13 +4924,14 @@ class BasicModel(BaseModel):
         Shape:
           stem  -> [B, K, N, D] (K = T-N+1 progressive-prefix windows
                    for AR; K = 1 for non-AR / inference).
-          body  -> per-stage CS/SS chain on [B*K, N, D], with each
-                   SymbolicSpace's output captured into ``ss_caches``.
+          body  -> per-stage CS/SS chain on [B*K, N, D]; each
+                   SymbolicSpace output captured into ``self._ss_cache``
+                   (plain Python list) by ``_forward_body``.
           head  -> outputSpace; result event [B, K, N, predDim].
 
-        Replaces the legacy while-loop: InputSpace produces all K
-        windows in one call; the body processes them in parallel via
-        FlattenKWrapper. K=1 is the inference (ARIR) and non-AR case.
+        K-axis flatten/restore is hoisted into ``_forward_body``; the
+        stem and head each still wrap their single relevant Space in
+        a ``FlattenKWrapper`` for now.
         """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
@@ -4813,19 +4989,16 @@ class BasicModel(BaseModel):
         )
         is_ir_mode = (self.masked_prediction == 'IR' and not is_runtime_arir)
 
-        # Single-call pipeline. InputSpace produces [B, K, N, D] (or
-        # [B, N, D] for non-AR with k_axis=False). FlattenKWrapper
-        # passes through transparently when k_axis is False.
-        if is_ir_mode:
-            stem_out = self.pipeline_stem(inputData)
-            if (stem_out is not None
-                    and not (hasattr(stem_out, 'is_empty')
-                             and stem_out.is_empty())):
-                self.create_ir_mask(stem_out)
-            body_out = self.pipeline_body(stem_out)
-            result = self.pipeline_head(body_out)
-        else:
-            result = self.pipeline_fwd(inputData)
+        # Stem -> body -> head explicit pipeline. Each stage handles
+        # its own K-axis flatten/restore via the ``_flatten_k`` /
+        # ``_restore_k`` helpers; FlattenKWrapper is gone.
+        stem_out = self._forward_stem(inputData)
+        if is_ir_mode and (
+                stem_out is not None
+                and not (hasattr(stem_out, 'is_empty') and stem_out.is_empty())):
+            self.create_ir_mask(stem_out)
+        body_out = self._forward_body(stem_out)
+        result = self._forward_head(body_out)
 
         # Empty-sentinel: input exhausted.
         if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
@@ -4844,9 +5017,9 @@ class BasicModel(BaseModel):
         # subtraction and _butterfly_unmerge handles the None diff as a
         # no-op, matching the is_last pass-through.
         if self.useGrammar == "all":
-            for m in self._body_inner:
-                if isinstance(m, GrammarMergeGlue):
-                    self._merge_diffs.append(m._merge_diff)
+            for stage in self.body_stages:
+                if "merge" in stage:
+                    self._merge_diffs.append(stage["merge"]._merge_diff)
                     self._sym_feedbacks.append(None)
 
         # Discover K from the result subspace (head's FlattenKWrapper
@@ -4863,12 +5036,12 @@ class BasicModel(BaseModel):
               and stem_sub.valid_mask.dim() == 2):
             K = stem_sub.valid_mask.shape[1]
 
-        # Capture symbol_states from per-stage CachePoints. Inside the
-        # body each cached event is [B*K, N, D]; un-flatten back to
-        # [B, K, N, D] when K is set.
+        # Capture symbol_states from the per-stage cache list (plain
+        # Python ``self._ss_cache`` populated by ``_forward_body``).
+        # Inside the body each captured event is [B*K, N, D];
+        # un-flatten back to [B, K, N, D] when K is set.
         captured_states = []
-        for cache in self.ss_caches:
-            sub = cache.last
+        for sub in self._ss_cache:
             if sub is None:
                 continue
             sv = sub.materialize() if hasattr(sub, 'materialize') else None
@@ -4898,8 +5071,7 @@ class BasicModel(BaseModel):
         # Prefer the symbol_cache's captured subspace when present so the
         # cache's last_seen flow is the canonical read path; fall back to
         # the SymbolicSpace's own subspace otherwise.
-        sym_sub = (self.symbol_cache.last
-                   if self.symbol_cache is not None else None)
+        sym_sub = self.symbol_cache  # property: terminal _ss_cache entry, may be None
         if sym_sub is not None:
             sym_vectors = sym_sub.materialize()
         else:
@@ -4925,9 +5097,9 @@ class BasicModel(BaseModel):
         # forwardInput contract for runBatch (mirrors BasicModel.forward):
         #   * AR modes: [B, T, D] embedded input (T == K cursors).
         #   * Non-AR:   [B, N, D] inputSpace event.
-        # The body's FlattenKWrapper flattens the stem event to
-        # [B*K, N, D] in place, so we expose the original embedding
-        # instead of materializing the modified subspace.
+        # AR-mode body flattens the stem event in place, so
+        # ``_ar_embedded`` is the cached pre-flatten copy. Non-AR
+        # materializes the live subspace event.
         if is_ar_mode:
             input_state = self.inputSpace._ar_embedded
             if input_state is None:

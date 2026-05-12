@@ -12,7 +12,7 @@ sys.path.insert(0, str(_project / "bin"))
 
 import torch
 
-from Pipeline import ReverseAdapter, CachePoint
+from Models import ReverseAdapter, CachePoint
 
 
 # --- Test helpers ---
@@ -85,7 +85,7 @@ def test_cache_point_updates_on_each_call():
     assert cp.last is b
 
 
-from Pipeline import GrammarMergeGlue  # noqa: E402
+from Models import GrammarMergeGlue  # noqa: E402
 
 
 # --- GrammarMergeGlue ---
@@ -161,9 +161,24 @@ def _make_mm_xor_model():
     return model
 
 
-def test_build_pipelines_creates_sequential():
-    """build_pipelines() constructs pipeline_fwd as an nn.Sequential."""
+def test_build_pipelines_creates_body_stages():
+    """build_pipelines() constructs body_stages as an nn.ModuleList of ModuleDicts.
+
+    Replaces the prior pipeline_fwd nn.Sequential check. After the
+    2026-05-11 module consolidation, the entire pipeline is method-
+    based: ``_forward_stem`` / ``_forward_body`` / ``_forward_head``
+    plus the per-stage ``body_stages`` ModuleList. FlattenKWrapper
+    is gone.
+    """
     import torch.nn as nn_
     model = _make_mm_xor_model()
-    assert model.pipeline_fwd is not None
-    assert isinstance(model.pipeline_fwd, nn_.Sequential)
+    assert isinstance(model.body_stages, nn_.ModuleList)
+    assert len(model.body_stages) == model.conceptualOrder
+    for stage in model.body_stages:
+        assert isinstance(stage, nn_.ModuleDict)
+        assert "cs" in stage and "ss" in stage
+    # Pipeline boundaries are methods, not attributes.
+    assert callable(getattr(model, '_forward_stem', None))
+    assert callable(getattr(model, '_forward_body', None))
+    assert callable(getattr(model, '_forward_head', None))
+    assert callable(getattr(model, '_run_pipeline_rev', None))

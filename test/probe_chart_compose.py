@@ -53,7 +53,7 @@ print(f"chart router_kind: {ws.chart.router_kind}")
 print(f"useGrammar: {m.useGrammar}")
 
 # Monkey-patch ChartCompose to re-raise instead of swallowing.
-from Pipeline import ChartCompose
+from Models import ChartCompose
 _orig_forward = ChartCompose.forward
 
 def _noisy_forward(self, subspace):

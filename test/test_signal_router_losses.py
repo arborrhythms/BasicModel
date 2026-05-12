@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import torch
 
-from SignalRouter import (
+from Language import (
     copy_penalty, length_penalty, comparator_dp_kl,
 )
 

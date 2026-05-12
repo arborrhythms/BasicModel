@@ -149,7 +149,7 @@ def test_wordspace_owns_chart_and_registry():
 def test_chartcompose_and_chartgenerate_in_pipeline():
     """ChartCompose / ChartGenerate are inserted into the AR-mode
     forward / reverse pipelines (Step 6 wiring)."""
-    from Pipeline import ChartCompose, ChartGenerate
+    from Models import ChartCompose, ChartGenerate
     import test_basicmodel as tb
     import Models
 
@@ -165,17 +165,14 @@ def test_chartcompose_and_chartgenerate_in_pipeline():
     m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
              nOutput=8, masked_prediction='AR')
 
-    # Both pipelines should contain the chart-driven steps.
-    stem_modules = list(m.pipeline_stem.children())
-    assert any(isinstance(mod, ChartCompose) for mod in stem_modules), (
-        f"ChartCompose missing from pipeline_stem: "
-        f"{[type(m).__name__ for m in stem_modules]}")
-    rev_pipeline = m.pipeline_rev or m.pipeline_rt
-    assert rev_pipeline is not None
-    rev_modules = list(rev_pipeline.children())
-    assert any(isinstance(mod, ChartGenerate) for mod in rev_modules), (
-        f"ChartGenerate missing from reverse pipeline: "
-        f"{[type(m).__name__ for m in rev_modules]}")
+    # ChartCompose and ChartGenerate are now module attributes
+    # (``_chart_compose`` / ``_chart_generate``) called inside
+    # ``_forward_stem`` / ``_run_pipeline_rev``, not children of a
+    # ``pipeline_stem`` Sequential.
+    assert isinstance(m._chart_compose, ChartCompose), (
+        f"_chart_compose not a ChartCompose: {type(m._chart_compose).__name__}")
+    assert isinstance(m._chart_generate, ChartGenerate), (
+        f"_chart_generate not a ChartGenerate: {type(m._chart_generate).__name__}")
 
 
 # --- GrammarLayer registry (Step 8) ---------------------------------

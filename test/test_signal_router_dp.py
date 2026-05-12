@@ -8,7 +8,7 @@ import math
 import pytest
 import torch
 
-from SignalRouter import binary_tiling_soft_dp
+from Language import binary_tiling_soft_dp
 from test_signal_router_brute_force import (
     enumerate_tilings, logsumexp_tilings, score_tiling,
 )

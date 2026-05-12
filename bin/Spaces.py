@@ -7825,16 +7825,15 @@ class ConceptualSpace(Space):
         # different things glued into one PiLayer input. Per-order
         # input switching keeps both halves at the same content width.
         self._right_half_dim = 0
-        # Sibling references retained for the per-order input switch
-        # (`forward` looks up the active sibling under the existing
-        # <architecture><mode>grammar|parallel</mode> flag).
+        # Sibling references: ConceptualSpace reads BOTH the perceptual
+        # event (stem-cached, same instance for every stage) AND the
+        # active grammar/parallel sibling's previous event at every
+        # stage. Combiner: additive after bivector-lift (see
+        # ``_sourced_input``). ``perceptualSpace_ref`` is wired
+        # post-construction in ``_build_pipelines_per_stage``.
         self.symbolicSpace_ref = None
         self.subsymbolicSpace_ref = None
-        # Stage index: set by the per-stage factory loop. Forward branches
-        # on this -- 0 reads PerceptualSpace.event, > 0 reads the active
-        # sibling's previous event lifted via the C-tier codebook's SVD
-        # pseudo-inverse.
-        self._stage_idx = 0
+        self.perceptualSpace_ref = None
         input = self.subspace.getEncodedInputSize()
         if self._bivector_output:
             # Bivector regime: PiLayer stays a square isomorphism inside
@@ -7975,61 +7974,79 @@ class ConceptualSpace(Space):
         return sym if sym is not None else sub
 
     def _sourced_input(self, vspace):
-        """Pick this stage's input per conceptualOrder.
+        """Dual-input: perceptual + sibling-symbolic, length-averaged.
 
-        Order 0 reads PerceptualSpace.event (the upstream ``vspace``
-        passed in by the per-stage forward dispatch). Order > 0 reads
-        the active sibling's previous event; if it arrived in the
-        bivector handoff shape ``[B, V_S, 2]``, lift it back to
-        concept content ``[B, V, concept_dim]`` via
-        ``Codebook.project_reverse`` on this stage's ``.what`` codebook.
+        Combines available shape-compatible contributions by averaging
+        (``sum / count``) instead of plain summation. Averaging keeps
+        the input bounded to the same range as each source so the
+        codebook's [-1, 1] invariant survives both channels firing.
+        Null vectors after reset don't contribute at all (sym is
+        ``None``, not a real zero tensor) -- so the average degrades
+        cleanly to the legacy single-source result.
+
+        Primary input source (preserves all ``forwardBegin`` side
+        effects -- ``subspace.batch`` and ``_pre_reshape_input`` -- so
+        downstream ``forwardEnd`` / ``reverseEnd`` reshape correctly):
+
+          Stage 0  (vspace IS perceptualSpace_ref.subspace):
+              primary = ``forwardBegin(vspace)`` -- perceptual reshape.
+          Stage > 0 (vspace is the previous symbolic subspace):
+              primary = lifted-sibling-symbolic when present, else
+              ``forwardBegin(vspace)`` fallback (sentence start).
+
+        Cross-channel contribution then participates in the average:
+
+          Stage 0:  ``sym`` (lifted sibling) when shape-matched.
+          Stage > 0: stem-cached ``perc`` (reshaped) when shape-matched.
+
+        Stage detection is by object identity (``vspace is
+        perceptualSpace_ref.subspace``); no ``_stage_idx`` flag.
         """
-        if self._stage_idx <= 0:
-            return self.forwardBegin(vspace, returnVectors=True)
+        perc_ref_sub = (self.perceptualSpace_ref.subspace
+                        if self.perceptualSpace_ref is not None
+                        else None)
+        at_stage_0 = (perc_ref_sub is not None and vspace is perc_ref_sub)
+
         sib = self._get_active_input_sibling()
-        ev = self._read_event(sib) if sib is not None else None
-        if ev is None:
-            # Sibling not yet populated (sentence start). Fall back to
-            # the upstream vspace so order-0 semantics hold for the
-            # very first forward call of the sequence.
+        sym = self._read_event(sib) if sib is not None else None
+        if sym is not None and (isinstance(self.subspace.what, Codebook)
+                and sym.dim() == 3 and sym.shape[-1] == 2):
+            sym = self.subspace.what.reverse(sym, project=True)
+
+        if at_stage_0 or perc_ref_sub is None:
+            # Primary = perceptual via vspace (legacy stage-0 path or
+            # standalone-construction fallback). Average in sym when
+            # shape-matched.
+            primary = self.forwardBegin(vspace, returnVectors=True)
+            if sym is not None and sym.shape == primary.shape:
+                return (primary + sym) / 2
+            return primary
+
+        # Stage > 0: primary = lifted_sym (legacy). On sentence start
+        # the sibling event is None -- fall back to legacy
+        # forwardBegin(vspace) so order-0 semantics hold for the very
+        # first forward call of the sequence.
+        if sym is None:
             return self.forwardBegin(vspace, returnVectors=True)
-        # Bivector handoff: [B, V_S, 2] needs lifting back to concept
-        # content space before PiLayer can consume it. Snap-mode
-        # codebooks (no bivector) deliver content vectors directly.
-        if (isinstance(self.subspace.what, Codebook)
-                and ev.dim() == 3 and ev.shape[-1] == 2):
-            ev = self.subspace.what.reverse(ev, project=True)
-        return ev
 
-    def _build_combined_input(self, perceptual_event):
-        """Concatenate ``perceptual_event`` with the right-half re-entrant sum.
-
-        Right half = ``symbolicSpace.event + subsymbolicSpace.event`` from
-        the previous conceptual order. At sentence start (events None /
-        not-yet-populated, or shape-mismatched against the current
-        perceptual N) the right half is filled with zeros, which the
-        PiLayer's entry transform maps to multiplicative identity --
-        i.e. order-0 behaviour matches the pre-widening pipeline.
-
-        Spec §"Pass-by-pass dataflow" and §"Sentence boundary".
-        """
-        B = perceptual_event.shape[0]
-        N = perceptual_event.shape[1]
-        D_right = self._right_half_dim
-        device = perceptual_event.device
-        dtype = perceptual_event.dtype
-        right = torch.zeros(B, N, D_right, device=device, dtype=dtype)
-        for sib in (self.symbolicSpace_ref, self.subsymbolicSpace_ref):
-            ev = self._read_event(sib)
-            if ev is None:
-                continue
-            if ev.shape == right.shape:
-                right = right + ev
-            # Else: shape mismatch (e.g. nPercepts != nSymbols at the
-            # combined-input boundary, or first call before sibling
-            # forward has run). Treat as zero -- spec's sentence-start
-            # / sibling-not-yet-active fallback.
-        return torch.cat([perceptual_event, right], dim=-1)
+        # Read the stem-cached perceptual event and apply the same
+        # nInputDim reshape ``forwardBegin`` would WITHOUT clobbering
+        # the side effects (those came from vspace, the correct source
+        # for this stage's forwardEnd/reverseEnd).
+        perc_ev = self._read_event(self.perceptualSpace_ref)
+        if perc_ev is not None and perc_ev.dim() == 4:
+            B, K, N, D = perc_ev.shape
+            perc_ev = perc_ev.reshape(B * K, N, D)
+        if (perc_ev is not None and perc_ev.dim() == 3
+                and self.nInputDim != -1):
+            try:
+                perc_ev = perc_ev.reshape(
+                    perc_ev.shape[0], -1, self.nInputDim)
+            except RuntimeError:
+                perc_ev = None
+        if perc_ev is not None and perc_ev.shape == sym.shape:
+            return (sym + perc_ev) / 2
+        return sym
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
