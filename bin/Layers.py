@@ -2430,63 +2430,78 @@ class UnionLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 class LiftLayer(GrammarLayer):
-    """``S -> lift(S, S)`` -- gated SigmaLayer compose at S-tier.
+    """``S -> lift(VP, NP)`` -- elementwise gate at C-tier, then sigma.
 
-    When constructed with a ``sigma_layer`` reference, lift owns a
-    ``[rank]`` ``raw_gate`` parameter and delegates to
-    ``sigma_layer.compose(left, right, gate=tanh(raw_gate))``. The
-    gate selects a low-rank slice of the SigmaLayer's LDU diagonal
-    (the SVD-style gating lives inside the LDU class -- see
-    ``InvertibleLinearLayer._d_effective``); LiftLayer just owns the
-    parameter and the tanh reparam that bounds it to ``[-1, 1]``.
+    Post-2026-05-12 refactor: lift is no longer an LDU-rank-gated
+    binary fold via a dedicated ``sigma_S`` at sym_dim. Instead VP's
+    activation acts as a per-prototype-and-per-dim mask on NP at the
+    C-tier:
 
-    Without a sigma_layer reference (parameter-free
-    instantiation, e.g. via ``GRAMMAR_LAYER_CLASSES['lift']()``),
-    falls back to the static lattice-min kernel for back-compat.
+        VP_c   = S.subspace.what.reverse(VP_bivec, project=True)
+        NP_c   = S.subspace.what.reverse(NP_bivec, project=True)
+        gated  = VP_c * NP_c                # elementwise gate
+        out_c  = P.sigma.forward(gated)     # substrate sigma at C-dim
+        return S.subspace.what.forward(out_c, project=True)
 
-    Per-rule one-gate convention: every LiftLayer instance owns its
-    own ``raw_gate``. Init at ``atanh(0.99) ~ 2.65`` so the bounded
-    gate starts near 1 and the layer's behavior matches plain
-    sigma.compose at construction time (default-behavior preservation).
+    The factorization is "VP IS the mask": same shared ``P.sigma``
+    LDU basis, but the operand VP supplies the masking. Different
+    VPs → different masks → different outputs from the same matrix.
+    There is no learnable per-LiftLayer parameter; the gate comes
+    from VP's content.
+
+    Without ``symbolicSpace`` / ``perceptualSpace`` back-refs
+    (parameter-free instantiation, e.g. via
+    ``GRAMMAR_LAYER_CLASSES['lift']()``), falls back to the static
+    lattice-min kernel for back-compat with standalone-test harnesses.
     """
     rule_name  = "lift"
     arity      = 2
     invertible = True
     tier       = 'S'
 
-    def __init__(self, sigma_layer=None):
-        """Initialize LiftLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+    def __init__(self, symbolicSpace=None, perceptualSpace=None):
+        """Initialize LiftLayer; the substrate references are wired by
+        the chart's lazy-build path. Standalone-test instantiation
+        with no refs falls back to the static lattice kernel.
         """
         super().__init__(0, 0)
-        self.sigma = sigma_layer
-        if sigma_layer is not None:
-            rank = sigma_layer.layer.rank
-            # atanh(0.99) ~ 2.6467; tanh(2.6467) ~ 0.99 ~ 1 at init.
-            self.raw_gate = nn.Parameter(torch.full((rank,), 2.6467))
-        else:
-            self.raw_gate = None
+        # ``object.__setattr__`` bypasses nn.Module submodule
+        # tracking so the back-references don't create cycles in the
+        # module tree (the Spaces are already registered under the
+        # top-level Model).
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
 
-    def _gate(self):
-        return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
+    def _gated_sigma(self, vp_bivec, np_bivec, sigma):
+        """Shared helper: reverse-lift to C-dim, elementwise gate,
+        apply the substrate ``sigma`` layer, re-snap to S-bivector.
+        """
+        cb = self.symbolicSpace.subspace.what
+        vp_c = cb.reverse(vp_bivec, project=True)
+        np_c = cb.reverse(np_bivec, project=True)
+        gated = vp_c * np_c
+        out_c = sigma.forward(gated)
+        return cb.forward(out_c, project=True)
 
     def forward(self, left, right):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Forward: elementwise gate at C-tier, then substrate sigma.
+
+        ``left`` is VP (the gating operand), ``right`` is NP
+        (the content riding through sigma).
         """
-        if self.sigma is not None:
-            return self.sigma.compose(left, right, gate=self._gate())
-        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+        if self.symbolicSpace is None or self.perceptualSpace is None:
+            return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+        return self._gated_sigma(left, right, self.perceptualSpace.sigma)
 
     def reverse(self, parent):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+        """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
+
+        The elementwise gate ``VP_c * NP_c`` is not bijective without
+        VP -- we cannot recover NP from gated_NP alone. The substrate
+        sigma's inverse handles the post-gate step, but the gate
+        itself is lossy. Inherit the lossy reverse pattern from the
+        existing GrammarLayer convention.
         """
-        if self.sigma is not None:
-            return self.sigma.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
@@ -2499,50 +2514,55 @@ class LiftLayer(GrammarLayer):
 
 
 class LowerLayer(GrammarLayer):
-    """``S -> lower(S, S)`` -- gated PiLayer compose at S-tier.
+    """``S -> lower(VP, NP)`` -- elementwise gate at C-tier, then pi.
 
-    Symmetric to ``LiftLayer`` but with ``pi_layer`` (matexp / log-
-    domain AND-fold) instead of ``sigma_layer``. Owns its own
-    ``raw_gate`` parameter; delegates the actual gate-on-SVD slicing
-    to the inner LDU.
+    Symmetric to ``LiftLayer`` but applies ``C.pi`` instead of
+    ``P.sigma`` on the gated operand. Same gate operation
+    (elementwise multiplicative mask at C-tier), different post-gate
+    transform (multiplicative log-domain instead of additive). The
+    asymmetry between lift and lower lives entirely in this layer
+    choice; the gating is identical.
     """
     rule_name  = "lower"
     arity      = 2
     invertible = True
     tier       = 'S'
 
-    def __init__(self, pi_layer=None):
-        """Initialize LowerLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+    def __init__(self, symbolicSpace=None, conceptualSpace=None):
+        """Initialize LowerLayer; the substrate references are wired
+        by the chart's lazy-build path. Standalone-test instantiation
+        with no refs falls back to the static lattice kernel.
         """
         super().__init__(0, 0)
-        self.pi = pi_layer
-        if pi_layer is not None:
-            rank = pi_layer.layer.rank
-            self.raw_gate = nn.Parameter(torch.full((rank,), 2.6467))
-        else:
-            self.raw_gate = None
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
 
-    def _gate(self):
-        return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
+    def _gated_pi(self, vp_bivec, np_bivec, pi):
+        """Shared helper: reverse-lift to C-dim, elementwise gate,
+        apply the substrate ``pi`` layer, re-snap to S-bivector.
+        """
+        cb = self.symbolicSpace.subspace.what
+        vp_c = cb.reverse(vp_bivec, project=True)
+        np_c = cb.reverse(np_bivec, project=True)
+        gated = vp_c * np_c
+        out_c = pi.forward(gated)
+        return cb.forward(out_c, project=True)
 
     def forward(self, left, right):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Forward: elementwise gate at C-tier, then substrate pi.
+
+        ``left`` is VP (the gating operand), ``right`` is NP
+        (the content riding through pi).
         """
-        if self.pi is not None:
-            return self.pi.compose(left, right, gate=self._gate())
-        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+        if self.symbolicSpace is None or self.conceptualSpace is None:
+            return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+        return self._gated_pi(left, right, self.conceptualSpace.pi)
 
     def reverse(self, parent):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+        """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
+
+        See LiftLayer.reverse for the gating-invertibility rationale.
         """
-        if self.pi is not None:
-            return self.pi.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
@@ -2679,451 +2699,6 @@ class DisjunctionLayer(GrammarLayer):
         return self.reverse(parent)
 
 
-class MereologicalTree(nn.Module):
-    """Long-term memory: a persistent tree of mereological 'part-of'
-    relations over a codebook of ``V`` prototype symbols.
-
-    Stores **direct** edges only; transitivity is computed on read.
-    This matches the psychological constraint that humans store
-    ``a < b`` and ``b < c`` separately and infer ``a < c`` on demand
-    rather than caching the full closure.
-
-    Storage model (replaces the legacy ``[V, V]`` adjacency):
-
-      ``parents:        Long[V]``  direct parent per atom; -1 = root.
-      ``start, end:     Long[V]``  contiguous-row interval per atom;
-                                   ``start[A] ≤ row[B] < end[A]`` iff B
-                                   is a stored proper-part of A. Lazy:
-                                   recomputed by ``_resort()`` on the
-                                   first read after any write.
-      ``equality_pairs: Long[K, 2]``  sparse table for mutual parthood
-                                   ``equals(A, B)`` assertions where
-                                   neither side is a stored ancestor of
-                                   the other. K is dynamic, capped at V.
-
-    Distinct references with equal referents are kept distinct in the
-    codebook (per user spec): ``equals`` does NOT merge codebook rows.
-
-    Writes are deferred and gated:
-      - ``writes_enabled`` (default False) — top-level kill switch.
-        Set True only when the model has decided the chart's POS /
-        derivation pipeline is reliable enough to commit to long-term
-        memory.
-      - ``confidence_min`` (default 0.5) — per-write threshold. Each
-        ``add_part`` / ``add_equal`` accepts an optional confidence in
-        [0, 1]; below threshold the assertion is dropped.
-      - ``add_*`` enqueues into ``pending_part`` / ``pending_equal``.
-      - ``commit()`` consumes the queues atomically: validates each
-        proposed edge against the existing tree, accepts or rejects,
-        and rebuilds ``(start, end)`` via DFS.
-
-    Persistence: ``parents``, ``start``, ``end`` and the equality
-    table are registered buffers, so ``state_dict()`` round-trips
-    the tree alongside the parametric weights.
-
-    Usage:
-
-        tree = MereologicalTree(V=128)
-        tree.writes_enabled = True
-        tree.add_part(child_idx=3, parent_idx=7, confidence=0.8)
-        tree.add_equal(idx_a=5, idx_b=11, confidence=0.9)
-        tree.commit()
-        tree.is_part_of(child_idx=3, parent_idx=7)      # True (direct)
-        tree.is_part_of_transitive(child_idx=3,
-                                   parent_idx=ancestor) # walks parents
-    """
-
-    def __init__(self, V, device=None, dtype=torch.float32):
-        """Initialize MereologicalTree; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__()
-        self.V = int(V)
-        self.register_buffer(
-            'parents',
-            torch.full((self.V,), -1, dtype=torch.long, device=device))
-        self.register_buffer(
-            'start',
-            torch.arange(self.V, dtype=torch.long, device=device))
-        self.register_buffer(
-            'end',
-            torch.arange(1, self.V + 1, dtype=torch.long, device=device))
-        # Equality pairs as a [K, 2] long tensor; rows are (a, b) with
-        # mutual parthood. Capped at V rows; growing past that is a
-        # signal that the codebook is undersized.
-        self.register_buffer(
-            'equality_pairs',
-            torch.empty(0, 2, dtype=torch.long, device=device))
-        # Pending queues — Python lists (not buffers) since they live
-        # only between writes and commits. Each entry is a 3-tuple
-        # (child_or_a, parent_or_b, confidence_float).
-        self.pending_part = []
-        self.pending_equal = []
-        # Gates.
-        self.writes_enabled = False
-        self.confidence_min = 0.5
-        # Lazy cache validity. Reads bump _resort if dirty.
-        self._intervals_dirty = False
-
-    @property
-    def adjacency(self):
-        """Back-compat: materialise a dense ``[V, V]`` bool adjacency
-        for callers (mostly tests) that still poke at the old field.
-        Direct edges only — transitive callers should use
-        ``transitive_closure()``.
-        """
-        V = self.V
-        adj = torch.zeros(V, V, dtype=torch.float32, device=self.parents.device)
-        valid = (self.parents >= 0).nonzero(as_tuple=False).squeeze(-1)
-        for c in valid.tolist():
-            p = int(self.parents[c].item())
-            if 0 <= p < V:
-                adj[c, p] = 1.0
-        if self.equality_pairs.numel() > 0:
-            for r in range(self.equality_pairs.shape[0]):
-                a, b = int(self.equality_pairs[r, 0]), int(self.equality_pairs[r, 1])
-                if 0 <= a < V and 0 <= b < V:
-                    adj[a, b] = 1.0
-                    adj[b, a] = 1.0
-        return adj
-
-    @staticmethod
-    def _as_long(idx):
-        if torch.is_tensor(idx):
-            return idx.long().reshape(-1)
-        return torch.tensor(idx, dtype=torch.long).reshape(-1)
-
-    def _check_index(self, x):
-        return 0 <= int(x) < self.V
-
-    def add_part(self, child_idx, parent_idx, confidence=1.0):
-        """Enqueue a ``part(child, parent)`` assertion.
-
-        Gated by ``writes_enabled`` and ``confidence >= confidence_min``.
-        Accepts scalars or 1-D long tensors (broadcast to matching len).
-        Actual structural mutation happens at ``commit()``.
-        """
-        if not self.writes_enabled:
-            return
-        if float(confidence) < float(self.confidence_min):
-            return
-        child = self._as_long(child_idx)
-        parent = self._as_long(parent_idx)
-        if child.numel() == 0 or parent.numel() == 0:
-            return
-        if child.numel() != parent.numel():
-            child, parent = torch.broadcast_tensors(child, parent)
-            child = child.reshape(-1).long()
-            parent = parent.reshape(-1).long()
-        for c, p in zip(child.tolist(), parent.tolist()):
-            if not self._check_index(c) or not self._check_index(p):
-                continue
-            if c == p:
-                continue
-            self.pending_part.append((int(c), int(p), float(confidence)))
-
-    def add_equal(self, idx_a, idx_b, confidence=1.0):
-        """Enqueue an ``equals(a, b)`` mutual-parthood assertion.
-
-        Distinct from a merge: A and B remain distinct codebook rows
-        with distinct embeddings; the equality is recorded in the
-        ``equality_pairs`` table for read-time inclusion in transitive
-        queries.
-        """
-        if not self.writes_enabled:
-            return
-        if float(confidence) < float(self.confidence_min):
-            return
-        a = self._as_long(idx_a)
-        b = self._as_long(idx_b)
-        if a.numel() == 0 or b.numel() == 0:
-            return
-        if a.numel() != b.numel():
-            a, b = torch.broadcast_tensors(a, b)
-            a = a.reshape(-1).long()
-            b = b.reshape(-1).long()
-        for ia, ib in zip(a.tolist(), b.tolist()):
-            if not self._check_index(ia) or not self._check_index(ib):
-                continue
-            if ia == ib:
-                continue
-            self.pending_equal.append((int(ia), int(ib), float(confidence)))
-
-    def commit(self):
-        """Atomically consume the pending queues, validate each edge,
-        and rebuild ``(start, end)`` via DFS.
-
-        Validation rules:
-          - ``add_part(c, p)`` rejected if ``c`` already has a parent
-            OR if accepting it would create a cycle.
-          - ``add_equal(a, b)`` rejected if either side is already a
-            transitive ancestor / descendant of the other (in which
-            case proper-parthood already covers the relation); else
-            appended to ``equality_pairs`` (deduped).
-        """
-        accepted_part = []
-        for c, p, _conf in self.pending_part:
-            if int(self.parents[c].item()) >= 0:
-                continue  # already has a parent — reject (tree, not DAG).
-            if self._would_create_cycle(c, p):
-                continue
-            self.parents[c] = int(p)
-            accepted_part.append((c, p))
-        self.pending_part = []
-
-        accepted_equal = []
-        for a, b, _conf in self.pending_equal:
-            # If proper-parthood already connects them either way, skip.
-            if (self._transitive_walk(a, b)
-                    or self._transitive_walk(b, a)):
-                continue
-            # Dedup vs existing equality_pairs.
-            if self._equality_exists(a, b):
-                continue
-            accepted_equal.append([a, b])
-        if accepted_equal:
-            new_rows = torch.tensor(
-                accepted_equal, dtype=torch.long, device=self.equality_pairs.device)
-            if self.equality_pairs.numel() == 0:
-                self.equality_pairs = new_rows
-            else:
-                self.equality_pairs = torch.cat(
-                    [self.equality_pairs, new_rows], dim=0)
-        self.pending_equal = []
-
-        if accepted_part:
-            self._intervals_dirty = True
-            self._resort()
-
-    def _would_create_cycle(self, c, p):
-        """Return True iff setting parents[c]=p would create a cycle.
-        Walks p's parent chain looking for c."""
-        cur = int(p)
-        depth = 0
-        while cur >= 0 and depth < self.V:
-            if cur == int(c):
-                return True
-            cur = int(self.parents[cur].item())
-            depth += 1
-        return False
-
-    def _transitive_walk(self, child, ancestor):
-        """Walk parents from `child`, return True if we encounter
-        `ancestor`. Bounded by V to prevent infinite loops on a
-        corrupt tree."""
-        cur = int(child)
-        depth = 0
-        while cur >= 0 and depth < self.V:
-            if cur == int(ancestor):
-                return True
-            cur = int(self.parents[cur].item())
-            depth += 1
-        return False
-
-    def _equality_exists(self, a, b):
-        if self.equality_pairs.numel() == 0:
-            return False
-        eq = self.equality_pairs
-        match_ab = ((eq[:, 0] == a) & (eq[:, 1] == b)).any()
-        match_ba = ((eq[:, 0] == b) & (eq[:, 1] == a)).any()
-        return bool((match_ab | match_ba).item())
-
-    def _resort(self):
-        """DFS from each root (parents[i] == -1) to recompute
-        ``(start, end)`` so each subtree occupies a contiguous range
-        of row indices. Codebook rows are NOT permuted — only the
-        interval bookkeeping is recomputed."""
-        if not self._intervals_dirty:
-            return
-        V = self.V
-        # Build child lists.
-        children = [[] for _ in range(V)]
-        roots = []
-        for c in range(V):
-            p = int(self.parents[c].item())
-            if p < 0:
-                roots.append(c)
-            elif 0 <= p < V:
-                children[p].append(c)
-        # DFS, assigning each node a contiguous [start, end) range.
-        # Pre-order assigns start; the matching end is fixed up after
-        # all descendants are visited.
-        new_start = self.start.clone()
-        new_end = self.end.clone()
-        counter = [0]
-
-        def dfs(node):
-            """Dfs.
-            
-            See class docstring for the operation contract.
-            """
-            new_start[node] = counter[0]
-            counter[0] += 1
-            for ch in sorted(children[node]):
-                dfs(ch)
-            new_end[node] = counter[0]
-
-        for r in sorted(roots):
-            dfs(r)
-        # Detached / unreachable atoms (shouldn't happen but defend
-        # against a half-built tree): give them singleton intervals.
-        for i in range(V):
-            if int(new_end[i].item()) < int(new_start[i].item()) + 1:
-                new_start[i] = i
-                new_end[i] = i + 1
-        self.start.copy_(new_start)
-        self.end.copy_(new_end)
-        self._intervals_dirty = False
-
-    def is_part_of(self, child_idx, parent_idx):
-        """Direct-link query (no transitive walk).
-        True iff ``parents[child] == parent`` OR there's an explicit
-        equality edge between them. Vectorised over [B] inputs."""
-        c = self._as_long(child_idx).to(self.parents.device)
-        p = self._as_long(parent_idx).to(self.parents.device)
-        if c.numel() != p.numel():
-            c, p = torch.broadcast_tensors(c, p)
-        direct = self.parents.index_select(0, c) == p
-        # Equality edges (rare): scalar-or argmax.
-        eq_mask = torch.zeros_like(direct)
-        if self.equality_pairs.numel() > 0:
-            for r in range(self.equality_pairs.shape[0]):
-                a_r = int(self.equality_pairs[r, 0])
-                b_r = int(self.equality_pairs[r, 1])
-                eq_mask = eq_mask | (
-                    ((c == a_r) & (p == b_r)) | ((c == b_r) & (p == a_r)))
-        result = (direct | eq_mask)
-        return bool(result.all().item())
-
-    def parents_of(self, child_idx):
-        """Direct parents of ``child_idx``: at most one tree parent
-        plus any equality-edge counterparts."""
-        c = int(child_idx)
-        out = []
-        p = int(self.parents[c].item())
-        if p >= 0:
-            out.append(p)
-        if self.equality_pairs.numel() > 0:
-            eq = self.equality_pairs
-            mask = (eq[:, 0] == c)
-            for r in mask.nonzero(as_tuple=False).squeeze(-1).tolist():
-                out.append(int(eq[r, 1].item()))
-            mask = (eq[:, 1] == c)
-            for r in mask.nonzero(as_tuple=False).squeeze(-1).tolist():
-                out.append(int(eq[r, 0].item()))
-        if not out:
-            return torch.empty(0, dtype=torch.long, device=self.parents.device)
-        return torch.tensor(out, dtype=torch.long, device=self.parents.device)
-
-    def children_of(self, parent_idx):
-        """Direct children of ``parent_idx``."""
-        p = int(parent_idx)
-        kids = (self.parents == p).nonzero(as_tuple=False).squeeze(-1)
-        if self.equality_pairs.numel() > 0:
-            eq = self.equality_pairs
-            extra = []
-            for r in (eq[:, 1] == p).nonzero(as_tuple=False).squeeze(-1).tolist():
-                extra.append(int(eq[r, 0].item()))
-            for r in (eq[:, 0] == p).nonzero(as_tuple=False).squeeze(-1).tolist():
-                extra.append(int(eq[r, 1].item()))
-            if extra:
-                extra_t = torch.tensor(
-                    extra, dtype=torch.long, device=kids.device)
-                kids = torch.cat([kids, extra_t])
-        return kids
-
-    def transitive_closure(self):
-        """``[V, V]`` boolean reachability matrix (with identity).
-        Computed on demand by walking the parent chain for each row;
-        not cached — callers should avoid this in hot paths and prefer
-        ``is_part_of_transitive_batched``."""
-        self._resort()
-        V = self.V
-        R = torch.eye(V, dtype=torch.bool, device=self.parents.device)
-        for c in range(V):
-            cur = int(self.parents[c].item())
-            depth = 0
-            while cur >= 0 and depth < V:
-                R[c, cur] = True
-                cur = int(self.parents[cur].item())
-                depth += 1
-        # Fold equality edges symmetrically.
-        if self.equality_pairs.numel() > 0:
-            for r in range(self.equality_pairs.shape[0]):
-                a = int(self.equality_pairs[r, 0])
-                b = int(self.equality_pairs[r, 1])
-                R[a, b] = True
-                R[b, a] = True
-        return R
-
-    def wholes_of(self, idx):
-        """All things ``idx`` is a (transitive) part of, including
-        self. Walks the parent chain; cost O(depth)."""
-        out = [int(idx)]
-        cur = int(self.parents[int(idx)].item())
-        depth = 0
-        while cur >= 0 and depth < self.V:
-            out.append(cur)
-            cur = int(self.parents[cur].item())
-            depth += 1
-        return torch.tensor(out, dtype=torch.long, device=self.parents.device)
-
-    def parts_of_recursive(self, idx):
-        """All things that are (transitively) part of ``idx``.
-        Uses interval form for an O(V) scan after a (cached) sort."""
-        self._resort()
-        s = int(self.start[int(idx)].item())
-        e = int(self.end[int(idx)].item())
-        # All atoms whose start falls in [s, e) are in the subtree.
-        # Plus the node itself.
-        mask = (self.start >= s) & (self.start < e)
-        out = mask.nonzero(as_tuple=False).squeeze(-1)
-        return out
-
-    def is_part_of_transitive(self, child_idx, parent_idx):
-        """True iff `child` is reachable from `parent` via the
-        parent chain (or via a single equality edge). Walks at most V
-        steps."""
-        if self._transitive_walk(int(child_idx), int(parent_idx)):
-            return True
-        if self.equality_pairs.numel() > 0:
-            eq = self.equality_pairs
-            c = int(child_idx)
-            p = int(parent_idx)
-            same = ((eq[:, 0] == c) & (eq[:, 1] == p)) | (
-                (eq[:, 0] == p) & (eq[:, 1] == c))
-            return bool(same.any().item())
-        return False
-
-    def is_part_of_transitive_batched(self, child_idx, parent_idx):
-        """Vectorised ``is_part_of_transitive`` over [B] index pairs.
-
-        Uses the interval form: child is in parent's subtree iff
-        ``start[parent] ≤ start[child] < end[parent]``. Plus
-        equality-edge fallback (rare; small loop).
-        Returns [B] bool."""
-        self._resort()
-        c = self._as_long(child_idx).to(self.parents.device)
-        p = self._as_long(parent_idx).to(self.parents.device)
-        if c.numel() != p.numel():
-            c, p = torch.broadcast_tensors(c, p)
-            c = c.reshape(-1).long()
-            p = p.reshape(-1).long()
-        s_p = self.start.index_select(0, p)
-        e_p = self.end.index_select(0, p)
-        s_c = self.start.index_select(0, c)
-        result = (s_c >= s_p) & (s_c < e_p)
-        # Equality-edge fallback. Rare, so a small Python loop is fine.
-        if self.equality_pairs.numel() > 0:
-            for r in range(self.equality_pairs.shape[0]):
-                a_r = int(self.equality_pairs[r, 0])
-                b_r = int(self.equality_pairs[r, 1])
-                result = result | (
-                    ((c == a_r) & (p == b_r)) | ((c == b_r) & (p == a_r)))
-        return result
-
-
 def _argmax_prototype(x):
     """Per-batch top-1 prototype index from a ``[B, V, D]`` muxed
     event tensor.
@@ -3153,24 +2728,57 @@ def _argmax_prototype(x):
     return norms.argmax(dim=-1)          # [B]
 
 
+def _parthood_geometric(left, right):
+    """Clipped cosine parthood on per-batch dominant bivector activations.
+
+    Replaces the explicit ``MereologicalTree`` lookup for
+    ``PartLayer`` / ``EqualsLayer`` / ``QueryLayer`` after the
+    "codebook IS the meronymic tree" unification: parthood is
+    expressed by codebook geometry on the bivector cone (see
+    ``Architecture.md`` §"Monotonicity of the bivector chain").
+
+    For per-batch dominant slot bivectors ``a = left[b, argmax_left]``
+    and ``b = right[b, argmax_right]``, returns the clipped cosine
+    similarity
+
+        part(a, b) = max(0, a · b) / (|a| * |b|)
+
+    which is the canonical mereological projection on the
+    non-negative paired-index cone. The return is a ``[B]`` tensor
+    in ``[0, 1]`` -- 1 means "fully a part of", 0 means disjoint.
+    """
+    a_idx = _argmax_prototype(left)             # [B]
+    b_idx = _argmax_prototype(right)            # [B]
+    B = int(left.shape[0])
+    a_vec = left[torch.arange(B, device=left.device), a_idx]    # [B, K]
+    b_vec = right[torch.arange(B, device=right.device), b_idx]  # [B, K]
+    # Restrict to bivector head [pos, neg]; if last_dim < 2 use full.
+    K = min(2, a_vec.shape[-1])
+    a_biv = a_vec[..., :K]
+    b_biv = b_vec[..., :K]
+    dot = (a_biv * b_biv).sum(dim=-1)
+    na = a_biv.norm(dim=-1)
+    nb = b_biv.norm(dim=-1)
+    return (dot.clamp(min=0.0) / (na * nb + 1e-9))               # [B]
+
+
 class EqualsLayer(GrammarLayer):
-    """``S -> equals(S, S)`` -- equality assertion via two child
-    links in the mereological tree.
+    """``S -> equals(S, S)`` -- propositional identity on the bivector
+    codebook.
 
-    Each ``equals(A, B)`` call writes two part-of links into the
-    tree owned by ``self.tree``: ``part(A, B)`` (A is part of B)
-    AND ``part(B, A)`` (B is part of A). Mutual parthood encodes
-    equality; the symmetric part of the tree's adjacency matrix
-    carries the equivalence-class structure across the codebook.
+    Post-MereologicalTree retirement: equality is expressed purely
+    geometrically. The codebook is now the meronymic structure; an
+    asserted equality between ``A`` and ``B`` shows up as
+    bivector co-location on the cone (mutual parthood
+    ``part(A, B) ≈ 1`` AND ``part(B, A) ≈ 1``), which the codebook
+    learns through training. No explicit equivalence-class table
+    is stored.
 
-    Codebook indices are recovered from each operand by
-    ``argmax`` over the L2 norm of the per-position activation
-    bivector ``[B, V, 2]`` (top-1 per batch row). The forward
-    returns the merged equivalent ``torch.maximum(left, right)``
-    so the chart's CKY consumer sees a single parent vector.
-
-    Tree updates run under ``torch.no_grad()`` -- mereological
-    knowledge is discrete and accumulated, not differentiable.
+    The forward returns ``torch.maximum(left, right)`` -- the
+    lattice join under the bivector cone's max-as-disjunction
+    interpretation -- so the chart's CKY consumer sees a single
+    parent vector (semantics unchanged from the tree-backed
+    version; the difference is only the absence of the tree write).
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
@@ -3182,28 +2790,23 @@ class EqualsLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
-        """Initialize EqualsLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+        """Initialize EqualsLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
         """
         super().__init__(0, 0)
-        self.tree = tree
 
     def forward(self, left, right):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
-        """
-        if self.tree is not None:
-            with torch.no_grad():
-                self.tree.add_equal(_argmax_prototype(left),
-                                    _argmax_prototype(right))
+        """Lattice join on the bivector cone (max element-wise)."""
         return torch.maximum(left, right)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+
+        Lossy ``(parent, parent)`` pseudo-inverse -- the max-fold
+        is not bijective.
         """
         return parent, parent
 
@@ -3217,24 +2820,22 @@ class EqualsLayer(GrammarLayer):
 
 
 class PartLayer(GrammarLayer):
-    """``S -> part(S, S)`` -- mereological part-of assertion.
+    """``S -> part(S, S)`` -- mereological part-of on the bivector
+    codebook.
 
-    Each ``part(A, B)`` call writes one child link into the
-    mereological tree owned by ``self.tree``: ``A`` becomes a
-    direct child of ``B`` (A is part of B). The user's design
-    treats this as the canonical knowledge primitive -- "all
-    knowledge is of the kind ``part(a, b)``" -- so a model's
-    accumulated factual structure lives in
-    ``wordSpace.mereological_tree`` rather than in
-    parameter-space.
+    Post-MereologicalTree retirement: parthood is expressed
+    geometrically by codebook position on the non-negative
+    paired-index bivector cone (see ``Architecture.md``
+    §"Monotonicity of the bivector chain"). The codebook IS the
+    meronymic tree: A is part of B iff the clipped cosine
+    projection of A's prototype onto B's prototype is high. The
+    codebook learns this geometry through training on the rule
+    composition; no separate adjacency table is stored.
 
-    Codebook indices are recovered from each operand by
-    ``argmax`` over the L2 norm of the per-position activation
-    bivector (top-1 per batch row). The forward returns the
-    parent operand ``right`` (the encompassing concept) so the
-    chart's CKY consumer sees a single parent vector.
-
-    Tree updates run under ``torch.no_grad()``.
+    The forward returns ``right`` -- the encompassing parent --
+    so the chart's CKY consumer sees a single parent vector
+    (semantics unchanged from the tree-backed version; the
+    difference is only the absence of the tree write).
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
@@ -3246,28 +2847,27 @@ class PartLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
-        """Initialize PartLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+        """Initialize PartLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
         """
         super().__init__(0, 0)
-        self.tree = tree
 
     def forward(self, left, right):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Pass the encompassing parent ``right`` through to the
+        CKY consumer. The parthood relationship between ``left``
+        and ``right`` is captured by the codebook geometry that
+        learns under training -- no explicit tree write.
         """
-        if self.tree is not None:
-            with torch.no_grad():
-                self.tree.add_part(_argmax_prototype(left),
-                                   _argmax_prototype(right))
         return right
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+
+        Lossy ``(parent, parent)`` pseudo-inverse -- ``part(A, B)``
+        does not preserve A's identity in the parent vector.
         """
         return parent, parent
 
@@ -3483,37 +3083,22 @@ class CopyLayer(GrammarLayer):
 
 class QueryLayer(GrammarLayer):
     """``S -> query(S, S)`` -- mereological-truth query "is A part
-    of B?" answered against the explicit knowledge in the
-    ``MereologicalTree``.
+    of B?" answered geometrically against the bivector codebook.
 
-    Algorithm (sufficient but not necessary explicit-truth test):
+    Post-MereologicalTree retirement: the answer is the clipped
+    cosine parthood between the per-batch dominant bivector
+    activations of ``left`` and ``right`` (see
+    ``_parthood_geometric``). Returns a continuous truth value
+    in ``[0, 1]`` rather than the prior tree-lookup boolean --
+    the codebook geometry IS the meronymic structure, so
+    parthood is *always* defined for any two symbols (no
+    "unknown" state). Returns a ``[B, V, 2]`` truth bivector
+    broadcast across the V dimension:
 
-        WHOLES(A) = the things A is a (transitive) part of (incl A).
-        PARTS(B)  = the things that are a (transitive) part of B (incl B).
-        is_part(A, B) iff WHOLES(A) ∩ PARTS(B) != ∅
+        part(A, B) ≈ 1  -> [pos=1, neg=0] (full affirmation)
+        part(A, B) ≈ 0  -> [pos=0, neg=0] (disjoint / no overlap)
 
-    If there exists any object X such that A is part of X and X is
-    part of B, then by mereological transitivity A is part of B
-    -- the answer is "known True" (sufficient). An empty
-    intersection means "not known": the link may still exist via
-    implicit or un-asserted structure, but no explicit derivation
-    is on file (necessary condition is *not* met).
-
-    Codebook indices recovered via top-1 ``argmax`` over per-position
-    L2 norm (same convention as ``PartLayer`` / ``EqualsLayer``).
-    Forward returns a ``[B, V, 2]`` truth bivector broadcast across
-    the V dimension:
-
-        known True  -> [pos=1, neg=0] (affirmation)
-        unknown     -> [pos=0, neg=0] (degenerate -- no extent)
-
-    Without a tree reference (parameter-free instantiation, e.g.
-    via ``cls()`` for chart lazy-build) the layer falls back to a
-    passthrough returning ``left``.
-
-    Tree access runs under ``no_grad`` -- the query is a discrete
-    knowledge lookup, not a differentiable op. Lossy with
-    ``(parent, parent)`` pseudo-inverse on reverse.
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
     rule_name        = "query"
     arity            = 2
@@ -3523,27 +3108,22 @@ class QueryLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
-        """Initialize QueryLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+        """Initialize QueryLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired in favour of
+        codebook geometry.
         """
         super().__init__(0, 0)
-        self.tree = tree
 
     def forward(self, left, right):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Geometric parthood query: returns a per-batch ``[B, V, K]``
+        truth bivector broadcast across V, with the bivector head
+        carrying ``[pos=parthood, neg=0]``.
         """
-        if self.tree is None:
-            return left
-        with torch.no_grad():
-            a_idx = _argmax_prototype(left)            # [B]
-            b_idx = _argmax_prototype(right)           # [B]
-            has_link = self.tree.is_part_of_transitive_batched(
-                a_idx, b_idx)                          # [B] bool
-        # Build truth bivector [B, 2] -> broadcast to right's [B, V, 2].
-        pos = has_link.to(dtype=right.dtype)
+        parthood = _parthood_geometric(left, right)    # [B] in [0, 1]
+        pos = parthood.to(dtype=right.dtype)
         neg = torch.zeros_like(pos)
         truth = torch.stack([pos, neg], dim=-1)        # [B, 2]
         if right.dim() < 3:

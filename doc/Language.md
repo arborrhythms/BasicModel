@@ -3,7 +3,10 @@
 ## Overview
 
 The language system is a soft-superposition CKY chart parser that runs
-over symbol activations.  Three pieces cooperate:
+over symbol activations. `SymbolicSpace` plays the role of the
+architecture's **calculator**: the chart at S reads operand cells,
+invokes the grammar layer's compose / forward / reverse, and writes the
+result back. Three pieces cooperate:
 
 - `Grammar` (in [`bin/Language.py`](../bin/Language.py)) — singleton
   rule table loaded from XML or `data/grammar.cfg`.
@@ -19,6 +22,29 @@ over symbol activations.  Three pieces cooperate:
 InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  OutputSpace
                                                           chart runs here
 ```
+
+> **Deferred refactor — serial / shift-reduce parser.** A separate
+> follow-up pass will replace the batched CKY with a serial /
+> shift-reduce parser driven word-by-word, consuming
+> `ConceptualSpace.stm` as the working-memory stack. The cadence is
+> **per-word**: each word makes a full round trip
+> `P (BPE lex) → C (project) → S (codebook snap = word identity + POS)
+> → C (S→C reverse, the unquantized idea) → stm.push(idea)`, and the
+> parser then fires reductions on the STM via the chart's grammar
+> rules. POS rides the codebook hit for free via the bivector
+> codebook's `category_ids` (hard POS tag per atom) and
+> `category_logits` (learnable per-atom soft POS distribution); the
+> chart's `_apply_codebook_pos_seed` already EMA-updates these from
+> the inside pass, so per-word snap returns `(word_id, POS)`
+> simultaneously — no separate POS tagger needed.
+>
+> Under that refactor, the chart's launch site moves from S to C
+> (with S retained as a "calculator" reachable via a per-reduce
+> dispatch buffer for relational ops like `query` / `equals` / `part`).
+> See [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
+> for the resolved design decisions and implementation outline.
+> Today's document describes the batched-CKY architecture that's
+> still in place.
 
 ### Tiers (P / C / S / L)
 
@@ -234,24 +260,47 @@ Sinkhorn iterations to produce a doubly-stochastic soft permutation
 $P$.  Given operands $\ell, r$ and a learned broadcast marker $m$,
 the output is the first row of $P \cdot [\ell, r, m]^\top$.  Lossy.
 
-### Lift / lower — SigmaPi (mode-dispatch)
+### Lift / lower — VP-codebook-gated substrate sigma/pi
 
-Unified mode-dispatchers.  Default modes: `lift` $\to$ `'OR'` (synthesis),
-`lower` $\to$ `'AND'` (analysis).  Cross-mode delegation:
-`lift(mode='AND')` $\to$ `lower(mode='AND')`; `lower(mode='OR')` $\to$
-`lift(mode='OR')`; `mode='NOT'` is `Ops.negation(X1)`.
+Post-2026-05-12 refactor. `LiftLayer` and `LowerLayer` no longer wrap a
+dedicated `sigma_S` / `pi_S` at sym_dim; they route through the
+substrate's existing sigma / pi at C-tier dim with VP's codebook content
+supplying the gate:
 
-`Ops.lowerReverseAll(Y, W, monotonic)` and `Ops.liftReverseAll(Y, W,
-monotonic)` return `(recovered_left, recovered_right)`.
-Single-operand analytic forms:
-$\mathrm{Ops.liftReverse}(\mathrm{result}, \mathrm{right}) = \mathrm{result} / (\mathrm{right} + \varepsilon)$
-and $\mathrm{Ops.lowerReverse}(\mathrm{result}, \mathrm{right}) = 2 \cdot \mathrm{result} - \mathrm{right}$.
+```
+LiftLayer.forward(VP_bivec, NP_bivec):
+    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
+    gated      = VP_c * NP_c            # elementwise gate at C-tier
+    out_c      = P.sigma.forward(gated) # substrate sigma (lift)
+    return       S.codebook.forward(out_c, project=True)
 
-Cfg-driven grammar dispatch invokes `Ops.lift` / `Ops.lower`.  Learnable
-equivalents live on `SymbolicSpace.sigma.forward` /
-`ConceptualSpace.pi.forward`.  The `binary=True` flag on
-`PiLayer.forward` / `SigmaLayer.forward` pre-applies
-`Ops.top2_select_ste` to hard-select the top-2 input operands.
+LowerLayer.forward(VP_bivec, NP_bivec):
+    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
+    gated      = VP_c * NP_c            # same gate
+    out_c      = C.pi.forward(gated)    # substrate pi (lower)
+    return       S.codebook.forward(out_c, project=True)
+```
+
+The shared `L · U` basis per LDU is reused across every VP; the per-call
+gate `VP_c * NP_c` (elementwise multiplicative on the codebook prototype
+× dim grid) is what makes the same matrix produce different effective
+transformations for different VPs ("VP is the mask"). No learnable
+`raw_gate` parameter; the gating signal comes from VP's codebook content.
+
+Asymmetry: lift uses sigma (additive log-domain expansion, well-suited
+to lifting features onto concepts); lower uses pi (multiplicative
+log-domain contraction, well-suited to lowering concepts into specific
+percept-realizations). The same codebook entry can serve either role
+depending on the chart's syntactic decision ("the running child" — lift;
+"the child runs" — lower).
+
+Cfg-driven grammar dispatch still invokes `LiftLayer` / `LowerLayer`,
+which now require `symbolicSpace` (for the codebook reverse-lift) and
+the appropriate substrate space reference (`perceptualSpace` for Lift,
+`conceptualSpace` for Lower). Standalone-test construction with no
+references falls back to the static lattice kernels (`Ops._lift_kernel`
+/ `Ops._lower_kernel`). The retired `space.sigma_S` / `space.pi_S`
+allocation that previously held the lift/lower LDU is gone.
 
 ### Chunking — Percepts
 

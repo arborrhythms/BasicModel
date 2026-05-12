@@ -5,6 +5,25 @@ The Lexicon's narrative description and distance math have moved into
 co-located with the Codebook Similarity Metric and the per-space
 geometry discussion (PerceptualSpace, ConceptualSpace, SymbolicSpace).
 
+> **Lexicon ownership: API on SymbolicSpace, physical Embedding on
+> PerceptualSpace.** Post-2026-05-12 the orthographic-lexicon **API**
+> (the `vocabulary` property, `train_embeddings`, `sbow_loss`,
+> `reconstruct_data`, `reconstruct_to_buffer`, `get_recovered_word`,
+> `_snapshot_embeddings`, `set_embedding_sigma`) lives on
+> `SymbolicSpace`. The Embedding *tensor* still lives on
+> `PerceptualSpace.subspace.what` because `InputSpace`'s
+> `_peer_perceptual.vocabulary` wiring at the lexer is too deeply
+> integrated to relocate without a separate refactor. S accesses the
+> Embedding via its `perceptualSpace_ref` back-reference. The full
+> codebook-as-lexicon physical unification is a deferred follow-up.
+
+> **BPE as the option-flipped lexicon mode.** `<chunking>bpe</chunking>`
+> on PerceptualSpace makes the chunker produce byte-aligned BPE units
+> instead of whitespace-split words, reusing the same Embedding for
+> storage. The byte round-trip is fully invertible via the chunker's
+> `id_to_bytes` table; see
+> [test_chunk_layer_bpe.py::test_hard_merge_spans_bpe_roundtrip](../test/test_chunk_layer_bpe.py).
+
 ## Quick reference
 
 The Lexicon ([`bin/Layers.py`](../bin/Layers.py)) is a learnable

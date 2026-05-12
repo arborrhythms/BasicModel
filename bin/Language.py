@@ -4415,6 +4415,17 @@ class WordSpace(Space):
         # fields by hand.
         nn.Module.__init__(self)
 
+        # Back-references to the three Spaces. Used post-2026-05-12 by
+        # the grammar's lift/lower wiring to pass perceptual / conceptual
+        # references to LiftLayer / LowerLayer at construction time, so
+        # those layers can route the substrate sigma/pi after gating.
+        # ``object.__setattr__`` bypasses nn.Module's submodule
+        # registration so we don't create cycles (each Space is already
+        # a direct child of the Model).
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+
         # 1. Grammar must be configured before any SyntacticLayer
         # construction can resolve rule sets / transition rules.
         TheGrammar._configured = False
@@ -4517,6 +4528,14 @@ class WordSpace(Space):
         # and conceptual spaces also get a ``wordSpace`` back-reference
         # so they can route through the shared buffer, but only the
         # symbolic space's compose() fires the chart.
+        # Post-split: grammar's canonical home is S; the
+        # SyntacticLayers at P and C are retained as backward-compat
+        # dispatchers that no-op for grammars omitting per-tier
+        # rules. They're not the architectural locus of grammar after
+        # the split (S is), but the mechanism stays in place so
+        # legacy configs continue to function and so any future
+        # P/C-tier rule (e.g. for lift/lower at concept_dim) can
+        # still fire through the chart's per-tier dispatch.
         if perceptualSpace is not None:
             perceptualSpace.attach_wordSpace(self)
             self._attach_per_space_syntactic_layer(
@@ -5144,12 +5163,13 @@ class WordSpace(Space):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
         this WordSpace's per-space SyntacticLayers.
 
-        Sums ``tanh(raw_gate).abs().sum()`` across every LiftLayer /
-        LowerLayer instance reachable through ``host_layer`` registry,
-        scaled by ``lam``. Returns ``None`` when ``lam <= 0`` or no
-        gated rules are registered (so the caller can skip the add
-        without burning a tensor). The reparam ensures we penalize
-        the bounded gate, not the unbounded raw param.
+        Post-2026-05-12: LiftLayer and LowerLayer no longer carry a
+        learnable ``raw_gate`` -- VP's codebook activation now supplies
+        the gate via elementwise multiplication. So this loss is a
+        no-op for the rewritten lift/lower layers. The method is kept
+        for back-compat with any GrammarLayer subclass that still
+        owns a ``raw_gate`` parameter (none in tree today). Returns
+        ``None`` when no such parameter is found.
         """
         lam = float(lam or 0.0)
         if lam <= 0.0:
@@ -5417,81 +5437,49 @@ class WordSpace(Space):
             # S-tier. Existing XML grammars referencing
             # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
             # ``disjunction(S, S)``.
-            # Lift / Lower wiring: if the grammar references S-tier
-            # `lift` or `lower` rules, the operators need a sigma /
-            # pi to dispatch their gated SVD slice through. Both
-            # operators live on SymbolicSpace per the 2026-05-04
-            # design (one matrix shared across rules of the same
-            # type; one gate per rule). Lazy-construct
-            # ``space.sigma_S`` / ``space.pi_S`` at symbol_dim only
-            # when actually needed so default configs are unaffected.
+            # Lift / Lower wiring: post-2026-05-12 refactor, lift and
+            # lower are elementwise-gate-then-substrate-sigma/pi
+            # operators. The gate is ``VP_c * NP_c`` at C-tier; the
+            # substrate sigma (P.sigma, reconfigured at concept_dim)
+            # is applied for lift, the substrate pi (C.pi) for lower.
+            # The dedicated ``space.sigma_S`` / ``space.pi_S`` LDU
+            # layers at sym_dim were retired -- they're redundant
+            # with the substrate's existing sigma/pi.
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.tier == 'S' and r.method_name is not None}
             if 'lift' in grammar_S_methods:
-                if not hasattr(space, 'sigma_S') or space.sigma_S is None:
-                    from Layers import SigmaLayer
-                    sym_dim = int(space.outputShape[1])
-                    space.sigma_S = SigmaLayer(
-                        sym_dim, sym_dim,
-                        invertible=True, nonlinear=True, stable=True)
-                    space.layers.append(space.sigma_S)
-                    for p in space.sigma_S.parameters():
-                        if all(p is not q for q in space.params):
-                            space.params.append(p)
                 from Layers import LiftLayer
-                builtin_layers['lift'] = LiftLayer(sigma_layer=space.sigma_S)
+                perceptualSpace = getattr(self, 'perceptualSpace', None)
+                builtin_layers['lift'] = LiftLayer(
+                    symbolicSpace=space,
+                    perceptualSpace=perceptualSpace)
             if 'lower' in grammar_S_methods:
-                if not hasattr(space, 'pi_S') or space.pi_S is None:
-                    from Layers import PiLayer
-                    sym_dim = int(space.outputShape[1])
-                    space.pi_S = PiLayer(
-                        sym_dim, sym_dim,
-                        invertible=True, nonlinear=True, stable=True)
-                    space.layers.append(space.pi_S)
-                    for p in space.pi_S.parameters():
-                        if all(p is not q for q in space.params):
-                            space.params.append(p)
                 from Layers import LowerLayer
-                builtin_layers['lower'] = LowerLayer(pi_layer=space.pi_S)
-            # Mereological-tree wiring: ``part`` / ``equals`` write
-            # child links and ``query`` reads transitively from a
-            # shared ``MereologicalTree`` keyed on the symbol
-            # codebook's V dimension. The tree lives on WordSpace so
-            # multiple rules (and multiple per-space SyntacticLayers)
-            # accumulate into one structure.
-            mereological_methods = {'part', 'equals', 'query'}
-            if grammar_S_methods & mereological_methods:
-                if getattr(self, 'mereological_tree', None) is None:
-                    from Layers import MereologicalTree
-                    # XML override: <architecture><mereologicalTreeSize>N
-                    # When unset, default to the symbolic codebook's actual
-                    # nVectors (the codebook size, not the per-stage
-                    # spaceShape[0] which gets clobbered by N-halving).
-                    sym_codebook = getattr(
-                        getattr(space, 'subspace', None), 'what', None)
-                    cb_V = int(getattr(sym_codebook, 'nVectors', 0) or 0)
-                    fallback_V = int(space.spaceShape[0])
-                    default_V = cb_V if cb_V > 0 else fallback_V
-                    try:
-                        size_xml = int(util.TheXMLConfig.get(
-                            "architecture.mereologicalTreeSize",
-                            default=default_V) or default_V)
-                    except Exception:
-                        size_xml = default_V
-                    self.mereological_tree = MereologicalTree(V=int(size_xml))
-                if 'part' in grammar_S_methods:
-                    from Layers import PartLayer
-                    builtin_layers['part'] = PartLayer(
-                        tree=self.mereological_tree)
-                if 'equals' in grammar_S_methods:
-                    from Layers import EqualsLayer
-                    builtin_layers['equals'] = EqualsLayer(
-                        tree=self.mereological_tree)
-                if 'query' in grammar_S_methods:
-                    from Layers import QueryLayer
-                    builtin_layers['query'] = QueryLayer(
-                        tree=self.mereological_tree)
+                conceptualSpace = getattr(self, 'conceptualSpace', None)
+                builtin_layers['lower'] = LowerLayer(
+                    symbolicSpace=space,
+                    conceptualSpace=conceptualSpace)
+            # Mereological grammar layers: ``part`` / ``equals`` /
+            # ``query`` are now pure-geometric operations on the
+            # SymbolicSpace bivector codebook (clipped cosine
+            # projection on the non-negative paired-index cone, per
+            # Architecture.md §"Monotonicity of the bivector chain").
+            # The standalone ``MereologicalTree`` sidecar that
+            # previously stored explicit parent/equality links has
+            # been retired -- the codebook IS the meronymic structure.
+            # The ``<architecture><mereologicalTreeSize>`` XML knob
+            # is correspondingly retired (any value is silently
+            # ignored).
+            if 'part' in grammar_S_methods:
+                from Layers import PartLayer
+                builtin_layers['part'] = PartLayer()
+            if 'equals' in grammar_S_methods:
+                from Layers import EqualsLayer
+                builtin_layers['equals'] = EqualsLayer()
+            if 'query' in grammar_S_methods:
+                from Layers import QueryLayer
+                builtin_layers['query'] = QueryLayer()
         layer = build_space_syntactic_layer(
             space, self, tier=tier,
             builtin_layers=builtin_layers)

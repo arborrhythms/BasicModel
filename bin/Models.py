@@ -74,7 +74,7 @@ from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SubsymbolicSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 from Language import WordSpace
 from util import parse
 # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
@@ -2086,38 +2086,40 @@ class BasicModel(BaseModel):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        # ConceptualSpace's input PiLayer is widened to read the
-        # combined ``[P_event || S_event_{t-1}]`` loopback input when
-        # the bivector regime is configured -- the C-tier output
-        # collapses to a [V, 2] bivector, so the [P||S] -> bivector
-        # PiLayer doesn't need to satisfy the legacy invertibility
-        # in==out constraint. Legacy configs (no <bivectorOutput>) keep
-        # the un-widened layer geometry; their loopback right-half is
-        # treated as a no-op.
-        try:
-            bivector_output = bool(
-                TheXMLConfig.space("ConceptualSpace", "bivectorOutput"))
-        except KeyError:
-            bivector_output = False
-        widen_dim = symbolShape[1] if bivector_output else 0
+        # ConceptualSpace and SymbolicSpace are constructed unconditionally;
+        # the dual loopback (S→C symbolic + new C→P conceptual) is wired
+        # post-construction via ``object.__setattr__`` to bypass
+        # nn.Module submodule tracking (otherwise SymbolicSpace would be
+        # registered as a child of ConceptualSpace AND as a child of the
+        # Model, creating a cycle in the module tree that breaks
+        # ``.to(device)`` and double-counts parameters).
         self.conceptualSpace = ConceptualSpace(
-            perceptShape, spaceShape_concept, conceptShape,
-            subsymbolic_widen_dim=widen_dim)
+            perceptShape, spaceShape_concept, conceptShape)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
-        # SubsymbolicSpace is no longer auto-constructed; the
-        # PerceptualSpace serves as the subsymbolic substrate. The
-        # symbolic loopback is wired unconditionally on every stage.
-        # ``object.__setattr__`` bypasses nn.Module submodule tracking
-        # -- otherwise SymbolicSpace would be registered as a child of
-        # ConceptualSpace AND as a child of the Model, creating a cycle
-        # in the module tree that breaks ``.to(device)`` and
-        # double-counts parameters.
-        self.subsymbolicSpace = None
+        # Symbolic loopback (existing): ConceptualSpace reads
+        # SymbolicSpace's prior event via ``_sourced_input``, averaging
+        # after a bivector lift.
         object.__setattr__(self.conceptualSpace,
                            'symbolicSpace_ref', self.symbolicSpace)
-        object.__setattr__(self.conceptualSpace,
-                           'subsymbolicSpace_ref', None)
+        # Conceptual loopback (new): PerceptualSpace reads C-tier event
+        # from the prior forward and averages it into its primary input
+        # via ``_sourced_input`` (parallel percept-concept subsymbolic
+        # loop). PerceptualSpace now serves as the subsymbolic
+        # substrate; the standalone ``SubsymbolicSpace`` class was
+        # retired together with its ``<architecture><mode>`` selector.
+        object.__setattr__(self.perceptualSpace,
+                           'conceptualSpace_ref', self.conceptualSpace)
+        # Lexicon ownership (post-lexicon-migration): the orthographic
+        # Lexicon ``Embedding`` is the "codebook IS lexicon" structure
+        # logically owned by SymbolicSpace. PerceptualSpace retains
+        # the physical Embedding for input-pipeline reasons
+        # (``InputSpace._peer_perceptual.vocabulary``); S accesses it
+        # via this back-reference, and exposes ``vocabulary`` +
+        # ``train_embeddings`` / ``sbow_loss`` / ``reconstruct_*`` /
+        # ``get_recovered_word`` as its public lexicon API.
+        object.__setattr__(self.symbolicSpace,
+                           'perceptualSpace_ref', self.perceptualSpace)
         spaces_to_add = [self.inputSpace, self.perceptualSpace,
                          self.conceptualSpace, self.symbolicSpace]
         self.spaces.extend(spaces_to_add)
@@ -4510,8 +4512,7 @@ class BasicModel(BaseModel):
             # docstring): per-order input sourcing replaces the concat,
             # so the C-tier PiLayer input width is just nInputDim.
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
-                                 layer=cs_layer,
-                                 subsymbolic_widen_dim=0)
+                                 layer=cs_layer)
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs, layer=ss_layer)
             # Per-stage flags consumed by build_pipelines / forward.
@@ -4525,15 +4526,10 @@ class BasicModel(BaseModel):
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
 
-        # SubsymbolicSpace is no longer auto-constructed; the
-        # PerceptualSpace serves as the subsymbolic substrate.
-        self.subsymbolicSpace = None
-
         # Wire sibling refs on every stage's ConceptualSpace.
-        # ``_sourced_input`` reads BOTH perceptual (stem-cached) AND
-        # the active grammar/parallel sibling (previous stage's
-        # symbolic event) at every stage, combining them additively
-        # after a bivector lift on the symbolic side.
+        # ``_sourced_input`` reads BOTH perceptual (stem-cached) AND the
+        # previous stage's SymbolicSpace event, combining them
+        # additively after a bivector lift on the symbolic side.
         # Stage 0 cold-starts with the same-stage SymbolicSpace (its
         # event is None at first call, treated as zero); stages t>=1
         # read stage t-1's SymbolicSpace. ``object.__setattr__``
@@ -4546,8 +4542,23 @@ class BasicModel(BaseModel):
             ref = (self.symbolicSpaces[0] if t == 0
                    else self.symbolicSpaces[t - 1])
             object.__setattr__(cs, 'symbolicSpace_ref', ref)
-            object.__setattr__(cs, 'subsymbolicSpace_ref', None)
             object.__setattr__(cs, 'perceptualSpace_ref', self.perceptualSpace)
+
+        # Conceptual loopback: PerceptualSpace reads C-tier event from the
+        # prior forward (terminal stage in the per-order pipeline) and
+        # averages it into its primary input via ``_sourced_input``
+        # (parallel percept-concept subsymbolic loop). Use the terminal
+        # ConceptualSpace stage so the deepest conceptual refinement
+        # feeds back into the next pass's perception.
+        object.__setattr__(self.perceptualSpace, 'conceptualSpace_ref',
+                           self.conceptualSpaces[-1])
+        # Lexicon ownership (post-lexicon-migration): wire every
+        # SymbolicSpace stage to PerceptualSpace so ``S.vocabulary``
+        # and the orthographic-API methods reach the physical Embedding
+        # that lives on PerceptualSpace for input-pipeline reasons.
+        for ss in self.symbolicSpaces:
+            object.__setattr__(ss, 'perceptualSpace_ref',
+                               self.perceptualSpace)
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -4590,8 +4601,6 @@ class BasicModel(BaseModel):
         self.spaces.extend([self.inputSpace, self.perceptualSpace])
         self.spaces.extend(list(self.conceptualSpaces))
         self.spaces.extend(list(self.symbolicSpaces))
-        if self.subsymbolicSpace is not None:
-            self.spaces.append(self.subsymbolicSpace)
         self.spaces.extend([self.outputSpace])
         self.spaces.append(self.wordSpace)
 

@@ -7,9 +7,8 @@
 
 * Ensure correct sentence-prediction
 
-
 * Figure out where chart parser lives 
-* incorporate lexicon with SymbolicSpace
+* Incorporate lexicon with SymbolicSpace
 
 * Remove all random seeds from the tests, they are a crutch that defends against learning robustness
 
@@ -17,7 +16,7 @@ Sentences are sometimes composites of ideas.
 * For example, questions relate two ideas:
   * Is subject predicate ?
   * part( x, y ) ?
-* the IS of definition: equals ( x,y )
+* The IS of definition: equals ( x,y )
   * Store explicit parthood on WordSpace's Mereonomy when encountering a definiton (please rename from MereologicalTree to mereonomy) 
   * This should only happen when some measure of sentence confidence is high.
 

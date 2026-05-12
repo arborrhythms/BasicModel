@@ -2,12 +2,17 @@
 
 ## Overview
 
-BasicModel is a bidirectional neural architecture organized as a pipeline of six
-**spaces**, each implementing a distinct representational transformation:
+BasicModel is a bidirectional neural architecture organized as a pipeline of five
+**spaces** plus a grammar host (`WordSpace`), each implementing a distinct
+representational transformation:
 
 ```
-Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> SyntacticSpace -> OutputSpace
-Reverse:  OutputSpace -> SyntacticSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
+Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+
+Feedback loops (cross-stage / cross-call):
+    SymbolicSpace ──→ ConceptualSpace   (S→C symbolic loopback; per stage at order ≥ 1)
+    ConceptualSpace ──→ PerceptualSpace (C→P subsymbolic loopback; cross-forward)
 ```
 
 The forward pass transforms raw input into predictions; the reverse pass
@@ -19,15 +24,23 @@ combined loss:
 totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
+The legacy `SubsymbolicSpace` class (a parallel-mode bitonic Space alongside
+SymbolicSpace) and `SyntacticSpace` (a separate derivation-tree Space) have
+both been retired. The subsymbolic role is filled by `PerceptualSpace` itself
+plus the new C→P feedback loop; syntax / grammar dispatch lives on
+`WordSpace` and is attached to `SymbolicSpace` (the canonical grammar host).
+The `MereologicalTree` sidecar that backed `part` / `equals` / `query` is
+also retired — those operations are now pure-geometric clipped-cosine
+projections on the SymbolicSpace bivector codebook.
+
 ### Spaces
 
-| Space | Role | Layer Type | Parameters |
-|-------|------|-----------|------------|
+| Space | Role | Layer Type | Notes |
+|-------|------|-----------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
-| **PerceptualSpace** | Per-percept aggregation | SigmaLayer (`self.sigma`) | nActive, nDim, nVectors, invertible, bivectorOutput |
-| **ConceptualSpace** | Multiplicative abstraction (P -> C) | PiLayer (`self.pi` with `forwardPi`/`reversePi` aliases) | nActive, nDim, nVectors, invertible, bivectorOutput |
-| **SymbolicSpace** | Discrete activation bottleneck (C -> S) + Codebook | SigmaLayer (`self.sigma` with `forwardSigma`/`reverseSigma` aliases) + Codebook | nActive, nVectors, codebook, bivectorOutput |
-| **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
+| **PerceptualSpace** | Per-percept aggregation; subsymbolic substrate | `self.sigma` activated as the **Lift operator** at concept_dim → concept_dim (replaces the dormant per-percept sigma). Reads C→P feedback via `_sourced_input` (bivector-gated). | nActive, nDim, nVectors, invertible, bivectorOutput |
+| **ConceptualSpace** | Multiplicative abstraction (P → C); host of `ShortTermMemory` | `self.pi` (used as the **Lower operator** too, via the gated path). Reads S→C feedback via `_sourced_input`. | nActive, nDim, nVectors, invertible, bivectorOutput, stmCapacity |
+| **SymbolicSpace** | Discrete activation bottleneck (C → S) + Codebook + **grammar's calculator** | `self.sigma` + Codebook (bivector prototypes). SyntacticLayer dispatches the chart's S-tier rules here. Codebook plays the unified role of *codebook + lexicon-reference + meronymic-tree* — three jobs on one structure (geometric). | nActive, nVectors, codebook, bivectorOutput |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 Each level-crossing space owns one bidirectional layer that handles both
@@ -119,7 +132,7 @@ See [Params.md](Params.md) for all XML parameters. See
 
 ### Modes of operation
 
-Three orthogonal mode dimensions plus a subsymbolic-enable flag.
+Three orthogonal mode dimensions plus the two feedback loops.
 
 **Butterfly mode** (`<useButterflies>true</useButterflies>`):
 Pairwise sigma/pi with N-halving across `<conceptualOrder>` stages. Each
@@ -135,17 +148,34 @@ Runtime fast path for streaming / autoregressive contexts.
 `PerceptualSpace` / `ConceptualSpace` may use slide-and-recompute with the
 previous step's per-cell warm cache (`subspace.serial_cache`). Independent
 of butterfly mode. Cache is keyed on owner-Space id, cleared on hard
-`Reset`.
+`Reset`. (Distinct from the **serial / shift-reduce parser** — a separate
+deferred refactor; see [`doc/plans/`](plans/).)
 
-**Conceptual input sourcing** (per-order switch):
-Each stage's `ConceptualSpace.forward` reads exactly one input source per
-stage. Stage 0 reads `PerceptualSpace.event` directly. Stages $t \geq 1$
-read the active sibling's previous event — `SymbolicSpace.event` under the
-default `grammar` mode, `SubsymbolicSpace.event` under
-`<architecture><mode>parallel</mode>` — lifted from the bivector handoff
-$[B, V_S, 2]$ back to concept content $[B, V, \mathrm{concept\_dim}]$ via
-`Codebook.project_reverse`. The shift between symbolic and subsymbolic
-input at higher orders is the architectural locus of attention.
+**The two feedback loops**:
+The architecture now exposes two concurrent recurrent paths between the
+spaces. Their iteration cadences differ — they do NOT both follow
+`conceptualOrder`.
+
+| Loop | Direction | Iterations per forward call | Cadence governed by |
+|---|---|---|---|
+| **Symbolic loopback** | `S → C` | `T = conceptualOrder` (each stage `t ≥ 1` reads stage `t-1`'s S event) | `<conceptualOrder>T</conceptualOrder>` directly |
+| **Subsymbolic loopback (new)** | `C → P` | **Exactly 1** per forward call (stem `P` reads `conceptualSpaces[-1]`.event before any C stage fires) | Cross-forward; not per-stage |
+
+Conceptual input sourcing: each stage's `ConceptualSpace.forward`
+combines two sources via `_sourced_input` — its own perceptual primary
+(stem-cached) AND the previous stage's `SymbolicSpace.event`, lifted
+from the bivector handoff `[B, V_S, 2]` back to concept content
+`[B, V, concept_dim]` via `Codebook.project_reverse`. The combination
+is additive after the bivector lift. Stage 0 cold-starts (no S
+sibling event yet); the previous-stage symbolic loopback fires from
+stage 1 onwards.
+
+The new C→P loopback at PerceptualSpace works the same way (mirror of
+the C-side mechanism): P's `_sourced_input` reads its primary input
+plus the terminal stage's `ConceptualSpace.event` (lifted via the
+C-tier codebook reverse), averaged when shape-compatible. Bivector-
+gated: if the C-tier codebook is not present or the event's last
+dim isn't 2, the loopback no-ops and P uses its primary input alone.
 
 ### Pipeline as a unit, two-tier reset
 
@@ -208,24 +238,92 @@ frozen embeddings; swapping codebooks between models with same architecture.
 
 ## Language System
 
-The symbolic and syntactic spaces implement a binary deep-structure grammar
-in Chomsky Normal Form. SymbolicSpace maps continuous concept activations to
-a discrete one-hot encoding via an invertible layer and codebook.
-SyntacticSpace generates a derivation tree from active symbols, stored as
-word tuples `(batch, vector, rule)`.
+The chart-driven grammar runs at the S tier. SymbolicSpace maps continuous
+concept activations to a discrete bivector codebook via the C → S
+SigmaLayer + Codebook snap, and `WordSpace` (the grammar host) attaches a
+`SyntacticLayer` to S that dispatches the chart's per-cell rules over the
+S bivector activation.
 
-All compositional operations live on the S tier over a bivector-shaped
-SymbolicSubSpace. The S-tier productions include ternary operators
-(`true(S)`, `false(S)`, `non(S)`), what/where/when column selectors, and
-mereological / logical operators (`not(S)`, `part(S, S)`,
-`intersection(S, S)`, `union(S, S)`, `equals(S, S)`, `conjunction`,
-`disjunction`, `swap`, `query`, `lift`, `lower`).
+`SymbolicSpace` plays the role of the architecture's **calculator**: the
+chart at S reads operand cells, invokes the grammar layer's compose /
+forward / reverse, and writes the result back. The dispatch is reactive
+to the chart's rule queue rather than running unconditionally.
 
-Parthood (`part`) is the **fundamental** mereological operation, realized as
-clipped cosine projection on the bivector symbol subspace. The full suite
-(`whole`, `equal`, `overlap`, `underlap`, `boundary`) composes through `part`
-on `Basis`. `equals(S, S)` is propositional identity on S; delegates to
-`Basis.equal`.
+All compositional operations live on the S tier over the bivector-shaped
+SymbolicSubSpace. The S-tier productions include:
+
+- **Codebook-bivector unary / binary operators** (geometric, propositional):
+  `not(S)`, `non(S)`, `intersection(S, S)`, `union(S, S)`, `conjunction`,
+  `disjunction`, `swap`, `copy`, `true`, `false`.
+- **Mereological operators**: `part(S, S)`, `equals(S, S)`, `query(S, S)`.
+  All three are now pure-geometric — the `MereologicalTree` sidecar that
+  formerly stored explicit parent / equality links has been retired in
+  favour of clipped-cosine parthood on the bivector codebook. See
+  [Mereology.md](Mereology.md).
+- **Bivector lift / lower** (`lift(VP, NP)` / `lower(VP, NP)`): these
+  factor the substrate's sigma / pi via an elementwise gate at C-tier
+  whose values come from VP's symbolic codebook row. The same shared
+  `L · U` basis on the substrate sigma (or pi) is reused across every
+  VP; the per-call gate `VP_c * NP_c` (elementwise multiplicative) is
+  what makes different VPs produce different transformations. See
+  [Spaces.md](Spaces.md#liftlower-factorization) and
+  [Layers.md](Layers.md#liftlayer--lowerlayer).
+
+Parthood (`part`) is the **fundamental** mereological operation, realized
+as clipped cosine projection on the bivector symbol subspace. The full
+suite (`whole`, `equal`, `overlap`, `underlap`, `boundary`) composes
+through `part` on `Basis`. `equals(S, S)` is propositional identity on S;
+delegates to `Basis.equal`.
+
+### Short-Term Memory on ConceptualSpace
+
+`ConceptualSpace.stm` (an instance of `ShortTermMemory`) is a per-batch
+stack of unquantized C-tier "ideas" — the continuous compositions that
+will accumulate as the (future) serial / shift-reduce parser processes
+words. Capacity defaults to 9 (the upper bound of the classical 7±2
+linguistic working-memory limit) and is configurable via
+`<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>`.
+The STM is cleared on hard `Reset` (sentence boundary) and survives
+soft reset. The current batched-CKY chart does not yet consume the STM;
+this is the structural slot the deferred serial parser will fill. See
+[Spaces.md](Spaces.md#shorttermmemory).
+
+### Per-word operational flow (planned, for the deferred serial parser)
+
+> See [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
+> for the full handoff spec — motivation, resolved design decisions
+> (Q1-Q7: reduce policy, dispatch ordering, truth attachment,
+> lift/lower invocation, backward-compat strategy, per-word iteration
+> count, operation-by-tier classification), implementation outline,
+> and files+line-numbers to read in Phase 1.
+
+The deferred serial parser will require each word to traverse a
+per-word round trip through the full pipeline, so that a single word
+ends up on the STM as a single post-quantized idea. The shape:
+
+```
+byte stream  →  P (BPE lex + per-percept features)
+             →  C (project lexed word onto concept space)
+             →  S (codebook snap = word identity + POS)
+             →  C (S→C reverse, the unquantized "idea")
+             →  ConceptualSpace.stm.push(idea)
+```
+
+This per-word cadence is **different from** today's per-stage
+(symbolic) and per-forward-call (subsymbolic) cadences. The parser
+will drive its own per-word forward, likely leveraging the existing
+`serial_mode` warm-cache machinery on PerceptualSpace which already
+slides one position at a time through the codebook lookup.
+
+**POS rides the codebook for free.** The SymbolicSpace bivector
+codebook carries two POS-bearing fields per atom: `category_ids: [V]`
+(hard POS tag — one of the grammar's nonterminals, e.g. NP / VP / N /
+V / ADJ) and `category_logits: [V, C]` (learnable soft POS distribution
+per atom, EMA-updated by the chart's `_apply_codebook_pos_seed`
+mechanism in [Language.py:2638](../bin/Language.py)). So per-word snap
+returns `(word_id, POS)` simultaneously — no separate POS tagger
+needed. The parser uses POS for typing reduce candidates (NP + VP → S,
+etc.); POS is *learned through parsing* alongside the codebook.
 
 See [Logic.md](Logic.md), [Mereology.md](Mereology.md), and
 [Language.md](Language.md).

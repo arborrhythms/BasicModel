@@ -2,14 +2,25 @@
 
 ## Overview
 
-BasicModel is a pipeline of six **spaces**, each performing a distinct
-representational transformation. Data flows forward from raw input to task
-output; the reverse pass reconstructs the original input from the symbolic
-representation.
+BasicModel is a pipeline of five **spaces** plus a grammar host
+(`WordSpace`), each performing a distinct representational
+transformation. Data flows forward from raw input to task output; the
+reverse pass reconstructs the original input from the symbolic
+representation. Two feedback loops connect the pipeline back upward:
+`S → C` (per-stage symbolic loopback at order ≥ 1) and `C → P`
+(cross-forward subsymbolic loopback). The legacy `SubsymbolicSpace` and
+`SyntacticSpace` classes have been retired — the subsymbolic role is
+filled by `PerceptualSpace` plus the new C→P feedback, and the grammar
+runs from `WordSpace`'s `SyntacticLayer` attached to `SymbolicSpace`
+(the canonical grammar host / "calculator").
 
 ```
-Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> SyntacticSpace -> OutputSpace
-Reverse:  OutputSpace -> SyntacticSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
+Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+
+Feedback:
+    SymbolicSpace ──→ ConceptualSpace   (S→C, per stage when bivectorOutput active)
+    ConceptualSpace ──→ PerceptualSpace (C→P, cross-forward; bivector-gated)
 ```
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -436,6 +447,71 @@ flags). `_apply_mask` is shape-disambiguated:
 | Aligns with `out.shape[-1]` (feature axis) | Element-wise multiply on output |
 | Aligns with `out.shape[-2]` (position axis) | Zero masked rows of `_active`; `materialize()` gates downstream |
 
+### ShortTermMemory
+
+ConceptualSpace also owns `self.stm` — a `ShortTermMemory` instance, a
+per-batch stack of unquantized C-tier "ideas" (continuous compositions
+of concepts produced by reduce operations). This is distinct from the
+sentence-scoped `_stm_fired` flag on `WordSpace` (which is a discourse-
+priming single-shot signal, not a working-memory buffer).
+
+| Property | Default | Configurable via |
+|---|---|---|
+| Capacity | 9 (upper bound of the linguistic 7±2) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
+| Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
+| Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
+
+API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `size(b)`, `is_full(b)`,
+`is_empty(b)`, `clear(b=None)`, `ensure_batch(batch)`.
+
+No code currently *consumes* the STM — the batched-CKY chart at S
+doesn't push/pop yet. The deferred serial / shift-reduce parser is the
+intended consumer: per-word shifts push concepts; reduce ops pop the
+top operands, run the appropriate compose (lattice op / lift / lower /
+relation dispatch), and push the result. The 7±2 cap is the forcing
+function for reduce decisions when the parser is reading more words.
+
+### Lift/Lower factorization
+
+ConceptualSpace's `self.pi` plays double duty: it's the bare C-forward
+operator (no grammar dispatch), AND the substrate that `LowerLayer`
+routes through. Similarly, the activated `PerceptualSpace.sigma` is the
+substrate that `LiftLayer` routes through (it's also nominally the
+sub-percept aggregator, currently a single-role surface).
+
+Both grammar layers factor as:
+
+```
+LiftLayer.forward(VP_bivec, NP_bivec):
+    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
+    gated_NP   = VP_c * NP_c                       # elementwise mask at C-tier
+    out_c      = P.sigma.forward(gated_NP)         # substrate sigma (lift)
+    return       S.codebook.forward(out_c, project=True)
+
+LowerLayer.forward(VP_bivec, NP_bivec):
+    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
+    gated_NP   = VP_c * NP_c                       # same gate
+    out_c      = C.pi.forward(gated_NP)            # substrate pi (lower)
+    return       S.codebook.forward(out_c, project=True)
+```
+
+The shared `L · U` per-layer LDU basis is reused across every VP. The
+per-call gate `VP_c * NP_c` (elementwise multiplicative on the C-tier
+prototype × dim grid) is what makes different VPs produce different
+transformations — "VP is the mask." No `raw_gate` learnable parameter;
+the gating signal comes from VP's codebook content. Different
+adjective / verb codebook activations give different outputs from the
+same shared matrix.
+
+Sigma vs Pi asymmetry maps directly to lift vs lower:
+- Lift uses sigma (additive log-domain expansion) — naturally
+  "lifting features onto concepts."
+- Lower uses pi (multiplicative log-domain contraction) — naturally
+  "lowering concepts into specific percept-realizations."
+
+See [Layers.md](Layers.md#liftlayer--lowerlayer) for the GrammarLayer
+specifics.
+
 ---
 
 ## SymbolicSpace
@@ -544,30 +620,19 @@ and [BuddhistParallels.md](BuddhistParallels.md).
 
 ---
 
-## SyntacticSpace
+## SyntacticSpace — retired
 
-**Role.** Generates a binary derivation tree (deep structure) from active
-symbols. Words are concepts encoding grammatical rules; the derivation is a
-CNF grammar stored as word tuples `(batch, vector, rule)`.
+The standalone `SyntacticSpace` class has been retired. Grammar /
+chart / derivation-tree machinery now lives on `WordSpace`, which
+attaches a `SyntacticLayer` to `SymbolicSpace` (the canonical grammar
+host). The CNF binary-derivation behavior previously documented here
+is preserved by `WordSpace.compose` + the chart at S; words are still
+concepts encoding grammatical rules, and the derivation is still
+stored as word tuples — just on `WordSpace` rather than on a separate
+Space.
 
-See [Language.md](Language.md) for the grammar.
-
-**Forward.**
-
-1. Read symbolic presence via `get_symbols()`.
-2. For N present symbols per batch, generate a CNF derivation: N-1 binary
-   rules + 1 terminal (S $\to$ W).
-3. Store derivation as word tuples; vectors pass through unchanged.
-
-**Reverse.** Walk the word list; reconstruct symbolic presence
-deterministically from the derivation.
-
-**Key parameters.** `nActive`, `nDim`, `nVectors`.
-
-**Layer.** No trainable parameters (rule selection currently random).
-
-**Invertibility.** Reverse deterministically recovers activation from the
-derivation tree.
+See [Language.md](Language.md) for the grammar and the chart's per-tier
+rule dispatch.
 
 ---
 

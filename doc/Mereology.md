@@ -4,6 +4,17 @@ Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
 `ImpenetrableLayer` regularizer.
 
+> **Codebook IS the meronymic structure.** The standalone
+> `MereologicalTree` sidecar that formerly stored explicit parent /
+> equality links was retired in favour of pure-geometric parthood
+> on the `SymbolicSpace` bivector codebook. The grammar layers
+> `PartLayer`, `EqualsLayer`, and `QueryLayer` operate directly on
+> codebook bivector activations via clipped cosine projection — no
+> separate adjacency table, no `<architecture><mereologicalTreeSize>`
+> XML knob (silently ignored if present). Asserted meronymic
+> relations are learned by training pulling the codebook geometry
+> into the right configuration.
+
 ---
 
 ## Parthood as Clipped Cosine Projection

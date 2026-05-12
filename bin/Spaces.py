@@ -6519,6 +6519,14 @@ class PerceptualSpace(Space):
         self.embedding_source = TheData.train_input if TheData.train_input else None
 
         super().__init__(inputShape, spaceShape, outputShape)
+        # Sibling reference: PerceptualSpace reads the conceptual loopback
+        # (lifted C-tier event from the prior forward) and averages it into
+        # the primary input via ``_sourced_input``, mirroring
+        # ConceptualSpace's symbolic loopback. Wired post-construction in
+        # ``Model.__init__`` / ``_build_pipelines_per_stage``. ``None`` for
+        # standalone unit tests so legacy single-Space forward semantics
+        # hold.
+        self.conceptualSpace_ref = None
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -6574,11 +6582,25 @@ class PerceptualSpace(Space):
         self._recovered_input = None
         self._embedded_input = None
 
-        # PerceptualSpace owns a SigmaLayer for the P -> sub-percept direction
-        # (Logic.md §8).  Pipeline wiring is deferred per spec §O3 -- the layer
-        # sits dormant until sub-perceptual structure exists.
-        nPerceptDim = outputShape[1]
-        self.sigma = SigmaLayer(nPerceptDim, nPerceptDim, invertible=True,
+        # PerceptualSpace owns a SigmaLayer that serves as the **lift
+        # operator** for the grammar's ``lift(VP, NP)`` rule at S. The
+        # forward path of P doesn't call this sigma directly; instead
+        # ``LiftLayer.forward`` (in Layers.py) routes through it after
+        # elementwise-gating the operands at C-tier:
+        #
+        #     gated = VP_c * NP_c            (concept-dim elementwise)
+        #     out_c = P.sigma.forward(gated)
+        #
+        # so the sigma's in/out dim is concept_dim (the C-tier per-vector
+        # width), NOT percept_dim. We read concept_dim from the XML so
+        # the sigma is correctly shaped at construction without needing
+        # a post-hoc rebuild.
+        try:
+            nConceptDim = int(
+                TheXMLConfig.space("ConceptualSpace", "nDim"))
+        except KeyError:
+            nConceptDim = outputShape[1]
+        self.sigma = SigmaLayer(nConceptDim, nConceptDim, invertible=True,
                                 monotonic=True, nonlinear=True)
 
         input = self.subspace.getEncodedInputSize()
@@ -6685,6 +6707,17 @@ class PerceptualSpace(Space):
         codebook directly). For embedding models, configures the
         Embedding with the lexicon size, vector dim, source artifact,
         and minimum-frequency / negative-sample knobs.
+
+        NOTE: post-lexicon-migration, the Embedding is logically owned
+        by SymbolicSpace -- ``SymbolicSpace.vocabulary`` returns this
+        same Embedding instance via a shared reference. PerceptualSpace
+        still builds and binds it here at construction time because the
+        input pipeline (InputSpace._lex_batch, PerceptualSpace._embed)
+        wires through ``self.subspace.what`` at the lexical-lookup
+        site. The "codebook IS the lexicon" unification on S is
+        realized by S's ``vocabulary`` property forwarding to this same
+        Embedding, with all orthographic-API methods (train_embeddings,
+        sbow_loss, reconstruct_data, ...) accessible from S.
         """
         if self.model_type != "embedding":
             return None
@@ -7284,6 +7317,65 @@ class PerceptualSpace(Space):
         x = self._sparsity(x)
         return x
 
+    def _read_event(self, sib):
+        """Return ``sib.subspace.event`` materialised, or None."""
+        if sib is None:
+            return None
+        sub = getattr(sib, 'subspace', None)
+        if sub is None:
+            return None
+        ev = getattr(sub, 'event', None)
+        if ev is None:
+            return None
+        return ev.getW()
+
+    def _sourced_input(self, vspace):
+        """Dual-input: primary input + conceptual loopback, length-averaged.
+
+        Mirrors ``ConceptualSpace._sourced_input`` one tier down: the
+        primary input source is the upstream (Input)Space event reshaped
+        via ``forwardBegin``; the cross-channel contribution is the
+        prior C-tier event, lifted back to perceptual content width via
+        the C-tier codebook's SVD pseudo-inverse when the bivector
+        regime is active. Averaging (``sum / count``) keeps the input
+        bounded to the same range as each source so the codebook's
+        [-1, 1] / [0, 1] invariants survive both channels firing.
+
+        Sentence-start / cold-start: ``conceptualSpace_ref`` may be
+        ``None`` (standalone unit tests) or its event tensor may be
+        unset (very first forward call before any C output has been
+        produced) -- either case degrades cleanly to the legacy
+        single-source ``forwardBegin`` result.
+
+        See ``ConceptualSpace._sourced_input`` for the symmetric
+        symbolic loopback that this method mirrors.
+        """
+        primary = self.forwardBegin(vspace, returnVectors=True)
+        cs = self.conceptualSpace_ref
+        if cs is None:
+            return primary
+        c_event = self._read_event(cs)
+        if c_event is None:
+            return primary
+        # The C→P loopback only fires in the bivector regime: the C
+        # event is a ``[B, V, 2]`` per-prototype catuskoti handoff that
+        # lifts back to concept content width via the C-tier codebook's
+        # cached SVD pseudo-inverse. Non-bivector ConceptualSpace
+        # writes its content directly to ``event``; that content lives
+        # in the same dim space as the primary input, would
+        # coincidentally shape-match, and would corrupt legacy
+        # non-bivector forward dynamics by averaging two semantically
+        # different tensors. Mirrors the symbolic lift gating in
+        # ``ConceptualSpace._sourced_input``.
+        cs_what = getattr(cs.subspace, 'what', None)
+        if not (isinstance(cs_what, Codebook)
+                and c_event.dim() == 3 and c_event.shape[-1] == 2):
+            return primary
+        c_event = cs_what.reverse(c_event, project=True)
+        if c_event.shape == primary.shape:
+            return (primary + c_event) / 2
+        return primary
+
     def forward(self, subspace):
         """Perception: map input vectors to percepts via attention + VQ + chunking.
 
@@ -7347,7 +7439,13 @@ class PerceptualSpace(Space):
                     f"PerceptualSpace chunking must be bpe|lexicon, got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        x = self.forwardBegin(vspace, returnVectors=True)
+        # Conceptual loopback: when ``conceptualSpace_ref`` is wired, the
+        # primary input is averaged with the lifted C-tier event from the
+        # previous forward (mirrors ConceptualSpace's symbolic loopback,
+        # one tier down). Falls back to plain ``forwardBegin`` when the
+        # ref is None or its event tensor is unset (sentence start /
+        # standalone unit tests).
+        x = self._sourced_input(vspace)
         # Attention is currently unused in PerceptualSpace; leaving the
         # AttentionLayer attribute intact for backward compat but skipping
         # the call so the codebook lookup can slide (see below) without
@@ -7748,6 +7846,133 @@ class ModalSpace(Space):
             self.whereSpace.paramUpdate()
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
+
+
+class ShortTermMemory(nn.Module):
+    """Short-term memory (STM) on ConceptualSpace.
+
+    A per-batch stack of unquantized C-tier activations -- "ideas",
+    the continuous compositions that the chart produces by reducing
+    concepts / earlier ideas. Distinct from
+    ``WordSpace._stm_fired`` (which is a once-per-sentence
+    discourse-priming flag, not a working-memory buffer).
+
+    Semantics:
+        * Each slot holds a ``[concept_dim]`` vector.
+        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
+          recent idea; ``peek(b, n)`` returns the n-th most recent.
+        * Capacity is a soft cap (7±2 for linguistic processing,
+          per the brain's classical working-memory limit). The
+          (future) serial parser is expected to reduce ideas before
+          pushing when ``is_full(b)`` would otherwise be true.
+        * Subsymbolic operation can drive a wider STM than the
+          linguistic 7±2; the capacity is configurable via
+          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``
+          in the model XML.
+
+    Lifecycle:
+        * Built by ``ConceptualSpace.__init__`` at construction time
+          (capacity from XML; default 9).
+        * Cleared on hard ``Reset`` (sentence boundary): all rows
+          set to zero, depth pointers reset to 0.
+        * No active consumer yet -- this is the structural slot
+          the upcoming serial / shift-reduce parser will read and
+          mutate. The current batched-CKY chart doesn't use it.
+
+    Storage is a plain registered buffer (``persistent=False``);
+    STM contents are runtime working state, not learned weights.
+    """
+
+    DEFAULT_CAPACITY = 9
+
+    def __init__(self, batch=1, capacity=None, concept_dim=0):
+        super().__init__()
+        self.capacity = int(capacity or self.DEFAULT_CAPACITY)
+        self.concept_dim = int(concept_dim)
+        # ``persistent=False``: STM is transient working state, not
+        # saved with the model checkpoint.
+        self.register_buffer(
+            "_buffer",
+            torch.zeros(int(batch), self.capacity, self.concept_dim),
+            persistent=False)
+        self.register_buffer(
+            "_depth",
+            torch.zeros(int(batch), dtype=torch.long),
+            persistent=False)
+
+    def ensure_batch(self, batch):
+        """Resize the STM buffers to ``batch`` rows when the model's
+        microbatch dimension changes. Idempotent.
+        """
+        batch = int(batch)
+        if int(self._buffer.shape[0]) == batch:
+            return
+        device = self._buffer.device
+        self._buffer = torch.zeros(
+            batch, self.capacity, self.concept_dim, device=device)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+
+    def push(self, b, idea):
+        """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
+
+        Raises if the stack is full -- the parser is expected to
+        reduce before pushing when ``is_full(b)`` would be true.
+        """
+        depth = int(self._depth[b].item())
+        if depth >= self.capacity:
+            raise RuntimeError(
+                f"ShortTermMemory.push: row {b} is at capacity "
+                f"({self.capacity}); the parser must reduce before "
+                f"pushing further.")
+        self._buffer[b, depth] = idea
+        self._depth[b] = depth + 1
+
+    def pop(self, b):
+        """Pop and return the top idea for row ``b``, or ``None`` when empty."""
+        depth = int(self._depth[b].item())
+        if depth == 0:
+            return None
+        depth -= 1
+        idea = self._buffer[b, depth].clone()
+        self._buffer[b, depth].zero_()
+        self._depth[b] = depth
+        return idea
+
+    def peek(self, b, n=0):
+        """Return the ``n``-th item from top of row ``b``, or ``None``
+        when fewer than ``n+1`` items are on the stack. ``n=0`` is the
+        most recent (top); ``n=size(b)-1`` is the oldest (bottom).
+        """
+        depth = int(self._depth[b].item())
+        if depth <= n:
+            return None
+        return self._buffer[b, depth - 1 - n]
+
+    def size(self, b):
+        """Current depth (number of occupied slots) for row ``b``."""
+        return int(self._depth[b].item())
+
+    def is_full(self, b):
+        """True when row ``b`` is at capacity."""
+        return self.size(b) >= self.capacity
+
+    def is_empty(self, b):
+        """True when row ``b`` has no occupants."""
+        return self.size(b) == 0
+
+    def clear(self, b=None):
+        """Clear row ``b`` (or all rows when ``b`` is ``None``).
+
+        Called on hard ``Reset`` (sentence boundary).
+        """
+        if b is None:
+            self._buffer.zero_()
+            self._depth.zero_()
+        else:
+            self._buffer[b].zero_()
+            self._depth[b] = 0
+
+
 class ConceptualSpace(Space):
     """Transforms percepts into concepts via a SigmaLayer (summation layer).
 
@@ -7774,10 +7999,9 @@ class ConceptualSpace(Space):
     # doc/Spaces.md "Codebook similarity metric".
     use_dot_product = True
 
-    def __init__(self, inputShape, spaceShape, outputShape, layer=None,
-                 subsymbolic_widen_dim=0):
+    def __init__(self, inputShape, spaceShape, outputShape, layer=None):
         """Initialize ConceptualSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         section = self.config_section
@@ -7807,32 +8031,21 @@ class ConceptualSpace(Space):
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         self.hasAttention = hasAttention
-        # Subsymbolic widening: when > 0, the input PiLayer's nInput is
-        # ``base_input + subsymbolic_widen_dim``. Forward concatenates
-        # the perceptual event with the right-half (sum of
-        # symbolicSpace.event + subsymbolicSpace.event from the prior
-        # conceptual order, or zeros at sentence start). The PiLayer's
-        # ``x=0 -> multiplicative identity`` property makes a zero
-        # right-half contribute nothing, preserving legacy behaviour
-        # for sentence-start (Phase-1 spec §"Integration, not just
-        # interference").
         # Right-half loopback widening retired: ConceptualSpace.forward
-        # now reads exactly one input source per stage (perceptual at
-        # order 0, lifted-symbolic/subsymbolic at order > 0) instead of
-        # concatenating perceptual_event with the previous symbolic+
-        # subsymbolic sum. The concat aliased a wide perceptual content
-        # vector with a 2-wide bivector activation -- semantically
-        # different things glued into one PiLayer input. Per-order
-        # input switching keeps both halves at the same content width.
+        # reads exactly one input source per stage (perceptual at order 0,
+        # lifted-symbolic at order > 0) via ``_sourced_input``, averaging
+        # the two when both are present after a bivector lift on the
+        # symbolic side. The legacy ``subsymbolic_widen_dim`` constructor
+        # parameter and the ``[P_event || S_event]`` concat it gated were
+        # removed together with ``SubsymbolicSpace``.
         self._right_half_dim = 0
         # Sibling references: ConceptualSpace reads BOTH the perceptual
         # event (stem-cached, same instance for every stage) AND the
-        # active grammar/parallel sibling's previous event at every
-        # stage. Combiner: additive after bivector-lift (see
-        # ``_sourced_input``). ``perceptualSpace_ref`` is wired
-        # post-construction in ``_build_pipelines_per_stage``.
+        # SymbolicSpace's previous event at every stage. Combiner:
+        # additive after bivector-lift (see ``_sourced_input``).
+        # ``perceptualSpace_ref`` is wired post-construction in
+        # ``_build_pipelines_per_stage``.
         self.symbolicSpace_ref = None
-        self.subsymbolicSpace_ref = None
         self.perceptualSpace_ref = None
         input = self.subspace.getEncodedInputSize()
         if self._bivector_output:
@@ -7890,6 +8103,26 @@ class ConceptualSpace(Space):
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
+
+        # Short-term memory: per-batch stack of unquantized C-tier
+        # "ideas" (continuous compositions produced by chart-reduce).
+        # The serial / shift-reduce parser (deferred) will push and
+        # pop here as it processes incoming words and decides when
+        # to reduce. Capacity is configurable via
+        # ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``;
+        # default is 9 (the upper bound of the classical 7±2
+        # linguistic working-memory limit). Subsymbolic operation can
+        # set a wider capacity. The current batched-CKY chart doesn't
+        # consume the STM yet; this is the structural slot it will
+        # use.
+        try:
+            stm_capacity_xml = TheXMLConfig.space(section, "stmCapacity")
+            stm_capacity = int(stm_capacity_xml) if stm_capacity_xml else None
+        except (KeyError, TypeError, ValueError):
+            stm_capacity = None
+        concept_dim = int(outputShape[1])
+        self.stm = ShortTermMemory(
+            batch=1, capacity=stm_capacity, concept_dim=concept_dim)
 
     def _build_what_basis(self):
         """Bivector regime: build a Codebook on ``.what`` so
@@ -7955,23 +8188,17 @@ class ConceptualSpace(Space):
     def _get_active_input_sibling(self):
         """Return the sibling whose previous event feeds this stage's input.
 
-        The <architecture><mode>grammar|parallel</mode> selector
-        ([SubsymbolicSpace docstring](Spaces.py:9013)) puts exactly one
-        of {symbolicSpace_ref, subsymbolicSpace_ref} into the active
-        loop. Default (no mode set / `grammar`) selects symbolic.
-        Returns ``None`` when neither sibling is wired (standalone unit
-        tests).
+        Always returns ``symbolicSpace_ref`` (the verbal / propositional
+        loopback). The earlier ``<architecture><mode>grammar|parallel
+        </mode>`` selector that toggled between a SymbolicSpace and a
+        SubsymbolicSpace sibling has been retired together with
+        ``SubsymbolicSpace`` (PerceptualSpace serves as the subsymbolic
+        substrate; the imagistic loop is now the new C→P
+        ``conceptualSpace_ref`` loopback on PerceptualSpace).
+
+        Returns ``None`` when no sibling is wired (standalone unit tests).
         """
-        sym = self.symbolicSpace_ref
-        sub = self.subsymbolicSpace_ref
-        try:
-            mode = TheXMLConfig.get("architecture.mode", default="grammar")
-        except Exception:
-            mode = "grammar"
-        mode = str(mode or "grammar").strip().lower()
-        if mode == "parallel" and sub is not None:
-            return sub
-        return sym if sym is not None else sub
+        return self.symbolicSpace_ref
 
     def _sourced_input(self, vspace):
         """Dual-input: perceptual + sibling-symbolic, length-averaged.
@@ -8069,6 +8296,11 @@ class ConceptualSpace(Space):
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
 
+        On hard reset (sentence boundary), also clears the
+        ShortTermMemory: the per-batch idea stack does not persist
+        across sentences (matching the existing soft/hard reset
+        semantics for ``_last_svo`` and ``_stm_fired`` on WordSpace).
+
         See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
         """
         super().Reset(batch=batch, hard=hard)
@@ -8077,6 +8309,12 @@ class ConceptualSpace(Space):
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
+        # Sentence-boundary STM clear: per-batch idea stack drops
+        # everything from the just-finished sentence; the next
+        # sentence starts with an empty STM.
+        stm = getattr(self, 'stm', None)
+        if stm is not None:
+            stm.clear(b=batch)
 
     def forward(self, subspace):
         """Knowing: map percepts to concepts via PiLayer + optional attention + VQ.
@@ -8106,11 +8344,15 @@ class ConceptualSpace(Space):
         # perceptual content vector with a 2-wide bivector activation;
         # PiLayer treated them uniformly which was semantically wrong).
         x = self._sourced_input(vspace)
+        # Post-split: grammar lives at S; C is semantically
+        # subsymbolic. The SyntacticLayer dispatch at C is retained
+        # here as a backward-compat no-op for grammars that omit
+        # C-tier rules (it then falls through to ``y = x``
+        # passthrough, preserving the legacy behavior of configs like
+        # MM_xor_bivector). Grammars that DO list C-tier rules can
+        # still fire them, but the canonical home of grammar
+        # operations is now S.
         if getattr(self, 'syntacticLayer', None) is None:
-            # Standalone-space unit tests construct ConceptualSpace
-            # without a WordSpace; the production path always wires
-            # a SyntacticLayer (Models.py -- BasicModel/BasicModel
-            # both build WordSpace unconditionally now).
             y = self.pi(x)
         else:
             vspace.set_event(x)
@@ -8213,24 +8455,21 @@ class ConceptualSpace(Space):
             # before pi.reverse so the upstream PiLayer sees the natural
             # ``[B, V, nDim]`` shape it produced on forward.
             y = self.subspace.what.reverse(y, project=True)
+        # Post-split: grammar lives at S; C is semantically
+        # subsymbolic on reverse too. The SyntacticLayer dispatch at
+        # C is retained for backward compat — no-op when the grammar
+        # has no C-tier reverse rule.
         if getattr(self, 'syntacticLayer', None) is None:
             y = self._pi_reverse(y)
         else:
             vspace.set_event(y)
             vspace = self.syntacticLayer.reverse(vspace)
             y = vspace.materialize()
-            # SyntacticLayer.reverse only fires pi.reverse when its
-            # generate-cursor has a 'pi' rule queued. When the cursor
-            # is exhausted (no rule fires) y stays at the post-lift
-            # codebook-prototype width, but reverseEnd expects the pre-
-            # forwardBegin input width. Run pi.reverse explicitly so
-            # the chain stays well-formed regardless of the syntactic
-            # dispatch outcome.
             if (y is not None and y.dim() == 3
                     and y.shape[-1] != self.subspace.getEncodedInputSize()):
                 y = self._pi_reverse(y)
-            if self._right_half_dim > 0 and y is not None and y.dim() == 3:
-                y = y[..., :-self._right_half_dim]
+        if self._right_half_dim > 0 and y is not None and y.dim() == 3:
+            y = y[..., :-self._right_half_dim]
         self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")   # range check
@@ -8367,6 +8606,16 @@ class SymbolicSpace(Space):
         self._svd_orthogonal_init_cfg = True
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
+        # Sibling reference: PerceptualSpace owns the physical Embedding
+        # (the input pipeline's InputSpace._peer_perceptual.vocabulary
+        # wiring requires it there), but ``SymbolicSpace`` is the
+        # logical owner after the lexicon migration -- ``S.vocabulary``
+        # and the orthographic-API methods live here and delegate
+        # through this back-reference. Wired post-construction in
+        # ``Model.__init__`` / ``BasicModel._build_pipelines_per_stage``.
+        # ``None`` for standalone unit tests so legacy single-Space
+        # construction still works.
+        self.perceptualSpace_ref = None
         self.nonlinear = nonlinear
         # Post-2026-05-07 rollback: SymbolicSpace inherits the natural
         # ``nWhat == self.nDim`` and ``muxedSize`` from
@@ -8548,6 +8797,82 @@ class SymbolicSpace(Space):
         # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``,
         # which the chart's lazy-build path resolves via the
         # ``'disjunction'`` entry in ``GRAMMAR_LAYER_CLASSES``.
+
+    # ------------------------------------------------------------------
+    # Lexicon ownership (post-lexicon-migration)
+    # ------------------------------------------------------------------
+    # The orthographic Lexicon (``Embedding`` instance) is the
+    # "codebook IS lexicon" structure -- one row per vocabulary entry,
+    # the C→S codebook snap *is* the byte→symbol lookup, and the
+    # reverse pipeline (S → C → P → I → bytes) is the only path from
+    # an active symbol back to its surface form. PerceptualSpace
+    # retains the physical Embedding instance for input-pipeline
+    # reasons (InputSpace._peer_perceptual.vocabulary wiring), but
+    # SymbolicSpace is the logical owner: the ``vocabulary`` property
+    # and the orthographic-API methods live here and delegate to
+    # the Embedding via ``perceptualSpace_ref``.
+
+    @property
+    def vocabulary(self):
+        """Return the orthographic Lexicon (Embedding), or fall back to
+        SymbolicSpace's own ``.what`` codebook for callers that pre-date
+        the lexicon migration. ``None`` when neither is wired
+        (standalone unit tests with no perceptualSpace_ref).
+        """
+        peer = self.perceptualSpace_ref
+        if peer is not None:
+            v = peer.subspace.vocabulary
+            if v is not None:
+                return v
+        return self.subspace.vocabulary
+
+    def train_embeddings(self, words, method='CBOW'):
+        """Run one CBOW/SBOW gradient step if words are available."""
+        emb = self.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.train_step(words, method=method)
+        return None
+
+    def sbow_loss(self, words):
+        """Return SBOW loss tensor for joint optimization (no backward/step)."""
+        emb = self.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.sbow_loss(words)
+        return None
+
+    def _snapshot_embeddings(self):
+        """Return the current WordVectors (no-op, vectors are always live)."""
+        emb = self.vocabulary
+        if isinstance(emb, Embedding):
+            return emb.wv
+        return None
+
+    def set_embedding_sigma(self, sigma):
+        """Control exploration noise on the embedding."""
+        emb = self.vocabulary
+        if hasattr(emb, 'set_sigma'):
+            emb.set_sigma(sigma)
+
+    def reconstruct_data(self, text=False):
+        """Render the last recovered text state from the reverse pipeline."""
+        peer = self.perceptualSpace_ref
+        if peer is None:
+            return None
+        return peer.reconstruct_data(text=text)
+
+    def reconstruct_to_buffer(self, buf_size=None):
+        """Render the last recovered text buffer from the reverse pipeline."""
+        peer = self.perceptualSpace_ref
+        if peer is None:
+            return None
+        return peer.reconstruct_to_buffer(buf_size=buf_size)
+
+    def get_recovered_word(self, batch_idx, position):
+        """Return one recovered token from the most recent reverse pass."""
+        peer = self.perceptualSpace_ref
+        if peer is None:
+            return None
+        return peer.get_recovered_word(batch_idx, position)
 
     def _build_object_basis(self):
         """Event is a writable Tensor -- codebook lives on .what."""
@@ -9551,173 +9876,6 @@ class SymbolicSpace(Space):
         if true_cls is None:
             return act
         return true_cls().forward(act)
-
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        pass
-
-
-class SubsymbolicSpace(Space):
-    """Imagistic / felt-sense re-entrant Space, parallel to SymbolicSpace.
-
-    Bitonic, codebook-free Space whose only operations are an existing
-    ``SigmaLayer`` (OR-fold / union) followed by an existing ``PiLayer``
-    (AND-fold / conjunction), applied sequentially. No custom layer
-    class is introduced; the Sigma·Pi composition is the entire
-    processing pipeline.
-
-    Architectural role: the subsymbolic loop carries the imagistic /
-    embodied counterpart to the verbal/propositional Symbolic loop.
-    Its event tensor is summed elementwise with ``SymbolicSpace``'s
-    event at the next conceptual order's combined input -- the
-    architectural locus of symbolic↔subsymbolic interference.
-
-    Phase 1 (per ``2026-05-05-subsymbolic-knowing-handoff``) runs the
-    model in exactly one of two mutually exclusive modes via the
-    ``<architecture><mode>grammar|parallel</mode>`` XML knob:
-
-      - ``grammar``: SymbolicSpace active, SubsymbolicSpace's event
-        held at zero (``self.held_at_zero = True``).
-      - ``parallel``: SubsymbolicSpace active, SymbolicSpace's event
-        held at zero.
-
-    Distinct from SymbolicSpace:
-
-      * No codebook on ``.what`` -- continuous bitonic content.
-      * ``accumulateTruth = False`` -- never writes to the LTM
-        TruthLayer (working imagery is transient).
-      * No resolve / lift / codebook snap.
-      * Domain ``[-1, 1]`` bitonic (vs. SymbolicSpace's ``[0, 1]``
-        magnitude bivector).
-
-    Round-trip invertibility: each of ``self.sigma`` and ``self.pi``
-    is constructed ``invertible=True, monotonic=False`` so the LDU
-    inverse path is exact. ``forward`` then ``reverse`` (and vice
-    versa) round-trips to within numerical precision.
-    """
-    name = "Subsymbols"
-    config_section = "SubsymbolicSpace"
-    use_dot_product = False
-
-    def empty_state(self, batch=1):
-        """Return a zero tensor shaped like this space's subsymbolic state.
-
-        Mirrors ``SymbolicSpace.empty_state`` so callers that seed the
-        re-entrant input at sentence start can use the same pattern.
-        """
-        nOutput = int(self.outputShape[0])
-        nDim = int(self.outputShape[1])
-        return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
-
-    def __init__(self, inputShape, spaceShape, outputShape):
-        """Initialize SubsymbolicSpace; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        section = self.config_section
-        ergodic = TheXMLConfig.get("architecture.ergodic")
-        naive = TheXMLConfig.get("architecture.naive")
-        try:
-            nonlinear = TheXMLConfig.space(section, "nonlinear")
-        except KeyError:
-            nonlinear = True
-        super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
-        self.nonlinear = nonlinear
-        # Continuous bitonic content -- no codebook constraint, no
-        # truth accumulation. accumulateTruth is a class-time invariant,
-        # not a config knob: subsymbolic content is transient working
-        # imagery (see plan §2.1, Memory architecture).
-        self.accumulateTruth = 0.0
-
-        nConceptDim = inputShape[1]      # concept_dim + obj_concept (== muxedSize_c)
-        nSubsymbolDim = outputShape[1]   # subsymbol_dim + obj == muxedSize_ss
-
-        # Sigma·Pi composition: the entire processing pipeline.
-        # ``invertible=True, monotonic=False`` so each layer's LDU
-        # inverse provides exact round-trip invertibility, and the
-        # response is bitonic (no codebook ordering constraint).
-        self.sigma = SigmaLayer(nConceptDim, nSubsymbolDim,
-                                invertible=True, monotonic=False,
-                                nonlinear=nonlinear,
-                                naive=naive, ergodic=ergodic)
-        self.pi = PiLayer(nSubsymbolDim, nSubsymbolDim,
-                          invertible=True, monotonic=False,
-                          nonlinear=nonlinear,
-                          naive=naive, ergodic=ergodic, stable=True)
-        self.layers = nn.ModuleList([self.sigma, self.pi])
-        self.params = list(self.parameters())
-
-        # Mode-gating flag, set by Model based on <architecture><mode>:
-        # when True, ``forward`` zeroes its event tensor instead of
-        # running the Sigma·Pi composition (held at multiplicative
-        # identity for the next-order combined input).
-        self.held_at_zero = False
-
-    def _build_object_basis(self):
-        """No codebook on the event -- the event is a writable Tensor."""
-        return None
-
-    def _build_what_basis(self):
-        """No codebook on .what (continuous bitonic content).
-
-        Mirrors ``ConceptualSpace`` (pure-event subspace); the
-        ``.what`` slot stays empty and state lives on ``.event`` via
-        ``set_event``.
-        """
-        return None
-
-    def forward(self, subspace):
-        """Concept → Subsymbol forward via Sigma then Pi composition.
-
-        ``self.sigma(x)`` is the OR-fold (additive log-domain union);
-        ``self.pi(y)`` is the AND-fold (multiplicative log-domain
-        conjunction). Their composition is the entire Subsymbolic
-        bridge -- no custom layer class is introduced.
-
-        When ``self.held_at_zero`` is set (Phase-1 ``grammar`` mode),
-        the event tensor is zeroed and the layers are not run. Zero is
-        the multiplicative identity in the entry transform, so the
-        next-order combined input's right-half contribution from this
-        Space is null.
-        """
-        if subspace.is_empty():
-            return subspace
-        self.subspace.copy_context(subspace)
-        if self.held_at_zero:
-            sample = subspace.materialize()
-            if sample is None:
-                return self.subspace
-            B = sample.shape[0]
-            N = self.outputShape[0]
-            D = self.subspace.muxedSize
-            zero_event = torch.zeros(B, N, D, device=sample.device,
-                                     dtype=sample.dtype)
-            self.subspace.set_event(zero_event)
-            return self.subspace
-        vspace = subspace
-        x = self.forwardBegin(vspace, returnVectors=True)
-        y = self.sigma.forward(x)
-        z = self.pi.forward(y)
-        vspace = self.forwardEnd(z, returnVectors=True)
-        return vspace
-
-    def reverse(self, subspace):
-        """Subsymbol → Concept reverse via Pi.reverse then Sigma.reverse.
-
-        Exact LDU inverse on each layer; the composition round-trips
-        ``forward(reverse(x)) ≈ x`` and ``reverse(forward(x)) ≈ x`` to
-        within numerical precision.
-        """
-        if subspace.is_empty():
-            return subspace
-        self.subspace.copy_context(subspace)
-        vspace = subspace
-        y = self.reverseBegin(vspace, returnVectors=True)
-        z = self.pi.reverse(y)
-        x = self.sigma.reverse(z)
-        vspace = self.reverseEnd(x, returnVectors=True)
-        return vspace
 
     @staticmethod
     def test():
