@@ -4690,45 +4690,55 @@ class BasicModel(BaseModel):
         # head can drive backward through them. The STM buffer itself
         # still receives ``.detach()`` ideas so cross-forward grad state
         # doesn't accumulate on the persistent buffer.
-        grad_ideas = [] if self.loss_head is not None else None
-        for w in range(N):
-            p_slot = p_flat[:, w:w+1, :]
-            c_slot = None
-            for _ in range(iterations):
-                c_slot = self.conceptualSpace.pi.forward(p_slot)
-            # SymbolicSpace has no sigma -- the C->S boundary is a
-            # dimensional pass-through; project directly through the S
-            # codebook when it carries a ``ProjectionBasis`` (the
-            # bivector projection surface added 2026-05-13).  Simpler
-            # Basis subclasses (Tensor, Codebook, Embedding) don't
-            # carry this surface, so we duck-type by class name and
-            # fall through to the no-project idea path for those.
-            cb_is_projection = (cb is not None and
-                                type(cb).__name__ == 'ProjectionBasis')
-            if cb_is_projection:
-                snap = cb.forward(c_slot)
-                idea_back = cb.reverse(snap)
-                if idea_back is None:
-                    idea = c_slot[:, 0, :]
-                elif idea_back.dim() == 3:
-                    # Bivector reverse returns [B, V, D_c] of per-prototype
-                    # contributions; sum across prototypes for the
-                    # weighted-average C-tier idea.
-                    idea = idea_back.sum(dim=1)
-                else:
-                    idea = idea_back
+        cb_is_projection = (cb is not None and
+                            type(cb).__name__ == 'ProjectionBasis')
+        # VECTORIZED per-word stem: previously this dispatched N
+        # iterations of pi.forward and N*B_flat ``.item()``-syncing
+        # STM pushes (B=128, N=1024 => 130k host round-trips per
+        # forward).  Computation is position-independent -- each
+        # word's idea depends only on its own ``p_slot`` -- so we
+        # process all N positions in one pi call, fold N into the
+        # cb-round-trip's batch dim, then write the whole window in
+        # a single push_window_batch.
+
+        # 1) Pi over all N positions at once, applied ``iterations``
+        #    times in sequence (fixed-point step under the SVD-
+        #    orthogonal codebook).
+        c_all = p_flat                                        # [B_flat, N, D_p]
+        for _ in range(iterations):
+            c_all = self.conceptualSpace.pi.forward(c_all)    # [B_flat, N, D_c]
+
+        # 2) Codebook round-trip: flatten the N axis into the batch
+        #    dim so each "word" goes through cb.forward/reverse as
+        #    its own row.  ProjectionBasis collapses the V axis
+        #    inside ``forward`` (mean across V slots), so processing
+        #    one slot per row preserves the per-word reverse-lift
+        #    that the legacy loop produced.
+        if cb_is_projection:
+            D_c = c_all.shape[-1]
+            c_flat = c_all.reshape(B_flat * N, 1, D_c)        # [B_flat*N, 1, D_c]
+            snap_flat = cb.forward(c_flat)                    # [B_flat*N, V_S, 2]
+            idea_back_flat = cb.reverse(snap_flat, V=1)       # [B_flat*N, 1, D_c]
+            if idea_back_flat is None:
+                ideas = c_all                                 # [B_flat, N, D_c]
+            elif idea_back_flat.dim() == 3:
+                # Sum across V (=1 here) matches the legacy single-
+                # slot ``idea_back.sum(dim=1)`` step.
+                ideas = idea_back_flat.sum(dim=1).reshape(
+                    B_flat, N, D_c)
             else:
-                idea = c_slot[:, 0, :]
-            if grad_ideas is not None:
-                grad_ideas.append(idea)
-            for b in range(B_flat):
-                self.conceptualSpace.stm.push(b, idea[b].detach())
-        # Stash the grad-bearing stack for the loss head to consume in
-        # ``_forward_body``. Shape: ``[B, N, D_c]``.
-        if grad_ideas:
-            self._loss_head_input = torch.stack(grad_ideas, dim=1)
+                ideas = idea_back_flat.reshape(B_flat, N, D_c)
         else:
-            self._loss_head_input = None
+            ideas = c_all                                     # [B_flat, N, D_c]
+
+        # 3) Vectorised STM push: one scatter, no per-row ``.item()``
+        #    sync points.
+        self.conceptualSpace.stm.push_window_batch(ideas.detach())
+
+        # 4) Stash the grad-bearing stack for the loss head.  The
+        #    legacy path built this via ``torch.stack(per_word_list,
+        #    dim=1)``; ``ideas`` is already that stack.
+        self._loss_head_input = ideas if self.loss_head is not None else None
         return sub
 
     def _forward_head(self, sub):

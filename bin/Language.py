@@ -388,6 +388,22 @@ class Grammar:
         # <concepts> / <percepts> sub-sections under <parse> /
         # <generate>. Used by space-tier filters at runtime to gate
         # which rules apply in each space's forward path.
+
+        # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-tier element
+        # form where the element NAME is the LHS and the CONTENT is the
+        # RHS.  Some configs (MM_5M, LM_5M etc.) redundantly prefix the
+        # content with ``LHS = `` -- strip it so the function-call parser
+        # below sees just ``pi(C)`` and ``method_name`` ends up as
+        # ``pi`` (the natural-fold key) rather than ``C = pi`` (which
+        # silently falls through ``_default_compose_rules``'s
+        # ``_NATURAL_FOLD_METHODS`` filter and leaves the chart with no
+        # C-tier rule, breaking ConceptualSpace dispatch).
+        rhs_stripped = rhs.lstrip()
+        eq_prefix = f"{lhs}="
+        if (rhs_stripped.startswith(eq_prefix)
+                or rhs_stripped.startswith(f"{lhs} =")):
+            rhs = rhs_stripped[rhs_stripped.index('=') + 1:].strip()
+
         if '(' in rhs:
             func_name = rhs[:rhs.index('(')]
             args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]

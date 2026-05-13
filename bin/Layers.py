@@ -1202,6 +1202,55 @@ class InvertibleLinearLayer(ErgodicLayer):
         """Non-ergodic sequential reverse using clean L, d_effective, U."""
         return self._solve_ldu(y, self._L(), self._d_effective(), self._U())
 
+    # --- Public matmul-free apply / solve --------------------------
+    # ``compute_W_current`` / ``compute_Winverse_current`` materialise
+    # the full ``[D, N]`` / ``[N, D]`` matrix; callers that only need
+    # ``x @ W`` or ``y @ W^-1`` against a batched RHS pay an O(n^3)
+    # build + an O(b*n^2) matmul.  These wrappers skip the build:
+    # apply_W_current runs ``x @ L @ D_embed @ U`` directly via three
+    # cheap matmuls; apply_Winverse_current runs two triangular solves
+    # plus a diagonal divide -- total cost O(b*n^2).  No dense W or
+    # W^-1 is ever materialised in either path, so transient memory
+    # stays at O(b*n) for the intermediate states.
+
+    def apply_W_current(self, x, gate=None):
+        """Return ``x @ W_current`` without materialising W.
+
+        Ergodic-aware: uses ``L_eff / d_eff / U_eff`` when
+        ``self.ergodic`` is True, else the clean factors.  Matches
+        the math of ``compute_W_current()`` but routes through the
+        per-factor matmul chain so transient memory is ``O(b*n)``
+        rather than ``O(n^2)``.
+        """
+        self._current_gate = gate
+        try:
+            if self.ergodic:
+                return self._apply_ldu(
+                    x, self._L_eff(), self._d_eff(), self._U_eff())
+            return self._apply_forward(x)
+        finally:
+            self._current_gate = None
+
+    def apply_Winverse_current(self, y, gate=None):
+        """Return ``y @ Winverse_current`` without materialising W^-1.
+
+        Ergodic-aware mirror of ``apply_W_current``: uses two
+        triangular solves (``solve_triangular(L, ...)`` and
+        ``solve_triangular(U, ...)``) on the RHS plus a diagonal
+        divide.  Cost is ``O(b * n^2)`` and transient memory is
+        ``O(b * n)``; the legacy ``y @ compute_Winverse_current()``
+        path materialises ``L^-1`` / ``U^-1`` / ``D^-1`` (3 × ``O(n^2)``
+        scratch) and chains two ``O(n^3)`` matmuls.
+        """
+        self._current_gate = gate
+        try:
+            if self.ergodic:
+                return self._solve_ldu(
+                    y, self._L_eff(), self._d_eff(), self._U_eff())
+            return self._solve_reverse(y)
+        finally:
+            self._current_gate = None
+
     # --- Forward / Reverse ---
     def forward(self, x, gate=None):
         """Apply the LDU transform with optional ergodic noise injection.

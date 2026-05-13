@@ -18,7 +18,22 @@
 
     <training>
       <numEpochs>1</numEpochs>
-      <batchSize>128</batchSize>
+      <!-- batchSize reduced from 128 to 8 on 2026-05-13.  The
+           SymbolicSpace.sigma-retirement refactor (commit d3e256b)
+           widened SS.nDim from 6 to 1024 so the C->S handoff is
+           dimensionally a pass-through, and per-stage ConceptualSpace
+           now sources percept-dim input from the stem-cached
+           ``perceptualSpace.event`` (kept live across the body's
+           per-stage loop).  Together these inflate the per-batch
+           activation slab through 3 stages * [B*K, N=1024, D=1028]
+           in bf16, which OOMs the 121 GiB GB10 unified pool past
+           batchSize=8.  Sweep on 2026-05-13: bs=2/4/8 fit cleanly,
+           bs=12 OOMs at the codebook commitment-loss MSE.  Restore
+           128 once either the activation slab is reduced (smaller
+           nDim) or the per-stage chain re-sources from a narrower
+           bivector handoff (the ``<bivectorOutput>true</...>`` path
+           skips the wide concept-dim materialisation entirely). -->
+      <batchSize>8</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>

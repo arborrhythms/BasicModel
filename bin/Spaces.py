@@ -2119,34 +2119,50 @@ class ProjectionBasis(Basis):
             naive=True, stable=True)
         return self
 
-    def _normalized_factors(self):
-        """Return ``(W_norm, W_inv_norm, col_norms)`` with unit-norm prototypes.
+    def _W_norm_and_scales(self):
+        """Return ``(W_norm, col_norms)`` -- forward path only.
 
-        Per-prototype normalization (rows of the [N, D] codebook view,
-        equivalently columns of compute_W's [D, N] output) bounds the
-        forward projection: each ``x · W_norm[n]`` ≤ ``||x||`` by
-        Cauchy-Schwarz.  The accompanying inverse correction keeps the
-        round-trip exact -- ``W_inv_norm = diag(col_norms) @ W_inv``,
-        so ``(bivec @ W_inv_norm)`` recovers the same x that
-        ``(x @ W_norm)`` projected.
-
-        Concretely, with ``W = L @ D_embed @ U`` from the LDU layer
-        (shape ``[D, N]``):
-
-          W_norm[:, n]   = W[:, n] / col_norms[n]      (each column unit-norm)
-          W_inv_norm     = col_norms[n].reshape(N,1) * W_inv   (row n of W_inv scaled by col_norms[n])
-
-        The ``[B, V, D]`` -> ``[B, N, 2]`` bivector forward is then
-        bounded by ``||x||_2`` per V slot; the reverse round-trips
-        because ``W_norm @ W_inv_norm`` reduces to the original
-        ``W @ W_inv`` (the scalings cancel).
+        ``W_norm`` has unit-norm columns (each codebook prototype is
+        on the unit ball), bounding the forward projection by
+        ``||x||``; ``col_norms`` is the per-prototype scale used by
+        the reverse path to undo the normalization (see
+        :meth:`_apply_inverse`).  This split lets ``forward`` skip
+        the inverse build that the legacy ``_normalized_factors``
+        always paid for.
         """
         W = self.layer.compute_W_current()                     # [D, N]
-        W_inv = self.layer.compute_Winverse_current()          # [N, D]
         col_norms = W.norm(dim=0, keepdim=True).clamp(min=1e-8)  # [1, N]
         W_norm = W / col_norms                                 # [D, N]
-        W_inv_norm = col_norms.transpose(0, 1) * W_inv         # [N, D]
-        return W_norm, W_inv_norm, col_norms
+        return W_norm, col_norms
+
+    def _apply_inverse(self, signed):
+        """Apply ``signed @ W_inv_norm`` without materialising W^-1.
+
+        Mathematically ``W_inv_norm = col_norms.T * W_inv`` (the
+        column-norm correction that makes the round-trip exact).
+        Implementation:
+
+          1. Scale ``signed`` per-prototype by ``col_norms``.
+          2. Call ``layer.apply_Winverse_current(...)`` which runs the
+             two triangular solves + diagonal divide directly against
+             the RHS, never materialising ``L^-1`` / ``U^-1`` / ``D^-1``
+             or their chained product.
+
+        Total cost is ``O(b * n^2)`` and transient memory ``O(b * n)``,
+        compared with the legacy ``signed @ compute_Winverse_current()``
+        path's ``O(n^3)`` build + ``O(b * n^2)`` matmul plus three
+        ``O(n^2)`` scratch tensors.
+        """
+        # Recompute col_norms here -- cheap (an `O(D*N)` reduction on
+        # the LDU's compute_W output) and keeps the two paths
+        # (forward / reverse) independent so neither carries dead
+        # work for the other.
+        W = self.layer.compute_W_current()
+        col_norms = W.norm(dim=0, keepdim=True).clamp(min=1e-8)  # [1, N]
+        # Scale signed by col_norms per prototype so the subsequent
+        # solve undoes the unit-norm scaling cleanly.
+        scaled = signed * col_norms                             # [B, N]
+        return self.layer.apply_Winverse_current(scaled)        # [B, D]
 
     def getW(self):
         """Codebook view: ``[N, D]`` with unit-norm prototype rows.
@@ -2161,7 +2177,7 @@ class ProjectionBasis(Basis):
             return self._active_payload
         if self.layer is None:
             return None
-        W_norm, _, _ = self._normalized_factors()
+        W_norm, _ = self._W_norm_and_scales()
         return W_norm.T
 
     def setW(self, value):
@@ -2194,7 +2210,7 @@ class ProjectionBasis(Basis):
             x = x.materialize()
         if x.dim() == 2:
             x = x.unsqueeze(1)
-        W_norm, _, _ = self._normalized_factors()              # [D, N]
+        W_norm, _ = self._W_norm_and_scales()                  # [D, N]
         D_min = min(int(x.shape[-1]), int(W_norm.shape[0]))
         x_d = x[..., :D_min].to(device=W_norm.device, dtype=W_norm.dtype)
         W_d = W_norm[:D_min, :]                                # [D, N]
@@ -2221,22 +2237,25 @@ class ProjectionBasis(Basis):
 
         Collapses the bivector to ``signed = pos - neg`` (the
         per-prototype signed mean-projection from the forward) and
-        maps through the unit-prototype inverse ``W_inv_norm =
-        col_norms * W_inv``.  The column-norm correction keeps the
+        maps through the unit-prototype inverse via
+        :meth:`_apply_inverse`.  The column-norm correction keeps the
         V=1 round-trip exact: ``W_norm @ W_inv_norm = W @ W_inv = I``.
         For V>1, the per-V information was summed away in the
         forward; the reverse returns the per-row mean summary vector
         replicated across V positions, which is the mathematically
         correct answer given the V-axis collapse.
+
+        No dense ``W^-1`` is materialised on this path -- the
+        triangular solves run directly on the RHS via
+        ``InvertibleLinearLayer.apply_Winverse_current`` for ``O(b *
+        n^2)`` cost.
         """
         if bivec is None or not torch.is_tensor(bivec):
             return None
         if self.layer is None:
             return None
         signed = bivec[..., 0] - bivec[..., 1]                # [B, N]
-        _, W_inv_norm, _ = self._normalized_factors()         # [N, D]
-        signed = signed.to(device=W_inv_norm.device, dtype=W_inv_norm.dtype)
-        x_summary = signed @ W_inv_norm                       # [B, D]
+        x_summary = self._apply_inverse(signed)               # [B, D]
         v = max(int(V) if V is not None else 1, 1)
         return x_summary.unsqueeze(1).expand(-1, v, -1).contiguous()
 
@@ -8006,6 +8025,38 @@ class ShortTermMemory(nn.Module):
         self._truth_tags[b, depth].zero_()
         self._depth[b] = depth + 1
 
+    def push_window_batch(self, ideas):
+        """Push ``W`` consecutive ideas onto every batch row in one shot.
+
+        ``ideas`` has shape ``[B, W, D]``: row ``b``'s slot ``depth+w`` is
+        written from ``ideas[b, w]`` for w in [0, W).  All rows advance
+        by the same ``W``.
+
+        Avoids the per-(b, w) ``.item()`` syncs that ``push`` incurs --
+        critical for the per-word stem's hot path, where the legacy
+        loop dispatched B*W sync points (B=128 N=1024 -> 130k host
+        round-trips) per forward.
+
+        Caller is responsible for ensuring ``max(_depth) + W <= capacity``;
+        the per-word stem calls ``clear()`` first so depths start at 0
+        and ``W`` is bounded by the buffer's already-sized ``capacity``.
+        """
+        B, W, D = ideas.shape
+        if W == 0:
+            return
+        device = self._buffer.device
+        starts = self._depth                                  # [B] long
+        offsets = torch.arange(W, device=device).unsqueeze(0)  # [1, W]
+        positions = starts.unsqueeze(1) + offsets             # [B, W]
+        row_idx = torch.arange(B, device=device).unsqueeze(1) \
+            .expand(-1, W)                                    # [B, W]
+        self._buffer[row_idx, positions] = ideas
+        # Zero the freshly-allocated truth tags in one scatter.
+        self._truth_tags[row_idx, positions] = torch.zeros(
+            B, W, self._TRUTH_TAG_WIDTH,
+            device=device, dtype=self._truth_tags.dtype)
+        self._depth = starts + W
+
     def pop(self, b):
         """Pop and return the top idea for row ``b``, or ``None`` when empty.
 
@@ -8388,11 +8439,29 @@ class ConceptualSpace(Space):
 
         sib = self._get_active_input_sibling()
         sym = self._read_event(sib) if sib is not None else None
-        if sym is not None and (
-                isinstance(self.subspace.what, ProjectionBasis)
-                and sym.dim() == 3 and sym.shape[-1] == 2):
-            V_orig = int(self.inputShape[0])
-            sym = self.subspace.what.reverse(sym, V=V_orig)
+        # Bivector reverse-lift: the SS event arrives as a per-prototype
+        # catuskoti slab [B, V, 2] over the SIBLING's codebook (V_S =
+        # SymbolicSpace.nVectors when ``bivectorOutput=true``).  We
+        # can only invert that with the basis it was produced by --
+        # i.e. the sibling's ProjectionBasis -- so the previous
+        # ``self.subspace.what.reverse(sym, ...)`` path crashed at
+        # conceptualOrder>1 when ``V_S != self.nVectors``.  Try the
+        # sibling's basis first; if it isn't a ProjectionBasis
+        # (legacy / non-bivector SS), fall through with ``sym``
+        # untouched and let the perc_ev fallback below carry the
+        # chain at percept-dim width.
+        if sym is not None and sym.dim() == 3 and sym.shape[-1] == 2:
+            sib_basis = (getattr(sib.subspace, 'what', None)
+                         if sib is not None else None)
+            if (isinstance(sib_basis, ProjectionBasis)
+                    and int(sib_basis.nVectors) == int(sym.shape[1])):
+                V_orig = int(self.inputShape[0])
+                sym = sib_basis.reverse(sym, V=V_orig)
+            else:
+                # Bivector lives in a basis whose V dim we can't invert
+                # against -- leave ``sym`` as the raw [B, V_S, 2] slab
+                # and let downstream shape checks route us to perc_ev.
+                pass
 
         if at_stage_0 or perc_ref_sub is None:
             # Primary = perceptual via vspace (legacy stage-0 path or
@@ -8403,17 +8472,17 @@ class ConceptualSpace(Space):
                 return (primary + sym) / 2
             return primary
 
-        # Stage > 0: primary = lifted_sym (legacy). On sentence start
-        # the sibling event is None -- fall back to legacy
-        # forwardBegin(vspace) so order-0 semantics hold for the very
-        # first forward call of the sequence.
-        if sym is None:
-            return self.forwardBegin(vspace, returnVectors=True)
-
-        # Read the stem-cached perceptual event and apply the same
-        # nInputDim reshape ``forwardBegin`` would WITHOUT clobbering
-        # the side effects (those came from vspace, the correct source
-        # for this stage's forwardEnd/reverseEnd).
+        # Stage > 0: read the stem-cached perceptual event so the
+        # chain stays at the percept-dim width that ``self.pi.nInput``
+        # was configured for.  ``sym`` (the previous SymbolicSpace
+        # event) only contributes when the bivector lift above
+        # recovered it to the perceptual-content shape (i.e. it
+        # shape-matches ``perc_ev``).  Without that lift, ``sym``
+        # lives in the concept-dim basis (post the C->S pass-through
+        # introduced when SymbolicSpace.sigma was retired) and would
+        # crash the next ``self.pi(x)`` matmul -- so we let the chart
+        # at C consume the SS event instead and feed the perceptual
+        # cache straight into pi.
         perc_ev = self._read_event(self.perceptualSpace_ref)
         if perc_ev is not None and perc_ev.dim() == 4:
             B, K, N, D = perc_ev.shape
@@ -8425,9 +8494,28 @@ class ConceptualSpace(Space):
                     perc_ev.shape[0], -1, self.nInputDim)
             except RuntimeError:
                 perc_ev = None
-        if perc_ev is not None and perc_ev.shape == sym.shape:
+        # ``_read_event`` returns the basis ``W`` parameter when no
+        # runtime event has been written (Tensor / Codebook surface
+        # over a [N, D] codebook).  That 2D tensor is the prototype
+        # store, not an actual upstream event -- treat it as "no
+        # event" and fall through to the legacy forwardBegin path.
+        perc_ev_valid = (perc_ev is not None and perc_ev.dim() >= 3)
+        if sym is None:
+            # Sentence start: no previous symbolic event -- use the
+            # perceptual cache when it carries a real (3D+) event,
+            # else fall back to legacy forwardBegin(vspace).
+            if perc_ev_valid:
+                return perc_ev
+            return self.forwardBegin(vspace, returnVectors=True)
+        if perc_ev_valid and perc_ev.shape == sym.shape:
             return (sym + perc_ev) / 2
-        return sym
+        if perc_ev_valid:
+            return perc_ev
+        # ``sym`` is set but ``perc_ev`` isn't a real event (only the
+        # codebook surface is visible).  Returning ``sym`` here would
+        # carry the concept-dim basis into a percept-dim pi and
+        # crash; prefer the legacy forwardBegin fallback over that.
+        return self.forwardBegin(vspace, returnVectors=True)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
