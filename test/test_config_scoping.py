@@ -87,8 +87,10 @@ class TestDefaultsXml(unittest.TestCase):
         for key in ["numTrials", "numEpochs", "batchSize", "learningRate",
                     "autoload", "autosave", "certainty"]:
             self.assertIn(key, trn, f"architecture.training missing key '{key}'")
-        # weightsPath and embeddingPath are at architecture level, not training
-        for key in ["weightsPath", "embeddingPath"]:
+        # weightsPath is at architecture level, not training.
+        # (embeddingPath retired 2026-05-12 -- integrated-weights bundle
+        # carries embeddings inside the .ckpt.)
+        for key in ["weightsPath"]:
             self.assertIn(key, arch, f"architecture missing key '{key}'")
         dat = arch.get("data", {})
         self.assertIn("dataset", dat, "architecture.data missing 'dataset'")

@@ -6352,7 +6352,7 @@ class ChunkLayer(Layer):
     """
 
     def __init__(self, nDim, bpe=False,
-                 n_vectors=1024, chunking_frequency=2,
+                 n_vectors=1024, word_learning=2,
                  cold_start_floor=300):
         """Initialize ChunkLayer; allocate state for the class contract.
         
@@ -6367,7 +6367,7 @@ class ChunkLayer(Layer):
         # 0..255 (see Spaces.py -- ``byte_value == codebook_index``).
         self.bpe = bool(bpe)
         self.n_vectors = int(n_vectors)
-        # ``chunking_frequency`` is now a frozen-vs-active gate:
+        # ``word_learning`` is now a frozen-vs-active gate:
         #   0 (or negative) -> codebook is held constant for the rest of
         #                       the run (used when loading a pre-trained
         #                       artifact -- avoids Inductor recompile
@@ -6376,7 +6376,7 @@ class ChunkLayer(Layer):
         #                       no longer matters for the threshold;
         #                       promotion is governed by the two-gate
         #                       criterion below.
-        self.chunking_frequency = int(chunking_frequency)
+        self.word_learning = int(word_learning)
         # ``cold_start_floor`` lets the lift gate be skipped while the
         # vocab is still small (V close to 256). With V=256, V^2=65k,
         # and the gate would demand count > N/65k, which stalls the
@@ -6468,11 +6468,11 @@ class ChunkLayer(Layer):
         self._next_id = int(section.get(
             "next_id", max(self.id_to_bytes.keys()) + 1 if self.id_to_bytes else 256))
         self._max_merge_len = int(section.get("max_merge_len", 1))
-        # Honor n_vectors / chunking_frequency from the artifact if the
+        # Honor n_vectors / word_learning from the artifact if the
         # caller didn't override at construction.
         self.n_vectors = int(section.get("n_vectors", self.n_vectors))
-        self.chunking_frequency = int(section.get(
-            "chunking_frequency", self.chunking_frequency))
+        self.word_learning = int(section.get(
+            "word_learning", self.word_learning))
         return self
 
     # -- Boundary detection --------------------------------------------
@@ -6590,7 +6590,7 @@ class ChunkLayer(Layer):
         ``terminal_id`` is not ``None`` the path from root to this node
         spells the byte tuple of vocab entry ``terminal_id``. Rebuild
         triggers off ``len(vocab)`` (vocab only grows under
-        ``train_step``); when ``chunking_frequency == 0`` the vocab is
+        ``train_step``); when ``word_learning == 0`` the vocab is
         frozen and this is built once then no-op forever after.
         """
         cur_size = len(self.vocab)
@@ -6638,7 +6638,7 @@ class ChunkLayer(Layer):
         ``n_vectors`` AND no candidate clears Gate 2. No-op in legacy
         (``bpe=False``) mode.
 
-        ``chunking_frequency <= 0`` is the **frozen** marker -- the
+        ``word_learning <= 0`` is the **frozen** marker -- the
         merge table is held constant for the rest of the run, no new
         entries are added regardless of byte-pair statistics. Use this
         after loading a pre-trained BPE artifact (via ``ChunkLayer.load``)
@@ -6647,7 +6647,7 @@ class ChunkLayer(Layer):
         """
         if not self.bpe:
             return 0
-        if self.chunking_frequency <= 0:
+        if self.word_learning <= 0:
             # Frozen: vocab stays as-is for the rest of the run.
             return 0
         all_chunks, _ = self.forward(byte_indices)

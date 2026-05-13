@@ -232,7 +232,7 @@ Transforms lifted input into perceptual features via Pi layers
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | bool | `false` | When `true`, `.what` is a learnable `Codebook`; when `false`, a passthrough `Tensor`. |
 | `chunking` | string | `"lexicon"` | Multi-token chunking strategy: `lexicon`, `bpe`. |
-| `chunkingFrequency` | int | `2` | BPE merges per chunking pass (ignored in lexicon mode). |
+| `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
 | `bivectorOutput` | bool | `false` | Applies the Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ per slot and writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation`. Completes the monotonic chain by joining PerceptualSpace to the C / S-tier bivector regime. Spec §B3 / §Q2 in `specs/2026-04-24-lift-lower-bivector-design.md`. |
 
 Pi layer math: $y_j = b_j \prod_i (1 + W_{ji} x_i)$. See [Architecture.md](Architecture.md).

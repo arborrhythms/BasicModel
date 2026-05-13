@@ -3,7 +3,6 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <modelType>embedding</modelType>
-    <embeddingPath>data/embeddings/enwiki_20180420_100d.txt</embeddingPath>
     <weightsPath>tomatoes_weights.ckpt</weightsPath>
     <data>
       <dataset>tomatoes</dataset>

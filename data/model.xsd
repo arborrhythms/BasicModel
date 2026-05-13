@@ -55,7 +55,8 @@
       <xs:element name="server" type="serverType" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
+      <!-- embeddingPath retired 2026-05-12: embeddings now live inside
+           the single .ckpt bundle, not a separate .kv artifact. -->
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
       <xs:element name="useButterflies" type="xs:boolean" minOccurs="0"/>
       <xs:element name="monotonic" type="xs:boolean" minOccurs="0"/>
@@ -334,7 +335,12 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="chunkingFrequency" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- wordLearning (formerly chunkingFrequency): controls active
+           lexicon growth. 0 = frozen codebook (training-time default);
+           >=1 = on first sight of a new word, insert it into the
+           lexicon and tag it as a part of the "words" symbol on the
+           meronomy. Only embed.py sets >0 at lexicon-build time. -->
+      <xs:element name="wordLearning" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="chunking" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
@@ -476,6 +482,12 @@
       <xs:element name="chartTopK" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Gaussian noise epsilon for chartTopK gating. -->
       <xs:element name="chartNoiseEps" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Per-word stem: each word does an individual P->C->S->C round
+           trip in the stem, ideas accumulate on ConceptualSpace.stm,
+           and the chart fires at C over STM in the body. -->
+      <xs:element name="perWordStem" type="xs:boolean" minOccurs="0"/>
+      <!-- Number of P->C iterations per word in the per-word stem path. -->
+      <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Downward generation: when true, MentalModel.forward() emits a
            codebook head via WordSpace.reconstruct() and stashes it on
            self._predicted_head for downstream (e.g. loss) consumption. -->

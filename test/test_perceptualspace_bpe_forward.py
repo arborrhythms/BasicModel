@@ -59,7 +59,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nVectors>{n_vectors}</nVectors>
     <codebook>true</codebook>
     <chunking>bpe</chunking>
-    <chunkingFrequency>2</chunkingFrequency>
+    <wordLearning>2</wordLearning>
   </PerceptualSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
@@ -90,7 +90,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
 class TestPerceptualSpaceBPE(unittest.TestCase):
 
     def test_init_reads_new_config_fields(self):
-        """Task 3: PerceptualSpace reads <chunking>, <nVectors>, <chunkingFrequency>."""
+        """Task 3: PerceptualSpace reads <chunking>, <nVectors>, <wordLearning>."""
         import tempfile
         from util import init_config
         import Spaces
@@ -104,7 +104,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             self.assertEqual(
                 int(Spaces.TheXMLConfig.space("PerceptualSpace", "nVectors")), 512)
             self.assertEqual(
-                int(Spaces.TheXMLConfig.space("PerceptualSpace", "chunkingFrequency")), 2)
+                int(Spaces.TheXMLConfig.space("PerceptualSpace", "wordLearning")), 2)
 
     def test_init_rejects_bpe_with_nVectors_below_256(self):
         """Task 4: bpe mode requires nVectors>=256."""
@@ -128,10 +128,10 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             model, cfg = BaseModel.from_config(config_path=path)
             ps = model.perceptualSpace
             self.assertEqual(ps.chunking_mode, "bpe")
-            self.assertEqual(ps.chunking_frequency, 2)
+            self.assertEqual(ps.word_learning, 2)
             self.assertTrue(ps.chunk_layer.bpe)
             self.assertEqual(ps.chunk_layer.n_vectors, 512)
-            self.assertEqual(ps.chunk_layer.chunking_frequency, 2)
+            self.assertEqual(ps.chunk_layer.word_learning, 2)
 
     def test_forward_bpe_emits_word_level_vectors(self):
         """Task 5: BPE forward pass emits [B, nOutput, nDim] with one position per whitespace word."""
@@ -195,7 +195,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         from Layers import ChunkLayer
 
         layer = ChunkLayer(nDim=4, bpe=True,
-                           n_vectors=260, chunking_frequency=1)
+                           n_vectors=260, word_learning=1)
         layer.train()
         batch = torch.tensor(
             [list(b"abababababababababab") + [0] * 4],

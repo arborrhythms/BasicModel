@@ -51,7 +51,6 @@
     <nWhen>0</nWhen>
 
     <!-- gensim KeyedVectors path; empty disables embedding load. -->
-    <embeddingPath></embeddingPath>
     <!-- Checkpoint path for the neural model weights. -->
     <weightsPath></weightsPath>
 
@@ -327,7 +326,7 @@
     <!-- Multi-token chunking strategy: lexicon | bpe. -->
     <chunking>lexicon</chunking>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
-    <chunkingFrequency>2</chunkingFrequency>
+    <wordLearning>2</wordLearning>
   </PerceptualSpace>
 
   <ModalSpace>

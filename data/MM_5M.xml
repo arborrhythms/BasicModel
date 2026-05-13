@@ -10,7 +10,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>MM_5M.ckpt</weightsPath>
-    <embeddingPath>MM_5M.kv</embeddingPath>
     <amp>bf16</amp>
 
     <data>
@@ -55,7 +54,12 @@
     <hasAttention>false</hasAttention>
     <codebook>true</codebook>
     <chunking>bpe</chunking>
-    <chunkingFrequency>0</chunkingFrequency>
+    <!-- wordLearning=0 at training time: the model uses a frozen
+         BPE codebook (carried in the .ckpt bundle alongside the other
+         weights). embed.py overrides this to 1 when building the
+         codebook from scratch — that is the only stage where the
+         vocab grows. -->
+    <wordLearning>0</wordLearning>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: final level shape is 4x1024.

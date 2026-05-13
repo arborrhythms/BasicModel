@@ -22,7 +22,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>LM_5M_IR.ckpt</weightsPath>
-    <embeddingPath>LM_5M_IR.kv</embeddingPath>
     <amp>bf16</amp>
 
     <!-- MereologicalTree size matches SymbolicSpace nVectors. -->
@@ -81,7 +80,7 @@
     <invertible>false</invertible>
     <codebook>true</codebook>
     <chunking>lexicon</chunking>
-    <chunkingFrequency>1</chunkingFrequency>
+    <wordLearning>1</wordLearning>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: hierarchical-mode shape from MM_5M_IR.

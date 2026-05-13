@@ -623,11 +623,8 @@ class BaseModel(Mereology, nn.Module):
         if model_type is None:
             model_type = arch["modelType"]
 
-        embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
-        if embedding_path is not None:
-            embedding_path = self._resolve_artifact_path(embedding_path)
-            TheXMLConfig._data["architecture"]["embeddingPath"] = embedding_path
-
+        # <embeddingPath> retired (2026-05-12): embeddings now ride
+        # inside the single .ckpt bundle, not a separate .kv artifact.
         _nWhere = TheXMLConfig.get("architecture.nWhere")
         _nWhen = TheXMLConfig.get("architecture.nWhen")
         _objectSize = _nWhere + _nWhen
@@ -668,7 +665,6 @@ class BaseModel(Mereology, nn.Module):
             conceptualOrder=arch["conceptualOrder"],
             model_type=model_type,
             data=data,
-            embedding_path=embedding_path,
             reverse_scale=_t("reverseScale"),
             what_scale=_t("whatScale"),
             where_scale=_t("whereScale"),
@@ -773,19 +769,10 @@ class BaseModel(Mereology, nn.Module):
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
             wpath = self._resolve_artifact_path(wpath)
+            # Single-artifact load: state_dict + vocab_extras +
+            # bpe_extras all ride in the .ckpt. The separate .kv
+            # embedding artifact was retired (2026-05-12).
             self.load_weights(wpath)
-            # The .kv artifact's vocab + word/chunk vectors are already
-            # restored by PerceptualSpace.vocabulary during model build
-            # (see Embedding.create -> _load_embeddings). load_embeddings()
-            # additionally restores the LTM truth-layer rows that the
-            # vocabulary path doesn't touch, so call it here under the
-            # same <autoload> gate. The vocab side is idempotent under
-            # re-load; load_embeddings short-circuits if the file is
-            # absent.
-            epath = TheXMLConfig.get("architecture.embeddingPath")
-            if epath:
-                epath = self._resolve_artifact_path(epath)
-                self.load_embeddings(epath)
         self.max_response_length = arch["maxResponseLength"]
         return cfg
 
@@ -881,16 +868,16 @@ class BaseModel(Mereology, nn.Module):
         return path
 
     def save_training_checkpoint(self, reason="checkpoint", suffix=None):
-        """Save model weights and embeddings during or after training.
+        """Save the model checkpoint (single integrated artifact).
 
-        Resolves the checkpoint path (with optional suffix), writes
-        weights then embeddings, and prints a labeled message. ``reason``
-        appears in the log only -- the on-disk filename is unaffected.
+        Resolves the .ckpt path (with optional suffix) and writes the
+        full bundle via ``save_weights``: parameters, buffers,
+        embeddings, and BPE state. ``reason`` appears in the log only;
+        the on-disk filename is unaffected.
         """
         path = self._checkpoint_path(suffix=suffix)
         TheMessage(f"[{self.name}] Saving training checkpoint ({reason})")
         self.save_weights(path)
-        self.save_embeddings()
         return path
 
     def _maybe_save_periodic_checkpoint(self):
@@ -1369,79 +1356,75 @@ class BaseModel(Mereology, nn.Module):
         raise NotImplementedError
 
     def save_weights(self, path=None):
-        """Persist model weights (excluding embeddings) to disk.
+        """Persist all model state to a single .ckpt: parameters, buffers,
+        embedding vectors, vocabulary mappings, and BPE codebook.
 
-        Embedding weights live in a separate artifact (the .kv/.pt file
-        specified by <embeddingPath> in the XML config).  The three files
-        -- XML config, embedding artifact, weights checkpoint -- partition
-        the model's behaviour and are managed independently.
+        The integrated-weights architecture: one XML config + one
+        checkpoint, no separate .kv embedding artifact. The checkpoint
+        carries:
+
+        * ``state_dict``: all nn.Parameter + register_buffer state
+          (model weights, embeddings, TruthLayer rows, etc.).
+        * ``vocab_extras``: Python-side WordVectors mappings that don't
+          fit ``state_dict`` (``index_to_key``, ``counts``, ``total_count``).
+        * ``bpe_extras``: ChunkLayer merge table and vocabulary (pure
+          Python state — merges list, vocab dict, id_to_bytes mapping,
+          counters).
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        # Filter out embedding parameters -- they belong to the .kv artifact
-        state = {k: v for k, v in self.state_dict().items()
-                 if "wv._vectors" not in k}
-        util.atomic_torch_save({"state_dict": state}, path)
+        bundle = {
+            "state_dict": dict(self.state_dict()),
+            "vocab_extras": self._collect_vocab_extras(),
+            "bpe_extras": self._collect_bpe_extras(),
+        }
+        util.atomic_torch_save(bundle, path)
         TheMessage(f"[{self.name}] Weights saved to {path}")
 
-    def save_embeddings(self, path=None):
-        """Snapshot current nn.Embedding weights and save the .pt artifact.
+    def _collect_vocab_extras(self):
+        """Gather WordVectors mappings + SymbolicSpace's well-known
+        atoms dict that don't ride in state_dict.
 
-        Also persists LTM (TruthLayer) data alongside the embeddings so
-        truths travel with the vocabulary and survive architecture
-        changes. When PerceptualSpace runs in BPE-chunking mode, the
-        ChunkLayer's merge table is co-saved into the same ``.kv`` file
-        under the artifact's ``bpe`` section -- the resulting ``.kv``
-        carries both Lexicon and BPE under ``kind="both"`` so it serves
-        either path. See :mod:`embed`.
+        Returns ``None`` when no Embedding is present.
         """
-        if path is None:
-            path = getattr(self, 'embedding_path', None)
-        if path is None:
-            return
         emb = self._get_embedding()
-        if emb is None:
-            return
+        if emb is None or getattr(emb, 'wv', None) is None:
+            return None
+        wv = emb.wv
+        counts = getattr(wv, 'counts', None)
+        if counts is not None and hasattr(counts, 'tolist'):
+            counts = counts.tolist()
+        sym_space = getattr(self, 'symbolicSpace', None)
+        well_known = dict(getattr(sym_space, 'well_known_atoms', {}) or {})
+        return {
+            "index_to_key": list(getattr(wv, 'index_to_key', []) or []),
+            "counts": counts or [],
+            "total_count": int(getattr(wv, 'total_count', 0) or 0),
+            "well_known_atoms": well_known,
+        }
 
-        # Collect truth data from SymbolicSpace for co-storage
-        truth_data = None
-        truth_layer = getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
-        if truth_layer is not None and truth_layer.count.item() > 0:
-            n = truth_layer.count.item()
-            truth_data = {
-                "truths": truth_layer.truths[:n].cpu().clone(),
-                "count": n,
-            }
-
-        # Co-save the BPE codebook when PerceptualSpace owns one in
-        # BPE mode. The ChunkLayer's merge table lives outside the
-        # nn.Embedding artifact in legacy code; the unified
-        # vocab-artifact format lets us bundle them.
-        bpe_section = None
+    def _collect_bpe_extras(self):
+        """Snapshot the ChunkLayer's pure-Python state into a dict
+        suitable for ``torch.save``. Returns ``None`` when no BPE
+        ChunkLayer is active.
+        """
         ps = getattr(self, 'perceptualSpace', None)
         cl = getattr(ps, 'chunk_layer', None) if ps is not None else None
-        if cl is not None and getattr(cl, 'bpe', False):
-            try:
-                from embed import bpe_section_from_chunk_layer
-                bpe_section = bpe_section_from_chunk_layer(cl)
-            except Exception as e:
-                TheMessage(
-                    f"[{self.name}] BPE co-save skipped "
-                    f"({type(e).__name__}: {e}); saving Lexicon only.")
-                bpe_section = None
-
-        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        emb.save_embeddings(path, truth_data=truth_data,
-                            bpe_section=bpe_section)
-        suffix_parts = []
-        if truth_data:
-            suffix_parts.append(f"{n} truths")
-        if bpe_section is not None:
-            suffix_parts.append(
-                f"BPE {len(bpe_section.get('vocab', {}))} entries")
-        suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
-        TheMessage(f"[{self.name}] Embeddings saved to {path}{suffix}")
+        if cl is None or not getattr(cl, 'bpe', False):
+            return None
+        return {
+            "merges": [list(p) for p in getattr(cl, 'merges', [])],
+            "vocab": {",".join(str(x) for x in k): int(v)
+                      for k, v in getattr(cl, 'vocab', {}).items()},
+            "id_to_bytes": {int(k): list(v)
+                            for k, v in getattr(cl, 'id_to_bytes', {}).items()},
+            "_next_id": int(getattr(cl, '_next_id', 0) or 0),
+            "_max_merge_len": int(getattr(cl, '_max_merge_len', 0) or 0),
+            "n_vectors": int(getattr(cl, 'n_vectors', 0) or 0),
+            "word_learning": int(
+                getattr(cl, 'word_learning', 0) or 0),
+        }
 
     @staticmethod
     def print_weights_info(path):
@@ -1463,92 +1446,15 @@ class BaseModel(Mereology, nn.Module):
             if isinstance(tensor, torch.Tensor):
                 TheMessage(f"    {key:<50s}  {list(tensor.shape)}")
 
-    def load_embeddings(self, path=None):
-        """Load embedding weights and vocab from a .pt artifact.
-
-        Falls back to ``self.embedding_path`` when ``path`` is None;
-        returns False on absence rather than raising. Also restores
-        the LTM truth-layer payload when present and the embedding
-        layer supports it.
-        """
-        if path is None:
-            path = getattr(self, 'embedding_path', None)
-        if path is None:
-            return False
-        if not os.path.exists(path):
-            return False
-        emb = self._get_embedding()
-        if emb is None:
-            return False
-        try:
-            wv = WordVectors.load(path)
-        except ValueError as exc:
-            # BPE-only artifact has no lexicon section to import on top
-            # of the live embedding. The Embedding.create() path
-            # already synthesized one stub vector per BPE chunk_id at
-            # construction time (see Embedding._load_embeddings); just
-            # skip the post-construction reload here.
-            if "BPE-only artifact" in str(exc):
-                TheMessage(
-                    f"[{self.name}] BPE-only artifact at {path}; "
-                    f"keeping the lexicon synthesized at construction time."
-                )
-                return False
-            raise
-        # Check that the saved embedding dimensionality matches the model.
-        expected_dim = emb.wv.vector_size
-        if wv.vector_size != expected_dim:
-            TheMessage(
-                f"[{self.name}] Embedding dimension mismatch -- cannot load {path}\n"
-                f"  File has {wv.vector_size}-dim vectors, model expects {expected_dim}-dim.\n"
-                f"  To fix: correct <nDim> in the model XML to match the saved embeddings,\n"
-                f"          or delete/move {path} to start fresh."
-            )
-            return False
-        self._restore_vocab(emb, list(wv.index_to_key),
-                            counts=wv.counts.tolist(),
-                            total_count=int(wv.total_count))
-        # Copy loaded weights into the live parameter. ``_restore_vocab``
-        # may have appended a trailing NULL_PERCEPT slot the saved file
-        # didn't include; copy only the leading rows that match the
-        # saved codebook and leave the appended slot at its random init.
-        with torch.no_grad():
-            saved = wv._vectors.to(emb.wv._vectors.device)
-            n_saved = saved.shape[0]
-            emb.wv._vectors.data[:n_saved].copy_(saved)
-            if emb.wv._vectors.shape[0] > n_saved:
-                # Re-init the appended NULL_PERCEPT slot uniformly on
-                # the torus (matches Embedding.create() defaults).
-                emb.wv._vectors.data[n_saved:].copy_(
-                    _random_unit_ball(
-                        (emb.wv._vectors.shape[0] - n_saved,
-                         emb.wv._vectors.shape[1]),
-                        device=emb.wv._vectors.device,
-                        dtype=emb.wv._vectors.dtype))
-        TheMessage(f"[{self.name}] Embeddings loaded from {path}")
-
-        # Restore LTM truths if present in the embedding artifact
-        truth_data = getattr(wv, 'truth_data', None)
-        if truth_data is not None:
-            truth_layer = getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
-            if truth_layer is not None:
-                n = truth_data["count"]
-                with torch.no_grad():
-                    truth_layer.truths[:n] = truth_data["truths"].to(
-                        truth_layer.truths.device)
-                    truth_layer.count.fill_(n)
-                TheMessage(f"[{self.name}] Restored {n} truths from {path}")
-        return True
-
     def load_weights(self, path=None, strict=False):
-        """Load model weights from disk (excluding embeddings).
+        """Load model state from a single .ckpt bundle.
 
-        Embedding weights are loaded separately from the .kv artifact
-        specified by <embeddingPath>.  This method only restores layer
-        weights, attention parameters, etc.
-
-        Supports both new format {"state_dict": ...} and legacy format
-        (bare state_dict).
+        The new bundle format carries ``state_dict`` plus
+        ``vocab_extras`` (WordVectors mappings) and ``bpe_extras``
+        (ChunkLayer merges/vocab) — see ``save_weights``. Old
+        embedding-stripped .ckpts (state_dict only, no extras) load
+        with a warning; the embeddings stay at their construction-time
+        random init.
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
@@ -1559,13 +1465,32 @@ class BaseModel(Mereology, nn.Module):
 
         if isinstance(saved, dict) and "state_dict" in saved:
             state = saved["state_dict"]
+            vocab_extras = saved.get("vocab_extras")
+            bpe_extras = saved.get("bpe_extras")
         else:
             state = saved
+            vocab_extras = None
+            bpe_extras = None
+
+        if vocab_extras is None and any("wv._vectors" in k for k in state):
+            # Bundled with embeddings but no vocab_extras — unusual
+            # but tolerated; the wv._vectors will load through state_dict.
+            pass
+        elif vocab_extras is None:
+            TheMessage(
+                f"[{self.name}] Legacy checkpoint at {path} has no "
+                f"embedding bundle; embeddings stay at random init.")
+
+        # Resize the live Embedding to match the saved vocab BEFORE the
+        # state_dict shape check. Otherwise the wv._vectors row count
+        # mismatch (live model is freshly built with a smaller vocab;
+        # saved bundle carries the grown vocab) would fail the load.
+        if vocab_extras is not None:
+            self._restore_vocab_extras(vocab_extras)
 
         # Pre-check for shape mismatches before attempting to load.
         # This produces an actionable diagnostic instead of a raw PyTorch error.
-        model_state = {k: v for k, v in self.state_dict().items()
-                       if "wv._vectors" not in k}
+        model_state = dict(self.state_dict())
 
         # Bivector migration: pre-bivector checkpoints have a [K, D] symbolic
         # codebook, while the current model expects [2K, D]. Duplicate each
@@ -1629,8 +1554,83 @@ class BaseModel(Mereology, nn.Module):
             TheMessage(
                 f"[{self.name}] Ignored {len(unexpected)} stale checkpoint "
                 f"keys not present in the current model")
+
+        # Restore Python-side WordVectors mappings (index_to_key etc.).
+        if vocab_extras is not None:
+            self._restore_vocab_extras(vocab_extras)
+        # Restore ChunkLayer BPE state (merges, vocab, id_to_bytes).
+        if bpe_extras is not None:
+            self._restore_bpe_extras(bpe_extras)
+
         TheMessage(f"[{self.name}] Weights loaded from {path}")
         return True
+
+    def _restore_vocab_extras(self, extras):
+        """Restore the WordVectors mappings AND resize the live
+        ``wv._vectors`` parameter to match the saved vocab size.
+
+        Called before the state_dict load so that the shape pre-check
+        sees matching dimensions. Vector data itself is populated by
+        the subsequent ``load_state_dict`` call; here we just allocate
+        the right-sized parameter and rebuild the Python mappings.
+        """
+        emb = self._get_embedding()
+        if emb is None or getattr(emb, 'wv', None) is None:
+            return
+        wv = emb.wv
+        keys = list(extras.get("index_to_key") or [])
+        if not keys:
+            return
+        counts = extras.get("counts") or []
+        total = int(extras.get("total_count") or 0)
+        # Resize wv._vectors to match the saved vocab size.
+        dim = wv._vectors.shape[1]
+        vocab_size = len(keys)
+        if wv._vectors.shape[0] != vocab_size:
+            wv._vectors = nn.Parameter(
+                torch.zeros(vocab_size, dim,
+                            device=wv._vectors.device,
+                            dtype=wv._vectors.dtype),
+                requires_grad=True)
+        wv.index_to_key = keys
+        wv.key_to_index = {k: i for i, k in enumerate(keys)}
+        wv.counts = (np.asarray(counts, dtype=np.int64) if counts
+                     else np.zeros(vocab_size, dtype=np.int64))
+        wv.total_count = np.int64(total)
+        if getattr(emb, 'pretrain', None) is not None:
+            emb.pretrain.index_to_key = wv.index_to_key
+            emb.pretrain.key_to_index = wv.key_to_index
+        wv._normed = None
+        # Restore the well-known atoms dict on SymbolicSpace so the
+        # "words" meronomy parent (and any future named parents) lines
+        # up with the rows in the saved codebook.
+        sym_space = getattr(self, 'symbolicSpace', None)
+        well_known = extras.get("well_known_atoms")
+        if sym_space is not None and isinstance(well_known, dict) and well_known:
+            sym_space.well_known_atoms = {
+                str(k): int(v) for k, v in well_known.items()
+            }
+
+    def _restore_bpe_extras(self, extras):
+        """Write the BPE codebook from a saved bundle back onto the
+        live ChunkLayer. Restores ``merges``, ``vocab``, ``id_to_bytes``,
+        and the cursors / counters that drive on-the-fly merge growth.
+        """
+        ps = getattr(self, 'perceptualSpace', None)
+        cl = getattr(ps, 'chunk_layer', None) if ps is not None else None
+        if cl is None:
+            return
+        cl.merges = [tuple(p) for p in extras.get("merges") or []]
+        cl.vocab = {
+            tuple(int(x) for x in k.split(",")) if k else (): int(v)
+            for k, v in (extras.get("vocab") or {}).items()
+        }
+        cl.id_to_bytes = {
+            int(k): tuple(int(x) for x in v)
+            for k, v in (extras.get("id_to_bytes") or {}).items()
+        }
+        cl._next_id = int(extras.get("_next_id") or 0)
+        cl._max_merge_len = int(extras.get("_max_merge_len") or 0)
 
     def _restore_vocab(self, emb, saved_vocab,
                        counts=None, total_count=0, pending_counts=None):
@@ -1869,7 +1869,7 @@ class BasicModel(BaseModel):
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
-               model_type="simple", data=None, embedding_path=None,
+               model_type="simple", data=None,
                reverse_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1,
                masked_prediction='NONE'):
         """Build the full space hierarchy from architecture parameters.
@@ -1889,7 +1889,6 @@ class BasicModel(BaseModel):
             nInput, nPercepts, nConcepts, nSymbols, nWords=nWords,
             nOutput=nOutput, conceptualOrder=conceptualOrder,
             model_type=model_type, data=data,
-            embedding_path=embedding_path,
             reverse_scale=reverse_scale, what_scale=what_scale,
             where_scale=where_scale, when_scale=when_scale,
             masked_prediction=masked_prediction)
@@ -1999,7 +1998,6 @@ class BasicModel(BaseModel):
         self.nWords           = nWords
         self.data             = data
         self.model_type       = model_type
-        self.embedding_path   = embedding_path
         self.conceptualOrder  = conceptualOrder
         self.loss = ModelLoss(reverse_scale=reverse_scale,
                          what_scale=what_scale,
@@ -4192,7 +4190,7 @@ class BasicModel(BaseModel):
         return outErr, inErr, allOutput, allInput
     def _create_per_stage(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
-               model_type="simple", data=None, embedding_path=None,
+               model_type="simple", data=None,
                reverse_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
                masked_prediction='NONE', **kwargs):
@@ -4215,7 +4213,6 @@ class BasicModel(BaseModel):
         self.nWords = nWords
         self.data = data
         self.model_type = model_type
-        self.embedding_path = embedding_path
         self.lexer = TheXMLConfig.space("InputSpace", "lexer")
         self.ergodic = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
@@ -4775,13 +4772,12 @@ class BasicModel(BaseModel):
         """
         return self._ss_cache[-1] if self._ss_cache else None
 
-    def _forward_stem(self, inputData):
-        """Stem: inputSpace -> perceptualSpace -> ChartCompose.
+    def _stem_input_to_percepts(self, inputData):
+        """inputSpace -> perceptualSpace prefix, shared by the legacy
+        chart-at-stem path and the per-word-stem path.
 
-        Hoists K-axis flatten/restore around perceptualSpace so the
-        per-Space FlattenKWrapper is no longer needed. Replaces the
-        prior ``self.pipeline_stem = nn.Sequential(inputSpace,
-        FlattenKWrapper(perceptualSpace), ChartCompose(wordSpace))``.
+        Returns the perceptual subspace (k_axis restored), or the empty
+        sentinel when the input is exhausted.
         """
         sub = self.inputSpace(inputData)
         if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
@@ -4789,7 +4785,85 @@ class BasicModel(BaseModel):
         B, K = self._flatten_k(sub)
         sub = self.perceptualSpace(sub)
         self._restore_k(sub, B, K)
+        return sub
+
+    def _forward_stem(self, inputData):
+        """Stem: inputSpace -> perceptualSpace -> (chart-at-stem OR
+        per-word P->C->S->C round trip filling ConceptualSpace.stm).
+
+        When ``WordSpace.chart.per_word_stem`` is on, the chart no longer
+        fires here; instead each word slot is run through the per-word
+        round trip and pushed onto STM. The body's per-stage chart
+        firing (Step 4) consumes that STM at C-tier.
+        """
+        sub = self._stem_input_to_percepts(inputData)
+        if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
+            return sub
+        if self.wordSpace.chart.per_word_stem:
+            self._forward_stem_per_word(sub)
+            return sub
         sub = self._chart_compose(sub)
+        return sub
+
+    def _forward_stem_per_word(self, sub):
+        """Per-word P->C->S->C round trip: for each word slot in the
+        perceptual event, run the C-tier pi transform, snap through the
+        S codebook (project=True), reverse-lift back to C, and push the
+        resulting "idea" onto ``conceptualSpace.stm``.
+
+        SymbolicSpace owns no sigma/pi (the C->S path is a dimensional
+        pass-through by architectural rule -- see Spaces.SymbolicSpace
+        constructor docstring), so the per-word loop applies only the
+        ConceptualSpace pi and then snaps through the S codebook.
+
+        The body's per-stage chart compose (Step 4) reads the STM at
+        C-tier and produces a parse. ``iterations_per_word`` (default 1)
+        controls how many P->C cycles run per word; with the SVD-
+        orthogonal codebook this is idempotent under N>=1.
+        """
+        p_event = sub.materialize()
+        if p_event is None:
+            return sub
+        # Per-row processing — slice the perceptual event by word slot.
+        # AR shape: [B, K, N, D]; non-AR shape: [B, N, D]. The per-word
+        # stem is K=1 within a forward, so we collapse any K-axis to
+        # the leading batch dim.
+        if p_event.dim() == 4:
+            B, K, N, D_p = p_event.shape
+            p_flat = p_event.reshape(B * K, N, D_p)
+        else:
+            B_flat, N, D_p = p_event.shape
+            p_flat = p_event
+        B_flat = p_flat.shape[0]
+        # Ensure STM is sized for this batch and starts empty.
+        self.conceptualSpace.stm.ensure_batch(B_flat)
+        self.conceptualSpace.stm.clear()
+        iterations = max(1, int(self.wordSpace.chart.iterations_per_word))
+        cb = getattr(self.symbolicSpace.subspace, 'what', None)
+        for w in range(N):
+            p_slot = p_flat[:, w:w+1, :]
+            c_slot = None
+            for _ in range(iterations):
+                c_slot = self.conceptualSpace.pi.forward(p_slot)
+            # SymbolicSpace has no sigma -- the C->S boundary is a
+            # dimensional pass-through; snap directly through the S
+            # codebook in bivector mode.
+            if cb is not None and hasattr(cb, 'forward') and hasattr(cb, 'reverse'):
+                snap = cb.forward(c_slot, project=True)
+                idea_back = cb.reverse(snap, project=True)
+                if idea_back is None:
+                    idea = c_slot[:, 0, :]
+                elif idea_back.dim() == 3:
+                    # Bivector reverse returns [B, V, D_c] of per-prototype
+                    # contributions; sum across prototypes for the
+                    # weighted-average C-tier idea.
+                    idea = idea_back.sum(dim=1)
+                else:
+                    idea = idea_back
+            else:
+                idea = c_slot[:, 0, :]
+            for b in range(B_flat):
+                self.conceptualSpace.stm.push(b, idea[b].detach())
         return sub
 
     def _forward_head(self, sub):
@@ -4809,18 +4883,44 @@ class BasicModel(BaseModel):
         old ``FlattenKWrapper(_body_inner)``). The body sees a flat
         [B*K, N, D] batch dim and operates as if K=1. Captures each
         stage's SymbolicSpace output into ``self._ss_cache[t]``.
+
+        When ``WordSpace.chart.per_word_stem`` is on, the chart fires
+        at C-tier over the STM buffer at each stage. Per-stage iteration
+        gives T = conceptualOrder passes of chart refinement, each using
+        the prior stage's S->C loopback as feedback through CS.
         """
         B, K = self._flatten_k(sub)
+        per_word_stem = self.wordSpace.chart.per_word_stem
         for t, stage in enumerate(self.body_stages):
             if "reparse" in stage:
                 sub = stage["reparse"](sub)
             sub = stage["cs"](sub)
+            if per_word_stem:
+                self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
                 sub = stage["merge"](sub)
             sub = stage["ss"](sub)
             self._ss_cache[t] = sub
         self._restore_k(sub, B, K)
         return sub
+
+    def _chart_compose_at_C(self, stage_idx=0):
+        """Fire the chart at C-tier over ``conceptualSpace.stm`` contents.
+
+        Populates ``wordSpace.current_rules`` for downstream SS dispatch.
+        Uses the largest depth across batch rows so the chart sees a
+        single uniform [B, N, D_c] input; rows with shorter sentences
+        carry zero-padding at the tail (handled by the chart's
+        ``valid_mask`` machinery in legacy code paths).
+        """
+        stm = self.conceptualSpace.stm
+        B = int(stm._buffer.shape[0])
+        max_depth = int(stm._depth.max().item()) if B > 0 else 0
+        if max_depth == 0:
+            return
+        # Slice [B, max_depth, D_c]; clone to keep autograd intact.
+        chart_input = stm._buffer[:, :max_depth, :].clone()
+        self.wordSpace.compose(chart_input)
 
     def _reverse_body(self, sub):
         """Per-stage body reverse. Mirrors ``_forward_body`` order.

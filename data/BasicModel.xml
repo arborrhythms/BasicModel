@@ -6,8 +6,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>BasicModel.ckpt</weightsPath>
-    <embeddingPath>BasicModel.kv</embeddingPath>
-
     <data>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>

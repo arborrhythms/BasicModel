@@ -2091,6 +2091,29 @@ class Chart(nn.Module):
                 "WordSpace.chartNoiseEps", 0.0) or 0.0)
         except Exception:
             self.chart_noise_eps = 0.0
+        # Per-word stem mode. When true, the stem runs each word
+        # through an individual P->C->S->C round trip and pushes
+        # ideas onto ConceptualSpace.stm; the chart fires at C
+        # over the STM buffer in the body.
+        #
+        # Default False (opt-in): the path is incompatible with
+        # butterfly mode (``<useButterflies>true``) because the
+        # per-word loop slices the perceptual event to N=1 slots
+        # and the butterfly pack requires even N. Once butterfly
+        # compatibility is added (either by pair-slicing or by
+        # routing per-word through a non-butterfly path), the
+        # default can flip to True and the legacy chart-at-stem
+        # launch site (``Models._chart_compose``) can retire.
+        try:
+            self.per_word_stem = bool(TheXMLConfig.get(
+                "WordSpace.perWordStem", False))
+        except Exception:
+            self.per_word_stem = False
+        try:
+            self.iterations_per_word = int(TheXMLConfig.get(
+                "WordSpace.iterationsPerWord", 1) or 1)
+        except Exception:
+            self.iterations_per_word = 1
         # Load-balance state: per-rule activation count from the most
         # recent inside pass. Tensor [R_bin] of int counts; rebuilt each
         # _chart_inside call when chart_top_k > 0. None when sparse
@@ -2558,20 +2581,57 @@ class Chart(nn.Module):
     # ------------------------------------------------------------------
     # Per-rule math dispatch.
     # ------------------------------------------------------------------
+
+    # Fixed tier classification (overrides per-rule authored ``tier``
+    # attributes; 2026-05-12). Drives ``_tier_for_method`` and the
+    # parameter-free fallback's substrate wiring.
+    #   P (subsymbolic) — fires through P.sigma / C.pi via the
+    #     LiftLayer / LowerLayer codebook-gate mechanism.
+    #   C (local)       — runs on the C-tier idea tensors directly;
+    #     no codebook lookup needed.
+    #   S (symbolic)    — needs codebook lookup (parthood / equality
+    #     / query) for its semantics.
+    _RULE_TIER = {
+        # P-tier: subsymbolic gate through substrate sigma / pi.
+        'lift':         'P',
+        'lower':        'P',
+        # C-tier: local ops over the operand tensors.
+        'union':        'C',
+        'intersection': 'C',
+        'conjunction':  'C',
+        'disjunction':  'C',
+        'not':          'C',
+        'non':          'C',
+        'swap':         'C',
+        'copy':         'C',
+        'true':         'C',
+        'false':        'C',
+        # S-tier: codebook-lookup-dependent.
+        'query':        'S',
+        'equals':       'S',
+        'part':         'S',
+    }
+
     def _apply_rule_forward(self, method_name, left, right, marker_mask,
                             subspace=None):
         """Dispatch rule's forward semantics. Marker operands are zeroed
         before the rule fires so a sugar operand contributes nothing.
 
-        Dispatch order (Step 7 of the 2026-05-01 refactor):
+        Dispatch order:
           1. host_layer dispatch via the active wordSpace's registry —
              fires the host space's parametrized GrammarLayer (e.g.
-             PiLayer-backed IntersectionLayer). The rule's authored
-             tier (RuleDef.tier) selects the registry shard.
+             PiLayer-backed IntersectionLayer).
           2. external rule_executor (test injection point, optional).
-          3. typed-GrammarLayer facade lookup (parameter-free, used
-             when no host layer exists for this rule — lift, lower,
-             swap, etc., on tiers that don't own a parametrized fold).
+          3. typed-GrammarLayer fallback. Constructs the layer with
+             substrate refs when it accepts them (lift / lower) so the
+             substrate sigma / pi fires instead of the static lattice
+             kernel. Local C-tier ops (union, intersection, ...) and
+             S-tier ops (query, equals, part) instantiate without
+             refs — they don't need them.
+
+        Errors are surfaced (logged + raised), not swallowed. The
+        previous bare ``except Exception: return l_eff`` silently
+        no-op'd every dispatch failure, hiding wiring bugs.
         """
         keep = (~marker_mask).to(left.dtype)
         kL = keep[..., 0:1]
@@ -2592,45 +2652,54 @@ class Chart(nn.Module):
         if self._rule_executor is not None:
             return self._rule_executor(
                 method_name, l_eff, r_eff, marker_mask, subspace)
-        # 3. Direct GrammarLayer class lookup (Step 8: replaces the
-        # retired `_GrammarOpFacade._registry`). Construct a fresh
-        # parameter-free instance each call; the parametrized ops
-        # (swap) only fire via host_layer dispatch with the right
-        # constructor args.
-        try:
-            from Layers import GRAMMAR_LAYER_CLASSES
-        except Exception:
-            return l_eff
+        # 3. Typed-GrammarLayer fallback with substrate wiring.
+        from Layers import GRAMMAR_LAYER_CLASSES
         cls = GRAMMAR_LAYER_CLASSES.get(method_name)
         if cls is None:
+            # The rule fired but no GrammarLayer class exists for it.
+            # Surface as a warning; return the left operand as a
+            # degraded continuation so the chart can still complete.
+            warnings.warn(
+                f"_apply_rule_forward: no GrammarLayer for "
+                f"method_name={method_name!r}; returning left operand.",
+                stacklevel=2)
             return l_eff
-        try:
-            inst = cls()
-        except TypeError:
-            return l_eff
-        try:
-            arity = getattr(inst, 'arity', 1)
-            if arity == 2 and hasattr(inst, 'compose'):
-                return inst.compose(l_eff, r_eff)
-            return inst.forward(l_eff)
-        except Exception:
-            return l_eff
+        inst = self._instantiate_grammar_layer(method_name, cls, ws)
+        arity = getattr(inst, 'arity', 1)
+        if arity == 2 and hasattr(inst, 'compose'):
+            return inst.compose(l_eff, r_eff)
+        return inst.forward(l_eff)
+
+    def _instantiate_grammar_layer(self, method_name, cls, ws):
+        """Construct a GrammarLayer instance with appropriate substrate
+        refs for its tier. Returns a fresh instance per call.
+
+        P-tier (lift / lower) requires the substrate Spaces so the
+        chart's gate fires through ``P.sigma`` / ``C.pi`` instead of
+        the static lattice fallback. C-tier and S-tier ops are
+        parameter-free.
+        """
+        tier = self._RULE_TIER.get(method_name)
+        if tier == 'P' and ws is not None:
+            if method_name == 'lift':
+                return cls(symbolicSpace=getattr(ws, 'symbolicSpace', None),
+                           perceptualSpace=getattr(ws, 'perceptualSpace', None))
+            if method_name == 'lower':
+                return cls(symbolicSpace=getattr(ws, 'symbolicSpace', None),
+                           conceptualSpace=getattr(ws, 'conceptualSpace', None))
+        # C / S tier and standalone (no wordSpace) callers: parameter-free.
+        return cls()
 
     def _tier_for_method(self, method_name):
-        """Return the host tier ('P' / 'C' / 'S') for ``method_name``
-        by scanning ``TheGrammar.rules`` for a rule whose method_name
-        matches. The first match wins; if a method_name appears at
-        multiple tiers, callers should pick one canonical tier.
+        """Return the host tier ('P' / 'C' / 'S') for ``method_name``.
+
+        Uses the fixed classification (``_RULE_TIER``) so the tier of
+        each operator is stable across grammars and doesn't depend on
+        the authored ``tier`` attribute on individual rules.
         """
         if not method_name:
             return None
-        for rule in TheGrammar.rules:
-            mn = getattr(rule, 'method_name', None)
-            if mn == method_name:
-                t = getattr(rule, 'tier', None)
-                if t in ('P', 'C', 'S'):
-                    return t
-        return None
+        return self._RULE_TIER.get(method_name)
 
     # ------------------------------------------------------------------
     # POS side-channel helpers.

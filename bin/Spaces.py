@@ -1280,6 +1280,16 @@ class Codebook(Basis):
         # lexical fill to seed pos_lex when an input position resolves
         # to a tagged codebook atom — see doc/Language.md "POS side-channel".
         self.category_ids = None
+        # Per-row meronomy parent index. ``part_parents[i] = j`` means
+        # atom ``i`` is a part of atom ``j``. ``-1`` is the sentinel for
+        # "no parent" (atom is a root concept). Used by the codebook
+        # quantizer to recognize "this is an instance of an existing
+        # whole" and avoid spawning a fresh row when the input maps to
+        # a child of a known parent. The canonical parent for entries
+        # that originated from the orthographic lexicon is the "words"
+        # atom; see ``SymbolicSpace.words_atom_id``. Allocated lazily
+        # alongside ``category_ids`` via ``create(..., category=True)``.
+        self.part_parents = None
         # Per-row part-of-speech distribution learned through parsing.
         # Shape ``[V, C]`` where C = len(WordSpace.category_index).
         # Float buffer (not Parameter): updated via EMA from the chart's
@@ -1416,6 +1426,10 @@ class Codebook(Basis):
         if category and self.nVectors > 0:
             self.category_ids = torch.zeros(
                 (self.nVectors,), dtype=torch.long)
+            # Allocate part_parents alongside category_ids so the
+            # codebook carries an explicit meronomy. -1 = no parent.
+            self.part_parents = torch.full(
+                (self.nVectors,), -1, dtype=torch.long)
         if self.nVectors > 0 and self.getW() is None:
             self.addVectors(self.nVectors)
         if self._svd_orthogonal_init and self.nVectors > 0:
@@ -1476,6 +1490,28 @@ class Codebook(Basis):
         if self.category_ids is None:
             return 0
         return int(self.category_ids[int(idx)].item())
+
+    def set_part_parent(self, idx, parent_idx):
+        """Mark codebook row ``idx`` as a part of row ``parent_idx``.
+
+        Writes the explicit meronomy: ``part_parents[idx] = parent_idx``.
+        Pass ``-1`` to clear the parent (root atom). The quantizer reads
+        this on insert to recognize "this row already has a parent
+        concept" and route to the parent slot when appropriate. Raises
+        if the codebook wasn't created with ``category=True`` (the
+        part_parents buffer is allocated alongside category_ids).
+        """
+        if self.part_parents is None:
+            raise RuntimeError(
+                "Codebook.set_part_parent called on a codebook without "
+                "meronomy storage (create with category=True).")
+        self.part_parents[int(idx)] = int(parent_idx)
+
+    def get_part_parent(self, idx):
+        """Return the meronomy parent index of row ``idx`` (-1 = none)."""
+        if self.part_parents is None:
+            return -1
+        return int(self.part_parents[int(idx)].item())
 
     def ensure_category_logits(self, num_categories, device=None):
         """Lazily allocate ``category_logits: [V, C]`` once C is known.
@@ -2530,6 +2566,21 @@ class Embedding(Basis):
 
         self._rebuild_optimizer()
         # W is managed by wv._vectors; getW() returns live data
+
+        # Explicit meronomy: tell the SymbolicSpace peer (when wired)
+        # that this new lexicon row is an instance of "words" so the
+        # codebook quantizer doesn't treat it as a fresh root atom.
+        # Wiring is via ``symbolicSpace_ref`` on this Embedding's owning
+        # space; unset in standalone construction (tests), in which case
+        # the call is a no-op.
+        s_peer = getattr(self, 'symbolicSpace_ref', None)
+        if s_peer is not None and hasattr(s_peer, 'mark_word_atom'):
+            try:
+                s_peer.mark_word_atom(idx)
+            except Exception:
+                # Tagging the meronomy is best-effort; never block an
+                # insert because the symbolic peer isn't ready.
+                pass
 
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
@@ -6566,10 +6617,10 @@ class PerceptualSpace(Space):
             lexical_basis.chunking_mode = self.chunking_mode
             lexical_basis.lexer_mode = self.lexer
         try:
-            self.chunking_frequency = int(
-                TheXMLConfig.space(section, "chunkingFrequency") or 2)
+            self.word_learning = int(
+                TheXMLConfig.space(section, "wordLearning") or 2)
         except (KeyError, TypeError, ValueError):
-            self.chunking_frequency = 2
+            self.word_learning = 2
         if self.chunking_mode == "bpe":
             if self.nVectors < 256:
                 raise ValueError(
@@ -6612,7 +6663,7 @@ class PerceptualSpace(Space):
             self.nDim,
             bpe=(self.chunking_mode == "bpe"),
             n_vectors=self.nVectors,
-            chunking_frequency=self.chunking_frequency,
+            word_learning=self.word_learning,
         )
         # Auto-load a previously-saved BPE codebook from the same
         # ``.kv`` artifact that hosts the Lexicon. The artifact format
@@ -6620,7 +6671,7 @@ class PerceptualSpace(Space):
         # under ``kind="both"``; if the file exists and has a BPE section,
         # loading restores the merge table so subsequent training
         # avoids the cold-start vocab-growth recompile pressure under
-        # ``torch.compile``. Setting ``chunking_frequency=0`` (the
+        # ``torch.compile``. Setting ``word_learning=0`` (the
         # frozen marker) at the same time prevents further growth so
         # Inductor's cache stays warm. Failure modes (missing file,
         # lexicon-only artifact, schema mismatch) downgrade to a
@@ -6948,7 +6999,7 @@ class PerceptualSpace(Space):
         codebook = self.subspace.what
         boundary = self.chunk_layer.BOUNDARY_BYTES
         chunk_frozen = (
-            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
+            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
 
         if what_buf.dim() == 3:
             byte_indices = what_buf[..., 0].long()
@@ -7005,7 +7056,7 @@ class PerceptualSpace(Space):
                     return None
                 assert not chunk_frozen, (
                     f"_embed_bpe: key {latin1!r} missing from frozen "
-                    f"codebook.pretrain (chunking_frequency<=0). .kv "
+                    f"codebook.pretrain (word_learning<=0). .kv "
                     f"load mismatch -- BPE section and lexicon "
                     f"embeddings disagree.")
                 codebook.insert(latin1)
@@ -7167,7 +7218,7 @@ class PerceptualSpace(Space):
     def _chunk_to_codebook_idx(self, word_subtokens, codebook):
         """Resolve a list of byte-tuple sub-tokens to a codebook index.
 
-        With a frozen BPE codebook (``chunking_frequency <= 0``) every
+        With a frozen BPE codebook (``word_learning <= 0``) every
         sub-token's latin-1 key MUST already live in
         ``codebook.pretrain.key_to_index`` -- the load pass is supposed
         to populate one entry per BPE chunk. A missing key here means
@@ -7176,7 +7227,7 @@ class PerceptualSpace(Space):
         silently grow the codebook and is a real bug. Assert loudly so
         the failure is obvious instead of corrupting the codebook.
 
-        In active-learning mode (``chunking_frequency > 0``) a missing
+        In active-learning mode (``word_learning > 0``) a missing
         key is expected and we fall back to ``Embedding.insert``.
 
         Returns the index of the first sub-token (used for bookkeeping;
@@ -7184,16 +7235,16 @@ class PerceptualSpace(Space):
         """
         keys = [self._chunk_key_to_latin1(bt) for bt in word_subtokens]
         chunk_frozen = (
-            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
+            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
         for key in keys:
             if (key and key not in codebook.pretrain.key_to_index
                     and not getattr(codebook, 'byte_mode', False)):
                 assert not chunk_frozen, (
                     f"_chunk_to_codebook_idx: key {key!r} missing from "
-                    f"frozen codebook.pretrain (chunking_frequency<=0). "
+                    f"frozen codebook.pretrain (word_learning<=0). "
                     f"This indicates a .kv load mismatch -- either the "
                     f"BPE section and the lexicon embeddings disagree, "
-                    f"or chunking_frequency was set to 0 before all BPE "
+                    f"or word_learning was set to 0 before all BPE "
                     f"chunks made it into the lexicon.")
                 codebook.insert(key)
         return codebook._token_to_index(keys[0]) if keys else 0
@@ -7214,19 +7265,19 @@ class PerceptualSpace(Space):
         if not word_subtokens:
             return torch.zeros(self.nDim, device=codebook.wv._vectors.device)
         # Collect codebook row indices for sub-tokens that resolve.
-        # Under a frozen BPE codebook (``chunking_frequency <= 0``)
+        # Under a frozen BPE codebook (``word_learning <= 0``)
         # every sub-token's latin-1 key MUST already live in
         # ``codebook.pretrain.key_to_index`` -- a missing key here is
         # the same .kv load mismatch we assert against in
         # ``_chunk_to_codebook_idx``. The active-learning branch
-        # (``chunking_frequency > 0``) silently skips unresolved keys
+        # (``word_learning > 0``) silently skips unresolved keys
         # since new chunks may legitimately not be in the lexicon
         # until the next promotion cycle catches up.
         indices = []
         key_to_index = codebook.pretrain.key_to_index
         token_to_index = codebook._token_to_index
         chunk_frozen = (
-            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
+            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
         for bt in word_subtokens:
             key = self._chunk_key_to_latin1(bt)
             if not key:
@@ -7234,7 +7285,7 @@ class PerceptualSpace(Space):
             if key not in key_to_index:
                 assert not chunk_frozen, (
                     f"_max_fuse_subtokens: key {key!r} missing from "
-                    f"frozen codebook.pretrain (chunking_frequency<=0). "
+                    f"frozen codebook.pretrain (word_learning<=0). "
                     f"This indicates a .kv load mismatch -- the BPE "
                     f"section and the lexicon embeddings disagree.")
                 continue
@@ -7884,6 +7935,8 @@ class ShortTermMemory(nn.Module):
     """
 
     DEFAULT_CAPACITY = 9
+    # Catuskoti pole width for the per-idea truth tag bivector.
+    _TRUTH_TAG_WIDTH = 2
 
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__()
@@ -7899,6 +7952,15 @@ class ShortTermMemory(nn.Module):
             "_depth",
             torch.zeros(int(batch), dtype=torch.long),
             persistent=False)
+        # Per-idea truth-tag bivector ``[B, capacity, 2]``: catuskoti
+        # pole pair attached to each STM slot. Written by
+        # ``query`` / ``equals`` / ``part`` rule firings during chart
+        # compose; read by downstream consumers (e.g. continuation
+        # reductions) as metadata on the operand idea.
+        self.register_buffer(
+            "_truth_tags",
+            torch.zeros(int(batch), self.capacity, self._TRUTH_TAG_WIDTH),
+            persistent=False)
 
     def ensure_batch(self, batch):
         """Resize the STM buffers to ``batch`` rows when the model's
@@ -7911,12 +7973,15 @@ class ShortTermMemory(nn.Module):
         self._buffer = torch.zeros(
             batch, self.capacity, self.concept_dim, device=device)
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._truth_tags = torch.zeros(
+            batch, self.capacity, self._TRUTH_TAG_WIDTH, device=device)
 
     def push(self, b, idea):
         """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
 
         Raises if the stack is full -- the parser is expected to
         reduce before pushing when ``is_full(b)`` would be true.
+        Fresh slot is born with a zero truth tag.
         """
         depth = int(self._depth[b].item())
         if depth >= self.capacity:
@@ -7925,16 +7990,21 @@ class ShortTermMemory(nn.Module):
                 f"({self.capacity}); the parser must reduce before "
                 f"pushing further.")
         self._buffer[b, depth] = idea
+        self._truth_tags[b, depth].zero_()
         self._depth[b] = depth + 1
 
     def pop(self, b):
-        """Pop and return the top idea for row ``b``, or ``None`` when empty."""
+        """Pop and return the top idea for row ``b``, or ``None`` when empty.
+
+        The popped slot's truth tag is zeroed alongside its content.
+        """
         depth = int(self._depth[b].item())
         if depth == 0:
             return None
         depth -= 1
         idea = self._buffer[b, depth].clone()
         self._buffer[b, depth].zero_()
+        self._truth_tags[b, depth].zero_()
         self._depth[b] = depth
         return idea
 
@@ -7967,17 +8037,48 @@ class ShortTermMemory(nn.Module):
         outside the currently-allocated batch dimension, the buffer
         hasn't been grown to include that row yet (no pushes ever
         happened for it), so there is nothing to clear -- skip
-        gracefully instead of raising IndexError.
+        gracefully instead of raising IndexError. Clears both the
+        idea buffer and the per-slot truth tags.
         """
         if b is None:
             self._buffer.zero_()
             self._depth.zero_()
+            self._truth_tags.zero_()
             return
         b = int(b)
         if b < 0 or b >= int(self._buffer.shape[0]):
             return
         self._buffer[b].zero_()
         self._depth[b] = 0
+        self._truth_tags[b].zero_()
+
+    def set_truth_tag(self, b, slot_from_top, tag):
+        """Write the catuskoti truth bivector for the slot at depth
+        ``size(b) - 1 - slot_from_top``.
+
+        Args:
+            b: batch row index.
+            slot_from_top: 0 is the most-recently-pushed idea.
+            tag: ``[2]`` tensor with the truth bivector (pos, neg poles).
+        """
+        depth = int(self._depth[b].item())
+        if depth <= slot_from_top:
+            raise IndexError(
+                f"ShortTermMemory.set_truth_tag: row {b} has "
+                f"{depth} ideas; slot_from_top={slot_from_top} is "
+                f"out of range.")
+        self._truth_tags[b, depth - 1 - slot_from_top] = tag
+
+    def get_truth_tag(self, b, slot_from_top=0):
+        """Read the truth bivector for slot ``slot_from_top`` from the top.
+
+        Returns ``None`` when fewer than ``slot_from_top + 1`` items are
+        on the stack.
+        """
+        depth = int(self._depth[b].item())
+        if depth <= slot_from_top:
+            return None
+        return self._truth_tags[b, depth - 1 - slot_from_top]
 
 
 class ConceptualSpace(Space):
@@ -8121,21 +8222,35 @@ class ConceptualSpace(Space):
         )
 
         # Short-term memory: per-batch stack of unquantized C-tier
-        # "ideas" (continuous compositions produced by chart-reduce).
-        # The serial / shift-reduce parser (deferred) will push and
-        # pop here as it processes incoming words and decides when
-        # to reduce. Capacity is configurable via
-        # ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``;
-        # default is 9 (the upper bound of the classical 7±2
-        # linguistic working-memory limit). Subsymbolic operation can
-        # set a wider capacity. The current batched-CKY chart doesn't
-        # consume the STM yet; this is the structural slot it will
-        # use.
+        # "ideas" (continuous compositions produced by chart-reduce
+        # or by the per-word subsymbolic round trip). Sized one of
+        # two ways:
+        #   * Default (legacy): capacity = 9 (7±2 working memory cap),
+        #     or ``<ConceptualSpace><stmCapacity>N</stmCapacity>`` if set.
+        #   * Per-word stem (``<WordSpace><perWordStem>true``): capacity =
+        #     the chart's sentence-length bound (``<WordSpace><wMax>``),
+        #     since each word fills a slot before the chart runs and the
+        #     7±2 cap would truncate sentences.
+        # Subsymbolic operation can still override via stmCapacity.
         try:
             stm_capacity_xml = TheXMLConfig.space(section, "stmCapacity")
             stm_capacity = int(stm_capacity_xml) if stm_capacity_xml else None
         except (KeyError, TypeError, ValueError):
             stm_capacity = None
+        if stm_capacity is None:
+            # Auto-size to chart wMax when per-word stem is on.
+            try:
+                per_word_stem = bool(TheXMLConfig.get(
+                    "WordSpace.perWordStem", False))
+            except Exception:
+                per_word_stem = False
+            if per_word_stem:
+                try:
+                    w_max_xml = TheXMLConfig.get("WordSpace.wMax", 0)
+                    w_max = int(w_max_xml) if int(w_max_xml) > 0 else 8
+                except Exception:
+                    w_max = 8
+                stm_capacity = int(w_max)
         concept_dim = int(outputShape[1])
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
@@ -8759,6 +8874,26 @@ class SymbolicSpace(Space):
         else:
             self._symbol_where = None
 
+        # Well-known atoms: a name -> codebook-row dict for parents
+        # that the architecture cares about by name (rather than by
+        # index). Saved in the .ckpt bundle's ``vocab_extras`` so the
+        # mapping survives reload. "words" is the canonical meronomy
+        # parent for lexicon entries: the codebook quantizer can
+        # recognize "this entry is an instance of an existing concept
+        # (a word)" instead of spawning a fresh row per quantization.
+        # Convention: row 0 holds "words"; new well-known atoms append.
+        self.well_known_atoms = {"words": 0}
+        cb = getattr(self.subspace, 'what', None)
+        if cb is None or not isinstance(cb, Codebook):
+            cb = getattr(self.subspace, 'event', None)
+        if (cb is not None and isinstance(cb, Codebook)
+                and getattr(cb, 'part_parents', None) is not None
+                and cb.part_parents.numel() > self.well_known_atoms["words"]):
+            # The "words" parent is a root atom: -1 sentinel means it
+            # is itself a top-level concept, not part of anything
+            # higher.
+            cb.set_part_parent(self.well_known_atoms["words"], -1)
+
         self.params = list(self.parameters())
         self._sparsity = self._build_sparsity_regularizer(
             self.l1_lambda, self.codebook)
@@ -8777,6 +8912,19 @@ class SymbolicSpace(Space):
         # ``'disjunction'`` entry in ``GRAMMAR_LAYER_CLASSES``.
 
     # ------------------------------------------------------------------
+    # Well-known atoms (meronomy parents).
+    # ------------------------------------------------------------------
+    @property
+    def words_atom_id(self):
+        """Codebook row reserved for the meronomy parent "words".
+
+        Backed by ``self.well_known_atoms["words"]`` so reloads from
+        a .ckpt that carried a different convention still pick up the
+        right slot.
+        """
+        return int(self.well_known_atoms.get("words", 0))
+
+    # ------------------------------------------------------------------
     # Lexicon ownership (post-lexicon-migration)
     # ------------------------------------------------------------------
     # The orthographic Lexicon (``Embedding`` instance) is the
@@ -8789,6 +8937,28 @@ class SymbolicSpace(Space):
     # SymbolicSpace is the logical owner: the ``vocabulary`` property
     # and the orthographic-API methods live here and delegate to
     # the Embedding via ``perceptualSpace_ref``.
+
+    def mark_word_atom(self, atom_idx):
+        """Mark codebook row ``atom_idx`` as a part of the canonical
+        "words" symbol so the meronomy explicitly records that this
+        atom is a word-instance rather than a fresh root concept.
+
+        Called when a new word lands in the codebook (via the Lexicon
+        insert path). Without this tag the codebook quantizer would
+        treat every quantization as a new root atom and the vocabulary
+        would grow unbounded; with it, the quantizer can short-circuit
+        to the "words" parent when an input maps to a child of an
+        existing word.
+        """
+        cb = getattr(self.subspace, 'what', None)
+        if cb is None or not isinstance(cb, Codebook):
+            cb = getattr(self.subspace, 'event', None)
+        if (cb is None or not isinstance(cb, Codebook)
+                or getattr(cb, 'part_parents', None) is None):
+            return
+        if int(atom_idx) < 0 or int(atom_idx) >= cb.part_parents.numel():
+            return
+        cb.set_part_parent(int(atom_idx), int(self.words_atom_id))
 
     @property
     def vocabulary(self):

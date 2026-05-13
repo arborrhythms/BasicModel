@@ -60,13 +60,18 @@ class TestLexiconOwnership(unittest.TestCase):
         self.assertTrue(m.outputSpace.text_mode)
 
     def test_save_and_load_embeddings_round_trip(self):
+        """Post-2026-05-12 integrated weights: embeddings round-trip
+        through the single ``save_weights`` / ``load_weights`` bundle
+        (the ``.kv`` artifact and ``save_embeddings`` / ``load_embeddings``
+        methods were retired).
+        """
         m = _build_text_model()
         self.assertIsInstance(m.perceptualSpace.vocabulary, Embedding)
         with tempfile.TemporaryDirectory() as td:
-            path = os.path.join(td, "lex.kv")
-            m.save_embeddings(path)
+            path = os.path.join(td, "weights.ckpt")
+            m.save_weights(path)
             self.assertTrue(os.path.exists(path))
-            ok = m.load_embeddings(path)
+            ok = m.load_weights(path)
             self.assertTrue(ok)
 
     def test_optimizer_includes_emb_params_when_trainable(self):
@@ -219,13 +224,15 @@ class TestLexiconOwnership(unittest.TestCase):
         self.assertTrue(torch.all(v < 1.0 + 1e-6))
 
 
-class TestWeightSpacePartition(unittest.TestCase):
-    """The .ckpt (weights) and .kv (embeddings) artifacts must partition
-    the weight space: no wv._vectors key may leak into .ckpt, and the
-    Embedding weights must be recoverable from .kv alone.
+class TestCheckpointBundle(unittest.TestCase):
+    """Post-2026-05-12 integrated weights: the single .ckpt bundle
+    carries every learnable tensor (model parameters + embedding
+    vectors + register-buffer state) alongside the Python-side
+    vocab and BPE state. The separate .kv embedding artifact was
+    retired so the .ckpt is now self-sufficient for reload.
     """
 
-    def test_ckpt_excludes_embedding_vectors(self):
+    def test_ckpt_includes_embedding_vectors(self):
         import torch
         m = _build_text_model()
         with tempfile.TemporaryDirectory() as td:
@@ -236,20 +243,29 @@ class TestWeightSpacePartition(unittest.TestCase):
                                weights_only=False)
             state = saved["state_dict"] if isinstance(saved, dict) \
                                            and "state_dict" in saved else saved
-            leaked = [k for k in state.keys() if "wv._vectors" in k]
-            self.assertEqual(
-                leaked, [],
-                f".ckpt must not contain embedding vectors; found: {leaked}"
+            present = [k for k in state.keys() if "wv._vectors" in k]
+            self.assertGreater(
+                len(present), 0,
+                ".ckpt must include embedding vectors after the integrated-"
+                "weights refactor; got no wv._vectors keys."
             )
 
-    def test_kv_contains_embedding_vectors(self):
+    def test_ckpt_includes_vocab_and_bpe_extras(self):
+        """The bundle carries Python-side mappings (vocab_extras) and
+        ChunkLayer state (bpe_extras) alongside the tensor state_dict.
+        """
+        import torch
         m = _build_text_model()
         with tempfile.TemporaryDirectory() as td:
-            kv_path = os.path.join(td, "lex.kv")
-            m.save_embeddings(kv_path)
-            self.assertTrue(os.path.exists(kv_path))
-            # File must be non-trivially sized (at minimum has some vectors).
-            self.assertGreater(os.path.getsize(kv_path), 0)
+            ckpt_path = os.path.join(td, "weights.ckpt")
+            m.save_weights(ckpt_path)
+            saved = torch.load(ckpt_path, map_location="cpu",
+                               weights_only=False)
+            self.assertIn("state_dict", saved)
+            self.assertIn("vocab_extras", saved)
+            # bpe_extras is None for non-BPE models; just assert the key
+            # is present (it's always written, possibly as None).
+            self.assertIn("bpe_extras", saved)
 
 
 def test_inputspace_expand_masked_is_gone():

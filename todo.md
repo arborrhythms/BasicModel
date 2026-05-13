@@ -1,5 +1,60 @@
 
-  
+## Immediate
+
+### 1. Fix broken chart rule dispatch
+`SymbolicSpace._forward_with_rule_dispatch()` (`bin/Spaces.py:~9395`) calls
+`layer.project(layer.grammar, rule_id, left, right=right, subspace=...)` on
+`WordSpace.syntacticLayer`. `SyntacticLayer` has no `project` method — the
+call raises `AttributeError` and silently falls back to returning the left
+operand unchanged. Chart-parsed rule firing is a no-op. Fix or replace the
+dispatch so rules actually execute their semantics.
+
+### 2. Implement subsymbolic / symbolic split in chart rule dispatch
+Once dispatch is working, route operations by tier:
+- **Subsymbolic** (SigmaLayer / PiLayer): `lift`, `lower`, `union`, `intersection`
+- **Symbolic** (SyntacticLayer `_RULE_METHODS`): all other rules
+
+Currently all rules route through the unified `SyntacticLayer.host_layer`
+registry with no split. The architecture in `doc/Language.md:263–303`
+describes the intended routing; the code does not implement it.
+
+### 3. Fix resolve() — one line
+`bin/Spaces.py`, `SymbolicSpace.resolve()`, the `setW` call:
+```python
+# wrong
+subspace.activation.setW(pos + neg)
+# correct — signed Degree of Truth
+subspace.activation.setW(pos - neg)
+```
+See `doc/plans/2026-05-04-resolve-luminosity-handoff.md` for full context.
+
+### 4. Replace TruthLayer.luminosity()
+Replace the existing positive-pole conjunction norm with the area-overlap
+formula: `luminosity = area − overlapArea × |t_A − t_B|` ∈ [−1, 1].
+Full spec and replacement code in `doc/plans/2026-05-04-resolve-luminosity-handoff.md`.
+
+### 5. Conceptual introspection — area(), luminosity(), directPartOf()
+Add introspective operations as grammar rules available inside the
+conceptual order loop. At each loop level, a learned `question_head`
+projects the current activation to a query; the introspective function
+answers it; the result is injected as a sidecar channel into the next
+level's input. Expose `directPartOf()` only — not generic `part()`. The
+transitive closure of parthood emerges from iteration across conceptual
+orders, matching the cognitive science reaction-time data on hierarchical
+mereological processing.
+External non-differentiable lookups use the STE wrapper:
+`a_external + (q − q.detach())`.
+Full design in `doc/plans/2026-05-04-conceptual-introspection-handoff.md`.
+
+### 6. MM_xor.xml — fix XOR non-convergence
+Set `<ramsified>true</ramsified>` in `data/MM_xor.xml`. The current
+`false` causes `MentalModel` to run `ConceptualSyntacticLayer` which
+collapses both words to position 0, making "hello world" and "hello there"
+identical (cosine sim = 1.0). Setting `ramsified=true` uses the butterfly
+path (`_CSLevelView`) which preserves both words.
+
+---
+
 * Enforce use of Mereonomy (per-symbol DoT graph).
 
 * Ensure correct sentence-prediction

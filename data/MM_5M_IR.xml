@@ -13,7 +13,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>MM_5M_IR.ckpt</weightsPath>
-    <embeddingPath>MM_5M_IR.kv</embeddingPath>
     <amp>bf16</amp>
 
     <data>
@@ -55,7 +54,7 @@
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
     <codebook>true</codebook>
-    <chunkingFrequency>1</chunkingFrequency>
+    <wordLearning>1</wordLearning>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: final level shape is 4x1024.

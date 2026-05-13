@@ -2291,7 +2291,12 @@ class TestVocabSaveRestore(unittest.TestCase):
     """Verify vocab is saved with weights and restored on load."""
 
     def test_save_load_with_vocab(self):
-        """Embedding vocab round-trips through the embedding file."""
+        """Vocabulary round-trips through the integrated .ckpt bundle.
+
+        Post-2026-05-12 the .kv embedding artifact was retired; vocab
+        mappings + embedding vectors + BPE state all ride inside the
+        single ``save_weights`` bundle alongside model parameters.
+        """
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         Models.TheData.load("xor")
@@ -2305,11 +2310,12 @@ class TestVocabSaveRestore(unittest.TestCase):
         for w in ["extra1", "extra2", "extra3"]:
             emb1.insert(w)
         vocab_before = list(emb1.pretrain.index_to_key)
+        vectors_before = emb1.wv._vectors.detach().clone()
 
-        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
-            emb_path = f.name
+        with tempfile.NamedTemporaryFile(suffix=".ckpt", delete=False) as f:
+            ckpt_path = f.name
         try:
-            m1.save_embeddings(emb_path)
+            m1.save_weights(ckpt_path)
 
             # Create a fresh model (will have smaller vocab)
             m2 = Models.BasicModel()
@@ -2317,16 +2323,16 @@ class TestVocabSaveRestore(unittest.TestCase):
             emb2 = m2._get_embedding()
             self.assertNotEqual(len(emb2.pretrain.index_to_key), len(vocab_before))
 
-            # Load should restore vocab and embedding weights cleanly
-            self.assertTrue(m2.load_embeddings(emb_path))
+            # Single-artifact load: state_dict + vocab_extras + bpe_extras.
+            self.assertTrue(m2.load_weights(ckpt_path))
             emb2 = m2._get_embedding()
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
-            # Embedding shapes must match exactly
+            # Embedding shapes / values must match.
             torch.testing.assert_close(
-                m2.state_dict()["perceptualSpace.subspace.what.wv._vectors"],
-                m1.state_dict()["perceptualSpace.subspace.what.wv._vectors"])
+                emb2.wv._vectors.detach(),
+                vectors_before)
         finally:
-            os.unlink(emb_path)
+            os.unlink(ckpt_path)
 
 
 class TestTrainingUpdatesWeights(unittest.TestCase):

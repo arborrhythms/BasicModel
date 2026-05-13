@@ -38,7 +38,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>LM_5M.ckpt</weightsPath>
-    <embeddingPath>LM_5M.kv</embeddingPath>
     <amp>bf16</amp>
 
     <!-- MereologicalTree size matches SymbolicSpace nVectors so
@@ -111,7 +110,7 @@
     <hasAttention>false</hasAttention>
     <codebook>true</codebook>
     <chunking>bpe</chunking>
-    <chunkingFrequency>0</chunkingFrequency>
+    <wordLearning>0</wordLearning>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: 3 stages (conceptualOrder=3 above) replace

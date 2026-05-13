@@ -8,8 +8,6 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>stream_smoke.ckpt</weightsPath>
-    <embeddingPath>stream_smoke.kv</embeddingPath>
-
     <data>
       <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>

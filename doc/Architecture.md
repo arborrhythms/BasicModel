@@ -222,17 +222,33 @@ residual `.tolist()` calls in `Chart._chart_inside` (`best_pair`,
 `best_rule_local`) plus a few data-dependent control points produce graph
 breaks; deferred to GB10-side capture wiring.
 
-### Three-File Architecture
+### Two-File Architecture
 
 | File | Contents | Managed by |
 |------|----------|-----------|
 | **XML config** (e.g. `BasicModel.xml`) | Architecture, hyperparameters | Hand-edited |
-| **Embedding artifact** (e.g. `BasicModel.kv`) | Word vectors (codebook) | Phase 1: `embed.py` |
-| **Weights checkpoint** (e.g. `BasicModel.ckpt`) | Model layer parameters (excludes embeddings) | Phase 2: `BasicModel.py` |
+| **Weights checkpoint** (e.g. `BasicModel.ckpt`) | Full integrated bundle: model parameters, register-buffer state, embedding vectors, vocabulary mappings, BPE codebook | Training (`save_weights`) |
 
-`save_weights()` filters out embedding parameters (`_emb.weight`). Enables:
-retraining embeddings without touching model weights; retraining model with
-frozen embeddings; swapping codebooks between models with same architecture.
+The 2026-05-12 *integrated-weights* refactor retired the separate
+`.kv` embedding artifact: embeddings, vocabulary mappings, and the
+BPE codebook now ride inside the single `.ckpt` bundle alongside the
+model's other parameters. The bundle layout is:
+
+* `state_dict`: every `nn.Parameter` and `register_buffer` in the
+  module tree (model weights, `wv._vectors`, `TruthLayer.truths`,
+  etc.) — serialised by the normal PyTorch path.
+* `vocab_extras`: the WordVectors Python-side mappings that don't
+  live in `state_dict` (`index_to_key`, `counts`, `total_count`).
+* `bpe_extras`: the ChunkLayer's pure-Python state (merges list,
+  vocab dict, `id_to_bytes`, growth cursors). Required because
+  `ChunkLayer` stores its merge table as Python dicts/lists, not
+  tensors.
+
+`bin/embed.py` still produces standalone `.kv` artifacts for
+CBOW/SBOW *pre-training* studies, but those artifacts are no longer
+part of the runtime artifact set. Cold-start training initialises
+the vocabulary and BPE codebook from scratch and learns them
+end-to-end alongside the model weights.
 
 ---
 

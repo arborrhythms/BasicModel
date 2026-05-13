@@ -11,8 +11,6 @@
     <modelType>embedding</modelType>
     <maskedPrediction>AR</maskedPrediction>
     <weightsPath>RamsifiedModel.ckpt</weightsPath>
-    <embeddingPath>MentalModel.kv</embeddingPath>
-
     <data>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>

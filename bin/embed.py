@@ -259,7 +259,7 @@ def bpe_section_from_chunk_layer(chunk_layer) -> Dict[str, Any]:
 
     Stores the merge table in insertion order, plus the byte seed and
     config knobs needed to resume training in the same regime
-    (``n_vectors``, ``chunking_frequency``). The section carries
+    (``n_vectors``, ``word_learning``). The section carries
     ``section_kind="bpe"``.
     """
     return {
@@ -271,7 +271,7 @@ def bpe_section_from_chunk_layer(chunk_layer) -> Dict[str, Any]:
         "next_id": int(chunk_layer._next_id),
         "max_merge_len": int(chunk_layer._max_merge_len),
         "n_vectors": int(chunk_layer.n_vectors),
-        "chunking_frequency": int(chunk_layer.chunking_frequency),
+        "word_learning": int(chunk_layer.word_learning),
     }
 
 
@@ -357,7 +357,7 @@ def lexicon_to_bpe_seed(words: Iterable[str],
         "next_id": next_id,
         "max_merge_len": max_merge_len,
         "n_vectors": int(n_vectors),
-        "chunking_frequency": 2,
+        "word_learning": 2,
     }
 
 
@@ -1415,7 +1415,7 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
 # running SBOW on documents re-tokenized through the frozen merge
 # table. The two halves are owned by different modules (``ChunkLayer``
 # holds the merges; the embedding matrix lives downstream), so freezing
-# one while training the other is just ``chunking_frequency=0``.
+# one while training the other is just ``word_learning=0``.
 #
 # The result is a single ``.kv`` artifact with ``kind="both"`` -- BPE
 # section carries the merge table, Lexicon section carries the
@@ -1437,7 +1437,7 @@ def _doc_to_byte_row(text: str, max_seq: int) -> List[int]:
 
 def discover_bpe(shard_paths, output_path, *,
                  max_docs=10000, n_vectors=4096,
-                 chunking_frequency=2, batch_size=32, max_seq=2048,
+                 word_learning=2, batch_size=32, max_seq=2048,
                  k_merges=4):
     """Phase A: discover BPE merges from a corpus.
 
@@ -1456,10 +1456,10 @@ def discover_bpe(shard_paths, output_path, *,
     # (the embedding matrix is allocated in Phase B).
     cl = ChunkLayer(nDim=1, bpe=True,
                     n_vectors=n_vectors,
-                    chunking_frequency=chunking_frequency)
+                    word_learning=word_learning)
     print(f"Phase A: BPE merge discovery from {len(shard_paths)} shard(s), "
           f"max_docs={max_docs}, target n_vectors={n_vectors}, "
-          f"chunking_frequency={chunking_frequency}",
+          f"word_learning={word_learning}",
           flush=True)
     import time as _time
     t_start = _time.time()
@@ -1531,7 +1531,7 @@ class StreamingChunkSBOWTrainer:
     sentence. Each document is tokenized through ``chunk_layer.forward``
     on demand.
 
-    ``chunk_layer.chunking_frequency`` is forced to 0 on entry so the
+    ``chunk_layer.word_learning`` is forced to 0 on entry so the
     codebook is held constant throughout this phase -- only the
     vector matrix shifts.
     """
@@ -1543,7 +1543,7 @@ class StreamingChunkSBOWTrainer:
                  neg_samples: int = 64):
         """Allocate the BPE-vocab embedding model and freeze the codebook.
 
-        Forces ``chunk_layer.chunking_frequency = 0`` so Phase B only
+        Forces ``chunk_layer.word_learning = 0`` so Phase B only
         shifts vectors -- the BPE codebook is held constant. Vocabulary
         size is fixed at ``chunk_layer.n_vectors``.
         """
@@ -1553,7 +1553,7 @@ class StreamingChunkSBOWTrainer:
         self.max_seq = max_seq
 
         # Freeze the codebook for the duration of Phase B.
-        chunk_layer.chunking_frequency = 0
+        chunk_layer.word_learning = 0
 
         self.vocab_size = int(chunk_layer.n_vectors)
         # Human-readable keys (latin-1 decode of each chunk's byte tuple)
@@ -1656,7 +1656,7 @@ def embed_bpe(shard_paths, artifact_path, *,
     """Phase B: train SBOW vectors over a frozen BPE codebook.
 
     Loads the codebook from ``artifact_path`` (must be ``kind`` in
-    ``{"bpe", "both"}``), forces ``chunking_frequency=0``, and trains
+    ``{"bpe", "both"}``), forces ``word_learning=0``, and trains
     a (n_vectors x vector_size) matrix via SBOW on chunk-id sequences.
     Writes the result to ``output_path`` (defaults to overwriting
     ``artifact_path``) as ``kind=both`` -- merge table + vectors.
@@ -1762,7 +1762,7 @@ def embed_bpe(shard_paths, artifact_path, *,
 
 def train_bpe(shard_paths, output_path, *,
               max_docs=10000, n_vectors=4096,
-              chunking_frequency=2, vector_size=100, epochs=10,
+              word_learning=2, vector_size=100, epochs=10,
               batch_size=32, max_seq=2048, learning_rate=0.001):
     """Convenience: Phase A then Phase B in one invocation.
 
@@ -1772,7 +1772,7 @@ def train_bpe(shard_paths, output_path, *,
     """
     discover_bpe(shard_paths, output_path,
                  max_docs=max_docs, n_vectors=n_vectors,
-                 chunking_frequency=chunking_frequency,
+                 word_learning=word_learning,
                  batch_size=batch_size, max_seq=max_seq)
     return embed_bpe(shard_paths, output_path,
                      max_docs=max_docs,
@@ -1892,7 +1892,11 @@ if __name__ == '__main__':
     bpe_disc_p.add_argument('--num-shards', type=int, default=1)
     bpe_disc_p.add_argument('--max-docs', type=int, default=10000)
     bpe_disc_p.add_argument('--n-vectors', type=int, default=4096)
-    bpe_disc_p.add_argument('--chunking-frequency', type=int, default=2)
+    # Default 1 = active codebook growth during lexicon construction.
+    # The model XML carries wordLearning=0 at training time
+    # (frozen codebook from the .ckpt bundle); embed.py is the only
+    # stage that grows the codebook.
+    bpe_disc_p.add_argument('--word-learning', type=int, default=1)
     bpe_disc_p.add_argument('--batch-size', type=int, default=32)
     bpe_disc_p.add_argument('--max-seq', type=int, default=2048)
     bpe_disc_p.add_argument('--k-merges', type=int, default=4,
@@ -1925,7 +1929,7 @@ if __name__ == '__main__':
     bpe_train_p.add_argument('--num-shards', type=int, default=1)
     bpe_train_p.add_argument('--max-docs', type=int, default=10000)
     bpe_train_p.add_argument('--n-vectors', type=int, default=4096)
-    bpe_train_p.add_argument('--chunking-frequency', type=int, default=2)
+    bpe_train_p.add_argument('--word-learning', type=int, default=1)
     bpe_train_p.add_argument('--vector-size', type=int, default=100)
     bpe_train_p.add_argument('--epochs', type=int, default=10)
     bpe_train_p.add_argument('--batch-size', type=int, default=32)
@@ -2007,7 +2011,7 @@ if __name__ == '__main__':
                 output_path=args.output,
                 max_docs=args.max_docs,
                 n_vectors=args.n_vectors,
-                chunking_frequency=args.chunking_frequency,
+                word_learning=args.word_learning,
                 batch_size=args.batch_size,
                 max_seq=args.max_seq,
                 k_merges=args.k_merges,
@@ -2029,7 +2033,7 @@ if __name__ == '__main__':
                 output_path=args.output,
                 max_docs=args.max_docs,
                 n_vectors=args.n_vectors,
-                chunking_frequency=args.chunking_frequency,
+                word_learning=args.word_learning,
                 vector_size=args.vector_size,
                 epochs=args.epochs,
                 batch_size=args.batch_size,
