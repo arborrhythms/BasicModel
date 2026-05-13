@@ -40,7 +40,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
     """
 
     def _check(self, nIn, nOut, naive, tol, hasBias=True, batch=(2, 3)):
-        torch.manual_seed(42)
+
         layer = Layers.InvertibleLinearLayer(nIn, nOut, naive=naive, hasBias=hasBias)
         layer.set_sigma(0)
         if nIn <= nOut:
@@ -77,7 +77,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
 
     def test_W_Winverse_identity(self):
         """compute_W() @ compute_Winverse() should be identity."""
-        torch.manual_seed(7)
+
         layer = Layers.InvertibleLinearLayer(5, 5, hasBias=False)
         layer.set_sigma(0)
         W     = layer.compute_W()
@@ -87,7 +87,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         self.assertLess(err, 1e-4, f"W@W_inv identity err={err:.2e}")
 
     def _check_ergodic(self, nIn, nOut, naive, stable, tol):
-        torch.manual_seed(42)
+
         layer = Layers.InvertibleLinearLayer(nIn, nOut, naive=naive, ergodic=True, stable=stable)
         with torch.no_grad():
             layer.var.fill_(0.2)
@@ -123,7 +123,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
 
 class TestMapppingLayer(unittest.TestCase):
     def _check(self, nIn, nOut, tol):
-        torch.manual_seed(42)
+
         layer = Layers.MapppingLayer(nIn, nOut)
         x = torch.randn(4, nIn).to(TheDevice.get())
         y = layer.forward(x)
@@ -139,7 +139,7 @@ class TestMapppingLayer(unittest.TestCase):
 class TestLinearLayerIdentity(unittest.TestCase):
     """LinearLayer with W=I and no bias should be exact identity."""
     def test_identity(self):
-        torch.manual_seed(42)
+
         layer = Layers.LinearLayer(5, 5, hasBias=False, ergodic=True)
         x = torch.randn(3, 5).to(TheDevice.get())
         y = layer.forward(x)
@@ -153,7 +153,7 @@ class TestLinearLayerIdentity(unittest.TestCase):
 
 class TestInvertibleSigmaLayer(unittest.TestCase):
     def _check(self, nIn, nOut, naive, tol):
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(2, 3, nIn).to(TheDevice.get()).tanh()
@@ -172,7 +172,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 
     def _check_3d(self, naive):
         nIn, nOut, seqLen = 5, 7, 3
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(2, seqLen, nIn).to(TheDevice.get()).tanh()
@@ -190,7 +190,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 class TestInvertiblePiLayer3D(unittest.TestCase):
     def _check(self, naive, bias):
         nIn, nOut = 4, 6
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
@@ -212,7 +212,7 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
     """Invertible PiLayer with single-object 3D input [B, 1, D]."""
     def _check(self, naive, bias):
         nIn, nOut = 4, 6
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
@@ -234,7 +234,7 @@ class TestPiLayerRoundtripUniformNeg1Pos1(unittest.TestCase):
     """PiLayer.reverse(PiLayer.forward(x)) must be identity for x in [-1, 1]."""
 
     def _check(self, nIn, nOut, naive, bias):
-        torch.manual_seed(7)
+
         layer = Layers.PiLayer(nIn, nOut, naive=naive, hasBias=bias, invertible=True)
         layer.set_sigma(0)
         layer.train(False)
@@ -259,7 +259,7 @@ class TestPiLayerLogitRoundtrip(unittest.TestCase):
     """PiLayer roundtrip: symmetric logit/sigmoid, unrestricted W."""
 
     def _check(self, nIn, nOut, naive, bias):
-        torch.manual_seed(7)
+
         layer = Layers.PiLayer(nIn, nOut, naive=naive, hasBias=bias,
                         invertible=True)
         layer.set_sigma(0)
@@ -291,7 +291,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_2d_roundtrip(self):
         """Single-object 3D [B, 1, nIn] -> [B, 1, nOut] roundtrip, no noise."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
@@ -306,7 +306,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_2d_nobias(self):
         """Single-object 3D roundtrip without bias term."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, hasBias=False, invertible=True)
         layer.train(False)
@@ -319,7 +319,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_3d_roundtrip(self):
         """3D (batch, seq, nInput) -> (batch, seq, nOutput) roundtrip."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
@@ -334,7 +334,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_3d(self):
         """3D (batch, seq, nInput) roundtrip."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
@@ -348,7 +348,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_ergodic_roundtrip(self):
         """Non-naive with ergodic noise."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, ergodic=True, invertible=True)
         with torch.no_grad():
@@ -364,7 +364,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     def test_training_preserves_invertibility(self):
         """After gradient steps, non-naive roundtrip remains accurate."""
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         optimizer = optim.Adam(layer.parameters(), lr=0.01)
@@ -397,7 +397,7 @@ class TestPairedSigmaTraining(unittest.TestCase):
     uses atanh then the configured inverse path of its linear layer.
     """
     def test_paired_roundtrip(self):
-        torch.manual_seed(42)
+
         nIn, nOut = 6, 8
         sigma_fwd = Layers.SigmaLayer(nIn, nOut, invertible=True)
         sigma_rev = Layers.SigmaLayer(nIn, nOut, invertible=True)
@@ -426,7 +426,7 @@ class TestPairedPiTraining(unittest.TestCase):
     forward() on one layer, reverse() on the other.
     """
     def test_paired_roundtrip(self):
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         pi_fwd = Layers.PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
         pi_rev = Layers.PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
@@ -531,7 +531,7 @@ class TestPiLayerInvertibleTrained(unittest.TestCase):
     no longer uses PiLayer -- it remains in SymbolicSpace).
     """
     def _check(self, dim):
-        torch.manual_seed(42)
+
         pi = Layers.PiLayer(dim, dim, invertible=True, monotonic=True).to(TheDevice.get())
         criterion = nn.MSELoss()
         optimizer = optim.Adam(pi.parameters(), lr=0.005)
@@ -561,7 +561,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         _setup_object_encoding(objSize=objSize, invertible=True,                               ergodic=False, flatten=flatten, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
-        torch.manual_seed(42)
+
         cspace = Models.ConceptualSpace(
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
@@ -588,7 +588,7 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
         _setup_object_encoding(objSize=objSize, invertible=False,                               ergodic=False, flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
-        torch.manual_seed(42)
+
         cspace = Models.ConceptualSpace(
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
@@ -615,7 +615,7 @@ class TestOutputSpaceReversePass(unittest.TestCase):
                                flatten=True)
         nObj, contentDim, outputDim = 3, 6, 2
         embDim = contentDim + objSize
-        torch.manual_seed(42)
+
         # OutputSpace: input has upstream objectSize, output has 0 (nWhere=0/nWhen=0)
         ospace = Models.OutputSpace(
             [nObj, embDim], [nObj, contentDim], [1, outputDim],
@@ -640,7 +640,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
 
         Directly sets moderate var; high var perturbs the weight matrix.
         """
-        torch.manual_seed(42)
+
         nIn, nOut = 4, 6
         layer = Layers.PiLayer(nIn, nOut, naive=True, ergodic=True, invertible=True)
         with torch.no_grad():
@@ -659,7 +659,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
 
         tanh/atanh amplifies noise so tolerance is higher than for PiLayer.
         """
-        torch.manual_seed(42)
+
         nIn, nOut = 6, 8
         layer = Layers.SigmaLayer(nIn, nOut, ergodic=True, invertible=True)
         with torch.no_grad():
@@ -681,7 +681,7 @@ class TestPiLayerOutputRange(unittest.TestCase):
     """PiLayer.forward() must produce output in [-1, 1]."""
 
     def test_output_in_neg1_pos1(self):
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(6, 6, invertible=True)
         layer.set_sigma(0)
         x = torch.rand(4, 3, 6) * 2 - 1  # [-1, 1]
@@ -693,7 +693,7 @@ class TestPiLayerOutputRange(unittest.TestCase):
 
     def test_extreme_input_minus1(self):
         """Input at -1 (boundary) should still produce valid output."""
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
         x = -torch.ones(2, 3, 4)
@@ -705,7 +705,7 @@ class TestPiLayerOutputRange(unittest.TestCase):
 
     def test_extreme_input_plus1(self):
         """Input at +1 (boundary) should still produce valid output."""
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
         x = torch.ones(2, 3, 4)
@@ -725,7 +725,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
 
     def test_forward_range(self):
         """tanh guarantees output in [-1, 1]."""
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(6, 6, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(4, 3, 6).tanh()
@@ -737,7 +737,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
 
     def test_reverse_range(self):
         """atanh->W_inv produces unconstrained output (no sigmoid here)."""
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(6, 6, invertible=True)
         layer.set_sigma(0)
         y = torch.rand(4, 3, 6) * 1.8 - 0.9  # (-0.9, 0.9) ⊂ (-1, 1)
@@ -746,7 +746,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
                         f"SigmaLayer reverse produced NaN/Inf: {x}")
 
     def test_roundtrip(self):
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(6, 6, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(4, 3, 6).tanh()
@@ -758,7 +758,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
 
     def test_reverse_extreme_input(self):
         """Values near +-1 should not produce NaN in reverse."""
-        torch.manual_seed(42)
+
         layer = Layers.SigmaLayer(4, 4, invertible=True)
         layer.set_sigma(0)
         y = torch.tensor([[-0.999, 0.999, -0.99, 0.99]]).unsqueeze(1)
@@ -771,7 +771,7 @@ class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
     """PiLayer.reverse() accepts [-1, 1] input via _to_mult."""
 
     def test_negative_input_accepted(self):
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
         y = torch.tensor([[[-0.5, 0.3, 0.7, 0.2]]])  # -0.5 is valid in [-1, 1]
@@ -780,7 +780,7 @@ class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
                         f"PiLayer.reverse produced NaN/Inf: {x}")
 
     def test_near_boundary_accepted(self):
-        torch.manual_seed(42)
+
         layer = Layers.PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
         y = torch.tensor([[[-0.99, 0.99, -0.5, 0.5]]])
@@ -797,7 +797,7 @@ class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
         _setup_object_encoding(objSize=0, invertible=True, hasAttention=False,
                                flatten=True)
         nObj, contentDim = 3, 6
-        torch.manual_seed(42)
+
         pspace = Models.PerceptualSpace(
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )
@@ -816,7 +816,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
         """With nonlinear=True, sigmoid guarantees reverse output in (0, 1)."""
         _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
-        torch.manual_seed(42)
+
         cspace = Models.ConceptualSpace(
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )
@@ -832,7 +832,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
         """With nonlinear=True, reverse output stays in [-1, 1] via tanh."""
         _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
-        torch.manual_seed(42)
+
         cspace = Models.ConceptualSpace(
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )

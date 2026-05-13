@@ -39,9 +39,10 @@ def _xor_input():
 
 def _build_per_word_stem(stm_capacity=8):
     TheData.load("xor")
-    torch.manual_seed(0)
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    m.wordSpace.chart.per_word_stem = True
+    # Per-word stem is the only path post-2026-05-12; the flag is fixed
+    # True at WordSpace construction.  iterations_per_word remains an
+    # XML knob; force 1 here so the test asserts the base contract.
     m.wordSpace.chart.iterations_per_word = 1
     # Resize STM to a generous capacity that exceeds the XOR sentence
     # length so push() never overflows.
@@ -114,25 +115,34 @@ def test_per_word_stem_sentence_boundary():
 
 
 def test_per_word_stem_quantization_count_matches_word_count():
-    """Per-word symbolic quantization invariant: the S codebook's
-    ``forward(project=True)`` and ``reverse(project=True)`` fire
-    exactly once per word slot. This locks the architectural contract
-    that words are quantized one-by-one as they land on STM.
+    """Per-word symbolic quantization invariant: the S
+    ``ProjectionBasis``'s ``forward`` and ``reverse`` fire exactly
+    once per word slot. This locks the architectural contract that
+    words are projected one-by-one as they land on STM.
+
+    Updated 2026-05-13: the per-word loop now calls ProjectionBasis
+    (not Codebook.forward(project=True)).  The fixture only fires
+    when SymbolicSpace.subspace.what is a ProjectionBasis (bivector
+    regime); for other configs the per-word loop's projection
+    branch short-circuits and no fwd/rev calls happen.
     """
     m = _build_per_word_stem()
     cb = m.symbolicSpace.subspace.what
+    if type(cb).__name__ != 'ProjectionBasis':
+        import pytest
+        pytest.skip(
+            "Config does not use ProjectionBasis on the symbolic "
+            "codebook; the per-word projection branch is inactive.")
     call_log = {"fwd": 0, "rev": 0}
     orig_fwd = cb.forward
     orig_rev = cb.reverse
 
     def trace_fwd(*args, **kwargs):
-        if kwargs.get("project"):
-            call_log["fwd"] += 1
+        call_log["fwd"] += 1
         return orig_fwd(*args, **kwargs)
 
     def trace_rev(*args, **kwargs):
-        if kwargs.get("project"):
-            call_log["rev"] += 1
+        call_log["rev"] += 1
         return orig_rev(*args, **kwargs)
 
     cb.forward = trace_fwd
@@ -140,70 +150,76 @@ def test_per_word_stem_quantization_count_matches_word_count():
     m.forward(_xor_input())
     stm_depth = m.conceptualSpace.stm.size(0)
     assert stm_depth > 0, "STM should hold at least one idea per word."
-    # The per-word loop fires the codebook snap exactly once per slot
-    # (project=True forward and reverse pair).
     assert call_log["fwd"] == stm_depth, (
-        f"codebook.forward(project=True) fired {call_log['fwd']} times; "
+        f"ProjectionBasis.forward fired {call_log['fwd']} times; "
         f"expected one per STM slot ({stm_depth}).")
     assert call_log["rev"] == stm_depth, (
-        f"codebook.reverse(project=True) fired {call_log['rev']} times; "
+        f"ProjectionBasis.reverse fired {call_log['rev']} times; "
         f"expected one per STM slot ({stm_depth}).")
 
 
 def test_per_word_stem_codebook_distinguishes_distinct_inputs():
     """Per-word quantization invariant: distinct C-tier inputs produce
-    distinct bivector snaps. Asserts the codebook is not a degenerate
-    constant function — given different inputs, ``cb.forward(project=True)``
-    returns different bivectors. This is the substrate guarantee that
-    word-by-word quantization can carry meaningful per-word identity
-    once the C-tier transform itself is non-degenerate.
+    distinct bivector snaps via the ProjectionBasis forward.  This
+    is the substrate guarantee that word-by-word quantization can
+    carry meaningful per-word identity once the C-tier transform
+    itself is non-degenerate.
+
+    Updated 2026-05-13: ProjectionBasis is the bivector-regime
+    surface (Codebook lost ``project=True``).
     """
     m = _build_per_word_stem()
     cb = m.symbolicSpace.subspace.what
-    torch.manual_seed(0)
+    if type(cb).__name__ != 'ProjectionBasis':
+        import pytest
+        pytest.skip(
+            "Config does not use ProjectionBasis on the symbolic "
+            "codebook; bivector snap test is only meaningful there.")
     c1 = torch.randn(1, 1, cb.nDim) * 0.5
     c2 = torch.randn(1, 1, cb.nDim) * 0.5
-    snap1 = cb.forward(c1, project=True)
-    snap2 = cb.forward(c2, project=True)
+    snap1 = cb.forward(c1)
+    snap2 = cb.forward(c2)
     diff = (snap1 - snap2).abs().max().item()
     assert diff > 1e-3, (
-        f"codebook is degenerate: distinct C-tier inputs produced "
+        f"ProjectionBasis is degenerate: distinct C-tier inputs produced "
         f"identical bivector snaps (max-diff={diff:.6f}).")
 
 
 def test_per_word_stem_iterations_per_word_idempotent():
     """iterations_per_word > 1 gives an idempotent C-tier idea under
-    the SVD-orthogonal codebook fixed point (the per-word loop reuses
-    the same perceptual slot each iteration so the projection should
-    not drift between iterations).
+    the SVD-orthogonal codebook fixed point: a SINGLE model run with
+    iterations=1 vs iterations=3 against the same untrained weights
+    must produce the same C-tier idea, because each iteration projects
+    the same perceptual slot through the same PiLayer.
     """
-    m1 = _build_per_word_stem()
-    m1.wordSpace.chart.iterations_per_word = 1
-    m1.forward(_xor_input())
-    idea_n1 = m1.conceptualSpace.stm.peek(0, 0).clone()
+    m = _build_per_word_stem()
+    m.wordSpace.chart.iterations_per_word = 1
+    m.forward(_xor_input())
+    idea_n1 = m.conceptualSpace.stm.peek(0, 0).clone()
 
-    m2 = _build_per_word_stem()
-    m2.wordSpace.chart.iterations_per_word = 3
-    m2.forward(_xor_input())
-    idea_n3 = m2.conceptualSpace.stm.peek(0, 0).clone()
+    # Same model instance, same weights -- only iterations changes.
+    m.wordSpace.chart.iterations_per_word = 3
+    m.conceptualSpace.stm.clear()
+    m.forward(_xor_input())
+    idea_n3 = m.conceptualSpace.stm.peek(0, 0).clone()
     assert torch.allclose(idea_n1, idea_n3, atol=1e-4), (
         "iterations_per_word should be idempotent under SVD codebook; "
         f"diff: {(idea_n1 - idea_n3).abs().max().item()}")
 
 
-def test_per_word_stem_flag_off_path_unchanged():
-    """With per_word_stem=False (default), the legacy chart-at-stem path
-    runs unmodified; STM is not filled by the stem."""
+def test_per_word_stem_is_default_path():
+    """Per-word stem is the only path post-2026-05-12: the chart flag
+    defaults to True at WordSpace construction, and the stem fills STM
+    on every forward."""
     TheData.load("xor")
-    torch.manual_seed(0)
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    assert m.wordSpace.chart.per_word_stem is False
+    assert m.wordSpace.chart.per_word_stem is True
     m.conceptualSpace.stm = ShortTermMemory(
         batch=4, capacity=8,
         concept_dim=m.conceptualSpace.stm.concept_dim)
     m.forward(_xor_input())
-    # In the legacy path the per-word stem does not run; STM stays empty.
+    # Every row should see at least one idea pushed onto STM.
     for b in range(4):
-        assert m.conceptualSpace.stm.size(b) == 0, (
-            f"Row {b} STM should be empty on the flag-off path; "
+        assert m.conceptualSpace.stm.size(b) > 0, (
+            f"Row {b} STM should be filled by the per-word stem; "
             f"got size={m.conceptualSpace.stm.size(b)}.")

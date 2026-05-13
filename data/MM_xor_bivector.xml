@@ -12,8 +12,6 @@
            output, mirror of the C-tier.
          - svdOrthogonalInit=true on both codebooks so the lift is
            well-conditioned from t=0.
-         - useButterflies=false: butterfly schedule is incompatible
-           with the [P||S] widening (Note A in the spec).
          - conceptualOrder=1: single C-S step, no per-stage halving.
          - subsymbolicEnabled marker (documentation-only; loopback is
            unconditional under bivector regime). -->

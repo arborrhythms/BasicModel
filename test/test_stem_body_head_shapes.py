@@ -26,7 +26,7 @@ def model():
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
-    torch.manual_seed(0)
+
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     return m
 

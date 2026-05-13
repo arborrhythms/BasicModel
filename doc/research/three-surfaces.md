@@ -147,7 +147,7 @@ The structural problem is concentrated on `intersection` and `union`:
 `PiLayer` (Surface 1) trains on every batch through the task loss. The
 chart's `intersectionForward` (Surface 3) trains only when the chart fires,
 and uses a different math kernel (`Basis.conjunction` rather than the PiLayer
-butterfly fold). They don't share parameters. The `IntersectionLayer` wrapper
+log-domain fold). They don't share parameters. The `IntersectionLayer` wrapper
 (Surface 2) would have unified them but is never invoked.
 
 This is why the chart can be diffuse or saturated without affecting the task

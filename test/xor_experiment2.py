@@ -366,7 +366,6 @@ def run_experiment():
         print(f"[{idx+1}/{total}] {cfg['label']}")
         print(f"{'='*60}")
 
-        torch.manual_seed(42)
         m = create_model(ergodic=cfg["ergodic"])
 
         t0 = time.time()

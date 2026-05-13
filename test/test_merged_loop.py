@@ -1,8 +1,8 @@
 """Tests for the Stage 2 Task 1 unified outer loop.
 
 The unified outer loop lives in ``BasicModel.forward`` and handles the
-flat (non-butterfly, non-grammar) configuration. Butterfly and
-grammar="all" still use their specialized paths.
+flat (non-grammar) configuration. ``useGrammar="all"`` still uses its
+specialized path.
 
 These tests verify:
 * ``SymbolicSpace.empty_state`` is callable and shape-correct -- the
@@ -56,7 +56,6 @@ def _load_mental_model(conceptualOrder: int = 1):
     tree.write(tmp.name)
     tmp.close()
 
-    torch.manual_seed(0)
     model, _ = Models.BasicModel.from_config(tmp.name)
     return model, tmp.name
 

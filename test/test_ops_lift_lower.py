@@ -208,7 +208,7 @@ class TestInverse(unittest.TestCase):
 
     def test_lower_and_inverse_via_W_matches_conjunctionReverse(self):
         # Build a small codebook and pick a result from the codebook itself.
-        torch.manual_seed(0)
+
         K, D = 6, 3
         W = torch.rand(K, D) - 0.5
         result = W[2].clone()

@@ -45,7 +45,7 @@ def test_comparator_gradient_into_each_branch_and_into_h():
 
 def test_comparator_temperature_sharpens_gates():
     B, N, D = 1, 4, 4
-    torch.manual_seed(0)
+
     cm_hot = ComparatorMixer(d_model=D, temperature=10.0)
     cm_cold = ComparatorMixer(d_model=D, temperature=0.1)
     cm_cold.load_state_dict(cm_hot.state_dict())

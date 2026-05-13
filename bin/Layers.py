@@ -674,9 +674,9 @@ class Layer(nn.Module):
     def Start(self):
         """Per-sentence state reset. Cascades to child layers.
 
-        Layers with per-call state (e.g. cached butterfly merge diffs
-        on Sigma/PiLayer, accumulating regularizer buffers) override
-        this to clear that state. The default walks self.layers.
+        Layers with per-call state (e.g. accumulating regularizer
+        buffers) override this to clear that state. The default walks
+        self.layers.
         """
         for layer in self.layers:
             if hasattr(layer, 'Start'):
@@ -1479,26 +1479,6 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     # InvertibleLinearLayer -- no constraint needed with symmetric
     # log domain (-inf, +inf).
 
-# ---------------------------------------------------------------------------
-# Butterfly access pattern
-#
-# A butterfly stage permutes its input on the N axis so XOR-neighbors at
-# bit ``stage_idx`` are adjacent, packs adjacent pairs into pairwise
-# features (D -> 2D), runs a SigmaLayer / PiLayer on the packed
-# features, unpacks (2D -> D), inverse-permutes, and (unless terminal)
-# average-merges adjacent halves so the next stage sees N/2.
-#
-# Originally implemented as a wrapper class (``ButterflyStage``) around
-# a Sigma/Pi inner layer. That added a Python call frame per stage and a
-# fresh ``torch.tensor`` per call for the permutation indices; both are
-# avoidable. The access helpers now live in ``ButterflyLayer`` and are
-# inherited by ``SigmaLayer`` and ``PiLayer``: pass ``stage_idx`` /
-# ``n_t`` / ``is_last`` at construction and the layer's own ``forward`` /
-# ``reverse`` becomes the butterfly-aware version. Permutation indices are
-# pre-computed once in ``__init__`` and stored as non-persistent buffers,
-# removing the per-call rebuild.
-# ---------------------------------------------------------------------------
-
 class GrammarLayer(Layer):
     """Base class for layers that implement grammar rule operators.
 
@@ -1508,10 +1488,10 @@ class GrammarLayer(Layer):
     the layer's contribution in the bottom-up forward path; the
     SyntacticLayer dispatches the layer top-down by the same name.
 
-    Note (2026-04-30): ``ButterflyLayer`` (and therefore ``PiLayer`` /
-    ``SigmaLayer``) now inherit from GrammarLayer so the parameterized
-    fold layers ARE Grammar layers, not wrapped by separate
-    IntersectionLayer / UnionLayer adapters. The wrappers remain for
+    Note (2026-04-30): ``PiLayer`` / ``SigmaLayer`` inherit directly
+    from GrammarLayer so the parameterized fold layers ARE Grammar
+    layers, not wrapped by separate IntersectionLayer / UnionLayer
+    adapters. The wrappers remain for
     back-compat but are no longer the only path to attach a rule_name
     to a parameterized fold.
 
@@ -1729,125 +1709,8 @@ class GrammarLayer(Layer):
         return self.generate(*args, **kwargs)
 
 
-class ButterflyLayer(GrammarLayer):
-    """Base class for layers with the optional butterfly access pattern.
-
-    SigmaLayer and PiLayer keep their own forward/reverse math. This base
-    only owns the shared permutation buffers, pack/unpack helpers, and the
-    merge-diff cache used by reverse().
-
-    Inherits from ``GrammarLayer`` so subclasses (PiLayer, SigmaLayer)
-    are Grammar layers in their own right -- their ``rule_name`` /
-    ``arity`` / ``invertible`` class attributes hook them into the
-    Grammar's rule-probability gating without needing a separate
-    ``IntersectionLayer`` / ``UnionLayer`` wrapper.
-    """
-
-    def __init__(self, nInput, nOutput):
-        """Initialize ButterflyLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__(nInput, nOutput)
-        self.butterfly = False
-        self.butterfly_stage_idx = None
-        self.butterfly_n_t = None
-        self.butterfly_is_last = False
-        self._merge_diff = None
-
-    @staticmethod
-    def _butterfly_index_lists(n_vectors, stage):
-        """Return ``(perm, inv_perm)`` as Python lists of ints."""
-        if n_vectors <= 1:
-            idx = list(range(n_vectors))
-            return idx, list(idx)
-        span = max(int(math.log2(n_vectors)), 1)
-        bit = stage % span
-        stride = 1 << bit
-        block = stride << 1
-        perm = []
-        for start in range(0, n_vectors, block):
-            for offset in range(stride):
-                perm.append(start + offset)
-                perm.append(start + offset + stride)
-        inv = [0] * n_vectors
-        for i, p in enumerate(perm):
-            inv[p] = i
-        return perm, inv
-
-    def _init_butterfly_buffers(self, stage_idx, n_t, is_last):
-        """Mark this layer as butterfly-mode; build buffers eagerly if n_t given.
-
-        When ``n_t`` is ``None`` the permutation buffers are deferred until the
-        first forward call sees the actual input shape (see
-        ``_ensure_butterfly_buffers``).
-        """
-        self.butterfly = True
-        self.butterfly_stage_idx = int(stage_idx)
-        self.butterfly_n_t = int(n_t) if n_t is not None else None
-        self.butterfly_is_last = bool(is_last)
-        self._merge_diff = None
-        if n_t is not None:
-            self._ensure_butterfly_buffers(int(n_t))
-
-    def _ensure_butterfly_buffers(self, n_t):
-        """Build / rebuild the permutation buffers for the given ``n_t``."""
-        if self.butterfly_n_t == int(n_t) and hasattr(self, "_butterfly_perm"):
-            return
-        perm_list, inv_list = self._butterfly_index_lists(
-            int(n_t), int(self.butterfly_stage_idx))
-        self.register_buffer(
-            "_butterfly_perm",
-            torch.tensor(perm_list, dtype=torch.long),
-            persistent=False)
-        self.register_buffer(
-            "_butterfly_inv_perm",
-            torch.tensor(inv_list, dtype=torch.long),
-            persistent=False)
-        self.butterfly_n_t = int(n_t)
-
-    def _butterfly_pack(self, x):
-        """``[B, N, D]`` -> ``[B, N/2, 2D]`` via the cached permutation."""
-        B, N, D = x.shape
-        return x.index_select(1, self._butterfly_perm).reshape(B, N // 2, 2 * D)
-
-    def _butterfly_unpack(self, pair, B, N, D):
-        """``[B, N/2, 2D]`` -> ``[B, N, D]`` via the inverse permutation."""
-        return pair.reshape(B, N, D).index_select(1, self._butterfly_inv_perm)
-
-    def _butterfly_merge(self, x_out):
-        """Average-merge unless terminal. Caches the diff for inversion."""
-        if self.butterfly_is_last:
-            return x_out
-        left = x_out[:, 0::2, :]
-        right = x_out[:, 1::2, :]
-        self._merge_diff = left - right
-        return (left + right) / 2
-
-    def _butterfly_unmerge(self, y):
-        """Inverse of ``_butterfly_merge`` using the cached diff."""
-        if self.butterfly_is_last:
-            return y
-        diff = self._merge_diff
-        assert diff is not None, (
-            "butterfly reverse called without prior forward (cached diff is None)")
-        left = y + diff / 2
-        right = y - diff / 2
-        B, N_half, D = left.shape
-        out = torch.empty(B, N_half * 2, D, device=y.device, dtype=y.dtype)
-        out[:, 0::2, :] = left
-        out[:, 1::2, :] = right
-        self._merge_diff = None
-        return out
-
-    def Start(self):
-        """Per-sentence reset. Clears any cached butterfly merge diff."""
-        if self.butterfly:
-            self._merge_diff = None
-        super().Start()
-
-class SigmaLayer(ButterflyLayer):
-    """Additive (summation) layer with optional butterfly access pattern.
+class SigmaLayer(GrammarLayer):
+    """Additive (summation) layer.
 
     Grammar role: implements the OR-fold (``union`` rule). The chart
     and rule-probability gate find this layer by ``rule_name``.
@@ -1870,22 +1733,12 @@ class SigmaLayer(ButterflyLayer):
     ``invertible=True``):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
-
-    Butterfly mode (when ``stage_idx`` is provided): forward expects
-    ``[B, N_t, D]`` where ``D = nInput // 2``, internally permutes on
-    the N axis, packs adjacent pairs into ``[B, N_t/2, 2D]``, runs the
-    inner linear, unpacks back to ``[B, N_t, D]``, and (unless
-    ``is_last``) average-merges to ``[B, N_t/2, D]``. ``reverse`` is the
-    exact inverse using the cached merge difference. ``nInput`` and
-    ``nOutput`` must be equal in butterfly mode and refer to the
-    *packed* (pair) dimension.
     """
     # GrammarLayer metadata: SigmaLayer is the additive (OR-style) unary
-    # fold (``sigma`` rule). The binary surface (compose/decompose) is
-    # retained for two-pass / butterfly internals but is no longer a
-    # chart-dispatch entry point; binary lattice max on concepts lives
-    # in ``UnionLayer``. ``invertible`` and ``lossy`` are governed by
-    # the constructor kwarg `invertible` and overwritten on the
+    # fold (``sigma`` rule). The binary surface (compose/decompose) is no
+    # longer a chart-dispatch entry point; binary lattice max on concepts
+    # lives in ``UnionLayer``. ``invertible`` and ``lossy`` are governed
+    # by the constructor kwarg `invertible` and overwritten on the
     # instance, so we leave the class-level defaults from GrammarLayer
     # alone.
     rule_name  = "sigma"
@@ -1893,10 +1746,9 @@ class SigmaLayer(ButterflyLayer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
-                 monotonic=False,
-                 stage_idx=None, n_t=None, is_last=False):
+                 monotonic=False):
         """Initialize SigmaLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput)
@@ -1914,19 +1766,6 @@ class SigmaLayer(ButterflyLayer):
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         self.layers.append(self.layer)
-        # Optional butterfly mode: when stage_idx is provided, forward
-        # treats its [B, N_t, D] input as halves of the packed (2D)
-        # features, with D = nInput // 2. ``n_t`` is the actual per-stage
-        # vector count this layer sees at runtime; when omitted, it is
-        # inferred from input.shape[1] on the first forward call.
-        if stage_idx is not None:
-            assert nInput == nOutput, (
-                f"SigmaLayer butterfly mode requires nInput == nOutput "
-                f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
-            assert nInput % 2 == 0, (
-                f"SigmaLayer butterfly mode requires even nInput "
-                f"(got {nInput})")
-            self._init_butterfly_buffers(stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
@@ -1971,17 +1810,7 @@ class SigmaLayer(ButterflyLayer):
         on its diagonal. Used by rule layers (LiftLayer / LowerLayer)
         to select a low-rank slice of the operator. The gating lives
         inside the LDU layer; SigmaLayer just passes it through.
-
-        In butterfly mode, the input is permuted/packed before the
-        inner transform and unpacked/merged after; see class docstring.
         """
-        if self.butterfly:
-            B, N, D = x.shape
-            self._ensure_butterfly_buffers(N)
-            packed = self._butterfly_pack(x)
-            packed_out = self._sigma_inner_forward(packed, binary=binary, gate=gate)
-            x_out = self._butterfly_unpack(packed_out, B, N, D)
-            return self._butterfly_merge(x_out)
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
@@ -1998,18 +1827,7 @@ class SigmaLayer(ButterflyLayer):
         ``gate`` (optional): same gate tensor passed to ``forward``;
         flows through to the inner LDU layer's reverse so the inverse
         uses ``1/(d * gate)``.
-
-        In butterfly mode, the cached merge diff is used to unmerge
-        before the inner inverse, and the inverse permutation restores
-        the original ordering after.
         """
-        if self.butterfly:
-            x_out = self._butterfly_unmerge(y)
-            B, N, D = x_out.shape
-            self._ensure_butterfly_buffers(N)
-            packed = self._butterfly_pack(x_out)
-            packed_in = self._sigma_inner_reverse(packed, gate=gate)
-            return self._butterfly_unpack(packed_in, B, N, D)
         if self.nonlinear:
             y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
         x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
@@ -2040,12 +1858,7 @@ class SigmaLayer(ButterflyLayer):
 
         Returns:
             ``[..., nOutput]`` in [-1, 1].
-
-        Not supported in butterfly mode.
         """
-        if self.butterfly:
-            raise NotImplementedError(
-                "SigmaLayer.compose not supported in butterfly mode")
         if self.nonlinear:
             a_l = torch.atanh(left.clamp(-1 + epsilon, 1 - epsilon))
             a_r = torch.atanh(right.clamp(-1 + epsilon, 1 - epsilon))
@@ -2077,12 +1890,8 @@ class SigmaLayer(ButterflyLayer):
         Returns:
             ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
 
-        Requires ``invertible=True`` on the inner LinearLayer; not
-        supported in butterfly mode.
+        Requires ``invertible=True`` on the inner LinearLayer.
         """
-        if self.butterfly:
-            raise NotImplementedError(
-                "SigmaLayer.generate not supported in butterfly mode")
         if self.nonlinear:
             a_y = torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
         else:
@@ -2450,11 +2259,11 @@ class LiftLayer(GrammarLayer):
     activation acts as a per-prototype-and-per-dim mask on NP at the
     C-tier:
 
-        VP_c   = S.subspace.what.reverse(VP_bivec, project=True)
-        NP_c   = S.subspace.what.reverse(NP_bivec, project=True)
+        VP_c   = S.subspace.what.reverse(VP_bivec)
+        NP_c   = S.subspace.what.reverse(NP_bivec)
         gated  = VP_c * NP_c                # elementwise gate
         out_c  = P.sigma.forward(gated)     # substrate sigma at C-dim
-        return S.subspace.what.forward(out_c, project=True)
+        return S.subspace.what.forward(out_c)
 
     The factorization is "VP IS the mask": same shared ``P.sigma``
     LDU basis, but the operand VP supplies the masking. Different
@@ -2490,11 +2299,11 @@ class LiftLayer(GrammarLayer):
         apply the substrate ``sigma`` layer, re-snap to S-bivector.
         """
         cb = self.symbolicSpace.subspace.what
-        vp_c = cb.reverse(vp_bivec, project=True)
-        np_c = cb.reverse(np_bivec, project=True)
+        vp_c = cb.reverse(vp_bivec)
+        np_c = cb.reverse(np_bivec)
         gated = vp_c * np_c
         out_c = sigma.forward(gated)
-        return cb.forward(out_c, project=True)
+        return cb.forward(out_c)
 
     def forward(self, left, right):
         """Forward: elementwise gate at C-tier, then substrate sigma.
@@ -2555,11 +2364,11 @@ class LowerLayer(GrammarLayer):
         apply the substrate ``pi`` layer, re-snap to S-bivector.
         """
         cb = self.symbolicSpace.subspace.what
-        vp_c = cb.reverse(vp_bivec, project=True)
-        np_c = cb.reverse(np_bivec, project=True)
+        vp_c = cb.reverse(vp_bivec)
+        np_c = cb.reverse(np_bivec)
         gated = vp_c * np_c
         out_c = pi.forward(gated)
-        return cb.forward(out_c, project=True)
+        return cb.forward(out_c)
 
     def forward(self, left, right):
         """Forward: elementwise gate at C-tier, then substrate pi.
@@ -3168,6 +2977,159 @@ class QueryLayer(GrammarLayer):
 
 
 # Hardcoded module-level lookup -- replaces the retired
+# -- Conceptual introspection (2026-05-12) ----------------------------
+#
+# Per-stage introspective grammar operations that read mental content
+# and produce scalar / vector annotations the network can condition on
+# at subsequent conceptual orders. Design source:
+# doc/plans/2026-05-04-conceptual-introspection-handoff.md
+#
+# Each is implemented as a fully differentiable function of the input
+# activation (no learned parameters of its own). Plug them in by
+# registering an op-class entry in `GRAMMAR_LAYER_CLASSES` and a
+# `<rule>area(S)</rule>`-style entry in the model's grammar XML.
+
+def area_op(x, sigma=None):
+    """Normalised Gaussian region area: ``min(sigma**2, 1)``.
+
+    Args:
+        x: ``[..., D]`` activation (the proposition whose extent we
+            measure). Used only for device / dtype routing -- the area
+            depends solely on `sigma`.
+        sigma: scalar or tensor (mean reduced). When None falls back to
+            `_DEFAULT_SUBSYMBOLIC_SIGMA`.
+
+    Returns:
+        Scalar tensor on `x.device` / `x.dtype` in [0, 1].
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    if torch.is_tensor(sigma):
+        s = sigma.float().mean()
+    else:
+        s = float(sigma)
+        s = (x.new_tensor(s) if torch.is_tensor(x) else torch.tensor(s))
+    return torch.clamp(s.pow(2), max=1.0)
+
+
+def luminosity_op(x_a, x_b, sigma=None):
+    """Pairwise luminosity ``area − overlapArea * |t_A − t_B|`` ∈ [-1, 1].
+
+    Both inputs are bivector-tail activations ``[..., D]`` (D >= 2);
+    the first two components carry the [pos, neg] poles. Returns a
+    scalar consistent with `Mereology.Luminosity`'s pairwise term.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    a_flat = x_a.reshape(-1, x_a.shape[-1])
+    b_flat = x_b.reshape(-1, x_b.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        a_flat, b_flat, sigma_f, sigma_f).mean()
+    if x_a.shape[-1] >= 2 and x_b.shape[-1] >= 2:
+        dot_a = (x_a[..., 0] - x_a[..., 1]).mean()
+        dot_b = (x_b[..., 0] - x_b[..., 1]).mean()
+    else:
+        dot_a = x_a.mean()
+        dot_b = x_b.mean()
+    disagree = (dot_a - dot_b).abs()
+    area = area_op(x_a, sigma_f).to(device=overlap.device, dtype=overlap.dtype)
+    lum = area - overlap * disagree
+    return torch.clamp(lum, min=-1.0, max=1.0)
+
+
+def direct_part_of_op(child, parent, sigma=None):
+    """One-step kernel overlap ``K(child, parent) ∈ (0, 1]`` per the
+    plan's "is the child contained in the parent at this conceptual
+    order" semantics.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    c_flat = child.reshape(-1, child.shape[-1])
+    p_flat = parent.reshape(-1, parent.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        c_flat, p_flat, sigma_f, sigma_f)
+    return overlap.mean()
+
+
+class AreaLayer(GrammarLayer):
+    """``S -> area(S)`` -- introspective scalar in [0, 1]."""
+    rule_name        = "area"
+    arity            = 1
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return area_op(x)
+
+    def reverse(self, parent):
+        return parent
+
+    def compose(self, x):
+        return self.forward(x)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+class LuminosityLayer(GrammarLayer):
+    """``S -> luminosity(S, S)`` -- introspective scalar in [-1, 1]."""
+    rule_name        = "luminosity"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return luminosity_op(left, right)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+class DirectPartOfLayer(GrammarLayer):
+    """``S -> directPartOf(S, S)`` -- one-step kernel overlap ∈ (0, 1]."""
+    rule_name        = "directPartOf"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, child, parent):
+        return direct_part_of_op(child, parent)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
 # `_GrammarOpFacade._registry` (Step 8). Maps rule method_name to a
 # GrammarLayer class that implements the rule's math directly.
 GRAMMAR_LAYER_CLASSES = {
@@ -3190,6 +3152,10 @@ GRAMMAR_LAYER_CLASSES = {
     'swap':         SwapLayer,
     'copy':         CopyLayer,           # Phase 1b: S-tier dual of swap
     'query':        QueryLayer,
+    # Conceptual introspection (2026-05-12):
+    'area':         AreaLayer,
+    'luminosity':   LuminosityLayer,
+    'directPartOf': DirectPartOfLayer,
     # 'absorb' removed 2026-05-04: the absorb / sentence-marker
     # behavior is a base-class method on ``GrammarLayer`` itself, so
     # callers invoke ``layer.absorb(left, right)`` on any GrammarLayer
@@ -3219,15 +3185,14 @@ GRAMMAR_LAYER_CLASSES = {
 CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
 
 
-class PiLayer(ButterflyLayer):
+class PiLayer(GrammarLayer):
     r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
 
     Grammar role: implements the multiplicative log-domain unary fold
     (``pi`` rule). The chart and rule-probability gate find this layer
-    by ``rule_name``. The binary surface (``compose``/``generate``) is
-    retained for two-pass / butterfly internals but is no longer a
-    chart-dispatch entry point; binary lattice min on concepts lives in
-    ``IntersectionLayer``.
+    by ``rule_name``. The binary surface (``compose``/``generate``) is no
+    longer a chart-dispatch entry point; binary lattice min on concepts
+    lives in ``IntersectionLayer``.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
@@ -3251,10 +3216,9 @@ class PiLayer(ButterflyLayer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, hasBias=True, stable=True,
-                 monotonic=False, nonlinear=True,
-                 stage_idx=None, n_t=None, is_last=False):
+                 monotonic=False, nonlinear=True):
         """Initialize PiLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput)
@@ -3275,18 +3239,6 @@ class PiLayer(ButterflyLayer):
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
         self.layers.append(self.layer)
-        # Optional butterfly mode -- see SigmaLayer docstring; identical
-        # construction-time semantics (nInput == nOutput == 2*state_dim,
-        # forward sees [B, n_t, state_dim]). ``n_t`` may be omitted; it
-        # is inferred from input.shape[1] on the first forward call.
-        if stage_idx is not None:
-            assert nInput == nOutput, (
-                f"PiLayer butterfly mode requires nInput == nOutput "
-                f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
-            assert nInput % 2 == 0, (
-                f"PiLayer butterfly mode requires even nInput "
-                f"(got {nInput})")
-            self._init_butterfly_buffers(stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
@@ -3327,71 +3279,45 @@ class PiLayer(ButterflyLayer):
         ``self.layer._current_gate`` so that ``compute_W_current``
         -> ``_d_effective`` picks it up. Used by rule layers
         (LiftLayer / LowerLayer) for low-rank operator slicing.
-
-        In butterfly mode, the input is permuted/packed before the
-        inner Pi transform and unpacked/merged after; see SigmaLayer
-        docstring for the access pattern (PiLayer mirrors it).
         """
-        if self.butterfly:
-            B, N, D = x.shape
-            self._ensure_butterfly_buffers(N)
-            packed = self._butterfly_pack(x)
-        else:
-            packed = x
-
         # Inline inner-forward: log-domain multiplicative AND fold.
         self.layer._current_gate = gate
         try:
             if self.layer.ergodic:
                 self.resample_noise()
             W = self.layer.compute_W_current()
-            packed = packed.to(W.device)
+            x = x.to(W.device)
             if binary:
-                packed = Ops.top2_select_ste(packed)
-            m = self._to_mult(packed)
+                x = Ops.top2_select_ste(x)
+            m = self._to_mult(x)
             l = torch.log(m)
             wl = l @ W
             b = self.layer._effective_bias()
             wl = wl + b
             if self.nonlinear:
-                packed_out = torch.tanh(wl / 2)
+                out = torch.tanh(wl / 2)
             else:
-                packed_out = torch.exp(wl)
+                out = torch.exp(wl)
         finally:
             self.layer._current_gate = None
-
-        if self.butterfly:
-            x_out = self._butterfly_unpack(packed_out, B, N, D)
-            return self._butterfly_merge(x_out)
-        return packed_out
+        return out
 
     def reverse(self, y, gate=None):
         """Recover x from y.  Requires invertible=True.
 
         ``gate`` flows through ``compute_Winverse_current`` ->
         ``_d_effective`` -> ``1/(d * gate)``.
-
-        In butterfly mode, the cached merge diff is consumed before the
-        inner Pi inverse runs.
         """
-        if self.butterfly:
-            x_out = self._butterfly_unmerge(y)
-            B, N, D = x_out.shape
-            self._ensure_butterfly_buffers(N)
-            packed = self._butterfly_pack(x_out)
-        else:
-            packed = y
-
         # Inline inner-reverse: log-domain multiplicative AND fold inverse.
         self.layer._current_gate = gate
         try:
             W_inv = self.layer.compute_Winverse_current()
-            packed = packed.to(W_inv.device)
+            y = y.to(W_inv.device)
             if self.nonlinear:
-                m = self._to_mult(packed)
+                m = self._to_mult(y)
                 l = torch.log(m)
             else:
-                l = torch.log(packed)
+                l = torch.log(y)
             b = self.layer._effective_bias()
             lx = (l - b) @ W_inv
             if self.nonlinear:
@@ -3402,9 +3328,6 @@ class PiLayer(ButterflyLayer):
                 self.resample_noise()
         finally:
             self.layer._current_gate = None
-
-        if self.butterfly:
-            return self._butterfly_unpack(out, B, N, D)
         return out
 
     # -- Binary tensor ops (chart parser) -----------------------------
@@ -3429,12 +3352,7 @@ class PiLayer(ButterflyLayer):
 
         Returns:
             ``[..., nOutput]`` in [-1, 1].
-
-        Not supported in butterfly mode.
         """
-        if self.butterfly:
-            raise NotImplementedError(
-                "PiLayer.compose not supported in butterfly mode")
         self.layer._current_gate = gate
         try:
             if self.layer.ergodic:
@@ -3475,11 +3393,8 @@ class PiLayer(ButterflyLayer):
         Returns:
             ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
 
-        Requires ``invertible=True``; not supported in butterfly mode.
+        Requires ``invertible=True``.
         """
-        if self.butterfly:
-            raise NotImplementedError(
-                "PiLayer.decompose not supported in butterfly mode")
         self.layer._current_gate = gate
         try:
             W_inv = self.layer.compute_Winverse_current()
@@ -7984,11 +7899,11 @@ class ModelLoss(Loss):
         - **Accuracy**: each predicted token matches its nearest original.
         - **Coverage**: each original token is covered by some prediction.
 
-        This handles token reordering (butterfly merge may swap vector
-        positions) and eliminates error shadowing when tokens overlap in
-        position space.  The what/where/when component weights are applied
-        before computing L2 distances so the matching respects the
-        relative importance of content vs position vs time.
+        This handles token reordering (the grammar pair-merge may swap
+        vector positions) and eliminates error shadowing when tokens
+        overlap in position space.  The what/where/when component weights
+        are applied before computing L2 distances so the matching respects
+        the relative importance of content vs position vs time.
         """
         embSize = pred.shape[-1]
         nWhere = self.nWhere

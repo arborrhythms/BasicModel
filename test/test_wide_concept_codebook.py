@@ -33,7 +33,7 @@ def test_topk_k_zero_is_zeros():
 def test_codebook_forward_topk_prunes_activation():
     """When Codebook.forward receives topK>0, self.activation has at most
     topK nonzero entries per batch row, even though the codebook is wide."""
-    torch.manual_seed(0)
+
     cb = Codebook()
     # Wide codebook: 16 prototypes, small input dim.
     cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False)
@@ -50,7 +50,7 @@ def test_codebook_forward_topk_prunes_activation():
 
 def test_codebook_forward_topk_zero_preserves_legacy_activation():
     """topK=0 (default) leaves self.activation unchanged from the legacy path."""
-    torch.manual_seed(0)
+
     cb = Codebook()
     cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False)
     cb.eval()
@@ -73,7 +73,7 @@ def _estimator_grad(mode, e, q, upstream):
 
 
 def test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e():
-    torch.manual_seed(0)
+
     e = torch.randn(2, 4, requires_grad=True)
     q = torch.randn(2, 4, requires_grad=True)
     out = Codebook.apply_gradient_estimator(e, q, mode="snap")
@@ -85,7 +85,7 @@ def test_gradient_estimator_snap_forward_is_q_and_zero_grad_to_e():
 
 
 def test_gradient_estimator_ste_passes_gradient_through_to_e():
-    torch.manual_seed(0)
+
     e = torch.randn(3, 4)
     q = torch.randn(3, 4)
     g = torch.randn_like(q)
@@ -98,7 +98,7 @@ def test_gradient_estimator_ste_passes_gradient_through_to_e():
 
 
 def test_gradient_estimator_rotation_scales_norm_and_rotates():
-    torch.manual_seed(0)
+
     e = torch.randn(5, 6)
     q = torch.randn(5, 6)
     g = torch.randn_like(q)
@@ -130,7 +130,7 @@ def test_gradient_estimator_invalid_mode_raises():
 
 def test_codebook_commit_loss_basic():
     """commit_loss: MSE with stop-gradient on q, gradient flows to e only."""
-    torch.manual_seed(0)
+
     cb = Codebook()
     cb.create(nInput=2, nVectors=4, nDim=3, customVQ=False)
     e = torch.randn(2, 3, requires_grad=True)
@@ -172,7 +172,7 @@ def _step_grad(cb, per_entry_scale):
 
 
 def test_codebook_freezing_stable_entry_gets_frozen():
-    torch.manual_seed(0)
+
     cb = Codebook()
     cb.create(nInput=2, nVectors=4, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=5)
@@ -188,7 +188,7 @@ def test_codebook_freezing_stable_entry_gets_frozen():
 
 
 def test_codebook_freezing_noisy_entry_not_frozen():
-    torch.manual_seed(0)
+
     cb = Codebook()
     cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=5)
@@ -203,7 +203,7 @@ def test_codebook_freezing_noisy_entry_not_frozen():
 
 
 def test_codebook_freezing_zeros_gradient_of_frozen_entries():
-    torch.manual_seed(0)
+
     cb = Codebook()
     cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=3)

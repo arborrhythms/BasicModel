@@ -27,7 +27,7 @@ def model():
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
-    torch.manual_seed(0)
+
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     return m
 
@@ -261,9 +261,6 @@ def test_stm_residual_flows_through_conceptualspace(model):
                         nInputDim=cs.nInputDim, nOutputDim=cs.nOutputDim)
     upstream.copy_context(cs.subspace)  # seed serial_cache/errors dicts
     upstream.wordSpace = ws
-    # In butterfly mode, the ConceptualSpace's inner PiLayer has a
-    # pre-cached permutation buffer sized to cs.inputShape[0]; using
-    # any other N would mis-shape the index_select.
     B = 2
     N = int(cs.inputShape[0])
     D = int(cs.inputShape[1])

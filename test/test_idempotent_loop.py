@@ -13,11 +13,11 @@ fixed point on the codebook's row space within one cycle:
 
 Tests exercise the Codebook directly (not the SymbolicSpace shell), to
 keep the focus on the snap loop without grammar entanglement. The
-intrinsic snap exposed via ``Codebook.forward(input, project=True)`` is
+intrinsic snap exposed via ``Codebook.forward(input)`` is
 the architectural definition of what naming a symbol means: project an
 incoming concept activation onto each codebook prototype, populate the
 per-prototype catuskoti bivector ``[B, V_S, 2]``. The decode via
-``Codebook.reverse(bivec, project=True)`` is the cached SVD-based
+``Codebook.reverse(bivec)`` is the cached SVD-based
 pseudo-inverse: it recovers the input modulo span(W).
 """
 import sys
@@ -29,23 +29,28 @@ import torch
 _PROJECT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT / "bin"))
 
-from Spaces import Codebook  # noqa: E402
+from Spaces import ProjectionBasis  # noqa: E402
 
 
 def _make_codebook(D_C=4, V_S=4, invertible=True):
-    """Build a unit-norm codebook for clean reasoning."""
-    cb = Codebook()
-    cb.create(nInput=V_S, nVectors=V_S, nDim=D_C,
-              customVQ=False,
-              monotonic=True, invertible=invertible)
-    cb.setW(torch.eye(V_S, D_C))
+    """Build a unit-norm projection basis for clean reasoning.
+
+    ``ProjectionBasis`` defaults to identity W via its LDU
+    factorization (raw_L = raw_U = 0, d = 1), which is exactly what
+    the legacy Codebook tests pinned via ``setW(torch.eye(...))``.
+    The ``invertible`` kwarg is retained for back-compat with the
+    old signature but is ignored -- ProjectionBasis is structurally
+    invertible by construction.
+    """
+    cb = ProjectionBasis()
+    cb.create(nInput=V_S, nVectors=V_S, nDim=D_C)
     return cb
 
 
 def _cycle(cb, x):
     """One forward (project) + reverse (pseudo-inverse) cycle."""
-    bivec = cb.forward(x, project=True)               # [B, V_S, 2]
-    x_back = cb.reverse(bivec, project=True)          # [B, V_in, D_C]
+    bivec = cb.forward(x)               # [B, V_S, 2]
+    x_back = cb.reverse(bivec)          # [B, V_in, D_C]
     return x_back, bivec
 
 
@@ -68,7 +73,7 @@ class TestIdempotentLoop(unittest.TestCase):
         cb = _make_codebook(D_C=8, V_S=4)
         cb_W = torch.zeros(4, 8); cb_W[:, :4] = torch.eye(4)
         cb.setW(cb_W)
-        torch.manual_seed(0)
+
         # Input: row 1 (in span) + noise on axes 4-7 (orthogonal to span).
         x0 = cb_W[1:2].unsqueeze(0) + torch.cat(
             [torch.zeros(1, 1, 4), 0.1 * torch.randn(1, 1, 4)], dim=-1)
@@ -92,7 +97,7 @@ class TestIdempotentLoop(unittest.TestCase):
         cb = _make_codebook(D_C=8, V_S=4)
         cb_W = torch.zeros(4, 8); cb_W[:, :4] = torch.eye(4)
         cb.setW(cb_W)
-        torch.manual_seed(42)
+
         x = 0.3 * cb_W[3:4].unsqueeze(0) + 0.1 * torch.randn(1, 1, 8)
         deltas = []
         for _ in range(5):

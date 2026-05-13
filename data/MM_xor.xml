@@ -5,7 +5,6 @@
        but scaled to XOR-sized dims. -->
   <architecture>
     <conceptualOrder>3</conceptualOrder>
-    <useButterflies>true</useButterflies>
     <modelType>embedding</modelType>
 
     <training>

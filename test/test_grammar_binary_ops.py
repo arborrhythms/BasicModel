@@ -73,7 +73,7 @@ class TestPiLayerBinary(unittest.TestCase):
     is a balanced split that round-trips when invertible."""
 
     def setUp(self):
-        torch.manual_seed(0)
+        pass
 
     def test_compose_shape_and_range(self):
         layer = PiLayer(nInput=4, nOutput=4, nonlinear=True)
@@ -107,22 +107,12 @@ class TestPiLayerBinary(unittest.TestCase):
         left, right = layer.decompose(parent)
         self.assertTrue(torch.allclose(left, right, atol=1e-6))
 
-    def test_butterfly_mode_raises(self):
-        layer = PiLayer(nInput=4, nOutput=4, invertible=True,
-                        nonlinear=True, stage_idx=0, n_t=4, is_last=False)
-        x = torch.rand(2, 3, 4) * 1.6 - 0.8
-        with self.assertRaises(NotImplementedError):
-            layer.compose(x, x)
-        with self.assertRaises(NotImplementedError):
-            layer.decompose(x)
-
-
 class TestSigmaLayerBinary(unittest.TestCase):
     """SigmaLayer.compose == OR fold of two operands; decompose
     is a balanced split that round-trips when invertible."""
 
     def setUp(self):
-        torch.manual_seed(0)
+        pass
 
     def test_compose_shape_and_range(self):
         layer = SigmaLayer(nInput=4, nOutput=4, nonlinear=True)
@@ -165,7 +155,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
     """
 
     def setUp(self):
-        torch.manual_seed(0)
+        pass
 
     def test_intersection_layer_is_L_tier(self):
         layer = IntersectionLayer()

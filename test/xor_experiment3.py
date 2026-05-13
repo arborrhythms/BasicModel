@@ -197,7 +197,6 @@ def run_experiment():
         print(f"[{idx+1}/{len(configs)}] {label}")
         print(f"{'='*60}")
 
-        torch.manual_seed(42)
         m = create_model(ergodic=False)
 
         t0 = time.time()

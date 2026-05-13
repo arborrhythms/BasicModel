@@ -36,7 +36,7 @@ _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 def _model():
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     return model
 

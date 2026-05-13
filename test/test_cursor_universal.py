@@ -38,7 +38,7 @@ def test_xor_runs_through_trial_cursor():
 
     config = str(_project / "data" / "MM_xor.xml")
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(config, data=TheData)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 

@@ -74,7 +74,7 @@ from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, ShortTermMemory
 from Language import WordSpace
 from util import parse
 # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
@@ -157,89 +157,6 @@ class CachePoint(nn.Module):
         return subspace
 
     def reverse(self, subspace):
-        return subspace
-
-
-class ChartCompose(nn.Module):
-    """Pipeline step that runs ``wordSpace.compose(...)`` on the
-    incoming subspace, then passes the subspace through unchanged.
-
-    Inserted into ``pipeline_stem`` between PerceptualSpace and the
-    body so the chart's per-(tier, step) rule selections are
-    available before the per-stage forward iterations consume them.
-    No-op when ``word_space`` is ``None``.
-    """
-
-    def __init__(self, word_space):
-        super().__init__()
-        # Stash as non-Module attr to avoid the wordSpace -> chart
-        # -> ... -> wordSpace cycle nn.Module ownership would create.
-        object.__setattr__(self, '_word_space', word_space)
-
-    def forward(self, subspace):
-        ws = self._word_space
-        if ws is None or subspace is None:
-            return subspace
-        if hasattr(subspace, 'is_empty') and subspace.is_empty():
-            return subspace
-        data = subspace.materialize() if hasattr(
-            subspace, 'materialize') else None
-        if data is None:
-            return subspace
-        try:
-            # ARIR microbatch path: data may arrive as [B, K, N, D].
-            # Flatten K into batch for the chart's compose; downstream
-            # consumes the per-row cursors at the same flat indexing.
-            if data.dim() == 4:
-                B, K, N, D = data.shape
-                flat = data.reshape(B * K, N, D)
-                ws.compose(flat, subspace=subspace)
-            else:
-                ws.compose(data, subspace=subspace)
-            # Signal-router mode: propagate the router's transformed
-            # slab back into subspace.event so downstream spaces
-            # receive the differentiable signal (otherwise the
-            # router's gates / scorer never see task-loss gradient).
-            if ws.chart.router_kind == "signal":
-                router = ws.chart._signal_router
-                if router is not None and router._last_output is not None:
-                    out = router._last_output
-                    if out.shape == data.shape:
-                        subspace.set_event(out)
-        except Exception as exc:
-            _log_advisory_exception("ChartCompose.forward", exc)
-        return subspace
-
-
-class ChartGenerate(nn.Module):
-    """Reverse-pipeline mirror of ``ChartCompose``: runs
-    ``wordSpace.generate(...)`` on the incoming subspace before the
-    spaces' reverse passes fire.
-    """
-
-    def __init__(self, word_space):
-        super().__init__()
-        object.__setattr__(self, '_word_space', word_space)
-
-    def forward(self, subspace):
-        ws = self._word_space
-        if ws is None or subspace is None:
-            return subspace
-        if hasattr(subspace, 'is_empty') and subspace.is_empty():
-            return subspace
-        data = subspace.materialize() if hasattr(
-            subspace, 'materialize') else None
-        if data is None:
-            return subspace
-        try:
-            if data.dim() == 4:
-                B, K, N, D = data.shape
-                flat = data.reshape(B * K, N, D)
-                ws.generate(flat, subspace=subspace)
-            else:
-                ws.generate(data, subspace=subspace)
-        except Exception as exc:
-            _log_advisory_exception("ChartGenerate.forward", exc)
         return subspace
 
 
@@ -1904,10 +1821,9 @@ class BasicModel(BaseModel):
         # BasicModel accepts the <useGrammar> XML surface for uniformity
         # with BasicModel but only ``none`` is meaningful for it -- the
         # BasicModel pipeline lacks the constituency-grammar machinery
-        # (``_level_shapes``, ``GrammarMergeGlue``, the
-        # ChartCompose/ChartGenerate stem wiring needed by ``all``).
-        # Configs that need full constituency grammar should use
-        # BasicModel.
+        # (``_level_shapes``, ``GrammarMergeGlue``, the per-stage chart-
+        # at-C wiring needed by ``all``). Configs that need full
+        # constituency grammar should use BasicModel.
         try:
             from basicmodel.bin.util import parse_use_grammar
         except ModuleNotFoundError:
@@ -1924,16 +1840,13 @@ class BasicModel(BaseModel):
         # use lift/lower opt in via <gateL1Lambda> in <architecture>.
         self.gate_l1_lambda = float(
             TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
-        # Per-stage / butterfly / grammar / truth knobs. Initialized
-        # here with safe defaults (off / zero / no-op) so subclasses
-        # and the merged grammar paths can reference them
-        # unconditionally. BasicModel.create overrides these with
-        # config values when running the per-stage pipeline; keeping
-        # them defined on every BasicModel instance avoids
-        # AttributeError in helpers that the two classes will share
-        # after the merger.
-        self.useButterflies = bool(
-            TheXMLConfig.get("architecture.useButterflies", default=False))
+        # Per-stage / grammar / truth knobs. Initialized here with safe
+        # defaults (off / zero / no-op) so subclasses and the merged
+        # grammar paths can reference them unconditionally. BasicModel.create
+        # overrides these with config values when running the per-stage
+        # pipeline; keeping them defined on every BasicModel instance avoids
+        # AttributeError in helpers that the two classes will share after
+        # the merger.
         self.monotonic = bool(
             TheXMLConfig.get("architecture.monotonic", default=False))
         self.load_balance_weight = float(
@@ -1964,12 +1877,6 @@ class BasicModel(BaseModel):
                              default="output/syntax.xml")
             or "output/syntax.xml")
         self._syntax_truncated = False
-        # Butterfly state cache (populated by BasicModel.create's
-        # butterfly branch; left None on the BasicModel path).
-        self._butterfly_state_vectors = None
-        self._butterfly_state_dim = None
-        self._butterfly_symbol_width = None
-        self._butterfly_symbol_factor = None
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
         # The lexicon lives on PerceptualSpace via its chunking_mode.
         # InputSpace.codebook defaults to false; configs that set it
@@ -2008,6 +1915,11 @@ class BasicModel(BaseModel):
                          conceptualOrder=conceptualOrder,
                          nWhere=TheXMLConfig.get("architecture.nWhere"),
                          nWhen=TheXMLConfig.get("architecture.nWhen"))
+        # Optional swappable loss head fed STM snapshots during the
+        # body forward. Installed by ``embed.py embed_pretrain`` for
+        # CBOW-over-STM pretraining; AR training leaves it None and
+        # keeps using ``outputSpace`` for the loss.
+        self.loss_head = None
         self.masked_prediction = masked_prediction
         if data is not None and hasattr(data, 'masked_prediction') and data.masked_prediction != 'NONE':
             data.masked_prediction = masked_prediction
@@ -2197,14 +2109,14 @@ class BasicModel(BaseModel):
         """
         return self._build_pipelines_per_stage()
 
-    # -- Per-stage / butterfly / AR helpers ----------------------------
-    # Shared by BasicModel's flat pipeline and BasicModel's per-stage
-    # path. The butterfly helpers depend on ``self._merge_diffs`` which
-    # is initialized in BasicModel.forward when ``useGrammar=='all'``;
-    # they raise on the BasicModel path because that path never invokes
-    # them.
+    # -- Per-stage / AR helpers ----------------------------------------
+    # Pair-merge primitives used by the grammar progressive-bottleneck
+    # path. ``_pair_merge`` averages adjacent slot pairs and caches the
+    # difference; ``_pair_unmerge`` consumes the cached diff to recover
+    # the original pair. Depend on ``self._merge_diffs`` which is
+    # initialized in BasicModel.forward when ``useGrammar=='all'``.
 
-    def _butterfly_merge(self, x):
+    def _pair_merge(self, x):
         """Average-merge: [B, N, D] -> [B, N/2, D].
 
         Averages adjacent vector pairs, keeping D constant and norms bounded.
@@ -2212,13 +2124,13 @@ class BasicModel(BaseModel):
         inversion in the reverse pass.
         """
         B, N, D = x.shape
-        assert N % 2 == 0, f"butterfly_merge requires even N, got {N}"
+        assert N % 2 == 0, f"pair_merge requires even N, got {N}"
         left = x[:, 0::2, :]    # [B, N/2, D]
         right = x[:, 1::2, :]   # [B, N/2, D]
         self._merge_diffs.append(left - right)
         return (left + right) / 2
 
-    def _butterfly_unmerge(self, x):
+    def _pair_unmerge(self, x):
         """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
 
         Uses cached difference to recover both original vectors. When the
@@ -2995,11 +2907,10 @@ class BasicModel(BaseModel):
             except Exception:
                 pass
             # Raise the CUDAGraph "distinct sizes" warning limit. The
-            # default (8) is conservative for models with butterfly /
-            # N-halving stages, where shapes across stages form an
-            # ``log2(N)`` sequence (each is static per stage). Set to
-            # 128 so the warning only fires on genuinely-pathological
-            # shape variance.
+            # default (8) is conservative for models with N-halving
+            # stages, where shapes across stages form an ``log2(N)``
+            # sequence (each is static per stage). Set to 128 so the
+            # warning only fires on genuinely-pathological shape variance.
             try:
                 torch._inductor.config.triton.cudagraph_dynamic_shape_warn_limit = 128
             except Exception:
@@ -3102,10 +3013,12 @@ class BasicModel(BaseModel):
             except Exception:
                 B_pre = None
             if B_pre is not None:
-                is_ar_outer = getattr(self, 'masked_prediction', 'NONE') in (
-                    'AR', 'ARUS', 'ARIR')
-                K_pre = (int(self.inputSpace.outputShape[0])
-                         if is_ar_outer else 1)
+                # Per-word stem is the only path (Phase 2): each word IS
+                # one AR position, so the AR microbatch K-axis loses its
+                # purpose. Force K=1 -- the per-word loop in
+                # ``_forward_stem_per_word`` collapses any incoming
+                # K-axis into the leading batch dim.
+                K_pre = 1
                 ws.ensure_microbatch(B_pre, K_pre)
 
         if train:
@@ -4224,11 +4137,6 @@ class BasicModel(BaseModel):
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
 
-        # Orthogonal architecture flags.  useButterflies and useGrammar
-        # are mutually exclusive -- butterfly permutations fight
-        # constituency structure.
-        self.useButterflies = bool(
-            TheXMLConfig.get("architecture.useButterflies", default=False))
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
         # flag; when True, invertible SigmaLayers use NonNegativeInvertibleLinearLayer.
         self.monotonic = bool(
@@ -4262,19 +4170,6 @@ class BasicModel(BaseModel):
             f"(got useGrammar={self.useGrammar!r}, "
             f"conceptualOrder={self.conceptualOrder})"
         )
-        # Butterflies still conflict with full constituency grammar.
-        if self.useButterflies and self.useGrammar == "all":
-            raise ValueError(
-                "useButterflies=true + useGrammar=\"all\" is excluded: "
-                "butterfly permutations fight constituency structure")
-
-        # Butterfly-path state cache (populated in the useButterflies branch
-        # below). Mirrors the per-stage SigmaLayer/PiLayer butterfly mode.
-        self._butterfly_state_vectors = None
-        self._butterfly_state_dim = None
-        self._butterfly_symbol_width = None
-        self._butterfly_symbol_factor = None
-
         # Truth integration config (optional -- absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
@@ -4314,6 +4209,12 @@ class BasicModel(BaseModel):
             nWhere=TheXMLConfig.get("architecture.nWhere"),
             nWhen=TheXMLConfig.get("architecture.nWhen"),
         )
+        # Optional swappable loss head fed STM snapshots during the
+        # body forward (Phase 3, 2026-05-12). Installed by
+        # ``embed.py embed_pretrain`` for CBOW-over-STM pretraining;
+        # AR training leaves it None and keeps using ``outputSpace``
+        # for the loss.
+        self.loss_head = None
 
         # Resolve dims, chaining through the pipeline (nDim=0 -> same as input dim)
         # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel.
@@ -4389,25 +4290,8 @@ class BasicModel(BaseModel):
         else:
             conceptOutputShape = [nConcepts, concept_dim + obj_concept]
 
-        # -- Butterfly path: pairwise sigma/pi with N-halving --
-        if self.useButterflies:
-            state_vectors = nPercepts
-            state_dim = percept_dim + obj_percept
-            symbol_width = symbol_dim + obj_symbol
-            n_stages = min(self.conceptualOrder, int(math.log2(state_vectors)))
-            # Butterfly power-of-two / reconstruct=symbols / volume equality /
-            # state_dim divisibility requirements are registered in
-            # ModelFactory.validate_config (see Models.py:3669+) and fire there
-            # before model construction.
-            self._butterfly_state_vectors = state_vectors
-            self._butterfly_state_dim = state_dim
-            self._butterfly_symbol_width = symbol_width
-            self._butterfly_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
-            self._level_shapes_list = self._level_shapes(
-                nPercepts, state_dim, n_stages,
-                width_mode=self._conceptual_width_mode())
         # -- Grammar path: progressive bottleneck per conceptual order --
-        elif self.useGrammar == "all":
+        if self.useGrammar == "all":
             n_stages = self.conceptualOrder
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, n_stages,
@@ -4428,23 +4312,10 @@ class BasicModel(BaseModel):
         self.symbolicSpaces = nn.ModuleList()
         for t in range(T):
             is_last = (t == T - 1)
-            if self.useButterflies:
-                # Butterfly cascade: only ConceptualSpace's PiLayer
-                # carries butterfly mode now (SymbolicSpace no longer
-                # owns a sigma layer; symbol_dim == concept_dim is
-                # enforced and the C->S transform is dimensionally a
-                # pass-through). CS self-constructs the butterfly PiLayer
-                # using ``stage_idx`` / ``is_last`` -- ``n_t`` is inferred
-                # from the input shape on first forward.
-                cs_n_t = state_vectors >> t
-                cs_in = [cs_n_t, state_dim]
-                cs_out = cs_in[:] if is_last else [state_vectors >> (t + 1), state_dim]
-                ss_in = cs_out[:]
-                ss_out = cs_out[:]
-            elif self.useGrammar == "all":
+            if self.useGrammar == "all":
                 # Grammar path: each stage halves N (except last). Shapes
                 # follow _level_shapes but the per-stage ConceptualSpace /
-                # SymbolicSpace are plain (no butterfly wrapping).
+                # SymbolicSpace are plain.
                 n_t = nPercepts >> t
                 d_t = percept_dim + obj_percept
                 cs_in = [n_t, d_t]
@@ -4468,14 +4339,13 @@ class BasicModel(BaseModel):
             # docstring): per-order input sourcing replaces the concat,
             # so the C-tier PiLayer input width is just nInputDim.
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
-                                 butterfly=self.useButterflies,
                                  stage_idx=t,
                                  is_last=is_last)
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs)
             # Per-stage flags consumed by build_pipelines / forward.
             ss.is_last = is_last
-            ss.quantize = True if self.useButterflies else (not is_last)
+            ss.quantize = not is_last
             self.conceptualSpaces.append(cs)
             self.symbolicSpaces.append(ss)
 
@@ -4631,11 +4501,12 @@ class BasicModel(BaseModel):
         """Phase 2: stem/body/head pipelines for BasicModel.
 
         Pipeline shape (microbatch AR):
-            stem  : nn.Sequential(inputSpace, FlattenK(perceptualSpace),
-                                  ChartCompose)
+            stem  : nn.Sequential(inputSpace, FlattenK(perceptualSpace))
+                    + per-word P->C->S->C round trip filling
+                    ConceptualSpace.stm
             body  : explicit for-loop over ``self.body_stages``
                     (ModuleList of ModuleDicts), one dict per stage:
-                      [reparse?] -> cs -> [merge?] -> ss
+                      cs -> chart-at-C -> [merge?] -> ss
                     K-axis flatten/restore is hoisted into _forward_body.
             head  : FlattenK(outputSpace)
 
@@ -4672,53 +4543,21 @@ class BasicModel(BaseModel):
         except Exception:
             base_n = int(getattr(self, "nPercepts", 0))
 
-        # Per-stage chart re-parse: when enabled, each conceptual stage
-        # gets its own ChartCompose right before the stage's
-        # ConceptualSpace.  Stage 0 inherits the stem's chart output;
-        # stages 1..T-1 re-parse the previous stage's symbolic output
-        # so each level of the constituency hierarchy gets its own
-        # rule-selection pass.  Default off to preserve the
-        # single-parse behaviour of existing configs (XOR_grammar
-        # tests, MM_grammar smoke).  Opt in via XML.
-        try:
-            per_stage_reparse = bool(TheXMLConfig.get(
-                "architecture.perStageChartReparse", default=False))
-        except Exception:
-            per_stage_reparse = False
-        per_stage_reparse = per_stage_reparse and (self.useGrammar == "all")
-        # Auto-disable under ARIR: the K-axis (AR microbatch windows)
-        # multiplies into the chart's per-cell soft-mode tensor
-        # [B*K, P, Sp, R_bin, C, D], which at production sizes
-        # (B=128, K~16, N=1024, wMax=32, R~20) requires hundreds of GB
-        # just for the rule-blend op on Language.py:1951.  ARIR keeps
-        # the single stem-level chart pass (one chart × K microbatches
-        # = K parses) -- per-stage reparse would multiply that by T
-        # again.  IR mode runs one chart per stage with no K axis,
-        # which is the design point.
-        if per_stage_reparse and getattr(self, 'masked_prediction', None) == 'ARIR':
-            import logging
-            logging.getLogger(__name__).warning(
-                "perStageChartReparse=true is auto-disabled under "
-                "maskedPrediction=ARIR (K-axis × T-stage chart cost is "
-                "structurally infeasible at production sizes).  "
-                "Use maskedPrediction=IR if you want per-stage re-parse.")
-            per_stage_reparse = False
-
         # Per-stage body: ModuleList of ModuleDicts, driven by an
         # explicit for-loop in ``_forward_body`` / ``_reverse_body``.
         # Replaces ``_body_inner = nn.Sequential(*body_modules)``; the
         # adapter classes (FlattenKWrapper, ReverseAdapter, CachePoint)
         # that existed only to fit Sequential's one-arg contract go
         # away. Each stage's dict contains:
-        #   "reparse": ChartCompose      (optional, t>0 + per_stage_reparse)
         #   "cs":      ConceptualSpace   (required)
         #   "merge":   GrammarMergeGlue  (optional, useGrammar=="all")
         #   "ss":      SymbolicSpace     (required)
+        # The legacy ``"reparse": ChartCompose`` entry was retired
+        # 2026-05-12 alongside chart-at-stem -- the chart now fires
+        # uniformly at C-tier inside ``_forward_body`` for every stage.
         self.body_stages = nn.ModuleList()
         for t in range(T):
             stage = nn.ModuleDict()
-            if per_stage_reparse and t > 0:
-                stage["reparse"] = ChartCompose(self.wordSpace)
             stage["cs"] = self.conceptualSpaces[t]
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
@@ -4728,15 +4567,6 @@ class BasicModel(BaseModel):
             stage["ss"] = self.symbolicSpaces[t]
             self.body_stages.append(stage)
 
-        # Stem/head are methods (``_forward_stem`` / ``_forward_head``)
-        # rather than stored Sequentials -- K-axis flatten/restore is
-        # hoisted into them via ``_flatten_k`` / ``_restore_k`` helpers,
-        # so FlattenKWrapper is no longer needed anywhere. ChartCompose
-        # is stored as a module attribute so the chart-compose step
-        # participates in parameter discovery (the host_layer registry
-        # hangs off WordSpace, but ChartCompose itself can hold buffers).
-        self._chart_compose = ChartCompose(self.wordSpace)
-
         all_spaces = ([self.inputSpace, self.perceptualSpace]
                       + list(self.conceptualSpaces)
                       + list(self.symbolicSpaces)
@@ -4745,12 +4575,6 @@ class BasicModel(BaseModel):
             s.invertible if hasattr(s, "invertible") else False
             for s in all_spaces)
 
-        # Reverse-pipeline pieces. The reverse path is composed of
-        # methods (``_reverse_head``, ``_reverse_body``,
-        # ``_reverse_perceptual``, direct ``inputSpace.reverse``) so
-        # ReverseAdapter goes away. ChartGenerate stays as a module
-        # since it's a real side-effect stage.
-        self._chart_generate = ChartGenerate(self.wordSpace)
         # Forward midpoint cache. None for invertible (Case A); for
         # non-invertible (Case B) the forward result is stored here so
         # the round-trip path can rebuild from it. Plain attribute --
@@ -4788,21 +4612,17 @@ class BasicModel(BaseModel):
         return sub
 
     def _forward_stem(self, inputData):
-        """Stem: inputSpace -> perceptualSpace -> (chart-at-stem OR
-        per-word P->C->S->C round trip filling ConceptualSpace.stm).
+        """Stem: inputSpace -> perceptualSpace -> per-word P->C->S->C
+        round trip filling ConceptualSpace.stm.
 
-        When ``WordSpace.chart.per_word_stem`` is on, the chart no longer
-        fires here; instead each word slot is run through the per-word
-        round trip and pushed onto STM. The body's per-stage chart
-        firing (Step 4) consumes that STM at C-tier.
+        The chart no longer fires here; each word slot is run through
+        the per-word round trip and pushed onto STM. The body's per-stage
+        chart firing (Step 4) consumes that STM at C-tier.
         """
         sub = self._stem_input_to_percepts(inputData)
         if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
             return sub
-        if self.wordSpace.chart.per_word_stem:
-            self._forward_stem_per_word(sub)
-            return sub
-        sub = self._chart_compose(sub)
+        self._forward_stem_per_word(sub)
         return sub
 
     def _forward_stem_per_word(self, sub):
@@ -4835,22 +4655,59 @@ class BasicModel(BaseModel):
             B_flat, N, D_p = p_event.shape
             p_flat = p_event
         B_flat = p_flat.shape[0]
-        # Ensure STM is sized for this batch and starts empty.
+        # Per-word stem requires that ``conceptualSpace.pi`` accept a
+        # single-slot tensor whose feature width equals D_p (the per-
+        # percept dim) AND that its output width matches the STM
+        # buffer's ``concept_dim``.  Toy / passthrough configs that
+        # break either of these (e.g. XOR_recon: D_p=10, STM
+        # concept_dim=2) skip cleanly so the body's chart-at-C /
+        # output path still runs without the per-word push.
+        pi_in = int(getattr(self.conceptualSpace.pi, 'nInput',
+                            D_p) or D_p)
+        if pi_in != D_p:
+            return sub
+        pi_out = int(getattr(self.conceptualSpace.pi, 'nOutput',
+                             pi_in) or pi_in)
+        stm_concept_dim = int(self.conceptualSpace.stm.concept_dim)
+        if pi_out != stm_concept_dim:
+            return sub
+        # Ensure STM is sized for this batch and starts empty.  When
+        # the percept-slot count exceeds the buffer's capacity (e.g.
+        # tests that produce more slots than ``<WordSpace><wMax>``),
+        # grow the buffer to N so push() never overflows.  Production
+        # configs with chart firing already calibrate wMax to the
+        # expected sentence length.
         self.conceptualSpace.stm.ensure_batch(B_flat)
+        if self.conceptualSpace.stm.capacity < N:
+            self.conceptualSpace.stm = ShortTermMemory(
+                batch=B_flat, capacity=int(N),
+                concept_dim=self.conceptualSpace.stm.concept_dim)
         self.conceptualSpace.stm.clear()
         iterations = max(1, int(self.wordSpace.chart.iterations_per_word))
         cb = getattr(self.symbolicSpace.subspace, 'what', None)
+        # When a loss head is installed (Phase 3, ``embed.py
+        # embed_pretrain``) collect the un-detached per-word ideas so the
+        # head can drive backward through them. The STM buffer itself
+        # still receives ``.detach()`` ideas so cross-forward grad state
+        # doesn't accumulate on the persistent buffer.
+        grad_ideas = [] if self.loss_head is not None else None
         for w in range(N):
             p_slot = p_flat[:, w:w+1, :]
             c_slot = None
             for _ in range(iterations):
                 c_slot = self.conceptualSpace.pi.forward(p_slot)
             # SymbolicSpace has no sigma -- the C->S boundary is a
-            # dimensional pass-through; snap directly through the S
-            # codebook in bivector mode.
-            if cb is not None and hasattr(cb, 'forward') and hasattr(cb, 'reverse'):
-                snap = cb.forward(c_slot, project=True)
-                idea_back = cb.reverse(snap, project=True)
+            # dimensional pass-through; project directly through the S
+            # codebook when it carries a ``ProjectionBasis`` (the
+            # bivector projection surface added 2026-05-13).  Simpler
+            # Basis subclasses (Tensor, Codebook, Embedding) don't
+            # carry this surface, so we duck-type by class name and
+            # fall through to the no-project idea path for those.
+            cb_is_projection = (cb is not None and
+                                type(cb).__name__ == 'ProjectionBasis')
+            if cb_is_projection:
+                snap = cb.forward(c_slot)
+                idea_back = cb.reverse(snap)
                 if idea_back is None:
                     idea = c_slot[:, 0, :]
                 elif idea_back.dim() == 3:
@@ -4862,8 +4719,16 @@ class BasicModel(BaseModel):
                     idea = idea_back
             else:
                 idea = c_slot[:, 0, :]
+            if grad_ideas is not None:
+                grad_ideas.append(idea)
             for b in range(B_flat):
                 self.conceptualSpace.stm.push(b, idea[b].detach())
+        # Stash the grad-bearing stack for the loss head to consume in
+        # ``_forward_body``. Shape: ``[B, N, D_c]``.
+        if grad_ideas:
+            self._loss_head_input = torch.stack(grad_ideas, dim=1)
+        else:
+            self._loss_head_input = None
         return sub
 
     def _forward_head(self, sub):
@@ -4884,23 +4749,36 @@ class BasicModel(BaseModel):
         [B*K, N, D] batch dim and operates as if K=1. Captures each
         stage's SymbolicSpace output into ``self._ss_cache[t]``.
 
-        When ``WordSpace.chart.per_word_stem`` is on, the chart fires
-        at C-tier over the STM buffer at each stage. Per-stage iteration
-        gives T = conceptualOrder passes of chart refinement, each using
-        the prior stage's S->C loopback as feedback through CS.
+        The chart fires at C-tier over the STM buffer at each stage.
+        Per-stage iteration gives T = conceptualOrder passes of chart
+        refinement, each using the prior stage's S->C loopback as
+        feedback through CS.
+
+        When ``self.loss_head`` is set (e.g. by ``embed.py
+        embed_pretrain``) the post-body STM snapshot feeds the head
+        and the resulting loss is stashed on ``self._loss_head_loss``
+        for the training loop to consume.
         """
         B, K = self._flatten_k(sub)
-        per_word_stem = self.wordSpace.chart.per_word_stem
         for t, stage in enumerate(self.body_stages):
-            if "reparse" in stage:
-                sub = stage["reparse"](sub)
             sub = stage["cs"](sub)
-            if per_word_stem:
-                self._chart_compose_at_C(stage_idx=t)
+            self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
                 sub = stage["merge"](sub)
             sub = stage["ss"](sub)
             self._ss_cache[t] = sub
+        if self.loss_head is not None:
+            # Prefer the grad-bearing per-word stack stashed by
+            # ``_forward_stem_per_word``; fall back to the (detached)
+            # STM snapshot when the stack is missing (e.g. body-only
+            # forward path that bypasses the per-word stem).
+            grad_input = getattr(self, '_loss_head_input', None)
+            if grad_input is None:
+                grad_input = self.conceptualSpace.stm.snapshot()
+            if grad_input is not None:
+                self._loss_head_loss = self.loss_head(grad_input)
+            else:
+                self._loss_head_loss = None
         self._restore_k(sub, B, K)
         return sub
 
@@ -4908,19 +4786,15 @@ class BasicModel(BaseModel):
         """Fire the chart at C-tier over ``conceptualSpace.stm`` contents.
 
         Populates ``wordSpace.current_rules`` for downstream SS dispatch.
-        Uses the largest depth across batch rows so the chart sees a
-        single uniform [B, N, D_c] input; rows with shorter sentences
-        carry zero-padding at the tail (handled by the chart's
-        ``valid_mask`` machinery in legacy code paths).
+        Uses :meth:`ShortTermMemory.snapshot` to obtain a single uniform
+        ``[B, max_depth, D_c]`` slab (rows with shorter sentences carry
+        zero-padding at the tail; handled by the chart's ``valid_mask``
+        machinery).
         """
-        stm = self.conceptualSpace.stm
-        B = int(stm._buffer.shape[0])
-        max_depth = int(stm._depth.max().item()) if B > 0 else 0
-        if max_depth == 0:
+        snap = self.conceptualSpace.stm.snapshot()
+        if snap is None:
             return
-        # Slice [B, max_depth, D_c]; clone to keep autograd intact.
-        chart_input = stm._buffer[:, :max_depth, :].clone()
-        self.wordSpace.compose(chart_input)
+        self.wordSpace.compose(snap)
 
     def _reverse_body(self, sub):
         """Per-stage body reverse. Mirrors ``_forward_body`` order.
@@ -4936,8 +4810,6 @@ class BasicModel(BaseModel):
             if "merge" in stage:
                 sub = stage["merge"].reverse(sub)
             sub = stage["cs"].reverse(sub)
-            if "reparse" in stage:
-                sub = stage["reparse"].reverse(sub)
         self._restore_k(sub, B, K)
         return sub
 
@@ -4963,17 +4835,38 @@ class BasicModel(BaseModel):
     def _run_pipeline_rev(self, x):
         """Case A reverse pipeline (any_invertible=True).
 
-        Replaces ``self.pipeline_rev = nn.Sequential(rev_head,
-        ChartGenerate, rev_body, rev_perceptual, rev_input)``.
+        Mirrors the forward path: after the head reverse, the chart
+        generates rules from the C-tier STM snapshot (mirror of the
+        forward ``_chart_compose_at_C``), then the body reverse fires
+        per stage with those generate rules in scope.
         """
         if x is None:
             return None
         x = self._reverse_head(x)
-        x = self._chart_generate(x)
+        self._chart_generate_from_stm()
         x = self._reverse_body(x)
         x = self._reverse_perceptual(x)
         x = self.inputSpace.reverse(x)
         return x
+
+    def _chart_generate_from_stm(self):
+        """Fire ``wordSpace.generate`` over the C-tier STM snapshot.
+
+        Mirror of ``_chart_compose_at_C`` on the reverse path:
+        populates ``wordSpace.generate_rules`` so the per-stage
+        SymbolicSpace.reverse dispatch can pop them via its
+        SyntacticLayer cursor.
+        """
+        ws = getattr(self, 'wordSpace', None)
+        if ws is None:
+            return
+        stm = getattr(self.conceptualSpace, 'stm', None)
+        if stm is None:
+            return
+        snap = stm.snapshot()
+        if snap is None:
+            return
+        ws.generate(snap)
 
     def _run_pipeline_rt(self, inputData):
         """Case B round-trip (any_invertible=False).
@@ -5084,7 +4977,7 @@ class BasicModel(BaseModel):
         # (None for is_last stages, which pass through). The pipeline does
         # not apply per-stage symbol feedback, so _sym_feedbacks is None for
         # every stage; reverse's `if fb is not None` branch then skips the
-        # subtraction and _butterfly_unmerge handles the None diff as a
+        # subtraction and _pair_unmerge handles the None diff as a
         # no-op, matching the is_last pass-through.
         if self.useGrammar == "all":
             for stage in self.body_stages:
@@ -5263,31 +5156,14 @@ class BasicModel(BaseModel):
     def _reverse_per_stage(self, symbols, outputData):
         """Walk the per-stage Symbol -> Concept -> Percept -> Input reverse path.
 
-        Handles butterfly and flat layouts. For each conceptual stage
-        in reverse order, runs the symbolic and conceptual reverse,
-        then re-injects into the next stage's symbolic subspace.
-        Returns the reconstructed input data.
+        For each conceptual stage in reverse order, runs the symbolic and
+        conceptual reverse, then re-injects into the next stage's symbolic
+        subspace.  Returns the reconstructed input data.
         """
         sym_vec = self.symbolicSpace.subspace.materialize()
         concepts_state = self.concepts
 
         T = len(self.symbolicSpaces)
-
-        if self.useButterflies:
-            x = sym_vec
-            for t in reversed(range(T)):
-                self.symbolicSpaces[t].subspace.set_event(x)
-                x = self.symbolicSpaces[t].reverse(
-                    self.symbolicSpaces[t].subspace).materialize()
-                self.conceptualSpaces[t].subspace.set_event(x)
-                x = self.conceptualSpaces[t].reverse(
-                    self.conceptualSpaces[t].subspace).materialize()
-            self.perceptualSpace.subspace.set_event(x)
-            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
-            self.inputs = self.inputSpace.reverse(input_state)
-            input_latent = input_state.materialize()
-            input_data = self.inputs.materialize()
-            return input_data, input_latent
 
         if self.useGrammar == "all":
             # Progressive-bottleneck: invert the pipeline order
@@ -5300,7 +5176,7 @@ class BasicModel(BaseModel):
                 fb = self._sym_feedbacks.pop()
                 if fb is not None:
                     x = x - fb
-                x = self._butterfly_unmerge(x)
+                x = self._pair_unmerge(x)
                 self.symbols.set_event(x)
                 concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
                 x = concept_input_state.materialize()
@@ -5919,19 +5795,6 @@ class ModelFactory:
             f"<ConceptualSpace><nDim>."
         )
 
-        use_butterflies = bool(arch.get("useButterflies", False))
-        if use_butterflies:
-            n_input = _resolve_count("InputSpace", 0)
-            n_percepts = _resolve_count("PerceptualSpace", n_input)
-
-            if n_percepts > 0:
-                TheXMLConfig.require(
-                    lambda cfg, _np=n_percepts: _np > 0 and (_np & (_np - 1)) == 0,
-                    f"useButterflies=true butterfly schedule requires nPercepts "
-                    f"to be a positive power of two (got nPercepts={n_percepts}). "
-                    f"Fix: set PerceptualSpace.nOutput to 2^k (e.g. 512, 1024, 2048)."
-                )
-
         # Invertible PerceptualSpace shape constraints are registered inside
         # PerceptualSpace._register_requirements() (not here) to keep them self-contained.
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
@@ -5951,10 +5814,9 @@ class ModelFactory:
             raise ValueError(
                 "XML config inconsistencies:\n  - " + "\n  - ".join(errors))
 
-        # Fire any requirements registered above (butterfly volume/divisibility/
-        # power-of-two/reconstruct, etc.) at validate_config time, so they
-        # surface as config errors *before* model construction, alongside the
-        # errors.append path.  Any remaining requirements registered later
+        # Fire any requirements registered above at validate_config time, so
+        # they surface as config errors *before* model construction, alongside
+        # the errors.append path.  Any remaining requirements registered later
         # (inside Space._register_requirements during __init__) will fire
         # via the second TheXMLConfig.validate() call at the end of
         # BasicModel.__init__.

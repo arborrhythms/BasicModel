@@ -25,7 +25,7 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     from Models import BaseModel
     config = str(_PROJECT / "data" / "MM_xor.xml")
     TheData.load("xor")
-    torch.manual_seed(13)
+
     model, _ = BaseModel.from_config(config, data=TheData)
     model.masked_prediction = 'AR'
     model.inputSpace.masked_prediction = 'AR'
@@ -76,7 +76,7 @@ def test_ensure_microbatch_method_explicit_BK():
     from Models import BaseModel
     config = str(_PROJECT / "data" / "MM_xor.xml")
     TheData.load("xor")
-    torch.manual_seed(13)
+
     model, _ = BaseModel.from_config(config, data=TheData)
     if model.wordSpace is None:
         import pytest

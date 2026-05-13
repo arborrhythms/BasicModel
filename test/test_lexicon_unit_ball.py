@@ -35,14 +35,14 @@ from Layers import Lexicon, topk_l2_chunked, topk_rp_chunked
 
 class TestUnitBallInitAndProjection(unittest.TestCase):
     def test_uniform_ball_init_inside_ball(self):
-        torch.manual_seed(0)
+
         emb = Lexicon(2048, 6)
         norms = emb.weight.norm(dim=-1)
         self.assertTrue(torch.all(norms <= 1.0 + 1e-5),
                         f"max norm {norms.max().item()}")
 
     def test_small_normal_init_inside_ball(self):
-        torch.manual_seed(0)
+
         emb = Lexicon(512, 8, init="small_normal")
         norms = emb.weight.norm(dim=-1)
         self.assertTrue(torch.all(norms <= 1.0 + 1e-5))
@@ -69,7 +69,7 @@ class TestUnitBallInitAndProjection(unittest.TestCase):
 
 class TestL2Scores(unittest.TestCase):
     def test_score_sort_matches_brute_force_distance_sort(self):
-        torch.manual_seed(0)
+
         V, D, B = 256, 6, 32
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -101,7 +101,7 @@ class TestL2Scores(unittest.TestCase):
 
 class TestTopkL2(unittest.TestCase):
     def test_topk_returns_exact_distances(self):
-        torch.manual_seed(0)
+
         V, D, B = 256, 6, 16
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -136,7 +136,7 @@ class TestTopkL2(unittest.TestCase):
 
 class TestTopkL2Chunked(unittest.TestCase):
     def test_chunked_matches_unchunked(self):
-        torch.manual_seed(0)
+
         V, D, B = 4096, 6, 8
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -150,7 +150,7 @@ class TestTopkL2Chunked(unittest.TestCase):
         self.assertTrue(torch.allclose(dist_full, dist_chunk, atol=1e-4))
 
     def test_chunk_size_larger_than_V(self):
-        torch.manual_seed(0)
+
         emb = Lexicon(64, 4)
         W_index, W_norm2 = emb.lookup_index()
         x = torch.randn(2, 4)
@@ -166,7 +166,7 @@ class TestProjectivePrimitives(unittest.TestCase):
     closed-form definitions on random inputs."""
 
     def test_rp_distance_min_of_pode_and_wrapped(self):
-        torch.manual_seed(0)
+
         a = torch.rand(64, 6) * 2 - 1
         b = torch.rand(64, 6) * 2 - 1
         a = Lexicon.project_unit_ball(a)
@@ -230,7 +230,7 @@ class TestProjectivePrimitives(unittest.TestCase):
 
 class TestRpScores(unittest.TestCase):
     def test_rp_score_sort_matches_projective_distance_sort(self):
-        torch.manual_seed(0)
+
         V, D, B = 256, 6, 32
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -251,7 +251,7 @@ class TestRpScores(unittest.TestCase):
         # |<x, w>|, so flipping the codebook row to its negation does
         # not change the rank. (Negation, not antipode -- the antipode
         # of w on RP^D is the orthogonal hyperplane, not -w.)
-        torch.manual_seed(0)
+
         V, D, B = 64, 4, 8
         cb = torch.randn(V, D) * 0.5
         cb = Lexicon.project_unit_ball(cb)
@@ -265,7 +265,7 @@ class TestRpScores(unittest.TestCase):
 
 class TestTopkRp(unittest.TestCase):
     def test_topk_rp_returns_exact_projective_distances(self):
-        torch.manual_seed(0)
+
         V, D, B = 256, 6, 16
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -283,7 +283,7 @@ class TestTopkRp(unittest.TestCase):
         self.assertTrue(torch.all(diffs >= -1e-5))
 
     def test_topk_rp_chunked_matches_unchunked(self):
-        torch.manual_seed(0)
+
         V, D, B = 4096, 6, 8
         emb = Lexicon(V, D)
         W_index, W_norm2 = emb.lookup_index()
@@ -303,7 +303,7 @@ class TestTorusLegacyMode(unittest.TestCase):
     working."""
 
     def test_torus_init_inside_canonical_cell(self):
-        torch.manual_seed(0)
+
         emb = Lexicon(256, 6, ball=False)
         self.assertFalse(emb.ball)
         self.assertTrue(emb.torus)               # backward-compat alias

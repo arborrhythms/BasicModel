@@ -89,7 +89,7 @@ def main():
 
     # --- Eager baseline ---
     model_eager = MatMulModel(dim=dim).to(TheDevice.get())
-    torch.manual_seed(42)
+
     # Save initial weights so all variants start from same state
     init_state = copy.deepcopy(model_eager.state_dict())
 

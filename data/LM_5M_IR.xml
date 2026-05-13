@@ -5,8 +5,7 @@
        chunking, 1M-entry perceptual codebook, hierarchical 8-level
        ConceptualSpace shape) so the .kv lexicon and .ckpt embeddings
        are interchangeable with MM_5M_IR.  Differs only in:
-         * useButterflies=false + useGrammar=all (chart-driven
-           constituency replaces N-halving butterflies)
+         * useGrammar=all (chart-driven constituency)
          * grammar block (full English grammar with PP rules)
          * chart machinery: per-stage re-parse, noisy top-K=4 gating,
            load-balance loss, per-rule width gates (Shazeer 2017
@@ -27,8 +26,8 @@
     <!-- MereologicalTree size matches SymbolicSpace nVectors. -->
     <mereologicalTreeSize>1024</mereologicalTreeSize>
 
-    <!-- Per-stage chart re-parse (Shazeer-style). -->
-    <perStageChartReparse>true</perStageChartReparse>
+    <!-- perStageChartReparse retired 2026-05-12: chart fires at C-tier
+         in every body stage by construction. -->
     <loadBalanceWeight>0.01</loadBalanceWeight>
 
     <data>

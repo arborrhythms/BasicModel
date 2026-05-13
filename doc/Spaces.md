@@ -457,19 +457,20 @@ priming single-shot signal, not a working-memory buffer).
 
 | Property | Default | Configurable via |
 |---|---|---|
-| Capacity | 9 (upper bound of the linguistic 7±2) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
+| Capacity | Auto-sized to `<WordSpace><wMax>` (sentence length bound), fallback 8 | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` (explicit override) |
 | Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
 | Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
 
-API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `size(b)`, `is_full(b)`,
-`is_empty(b)`, `clear(b=None)`, `ensure_batch(batch)`.
+API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
+`size(b)`, `is_full(b)`, `is_empty(b)`, `clear(b=None)`,
+`ensure_batch(batch)`.
 
-No code currently *consumes* the STM — the batched-CKY chart at S
-doesn't push/pop yet. The deferred serial / shift-reduce parser is the
-intended consumer: per-word shifts push concepts; reduce ops pop the
-top operands, run the appropriate compose (lattice op / lift / lower /
-relation dispatch), and push the result. The 7±2 cap is the forcing
-function for reduce decisions when the parser is reading more words.
+The per-word stem inside `BasicModel._forward_stem_per_word` pushes one
+post-quantized idea per word; the body's `_chart_compose_at_C` consumes
+the buffer via `snapshot()` at every stage. The reverse mirror,
+`_chart_generate_from_stm`, fires at the symmetric C-tier point inside
+the reverse pipeline. The 7±2 cap is enforced by `wMax`-driven capacity
+plus per-row depth pointers.
 
 ### Lift/Lower factorization
 

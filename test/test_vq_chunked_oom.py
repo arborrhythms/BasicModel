@@ -36,7 +36,7 @@ def test_chunked_indices_match_unchunked_l2():
     parity between ``vq._vq_chunk_rows = N`` (single pass) and a small
     chunk size is the correctness signal.
     """
-    torch.manual_seed(0)
+
     D, V, N = 6, 128, 4096
     vq = _vq(D=D, V=V, train=False)
     x = torch.randn(N, D)
@@ -52,7 +52,7 @@ def test_chunked_indices_match_unchunked_l2():
 
 
 def test_chunked_indices_match_unchunked_cosine():
-    torch.manual_seed(1)
+
     D, V, N = 8, 64, 2048
     vq = _vq(D=D, V=V, train=False, cosine=True)
     x = torch.randn(N, D)
@@ -72,7 +72,7 @@ def test_ema_update_uses_bincount_not_onehot_matmul():
     We monkeypatch `torch.nn.functional.one_hot` to raise; if the EMA
     update path takes the bincount branch the call succeeds.
     """
-    torch.manual_seed(2)
+
     D, V, N = 6, 64, 1024
     vq = _vq(D=D, V=V, train=True)
     x = torch.randn(N, D)
@@ -98,7 +98,7 @@ def test_large_flat_does_not_oom_l2():
     the chunked path is exercised end-to-end.  Fits in CPU RAM if and
     only if chunking is real.
     """
-    torch.manual_seed(3)
+
     # 256k rows * 8192 codebook * 4 bytes = 8 GB unchunked.
     # Chunked path keeps peak well under that.
     D, V, N = 6, 8192, 256_000
@@ -113,7 +113,7 @@ def test_large_flat_does_not_oom_l2():
 
 def test_large_flat_ema_does_not_oom():
     """EMA path on large N must succeed (bincount + index_add_)."""
-    torch.manual_seed(4)
+
     D, V, N = 6, 8192, 256_000
     vq = _vq(D=D, V=V, train=True)
     x = torch.randn(N, D)
@@ -125,7 +125,7 @@ def test_large_flat_ema_does_not_oom():
 
 def test_dead_code_refresh_replaces_multiple_rows():
     """Dead-code refresh should replace expired rows via explicit indices."""
-    torch.manual_seed(5)
+
     D, V, N = 4, 8, 32
     vq = _vq(D=D, V=V, train=True)
     vq.codebook_retire = True
@@ -153,7 +153,7 @@ def test_dead_code_refresh_replaces_multiple_rows():
 def test_codebook_retire_false_disables_expiration():
     """Default (codebook_retire=False) must skip dead-code replacement even
     when ``threshold_ema_dead_code`` is positive."""
-    torch.manual_seed(6)
+
     D, V, N = 4, 8, 32
     vq = _vq(D=D, V=V, train=True)
     assert vq.codebook_retire is False

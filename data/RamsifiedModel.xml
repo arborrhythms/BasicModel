@@ -1,10 +1,9 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- RamsifiedModel: MentalModel with useButterflies=true, conceptualOrder=2.
+  <!-- RamsifiedModel: MentalModel with conceptualOrder=2.
        Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
   <architecture>
     <conceptualOrder>2</conceptualOrder>
-    <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>

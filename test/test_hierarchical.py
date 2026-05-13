@@ -1,6 +1,6 @@
 """Tests for the hierarchical epistemic architecture.
 
-Covers: _level_shapes, _butterfly_merge/unmerge, WordEncoding 4-tuple,
+Covers: _level_shapes, _pair_merge/unmerge, WordEncoding 4-tuple,
 per-level Sigmas/Pis, hierarchical forward, and backward compat.
 """
 
@@ -70,17 +70,17 @@ class TestLevelShapes(unittest.TestCase):
         self.assertEqual(shapes, [(4, 4), (2, 4)])
 
 
-# -- _butterfly_merge / _butterfly_unmerge ----------------------------
+# -- _pair_merge / _pair_unmerge --------------------------------------
 
 class _MergeHelper:
     """Lightweight stand-in for BasicModel merge/unmerge (instance methods)."""
     def __init__(self):
         self._merge_diffs = []
-    _butterfly_merge = Models.BasicModel._butterfly_merge
-    _butterfly_unmerge = Models.BasicModel._butterfly_unmerge
+    _pair_merge = Models.BasicModel._pair_merge
+    _pair_unmerge = Models.BasicModel._pair_unmerge
 
 
-class TestButterflyMerge(unittest.TestCase):
+class TestPairMerge(unittest.TestCase):
 
     def setUp(self):
         self.helper = _MergeHelper()
@@ -88,26 +88,26 @@ class TestButterflyMerge(unittest.TestCase):
     def test_merge_shape(self):
         """[2, 8, 4] -> [2, 4, 4] (D stays constant)."""
         x = torch.randn(2, 8, 4)
-        merged = self.helper._butterfly_merge(x)
+        merged = self.helper._pair_merge(x)
         self.assertEqual(merged.shape, (2, 4, 4))
 
     def test_unmerge_inverse(self):
         """unmerge(merge(x)) recovers original."""
         x = torch.randn(3, 16, 6)
-        merged = self.helper._butterfly_merge(x)
-        recovered = self.helper._butterfly_unmerge(merged)
+        merged = self.helper._pair_merge(x)
+        recovered = self.helper._pair_unmerge(merged)
         self.assertTrue(torch.allclose(x, recovered, atol=1e-6))
 
     def test_information_preserved(self):
         """Average merge + cached diff preserves all information."""
         x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3)
-        merged = self.helper._butterfly_merge(x)
+        merged = self.helper._pair_merge(x)
         # Shape halves N, keeps D
         self.assertEqual(merged.shape, (1, 4, 3))
         # Average halves the sum
         self.assertAlmostEqual(merged.sum().item(), x.sum().item() / 2, places=4)
         # But full round-trip recovers everything
-        recovered = self.helper._butterfly_unmerge(merged)
+        recovered = self.helper._pair_unmerge(merged)
         self.assertTrue(torch.allclose(x, recovered))
 
 
@@ -154,48 +154,6 @@ class TestWordEncoding(unittest.TestCase):
         self.assertEqual(w[Spaces.WordEncoding.LEAF3], -1)
 
 
-# -- Hierarchical forward (requires RamsifiedModel.xml with order>1) --
-
-class TestHierarchicalForward(unittest.TestCase):
-
-    def test_forward_runs(self):
-        """`RamsifiedModel.xml` with conceptualOrder=2 runs forward without error."""
-        model = _make_model('RamsifiedModel.xml')
-        if not model.useButterflies:
-            self.skipTest("Model not butterfly-enabled")
-
-        sentences = ['test sentence one', 'another test sentence']
-        outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
-
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            train_input, _ = model.inputSpace.getTrainData()
-            x = model.inputSpace.prepInput(train_input[:2])
-            with torch.no_grad():
-                result = model.forward(x)
-        self.assertIsNotNone(result)
-
-    def test_symbol_states_populated(self):
-        """Hierarchical forward populates symbol_states per level."""
-        model = _make_model('RamsifiedModel.xml')
-        if not model.useButterflies:
-            self.skipTest("Model not butterfly-enabled")
-
-        sentences = ['test one', 'test two']
-        outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
-
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            train_input, _ = model.inputSpace.getTrainData()
-            x = model.inputSpace.prepInput(train_input[:2])
-            with torch.no_grad():
-                model.forward(x)
-
-        self.assertEqual(len(model.symbol_states), model.conceptualOrder)
-
-
 # -- Backward compat: non-hierarchical models still work --------------
 
 class TestBackwardCompat(unittest.TestCase):
@@ -203,7 +161,6 @@ class TestBackwardCompat(unittest.TestCase):
     def test_mentalmodel_unchanged(self):
         """MentalModel.xml (conceptualOrder=1) still creates and forwards."""
         model = _make_model('MentalModel.xml')
-        self.assertFalse(model.useButterflies)
 
         sentences = ['hello world']
         outputs = [torch.tensor([0.0])]
@@ -217,9 +174,9 @@ class TestBackwardCompat(unittest.TestCase):
                 result = model.forward(x)
         self.assertIsNotNone(result)
 
-    def test_symbolicspace_single_instance(self):
-        """Non-butterfly model: BasicModel builds T independent SymbolicSpace
-        instances (T = conceptualOrder) in symbolicSpaces ModuleList."""
+    def test_symbolicspace_per_stage_instances(self):
+        """BasicModel builds T independent SymbolicSpace instances
+        (T = conceptualOrder) in the symbolicSpaces ModuleList."""
         model = _make_model('MentalModel.xml')
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
 
@@ -228,49 +185,16 @@ class TestBackwardCompat(unittest.TestCase):
 
 class TestPerLevelLayers(unittest.TestCase):
 
-    def test_pair_sigmas_created(self):
-        """Butterfly path: T independent ConceptualSpace instances, each
-        carrying a butterfly-mode PiLayer on pair-dim inputs."""
-        model = _make_model('RamsifiedModel.xml')
-        if not model.useButterflies:
-            self.skipTest("Model not butterfly-enabled")
-        pair_dim = 2 * model._butterfly_state_dim
-        self.assertEqual(len(model.conceptualSpaces), model.conceptualOrder)
-        stage0 = model.conceptualSpaces[0].pi
-        self.assertTrue(getattr(stage0, "butterfly", False),
-                        "ConceptualSpace.pi should be in butterfly mode")
-        self.assertEqual(stage0.nInput, pair_dim)
-        self.assertEqual(stage0.nOutput, pair_dim)
-
     def test_symbolic_spaces_have_no_sigma(self):
-        """Butterfly path: post-2026-05 ownership rule, SymbolicSpace
-        owns no SigmaLayer. The per-stage butterfly cascade lives
-        entirely on ConceptualSpace.pi (see test_per_level_pi_layers_created
-        above). This test asserts the absence so a regression that
-        re-introduces SS-tier butterfly layers is caught."""
+        """Post-2026-05 ownership rule: SymbolicSpace owns no SigmaLayer
+        or PiLayer."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.useButterflies:
-            self.skipTest("Model not butterfly-enabled")
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
         for s in model.symbolicSpaces:
             self.assertFalse(hasattr(s, 'sigma'),
                              "SymbolicSpace must not own a sigma layer.")
             self.assertFalse(hasattr(s, 'pi'),
                              "SymbolicSpace must not own a pi layer.")
-
-    def test_symbol_factor_matches_configured_volume(self):
-        """Pair head reshaping matches the configured symbol volume exactly."""
-        model = _make_model('RamsifiedModel.xml')
-        if not model.useButterflies:
-            self.skipTest("Model not butterfly-enabled")
-        self.assertEqual(
-            model._butterfly_state_vectors * model._butterfly_state_dim,
-            model.nSymbols * model._butterfly_symbol_width,
-        )
-        self.assertEqual(
-            model._butterfly_state_vectors * model._butterfly_symbol_factor,
-            model.nSymbols,
-        )
 
 
 if __name__ == '__main__':

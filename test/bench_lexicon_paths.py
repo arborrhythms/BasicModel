@@ -197,7 +197,7 @@ def main():
         # Real codebook: random rows projected into the unit ball, then
         # also wrap-canonical -- so both torus and ball forms see legal
         # inputs.
-        torch.manual_seed(0)
+
         W = torch.rand(V, args.D, device=device) * 2 - 1   # [-1, 1)
         W_ball = Lexicon.project_unit_ball(W)
         W_norm2 = W_ball.square().sum(dim=-1).contiguous()

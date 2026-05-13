@@ -31,9 +31,9 @@
            (Phase 5 option A) makes per-prototype shape [B, V_S=4, 2]
            coincide with per-slot shape [B, N=4, 2]; no diagonal /
            outer-product disambiguation needed.
-         - conceptualOrder = 1, useButterflies = false: a single
-           ConceptualSpace -> SymbolicSpace step with no slot halving,
-           so the round trip is exactly one forward + one reverse.
+         - conceptualOrder = 1: a single ConceptualSpace -> SymbolicSpace
+           step with no slot halving, so the round trip is exactly one
+           forward + one reverse.
          - useVQVAE = false on SymbolicSpace: keeps the focus on the
            snap (Codebook.forward(project=True)) rather than VQ-VAE
            commit / residual training signals.

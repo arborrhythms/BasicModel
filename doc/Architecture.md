@@ -132,24 +132,15 @@ See [Params.md](Params.md) for all XML parameters. See
 
 ### Modes of operation
 
-Three orthogonal mode dimensions plus the two feedback loops.
-
-**Butterfly mode** (`<useButterflies>true</useButterflies>`):
-Pairwise sigma/pi with N-halving across `<conceptualOrder>` stages. Each
-per-stage `ConceptualSpace` / `SymbolicSpace` is built with a butterfly-mode
-SigmaLayer / PiLayer that packs `[B, N, D]` to `[B, N/2, 2*D]` before the
-inner LDU and unpacks after. Slot count halves per stage; per-slot dim
-doubles; total per-stage volume preserved. Validated by `nPercepts *
-state_dim == nSymbols * symbol_width` at `ModelFactory.validate_config`.
-Used by MM_xor, MM_5M, MM_400M.
+Two orthogonal mode dimensions plus the two feedback loops.
 
 **Serial mode** (`BASICMODEL_DEVICE` / runtime flag `serial_mode`):
 Runtime fast path for streaming / autoregressive contexts.
 `PerceptualSpace` / `ConceptualSpace` may use slide-and-recompute with the
-previous step's per-cell warm cache (`subspace.serial_cache`). Independent
-of butterfly mode. Cache is keyed on owner-Space id, cleared on hard
-`Reset`. (Distinct from the **serial / shift-reduce parser** — a separate
-deferred refactor; see [`doc/plans/`](plans/).)
+previous step's per-cell warm cache (`subspace.serial_cache`). Cache is
+keyed on owner-Space id, cleared on hard `Reset`. (Distinct from the
+**serial / shift-reduce parser** — a separate deferred refactor; see
+[`doc/plans/`](plans/).)
 
 **The two feedback loops**:
 The architecture now exposes two concurrent recurrent paths between the
@@ -295,27 +286,20 @@ delegates to `Basis.equal`.
 
 `ConceptualSpace.stm` (an instance of `ShortTermMemory`) is a per-batch
 stack of unquantized C-tier "ideas" — the continuous compositions that
-will accumulate as the (future) serial / shift-reduce parser processes
-words. Capacity defaults to 9 (the upper bound of the classical 7±2
-linguistic working-memory limit) and is configurable via
-`<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>`.
-The STM is cleared on hard `Reset` (sentence boundary) and survives
-soft reset. The current batched-CKY chart does not yet consume the STM;
-this is the structural slot the deferred serial parser will fill. See
+accumulate as the per-word stem processes words. Capacity auto-sizes to
+`<WordSpace><wMax>` (the chart's sentence-length bound), so each word
+fills a slot before the chart fires at C-tier in the body; an explicit
+`<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` still
+overrides for subsymbolic configs that want a larger buffer. The STM
+is cleared on hard `Reset` (sentence boundary) and survives soft reset.
+The body's chart fires over `stm.snapshot()` at every stage. See
 [Spaces.md](Spaces.md#shorttermmemory).
 
-### Per-word operational flow (planned, for the deferred serial parser)
+### Per-word operational flow
 
-> See [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
-> for the full handoff spec — motivation, resolved design decisions
-> (Q1-Q7: reduce policy, dispatch ordering, truth attachment,
-> lift/lower invocation, backward-compat strategy, per-word iteration
-> count, operation-by-tier classification), implementation outline,
-> and files+line-numbers to read in Phase 1.
-
-The deferred serial parser will require each word to traverse a
-per-word round trip through the full pipeline, so that a single word
-ends up on the STM as a single post-quantized idea. The shape:
+Each word traverses a per-word round trip through the full pipeline,
+so that a single word ends up on the STM as a single post-quantized
+idea. The shape:
 
 ```
 byte stream  →  P (BPE lex + per-percept features)
@@ -325,11 +309,12 @@ byte stream  →  P (BPE lex + per-percept features)
              →  ConceptualSpace.stm.push(idea)
 ```
 
-This per-word cadence is **different from** today's per-stage
-(symbolic) and per-forward-call (subsymbolic) cadences. The parser
-will drive its own per-word forward, likely leveraging the existing
-`serial_mode` warm-cache machinery on PerceptualSpace which already
-slides one position at a time through the codebook lookup.
+This per-word cadence runs **inside the stem** before the body's
+per-stage chart firing. The body then iterates over its `body_stages`
+ModuleList, calling `_chart_compose_at_C` over `stm.snapshot()` at
+every stage so the chart's per-rule selections shape SymbolicSpace
+dispatch.  The reverse mirror (`_chart_generate_from_stm`) fires at
+the symmetric C-tier point inside the reverse pipeline.
 
 **POS rides the codebook for free.** The SymbolicSpace bivector
 codebook carries two POS-bearing fields per atom: `category_ids: [V]`

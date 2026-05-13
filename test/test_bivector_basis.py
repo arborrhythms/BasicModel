@@ -45,7 +45,7 @@ class TestBivectorNegation(unittest.TestCase):
 
     def test_double_negation_identity(self):
         basis = self._basis()
-        torch.manual_seed(0)
+
         v = torch.rand(16).clamp(0.0, 1.0)
         out = Ops.negation(Ops.negation(v, monotonic=True),
                              monotonic=True)

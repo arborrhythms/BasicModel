@@ -2091,24 +2091,11 @@ class Chart(nn.Module):
                 "WordSpace.chartNoiseEps", 0.0) or 0.0)
         except Exception:
             self.chart_noise_eps = 0.0
-        # Per-word stem mode. When true, the stem runs each word
-        # through an individual P->C->S->C round trip and pushes
-        # ideas onto ConceptualSpace.stm; the chart fires at C
-        # over the STM buffer in the body.
-        #
-        # Default False (opt-in): the path is incompatible with
-        # butterfly mode (``<useButterflies>true``) because the
-        # per-word loop slices the perceptual event to N=1 slots
-        # and the butterfly pack requires even N. Once butterfly
-        # compatibility is added (either by pair-slicing or by
-        # routing per-word through a non-butterfly path), the
-        # default can flip to True and the legacy chart-at-stem
-        # launch site (``Models._chart_compose``) can retire.
-        try:
-            self.per_word_stem = bool(TheXMLConfig.get(
-                "WordSpace.perWordStem", False))
-        except Exception:
-            self.per_word_stem = False
+        # Per-word stem is the only path (legacy chart-at-stem retired
+        # 2026-05-12). Each word runs an individual P->C->S->C round
+        # trip in the stem, ideas accumulate on ConceptualSpace.stm,
+        # and the chart fires at C over the STM buffer in the body.
+        self.per_word_stem = True
         try:
             self.iterations_per_word = int(TheXMLConfig.get(
                 "WordSpace.iterationsPerWord", 1) or 1)
@@ -4937,9 +4924,9 @@ class WordSpace(Space):
                 # skipping the bias rather than mis-broadcasting.
                 return None
         if expected_dim is not None and int(bias_full.shape[-1]) != int(expected_dim):
-            # Hierarchical/butterfly stages may operate in a packed state
-            # basis that is narrower than the global DiscourseSpace concept
-            # projection. Do not inject a residual across incompatible bases.
+            # Hierarchical stages may operate in a state basis that is
+            # narrower than the global DiscourseSpace concept projection.
+            # Do not inject a residual across incompatible bases.
             return None
         # Gate per source row: each source's bias broadcasts to its K
         # windows; sources already fired are masked to zero.
@@ -5569,10 +5556,12 @@ class WordSpace(Space):
         """Demux the muxed symbol tensor into the subspace's modality
         slots (Rule #2 axis commitment side effect).
 
-        Post-2026-05-01 refactor: the actual symbolic composition runs
-        on the chart (via ``ChartCompose`` in the pipeline + per-space
-        ``SyntacticLayer.forward`` dispatch). This helper retains the
-        demux side effect that downstream slot selectors depend on.
+        Post-2026-05-12 refactor: the actual symbolic composition runs
+        on the chart at C-tier over the per-word STM buffer
+        (``_chart_compose_at_C`` inside ``_forward_body``), with the
+        per-space ``SyntacticLayer.forward`` dispatch consuming the
+        chart's rule choices.  This helper retains the demux side
+        effect that downstream slot selectors depend on.
 
         Per the 2026-05-07 rollback, demux is skipped when there are
         no aux axes to split (nWhere == 0 and nWhen == 0). In that
@@ -5591,8 +5580,8 @@ class WordSpace(Space):
 
     def reverseSymbols(self, data, subspace):
         """No-op pass-through: chart-driven generation handles the
-        symbol-side reverse via ``ChartGenerate`` + per-space
-        ``SyntacticLayer.reverse`` dispatch.
+        symbol-side reverse via ``BasicModel._chart_generate_from_stm``
+        + per-space ``SyntacticLayer.reverse`` dispatch.
         """
         return data
 

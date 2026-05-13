@@ -105,19 +105,16 @@ reconstruction objective:
 Paraphrase-invariance holds because semantically similar sentences snap to
 nearby codebook entries.
 
-## Architecture Modes: useButterflies × useGrammar
+## Architecture Modes: useGrammar
 
-Two knobs select among Sigma-Pi architectures. Full grammar mode and
-butterflies are **mutually exclusive** — butterfly permutations fight
-constituency structure; rejected at load time. Shamatha Speech is a target
+One knob selects among Sigma-Pi architectures. Shamatha Speech is a target
 narrow-grammar mode wired as a DNF-object policy with contiguity checks.
 
 | | **useGrammar="none"** | **useGrammar="shamathaSpeech" target** | **useGrammar="all"** |
 |---|---|---|---|
-| **useButterflies=false** | Flat shared sigma (default) | DNF object grammar + contiguity | Grammar-directed composition |
-| **useButterflies=true** | Pairwise butterfly mixing | TBD shape/policy | excluded |
+| Behavior | Flat shared sigma (default) | DNF object grammar + contiguity | Grammar-directed composition |
 
-### Flat (both false)
+### Flat (useGrammar="none")
 
 A single shared PiLayer (P↔C) and SigmaLayer (C↔S) on a concatenated
 `[percepts, symbols]` tensor at every conceptual order. All orders share one
@@ -134,20 +131,9 @@ Per iteration `t`:
 Key: all conceptual orders share one undifferentiated symbolic space; no way
 to tell from a symbol vector alone which order produced it.
 
-### Butterfly (useButterflies=true, useGrammar="none")
+### Grammar-directed (useGrammar="all")
 
-Butterfly-mode layers permute inputs, pack adjacent pairs, apply the layer,
-unpack, and merge — halving `N` at each conceptual order while keeping `D`
-constant. Merge is internal; the reverse path inverts each stage exactly.
-Requires `<reconstruct>symbols</reconstruct>`.
-
-Analogous to V1→V2→V4→IT in visual cortex; pairwise mixing lets information
-flow across the slot axis — suitable for tasks like XOR where information at
-different slots must collide.
-
-### Grammar-directed (useButterflies=false, useGrammar="all")
-
-Progressive-bottleneck path with external pair-average merge (`_butterfly_merge`
+Progressive-bottleneck path with external pair-average merge (`_pair_merge`
 caching `left - right` diffs in `_merge_diffs`), per-level indexed
 Sigma/Pi (`conceptualSpace[t]` / `symbolicSpace[t]`), and cached symbol
 feedback. Symbol dimension geometrically partitioned per order — gives
@@ -158,7 +144,7 @@ Forward:
 
 ```
 for t in range(conceptualOrder):
-    x = butterfly_merge(x)               # halve vector count (external)
+    x = pair_merge(x)                    # halve vector count (external)
     x = x + sym_feedback                 # additive feedback
     concepts = conceptualSpace[t](x)     # per-level sigma
     symbols  = symbolicSpace[t](concepts) # per-level pi
@@ -172,11 +158,11 @@ x = symbolicSpace[last].reverse(sym_vec)
 for t in reversed(range(conceptualOrder)):
     x = conceptualSpace[t].reverse(x)
     x = x - cached_feedback[t]           # undo additive feedback
-    x = butterfly_unmerge(x)             # restore vector count
+    x = pair_unmerge(x)                  # restore vector count
 ```
 
-Butterfly unmerge uses cached `_merge_diffs` to recover both originals from
-each averaged pair — inverse is exact.
+Pair-unmerge uses cached `_merge_diffs` to recover both originals from each
+averaged pair — inverse is exact.
 
 ## Configuration
 
@@ -184,7 +170,6 @@ each averaged pair — inverse is exact.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<conceptualOrder>` | `<architecture>` | 1 | Percept→Concept→Symbol iterations |
-| `<useButterflies>` | `<architecture>` | false | Pairwise butterfly mixing with N-halving |
 | `<useGrammar>` | `<WordSpace>` | false | Grammar-directed composition |
 | `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Activation-norm cap driving per-cell trust score in `TruthLayer.record_batch`. Codebook NN lookup at compact time dedupes near-zero/near-duplicate vectors. |
 

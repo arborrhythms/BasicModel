@@ -140,7 +140,7 @@ class TestChunkLayerBPE(unittest.TestCase):
 
         batch = _byte_tensor(["hello"], width=8)
         B, N = batch.shape
-        torch.manual_seed(0)
+
         data = torch.randn(B, N, 4)
         original_before_mutation = data.clone()
 

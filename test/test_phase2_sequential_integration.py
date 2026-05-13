@@ -32,7 +32,7 @@ def _model(masked_prediction=None):
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     if masked_prediction is not None:
         model.masked_prediction = masked_prediction
@@ -133,7 +133,7 @@ def test_basic_model_ar_sequential_path():
     from data import TheData
     from Models import BaseModel, BasicModel
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     if not isinstance(model, BasicModel):
         pytest.skip("MM_xor.xml resolves to BasicModel; AR test requires BasicModel")

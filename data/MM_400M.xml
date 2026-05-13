@@ -3,12 +3,10 @@
   <!-- MM_1B: Enhanced MM_5M scaled to ~1B params.
        True MM_5M architecture: low-dim percepts/symbols (4), high-dim
        conceptual lifting (16 verbs x 7296^2 = ~852M params).
-       Butterfly path: pair_dim=8, conceptualOrder=14.
        BPE chunk merging: 1024 bytes -> 512 percepts.
        Volume: 512 percepts x 4 = 512 symbols x 4. -->
   <architecture>
     <conceptualOrder>4</conceptualOrder>
-    <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>

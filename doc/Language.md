@@ -38,13 +38,15 @@ InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  Out
 > the inside pass, so per-word snap returns `(word_id, POS)`
 > simultaneously — no separate POS tagger needed.
 >
-> Under that refactor, the chart's launch site moves from S to C
-> (with S retained as a "calculator" reachable via a per-reduce
-> dispatch buffer for relational ops like `query` / `equals` / `part`).
-> See [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
-> for the resolved design decisions and implementation outline.
-> Today's document describes the batched-CKY architecture that's
-> still in place.
+> The chart's launch site is at C (over `ConceptualSpace.stm` snapshot)
+> rather than at S (with S retained as a "calculator" reachable via a
+> per-reduce dispatch buffer for relational ops like `query` / `equals`
+> / `part`). The 2026-05-12 refactor retired the legacy
+> `ChartCompose` / `ChartGenerate` stem modules; `_chart_compose_at_C`
+> fires inside every body stage and `_chart_generate_from_stm` mirrors
+> it on the reverse path. See
+> [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
+> for the original handoff spec.
 
 ### Tiers (P / C / S / L)
 

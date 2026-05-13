@@ -3,15 +3,12 @@
   <!-- LM_5M: grammar-driven sibling of MM_5M.
 
        Same data / dim budget as MM_5M, but:
-         * useButterflies=false   (constituency structure replaces the
-                                   N-halving butterfly permutations)
          * useGrammar=all         (per-space SyntacticLayers dispatch
                                    on the chart's rule selections, not
                                    the unary pi/sigma defaults)
          * conceptualOrder=1      (the per-stage Sigma-Pi cascade is
                                    replaced by single-stage chart-driven
-                                   composition; useButterflies+useGrammar
-                                   are mutually exclusive at order > 1)
+                                   composition)
          * softChartCompose=true  (CKY inside pass populates current_rules)
          * <wMax>                 (must be set explicitly because the
                                    chart's default w_max=8 would silently
@@ -30,8 +27,7 @@
     <!-- conceptualOrder=3: per-stage Sigma-Pi cascade depth.  At least 3
          to give the chart a reasonable tree depth (each conceptual stage
          is one level of the constituency hierarchy; 3 stages cover S ->
-         NP/VP -> N/V/AP -> word).  useButterflies must stay false at
-         order > 1 because Models.py forbids butterfly+useGrammar='all'. -->
+         NP/VP -> N/V/AP -> word). -->
     <conceptualOrder>3</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
@@ -46,13 +42,10 @@
          pipeline is reliable enough to commit assertions. -->
     <mereologicalTreeSize>1024</mereologicalTreeSize>
 
-    <!-- Per-stage chart re-parse: each conceptualOrder stage runs
-         its own chart pass on the previous stage's symbolic output.
-         Compounds the chart's compositional capacity across stages
-         (stage 0 parses words, stage 1 phrases, stage 2 clauses)
-         instead of consuming one parse three times.  Cost: chart
-         runs T times per batch (T = conceptualOrder). -->
-    <perStageChartReparse>true</perStageChartReparse>
+    <!-- Per-stage chart firing is now built into the per-word stem
+         + chart-at-C body (see Architecture.md): each conceptualOrder
+         stage fires the chart at C-tier over the STM buffer. The
+         legacy perStageChartReparse knob was retired 2026-05-12. -->
 
     <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
          Penalises CV² of per-rule activation counts so the noisy
@@ -113,11 +106,9 @@
     <wordLearning>0</wordLearning>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: 3 stages (conceptualOrder=3 above) replace
-       MM_5M's 8-level hierarchical butterfly.  The chart's CKY-driven
-       composition is the structural replacement for the per-stage
-       Sigma-Pi cascade; 3 stages give the chart enough tree depth for
-       basic constituency (S, NP/VP, word). -->
+  <!-- ConceptualSpace: 3 stages (conceptualOrder=3 above). The chart's
+       CKY-driven composition gives 3 stages enough tree depth for basic
+       constituency (S, NP/VP, word). -->
   <ConceptualSpace>
     <nOutput>1024</nOutput>
     <nDim>6</nDim>

@@ -78,7 +78,7 @@ class TestNegationLayer(unittest.TestCase):
 
     def test_negation_pi_sigma_stack_is_dnf_ordered(self):
         """The no-grammar stack has the DNF order: literals -> Pi -> Sigma."""
-        torch.manual_seed(0)
+
         neg = Layers.NegationLayer(2)
         pi = Layers.PiLayer(4, 3, invertible=True, monotonic=True, nonlinear=True)
         sigma = Layers.SigmaLayer(3, 1, invertible=True, monotonic=True, nonlinear=True)

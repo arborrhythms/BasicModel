@@ -230,16 +230,14 @@ Each stage leaves the test suite green.
    instead of `[B, V_S, D_S]`; verify trust-score still makes sense on
    bivector poles. Surfaces in Stage 6.
 
-## Note A — Butterflies stay (deferred)
+## Note A — Butterflies removed (2026-05-12 follow-up)
 
-The bivector regime can't satisfy the volume-equality check (`nPercepts ×
-state_dim == nSymbols × symbol_width`). Rather than trim now, butterflies
-stay in place for legacy configs (MM_5M, MM_400M, MM_xor's pre-bivector
-flavor); bivector configs set `<useButterflies>false</useButterflies>`.
-Butterfly removal is a follow-up.
-
-Don't touch `_create_per_stage`'s butterfly branch, `ButterflyLayer`, or the
-`validate_config` volume-equality check.
+Butterfly mode (`<useButterflies>true</useButterflies>`) has been retired
+wholesale. The `_butterfly_*` machinery in Layers.py, the `useButterflies`
+XML knob, and the volume-equality validation are all gone. Configs that
+previously relied on butterfly halving (MM_5M, MM_400M, MM_xor's
+pre-bivector flavor) now use the plain per-stage path. See the Butterfly
+Removal handoff for the migration log.
 
 ## Current state at handoff
 

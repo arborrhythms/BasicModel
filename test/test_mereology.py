@@ -230,11 +230,15 @@ class TestCopyLayer(unittest.TestCase):
         self.assertTrue(torch.equal(SwapLayer().forward(a, b), b))
         self.assertTrue(torch.equal(CopyLayer().forward(a, b), a))
 
-    def test_old_phase1b_layers_removed(self):
-        # The Phase 1b GrammarLayer scaffolding for area / luminosity
-        # was reverted when those measures migrated to Mereology.
-        self.assertNotIn('area', GRAMMAR_LAYER_CLASSES)
-        self.assertNotIn('luminosity', GRAMMAR_LAYER_CLASSES)
+    def test_introspection_layers_registered(self):
+        # The 2026-05-12 conceptual-introspection refactor restored
+        # ``area`` / ``luminosity`` / ``directPartOf`` as first-class
+        # GrammarLayers (see test_conceptual_introspection.py).  The
+        # measures still live on the Mereology mixin; the layers wrap
+        # them as chart-dispatch entry points.
+        self.assertIn('area', GRAMMAR_LAYER_CLASSES)
+        self.assertIn('luminosity', GRAMMAR_LAYER_CLASSES)
+        self.assertIn('directPartOf', GRAMMAR_LAYER_CLASSES)
 
 
 class TestSTEAnswer(unittest.TestCase):

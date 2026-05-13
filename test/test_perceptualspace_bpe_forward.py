@@ -23,7 +23,6 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
 <model>
   <architecture>
     <conceptualOrder>2</conceptualOrder>
-    <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>

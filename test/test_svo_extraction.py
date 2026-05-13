@@ -43,7 +43,7 @@ def _isolated_grammar(rules):
 
 class TestChartExtractSVO(unittest.TestCase):
     def setUp(self):
-        torch.manual_seed(0)
+
         _isolated_grammar(_SVO_GRAMMAR)
         self.chart = Chart(
             nInput=4, max_depth=4, hidden_dim=16, D_rule=4,

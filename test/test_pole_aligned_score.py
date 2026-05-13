@@ -48,7 +48,7 @@ class TestPoleAlignedArgmax(unittest.TestCase):
     antipode equivalence for normalized vectors."""
 
     def test_argmax_matches_wrapped_mse_on_unit_codebook(self):
-        torch.manual_seed(0)
+
         # Generate a unit-norm codebook far from the antipode boundary
         # (so wrap doesn't kick in) and queries that are perturbations
         # of codebook entries.
@@ -86,7 +86,7 @@ class TestArgmaxParityForLookupShapes(unittest.TestCase):
     agree on argmax with high probability."""
 
     def test_snap_content_call_shape(self):
-        torch.manual_seed(0)
+
         D, V, N_active = 6, 256, 64
         cb = _unit_norm(torch.randn(V, D))
         # ``_snap_content`` truncates to ``nWhat`` columns; mirror that.
@@ -102,7 +102,7 @@ class TestArgmaxParityForLookupShapes(unittest.TestCase):
                            f"argmax agreement {agree:.2f} below threshold")
 
     def test_nearest_idx_call_shape(self):
-        torch.manual_seed(0)
+
         D, V = 6, 1024
         cb = _unit_norm(torch.randn(V, D))
         target = torch.randint(0, V, (1,))

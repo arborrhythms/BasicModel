@@ -58,7 +58,6 @@
       <!-- embeddingPath retired 2026-05-12: embeddings now live inside
            the single .ckpt bundle, not a separate .kv artifact. -->
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
-      <xs:element name="useButterflies" type="xs:boolean" minOccurs="0"/>
       <xs:element name="monotonic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
@@ -87,9 +86,9 @@
            tapered = geometrically narrowing slices (default);
            uniform = equal-width slices. -->
       <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
-      <!-- Per-stage chart re-parse (LM_5M-style): chart runs once per
-           conceptualOrder stage, compounding compositional capacity. -->
-      <xs:element name="perStageChartReparse" type="xs:boolean" minOccurs="0"/>
+      <!-- Per-stage chart re-parse retired 2026-05-12 alongside chart-
+           at-stem.  The chart now fires uniformly at C-tier inside
+           every body stage; the legacy reparse knob is no longer read. -->
       <!-- MereologicalTree capacity (matches SymbolicSpace.nVectors). -->
       <xs:element name="mereologicalTreeSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Optional: dump POS-labelled syntax tree at end of every
@@ -482,10 +481,11 @@
       <xs:element name="chartTopK" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Gaussian noise epsilon for chartTopK gating. -->
       <xs:element name="chartNoiseEps" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Per-word stem: each word does an individual P->C->S->C round
-           trip in the stem, ideas accumulate on ConceptualSpace.stm,
-           and the chart fires at C over STM in the body. -->
-      <xs:element name="perWordStem" type="xs:boolean" minOccurs="0"/>
+      <!-- Per-word stem is the only path. Each word does an individual
+           P->C->S->C round trip in the stem, ideas accumulate on
+           ConceptualSpace.stm, and the chart fires at C over STM in the
+           body. ``perWordStem`` knob removed 2026-05-12; legacy chart-
+           at-stem launch retired in the same pass. -->
       <!-- Number of P->C iterations per word in the per-word stem path. -->
       <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Downward generation: when true, MentalModel.forward() emits a

@@ -427,7 +427,7 @@ def auto_compile_mode():
     the no-cudagraphs autotune and eager, with much smaller tails
     (max-autotune max=42s vs no-cudagraphs max=204s). Re-bench when
     architecture changes meaningfully (new spaces, conceptualOrder,
-    butterfly width) since shape diversity drives the trade-off.
+    N-halving width) since shape diversity drives the trade-off.
     """
     override = os.environ.get("MODEL_COMPILE_MODE", "").strip().lower()
     if not override:
@@ -581,8 +581,8 @@ def compile(model, verbose=True):
     Set ``MODEL_COMPILE_MODE=reduce-overhead`` (or ``max-autotune``) to
     opt into CUDAGraph capture. The CUDAGraph-bearing modes recompile
     per distinct static shape; for architectures with many shapes
-    (butterfly / N-halving / conceptualOrder), wall-clock can be
-    dominated by per-shape capture. ``default`` skips that entirely.
+    (N-halving / conceptualOrder), wall-clock can be dominated by
+    per-shape capture. ``default`` skips that entirely.
 
     Patches inductor compile commands first when paths contain spaces.
     """

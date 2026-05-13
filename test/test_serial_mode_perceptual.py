@@ -29,7 +29,7 @@ def _xor_input():
 
 def _build(serial_mode):
     TheData.load("xor")
-    torch.manual_seed(0)
+
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     m.serial_mode = serial_mode
     m.perceptualSpace.serial_mode = serial_mode

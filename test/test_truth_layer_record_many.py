@@ -44,7 +44,7 @@ def test_record_batch_matches_record_loop_high_trust():
     """``record_batch`` + ``compact`` matches a record-per-entry loop
     when every cell has high trust (above the compact threshold).
     """
-    torch.manual_seed(0)
+
     D = 8
     N = 6
     activations = torch.randn(N, D)
@@ -78,7 +78,7 @@ def test_record_batch_low_trust_dropped_at_compact():
     grow the store. Here we test the simpler trust-threshold fence at
     ``compact()``: low-trust entries are filtered out.
     """
-    torch.manual_seed(1)
+
     D = 8
     N_high = 3
     N_low = 5
@@ -101,7 +101,7 @@ def test_record_batch_dot_scaling_negative_degree_bivector():
     """For ``degree<0`` with a monotonic basis, ``record_batch`` uses
     the bivector-aware path (paired-index flip), matching ``record``.
     """
-    torch.manual_seed(2)
+
     K = 3
     D = 2 * K  # even, monotonic-ready
 

@@ -42,7 +42,7 @@ def test_brick_runBatch_zero_dtoh_events():
 
     config = str(_project / "data" / "MM_xor.xml")
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(config, data=TheData)
     model = model.to('cuda')
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)

@@ -151,10 +151,12 @@ def test_wordspace_owns_chart_and_registry():
 
 # --- Pipeline integration -------------------------------------------
 
-def test_chartcompose_and_chartgenerate_in_pipeline():
-    """ChartCompose / ChartGenerate are inserted into the AR-mode
-    forward / reverse pipelines (Step 6 wiring)."""
-    from Models import ChartCompose, ChartGenerate
+def test_chart_fires_at_C_inside_body():
+    """Post-2026-05-12: the chart fires at C-tier inside ``_forward_body``
+    (via ``_chart_compose_at_C``) and at C-tier inside the reverse
+    pipeline (via ``_chart_generate_from_stm``).  The legacy stem-level
+    ChartCompose / ChartGenerate modules were retired in the same pass.
+    """
     import test_basicmodel as tb
     import Models
 
@@ -170,14 +172,18 @@ def test_chartcompose_and_chartgenerate_in_pipeline():
     m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
              nOutput=8, masked_prediction='AR')
 
-    # ChartCompose and ChartGenerate are now module attributes
-    # (``_chart_compose`` / ``_chart_generate``) called inside
-    # ``_forward_stem`` / ``_run_pipeline_rev``, not children of a
-    # ``pipeline_stem`` Sequential.
-    assert isinstance(m._chart_compose, ChartCompose), (
-        f"_chart_compose not a ChartCompose: {type(m._chart_compose).__name__}")
-    assert isinstance(m._chart_generate, ChartGenerate), (
-        f"_chart_generate not a ChartGenerate: {type(m._chart_generate).__name__}")
+    # The new chart-firing surface is per-stage at C-tier inside the
+    # body. ``_chart_compose_at_C`` and ``_chart_generate_from_stm``
+    # are instance methods on BasicModel; the legacy stem modules
+    # ``_chart_compose`` / ``_chart_generate`` are gone.
+    assert hasattr(m, '_chart_compose_at_C'), (
+        "BasicModel must expose ``_chart_compose_at_C`` for chart-at-C wiring")
+    assert hasattr(m, '_chart_generate_from_stm'), (
+        "BasicModel must expose ``_chart_generate_from_stm`` for the reverse mirror")
+    assert not hasattr(m, '_chart_compose'), (
+        "Legacy ``_chart_compose`` module should have been removed")
+    assert not hasattr(m, '_chart_generate'), (
+        "Legacy ``_chart_generate`` module should have been removed")
 
 
 # --- GrammarLayer registry (Step 8) ---------------------------------

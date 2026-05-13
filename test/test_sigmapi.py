@@ -99,7 +99,7 @@ class TestPiSigmaXOR(unittest.TestCase):
         from itertools import chain
         best_loss = float('inf')
         for seed in (33, 3, 123, 99, 42, 7, 11, 2024, 17):
-            torch.manual_seed(seed)
+
             pi = Layers.PiLayer(2, 4, nonlinear=True)
             sigma = Layers.SigmaLayer(4, 1, nonlinear=True)
             pi.set_sigma(0)
@@ -136,7 +136,6 @@ class TestTanhFreePiSigmaXORTestpoint(unittest.TestCase):
             device=TheDevice.get(),
         )
 
-        torch.manual_seed(0)
         pi = Layers.PiLayer(2, 8, nonlinear=False)
         sigma = Layers.SigmaLayer(8, 1, nonlinear=False)
         pi.set_sigma(0)

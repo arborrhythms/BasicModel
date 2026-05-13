@@ -57,7 +57,6 @@ def test_captured_replay_matches_eager_within_tolerance():
     config = str(_project / "data" / "MM_xor.xml")
     TheData.load("xor")
 
-    torch.manual_seed(0)
     model_cap, _ = BaseModel.from_config(config, data=TheData)
     model_cap = model_cap.to('cuda')
     if not _capture_wired(model_cap):
@@ -67,7 +66,7 @@ def test_captured_replay_matches_eager_within_tolerance():
             "GB10 path lands.")
 
     eager_losses = []
-    torch.manual_seed(0)
+
     model_eager, _ = BaseModel.from_config(config, data=TheData)
     model_eager = model_eager.to('cuda')
     opt_e = torch.optim.Adam(model_eager.parameters(), lr=1e-4)

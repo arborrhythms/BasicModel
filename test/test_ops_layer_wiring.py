@@ -42,7 +42,10 @@ from Layers import Ops, PiLayer, SigmaLayer
 
 
 def _set_seed(seed=0):
-    torch.manual_seed(seed)
+    """No-op: seed-defeated determinism was removed from these tests on
+    2026-05-12 so the assertions exercise learning robustness, not
+    init-pinned reproducibility."""
+    return None
 
 
 class TestTop2SelectSTE(unittest.TestCase):

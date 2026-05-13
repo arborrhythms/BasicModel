@@ -264,7 +264,7 @@ class TestExtrapolate(unittest.TestCase):
         # clamped cosine projection collapses to 0 and no candidates
         # are produced. This is a property of the kernel, not a
         # regression: seed for stability.
-        torch.manual_seed(0)
+
         t1 = torch.randn(D)
         t2 = torch.randn(D)
         # Force a positive correlation so part(t1, t2) > 0.
@@ -285,7 +285,7 @@ class TestExtrapolate(unittest.TestCase):
 class TestWriteMask(unittest.TestCase):
 
     def test_partition_isolation(self):
-        """After butterfly forward, each order's partition should be isolated."""
+        """After forward, each order's partition should be isolated."""
         model = _make_model('RamsifiedModel.xml')
 
         truth_layer = model._get_truth_layer()

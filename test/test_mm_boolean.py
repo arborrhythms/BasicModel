@@ -65,7 +65,7 @@ class TestMMBoolean(unittest.TestCase):
 
             best_loss = float('inf')
             for seed in (42, 123, 7):
-                torch.manual_seed(seed)
+
                 m, _, data = _fresh_model()
                 n_train = len(data.train_input)
                 self.assertGreater(n_train, 0,
@@ -127,7 +127,7 @@ class TestMMBoolean(unittest.TestCase):
             warnings.filterwarnings("ignore")
             best = {"val_loss": float("inf"), "preds": None}
             for seed in (13, 42, 123, 7):
-                torch.manual_seed(seed)
+
                 m, _, data = _fresh_model()
                 n_train = len(data.train_input)
                 optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
@@ -222,7 +222,7 @@ class TestMMBoolean(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            torch.manual_seed(42)
+
             m, _, data = _fresh_model()
             n_train = len(data.train_input)
             optimizer = torch.optim.Adam(m.parameters(), lr=0.01)

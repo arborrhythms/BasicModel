@@ -34,7 +34,7 @@ _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 
 
 def _train(seed=42, epochs=400):
-    torch.manual_seed(seed)
+
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
     cfg = TheXMLConfig.data

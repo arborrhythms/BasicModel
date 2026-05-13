@@ -180,7 +180,7 @@ def run_experiment():
     for idx, cfg in enumerate(ergodic_configs):
         label = cfg["label"]
         print(f"\n[A{idx+1}] {label}")
-        torch.manual_seed(42)
+
         m = create_model(ergodic=cfg["ergodic"])
 
         # Check what getOptimizer returns for ergodic
@@ -212,7 +212,7 @@ def run_experiment():
         nCon = nSym  # keep conceptual and symbolic same width
         label = f"nSym={nSym} nCon={nCon}"
         print(f"\n[B] {label}")
-        torch.manual_seed(42)
+
         m = create_model(ergodic=False, nSymbols=nSym, nConcepts=nCon)
 
         buf = io.StringIO()

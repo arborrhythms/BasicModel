@@ -202,7 +202,6 @@ def run_experiment():
                 print(f"[{run_idx}/{total}] {label}")
                 print(f"{'='*60}")
 
-                torch.manual_seed(42)
                 m = create_model(ergodic=erg)
                 alpha_fn = ALPHA_SCHEDULES[sched_name]
 

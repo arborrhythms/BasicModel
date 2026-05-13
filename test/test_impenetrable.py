@@ -50,7 +50,7 @@ class TestOverlapPenalty(unittest.TestCase):
 
     def test_disjoint_codebook_zero_loss(self):
         """Orthogonal rows -- no overlap -> zero overlap loss regardless of trust."""
-        torch.manual_seed(0)
+
         K, D = 4, 4
         cb = torch.eye(K, D)
         basis = _attach_vq(_basis(K=K, D=D), [1.0, 2.0, 3.0, 4.0])
@@ -113,7 +113,7 @@ class TestOverlapPenalty(unittest.TestCase):
 
     def test_relation_counts_partition_non_diagonal(self):
         """Sum of the five relation counts equals K*(K-1) (all ordered off-diagonal pairs)."""
-        torch.manual_seed(5)
+
         K, D = 5, 4
         cb = torch.randn(K, D)
         basis = _attach_vq(_basis(K=K, D=D), [1.0] * K)
@@ -138,7 +138,7 @@ class TestVarianceFloor(unittest.TestCase):
         self.assertAlmostEqual(loss.item(), 0.1, places=5)
 
     def test_well_spread_no_penalty(self):
-        torch.manual_seed(4)
+
         K, D = 8, 5
         cb = torch.rand(K, D)
         basis = _basis(K=K, D=D)

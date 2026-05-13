@@ -1,5 +1,5 @@
-"""Side-by-side perf: MM_5M_IR (butterflies, useGrammar=none) vs
-LM_5M (grammar=all, conceptualOrder=3) under pure IR mode.
+"""Side-by-side perf: MM_5M_IR (useGrammar=none) vs LM_5M
+(grammar=all, conceptualOrder=3) under pure IR mode.
 
 Each config runs in its own subprocess so module-level singletons
 (TheData, TheXMLConfig, TheGrammar) start fresh.  Forces CPU + small
@@ -47,7 +47,7 @@ def time_one(config_path, label):
 
 results = []
 for label, cfg in [
-    ("MM_5M_IR (butterflies, useGrammar=none, IR)",
+    ("MM_5M_IR (useGrammar=none, IR)",
      str(PROJECT / "data" / "MM_5M_IR.xml")),
     ("LM_5M (grammar=all, conceptualOrder=3, IR)",
      str(PROJECT / "data" / "LM_5M.xml")),

@@ -4,7 +4,6 @@
        progressive bottleneck. 8 levels from 1024x4 to 4x1024 (N*D=4096). -->
   <architecture>
     <conceptualOrder>3</conceptualOrder>
-    <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>

@@ -12,7 +12,7 @@ def _trivial_op(left, right):
 
 def test_compact_hard_lengths_match_viterbi_route():
     B, N, D = 2, 6, 4
-    torch.manual_seed(0)
+
     x = torch.randn(B, N, D)
     reduced = _trivial_op(x[:, :-1], x[:, 1:])
     copy_score = torch.randn(B, N, 1)

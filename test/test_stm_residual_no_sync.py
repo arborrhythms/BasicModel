@@ -60,7 +60,7 @@ def test_stm_residual_microbatch_runs_when_all_fired():
 
     config = str(_project / "data" / "MM_xor.xml")
     TheData.load("xor")
-    torch.manual_seed(0)
+
     model, _ = BaseModel.from_config(config, data=TheData)
     ws = model.wordSpace
 
