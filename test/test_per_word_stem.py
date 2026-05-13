@@ -113,6 +113,64 @@ def test_per_word_stem_sentence_boundary():
     assert torch.allclose(stm._truth_tags[0], torch.zeros_like(stm._truth_tags[0]))
 
 
+def test_per_word_stem_quantization_count_matches_word_count():
+    """Per-word symbolic quantization invariant: the S codebook's
+    ``forward(project=True)`` and ``reverse(project=True)`` fire
+    exactly once per word slot. This locks the architectural contract
+    that words are quantized one-by-one as they land on STM.
+    """
+    m = _build_per_word_stem()
+    cb = m.symbolicSpace.subspace.what
+    call_log = {"fwd": 0, "rev": 0}
+    orig_fwd = cb.forward
+    orig_rev = cb.reverse
+
+    def trace_fwd(*args, **kwargs):
+        if kwargs.get("project"):
+            call_log["fwd"] += 1
+        return orig_fwd(*args, **kwargs)
+
+    def trace_rev(*args, **kwargs):
+        if kwargs.get("project"):
+            call_log["rev"] += 1
+        return orig_rev(*args, **kwargs)
+
+    cb.forward = trace_fwd
+    cb.reverse = trace_rev
+    m.forward(_xor_input())
+    stm_depth = m.conceptualSpace.stm.size(0)
+    assert stm_depth > 0, "STM should hold at least one idea per word."
+    # The per-word loop fires the codebook snap exactly once per slot
+    # (project=True forward and reverse pair).
+    assert call_log["fwd"] == stm_depth, (
+        f"codebook.forward(project=True) fired {call_log['fwd']} times; "
+        f"expected one per STM slot ({stm_depth}).")
+    assert call_log["rev"] == stm_depth, (
+        f"codebook.reverse(project=True) fired {call_log['rev']} times; "
+        f"expected one per STM slot ({stm_depth}).")
+
+
+def test_per_word_stem_codebook_distinguishes_distinct_inputs():
+    """Per-word quantization invariant: distinct C-tier inputs produce
+    distinct bivector snaps. Asserts the codebook is not a degenerate
+    constant function — given different inputs, ``cb.forward(project=True)``
+    returns different bivectors. This is the substrate guarantee that
+    word-by-word quantization can carry meaningful per-word identity
+    once the C-tier transform itself is non-degenerate.
+    """
+    m = _build_per_word_stem()
+    cb = m.symbolicSpace.subspace.what
+    torch.manual_seed(0)
+    c1 = torch.randn(1, 1, cb.nDim) * 0.5
+    c2 = torch.randn(1, 1, cb.nDim) * 0.5
+    snap1 = cb.forward(c1, project=True)
+    snap2 = cb.forward(c2, project=True)
+    diff = (snap1 - snap2).abs().max().item()
+    assert diff > 1e-3, (
+        f"codebook is degenerate: distinct C-tier inputs produced "
+        f"identical bivector snaps (max-diff={diff:.6f}).")
+
+
 def test_per_word_stem_iterations_per_word_idempotent():
     """iterations_per_word > 1 gives an idempotent C-tier idea under
     the SVD-orthogonal codebook fixed point (the per-word loop reuses
