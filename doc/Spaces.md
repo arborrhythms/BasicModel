@@ -66,6 +66,100 @@ compute brick — see [Architecture.md](Architecture.md)).
 
 ---
 
+## Sigma / Pi ownership (2026-05-13 rebalance)
+
+The two composition operators sigma and pi live on the spaces in a
+**fixed isomorphic pattern**.  Each space owns only the operator that
+fits its tier; the cross-tier feedback loops thread through those
+operators unconditionally; the **chart's role is to invoke the loop, not
+to dispatch a separate substrate per rule**.
+
+| Space | Owns | Used in `.forward(IS, CS)` / `.forward(PS, SS)` |
+|---|---|---|
+| **PerceptualSpace** | `pi_input` (`input_dim → percept_dim`) and `pi_concept` (`concept_dim → percept_dim`) | both fire unconditionally each forward; their outputs are **summed** (no /2 averaging) |
+| **ConceptualSpace** | `sigma_percept` (`percept_dim → concept_dim`) only | fires unconditionally on the PS argument; the SS argument has **no default fold layer** |
+| **SymbolicSpace** | (none) | grammar operations only (`intersection`, `union`, `lift`, `lower`, …) — no default sigma or pi |
+
+**Composition** (the end-to-end fold from input to concept):
+
+```
+C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )
+```
+
+where `C_prev` is the prior C-tier event fed back via the subsymbolic
+loop.  At the very first forward of a sentence, `C_prev` is zero/empty,
+so `pi_concept(0) = 0` and the formula degenerates to
+`C = sigma_percept(pi_input(IS))`.
+
+### Why the subsymbolic loop fires unconditionally
+
+The earlier design dispatched `pi_concept` only when the chart's
+syntactic dispatch fired a "lowering" grammar rule.  We collapsed that
+into **unconditional firing** for two reasons:
+
+1. **Cognitive parsimony.**  "the running boy" (lowering, attribution)
+   and "the boy runs" (lifting, predication) involve the **same neural
+   composition act** — fusing a noun representation with a verb
+   representation into a single bound state.  The linguistic distinction
+   between lift and lower is a *labelling* over a shared composed state,
+   not a different composition primitive.  Making `pi_concept` fire
+   unconditionally puts the composition machinery at the substrate
+   layer, where it can be invoked once and re-read by any number of
+   downstream grammar-driven framings.
+
+2. **Idempotence of the symbolic loop.**  `cs.forward(ss.forward(c)) ==
+   c` — SS is a dimensional pass-through (no default sigma/pi at S),
+   and the grammar's S-tier ops are idempotent in their algebra, so
+   routing a C-activation through SS and back through CS leaves it
+   unchanged.  That's why CS owns only **one sigma** (for PS) — there
+   is no fold needed on the SS side; SS already returns what C handed
+   it.  An unconditional `pi_concept` therefore can't double-apply
+   across the symbolic loop's round-trip.
+
+### Where lift vs lower lives, if not at the substrate
+
+The cognitively-real distinction between
+**attribution** ("the running boy") and **predication** ("the boy
+runs") is preserved at three downstream sites:
+
+1. **Parse tree / rule_id metadata** *(primary)* — the chart records
+   *"this composition fired under rule `lift`"* vs *"under rule
+   `lower`"*; the truth layer and output decoder read the `rule_id` to
+   interpret the composed state.  This is the cheapest, structural
+   distinction and matches the linguistic view that lift/lower is a
+   **derivational labelling** over a shared operation.
+2. **Per-slot catuskoti tag** on `STM._truth_tags` — secondary
+   metadata stamp; useful when downstream readers need O(1) access to
+   role without traversing the parse tree.
+3. **Category stack frames** in `WordSpace` — each composition pushes
+   a stack frame tagged with category; NP-frames are attribution
+   outcomes, S-frames predication.
+
+`LiftLayer` and `LowerLayer` are therefore **pure rule-id
+annotators**.  They do *not* own internal substrate sigma/pi layers
+(the legacy "borrowed substrate" pattern is retired); they record the
+rule firing and let the unconditional subsymbolic loop compute the
+composed state.
+
+### Grammar XML migration
+
+The old rule names matched the **old** ownership (`P = sigma(P)`,
+`C = pi(C)`); under the new rebalance they're inverted at the operator
+level.  Rules re-label as:
+
+| Old | New | Meaning |
+|---|---|---|
+| `P = sigma(P)` | `P = pi(IS)`            | `pi_input` always fires |
+| (none)         | `P = lower(C)`          | `pi_concept`; grammar can also fire `lower` as an S-tier rule that records the lowering role |
+| `C = pi(C)`    | `C = sigma(PS)`         | `sigma_percept` always fires |
+| `S = lift(NP, VP)` | unchanged           | now a rule-id annotator over the same loop |
+| `S = lower(NP, VP)` | unchanged          | rule-id annotator |
+
+Legacy XMLs keep working via an alias layer in the rule parser that
+maps old names to new layer bindings (parser-side, no runtime cost).
+
+---
+
 ## Normalization and Ranges
 
 | Space | Data Contract | Geometry |

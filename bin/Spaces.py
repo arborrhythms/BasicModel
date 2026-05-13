@@ -6130,8 +6130,11 @@ class InputSpace(Space):
                 # drift). ``_embed_bpe`` does the right thing: BPE
                 # chunk + MAX-fuse using the frozen codebook keyed by
                 # latin-1 byte-tuples.
-                if getattr(peer, 'chunking_mode', None) == "bpe":
+                peer_mode = getattr(peer, 'chunking_mode', None)
+                if peer_mode == "bpe":
                     peer._embed_bpe(self.subspace)
+                elif peer_mode == "none":
+                    peer._embed_byte(self.subspace)
                 else:
                     peer._embed(self.subspace)
                 embedded = peer._embedded_input
@@ -6151,10 +6154,15 @@ class InputSpace(Space):
         # always True for muxed events (where/when components are
         # nonzero even at padding positions) and would make every
         # window look valid.
+        #
+        # ``chunking=none`` (byte-direct) installs the same
+        # ``_bpe_word_mask`` attribute via ``(byte_indices != 0)``;
+        # the windowed view is identical so we accept it here under
+        # the same name.
         peer = self._peer_perceptual
         bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                     if peer is not None
-                    and getattr(peer, "chunking_mode", None) == "bpe"
+                    and getattr(peer, "chunking_mode", None) in ("bpe", "none")
                     else None)
 
         if is_runtime_arir:
@@ -6640,9 +6648,9 @@ class PerceptualSpace(Space):
             )
         except KeyError:
             self.chunking_mode = "lexicon"
-        if self.chunking_mode not in ("bpe", "lexicon"):
+        if self.chunking_mode not in ("bpe", "lexicon", "none"):
             raise ValueError(
-                f"PerceptualSpace.chunking must be bpe|lexicon, "
+                f"PerceptualSpace.chunking must be bpe|lexicon|none, "
                 f"got {self.chunking_mode!r}")
         if isinstance(lexical_basis, Embedding):
             lexical_basis.chunking_mode = self.chunking_mode
@@ -6660,6 +6668,24 @@ class PerceptualSpace(Space):
             if self.model_type != "embedding":
                 raise ValueError(
                     "PerceptualSpace.chunking='bpe' requires "
+                    "<modelType>embedding</modelType>")
+        elif self.chunking_mode == "none":
+            # Byte-direct mode: each byte is its own perceptual atom,
+            # looked up via a 256-entry codebook (byte_value ==
+            # codebook_index for 0..255, seeded by the ``\x00``
+            # cold-start at Embedding cold-start; subsequent insert()
+            # calls are blocked downstream when chunking_mode='none').
+            # No BPE walker, no Python trie, no graph break.  ``\0``
+            # (byte 0) doubles as the sentence-end / pad sentinel and
+            # lands at codebook index 0 by design.
+            if self.nVectors < 256:
+                raise ValueError(
+                    f"PerceptualSpace.chunking='none' requires "
+                    f"nVectors>=256 (the 256-entry byte codebook); "
+                    f"got nVectors={self.nVectors}")
+            if self.model_type != "embedding":
+                raise ValueError(
+                    "PerceptualSpace.chunking='none' requires "
                     "<modelType>embedding</modelType>")
         self._recovered_input = None
         self._embedded_input = None
@@ -7399,6 +7425,97 @@ class PerceptualSpace(Space):
         x = self._sparsity(x)
         return x
 
+    def _embed_byte(self, upstream_vspace):
+        """Byte-direct chunking (``<chunking>none</chunking>``).
+
+        Skips the BPE walker entirely.  Each byte from the upstream
+        buffer becomes its own perceptual slot via direct embedding-
+        table lookup at codebook index ``byte_value``.  The
+        Embedding's cold-start path seeds entries 0..255 with
+        ``byte_value == codebook_index`` (see ``NULL_PERCEPT`` seeding
+        and the ``_random_unit_ball`` init at Spaces.py:2520), so this
+        method is just:
+
+            byte_indices = upstream_vspace.what[..., 0]  # [B, N]
+            subspace.set_forward_content(byte_indices, where, when)
+
+        ``\0`` (byte 0) lands at codebook index 0 and doubles as the
+        sentence-end / pad sentinel.  ``_bpe_word_mask`` is derived as
+        ``(byte_indices != 0)`` — pure tensor op, no Python loop, no
+        graph break.  Downstream consumers (PerceptualSpace.forward's
+        AR-window pad-and-unfold path) read the mask the same way they
+        do for BPE mode.
+        """
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_byte: upstream subspace.what is empty. "
+                "InputSpace.forward must lex into subspace.what.W before "
+                "PerceptualSpace.forward runs.")
+
+        dev = TheDevice.get()
+        batch = what_buf.shape[0]
+        nObj = self.outputShape[0]
+
+        if what_buf.dim() == 3:
+            byte_indices = what_buf[..., 0].long()
+        else:
+            byte_indices = what_buf.long()
+        # Defensive clamp: prepInput sometimes uses int8 which sign-
+        # extends negative values for byte > 127; remap to the
+        # canonical [0, 255] range so the codebook lookup hits the
+        # right entry.
+        byte_indices = byte_indices.where(byte_indices >= 0, byte_indices + 256)
+        byte_indices = byte_indices.clamp(0, 255)
+        # Trim / pad to nObj slots.
+        n_upstream = byte_indices.shape[1]
+        if n_upstream > nObj:
+            byte_indices = byte_indices[:, :nObj]
+        elif n_upstream < nObj:
+            pad = torch.zeros(
+                batch, nObj - n_upstream,
+                dtype=byte_indices.dtype, device=byte_indices.device)
+            byte_indices = torch.cat([byte_indices, pad], dim=1)
+
+        # where / when come straight from the upstream buffer (mirror
+        # of ``_embed`` for the lexicon path).
+        where_raw = upstream_vspace.materialize(mode="where")
+        when_raw = upstream_vspace.materialize(mode="when")
+        if self.nWhere > 0:
+            if where_raw is not None:
+                where_indices = where_raw[:, :nObj].long()
+            else:
+                where_indices = torch.zeros(
+                    batch, nObj, dtype=torch.long, device=dev)
+        else:
+            where_indices = None
+        if self.nWhen > 0:
+            if when_raw is not None:
+                when_indices = when_raw[:, :nObj].long()
+            else:
+                when_indices = torch.arange(
+                    nObj, device=dev).unsqueeze(0).expand(batch, -1)
+        else:
+            when_indices = None
+
+        self.subspace.whereEncoding.p = 0
+        self.subspace.set_forward_content(
+            byte_indices, where_indices, when_indices)
+        self.subspace.normalize("input", target="what", normalize=True)
+
+        # Stash the materialized [B, nObj, D] muxed event for
+        # InputSpace.forward to consume (same contract as ``_embed``
+        # and ``_embed_bpe``).
+        self._embedded_input = self.subspace.materialize()
+
+        # Word-boundary mask: bytes != 0 are real.  Matches the
+        # ``_bpe_word_mask`` contract used by InputSpace.forward's AR
+        # unfold so downstream consumers don't need a separate code
+        # path -- the windowed view is identical.
+        self._bpe_word_mask = (byte_indices != 0).to(
+            dtype=torch.float32, device=byte_indices.device)
+        return upstream_vspace
+
     def _read_event(self, sib):
         """Return ``sib.subspace.event`` materialised, or None."""
         if sib is None:
@@ -7517,9 +7634,12 @@ class PerceptualSpace(Space):
                 vspace = self._embed(vspace)
             elif mode == "bpe":
                 vspace = self._embed_bpe(vspace)
+            elif mode == "none":
+                vspace = self._embed_byte(vspace)
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be bpe|lexicon, got {mode!r}")
+                    f"PerceptualSpace chunking must be bpe|lexicon|none, "
+                    f"got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
         # Conceptual loopback: when ``conceptualSpace_ref`` is wired, the
@@ -7563,7 +7683,11 @@ class PerceptualSpace(Space):
         #   * ``_bpe_word_mask`` ([B, N]) is the unwindowed view from
         #     ``_embed_bpe`` itself. Only correct when there's no AR
         #     windowing (K=1, B*K==B); used as fallback.
-        if self.chunking_mode == "bpe":
+        # ``bpe`` and ``none`` (byte-direct) both install
+        # ``_bpe_word_mask`` (one is real-vs-padding for BPE chunks,
+        # the other is byte != 0); the post-VQ reapply is the same
+        # under either mode.
+        if self.chunking_mode in ("bpe", "none"):
             mask = getattr(self, "_bpe_word_mask_flat", None)
             if mask is None:
                 mask = getattr(self, "_bpe_word_mask", None)
@@ -7984,6 +8108,16 @@ class ShortTermMemory(nn.Module):
             "_depth",
             torch.zeros(int(batch), dtype=torch.long),
             persistent=False)
+        # Host-side mirror of ``_depth.max()``.  Updated by every push
+        # path (uniform-step push, push_step, push_window_batch);
+        # ``snapshot()`` reads this so it never needs a ``.item()``
+        # sync inside the compiled forward.  The chart at C reads
+        # ``snapshot()`` once per stage in the body; under
+        # ``max-autotune`` each such ``.item()`` was a graph break
+        # (and a CUDAGraph split).  Tracking host-side collapses
+        # those breaks while preserving the trim-to-actual-depth
+        # behaviour the chart relies on.
+        self._max_depth_host = 0
         # Per-idea truth-tag bivector ``[B, capacity, 2]``: catuskoti
         # pole pair attached to each STM slot. Written by
         # ``query`` / ``equals`` / ``part`` rule firings during chart
@@ -8007,6 +8141,8 @@ class ShortTermMemory(nn.Module):
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
         self._truth_tags = torch.zeros(
             batch, self.capacity, self._TRUTH_TAG_WIDTH, device=device)
+        # Fresh allocation -> empty buffer -> max depth resets to 0.
+        self._max_depth_host = 0
 
     def push(self, b, idea):
         """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
@@ -8024,6 +8160,37 @@ class ShortTermMemory(nn.Module):
         self._buffer[b, depth] = idea
         self._truth_tags[b, depth].zero_()
         self._depth[b] = depth + 1
+        # ``push`` already incurs a ``.item()`` sync above (single-row
+        # legacy path), so an extra host max() here is cheap.
+        if depth + 1 > self._max_depth_host:
+            self._max_depth_host = depth + 1
+
+    def push_step(self, ideas):
+        """Push ONE idea per batch row.  ``ideas`` shape ``[B, D]``.
+
+        Vectorised single-step push for the serial cursor-loop stem:
+        each call advances every row's depth by 1 and writes
+        ``ideas[b]`` to slot ``_depth[b]`` for all b in parallel.  No
+        ``.item()`` syncs, no Python per-row loop -- the serial-K stem
+        path dispatches one of these per cursor step and inductor
+        unrolls them when K is shape-bucketed.
+
+        Caller must ensure ``max(_depth) < capacity`` (the cursor loop's
+        outer guard); the buffer was sized to T or K when the loop
+        was set up so this just costs one scatter per step.
+        """
+        B, D = ideas.shape
+        device = self._buffer.device
+        row_idx = torch.arange(B, device=device)                 # [B]
+        depths  = self._depth                                    # [B] long
+        self._buffer[row_idx, depths] = ideas
+        self._truth_tags[row_idx, depths] = torch.zeros(
+            B, self._TRUTH_TAG_WIDTH,
+            device=device, dtype=self._truth_tags.dtype)
+        self._depth = depths + 1
+        # All rows advance by +1 in lockstep; host-side mirror tracks
+        # the uniform increment without a ``.item()`` sync.
+        self._max_depth_host = self._max_depth_host + 1
 
     def push_window_batch(self, ideas):
         """Push ``W`` consecutive ideas onto every batch row in one shot.
@@ -8056,6 +8223,9 @@ class ShortTermMemory(nn.Module):
             B, W, self._TRUTH_TAG_WIDTH,
             device=device, dtype=self._truth_tags.dtype)
         self._depth = starts + W
+        # All rows advance by +W in lockstep; host-side mirror tracks
+        # the increment.
+        self._max_depth_host = self._max_depth_host + int(W)
 
     def pop(self, b):
         """Pop and return the top idea for row ``b``, or ``None`` when empty.
@@ -8090,6 +8260,12 @@ class ShortTermMemory(nn.Module):
         sentences carry zero-padding at the tail.  Returns ``None``
         when the buffer is empty (no pushes have occurred).
 
+        Uses the host-side ``_max_depth_host`` mirror updated by every
+        push path so the chart at C reads STM without a ``.item()``
+        sync.  Under ``max-autotune`` each ``_depth.max().item()`` was
+        a CUDAGraph split (graph break for the dynamo trace); the
+        mirror collapses those splits.
+
         Used by ``BasicModel._chart_compose_at_C`` and
         ``BasicModel._chart_generate_from_stm`` to feed the chart at
         C-tier without each call site re-implementing the depth/padding
@@ -8103,9 +8279,14 @@ class ShortTermMemory(nn.Module):
         B = int(self._buffer.shape[0])
         if B == 0:
             return None
-        max_depth = int(self._depth.max().item())
+        max_depth = int(self._max_depth_host)
         if max_depth == 0:
             return None
+        # Defensive clamp: ``_max_depth_host`` should never exceed
+        # capacity, but if a code path slipped past the contract
+        # we'd rather slice safely than index OOB.
+        if max_depth > self.capacity:
+            max_depth = self.capacity
         snap = self._buffer[:, :max_depth, :]
         if detach:
             snap = snap.detach().clone()
@@ -8139,12 +8320,18 @@ class ShortTermMemory(nn.Module):
             self._buffer.zero_()
             self._depth.zero_()
             self._truth_tags.zero_()
+            self._max_depth_host = 0
             return
         b = int(b)
         if b < 0 or b >= int(self._buffer.shape[0]):
             return
         self._buffer[b].zero_()
         self._depth[b] = 0
+        # Per-row clear: the host mirror is a global max over rows.
+        # Re-derive (one host scalar) from the remaining rows' depths.
+        # ``.item()`` is acceptable here -- partial clear is called
+        # from sentence-boundary Reset, not the hot path.
+        self._max_depth_host = int(self._depth.max().item())
         self._truth_tags[b].zero_()
 
     def set_truth_tag(self, b, slot_from_top, tag):

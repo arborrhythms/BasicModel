@@ -345,6 +345,14 @@
           <xs:restriction base="xs:string">
             <xs:enumeration value="bpe"/>
             <xs:enumeration value="lexicon"/>
+            <!-- ``none``: byte-direct.  Each byte becomes its own
+                 perceptual slot via a 256-entry codebook lookup; no
+                 BPE walker, no Python trie, no graph break at the
+                 chunking boundary.  ``\0`` (byte 0) doubles as the
+                 sentence-end / pad sentinel.  Requires nVectors>=256
+                 and modelType=embedding.  See doc/Spaces.md
+                 §"Chunking modes" for the cognitive rationale. -->
+            <xs:enumeration value="none"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
@@ -387,6 +395,16 @@
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+      <!-- perWordStemSerial: when true, the per-word stem uses a
+           causal cursor loop (option (a) from the K-microbatch
+           design discussion) instead of the parallel-over-AR-windows
+           default.  Serial path: B-sized STM accumulates one new
+           word per step; after the K-loop the snapshots are staged
+           as [B*K, K, D_c] for the body's chart-at-C parallelism.
+           Work drops from O(B*K*N) to O(B*K) in the stem.  Inductor
+           unrolls the loop when K is shape-bucketed (BPE power-of-
+           two quantisation). -->
+      <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

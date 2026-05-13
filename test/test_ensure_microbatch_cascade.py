@@ -89,3 +89,60 @@ def test_ensure_microbatch_method_explicit_BK():
     if model.wordSpace.discourse is not None:
         assert model.wordSpace.discourse._batch == 2, (
             f"discourse must stay at B=2, got {model.wordSpace.discourse._batch}")
+
+
+def test_stm_fired_survives_K_change():
+    """``_stm_fired`` is B-indexed sentence-lifecycle state.  When the
+    AR microbatch K changes between batches (PerceptualSpace.forward
+    re-quantises K to a power-of-two from the current batch's
+    ``actual_max`` BPE word count), the cumulative B*K body batch
+    changes -- but the per-source-row fire flag must NOT reset.
+    Regression for the bug where ``ensure_batch(BK)`` reallocated
+    ``_stm_fired`` to BK-zeros, then ``ensure_microbatch`` reshaped it
+    back to B-zeros, wiping the firing history mid-sentence.
+    """
+    from data import TheData
+    from Models import BaseModel
+    config = str(_PROJECT / "data" / "MM_xor.xml")
+    TheData.load("xor")
+
+    model, _ = BaseModel.from_config(config, data=TheData)
+    if model.wordSpace is None:
+        import pytest
+        pytest.skip("Model has no WordSpace")
+    ws = model.wordSpace
+    B = 3
+
+    # Initial sizing at (B=3, K=4)  ->  BK=12.
+    ws.ensure_microbatch(B=B, K=4)
+    assert ws._stm_fired.shape == (B,)
+
+    # Simulate a source row firing its STM residual.
+    ws.mark_stm_fired(0)
+    ws.mark_stm_fired(2)
+    assert bool(ws._stm_fired[0].item()) is True
+    assert bool(ws._stm_fired[1].item()) is False
+    assert bool(ws._stm_fired[2].item()) is True
+
+    # K changes (e.g. next batch's actual_max crosses a pow2 boundary).
+    # BK goes 12 -> 24; body-side state reallocates.
+    ws.ensure_microbatch(B=B, K=8)
+    assert ws._stm_fired.shape == (B,)
+    assert bool(ws._stm_fired[0].item()) is True, (
+        "_stm_fired[0] was wiped by the K-change; sentence-lifecycle "
+        "state must survive body-batch reshape")
+    assert bool(ws._stm_fired[1].item()) is False
+    assert bool(ws._stm_fired[2].item()) is True, (
+        "_stm_fired[2] was wiped by the K-change")
+
+    # K changes back to 4 (shrink): same invariant.
+    ws.ensure_microbatch(B=B, K=4)
+    assert bool(ws._stm_fired[0].item()) is True
+    assert bool(ws._stm_fired[2].item()) is True
+
+    # B changes (real sentence-stream boundary): fresh zeros is correct.
+    ws.ensure_microbatch(B=B + 1, K=4)
+    assert ws._stm_fired.shape == (B + 1,)
+    assert not ws._stm_fired.any().item(), (
+        "When B changes, _stm_fired should reset -- the rows refer to "
+        "different source streams now")

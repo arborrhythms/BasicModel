@@ -844,3 +844,143 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
         x = result.materialize()
         self.assertTrue(torch.all(x >= -1) and torch.all(x <= 1),
                         f"Reverse output should be in [-1, 1], got [{x.min():.4f}, {x.max():.4f}]")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 5. ProjectionBasis invertibility regimes (the bivector chain)
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestProjectionBasisInvertibility(unittest.TestCase):
+    """Pin down WHEN a single ProjectionBasis round-trip is exact and
+    when the C->S->C bivector chain inherits loss.
+
+    Two structural facts about ``ProjectionBasis.forward``:
+
+      (a) the forward projects ``x[B, V_in, D]`` through ``W[D, V_basis]``
+          then takes ``.mean(dim=1)`` over the V_in axis.  The mean is
+          identity at V_in=1 and many-to-one for V_in>1.
+
+      (b) the underlying ``W`` has shape ``[D, V_basis]``; the
+          rectangular forward ``x @ W`` is rank ``min(D, V_basis)``.
+          When ``V_basis < D`` the projection drops ``D - V_basis``
+          dimensions before the mean even runs -- no reverse can
+          recover them.
+
+    Exactness conditions for the V=1 round-trip:
+
+        x in R^D  -[forward]->  bivec[B, V_basis, 2]  -[reverse]->  x_back
+
+        | V_in == 1          | mean(V_in) is the identity         |
+        | V_basis >= D       | rectangular forward is rank-D       |
+        | no quantization    | no Codebook snap on the path        |
+    """
+
+    BATCH = 4
+
+    def _basis(self, V_in, V_basis, D, seed=0):
+        torch.manual_seed(seed)
+        from Spaces import ProjectionBasis
+        b = ProjectionBasis()
+        b.create(nInput=V_in, nVectors=V_basis, nDim=D)
+        return b
+
+    def test_single_slot_round_trip_exact_when_V_basis_geq_D(self):
+        """V_in=1, V_basis>=D, no quantization -> bit-exact recovery
+        (modulo float-32 noise).
+        """
+        D, V_basis = 2, 8
+        basis = self._basis(V_in=1, V_basis=V_basis, D=D, seed=0)
+        x = torch.randn(self.BATCH, 1, D) * 0.3
+        bivec = basis.forward(x)
+        x_back = basis.reverse(bivec, V=1)
+        err = (x - x_back).abs().max().item()
+        self.assertLess(err, 1e-5,
+                        f"V=1 round-trip should be exact when V_basis>=D, "
+                        f"got max-abs err={err:.2e}")
+
+    def test_single_slot_lossy_when_V_basis_lt_D(self):
+        """V_basis < D forces a rank-V_basis projection -> reverse
+        cannot recover the dropped dimensions.
+        """
+        D, V_basis = 10, 8  # MM_5M_bivector's C-tier shape today
+        basis = self._basis(V_in=1, V_basis=V_basis, D=D, seed=1)
+        x = torch.randn(self.BATCH, 1, D) * 0.3
+        bivec = basis.forward(x)
+        x_back = basis.reverse(bivec, V=1)
+        err = (x - x_back).abs().max().item()
+        self.assertGreater(err, 0.05,
+                           f"V_basis<D must be lossy; if err is ~0 the "
+                           f"forward projection is somehow rank-D and the "
+                           f"invariant below is stale. got err={err:.2e}")
+
+    def test_multi_slot_recovers_only_per_row_mean(self):
+        """V_in>1 + forward's mean(V_in) -> reverse outputs the per-row
+        mean replicated across V positions, not the original x.
+        """
+        D, V_basis, V_in = 2, 8, 6
+        basis = self._basis(V_in=V_in, V_basis=V_basis, D=D, seed=2)
+        x = torch.randn(self.BATCH, V_in, D) * 0.3
+        bivec = basis.forward(x)
+        x_back = basis.reverse(bivec, V=V_in)
+        row_mean = x.mean(dim=1, keepdim=True).expand(-1, V_in, -1)
+        # x_back should track the row-mean (collapse fingerprint), not x.
+        self.assertLess(
+            (x_back - row_mean).abs().max().item(), 1e-5,
+            "reverse(forward(x)) should be the row-mean replicated")
+        self.assertGreater(
+            (x_back - x).abs().max().item(), 0.05,
+            "if V_in>1 round-trip looks exact, the V-collapse invariant has "
+            "changed and downstream chain analyses are stale")
+
+    def test_C_to_S_to_C_chain_is_lossy_under_current_shapes(self):
+        """The body chain ``CS[t] -> SS[t] -> CS[t+1]`` carries a
+        bivector through TWO ProjectionBasis forwards.  Even with V=1
+        single-slot input and no quantization, the chain is LOSSY for
+        any non-degenerate (V_C, D_C) configuration, because:
+
+          * The SS forward sees V_in=V_C>1 -> mean collapse.
+          * Or, if V_C=1, then V_basis_C=1 < D_C (typical) -> rank
+            collapse in the C forward.
+
+        This test states the loss as an invariant so future
+        architecture changes that claim "lossless body chain" trip the
+        guard.
+        """
+        from Spaces import ProjectionBasis
+
+        # Mirror MM_5M_bivector per-stage shapes.
+        D_C, V_C = 10, 8       # C-tier basis: D=10, V_C=8 (rectangular)
+        D_S, V_S = 2,  1024
+        V_in = 1               # single-slot (the most favourable case)
+
+        torch.manual_seed(3)
+        C = ProjectionBasis(); C.create(nInput=V_in, nVectors=V_C, nDim=D_C)
+        S = ProjectionBasis(); S.create(nInput=V_C,  nVectors=V_S, nDim=D_S)
+
+        x_p = torch.randn(self.BATCH, V_in, D_C) * 0.3
+        bivec_C = C.forward(x_p)            # [B, V_C, 2]
+        bivec_S = S.forward(bivec_C)        # [B, V_S, 2] -- V_C collapses
+
+        # Mirror _sourced_input's reverse-then-replicate path:
+        rec_C  = S.reverse(bivec_S, V=V_C)  # [B, V_C, 2]
+        rec_p  = C.reverse(rec_C, V=V_in)   # [B, V_in, D_C]
+
+        err = (x_p - rec_p).abs().max().item()
+        # We expect this to FAIL exactness.  The assertion captures the
+        # current invariant: chain is lossy until someone replaces the
+        # mean-over-V collapse with a non-collapsing alternative.
+        self.assertGreater(
+            err, 0.05,
+            f"C->S->C should be lossy under the mean-over-V design; "
+            f"got err={err:.2e}.  If this drops to ~0, document the "
+            f"forward-collapse change and update the chain analysis.")
+
+        # Confirm the source of loss is the S-side V_C collapse:
+        # rec_C should be the per-row mean of bivec_C replicated.
+        s_mean_err = (rec_C
+                      - bivec_C.mean(dim=1, keepdim=True).expand(-1, V_C, -1)
+                      ).abs().max().item()
+        self.assertLess(
+            s_mean_err, 1e-5,
+            f"intermediate should match bivec_C row-mean (S collapse "
+            f"fingerprint), got err={s_mean_err:.2e}")

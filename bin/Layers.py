@@ -2301,77 +2301,63 @@ class UnionLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 class LiftLayer(GrammarLayer):
-    """``S -> lift(VP, NP)`` -- elementwise gate at C-tier, then sigma.
+    """``S -> lift(VP, NP)`` -- rule-id annotator over the unconditional
+    subsymbolic loop.
 
-    Post-2026-05-12 refactor: lift is no longer an LDU-rank-gated
-    binary fold via a dedicated ``sigma_S`` at sym_dim. Instead VP's
-    activation acts as a per-prototype-and-per-dim mask on NP at the
-    C-tier:
+    Post-2026-05-13 refactor.  LiftLayer no longer owns or borrows a
+    substrate sigma; the composition between VP and NP happens in the
+    always-on subsymbolic loop
+    ``C = sigma_percept(pi_input(IS) + pi_concept(C_prev))``.
+    LiftLayer's role at S is purely to **annotate** that the composed
+    state is being framed as a predication (lift), distinguishing it
+    from the same state framed as an attribution (lower).
 
-        VP_c   = S.subspace.what.reverse(VP_bivec)
-        NP_c   = S.subspace.what.reverse(NP_bivec)
-        gated  = VP_c * NP_c                # elementwise gate
-        out_c  = P.sigma.forward(gated)     # substrate sigma at C-dim
-        return S.subspace.what.forward(out_c)
+    Mechanically the layer computes the S-tier lattice OR via
+    ``Ops._lower_kernel`` (parameter-free), then the chart's parse
+    tree records the rule_id ``lift``.  Downstream readers (truth
+    layer, output decoder) consume the rule_id to discriminate
+    predication from attribution; the substrate composition is shared.
 
-    The factorization is "VP IS the mask": same shared ``P.sigma``
-    LDU basis, but the operand VP supplies the masking. Different
-    VPs → different masks → different outputs from the same matrix.
-    There is no learnable per-LiftLayer parameter; the gate comes
-    from VP's content.
-
-    Without ``symbolicSpace`` / ``perceptualSpace`` back-refs
-    (parameter-free instantiation, e.g. via
-    ``GRAMMAR_LAYER_CLASSES['lift']()``), falls back to the static
-    lattice-min kernel for back-compat with standalone-test harnesses.
+    See ``doc/Language.md`` §"Lift / lower — rule-id annotators" for
+    the cognitive rationale ("the boy runs" vs "the running boy" share
+    the same neural composition; lift/lower is a labelling).
     """
     rule_name  = "lift"
     arity      = 2
     invertible = True
     tier       = 'S'
 
-    def __init__(self, symbolicSpace=None, perceptualSpace=None):
-        """Initialize LiftLayer; the substrate references are wired by
-        the chart's lazy-build path. Standalone-test instantiation
-        with no refs falls back to the static lattice kernel.
+    def __init__(self, symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None):
+        """Initialize LiftLayer.
+
+        ``symbolicSpace`` / ``perceptualSpace`` / ``conceptualSpace``
+        are accepted for API compatibility with the legacy
+        gated-substrate constructor signature; the new annotator path
+        does not use them.  They are stored via ``object.__setattr__``
+        to avoid nn.Module submodule tracking that would create
+        cycles in the module tree.
         """
         super().__init__(0, 0)
-        # ``object.__setattr__`` bypasses nn.Module submodule
-        # tracking so the back-references don't create cycles in the
-        # module tree (the Spaces are already registered under the
-        # top-level Model).
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
-
-    def _gated_sigma(self, vp_bivec, np_bivec, sigma):
-        """Shared helper: reverse-lift to C-dim, elementwise gate,
-        apply the substrate ``sigma`` layer, re-snap to S-bivector.
-        """
-        cb = self.symbolicSpace.subspace.what
-        vp_c = cb.reverse(vp_bivec)
-        np_c = cb.reverse(np_bivec)
-        gated = vp_c * np_c
-        out_c = sigma.forward(gated)
-        return cb.forward(out_c)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
 
     def forward(self, left, right):
-        """Forward: elementwise gate at C-tier, then substrate sigma.
+        """Forward: S-tier lattice composition; rule-id ``lift`` is
+        recorded by the chart on the surrounding parse cell.
 
-        ``left`` is VP (the gating operand), ``right`` is NP
-        (the content riding through sigma).
+        ``left`` is VP (the predicated operand), ``right`` is NP.
         """
-        if self.symbolicSpace is None or self.perceptualSpace is None:
-            return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
-        return self._gated_sigma(left, right, self.perceptualSpace.sigma)
+        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
 
     def reverse(self, parent):
         """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
 
-        The elementwise gate ``VP_c * NP_c`` is not bijective without
-        VP -- we cannot recover NP from gated_NP alone. The substrate
-        sigma's inverse handles the post-gate step, but the gate
-        itself is lossy. Inherit the lossy reverse pattern from the
-        existing GrammarLayer convention.
+        The lattice AND is not bijective in either operand.  Inherit
+        the lossy reverse convention from the legacy LiftLayer; the
+        chart's generate path uses the rule_id to backtrace rather
+        than relying on a bijective inverse here.
         """
         return parent, parent
 
@@ -2385,54 +2371,55 @@ class LiftLayer(GrammarLayer):
 
 
 class LowerLayer(GrammarLayer):
-    """``S -> lower(VP, NP)`` -- elementwise gate at C-tier, then pi.
+    """``S -> lower(VP, NP)`` -- rule-id annotator over the unconditional
+    subsymbolic loop.
 
-    Symmetric to ``LiftLayer`` but applies ``C.pi`` instead of
-    ``P.sigma`` on the gated operand. Same gate operation
-    (elementwise multiplicative mask at C-tier), different post-gate
-    transform (multiplicative log-domain instead of additive). The
-    asymmetry between lift and lower lives entirely in this layer
-    choice; the gating is identical.
+    Symmetric to ``LiftLayer`` but records rule_id ``lower`` instead
+    of ``lift``.  The composition between VP and NP happens in the
+    always-on subsymbolic loop (`sigma_percept(pi_input + pi_concept)`);
+    LowerLayer's role at S is purely to annotate that the composed
+    state is being framed as an attribution (lower), distinguishing
+    it from the same state framed as a predication (lift).
+
+    Mechanically the layer computes the S-tier lattice OR via
+    ``Ops._lift_kernel`` (parameter-free); the chart's parse tree
+    records the rule_id ``lower``.
+
+    Post-2026-05-13: no internal substrate sigma/pi; LiftLayer and
+    LowerLayer differ only in their static lattice kernel and the
+    rule_id stamped on the parse cell.
     """
     rule_name  = "lower"
     arity      = 2
     invertible = True
     tier       = 'S'
 
-    def __init__(self, symbolicSpace=None, conceptualSpace=None):
-        """Initialize LowerLayer; the substrate references are wired
-        by the chart's lazy-build path. Standalone-test instantiation
-        with no refs falls back to the static lattice kernel.
+    def __init__(self, symbolicSpace=None, conceptualSpace=None,
+                 perceptualSpace=None):
+        """Initialize LowerLayer.
+
+        Constructor accepts ``symbolicSpace`` / ``conceptualSpace`` /
+        ``perceptualSpace`` for API compatibility with the legacy
+        gated-substrate signature; the new annotator path does not
+        use them.
         """
         super().__init__(0, 0)
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
-
-    def _gated_pi(self, vp_bivec, np_bivec, pi):
-        """Shared helper: reverse-lift to C-dim, elementwise gate,
-        apply the substrate ``pi`` layer, re-snap to S-bivector.
-        """
-        cb = self.symbolicSpace.subspace.what
-        vp_c = cb.reverse(vp_bivec)
-        np_c = cb.reverse(np_bivec)
-        gated = vp_c * np_c
-        out_c = pi.forward(gated)
-        return cb.forward(out_c)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
 
     def forward(self, left, right):
-        """Forward: elementwise gate at C-tier, then substrate pi.
+        """Forward: S-tier lattice composition; rule-id ``lower`` is
+        recorded by the chart on the surrounding parse cell.
 
-        ``left`` is VP (the gating operand), ``right`` is NP
-        (the content riding through pi).
+        ``left`` is VP (the attributed operand), ``right`` is NP.
         """
-        if self.symbolicSpace is None or self.conceptualSpace is None:
-            return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
-        return self._gated_pi(left, right, self.conceptualSpace.pi)
+        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
 
     def reverse(self, parent):
         """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
 
-        See LiftLayer.reverse for the gating-invertibility rationale.
+        See ``LiftLayer.reverse`` for the lattice-invertibility note.
         """
         return parent, parent
 

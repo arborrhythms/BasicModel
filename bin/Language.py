@@ -5817,13 +5817,23 @@ class WordSpace(Space):
         return self.subspace.get_blocks(b)
 
     def ensure_batch(self, batch):
-        """Resize the underlying buffer + per-batch stacks to a new batch size.
+        """Resize the BODY-side per-row buffers to ``batch`` (= B*K under
+        the microbatch contract).
 
-        ensure_batch is the single fan-out point for every per-row buffer
-        WordSpace owns: the WordSubSpace event, the CategoryStack /
-        ReconstructionStack stacks, and the Task-2 ``last_svo`` /
-        ``_stm_fired`` tensors.  Reallocates fresh storage; per-row state
-        is zeroed.
+        Body-side buffers owned here: the WordSubSpace event, the
+        CategoryStack / ReconstructionStack stacks, and the per-window
+        transient tensors ``_last_svo`` / ``_svo_valid``.  These reallocate
+        fresh-zero on shape change -- they're per-microbatch-row state
+        with no cross-batch lifecycle.
+
+        ``_stm_fired`` and ``discourse`` are NOT touched here: they live
+        at B (per source row), persist across forward calls within a
+        sentence, and are owned by :meth:`ensure_microbatch`.  Wiping
+        them on every K-change (which happens whenever ``actual_max``
+        BPE word count crosses a power-of-two boundary in PerceptualSpace's
+        AR unfold) would re-arm the once-per-sentence STM-residual fire
+        flag mid-sentence, causing the discourse bias to inject multiple
+        times for the same source row.
         """
         batch = int(batch)
         if batch == self.batch:
@@ -5842,7 +5852,8 @@ class WordSpace(Space):
         device = self._last_svo.device
         self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
         self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
-        self._stm_fired = torch.zeros(batch, dtype=torch.bool, device=device)
+        # ``_stm_fired`` is intentionally NOT reallocated here -- see
+        # docstring.  ``ensure_microbatch`` handles the B-sized fields.
 
     def ensure_microbatch(self, B, K):
         """Resize per-row state for the microbatch AR pipeline.
@@ -5857,9 +5868,11 @@ class WordSpace(Space):
         snapshot collapses K to mirror legacy last-cursor semantics).
         """
         BK = int(B) * int(K)
-        self.ensure_batch(BK)
+        self.ensure_batch(BK)  # body-side only; preserves _stm_fired
         device = self._stm_fired.device
         if self._stm_fired.shape[0] != int(B):
+            # First allocation, or source-row count B changed (a real
+            # sentence-stream boundary, not a K-change). Fresh zeros.
             self._stm_fired = torch.zeros(int(B), dtype=torch.bool, device=device)
         if self.discourse is not None and hasattr(self.discourse, 'ensure_batch'):
             self.discourse.ensure_batch(int(B))

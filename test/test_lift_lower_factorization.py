@@ -155,8 +155,11 @@ class TestLiftLowerFactorization(unittest.TestCase):
                          "(VP, NP) -- the sigma-vs-pi post-gate "
                          "transform is what gives them asymmetry.")
 
-    def test_lift_no_substrate_falls_back_to_static_kernel(self):
-        """LiftLayer without refs → fall back to Ops._lower_kernel."""
+    def test_lift_uses_static_lattice_kernel(self):
+        """LiftLayer is a rule-id annotator: forward always computes
+        the static lattice AND via ``Ops._lower_kernel`` (post 2026-05-13
+        refactor; substrate sigma is no longer borrowed).
+        """
         from Layers import LiftLayer, Ops
         layer = LiftLayer(symbolicSpace=None, perceptualSpace=None)
         B, V_S = self._bivec_for_test()
@@ -166,13 +169,14 @@ class TestLiftLowerFactorization(unittest.TestCase):
             out = layer.forward(VP, NP)
             expected = Ops._lower_kernel(VP, NP, mode='AND', kind='smooth')
         torch.testing.assert_close(out, expected,
-                                   msg="Standalone LiftLayer (no refs) "
-                                       "must fall back to static lattice "
-                                       "kernel for back-compat with "
-                                       "harness tests.")
+                                   msg="LiftLayer must compute the static "
+                                       "lattice kernel; substrate sigma "
+                                       "borrowing was retired.")
 
-    def test_lower_no_substrate_falls_back_to_static_kernel(self):
-        """LowerLayer without refs → fall back to Ops._lift_kernel."""
+    def test_lower_uses_static_lattice_kernel(self):
+        """LowerLayer is a rule-id annotator: forward always computes
+        the static lattice OR via ``Ops._lift_kernel``.
+        """
         from Layers import LowerLayer, Ops
         layer = LowerLayer(symbolicSpace=None, conceptualSpace=None)
         B, V_S = self._bivec_for_test()
@@ -182,9 +186,9 @@ class TestLiftLowerFactorization(unittest.TestCase):
             out = layer.forward(VP, NP)
             expected = Ops._lift_kernel(VP, NP, mode='OR', kind='smooth')
         torch.testing.assert_close(out, expected,
-                                   msg="Standalone LowerLayer (no refs) "
-                                       "must fall back to static lattice "
-                                       "kernel for back-compat.")
+                                   msg="LowerLayer must compute the static "
+                                       "lattice kernel; substrate pi "
+                                       "borrowing was retired.")
 
 
 if __name__ == "__main__":

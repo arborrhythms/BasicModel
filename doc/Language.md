@@ -262,47 +262,61 @@ Sinkhorn iterations to produce a doubly-stochastic soft permutation
 $P$.  Given operands $\ell, r$ and a learned broadcast marker $m$,
 the output is the first row of $P \cdot [\ell, r, m]^\top$.  Lossy.
 
-### Lift / lower — VP-codebook-gated substrate sigma/pi
+### Lift / lower — rule-id annotators over the shared subsymbolic loop
 
-Post-2026-05-12 refactor. `LiftLayer` and `LowerLayer` no longer wrap a
-dedicated `sigma_S` / `pi_S` at sym_dim; they route through the
-substrate's existing sigma / pi at C-tier dim with VP's codebook content
-supplying the gate:
+Post-2026-05-13 refactor.  `LiftLayer` and `LowerLayer` are now
+**pure rule-id annotators** — they no longer own (or borrow) a
+substrate sigma/pi.  All composition happens in the unconditional
+subsymbolic loop:
 
 ```
-LiftLayer.forward(VP_bivec, NP_bivec):
-    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
-    gated      = VP_c * NP_c            # elementwise gate at C-tier
-    out_c      = P.sigma.forward(gated) # substrate sigma (lift)
-    return       S.codebook.forward(out_c, project=True)
-
-LowerLayer.forward(VP_bivec, NP_bivec):
-    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
-    gated      = VP_c * NP_c            # same gate
-    out_c      = C.pi.forward(gated)    # substrate pi (lower)
-    return       S.codebook.forward(out_c, project=True)
+C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )
 ```
 
-The shared `L · U` basis per LDU is reused across every VP; the per-call
-gate `VP_c * NP_c` (elementwise multiplicative on the codebook prototype
-× dim grid) is what makes the same matrix produce different effective
-transformations for different VPs ("VP is the mask"). No learnable
-`raw_gate` parameter; the gating signal comes from VP's codebook content.
+owned by `ConceptualSpace.sigma_percept` and the
+`PerceptualSpace.pi_input` / `pi_concept` pair.  See
+[Spaces.md §"Sigma / Pi
+ownership"](Spaces.md#sigma--pi-ownership-2026-05-13-rebalance).
 
-Asymmetry: lift uses sigma (additive log-domain expansion, well-suited
-to lifting features onto concepts); lower uses pi (multiplicative
-log-domain contraction, well-suited to lowering concepts into specific
-percept-realizations). The same codebook entry can serve either role
-depending on the chart's syntactic decision ("the running child" — lift;
-"the child runs" — lower).
+When the chart fires `S = lift(NP, VP)` or `S = lower(NP, VP)`,
+`LiftLayer` / `LowerLayer`:
 
-Cfg-driven grammar dispatch still invokes `LiftLayer` / `LowerLayer`,
-which now require `symbolicSpace` (for the codebook reverse-lift) and
-the appropriate substrate space reference (`perceptualSpace` for Lift,
-`conceptualSpace` for Lower). Standalone-test construction with no
-references falls back to the static lattice kernels (`Ops._lift_kernel`
-/ `Ops._lower_kernel`). The retired `space.sigma_S` / `space.pi_S`
-allocation that previously held the lift/lower LDU is gone.
+1. Record the **rule_id** in the parse tree (`lift` vs `lower`).
+2. Optionally stamp the per-slot **catuskoti tag** on
+   `STM._truth_tags` so downstream readers (truth layer, output
+   decoder) can read role in O(1).
+
+They do **not** apply a separate sigma / pi.  The composed C-state is
+whatever the unconditional loop already produced this tick.  Lift vs
+lower differ in what the downstream **truth and output layers** make
+of that state, not in the substrate operation that produced it.
+
+#### Why no separate substrate per rule
+
+Linguistically, *"the running boy"* (lowering, attribution) and
+*"the boy runs"* (lifting, predication) share a single neural
+composition act — *fuse a noun representation with a verb
+representation into one bound state*.  The lift/lower distinction is a
+**derivational labelling** of that shared state, not a separate
+operation.  Re-firing the loop with a different rule annotation
+suffices to switch framings; the chart records which framing won.
+
+The previous "gated-substrate" pattern (which borrowed
+`perceptualSpace.sigma` at concept_dim and
+`conceptualSpace.pi` at percept_dim) is retired.  Standalone-test
+construction with no perceptual/conceptual refs falls back to the
+static lattice kernels (`Ops._lift_kernel` / `Ops._lower_kernel`)
+when the unconditional loop isn't wired (legacy compatibility).
+
+#### Idempotence of the symbolic loop
+
+`cs.forward(ss.forward(c)) == c`.  SymbolicSpace is a dimensional
+pass-through (no default sigma/pi at S, only grammar ops, which are
+idempotent under their algebra), so routing a C-activation through SS
+and back through CS returns the same state.  An unconditional
+`pi_concept` therefore can't double-apply across the symbolic round
+trip — it just re-folds the same C content into the unchanged P
+state.
 
 ### Chunking — Percepts
 

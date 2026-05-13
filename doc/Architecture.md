@@ -38,15 +38,27 @@ projections on the SymbolicSpace bivector codebook.
 | Space | Role | Layer Type | Notes |
 |-------|------|-----------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
-| **PerceptualSpace** | Per-percept aggregation; subsymbolic substrate | `self.sigma` activated as the **Lift operator** at concept_dim → concept_dim (replaces the dormant per-percept sigma). Reads C→P feedback via `_sourced_input` (bivector-gated). | nActive, nDim, nVectors, invertible, bivectorOutput |
-| **ConceptualSpace** | Multiplicative abstraction (P → C); host of `ShortTermMemory` | `self.pi` (used as the **Lower operator** too, via the gated path). Reads S→C feedback via `_sourced_input`. | nActive, nDim, nVectors, invertible, bivectorOutput, stmCapacity |
-| **SymbolicSpace** | Discrete activation bottleneck (C → S) + Codebook + **grammar's calculator** | `self.sigma` + Codebook (bivector prototypes). SyntacticLayer dispatches the chart's S-tier rules here. Codebook plays the unified role of *codebook + lexicon-reference + meronymic-tree* — three jobs on one structure (geometric). | nActive, nVectors, codebook, bivectorOutput |
+| **PerceptualSpace** | Per-percept aggregation; subsymbolic substrate | Owns **`pi_input`** (`input_dim → percept_dim`) and **`pi_concept`** (`concept_dim → percept_dim`). Both fire unconditionally each forward; outputs summed.  C→P feedback flows through `pi_concept`. | nActive, nDim, nVectors, invertible, bivectorOutput |
+| **ConceptualSpace** | Additive concept abstraction (P → C); host of `ShortTermMemory` | Owns **`sigma_percept`** (`percept_dim → concept_dim`) only.  SS feedback has **no default fold** — only grammar ops at S. | nActive, nDim, nVectors, invertible, bivectorOutput, stmCapacity |
+| **SymbolicSpace** | Discrete activation bottleneck (C → S) + Codebook + **grammar's calculator** | No default sigma or pi.  Grammar ops only (`intersection`, `union`, `lift`, `lower`, …) dispatched by SyntacticLayer.  Codebook plays the unified role of *codebook + lexicon-reference + meronymic-tree* — three jobs on one structure (geometric). | nActive, nVectors, codebook, bivectorOutput |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
-Each level-crossing space owns one bidirectional layer that handles both
-forward and reverse via its own self-inverse: `ConceptualSpace.pi` does P->C /
-C->P; `SymbolicSpace.sigma` does C->S / S->C. Pi and Sigma have independent
-weights. See [Logic.md §8](Logic.md) and [Spaces.md](Spaces.md).
+The cross-space fold contract — the canonical composition is:
+
+```
+C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )
+```
+
+`pi_input` is the input boundary fold; `pi_concept` carries the
+subsymbolic C→P feedback.  Both fire on every PerceptualSpace forward
+and are summed (no /2 averaging — the previous `(primary + c_event) / 2`
+in `_sourced_input` is retired). `sigma_percept` then folds the
+combined P-state into a C-state.  See [Spaces.md §"Sigma / Pi
+ownership"](Spaces.md#sigma--pi-ownership-2026-05-13-rebalance)
+for the cognitive rationale (lift vs lower as rule-id annotations
+over a shared composition primitive) and the grammar-XML migration
+table.  See [Logic.md §8](Logic.md) for the algebraic constraints on
+sigma/pi.
 
 Dimensions (`nDim`) are read from `TheObjectEncoding`. Codebook sizes
 (`nVectors`) are likewise on `TheObjectEncoding`; the factory validates

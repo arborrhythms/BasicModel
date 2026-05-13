@@ -4626,21 +4626,31 @@ class BasicModel(BaseModel):
         return sub
 
     def _forward_stem_per_word(self, sub):
-        """Per-word P->C->S->C round trip: for each word slot in the
-        perceptual event, run the C-tier pi transform, snap through the
-        S codebook (project=True), reverse-lift back to C, and push the
-        resulting "idea" onto ``conceptualSpace.stm``.
+        """Per-word P->C->S->C round trip.
 
-        SymbolicSpace owns no sigma/pi (the C->S path is a dimensional
-        pass-through by architectural rule -- see Spaces.SymbolicSpace
-        constructor docstring), so the per-word loop applies only the
-        ConceptualSpace pi and then snaps through the S codebook.
+        Two implementations gated by
+        ``ConceptualSpace.perWordStemSerial``:
 
-        The body's per-stage chart compose (Step 4) reads the STM at
-        C-tier and produces a parse. ``iterations_per_word`` (default 1)
-        controls how many P->C cycles run per word; with the SVD-
-        orthogonal codebook this is idempotent under N>=1.
+        * Default (``false``): parallel-over-N-slots vectorised path.
+          Each cursor window is rebuilt from scratch (the AR unfold's
+          implicit-state shape); work is O(B*K*N) with N=1024 even
+          though most slots are zero-pad.
+        * Serial (``true``): causal cursor loop (option (a) from the
+          architecture discussion).  One new word per cursor step,
+          B-sized STM accumulates, then the loop's K snapshots are
+          staged as ``[B*K, K, D_c]`` for the body's chart-at-C
+          parallelism.  Work is O(B*K) -- ~64x less for MM_5M's
+          K=16/N=1024 typical shape.  Inductor unrolls the
+          ``for k in range(K)`` loop when K is shape-bucketed (BPE
+          power-of-two quantisation gives a stable compile cache).
         """
+        try:
+            use_serial = bool(TheXMLConfig.space(
+                "ConceptualSpace", "perWordStemSerial"))
+        except KeyError:
+            use_serial = False
+        if use_serial:
+            return self._forward_stem_per_word_serial(sub)
         p_event = sub.materialize()
         if p_event is None:
             return sub
@@ -4739,6 +4749,138 @@ class BasicModel(BaseModel):
         #    legacy path built this via ``torch.stack(per_word_list,
         #    dim=1)``; ``ideas`` is already that stack.
         self._loss_head_input = ideas if self.loss_head is not None else None
+        return sub
+
+    def _forward_stem_per_word_serial(self, sub):
+        """Causal serial cursor-loop stem (option (a)).
+
+        Reads the un-windowed embedded sentence from
+        ``inputSpace._ar_embedded`` and walks one cursor at a time:
+        each step applies ``pi`` to a single new word, optionally
+        round-trips through the SymbolicSpace bivector codebook, and
+        pushes the resulting idea into a B-sized STM accumulator.
+
+        After the loop, the K snapshots of "STM through cursor k" are
+        staged into ``[B*K, K, D_c]`` via a causal lower-triangular
+        mask so the body's parallel chart-at-C consumer sees the same
+        shape and depth contract the parallel stem produced.  The win
+        is in the stem itself: work drops from O(B*K*N) (parallel
+        stem, most slots zero-pad) to O(B*K) (one word per cursor
+        step).  Inductor unrolls the ``for k in range(K)`` loop when K
+        is shape-bucketed -- BPE's power-of-two K quantisation gives
+        a small stable compile cache.
+
+        Fall-throughs (return ``sub`` unchanged) match the parallel
+        stem's guards: missing perceptual event, missing un-windowed
+        embedded tensor, pi.nInput/nOutput dim mismatches, or a
+        non-AR ``[B, N, D]`` sub (k_axis=False) where there's only
+        one window so the serial loop trivially degenerates to
+        push_step.
+        """
+        p_event = sub.materialize()
+        if p_event is None:
+            return sub
+        embedded = getattr(self.inputSpace, '_ar_embedded', None)
+        if embedded is None or embedded.dim() != 3:
+            # No un-windowed view available; the serial path needs
+            # the raw [B, T, D] embed and the parallel stem's
+            # per-cursor zero-padded re-reads are the only fallback.
+            return sub
+        if p_event.dim() != 4:
+            # Non-AR (k_axis=False): no cursor windows to serialise
+            # across.  The parallel stem already does the right thing
+            # in this case; the dispatch flag should be off for non-AR
+            # configs but we'd rather no-op than crash if it isn't.
+            return sub
+        B, K, _, _ = p_event.shape
+        _, T_full, D_p = embedded.shape
+
+        pi_in = int(getattr(self.conceptualSpace.pi, 'nInput', D_p) or D_p)
+        if pi_in != D_p:
+            return sub
+        pi_out = int(getattr(self.conceptualSpace.pi, 'nOutput', pi_in) or pi_in)
+        stm_concept_dim = int(self.conceptualSpace.stm.concept_dim)
+        if pi_out != stm_concept_dim:
+            return sub
+        D_c = pi_out
+
+        cb = getattr(self.symbolicSpace.subspace, 'what', None)
+        cb_is_projection = (cb is not None
+                            and type(cb).__name__ == 'ProjectionBasis')
+        iterations = max(1, int(self.wordSpace.chart.iterations_per_word))
+
+        # Pad the un-windowed embedded out to K so the cursor loop
+        # always reads valid data (loop bound becomes K, matching the
+        # AR unfold's shape bucket; Inductor recompiles per-K only).
+        if T_full < K:
+            pad = torch.zeros(
+                B, K - T_full, D_p,
+                device=embedded.device, dtype=embedded.dtype)
+            embedded_padded = torch.cat([embedded, pad], dim=1)
+        else:
+            embedded_padded = embedded[:, :K, :]
+
+        track_grad = self.loss_head is not None
+        ideas_per_step = []
+        # SERIAL cursor loop.  K is shape-bucketed (power-of-two from
+        # the BPE actual_max quantisation), so Inductor caches one
+        # compiled graph per bucket and unrolls the loop inside.
+        for k in range(K):
+            word = embedded_padded[:, k:k+1, :]              # [B, 1, D_p]
+            c = word
+            for _ in range(iterations):
+                c = self.conceptualSpace.pi.forward(c)        # [B, 1, D_c]
+            if cb_is_projection:
+                snap = cb.forward(c)                          # [B, V_S, 2]
+                idea_back = cb.reverse(snap, V=1)
+                if idea_back is None:
+                    idea = c[:, 0, :]
+                elif idea_back.dim() == 3:
+                    idea = idea_back.sum(dim=1)               # [B, D_c]
+                else:
+                    idea = idea_back
+            else:
+                idea = c[:, 0, :]                             # [B, D_c]
+            ideas_per_step.append(idea)
+
+        # Stack the per-step ideas.  ``stm_acc`` carries grad when the
+        # loss head is installed (so the head can backprop through pi
+        # via the per-step ideas); the staged chart-side buffer below
+        # always sees the detached snapshot to match the parallel
+        # stem's "chart reads detached STM" contract.
+        stm_acc = torch.stack(ideas_per_step, dim=1)           # [B, K, D_c]
+        # Causal snapshots: row b*K+k contains stm_acc[b, :k+1, :]
+        # with positions j>k zeroed.  One scatter, no Python loop.
+        mask = torch.tril(torch.ones(
+            K, K, device=stm_acc.device, dtype=stm_acc.dtype))
+        snapshots = (stm_acc.unsqueeze(1).expand(B, K, K, D_c)
+                     * mask.unsqueeze(0).unsqueeze(-1))         # [B, K, K, D_c]
+        snapshots_flat = snapshots.reshape(B * K, K, D_c).contiguous().detach()
+
+        # Slot the snapshot stack into conceptualSpace.stm so the
+        # chart's ``conceptualSpace.stm.snapshot()`` returns it
+        # unchanged.  Buffer reallocates when capacity is too small.
+        cs_stm = self.conceptualSpace.stm
+        cs_stm.ensure_batch(B * K)
+        if cs_stm.capacity < K:
+            cs_stm = ShortTermMemory(
+                batch=B * K, capacity=int(K), concept_dim=D_c)
+            cs_stm = cs_stm.to(snapshots_flat.device)
+            self.conceptualSpace.stm = cs_stm
+        cs_stm.clear()
+        # Write the [B*K, K, D_c] slab into the front of the per-row
+        # capacity-K buffer (capacity may exceed K when wMax is wider).
+        cs_stm._buffer[:, :K, :] = snapshots_flat
+        # Per-window depth: row b*K+k has depth k+1.
+        depths = (torch.arange(K, device=cs_stm._depth.device,
+                               dtype=cs_stm._depth.dtype) + 1
+                  ).repeat(B)                                  # [B*K]
+        cs_stm._depth = depths
+
+        if track_grad:
+            self._loss_head_input = stm_acc                    # [B, K, D_c]
+        else:
+            self._loss_head_input = None
         return sub
 
     def _forward_head(self, sub):

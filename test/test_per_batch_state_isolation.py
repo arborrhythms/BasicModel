@@ -63,7 +63,13 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
         concept_dim=conceptDim,
         symbol_dim=symbolDim,
     )
-    ws.ensure_batch(batch)
+    # ``ensure_microbatch`` is the per-row state entry point post-2026-05-13:
+    # it sizes body-side state (B*K) AND the B-sized lifecycle fields
+    # (``_stm_fired``, discourse) together.  Passing K=1 makes B*K == B
+    # so both halves end up at ``batch`` rows -- the legacy contract these
+    # tests check.  ``ensure_batch`` alone no longer touches ``_stm_fired``
+    # (that wipe was the root cause of the K-change history loss bug).
+    ws.ensure_microbatch(batch, 1)
     return ws, symbolDim
 
 
@@ -125,12 +131,24 @@ def test_stm_arm_per_row():
     assert not ws.stm_fired(0) and not ws.stm_fired(1)
 
 
-def test_stm_fired_ensure_batch_resets():
+def test_ensure_microbatch_grows_stm_fired_to_new_B():
+    """``ensure_microbatch(B', K)`` with a NEW source-row count B' grows
+    ``_stm_fired`` to ``B'`` and resets it to zeros (the new rows are
+    different streams; previous-stream fire flags don't carry over).
+
+    Replaces the legacy ``test_stm_fired_ensure_batch_resets`` which
+    assumed ``ensure_batch`` itself reallocated ``_stm_fired``.  Post
+    2026-05-13 fix, ``ensure_batch`` is body-side-only; only
+    ``ensure_microbatch`` reshapes the B-sized lifecycle fields, and
+    only when the source-row count actually changes (K-change alone
+    no longer wipes -- regression test in
+    ``test_ensure_microbatch_cascade.py``).
+    """
     ws, _ = _make_ws(batch=1)
     ws.mark_stm_fired(0)
     assert ws.stm_fired(0)
-    ws.ensure_batch(3)
-    # ensure_batch reallocates; every row armed.
+    ws.ensure_microbatch(3, 1)
+    # B changed from 1 -> 3, so _stm_fired is a fresh [3] zero tensor.
     assert not ws.stm_fired(0)
     assert not ws.stm_fired(1)
     assert not ws.stm_fired(2)
