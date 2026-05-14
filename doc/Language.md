@@ -48,20 +48,24 @@ InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  Out
 > [`doc/plans/2026-05-12-serial-parser-handoff.md`](plans/2026-05-12-serial-parser-handoff.md)
 > for the original handoff spec.
 
-### Tiers (P / C / S / L)
+### Tiers (P / C / S)
 
-| Tier | Owner            | Activation domain                              |
-|------|------------------|-------------------------------------------------|
-| `P`  | PerceptualSpace  | bivector ``[B, V, 2]`` per percept              |
-| `C`  | ConceptualSpace  | bivector ``[B, V, 2]`` pre-codebook             |
-| `S`  | SymbolicSpace    | scalar ``[B, V]`` post-codebook (monotonic)     |
-| `L`  | (logical, none)  | bivector ``[..., 2]`` -- pure lattice primitive |
+| Tier | Owner            | Activation domain                              | Architectural role                                                              |
+|------|------------------|-------------------------------------------------|----------------------------------------------------------------------------------|
+| `P`  | PerceptualSpace  | bivector ``[B, V, 2]`` per percept              | Drives the subsymbolic loop (``lift`` / ``lower``).                              |
+| `C`  | ConceptualSpace  | bivector ``[B, V, 2]`` pre-codebook             | Direct on concepts. Most ops live here.                                          |
+| `S`  | SymbolicSpace    | scalar ``[B, V]`` post-codebook (monotonic)     | Produces a higher-epistemic-level wholeness of its arguments — a temporary symbol that cannot be expressed at the subsymbolic level. |
 
-S-tier ops compose **monotonic** functions over the post-codebook scalar
-activation (``effective_activation()``: bivector poles reduced via
-``max`` and gated by modal presence).  L-tier ops (``intersection``,
-``union``) are pure lattice min/max on the bivector activation; the
-chart binds them at whichever space's tier the operands live in.
+S-tier is reserved for ops that create a composite assertion over their
+arguments: ``conjunction`` and ``disjunction`` (a parent truth-condition),
+``isEqual`` (an identity assertion), ``isaPart`` (a transitive parthood
+claim). All other ops act directly on the concept-tier bivector and
+live at C-tier — including the lattice primitives ``intersection`` /
+``union`` and the geometric identity check ``equal``.
+
+Note: a legacy ``'L'`` (logical) tier value persists in
+``Grammar._TIER_SECTIONS`` (XML ``<logical>`` section maps to ``'L'``)
+but no current ``GrammarLayer`` subclass declares ``tier = 'L'``.
 
 Per-space dispatchers are `SyntacticLayer` instances built by
 `build_space_syntactic_layer`; each holds a tier-specific
@@ -92,7 +96,7 @@ downward `S -> C` projection.
 - `Grammar.rule_by_id(i)` --- canonical production string
 - `Grammar.method_name(i)` --- dispatch method name (e.g. `'swap'`)
 - `Grammar.arity(i)` --- 1 or 2
-- `Grammar.tier(i)` --- `'P'` / `'C'` / `'S'` / `'L'`
+- `Grammar.tier(i)` --- `'P'` / `'C'` / `'S'` (also accepts legacy `'L'`)
 
 ### Grammar configuration
 
@@ -129,10 +133,11 @@ The loader accepts three RHS forms; the **explicit-op** form is canonical:
 ```
 
 Op names dispatch into `GRAMMAR_LAYER_CLASSES` (Layers.py): `lift`,
-`lower`, `intersection`, `union`, `not`, `non`, `conjunction`,
-`disjunction`, `equals`, `part`, `true`, `false`, `swap`, `query`.
-Reverse productions are derived mechanically at grammar-load time ---
-for `LHS = op(arg1, arg2)` the loader synthesizes
+`lower`, `intersection`, `union`, `swap`, `copy`, `not`, `non`,
+`true`, `false`, `part`, `query`, `area`, `luminosity`, `equal`,
+`conjunction`, `disjunction`, `isEqual`, `isaPart`.  Reverse
+productions are derived mechanically at grammar-load time --- for
+`LHS = op(arg1, arg2)` the loader synthesizes
 `arg1, arg2 = opReverse(LHS)`.
 
 ### `data/grammar.cfg` dispatch
@@ -190,27 +195,34 @@ fall back to torch elementwise.  An optional `mask` gates the output.
 
 ### Ternary commitment (`true` / `false` / `non`)
 
-For $x \in [-1, 1]$ (clamped on entry):
+All three operate on the bivector ``[pos, neg]`` at the leading two
+channels (``[..., :2]``); nWhere / nWhen channels at ``[..., 2:]``
+pass through unchanged.
 
 $$
-\mathrm{true}(x)  = \max(0,\ x), \qquad
-\mathrm{false}(x) = \max(0,\ -x), \qquad
-\mathrm{non}(x)   = 1 - |x|
+\mathrm{true}([\mathit{pos}, \mathit{neg}])  = [\mathit{pos}, 0], \qquad
+\mathrm{false}([\mathit{pos}, \mathit{neg}]) = [0, \mathit{neg}], \qquad
+\mathrm{non}([\mathit{pos}, \mathit{neg}])   = [1 - \mathit{pos},\ 1 - \mathit{neg}]
 $$
 
-These partition unity: $\mathrm{true} + \mathrm{false} + \mathrm{non}
-= 1$ pointwise.  All three are lossy.
+`true` and `false` are lossy pole projections (the discarded pole is
+zeroed; reverse is the identity passthrough). `non` is the pole-wise
+complement and self-inverse: it rotates the tetralemma
+``affirm ↔ negate`` and ``unknown ↔ contradict``.
 
-### Negation (`not`) --- Sym
+### Negation (`not`) --- C-tier
 
 Propositional bivector swap on the leading two dims:
 $[x_0, x_1, x_{2..}] \to [x_1, x_0, x_{2..}]$.  Self-inverse.
 
-### Conjunction / disjunction --- S-tier (post-codebook scalar) {#conjunction--disjunction--sym}
+### Conjunction / disjunction --- S-tier (composite-assertion wholeness) {#conjunction--disjunction--sym}
 
-`S = conjunction(S, S)` and `S = disjunction(S, S)` operate on the
-post-codebook scalar activation ``[B, V]`` (non-negative strength per
-prototype).  Strictly monotonic lattice primitives:
+`S = conjunction(S, S)` and `S = disjunction(S, S)` produce a parent
+symbol that represents a temporary *wholeness* of the two arguments —
+a composite truth-condition that cannot be expressed at the
+subsymbolic level. They operate on the post-codebook scalar
+activation ``[B, V]`` (non-negative strength per prototype). Strictly
+monotonic lattice primitives:
 
 $$
 \mathrm{conjunction}(\ell, r) = \min(\ell, r), \qquad
@@ -221,9 +233,9 @@ Routed through ``Ops.intersection(..., monotonic=True)`` /
 ``Ops.union(..., monotonic=True)``.  Both lossy with
 ``(parent, parent)`` pseudo-inverse on `reverse`.
 
-### Intersection / union --- L-tier (lattice on bivectors)
+### Intersection / union --- C-tier (lattice on bivectors)
 
-`L = intersection(L, L)` / `L = union(L, L)` are lattice min/max on a
+`C = intersection(C, C)` / `C = union(C, C)` are lattice min/max on a
 **bivector activation** ``[..., 2]``.  The chart binds them at
 whichever space's activation tier the operands live in.
 
@@ -232,17 +244,35 @@ whichever space's activation tier the operands live in.
 | `False`     | RadMin / RadMax --- same-sign min / max       |
 | `True`      | strict lattice min / max (per channel)      |
 
-L-tier ops are lossy: `decompose` returns `(parent, parent)`.
+C-tier lattice ops are lossy: `decompose` returns `(parent, parent)`.
 
-### Part / equals --- Def (tensor scoring)
+### Part / equal / isEqual / isaPart --- mereology
 
+**`part(ℓ, r)` (C-tier):**
 $\mathrm{part}(\ell, r) = \frac{\max(0,\ \ell \cdot r)}{|\ell|\,|r|} \cdot r$.
-The scalar score is broadcast to $r$'s rank.  Empty-operand contract:
+The scalar score is broadcast to $r$'s rank. Empty-operand contract:
 if $|\ell|$ or $|r|$ is near zero, the score is 1.
 
-`equals(\ell, r) = part(\ell, r) \cdot part(r, \ell)$, scalar-reduced
-and broadcast to $r$.  Under `mask`, equals degenerates to L1-distance
-agreement.  Both lossy.  See [Mereology.md](Mereology.md).
+**`equal(ℓ, r)` (C-tier; new):** geometric identity on concept
+bivectors.
+$\mathrm{equal}(\ell, r) = \mathrm{part}(\ell, r) \cdot \mathrm{part}(r, \ell)$
+(elementwise mutual parthood). Returns 1 where $\ell$ and $r$ are
+co-located on the bivector cone and 0 where they are disjoint. Acts
+directly on the pre-codebook bivector activation.
+
+**`isEqual(ℓ, r)` (S-tier):** symbolic identity assertion. Returns
+the lattice join ``torch.maximum(ℓ, r)`` on the bivector cone,
+producing a single parent symbol that asserts identity at the
+symbolic level — a higher-epistemic-level wholeness of its
+arguments. Compare with `equal`, which is the underlying geometric
+check at C-tier.
+
+**`isaPart(child, parent)` (S-tier):** one-step kernel overlap in
+$(0, 1]$, asserting transitive parthood at the current conceptual
+order. See [Mereology.md](Mereology.md).
+
+All four are lossy. See [Mereology.md](Mereology.md) for the
+mereological algebra.
 
 ### Absorb --- base-class marker
 
@@ -255,14 +285,19 @@ syntactic sugar.
 `query(\ell, r) = \ell`.  The chart pushes a marker word elsewhere
 when a norm-drop fires (see [Composition](#composition) below).
 
-### Swap (Sinkhorn soft permutation) --- Sym
+### Swap / copy --- C-tier argument selection
 
-A learned $3 \times 3$ logit matrix $M$ is normalized via $k=5$
-Sinkhorn iterations to produce a doubly-stochastic soft permutation
-$P$.  Given operands $\ell, r$ and a learned broadcast marker $m$,
-the output is the first row of $P \cdot [\ell, r, m]^\top$.  Lossy.
+`swap(ℓ, r) = r` and `copy(ℓ, r) = ℓ` are parameter-free binary ops:
+swap promotes the right operand to the parent slot, copy promotes the
+left. Lossy in both directions; reverse is the symmetric
+`(parent, parent)` pseudo-inverse on each.
 
-### Lift / lower --- rule-id annotators over the shared subsymbolic loop
+The 2026-05-04 operator overhaul retired the earlier
+Sinkhorn-based swap (a learned $3 \times 3$ logit matrix with $k=5$
+iterations) — soft permutation now lives in the chart's CKY
+pair-selection logic, not in a per-cell GrammarLayer.
+
+### Lift / lower --- P-tier rule-id annotators over the shared subsymbolic loop
 
 Post-2026-05-13 refactor.  `LiftLayer` and `LowerLayer` are now
 **pure rule-id annotators** --- they no longer own (or borrow) a
@@ -362,19 +397,24 @@ defaults to `reverse(parent)` for arity 1 invertible, else `parent`.
 | Class | Rule | Tier | Arity | Reads | Description |
 |-------|------|------|-------|-------|-------------|
 | `NotLayer` | `not` | S | 1 | event | Bivector pole swap on `[..., :2]`; self-inverse |
-| `NonLayer` | `non` | S | 1 | event | Per-pole bivector complement `1 - x[..., :2]`; self-inverse |
-| `IntersectionLayer` | `intersection` | L | 2 | activation | Lattice min on bivector `[..., 2]`; `monotonic` toggles RadMin / strict |
-| `UnionLayer` | `union` | L | 2 | activation | Lattice max on bivector `[..., 2]`; `monotonic` toggles RadMax / strict |
-| `ConjunctionLayer` | `conjunction` | S | 2 | activation | `Ops.intersection(monotonic=True)` on `[B, V]` scalar |
-| `DisjunctionLayer` | `disjunction` | S | 2 | activation | `Ops.union(monotonic=True)` on `[B, V]` scalar |
-| `LiftLayer` | `lift` | S | 2 | event | `sigma.compose` (OR fold) gated by per-rule `raw_gate`; exact LDU reverse |
-| `LowerLayer` | `lower` | S | 2 | event | `pi.compose` (AND fold) gated by per-rule `raw_gate`; exact LDU reverse |
-| `EqualsLayer` | `equals` | S | 2 | event | Mutual parthood score broadcast over right operand; lossy |
-| `PartLayer` | `part` | S | 2 | event | Directional parthood score broadcast over right operand; lossy |
-| `TrueLayer` | `true` | S | 1 | event | `relu(clamp(x, -1, 1))`; lossy |
-| `FalseLayer` | `false` | S | 1 | event | `relu(-clamp(x, -1, 1))`; lossy |
-| `SwapLayer` | `swap` | S | 2 | event | Sinkhorn soft permutation; `swap_logits`+`swap_marker` parameters |
-| `QueryLayer` | `query` | S | 2 | event | Returns left operand; chart pushes marker elsewhere |
+| `NonLayer` | `non` | C | 1 | event | Per-pole bivector complement `[1-pos, 1-neg]`; self-inverse |
+| `IntersectionLayer` | `intersection` | C | 2 | activation | Lattice min on bivector `[..., 2]`; `monotonic` toggles RadMin / strict |
+| `UnionLayer` | `union` | C | 2 | activation | Lattice max on bivector `[..., 2]`; `monotonic` toggles RadMax / strict |
+| `LiftLayer` | `lift` | P | 2 | event | Rule-id annotator; composition delegated to the subsymbolic loop |
+| `LowerLayer` | `lower` | P | 2 | event | Rule-id annotator; mirror of `lift` |
+| `EqualLayer` | `equal` | C | 2 | activation | Mutual parthood `part(ℓ,r)·part(r,ℓ)` on bivector activation (`Ops._equal_kernel`) |
+| `PartLayer` | `part` | C | 2 | event | Directional parthood score broadcast over right operand; lossy |
+| `TrueLayer` | `true` | C | 1 | event | Bivector pos-pole projection: `[pos, neg] → [pos, 0]`; lossy |
+| `FalseLayer` | `false` | C | 1 | event | Bivector neg-pole projection: `[pos, neg] → [0, neg]`; lossy |
+| `SwapLayer` | `swap` | C | 2 | event | Parameter-free `forward(left, right) → right`; reverse `(parent, parent)` |
+| `CopyLayer` | `copy` | C | 2 | event | Parameter-free dual of `swap`: `forward(left, right) → left` |
+| `QueryLayer` | `query` | C | 2 | event | Returns left operand; chart pushes marker elsewhere |
+| `AreaLayer` | `area` | C | 1 | event | Introspective scalar in `[0, 1]`; normalized Gaussian region area |
+| `LuminosityLayer` | `luminosity` | C | 2 | event | Introspective scalar in `[−1, 1]`; pairwise overlap minus disagreement |
+| `ConjunctionLayer` | `conjunction` | S | 2 | activation | `Ops.intersection(monotonic=True)` on `[B, V]` scalar; composite truth |
+| `DisjunctionLayer` | `disjunction` | S | 2 | activation | `Ops.union(monotonic=True)` on `[B, V]` scalar; composite truth |
+| `IsEqualLayer` | `isEqual` | S | 2 | event | Symbolic identity assertion via lattice join `max(ℓ, r)` on bivector cone |
+| `IsaPartLayer` | `isaPart` | S | 2 | event | One-step kernel overlap in `(0, 1]`; transitive parthood claim |
 
 `reads_activation = True` feeds `subspace.materialize(mode='activation')`;
 `False` feeds the muxed event tensor.
@@ -440,43 +480,59 @@ hard-select the top-2 operands.
 
 ```python
 GRAMMAR_LAYER_CLASSES = {
-    # S-tier (post-codebook scalar / muxed event)
-    'not':          NotLayer,
-    'non':          NonLayer,
-    'conjunction':  ConjunctionLayer,
-    'disjunction':  DisjunctionLayer,
+    # P-tier (drive the subsymbolic loop; rule-id annotators)
     'lift':         LiftLayer,
     'lower':        LowerLayer,
-    'equals':       EqualsLayer,
-    'part':         PartLayer,
-    'true':         TrueLayer,
-    'false':        FalseLayer,
-    'swap':         SwapLayer,
-    'query':        QueryLayer,
-    # L-tier (lattice on bivector activation)
+    # C-tier (direct on concept bivectors)
     'intersection': IntersectionLayer,
     'union':        UnionLayer,
+    'swap':         SwapLayer,
+    'copy':         CopyLayer,
+    'not':          NotLayer,
+    'non':          NonLayer,
+    'true':         TrueLayer,
+    'false':        FalseLayer,
+    'part':         PartLayer,
+    'query':        QueryLayer,
+    'area':         AreaLayer,
+    'luminosity':   LuminosityLayer,
+    'equal':        EqualLayer,
+    # S-tier (composite wholeness over arguments — needs a temporary
+    # symbol at a higher epistemic level)
+    'conjunction':  ConjunctionLayer,
+    'disjunction':  DisjunctionLayer,
+    'isEqual':      IsEqualLayer,
+    'isaPart':      IsaPartLayer,
 }
 ```
+
+`absorb(left, right) -> left` lives as a method on the
+``GrammarLayer`` base class (architecturally C-tier) so any subclass
+can invoke it; no dedicated subclass and no registry entry.
 
 ### Inverse contract by operator
 
 | Op            | Tier | Reverse                                        |
 |---------------|------|-------------------------------------------------|
-| `not`         | S    | exact (self-inverse pole flip)                 |
-| `non`         | S    | exact (self-inverse)                           |
-| `lift`        | S    | exact LDU inverse via gated ``sigma.generate`` |
-| `lower`       | S    | exact LDU inverse via gated ``pi.generate``    |
+| `lift`        | P    | exact LDU inverse via the subsymbolic loop      |
+| `lower`       | P    | exact LDU inverse via the subsymbolic loop      |
+| `intersection`| C    | pseudo-inverse ``(parent, parent)``            |
+| `union`       | C    | pseudo-inverse ``(parent, parent)``            |
+| `swap`        | C    | pseudo-inverse ``(parent, parent)``            |
+| `copy`        | C    | pseudo-inverse ``(parent, parent)``            |
+| `not`         | C    | exact (self-inverse pole flip)                 |
+| `non`         | C    | exact (self-inverse)                           |
+| `true`        | C    | identity passthrough (lossy)                   |
+| `false`       | C    | identity passthrough (lossy)                   |
+| `part`        | C    | no defined inverse (mereological write)        |
+| `query`       | C    | no defined inverse (mereological read)         |
+| `area`        | C    | no defined inverse (scalar introspection)      |
+| `luminosity`  | C    | no defined inverse (scalar introspection)      |
+| `equal`       | C    | pseudo-inverse ``(parent, parent)``            |
 | `conjunction` | S    | pseudo-inverse ``(parent, parent)``            |
 | `disjunction` | S    | pseudo-inverse ``(parent, parent)``            |
-| `intersection`| L    | pseudo-inverse ``(parent, parent)``            |
-| `union`       | L    | pseudo-inverse ``(parent, parent)``            |
-| `equals`      | S    | no defined inverse (mereological write)        |
-| `part`        | S    | no defined inverse (mereological write)        |
-| `query`       | S    | no defined inverse (mereological read)         |
-| `swap`        | S    | pseudo-inverse ``(parent, parent)``            |
-| `true`        | S    | identity passthrough (lossy)                   |
-| `false`       | S    | identity passthrough (lossy)                   |
+| `isEqual`     | S    | pseudo-inverse ``(parent, parent)``            |
+| `isaPart`     | S    | pseudo-inverse ``(parent, parent)``            |
 
 ---
 

@@ -197,7 +197,7 @@ def test_grammar_layer_classes_registry_complete():
     expected = {
         'not', 'non', 'intersection', 'union',
         'lift', 'lower', 'conjunction', 'disjunction',
-        'equals', 'part', 'true', 'false',
+        'isEqual', 'equal', 'part', 'true', 'false',
         'swap', 'query',
     }
     assert expected.issubset(GRAMMAR_LAYER_CLASSES.keys()), (

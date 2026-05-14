@@ -64,8 +64,8 @@
             <!-- Sentence -->
             <rule>S = NP</rule>
             <rule>S = lift(NP, VP)</rule>
-            <rule>S = equals(NP, NP)</rule>      <!-- marker: "is" -->
-            <rule>S = equals(NP, AP)</rule>      <!-- marker: "is" -->
+            <rule>S = isEqual(NP, NP)</rule>      <!-- marker: "is" -->
+            <rule>S = isEqual(NP, AP)</rule>      <!-- marker: "is" -->
             <rule>S = part(NP, NP)</rule>        <!-- markers: "has", "is-a" -->
             <rule>S = not(S)</rule>              <!-- marker: "not" -->
             <rule>S = conjunction(S, S)</rule>   <!-- marker: "and" -->
@@ -139,11 +139,11 @@
             <!-- S = lift(NP, VP)          (no marker) -->
             <rule>NP, VP = lift.reverse(S)</rule>
 
-            <!-- S = equals(NP, NP) -->
-            <rule>NP, EQUALS_MARK, NP = equals.reverse(S)</rule>
+            <!-- S = isEqual(NP, NP) -->
+            <rule>NP, EQUALS_MARK, NP = isEqual.reverse(S)</rule>
 
-            <!-- S = equals(NP, AP) -->
-            <rule>NP, EQUALS_MARK, AP = equals.reverse(S)</rule>
+            <!-- S = isEqual(NP, AP) -->
+            <rule>NP, EQUALS_MARK, AP = isEqual.reverse(S)</rule>
 
             <!-- S = part(NP, NP) -->
             <rule>NP, PART_MARK, NP = part.reverse(S)</rule>

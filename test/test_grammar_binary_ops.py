@@ -69,7 +69,7 @@ class TestUnaryGrammarLayers(unittest.TestCase):
 
 
 class TestPiLayerBinary(unittest.TestCase):
-    """PiLayer.compose == AND fold of two operands; decompose
+    """PiLayer.compose == AND fold of two operands; generate
     is a balanced split that round-trips when invertible."""
 
     def setUp(self):
@@ -85,30 +85,30 @@ class TestPiLayerBinary(unittest.TestCase):
         self.assertTrue(torch.isfinite(y).all())
         self.assertTrue((y >= -1).all() and (y <= 1).all())
 
-    def test_compose_decompose_roundtrip_invertible(self):
+    def test_compose_generate_roundtrip_invertible(self):
         layer = PiLayer(nInput=4, nOutput=4, invertible=True, nonlinear=True)
         layer.set_sigma(0.0)
         left = torch.rand(3, 7, 4) * 1.6 - 0.8
         right = torch.rand(3, 7, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # Balanced inverse: compose(decompose(y)) == y.
-        l_rec, r_rec = layer.decompose(y)
+        # Balanced inverse: compose(generate(y)) == y.
+        l_rec, r_rec = layer.generate(y)
         y_rec = layer.compose(l_rec, r_rec)
         err = torch.norm(y - y_rec) / torch.norm(y).clamp_min(1e-8)
         self.assertLess(err.item(), 1e-4,
-                        f"PiLayer compose/decompose roundtrip err {err:.2e}")
+                        f"PiLayer compose/generate roundtrip err {err:.2e}")
 
-    def test_decompose_yields_equal_halves(self):
-        # Default decompose splits the parent into two equal halves
+    def test_generate_yields_equal_halves(self):
+        # Default generate splits the parent into two equal halves
         # (in log-mult domain). Useful for the chart's outside pass.
         layer = PiLayer(nInput=4, nOutput=4, invertible=True, nonlinear=True)
         layer.set_sigma(0.0)
         parent = torch.rand(2, 3, 4) * 1.6 - 0.8
-        left, right = layer.decompose(parent)
+        left, right = layer.generate(parent)
         self.assertTrue(torch.allclose(left, right, atol=1e-6))
 
 class TestSigmaLayerBinary(unittest.TestCase):
-    """SigmaLayer.compose == OR fold of two operands; decompose
+    """SigmaLayer.compose == OR fold of two operands; generate
     is a balanced split that round-trips when invertible."""
 
     def setUp(self):
@@ -124,46 +124,46 @@ class TestSigmaLayerBinary(unittest.TestCase):
         self.assertTrue(torch.isfinite(y).all())
         self.assertTrue((y >= -1).all() and (y <= 1).all())
 
-    def test_compose_decompose_roundtrip_invertible(self):
+    def test_compose_generate_roundtrip_invertible(self):
         layer = SigmaLayer(nInput=4, nOutput=4, naive=False,
                            invertible=True, nonlinear=True)
         layer.set_sigma(0.0)
         left = torch.rand(3, 7, 4) * 1.6 - 0.8
         right = torch.rand(3, 7, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        l_rec, r_rec = layer.decompose(y)
+        l_rec, r_rec = layer.generate(y)
         y_rec = layer.compose(l_rec, r_rec)
         err = torch.norm(y - y_rec) / torch.norm(y).clamp_min(1e-8)
         self.assertLess(err.item(), 1e-4,
-                        f"SigmaLayer compose/decompose roundtrip err {err:.2e}")
+                        f"SigmaLayer compose/generate roundtrip err {err:.2e}")
 
-    def test_decompose_yields_equal_halves(self):
+    def test_generate_yields_equal_halves(self):
         layer = SigmaLayer(nInput=4, nOutput=4, naive=False,
                            invertible=True, nonlinear=True)
         layer.set_sigma(0.0)
         parent = torch.rand(2, 3, 4) * 1.6 - 0.8
-        left, right = layer.decompose(parent)
+        left, right = layer.generate(parent)
         self.assertTrue(torch.allclose(left, right, atol=1e-6))
 
 
 class TestIntersectionUnionBinary(unittest.TestCase):
-    """IntersectionLayer / UnionLayer are L-tier (logical) binary
+    """IntersectionLayer / UnionLayer are C-tier (conceptual) binary
     lattice min/max on bivector activation. They share kernels
     with ConjunctionLayer / DisjunctionLayer (S-tier counterparts
-    on post-codebook scalar activation); the L-vs-S distinction is
+    on post-codebook scalar activation); the C-vs-S distinction is
     operand domain (bivector vs scalar), not which space holds them.
     """
 
     def setUp(self):
         pass
 
-    def test_intersection_layer_is_L_tier(self):
+    def test_intersection_layer_is_C_tier(self):
         layer = IntersectionLayer()
-        self.assertEqual(layer.tier, 'L')
+        self.assertEqual(layer.tier, 'C')
 
-    def test_union_layer_is_L_tier(self):
+    def test_union_layer_is_C_tier(self):
         layer = UnionLayer()
-        self.assertEqual(layer.tier, 'L')
+        self.assertEqual(layer.tier, 'C')
 
     def test_intersection_compose_is_min_kernel(self):
         from Layers import Ops
@@ -171,7 +171,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # L-tier intersection is RadMin (same-sign min magnitude,
+        # C-tier intersection is RadMin (same-sign min magnitude,
         # zero passthrough) via Ops.intersection.
         self.assertTrue(torch.allclose(y, Ops.intersection(left, right), atol=1e-6))
         # Idempotent on the diagonal.
@@ -195,7 +195,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # L-tier union is RadMax (same-sign max magnitude, zero
+        # C-tier union is RadMax (same-sign max magnitude, zero
         # passthrough) via Ops.union.
         self.assertTrue(torch.allclose(y, Ops.union(left, right), atol=1e-6))
         diag = layer.compose(left, left)

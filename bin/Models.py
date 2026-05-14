@@ -1108,7 +1108,7 @@ class BaseModel(Mereology, nn.Module):
         partitions = getattr(self, '_partitions', None)
 
         # Two-argument grammar methods eligible for extrapolation
-        two_arg_rules = ['union', 'intersection', 'equals', 'part']
+        two_arg_rules = ['union', 'intersection', 'isEqual', 'part']
 
         indices = seed_indices if seed_indices is not None else list(range(n))
         added = []

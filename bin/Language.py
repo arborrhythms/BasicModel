@@ -2595,24 +2595,30 @@ class Chart(nn.Module):
     #   S (symbolic)    — needs codebook lookup (parthood / equality
     #     / query) for its semantics.
     _RULE_TIER = {
-        # P-tier: subsymbolic gate through substrate sigma / pi.
+        # P-tier: drive the subsymbolic loop.
         'lift':         'P',
         'lower':        'P',
-        # C-tier: local ops over the operand tensors.
+        # C-tier: act directly on concept tensors (no symbolic
+        # wholeness assertion required).
         'union':        'C',
         'intersection': 'C',
-        'conjunction':  'C',
-        'disjunction':  'C',
-        'not':          'C',
-        'non':          'C',
         'swap':         'C',
         'copy':         'C',
+        'not':          'C',
+        'non':          'C',
         'true':         'C',
         'false':        'C',
-        # S-tier: codebook-lookup-dependent.
-        'query':        'S',
-        'equals':       'S',
-        'part':         'S',
+        'part':         'C',
+        'query':        'C',
+        'area':         'C',
+        'luminosity':   'C',
+        'equal':        'C',
+        # S-tier: produce a higher-epistemic-level wholeness of
+        # arguments; cannot be implemented at the subsymbolic level.
+        'conjunction':  'S',
+        'disjunction':  'S',
+        'isEqual':      'S',
+        'isaPart':      'S',
     }
 
     def _apply_rule_forward(self, method_name, left, right, marker_mask,
@@ -5568,9 +5574,9 @@ class WordSpace(Space):
             if 'part' in grammar_S_methods:
                 from Layers import PartLayer
                 builtin_layers['part'] = PartLayer()
-            if 'equals' in grammar_S_methods:
-                from Layers import EqualsLayer
-                builtin_layers['equals'] = EqualsLayer()
+            if 'isEqual' in grammar_S_methods:
+                from Layers import IsEqualLayer
+                builtin_layers['isEqual'] = IsEqualLayer()
             if 'query' in grammar_S_methods:
                 from Layers import QueryLayer
                 builtin_layers['query'] = QueryLayer()

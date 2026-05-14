@@ -1758,11 +1758,12 @@ class GrammarLayer(Layer):
         return self.generate(*args, **kwargs)
 
 
-class SigmaLayer(GrammarLayer):
-    """Additive (summation) layer.
+class SigmaLayer(Layer):
+    """Additive (summation) fold feature of the subsymbolic loop.
 
-    Grammar role: implements the OR-fold (``union`` rule). The chart
-    and rule-probability gate find this layer by ``rule_name``.
+    Substrate, not a grammar operation. Instantiated directly by spaces
+    (``ConceptualSpace.sigma_percept``) and used by the subsymbolic
+    loop; not chart-dispatched.
 
     With ``nonlinear=True`` (legacy behavior), ``forward`` returns
     ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
@@ -1783,15 +1784,6 @@ class SigmaLayer(GrammarLayer):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
     """
-    # GrammarLayer metadata: SigmaLayer is the additive (OR-style) unary
-    # fold (``sigma`` rule). The binary surface (compose/decompose) is no
-    # longer a chart-dispatch entry point; binary lattice max on concepts
-    # lives in ``UnionLayer``. ``invertible`` and ``lossy`` are governed
-    # by the constructor kwarg `invertible` and overwritten on the
-    # instance, so we leave the class-level defaults from GrammarLayer
-    # alone.
-    rule_name  = "sigma"
-    arity      = 1
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
@@ -2065,7 +2057,7 @@ class NotLayer(GrammarLayer):
     rule_name  = "not"
     arity      = 1
     invertible = True
-    tier       = 'S'
+    tier       = 'C'
 
     def __init__(self):
         """Initialize NotLayer; allocate state for the class contract.
@@ -2117,6 +2109,7 @@ class NonLayer(GrammarLayer):
     rule_name  = "non"
     arity      = 1
     invertible = True
+    tier       = 'C'
 
     def __init__(self):
         """Initialize NonLayer; allocate state for the class contract.
@@ -2172,7 +2165,7 @@ class IntersectionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'L'
+    tier             = 'C'
     reads_activation = True
 
     def __init__(self, monotonic=False):
@@ -2228,7 +2221,7 @@ class UnionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'L'
+    tier             = 'C'
     reads_activation = True
 
     def __init__(self, monotonic=False):
@@ -2325,7 +2318,7 @@ class LiftLayer(GrammarLayer):
     rule_name  = "lift"
     arity      = 2
     invertible = True
-    tier       = 'S'
+    tier       = 'P'
 
     def __init__(self, symbolicSpace=None, perceptualSpace=None,
                  conceptualSpace=None):
@@ -2392,7 +2385,7 @@ class LowerLayer(GrammarLayer):
     rule_name  = "lower"
     arity      = 2
     invertible = True
-    tier       = 'S'
+    tier       = 'P'
 
     def __init__(self, symbolicSpace=None, conceptualSpace=None,
                  perceptualSpace=None):
@@ -2453,7 +2446,7 @@ class ConjunctionLayer(GrammarLayer):
     ``Ops.intersection`` so the kernel collapses to ``torch.min``
     via ``_lower_kernel(kind='strict')``.
 
-    Distinct from ``IntersectionLayer`` (L-tier): IntersectionLayer
+    Distinct from ``IntersectionLayer`` (C-tier): IntersectionLayer
     operates on a bivector ``[..., 2]`` activation (concept-tier
     pre-codebook) and supports both RadMin and lattice-min;
     ConjunctionLayer operates on a *scalar* ``[B, V]`` post-
@@ -2513,7 +2506,7 @@ class DisjunctionLayer(GrammarLayer):
     which collapses to ``torch.max`` via
     ``_lift_kernel(kind='strict')``.
 
-    Distinct from ``UnionLayer`` (L-tier): UnionLayer operates on
+    Distinct from ``UnionLayer`` (C-tier): UnionLayer operates on
     a bivector ``[..., 2]`` activation and supports both RadMax
     and lattice-max; DisjunctionLayer operates on a scalar
     ``[B, V]`` post-codebook activation and is strictly monotonic.
@@ -2570,7 +2563,7 @@ def _argmax_prototype(x):
     Returns a ``[B]`` long tensor where each entry is the position
     (codebook prototype index) with the largest ``.what`` L2 norm
     in that batch row -- the most-active prototype for that
-    operand. Used by ``PartLayer`` / ``EqualsLayer`` / ``QueryLayer``
+    operand. Used by ``PartLayer`` / ``IsEqualLayer`` / ``QueryLayer``
     to map continuous activations to discrete codebook indices for
     mereological-tree bookkeeping.
     """
@@ -2590,7 +2583,7 @@ def _parthood_geometric(left, right):
     """Clipped cosine parthood on per-batch dominant bivector activations.
 
     Replaces the explicit ``MereologicalTree`` lookup for
-    ``PartLayer`` / ``EqualsLayer`` / ``QueryLayer`` after the
+    ``PartLayer`` / ``IsEqualLayer`` / ``QueryLayer`` after the
     "codebook IS the meronymic tree" unification: parthood is
     expressed by codebook geometry on the bivector cone (see
     ``Architecture.md`` §"Monotonicity of the bivector chain").
@@ -2620,9 +2613,15 @@ def _parthood_geometric(left, right):
     return (dot.clamp(min=0.0) / (na * nb + 1e-9))               # [B]
 
 
-class EqualsLayer(GrammarLayer):
-    """``S -> equals(S, S)`` -- propositional identity on the bivector
-    codebook.
+class IsEqualLayer(GrammarLayer):
+    """``S -> isEqual(S, S)`` -- symbolic identity assertion.
+
+    S-tier identity: ``isEqual(A, B)`` asserts that A and B name the
+    same concept by producing a single parent symbol that represents
+    the wholeness of its arguments — a higher-epistemic-level
+    assertion that cannot be expressed at the subsymbolic level.
+    Compare with the C-tier ``equal`` which performs the geometric
+    identity check on concept bivectors directly.
 
     Post-MereologicalTree retirement: equality is expressed purely
     geometrically. The codebook is now the meronymic structure; an
@@ -2640,7 +2639,7 @@ class EqualsLayer(GrammarLayer):
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
-    rule_name        = "equals"
+    rule_name        = "isEqual"
     arity            = 2
     invertible       = False
     lossy            = True
@@ -2648,7 +2647,7 @@ class EqualsLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, tree=None):
-        """Initialize EqualsLayer.
+        """Initialize IsEqualLayer.
 
         ``tree`` is accepted but ignored for backward compatibility
         with the chart's lazy-build call sites; the
@@ -2666,6 +2665,50 @@ class EqualsLayer(GrammarLayer):
         Lossy ``(parent, parent)`` pseudo-inverse -- the max-fold
         is not bijective.
         """
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+class EqualLayer(GrammarLayer):
+    """``C -> equal(C, C)`` -- geometric identity on concept bivectors.
+
+    C-tier identity: ``equal(A, B)`` returns the mutual-parthood
+    score ``part(A, B) * part(B, A)`` on bivector activations,
+    yielding 1 where A and B are co-located on the bivector cone
+    and 0 where they are disjoint. Acts directly on the concept-tier
+    bivector activation; no codebook lookup is required.
+
+    Compare with the S-tier ``isEqual`` which produces a single
+    parent symbol asserting identity — a higher-epistemic-level
+    wholeness operation that cannot be expressed at the subsymbolic
+    level.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "equal"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'C'
+    reads_activation = True
+
+    def __init__(self):
+        """Initialize EqualLayer."""
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Mutual parthood: ``part(left, right) * part(right, left)``."""
+        return Ops._equal_kernel(left, right)
+
+    def reverse(self, parent):
+        """Lossy ``(parent, parent)`` pseudo-inverse."""
         return parent, parent
 
     def compose(self, left, right):
@@ -2701,7 +2744,7 @@ class PartLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -2742,13 +2785,13 @@ class TrueLayer(GrammarLayer):
     """``S -> true(S)`` -- keep only the pos pole of the bivector
     activation; zero the neg pole.
 
-    Operates on the materialized symbolic-tier activation
-    ``[B, V, 2]`` (``reads_activation=True``). Returns the same
-    shape with ``neg`` replaced by zero -- the bivector now
-    affirms only what was on the positive pole, with no negative
-    evidence. nWhere / nWhen channels at ``[..., 2:]`` pass
-    through unchanged (same convention as ``NotLayer`` /
-    ``NonLayer``).
+    The dispatcher hands TrueLayer the muxed event tensor
+    (``reads_activation=False``); the bivector ``[pos, neg]`` lives
+    at ``[..., :2]`` (same convention as ``NotLayer`` / ``NonLayer``).
+    Returns the same shape with ``neg`` replaced by zero -- the
+    bivector now affirms only what was on the positive pole, with
+    no negative evidence. nWhere / nWhen channels at ``[..., 2:]``
+    pass through unchanged.
 
     Lossy: the neg pole is destroyed; reverse is a passthrough.
     """
@@ -2756,7 +2799,7 @@ class TrueLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -2792,8 +2835,10 @@ class FalseLayer(GrammarLayer):
     """``S -> false(S)`` -- keep only the neg pole of the bivector
     activation; zero the pos pole.
 
-    Mirror of ``TrueLayer``: bivector ``[pos, neg]`` becomes
-    ``[0, neg]``. nWhere / nWhen channels pass through.
+    Mirror of ``TrueLayer``: dispatcher hands the muxed event tensor
+    (``reads_activation=False``); bivector ``[pos, neg]`` at
+    ``[..., :2]`` becomes ``[0, neg]``. nWhere / nWhen channels at
+    ``[..., 2:]`` pass through unchanged.
 
     Lossy: the pos pole is destroyed; reverse is a passthrough.
     """
@@ -2801,7 +2846,7 @@ class FalseLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -2851,7 +2896,7 @@ class SwapLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -2906,7 +2951,7 @@ class CopyLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -2962,7 +3007,7 @@ class QueryLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -3075,7 +3120,7 @@ def luminosity_op(x_a, x_b, sigma=None):
     return torch.clamp(lum, min=-1.0, max=1.0)
 
 
-def direct_part_of_op(child, parent, sigma=None):
+def isa_part_op(child, parent, sigma=None):
     """One-step kernel overlap ``K(child, parent) ∈ (0, 1]`` per the
     plan's "is the child contained in the parent at this conceptual
     order" semantics.
@@ -3097,7 +3142,7 @@ class AreaLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -3122,7 +3167,7 @@ class LuminosityLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    tier             = 'C'
     reads_activation = False
 
     def __init__(self):
@@ -3141,9 +3186,9 @@ class LuminosityLayer(GrammarLayer):
         return self.reverse(parent)
 
 
-class DirectPartOfLayer(GrammarLayer):
-    """``S -> directPartOf(S, S)`` -- one-step kernel overlap ∈ (0, 1]."""
-    rule_name        = "directPartOf"
+class IsaPartLayer(GrammarLayer):
+    """``S -> isaPart(S, S)`` -- one-step kernel overlap ∈ (0, 1]."""
+    rule_name        = "isaPart"
     arity            = 2
     invertible       = False
     lossy            = True
@@ -3154,7 +3199,7 @@ class DirectPartOfLayer(GrammarLayer):
         super().__init__(0, 0)
 
     def forward(self, child, parent):
-        return direct_part_of_op(child, parent)
+        return isa_part_op(child, parent)
 
     def reverse(self, parent):
         return parent, parent
@@ -3181,7 +3226,8 @@ GRAMMAR_LAYER_CLASSES = {
     'lower':        LowerLayer,
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
-    'equals':       EqualsLayer,
+    'isEqual':      IsEqualLayer,
+    'equal':        EqualLayer,
     'part':         PartLayer,
     'true':         TrueLayer,
     'false':        FalseLayer,
@@ -3191,7 +3237,7 @@ GRAMMAR_LAYER_CLASSES = {
     # Conceptual introspection (2026-05-12):
     'area':         AreaLayer,
     'luminosity':   LuminosityLayer,
-    'directPartOf': DirectPartOfLayer,
+    'isaPart':      IsaPartLayer,
     # 'absorb' removed 2026-05-04: the absorb / sentence-marker
     # behavior is a base-class method on ``GrammarLayer`` itself, so
     # callers invoke ``layer.absorb(left, right)`` on any GrammarLayer
@@ -3221,14 +3267,13 @@ GRAMMAR_LAYER_CLASSES = {
 CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
 
 
-class PiLayer(GrammarLayer):
-    r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
+class PiLayer(Layer):
+    r"""Multiplicative boundary fold feature of the subsymbolic loop:
+    ``[-1, 1] -> [-1, 1]``.
 
-    Grammar role: implements the multiplicative log-domain unary fold
-    (``pi`` rule). The chart and rule-probability gate find this layer
-    by ``rule_name``. The binary surface (``compose``/``generate``) is no
-    longer a chart-dispatch entry point; binary lattice min on concepts
-    lives in ``IntersectionLayer``.
+    Substrate, not a grammar operation. Instantiated directly by spaces
+    (``PerceptualSpace.pi_input`` / ``pi_concept``) and used by the
+    subsymbolic loop; not chart-dispatched.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
@@ -3245,8 +3290,6 @@ class PiLayer(GrammarLayer):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer) -- bitonic response
     """
-    rule_name  = "pi"
-    arity      = 1
 
     _eps = 1e-6
 
@@ -9136,7 +9179,7 @@ def _bind_ops_singletons():
         ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
         ('lift',        Ops._lift_kernel,        LiftLayer),
         ('lower',       Ops._lower_kernel,       LowerLayer),
-        ('equal',       Ops._equal_kernel,       EqualsLayer),
+        ('equal',       Ops._equal_kernel,       EqualLayer),
         ('part',        Ops._part_kernel,        PartLayer),
     )
     for name, kernel, cls in bindings:

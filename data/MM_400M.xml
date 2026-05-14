@@ -109,7 +109,7 @@
         <S>when(S)</S>
         <S>query(S, S)</S>
         <S>swap(S, S)</S>
-        <S>equals(S, S)</S>
+        <S>isEqual(S, S)</S>
         <S>part(S, S)</S>
         <S>not(S)</S>
         <S>intersection(S, S)</S>

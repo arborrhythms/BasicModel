@@ -66,8 +66,8 @@
             <!-- Sentence -->
             <rule>S = NP</rule>
             <rule>S = lift(NP, VP)</rule>
-            <rule>S = equals(NP, NP)</rule>
-            <rule>S = equals(NP, AP)</rule>
+            <rule>S = isEqual(NP, NP)</rule>
+            <rule>S = isEqual(NP, AP)</rule>
             <rule>S = part(NP, NP)</rule>
             <rule>S = not(S)</rule>
             <rule>S = conjunction(S, S)</rule>

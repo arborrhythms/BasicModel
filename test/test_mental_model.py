@@ -57,8 +57,11 @@ class TestBasicModelForwardReverse(unittest.TestCase):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")
-        # After the C->S merge, all method rules live on S-tier.
-        self.assertIn('equals', Language.TheGrammar.s_methods)
+        # Methods present in TheGrammar.s_methods reflect the XML's
+        # <symbols> bucketing; not every grammar op is S-tier in the
+        # post-2026-05-14 architecture (intersection / union / not /
+        # part are now C-tier, but still appear in <symbols>).
+        self.assertIn('isEqual', Language.TheGrammar.s_methods)
         self.assertIn('part', Language.TheGrammar.s_methods)
         self.assertIn('union', Language.TheGrammar.s_methods)
         self.assertIn('not', Language.TheGrammar.s_methods)
@@ -91,7 +94,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         'conjunction', 'disjunction',
         'intersection', 'union',
         'lift', 'lower',
-        'equals', 'part',
+        'isEqual', 'part',
         'query', 'swap',
     }
 

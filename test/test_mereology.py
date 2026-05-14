@@ -232,13 +232,13 @@ class TestCopyLayer(unittest.TestCase):
 
     def test_introspection_layers_registered(self):
         # The 2026-05-12 conceptual-introspection refactor restored
-        # ``area`` / ``luminosity`` / ``directPartOf`` as first-class
+        # ``area`` / ``luminosity`` / ``isaPart`` as first-class
         # GrammarLayers (see test_conceptual_introspection.py).  The
         # measures still live on the Mereology mixin; the layers wrap
         # them as chart-dispatch entry points.
         self.assertIn('area', GRAMMAR_LAYER_CLASSES)
         self.assertIn('luminosity', GRAMMAR_LAYER_CLASSES)
-        self.assertIn('directPartOf', GRAMMAR_LAYER_CLASSES)
+        self.assertIn('isaPart', GRAMMAR_LAYER_CLASSES)
 
 
 class TestSTEAnswer(unittest.TestCase):

@@ -136,8 +136,8 @@
                  width-1 leaves only. -->
             <rule width="1..">S = NP</rule>
             <rule width="3..">S = lift(NP, VP)</rule>
-            <rule width="3..">S = equals(NP, NP)</rule>
-            <rule width="3..">S = equals(NP, AP)</rule>
+            <rule width="3..">S = isEqual(NP, NP)</rule>
+            <rule width="3..">S = isEqual(NP, AP)</rule>
             <rule width="3..">S = part(NP, NP)</rule>
             <rule width="2..">S = not(S)</rule>
             <rule width="3..">S = conjunction(S, S)</rule>
