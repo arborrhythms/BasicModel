@@ -39,7 +39,7 @@
       <numEpochs>80</numEpochs>
       <batchSize>16</batchSize>
       <learningRate>0.005</learningRate>
-      <reverseScale>0.1</reverseScale>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>

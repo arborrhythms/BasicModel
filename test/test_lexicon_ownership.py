@@ -279,10 +279,14 @@ def test_outputspace_expand_masked_is_gone():
         "OutputSpace.expand_masked should be deleted (MLM removed)"
 
 
-def test_inputspace_arir_step_is_public():
+def test_inputspace_arir_step_retired():
+    """``arir_step`` retired 2026-05-14 alongside ``<maskedPrediction>``;
+    sentence-level generation moves to ``BasicModel.generate_sentence``
+    backed by the ARMA(p, q) InterSentenceLayer.
+    """
     from bin import Spaces
-    assert hasattr(Spaces.InputSpace, 'arir_step'), \
-        "InputSpace.arir_step should be a public method (promoted from _getBatch_arir)"
+    assert not hasattr(Spaces.InputSpace, 'arir_step'), \
+        "InputSpace.arir_step should be deleted (ARIR runtime retired)"
 
 
 def test_inputspace_getbatch_is_gone():

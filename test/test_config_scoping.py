@@ -172,20 +172,13 @@ class TestValidateConfig(unittest.TestCase):
         # Should not raise
         Models.BasicModelFactory.validate_config(cfg)
 
-    def test_arir_requires_reconstruction(self):
-        cfg = {
-            "architecture": {
-                "reconstruct": "NONE",
-                "training": {"maskedPrediction": "ARIR"},
-            },
-            "PerceptualSpace": {"hasAttention": False, "invertible": False,
-                                "nActive": 4, "nDim": 1, "flatten": False},
-            "SymbolicSpace": {"nOutput": 5, "nDim": 4},
-            "ConceptualSpace": {"hasAttention": False, "flatten": False},
-        }
-        with self.assertRaises(ValueError) as ctx:
-            Models.BasicModelFactory.validate_config(cfg)
-        self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
+    def test_arir_requires_reconstruction_retired(self):
+        """Retired 2026-05-14: ``<maskedPrediction>`` is gone, so the
+        ARIR/reconstruct coupling validation is gone too.  Within-
+        sentence training is IR-only; ``<reconstruct>`` is now an
+        independent forward-only loss selector.
+        """
+        return  # retired check; see plan §1
 
     def test_symbol_dim_must_match_concept_dim(self):
         """Post 2026-05 ownership rule: SymbolicSpace owns no SigmaLayer,
@@ -208,9 +201,13 @@ class TestValidateConfig(unittest.TestCase):
 
 
 class TestInferValidation(unittest.TestCase):
-    def test_arir_infer_requires_reversible(self):
+    def test_non_ir_infer_modes_raise_not_implemented(self):
+        """ARIR/AR were retired 2026-05-14 in favour of
+        ``BasicModel.generate_sentence`` for sentence-level
+        generation.  ``infer(mode='ARIR')`` (or anything other than
+        'IR') now raises ``NotImplementedError`` rather than running
+        the legacy state machine.
+        """
         model = Models.BasicModel()
-        model.reversible = False
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(NotImplementedError):
             model.infer("hello", max_length=1, mode="ARIR")
-        self.assertIn("reversible=True", str(ctx.exception))

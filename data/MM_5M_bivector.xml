@@ -24,15 +24,13 @@
 
     <training>
       <numEpochs>1</numEpochs>
-      <batchSize>16</batchSize>
+      <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
-      <reverseScale>0.1</reverseScale>
-      <maskedPrediction>ARIR</maskedPrediction>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>AR</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
-      <sentenceContextWindow>5</sentenceContextWindow>
     </training>
 
     <server>
@@ -74,10 +72,9 @@
     <nInputDim>10</nInputDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
-    <nDim>10</nDim>
+    <nDim>128</nDim>
     <nVectors>512</nVectors>
     <codebook>true</codebook>
-    <chunking>lexicon</chunking>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
@@ -95,7 +92,7 @@
     <nInput>8</nInput>
     <nInputDim>2</nInputDim>
     <nDim>2</nDim>
-    <nVectors>1024</nVectors>
+    <nVectors>65536</nVectors>
     <nOutput>1024</nOutput>
     <nOutputDim>2</nOutputDim>
     <nWhere>0</nWhere>

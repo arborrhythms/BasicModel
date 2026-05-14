@@ -63,7 +63,7 @@
       <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
-      <reverseScale>0.1</reverseScale>
+      <reconstructionScale>0.1</reconstructionScale>
       <!-- ARIR (autoregressive + masked-fill).  AR loop trains the
            model for next-token generation; IR adds reconstruction loss
            at masked positions on the same forward.  K microbatch
@@ -72,11 +72,9 @@
            LM_5M_IR.xml runs the chart once per batch and trains the
            same parameter shape, so transferring weights between the
            two configs is straightforward. -->
-      <maskedPrediction>ARIR</maskedPrediction>
       <trainEmbedding>AR</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
-      <sentenceContextWindow>5</sentenceContextWindow>
     </training>
 
     <server>

@@ -4505,16 +4505,18 @@ class WordSpace(Space):
         grammar = TheGrammar
 
         # 1a. Detect the default-only case (every operational rule is
-        # the unary pi / sigma fold registered as the per-tier
-        # default). When true, ``compose`` / ``generate`` skip the
-        # CKY-style inside / outside pass entirely; per-space
-        # SyntacticLayer dispatch falls through to its registered
-        # default rule, which fires PiLayer.forward / SigmaLayer.forward
-        # exactly once per step -- mathematically identical to the
-        # legacy bare ``self.pi(x)`` / ``self.sigma.forward(x)`` call
-        # sites. Implicit non-operational rules (epsilon, X -> X
-        # passthrough whose method_name is None) don't disqualify the
-        # bypass.
+        # a unary substrate fold registered as the per-tier default).
+        # When true, ``compose`` / ``generate`` skip the CKY-style
+        # inside / outside pass entirely; per-space SyntacticLayer
+        # dispatch falls through to its registered default rule, which
+        # fires the substrate layer (``pi_input``, ``sigma_percept``,
+        # …) exactly once per step -- mathematically identical to the
+        # bare ``self.sigma_percept(x)`` / ``self.pi_input(x)`` call
+        # sites. Legacy ``pi`` / ``sigma`` names alias to the new
+        # substrates (see ``_attach_per_space_syntactic_layer``), so
+        # both old and new grammar names qualify for the bypass.
+        # Implicit non-operational rules (epsilon, X -> X passthrough
+        # whose method_name is None) don't disqualify the bypass.
         self._grammar_is_default_only = all(
             r.method_name is None or (
                 r.method_name in ('pi', 'sigma') and r.arity == 1)
@@ -4731,14 +4733,14 @@ class WordSpace(Space):
             if all(p is not q for q in self.params):
                 self.params.append(p)
 
-        # 7. DiscourseSpace -- optional inter-sentence substrate.
-        # Gated on <architecture><training><sentencePrediction>; tasks
-        # without inter-sentence structure (XOR, MNIST) leave it off.
-        # The contrastive loss has no learnable parameters; the three
-        # training keys that survive are ``sentenceContextWindow``
-        # (recent buffer depth used for the attractive centroid),
-        # ``sentenceCentroidHistory`` (older centroids used for the
-        # repulsive force), and ``sentenceLambda`` (repulsive scale).
+        # 7. InterSentenceLayer -- optional ARMA(p, q) next-sentence
+        # predictor.  Gated on <architecture><training><sentencePrediction>;
+        # tasks without inter-sentence structure (XOR, MNIST) leave
+        # it off.  Shape knobs live under <WordSpace> (armaP, armaQ,
+        # armaHiddenDim); the loss weight lives under
+        # <architecture><training><armaScale> and is read by runBatch.
+        # Contrastive cosine machinery retired 2026-05-14 alongside
+        # <maskedPrediction>.
         self.discourse = None
         if bool(TheXMLConfig.training("sentencePrediction", False)):
             try:
@@ -4746,20 +4748,21 @@ class WordSpace(Space):
             except (AttributeError, IndexError, TypeError):
                 n_sym_rows = int(getattr(symbolicSpace, 'nVectors', 0) or 0)
             if n_sym_rows > 0 and muxed > 0:
-                context_window = int(TheXMLConfig.training(
-                    "sentenceContextWindow", 12) or 12)
-                centroid_history = int(TheXMLConfig.training(
-                    "sentenceCentroidHistory", 3) or 3)
-                sentence_lambda = float(TheXMLConfig.training(
-                    "sentenceLambda", 1.01) or 1.01)
+                arma_p = int(TheXMLConfig.space(
+                    "WordSpace", "armaP", default=5) or 5)
+                arma_q = int(TheXMLConfig.space(
+                    "WordSpace", "armaQ", default=2) or 2)
+                arma_hidden = TheXMLConfig.space(
+                    "WordSpace", "armaHiddenDim", default=None)
                 self.discourse = InterSentenceLayer(
                     n_symbols=n_sym_rows,
                     max_depth=int(getattr(
                         self.subspace, 'max_depth', 256) or 256),
                     n_dim=muxed,
-                    context_window=context_window,
-                    centroid_history=centroid_history,
-                    lam=sentence_lambda,
+                    p=arma_p,
+                    q=arma_q,
+                    hidden_dim=(int(arma_hidden)
+                                if arma_hidden is not None else None),
                     concept_dim=int(concept_dim),
                 )
                 self.layers.append(self.discourse)
@@ -5088,20 +5091,21 @@ class WordSpace(Space):
         ``default_rule`` code-level fallback).
         """
         self._compose_generation += 1
+        # Two firing modes, gated by ``_grammar_is_default_only``
+        # (computed from the configured grammar at __init__ time):
+        #
+        #   * Default-only fast path — every operational rule is the
+        #     unary substrate fold (``pi`` / ``sigma`` arity-1). The
+        #     chart inside pass adds no information; ``current_rules``
+        #     is populated from the grammar XML directly.
+        #
+        #   * Full chart — any other rule is present (``intersection``,
+        #     ``union``, ``lift``, ``lower``, ``not``, …). The chart
+        #     runs its inside pass to select per-cell winners.
+        #
+        # The retired ``<WordSpace><useGrammar>`` XML knob used to
+        # also gate this; the grammar XML is now the sole driver.
         if self._grammar_is_default_only:
-            self.current_rules = self._default_compose_rules()
-            return self.current_rules
-        # useGrammar='none' guard: skip the chart inside pass entirely.
-        # Cached on first call to avoid an XMLConfig.get per forward.
-        ug = getattr(self, '_use_grammar_cached', None)
-        if ug is None:
-            try:
-                ug = str(util.TheXMLConfig.get(
-                    "WordSpace.useGrammar", default="none")).lower()
-            except Exception:
-                ug = "none"
-            self._use_grammar_cached = ug
-        if ug == "none":
             self.current_rules = self._default_compose_rules()
             return self.current_rules
         self.current_rules = self.chart.compose(
@@ -5112,21 +5116,21 @@ class WordSpace(Space):
         """Run the chart's outside pass + Viterbi backtrace; populate
         ``self.generate_rules``.
 
-        Default-only and useGrammar='none' fast paths mirror ``compose``.
+        Default-only fast path mirrors ``compose``.
+
+        Post-2026-05-14: the only training-time caller of this method
+        was ``Models._chart_generate_from_stm``, which was retired
+        with the reverse pipeline.  ``WordSpace.generate_rules`` is
+        now populated once at construction via
+        ``_default_generate_rules`` and consumed read-only by
+        ``Mereology`` / ``Models`` for diagnostic dumps; the
+        downstream chart's outside pass is never re-fired during
+        training.  This method is kept on the public surface so that
+        unit-level tests of the chart's outside pass (signal-router
+        contract, Viterbi backtrace) can still drive it directly.
         """
         self._generate_generation += 1
         if self._grammar_is_default_only:
-            self.generate_rules = self._default_generate_rules()
-            return self.generate_rules
-        ug = getattr(self, '_use_grammar_cached', None)
-        if ug is None:
-            try:
-                ug = str(util.TheXMLConfig.get(
-                    "WordSpace.useGrammar", default="none")).lower()
-            except Exception:
-                ug = "none"
-            self._use_grammar_cached = ug
-        if ug == "none":
             self.generate_rules = self._default_generate_rules()
             return self.generate_rules
         self.generate_rules = self.chart.generate(
@@ -5484,19 +5488,34 @@ class WordSpace(Space):
         # Inner instance probes: use try/except rather than getattr-with-
         # defaults per the project's no-defensive-getattr stance.
         if tier == 'P':
-            sigma = getattr(space, 'sigma', None)
-            if sigma is not None:
-                # SigmaLayer is the unary multiplicative OR-fold and is
-                # registered under rule_name "sigma". Grammar XML's
-                # ``P = sigma(P)`` rule fires SigmaLayer.forward(x).
-                builtin_layers['sigma'] = sigma
+            # Phase C (2026-05-13 rebalance): PerceptualSpace owns
+            # ``pi_input`` (input_dim → percept_dim) and ``pi_concept``
+            # (concept_dim → percept_dim); both fire unconditionally
+            # in the bare forward path. The chart can dispatch them by
+            # rule name as well — ``pi_input`` is the IS-side fold so
+            # we register it under both the new ``pi`` rule name (per
+            # the doc/Spaces.md migration table: ``P = pi(IS)``) and
+            # the legacy ``sigma`` alias (so old grammars
+            # ``P = sigma(P)`` continue to find a layer). ``pi_concept``
+            # is the C-feedback fold and gets the ``lower`` rule name.
+            pi_input = getattr(space, 'pi_input', None)
+            if pi_input is not None:
+                builtin_layers['pi'] = pi_input
+                builtin_layers['sigma'] = pi_input  # legacy alias
+            pi_concept = getattr(space, 'pi_concept', None)
+            if pi_concept is not None:
+                builtin_layers['lower'] = pi_concept
         elif tier == 'C':
-            pi = getattr(space, 'pi', None)
-            if pi is not None:
-                # PiLayer is the unary multiplicative AND-fold and is
-                # registered under rule_name "pi". Grammar XML's
-                # ``C = pi(C)`` rule fires PiLayer.forward(x).
-                builtin_layers['pi'] = pi
+            # Phase B (2026-05-13 rebalance): ConceptualSpace owns
+            # ``sigma_percept`` (percept_dim → concept_dim) — the
+            # canonical forward C-tier fold. Register it under the new
+            # ``sigma`` rule name (per the doc/Spaces.md migration
+            # table: ``C = sigma(PS)``) and the legacy ``pi`` alias so
+            # old grammars ``C = pi(C)`` continue to dispatch correctly.
+            sigma_percept = getattr(space, 'sigma_percept', None)
+            if sigma_percept is not None:
+                builtin_layers['sigma'] = sigma_percept
+                builtin_layers['pi'] = sigma_percept  # legacy alias
         elif tier == 'S':
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:
@@ -5509,14 +5528,17 @@ class WordSpace(Space):
             # S-tier. Existing XML grammars referencing
             # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
             # ``disjunction(S, S)``.
-            # Lift / Lower wiring: post-2026-05-12 refactor, lift and
-            # lower are elementwise-gate-then-substrate-sigma/pi
-            # operators. The gate is ``VP_c * NP_c`` at C-tier; the
-            # substrate sigma (P.sigma, reconfigured at concept_dim)
-            # is applied for lift, the substrate pi (C.pi) for lower.
-            # The dedicated ``space.sigma_S`` / ``space.pi_S`` LDU
-            # layers at sym_dim were retired -- they're redundant
-            # with the substrate's existing sigma/pi.
+            # Lift / Lower wiring: per Phase A of the 2026-05-13
+            # rebalance (doc/Spaces.md §"Where lift vs lower lives, if
+            # not at the substrate"), LiftLayer and LowerLayer are
+            # **pure rule-id annotators**: they compute a parameter-
+            # free static lattice op (``Ops._lower_kernel`` for lift,
+            # ``Ops._lift_kernel`` for lower) and the chart records
+            # the ``rule_id`` on the surrounding parse cell. They no
+            # longer borrow substrate sigma/pi instances. The
+            # constructor signatures keep ``symbolicSpace`` /
+            # ``perceptualSpace`` / ``conceptualSpace`` parameters for
+            # API compatibility but the kernels ignore them.
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.tier == 'S' and r.method_name is not None}

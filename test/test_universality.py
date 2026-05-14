@@ -198,42 +198,7 @@ class TestSVOIdentification(unittest.TestCase):
         self.assertLess(vo_sim, 0.9, f"V and O too similar: {vo_sim:.3f}")
         self.assertLess(so_sim, 0.9, f"S and O too similar: {so_sim:.3f}")
 
-    @pytest.mark.xfail(reason="untrained model: reconstruction not meaningful", strict=False)
-    def test_svo_reconstruction_accuracy(self):
-        """Reverse pass should place S, V, O tokens in correct sentence positions.
-
-        For "the teacher helped the student":
-          positions 0-1 -> subject phrase ("the teacher")
-          position  2   -> verb ("helped")
-          positions 3-4 -> object phrase ("the student")
-        """
-        _run_forward(self.model, ["the teacher helped the student"])
-        conf = _get_lift_confidence(self.model, self.grammar)
-        if conf < LIFT_CONFIDENCE_THRESHOLD:
-            self.skipTest(f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD}")
-        ws = self.model.wordSpace
-        svo = ws.get_last_svo(0) if ws.svo_valid(0) else None
-        if svo is None:
-            self.skipTest("ternary lift did not fire")
-
-        # Run reverse to get reconstructed tokens
-        symbols = self.model.outputSpace.subspace.materialize()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            with torch.no_grad():
-                input_data, _ = self.model.reverse(
-                    symbols, self.model.outputs.materialize())
-
-        # Decode reconstructed tokens
-        tokens = self.model.inputSpace.decodeInput(input_data)
-        if not tokens:
-            self.skipTest("No tokens decoded")
-
-        # Check that the verb appears in the middle region
-        sentence_tokens = tokens[0] if isinstance(tokens[0], list) else tokens
-        token_texts = [t.lower().strip() for t in sentence_tokens if t.strip()]
-        self.assertIn("helped", token_texts,
-                       f"Verb 'helped' not in reconstruction: {token_texts}")
+    # test_svo_reconstruction_accuracy retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     @pytest.mark.xfail(reason="untrained model: lift confidence near chance", strict=False)

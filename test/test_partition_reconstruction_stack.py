@@ -116,58 +116,37 @@ def test_reconstruction_stack_roundtrip():
 # Task 5.3 -- discourse predictor input width narrowed to S only
 # ---------------------------------------------------------------------------
 
-def test_sentence_prediction_consumes_s_only():
-    """Discourse predictor input width equals ``n_symbols * n_dim`` (S only),
-    not the full ``[S | W]`` ``snapshot_dim``.
+def test_sentence_prediction_uses_root_slot_only():
+    """Discourse predictor consumes the root S-tier slot, not the full
+    [S | W] snapshot.
 
-    Task 5.3 deleted the ``[S | W]`` augmentation of the prediction head:
-    W is the per-sentence WordSpace buffer's own concern and was redundant
-    input to the sentence-level AR predictor.  The discourse substrate's
-    snapshot history, contrastive loss, and ``_assemble`` all still carry
-    the full ``[S | W]`` rows -- only the predictor narrowed.
-
-    WordSpace gates discourse on ``TheXMLConfig.training("sentencePrediction")``
-    and that flag is off in the minimal test config.  Rather than also
-    rewiring the test config, instantiate InterSentenceLayer directly --
-    it's the unit of interest and has no hidden coupling to the surrounding
-    space stack.
+    Pre-2026-05-14 the contrastive layer flattened ``n_symbols * n_dim``
+    into the AttentionLayer predictor's input; the bin would blow past
+    the allocator on MM_5M_bivector-scale configs (V_S * D > 100k).
+    The ARMA(p, q) layer pools sentence rep to the **root cell** (the
+    start-symbol reduction's slot) -- a single ``[n_dim]`` vector --
+    and the MLP predictor's input is ``(p + q) * n_dim``, bounded
+    regardless of ``n_symbols``.
     """
     import Layers
     n_symbols = 4
     max_depth = 6
     n_dim = 8
     concept_dim = 12
+    p, q = 5, 2
 
     discourse = Layers.InterSentenceLayer(
         n_symbols=n_symbols,
         max_depth=max_depth,
         n_dim=n_dim,
-        context_window=3,
-        centroid_history=2,
-        lam=1.01,
+        p=p, q=q,
         concept_dim=concept_dim,
     )
-    assert discourse.predictor is not None, (
-        "InterSentenceLayer should build the predictor when concept_dim "
-        "is provided.")
-
-    expected = n_symbols * n_dim
-    # s_dim is the attribute Task 5.3 exposes for the S-only flattened
-    # width; keep it in the invariant for readability.
-    assert discourse.s_dim == expected
-
-    # AttentionLayer inherits nInput/nOutput from Layer; the public
-    # dimension attribute exposed by the codebase is ``nInput``.  Fall
-    # back to ``in_features`` for compatibility with the plan's naming.
-    actual = getattr(discourse.predictor, 'nInput',
-                     getattr(discourse.predictor, 'in_features', None))
-    assert actual is not None, (
-        "AttentionLayer did not expose nInput (or in_features) for "
-        "width introspection")
-    assert actual == expected, (
-        f"predictor input width should be n_symbols * n_dim = {expected} "
-        f"(S-only), got {actual}")
-    assert actual < discourse.snapshot_dim, (
-        f"predictor width {actual} should be strictly less than the full "
-        f"[S | W] snapshot_dim {discourse.snapshot_dim}; W block was not "
-        f"removed from the prediction head.")
+    assert discourse.predictor is not None
+    assert discourse.sentence_dim == n_dim, (
+        "Sentence rep is the root S-tier slot of width n_dim, not the "
+        "full n_symbols * n_dim flatten.")
+    in_dim = discourse.predictor[0].in_features
+    assert in_dim == (p + q) * n_dim, (
+        f"predictor input width should be (p+q)*n_dim = {(p+q)*n_dim}, "
+        f"got {in_dim}")

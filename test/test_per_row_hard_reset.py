@@ -22,14 +22,12 @@ import torch
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
-def _model(masked_prediction='AR'):
+def _model():
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    model.masked_prediction = masked_prediction
-    model.inputSpace.masked_prediction = masked_prediction
     return model
 
 

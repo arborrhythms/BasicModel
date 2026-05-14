@@ -23,12 +23,10 @@
       <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
-      <reverseScale>0.1</reverseScale>
-      <maskedPrediction>ARIR</maskedPrediction>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>AR</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
-      <sentenceContextWindow>5</sentenceContextWindow>
     </training>
 
     <server>

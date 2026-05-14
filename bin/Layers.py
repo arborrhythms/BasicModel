@@ -5678,614 +5678,422 @@ class TruthLayer(Layer):
         print("TruthLayer tests passed.")
 
 class InterSentenceLayer(Layer):
-    """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots
-    scored by a contrastive dual-force cosine loss.
+    """Inter-sentence ARMA(p, q) next-sentence predictor.
 
-    **What it is.** WordSpace clears at every sentence boundary -- its
-    buffer is intentionally per-sentence. Inter-sentence coherence
-    needs something one tier higher: a muxed view of both what the
-    sentence committed (SymbolicSpace's final ``materialize()``) and
-    how it was said (WordSpace's ``read()`` buffer). DiscourseSpace
-    is the "buffer of snapshots across sentences, cleared at topic /
-    discourse boundary" analog of WordSpace -- same fixed-buffer
-    pattern one scale up.
+    **What it is.** Sentence-level autoregression lives here, not in
+    the within-sentence body (which is now IR-only / masked-LM).  Each
+    sentence is summarised into a flat ``[B, sentence_dim]`` rep
+    ``s_t`` (the body's S-tier root slot pooled per row); the
+    predictor consumes the last ``p`` sentence reps plus the last
+    ``q`` prediction errors and produces ``s_hat_{t+1}``.
 
-    **Snapshot shape.** Each sentence produces an
-    ``[n_sentence, n_dim]`` row where
-    ``n_sentence = n_symbols + max_depth``. S fills rows
-    ``[0 : n_symbols]``; W fills rows ``[n_symbols : n_sentence]``.
-    Both inputs share the peer ``[what | where | when]`` column
-    layout, so the concat along the N axis is a plain
-    ``torch.cat([s, w], dim=0)`` with no per-source branching.
+    **Loss.** ``MSE(predictor(s_{t-1..t-p}, e_{t-1..t-q}), s_t)``.
+    The residual ``e_t = s_t - s_hat_t`` is pushed into the MA ring
+    so the next prediction can correct for systematic bias in the AR
+    extrapolation.
 
-    **Loss.** Dual-force cosine similarity over the full flattened
-    ``[n_sentence * n_dim]`` snapshot vector::
+    **Buffers (per row).**
 
-        loss(s_t) = (1 - cos(s_t, ctx_t))
-                    + lambda_ * mean(cos(s_t, ctx_{t-i}) for i in 1..M)
+    - ``_s_history``: ``[B, p, sentence_dim]`` ring of last ``p``
+      sentence reps (most recent at index ``-1``).
+    - ``_e_history``: ``[B, q, sentence_dim]`` ring of last ``q``
+      residuals.
+    - ``_s_count`` / ``_e_count``: ``[B]`` long, current fill levels.
 
-    where ``ctx_t`` is the mean of the most recent ``context_window``
-    snapshots and ``ctx_{t-i}`` are older centroids stored in a ring
-    of length ``centroid_history``. Attractive pull toward the nearby
-    context + repulsive push from older contexts makes
-    representational collapse an unstable equilibrium at lambda_ ~= 1.01.
-    Gradient flows only through the live ``s_tensor`` / ``w_tensor``
-    arguments; all stored history is detached.
+    All buffers are non-persistent (transient state, not checkpoint
+    material) and follow ``.to(device)`` through ``register_buffer``.
 
-    Subclasses ``Layer`` (not ``Space``): DiscourseSpace has no
-    SubSpace, no what/where/when basis slots, and no forward/reverse
-    tensor-map contract. It lives inside ``WordSpace.layers`` so the
-    Layer ergodic interface (``paramUpdate`` / ``set_sigma`` /
-    ``observe_sigma`` / ``sigma_to_ergodic``) can reach any future
-    learnable sub-modules via the same walk WordSpace uses for its
-    SyntacticLayers. The contrastive loss itself has no learnable
-    parameters.
+    **Reset.** ``Reset()`` clears both rings.  ARMA lags carry across
+    document boundaries by default — discourse continuity is
+    information the predictor wants to use; callers that need a hard
+    boundary call ``Reset()`` explicitly.
+
+    **Subclass.** ``Layer`` rather than ``Space``: no SubSpace, no
+    forward/reverse tensor-map contract.  Lives inside
+    ``WordSpace.layers`` so the Layer ergodic walk reaches the MLP
+    predictor's parameters via ``WordSpace.params``.
+
+    Replaces the pre-2026-05-14 contrastive cosine machinery
+    (``context_window`` recent buffer, ``centroid_history`` repulsive
+    ring, ``lam`` cosine push) and the AttentionLayer-based
+    predictive head.  See ``doc/Architecture.md`` §"Sentence-level
+    AR (InterSentenceLayer)" for the design rationale.
     """
 
     name = "Discourse"
 
     def __init__(self, n_symbols, max_depth, n_dim,
-                 context_window=12, centroid_history=3, lam=1.01,
-                 concept_dim=None, batch=1):
-        # n_sentence rows * n_dim cols is the shape of a single
-        # snapshot; Layer's nInput / nOutput fields carry the
-        # flattened count for any legacy consumers that read them.
-        """Initialize InterSentenceLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
+                 p=5, q=2, hidden_dim=None,
+                 concept_dim=None, batch=1,
+                 # Legacy-named kwargs accepted for back-compat; ignored.
+                 context_window=None, centroid_history=None, lam=None):
+        """Initialize the ARMA(p, q) predictor.
+
+        ``n_symbols``, ``max_depth``, ``n_dim`` describe the legacy
+        ``[S | W]`` snapshot layout the caller used to hand in; under
+        ARMA we only need the flat ``sentence_dim`` (defaults to
+        ``n_symbols * n_dim``) but keep the constructor signature for
+        smooth migration of the WordSpace instantiation site.
+
+        ``p`` = AR lag count (number of past sentence reps consumed
+        by the predictor); ``q`` = MA lag count (past residuals).
+        ``hidden_dim`` defaults to ``2 * sentence_dim``.
+        ``concept_dim`` is the target dim for the optional priming
+        cast that lifts ``s_hat_{t+1}`` into C-tier for the chat-
+        loop's ``_c_prior`` injection.
+
+        ``context_window`` / ``centroid_history`` / ``lam`` are
+        accepted for signature back-compat with the retired
+        contrastive constructor and ignored.
         """
-        n_sentence = int(n_symbols) + int(max_depth)
-        flat = n_sentence * int(n_dim)
-        super().__init__(flat, flat)
+        del context_window, centroid_history, lam  # retired knobs
+        n_symbols = int(n_symbols)
+        n_dim = int(n_dim)
+        # Sentence-rep pooling: the per-sentence rep ``s_t`` is the
+        # **root S-tier slot** (row 0 of the body's final-stage S-tier
+        # event), not the full ``[n_symbols, n_dim]`` flatten.  The
+        # root is what the start-symbol reduction wrote -- it carries
+        # the sentence-level signal; the other slots are intermediate
+        # composition state.  This keeps the predictor's input width
+        # bounded at ``(p + q) * n_dim`` instead of
+        # ``(p + q) * n_symbols * n_dim`` (which OOMs the allocator on
+        # configs where ``n_symbols * n_dim`` is in the hundreds of
+        # thousands -- the legacy contrastive snapshot avoided this
+        # by never feeding the snapshot through a Linear).
+        sentence_dim = n_dim
+        super().__init__(sentence_dim, sentence_dim)
 
-        self.n_symbols = int(n_symbols)
+        self.n_symbols = n_symbols
         self.max_depth = int(max_depth)
-        self.n_dim = int(n_dim)
-        self.n_sentence = n_sentence
-        self.snapshot_dim = flat
-        # S-only flattened width: the prediction head operates on the
-        # symbolic sub-block of the snapshot only.  The discourse
-        # substrate (buffers, contrastive loss, snapshot history) still
-        # stores the full [S | W] rows -- augmenting the predictor's
-        # input with W was the redundant coupling that Task 5.3
-        # removed.
-        self.s_dim = self.n_symbols * self.n_dim
-        self.context_window = int(context_window)
-        self.centroid_history = int(centroid_history)
-        self.lam = float(lam)
-        # concept_dim is the target dim for the priming cast.  When
-        # None, the predictor and cast are not built -- the layer
-        # degrades to pure contrastive behavior (legacy path).
-        self.concept_dim = int(concept_dim) if concept_dim is not None else None
+        self.n_dim = n_dim
+        self.sentence_dim = sentence_dim
+        self.p = int(p)
+        self.q = int(q)
+        # Cap hidden_dim so the predictor's Linear stays under the
+        # allocator's per-tensor budget on every config we ship --
+        # 1024 is comfortably bigger than ``sentence_dim`` for every
+        # MM_* training config (sentence_dim == n_dim, typically 2-100)
+        # and small enough that the MLP fits in a few MB.
+        _hidden_cap = 1024
+        self.hidden_dim = int(hidden_dim if hidden_dim is not None
+                              else min(_hidden_cap, 2 * sentence_dim))
+        self.concept_dim = (int(concept_dim)
+                            if concept_dim is not None else None)
 
-        # Per-batch substrate. Microbatch refactor (Task 3): each row
-        # owns an independent recent ring + prev-centroids ring +
-        # counts; cross-row aggregation only happens at the loss
-        # reduction.  ``ensure_batch(B)`` reallocates when B grows.
         self._batch = int(batch)
-
-        # Recent buffer: last K = context_window snapshots per row.
-        # Their per-row mean is the current attractive target.
-        # Registered as a non-persistent buffer so ``.to(device)``
-        # follows it without saving it in checkpoints -- the contents
-        # are per-epoch transient state.
         self.register_buffer(
-            "_recent",
-            torch.zeros(self._batch, self.context_window,
-                        self.n_sentence, self.n_dim),
+            "_s_history",
+            torch.zeros(self._batch, self.p, self.sentence_dim),
             persistent=False)
         self.register_buffer(
-            "_recent_count",
+            "_s_count",
+            torch.zeros(self._batch, dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            "_e_history",
+            torch.zeros(self._batch, max(1, self.q), self.sentence_dim),
+            persistent=False)
+        self.register_buffer(
+            "_e_count",
             torch.zeros(self._batch, dtype=torch.long),
             persistent=False)
 
-        # Previous centroids: per row, M = centroid_history older
-        # snapshot-window centroids the current sentence should be
-        # repelled from.  A new centroid is folded in whenever the
-        # recent buffer evicts its oldest entry.
-        self.register_buffer(
-            "_prev_centroids",
-            torch.zeros(self._batch, self.centroid_history,
-                        self.n_sentence, self.n_dim),
-            persistent=False)
-        self.register_buffer(
-            "_prev_count",
-            torch.zeros(self._batch, dtype=torch.long),
-            persistent=False)
-
-        # Learnable pieces for the AR sentence predictor.  Only built
-        # when concept_dim is provided (i.e. the caller wants the
-        # predictive/priming pathway).  Layer.layers carries them so
-        # the ergodic walk reaches their parameters.
+        # ``self.layers`` (parent Layer's ergodic-walk list) only holds
+        # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
+        # The ARMA MLP predictor is an ``nn.Sequential`` (no ergodic
+        # interface), so it's NOT added here -- its parameters still
+        # register with the host module via plain attribute
+        # assignment, so the optimizer sees them.  ``LinearLayer`` is
+        # ergodic-compatible and gets added.
         self.layers = []
-        self.predictor = None
-        self.cast = None
-        if self.concept_dim is not None:
-            # Causal self-attention over [N, s_dim].  Output at the
-            # final position is the predicted next S-block.  The
-            # predictor consumes S only; W is the "how it was said"
-            # view already captured by the per-sentence WordSpace
-            # buffer, so feeding it here was redundant [S|W]
-            # augmentation (Task 5.3 removed it).  Transformer mode
-            # with a causal mask so every position also supplies a
-            # predict-next training signal (only the last is read at
-            # inference).
-            #
-            # s_dim can still be non-trivial (n_symbols * n_dim); a
-            # bottleneck hidden dim keeps Q/K/V manageable.
-            predictor_hidden = min(self.s_dim, 256)
-            self.predictor = AttentionLayer(
-                nInput=self.s_dim,
-                nOutput=self.s_dim,
-                nHidden=predictor_hidden,
-                type="transformer",
-                nHeads=1,
+        in_dim = (self.p + self.q) * self.sentence_dim
+        if in_dim > 0 and self.sentence_dim > 0:
+            self.predictor = nn.Sequential(
+                nn.Linear(in_dim, self.hidden_dim),
+                nn.Tanh(),
+                nn.Linear(self.hidden_dim, self.sentence_dim),
             )
-            self.cast = LinearLayer(self.s_dim, self.concept_dim)
-            self.layers.append(self.predictor)
+        else:
+            self.predictor = None
+
+        # Optional priming cast for the chat-loop's c_prior injection
+        # (Phase 4 of the IR-only refactor).  When concept_dim is set
+        # the cast lifts s_hat_{t+1} into C-tier so it can be added
+        # as a bias before the body's sigma-pi loop.
+        self.cast = None
+        if self.concept_dim is not None and self.sentence_dim > 0:
+            self.cast = LinearLayer(self.sentence_dim, self.concept_dim)
             self.layers.append(self.cast)
 
     # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
-        """Resize per-row substrate to a new batch size.
-
-        Reallocates the four ring buffers and their counts; per-row
-        state is zeroed.  Stays a no-op when ``batch`` already
-        matches.  Cascaded from ``WordSpace.ensure_batch`` at
-        ``Models.Start`` so the body's per-(B*K) state is sized
-        correctly under the microbatch refactor.
+        """Resize per-row substrate to a new batch size.  Cascaded
+        from ``WordSpace.ensure_batch`` so the body's per-B state is
+        sized correctly.  Zeroes the rings.
         """
         batch = int(batch)
         if batch == self._batch:
             return
+        device = self._s_history.device
+        dtype = self._s_history.dtype
         self._batch = batch
-        device = self._recent.device
-        dtype = self._recent.dtype
-        self._recent = torch.zeros(
-            batch, self.context_window, self.n_sentence, self.n_dim,
+        self._s_history = torch.zeros(
+            batch, self.p, self.sentence_dim,
             dtype=dtype, device=device)
-        self._recent_count = torch.zeros(
+        self._s_count = torch.zeros(
             batch, dtype=torch.long, device=device)
-        self._prev_centroids = torch.zeros(
-            batch, self.centroid_history, self.n_sentence, self.n_dim,
+        self._e_history = torch.zeros(
+            batch, max(1, self.q), self.sentence_dim,
             dtype=dtype, device=device)
-        self._prev_count = torch.zeros(
+        self._e_count = torch.zeros(
             batch, dtype=torch.long, device=device)
 
-    # -- snapshot & history -------------------------------------------
-    def _fit_rows(self, x, target_rows):
-        """Pad-or-truncate ``x`` along its row axis to exactly
-        ``target_rows``.  Accepts ``[rows, dim]`` (B=1 legacy) or
-        ``[B, rows, dim]`` (microbatch); preserves the input rank in
-        the output.
+    # -- sentence-rep pooling -----------------------------------------
+    def _pool_sentence_rep(self, s_tensor):
+        """Pool an S-tier event into a per-row ``[B, sentence_dim]``
+        sentence rep.
 
-        Microbatch refactor (Task 3): the legacy ``x.mean(dim=0)``
-        mean-pool is gone -- per-row state must stay distinct so the
-        body's B*K rows do not corrupt each other.
+        Accepts:
+          * ``[B, N, D]`` (microbatch S-tier event) -- take row 0
+            (the root slot the start-symbol reduction wrote into).
+          * ``[N, D]`` (B=1 legacy) -- same: take row 0.
+          * ``[B, D]`` (already-pooled).
+        Right-pads / truncates to ``sentence_dim`` so dim mismatches
+        between training configs and the layer's stored width stay
+        well-defined.
         """
-        is_2d = (x.ndim == 2)
-        if is_2d:
-            x = x.unsqueeze(0)
-        B, rows, dim = x.shape
-        if rows == target_rows:
-            out = x
-        elif rows > target_rows:
-            out = x[:, :target_rows, :]
-        else:
-            pad = torch.zeros(
-                B, target_rows - rows, dim,
-                dtype=x.dtype, device=x.device)
-            out = torch.cat([x, pad], dim=1)
-        return out.squeeze(0) if is_2d else out
-
-    def _fit_dim(self, x):
-        """Pad-or-truncate ``x`` along its column axis to exactly
-        ``self.n_dim``. Handles configs where S and W have mismatched
-        n_dim (e.g. muxed vs. what-only)."""
-        cur = x.shape[-1]
-        if cur == self.n_dim:
-            return x
-        if cur > self.n_dim:
-            return x[..., :self.n_dim]
-        return F.pad(x, (0, self.n_dim - cur))
-
-    def _assemble(self, s_tensor, w_tensor):
-        """Assemble an ``[S | W]`` row from S + W tensors.
-
-        Returns ``[n_sentence, n_dim]`` for 2D inputs (B=1 legacy
-        path) and ``[B, n_sentence, n_dim]`` for 3D inputs.
-        """
-        s = self._fit_rows(s_tensor, self.n_symbols)
-        w = self._fit_rows(w_tensor, self.max_depth)
-        s = self._fit_dim(s)
-        w = self._fit_dim(w)
-        # Concat on the row axis: dim=0 for 2D, dim=-2 for 3D both work.
-        return torch.cat([s, w], dim=-2)
-
-    def _recent_centroid(self, b=None):
-        """Mean of the recent-buffer entries currently in use, or
-        ``None`` when the buffer is empty.  Returned tensor is
-        detached (it comes from the stored non-persistent buffer).
-
-        With ``b=None`` and ``self._batch == 1``, returns
-        ``[n_sentence, n_dim]`` (legacy shape).  With explicit ``b``
-        or batched layer, returns the per-row centroid for that row
-        as ``[n_sentence, n_dim]``, or ``None`` if row b is empty.
-        """
-        if b is None:
-            if self._batch != 1:
-                raise ValueError(
-                    "_recent_centroid(b=None) only legal for batch=1; "
-                    "use _recent_centroid(b) for per-row layers")
-            n = int(self._recent_count[0].item())
-            if n == 0:
-                return None
-            return self._recent[0, :n].mean(dim=0)
-        n = int(self._recent_count[b].item())
-        if n == 0:
+        if s_tensor is None:
             return None
-        return self._recent[b, :n].mean(dim=0)
+        x = s_tensor
+        if x.ndim == 2:
+            if x.shape[-1] == self.sentence_dim:
+                return x
+            x = x.unsqueeze(0)                # [N, D] -> [1, N, D]
+        if x.ndim != 3:
+            return None
+        # Take the root S-tier slot (row 0) per batch row.
+        rooted = x[:, 0, :]                   # [B, D]
+        cur = rooted.shape[-1]
+        if cur == self.sentence_dim:
+            return rooted
+        if cur > self.sentence_dim:
+            return rooted[:, :self.sentence_dim]
+        return F.pad(rooted, (0, self.sentence_dim - cur))
+
+    # -- prediction ---------------------------------------------------
+    def _predictor_input(self):
+        """Concatenate ``[s_history | e_history]`` per row.
+
+        Returns ``[B, (p + q) * sentence_dim]``.  Empty slots in
+        either ring are already zero-padded by ``ensure_batch`` /
+        ``Reset``, so the predictor always sees a stable shape on
+        cold-start.
+        """
+        s_flat = self._s_history.reshape(self._batch, -1)  # [B, p*D]
+        if self.q > 0:
+            e_flat = self._e_history.reshape(self._batch, -1)  # [B, q*D]
+            return torch.cat([s_flat, e_flat], dim=-1)
+        return s_flat
 
     @torch.compiler.disable
-    def snapshot(self, s_tensor, w_tensor, mask=None):
-        """Commit a ``[S | W]`` snapshot to history.
+    def predict_next(self, b=None):
+        """Predict the next sentence rep without committing to history.
 
-        Ring semantics (per row): when the recent buffer is full, fold
-        its current centroid into ``_prev_centroids`` (so the repulsive
-        force has fresh fodder), then shift the recent ring left and
-        append the new row at the end.  Stored tensors are detached.
-
-        Inputs may be 2D ``[rows, dim]`` (B=1 legacy) or 3D
-        ``[B, rows, dim]``.  ``mask`` is an optional ``[B] bool``
-        selecting which rows ended a sentence this step (defaults to
-        all True).  Mask is ignored for 2D inputs.
-
-        Backward compat: if the layer is sized at B=1 and a 3D input
-        with batch B>1 is given, the rows are mean-pooled into the
-        single stored row.  Production sizes the layer to B*K via
-        ``ensure_batch`` at ``Models.Start`` (Task 9), making the
-        mean-pool path obsolete in the post-cutover world.
-
-        ``@torch.compiler.disable``: paired with ``predict``'s disable
-        for the same reason -- ``snapshot`` slices and writes
-        ``_recent[b, n]`` and ``_recent[b, :-1]`` with dynamic ``n``
-        derived from ``_recent_count[b].item()``. Under torch.compile
-        each distinct ``n`` is a separate specialization. Discourse
-        update is once-per-sentence and off the kernel-launch hot
-        path, so excluding it from the compiled forward is the right
-        cost/benefit trade-off for CUDAGraph-friendly compilation.
+        Returns ``[sentence_dim]`` for B=1 or with explicit ``b``;
+        otherwise returns ``[B, sentence_dim]`` stacked across rows.
+        Rows whose history is empty still get a (zero-input)
+        prediction, so the call always produces a tensor of stable
+        shape — callers gate on ``_s_count`` if they need to
+        distinguish cold-start from a real prediction.
         """
-        row = self._assemble(s_tensor, w_tensor).detach()
-        if row.ndim == 2:
-            # B=1 legacy: route through row 0.
-            self._snapshot_row(0, row)
-            return
-        B = row.shape[0]
-        if self._batch == 1 and B != 1:
-            # Legacy fallback: collapse the input batch into the single
-            # stored row.  Used pre-Task-9 when the model still hasn't
-            # cascaded ensure_batch through Start().
-            self._snapshot_row(0, row.mean(dim=0))
-            return
-        assert B == self._batch, (
-            f"snapshot row-batch {B} != layer batch {self._batch}; "
-            "call ensure_batch first")
-        if mask is None:
-            for b in range(B):
-                self._snapshot_row(b, row[b])
-        else:
-            for b in range(B):
-                if bool(mask[b]):
-                    self._snapshot_row(b, row[b])
+        if self.predictor is None:
+            return None
+        x = self._predictor_input()
+        out = self.predictor(x)                          # [B, sentence_dim]
+        if b is not None:
+            return out[int(b)]
+        if self._batch == 1:
+            return out[0]
+        return out
 
-    def _snapshot_row(self, b, row):
-        """Push one already-assembled row into row ``b``'s rings."""
-        n = int(self._recent_count[b].item())
-        if n < self.context_window:
-            self._recent[b, n] = row
-            self._recent_count[b] = n + 1
-            return
-        # Recent buffer is full: snapshot its centroid into the
-        # prev_centroids ring before evicting the oldest row.
-        ctx = self._recent[b].mean(dim=0).detach()
-        m = int(self._prev_count[b].item())
-        if m < self.centroid_history:
-            self._prev_centroids[b, m] = ctx
-            self._prev_count[b] = m + 1
-        else:
-            self._prev_centroids[b, :-1] = self._prev_centroids[b, 1:].clone()
-            self._prev_centroids[b, -1] = ctx
-        self._recent[b, :-1] = self._recent[b, 1:].clone()
-        self._recent[b, -1] = row
+    # -- observe (push + compute loss) --------------------------------
+    @torch.compiler.disable
+    def observe(self, s_tensor, mask=None):
+        """Capture sentence rep ``s_t``, compute the ARMA MSE loss,
+        and update the AR/MA rings.
 
-    def reset(self):
-        """Clear both rings on every row (epoch boundary)."""
-        self._recent.zero_()
-        self._recent_count.zero_()
-        self._prev_centroids.zero_()
-        self._prev_count.zero_()
+        Returns the per-batch mean MSE between ``s_hat_t`` (predicted
+        from history) and ``s_t``.  Returns ``None`` when no row has
+        a primed predictor (all-empty ``_s_count``) — the first
+        sentence per row has no AR signal to score against, but its
+        rep still goes into ``_s_history`` so subsequent observes
+        can predict.
+
+        ``mask`` is an optional ``[B] bool`` selecting which rows
+        ended a sentence this step (defaults to all True).
+        """
+        pooled = self._pool_sentence_rep(s_tensor)
+        if pooled is None:
+            return None
+        B = pooled.shape[0]
+        if B != self._batch:
+            self.ensure_batch(B)
+        s_hat = self.predict_next()
+        if s_hat is None:
+            return None
+        if s_hat.ndim == 1:
+            s_hat = s_hat.unsqueeze(0).expand(B, -1)
+        # Only score rows whose history was primed.
+        primed = self._s_count > 0                        # [B] bool
+        if mask is not None:
+            primed = primed & mask.to(primed.device)
+        loss = None
+        if bool(primed.any()):
+            diff = (s_hat[primed] - pooled[primed].detach())
+            loss = diff.pow(2).mean()
+        # Update rings.
+        residual = (pooled - s_hat).detach()
+        active = (mask if mask is not None
+                  else torch.ones(B, dtype=torch.bool, device=pooled.device))
+        for b in range(B):
+            if not bool(active[b]):
+                continue
+            self._push_row(b, pooled[b].detach(), residual[b])
+        return loss
+
+    def _push_row(self, b, s_row, e_row):
+        """Shift-left + append for row ``b``'s rings."""
+        # s_history: most-recent at the tail, zero-pad at the head
+        # until the ring is full.
+        n = int(self._s_count[b].item())
+        if n < self.p:
+            self._s_history[b, self.p - n - 1] = s_row
+            self._s_count[b] = n + 1
+        else:
+            self._s_history[b, :-1] = self._s_history[b, 1:].clone()
+            self._s_history[b, -1] = s_row
+        if self.q > 0:
+            m = int(self._e_count[b].item())
+            if m < self.q:
+                self._e_history[b, self.q - m - 1] = e_row
+                self._e_count[b] = m + 1
+            else:
+                self._e_history[b, :-1] = self._e_history[b, 1:].clone()
+                self._e_history[b, -1] = e_row
+
+    # -- lifecycle ----------------------------------------------------
+    def Reset(self, batch=None, hard=False):
+        """Clear AR/MA rings on hard discourse boundary.
+
+        ``batch`` selects a specific per-row index to clear; ``None``
+        clears all rows.  ``hard`` is accepted for signature parity
+        with the per-Space Reset contract and currently ignored —
+        ARMA has only one reset semantic.
+        """
+        del hard
+        if batch is None:
+            self._s_history.zero_()
+            self._s_count.zero_()
+            self._e_history.zero_()
+            self._e_count.zero_()
+        else:
+            bi = int(batch)
+            self._s_history[bi].zero_()
+            self._s_count[bi] = 0
+            self._e_history[bi].zero_()
+            self._e_count[bi] = 0
+    reset = Reset
 
     def __len__(self):
-        """Count of recent entries.  For B=1 returns the single row's
-        count (legacy); for B>1 returns the max across rows so a
-        non-empty layer reports ``len > 0``.
-        """
+        """Max ring fill level across rows."""
         if self._batch == 1:
-            return int(self._recent_count[0].item())
-        return int(self._recent_count.max().item())
+            return int(self._s_count[0].item())
+        return int(self._s_count.max().item())
 
-    def latest_snapshot(self, b=None):
-        """Return the most recently pushed snapshot.
-
-        With ``b=None`` and ``self._batch == 1``, returns
-        ``[n_sentence, n_dim]`` (legacy shape) or ``None`` if empty.
-        With ``b`` provided, returns row ``b``'s latest snapshot or
-        ``None`` if that row is empty.
+    def latest(self, b=None):
+        """Return the most recent sentence rep for row ``b`` (or row 0
+        for B=1), or ``None`` if the row is empty.
         """
         if b is None:
-            if self._batch != 1:
-                raise ValueError(
-                    "latest_snapshot(b=None) only legal for batch=1; "
-                    "use latest_snapshot(b) for per-row layers")
-            n = int(self._recent_count[0].item())
-            if n == 0:
-                return None
-            return self._recent[0, n - 1]
-        n = int(self._recent_count[b].item())
+            b = 0
+        n = int(self._s_count[b].item())
         if n == 0:
             return None
-        return self._recent[b, n - 1]
+        return self._s_history[b, -1]
 
-    def split(self, snapshot):
-        """Split a ``[n_sentence, n_dim]`` snapshot into its
-        ``(S, W)`` parts.
-        """
-        s = snapshot[:self.n_symbols]
-        w = snapshot[self.n_symbols:]
-        return s, w
+    # -- back-compat shims --------------------------------------------
+    # The pre-2026-05-14 contrastive API exposed predict/snapshot/
+    # contrastive_loss/predictive_loss/prime.  Keep thin shims so the
+    # runBatch + Language wiring transitions smoothly until callers
+    # migrate to the explicit observe/predict_next/Reset API.
 
-    # -- contrastive loss ---------------------------------------------
-    def contrastive_loss(self, s_tensor, w_tensor):
-        """Dual-force contrastive loss over the full flattened
-        ``[n_sentence * n_dim]`` snapshot vector.
-
-        - Attractive: ``1 - cos(current, recent_centroid)``
-        - Repulsive:  ``lam * mean(cos(current, prev_centroid_i))``
-
-        Inputs may be 2D ``[rows, dim]`` (B=1 legacy) or 3D
-        ``[B, rows, dim]``.  The 3D path computes per-row losses and
-        returns the mean over rows that have context (rows whose
-        ``_recent_count`` is zero are skipped).  Returns ``None`` when
-        no row has any context to contrast against.
-
-        Gradient flows through the live ``s_tensor`` / ``w_tensor``
-        arguments; all stored history is detached.
-        """
-        current = self._assemble(s_tensor, w_tensor)
-        if current.ndim == 2:
-            ctx = self._recent_centroid()
-            if ctx is None:
-                return None
-            return self._contrastive_one_row(0, current, ctx)
-        B = current.shape[0]
-        if self._batch == 1 and B != 1:
-            # Legacy fallback: pool the input batch and score against
-            # the single stored row.  Used pre-Task-9.
-            current_pooled = current.mean(dim=0)
-            ctx = self._recent_centroid()
-            if ctx is None:
-                return None
-            return self._contrastive_one_row(0, current_pooled, ctx)
-        assert B == self._batch, (
-            f"contrastive_loss row-batch {B} != layer batch "
-            f"{self._batch}; call ensure_batch first")
-        per_row = []
-        for b in range(B):
-            ctx_b = self._recent_centroid(b)
-            if ctx_b is None:
-                continue
-            per_row.append(self._contrastive_one_row(b, current[b], ctx_b))
-        if not per_row:
-            return None
-        stacked = torch.stack(per_row)
-        return stacked.mean()
-
-    def _contrastive_one_row(self, b, current, ctx):
-        """Compute attractive + repulsive contrastive scalar for row b.
-
-        ``current`` is ``[n_sentence, n_dim]`` and ``ctx`` is the
-        already-fetched per-row centroid for row b.
-        """
-        current_flat = current.reshape(-1)
-        ctx_flat = ctx.reshape(-1)
-        attractive = 1.0 - F.cosine_similarity(
-            current_flat.unsqueeze(0), ctx_flat.unsqueeze(0))
-        m = int(self._prev_count[b].item())
-        if m > 0:
-            prev = self._prev_centroids[b, :m].reshape(m, -1)
-            sims = F.cosine_similarity(
-                current_flat.unsqueeze(0), prev, dim=-1)
-            repulsive = sims.mean()
-        else:
-            repulsive = torch.tensor(
-                0.0, device=current_flat.device, dtype=current_flat.dtype)
-        return attractive.squeeze() + self.lam * repulsive
-
-    # -- AR sentence prediction ---------------------------------------
-    def _causal_mask(self, n, device):
-        """Lower-triangular bool mask [1, n, n]: True = attend."""
-        m = torch.ones(n, n, dtype=torch.bool, device=device).tril_()
-        return m.unsqueeze(0)
-
-    @torch.compiler.disable
     def predict(self, b=None):
-        """Run the AR predictor over the recent buffer.
+        """Legacy alias for ``predict_next``.
 
-        With ``b=None``: behaves as before for B=1 layers (returns
-        ``([s_dim], scalar)`` legacy shape).  For B>1 layers, returns
-        per-row stacked tensors ``([B, s_dim], [B])`` -- rows whose
-        recent buffer is empty get zero predictions/confidences.
-        Returns ``(None, None)`` when no row has any context (or when
-
-        ``@torch.compiler.disable``: this method slices
-        ``self._recent[b, :n, ...]`` where ``n = _recent_count[b].item()``
-        grows from 0 to ``context_window`` as the discourse buffer
-        fills, and feeds a TransformerEncoder whose attention mask is
-        ``[n, n]`` -- a different shape per ``n``. Under
-        ``torch.compile`` (esp. ``mode="reduce-overhead"``), each
-        distinct ``n`` would trigger its own Inductor specialization
-        and CUDAGraph capture (~30s-3min compile each), producing the
-        65+ "distinct sizes" warning observed at GB10. The discourse
-        path runs once per sentence (not per AR cursor position) and
-        is not on the kernel-launch hot path, so disabling its compile
-        wrapper costs negligible perf and lets the surrounding model
-        compile cleanly.
-        the predictor isn't built).
-
-        With explicit ``b``: returns ``([s_dim], scalar)`` for that row,
-        or ``(None, None)`` if row b's recent buffer is empty.
-
-        The predictor consumes S only -- the W block of each stored
-        row is sliced off before attention so the head is not coupled
-        to buffer-surface features (Task 5.3).  Confidence is derived
-        from the last-position attention entropy (focused attention =
-        high confidence).
+        Returns ``(prediction, confidence)`` where confidence is a
+        scalar / per-row tensor fixed at 1.0 — the legacy attention-
+        entropy confidence had no analog in the MLP predictor, but
+        downstream callers (``WordSpace.stm_residual_microbatch``)
+        gate the priming bias on ``conf is None`` so we emit a
+        placeholder rather than break that wiring.  Real cold-start
+        gating happens via ``_s_count``: rows whose ring is empty
+        return ``(None, None)``.
         """
         if self.predictor is None:
             return None, None
-        if b is not None:
-            return self._predict_row(b)
-        if self._batch == 1:
-            return self._predict_row(0)
-        # Batched: per-row stack so callers don't need a Python loop.
-        per_pred = []
-        per_conf = []
-        any_valid = False
-        device = self._recent.device
-        dtype = self._recent.dtype
-        zero_p = torch.zeros(self.s_dim, device=device, dtype=dtype)
-        zero_c = torch.zeros((), device=device, dtype=dtype)
-        for bi in range(self._batch):
-            p, c = self._predict_row(bi)
-            if p is None:
-                per_pred.append(zero_p)
-                per_conf.append(zero_c)
-            else:
-                per_pred.append(p)
-                per_conf.append(c)
-                any_valid = True
-        if not any_valid:
+        if (self._batch == 1
+                and int(self._s_count[0].item()) == 0):
             return None, None
-        return torch.stack(per_pred), torch.stack(per_conf)
-
-    def _predict_row(self, b):
-        """Single-row predictor: returns ``([s_dim], scalar)`` or
-        ``(None, None)`` for an empty row."""
-        n = int(self._recent_count[b].item())
-        if n == 0:
-            return None, None
-        # _recent[b] rows are [n_sentence, n_dim] with S in
-        # [0:n_symbols].  Slice out the S rows and flatten to feed
-        # the narrower predictor.
-        s_rows = self._recent[b, :n, :self.n_symbols, :]
-        seq = s_rows.reshape(n, self.s_dim).unsqueeze(0).detach().clone()
-        self.predictor.set_mask(self._causal_mask(n, seq.device))
-        try:
-            out = self.predictor(seq)              # [1, n, s_dim]
-        finally:
-            # Clear the mask so the shared instance doesn't leak a
-            # stale mask into any other caller.
-            self.predictor.set_mask(None)
-        predicted = out[0, -1]                      # [s_dim]
-        attn = getattr(self.predictor, 'last_attn', None)
-        if attn is None:
-            confidence = torch.tensor(0.0, device=predicted.device)
+        pred = self.predict_next(b=b)
+        if pred.ndim == 1:
+            conf = pred.new_ones(())
         else:
-            last_row = attn[0, 0, -1]               # [n]
-            eps = 1e-12
-            h = -(last_row * (last_row + eps).log()).sum()
-            # Normalize by log(max(n, 2)) to avoid divide-by-zero at
-            # n=1.  At n=1 the attention is a point mass so h=0 and
-            # confidence is 1 regardless of the denominator; the
-            # guard just keeps the arithmetic finite.
-            denom = float(torch.log(torch.tensor(max(n, 2),
-                dtype=last_row.dtype, device=last_row.device)))
-            confidence = (1.0 - h / denom).clamp(0.0, 1.0)
-        return predicted, confidence
+            conf = pred.new_ones(pred.shape[0])
+        return pred, conf
 
-    def predictive_loss(self, s_tensor, w_tensor, predicted):
-        """Cosine-distance loss between the AR-predicted S-block and
-        the actual S-slice of the snapshot assembled from the live
-        ``(s_tensor, w_tensor)`` pair.
+    def snapshot(self, s_tensor, w_tensor=None, mask=None):
+        """Legacy alias for ``observe`` (ignores ``w_tensor``).
 
-        Inputs may be 2D ``[rows, dim]`` (B=1 legacy, ``predicted``
-        shape ``[s_dim]``) or 3D ``[B, rows, dim]`` (``predicted``
-        shape ``[B, s_dim]``).  The 3D path returns the mean of the
-        per-row cosine distances.
-
-        The predictor consumes S only (Task 5.3), so the comparison
-        is also S-only: the W rows of ``_assemble`` are still used by
-        the contrastive loss, but this loss only scores the symbolic
-        block that the head actually predicted.
-
-        Returns ``None`` when ``predicted`` is ``None`` (first sentence
-        cold-start, or predictor disabled).  Gradient flows through
-        both ``predicted`` (via the predictor's parameters) and the
-        live ``s_tensor`` arguments; ``w_tensor`` is still accepted
-        for symmetry with the contrastive API but does not contribute
-        to this loss.
+        The pre-ARMA discourse layer pooled an ``[S | W]`` row; ARMA
+        consumes only the S-tier sentence rep so ``w_tensor`` is
+        dropped.  Returns the ARMA loss the same way ``observe``
+        does so callers that already wrote ``layer.snapshot(...)`` for
+        side-effects only still work.
         """
-        if predicted is None:
-            return None
-        actual = self._assemble(s_tensor, w_tensor)
-        if actual.ndim == 2:
-            # Legacy B=1: [n_sentence, n_dim] -> [s_dim]
-            actual_flat = actual[:self.n_symbols].reshape(-1)
-            pred_flat = predicted.reshape(-1)
-            sim = F.cosine_similarity(
-                pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
-            return (1.0 - sim).squeeze()
-        B = actual.shape[0]
-        if self._batch == 1 and B != 1:
-            # Legacy fallback: pool the input batch into one row and
-            # compare against the (single) stored prediction.
-            actual_pooled = actual.mean(dim=0)
-            actual_flat = actual_pooled[:self.n_symbols].reshape(-1)
-            pred_flat = predicted.reshape(-1)
-            sim = F.cosine_similarity(
-                pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
-            return (1.0 - sim).squeeze()
-        # 3D batched: [B, n_sentence, n_dim] -> [B, s_dim]
-        actual_flat = actual[:, :self.n_symbols, :].reshape(B, -1)
-        if predicted.ndim == 1:
-            # Single prediction broadcast across the batch.
-            pred_flat = predicted.reshape(1, -1).expand(B, -1)
-        else:
-            pred_flat = predicted.reshape(B, -1)
-        sim = F.cosine_similarity(pred_flat, actual_flat, dim=-1)  # [B]
-        return (1.0 - sim).mean()
+        del w_tensor
+        return self.observe(s_tensor, mask=mask)
+
+    def contrastive_loss(self, s_tensor, w_tensor=None):
+        """Legacy alias: under ARMA the single loss term is the MSE
+        from ``observe``; the contrastive cosine pair was retired
+        2026-05-14.  Kept so the existing runBatch wiring still
+        compiles.
+        """
+        del w_tensor
+        return self.observe(s_tensor)
+
+    def predictive_loss(self, s_tensor, w_tensor=None, predicted=None):
+        """No-op under ARMA (the single MSE term in ``observe``
+        replaces the separate predictive head)."""
+        del s_tensor, w_tensor, predicted
+        return None
 
     def prime(self, predicted, confidence, scale):
-        """Cast a predicted snapshot into concept space and gate it.
+        """Lift a predicted sentence rep into C-tier for the chat-
+        loop's ``_c_prior`` injection.
 
-        Returns ``cast(predicted) * confidence * scale``.  Shape is
-        ``[concept_dim]`` for 1D ``predicted`` (single row) and
-        ``[B, concept_dim]`` for 2D ``predicted`` (batched
-        per-row predictions).  Returns ``None`` when inputs are
-        missing or the cast is not built.
+        Returns ``cast(predicted) * scale`` (``confidence`` accepted
+        for signature back-compat but always treated as 1.0 under
+        ARMA, which has no per-prediction confidence score).
+        Returns ``None`` when inputs or the cast are missing.
         """
-        if (self.cast is None
-                or predicted is None
-                or confidence is None):
+        del confidence  # not produced by the ARMA predictor
+        if self.cast is None or predicted is None:
             return None
         if predicted.ndim == 1:
-            # cast expects a 2D [B, in]; wrap and unwrap the singleton.
             cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
-            return cast_out * confidence * float(scale)
-        # Batched: cast operates on [B, s_dim] -> [B, concept_dim].
-        cast_out = self.cast(predicted)
-        # Confidence is [B]; broadcast over concept_dim.
-        return cast_out * confidence.unsqueeze(-1) * float(scale)
+            return cast_out * float(scale)
+        return self.cast(predicted) * float(scale)
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 
@@ -7840,13 +7648,18 @@ class Loss(nn.Module):
 class ModelLoss(Loss):
     """Weighted reconstruction loss with separate scales for what/where/when.
 
-    Combines a forward task-output loss with a reverse-reconstruction
-    loss; the reverse term is decomposed into per-modality slices so
-    each (what / where / when) modality carries its own weight. Used
-    as the canonical training criterion across the model factory.
+    Combines a forward task-output loss with a forward reconstruction
+    loss; the reconstruction term is decomposed into per-modality
+    slices so each (what / where / when) modality carries its own
+    weight. Used as the canonical training criterion across the
+    model factory.
+
+    The blend between output and reconstruction is set by
+    ``reconstruction_scale`` (formerly ``reverse_scale``, retired
+    alongside the reverse pipeline 2026-05-14).
     """
 
-    def __init__(self, reverse_scale=0.5,
+    def __init__(self, reconstruction_scale=0.5,
                  what_scale=0.7, where_scale=0.2, when_scale=0.1,
                  embedding_scale=0.1,
                  certainty=False, nOutput=2,
@@ -7857,7 +7670,7 @@ class ModelLoss(Loss):
         See class docstring for invariants.
         """
         super().__init__()
-        self.reverse_scale = float(reverse_scale or 0.5)
+        self.reconstruction_scale = float(reconstruction_scale or 0.5)
         self.what_scale = float(what_scale or 0.7)
         self.where_scale = float(where_scale or 0.2)
         self.when_scale = float(when_scale or 0.1)
@@ -7985,7 +7798,7 @@ class ModelLoss(Loss):
         """
         total = lossOut
         if lossIn is not None and torch.isfinite(lossIn).all():
-            rr = self.reverse_scale
+            rr = self.reconstruction_scale
             total = (1 - rr) * lossOut + rr * lossIn
         if sbow is not None:
             total = total + self.embedding_scale * sbow
@@ -8032,7 +7845,7 @@ class Error:
 
         TheError.reset()
         TheError.compute("reconstruction", pred, target,
-                          method="compute", weight=self.loss.reverse_scale,
+                          method="compute", weight=self.loss.reconstruction_scale,
                           space="InputSpace", category="reconstruction")
         TheError.add("symbol_residual", sym_term, weight=1.0,
                       space="SymbolicSpace", category="symbol")
@@ -9115,6 +8928,87 @@ class VectorQuantize(nn.Module):
         if return_all_codes:
             return quantized, indices, commit_loss, quantized.unsqueeze(0)
         return quantized, indices, commit_loss
+
+    @torch.no_grad()
+    def grow_on_novelty(self, x, eps, free_threshold=None):
+        """ε-growing codebook: insert novel inputs into dead slots.
+
+        Two-phase logic:
+
+          1. **Dead-slot detection.** A slot is considered "dead"
+             (available for re-use) when its EMA ``cluster_size``
+             falls below ``free_threshold``.  Default threshold is
+             ``self.threshold_ema_dead_code`` if that's > 0, otherwise
+             a small fraction of the codebook's initial unit
+             ``cluster_size`` (``0.5``) so EMA-decayed never-assigned
+             slots count as dead after a few batches.
+
+          2. **Novelty test.** For each row of the flattened encoder
+             output ``x``, compute the min-distance to the **live**
+             entries (cluster_size > threshold).  Rows whose min-
+             distance exceeds ``eps`` are "novel" and get inserted
+             into the available dead slots, seeding
+             ``cluster_size``/``embed_avg`` so subsequent EMA blends
+             pull toward the inserted point.
+
+        Returns the count of inserted slots.  Idempotent when every
+        novel row already maps within ``eps`` of a live entry.
+        No-op when ``eps <= 0`` or the layer is in eval mode.
+        """
+        if eps <= 0.0 or not self.training:
+            return 0
+        if free_threshold is None:
+            free_threshold = (float(self.threshold_ema_dead_code)
+                              if self.threshold_ema_dead_code > 0
+                              else 0.5)
+        flat = x.reshape(-1, x.shape[-1])
+        if self.use_cosine_sim:
+            flat = F.normalize(flat, dim=-1)
+        live_mask = (self.cluster_size > free_threshold).reshape(-1)
+        free_idx = torch.nonzero(
+            ~live_mask, as_tuple=False).flatten()
+        if int(free_idx.numel()) == 0:
+            return 0
+        live_idx = torch.nonzero(
+            live_mask, as_tuple=False).flatten()
+        seed_val = max(1.0, float(self.threshold_ema_dead_code))
+        if int(live_idx.numel()) == 0:
+            # No live entries yet -- seed the first n free slots with
+            # the leading rows of x.  Mirrors the dead-code retire's
+            # cold-start path.
+            n_seed = min(int(free_idx.numel()), int(flat.shape[0]))
+            target = free_idx[:n_seed]
+            sampled = flat[:n_seed].to(self.codebook.dtype)
+            self.codebook.index_copy_(0, target, sampled)
+            self.cluster_size.index_fill_(0, target, seed_val)
+            self.embed_avg.index_copy_(
+                0, target,
+                sampled.to(self.embed_avg.dtype) * seed_val)
+            return n_seed
+        live_codes = self.codebook.index_select(0, live_idx)
+        if self.use_cosine_sim:
+            live_codes = F.normalize(live_codes, dim=-1)
+        # Pairwise squared L2; min over codes per row.
+        x_sq = (flat * flat).sum(dim=-1, keepdim=True)
+        c_sq = (live_codes * live_codes).sum(dim=-1, keepdim=True).T
+        dots = flat @ live_codes.T
+        dists_sq = (x_sq - 2 * dots + c_sq).clamp(min=0.0)
+        min_dist = dists_sq.min(dim=-1).values.sqrt()
+        novel_mask = min_dist > float(eps)
+        novel_rows = torch.nonzero(
+            novel_mask, as_tuple=False).flatten()
+        if int(novel_rows.numel()) == 0:
+            return 0
+        n_insert = min(int(novel_rows.numel()),
+                       int(free_idx.numel()))
+        sampled = flat[novel_rows[:n_insert]].to(
+            self.codebook.dtype)
+        target = free_idx[:n_insert]
+        self.codebook.index_copy_(0, target, sampled)
+        self.cluster_size.index_fill_(0, target, seed_val)
+        self.embed_avg.index_copy_(
+            0, target, sampled.to(self.embed_avg.dtype) * seed_val)
+        return n_insert
 
 
 def test():

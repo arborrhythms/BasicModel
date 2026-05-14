@@ -420,3 +420,110 @@ and the noise lifecycle, are documented in [Ergodic.md](Ergodic.md).
 ## Ergodic Exploration
 
 See [Ergodic.md](Ergodic.md).
+
+---
+
+## Sentence-level AR (`InterSentenceLayer`)
+
+Within-sentence training is IR-only (BERT-style masked-LM at the
+P-tier; see `doc/Spaces.md` §"Within-sentence AR retirement"). The
+**autoregressive** signal in this architecture lives one scale up:
+between sentences, on a per-sentence representation `s_t`. That's the
+job of `InterSentenceLayer` (alias `wordSpace.discourse`).
+
+### Sentence representation
+
+`s_t` is the **root S-tier slot** of the body's final stage: the
+single vector the start-symbol reduction wrote into. The chart's
+parse trace already commits to this slot at sentence end; the layer
+pools `[B, N, D] -> [B, D]` by taking row 0 (root). Width is
+`sentence_dim = n_dim` (one vector per row), **not** the full
+`n_symbols * n_dim` flatten that the pre-2026-05-14 contrastive layer
+used — that broader rep would have blown the predictor's Linear past
+the allocator budget on MM_5M_bivector-scale configs.
+
+### ARMA(p, q) predictor
+
+`InterSentenceLayer` runs an autoregressive moving-average predictor:
+
+```
+s_hat_t = predictor(s_{t-1..t-p}, e_{t-1..t-q})
+e_t     = s_t - s_hat_t
+loss    = MSE(s_hat_t, s_t)        # accumulated per batch
+```
+
+- `p` = AR lag count (default 5) — last p sentence reps.
+- `q` = MA lag count (default 2) — last q prediction errors.
+- `predictor` = `nn.Sequential(Linear(p*D + q*D, H), Tanh,
+  Linear(H, D))`, with `H = min(1024, 2*sentence_dim)`.
+
+The MA term lets the predictor correct for systematic bias in the AR
+extrapolation: if the AR model consistently under-predicts the
+sentence rep, the residual `e_t` carries that signal forward.
+
+Buffers (per row, non-persistent):
+
+- `_s_history`: `[B, p, sentence_dim]` ring of last p sentence reps
+  (most recent at index `-1`).
+- `_e_history`: `[B, q, sentence_dim]` ring of last q residuals.
+- `_s_count` / `_e_count`: `[B]` long, fill levels (cap at p / q).
+
+`ensure_batch(B)` resizes these on cascade from
+`WordSpace.ensure_batch`; `Reset()` clears them on hard / discourse
+boundary. Default behaviour is to **not** auto-reset across document
+boundaries — the AR lags carry information through discourse
+continuity unless the caller explicitly calls `Reset`.
+
+### Wiring into the training loop
+
+1. After the body finishes (sentence end), `_forward_per_stage`
+   stashes the S-tier event on `_current_discourse_s`.
+2. In `runBatch`, when training, `discourse.observe(s_tensor)`:
+   - Pools `s_t = sigma_S(s_tensor[:, 0, :])`.
+   - Computes `s_hat_t = predictor(_s_history, _e_history)`.
+   - Returns `MSE(s_hat_t, s_t)` (None on the first call per row
+     when the ring is empty).
+   - Computes `e_t = s_t - s_hat_t`, pushes both into the rings.
+3. `runBatch` adds the loss to `TheError` under category
+   `"discourse"` with weight `armaScale` (training XSD knob, default
+   0.1).
+
+### Inference (chat-loop seeding)
+
+`BasicModel.generate_sentence(seed_text)`:
+
+1. Calls `discourse.predict_next()` for the ARMA-predicted
+   sentence-rep prior `s_hat_{t+1}`.
+2. Lifts it through `discourse.cast` to `concept_dim` and stages on
+   `ConceptualSpace._c_prior`.
+3. Runs the IR forward — the body's first sigma_percept output gets
+   `_c_prior` summed in as a sentence-level conditioning bias before
+   the codebook lookup. Cleared after the forward consumes it.
+4. The post-body perceptual event is decoded by nearest-neighbour
+   against the perceptual codebook, producing the
+   `(slot, original, predicted)` triples for the seed text's masked
+   positions.
+5. Commits the produced sentence's S-tier root to the ARMA ring via
+   `discourse.observe(s_tensor)`.
+
+The IR head plays no role at inference — the prediction lives at the
+masked P-tier positions, decoded against the (frozen) perceptual
+codebook.
+
+### Configuration
+
+| XSD knob | Section | Default | Notes |
+|---|---|---|---|
+| `<armaP>` | `<WordSpace>` | 5 | AR lag count |
+| `<armaQ>` | `<WordSpace>` | 2 | MA lag count |
+| `<armaHiddenDim>` | `<WordSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
+| `<armaScale>` | `<architecture><training>` | 0.1 | ARMA loss weight added to `TheError` |
+| `<sentencePrediction>` | `<architecture><training>` | false | Gates `InterSentenceLayer` construction |
+
+The retired pre-2026-05-14 knobs (`<sentenceContextWindow>`,
+`<sentenceCentroidHistory>`, `<sentenceLambda>`,
+`<sentencePredictionScale>`, `<sentencePredictiveScale>`,
+`<sentenceContrastiveScale>`) shaped the legacy contrastive cosine
+machinery (recent-centroid attraction + older-centroid repulsion).
+They are not parsed; configs that still set them are tolerated
+silently.

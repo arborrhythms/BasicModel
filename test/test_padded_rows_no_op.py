@@ -32,14 +32,12 @@ def _xor_input():
     ).float().unsqueeze(1)
 
 
-def _model(masked_prediction='AR'):
+def _model():
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    model.masked_prediction = masked_prediction
-    model.inputSpace.masked_prediction = masked_prediction
     return model
 
 

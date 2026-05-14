@@ -27,8 +27,6 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    model.masked_prediction = 'AR'
-    model.inputSpace.masked_prediction = 'AR'
     if model.wordSpace is None:
         import pytest
         pytest.skip("Model has no WordSpace; cascade is a no-op")
@@ -59,14 +57,22 @@ def test_inputspace_forward_triggers_ensure_microbatch():
 
 def test_ensure_microbatch_cascades_to_discourse():
     """When discourse exists, its buffer stays at B (per-source-stream),
-    not B*K -- one discourse history per stream, shared by all K windows."""
+    not B*K -- one discourse history per stream, shared by all K windows.
+
+    Post-2026-05-14 the layer is ARMA(p, q) with ``_s_history`` /
+    ``_e_history`` rings instead of the legacy ``_recent`` /
+    ``_prev_centroids`` contrastive buffers; the per-batch leading
+    dim contract is unchanged.
+    """
     from Layers import InterSentenceLayer
     layer = InterSentenceLayer(n_symbols=2, max_depth=2, n_dim=8, batch=1)
     assert layer._batch == 1
     layer.ensure_batch(6)
     assert layer._batch == 6
-    assert layer._recent.shape[0] == 6
-    assert layer._recent_count.shape == (6,)
+    assert layer._s_history.shape[0] == 6
+    assert layer._s_count.shape == (6,)
+    assert layer._e_history.shape[0] == 6
+    assert layer._e_count.shape == (6,)
 
 
 def test_ensure_microbatch_method_explicit_BK():

@@ -95,7 +95,7 @@ Training loop and I/O.
 | `batchSize` | int | `64` | Contiguous streams through the dataset. Each batch row `b` receives the next item from stream `b`, so temporal context is coherent across steps. Capped at split length, so small eval sets yield one rectangular batch. |
 | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Adam learning rate. |
-| `reverseScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$. (Older docs called this `reconRatio`.) |
+| `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |
 | `whatScale` | float | `0.7` | Loss weight on the `.what` (content) channel. |
 | `whereScale` | float | `0.2` | Loss weight on the `.where` (positional) channel. |
 | `whenScale` | float | `0.1` | Loss weight on the `.when` (temporal) channel. |
@@ -442,8 +442,7 @@ Everything not listed inherits from `data/model.xml`.
     <training>
       <numEpochs>2</numEpochs>
       <batchSize>128</batchSize>
-      <reverseScale>0.1</reverseScale>
-      <maskedPrediction>AR</maskedPrediction>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>AR</trainEmbedding>
       <autosave>true</autosave>
       <checkpointEveryBatches>500</checkpointEveryBatches>

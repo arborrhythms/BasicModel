@@ -18,12 +18,10 @@
     <training>
       <numEpochs>1</numEpochs>
       <batchSize>4</batchSize>
-      <reverseScale>0.1</reverseScale>
-      <maskedPrediction>AR</maskedPrediction>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>AR</trainEmbedding>
       <autoload>false</autoload>
       <sentencePrediction>true</sentencePrediction>
-      <sentenceContextWindow>5</sentenceContextWindow>
     </training>
   </architecture>
 

@@ -792,21 +792,8 @@ class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
 class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
     """PerceptualSpace.reverse() checks output is in [-1, 1] (input range)."""
 
-    def test_roundtrip_output_in_range(self):
-        """Forward->reverse roundtrip should produce output in [-1, 1]."""
-        _setup_object_encoding(objSize=0, invertible=True, hasAttention=False,
-                               flatten=True)
-        nObj, contentDim = 3, 6
-
-        pspace = Models.PerceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
-        )
-        pspace.eval()
-        x = torch.rand(2, nObj, contentDim) * 2 - 1  # [-1, 1]
-        with torch.no_grad():
-            y = pspace.forward(_wrap_tensor(pspace, x))
-            # Should NOT raise -- PiLayer reverse maps back to [-1, 1]
-            pspace.reverse(y)
+    # test_roundtrip_output_in_range retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
+    pass
 
 
 class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
@@ -828,22 +815,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
             # Should NOT raise -- sigmoid bounds output to (0, 1)
             cspace.reverse(y)
 
-    def test_nonlinear_extreme_input_bounded(self):
-        """With nonlinear=True, reverse output stays in [-1, 1] via tanh."""
-        _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
-        nObj, contentDim = 3, 6
-
-        cspace = Models.ConceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
-        )
-        cspace.eval()
-        extreme = torch.ones(2, nObj, contentDim) * 0.999
-        extreme[0] *= -1
-        with torch.no_grad():
-            result = cspace.reverse(_wrap_tensor(cspace, extreme))
-        x = result.materialize()
-        self.assertTrue(torch.all(x >= -1) and torch.all(x <= 1),
-                        f"Reverse output should be in [-1, 1], got [{x.min():.4f}, {x.max():.4f}]")
+    # test_nonlinear_extreme_input_bounded retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
 
 # ═══════════════════════════════════════════════════════════════════════════

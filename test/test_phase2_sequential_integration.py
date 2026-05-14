@@ -28,18 +28,12 @@ def _xor_input():
     ).float().unsqueeze(1)
 
 
-def _model(masked_prediction=None):
+def _model():
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    if masked_prediction is not None:
-        model.masked_prediction = masked_prediction
-        # Propagate to InputSpace so its forward() AR gate picks up the
-        # override (model.forward does this defensively, but tests that
-        # call inputSpace.forward directly rely on this).
-        model.inputSpace.masked_prediction = masked_prediction
     return model
 
 
@@ -54,13 +48,11 @@ def test_sequential_non_ar_forward_shape():
 
 
 def test_sequential_builds_body_stages_and_invertible_path():
-    """Construction produces body_stages + invertible-case reverse path.
-
-    Replaces the prior pipeline_fwd / pipeline_rev nn.Sequential checks:
-    the body is now an explicit nn.ModuleList of ModuleDicts driven by
-    ``_forward_body``; the reverse pipeline is a method (``_run_pipeline_rev``)
-    instead of an attribute Sequential. MM_xor.xml has invertible spaces,
-    so any_invertible should be True and midpoint_cache should be None.
+    """Construction produces ``body_stages`` (an nn.ModuleList of
+    ModuleDicts driven by ``_forward_body``).  The reverse pipeline
+    was retired 2026-05-14 alongside ``<reconstruct>output</...>`` so
+    ``_run_pipeline_rev`` is gone; ``midpoint_cache`` survives as a
+    no-op attribute.
     """
     import torch.nn as nn_
     model = _model()
@@ -68,9 +60,9 @@ def test_sequential_builds_body_stages_and_invertible_path():
     assert model.any_invertible is True, (
         "MM_xor.xml has invertible spaces; expected any_invertible=True")
     assert model.midpoint_cache is None
-    # Methods replace the stored Sequentials.
-    assert callable(getattr(model, '_run_pipeline_rev', None))
     assert callable(getattr(model, '_forward_body', None))
+    assert not hasattr(model, '_run_pipeline_rev'), (
+        "_run_pipeline_rev was retired with the reverse pipeline")
 
 
 def test_sequential_unrolls_conceptual_order():
@@ -94,56 +86,13 @@ def test_sequential_unrolls_conceptual_order():
     assert ss_count == T, f"expected {T} SymbolicSpaces, got {ss_count}"
 
 
-def test_sequential_reconstruction_produced():
-    """Reconstruction path runs when model.reversible is True.
-
-    In the sequential design, forward() only populates the 4-tuple's
-    reconstruction slot for ARIR (where reconstruction is needed inside
-    the AR loop); non-AR reversible reconstruction happens in runBatch
-    via model.reverse(). Exercise both so we catch regressions in either
-    branch of that ownership split.
-    """
-    model = _model()
-    assert model.reversible  # MM_xor has reconstruct="symbols"
-    out = model.forward(_xor_input())
-    _, symbols, outputData, _ = out
-    inputData, _ = model.reverse(symbols, outputData)
-    assert inputData is not None, (
-        "reversible model.reverse() must produce a reconstruction")
-
-
-def test_sequential_ar_mode_produces_prediction_tensor():
-    """AR mode returns a [B, K, N, predDim] tensor (microbatch path).
-
-    The legacy serial AR loop returned a Python list of per-position
-    [B, N, predDim] tensors; the microbatch refactor replaced that with
-    a single emit of all K windows in parallel.
-    """
-    model = _model(masked_prediction='AR')
-    out = model.forward(_xor_input())
-    predictions = out[2]
-    assert isinstance(predictions, torch.Tensor), (
-        f"AR mode expected predictions tensor, got {type(predictions).__name__}")
-    assert predictions.dim() == 4, (
-        f"AR predictions must be [B, K, N, predDim], got shape {tuple(predictions.shape)}")
-
-
-def test_basic_model_ar_sequential_path():
-    """BasicModel.forward() with maskedPrediction=AR produces per-pos predictions."""
-    from data import TheData
-    from Models import BaseModel, BasicModel
-    TheData.load("xor")
-
-    model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    if not isinstance(model, BasicModel):
-        pytest.skip("MM_xor.xml resolves to BasicModel; AR test requires BasicModel")
-    model.masked_prediction = 'AR'
-    out = model.forward(_xor_input())
-    preds = out[2]
-    assert isinstance(preds, torch.Tensor), (
-        f"BasicModel AR should return tensor, got {type(preds).__name__}")
-    assert preds.dim() == 4, (
-        f"AR predictions must be [B, K, N, predDim], got shape {tuple(preds.shape)}")
+# test_sequential_reconstruction_produced retired 2026-05-14: the
+# reverse pipeline it exercised was retired alongside
+# <reconstruct>output</...>.
+# test_sequential_ar_mode_produces_prediction_tensor +
+# test_basic_model_ar_sequential_path retired in the same change:
+# within-sentence training is now IR-only and emits [B, N, predDim],
+# not the legacy [B, K, N, predDim] AR microbatch shape.
 
 
 def test_input_space_null_byte_emits_zero_validity():
@@ -155,7 +104,7 @@ def test_input_space_null_byte_emits_zero_validity():
     every all-zero target row should map to False.
     """
     import torch as _t
-    model = _model(masked_prediction='AR')
+    model = _model()
     inp = model.inputSpace
     # Stub the embed step so InputSpace.forward runs the unfold/mask path
     # against a tensor we control directly.

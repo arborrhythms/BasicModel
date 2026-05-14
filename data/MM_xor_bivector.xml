@@ -34,7 +34,7 @@
       <numEpochs>1</numEpochs>
       <batchSize>4</batchSize>
       <learningRate>0.0</learningRate>
-      <reverseScale>0.0</reverseScale>
+      <reconstructionScale>0.0</reconstructionScale>
       <autoload>false</autoload>
     </training>
 

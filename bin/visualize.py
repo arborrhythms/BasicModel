@@ -16,21 +16,7 @@ import util
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 
-class _LazyPlt:
-    """Defers ``import matplotlib.pyplot`` until the first plotting call.
-
-    Headless / GPU-only training runs that never plot avoid loading
-    matplotlib (and pulling in its slow font cache build). On the first
-    attribute access the proxy installs the real module into ``globals``
-    so subsequent lookups skip the proxy.
-    """
-    def __getattr__(self, name):
-        """Import matplotlib on first access; replace the proxy in globals."""
-        import matplotlib.pyplot as _m
-        globals()['plt'] = _m  # replace proxy with the real module
-        return getattr(_m, name)
-
-plt = _LazyPlt()
+import matplotlib.pyplot as plt
 
 try:
     from torchviz import make_dot
@@ -268,20 +254,28 @@ class Report:
     # ----- Plotting methods -----
 
     def mnistReport(self, model):
-        """Run test epoch, compute per-digit accuracy, and plot.
+        """Run test epoch, compute per-class accuracy, and plot.
 
-        Skips gracefully when the model has masked-prediction enabled,
-        no test split is configured, or training was zero-epoch
-        (structural scaffold runs). Dispatches to
-        ``plotAccuracyAndCertainty`` when ``model.certainty`` else
-        ``plotAccuracy``.
+        Misnamed for legacy reasons: the function reports general
+        classification accuracy (per-class correctness rate), not
+        MNIST-specific behaviour.  Designed for tasks where each
+        test row has a single integer / one-hot label.
+
+        Skips gracefully for:
+          * IR / masked-LM text training (post-2026-05-14 default for
+            ``modelType=embedding``) — there's no per-row class label
+            to score against; the IR P-tier reconstruction loss is
+            the live signal.
+          * Empty test split (structural-scaffold configs).
+          * Zero-epoch runs (no training happened).
         """
-        if hasattr(model, 'masked_prediction') and model.masked_prediction != 'NONE':
-            return torch.zeros(1)  # no classification report for masked prediction
-        # Configs that exercise the model architecturally without a real
-        # dataset (idempotent.xml's C-S round-trip, etc.) have no test
-        # split. Skip the report rather than crashing on an empty or
-        # degenerate forward+reverse run.
+        # Skip for IR-only text models: the "predicted vs actual"
+        # contract assumes a per-row class label, but masked-LM
+        # training produces per-slot predictions over the perceptual
+        # codebook — meaningless to argmax-and-compare against a
+        # token-count output tensor.
+        if getattr(model, 'model_type', None) == 'embedding':
+            return torch.zeros(1)
         try:
             test_input = model.inputSpace.getTestData()[0]
             if test_input is None:

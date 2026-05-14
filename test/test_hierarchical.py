@@ -70,45 +70,11 @@ class TestLevelShapes(unittest.TestCase):
         self.assertEqual(shapes, [(4, 4), (2, 4)])
 
 
-# -- _pair_merge / _pair_unmerge --------------------------------------
-
-class _MergeHelper:
-    """Lightweight stand-in for BasicModel merge/unmerge (instance methods)."""
-    def __init__(self):
-        self._merge_diffs = []
-    _pair_merge = Models.BasicModel._pair_merge
-    _pair_unmerge = Models.BasicModel._pair_unmerge
-
-
-class TestPairMerge(unittest.TestCase):
-
-    def setUp(self):
-        self.helper = _MergeHelper()
-
-    def test_merge_shape(self):
-        """[2, 8, 4] -> [2, 4, 4] (D stays constant)."""
-        x = torch.randn(2, 8, 4)
-        merged = self.helper._pair_merge(x)
-        self.assertEqual(merged.shape, (2, 4, 4))
-
-    def test_unmerge_inverse(self):
-        """unmerge(merge(x)) recovers original."""
-        x = torch.randn(3, 16, 6)
-        merged = self.helper._pair_merge(x)
-        recovered = self.helper._pair_unmerge(merged)
-        self.assertTrue(torch.allclose(x, recovered, atol=1e-6))
-
-    def test_information_preserved(self):
-        """Average merge + cached diff preserves all information."""
-        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3)
-        merged = self.helper._pair_merge(x)
-        # Shape halves N, keeps D
-        self.assertEqual(merged.shape, (1, 4, 3))
-        # Average halves the sum
-        self.assertAlmostEqual(merged.sum().item(), x.sum().item() / 2, places=4)
-        # But full round-trip recovers everything
-        recovered = self.helper._pair_unmerge(merged)
-        self.assertTrue(torch.allclose(x, recovered))
+# _pair_merge / _pair_unmerge retired 2026-05-14 alongside the reverse
+# pipeline (the operators only fired inside ``_reverse_per_stage``,
+# which itself was retired along with ``<reconstruct>output</...>``).
+# The level-shape contract above is the only piece of the progressive-
+# bottleneck story that still has a forward-time caller.
 
 
 # -- WordEncoding 4-tuple ---------------------------------------------

@@ -48,7 +48,6 @@
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
-      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
@@ -121,17 +120,6 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="maskedPredictionEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="NONE"/>
-      <xs:enumeration value="none"/>
-      <xs:enumeration value="IR"/>
-      <xs:enumeration value="AR"/>
-      <xs:enumeration value="ARUS"/>
-      <xs:enumeration value="ARIR"/>
-    </xs:restriction>
-  </xs:simpleType>
-
   <xs:simpleType name="ampModeEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="off"/>
@@ -159,7 +147,6 @@
       <xs:enumeration value="none"/>
       <xs:enumeration value="symbols"/>
       <xs:enumeration value="concepts"/>
-      <xs:enumeration value="output"/>
       <xs:enumeration value="both"/>
     </xs:restriction>
   </xs:simpleType>
@@ -258,13 +245,17 @@
            batch assembly. -->
       <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
-      <xs:element name="reverseScale" type="unitInterval" minOccurs="0"/>
+      <!-- reconstructionScale: blend weight between OutputSpace
+           prediction loss and reconstruction loss. Higher value =
+           more reconstruction. 0 = output-only training.
+           Legacy name reverseScale still parsed (with deprecation
+           warning) by util.TheXMLConfig. -->
+      <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -273,16 +264,13 @@
       <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
-      <!-- Inter-sentence contrastive loss (DiscourseSpace):
-           attractive cosine to recent centroid, repulsive cosine
-           from older centroids.  No learnable parameters. -->
+      <!-- Inter-sentence ARMA(p, q) next-sentence prediction
+           (InterSentenceLayer). The layer's AR/MA orders and hidden
+           dim live under <WordSpace> (armaP/armaQ/armaHiddenDim);
+           this scale is the loss weight applied on top of the
+           per-batch ARMA MSE. -->
       <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="sentenceContextWindow" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="sentenceCentroidHistory" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="sentenceLambda" type="positiveFloat" minOccurs="0"/>
-      <xs:element name="sentencePredictionScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="sentencePredictiveScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="sentenceContrastiveScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="armaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -334,6 +322,12 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
+           symbolicSpaceType; see comments there). -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
       <!-- wordLearning (formerly chunkingFrequency): controls active
            lexicon growth. 0 = frozen codebook (training-time default);
            >=1 = on first sight of a new word, insert it into the
@@ -393,6 +387,12 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
+           symbolicSpaceType; see comments there). -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
       <!-- perWordStemSerial: when true, the per-word stem uses a
@@ -431,6 +431,26 @@
       <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="useVQVAE" type="xs:boolean" minOccurs="0"/>
+      <!-- VQ-VAE EMA decay (``VectorQuantize.decay``).  Higher = slower
+           adaptation, more stable assignment across time; lower =
+           faster drift but less stable.  Default 0.9 (see
+           doc/Spaces.md §"Codebook drift sync"). -->
+      <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
+      <!-- Dead-code retire: when a slot's EMA ``cluster_size`` falls
+           below ``codebookEmaDeadThreshold``, replace it with a fresh
+           sample from the current input batch.  Off by default
+           because reseeding can blow up the effective number of
+           distinct codes on non-stationary data; enable for
+           growing-codebook semantics where novel inputs should evict
+           rarely-used slots. -->
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Novelty insertion threshold for ε-growing codebook semantics.
+           When > 0, ``VectorQuantize.grow_on_novelty`` inserts an input
+           vector into an empty slot whenever its min-distance to the
+           live codebook exceeds this value.  0 disables (use
+           dead-code retire above, or fixed-size codebook). -->
+      <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
@@ -461,12 +481,14 @@
 
   <!-- ═══════════════════════════════════════════════════════════════════
        WordSpace section — unified container for grammar infrastructure
-       (SyntacticLayers, TruthLayer). The DiscourseSpace toggle and
-       its training hyperparameters live under <architecture><training>
-       (sentencePrediction / sentenceContextWindow /
-       sentenceCentroidHistory / sentenceLambda /
-       sentencePredictionScale / sentencePredictiveScale /
-       sentenceContrastiveScale / sentencePrimingScale).
+       (SyntacticLayers, TruthLayer) and the per-batch inter-sentence
+       ARMA(p, q) predictor (InterSentenceLayer). Sentence-level AR
+       lives here, not in the within-sentence body — the body is now
+       a pure IR (masked-LM) forward.
+
+       InterSentenceLayer shape knobs live in this section
+       (armaP / armaQ / armaHiddenDim); the loss weight lives under
+       <architecture><training> as <armaScale>.
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:simpleType name="useGrammarType">
     <xs:restriction base="xs:string">
@@ -483,6 +505,15 @@
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- InterSentenceLayer ARMA(p, q) shape knobs. p = AR lag count
+           (number of previous sentence reps); q = MA lag count
+           (number of previous prediction errors); armaHiddenDim is
+           the MLP predictor's hidden layer width.  Defaults: p=5,
+           q=2, hiddenDim=2*sentence_dim (computed at construction
+           time when omitted). -->
+      <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="chartCompose" type="xs:boolean" minOccurs="0"/>
       <!-- Soft-superposition chart output behavior: root (single root
            sentence node, other positions zero) or broadcast (replicate

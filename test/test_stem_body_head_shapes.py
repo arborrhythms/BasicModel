@@ -34,7 +34,6 @@ def model():
 def test_inputspace_emits_b_k_n_d_in_ar_mode(model):
     """AR forward emits [B, K, N, D] with k_axis True and a valid mask."""
     inp = model.inputSpace
-    inp.masked_prediction = "AR"
     inp.Start()
     # Drive a real batch so the lex/embed runs end to end.
     loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
@@ -56,7 +55,6 @@ def test_inputspace_emits_b_k_n_d_in_ar_mode(model):
 def test_inputspace_inference_k1_degenerate(model):
     """ARIR runtime path: T==N -> K=1 single-window emission."""
     inp = model.inputSpace
-    inp.masked_prediction = "ARIR"
     inp.Start()
     # Mark data as runtime ARIR so the inference branch fires.
     inp.data._runtime_mode = "ARIR"
@@ -79,7 +77,6 @@ def test_inputspace_inference_k1_degenerate(model):
 def test_inputspace_non_ar_keeps_k_axis_false(model):
     """Non-AR mode bypasses K-windowing — k_axis stays False."""
     inp = model.inputSpace
-    inp.masked_prediction = "NONE"
     inp.Start()
     loader = inp.data.data_loader(split="train", num_streams=1)
     inp_items, _ = next(iter(loader))
@@ -107,7 +104,6 @@ def test_inputspace_progressive_prefix_windows(model):
     seen yet), and window k>=N is the last N tokens.
     """
     inp = model.inputSpace
-    inp.masked_prediction = "AR"
     inp.Start()
     loader = inp.data.data_loader(split="train", num_streams=1)
     inp_items, _ = next(iter(loader))

@@ -1,21 +1,22 @@
-"""Tests for DiscourseSpace -- inter-sentence [S, W] snapshot substrate.
+"""Tests for InterSentenceLayer -- ARMA(p, q) next-sentence predictor.
 
-DiscourseSpace is a service space that sits above WordSpace. It owns
-two rings of per-sentence ``[S | W]`` concatenations (a recent buffer
-used for the attractive centroid and a prev_centroids buffer used for
-the repulsive force), plus a contrastive dual-force cosine loss over
-the full flattened snapshot vector. It has no learnable parameters.
+Replaces the pre-2026-05-14 contrastive cosine tests (retired alongside
+``<maskedPrediction>``).  Within-sentence training is now IR-only;
+sentence-level AR lives here.
 
 Covers:
-  1. Unit-level DiscourseSpace behavior (no model) -- snapshot round
-     trip, padding/truncation, ring eviction + centroid folding,
-     contrastive loss arithmetic (attractive alone, attractive +
-     repulsive), reset, split, gradient flow through the live
-     (s, w) arguments.
-  2. BasicModel integration -- that building a BasicModel wires
-     DiscourseSpace in, that forward() populates the pending snapshot
-     attributes, and that runBatch-equivalent flow pushes snapshots
-     into history.
+  1. Unit-level ARMA layer: observe pushes ``s_t`` into the ring,
+     ``predict_next`` produces a stable-shape prediction, MSE loss
+     fires after the ring has been primed by p observations.
+  2. Buffer + lifecycle: ``ensure_batch`` resizes per-row state,
+     ``Reset`` clears both rings, ``__len__`` reports max ring depth.
+  3. Back-compat shims: ``predict``/``snapshot``/``contrastive_loss``
+     keep their pre-ARMA signatures so existing call sites in
+     ``runBatch`` still work during the transition.
+  4. Integration: building a BasicModel under ``<sentencePrediction>``
+     wires an ``InterSentenceLayer`` on ``wordSpace.discourse`` and
+     forward() populates ``_current_discourse_s`` for the runBatch
+     observe call.
 """
 
 import sys
@@ -24,9 +25,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import gc
 import unittest
-import warnings
 import torch
-import torch.nn.functional as F
 import matplotlib
 import Models
 import Spaces
@@ -57,614 +56,220 @@ def _release_allocator_cache():
 
 
 class _DiscourseTestBase(unittest.TestCase):
-    """Shared tearDown mirroring test_grammar_derivation's pattern so
-    BasicModel instances don't accumulate across tests and trip the
-    MPS 30 GiB limit.
-    """
-
-    _SLOTS = ('model', 'discourse', 'cfg')
 
     def tearDown(self):
-        for slot in self._SLOTS:
-            if hasattr(self, slot):
-                try:
-                    delattr(self, slot)
-                except AttributeError:
-                    pass
+        for attr in ("layer", "model"):
+            if hasattr(self, attr):
+                setattr(self, attr, None)
         _release_allocator_cache()
 
 
-class TestDiscourseSpaceUnit(_DiscourseTestBase):
-    """Unit tests for DiscourseSpace in isolation (no model).
+class TestArmaUnit(_DiscourseTestBase):
+    """Stand-alone InterSentenceLayer (no model) -- ring + loss arithmetic."""
 
-    Exercises the class's own contracts: shape fitting, ring-buffer
-    eviction with centroid folding, contrastive-loss arithmetic,
-    split inverse-of-assemble, reset, and gradient flow through the
-    live (s, w) arguments. No BasicModel required.
-    """
-
-    N_SYMBOLS = 4
-    MAX_DEPTH = 6
-    N_DIM = 8
-    CTX = 2               # recent buffer depth
-    CENTROID_HIST = 2     # prev_centroids depth
-    LAM = 1.01
-
-    def _make(self):
-        return Layers.InterSentenceLayer(
-            n_symbols=self.N_SYMBOLS,
-            max_depth=self.MAX_DEPTH,
-            n_dim=self.N_DIM,
-            context_window=self.CTX,
-            centroid_history=self.CENTROID_HIST,
-            lam=self.LAM,
+    def setUp(self):
+        self.n_symbols = 4
+        self.n_dim = 3
+        self.p = 5
+        self.q = 2
+        self.layer = Layers.InterSentenceLayer(
+            n_symbols=self.n_symbols,
+            max_depth=2,
+            n_dim=self.n_dim,
+            p=self.p, q=self.q,
+            batch=2,
         )
 
-    # -- snapshot / ring plumbing -------------------------------------
-
-    def test_snapshot_roundtrip(self):
-        """snapshot() -> latest_snapshot() returns the assembled row."""
-        d = self._make()
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        latest = d.latest_snapshot()
-        self.assertIsNotNone(latest)
-        self.assertEqual(latest.shape,
-                          (self.N_SYMBOLS + self.MAX_DEPTH, self.N_DIM))
-        # The S half of the snapshot should match the input S.
-        s_half, w_half = d.split(latest)
-        self.assertTrue(torch.allclose(s_half, s))
-        self.assertTrue(torch.allclose(w_half, w))
-
-    def test_empty_history(self):
-        """Fresh DiscourseSpace: len=0, latest is None, loss is None."""
-        d = self._make()
-        self.assertEqual(len(d), 0)
-        self.assertIsNone(d.latest_snapshot())
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        self.assertIsNone(d.contrastive_loss(s, w))
-
-    def test_ring_eviction_folds_centroid(self):
-        """When the recent buffer is full, the next snapshot folds the
-        current centroid into prev_centroids before evicting the
-        oldest row.  With CTX=2 and CENTROID_HIST=2 we push three
-        snapshots and verify the expected geometry.
+    def test_sentence_dim_equals_n_dim(self):
+        """Sentence rep is the root S-tier slot -- dim is just n_dim,
+        not n_symbols * n_dim.  Without this the predictor's Linear
+        would balloon to V_S * n_dim and OOM the allocator on
+        MM_5M_bivector-scale configs.
         """
-        d = self._make()
-        # Tag each snapshot with a distinct scalar so we can track it.
-        tags = [1.0, 2.0, 3.0]
-        for i, tag in enumerate(tags):
-            s = torch.full((self.N_SYMBOLS, self.N_DIM), tag)
-            w = torch.full((self.MAX_DEPTH, self.N_DIM), tag)
-            d.snapshot(s, w)
-        # Recent buffer still holds at most CTX rows.
-        self.assertEqual(len(d), self.CTX)
-        # Latest is the most recent push.
-        latest = d.latest_snapshot()
-        self.assertTrue(torch.allclose(
-            latest, torch.full_like(latest, tags[-1])))
-        # The oldest recent entry is tags[1] (tags[0] was evicted).
-        # Buffers carry a leading B=1 dim under the Task 3 microbatch
-        # refactor; row 0 is the legacy single-row content.
-        oldest = d._recent[0, 0]
-        self.assertTrue(torch.allclose(
-            oldest, torch.full_like(oldest, tags[1])))
-        # Exactly one centroid should have been folded into prev_centroids
-        # -- the mean of the pre-eviction recent window (tags[0], tags[1]).
-        self.assertEqual(int(d._prev_count[0].item()), 1)
-        expected_prev = torch.full_like(d._prev_centroids[0, 0],
-                                        (tags[0] + tags[1]) / 2.0)
-        self.assertTrue(torch.allclose(d._prev_centroids[0, 0], expected_prev))
+        self.assertEqual(self.layer.sentence_dim, self.n_dim)
 
-    def test_prev_centroids_ring_overflow(self):
-        """Folding more than CENTROID_HIST centroids evicts the oldest
-        from the prev_centroids ring."""
-        d = self._make()
-        # Push enough snapshots to fold CENTROID_HIST + 1 centroids.
-        # Each eviction folds one centroid, so we need CTX + CENTROID_HIST + 1
-        # total snapshots (first CTX fill the recent buffer cleanly).
-        total = self.CTX + self.CENTROID_HIST + 1
-        for i in range(total):
-            s = torch.full((self.N_SYMBOLS, self.N_DIM), float(i))
-            w = torch.full((self.MAX_DEPTH, self.N_DIM), float(i))
-            d.snapshot(s, w)
-        # prev_centroids should be saturated at CENTROID_HIST.
-        self.assertEqual(int(d._prev_count[0].item()), self.CENTROID_HIST)
+    def test_observe_pushes_and_returns_none_on_cold_start(self):
+        """First observe primes the ring; no AR prediction to score
+        against on the first sentence, so the loss is None."""
+        s = torch.randn(2, self.n_symbols, self.n_dim)
+        loss = self.layer.observe(s)
+        self.assertIsNone(loss)
+        self.assertEqual(self.layer._s_count.tolist(), [1, 1])
 
-    def test_fit_rows_truncate(self):
-        """_fit_rows with too many rows truncates, too few pads."""
-        d = self._make()
-        x = torch.randn(self.N_SYMBOLS + 3, self.N_DIM)
-        y = d._fit_rows(x, self.N_SYMBOLS)
-        self.assertEqual(y.shape, (self.N_SYMBOLS, self.N_DIM))
-        self.assertTrue(torch.allclose(y, x[:self.N_SYMBOLS]))
-        x = torch.randn(self.N_SYMBOLS - 2, self.N_DIM)
-        y = d._fit_rows(x, self.N_SYMBOLS)
-        self.assertEqual(y.shape, (self.N_SYMBOLS, self.N_DIM))
-        self.assertTrue(torch.allclose(y[:self.N_SYMBOLS - 2], x))
-        self.assertTrue(torch.allclose(
-            y[self.N_SYMBOLS - 2:], torch.zeros(2, self.N_DIM)))
-
-    def test_fit_rows_preserves_batch_axis(self):
-        """3D input keeps its batch axis (Task 3 dropped the mean-pool).
-
-        The microbatch refactor needs each row's snapshot kept
-        independent through ``_fit_rows`` so the snapshot path can
-        write per-row state into the per-B rings.  The legacy
-        ``mean(dim=0)`` collapse is gone.
-        """
-        d = self._make()
-        x = torch.randn(5, self.N_SYMBOLS, self.N_DIM)
-        y = d._fit_rows(x, self.N_SYMBOLS)
-        self.assertEqual(y.shape, (5, self.N_SYMBOLS, self.N_DIM))
-        self.assertTrue(torch.allclose(y, x))
-
-    def test_fit_dim_pad_and_truncate(self):
-        """_fit_dim handles column mismatches."""
-        d = self._make()
-        wider = torch.randn(self.N_SYMBOLS, self.N_DIM + 4)
-        y = d._fit_dim(wider)
-        self.assertEqual(y.shape[-1], self.N_DIM)
-        narrower = torch.randn(self.N_SYMBOLS, self.N_DIM - 3)
-        y = d._fit_dim(narrower)
-        self.assertEqual(y.shape[-1], self.N_DIM)
-        self.assertTrue(torch.allclose(y[..., :self.N_DIM - 3], narrower))
-        self.assertTrue(torch.allclose(
-            y[..., self.N_DIM - 3:], torch.zeros(self.N_SYMBOLS, 3)))
-
-    def test_split_inverse_of_assemble(self):
-        """split(assemble(s, w)) == (s, w) for correctly-sized inputs."""
-        d = self._make()
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        assembled = d._assemble(s, w)
-        s2, w2 = d.split(assembled)
-        self.assertTrue(torch.allclose(s2, s))
-        self.assertTrue(torch.allclose(w2, w))
-
-    def test_reset_clears_history(self):
-        """reset() zeros both rings and resets both counts."""
-        d = self._make()
-        # Fill enough to populate both rings.
-        for i in range(self.CTX + 1):
-            s = torch.full((self.N_SYMBOLS, self.N_DIM), float(i + 1))
-            w = torch.full((self.MAX_DEPTH, self.N_DIM), float(i + 1))
-            d.snapshot(s, w)
-        self.assertGreater(len(d), 0)
-        self.assertGreater(int(d._prev_count.item()), 0)
-        d.reset()
-        self.assertEqual(len(d), 0)
-        self.assertEqual(int(d._prev_count.item()), 0)
-        self.assertIsNone(d.latest_snapshot())
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        self.assertIsNone(d.contrastive_loss(s, w))
-
-    # -- contrastive loss --------------------------------------------
-
-    def test_loss_attractive_only_matches_manual(self):
-        """With just one snapshot (no prev_centroids), the loss should
-        equal the attractive term ``1 - cos(current, recent_centroid)``
-        computed over the flattened snapshot vector.
-        """
-        d = self._make()
-        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s_hist, w_hist)
-
-        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        loss = d.contrastive_loss(s_cur, w_cur)
+    def test_observe_accumulates_loss_after_first_step(self):
+        """Once the ring has any entry, the next observe scores
+        s_hat (from history) against s_t and returns a scalar tensor."""
+        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        loss = self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
         self.assertIsNotNone(loss)
+        self.assertIsInstance(loss, torch.Tensor)
+        self.assertEqual(loss.dim(), 0)
+        self.assertTrue(torch.isfinite(loss).all())
 
-        # Manual computation:
-        current = d._assemble(s_cur, w_cur).reshape(-1)
-        ctx = d._assemble(s_hist, w_hist).reshape(-1)
-        manual = 1.0 - F.cosine_similarity(
-            current.unsqueeze(0), ctx.unsqueeze(0))
-        self.assertTrue(torch.allclose(loss, manual.squeeze()))
+    def test_observe_ring_saturates_at_p(self):
+        """``_s_count`` clamps at ``p`` once the AR ring fills."""
+        for _ in range(self.p + 4):
+            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        self.assertEqual(self.layer._s_count.tolist(), [self.p, self.p])
 
-    def test_loss_attractive_plus_repulsive(self):
-        """With >=1 prev_centroid, the loss should equal
-        attractive + lam * mean(cos(current, prev_i)).
-        """
-        d = self._make()
-        # Fill recent + fold one centroid into prev.
-        for i in range(self.CTX + 1):
-            s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-            w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-            d.snapshot(s, w)
-        self.assertGreaterEqual(int(d._prev_count.item()), 1)
+    def test_e_history_saturates_at_q(self):
+        """MA ring fills to ``q`` and stays there."""
+        for _ in range(self.q + 4):
+            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        self.assertEqual(self.layer._e_count.tolist(), [self.q, self.q])
 
-        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        loss = d.contrastive_loss(s_cur, w_cur)
-        self.assertIsNotNone(loss)
+    def test_predict_next_shape(self):
+        """``predict_next`` returns ``[B, sentence_dim]`` for B>1."""
+        for _ in range(2):
+            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        pred = self.layer.predict_next()
+        self.assertEqual(tuple(pred.shape), (2, self.n_dim))
 
-        # Manual: attractive + lam * mean_over_prev(cos).  Buffers carry
-        # a leading B=1 dim under Task 3; row 0 is the legacy state.
-        current = d._assemble(s_cur, w_cur).reshape(-1)
-        ctx = d._recent_centroid().reshape(-1)
-        attractive = 1.0 - F.cosine_similarity(
-            current.unsqueeze(0), ctx.unsqueeze(0))
-        m = int(d._prev_count[0].item())
-        prev = d._prev_centroids[0, :m].reshape(m, -1)
-        sims = F.cosine_similarity(current.unsqueeze(0), prev, dim=-1)
-        repulsive = sims.mean()
-        manual = attractive.squeeze() + self.LAM * repulsive
-        self.assertTrue(torch.allclose(loss, manual))
+    def test_predict_next_stable_shape_on_cold_start(self):
+        """Empty history still produces a (zero-input) prediction so
+        callers don't need to special-case the cold-start shape."""
+        pred = self.layer.predict_next()
+        self.assertEqual(tuple(pred.shape), (2, self.n_dim))
 
-    def test_loss_zero_when_current_matches_centroid(self):
-        """If the current snapshot equals the only prior snapshot,
-        cos = 1 so the attractive term is 0.  With no prev_centroids
-        the repulsive term is 0 too, so the whole loss is ~0.
-        """
-        d = self._make()
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        loss = d.contrastive_loss(s, w)
-        self.assertIsNotNone(loss)
-        self.assertTrue(torch.allclose(
-            loss, torch.zeros_like(loss), atol=1e-6))
-
-    def test_loss_gradient_flows_through_current(self):
-        """The contrastive loss has no learnable parameters, but
-        gradient must still reach the live (s, w) arguments passed in
-        -- that is the signal the rest of the model learns from.
-        """
-        d = self._make()
-        # Prime history (detached, stored in buffers).
-        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s_hist, w_hist)
-
-        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
-        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        loss = d.contrastive_loss(s_cur, w_cur)
-        self.assertIsNotNone(loss)
-        loss.backward()
-        self.assertIsNotNone(s_cur.grad)
-        self.assertIsNotNone(w_cur.grad)
-        self.assertTrue(s_cur.grad.abs().sum().item() > 0,
-                        "no gradient on s_cur")
-        self.assertTrue(w_cur.grad.abs().sum().item() > 0,
-                        "no gradient on w_cur")
-
-    def test_history_is_detached(self):
-        """Stored snapshots must not carry graph history -- the loss
-        on a later sentence shouldn't try to backprop through the
-        pushed tensors (they were detached at snapshot time).
-        """
-        d = self._make()
-        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
-        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        d.snapshot(s_hist, w_hist)
-
-        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
-        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        loss = d.contrastive_loss(s_cur, w_cur)
-        loss.backward()
-        # The historical tensors should NOT have received gradient --
-        # snapshot() detached them.
-        self.assertTrue(s_hist.grad is None
-                        or s_hist.grad.abs().sum().item() == 0)
-        self.assertTrue(w_hist.grad is None
-                        or w_hist.grad.abs().sum().item() == 0)
-
-
-class TestDiscoursePredictor(_DiscourseTestBase):
-    """Unit tests for the AR-sentence predictor pathway.
-
-    Covers the three methods added to InterSentenceLayer when
-    ``concept_dim`` is provided: ``predict`` (next-snapshot + its
-    attention-entropy confidence), ``predictive_loss`` (cosine
-    distance vs. the actual next snapshot), and ``prime`` (cast into
-    concept_dim gated by confidence and scale).
-    """
-
-    N_SYMBOLS = 4
-    MAX_DEPTH = 6
-    N_DIM = 8
-    CTX = 4
-    CENTROID_HIST = 2
-    LAM = 1.01
-    CONCEPT_DIM = 12
-
-    def _make(self, concept_dim=None):
-        return Layers.InterSentenceLayer(
-            n_symbols=self.N_SYMBOLS,
-            max_depth=self.MAX_DEPTH,
-            n_dim=self.N_DIM,
-            context_window=self.CTX,
-            centroid_history=self.CENTROID_HIST,
-            lam=self.LAM,
-            concept_dim=concept_dim,
-        )
-
-    def test_predict_empty_buffer(self):
-        """With zero snapshots recorded, predict() should return
-        ``(None, None)`` -- there is nothing to attend over."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        pred, conf = d.predict()
-        self.assertIsNone(pred)
-        self.assertIsNone(conf)
-
-    def test_predict_shape(self):
-        """After at least one snapshot, predict() should return a
-        1-D tensor of length ``s_dim`` (= n_symbols * n_dim -- the
-        predictor consumes S only, Task 5.3) and a scalar
-        confidence."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        pred, conf = d.predict()
-        self.assertIsNotNone(pred)
-        self.assertEqual(tuple(pred.shape), (d.s_dim,))
-        self.assertLess(d.s_dim, d.snapshot_dim,
-                        "s_dim must be strictly smaller than snapshot_dim "
-                        "(W block is what the [S|W] augmentation contributed)")
-        self.assertIsNotNone(conf)
-        self.assertEqual(conf.ndim, 0)
-
-    def test_confidence_range(self):
-        """Confidence is derived from attention entropy, so it must
-        stay in ``[0, 1]``."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
+    def test_reset_clears_both_rings(self):
         for _ in range(3):
-            s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-            w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-            d.snapshot(s, w)
-        _, conf = d.predict()
-        self.assertIsNotNone(conf)
-        c = float(conf.item())
-        self.assertGreaterEqual(c, 0.0)
-        self.assertLessEqual(c, 1.0)
+            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        self.assertGreater(int(self.layer._s_count.max().item()), 0)
+        self.layer.Reset()
+        self.assertEqual(self.layer._s_count.tolist(), [0, 0])
+        self.assertEqual(self.layer._e_count.tolist(), [0, 0])
+        self.assertTrue(torch.all(self.layer._s_history == 0))
+        self.assertTrue(torch.all(self.layer._e_history == 0))
 
-    def test_predictive_loss_zero_when_pred_equals_actual(self):
-        """If the predicted S-block equals the actual S-slice of the
-        assembled snapshot, the cosine distance should be ~0.  The
-        predictor scores S only (Task 5.3); the W rows are the
-        discourse substrate's concern, not the head's."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        actual_s_flat = d._assemble(s, w)[:d.n_symbols].reshape(-1).detach()
-        loss = d.predictive_loss(s, w, actual_s_flat)
-        self.assertIsNotNone(loss)
-        self.assertTrue(torch.allclose(
-            loss, torch.zeros_like(loss), atol=1e-6))
-
-    def test_predictive_loss_none_when_no_prediction(self):
-        """predictive_loss() with ``predicted=None`` returns None."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        self.assertIsNone(d.predictive_loss(s, w, None))
-
-    def test_cast_shape(self):
-        """prime() output shape is ``[concept_dim]`` (1-D)."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        pred, conf = d.predict()
-        bias = d.prime(pred, conf, 0.5)
-        self.assertIsNotNone(bias)
-        self.assertEqual(tuple(bias.shape), (self.CONCEPT_DIM,))
-
-    def test_prime_zero_when_scale_zero(self):
-        """prime() scaled by 0.0 returns a zero tensor (no bias)."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        pred, conf = d.predict()
-        bias = d.prime(pred, conf, 0.0)
-        self.assertIsNotNone(bias)
-        self.assertTrue(torch.allclose(
-            bias, torch.zeros_like(bias), atol=1e-6))
-
-    def test_prime_none_without_concept_dim(self):
-        """When ``concept_dim`` isn't set, the cast isn't built and
-        prime() falls back to None (legacy contrastive-only path)."""
-        d = self._make(concept_dim=None)
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s, w)
-        # predict() also returns (None, None) in this legacy mode.
-        pred, conf = d.predict()
-        self.assertIsNone(pred)
-        self.assertIsNone(conf)
-        bias = d.prime(pred, conf, 0.1)
-        self.assertIsNone(bias)
-
-    def test_contrastive_unaffected_by_predictor(self):
-        """Adding the predictor/cast must not change the value of the
-        contrastive loss on the same inputs."""
-        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
-
-        d_plain = self._make(concept_dim=None)
-        d_plain.snapshot(s_hist, w_hist)
-        loss_plain = d_plain.contrastive_loss(s, w)
-
-        d_pred = self._make(concept_dim=self.CONCEPT_DIM)
-        d_pred.snapshot(s_hist, w_hist)
-        loss_pred = d_pred.contrastive_loss(s, w)
-
-        self.assertIsNotNone(loss_plain)
-        self.assertIsNotNone(loss_pred)
-        self.assertTrue(torch.allclose(loss_plain, loss_pred, atol=1e-6))
-
-    def test_predictive_loss_gradient_flows_through_predictor(self):
-        """The predictive loss has learnable parameters in the
-        predictor; gradient must reach at least one of them."""
-        d = self._make(concept_dim=self.CONCEPT_DIM)
-        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
-        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        d.snapshot(s_hist, w_hist)
-
-        pred, _ = d.predict()
-        self.assertIsNotNone(pred)
-
-        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
-        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        loss = d.predictive_loss(s_cur, w_cur, pred)
+    def test_loss_gradient_flows_through_predictor(self):
+        """Predictor parameters get gradient when the MSE loss is
+        backpropagated (verifies the head is actually being trained)."""
+        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        loss = self.layer.observe(
+            torch.randn(2, self.n_symbols, self.n_dim, requires_grad=False))
         self.assertIsNotNone(loss)
         loss.backward()
+        any_grad = False
+        for p in self.layer.predictor.parameters():
+            if p.grad is not None and p.grad.abs().sum() > 0:
+                any_grad = True
+                break
+        self.assertTrue(any_grad,
+                        "ARMA predictor did not receive any gradient")
 
-        any_param_grad = any(
-            p.grad is not None and p.grad.abs().sum().item() > 0
-            for p in d.predictor.parameters())
-        self.assertTrue(any_param_grad,
-                        "no gradient reached the predictor parameters")
+    def test_ensure_batch_resizes_buffers(self):
+        self.layer.ensure_batch(4)
+        self.assertEqual(self.layer._batch, 4)
+        self.assertEqual(tuple(self.layer._s_history.shape),
+                         (4, self.p, self.n_dim))
+        self.assertEqual(tuple(self.layer._e_history.shape),
+                         (4, self.q, self.n_dim))
+
+    def test_len_reports_max_ring_depth(self):
+        self.assertEqual(len(self.layer), 0)
+        self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        self.assertEqual(len(self.layer), 1)
+        for _ in range(self.p + 3):
+            self.layer.observe(torch.randn(2, self.n_symbols, self.n_dim))
+        self.assertEqual(len(self.layer), self.p)
 
 
-class TestDiscourseSpaceIntegration(_DiscourseTestBase):
-    """Integration tests against a real BasicModel.
-
-    Verifies that create() wires DiscourseSpace, that forward()
-    populates the pending snapshot attributes, and that the runBatch
-    path pushes snapshots into history correctly.
+class TestBackCompatShims(_DiscourseTestBase):
+    """The legacy contrastive call sites in ``runBatch`` and
+    ``Language`` use ``snapshot`` / ``contrastive_loss`` / ``predict``.
+    The ARMA layer keeps those names as thin shims so the wiring keeps
+    working until callers migrate to observe / predict_next directly.
     """
 
     def setUp(self):
-        _reload_config()
+        self.layer = Layers.InterSentenceLayer(
+            n_symbols=4, max_depth=2, n_dim=3, p=5, q=2,
+            concept_dim=6, batch=1,
+        )
 
-    def _build_model(self):
-        _reload_config()
-        model, cfg = Models.BasicModel.from_config(
-            os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        return model, cfg
-
-    def test_create_wires_discourse_space(self):
-        """BasicModel.create() should build and attach WordSpace.discourse
-        when the AR/ARUS/AR grammar path is active."""
-        self.model, self.cfg = self._build_model()
-        self.assertIsNotNone(self.model.wordSpace)
-        self.assertIsNotNone(self.model.wordSpace.discourse)
-        d = self.model.wordSpace.discourse
-        # Sizing should match SymbolicSpace's declared output shape.
-        self.assertEqual(d.n_symbols,
-                          int(self.model.symbolicSpace.outputShape[0]))
-        self.assertEqual(d.n_dim,
-                          self.model.symbolicSpace.subspace.muxedSize)
-
-    def test_forward_populates_snapshot_attributes(self):
-        """After forward(), the pending snapshot attributes should be
-        set so runBatch can pick them up.
+    def test_predict_returns_two_tuple(self):
+        """Legacy callers unpack ``(prediction, confidence)``.
+        ARMA has no native confidence score, but downstream priming
+        callers gate on ``conf is None`` so the shim emits a
+        placeholder ``1.0`` after the ring is primed; cold-start
+        still returns ``(None, None)``.
         """
-        self.model, self.cfg = self._build_model()
-        sentences = ['the cat sat on the mat']
-        outputs = [torch.tensor([0.0])]
+        pred, conf = self.layer.predict()
+        self.assertIsNone(pred)
+        self.assertIsNone(conf)
+        self.layer.observe(torch.randn(1, 4, 3))
+        pred, conf = self.layer.predict()
+        self.assertIsNotNone(pred)
+        self.assertIsNotNone(conf)
+        self.assertEqual(float(conf), 1.0)
 
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            train_input, _ = self.model.inputSpace.getTrainData()
-            x = self.model.inputSpace.prepInput(train_input[:1])
-            self.model.eval()
-            self.model.set_sigma(0)
-            with torch.no_grad():
-                try:
-                    self.model.forward(x)
-                except (ValueError, AssertionError):
-                    # Subspace.normalize() emits AssertionError on
-                    # non-finite checks in non-ergodic mode; untrained
-                    # weights can land in that regime regardless of the
-                    # predictor's width.
-                    self.skipTest("Untrained model range violation")
+    def test_snapshot_alias_calls_observe(self):
+        """The ``snapshot`` shim accepts the legacy ``(s, w)`` signature
+        and just routes to ``observe`` (w_tensor is ignored)."""
+        # First snapshot -- primes the ring, returns None loss.
+        loss = self.layer.snapshot(
+            torch.randn(1, 4, 3), torch.zeros(1, 2, 3))
+        self.assertIsNone(loss)
+        self.assertEqual(int(self.layer._s_count[0].item()), 1)
 
-        # After forward: the pending snapshot pair should be populated
-        # (unless wordSpace.discourse is None, which shouldn't happen
-        # in this config).
-        self.assertIsNotNone(self.model.wordSpace.discourse)
-        self.assertIsNotNone(getattr(self.model, '_current_discourse_s', None))
-        self.assertIsNotNone(getattr(self.model, '_current_discourse_w', None))
+    def test_contrastive_loss_alias_returns_arma_mse(self):
+        """The ``contrastive_loss`` shim now returns the ARMA MSE so
+        existing runBatch code that adds it to the total still works.
+        """
+        self.layer.observe(torch.randn(1, 4, 3))
+        out = self.layer.contrastive_loss(torch.randn(1, 4, 3))
+        self.assertIsNotNone(out)
+        self.assertEqual(out.dim(), 0)
 
-    def test_discourse_history_grows(self):
-        """Running snapshot() directly on the model's wordSpace.discourse
-        increments the count -- sanity check that the connection is
-        live."""
-        self.model, self.cfg = self._build_model()
-        d = self.model.wordSpace.discourse
-        self.assertEqual(len(d), 0)
-        # Build correctly-sized dummy tensors and push.
-        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
-        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
-        d.snapshot(s, w)
-        self.assertEqual(len(d), 1)
-        d.reset()
-        self.assertEqual(len(d), 0)
+    def test_predictive_loss_alias_is_no_op(self):
+        """ARMA folds the predictive term into the single observe MSE,
+        so the legacy split call now returns None.
+        """
+        out = self.layer.predictive_loss(
+            torch.randn(1, 4, 3), torch.zeros(1, 2, 3),
+            predicted=torch.randn(3))
+        self.assertIsNone(out)
 
-    def test_epoch_reset_clears_discourse(self):
-        """runEpoch's pre-loop reset should clear the discourse
-        history. We verify by pushing a snapshot, calling reset on
-        the model's wordSpace.discourse directly (which is what
-        runEpoch does), and confirming the count goes back to zero."""
-        self.model, self.cfg = self._build_model()
-        d = self.model.wordSpace.discourse
-        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
-        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
-        d.snapshot(s, w)
-        self.assertEqual(len(d), 1)
-        # Mirror runEpoch's behavior
-        ws = getattr(self.model, 'wordSpace', None)
-        if ws is not None and getattr(ws, 'discourse', None) is not None:
-            ws.discourse.reset()
-        self.assertEqual(len(d), 0)
-
-    def test_discourse_predictor_wired_when_concept_dim_available(self):
-        """When BasicModel builds WordSpace with a concept_dim, the
-        discourse layer's predictor/cast should be built -- this is
-        what enables the AR priming path."""
-        self.model, self.cfg = self._build_model()
-        d = self.model.wordSpace.discourse
-        self.assertIsNotNone(d.concept_dim)
-        self.assertIsNotNone(d.predictor)
-        self.assertIsNotNone(d.cast)
-
-    def test_predicted_snapshot_cached_after_forward(self):
-        """forward() caches ``_predicted_snapshot`` and
-        ``_predicted_confidence`` on self (after at least one prior
-        snapshot has been recorded) so runBatch can pick them up."""
-        self.model, self.cfg = self._build_model()
-        d = self.model.wordSpace.discourse
-        # Seed one prior snapshot so predict() has context.
-        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
-        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
-        d.snapshot(s, w)
-
-        sentences = ['the cat sat on the mat']
-        outputs = [torch.tensor([0.0])]
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            train_input, _ = self.model.inputSpace.getTrainData()
-            x = self.model.inputSpace.prepInput(train_input[:1])
-            self.model.eval()
-            self.model.set_sigma(0)
-            with torch.no_grad():
-                try:
-                    self.model.forward(x)
-                except (ValueError, AssertionError):
-                    # Subspace.normalize() emits AssertionError on
-                    # non-finite checks in non-ergodic mode; untrained
-                    # weights can land in that regime regardless of the
-                    # predictor's width.
-                    self.skipTest("Untrained model range violation")
-
-        self.assertIsNotNone(getattr(self.model, '_predicted_snapshot', None))
-        self.assertIsNotNone(getattr(self.model, '_predicted_confidence', None))
+    def test_prime_lifts_prediction_to_concept_dim(self):
+        """``prime`` is used by the chat-loop's ``_c_prior`` injection."""
+        self.layer.observe(torch.randn(1, 4, 3))
+        s_hat = self.layer.predict_next()
+        primed = self.layer.prime(s_hat, confidence=None, scale=0.5)
+        self.assertIsNotNone(primed)
+        self.assertEqual(primed.shape[-1], 6)
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestModelIntegration(_DiscourseTestBase):
+    """End-to-end: building a model wires the layer, forward() stages
+    the sentence rep, observe() runs from runBatch (or directly).
+    """
+
+    def test_discourse_layer_wired_when_sentencePrediction_true(self):
+        _reload_config()
+        TheXMLConfig.set("architecture.training.sentencePrediction", True)
+        try:
+            model, _ = Models.BasicModel.from_config(
+                os.path.join(_DATA_DIR, 'MentalModel.xml'))
+            self.assertIsNotNone(model.wordSpace.discourse)
+            self.assertIsInstance(
+                model.wordSpace.discourse, Layers.InterSentenceLayer)
+            self.assertEqual(model.wordSpace.discourse.p, 5)
+            self.assertEqual(model.wordSpace.discourse.q, 2)
+            self.model = model
+        finally:
+            TheXMLConfig.set(
+                "architecture.training.sentencePrediction", False)
+
+    def test_discourse_layer_absent_when_sentencePrediction_false(self):
+        # MM_xor.xml does not set <sentencePrediction>; with the
+        # default (False), the layer should not be wired.
+        init_config(
+            path=os.path.join(_DATA_DIR, 'MM_xor.xml'),
+            defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
+        )
+        Language.TheGrammar._configured = False
+        TheXMLConfig.set("architecture.training.sentencePrediction", False)
+        model, _ = Models.BasicModel.from_config(
+            os.path.join(_DATA_DIR, 'MM_xor.xml'))
+        self.assertIsNone(model.wordSpace.discourse)
+        self.model = model

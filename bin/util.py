@@ -810,6 +810,7 @@ class XMLConfig:
         instead of replacing.
         """
         self._data = self._parse_xml(path)
+        self._apply_legacy_renames(self._data, path)
         self._sources = [path]
 
     # Sub-trees that an overlay file *replaces wholesale* rather than
@@ -831,6 +832,7 @@ class XMLConfig:
         wholesale when present in the overlay; other keys merge.
         """
         over = self._parse_xml(path)
+        self._apply_legacy_renames(over, path)
         for section in over:
             if section not in self._data:
                 self._data[section] = over[section]
@@ -839,6 +841,28 @@ class XMLConfig:
                     self._data[section], over[section],
                     path=(section,))
         self._sources.append(path)
+
+    @staticmethod
+    def _apply_legacy_renames(data, source_path):
+        """Rewrite retired element names in a parsed config dict.
+
+        Currently handles ``<reverseScale>`` -> ``<reconstructionScale>``
+        (rename done 2026-05-14 alongside the maskedPrediction retirement;
+        see basicmodel/doc/Training.md).  Emits a single deprecation
+        warning per affected file so test churn stays bounded.
+        """
+        training = (data.get("architecture", {}) or {}).get("training", {})
+        if not isinstance(training, dict):
+            return
+        if "reverseScale" in training and "reconstructionScale" not in training:
+            import warnings
+            warnings.warn(
+                f"{source_path}: <reverseScale> is deprecated; "
+                "rename to <reconstructionScale>.",
+                DeprecationWarning, stacklevel=3)
+            training["reconstructionScale"] = training.pop("reverseScale")
+        elif "reverseScale" in training:
+            training.pop("reverseScale")
 
     def reload(self):
         """Re-parse all previously loaded sources in order.

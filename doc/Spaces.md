@@ -426,6 +426,58 @@ grab `loader.dataset`.
 `_end_of_stream` is a host-side `list[bool]` diagnostic only; the canonical
 hard-reset signal is the cursor's `hard_eos`.
 
+### AR cursor unfold retirement (2026-05-13)
+
+The legacy AR-training path padded + unfolded the embedded sentence
+into `[B, K, N, D]` cursor windows so the body could see a
+`[B*K, N, D]` parallel view of every prefix. At `bs=128`, `K=128`,
+`N=1024`, `D=10`, the unfolded tensor alone was ~320 MB.
+
+The unfold was retired for AR training on 2026-05-13, replaced with a
+serial K-cursor loop (`_forward_per_stage_no_unfold`) that walked
+the same prefixes with a `[B, N, D]` tensor and a per-cursor causal
+mask.
+
+### Within-sentence AR retirement (2026-05-14)
+
+The serial K-cursor loop itself was retired one day later: the
+benchmark showed `_forward_per_stage_no_unfold` running at ~18
+sent/sec (the K body+head calls dominate) vs the single-shot IR
+fast-path's ~61 sent/sec, and the real AR objective in this
+architecture is **next-sentence** prediction (the discourse layer) —
+not next-token within a sentence.
+
+**Within-sentence training is now IR-only.** `InputSpace.forward`
+emits `[B, N, D]` (left-aligned, right-padded to N) and
+`_forward_per_stage` runs a single masked-LM pass:
+
+1. **Stem**: `InputSpace.forward` + `PerceptualSpace.forward` →
+   `[B, N, D]`.
+2. **Mask**: `create_ir_mask` replaces a `mask_rate` fraction of WHAT
+   positions with `NULL_PERCEPT`; pre-mask event stored on
+   `_ir_pre_mask_input` as the loss target.
+3. **Body**: T stages on B rows (no per-cursor walk, no causal
+   mask).
+4. **Head**: `outputSpace` → `[B, N, predDim]`. The head is a side
+   channel — IR loss is computed at the P-tier, not at the head.
+
+`runBatch` reads `_ir_mask_positions` and `_ir_pre_mask_input` and
+computes `MSE(perceptualSpace.subspace at masked positions,
+_ir_pre_mask_input at masked positions)`. The
+`<reconstruct>concepts|symbols|both</...>` knob adds optional
+C-tier / S-tier reconstruction terms (target derived by lifting
+`_ir_pre_mask_input` through `sigma_percept`; see Plan §
+"Reconstruction-loss target shape" Option B).
+
+`<maskedPrediction>` is retired; `<reconstruct>output</...>` is
+retired (it was the only path that fired the reverse pipeline);
+`<reverseScale>` is renamed to `<reconstructionScale>` (the legacy
+name remains parseable with a one-shot deprecation warning).
+
+Sentence-level AR moves to `InterSentenceLayer` — see
+`doc/Architecture.md` §"Sentence-level AR (`InterSentenceLayer`)"
+for the ARMA(p, q) design.
+
 ---
 
 ## PerceptualSpace
@@ -483,35 +535,40 @@ space.
 $[-1, +1]$ encodes belief certainty with sign. No antipodal identification —
 sign matters.
 
-**Owned layer.**
+**Owned layer (2026-05-13 rebalance).**
 
 | Layer | Direction | Math | Notes |
 |-------|-----------|------|-------|
-| `self.pi` (`PiLayer`) | P $\leftrightarrow$ C | log-domain multiplicative, monotonic | `forwardPi`/`reversePi` aliases |
+| `self.sigma_percept` (`SigmaLayer`) | P $\to$ C | additive linear `tanh(W @ atanh(x) + b)`, non-square in the general case (`percept_dim → concept_dim`) | Canonical forward C-tier fold. The legacy `self.pi` was retired by Phase B; `_pi_reverse` was renamed to `_sigma_percept_reverse`. |
 
-One PiLayer handles both directions via self-inverse. Two PiLayers
-(`pi1`, `pi2`) are constructed when reversible without invertibility.
+One SigmaLayer handles both directions via self-inverse in the square /
+invertible regime (the bivector configuration forces square dim — the
+codebook does the dim adaptation inside `project`). In the
+non-square / non-invertible regime, two SigmaLayers
+(`sigma_percept_1`, `sigma_percept_2`) are constructed when
+reversible without invertibility, with independent weights.
 
-**Binary forward.** `pi.forward(x, binary=True)` hard-selects the top-2 input
-operands by $|x_i|$ via `Ops.top2_select_ste` and zeros the rest before the
-log-domain fold. Zero is the multiplicative identity for Pi's AND, so unselected
-operands drop out. Backward is straight-through: every input dim retains a
-learning signal.
+**Binary forward (legacy `binary=True` flag).** Preserved on the
+SigmaLayer surface for grammar layers that need it; defaults to off.
+The SigmaLayer's additive fold is the OR-side of the tetralemma
+(disjunction of features into a concept), the inverse of PiLayer's
+AND-side multiplicative fold (intersection of features).
 
 **Forward (P $\to$ C).**
 
 ```
-m   = (1 + x) / (1 - x)               # (-1,1) -> (0, inf)
-y   = tanh(W * log(m) / 2 + b)        # back to (-1, 1)
+s = atanh(x)                            # entry transform; clamps |x| < 1
+y = tanh(W @ s + b)                     # back to (-1, 1)
 ```
 
-`monotonic` constrains $W \ge 0$; `nonlinear=True` keeps output in `[-1, 1]`.
+`monotonic` constrains $W \ge 0$ in the invertible variant;
+`nonlinear=True` keeps output in `[-1, 1]`.
 
-**Reverse (invertible=True).**
+**Reverse (invertible=True, square dim).**
 
 ```
-l   = log((1 + y) / (1 - y))
-x   = tanh(W^{-1} * (l - b) / 2)
+s = atanh(y)
+x = tanh(W^{-1} @ (s - b))
 ```
 
 **Activation carrier.** `ActiveEncoding.nDim = 2`: activation is a 2-dim

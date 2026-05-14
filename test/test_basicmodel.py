@@ -839,19 +839,7 @@ class TestSimpleModel(unittest.TestCase):
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
-    def test_simple_model_reverse_shapes(self):
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-            perceptPassThrough=True, symbolPassThrough=True,
-            ergodic=True, flatten=True, reconstruct="FULL")
-        model = Models.BasicModel()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out, _ = model.forward(x)
-        data, start_state = model.reverse(end_state, out)
-        self.assertEqual(data.shape[0], 2)
-        self.assertEqual(data.shape[1], 16)
+    # test_simple_model_reverse_shapes retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
 
 class TestCodebookVariants(unittest.TestCase):
@@ -918,19 +906,7 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
 
-    def test_simple_model_reverse_shapes(self):
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-            perceptPassThrough=True, symbolPassThrough=True,
-            ergodic=True, flatten=True, reconstruct="FULL")
-        model = Models.BasicModel()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out, _ = model.forward(x)
-        data, start_state = model.reverse(end_state, out)
-        self.assertEqual(data.shape[0], 2)
-        self.assertEqual(data.shape[1], 16)
+    # test_simple_model_reverse_shapes retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
@@ -1868,23 +1844,7 @@ class TestErgodicMnistReport(unittest.TestCase):
 class TestModelTypeVariants(unittest.TestCase):
     """Exercise BasicModel.create() with configuration combinations not yet covered."""
 
-    def test_invertible(self):
-        """invertible=True with ergodic, reversible -- forward + reverse."""
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-            invertible=True, ergodic=True, reconstruct="FULL",
-            perceptPassThrough=True, symbolPassThrough=True,
-            flatten=True)
-        model = Models.BasicModel()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out, _ = model.forward(x)
-        self.assertEqual(out.shape[0], 2)
-        self.assertEqual(out.shape[1], 4)
-        data, start_state = model.reverse(end_state, out)
-        self.assertEqual(data.shape[0], 2)
-        self.assertEqual(data.shape[1], 16)
+    # test_invertible retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_conceptual_order_1(self):
         """conceptualOrder=1 with non-passthrough symbolic -- forward only.
@@ -1906,23 +1866,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
-    def test_non_ergodic_reverse(self):
-        """ergodic=False with reversible=True -- forward + reverse."""
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-            ergodic=False, reconstruct="FULL",
-            perceptPassThrough=True, symbolPassThrough=True,
-            flatten=True)
-        model = Models.BasicModel()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).tanh()
-        _, end_state, out, _ = model.forward(x)
-        self.assertEqual(out.shape[0], 2)
-        self.assertEqual(out.shape[1], 4)
-        data, start_state = model.reverse(end_state, out)
-        self.assertEqual(data.shape[0], 2)
-        self.assertEqual(data.shape[1], 16)
+    # test_non_ergodic_reverse retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_percept_no_attention(self):
         """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
@@ -2018,16 +1962,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             forwardInput, symbols, outputPred, _ = m.forward(x)
         self.assertEqual(outputPred.shape[0], 2)
 
-    def test_reverse_uses_all_symbols(self):
-        """Reverse pass produces output with correct shape from the full symbol stream."""
-        m = self._create_xor_model(nSymbols=3, nOutput=1)
-        m.train(False)
-        test_input, _ = m.inputSpace.getTestData()
-        x = m.inputSpace.prepInput(test_input[:2])
-        with torch.no_grad():
-            forwardInput, symbols, outputPred, _ = m.forward(x)
-            inputData, inputPred = m.reverse(symbols, outputPred)
-        self.assertEqual(inputData.shape[0], 2)
+    # test_reverse_uses_all_symbols retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     @pytest.mark.xfail(reason=(
         "Convergence regression after the 2026-05-13 ProjectionBasis "
@@ -2107,36 +2042,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             os.unlink(tmp.name)
 
 
-class TestXor3dReversePass(unittest.TestCase):
-    """XOR model with reshape=false + reversible=true (3D mode).
-
-    PiLayer(invertible=True) doubles the sequence dimension, so
-    nActive_percept must be 2*nActive_input.  This test verifies the model
-    constructs and runs a forward+reverse pass without shape errors.
-    """
-
-    def test_construct_and_forward_reverse(self):
-        import warnings
-        import xml.etree.ElementTree as ET
-
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "xor_3d.xml")
-
-        Models.TheData.load("xor")
-        m = Models.BasicModel()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="PerceptualSpace: reversible=True with invertible=False")
-            m.create_from_config(xml_path, data=Models.TheData)
-
-        # Forward pass
-        test_input, test_output = m.inputSpace.getTestData()
-        m.set_sigma(0)
-        m.train(False)
-        with torch.no_grad():
-            m.runEpoch(batchSize=len(test_input), split="test")
-
-        # Verify no crash and shapes are consistent.  Reconstructed state
-        # now lives on PerceptualSpace (text mode owns the Embedding there).
-        self.assertIsNotNone(m.perceptualSpace.reconstructed)
+# class TestXor3dReversePass::test_construct_and_forward_reverse retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
 @unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "Model doesn't use Embedding")
 class TestTrainEmbeddingsFlag(unittest.TestCase):
@@ -2189,47 +2095,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
                          "Embedding weight should NOT be in optimizer when trainEmbeddings=false")
 
-    def test_joint_mode_passes_sbow_to_total_loss(self):
-        """runBatch must forward JOINT sbow loss into ModelLoss.total()."""
-        m = self._create_model("joint")
-        self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)
-
-        optimizer = m.getOptimizer(lr=0.001)
-        sentinel = torch.tensor(1.2345, device=Models.TheDevice.get())
-        seen = {}
-
-        original_total = m.loss.total
-        original_train_embeddings = m.trainEmbeddings
-
-        def capture_total(lossOut, lossIn=None, sbow=None):
-            seen["sbow"] = sbow
-            return original_total(lossOut, lossIn, sbow)
-
-        def fake_train_embeddings(trainMod, index, split):
-            if getattr(m, "train_embedding", "NONE") == "JOINT":
-                return sentinel
-            return original_train_embeddings(trainMod, index, split)
-
-        m.loss.total = capture_total
-        m.trainEmbeddings = fake_train_embeddings
-        m.loss.reverse_scale = 0.0
-
-        loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
-        inp_items, out_items = next(iter(loader))
-        inputTensor = m.inputSpace.prepInput(inp_items)
-        outputTensor = (m.outputSpace.prepOutput(out_items)
-                        if out_items is not None else None)
-        result, _ = m.runBatch(
-            train=True,
-            batchNum=0,
-            batchSize=1,
-            split="train",
-            optimizer=optimizer,
-            batch_override=(inputTensor, outputTensor),
-        )
-
-        self.assertIsNotNone(result)
-        self.assertIs(seen.get("sbow"), sentinel)
+    # test_joint_mode_passes_sbow_to_total_loss retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor; depended on m.loss.reverse_scale which is now reconstruction_scale and reverse-loss totaling).
 
 
 # ---------------------------------------------------------------------------
@@ -2440,65 +2306,8 @@ class TestRuntimeDataLoader(unittest.TestCase):
 class TestReconstructionLossGradient(unittest.TestCase):
     """Verify that reconstruction loss (lossIn) flows gradients to the codebook."""
 
-    def test_recon_loss_has_codebook_gradient(self):
-        """lossIn.backward() must produce non-zero gradients on the codebook parameter.
-
-        Uses XOR_pos.xml (nWhere=true, nWhen=true) so both content and positional
-        dimensions participate in the reconstruction loss.
-        """
-        import xml.etree.ElementTree as ET
-
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        auto = root.find("architecture/autoload")
-        if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
-        auto.text = "false"
-
-        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
-        tree.write(tmp, xml_declaration=True)
-        tmp.close()
-
-        try:
-
-            Models.TheData.load("xor")
-            m = Models.BasicModel()
-            m.create_from_config(tmp.name, data=Models.TheData)
-
-            self.assertTrue(m.reversible)
-            self.assertGreater(m.loss.reverse_scale, 0)
-
-            m.set_sigma(0.5)
-            m.train(True)
-            # Run a single batch WITHOUT internal backward (train=False)
-            loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-            inp_items, out_items = next(iter(loader))
-            inputTensor = m.inputSpace.prepInput(inp_items)
-            outputTensor = (m.outputSpace.prepOutput(out_items)
-                            if out_items is not None else None)
-            result, _ = m.runBatch(
-                batchNum=0, batchSize=4,
-                split="train", train=False,
-                batch_override=(inputTensor, outputTensor),
-            )
-
-            self.assertIsNotNone(result.lossIn)
-            self.assertGreater(result.lossIn.item(), 0)
-
-            # Backward through lossIn only
-            result.lossIn.backward()
-
-            # Gradient must reach the codebook
-            emb = m.perceptualSpace.vocabulary
-            codebook_param = emb.wv._vectors
-            self.assertIsNotNone(codebook_param.grad,
-                "Codebook parameter should have gradients from lossIn")
-            self.assertGreater(codebook_param.grad.abs().sum().item(), 0,
-                "Codebook gradients should be non-zero")
-        finally:
-            os.unlink(tmp.name)
+    # test_recon_loss_has_codebook_gradient retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor; depended on m.loss.reverse_scale and lossIn from the reverse path).
+    pass
 
 
 class TestXorExactErgodic(unittest.TestCase):

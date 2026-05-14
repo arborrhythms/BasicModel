@@ -18,7 +18,11 @@
          passthrough (identity bench), vq (VQ-only). -->
     <modelType>simple</modelType>
 
-    <!-- Reverse-pass mode: NONE | symbols | concepts | output | both. -->
+    <!-- Reconstruction-loss target: none | symbols | concepts | both.
+         'symbols' / 'concepts' compare the body's tier event at masked
+         positions to a derived target (lifted through sigma_percept
+         on the fly); 'both' fires both losses.  Forward-only — there
+         is no reverse pipeline. -->
     <reconstruct>symbols</reconstruct>
 
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
@@ -121,7 +125,7 @@
       <learningRate>0.001</learningRate>
       <!-- Weight of reconstruction loss vs prediction loss in [0,1]:
            total = (1-r)*output + r*recon. -->
-      <reverseScale>0.5</reverseScale>
+      <reconstructionScale>0.5</reconstructionScale>
       <!-- Per-channel triple loss scales (what / where / when). -->
       <whatScale>0.7</whatScale>
       <whereScale>0.2</whereScale>
@@ -132,12 +136,9 @@
            uses union-norm reduction.  0 disables. -->
       <TruthLoss>0.0</TruthLoss>
 
-      <!-- Masked / autoregressive mode: NONE | IR | AR | ARUS | ARIR.
-           See Training.md. -->
-      <maskedPrediction>NONE</maskedPrediction>
-      <!-- IR-mode Bernoulli probability that a percept is replaced by
-           NULL_PERCEPT.  Range [0,1]; BERT default 0.15.  Ignored when
-           maskedPrediction != IR. -->
+      <!-- Within-sentence training is IR-only (masked-LM at the P-tier).
+           IR-mode Bernoulli probability that a percept is replaced by
+           NULL_PERCEPT.  Range [0,1]; BERT default 0.15. -->
       <maskRate>0.15</maskRate>
 
       <!-- Embedding update mode:
@@ -158,28 +159,14 @@
       <!-- Per-neuron certainty tracking in ergodic layers. -->
       <certainty>false</certainty>
 
-      <!-- Inter-sentence contrastive loss (DiscourseSpace).  Off by
-           default.  The loss is a dual-force cosine similarity over
-           the flattened [S|W] snapshot: attractive toward the recent
-           context centroid, repulsive from older centroids.  No
-           learnable parameters. -->
+      <!-- Inter-sentence ARMA(p, q) next-sentence prediction
+           (InterSentenceLayer).  The layer's AR/MA orders + hidden
+           dim live under <WordSpace> (armaP/armaQ/armaHiddenDim);
+           this scale is the loss weight applied on top of the
+           per-batch ARMA MSE.  Off by default. -->
       <sentencePrediction>false</sentencePrediction>
-      <!-- Recent-sentence context window length (in sentences). -->
-      <sentenceContextWindow>12</sentenceContextWindow>
-      <!-- Number of historical centroids retained for repulsion. -->
-      <sentenceCentroidHistory>3</sentenceCentroidHistory>
-      <!-- Geometric decay base for older centroids' repulsive weight. -->
-      <sentenceLambda>1.01</sentenceLambda>
-      <!-- Legacy combined-loss scale; also fallback for the contrastive term. -->
-      <sentencePredictionScale>0.1</sentencePredictionScale>
-      <!-- AR predictive loss: cosine distance between the AR
-           sentence predictor's output and the actual current [S|W]
-           snapshot.  Paired with the contrastive loss as a
-           collapse / expand tension on the snapshot geometry. -->
-      <sentencePredictiveScale>0.1</sentencePredictiveScale>
-      <!-- Contrastive-only scale (split from sentencePredictionScale). -->
-      <sentenceContrastiveScale>0.1</sentenceContrastiveScale>
-      <!-- Priming: AR prediction cast into concept_dim and added as
+      <armaScale>0.1</armaScale>
+      <!-- Priming: ARMA prediction cast into concept_dim and added as
            a bias to concept_input before the sigma-pi loop.  Scaled
            by confidence * sentencePrimingScale.  Default small. -->
       <sentencePrimingScale>0.05</sentencePrimingScale>

@@ -12,7 +12,7 @@
     <training>
       <numEpochs>400</numEpochs>
       <learningRate>0.01</learningRate>
-      <reverseScale>0.1</reverseScale>
+      <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>

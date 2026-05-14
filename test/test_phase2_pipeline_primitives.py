@@ -177,8 +177,11 @@ def test_build_pipelines_creates_body_stages():
     for stage in model.body_stages:
         assert isinstance(stage, nn_.ModuleDict)
         assert "cs" in stage and "ss" in stage
-    # Pipeline boundaries are methods, not attributes.
-    assert callable(getattr(model, '_forward_stem', None))
+    # Pipeline boundaries are methods, not attributes.  ``_forward_stem``
+    # and ``_run_pipeline_rev`` retired 2026-05-14 with the IR-only
+    # refactor; the IR forward path inlines the stem (InputSpace +
+    # PerceptualSpace forward) directly into ``_forward_per_stage``.
     assert callable(getattr(model, '_forward_body', None))
     assert callable(getattr(model, '_forward_head', None))
-    assert callable(getattr(model, '_run_pipeline_rev', None))
+    assert not hasattr(model, '_forward_stem')
+    assert not hasattr(model, '_run_pipeline_rev')

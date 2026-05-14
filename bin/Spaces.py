@@ -3501,18 +3501,19 @@ class SubSpace(nn.Module):
         self.errors = Error()
         self.serial_cache = {}
 
-        # Microbatch-AR contract (Task 5 of 2026-04-22 plan).
-        # k_axis=True means the event tensor has shape [B, K, N, D]
-        # (stem output before the body's FlattenKWrapper folds K into B).
-        # valid_mask: [B, K] bool, True where the window's target
-        # token is non-NULL. Built by the stem; consumed by runBatch.
-        self.k_axis = False
+        # Per-cursor validity mask: ``[B, K]`` bool, True where each
+        # cursor position's target token is non-NULL. Built by the
+        # stem (or set to a default ``[B, 1]`` true mask in non-AR
+        # paths); consumed by ``runBatch`` to gate per-cursor loss.
+        # The legacy ``k_axis`` flag (which marked ``[B, K, N, D]``
+        # slabs) was retired together with the AR cursor unfold —
+        # every space now produces ``[B, …]`` shapes directly.
         self.valid_mask = None
-        # stem_embedded=True signals downstream stages that InputSpace has
-        # already performed lex+embed in the microbatch AR path; the body's
-        # PerceptualSpace must skip its own _embed (which would clobber the
-        # K-windowed event with a fresh [B, N, D] re-embed of the original
-        # byte buffer).
+        # stem_embedded=True signals downstream stages that InputSpace
+        # has already performed lex+embed; the body's PerceptualSpace
+        # must skip its own _embed (which would clobber the embedded
+        # event with a fresh [B, N, D] re-embed of the original byte
+        # buffer).
         self.stem_embedded = False
 
         payload = self.materialize()
@@ -3530,18 +3531,16 @@ class SubSpace(nn.Module):
         a commitment term) land in the same accumulator that
         ``OutputSpace`` / ``runBatch`` will read.
 
-        Also propagates the microbatch-AR routing attrs (``k_axis``,
-        ``valid_mask``, ``stem_embedded``).  These are stem-route
-        contracts that stages downstream of FlattenKWrapper currently do
-        not read, but propagation keeps the contract explicit and prevents
-        a stale value on a recycled subspace from misrouting the body.
+        Also propagates the stem-route contracts (``valid_mask``,
+        ``stem_embedded``). These are stage-routing flags whose value
+        is set by the stem and read by ``runBatch``; propagating them
+        through ``copy_context`` keeps the contract explicit.
         """
         if other is None:
             return
         self.wordSpace = other.wordSpace
         self.errors = other.errors
         self.serial_cache = other.serial_cache
-        self.k_axis = other.k_axis
         self.valid_mask = other.valid_mask
         self.stem_embedded = other.stem_embedded
 
@@ -4615,14 +4614,9 @@ class SubSpace(nn.Module):
         # The 4-valued bivector is reduced to a scalar presence (max of
         # poles) for event gating; see BuddhistParallels.md for the
         # tetralemma mapping.
-        # When k_axis=True, the event has a leading [B, K, ...] shape that
-        # the [B, N] presence tensor cannot broadcast into. Stem windows
-        # are emitted pre-gated (zero-padded for absent positions), so
-        # skip the multiply in that case.
-        if not self.k_axis:
-            pres = self.activation_presence()
-            if pres is not None:
-                x = x * pres.unsqueeze(-1)
+        pres = self.activation_presence()
+        if pres is not None:
+            x = x * pres.unsqueeze(-1)
 
         # top-k selection if requested
         if k is not None and k < x.shape[-2]:
@@ -5881,9 +5875,9 @@ class InputSpace(Space):
         # to compute the outer-loop iteration count N without rethreading
         # inp_items through runBatch's call signature.
         self._last_sentences = None
-        # ARIR-inference cache bypass: the runtime state machine stages a
-        # pre-built embedding here; forward() consumes it once instead of
-        # re-lexing. AR training does not use this.
+        # Optional pre-built embedding bypass: callers (chat-loop /
+        # generate_sentence) stage a tensor here so forward() skips
+        # the lex/embed step on that call.  None during training.
         self._cached_embedding = None
         # Byte lexer inputs are discrete indices (0-255) looked up via
         # Embedding -- a global linear lift over the flattened buffer is
@@ -6070,66 +6064,34 @@ class InputSpace(Space):
 
     # The world presenting itself
     def forward(self, inputData):
-        """Single-call stem source for the microbatch AR pipeline.
+        """Single-call stem source for the IR-only training pipeline.
 
-        Lexes/embeds the input once and emits ALL K windows in a single
-        subspace whose event has shape [B, K, N, D] with k_axis=True.
+        Lexes/embeds the input once and emits ``[B, N, D]`` (left-
+        aligned, right-padded to N).  ``self.subspace`` carries
+        ``valid_mask`` (``[B, 1]`` bool) and ``stem_embedded=True``.
 
-        Semantics:
-          * Non-AR: K=1 single-window pass-through (subspace event keeps
-            its existing [B, N, D] shape; k_axis stays False).
-          * AR training: K = T for dense token streams; BPE caps K to
-            the max active word count in the batch after chunking.
-            Windows are progressive-prefix slices from a pad-N-then-unfold.
-          * ARIR inference: each call feeds an N-length buffer (T==N),
-            so K=1 and the head produces one prediction per call. The
-            ARIR runtime maintains the buffer across calls.
-
-        ``self.subspace`` carries valid_mask: [B, K] bool for runBatch.
-        ``_end_of_stream`` is sized to ``[False] * B`` here as a host-side
-        diagnostic; the canonical hard-reset signal under the rolling-
-        cursor handoff is ``next_tick``'s ``hard_eos`` list, not anything
-        derived from ``valid_mask`` (which would require a sync-incurring
-        ``.tolist()`` inside the brick body).
+        AR cursor unfold + ARIR runtime branch retired 2026-05-14
+        alongside ``<maskedPrediction>``; within-sentence training is
+        purely masked-LM at the P-tier (BERT-style IR).
         """
         if inputData is None:
             return self._empty_like_subspace()
         if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
             return inputData
 
-        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR') if hasattr(self, 'masked_prediction') else False
-        is_runtime_arir = (
-            self.data is not None
-            and self.data._runtime_mode == 'ARIR'
-        )
-
-        if not is_ar:
-            # Non-AR: pass through unchanged. No K axis. Cascade
-            # ensure_microbatch(B, 1) so the body's per-row state is sized
-            # to match the input batch -- this is the K=1 degenerate of
-            # the microbatch contract.
-            sub = self._lex_and_embed(inputData)
-            event = sub.materialize()
-            ws = self._model_wordSpace
-            if ws is not None and event is not None and event.dim() >= 1:
-                ws.ensure_microbatch(int(event.shape[0]), 1)
-            return sub
-
-        # Lex/embed once -- produces _ar_embedded of shape [B, T, D].
+        # Lex/embed once -- produces ``[B, T, D]`` on ``self.subspace``.
         self._lex_and_embed(inputData)
         embedded = self.subspace.materialize()
         if embedded is None and self.model_type == "embedding":
             peer = self._peer_perceptual
             if peer is not None:
                 # Route to the peer's chunking mode rather than always
-                # calling the lexicon path. With ``<chunking>bpe</...>``
+                # calling the lexicon path.  With ``<chunking>bpe</...>``
                 # the lexicon-style ``_embed`` would tokenize on
-                # whitespace + look up whole-word strings against a
-                # codebook seeded from BPE chunks, hitting OOV on
-                # every word and silently inserting them (codebook
-                # drift). ``_embed_bpe`` does the right thing: BPE
-                # chunk + MAX-fuse using the frozen codebook keyed by
-                # latin-1 byte-tuples.
+                # whitespace and OOV-insert per word (codebook drift);
+                # ``_embed_bpe`` does the right thing: BPE chunk +
+                # MAX-fuse against the frozen codebook keyed by latin-1
+                # byte-tuples.
                 peer_mode = getattr(peer, 'chunking_mode', None)
                 if peer_mode == "bpe":
                     peer._embed_bpe(self.subspace)
@@ -6138,6 +6100,11 @@ class InputSpace(Space):
                 else:
                     peer._embed(self.subspace)
                 embedded = peer._embedded_input
+        # ``_ar_embedded`` kept as the canonical un-windowed [B, T, D]
+        # handle so downstream consumers (chat-loop, diagnostic dumps)
+        # have a single name for the source embedded tensor.  The
+        # ``_ar_`` prefix is historical; remove once those callers
+        # rename.
         self._ar_embedded = embedded
 
         if embedded is None:
@@ -6149,132 +6116,64 @@ class InputSpace(Space):
         # When peer is in BPE chunking mode, ``peer._bpe_word_mask``
         # ([B, N], 1.0 where the slot holds a real BPE-fused word
         # vector and 0.0 in padding) is the source of truth for both
-        # validity AND the per-window event mask. Without it, validity
-        # would fall back to ``embedded.abs().sum > 0``, which is
-        # always True for muxed events (where/when components are
-        # nonzero even at padding positions) and would make every
-        # window look valid.
+        # validity AND the per-position event mask.  Without it,
+        # validity would fall back to ``embedded.abs().sum > 0``, which
+        # is always True for muxed events (where/when components stay
+        # nonzero even at padding positions).
         #
         # ``chunking=none`` (byte-direct) installs the same
-        # ``_bpe_word_mask`` attribute via ``(byte_indices != 0)``;
-        # the windowed view is identical so we accept it here under
-        # the same name.
+        # ``_bpe_word_mask`` attribute via ``(byte_indices != 0)``; the
+        # windowed view is identical so we accept it here under the
+        # same name.
         peer = self._peer_perceptual
         bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                     if peer is not None
                     and getattr(peer, "chunking_mode", None) in ("bpe", "none")
                     else None)
 
-        if is_runtime_arir:
-            # ARIR inference path. Buffer is already the N-length window.
-            if T < N:
-                pad = torch.zeros(B, N - T, D,
-                                  device=embedded.device, dtype=embedded.dtype)
-                embedded = torch.cat([embedded, pad], dim=1)
-                T = N
-            windows = embedded.unfold(1, N, 1).permute(0, 1, 3, 2).contiguous()
-            K = windows.shape[1]
-            # Inference always "valid"; runtime decides termination via predictions.
-            valid_mask = torch.ones(B, K, dtype=torch.bool, device=embedded.device)
-            # Single N-length window per row -- replicate the [B, N]
-            # word mask across the (typically 1) K dimension.
-            bpe_mask_windowed = (bpe_mask.unsqueeze(1).expand(B, K, N).contiguous()
-                                 if bpe_mask is not None else None)
+        # Pad / truncate to N.
+        if T < N:
+            pad = torch.zeros(
+                B, N - T, D,
+                device=embedded.device, dtype=embedded.dtype)
+            embedded_N = torch.cat([embedded, pad], dim=1)
+        elif T > N:
+            embedded_N = embedded[:, :N, :]
         else:
-            # AR training. Pad N zeros on the LEFT to recreate the legacy
-            # cursor-based progressive-prefix windows: window k = the
-            # buffer state at cursor k (k zero-pad slots followed by
-            # emb[0..k-1] right-aligned).
-            pad = torch.zeros(B, N, D, device=embedded.device, dtype=embedded.dtype)
-            padded = torch.cat([pad, embedded], dim=1)  # [B, T+N, D]
-            unfolded = padded.unfold(1, N, 1).permute(0, 1, 3, 2).contiguous()
-            # unfolded shape: [B, T+1, N, D] -- normally we'd take all T
-            # windows, but in BPE mode ``_embed_bpe`` packs active words
-            # at the front of [B, N], so windows k >= max-active-count
-            # carry no real targets and the body's work on them is
-            # entirely zeroed by the mask. Cap K to the max active word
-            # count in the batch to skip them outright.
-            if bpe_mask is not None:
-                # ``int(...)`` forces a host sync (one per batch); the
-                # savings on body work (~T / max_word_count, often
-                # 1024 / ~40 ≈ 25×) far exceed the sync cost.
-                word_counts = bpe_mask.sum(dim=1)  # [B]
-                actual_max = int(word_counts.max().item())
-                # Quantize K to the next power of two ABOVE actual_max
-                # (ceiling, not nearest -- see notes below). Bounded
-                # set for T=1024: {1, 2, 4, 8, 16, 32, 64, 128, 256,
-                # 512, 1024} = 11 distinct K values. Typical English-
-                # text batches land in {32, 64, 128} so the compile
-                # cache fills in a few hundred steps and stays stable
-                # instead of recompiling per data-dependent K.
-                #
-                # Why ceiling not nearest: K MUST satisfy K >=
-                # actual_max, otherwise the windows beyond K cover
-                # active word positions that would never get a
-                # training signal (their predictions are dropped).
-                # Nearest-pow2 of e.g. actual_max=35 is 32, which
-                # truncates 3 words of training data. Ceiling
-                # (35 → 64) wastes ~29 zero-mask slots of compute but
-                # preserves all training signal; the wasted work is
-                # multiplied out by the BPE mask anyway.
-                if actual_max <= 1:
-                    K = 1
-                else:
-                    K = min(T, 1 << (actual_max - 1).bit_length())
-                windows = unfolded[:, :K, :, :]
-                # Apply the SAME left-pad + unfold to the [B, T] word
-                # mask so each window k carries which of its N slots
-                # are real-word vs zero-pad. Trim to the first K.
-                pad_mask = torch.zeros(
-                    B, N, device=bpe_mask.device, dtype=bpe_mask.dtype)
-                padded_mask = torch.cat([pad_mask, bpe_mask], dim=1)  # [B, T+N]
-                unfolded_mask = padded_mask.unfold(1, N, 1)            # [B, T+1, N]
-                bpe_mask_windowed = unfolded_mask[:, :K, :].contiguous()
-                # Per-window validity: window k's target is emb[k];
-                # valid iff that position carried a real word. Trimmed
-                # to first K to align with the K-trimmed windows.
-                valid_mask = bpe_mask[:, :K].bool()
-            else:
-                K = T
-                windows = unfolded[:, :K, :, :]
-                bpe_mask_windowed = None
-                # Legacy fallback: NULL = all-zero embedding (lex pads
-                # short sentences this way). Wrong under muxed events
-                # but preserved for non-BPE codepaths.
-                valid_mask = (embedded.abs().sum(dim=-1) > 0)  # [B, T] = [B, K]
-
+            embedded_N = embedded
+        if bpe_mask is not None:
+            valid_mask = bpe_mask[:, :N].any(dim=1).reshape(B, 1)
+            bpe_mask_N = bpe_mask[:, :N] if bpe_mask.shape[1] >= N else bpe_mask
+        else:
+            valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
+                dim=1).reshape(B, 1)
+            bpe_mask_N = None
         sub = self.subspace
-        sub.set_event(windows)
-        sub.k_axis = True
+        # ``set_event`` clears ``_demuxed`` — that's correct when the
+        # input came in muxed (text path), but the numeric-vocab path
+        # in ``_lex_and_embed`` populates the demuxed what/where/when
+        # slots via ``set_what``/``set_where``/``set_when`` and
+        # downstream callers (``InputSpace(demuxed=True)``) expect
+        # ``is_demuxed`` to stay True.  Restore the demuxed flag
+        # after the set_event so both contracts hold: the event
+        # tensor carries the padded/truncated muxed view (for the
+        # body's reshape contract) AND the demuxed slots remain
+        # readable.
+        was_demuxed = sub._demuxed
+        sub.set_event(embedded_N)
+        if was_demuxed:
+            sub._demuxed = True
         sub.valid_mask = valid_mask
         sub.stem_embedded = True
-
-        # Stash the flattened [B*K, N] BPE mask on peer so
-        # PerceptualSpace.forward can apply it to the post-VQ event
-        # (which has shape [B*K, N, D] after FlattenKWrapper). The
-        # original [B, N] ``peer._bpe_word_mask`` is left in place for
-        # callers that want the unwindowed view.
-        if peer is not None and bpe_mask_windowed is not None:
-            peer._bpe_word_mask_flat = bpe_mask_windowed.reshape(B * K, N)
+        if peer is not None and bpe_mask_N is not None:
+            peer._bpe_word_mask_flat = bpe_mask_N
         elif peer is not None:
             peer._bpe_word_mask_flat = None
-
-        # Size the diagnostic to B, but do not derive its values from
-        # valid_mask: a per-tick ``.tolist()`` here would be a host sync
-        # inside the brick body. Cursor-mode callers overwrite this from
-        # the host-side ``hard_eos`` list immediately after the brick.
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
-
-        # Cascade ensure_microbatch(B, K) so the body's per-row state
-        # (subspace, stacks, last_svo) is sized to B*K. _stm_fired stays
-        # at B; discourse buffers also size to B*K. This must happen
-        # before the body runs so its FlattenKWrapper sees correctly
-        # sized substrates.
         ws = self._model_wordSpace
         if ws is not None:
-            ws.ensure_microbatch(B, K)
-
+            ws.ensure_microbatch(B, 1)
         return sub
 
     def _empty_like_subspace(self):
@@ -6293,17 +6192,13 @@ class InputSpace(Space):
     def _lex_and_embed(self, input):
         """Populate subspace from raw input: lex/embed for text, vocab lookup for numeric.
 
-        Called by forward() at the start of a stream (first AR call or
-        the entire non-AR pass). Handles three cases:
-          * _cached_embedding set (ARIR inference) -- use pre-built latent.
-          * model_type == 'embedding' (text) -- lex into byte buffer.
+        Called by forward() at the start of every pass.  Handles three
+        cases:
+          * ``_cached_embedding`` set -- use pre-built latent (chat-
+            loop / generate_sentence stages this).
+          * ``model_type == 'embedding'`` (text) -- lex into byte buffer.
           * numeric mode -- vocab codebook lookup.
         """
-        # ARIR-inference cache bypass: the ARIR runtime state machine
-        # injects a pre-built embedding tensor via ``_cached_embedding`` so
-        # forward() skips lex/embed and uses the staged latent directly.
-        # AR training does not use this -- it lexes/embeds each call and
-        # builds progressive-prefix windows via unfold.
         if self._cached_embedding is not None:
             self.input = self._cached_embedding
             self._cached_embedding = None  # consume once
@@ -6416,143 +6311,27 @@ class InputSpace(Space):
         """
         return None, None
 
-    # -- ARIR state machine ------------------------------------------
 
-    def arir_step(self, inputData, batchNum):
-        """ARIR state machine: embed seed, then iteratively
-        place [MASK] and read back reconstructed latent vectors.
 
-        First call (cursor is None):
-            Embed seed text, fill future with spaces, place [MASK] at seed_len.
-
-        Subsequent calls (cursor is not None):
-            Read reconstruction from previous reverse pass, decode word,
-            write reconstructed latent at previous cursor, advance, place [MASK].
-
-        Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
-        """
-        nVec = self.outputShape[0]
-        embSize = self.muxedSize
-        nWhat = self._peer_perceptual.vocabulary.embedding_dim
-
-        if self._arir_cursor is None:
-            # -- First call: embed seed, prepare buffer --------------
-            inputTensor = self.prepInput(inputData)
-            embedded = self.forward(inputTensor)  # [1, nVec, embSize]
-            self._arir_embedded = embedded.detach().clone()
-
-            # Read span count from the lex pass
-            meta = getattr(self, '_forward_input', None) or {}
-            counts = meta.get('span_counts', [])
-            seed_len = counts[0] if counts else 1
-
-            # Read byte offset from the lex pass
-            offsets = meta.get('final_offsets', [])
-            self._arir_byte_offset = offsets[0] if offsets else 0
-
-            # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self._peer_perceptual.vocabulary.embed_token("\x00")
-            for k in range(seed_len, nVec):
-                self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
-                est_offset = self._arir_byte_offset + (k - seed_len)
-                self._arir_stamp_where(self._arir_embedded, k, est_offset)
-
-            # Set cursor and place [MASK] at seed_len
-            self._arir_cursor = seed_len
-            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
-            self._arir_stamp_where(
-                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
-            )
-
-            # Inject via the cached-embedding bypass in forward()
-            self._cached_embedding = self._arir_embedded.clone()
-
-            # Return a dummy input tensor (forward() will use _cached_embedding)
-            dummy_input = inputTensor
-            return (dummy_input, None), batchNum + 1
-
-        else:
-            # -- Subsequent calls: read reconstruction, advance cursor --
-            prev_cursor = self._arir_cursor
-
-            # Read decoded word from previous reverse pass
-            word = self.get_recovered_word(0, prev_cursor)
-
-            # EOF check
-            if word is None or word == '' or word == '\x00':
-                self._arir_reset()
-                return None, batchNum
-
-            # Record the token
-            self._arir_tokens.append(word)
-            self._arir_total_chars += len(word)
-
-            # Max chars check
-            if self._arir_total_chars >= self._arir_max_chars:
-                self._arir_reset()
-                return None, batchNum
-
-            # Write reconstructed latent vector at current cursor
-            # (no codebook lookup -- stay in latent space)
-            recon = self.reconstructed  # [1, nVec, embSize] from reverse()
-            self._arir_embedded[0, prev_cursor, :nWhat] = recon[0, prev_cursor, :nWhat]
-            self._arir_stamp_where(
-                self._arir_embedded, prev_cursor, self._arir_byte_offset
-            )
-
-            # Advance byte offset for positional encoding
-            self._arir_byte_offset += len(word.encode('utf-8'))
-
-            # Write reconstructed vectors beyond cursor as steering signal
-            for k in range(prev_cursor + 1, nVec):
-                self._arir_embedded[0, k, :nWhat] = recon[0, k, :nWhat]
-                # Keep existing positional encoding at those positions
-
-            # Advance cursor
-            self._arir_cursor = prev_cursor + 1
-
-            # Buffer full check
-            if self._arir_cursor >= nVec:
-                self._arir_reset()
-                return None, batchNum
-
-            # Place [MASK] at new cursor
-            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
-            self._arir_stamp_where(
-                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
-            )
-
-            # Inject via cached-embedding bypass
-            self._cached_embedding = self._arir_embedded.clone()
-
-            # Return dummy input (forward() will use _cached_embedding)
-            dummy_input = torch.zeros(1, device=TheDevice.get())
-            return (dummy_input, None), batchNum + 1
-
-    def _arir_reset(self):
-        """Reset all ARIR state attributes."""
-        self._arir_cursor = None
-        self._arir_embedded = None
-        self._arir_byte_offset = 0
-        self._arir_tokens = []
-        self._arir_max_chars = 256
-        self._arir_total_chars = 0
-
-    def get_predicted_tokens(self):
-        """Return the list of tokens predicted during ARIR inference."""
-        return getattr(self, '_arir_tokens', [])
-
-    def _arir_stamp_where(self, buf, pos_idx, byte_off):
-        """Stamp positional encoding at a buffer position via subspace.whereEncoding."""
-        if self.subspace.whereEncoding.nDim > 0:
-            self.subspace.whereEncoding.stamp(buf, 0, pos_idx, byte_off)
 class PerceptualSpace(Space):
-    """Transforms raw input vectors into percepts via a PiLayer.
+    """Transforms raw input vectors into percepts via two PiLayer folds.
 
     In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Uses a PiLayer (log-space multiplicative layer) to map input embeddings to
-    perceptual embeddings, optionally followed by self-attention and VQ
-    codebook quantization.
+    Owns two PiLayer instances (log-space multiplicative layers), both
+    firing unconditionally per the 2026-05-13 sigma/pi rebalance
+    (``doc/Spaces.md §"Sigma / Pi ownership"``):
+
+        * ``self.pi_input``   (input_dim   → percept_dim) — IS-side fold.
+        * ``self.pi_concept`` (concept_dim → percept_dim) — C-feedback fold.
+
+    Their outputs are **summed** (the legacy
+    ``(primary + c_event) / 2`` averaging in ``_sourced_input`` is
+    retired). The composition at the surface of ConceptualSpace is
+    therefore::
+
+        C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
+
+    Optionally followed by self-attention and VQ codebook quantization.
 
     When ``reversible=True`` and ``invertible=True``, the reverse path
     uses the configured inverse layer. With ``naive=False`` this uses the
@@ -6690,28 +6469,57 @@ class PerceptualSpace(Space):
         self._recovered_input = None
         self._embedded_input = None
 
-        # PerceptualSpace owns a SigmaLayer that serves as the **lift
-        # operator** for the grammar's ``lift(VP, NP)`` rule at S. The
-        # forward path of P doesn't call this sigma directly; instead
-        # ``LiftLayer.forward`` (in Layers.py) routes through it after
-        # elementwise-gating the operands at C-tier:
+        # Phase C (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
+        # ownership"): PerceptualSpace owns two PiLayer instances:
         #
-        #     gated = VP_c * NP_c            (concept-dim elementwise)
-        #     out_c = P.sigma.forward(gated)
+        #   * ``self.pi_input``   (input_dim → percept_dim) — folds the
+        #     upstream InputSpace argument.
+        #   * ``self.pi_concept`` (concept_dim → percept_dim) — folds
+        #     the C-tier feedback ``C_prev`` from the cross-forward
+        #     subsymbolic loop.
         #
-        # so the sigma's in/out dim is concept_dim (the C-tier per-vector
-        # width), NOT percept_dim. We read concept_dim from the XML so
-        # the sigma is correctly shaped at construction without needing
-        # a post-hoc rebuild.
+        # Both fire unconditionally each forward and their outputs are
+        # **summed** (the prior ``(primary + c_event) / 2`` averaging
+        # in ``_sourced_input`` is retired). The composition at the
+        # surface of CS is therefore:
+        #
+        #     C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
+        #
+        # The earlier ``self.sigma`` at concept_dim (which served the
+        # legacy borrowed-substrate ``LiftLayer.forward``) is retired
+        # by Phase A — LiftLayer is now a pure rule-id annotator.
+        #
+        # Dim choice: ``percept_dim`` is the per-slot dim
+        # PerceptualSpace operates on INTERNALLY — i.e. the post-
+        # forwardBegin shape ``[B, ?, nInputDim]``. We use
+        # ``getEncodedInputSize()`` for that. The legacy
+        # ``nInputDim != nOutputDim`` slot-redistribution at
+        # forwardEnd is preserved (the codebook + forwardEnd reshape
+        # together remap the per-slot output dim and grow/shrink slot
+        # count by the same factor). ``pi_input`` is therefore square
+        # at ``nInputDim → nInputDim``; ``pi_concept`` is
+        # ``concept_dim → nInputDim`` (potentially non-square when the
+        # C-tier handoff width differs from the percept-tier width).
+        percept_dim = int(self.subspace.getEncodedInputSize())
         try:
             nConceptDim = int(
                 TheXMLConfig.space("ConceptualSpace", "nDim"))
         except KeyError:
             nConceptDim = outputShape[1]
-        self.sigma = SigmaLayer(nConceptDim, nConceptDim, invertible=True,
-                                monotonic=True, nonlinear=True)
+        self.pi_input = PiLayer(
+            percept_dim, percept_dim,
+            naive=naive, ergodic=ergodic,
+            invertible=False, nonlinear=nonlinear,
+            stable=True, monotonic=False,
+        )
+        self.pi_concept = PiLayer(
+            int(nConceptDim), percept_dim,
+            naive=naive, ergodic=ergodic,
+            invertible=False, nonlinear=nonlinear,
+            stable=True, monotonic=False,
+        )
 
-        input = self.subspace.getEncodedInputSize()
+        input = percept_dim
         self.attention = AttentionLayer(input, input, type="transformer")
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
@@ -7529,52 +7337,65 @@ class PerceptualSpace(Space):
         return ev.getW()
 
     def _sourced_input(self, vspace):
-        """Dual-input: primary input + conceptual loopback, length-averaged.
+        """Dual-input: ``pi_input(IS) + pi_concept(C_prev)`` — unconditional sum.
 
-        Mirrors ``ConceptualSpace._sourced_input`` one tier down: the
-        primary input source is the upstream (Input)Space event reshaped
-        via ``forwardBegin``; the cross-channel contribution is the
-        prior C-tier event, lifted back to perceptual content width via
-        the C-tier codebook's SVD pseudo-inverse when the bivector
-        regime is active. Averaging (``sum / count``) keeps the input
-        bounded to the same range as each source so the codebook's
-        [-1, 1] / [0, 1] invariants survive both channels firing.
+        Phase C (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
+        ownership"): replaces the legacy ``(primary + c_event) / 2``
+        averaging with the canonical composition
+
+            x = pi_input(primary) + pi_concept(c_event)
+
+        Both folds fire unconditionally. ``pi_input`` lifts the upstream
+        InputSpace event from ``input_dim → percept_dim``;
+        ``pi_concept`` lifts the prior C-tier event from
+        ``concept_dim → percept_dim``. Summing (no /2 averaging) keeps
+        the chain mathematically clean: at sentence start ``C_prev``
+        is empty so ``pi_concept(0) = 0`` and the formula degenerates
+        to ``x = pi_input(primary)``.
 
         Sentence-start / cold-start: ``conceptualSpace_ref`` may be
         ``None`` (standalone unit tests) or its event tensor may be
-        unset (very first forward call before any C output has been
-        produced) -- either case degrades cleanly to the legacy
-        single-source ``forwardBegin`` result.
+        unset (first forward call before any C output) -- either case
+        degrades cleanly to the single-source ``pi_input(primary)``.
 
-        See ``ConceptualSpace._sourced_input`` for the symmetric
-        symbolic loopback that this method mirrors.
+        See ``ConceptualSpace._sourced_input`` for the symbolic
+        loopback at the C-tier.
         """
         primary = self.forwardBegin(vspace, returnVectors=True)
+        x_input = self.pi_input.forward(primary)
         cs = self.conceptualSpace_ref
         if cs is None:
-            return primary
+            return x_input
         c_event = self._read_event(cs)
         if c_event is None:
-            return primary
+            return x_input
         # The C→P loopback only fires in the bivector regime: the C
-        # event is a ``[B, V, 2]`` per-prototype catuskoti handoff that
-        # lifts back to concept content width via the C-tier codebook's
-        # cached SVD pseudo-inverse. Non-bivector ConceptualSpace
-        # writes its content directly to ``event``; that content lives
-        # in the same dim space as the primary input, would
-        # coincidentally shape-match, and would corrupt legacy
-        # non-bivector forward dynamics by averaging two semantically
-        # different tensors. Mirrors the symbolic lift gating in
-        # ``ConceptualSpace._sourced_input``.
+        # event is a ``[B, V, 2]`` per-prototype catuskoti handoff. We
+        # lift it back to concept-content width via the C-tier
+        # codebook's cached SVD pseudo-inverse, then ``pi_concept``
+        # folds concept_dim → percept_dim. Non-bivector ConceptualSpace
+        # writes content directly to ``event`` whose feature dim does
+        # not match ``pi_concept.nInput``; in that case skip the
+        # loopback and return ``pi_input(primary)`` alone.
         cs_what = getattr(cs.subspace, 'what', None)
         if not (isinstance(cs_what, ProjectionBasis)
                 and c_event.dim() == 3 and c_event.shape[-1] == 2):
-            return primary
+            return x_input
         V_orig = int(cs.inputShape[0])
         c_event = cs_what.reverse(c_event, V=V_orig)
-        if c_event.shape == primary.shape:
-            return (primary + c_event) / 2
-        return primary
+        if c_event.dim() != 3 or c_event.shape[-1] != self.pi_concept.nInput:
+            return x_input
+        x_concept = self.pi_concept.forward(c_event)
+        if x_concept.shape != x_input.shape:
+            return x_input
+        # Sum-then-tanh: both folds output in ``[-1, 1]`` (PiLayer's
+        # ``nonlinear=True`` ends in tanh). Their raw sum lives in
+        # ``[-2, 2]``, which violates the codebook's ``[-1, 1]``
+        # invariant. The legacy ``(primary + c_event) / 2`` averaging
+        # achieved boundedness by halving; Phase C's ``sum`` form
+        # achieves the same bound via tanh saturation. Math is still
+        # additive: ``tanh`` is monotonic and gradient-preserving.
+        return torch.tanh(x_input + x_concept)
 
     def forward(self, subspace):
         """Perception: map input vectors to percepts via attention + VQ + chunking.
@@ -7642,12 +7463,14 @@ class PerceptualSpace(Space):
                     f"got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        # Conceptual loopback: when ``conceptualSpace_ref`` is wired, the
-        # primary input is averaged with the lifted C-tier event from the
-        # previous forward (mirrors ConceptualSpace's symbolic loopback,
-        # one tier down). Falls back to plain ``forwardBegin`` when the
-        # ref is None or its event tensor is unset (sentence start /
-        # standalone unit tests).
+        # Conceptual loopback (Phase C, 2026-05-13 rebalance): the
+        # primary input runs through ``pi_input`` (input_dim →
+        # percept_dim) and the lifted C-tier feedback runs through
+        # ``pi_concept`` (concept_dim → percept_dim). Outputs are
+        # **summed** (no /2 averaging). Falls back to
+        # ``pi_input(primary)`` alone when the C ref is None or its
+        # event tensor is unset (sentence start / standalone unit
+        # tests). See ``_sourced_input``.
         x = self._sourced_input(vspace)
         # Attention is currently unused in PerceptualSpace; leaving the
         # AttentionLayer attribute intact for backward compat but skipping
@@ -8364,18 +8187,23 @@ class ShortTermMemory(nn.Module):
 
 
 class ConceptualSpace(Space):
-    """Transforms percepts into concepts via a SigmaLayer (summation layer).
+    """Transforms percepts into concepts via ``sigma_percept`` (additive fold).
 
     In the forward data flow: PerceptualSpace -> **ConceptualSpace** -> SymbolicSpace.
-    Uses a SigmaLayer to combine perceptual features into conceptual
-    representations.  The SigmaLayer computes weighted sums (inner products)
-    rather than the permutation-equivariant operations of PiLayer.
+    Owns the canonical forward C-tier fold ``self.sigma_percept`` — a
+    SigmaLayer mapping ``percept_dim → concept_dim`` (non-square in the
+    general case; square in the bivector regime where the codebook does
+    the dim adaptation inside ``project``). The earlier
+    ``self.pi`` (multiplicative log-domain, square-iso percept_dim →
+    percept_dim) was retired by the 2026-05-13 sigma/pi rebalance —
+    see ``doc/Spaces.md §"Sigma / Pi ownership"``.
 
     Supports optional self-attention and VQ codebook quantization.
 
     When ``invertible=True``, uses ``SigmaLayer(invertible=True)`` whose
-    inverse is exact.  When ``reversible=True`` without invertibility, a
-    separate SigmaLayer is trained for the reverse direction.
+    inverse is exact (requires square dim). When ``reversible=True``
+    without invertibility, a separate SigmaLayer is trained for the
+    reverse direction.
     """
     name = "Concepts"
     config_section = "ConceptualSpace"
@@ -8442,6 +8270,14 @@ class ConceptualSpace(Space):
         # ``_build_pipelines_per_stage``.
         self.symbolicSpace_ref = None
         self.perceptualSpace_ref = None
+        # Optional C-tier prior for chat-loop generation: the inference
+        # loop (BasicModel.generate_sentence) lifts the ARMA-predicted
+        # next sentence rep through InterSentenceLayer.cast into
+        # concept_dim and stages it here.  When set, it is summed
+        # into the post-sigma_percept activation before the codebook
+        # lookup, then cleared.  None during training -- the attribute
+        # exists so the forward path can read it unconditionally.
+        self._c_prior = None
         input = self.subspace.getEncodedInputSize()
         if self._bivector_output:
             # Bivector regime: PiLayer stays a square isomorphism inside
@@ -8456,34 +8292,59 @@ class ConceptualSpace(Space):
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
-        # Post-2026-05-01 refactor: ``self.pi`` is the canonical forward
-        # PiLayer for every mode. In the asymmetric two-pass ergodic
-        # path, ``self.pi`` aliases ``self.pi1`` (forward direction) and
-        # ``self.pi2`` is preserved as a separate attribute consulted
-        # on the reverse path via ``self._pi_reverse``. Bare
-        # ``forwardPi``/``reversePi`` aliases were removed.
+        # Phase B (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
+        # ownership"): the canonical C-tier fold is the additive
+        # SigmaLayer ``self.sigma_percept`` (``percept_dim →
+        # concept_dim``), not the multiplicative PiLayer.  The earlier
+        # ``self.pi`` (square-iso ``percept_dim → percept_dim``) is
+        # retired — pi is no longer the C-tier substrate.  In the
+        # asymmetric two-pass ergodic path, ``self.sigma_percept``
+        # aliases ``self.sigma_percept_1`` (forward direction) and
+        # ``self.sigma_percept_2`` is preserved for the reverse
+        # path via ``self._sigma_percept_reverse``.
+        #
+        # Force ``nonlinear=True`` regardless of XML config: the
+        # legacy ``PiLayer`` stayed in ``(-1, 1)`` intrinsically via
+        # its ``_to_mult`` / ``_from_mult`` log-domain transform even
+        # with ``nonlinear=False``; ``SigmaLayer`` is linear and only
+        # bounded by the tanh wrap. The C-tier output feeds a codebook
+        # whose prototype range is ``[-1, 1]``, so boundedness must be
+        # preserved across the math swap. Configs that set
+        # ``<nonlinear>false</nonlinear>`` (e.g. MM_xor_bivector) still
+        # honour the flag for SymbolicSpace, OutputSpace, and other
+        # PiLayer / SigmaLayer instances — only the C-tier sigma_percept
+        # is force-tanh-wrapped.
+        nonlinear_sigma_percept = True
         if self.reversible:
             if invertible:
-                self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
-                                  invertible=True, nonlinear=nonlinear,
-                                  stable=True, monotonic=monotonic)
-                self.params = self.pi.getParameters()
-                self.layers = nn.ModuleList([self.pi])
+                self.sigma_percept = SigmaLayer(
+                    input, output, naive=naive, ergodic=ergodic,
+                    invertible=True, nonlinear=nonlinear_sigma_percept,
+                    stable=True, monotonic=monotonic)
+                self.params = self.sigma_percept.getParameters()
+                self.layers = nn.ModuleList([self.sigma_percept])
             else:
-                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic,
-                                   invertible=True, nonlinear=nonlinear,
-                                   stable=True, monotonic=monotonic)
-                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic,
-                                   invertible=True, nonlinear=nonlinear,
-                                   stable=True, monotonic=monotonic)
-                self.pi = self.pi1  # forward direction canonical alias
-                self.params = self.pi1.getParameters() + self.pi2.getParameters()
-                self.layers = nn.ModuleList([self.pi1, self.pi2])
+                self.sigma_percept_1 = SigmaLayer(
+                    input, output, naive=naive, ergodic=ergodic,
+                    invertible=True, nonlinear=nonlinear_sigma_percept,
+                    stable=True, monotonic=monotonic)
+                self.sigma_percept_2 = SigmaLayer(
+                    input, output, naive=naive, ergodic=ergodic,
+                    invertible=True, nonlinear=nonlinear_sigma_percept,
+                    stable=True, monotonic=monotonic)
+                self.sigma_percept = self.sigma_percept_1
+                self.params = (
+                    self.sigma_percept_1.getParameters()
+                    + self.sigma_percept_2.getParameters())
+                self.layers = nn.ModuleList(
+                    [self.sigma_percept_1, self.sigma_percept_2])
         else:
-            self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
-                              nonlinear=nonlinear, stable=True, monotonic=monotonic)
-            self.params = self.pi.getParameters()
-            self.layers = nn.ModuleList([self.pi])
+            self.sigma_percept = SigmaLayer(
+                input, output, naive=naive, ergodic=ergodic,
+                nonlinear=nonlinear_sigma_percept,
+                stable=True, monotonic=monotonic)
+            self.params = self.sigma_percept.getParameters()
+            self.layers = nn.ModuleList([self.sigma_percept])
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -8541,24 +8402,24 @@ class ConceptualSpace(Space):
         )
         return basis
 
-    def _pi_reverse(self, y):
-        """PiLayer reverse, hiding the two-pass ergodic mode split.
+    def _sigma_percept_reverse(self, y):
+        """SigmaLayer reverse, hiding the two-pass ergodic mode split.
 
-        Single-PiLayer modes call ``self.pi.reverse``. The two-pass
-        ergodic mode (where ``self.pi`` aliases ``self.pi1`` for the
-        forward path) routes the reverse through ``self.pi2`` instead.
+        Single-Sigma modes call ``self.sigma_percept.reverse``. The
+        two-pass ergodic mode (where ``self.sigma_percept`` aliases
+        ``self.sigma_percept_1`` for the forward path) routes the
+        reverse through ``self.sigma_percept_2`` instead.
 
-        When the input PiLayer is widened for the subsymbolic loop,
-        the reverse output carries the right-half re-entrant
-        contribution which is not consumable by upstream
-        PerceptualSpace; slice it off so downstream reverse stages see
-        only the perceptual half.
+        When the input layer is widened for the subsymbolic loop, the
+        reverse output carries the right-half re-entrant contribution
+        which is not consumable by upstream PerceptualSpace; slice it
+        off so downstream reverse stages see only the perceptual half.
         """
-        pi2 = getattr(self, 'pi2', None)
-        if pi2 is not None:
-            x = pi2.reverse(y)
+        sigma2 = getattr(self, 'sigma_percept_2', None)
+        if sigma2 is not None:
+            x = sigma2.reverse(y)
         else:
-            x = self.pi.reverse(y)
+            x = self.sigma_percept.reverse(y)
         if self._right_half_dim > 0:
             x = x[..., :-self._right_half_dim]
         return x
@@ -8660,16 +8521,17 @@ class ConceptualSpace(Space):
             return primary
 
         # Stage > 0: read the stem-cached perceptual event so the
-        # chain stays at the percept-dim width that ``self.pi.nInput``
-        # was configured for.  ``sym`` (the previous SymbolicSpace
-        # event) only contributes when the bivector lift above
-        # recovered it to the perceptual-content shape (i.e. it
-        # shape-matches ``perc_ev``).  Without that lift, ``sym``
-        # lives in the concept-dim basis (post the C->S pass-through
-        # introduced when SymbolicSpace.sigma was retired) and would
-        # crash the next ``self.pi(x)`` matmul -- so we let the chart
-        # at C consume the SS event instead and feed the perceptual
-        # cache straight into pi.
+        # chain stays at the percept-dim width that
+        # ``self.sigma_percept.nInput`` was configured for.  ``sym``
+        # (the previous SymbolicSpace event) only contributes when
+        # the bivector lift above recovered it to the perceptual-
+        # content shape (i.e. it shape-matches ``perc_ev``). Without
+        # that lift, ``sym`` lives in the concept-dim basis (post the
+        # C->S pass-through introduced when SymbolicSpace.sigma was
+        # retired) and would crash the next ``self.sigma_percept(x)``
+        # matmul -- so we let the chart at C consume the SS event
+        # instead and feed the perceptual cache straight into
+        # sigma_percept.
         perc_ev = self._read_event(self.perceptualSpace_ref)
         if perc_ev is not None and perc_ev.dim() == 4:
             B, K, N, D = perc_ev.shape
@@ -8746,32 +8608,35 @@ class ConceptualSpace(Space):
             stm.clear(b=batch)
 
     def forward(self, subspace):
-        """Knowing: map percepts to concepts via PiLayer + optional attention + VQ.
+        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
-        When nonlinear=True the multiplicative log-domain transform keeps
-        the output in [-1, 1].
+        The canonical C-tier fold is the additive ``sigma_percept``
+        (``percept_dim → concept_dim``), per the 2026-05-13 rebalance
+        (doc/Spaces.md §"Sigma / Pi ownership"). When ``nonlinear=True``
+        the tanh wrap on SigmaLayer keeps the output in ``[-1, 1]``.
         """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
         # SyntacticLayer is unconditional: it dispatches whatever the
-        # grammar XML specifies for the C tier (e.g. ``C = pi(C)`` from
-        # model.xml's default grammar) -- exact mathematical replacement
-        # for the legacy ``y = self.pi(x)`` call. Per the 2026-05-07
-        # rollback, ``WordSpace.compose`` populates ``current_rules``
-        # from the grammar XML in default-only / useGrammar='none' fast
-        # paths, so the cursor always finds the configured rule (no
-        # ``default_rule`` code-level fallback).
+        # grammar XML specifies for the C tier (e.g. ``C = sigma(C)``
+        # from model.xml's default grammar) -- exact mathematical
+        # replacement for the bare ``y = self.sigma_percept(x)`` call.
+        # Per the 2026-05-07 rollback, ``WordSpace.compose`` populates
+        # ``current_rules`` from the grammar XML in default-only /
+        # useGrammar='none' fast paths, so the cursor always finds the
+        # configured rule (no ``default_rule`` code-level fallback).
+        # Legacy grammars (``C = pi(C)``) are auto-aliased to
+        # ``sigma_percept`` by ``_attach_per_space_syntactic_layer`` so
+        # they keep working post-2026-05-13 rebalance.
         # Per-order input source. Order 0 reads PerceptualSpace.event
         # (today's behavior); higher orders read the active sibling's
         # previous event (Symbolic under <mode>grammar</mode>,
         # Subsymbolic under <mode>parallel</mode>) lifted from the
         # downstream bivector handoff back into concept content via
         # the C-tier codebook's SVD pseudo-inverse. Replaces the
-        # legacy `_build_combined_input` concat (which aliased a wide
-        # perceptual content vector with a 2-wide bivector activation;
-        # PiLayer treated them uniformly which was semantically wrong).
+        # legacy `_build_combined_input` concat.
         x = self._sourced_input(vspace)
         # Post-split: grammar lives at S; C is semantically
         # subsymbolic. The SyntacticLayer dispatch at C is retained
@@ -8782,11 +8647,36 @@ class ConceptualSpace(Space):
         # still fire them, but the canonical home of grammar
         # operations is now S.
         if getattr(self, 'syntacticLayer', None) is None:
-            y = self.pi(x)
+            y = self.sigma_percept(x)
         else:
             vspace.set_event(x)
             vspace = self.syntacticLayer.forward(vspace)
             y = vspace.materialize()
+        # Chat-loop C-prior injection: when the inference loop staged
+        # a predicted next-sentence prior on ``self._c_prior`` (lifted
+        # through ``InterSentenceLayer.cast`` to ``concept_dim``), sum
+        # it into the C-tier event before the codebook lookup so the
+        # mask-position predictions get a sentence-level conditioning
+        # signal.  Cleared after each consumer so it doesn't leak
+        # across forwards.
+        if self._c_prior is not None and y is not None:
+            prior = self._c_prior
+            # Shape-match: prior is [B, concept_dim] or [concept_dim].
+            # ``y`` is [B*K, N, concept_dim].  Broadcast as a per-row
+            # bias across N positions.
+            if prior.dim() == 1:
+                prior = prior.unsqueeze(0)
+            if y.dim() == 3 and prior.dim() == 2:
+                if prior.shape[0] == 1:
+                    prior_b = prior.expand(y.shape[0], -1)
+                elif prior.shape[0] == y.shape[0]:
+                    prior_b = prior
+                else:
+                    # Broadcast a B-shaped prior across B*K rows.
+                    K = max(1, y.shape[0] // max(1, prior.shape[0]))
+                    prior_b = prior.repeat_interleave(K, dim=0)
+                y = y + prior_b.unsqueeze(1)
+            self._c_prior = None
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
@@ -8861,21 +8751,22 @@ class ConceptualSpace(Space):
         return vspace
 
     def reverse(self, subspace):
-        """Visualizing: reconstruct percepts from concepts via reverse PiLayer.
+        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
 
         When CSBP bivector output is active, first runs the codebook's
         cached SVD pseudo-inverse to lift the bivector ``[B, V, 2]`` back
         to ``[B, V, D_C]``. Then dispatches to the SyntacticLayer (or the
-        legacy bare PiLayer.reverse) for the rule-driven reverse pass.
+        bare ``sigma_percept.reverse``) for the rule-driven reverse pass.
         """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
         # SyntacticLayer is unconditional: its default rule fires
-        # ``PiLayer.reverse(y)`` (or two-pass ergodic ``_pi_reverse``
-        # via Phase 3 adapter), exact mathematical replacement for
-        # the legacy ``y = self._pi_reverse(y)`` call. When the chart
+        # ``SigmaLayer.reverse(y)`` (or two-pass ergodic
+        # ``_sigma_percept_reverse`` via Phase 3 adapter), exact
+        # mathematical replacement for the bare
+        # ``y = self._sigma_percept_reverse(y)`` call. When the chart
         # populates a C-tier generate sequence, the dispatcher fires
         # those instead.
         y = self.reverseBegin(vspace, returnVectors=True)
@@ -8883,12 +8774,13 @@ class ConceptualSpace(Space):
                 and isinstance(self.subspace.what, ProjectionBasis)):
             # CSBP reverse lift: bivec ``[B, V_C, 2]`` -> ``[B, V, D_C]``
             # via the exact LDU inverse on ProjectionBasis. Runs before
-            # pi.reverse so the upstream PiLayer sees the natural
-            # ``[B, V, nDim]`` shape it produced on forward.  V comes
-            # from this space's ``inputShape[0]`` (the slot count the
-            # forward consumed); the per-row summary vector is then
-            # replicated across V positions, which is the mathematically-
-            # correct answer for the V-axis-summed bivector forward.
+            # sigma_percept.reverse so the upstream SigmaLayer sees
+            # the natural ``[B, V, nDim]`` shape it produced on forward.
+            # V comes from this space's ``inputShape[0]`` (the slot
+            # count the forward consumed); the per-row summary vector
+            # is then replicated across V positions, which is the
+            # mathematically-correct answer for the V-axis-summed
+            # bivector forward.
             V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
         # Post-split: grammar lives at S; C is semantically
@@ -8896,14 +8788,34 @@ class ConceptualSpace(Space):
         # C is retained for backward compat — no-op when the grammar
         # has no C-tier reverse rule.
         if getattr(self, 'syntacticLayer', None) is None:
-            y = self._pi_reverse(y)
+            y = self._sigma_percept_reverse(y)
         else:
             vspace.set_event(y)
             vspace = self.syntacticLayer.reverse(vspace)
-            y = vspace.materialize()
-            if (y is not None and y.dim() == 3
-                    and y.shape[-1] != self.subspace.getEncodedInputSize()):
-                y = self._pi_reverse(y)
+            y_post = vspace.materialize()
+            # Phase B: under the legacy ``pi`` alias the SyntacticLayer
+            # dispatcher's fast-path may short-circuit (no-op when the
+            # generate queue is empty for default-only grammars). In
+            # that case the bivector-codebook-reverse output (which can
+            # be slightly outside ``[-1, 1]`` after the LDU inverse) is
+            # left unwrapped and downstream range checks on
+            # ``percepts.what`` fail. The legacy PiLayer's reverse via
+            # ``_from_mult(exp(...))`` always clamped to ``(-1, 1)``
+            # intrinsically; SigmaLayer's reverse only clamps via its
+            # tanh wrap, which requires us to fire the wrap explicitly
+            # when the dispatcher didn't reach it.
+            if y_post is not None and y_post.dim() == 3:
+                if y_post.shape[-1] != self.subspace.getEncodedInputSize():
+                    y = self._sigma_percept_reverse(y_post)
+                elif (y_post.detach().abs().max().item()
+                      > 1.0 + 1e-2):
+                    # Dispatcher skipped — apply the substrate fold
+                    # reverse explicitly to enforce ``[-1, 1]``.
+                    y = self._sigma_percept_reverse(y_post)
+                else:
+                    y = y_post
+            else:
+                y = y_post
         if self._right_half_dim > 0 and y is not None and y.dim() == 3:
             y = y[..., :-self._right_half_dim]
         self.concepts = y.detach()
@@ -10416,14 +10328,13 @@ class OutputSpace(Space):
         )
         return basis
 
-    def __init__(self, inputShape, spaceShape, outputShape, masked_prediction=False, vectors=None):
+    def __init__(self, inputShape, spaceShape, outputShape, vectors=None):
         """Initialize OutputSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         section = self.config_section
         invertible = TheXMLConfig.space(section, "invertible")
-        self.masked_prediction = masked_prediction
         object.__setattr__(self, "_initial_vectors", vectors)
         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
         super().__init__(inputShape, spaceShape, outputShape)

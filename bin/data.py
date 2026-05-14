@@ -477,7 +477,11 @@ class Data():
         self.input_max  = None
         self.output_min = None
         self.output_max = None
-        self._runtime_mode = None  # set inside runtime_inputs() context manager
+        # ``_runtime_mode`` retired 2026-05-14 alongside ARIR; runtime
+        # callers no longer pass a mode token.  Field kept on the class
+        # at None so legacy ``getattr(data, '_runtime_mode', None)``
+        # reads stay well-defined; remove next release.
+        self._runtime_mode = None
 
     @property
     def nInput(self):
@@ -639,23 +643,18 @@ class Data():
 
     @contextmanager
     def runtime_batch(self, inputs, outputs=None, mode=None):
-        """Stage transient inference data into train_input/train_output.
+        """Stage transient inference data into ``train_input`` / ``train_output``.
 
         Saves and restores the previous contents so training data is
-        not corrupted (though in practice, inference and training never
-        overlap).
-
-        Args:
-            inputs: list of strings for the runtime batch.
-            outputs: optional list of output targets.
-            mode: optional inference mode ('ARIR', 'AR', or None).
+        not corrupted (training and inference never overlap in
+        practice).  ``mode`` is accepted for back-compat and ignored;
+        the legacy ARIR-mode signalling retired 2026-05-14.
         """
+        del mode  # retained for signature back-compat only
         saved_input = self.train_input
         saved_output = self.train_output
         self.train_input = inputs
         self.train_output = outputs
-        self._runtime_mode = mode
-        # Validate tensor inputs are within the expected range
         if isinstance(inputs, torch.Tensor) and self.input_min is not None:
             xmin = inputs.min().item()
             xmax = inputs.max().item()
@@ -669,7 +668,6 @@ class Data():
         finally:
             self.train_input = saved_input
             self.train_output = saved_output
-            self._runtime_mode = None
 
     def pushInput(self, token):
         """Append a token to train_input[0] during inference.

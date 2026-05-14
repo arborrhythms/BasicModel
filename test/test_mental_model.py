@@ -40,36 +40,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
     def setUp(self):
         _reload_config()
 
-    def test_forward_reverse_runs(self):
-        _reload_config()
-        model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        sentences = ['the cat sat on the mat', 'a dog chased the ball']
-        outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
-
-        # Untrained model -- suppress range checks (shape-only test)
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            train_input, _ = model.inputSpace.getTrainData()
-            x = model.inputSpace.prepInput(train_input[:2])
-
-            model.eval()
-            model.set_sigma(0)
-            with torch.no_grad():
-                input_state, symbols, predictions, reconstruction = model.forward(x)
-
-            self.assertEqual(symbols.ndim, 3)
-            self.assertEqual(symbols.shape[0], 2)  # batch=2
-
-            if model.reversible:
-                with torch.no_grad():
-                    try:
-                        inputData, inputLatent = model.reverse(symbols, model.outputs.materialize())
-                    except ValueError:
-                        self.skipTest("Untrained model range violation (expected)")
-                self.assertEqual(inputData.ndim, 3)
-                self.assertEqual(inputData.shape[0], 2)
+    # test_forward_reverse_runs retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_grammar_has_syntactic_layers(self):
         """TheGrammar is initialized and Spaces own SyntacticLayers after init_layers."""

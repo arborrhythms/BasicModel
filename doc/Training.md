@@ -118,17 +118,24 @@ CPU by default (`BASICMODEL_DEVICE=cpu`) to avoid MPS/GPU memory limits.
 The network learns to predict and reconstruct sentences using pretrained
 embeddings.
 
-### Masked Prediction Modes
+### Within-sentence training objective (IR-only)
 
-`maskedPrediction` controls the prediction objective:
+Within-sentence training is **always IR** (masked-LM at the P-tier).
+`create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
+with `NULL_PERCEPT` and snapshots the pre-mask event on
+`_ir_pre_mask_input`; `runBatch` computes
+`MSE(perceptualSpace at masked positions, _ir_pre_mask_input at
+masked positions)` — no head loss, no reverse pipeline.  The legacy
+`<maskedPrediction>` knob and the AR / ARUS / ARIR modes were
+retired 2026-05-14; sentence-level AR moved to
+`InterSentenceLayer` (see `doc/Architecture.md` §"Sentence-level AR
+(`InterSentenceLayer`)").
 
-| Mode | Input Masking | Truncation | Target | Description |
-|------|---------------|------------|--------|-------------|
-| `NONE` | None | No | Dataset labels | Standard supervised |
-| `IR` | Zero word i | No | Embedding of word i | Bidirectional input reconstruction |
-| `AR` | Zero word i | Yes (j > i zeroed) | Embedding of word i | Autoregressive (GPT-style) |
-| `ARUS` | Same as AR | Yes | Zero vector | Unsupervised (loss suppressed) |
-| `ARIR` | Per-pos | Yes | Embedding + reconstruction | Autoregressive iterative reconstruction |
+| Knob | Effect |
+|------|--------|
+| `maskRate` | Bernoulli mask probability at the P-tier (BERT default 0.15) |
+| `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
+| `<reconstruct>` | Target tier for the optional forward-only reconstruction loss: `none` / `symbols` / `concepts` / `both`.  `output` is retired (the reverse pipeline is gone). |
 
 ### `<trainEmbedding>`: Embedding Update Mode
 
@@ -200,37 +207,29 @@ ordered training list is split into `B = batchSize` contiguous slabs of
 length `L = len(split) // B`; at step `t`, row `b` is item `b * L + t`.
 Temporal context is coherent across steps. No per-epoch global shuffle.
 
-For each B-wide batch in AR modes:
+For each B-wide batch:
 
 1. `BasicModel.Start(inputData)` cascades reset through every Space.
-2. `InputSpace.forward()` lexes/embeds once into `[B, T, D]`, then builds all
-   K progressive-prefix windows via `tensor.unfold(1, N, 1)` — left-padding
-   N zeros so window `k` is `k` zero-pad slots followed by `emb[0..k-1]`
-   right-aligned. The subspace carries `event: [B, K, N, D]` with
-   `k_axis=True` and a `[B, K]` validity mask. Body consumes K as microbatch
-   (flattened to `B*K`); head produces all K predictions in one pass.
-3. For `ARIR` only, a single terminal `reverse(symbols)` produces a
-   `[B, N, D]` reconstruction.
-4. `runBatch` computes loss once via `TheError.add`:
-   - `AR`: output prediction only (masked by validity).
-   - `ARUS`: no output term; no reconstruction.
-   - `ARIR`: output prediction + reconstruction, weighted by `reverseScale`.
-5. One `backward()` + `optimizer.step()` per DataLoader yield.
-6. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
-
-Non-AR modes (`maskedPrediction=NONE`) do a single forward/backward/step per
-B-wide batch, skipping the pos loop.
-
-Mode contract:
-
-| Mode | Per-pos output | Terminal reverse | Reconstruction loss |
-|------|----------------|------------------|--------------------|
-| `AR` | Yes | No (ignores `<reconstruct>`) | Not trained |
-| `ARUS` | No | No | Not trained |
-| `ARIR` | Yes | Yes | Over `[B, N, D]` |
-
-`<maskedPrediction>ARIR</maskedPrediction>` requires `<reconstruct>` not
-`NONE`.
+2. `InputSpace.forward()` lexes/embeds once into `[B, N, D]`
+   (left-aligned, right-padded to N). No K axis, no cursor unfold.
+3. `create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
+   with `NULL_PERCEPT`; pre-mask event stashed on
+   `_ir_pre_mask_input` and the position mask on
+   `_ir_mask_positions`.
+4. `_forward_body` runs T stages on B rows.
+5. `_forward_head` produces `[B, N, predDim]` (a side channel — IR
+   loss is computed at the P-tier, not at the head).
+6. `runBatch` computes loss via `TheError.add`:
+   - `reconstruction` (P-tier): MSE between post-body
+     `perceptualSpace` and `_ir_pre_mask_input` at masked positions.
+   - Optionally `reconstruction_c` / `reconstruction_s` (C-tier /
+     S-tier) when `<reconstruct>` is `concepts` / `symbols` / `both`,
+     weighted by `reconstructionScale`.
+   - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
+     between the ARMA(p, q) prediction and the current sentence rep,
+     weighted by `armaScale`.
+7. One `backward()` + `optimizer.step()` per DataLoader yield.
+8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
 ---
 

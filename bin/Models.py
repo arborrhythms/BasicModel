@@ -317,9 +317,11 @@ class BaseModel(Mereology, nn.Module):
     # model. Callers that need it should read through
     # ``wordSpace``; ``<training><sentencePrediction>false`` in
     # config leaves ``wordSpace.discourse`` as ``None``.
-    sentence_prediction_scale = 0.1
-    sentence_contrastive_scale = 0.1
-    sentence_predictive_scale = 0.1
+    # Class-level defaults for ARMA loss weight + priming scale.
+    # Pre-2026-05-14 contrastive sentence-loss knobs retired alongside
+    # <maskedPrediction>; the single ARMA MSE replaces the contrastive
+    # + predictive cosine pair.
+    arma_scale = 0.1
     sentence_priming_scale = 0.05
 
     @staticmethod
@@ -582,46 +584,33 @@ class BaseModel(Mereology, nn.Module):
             conceptualOrder=arch["conceptualOrder"],
             model_type=model_type,
             data=data,
-            reverse_scale=_t("reverseScale"),
+            reconstruction_scale=_t("reconstructionScale"),
             what_scale=_t("whatScale"),
             where_scale=_t("whereScale"),
             when_scale=_t("whenScale"),
-            masked_prediction=str(_t("maskedPrediction", "NONE") or "NONE").upper(),
         )
 
-        # Propagate masked_prediction to InputSpace so its forward() can
-        # gate the AR streaming state machine (cursor, sliding buffer,
-        # null-byte sentinel). Without this, InputSpace.forward silently
-        # takes the non-AR branch every call and the model.forward
-        # while-loop in AR mode never terminates.
-        if hasattr(self, 'inputSpace'):
-            self.inputSpace.masked_prediction = self.masked_prediction
-
-        # IR-mode mask rate: Bernoulli probability that a position is
-        # replaced by NULL_PERCEPT for masked reconstruction. Set on
-        # every model so create_ir_mask can read it; only IR mode
-        # actually consumes it. Default 0.15 (BERT-style).
+        # IR mask rate: Bernoulli probability that a P-tier position is
+        # replaced by NULL_PERCEPT for masked reconstruction. Default
+        # 0.15 (BERT-style).
         _mask_rate = _t("maskRate", 0.15)
         self.mask_rate = float(_mask_rate if _mask_rate is not None else 0.15)
         if not (0.0 <= self.mask_rate <= 1.0):
             raise ValueError(
                 f"maskRate must be in [0.0, 1.0], got {self.mask_rate}")
 
-        # serial_mode: true when streaming AR is active — enables the
-        # slide-and-recompute fast path in PerceptualSpace/ConceptualSpace.
-        is_runtime_arir = (
-            data is not None
-            and getattr(data, '_runtime_mode', None) == 'ARIR')
-        self.serial_mode = (
-            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-            or is_runtime_arir
-        )
+        # serial_mode (AR streaming fast path) retired with
+        # <maskedPrediction> 2026-05-14.  Within-sentence training is
+        # IR-only; the slide-and-recompute optimisation no longer has
+        # a caller.  Keeping the attribute False so legacy reads stay
+        # well-defined; remove next release.
+        self.serial_mode = False
         if hasattr(self, 'perceptualSpace'):
-            self.perceptualSpace.serial_mode = self.serial_mode
+            self.perceptualSpace.serial_mode = False
         if hasattr(self, 'conceptualSpace'):
-            self.conceptualSpace.serial_mode = self.serial_mode
+            self.conceptualSpace.serial_mode = False
         if getattr(self, 'wordSpace', None) is not None:
-            self.wordSpace.serial_mode = self.serial_mode
+            self.wordSpace.serial_mode = False
 
         # Attention on ConceptualSpace violates position locality required
         # by serial_mode; downgrade conceptualSpace only. PerceptualSpace
@@ -639,21 +628,12 @@ class BaseModel(Mereology, nn.Module):
             )
             self.conceptualSpace.serial_mode = False
 
-        # Inter-sentence contrastive loss weight. DiscourseSpace (owned
-        # by WordSpace) contributes a dual-force cosine loss to
-        # ``runBatch`` with this scale when ``<training><sentencePrediction>``
-        # is true. Gated inside Language.WordSpace construction.
-        self.sentence_prediction_scale = float(
-            TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
-        # Contrastive scale falls back to the legacy
-        # sentencePredictionScale so existing configs keep behaving
-        # as before for the contrastive term.
-        self.sentence_contrastive_scale = float(
-            TheXMLConfig.training(
-                "sentenceContrastiveScale",
-                self.sentence_prediction_scale) or self.sentence_prediction_scale)
-        self.sentence_predictive_scale = float(
-            TheXMLConfig.training("sentencePredictiveScale", 0.1) or 0.1)
+        # InterSentenceLayer ARMA(p, q) loss weight. ``InterSentenceLayer.observe``
+        # returns a per-batch MSE which ``runBatch`` weights by
+        # ``arma_scale`` before adding to ``TheError``.  Active only
+        # when ``<training><sentencePrediction>`` is true.
+        self.arma_scale = float(
+            TheXMLConfig.training("armaScale", 0.1) or 0.1)
         self.sentence_priming_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
 
@@ -1619,31 +1599,17 @@ class BaseModel(Mereology, nn.Module):
         return "".join(chars).rstrip("\x00")
 
     def _reconstructionReport(self):
-        """Run a test pass with reverse and report input vs reconstructed text.
+        """Stub retained for API parity with the legacy reverse pipeline.
 
-        Skipped under masked-prediction or zero-epoch structural-scaffold
-        configs (e.g. idempotent.xml) where reverse-pass shape assumptions
-        don't hold. Prints input / reconstruction pairs for visual inspection.
+        The full input-reconstruction report relied on
+        ``BasicModel.reverse`` and the input-space round trip, both of
+        which were retired together with ``<reconstruct>output</...>``
+        on 2026-05-14.  Within-sentence training is now IR-only; the
+        masked-LM accuracy is reported via the per-batch
+        ``reconstruction`` term in ``TheError`` and does not need a
+        separate text-level dump.
         """
-        if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
-            return  # masked prediction has variable batch sizes; skip reconstruction report
-        # Skip when the config is a structural scaffold (no training, no
-        # real test data) so the reverse-pass runEpoch doesn't crash on
-        # mismatched-shape activations. idempotent.xml is the canonical
-        # example -- it exists for unit tests of the C-S round-trip
-        # primitive, not end-to-end CLI runs.
-        try:
-            num_epochs = TheXMLConfig.get(
-                "architecture.training.numEpochs", default=1)
-            if num_epochs is not None and int(num_epochs) == 0:
-                return
-        except (AttributeError, KeyError, TypeError, ValueError):
-            pass
-        self.set_sigma(0)  # suppress exploration for evaluation
-        test_input, test_output = self.inputSpace.getTestData()
-        if not test_input:
-            return  # no test data -- nothing to reconstruct
-        _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
+        return
 
         if not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
             return  # no predictions to report
@@ -1787,8 +1753,7 @@ class BasicModel(BaseModel):
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
                model_type="simple", data=None,
-               reverse_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1,
-               masked_prediction='NONE'):
+               reconstruction_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1):
         """Build the full space hierarchy from architecture parameters.
 
         Always dispatches to ``_create_per_stage``: per-stage with
@@ -1806,289 +1771,9 @@ class BasicModel(BaseModel):
             nInput, nPercepts, nConcepts, nSymbols, nWords=nWords,
             nOutput=nOutput, conceptualOrder=conceptualOrder,
             model_type=model_type, data=data,
-            reverse_scale=reverse_scale, what_scale=what_scale,
-            where_scale=where_scale, when_scale=when_scale,
-            masked_prediction=masked_prediction)
-        self.spaces = []  # reset -- prevent stale accumulation from prior create() calls
-        self.wordSpace = None  # wired below once the home spaces exist
-        TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
-        self.reversible      = True
-        self.ergodic          = TheXMLConfig.get("architecture.ergodic")
-        self.processSymbols   = TheXMLConfig.get("architecture.processSymbols")
-        self.certainty        = TheXMLConfig.get("architecture.training.certainty")
-        self.syntax           = False  # BasicModel: no syntax
-        TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
-        # BasicModel accepts the <useGrammar> XML surface for uniformity
-        # with BasicModel but only ``none`` is meaningful for it -- the
-        # BasicModel pipeline lacks the constituency-grammar machinery
-        # (``_level_shapes``, ``GrammarMergeGlue``, the per-stage chart-
-        # at-C wiring needed by ``all``). Configs that need full
-        # constituency grammar should use BasicModel.
-        try:
-            from basicmodel.bin.util import parse_use_grammar
-        except ModuleNotFoundError:
-            from util import parse_use_grammar
-        self.useGrammar = parse_use_grammar(
-            TheXMLConfig.get("WordSpace.useGrammar", default="none"))
-        TheXMLConfig.require(
-            lambda cfg, _ug=self.useGrammar: _ug == "none",
-            f"BasicModel only supports useGrammar='none' (got "
-            f"{self.useGrammar!r}); use BasicModel for full "
-            f"constituency grammar.")
-        # Gate-L1 sparsity lambda for LiftLayer / LowerLayer raw_gate
-        # parameters. 0.0 (default) disables the penalty; configs that
-        # use lift/lower opt in via <gateL1Lambda> in <architecture>.
-        self.gate_l1_lambda = float(
-            TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
-        # Per-stage / grammar / truth knobs. Initialized here with safe
-        # defaults (off / zero / no-op) so subclasses and the merged
-        # grammar paths can reference them unconditionally. BasicModel.create
-        # overrides these with config values when running the per-stage
-        # pipeline; keeping them defined on every BasicModel instance avoids
-        # AttributeError in helpers that the two classes will share after
-        # the merger.
-        self.monotonic = bool(
-            TheXMLConfig.get("architecture.monotonic", default=False))
-        self.load_balance_weight = float(
-            TheXMLConfig.get("architecture.loadBalanceWeight", default=0.0)
-            or 0.0)
-        self.truth_bias_scale = float(
-            TheXMLConfig.get("architecture.truthBiasScale", default=0.0)
-            or 0.0)
-        self.luminosity_weight = float(
-            TheXMLConfig.get("architecture.LuminosityWeight", default=0.0)
-            or 0.0)
-        self.universality_weight = float(
-            TheXMLConfig.get("architecture.UniversalityWeight", default=0.0)
-            or 0.0)
-        self.allow_excluded_middle = int(
-            TheXMLConfig.get("architecture.allowExcludedMiddle", default=1)
-            or 1)
-        self.allow_contradiction = int(
-            TheXMLConfig.get("architecture.allowContradiction", default=0)
-            or 0)
-        self.truth_loss_weight = float(
-            TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
-        self._write_syntax = bool(
-            TheXMLConfig.get("architecture.writeSyntax", default=False)
-            or False)
-        self._syntax_out_path = (
-            TheXMLConfig.get("architecture.syntaxOutPath",
-                             default="output/syntax.xml")
-            or "output/syntax.xml")
-        self._syntax_truncated = False
-        self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
-        # The lexicon lives on PerceptualSpace via its chunking_mode.
-        # InputSpace.codebook defaults to false; configs that set it
-        # true opt into the InputSpace lexical path.
-        self.codebook         = TheXMLConfig.space("InputSpace", "codebook", default=False)
-        self.perceptCodebook  = TheXMLConfig.space("PerceptualSpace", "codebook")
-        self.conceptCodebook  = TheXMLConfig.space("ConceptualSpace", "codebook")
-        self.invertible       = TheXMLConfig.space("PerceptualSpace", "invertible")
-        self.perceptHasAttention = TheXMLConfig.space("PerceptualSpace", "hasAttention")
-        self.conceptHasAttention = TheXMLConfig.space("ConceptualSpace", "hasAttention")
-        self.perceptPrototypes  = TheXMLConfig.space("PerceptualSpace", "nVectors")
-        self.conceptPrototypes  = TheXMLConfig.space("ConceptualSpace", "nVectors")
-        self.min_frequency    = float(TheXMLConfig.data_param("minFrequency", 0.0))
-        self.neg_samples      = int(TheXMLConfig.training("negSamples", 64))
-        # Runtime params
-        self.nInput           = nInput
-        self.nOutput          = nOutput
-        self.nPercepts        = nPercepts
-        self.nConcepts        = nConcepts
-        self.nSymbols         = nSymbols
-        TheXMLConfig.require(
-            lambda cfg, _ns=nSymbols, _no=nOutput: _ns >= _no,
-            f"nSymbols ({nSymbols}) must be >= nOutput ({nOutput}): "
-            f"the symbolic bottleneck must have at least as many symbols as outputs"
-        )
-        self.nWords           = nWords
-        self.data             = data
-        self.model_type       = model_type
-        self.conceptualOrder  = conceptualOrder
-        self.loss = ModelLoss(reverse_scale=reverse_scale,
-                         what_scale=what_scale,
-                         where_scale=where_scale,
-                         when_scale=when_scale,
-                         certainty=self.certainty,
-                         nOutput=nOutput,
-                         conceptualOrder=conceptualOrder,
-                         nWhere=TheXMLConfig.get("architecture.nWhere"),
-                         nWhen=TheXMLConfig.get("architecture.nWhen"))
-        # Optional swappable loss head fed STM snapshots during the
-        # body forward. Installed by ``embed.py embed_pretrain`` for
-        # CBOW-over-STM pretraining; AR training leaves it None and
-        # keeps using ``outputSpace`` for the loss.
-        self.loss_head = None
-        self.masked_prediction = masked_prediction
-        if data is not None and hasattr(data, 'masked_prediction') and data.masked_prediction != 'NONE':
-            data.masked_prediction = masked_prediction
-        # Resolve nInput=0 sentinel (derive from data when InputSpace.nOutput was 0 in XML)
-        if nInput == 0:
-            _d = data if data is not None else TheData
-            nInput = getattr(_d, 'nInput', 0)
-            self.nInput = nInput
+            reconstruction_scale=reconstruction_scale, what_scale=what_scale,
+            where_scale=where_scale, when_scale=when_scale)
 
-        # Resolve dims, chaining through the pipeline.
-        # nDim=0 for a space means "same as the previous space's output dim".
-        # InputSpace output dim is its configured nDim (embedding/feature size).
-        # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel
-        # so the same chaining logic is shared with BasicModel.
-        input_dim   = self._resolve_dim("InputSpace",      1)
-        percept_dim = self._resolve_dim("PerceptualSpace", input_dim)
-        concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
-        symbol_dim  = self._resolve_dim("SymbolicSpace",   concept_dim)
-        output_dim  = self._resolve_dim("OutputSpace",     symbol_dim)
-
-        obj_input     = self._obj_size("InputSpace")
-        obj_percept   = self._obj_size("PerceptualSpace")
-        obj_concept   = self._obj_size("ConceptualSpace")
-        obj_symbol    = self._obj_size("SymbolicSpace")
-        obj_output    = self._obj_size("OutputSpace")
-
-        nvec_input   = self._nvec("InputSpace",       nInput)
-        nvec_percept = self._nvec("PerceptualSpace",  nPercepts)
-        nvec_concept = self._nvec("ConceptualSpace",  nConcepts)
-        nvec_symbol  = self._nvec("SymbolicSpace",    nSymbols)
-        nvec_output    = self._nvec("OutputSpace",      nOutput)
-
-        # Stage 2: the loopback is always wired -- ConceptualSpace's
-        # input PiLayer is widened by ``symbolShape[1]`` (the symbolic
-        # side's encoded width) at construction time, so the C input
-        # naturally accepts ``[P_event || S_event_{t-1}]`` regardless
-        # of the XML's nInputDim. No separate validator is required;
-        # invertibility constraints are still enforced by each Space's
-        # ``_register_requirements``.
-
-        # Build I/O shape tuples: [count, dim + objectSize]
-        # Each space's shape includes its own objectSize.
-        inputShape   = [nInput,    input_dim   + obj_input]
-        perceptShape = [nPercepts, percept_dim + obj_percept]
-        conceptShape = [nConcepts, concept_dim + obj_concept]
-        symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
-        outputShape  = [nOutput,   output_dim  + obj_output]
-
-        # Build codebook (space-internal) shape tuples: [nVectors, nDim]
-        # spaceShape uses raw content dim -- codebook vectors don't include objectSize.
-        spaceShape_input   = [nvec_input,   input_dim]
-        spaceShape_percept = [nvec_percept, percept_dim]
-        spaceShape_concept = [nvec_concept, concept_dim]
-        spaceShape_symbol  = [nvec_symbol,  symbol_dim]
-        spaceShape_output  = [nvec_output,  output_dim]
-
-        # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
-        rawInputShape = [nInput, input_dim]
-        self.inputSpace      = self._make_input_space(rawInputShape, spaceShape_input, inputShape,
-                                                      model_type=model_type)
-        self.perceptualSpace = self._make_perceptual_space(inputShape, spaceShape_percept, perceptShape)
-        if isinstance(self.perceptualSpace.vocabulary, Embedding):
-            # object.__setattr__ bypasses nn.Module submodule registration so
-            # the PerceptualSpace reference is not double-counted in state_dict.
-            # Text-mode InputSpace.forward calls _embed (lexicon lives there).
-            object.__setattr__(self.inputSpace, '_peer_perceptual',
-                               self.perceptualSpace)
-        # Convert masked-word string labels to embedding vectors now that
-        # the Embedding vocabulary is available on PerceptualSpace.
-        if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.perceptualSpace.vocabulary
-            if embedding is not None and hasattr(embedding, 'pretrain'):
-                data.prepare_lm_targets(embedding)
-                # Move new targets to device
-                data.toDevice()
-        # ConceptualSpace and SymbolicSpace are constructed unconditionally;
-        # the dual loopback (S→C symbolic + new C→P conceptual) is wired
-        # post-construction via ``object.__setattr__`` to bypass
-        # nn.Module submodule tracking (otherwise SymbolicSpace would be
-        # registered as a child of ConceptualSpace AND as a child of the
-        # Model, creating a cycle in the module tree that breaks
-        # ``.to(device)`` and double-counts parameters).
-        self.conceptualSpace = ConceptualSpace(
-            perceptShape, spaceShape_concept, conceptShape)
-        self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
-                                             conceptualSpace=self.conceptualSpace)
-        # Symbolic loopback (existing): ConceptualSpace reads
-        # SymbolicSpace's prior event via ``_sourced_input``, averaging
-        # after a bivector lift.
-        object.__setattr__(self.conceptualSpace,
-                           'symbolicSpace_ref', self.symbolicSpace)
-        # Conceptual loopback (new): PerceptualSpace reads C-tier event
-        # from the prior forward and averages it into its primary input
-        # via ``_sourced_input`` (parallel percept-concept subsymbolic
-        # loop). PerceptualSpace now serves as the subsymbolic
-        # substrate; the standalone ``SubsymbolicSpace`` class was
-        # retired together with its ``<architecture><mode>`` selector.
-        object.__setattr__(self.perceptualSpace,
-                           'conceptualSpace_ref', self.conceptualSpace)
-        # Lexicon ownership (post-lexicon-migration): the orthographic
-        # Lexicon ``Embedding`` is the "codebook IS lexicon" structure
-        # logically owned by SymbolicSpace. PerceptualSpace retains
-        # the physical Embedding for input-pipeline reasons
-        # (``InputSpace._peer_perceptual.vocabulary``); S accesses it
-        # via this back-reference, and exposes ``vocabulary`` +
-        # ``train_embeddings`` / ``sbow_loss`` / ``reconstruct_*`` /
-        # ``get_recovered_word`` as its public lexicon API.
-        object.__setattr__(self.symbolicSpace,
-                           'perceptualSpace_ref', self.perceptualSpace)
-        spaces_to_add = [self.inputSpace, self.perceptualSpace,
-                         self.conceptualSpace, self.symbolicSpace]
-        self.spaces.extend(spaces_to_add)
-        self.syntacticSpace = None
-
-        self.outputSpace     = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
-                                           masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.perceptualSpace.vocabulary)
-        self.spaces.extend([self.outputSpace])
-        self.inputSpace.outputSpace = self.outputSpace
-
-        # The output dimensionality of the input layer must be equal to the output dimensionality of the perceptual layer, since the conceptual layer operates on both.
-        #assert self.inputSpace.outputShape[1] == self.perceptualSpace2.outputShape[1] # inputDim == perceptDim
-        # The input dimensionality of the symbolic layer must be equal to the input dimensionality of the perceptual layer, since they both operate on the output of the conceptual layer.
-        #assert self.symbolicSpace.inputShape[1] == self.perceptualSpace2.inputShape[1] == self.conceptualSpace.outputShape[1]#  conceptDim = conceptDim
-        # The output shape of the symbolic space is equal to the input shape of the output space
-        #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
-
-        # Initialize Grammar, WordSpace, and all three SyntacticLayers.
-        # WordSpace is now built unconditionally (no AR/ARUS gate) so
-        # every space has a SyntacticLayer wired -- the per-space
-        # forward/reverse paths dispatch through it always, with the
-        # default unary pi/sigma fold firing in the non-grammar case.
-        # ``WordSpace._grammar_is_default_only`` triggers the chart
-        # fast-path bypass when ``useGrammar='none'`` (the only valid
-        # BasicModel value), so chart overhead is near-zero. See plan:
-        # "Architectural addition -- WordSpace".
-        self.wordSpace = WordSpace(
-            perceptualSpace=self.perceptualSpace,
-            conceptualSpace=self.conceptualSpace,
-            symbolicSpace=self.symbolicSpace,
-            nPercepts=nPercepts,
-            nConcepts=nConcepts,
-            nSymbols=nSymbols,
-            concept_dim=concept_dim + obj_concept,
-            symbol_dim=symbol_dim + obj_symbol,
-        )
-        # Register WordSpace with the Space-walking training contract
-        # so ``getOptimizer`` collects its parameters (including the
-        # truth layer and, if present, the discourse predictor) via
-        # the uniform ``getParameters`` path.
-        self.spaces.append(self.wordSpace)
-        # Seed the pipeline context (see InputSpace.set_word_space docstring).
-        self.inputSpace.set_word_space(self.wordSpace)
-
-        # Phase 1: wire a Normalizer onto every space so spaces can call
-        # self.normalizer.{normalize,denormalize} instead of the TheData global.
-        self.normalizer = Normalizer(TheData)
-        for space in self.spaces:
-            space.normalizer = self.normalizer
-            if hasattr(space, 'subspace'):
-                space.subspace.normalizer = self.normalizer
-
-        # Phase 2: Sequential pipeline is the only path.
-        self.build_pipelines()
-
-        self.to(TheDevice.get())
-        TheXMLConfig.validate()
-
-    # --- Factory methods (override in subclasses to swap Space types) ---
     def _make_input_space(self, rawInputShape, spaceShape, inputShape, model_type):
         return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
 
@@ -2109,46 +1794,13 @@ class BasicModel(BaseModel):
         """
         return self._build_pipelines_per_stage()
 
-    # -- Per-stage / AR helpers ----------------------------------------
-    # Pair-merge primitives used by the grammar progressive-bottleneck
-    # path. ``_pair_merge`` averages adjacent slot pairs and caches the
-    # difference; ``_pair_unmerge`` consumes the cached diff to recover
-    # the original pair. Depend on ``self._merge_diffs`` which is
-    # initialized in BasicModel.forward when ``useGrammar=='all'``.
+    # -- Per-stage helpers ---------------------------------------------
+    # Pair-merge primitives that previously lived here
+    # (``_pair_merge`` / ``_pair_unmerge``) were retired 2026-05-14
+    # alongside the reverse pipeline; ``GrammarMergeGlue.forward`` and
+    # ``.reverse`` (top of file) carry the live merge/unmerge math.
 
-    def _pair_merge(self, x):
-        """Average-merge: [B, N, D] -> [B, N/2, D].
 
-        Averages adjacent vector pairs, keeping D constant and norms bounded.
-        Caches (left - right) differences in self._merge_diffs for exact
-        inversion in the reverse pass.
-        """
-        B, N, D = x.shape
-        assert N % 2 == 0, f"pair_merge requires even N, got {N}"
-        left = x[:, 0::2, :]    # [B, N/2, D]
-        right = x[:, 1::2, :]   # [B, N/2, D]
-        self._merge_diffs.append(left - right)
-        return (left + right) / 2
-
-    def _pair_unmerge(self, x):
-        """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
-
-        Uses cached difference to recover both original vectors. When the
-        cached diff is None (is_last GrammarMergeGlue stage, which is a
-        forward-pass-through), this is a no-op to keep the reverse loop
-        count aligned with T without reshaping.
-        """
-        diff = self._merge_diffs.pop()  # left - right
-        if diff is None:
-            return x
-        left = x + diff / 2
-        right = x - diff / 2
-        B, N_half, D = left.shape
-        # Interleave left and right back to original ordering
-        out = torch.zeros(B, N_half * 2, D, device=x.device)
-        out[:, 0::2, :] = left
-        out[:, 1::2, :] = right
-        return out
 
     def _bound_concept_input(self, x):
         """Keep recurrent concept inputs inside ConceptualSpace's logit domain."""
@@ -2183,24 +1835,34 @@ class BasicModel(BaseModel):
         norms = feedback.norm(dim=-1, keepdim=True)
         return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
 
-    def _is_ar_mode(self):
-        """True when the current config is AR (AR/ARUS/ARIR at training time)."""
-        is_runtime_arir = (
-            self.inputSpace.data is not None
-            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
-        )
-        return (self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-                and not is_runtime_arir)
+
+    def _derive_use_grammar(self):
+        """Derive ``useGrammar`` from the configured grammar rules.
+
+        Returns ``"all"`` when the grammar contains any non-default
+        rule (anything beyond unary ``pi`` / ``sigma`` substrate
+        folds), else ``"none"``. Replaces the retired
+        ``<WordSpace><useGrammar>`` XML knob — the grammar XML itself
+        is now the sole source of truth for whether the chart fires
+        and whether per-stage merge glue is wired.
+        """
+        try:
+            from Language import TheGrammar
+            TheGrammar._ensure_configured()
+            for rule in getattr(TheGrammar, 'rules', []) or []:
+                mn = getattr(rule, 'method_name', None)
+                arity = int(getattr(rule, 'arity', 1) or 1)
+                if mn is None:
+                    continue
+                if mn in ('pi', 'sigma') and arity == 1:
+                    continue
+                return "all"
+        except Exception:
+            pass
+        return "none"
 
     def _extract_prediction_sequential(self, fwd_out):
-        """Materialize OutputSpace's subspace and denormalize to task range.
-
-        In AR mode (predictions collected into a list that runBatch
-        torch.stacks on dim=1), the nOutput=1 middle axis is squeezed
-        here so stack yields [B, N, D] and not [B, N, 1, D]. Non-AR
-        callers (returning predictions[0] directly) keep the 3D shape
-        so existing loss contracts hold.
-        """
+        """Materialize OutputSpace's subspace and denormalize to task range."""
         if fwd_out is None:
             return None
         if self.outputSpace.nonlinear_output:
@@ -2209,25 +1871,7 @@ class BasicModel(BaseModel):
             outputData = fwd_out.materialize()
         if outputData is None:
             return None
-        outputData = self.normalizer.denormalize(outputData, which="output")
-        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-        if is_ar and outputData.dim() == 3 and outputData.shape[1] == 1:
-            outputData = outputData.squeeze(1)
-        return outputData
-
-    def _should_reconstruct(self):
-        """True when reverse reconstruction should run after the forward loop.
-
-        Only ARIR triggers an automatic reverse pass (input reconstruction).
-        Non-AR and AR/ARUS callers invoke `model.reverse()` explicitly.
-        """
-        return self.masked_prediction == 'ARIR'
-
-    def _run_reverse_sequential(self, last_forward_result):
-        """Case A reconstruction: run the reverse pipeline once after forward."""
-        if not self.any_invertible or last_forward_result is None:
-            return None
-        return self._run_pipeline_rev(last_forward_result)
+        return self.normalizer.denormalize(outputData, which="output")
 
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
@@ -2239,32 +1883,6 @@ class BasicModel(BaseModel):
             if hasattr(space, 'End'):
                 space.End()
 
-    def StartReverse(self, symbols):
-        """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction).
-
-        Drives the reverse direction through each space in turn,
-        materializing intermediate states for MODEL_DEBUG diagnostics.
-        Returns ``(inputData, input)`` -- the rebuilt byte/text and the
-        post-perceptual-reverse state respectively.
-        """
-        if isinstance(symbols, torch.Tensor):
-            self.symbolicSpace.subspace.set_event(symbols)
-            symbols = self.symbolicSpace.subspace
-        concepts_state = self.symbolicSpace.reverse(symbols)
-        self._debug_tensor_stats(
-            "reverse.concepts_state", concepts_state.materialize())
-        percepts_state = self.conceptualSpace.reverse(concepts_state)
-        self._debug_tensor_stats(
-            "reverse.percepts_state", percepts_state.materialize())
-        input_state = self.perceptualSpace.reverse(percepts_state)
-        self._debug_tensor_stats(
-            "reverse.input_state", input_state.materialize())
-        self.inputs = self.inputSpace.reverse(input_state)
-        self._debug_tensor_stats(
-            "reverse.inputs", self.inputs.materialize())
-        input = input_state.materialize()
-        inputData  = self.inputs.materialize()
-        return inputData, input
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace.
 
@@ -2359,131 +1977,52 @@ class BasicModel(BaseModel):
         )
 
     def infer(self, text, max_length=None, mode=None):
-        """Inference via the standard batch pipeline.
+        """IR-mode infill inference.
 
-        Three modes:
+        Lexes the input, embeds it, applies ``mask_rate`` random
+        masking to the embedded substrate (NULL_PERCEPT replacement),
+        runs one forward pass, and decodes the body's prediction at
+        each masked position via nearest-neighbor lookup against the
+        lexicon.  Returns ``(slot_index, original_token, predicted_token)``
+        triples.
 
-        ``AR`` (append-and-rerun): stages seed text, runs forward,
-        decodes the output token, appends it to the input via
-        ``pushInput()``, and repeats.  Each iteration re-lexes and
-        re-embeds the full (growing) input.
-
-        ``ARIR`` (autoregressive input reconstruction): reconstructs a
-        degraded input in-place, reusing the lexing and codebook lookup
-        from the initial forward pass.
-
-        ``IR`` (parallel-infill input reconstruction): bidirectional
-        masked-position reconstruction. Lexes the input, embeds it,
-        applies ``mask_rate`` random masking to the embedded substrate
-        (NULL_PERCEPT replacement), runs one forward+reverse pass, and
-        decodes the percept-level reconstruction at masked positions
-        back to words via nearest-neighbor lookup against the lexicon.
-        Returns ``(slot_index, original_token, predicted_token)`` triples.
-
-        Stops when: EOF is predicted, ``max_length`` characters have
-        been produced, or the InputSpace output buffer is full.
-
-        Args:
-            text: input string (seed text)
-            max_length: max characters to generate (AR only)
-            mode: 'AR', 'ARIR', or 'IR'. Defaults to the model's
-                  ``masked_prediction`` setting.
-
-        Returns:
-            list of predicted tokens (AR / ARIR), or list of
-            (slot_index, original_token, predicted_token) triples (IR).
+        Sentence-level generation (the legacy AR / ARIR chat loop) is
+        now provided by ``generate_sentence`` via ``InterSentenceLayer``
+        (ARMA(p, q) over sentence reps).  ``mode`` is accepted for
+        back-compat with callers that still pass ``mode='IR'``; any
+        other value raises.
         """
-        if mode is None:
-            mode = getattr(self, 'masked_prediction', 'ARIR')
-        mode = mode.upper()
-        if max_length is None:
-            max_length = getattr(self, 'max_response_length', 256)
-
-        if mode not in {'AR', 'ARIR', 'IR'}:
-            raise ValueError(
-                f"infer: unknown mode '{mode}'. Use 'AR', 'ARIR', or 'IR'.")
-
-        if mode == 'IR':
-            return self._infer_ir(text)
-
-        tokens = None
-        if mode == 'ARIR':
-            if not self.reversible:
-                raise ValueError("infer(mode='ARIR') requires reversible=True.")
-            self.eval()
-            self.set_sigma(0)
-
-            with torch.no_grad(), TheData.runtime_batch([text], [[0]], mode='ARIR'):
-                self.inputSpace._arir_reset()
-                self.inputSpace._arir_max_chars = max_length
-                self.runEpoch(batchSize=1, split="runtime")
-
-            tokens = self.inputSpace.get_predicted_tokens()
-        else: # 'AR'
-            self.eval()
-            self.set_sigma(0)
-            nOutput = self.inputSpace.outputShape[0]
-            tokens = []
-            total_chars = 0
-
-            with torch.no_grad(), TheData.runtime_batch([text]):
-                batchNum=0
-                while True:
-                    inputTensor = self.inputSpace.prepInput(
-                        list(TheData.train_input))
-                    result, batchNum = self.runBatch(
-                        train=False, batchNum=batchNum, batchSize=1, split="runtime",
-                        batch_override=(inputTensor, None),
-                    )
-                    if result is None:
-                        break
-
-                    decoded = self.perceptualSpace.vocabulary.predict(result.outputPred)
-                    # Empty `decoded` happens on untrained / probe configs
-                    # where the output head doesn't produce a usable
-                    # prediction (e.g. ``result.outputPred is None`` ->
-                    # ``predict`` returns []). Treat as end-of-stream.
-                    if not decoded:
-                        break
-                    word = decoded[0]
-
-                    if word is None or word == '' or word == '\x00':
-                        break
-
-                    tokens.append(word)
-                    total_chars += len(word)
-
-                    if total_chars >= max_length:
-                        break
-
-                    if len(tokens) >= nOutput:
-                        break
-
-                    TheData.pushInput(word)
-        return tokens
+        del max_length  # retained for signature back-compat only
+        if mode is not None and str(mode).upper() != 'IR':
+            raise NotImplementedError(
+                f"infer(mode={mode!r}) retired 2026-05-14. Within-sentence "
+                "training/inference is IR-only; for sentence-level "
+                "generation use BasicModel.generate_sentence (Phase 4)."
+            )
+        return self._infer_ir(text)
 
     def _infer_ir(self, text):
-        """IR-mode parallel-infill inference. See ``infer(mode='IR')``.
+        """IR-mode parallel-infill inference.
 
-        Runs one forward + reverse pass under no_grad, reads back the
-        positions the mask marked as predict-here, and returns the
-        decoded token list for those positions. Requires the model
-        to be reversible.
+        Runs one forward pass under no_grad and reads the body's
+        prediction at each masked position straight out of the post-
+        body perceptual event (the same target ``runBatch`` uses for
+        the IR reconstruction loss).  No reverse pipeline involved.
         """
-        if not self.reversible:
-            raise ValueError("infer(mode='IR') requires reversible=True.")
         self.eval()
         self.set_sigma(0)
 
         with torch.no_grad(), TheData.runtime_batch([text]):
             inputTensor = self.inputSpace.prepInput(list(TheData.train_input))
-            forwardInput, symbols, predictions, _ = self.forward(inputTensor)
+            forwardInput, _symbols, _predictions, _ = self.forward(inputTensor)
             if forwardInput is None:
                 return []
-            inputDataPred, _ = self.reverse(symbols, predictions)
+            pred_full = None
+            if hasattr(self.perceptualSpace.subspace, 'materialize'):
+                pred_full = self.perceptualSpace.subspace.materialize()
 
         mask_pos = self._ir_mask_positions
-        if (mask_pos is None or inputDataPred is None
+        if (mask_pos is None or pred_full is None
                 or not bool(mask_pos.any())):
             return []
 
@@ -2491,26 +2030,69 @@ class BasicModel(BaseModel):
         peer = self._peer_perceptual if hasattr(self, '_peer_perceptual') else None
         if peer is None:
             peer = self.perceptualSpace
-        codebook = peer.subspace.what  # Embedding
+        codebook = peer.subspace.what
         last_meta = getattr(peer, '_forward_input', None) or {}
         all_tokens = last_meta.get('tokens') or [[]]
         tokens0 = all_tokens[0] if all_tokens else []
 
-        # Decode: nearest-neighbor on the lexicon, slicing the muxed
-        # event down to the WHAT (lexicon) dim.
         D = codebook.wv.vector_size
-        K = inputDataPred.shape[1]
+        K = pred_full.shape[1]
         indices = mask_pos[0, :K].nonzero(as_tuple=False).squeeze(-1).tolist()
         out = []
         for idx in indices:
             orig = tokens0[idx] if idx < len(tokens0) else ''
-            pred_vec = inputDataPred[0, idx, :D].detach().unsqueeze(0)
+            pred_vec = pred_full[0, idx, :D].detach().unsqueeze(0)
             try:
                 neighbors = codebook.wv.most_similar(pred_vec, k=1)
                 pred = neighbors[0][0] if neighbors else ''
             except Exception:
                 pred = ''
             out.append((int(idx), str(orig), str(pred)))
+        return out
+
+    def generate_sentence(self, seed_text="", max_chars=128):
+        """Chat-loop sentence generation via InterSentenceLayer ARMA.
+
+        Steps (per plan §4):
+          1. Ask ``self.wordSpace.discourse.predict_next()`` for the
+             ARMA-predicted next sentence rep ``s_hat_{t+1}``.
+          2. Lift it through ``InterSentenceLayer.cast`` into
+             ``concept_dim`` and stage on ``ConceptualSpace._c_prior``
+             so the body's forward picks it up as a sentence-level
+             prior before the codebook lookup.
+          3. Run the IR forward over the seed text; sample tokens at
+             masked positions by nearest-neighbor lookup in the
+             perceptual codebook.
+          4. Pool the produced S-tier root into ``s_t`` and call
+             ``discourse.observe(s_t)`` to commit to the AR ring.
+
+        This is a minimal scaffold: a single IR forward + one-shot
+        decode of every masked position.  Iterative mask-and-resample
+        is left to a later refinement.
+
+        Returns a list of decoded tokens (the predictions at the
+        masked positions of the seed).
+        """
+        del max_chars  # reserved for the iterative variant
+        discourse = (self.wordSpace.discourse
+                     if self.wordSpace is not None else None)
+        # Stage the C-prior when the discourse layer has primed
+        # history (cold-start: no prior, the seed text is the only
+        # signal).
+        if discourse is not None and discourse.predictor is not None:
+            s_hat = discourse.predict_next()
+            if s_hat is not None and discourse.cast is not None:
+                prior = discourse.cast(
+                    s_hat if s_hat.dim() == 2 else s_hat.unsqueeze(0))
+                self.conceptualSpace._c_prior = (
+                    prior * float(self.sentence_priming_scale))
+        # Run the IR forward over the seed text.
+        out = self._infer_ir(seed_text)
+        # Commit the produced sentence to the ARMA ring.
+        if discourse is not None:
+            s_tensor = getattr(self, '_current_discourse_s', None)
+            if s_tensor is not None:
+                discourse.observe(s_tensor)
         return out
 
     def create_ir_mask(self, percept_subspace):
@@ -2577,19 +2159,14 @@ class BasicModel(BaseModel):
         event_basis.setW(new_event)
 
     def forward(self, inputData):
-        """Microbatch AR forward: stem -> body -> head.
+        """IR-only forward: stem -> body -> head.
 
-        Always dispatches to ``_forward_per_stage`` (the single
-        per-stage forward path).
+        Dispatches to ``_forward_per_stage`` (the single per-stage
+        forward path).  Within-sentence training is BERT-style masked-
+        LM at the P-tier; sentence-level AR is delegated to
+        ``InterSentenceLayer`` (ARMA(p, q) over sentence reps).
         """
         return self._forward_per_stage(inputData)
-
-    def reverse(self, symbols, outputData):
-        """Full reverse pass: symbols -> concepts -> percepts -> input.
-
-        Always dispatches to ``_reverse_per_stage``.
-        """
-        return self._reverse_per_stage(symbols, outputData)
 
     def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
@@ -2676,11 +2253,7 @@ class BasicModel(BaseModel):
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 
-            if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
-                # Masked prediction: report loss only (no classification accuracy)
-                accuracy += [0.0]
-                TheMessage(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
-            elif not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
+            if not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
                 # No output predictions (empty dataset or no batches)
                 accuracy += [0.0]
                 TheMessage(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f} (no predictions)")
@@ -2959,28 +2532,17 @@ class BasicModel(BaseModel):
         # mode on CUDA targets. Idempotent; safe on non-CUDA hosts.
         self._maybe_compile_brick()
         sentenceIdx = batchNum  # sentence index before batchNum increments
-        if batch_override is not None:
-            batch = batch_override
-        elif (split == "runtime"
-              and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'):
-            inputData = self.inputSpace.data.train_input
-            result, batchNum = self.inputSpace.arir_step(inputData, batchNum)
-            if result is None:
-                return None, batchNum
-            batch = result
-        else:
+        if batch_override is None:
             raise RuntimeError(
                 "runBatch: no batch_override supplied. Callers must pass "
-                "batch_override=(inputTensor, outputTensor) -- AR/ARUS "
-                "infer() prep via InputSpace.prepInput, training path "
-                "via the DataLoader in runEpoch. ARIR is the only runtime "
-                "mode with a dedicated state machine (arir_step)."
+                "batch_override=(inputTensor, outputTensor) — training "
+                "path via the DataLoader in runEpoch, inference path via "
+                "InputSpace.prepInput (or, for sentence-level generation, "
+                "BasicModel.generate_sentence)."
             )
-
+        batch = batch_override
         inputTensor, outputTensor = batch
         inference_only = not train and split == "runtime"
-        arir_mode = (split == "runtime"
-                     and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
 
         # Pre-allocate per-batch state OUTSIDE the compiled forward.
         # ``WordSpace.ensure_microbatch`` allocates ``_stm_fired`` /
@@ -2993,17 +2555,7 @@ class BasicModel(BaseModel):
         # accessing tensor output of CUDAGraphs that has been
         # overwritten by a subsequent run.`` Hoisting the call up
         # here keeps the resulting tensors Python-owned.
-        #
-        # ``K`` is deterministic for AR training under the cursor
-        # contract: ``slab_bytes = nObj`` (constant), parse(lex='bytes')
-        # produces exactly ``nObj`` tokens (byte-exact post-§8g),
-        # ``_embed`` / ``_embed_bpe`` materialize ``[B, nObj, nDim]``
-        # constants -- so K = T = nObj. For non-AR / numeric trial-
-        # cursor data, K = 1. ARIR inference (where K depends on the
-        # runtime buffer length) keeps the in-forward call: under
-        # inference there's no compile wrapper and the dynamic K is
-        # safe in eager.
-        if not arir_mode and self.wordSpace is not None and not inference_only:
+        if self.wordSpace is not None and not inference_only:
             ws = self.wordSpace
             try:
                 if isinstance(inputTensor, torch.Tensor):
@@ -3013,13 +2565,7 @@ class BasicModel(BaseModel):
             except Exception:
                 B_pre = None
             if B_pre is not None:
-                # Per-word stem is the only path (Phase 2): each word IS
-                # one AR position, so the AR microbatch K-axis loses its
-                # purpose. Force K=1 -- the per-word loop in
-                # ``_forward_stem_per_word`` collapses any incoming
-                # K-axis into the leading batch dim.
-                K_pre = 1
-                ws.ensure_microbatch(B_pre, K_pre)
+                ws.ensure_microbatch(B_pre, 1)
 
         if train:
             optimizer.zero_grad()
@@ -3045,48 +2591,60 @@ class BasicModel(BaseModel):
         # the process-wide GradScaler used in the backward path below.
         amp_cm, amp_scaler = amp_context()
         with amp_cm:
-            # Forward pass returns a 4-tuple. AR modes: ``predictions``
-            # is a [B, K, N_window, predDim] tensor (one column per
-            # cursor position) and ``forwardInput`` is the embedded
-            # source [B, T, D]. Non-AR: ``predictions`` is [B, N, predDim]
-            # and ``forwardInput`` is the inputSpace event [B, N, D].
-            # ``reconstruction`` is the ARIR reverse output (None elsewhere).
+            # Forward pass returns a 4-tuple.  IR-only contract:
+            # ``predictions`` is ``[B, N, predDim]`` (one head emission
+            # per P-slot) and ``forwardInput`` is the inputSpace event
+            # ``[B, N, D]``.  ``reconstruction`` is always None after
+            # the reverse pipeline retirement (2026-05-14); the slot
+            # is kept in the tuple for downstream code that pattern-
+            # matches on the legacy shape.
             #
             # ``cudagraph_mark_step_begin`` (only meaningful under modes
             # that capture CUDAGraphs -- "reduce-overhead", "max-
             # autotune") tells the runtime to release the previous
             # step's CUDAGraph outputs so the memory pool can be reused
-            # for this step. No-op under "default" mode (kernel fusion
-            # only); idempotent on non-CUDA hosts.
+            # for this step.  No-op under "default" mode; idempotent on
+            # non-CUDA hosts.
             try:
                 torch.compiler.cudagraph_mark_step_begin()
             except (AttributeError, RuntimeError):
                 pass
-            forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
-            is_ar_mode = (
-                self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-                and not arir_mode
-            )
-            is_ir_mode = (self.masked_prediction == 'IR' and not arir_mode)
+            forwardInput, symbols, predictions, _ = self.forward(inputTensor)
             outputDataPred = predictions
 
-            if arir_mode:
-                # ARIR inference: no output loss, but the forward pass (AR path)
-                # already produced a terminal reconstruction; pass it through.
-                inputPred = reconstruction
-                if inputPred is None and self.reversible:
-                    # Fallback for non-AR ARIR runtime mode.
-                    _, inputPred = self.reverse(symbols, outputDataPred)
-                result = self.BatchResult(
-                    outputPred=outputDataPred, symbols=symbols,
-                    lossOut=None, lossIn=None,
-                    inputPred=inputPred, forwardInput=forwardInput,
-                )
-                self.End()
-                return result, batchNum
+            # ε-growing codebook hook (Phase 4 follow-up): when any
+            # codebook-bearing space carries ``codebookGrowthEpsilon > 0``
+            # in its XSD, invoke ``VectorQuantize.grow_on_novelty`` on
+            # the encoder output to insert novel inputs into empty
+            # slots before the EMA path locks in assignments.  No-op
+            # when ``growth_epsilon`` is 0 (default) or every slot is
+            # already populated.
+            if train:
+                for _sp_attr in ("perceptualSpace", "conceptualSpace",
+                                 "symbolicSpace"):
+                    _sp = getattr(self, _sp_attr, None)
+                    _cb = getattr(getattr(_sp, "subspace", None),
+                                  "what", None)
+                    _vq = getattr(_cb, "vq", None)
+                    if _vq is None:
+                        continue
+                    _eps = float(getattr(_vq, "growth_epsilon", 0.0)
+                                 or 0.0)
+                    if _eps <= 0.0:
+                        continue
+                    _ev = (_sp.subspace.materialize()
+                           if _sp.subspace is not None else None)
+                    if _ev is None:
+                        continue
+                    try:
+                        _vq.grow_on_novelty(_ev, _eps)
+                    except Exception:
+                        # Growth is best-effort -- never let an
+                        # insertion glitch stop the training step.
+                        pass
 
             if inference_only:
-                # Inference path: forward only, no loss, no reverse.
+                # Inference path: forward only, no loss.
                 result = self.BatchResult(
                     outputPred=outputDataPred, symbols=symbols,
                     lossOut=None, lossIn=None,
@@ -3098,154 +2656,132 @@ class BasicModel(BaseModel):
             if outputTensor is None:
                 raise RuntimeError(
                     f"runBatch: missing output targets for split='{split}'. "
-                    "For inference use split='runtime', or stage runtime_batch(..., outputs=...) "
-                    "if targets are required."
+                    "For inference use split='runtime'."
                 )
 
-            if is_ar_mode:
-                # Microbatch AR: ``predictions`` is [B, K, N_window, predDim].
-                # The "predicted next token" at cursor k is the rightmost
-                # slot of window k -- collapse N_window down to that slot
-                # to recover the legacy [B, K, predDim] per-cursor view.
-                #
-                # OutputSpace and InputSpace can have different muxed widths:
-                # InputSpace carries [what + where + when] (e.g. 100+2+2=104),
-                # OutputSpace typically carries only [what] (100). We compare
-                # only the leading ``pred`` dims, treating the where/when of
-                # the target as side info that is not predicted.
-                pred_stack = outputDataPred[:, :, -1, :]  # [B, K, predDim]
-                B_, K, predDim = pred_stack.shape
-                target_stack = forwardInput[:, :K, :predDim]  # [B, K, predDim]
-                # Per-cursor valid mask from forward(): rows shorter than K
-                # have NULL targets at the tail; training on those teaches
-                # the model to predict padding. Mask them out.
-                valid_pos = getattr(self, "_ar_valid_pos", None)
-                if valid_pos is not None:
-                    # valid_pos is [B, K] (window-level validity).
-                    mask = valid_pos[:, :K].unsqueeze(-1).expand_as(pred_stack)
-                    pred_stack = pred_stack[mask].view(-1, predDim)
-                    target_stack = target_stack[mask].view(-1, predDim)
-                else:
-                    pred_stack = pred_stack.reshape(-1, predDim)
-                    target_stack = target_stack.reshape(-1, predDim)
-                if self.masked_prediction == 'ARUS':
-                    lossOut = torch.tensor(0.0, device=TheDevice.get())
-                    output_weight = 0.0
-                elif pred_stack.numel() == 0:
-                    # All rows were padding (zero-length batch). No signal.
-                    lossOut = torch.tensor(0.0, device=TheDevice.get())
-                    output_weight = 0.0
-                else:
-                    lossOut = self.loss.output(pred_stack, target_stack)
-                    # ARIR blends output with reconstruction via reverse_scale;
-                    # AR has no reconstruction term so the output gets full weight.
-                    output_weight = ((1 - self.loss.reverse_scale)
-                                     if self.masked_prediction == 'ARIR' else 1.0)
-            elif is_ir_mode:
-                # IR: lossOut is suppressed (the head has no role in
-                # masked input reconstruction); kept wired for code-path
-                # symmetry but contributes zero to the total loss.
-                lossOut = torch.tensor(0.0, device=TheDevice.get())
-                output_weight = 0.0
-            else:
-                # Non-AR: today's behavior.
-                # Configs with no trained output head (e.g. idempotent.xml's
-                # round-trip-only setup) produce ``outputDataPred=None``.
-                # Treat that as a zero-weight no-op so the test pass can
-                # still run reverse and reconstruction.
-                if outputDataPred is None:
-                    lossOut = torch.tensor(0.0, device=TheDevice.get())
-                    output_weight = 0.0
-                else:
-                    outputPred = outputDataPred.squeeze()
-                    output     = outputTensor.squeeze()
-                    lossOut    = self.loss.output(outputPred, output)
-                    self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
-                    output_weight = 1.0 - self.loss.reverse_scale
-
+            # IR head is purely a side channel — the prediction lives in
+            # the masked P-tier slots, not in the head.  ``lossOut`` is
+            # kept wired (with zero weight) for code-path symmetry with
+            # downstream Error tracking; the gradient signal flows
+            # through ``lossIn`` only.
+            lossOut = torch.tensor(0.0, device=TheDevice.get())
+            output_weight = 0.0
             TheError.add(
                 "output", lossOut,
                 weight=output_weight,
                 space="OutputSpace", category="prediction",
             )
 
-            # Reconstruction term.
-            if is_ar_mode:
-                # AR modes: reconstruction is non-None only under ARIR.
-                if reconstruction is not None:
-                    pred_sq = reconstruction
-                    target_sq = forwardInput
-                    # Align sequence dim.
-                    if pred_sq.shape[1] != target_sq.shape[1]:
-                        M = min(pred_sq.shape[1], target_sq.shape[1])
-                        pred_sq = pred_sq[:, :M, :]
-                        target_sq = target_sq[:, :M, :]
-                    lossIn = self.loss.compute(pred_sq, target_sq)
-                    TheError.add(
-                        "reconstruction", lossIn,
-                        weight=self.loss.reverse_scale,
-                        space="InputSpace", category="reconstruction",
-                    )
-                    inputDataPred = reconstruction
-                else:
-                    inputDataPred = None
-                    lossIn = None
-            elif is_ir_mode and self.reversible:
-                # IR: full reverse to InputSpace level, then MSE only at
-                # masked positions. The pre-mask target was captured by
-                # create_ir_mask before the body saw the (corrupted)
-                # embedded substrate; mask_positions track which slots
-                # were replaced with NULL_PERCEPT.
-                inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-                mask_pos = self._ir_mask_positions
-                pre_mask = self._ir_pre_mask_input
-                if (mask_pos is not None and pre_mask is not None
-                        and bool(mask_pos.any())):
-                    # Align the K dim between pred and target. forwardInput
-                    # / inputDataPred live at the InputSpace muxed level
-                    # whose slot count usually matches the percept-level
-                    # mask under word-mode + no-chunking; if they ever
-                    # diverge, clip the trailing slots so the mask still
-                    # applies cleanly.
-                    pred_full = inputDataPred
-                    target_full = forwardInput
-                    K_pred = pred_full.shape[1]
-                    K_mask = mask_pos.shape[1]
-                    K_target = target_full.shape[1]
-                    K = min(K_pred, K_mask, K_target)
-                    pred_full = pred_full[:, :K, :]
-                    target_full = target_full[:, :K, :]
-                    mask_pos = mask_pos[:, :K]
-                    D = min(pred_full.shape[-1], target_full.shape[-1])
-                    pred_at_masked = pred_full[mask_pos][:, :D]
-                    target_at_masked = target_full[mask_pos][:, :D]
-                    lossIn = self.loss.compute(pred_at_masked, target_at_masked)
-                else:
-                    # No masked positions this batch (rare, but possible
-                    # for very short rows). Yield a zero-valued grad.
-                    lossIn = torch.tensor(0.0, device=TheDevice.get())
-                TheError.add(
-                    "reconstruction", lossIn,
-                    weight=1.0,
-                    space="InputSpace", category="reconstruction",
-                )
-            elif self.reversible and self.loss.reverse_scale > 0:
-                # Non-AR reversible: today's reverse branch.
-                inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-                pred_sq = inputDataPred
-                target_sq = forwardInput.squeeze()
-                if self.loss.nWhere > 0:
-                    lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
-                else:
-                    lossIn = self.loss.compute(pred_sq, target_sq)
-                TheError.add(
-                    "reconstruction", lossIn,
-                    weight=self.loss.reverse_scale,
-                    space="InputSpace", category="reconstruction",
-                )
+            # IR masked-LM loss: compare the post-body perceptual event
+            # at masked positions against the pre-mask embedding the
+            # forward snapshotted in ``_ir_pre_mask_input``.  No reverse
+            # pipeline involved -- the body / head ran masked, the
+            # masked positions carry the prediction target, the head
+            # plays no role in the loss.  This is the BERT-style
+            # masked-LM contract.
+            inputDataPred = None
+            inputPred = None
+            mask_pos = self._ir_mask_positions
+            pre_mask = self._ir_pre_mask_input
+            pred_full = None
+            if hasattr(self.perceptualSpace.subspace, 'materialize'):
+                pred_full = self.perceptualSpace.subspace.materialize()
+            if (mask_pos is not None and pre_mask is not None
+                    and pred_full is not None
+                    and bool(mask_pos.any())):
+                K_pred = pred_full.shape[1]
+                K_mask = mask_pos.shape[1]
+                K_pre = pre_mask.shape[1]
+                K = min(K_pred, K_mask, K_pre)
+                pred_clip = pred_full[:, :K, :]
+                pre_clip = pre_mask[:, :K, :]
+                mask_clip = mask_pos[:, :K]
+                D = min(pred_clip.shape[-1], pre_clip.shape[-1])
+                pred_at_masked = pred_clip[mask_clip][:, :D]
+                target_at_masked = pre_clip[mask_clip][:, :D]
+                lossIn = self.loss.compute(
+                    pred_at_masked, target_at_masked)
             else:
-                inputDataPred = None
-                lossIn = None
+                lossIn = torch.tensor(0.0, device=TheDevice.get())
+            TheError.add(
+                "reconstruction", lossIn,
+                weight=1.0,
+                space="InputSpace", category="reconstruction",
+            )
+
+            # Forward-only C/S reconstruction loss
+            # (``<reconstruct>concepts|symbols|both</...>``).  Targets
+            # are derived from the pre-mask P-tier event lifted on the
+            # fly through ``sigma_percept`` (plan §"Reconstruction-loss
+            # target shape" Option B); the model's own sigma_percept
+            # supplies the lift so no second body forward is needed.
+            # The C/S losses fire alongside the IR P-tier loss above
+            # and are blended via ``self.loss.reconstruction_scale``.
+            recon_mode = (getattr(self, 'reconstruct', 'none')
+                          or 'none').lower()
+            if (recon_mode in ('concepts', 'symbols', 'both')
+                    and mask_pos is not None and pre_mask is not None
+                    and bool(mask_pos.any())):
+                # Lift pre_mask through sigma_percept once; this is
+                # the C-tier target both ``concepts`` and ``symbols``
+                # consume (``symbols`` could route through SS for a
+                # tighter target — left to a later refinement; the
+                # plan accepts the C-tier lift as the Option-B
+                # approximation for both).
+                sigma_p = getattr(self.conceptualSpace,
+                                  'sigma_percept', None)
+                target_c = (sigma_p(pre_mask) if sigma_p is not None
+                            else None)
+                recon_weight = self.loss.reconstruction_scale
+                if (recon_mode in ('concepts', 'both')
+                        and target_c is not None and self._cs_cache):
+                    cs_sub = self._cs_cache[-1]
+                    pred_c = (cs_sub.materialize()
+                              if cs_sub is not None
+                              and hasattr(cs_sub, 'materialize')
+                              else None)
+                    if pred_c is not None and pred_c.dim() == 3:
+                        K_c = min(pred_c.shape[1],
+                                  target_c.shape[1],
+                                  mask_pos.shape[1])
+                        D_c = min(pred_c.shape[-1],
+                                  target_c.shape[-1])
+                        mc = mask_pos[:, :K_c]
+                        loss_c = self.loss.compute(
+                            pred_c[:, :K_c, :D_c][mc],
+                            target_c[:, :K_c, :D_c][mc].detach())
+                        TheError.add(
+                            "reconstruction_c", loss_c,
+                            weight=recon_weight,
+                            space="ConceptualSpace",
+                            category="reconstruction",
+                        )
+                if (recon_mode in ('symbols', 'both')
+                        and target_c is not None and self._ss_cache):
+                    ss_sub = self._ss_cache[-1]
+                    pred_s = (ss_sub.materialize()
+                              if ss_sub is not None
+                              and hasattr(ss_sub, 'materialize')
+                              else None)
+                    if pred_s is not None and pred_s.dim() == 3:
+                        # Match dims: target_c is at C-tier width;
+                        # SS may have a different muxed width.  Use
+                        # the leading shared dims.
+                        K_s = min(pred_s.shape[1],
+                                  target_c.shape[1],
+                                  mask_pos.shape[1])
+                        D_s = min(pred_s.shape[-1],
+                                  target_c.shape[-1])
+                        ms = mask_pos[:, :K_s]
+                        loss_s = self.loss.compute(
+                            pred_s[:, :K_s, :D_s][ms],
+                            target_c[:, :K_s, :D_s][ms].detach())
+                        TheError.add(
+                            "reconstruction_s", loss_s,
+                            weight=recon_weight,
+                            space="SymbolicSpace",
+                            category="reconstruction",
+                        )
 
             # JOINT mode: compute SBOW embedding loss
             sbow = None
@@ -3264,46 +2800,27 @@ class BasicModel(BaseModel):
                         space="WordSpace", category="embedding",
                     )
 
-            # Inter-sentence discourse losses. DiscourseSpace produces
-            # two complementary terms over the flattened ``[S | W]``
-            # snapshot vector:
-            #   * contrastive -- dual-force cosine, attractive toward
-            #     the recent context centroid, repulsive from older
-            #     centroids.  Expands the codebook.
-            #   * predictive  -- cosine distance between the AR
-            #     sentence predictor's output and the actual current
-            #     snapshot.  Collapses the codebook.
-            # Both share gradient through the live ``(s_tensor, w_tensor)``
-            # pair; stored history is detached.  First-sentence / empty
-            # buffer cases return ``None`` and we just snapshot.
-            discourse_contrastive = None
-            discourse_predictive = None
-            discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
+            # Inter-sentence ARMA(p, q) loss.  ``InterSentenceLayer.observe``
+            # captures the current sentence rep, predicts ``s_hat_t``
+            # from the ``p`` lagged reps + ``q`` lagged residuals,
+            # returns the per-batch MSE, and pushes the new rep +
+            # residual into the rings.  Cold-start rows (history
+            # empty) return ``None`` for the loss; the rep still goes
+            # into the ring.
+            arma_loss = None
+            discourse = (getattr(self.wordSpace, 'discourse', None)
+                         if self.wordSpace is not None else None)
             if train and discourse is not None:
                 s_tensor = getattr(self, '_current_discourse_s', None)
-                w_tensor = getattr(self, '_current_discourse_w', None)
-                if s_tensor is not None and w_tensor is not None:
-                    discourse_contrastive = discourse.contrastive_loss(
-                        s_tensor, w_tensor)
-                    predicted = getattr(self, '_predicted_snapshot', None)
-                    if predicted is not None:
-                        discourse_predictive = discourse.predictive_loss(
-                            s_tensor, w_tensor, predicted)
-                    discourse.snapshot(s_tensor, w_tensor)
+                if s_tensor is not None:
+                    arma_loss = discourse.observe(s_tensor)
 
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
-            if discourse_contrastive is not None:
-                totalLoss = totalLoss + self.sentence_contrastive_scale * discourse_contrastive
+            if arma_loss is not None:
+                totalLoss = totalLoss + self.arma_scale * arma_loss
                 TheError.add(
-                    "discourse_contrastive", discourse_contrastive,
-                    weight=self.sentence_contrastive_scale,
-                    space="DiscourseSpace", category="discourse",
-                )
-            if discourse_predictive is not None:
-                totalLoss = totalLoss + self.sentence_predictive_scale * discourse_predictive
-                TheError.add(
-                    "discourse_predictive", discourse_predictive,
-                    weight=self.sentence_predictive_scale,
+                    "arma", arma_loss,
+                    weight=self.arma_scale,
                     space="DiscourseSpace", category="discourse",
                 )
             # Phase 3: every stage's SymbolicSpace.forward wrote its
@@ -3399,8 +2916,7 @@ class BasicModel(BaseModel):
                 _loss_value("lossOut", lossOut),
                 _loss_value("lossIn", lossIn),
                 _loss_value("sbow", sbow),
-                _loss_value("discourse_contrastive", discourse_contrastive),
-                _loss_value("discourse_predictive", discourse_predictive),
+                _loss_value("arma", arma_loss),
                 _loss_value("symbol", symbol_loss),
                 _loss_value("total", totalLoss),
             ])
@@ -3900,17 +3416,13 @@ class BasicModel(BaseModel):
         #     atomic data unit per row (MNIST image, XOR sample,
         #     non-AR sentence). Per-row Reset fires for every row each
         #     tick, mirroring the pre-handoff DataLoader contract.
-        is_ar_mode_outer = (
-            hasattr(self, 'masked_prediction')
-            and self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-        )
         text_input = (
             isinstance(self.inputSpace.data.train_input, list)
             and len(self.inputSpace.data.train_input) > 0
             and isinstance(self.inputSpace.data.train_input[0], str)
         )
         byte_lexer = getattr(self, 'lexer', None) in ('byte', 'bytes')
-        use_byte_cursor = (is_ar_mode_outer and text_input and byte_lexer)
+        use_byte_cursor = (text_input and byte_lexer)
 
         if use_byte_cursor:
             # InputSpace.outputShape[0] (= ``nObj``) is the byte-buffer
@@ -4063,7 +3575,7 @@ class BasicModel(BaseModel):
                 # lexer). Byte-cursor path has its own embedding update
                 # plumbing inside runBatch.
                 if (training and not use_byte_cursor
-                        and is_ar_mode_outer
+                        and text_input
                         and isinstance(inp_items, list)
                         and inp_items
                         and isinstance(inp_items[0], str)):
@@ -4094,6 +3606,27 @@ class BasicModel(BaseModel):
             else:
                 allOutput = torch.cat(outputChunks, dim=0)
 
+        # Trim eval-pass outputs to the test-split row count.  The
+        # byte-cursor's per-stream pacing keeps emitting one row per
+        # tick per stream until every stream's data is drained, so
+        # streams that finish early contribute trailing padding rows
+        # that have no matching ground-truth label.  Post-epoch
+        # consumers (``mnistReport``, accuracy plots) align
+        # ``allOutput`` against ``model.outputSpace.getTestOutput()``
+        # row-for-row; trim to the shorter length so they stay in
+        # sync.  Train pass discards both so the trim is eval-only.
+        if not training and isinstance(allOutput, torch.Tensor):
+            try:
+                ref = self.outputSpace.getTestOutput()
+                if isinstance(ref, torch.Tensor) and ref.dim() >= 1:
+                    target_n = int(ref.shape[0])
+                    if allOutput.shape[0] > target_n:
+                        allOutput = allOutput[:target_n]
+                        if isinstance(allInput, torch.Tensor) and allInput.shape[0] > target_n:
+                            allInput = allInput[:target_n]
+            except (AttributeError, RuntimeError):
+                pass
+
         # Materialize loss scalars exactly once at epoch end -- avoid
         # per-batch .item() syncs that drain the GPU pipeline.
         if torch.is_tensor(outErr):
@@ -4104,9 +3637,9 @@ class BasicModel(BaseModel):
     def _create_per_stage(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
                model_type="simple", data=None,
-               reverse_scale=0.5,
+               reconstruction_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
-               masked_prediction='NONE', **kwargs):
+               **kwargs):
         """Wire the full per-stage space stack from architecture parameters.
 
         Builds Input / Perceptual / Conceptual stages (one per
@@ -4141,14 +3674,17 @@ class BasicModel(BaseModel):
         # flag; when True, invertible SigmaLayers use NonNegativeInvertibleLinearLayer.
         self.monotonic = bool(
             TheXMLConfig.get("architecture.monotonic", default=False))
-        try:
-            from basicmodel.bin.util import parse_use_grammar
-        except ModuleNotFoundError:
-            from util import parse_use_grammar
-        _raw_use_grammar = TheXMLConfig.get(
-            "WordSpace.useGrammar", default="none"
-        )
-        self.useGrammar = parse_use_grammar(_raw_use_grammar)
+        # ``useGrammar`` XML knob retired 2026-05-13: derived from the
+        # configured grammar instead. See ``_derive_use_grammar``.
+        self.useGrammar = self._derive_use_grammar()
+        # ``<architecture><reconstruct>`` selects the forward-only
+        # reconstruction-loss target (``none`` / ``symbols`` /
+        # ``concepts`` / ``both``).  ``output`` was retired
+        # 2026-05-14 with the reverse pipeline.  ``runBatch`` reads
+        # this attribute to gate the C/S reconstruction term.
+        self.reconstruct = str(
+            TheXMLConfig.get("architecture.reconstruct", default="none")
+            or "none").lower()
         # Gate-L1 sparsity lambda for LiftLayer / LowerLayer raw_gate
         # parameters. 0.0 (default) disables the penalty; configs that
         # use lift/lower opt in via <gateL1Lambda> in <architecture>.
@@ -4185,7 +3721,6 @@ class BasicModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
-        self.masked_prediction = masked_prediction
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
         # set in the model XML (under <architecture>), BasicModel.forward
@@ -4200,7 +3735,7 @@ class BasicModel(BaseModel):
         self._syntax_truncated = False
 
         self.loss = ModelLoss(
-            reverse_scale=reverse_scale,
+            reconstruction_scale=reconstruction_scale,
             what_scale=what_scale,
             where_scale=where_scale,
             when_scale=when_scale,
@@ -4354,6 +3889,39 @@ class BasicModel(BaseModel):
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
 
+        # VQ-VAE EMA / growing-codebook knob overrides per space.
+        # Each Space's ``subspace.what`` may carry an internal
+        # ``VectorQuantize`` (``.vq``); when XSD knobs are set, override
+        # the defaults baked in at ``Codebook.addVectors`` time so
+        # configs can tune EMA decay and dead-code retirement without
+        # code edits.  ``codebookGrowthEpsilon`` is stashed as
+        # ``.growth_epsilon`` on the VQ for runBatch to consult.
+        for _sect, _sp in (
+            ("PerceptualSpace", self.perceptualSpace),
+            ("ConceptualSpace", self.conceptualSpace),
+            ("SymbolicSpace", self.symbolicSpace),
+        ):
+            _cb = getattr(getattr(_sp, 'subspace', None), 'what', None)
+            _vq = getattr(_cb, 'vq', None) if _cb is not None else None
+            if _vq is None:
+                continue
+            _decay = TheXMLConfig.space(_sect, "commitmentDecay",
+                                        default=None)
+            if _decay is not None:
+                _vq.decay = float(_decay)
+            _retire = TheXMLConfig.space(_sect, "codebookRetire",
+                                         default=None)
+            if _retire is not None:
+                _vq.codebook_retire = bool(_retire)
+            _thr = TheXMLConfig.space(_sect, "codebookEmaDeadThreshold",
+                                      default=None)
+            if _thr is not None:
+                _vq.threshold_ema_dead_code = int(_thr)
+            _eps = TheXMLConfig.space(_sect, "codebookGrowthEpsilon",
+                                      default=None)
+            _vq.growth_epsilon = (float(_eps) if _eps is not None
+                                  else 0.0)
+
         # Wire sibling refs on every stage's ConceptualSpace.
         # ``_sourced_input`` reads BOTH perceptual (stem-cached) AND the
         # previous stage's SymbolicSpace event, combining them
@@ -4398,7 +3966,6 @@ class BasicModel(BaseModel):
         output_n = int(self.symbolicSpaces[-1].outputShape[0])
         outputInputShape = [output_n, symbol_dim + obj_symbol]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
-                                       masked_prediction=(masked_prediction != 'NONE'),
                                        vectors=self.perceptualSpace.vocabulary)
 
         self._symbol_shape = [nPercepts, percept_dim + obj_percept]
@@ -4459,43 +4026,11 @@ class BasicModel(BaseModel):
         TheXMLConfig.validate()
 
     # -- Phase 2: Sequential pipeline ----------------------------------
-
-    def _flatten_k(self, sub):
-        """Collapse [B, K, N, D] -> [B*K, N, D]; mutates ``sub`` in place.
-
-        Returns ``(B, K)`` so the caller can restore the K axis later.
-        Returns ``(None, None)`` for ``k_axis=False`` subspaces (already flat).
-        Hoisted from FlattenKWrapper so per-stage body/head can run on a
-        flat batch dim without per-module wrappers.
-        """
-        if sub is None or not sub.k_axis:
-            return None, None
-        x = sub.materialize()
-        assert x.dim() == 4, (
-            f"_flatten_k expects [B,K,N,D], got shape {tuple(x.shape)}"
-        )
-        B, K, N, D = x.shape
-        sub.set_event(x.reshape(B * K, N, D))
-        sub.k_axis = False
-        return B, K
-
-    def _restore_k(self, sub, B, K):
-        """Reshape [B*K, N, D] -> [B, K, N, D] in place on ``sub``.
-
-        ``(B, K) == (None, None)`` is the pass-through case (the subspace
-        was already flat on entry to _flatten_k).
-        """
-        if sub is None or B is None:
-            return sub
-        y = sub.materialize()
-        BK, Nout, Dout = y.shape
-        assert BK == B * K, (
-            f"_restore_k batch dim drift: expected B*K={B * K}, got {BK} "
-            f"(out shape {tuple(y.shape)})"
-        )
-        sub.set_event(y.view(B, K, Nout, Dout))
-        sub.k_axis = True
-        return sub
+    #
+    # ``_flatten_k`` / ``_restore_k`` retired 2026-05-13 together with
+    # the AR cursor unfold. The body and head now operate on
+    # B-shaped tensors throughout; per-cursor predictions are produced
+    # by the serial K-loop in ``_forward_per_stage_no_unfold``.
 
     def _build_pipelines_per_stage(self):
         """Phase 2: stem/body/head pipelines for BasicModel.
@@ -4536,6 +4071,10 @@ class BasicModel(BaseModel):
         # resolves to the terminal entry. Replaces the prior CachePoint
         # ModuleList (CachePoints existed only to fit nn.Sequential).
         self._ss_cache = [None] * T
+        # Per-stage concept output capture (parallel to ``_ss_cache``)
+        # for the ``<reconstruct>concepts</...>`` / ``both`` forward-
+        # only reconstruction loss in ``runBatch``.
+        self._cs_cache = [None] * T
 
         # Determine initial_n per stage for the N-halving GrammarMergeGlue.
         try:
@@ -4596,312 +4135,24 @@ class BasicModel(BaseModel):
         """
         return self._ss_cache[-1] if self._ss_cache else None
 
-    def _stem_input_to_percepts(self, inputData):
-        """inputSpace -> perceptualSpace prefix, shared by the legacy
-        chart-at-stem path and the per-word-stem path.
 
-        Returns the perceptual subspace (k_axis restored), or the empty
-        sentinel when the input is exhausted.
-        """
-        sub = self.inputSpace(inputData)
-        if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
-            return sub
-        B, K = self._flatten_k(sub)
-        sub = self.perceptualSpace(sub)
-        self._restore_k(sub, B, K)
-        return sub
 
-    def _forward_stem(self, inputData):
-        """Stem: inputSpace -> perceptualSpace -> per-word P->C->S->C
-        round trip filling ConceptualSpace.stm.
 
-        The chart no longer fires here; each word slot is run through
-        the per-word round trip and pushed onto STM. The body's per-stage
-        chart firing (Step 4) consumes that STM at C-tier.
-        """
-        sub = self._stem_input_to_percepts(inputData)
-        if sub is None or (hasattr(sub, 'is_empty') and sub.is_empty()):
-            return sub
-        self._forward_stem_per_word(sub)
-        return sub
-
-    def _forward_stem_per_word(self, sub):
-        """Per-word P->C->S->C round trip.
-
-        Two implementations gated by
-        ``ConceptualSpace.perWordStemSerial``:
-
-        * Default (``false``): parallel-over-N-slots vectorised path.
-          Each cursor window is rebuilt from scratch (the AR unfold's
-          implicit-state shape); work is O(B*K*N) with N=1024 even
-          though most slots are zero-pad.
-        * Serial (``true``): causal cursor loop (option (a) from the
-          architecture discussion).  One new word per cursor step,
-          B-sized STM accumulates, then the loop's K snapshots are
-          staged as ``[B*K, K, D_c]`` for the body's chart-at-C
-          parallelism.  Work is O(B*K) -- ~64x less for MM_5M's
-          K=16/N=1024 typical shape.  Inductor unrolls the
-          ``for k in range(K)`` loop when K is shape-bucketed (BPE
-          power-of-two quantisation gives a stable compile cache).
-        """
-        try:
-            use_serial = bool(TheXMLConfig.space(
-                "ConceptualSpace", "perWordStemSerial"))
-        except KeyError:
-            use_serial = False
-        if use_serial:
-            return self._forward_stem_per_word_serial(sub)
-        p_event = sub.materialize()
-        if p_event is None:
-            return sub
-        # Per-row processing — slice the perceptual event by word slot.
-        # AR shape: [B, K, N, D]; non-AR shape: [B, N, D]. The per-word
-        # stem is K=1 within a forward, so we collapse any K-axis to
-        # the leading batch dim.
-        if p_event.dim() == 4:
-            B, K, N, D_p = p_event.shape
-            p_flat = p_event.reshape(B * K, N, D_p)
-        else:
-            B_flat, N, D_p = p_event.shape
-            p_flat = p_event
-        B_flat = p_flat.shape[0]
-        # Per-word stem requires that ``conceptualSpace.pi`` accept a
-        # single-slot tensor whose feature width equals D_p (the per-
-        # percept dim) AND that its output width matches the STM
-        # buffer's ``concept_dim``.  Toy / passthrough configs that
-        # break either of these (e.g. XOR_recon: D_p=10, STM
-        # concept_dim=2) skip cleanly so the body's chart-at-C /
-        # output path still runs without the per-word push.
-        pi_in = int(getattr(self.conceptualSpace.pi, 'nInput',
-                            D_p) or D_p)
-        if pi_in != D_p:
-            return sub
-        pi_out = int(getattr(self.conceptualSpace.pi, 'nOutput',
-                             pi_in) or pi_in)
-        stm_concept_dim = int(self.conceptualSpace.stm.concept_dim)
-        if pi_out != stm_concept_dim:
-            return sub
-        # Ensure STM is sized for this batch and starts empty.  When
-        # the percept-slot count exceeds the buffer's capacity (e.g.
-        # tests that produce more slots than ``<WordSpace><wMax>``),
-        # grow the buffer to N so push() never overflows.  Production
-        # configs with chart firing already calibrate wMax to the
-        # expected sentence length.
-        self.conceptualSpace.stm.ensure_batch(B_flat)
-        if self.conceptualSpace.stm.capacity < N:
-            self.conceptualSpace.stm = ShortTermMemory(
-                batch=B_flat, capacity=int(N),
-                concept_dim=self.conceptualSpace.stm.concept_dim)
-        self.conceptualSpace.stm.clear()
-        iterations = max(1, int(self.wordSpace.chart.iterations_per_word))
-        cb = getattr(self.symbolicSpace.subspace, 'what', None)
-        # When a loss head is installed (Phase 3, ``embed.py
-        # embed_pretrain``) collect the un-detached per-word ideas so the
-        # head can drive backward through them. The STM buffer itself
-        # still receives ``.detach()`` ideas so cross-forward grad state
-        # doesn't accumulate on the persistent buffer.
-        cb_is_projection = (cb is not None and
-                            type(cb).__name__ == 'ProjectionBasis')
-        # VECTORIZED per-word stem: previously this dispatched N
-        # iterations of pi.forward and N*B_flat ``.item()``-syncing
-        # STM pushes (B=128, N=1024 => 130k host round-trips per
-        # forward).  Computation is position-independent -- each
-        # word's idea depends only on its own ``p_slot`` -- so we
-        # process all N positions in one pi call, fold N into the
-        # cb-round-trip's batch dim, then write the whole window in
-        # a single push_window_batch.
-
-        # 1) Pi over all N positions at once, applied ``iterations``
-        #    times in sequence (fixed-point step under the SVD-
-        #    orthogonal codebook).
-        c_all = p_flat                                        # [B_flat, N, D_p]
-        for _ in range(iterations):
-            c_all = self.conceptualSpace.pi.forward(c_all)    # [B_flat, N, D_c]
-
-        # 2) Codebook round-trip: flatten the N axis into the batch
-        #    dim so each "word" goes through cb.forward/reverse as
-        #    its own row.  ProjectionBasis collapses the V axis
-        #    inside ``forward`` (mean across V slots), so processing
-        #    one slot per row preserves the per-word reverse-lift
-        #    that the legacy loop produced.
-        if cb_is_projection:
-            D_c = c_all.shape[-1]
-            c_flat = c_all.reshape(B_flat * N, 1, D_c)        # [B_flat*N, 1, D_c]
-            snap_flat = cb.forward(c_flat)                    # [B_flat*N, V_S, 2]
-            idea_back_flat = cb.reverse(snap_flat, V=1)       # [B_flat*N, 1, D_c]
-            if idea_back_flat is None:
-                ideas = c_all                                 # [B_flat, N, D_c]
-            elif idea_back_flat.dim() == 3:
-                # Sum across V (=1 here) matches the legacy single-
-                # slot ``idea_back.sum(dim=1)`` step.
-                ideas = idea_back_flat.sum(dim=1).reshape(
-                    B_flat, N, D_c)
-            else:
-                ideas = idea_back_flat.reshape(B_flat, N, D_c)
-        else:
-            ideas = c_all                                     # [B_flat, N, D_c]
-
-        # 3) Vectorised STM push: one scatter, no per-row ``.item()``
-        #    sync points.
-        self.conceptualSpace.stm.push_window_batch(ideas.detach())
-
-        # 4) Stash the grad-bearing stack for the loss head.  The
-        #    legacy path built this via ``torch.stack(per_word_list,
-        #    dim=1)``; ``ideas`` is already that stack.
-        self._loss_head_input = ideas if self.loss_head is not None else None
-        return sub
-
-    def _forward_stem_per_word_serial(self, sub):
-        """Causal serial cursor-loop stem (option (a)).
-
-        Reads the un-windowed embedded sentence from
-        ``inputSpace._ar_embedded`` and walks one cursor at a time:
-        each step applies ``pi`` to a single new word, optionally
-        round-trips through the SymbolicSpace bivector codebook, and
-        pushes the resulting idea into a B-sized STM accumulator.
-
-        After the loop, the K snapshots of "STM through cursor k" are
-        staged into ``[B*K, K, D_c]`` via a causal lower-triangular
-        mask so the body's parallel chart-at-C consumer sees the same
-        shape and depth contract the parallel stem produced.  The win
-        is in the stem itself: work drops from O(B*K*N) (parallel
-        stem, most slots zero-pad) to O(B*K) (one word per cursor
-        step).  Inductor unrolls the ``for k in range(K)`` loop when K
-        is shape-bucketed -- BPE's power-of-two K quantisation gives
-        a small stable compile cache.
-
-        Fall-throughs (return ``sub`` unchanged) match the parallel
-        stem's guards: missing perceptual event, missing un-windowed
-        embedded tensor, pi.nInput/nOutput dim mismatches, or a
-        non-AR ``[B, N, D]`` sub (k_axis=False) where there's only
-        one window so the serial loop trivially degenerates to
-        push_step.
-        """
-        p_event = sub.materialize()
-        if p_event is None:
-            return sub
-        embedded = getattr(self.inputSpace, '_ar_embedded', None)
-        if embedded is None or embedded.dim() != 3:
-            # No un-windowed view available; the serial path needs
-            # the raw [B, T, D] embed and the parallel stem's
-            # per-cursor zero-padded re-reads are the only fallback.
-            return sub
-        if p_event.dim() != 4:
-            # Non-AR (k_axis=False): no cursor windows to serialise
-            # across.  The parallel stem already does the right thing
-            # in this case; the dispatch flag should be off for non-AR
-            # configs but we'd rather no-op than crash if it isn't.
-            return sub
-        B, K, _, _ = p_event.shape
-        _, T_full, D_p = embedded.shape
-
-        pi_in = int(getattr(self.conceptualSpace.pi, 'nInput', D_p) or D_p)
-        if pi_in != D_p:
-            return sub
-        pi_out = int(getattr(self.conceptualSpace.pi, 'nOutput', pi_in) or pi_in)
-        stm_concept_dim = int(self.conceptualSpace.stm.concept_dim)
-        if pi_out != stm_concept_dim:
-            return sub
-        D_c = pi_out
-
-        cb = getattr(self.symbolicSpace.subspace, 'what', None)
-        cb_is_projection = (cb is not None
-                            and type(cb).__name__ == 'ProjectionBasis')
-        iterations = max(1, int(self.wordSpace.chart.iterations_per_word))
-
-        # Pad the un-windowed embedded out to K so the cursor loop
-        # always reads valid data (loop bound becomes K, matching the
-        # AR unfold's shape bucket; Inductor recompiles per-K only).
-        if T_full < K:
-            pad = torch.zeros(
-                B, K - T_full, D_p,
-                device=embedded.device, dtype=embedded.dtype)
-            embedded_padded = torch.cat([embedded, pad], dim=1)
-        else:
-            embedded_padded = embedded[:, :K, :]
-
-        track_grad = self.loss_head is not None
-        ideas_per_step = []
-        # SERIAL cursor loop.  K is shape-bucketed (power-of-two from
-        # the BPE actual_max quantisation), so Inductor caches one
-        # compiled graph per bucket and unrolls the loop inside.
-        for k in range(K):
-            word = embedded_padded[:, k:k+1, :]              # [B, 1, D_p]
-            c = word
-            for _ in range(iterations):
-                c = self.conceptualSpace.pi.forward(c)        # [B, 1, D_c]
-            if cb_is_projection:
-                snap = cb.forward(c)                          # [B, V_S, 2]
-                idea_back = cb.reverse(snap, V=1)
-                if idea_back is None:
-                    idea = c[:, 0, :]
-                elif idea_back.dim() == 3:
-                    idea = idea_back.sum(dim=1)               # [B, D_c]
-                else:
-                    idea = idea_back
-            else:
-                idea = c[:, 0, :]                             # [B, D_c]
-            ideas_per_step.append(idea)
-
-        # Stack the per-step ideas.  ``stm_acc`` carries grad when the
-        # loss head is installed (so the head can backprop through pi
-        # via the per-step ideas); the staged chart-side buffer below
-        # always sees the detached snapshot to match the parallel
-        # stem's "chart reads detached STM" contract.
-        stm_acc = torch.stack(ideas_per_step, dim=1)           # [B, K, D_c]
-        # Causal snapshots: row b*K+k contains stm_acc[b, :k+1, :]
-        # with positions j>k zeroed.  One scatter, no Python loop.
-        mask = torch.tril(torch.ones(
-            K, K, device=stm_acc.device, dtype=stm_acc.dtype))
-        snapshots = (stm_acc.unsqueeze(1).expand(B, K, K, D_c)
-                     * mask.unsqueeze(0).unsqueeze(-1))         # [B, K, K, D_c]
-        snapshots_flat = snapshots.reshape(B * K, K, D_c).contiguous().detach()
-
-        # Slot the snapshot stack into conceptualSpace.stm so the
-        # chart's ``conceptualSpace.stm.snapshot()`` returns it
-        # unchanged.  Buffer reallocates when capacity is too small.
-        cs_stm = self.conceptualSpace.stm
-        cs_stm.ensure_batch(B * K)
-        if cs_stm.capacity < K:
-            cs_stm = ShortTermMemory(
-                batch=B * K, capacity=int(K), concept_dim=D_c)
-            cs_stm = cs_stm.to(snapshots_flat.device)
-            self.conceptualSpace.stm = cs_stm
-        cs_stm.clear()
-        # Write the [B*K, K, D_c] slab into the front of the per-row
-        # capacity-K buffer (capacity may exceed K when wMax is wider).
-        cs_stm._buffer[:, :K, :] = snapshots_flat
-        # Per-window depth: row b*K+k has depth k+1.
-        depths = (torch.arange(K, device=cs_stm._depth.device,
-                               dtype=cs_stm._depth.dtype) + 1
-                  ).repeat(B)                                  # [B*K]
-        cs_stm._depth = depths
-
-        if track_grad:
-            self._loss_head_input = stm_acc                    # [B, K, D_c]
-        else:
-            self._loss_head_input = None
-        return sub
 
     def _forward_head(self, sub):
-        """Head: outputSpace with K-axis flatten/restore.
-
-        Replaces ``self.pipeline_head = FlattenKWrapper(outputSpace)``.
-        """
-        B, K = self._flatten_k(sub)
-        sub = self.outputSpace(sub)
-        self._restore_k(sub, B, K)
-        return sub
+        """Head: outputSpace forward."""
+        return self.outputSpace(sub)
 
     def _forward_body(self, sub):
-        """Per-stage body forward. Replaces nn.Sequential(*body_modules).
+        """Per-stage body forward.
 
-        Hoists K-axis flatten/restore around the loop (was inside the
-        old ``FlattenKWrapper(_body_inner)``). The body sees a flat
-        [B*K, N, D] batch dim and operates as if K=1. Captures each
-        stage's SymbolicSpace output into ``self._ss_cache[t]``.
+        Walks ``self.body_stages`` (a ModuleList of ModuleDicts, one
+        dict per stage): each stage runs ``cs → chart-at-C → [merge?]
+        → ss``. The body operates on B-shaped tensors throughout —
+        the legacy K-axis flatten/restore wrappers were retired with
+        the AR cursor unfold (2026-05-13). Captures each stage's
+        SymbolicSpace output into ``self._ss_cache[t]``.
 
-        The chart fires at C-tier over the STM buffer at each stage.
         Per-stage iteration gives T = conceptualOrder passes of chart
         refinement, each using the prior stage's S->C loopback as
         feedback through CS.
@@ -4911,9 +4162,13 @@ class BasicModel(BaseModel):
         and the resulting loss is stashed on ``self._loss_head_loss``
         for the training loop to consume.
         """
-        B, K = self._flatten_k(sub)
         for t, stage in enumerate(self.body_stages):
             sub = stage["cs"](sub)
+            # Capture C-tier event for the optional concepts /
+            # ``both`` reconstruction loss (forward-only target derived
+            # by ``runBatch`` via ``sigma_percept(_ir_pre_mask_input)``;
+            # see plan §"Reconstruction-loss target shape" Option B).
+            self._cs_cache[t] = sub
             self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
                 sub = stage["merge"](sub)
@@ -4931,7 +4186,6 @@ class BasicModel(BaseModel):
                 self._loss_head_loss = self.loss_head(grad_input)
             else:
                 self._loss_head_loss = None
-        self._restore_k(sub, B, K)
         return sub
 
     def _chart_compose_at_C(self, stage_idx=0):
@@ -4948,111 +4202,31 @@ class BasicModel(BaseModel):
             return
         self.wordSpace.compose(snap)
 
-    def _reverse_body(self, sub):
-        """Per-stage body reverse. Mirrors ``_forward_body`` order.
 
-        Hoists K-axis flatten/restore around the loop just like the
-        forward path. Replaces ReverseAdapter-wrapped reversed
-        Sequential.
-        """
-        B, K = self._flatten_k(sub)
-        for t in reversed(range(len(self.body_stages))):
-            stage = self.body_stages[t]
-            sub = stage["ss"].reverse(sub)
-            if "merge" in stage:
-                sub = stage["merge"].reverse(sub)
-            sub = stage["cs"].reverse(sub)
-        self._restore_k(sub, B, K)
-        return sub
 
-    def _reverse_head(self, sub):
-        """Reverse the head: K-flatten, outputSpace.reverse, K-restore.
 
-        Replaces the prior ``FlattenKWrapper(ReverseAdapter(outputSpace))``
-        wrapper attribute.
-        """
-        B, K = self._flatten_k(sub)
-        sub = self.outputSpace.reverse(sub)
-        return self._restore_k(sub, B, K)
 
-    def _reverse_perceptual(self, sub):
-        """Reverse the perceptualSpace boundary with K-flatten/restore.
 
-        Replaces ``FlattenKWrapper(ReverseAdapter(perceptualSpace))``.
-        """
-        B, K = self._flatten_k(sub)
-        sub = self.perceptualSpace.reverse(sub)
-        return self._restore_k(sub, B, K)
-
-    def _run_pipeline_rev(self, x):
-        """Case A reverse pipeline (any_invertible=True).
-
-        Mirrors the forward path: after the head reverse, the chart
-        generates rules from the C-tier STM snapshot (mirror of the
-        forward ``_chart_compose_at_C``), then the body reverse fires
-        per stage with those generate rules in scope.
-        """
-        if x is None:
-            return None
-        x = self._reverse_head(x)
-        self._chart_generate_from_stm()
-        x = self._reverse_body(x)
-        x = self._reverse_perceptual(x)
-        x = self.inputSpace.reverse(x)
-        return x
-
-    def _chart_generate_from_stm(self):
-        """Fire ``wordSpace.generate`` over the C-tier STM snapshot.
-
-        Mirror of ``_chart_compose_at_C`` on the reverse path:
-        populates ``wordSpace.generate_rules`` so the per-stage
-        SymbolicSpace.reverse dispatch can pop them via its
-        SyntacticLayer cursor.
-        """
-        ws = getattr(self, 'wordSpace', None)
-        if ws is None:
-            return
-        stm = getattr(self.conceptualSpace, 'stm', None)
-        if stm is None:
-            return
-        snap = stm.snapshot()
-        if snap is None:
-            return
-        ws.generate(snap)
-
-    def _run_pipeline_rt(self, inputData):
-        """Case B round-trip (any_invertible=False).
-
-        Forward, cache midpoint, reverse. Replaces the prior
-        ``self.pipeline_rt`` nn.Sequential.
-        """
-        sub = self._forward_stem(inputData)
-        sub = self._forward_body(sub)
-        sub = self._forward_head(sub)
-        # Plain-attribute midpoint cache (was a CachePoint module).
-        self.midpoint_cache = sub
-        return self._run_pipeline_rev(sub)
 
     def _forward_per_stage(self, inputData):
-        """Microbatch AR forward via stem/body/head pipeline.
+        """IR-only forward via stem/body/head pipeline.
 
         Shape:
-          stem  -> [B, K, N, D] (K = T-N+1 progressive-prefix windows
-                   for AR; K = 1 for non-AR / inference).
-          body  -> per-stage CS/SS chain on [B*K, N, D]; each
-                   SymbolicSpace output captured into ``self._ss_cache``
-                   (plain Python list) by ``_forward_body``.
-          head  -> outputSpace; result event [B, K, N, predDim].
+          stem -> ``[B, N, D]`` (InputSpace.forward + PerceptualSpace
+                  .forward; no K-axis).
+          body -> per-stage CS/SS chain on B-shaped tensors; each
+                  SymbolicSpace output captured into ``self._ss_cache``.
+          head -> ``outputSpace``; result event ``[B, N, predDim]``.
 
-        K-axis flatten/restore is hoisted into ``_forward_body``; the
-        stem and head each still wrap their single relevant Space in
-        a ``FlattenKWrapper`` for now.
+        Within-sentence training is IR-only (BERT-style masked-LM at
+        the P-tier).  Sentence-level AR moved to ``InterSentenceLayer``
+        (ARMA(p, q) over sentence reps).  ``<maskedPrediction>`` and
+        the per-cursor K-loop retired 2026-05-14; legacy reverse
+        pipeline retired in the same change.
         """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
-
-        self.inputSpace.masked_prediction = self.masked_prediction
-        self._ar_valid_pos = None
+        self._ar_valid_pos = None  # IR has no per-cursor axis.
 
         # Detach cached events carried over from prior forward to break
         # the autograd graph; in-place writes below restore live grads.
@@ -5069,92 +4243,56 @@ class BasicModel(BaseModel):
 
         # Per-run scratch.
         self.symbol_states = []
-        self._nonrams_sym_feedbacks = []
-        if self.useGrammar == "all":
-            self._sym_feedbacks = []
-            self._merge_diffs = []
         self._unified_j_iterations = 0
 
         B = inputData.shape[0] if isinstance(inputData, torch.Tensor) else 1
         device = (inputData.device if isinstance(inputData, torch.Tensor)
                   else TheDevice.get())
-        # WordSpace state cascade is owned by InputSpace.forward, which
-        # calls ensure_microbatch(B, K) for both AR (K=T) and non-AR
-        # (K=1) paths.  No standalone resize needed here.
         self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(device)
 
-        # Discourse priming prediction (pre-pipeline).
+        # Inter-sentence prior (read-only at forward time; the actual
+        # ARMA observe + loss happen in ``runBatch`` after the body).
         self._predicted_snapshot = None
         self._predicted_confidence = None
         discourse_for_prime = (
             self.wordSpace.discourse
             if self.wordSpace is not None else None)
-        if discourse_for_prime is not None:
+        if discourse_for_prime is not None and hasattr(discourse_for_prime, 'predict'):
             d_pred, d_conf = discourse_for_prime.predict()
             self._predicted_snapshot = d_pred
             self._predicted_confidence = d_conf
 
-        is_runtime_arir = (
-            self.inputSpace.data is not None
-            and self.inputSpace.data._runtime_mode == 'ARIR'
-        )
-        is_ar_mode = (
-            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-            and not is_runtime_arir
-        )
-        is_ir_mode = (self.masked_prediction == 'IR' and not is_runtime_arir)
-
-        # Stem -> body -> head explicit pipeline. Each stage handles
-        # its own K-axis flatten/restore via the ``_flatten_k`` /
-        # ``_restore_k`` helpers; FlattenKWrapper is gone.
-        stem_out = self._forward_stem(inputData)
-        if is_ir_mode and (
-                stem_out is not None
-                and not (hasattr(stem_out, 'is_empty') and stem_out.is_empty())):
-            self.create_ir_mask(stem_out)
-        body_out = self._forward_body(stem_out)
-        result = self._forward_head(body_out)
-
-        # Empty-sentinel: input exhausted.
-        if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
+        # Stem: InputSpace + PerceptualSpace forward (``[B, N, D]``).
+        in_sub = self.inputSpace.forward(inputData)
+        if in_sub is None or (
+                hasattr(in_sub, 'is_empty') and in_sub.is_empty()):
             self.inputs = self.inputSpace.subspace
             self.percepts = self.perceptualSpace.subspace
             self.concepts = self.conceptualSpace.subspace
             self.symbols = self.symbolicSpace.subspace
             self.outputs = self.outputSpace.subspace
             return None, None, None, None
+        p_sub = self.perceptualSpace.forward(in_sub)
 
-        # Harvest per-stage state the legacy reverse() for useGrammar=="all"
-        # expects. GrammarMergeGlue caches its pairwise diff on forward
-        # (None for is_last stages, which pass through). The pipeline does
-        # not apply per-stage symbol feedback, so _sym_feedbacks is None for
-        # every stage; reverse's `if fb is not None` branch then skips the
-        # subtraction and _pair_unmerge handles the None diff as a
-        # no-op, matching the is_last pass-through.
-        if self.useGrammar == "all":
-            for stage in self.body_stages:
-                if "merge" in stage:
-                    self._merge_diffs.append(stage["merge"]._merge_diff)
-                    self._sym_feedbacks.append(None)
+        # IR masked-LM: random mask at P-tier replaces a ``mask_rate``
+        # fraction of WHAT positions with NULL_PERCEPT.  Snapshots the
+        # pre-mask event on ``_ir_pre_mask_input`` and the per-position
+        # mask on ``_ir_mask_positions`` for the loss in ``runBatch``.
+        self.create_ir_mask(p_sub)
 
-        # Discover K from the result subspace (head's FlattenKWrapper
-        # leaves k_axis=True with event [B, K, N, predDim]). The stem
-        # subspace has k_axis=False after the body's FlattenKWrapper
-        # flattens it in place, so it can't be the K source.
-        stem_sub = self.inputSpace.subspace
-        K = None
-        if result.k_axis:
-            result_event = result.materialize()
-            if result_event is not None and result_event.dim() == 4:
-                K = result_event.shape[1]
-        elif (stem_sub.valid_mask is not None
-              and stem_sub.valid_mask.dim() == 2):
-            K = stem_sub.valid_mask.shape[1]
+        # Body: T stages on B rows.  Chart-at-C reads ``ConceptualSpace
+        # .stm`` (empty in the IR fast path; the chart's ``valid_mask``
+        # handles the no-op cleanly).
+        body_sub = self._forward_body(p_sub)
+
+        # Head: outputSpace -> ``[B, N, predDim]``.
+        head_sub = self._forward_head(body_sub)
+        pred = head_sub.materialize() if head_sub is not None else None
+        if pred is not None:
+            pred = self.normalizer.denormalize(pred, which="output")
 
         # Capture symbol_states from the per-stage cache list (plain
         # Python ``self._ss_cache`` populated by ``_forward_body``).
-        # Inside the body each captured event is [B*K, N, D];
-        # un-flatten back to [B, K, N, D] when K is set.
         captured_states = []
         for sub in self._ss_cache:
             if sub is None:
@@ -5162,67 +4300,10 @@ class BasicModel(BaseModel):
             sv = sub.materialize() if hasattr(sub, 'materialize') else None
             if sv is None:
                 continue
-            if K is not None and sv.dim() == 3 and sv.shape[0] == B * K:
-                sv = sv.view(B, K, sv.shape[1], sv.shape[2])
             captured_states.append(sv.clone())
         self.symbol_states = captured_states
         self._unified_j_iterations = min(
             self.conceptualOrder, len(captured_states))
-
-        # Reverse reconstruction (ARIR triggers it).
-        reconstruction = None
-        if self._should_reconstruct():
-            reconstruction = self._run_reverse_sequential(result)
-
-        # Predictions tensor: [B, K, N, predDim] microbatch / [B, N, predDim] non-AR.
-        if self.outputSpace.nonlinear_output:
-            pred = result.materialize(mode="activation")
-        else:
-            pred = result.materialize()
-        if pred is not None:
-            pred = self.normalizer.denormalize(pred, which="output")
-
-        # Reshape sym/percept events back to [B, K, ...] for downstream consumers.
-        # Prefer the symbol_cache's captured subspace when present so the
-        # cache's last_seen flow is the canonical read path; fall back to
-        # the SymbolicSpace's own subspace otherwise.
-        sym_sub = self.symbol_cache  # property: terminal _ss_cache entry, may be None
-        if sym_sub is not None:
-            sym_vectors = sym_sub.materialize()
-        else:
-            sym_vectors = self.symbolicSpace.subspace.materialize()
-        if (K is not None and sym_vectors is not None
-                and sym_vectors.dim() == 3
-                and sym_vectors.shape[0] == B * K):
-            sym_vectors = sym_vectors.view(
-                B, K, sym_vectors.shape[1], sym_vectors.shape[2])
-
-        percepts_t = self.perceptualSpace.subspace.materialize()
-        if (K is not None and percepts_t is not None
-                and percepts_t.dim() == 3
-                and percepts_t.shape[0] == B * K):
-            percepts_t = percepts_t.view(
-                B, K, percepts_t.shape[1], percepts_t.shape[2])
-
-        symbols = sym_vectors
-        if sym_vectors is not None and percepts_t is not None and percepts_t.ndim >= 3:
-            symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
-                *sym_vectors.shape[:-1], percepts_t.shape[-1])
-
-        # forwardInput contract for runBatch (mirrors BasicModel.forward):
-        #   * AR modes: [B, T, D] embedded input (T == K cursors).
-        #   * Non-AR:   [B, N, D] inputSpace event.
-        # AR-mode body flattens the stem event in place, so
-        # ``_ar_embedded`` is the cached pre-flatten copy. Non-AR
-        # materializes the live subspace event.
-        if is_ar_mode:
-            input_state = self.inputSpace._ar_embedded
-            if input_state is None:
-                input_state = self.perceptualSpace._embedded_input
-        else:
-            input_state = self.inputSpace.subspace.materialize()
-            if input_state is None:
-                input_state = self.perceptualSpace._embedded_input
 
         self.inputs = self.inputSpace.subspace
         self.percepts = self.perceptualSpace.subspace
@@ -5230,134 +4311,56 @@ class BasicModel(BaseModel):
         self.symbols = self.symbolicSpace.subspace
         self.outputs = self.outputSpace.subspace
 
-        # Per-cursor validity mask for the AR loss in runBatch: [B, K].
-        if is_ar_mode and stem_sub.valid_mask is not None:
-            self._ar_valid_pos = stem_sub.valid_mask
+        # forwardInput contract for runBatch: ``[B, N, D]`` embedded input.
+        input_state = getattr(self.inputSpace, '_ar_embedded', None)
+        if input_state is None:
+            input_state = self.inputSpace.subspace.materialize()
+        if input_state is None:
+            input_state = self.perceptualSpace._embedded_input
 
-        # Discourse snapshot — last window's symbols match legacy
-        # last-cursor semantics.
-        self._current_discourse_s = None
-        self._current_discourse_w = None
-        discourse = (self.wordSpace.discourse
-                     if self.wordSpace is not None else None)
-        if discourse is not None:
-            if sym_vectors is not None and sym_vectors.dim() == 4:
-                s_state = sym_vectors[:, -1]
-            else:
-                s_state = sym_vectors
-            try:
-                w_state = self.wordSpace.read()
-            except Exception:
-                w_state = None
-            # WordSpace was ensure_batch'd to B*K in the body; collapse the
-            # K axis to mirror s_state's last-window semantics: [B*K, M, D]
-            # -> [B, K, M, D] -> [B, M, D].
-            if (K is not None and w_state is not None
-                    and w_state.dim() == 3 and w_state.shape[0] == B * K):
-                w_state = w_state.view(
-                    B, K, w_state.shape[1], w_state.shape[2])[:, -1]
-            if w_state is None and s_state is not None:
-                w_state = torch.zeros(
-                    B, discourse.max_depth, discourse.n_dim,
-                    device=s_state.device, dtype=s_state.dtype)
-            if s_state is not None:
-                self._current_discourse_s = s_state.detach()
-                self._current_discourse_w = w_state.detach()
+        # Symbol vectors at last stage.
+        sym_sub = self.symbol_cache
+        if sym_sub is not None:
+            sym_vectors = sym_sub.materialize()
+        else:
+            sym_vectors = self.symbolicSpace.subspace.materialize()
 
-        # Universality (Golden Rule) score. SVO source of truth is the
-        # chart's Viterbi trace -- ``chart.last_svo`` is populated when
-        # the parse contains ``S = lift(NP, VP)`` over
-        # ``VP = intersection(V, O)``. The legacy SyntacticLayer
-        # ``lifting_layer`` slot was always None and the universality
-        # call always short-circuited; both were retired together with
-        # the legacy class.
+        # Inter-sentence snapshot: pass the S-tier event to runBatch,
+        # which calls ``InterSentenceLayer.observe`` to capture the
+        # sentence rep, compute the ARMA loss, and update the rings.
+        # ``_current_discourse_s`` carries the unmodified S-tier event;
+        # the layer's ``_pool_sentence_rep`` does the flattening.
+        self._current_discourse_s = (
+            sym_vectors.detach() if sym_vectors is not None else None)
+
         self._universality_score = None
 
-        # Downward head emission (S -> C). Use last window for K-axis.
+        # Downward head emission (S -> C).
         self._predicted_head = None
         try:
             gen_on = bool(TheXMLConfig.get('WordSpace.downwardGeneration'))
         except KeyError:
             gen_on = False
-        sv_for_head = sym_vectors
-        if sv_for_head is not None and sv_for_head.dim() == 4:
-            sv_for_head = sv_for_head[:, -1]
         if (gen_on and self.wordSpace is not None
-                and sv_for_head is not None and sv_for_head.ndim >= 3):
-            final_state = sv_for_head[:, 0, :]
+                and sym_vectors is not None and sym_vectors.ndim >= 3):
+            final_state = sym_vectors[:, 0, :]
             codebook_space = (self.perceptualSpace
                               if self.inputSpace.model_type == "embedding"
                               else self.inputSpace)
             head_result = self.wordSpace.reconstruct(final_state, codebook_space)
             self._predicted_head = head_result['heads']
 
-        # Optional syntax tree dump (POS-labelled words + chosen
-        # rules). See doc/Language.md "POS side-channel". No-op
-        # when <writeSyntax> is false (default).
+        # Optional syntax tree dump.
         if getattr(self, '_write_syntax', False):
             try:
                 self.write_syntax_tree(self._syntax_out_path)
             except Exception as e:
-                # Tree dump is debug-only; never let it crash forward.
                 import sys
                 print(f"[writeSyntax] error: {e}", file=sys.stderr)
 
-        return input_state, symbols, pred, reconstruction
+        return input_state, sym_vectors, pred, None
 
 
-    def _reverse_per_stage(self, symbols, outputData):
-        """Walk the per-stage Symbol -> Concept -> Percept -> Input reverse path.
-
-        For each conceptual stage in reverse order, runs the symbolic and
-        conceptual reverse, then re-injects into the next stage's symbolic
-        subspace.  Returns the reconstructed input data.
-        """
-        sym_vec = self.symbolicSpace.subspace.materialize()
-        concepts_state = self.concepts
-
-        T = len(self.symbolicSpaces)
-
-        if self.useGrammar == "all":
-            # Progressive-bottleneck: invert the pipeline order
-            # (conceptualSpaces[t] -> GrammarMergeGlue[t] -> symbolicSpaces[t])
-            # at each stage, bridging stages with symbolicSpaces[t-1].reverse.
-            self.symbols.set_event(sym_vec)
-            x = self.symbolicSpaces[T - 1].reverse(
-                self.symbols).materialize()
-            for t in reversed(range(T)):
-                fb = self._sym_feedbacks.pop()
-                if fb is not None:
-                    x = x - fb
-                x = self._pair_unmerge(x)
-                self.symbols.set_event(x)
-                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
-                x = concept_input_state.materialize()
-                if t > 0:
-                    self.symbolicSpaces[t - 1].subspace.set_event(x)
-                    x = self.symbolicSpaces[t - 1].reverse(
-                        self.symbolicSpaces[t - 1].subspace).materialize()
-            concept_input_state.set_event(x)
-        else:
-            # Flat recurrent path: reverse sigma, subtract cached feedback.
-            concept_input_state = self.conceptualSpace.reverse(concepts_state)
-            if getattr(self, '_nonrams_sym_feedbacks', None):
-                fb = self._nonrams_sym_feedbacks[-1]
-                if fb is not None:
-                    recovered = concept_input_state.materialize() - fb
-                    concept_input_state.set_event(recovered)
-
-        # -- Shared tail: percept/input reverse --
-        concept_input = concept_input_state.materialize()
-        percepts_portion = concept_input[:, :self.nPercepts, :]
-
-        concept_input_state.set_event(percepts_portion)
-        input_state = self.perceptualSpace.reverse(concept_input_state)
-        self.inputs = self.inputSpace.reverse(input_state)
-        input_latent = input_state.materialize()
-        input_data = self.inputs.materialize()
-        return input_data, input_latent
-
-    # -- Grammar Learning (Phase 2) ------------------------------------
 
 
     def write_syntax_tree(self, path):
@@ -5624,78 +4627,6 @@ class BasicModel(BaseModel):
             fh.write("\n")
 
 
-    def grammar_learning_step(self, inputTensor, optimizer):
-        """Single grammar learning step: symbolic reconstruction loss.
-
-        1. Forward: sentence -> symbolSum (normal useGrammar forward)
-        2. Reverse over partition slices with soft rule superposition
-        3. Re-encode reconstruction -> symbolSum_hat
-        4. Loss = ||symbolSum_hat - symbolSum||^2 (symbolic level)
-        5. Optional luminosity validity penalty
-
-        Args:
-            inputTensor: input batch tensor.
-            optimizer: optimizer for grammar weights.
-
-        Returns:
-            dict with 'recon_loss' and 'validity_loss' scalars.
-        """
-        optimizer.zero_grad()
-
-        # AMP wraps forward / reverse / re-forward.  The luminosity block
-        # below uses .item() against truth-layer state and must see fp32,
-        # so it stays outside the autocast region.
-        amp_cm, amp_scaler = amp_context()
-        with amp_cm:
-            # Forward pass to get symbolSum
-            input_state, symbols, outputData, _ = self.forward(inputTensor)
-
-            # Get the current symbolSum from the symbolic space
-            symbolSum = self.symbolicSpace.subspace.event.clone()  # [B, nC, symbol_dim]
-
-            # Reverse pass to reconstruct
-            inputPred, _ = self.reverse(symbols, outputData)
-
-            # Re-encode through forward to get symbolSum_hat
-            _, _, _, _ = self.forward(inputPred)
-            symbolSum_hat = self.symbolicSpace.subspace.event  # [B, nC, symbol_dim]
-
-            # Reconstruction loss at symbolic level
-            recon_loss = F.mse_loss(symbolSum_hat, symbolSum.detach())
-
-        # Optional luminosity validity penalty
-        truth_layer = self._get_truth_layer()
-        validity_loss = torch.tensor(0.0, device=recon_loss.device)
-        if truth_layer is not None and len(truth_layer) > 0:
-            lum_before = float(self.Luminosity(truth_layer=truth_layer))
-            # Check if reconstruction preserves luminosity
-            # (temporarily store reconstructed symbols)
-            saved_count = truth_layer.count.item()
-            mean_sym = symbolSum_hat.mean(dim=(0, 1)).detach()
-            if mean_sym.norm() > 1e-6:
-                truth_layer.record(mean_sym, degree=1.0, basis=self._get_basis())
-                lum_after = float(self.Luminosity(truth_layer=truth_layer))
-                validity_loss = torch.tensor(
-                    max(0.0, lum_before - lum_after),
-                    device=recon_loss.device)
-                truth_layer.count.fill_(saved_count)
-                truth_layer.truths[saved_count:] = 0
-
-        total = recon_loss + 0.1 * validity_loss
-        if amp_scaler is not None:
-            amp_scaler.scale(total).backward()
-            amp_scaler.step(optimizer)
-            amp_scaler.update()
-        else:
-            total.backward()
-            optimizer.step()
-        self._clamp_symbolic_codebook()
-
-        return {
-            'recon_loss': recon_loss.item(),
-            'validity_loss': validity_loss.item() if isinstance(validity_loss, torch.Tensor) else validity_loss,
-        }
-
     # -- Bidirectional Reasoning Loop (Phase 3) ------------------------
 
     @torch.no_grad()
@@ -5888,17 +4819,11 @@ class ModelFactory:
                 "PerceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <PerceptualSpace>.")
 
-        # ARIR mode auto-runs the reverse pass to produce a reconstruction.
-        # That makes no sense if reconstruct is disabled.
-        training = arch.get("training", {})
-        mp = str(training.get("maskedPrediction", "NONE")).upper()
-        rc = str(arch.get("reconstruct", "")).upper()
-        if mp == "ARIR" and rc == "NONE":
-            errors.append(
-                "maskedPrediction=ARIR requires <reconstruct> to be set "
-                "(not 'NONE'); ARIR runs the reverse path and needs a "
-                "reconstruction target. Set <reconstruct>symbols</reconstruct> "
-                "(or another non-NONE value) under <architecture>.")
+        # ``<maskedPrediction>`` retired 2026-05-14: within-sentence
+        # training is IR-only and there's no ARIR mode to validate.
+        # ``<reconstruct>`` is independent of the (gone) AR mode --
+        # the surviving values (``none`` / ``symbols`` / ``concepts``
+        # / ``both``) all fire forward-only loss terms in ``runBatch``.
         if _has_reshape("ConceptualSpace") and gsp(cfg, "ConceptualSpace", "hasAttention"):
             errors.append(
                 "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "

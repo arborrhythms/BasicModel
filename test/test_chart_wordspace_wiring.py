@@ -124,7 +124,7 @@ def test_wordspace_owns_chart_and_registry():
 
     m = Models.BasicModel()
     m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
-             nOutput=8, masked_prediction='AR')
+             nOutput=8)
     assert m.wordSpace is not None
     assert type(m.wordSpace.chart).__name__ == 'Chart'
     # Registry has at least the SymbolicSpace builtin layers. Per
@@ -152,10 +152,11 @@ def test_wordspace_owns_chart_and_registry():
 # --- Pipeline integration -------------------------------------------
 
 def test_chart_fires_at_C_inside_body():
-    """Post-2026-05-12: the chart fires at C-tier inside ``_forward_body``
-    (via ``_chart_compose_at_C``) and at C-tier inside the reverse
-    pipeline (via ``_chart_generate_from_stm``).  The legacy stem-level
-    ChartCompose / ChartGenerate modules were retired in the same pass.
+    """Post-2026-05-14: the chart fires at C-tier inside
+    ``_forward_body`` (via ``_chart_compose_at_C``).  The reverse-side
+    ``_chart_generate_from_stm`` mirror was retired alongside the
+    reverse pipeline in the IR-only refactor; the legacy stem-level
+    ChartCompose / ChartGenerate modules remain retired.
     """
     import test_basicmodel as tb
     import Models
@@ -165,23 +166,17 @@ def test_chart_fires_at_C_inside_body():
         nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8,
         nOutput=8, perceptPassThrough=True, symbolPassThrough=True)
     Models.TheXMLConfig._data["architecture"]["syntax"] = True
-    (Models.TheXMLConfig._data["architecture"]
-        .setdefault("training", {})["maskedPrediction"]) = "AR"
 
     m = Models.BasicModel()
     m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
-             nOutput=8, masked_prediction='AR')
+             nOutput=8)
 
-    # The new chart-firing surface is per-stage at C-tier inside the
-    # body. ``_chart_compose_at_C`` and ``_chart_generate_from_stm``
-    # are instance methods on BasicModel; the legacy stem modules
-    # ``_chart_compose`` / ``_chart_generate`` are gone.
     assert hasattr(m, '_chart_compose_at_C'), (
         "BasicModel must expose ``_chart_compose_at_C`` for chart-at-C wiring")
-    assert hasattr(m, '_chart_generate_from_stm'), (
-        "BasicModel must expose ``_chart_generate_from_stm`` for the reverse mirror")
     assert not hasattr(m, '_chart_compose'), (
         "Legacy ``_chart_compose`` module should have been removed")
+    assert not hasattr(m, '_chart_generate_from_stm'), (
+        "Reverse-side chart mirror was retired with the reverse pipeline")
     assert not hasattr(m, '_chart_generate'), (
         "Legacy ``_chart_generate`` module should have been removed")
 

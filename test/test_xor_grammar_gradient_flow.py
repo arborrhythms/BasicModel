@@ -76,7 +76,7 @@ class TestXORGrammarGradientFlow(unittest.TestCase):
 
         m = Models.BasicModel()
         m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
-                 nOutput=8, masked_prediction='AR')
+                 nOutput=8)
         return m
 
     def test_chart_rule_bias_accumulates_gradient(self):

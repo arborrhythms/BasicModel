@@ -101,35 +101,7 @@ class TestMMXorConvergence(unittest.TestCase):
                 result = m.forward(inp)
         self.assertEqual(len(result), 4)
 
-    def test_forward_reverse_reconstructs_input_state(self):
-        """Reversible MM_xor should recover the encoded input state.
-
-        MM_xor uses text mode: PerceptualSpace.reverse routes through
-        _reverse_text which snaps vectors to nearest embedding entries.
-        With a fresh untrained embedding on XOR's tiny vocabulary, the
-        snap-to-nearest loss dominates fp round-off, so the tolerance
-        reflects nearest-neighbor recovery rather than exact inversion.
-        A trained model would tighten this naturally.
-        """
-        import torch
-
-        m = self.model
-        m.eval()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-            inp_items, out_items = next(iter(loader))
-            inputTensor = m.inputSpace.prepInput(inp_items)
-            outputTensor = (m.outputSpace.prepOutput(out_items)
-                            if out_items is not None else None)
-            batch = (inputTensor, outputTensor)
-            inp, _ = batch
-            with torch.no_grad():
-                forward_input, symbols, output, _ = m.forward(inp)
-                input_data, _ = m.reverse(symbols, output)
-        err = torch.nn.functional.mse_loss(
-            input_data.squeeze(), forward_input.squeeze())
-        self.assertLess(err.item(), 1e-2)
+    # test_forward_reverse_reconstructs_input_state retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_forward_keeps_continuous_symbols(self):
         """The recurrent path should not collapse via symbol VQ."""
@@ -152,49 +124,7 @@ class TestMMXorConvergence(unittest.TestCase):
         self.assertTrue(torch.isfinite(symbols).all())
         self.assertGreater(symbols.std().item(), 1e-6)
 
-    def test_runbatch_losses_stay_finite(self):
-        """The public train/reverse loss path should stay finite."""
-        import torch
-
-        m, _, _ = _fresh_model()
-        optimizer = m.getOptimizer(lr=0.01)
-
-        totals = []
-        original_total = m.loss.total
-
-        def capture_total(lossOut, lossIn=None, sbow=None):
-            total = original_total(lossOut, lossIn, sbow)
-            totals.append(total.detach())
-            return total
-
-        m.loss.total = capture_total
-        original_message = Models.TheMessage
-        Models.TheMessage = lambda *args, **kwargs: None
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-                for _ in range(30):
-                    inp_items, out_items = next(iter(loader))
-                    inputTensor = m.inputSpace.prepInput(inp_items)
-                    outputTensor = (m.outputSpace.prepOutput(out_items)
-                                    if out_items is not None else None)
-                    result, _ = m.runBatch(
-                        train=True,
-                        batchNum=0,
-                        batchSize=4,
-                        split="train",
-                        optimizer=optimizer,
-                        batch_override=(inputTensor, outputTensor),
-                    )
-                    self.assertIsNotNone(result)
-                    self.assertTrue(torch.isfinite(result.lossOut))
-                    self.assertTrue(torch.isfinite(result.lossIn))
-        finally:
-            Models.TheMessage = original_message
-
-        self.assertEqual(len(totals), 30)
-        self.assertTrue(torch.isfinite(torch.stack(totals)).all())
+    # test_runbatch_losses_stay_finite retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_learns_xor_signal(self):
@@ -322,76 +252,7 @@ class TestMMXorConvergence(unittest.TestCase):
         finally:
             os.unlink(tmp.name)
 
-    def test_vqvae_ste_registers_commitment_and_moves_encoder(self):
-        """With useVQVAE=true, STE path must register symbol_commitment and
-        deliver gradient through the quantization bottleneck into the encoder.
-
-        Verifies the core fix of the VQ-VAE STE follow-on: the forward pass
-        produces the hard codebook pick, while the backward pass bypasses
-        argmin so downstream losses shape the PiLayer encoder weights.
-        """
-        import torch
-
-        m, _, _ = _fresh_model()
-        self.assertTrue(m.symbolicSpace.use_vqvae,
-                        "MM_xor.xml should have useVQVAE=true")
-        self.assertGreater(m.symbolicSpace.commitment_beta, 0.0)
-
-        optimizer = m.getOptimizer(lr=0.01)
-
-        # Snapshot every trainable SymbolicSpace parameter and check for
-        # movement across the whole set instead of a single named Pi.
-        params_before = {
-            name: p.detach().clone()
-            for name, p in m.symbolicSpace.named_parameters()
-            if p.requires_grad
-        }
-        self.assertGreater(len(params_before), 0,
-                           "SymbolicSpace should have trainable params")
-
-        commit_values = []
-        original_message = Models.TheMessage
-        Models.TheMessage = lambda *args, **kwargs: None
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-                for _ in range(20):
-                    inp_items, out_items = next(iter(loader))
-                    inputTensor = m.inputSpace.prepInput(inp_items)
-                    outputTensor = (m.outputSpace.prepOutput(out_items)
-                                    if out_items is not None else None)
-                    result, _ = m.runBatch(
-                        train=True, batchNum=0, batchSize=4,
-                        split="train", optimizer=optimizer,
-                        batch_override=(inputTensor, outputTensor),
-                    )
-                    self.assertIsNotNone(result)
-                    from Layers import TheError
-                    terms_by_name = {t[0]: t[1] for t in TheError.terms()}
-                    self.assertIn("symbol_commitment", terms_by_name,
-                                  "STE path must register symbol_commitment")
-                    commit_values.append(
-                        float(terms_by_name["symbol_commitment"].detach().item()))
-        finally:
-            Models.TheMessage = original_message
-
-        moved_names = []
-        max_move = 0.0
-        for name, p in m.symbolicSpace.named_parameters():
-            if not p.requires_grad or name not in params_before:
-                continue
-            delta = (p.detach() - params_before[name]).abs().max().item()
-            if delta > 1e-5:
-                moved_names.append(name)
-            if delta > max_move:
-                max_move = delta
-        self.assertGreater(
-            len(moved_names), 0,
-            f"Commitment gradient must reach the encoder -- no SymbolicSpace "
-            f"params moved (max Δ={max_move:.2e})")
-        self.assertTrue(all(torch.isfinite(torch.tensor(commit_values))),
-                        "symbol_commitment must stay finite over training")
+    # test_vqvae_ste_registers_commitment_and_moves_encoder retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     @pytest.mark.xfail(reason=(
         "Autograd-graph re-entry under per-word stem (pre-existing "

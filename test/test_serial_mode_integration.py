@@ -17,11 +17,10 @@ from Models import BaseModel
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
-def _build_model(serial_mode, masked_prediction='AR'):
+def _build_model(serial_mode):
     TheData.load("xor")
 
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-    m.masked_prediction = masked_prediction
     m.serial_mode = serial_mode
     if hasattr(m, 'perceptualSpace'):
         m.perceptualSpace.serial_mode = serial_mode
@@ -38,8 +37,8 @@ def _xor_input():
 
 def test_serial_mode_equivalence_end_to_end():
     """Serial and non-serial forward produce matching predictions (fp tolerance)."""
-    m_serial = _build_model(serial_mode=True, masked_prediction='NONE')
-    m_baseline = _build_model(serial_mode=False, masked_prediction='NONE')
+    m_serial = _build_model(serial_mode=True)
+    m_baseline = _build_model(serial_mode=False)
     inp = _xor_input()
     out_s = m_serial.forward(inp)
     out_b = m_baseline.forward(inp)
@@ -67,8 +66,8 @@ def test_eos_triggers_reset_cascade():
 
 def test_serial_mode_does_not_slow_short_streams():
     """Smoke: serial_mode forward latency on 4 tokens is within 2x of baseline."""
-    m_s = _build_model(serial_mode=True, masked_prediction='NONE')
-    m_b = _build_model(serial_mode=False, masked_prediction='NONE')
+    m_s = _build_model(serial_mode=True)
+    m_b = _build_model(serial_mode=False)
     inp = _xor_input()
 
     # Warmup.

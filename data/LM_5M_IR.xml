@@ -40,11 +40,9 @@
       <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
-      <reverseScale>1.0</reverseScale>
-      <maskedPrediction>IR</maskedPrediction>
+      <reconstructionScale>1.0</reconstructionScale>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
-      <sentenceContextWindow>5</sentenceContextWindow>
     </training>
 
     <server>

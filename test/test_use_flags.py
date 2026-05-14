@@ -34,11 +34,18 @@ def _load(cfg_name):
 #   - MM_400M.xml       -- relied on butterfly N-halving (post 2026-05-12)
 #   - MM_shamatha.xml   -- ConceptualSpace nVectors!=nActive
 #   - MM_xor_step4.xml  -- ConceptualSpace nVectors!=nActive
+# ``useGrammar`` is derived from the grammar rules
+# (``_derive_use_grammar``): ``"none"`` when every operational rule is
+# a unary substrate fold (``pi`` / ``sigma``), ``"all"`` when any other
+# operator (``intersection`` / ``union`` / ``not`` / ``lift`` / …) appears.
+# The configs below all carry such operators at S-tier (XOR's
+# not/intersection/union, MentalModel's full Boolean grammar, etc.),
+# so the derived value is ``"all"`` for every entry.
 EXPECTED = {
-    "MM_xor.xml":            "none",
-    "RamsifiedModel.xml":    "none",
-    "MM_bpe.xml":            "none",
-    "MentalModel.xml":       "none",
+    "MM_xor.xml":            "all",
+    "RamsifiedModel.xml":    "all",
+    "MM_bpe.xml":            "all",
+    "MentalModel.xml":       "all",
     "MM_grammar.xml":        "all",
 }
 
