@@ -12,7 +12,7 @@ Two layers of coverage:
    catuskoti bivector ``[B, V_C, 2]`` and ``.reverse`` lifts it back
    through the cached SVD pseudo-inverse.
 
-Spec: doc/2026-05-08-bivector-activation-conceptual-loopback-design.md
+Spec: doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md
 (Stage 4 acceptance: round-trip MSE on the C-tier alone < 1e-3 from
 fresh SVD-orthogonal init).
 """

@@ -1,5 +1,7 @@
 # Basic Model
 
+![BasicModel: MM_5M_bivector reference architecture](diagrams/mm5m_bivector_architecture.svg)
+
 ***The Basic Model of Cognition is a neural network of four spaces: real space, perceptual space, conceptual space, and symbolic space.***
 
 **Model Entities:**

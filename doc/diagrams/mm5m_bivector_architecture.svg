@@ -1,0 +1,257 @@
+<svg width='1280' height='960' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' viewBox='0 0 1280 960'>
+  <rect width='1280' height='960' fill='#fafafa'/>
+  <defs>
+    <marker id='arr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/>
+    </marker>
+    <marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/>
+    </marker>
+    <marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/>
+    </marker>
+    <marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/>
+    </marker>
+    <marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/>
+    </marker>
+    <marker id='arrgr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'>
+      <polygon points='0 0, 8 2.8, 0 5.6' fill='#922b21'/>
+    </marker>
+  </defs>
+
+  <!-- ═══ Title bar ═══ -->
+  <rect x='0' y='0' width='1280' height='50' fill='#2c3e50'/>
+  <text x='640' y='32' text-anchor='middle' font-size='20' fill='white' font-weight='bold'>BasicModel Architecture: MM_5M_bivector  (bivectorOutput on C and S tiers)</text>
+
+  <!-- ═══ Forward / Reverse axis labels ═══ -->
+  <text x='130' y='75' text-anchor='middle' font-size='12' fill='#2980b9' font-weight='bold'>Forward (compose)</text>
+  <text x='130' y='90' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>predict from bytes</text>
+  <text x='1150' y='75' text-anchor='middle' font-size='12' fill='#922b21' font-weight='bold'>Reverse (decompose)</text>
+  <text x='1150' y='90' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>reconstruct from S-tier event</text>
+
+  <!-- ═══ MAIN PIPELINE: five spaces arranged horizontally ═══ -->
+  <!-- Coordinates: y_center = 215 for boxes; box height = 110 -->
+
+  <!-- InputSpace -->
+  <rect x='40' y='160' width='180' height='130' fill='#eaf4fb' stroke='#2980b9' stroke-width='2' rx='8'/>
+  <rect x='40' y='160' width='180' height='28' fill='#2980b9' rx='8'/>
+  <rect x='40' y='174' width='180' height='14' fill='#2980b9'/>
+  <text x='130' y='179' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>InputSpace</text>
+  <text x='130' y='208' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>[B, 1024, 6]</text>
+  <text x='130' y='225' text-anchor='middle' font-size='10' fill='#626567'>byte lexer</text>
+  <text x='130' y='240' text-anchor='middle' font-size='10' fill='#626567'>nOutput = 1024</text>
+  <text x='130' y='255' text-anchor='middle' font-size='10' fill='#626567'>nDim = 6  (nWhere = 2)</text>
+  <text x='130' y='275' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>raw byte tokens</text>
+
+  <!-- PerceptualSpace -->
+  <rect x='240' y='160' width='200' height='130' fill='#d6eaf8' stroke='#2980b9' stroke-width='2' rx='8'/>
+  <rect x='240' y='160' width='200' height='28' fill='#2980b9' rx='8'/>
+  <rect x='240' y='174' width='200' height='14' fill='#2980b9'/>
+  <text x='340' y='179' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>PerceptualSpace</text>
+  <text x='340' y='208' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>[B, 1024, 6]</text>
+  <text x='340' y='225' text-anchor='middle' font-size='10' fill='#626567'>BPE codebook  V=4096</text>
+  <text x='340' y='240' text-anchor='middle' font-size='10' fill='#626567'>pi_input + pi_concept</text>
+  <text x='340' y='255' text-anchor='middle' font-size='10' fill='#626567'>log-mult atanh-Wx+b-tanh</text>
+  <text x='340' y='275' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>subsymbolic substrate</text>
+
+  <!-- ConceptualSpace (bivector!) -->
+  <rect x='460' y='160' width='220' height='130' fill='#f5eef8' stroke='#8e44ad' stroke-width='2' rx='8'/>
+  <rect x='460' y='160' width='220' height='28' fill='#8e44ad' rx='8'/>
+  <rect x='460' y='174' width='220' height='14' fill='#8e44ad'/>
+  <text x='570' y='179' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>ConceptualSpace</text>
+  <text x='570' y='208' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>[B, 512, 2]</text>
+  <text x='570' y='225' text-anchor='middle' font-size='10' fill='#5b2c6f' font-weight='bold'>bivectorOutput = true</text>
+  <text x='570' y='240' text-anchor='middle' font-size='10' fill='#626567'>codebook V_C = 512, D = 128</text>
+  <text x='570' y='255' text-anchor='middle' font-size='10' fill='#626567'>LDU invertible, monotonic</text>
+  <text x='570' y='275' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>SVD-orthog init; cached pinv</text>
+
+  <!-- SymbolicSpace (bivector!) -->
+  <rect x='700' y='160' width='220' height='130' fill='#f5eef8' stroke='#8e44ad' stroke-width='2' rx='8'/>
+  <rect x='700' y='160' width='220' height='28' fill='#8e44ad' rx='8'/>
+  <rect x='700' y='174' width='220' height='14' fill='#8e44ad'/>
+  <text x='810' y='179' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>SymbolicSpace</text>
+  <text x='810' y='208' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>[B, 1024, 2]</text>
+  <text x='810' y='225' text-anchor='middle' font-size='10' fill='#5b2c6f' font-weight='bold'>bivectorOutput = true</text>
+  <text x='810' y='240' text-anchor='middle' font-size='10' fill='#626567'>codebook V_S = 65536, D = 2</text>
+  <text x='810' y='255' text-anchor='middle' font-size='10' fill='#626567'>grammar's calculator</text>
+  <text x='810' y='275' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>WordSpace.SyntacticLayer dispatch</text>
+
+  <!-- OutputSpace -->
+  <rect x='940' y='160' width='180' height='130' fill='#fdebd0' stroke='#ca6f1e' stroke-width='2' rx='8'/>
+  <rect x='940' y='160' width='180' height='28' fill='#ca6f1e' rx='8'/>
+  <rect x='940' y='174' width='180' height='14' fill='#ca6f1e'/>
+  <text x='1030' y='179' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>OutputSpace</text>
+  <text x='1030' y='208' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>[B, 1, 4]</text>
+  <text x='1030' y='225' text-anchor='middle' font-size='10' fill='#626567'>linear projection</text>
+  <text x='1030' y='240' text-anchor='middle' font-size='10' fill='#626567'>data-range rescale</text>
+  <text x='1030' y='255' text-anchor='middle' font-size='10' fill='#626567'>nOutput = 1, nDim = 4</text>
+  <text x='1030' y='275' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>logits → predictions</text>
+
+  <!-- Forward arrows -->
+  <line x1='220' y1='225' x2='238' y2='225' stroke='#2980b9' stroke-width='2.4' marker-end='url(#arrb)'/>
+  <line x1='440' y1='225' x2='458' y2='225' stroke='#8e44ad' stroke-width='2.4' marker-end='url(#arrp)'/>
+  <line x1='680' y1='225' x2='698' y2='225' stroke='#8e44ad' stroke-width='2.4' marker-end='url(#arrp)'/>
+  <line x1='920' y1='225' x2='938' y2='225' stroke='#ca6f1e' stroke-width='2.4' marker-end='url(#arro)'/>
+
+  <!-- Operator labels above forward arrows -->
+  <text x='229' y='220' text-anchor='middle' font-size='9' fill='#2980b9' font-style='italic'>pi_input</text>
+  <text x='449' y='220' text-anchor='middle' font-size='9' fill='#8e44ad' font-style='italic'>sigma_p</text>
+  <text x='689' y='220' text-anchor='middle' font-size='9' fill='#8e44ad' font-style='italic'>C→S snap</text>
+  <text x='929' y='220' text-anchor='middle' font-size='9' fill='#ca6f1e' font-style='italic'>linear</text>
+
+  <!-- Reverse arrows (curved below) -->
+  <path d='M 1030 290 Q 1030 320 980 320 L 200 320 Q 130 320 130 290' fill='none' stroke='#922b21' stroke-width='2' marker-end='url(#arrgr)' stroke-dasharray='4 3'/>
+  <text x='580' y='338' text-anchor='middle' font-size='11' fill='#922b21' font-style='italic'>Reverse pipeline: OutputSpace.reverse → SymbolicSpace.reverse (SVD pinv lift) → ConceptualSpace.reverse → PerceptualSpace.reverse → InputSpace.reverse</text>
+
+  <!-- ═══ Feedback loops ═══ -->
+
+  <!-- S→C symbolic loopback (above pipeline) -->
+  <path d='M 810 160 Q 810 110 690 110 Q 570 110 570 160' fill='none' stroke='#1a7a38' stroke-width='1.8' marker-end='url(#arrg)' stroke-dasharray='5 3'/>
+  <text x='690' y='105' text-anchor='middle' font-size='11' fill='#1a7a38' font-weight='bold'>S→C symbolic loopback</text>
+  <text x='690' y='125' text-anchor='middle' font-size='10' fill='#1a7a38' font-style='italic'>per stage (t ≥ 1): C_in includes prev S event</text>
+
+  <!-- C→P subsymbolic loopback (below pipeline) -->
+  <path d='M 570 290 Q 570 365 460 365 Q 340 365 340 290' fill='none' stroke='#16a085' stroke-width='1.8' marker-end='url(#arrg)' stroke-dasharray='5 3'/>
+  <text x='455' y='377' text-anchor='middle' font-size='11' fill='#16a085' font-weight='bold'>C→P subsymbolic loopback</text>
+  <text x='455' y='393' text-anchor='middle' font-size='10' fill='#16a085' font-style='italic'>cross-forward: pi_concept(C_prev) added to pi_input(IS)</text>
+
+  <!-- ═══ Composition formula ═══ -->
+  <rect x='40' y='415' width='840' height='52' fill='#f4f6f7' stroke='#aab7b8' stroke-width='1.5' rx='6'/>
+  <text x='460' y='438' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>Cross-space composition  (Sigma / Pi ownership, 2026-05-13 rebalance)</text>
+  <text x='460' y='458' text-anchor='middle' font-size='13' fill='#2c3e50' font-family='Menlo, monospace'>C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )</text>
+
+  <!-- ═══ conceptualOrder = 3 stages illustration ═══ -->
+  <rect x='900' y='415' width='340' height='112' fill='#f4f6f7' stroke='#aab7b8' stroke-width='1.5' rx='6'/>
+  <text x='1070' y='433' text-anchor='middle' font-size='12' fill='#2c3e50' font-weight='bold'>conceptualOrder = 3  (per-stage chart firing)</text>
+  <rect x='920' y='448' width='90' height='30' fill='#f5eef8' stroke='#8e44ad' stroke-width='1' rx='4'/>
+  <text x='965' y='467' text-anchor='middle' font-size='10' fill='#2c3e50' font-weight='bold'>Stage 0 cold</text>
+  <rect x='1025' y='448' width='90' height='30' fill='#f5eef8' stroke='#8e44ad' stroke-width='1' rx='4'/>
+  <text x='1070' y='467' text-anchor='middle' font-size='10' fill='#2c3e50' font-weight='bold'>Stage 1  S→C</text>
+  <rect x='1130' y='448' width='90' height='30' fill='#f5eef8' stroke='#8e44ad' stroke-width='1' rx='4'/>
+  <text x='1175' y='467' text-anchor='middle' font-size='10' fill='#2c3e50' font-weight='bold'>Stage 2  S→C</text>
+  <line x1='1010' y1='463' x2='1025' y2='463' stroke='#8e44ad' stroke-width='1.2' marker-end='url(#arrp)'/>
+  <line x1='1115' y1='463' x2='1130' y2='463' stroke='#8e44ad' stroke-width='1.2' marker-end='url(#arrp)'/>
+  <text x='1070' y='497' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>each stage runs body chart over stm.snapshot()</text>
+  <text x='1070' y='514' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>partition: order 0 in [0, D/2); order 1 in [D/2, 3D/4); ...</text>
+
+  <!-- ═══ Bivector / Catuskoti panel ═══ -->
+  <rect x='40' y='483' width='420' height='244' fill='#fef9e7' stroke='#b7950b' stroke-width='2' rx='8'/>
+  <rect x='40' y='483' width='420' height='28' fill='#b7950b' rx='8'/>
+  <rect x='40' y='497' width='420' height='14' fill='#b7950b'/>
+  <text x='250' y='502' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Bivector activation  —  catuskoti tetralemma</text>
+
+  <text x='250' y='527' text-anchor='middle' font-size='11' fill='#2c3e50' font-style='italic'>per-prototype [a_P, a_N] ∈ [0, 1]^2  at C and S tiers</text>
+
+  <!-- 2x2 grid of corners -->
+  <rect x='80' y='540' width='160' height='62' fill='#d5f5e3' stroke='#1a7a38' stroke-width='1.5' rx='4'/>
+  <text x='160' y='560' text-anchor='middle' font-size='12' fill='#1a7a38' font-weight='bold'>TRUE  (asti)</text>
+  <text x='160' y='578' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>[1, 0]</text>
+  <text x='160' y='594' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>affirmed</text>
+
+  <rect x='260' y='540' width='160' height='62' fill='#fadbd8' stroke='#922b21' stroke-width='1.5' rx='4'/>
+  <text x='340' y='560' text-anchor='middle' font-size='12' fill='#922b21' font-weight='bold'>FALSE  (nasti)</text>
+  <text x='340' y='578' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>[0, 1]</text>
+  <text x='340' y='594' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>negated</text>
+
+  <rect x='80' y='610' width='160' height='62' fill='#e8daef' stroke='#8e44ad' stroke-width='1.5' rx='4'/>
+  <text x='160' y='630' text-anchor='middle' font-size='12' fill='#8e44ad' font-weight='bold'>BOTH  (ubhaya)</text>
+  <text x='160' y='648' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>[1, 1]</text>
+  <text x='160' y='664' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>contradiction</text>
+
+  <rect x='260' y='610' width='160' height='62' fill='#f2f3f4' stroke='#626567' stroke-width='1.5' rx='4'/>
+  <text x='340' y='630' text-anchor='middle' font-size='12' fill='#626567' font-weight='bold'>NEITHER  (anubhaya)</text>
+  <text x='340' y='648' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>[0, 0]</text>
+  <text x='340' y='664' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>unknown</text>
+
+  <text x='250' y='693' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>De Morgan via pole-swap: ¬[a_P, a_N] = [a_N, a_P]</text>
+  <text x='250' y='710' text-anchor='middle' font-size='10' fill='#626567'>and([a,b], [c,d]) = [min(a,c), max(b,d)]   ·   or = [max(a,c), min(b,d)]</text>
+
+  <!-- ═══ Grammar / WordSpace panel ═══ -->
+  <rect x='480' y='483' width='400' height='244' fill='#fdebd0' stroke='#ca6f1e' stroke-width='2' rx='8'/>
+  <rect x='480' y='483' width='400' height='28' fill='#ca6f1e' rx='8'/>
+  <rect x='480' y='497' width='400' height='14' fill='#ca6f1e'/>
+  <text x='680' y='502' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Grammar  —  WordSpace + SyntacticLayer (S-tier dispatch)</text>
+
+  <text x='680' y='527' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>MM_5M_bivector productions (data/MM_5M_bivector.xml)</text>
+
+  <rect x='498' y='538' width='364' height='22' fill='white' stroke='#aab7b8' stroke-width='0.5' rx='3'/>
+  <text x='510' y='553' text-anchor='start' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>&lt;P&gt;P = sigma(P)&lt;/P&gt;          subsymbolic fold</text>
+
+  <rect x='498' y='562' width='364' height='22' fill='#fafafa' stroke='#aab7b8' stroke-width='0.5' rx='3'/>
+  <text x='510' y='577' text-anchor='start' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>&lt;C&gt;C = pi(C)&lt;/C&gt;             concept aggregation</text>
+
+  <rect x='498' y='586' width='364' height='22' fill='white' stroke='#aab7b8' stroke-width='0.5' rx='3'/>
+  <text x='510' y='601' text-anchor='start' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>&lt;S&gt;S = sigma(S)&lt;/S&gt;          unary parametric</text>
+
+  <rect x='498' y='610' width='364' height='22' fill='#fafafa' stroke='#aab7b8' stroke-width='0.5' rx='3'/>
+  <text x='510' y='625' text-anchor='start' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>&lt;S&gt;S = intersection(S, S)&lt;/S&gt; lattice min</text>
+
+  <rect x='498' y='634' width='364' height='22' fill='white' stroke='#aab7b8' stroke-width='0.5' rx='3'/>
+  <text x='510' y='649' text-anchor='start' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>&lt;S&gt;S = union(S, S)&lt;/S&gt;        lattice max</text>
+
+  <text x='680' y='680' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>POS tags ride codebook category_ids; chart dispatches via host_layer(tier, rule).</text>
+  <text x='680' y='697' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>S-tier ops: conjunction, disjunction, isEqual, isaPart (composite assertions).</text>
+  <text x='680' y='714' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>C-tier ops: not, non, intersection, union, true, false, part, equal, swap.</text>
+
+  <!-- ═══ Training panel ═══ -->
+  <rect x='900' y='540' width='340' height='187' fill='#d4efdf' stroke='#1a7a38' stroke-width='2' rx='8'/>
+  <rect x='900' y='540' width='340' height='28' fill='#1a7a38' rx='8'/>
+  <rect x='900' y='554' width='340' height='14' fill='#1a7a38'/>
+  <text x='1070' y='559' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Training  —  IR-only within sentence</text>
+
+  <text x='1070' y='583' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>1. Stem:  byte stream → P → BPE chunk</text>
+  <text x='1070' y='600' text-anchor='middle' font-size='10' fill='#626567'>InputSpace.forward → PerceptualSpace event</text>
+
+  <text x='1070' y='620' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>2. Mask:  Bernoulli at WHAT positions</text>
+  <text x='1070' y='637' text-anchor='middle' font-size='10' fill='#626567'>create_ir_mask (BERT-style, mask_rate = 0.15)</text>
+
+  <text x='1070' y='657' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>3. Body:  T = conceptualOrder stages</text>
+  <text x='1070' y='674' text-anchor='middle' font-size='10' fill='#626567'>chart compose @ C, codebook snap @ S</text>
+
+  <text x='1070' y='694' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>4. Loss:  MSE at masked P positions</text>
+  <text x='1070' y='711' text-anchor='middle' font-size='10' fill='#626567'>+ reconstructionScale (0.1) on optional C/S</text>
+
+  <!-- ═══ Inter-sentence AR + Truth panel ═══ -->
+  <rect x='40' y='743' width='600' height='185' fill='#eaf4fb' stroke='#2980b9' stroke-width='2' rx='8'/>
+  <rect x='40' y='743' width='600' height='28' fill='#2980b9' rx='8'/>
+  <rect x='40' y='757' width='600' height='14' fill='#2980b9'/>
+  <text x='340' y='762' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>InterSentenceLayer  —  ARMA(p=5, q=2) over sentence reps  (cross-sentence AR)</text>
+
+  <text x='340' y='790' text-anchor='middle' font-size='11' fill='#2c3e50'>s_t = body's final S-tier root slot   (sentence rep, dim = sentence_dim)</text>
+  <text x='340' y='810' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>s_hat_t = predictor(s_{t-1..t-p}, e_{t-1..t-q})</text>
+  <text x='340' y='828' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>e_t     = s_t − s_hat_t      ;      loss = MSE(s_hat_t, s_t)</text>
+
+  <text x='340' y='855' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>buffers per row (non-persistent): _s_history [B, p, D]   _e_history [B, q, D]</text>
+  <text x='340' y='872' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>weight added to TheError under "discourse" category × armaScale (default 0.1)</text>
+  <text x='340' y='889' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>at inference: discourse.predict_next() seeds ConceptualSpace._c_prior bias</text>
+  <text x='340' y='912' text-anchor='middle' font-size='11' fill='#2c3e50' font-style='italic'>Anti-capture mirror: ergodic exploration via Gradient Energy Sensor on α temperature</text>
+
+  <!-- ═══ Anti-capture / Ergodic panel ═══ -->
+  <rect x='660' y='743' width='580' height='185' fill='#fadbd8' stroke='#922b21' stroke-width='2' rx='8'/>
+  <rect x='660' y='743' width='580' height='28' fill='#922b21' rx='8'/>
+  <rect x='660' y='757' width='580' height='14' fill='#922b21'/>
+  <text x='950' y='762' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Anti-capture safeguards  —  Ergodic exploration (α, ΔW)</text>
+
+  <text x='950' y='790' text-anchor='middle' font-size='11' fill='#2c3e50' font-family='Menlo, monospace'>W_eff = α · W + (1 − α) · ε ,   ε ~ N(0, I)</text>
+
+  <rect x='680' y='803' width='270' height='38' fill='white' stroke='#922b21' stroke-width='1' rx='4'/>
+  <text x='815' y='819' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>Gradient Energy Sensor (not Adam)</text>
+  <text x='815' y='834' text-anchor='middle' font-size='10' fill='#626567'>α_t = 1 / (1 + τ · √v̂_t)   where v̂ = E[g²]</text>
+
+  <rect x='960' y='803' width='270' height='38' fill='white' stroke='#922b21' stroke-width='1' rx='4'/>
+  <text x='1095' y='819' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>InvertibleLinearLayer factor noise</text>
+  <text x='1095' y='834' text-anchor='middle' font-size='10' fill='#626567'>noise at L, D, U keeps W exactly invertible</text>
+
+  <rect x='680' y='850' width='270' height='38' fill='white' stroke='#922b21' stroke-width='1' rx='4'/>
+  <text x='815' y='866' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>Bivector cone monotonicity</text>
+  <text x='815' y='881' text-anchor='middle' font-size='10' fill='#626567'>W ≥ 0 entries preserve parthood pole-by-pole</text>
+
+  <rect x='960' y='850' width='270' height='38' fill='white' stroke='#922b21' stroke-width='1' rx='4'/>
+  <text x='1095' y='866' text-anchor='middle' font-size='11' fill='#2c3e50' font-weight='bold'>ImpenetrableLayer regularizer</text>
+  <text x='1095' y='881' text-anchor='middle' font-size='10' fill='#626567'>overlap penalty: drives codebook to antichain</text>
+
+  <text x='950' y='913' text-anchor='middle' font-size='10' fill='#626567' font-style='italic'>α = 0 (pure exploration) → α = 1 (pure exploitation) drives annealing; zero-init W safe.</text>
+
+</svg>

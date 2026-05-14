@@ -280,10 +280,10 @@ perceptual or delete).
 
 ## References
 
-- Rollback plan: [doc/plans/2026-05-07-finish-symbolic-rollback.md](plans/2026-05-07-finish-symbolic-rollback.md)
-- Codebook primitives: [bin/Spaces.py](../bin/Spaces.py) `Codebook.project`,
+- Rollback plan: [2026-05-07-finish-symbolic-rollback.md](2026-05-07-finish-symbolic-rollback.md)
+- Codebook primitives: [bin/Spaces.py](../../bin/Spaces.py) `Codebook.project`,
   `Codebook.project_reverse`.
-- Idempotent-loop test: [test/test_idempotent_loop.py](../test/test_idempotent_loop.py).
-- Combined-input wiring: `_build_combined_input` in [bin/Spaces.py](../bin/Spaces.py).
-- Per-stage construction: `_create_per_stage` in [bin/Models.py](../bin/Models.py).
-- Subsymbolic plan (predecessor): [doc/plans/2026-05-05-subsymbolic-knowing-handoff.md](plans/2026-05-05-subsymbolic-knowing-handoff.md).
+- Idempotent-loop test: [test/test_idempotent_loop.py](../../test/test_idempotent_loop.py).
+- Combined-input wiring: `_build_combined_input` in [bin/Spaces.py](../../bin/Spaces.py).
+- Per-stage construction: `_create_per_stage` in [bin/Models.py](../../bin/Models.py).
+- Subsymbolic plan (predecessor): [2026-05-05-subsymbolic-knowing-handoff.md](2026-05-05-subsymbolic-knowing-handoff.md).

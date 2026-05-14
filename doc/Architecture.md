@@ -64,7 +64,10 @@ Dimensions (`nDim`) are read from `TheObjectEncoding`. Codebook sizes
 (`nVectors`) are likewise on `TheObjectEncoding`; the factory validates
 `nVectors >= nActive`.
 
-![MM_5M Hierarchical Progressive Bottleneck](diagrams/mm5m_architecture.svg)
+![MM_5M_bivector Architecture](diagrams/mm5m_bivector_architecture.svg)
+
+(See also the legacy [MM_5M Hierarchical Progressive Bottleneck](diagrams/mm5m_architecture.svg)
+diagram for the pre-bivector dimension layout.)
 
 Layer selection by `<reconstruct>` and `invertible`:
 
@@ -286,7 +289,8 @@ SymbolicSubSpace. The S-tier productions include:
   VP; the per-call gate `VP_c * NP_c` (elementwise multiplicative) is
   what makes different VPs produce different transformations. See
   [Spaces.md](Spaces.md#liftlower-factorization) and
-  [Layers.md](Layers.md#liftlayer--lowerlayer).
+  [Language.md](Language.md#grammarlayer-implementations) and the
+  `LiftLayer` / `LowerLayer` definitions in [`bin/Layers.py`](../bin/Layers.py).
 
 Parthood (`part`) is the **fundamental** mereological operation, realized
 as clipped cosine projection on the bivector symbol subspace. The full

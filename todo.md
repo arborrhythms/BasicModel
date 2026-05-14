@@ -3,8 +3,11 @@
 
 * Ensure correct sentence-prediction
 
+* Ensure that grammatical pseudo-inverse operations are optimal in some sense
 
-Sentences are sometimes composites of ideas.
+* Make the chart parser predict the words, taking into account the part of speech
+
+Sentences are sometimes composites of ideas (over relations isEqual and isPart).
 * For example, questions relate two ideas:
   * Is subject predicate ?
   * part( x, y ) ?

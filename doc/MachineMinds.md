@@ -1,6 +1,6 @@
-Alec Rogers
+# Machine Minds
 
-September 24, 2025
+Alec Rogers, September 24, 2025
 
 ## Abstract
 

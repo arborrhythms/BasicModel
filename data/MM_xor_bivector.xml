@@ -19,7 +19,7 @@
     <!-- Documentation marker: the symbolic loopback (P_event || S_event
          concat into ConceptualSpace's PiLayer) is unconditional under
          the bivector regime per
-         doc/2026-05-08-bivector-activation-conceptual-loopback-design.md
+         doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md
          Stage 2. The actual gate is <ConceptualSpace><bivectorOutput>;
          no code reads this flag. -->
     <subsymbolicEnabled>true</subsymbolicEnabled>

@@ -208,7 +208,7 @@ $$
 `true` and `false` are lossy pole projections (the discarded pole is
 zeroed; reverse is the identity passthrough). `non` is the pole-wise
 complement and self-inverse: it rotates the tetralemma
-``affirm ↔ negate`` and ``unknown ↔ contradict``.
+``affirm`` $\leftrightarrow$ ``negate`` and ``unknown`` $\leftrightarrow$ ``contradict``.
 
 ### Negation (`not`) --- C-tier
 
@@ -402,12 +402,12 @@ defaults to `reverse(parent)` for arity 1 invertible, else `parent`.
 | `UnionLayer` | `union` | C | 2 | activation | Lattice max on bivector `[..., 2]`; `monotonic` toggles RadMax / strict |
 | `LiftLayer` | `lift` | P | 2 | event | Rule-id annotator; composition delegated to the subsymbolic loop |
 | `LowerLayer` | `lower` | P | 2 | event | Rule-id annotator; mirror of `lift` |
-| `EqualLayer` | `equal` | C | 2 | activation | Mutual parthood `part(ℓ,r)·part(r,ℓ)` on bivector activation (`Ops._equal_kernel`) |
+| `EqualLayer` | `equal` | C | 2 | activation | Mutual parthood $\mathrm{part}(\ell, r) \cdot \mathrm{part}(r, \ell)$ on bivector activation (`Ops._equal_kernel`) |
 | `PartLayer` | `part` | C | 2 | event | Directional parthood score broadcast over right operand; lossy |
-| `TrueLayer` | `true` | C | 1 | event | Bivector pos-pole projection: `[pos, neg] → [pos, 0]`; lossy |
-| `FalseLayer` | `false` | C | 1 | event | Bivector neg-pole projection: `[pos, neg] → [0, neg]`; lossy |
-| `SwapLayer` | `swap` | C | 2 | event | Parameter-free `forward(left, right) → right`; reverse `(parent, parent)` |
-| `CopyLayer` | `copy` | C | 2 | event | Parameter-free dual of `swap`: `forward(left, right) → left` |
+| `TrueLayer` | `true` | C | 1 | event | Bivector pos-pole projection: `[pos, neg]` $\to$ `[pos, 0]`; lossy |
+| `FalseLayer` | `false` | C | 1 | event | Bivector neg-pole projection: `[pos, neg]` $\to$ `[0, neg]`; lossy |
+| `SwapLayer` | `swap` | C | 2 | event | Parameter-free `forward(left, right)` $\to$ `right`; reverse `(parent, parent)` |
+| `CopyLayer` | `copy` | C | 2 | event | Parameter-free dual of `swap`: `forward(left, right)` $\to$ `left` |
 | `QueryLayer` | `query` | C | 2 | event | Returns left operand; chart pushes marker elsewhere |
 | `AreaLayer` | `area` | C | 1 | event | Introspective scalar in `[0, 1]`; normalized Gaussian region area |
 | `LuminosityLayer` | `luminosity` | C | 2 | event | Introspective scalar in `[−1, 1]`; pairwise overlap minus disagreement |

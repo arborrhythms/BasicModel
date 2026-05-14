@@ -12,7 +12,7 @@
 
 ## Context — `<subsymbolicEnabled>` is documentation-only
 
-The 2026-05-08 conceptual-loopback design (`doc/2026-05-08-bivector-activation-conceptual-loopback-design.md` Stage 2) dropped the `<subsymbolicEnabled>` flag. The symbolic loopback (which conjoins `[P_event || S_event]` to feed ConceptualSpace via concat-on-last-axis at [Spaces.py:7396](../../bin/Spaces.py)) is now unconditional — gated only by `<ConceptualSpace><bivectorOutput>true</bivectorOutput></ConceptualSpace>` at [Models.py:1797-1820](../../bin/Models.py). No live reader for `subsymbolicEnabled` exists in the codebase. We add it to the XML as a documentation-only marker per the user's request.
+The 2026-05-08 conceptual-loopback design (`doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md` Stage 2) dropped the `<subsymbolicEnabled>` flag. The symbolic loopback (which conjoins `[P_event || S_event]` to feed ConceptualSpace via concat-on-last-axis at [Spaces.py:7396](../../bin/Spaces.py)) is now unconditional — gated only by `<ConceptualSpace><bivectorOutput>true</bivectorOutput></ConceptualSpace>` at [Models.py:1797-1820](../../bin/Models.py). No live reader for `subsymbolicEnabled` exists in the codebase. We add it to the XML as a documentation-only marker per the user's request.
 
 The dim-alignment constraint introduced by the loopback: with both P and S bivector,
 - `P.nOutputDim == S.nOutputDim == 2` (both produce per-slot bivector pairs)
@@ -279,7 +279,7 @@ Insert at the top of `<architecture>` (after `<conceptualOrder>` at [data/MM_xor
     <!-- Documentation marker: the symbolic loopback (P_event || S_event
          concat into ConceptualSpace's PiLayer) is unconditional under
          the bivector regime per
-         doc/2026-05-08-bivector-activation-conceptual-loopback-design.md
+         doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md
          Stage 2. The actual gate is <ConceptualSpace><bivectorOutput>;
          no code reads this flag. -->
     <subsymbolicEnabled>true</subsymbolicEnabled>

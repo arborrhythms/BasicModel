@@ -168,8 +168,11 @@ maps old names to new layer bindings (parser-side, no runtime cost).
 | PerceptualSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors. No negation operator | Signed hypercube `[-1,1]^d` |
 | ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude (tanh-bounded). Event norm on `subspace.activation` | `[-1,1]` per element (tanh) |
 | SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time | `[0,1]` presence |
-| SyntacticSpace | Words are concepts encoding grammar rules. Word tuples + production rules | `(batch, vector, rule)` |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
+
+`SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
+Grammar / chart machinery lives on `WordSpace` and is attached to
+`SymbolicSpace` (the canonical grammar host).
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
 `output_min`/`output_max` at load time. InputSpace uses `Data.normalize(x,
@@ -661,7 +664,7 @@ Sigma vs Pi asymmetry maps directly to lift vs lower:
 - Lower uses pi (multiplicative log-domain contraction) --- naturally
   "lowering concepts into specific percept-realizations."
 
-See [Layers.md](Layers.md#liftlayer--lowerlayer) for the GrammarLayer
+See [Language.md](Language.md#grammarlayer-implementations) for the GrammarLayer
 specifics.
 
 ---
