@@ -87,7 +87,7 @@ $$
 \mathbb{E}[g_t^2] = \text{Var}(g_t) = \sum_{i,j} \left(\frac{\partial \mathcal{L}}{\partial (W_{\text{eff}})_{ij}}\right)^2 = \left\| \frac{\partial \mathcal{L}}{\partial W_{\text{eff}}} \right\|_F^2
 $$
 
-The **squared Frobenius norm** of the loss gradient — the **gradient energy**.
+The **squared Frobenius norm** of the loss gradient --- the **gradient energy**.
 
 | Gradient energy | Meaning | Desired behavior |
 |-----------------|---------|-----------------|
@@ -113,7 +113,7 @@ After computing $\alpha_t$: $\text{bias}_t = \alpha_t$, $\text{var}_t = 1 -
 
 ### 3.5 Layer-Local Certainty (Per-Neuron Sigma)
 
-Each ergodic layer maintains per-neuron **sigma** — running variance of its
+Each ergodic layer maintains per-neuron **sigma** --- running variance of its
 gradient energy, tracked via Welford's algorithm in `observe_sigma()`. Sigma
 drives per-neuron bias and var:
 
@@ -135,12 +135,12 @@ High sigma (unstable gradient) yields low bias, high var.
 | Property | Adam (for $W$) | Sensor (for $\alpha$) |
 |----------|----------------|------------------------|
 | **Type** | Optimizer | Sensor (measurement) |
-| **First moment** $m_t$ | Yes — tracks direction | No — direction is zero-mean |
-| **Second moment** $v_t$ | Yes — normalizes step size | Yes — **is the output** |
+| **First moment** $m_t$ | Yes --- tracks direction | No --- direction is zero-mean |
+| **Second moment** $v_t$ | Yes --- normalizes step size | Yes --- **is the output** |
 | **Role of** $\sqrt{v_t}$ | Denominator (adaptive LR) | Numerator (energy estimate) |
 | **Update rule** | $W \leftarrow W - \eta \cdot m / \sqrt{v}$ | $\alpha \leftarrow 1 / (1 + \tau \sqrt{\hat{v}})$ |
-| **Descent?** | Yes | No — maps energy to policy |
-| **Zero-mean safe?** | No — produces $0/\sqrt{v} = 0$ | Yes — by design |
+| **Descent?** | Yes | No --- maps energy to policy |
+| **Zero-mean safe?** | No --- produces $0/\sqrt{v} = 0$ | Yes --- by design |
 
 ---
 
@@ -149,7 +149,7 @@ High sigma (unstable gradient) yields low bias, high var.
 Let $g_t = \nabla_T \mathcal{L}$. Since noise $\varepsilon$ is i.i.d. each
 step, $\mathbb{E}[g_t] = 0$. The first moment EMA $m_t = \beta_1 m_{t-1} +
 (1 - \beta_1) g_t$ gives $\mathbb{E}[m_t] = \beta_1 \mathbb{E}[m_{t-1}]$. By
-induction $\mathbb{E}[m_t] = \beta_1^t \mathbb{E}[m_0] = 0$ — exponentially
+induction $\mathbb{E}[m_t] = \beta_1^t \mathbb{E}[m_0] = 0$ --- exponentially
 to zero, carrying **no information**.
 
 The second moment converges to a meaningful quantity:
@@ -158,7 +158,7 @@ $$
 \mathbb{E}[v_t] \to \mathbb{E}[g_t^2] = \left\| \nabla_{W_{\text{eff}}} \mathcal{L} \right\|_F^2
 $$
 
-The gradient energy — exactly what we need.
+The gradient energy --- exactly what we need.
 
 ---
 
@@ -179,7 +179,7 @@ contribution is consistent.
 
 Dropout is a schedule on bias: ordinary Bernoulli dropout is the binary case.
 Annealed dropout corresponds to increasing the expected bias over training.
-Nonzero temperature bakes regularization directly into the model — every
+Nonzero temperature bakes regularization directly into the model --- every
 forward pass perturbs the effective weights, discouraging brittle
 co-adaptation.
 
@@ -191,9 +191,9 @@ $\tau$ (`global_temp`) scales responsiveness:
 
 | $\tau$ | Effect |
 |--------|--------|
-| $\tau = 0$ | $\alpha = 1$ always — pure exploitation |
+| $\tau = 0$ | $\alpha = 1$ always --- pure exploitation |
 | $\tau \ll 1$ | Quickly converges to $\alpha \approx 1$ |
-| $\tau = 1$ | Balanced — $\alpha$ tracks gradient energy on natural scale |
+| $\tau = 1$ | Balanced --- $\alpha$ tracks gradient energy on natural scale |
 | $\tau \gg 1$ | Maintains high exploration even with moderate gradients |
 
 $\tau$ can be scheduled (e.g., annealed from high to low) for a coarse
@@ -205,12 +205,12 @@ exploration-to-exploitation curriculum.
 
 **Problem.** If initialized at $\alpha = 1$ (pure exploitation), the noise
 term vanishes and $\partial \mathcal{L} / \partial T = 0$. The sensor would
-read zero energy and keep $\alpha = 1$ forever — an **exploitation trap**.
+read zero energy and keep $\alpha = 1$ forever --- an **exploitation trap**.
 
 **Solution.** Initialize at $\alpha = 0$.
 
 At $\alpha = 0$:
-- $W_{\text{eff}} = \varepsilon$ — pure noise carries gradients through the network
+- $W_{\text{eff}} = \varepsilon$ --- pure noise carries gradients through the network
 - Temperature gradient is nonzero: $g_t = \sum_{ij} (\partial \mathcal{L} /
   \partial \varepsilon_{ij}) \cdot \varepsilon_{ij} \neq 0$
 - Sensor measures initial gradient energy and begins tuning $\alpha$ upward
@@ -235,7 +235,7 @@ driven by gradient variance (`observe_sigma()` / `sigma_to_ergodic()`).
 Subclasses with child ErgodicLayers must forward `set_sigma()` and
 `paramUpdate()`.
 
-### InvertibleLinearLayer — factor-level noise injection
+### InvertibleLinearLayer --- factor-level noise injection
 
 LDU factorisation $W = L \cdot D_{\text{embed}} \cdot U$ (see
 [Architecture.md](Architecture.md)). Exact inverse via triangular solves;
@@ -254,7 +254,7 @@ $$
 d_{\text{eff}} = b \cdot d_{\text{clamped}} + t \cdot \text{noise\_d}
 $$
 
-`W_eff` stays in LDU form, so its exact inverse is always available — no
+`W_eff` stays in LDU form, so its exact inverse is always available --- no
 approximation regardless of noise level. Compare to matrix-level blending
 $W_{\text{eff}} = b \cdot W + t \cdot N$, which destroys LDU structure:
 
@@ -262,7 +262,7 @@ $$
 W_{\text{eff}} \cdot W_{\text{eff}}^{-1} \approx (b^2 + t^2) I + b t (W N^{-1} + N W^{-1}) \neq I
 $$
 
-Error grows with temperature — exactly the regime where exploration is most
+Error grows with temperature --- exactly the regime where exploration is most
 active. Factor-level injection avoids this.
 
 `noise_d` is sampled with magnitude in $[\text{eps}, 1]$ and random sign, so

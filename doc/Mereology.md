@@ -9,7 +9,7 @@ fundamental operation, the five mereological relations, and the
 > equality links was retired in favour of pure-geometric parthood
 > on the `SymbolicSpace` bivector codebook. The grammar layers
 > `PartLayer`, `EqualsLayer`, and `QueryLayer` operate directly on
-> codebook bivector activations via clipped cosine projection — no
+> codebook bivector activations via clipped cosine projection --- no
 > separate adjacency table, no `<architecture><mereologicalTreeSize>`
 > XML knob (silently ignored if present). Asserted meronymic
 > relations are learned by training pulling the codebook geometry
@@ -38,7 +38,7 @@ $$
 because $(-B) \cdot (-A) = A \cdot B$ and norms are sign-invariant.
 
 **Empty-operand contract.** When $|A|$ or $|B|$ is near zero, `part` returns
-1.0 — the empty set is part of everything.
+1.0 --- the empty set is part of everything.
 
 ---
 
@@ -162,7 +162,7 @@ XML knobs (under SymbolicSpace):
 
 | Knob | Default | Meaning |
 |------|---------|---------|
-| `overlapWeight` | 0.1 | Weight of overlap × trust-diff penalty |
+| `overlapWeight` | 0.1 | Weight of overlap $\times$ trust-diff penalty |
 | `varianceFloor` | 0.01 | Minimum per-dim std |
 | `fullPartThreshold` | 0.9 | $\tau$: part score above this is "full part" |
 | `disjointThreshold` | 0.1 | $\epsilon$: part score below this is "disjoint" |
@@ -174,7 +174,8 @@ XML knobs (under SymbolicSpace):
 
 - **Parthood as projection.** One formula, Boole-contrapositive exact,
   continuous in $[0, 1]$. The old composite formula
-  `conjunction(1 - dist(x, x∩y), 1 - dist(y, x∪y))` mixed set-valued operands
+  $\operatorname{conjunction}(1 - \operatorname{dist}(x, x \cap y),
+  1 - \operatorname{dist}(y, x \cup y))$ mixed set-valued operands
   with a distance.
 
 - **Overlap penalty (not antisymmetry).** Legacy `ImpenetrableLayer`

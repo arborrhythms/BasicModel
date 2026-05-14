@@ -5,7 +5,7 @@ Default values are loaded from `data/model.xml` and overridden by
 model-specific configs. The schema is in `data/model.xsd`.
 
 Overlay merge order:
-`data/model.xml`  →  `<config>.xml`  →  runtime overrides.
+`data/model.xml`  $\to$  `<config>.xml`  $\to$  runtime overrides.
 
 Note on naming: the schema and the XML configs use `nInput` / `nOutput`
 (sequence-length sentinels), `nDim` (per-vector dim), `nVectors`
@@ -25,7 +25,7 @@ sub-elements `<training>` and `<data>` (see below).
 |-----------|------|---------|-------------|
 | `modelType` | string | `"simple"` | `simple` (feedforward), `embedding` (LM / chat with sequence processing), `passthrough` (identity bench), `vq` (codebook-only). |
 | `reconstruct` | string | `"symbols"` | Reverse-pass mode: `NONE` disables; `symbols` reconstructs from cached output symbols (most common); `concepts` reconstructs at the conceptual tier; `output` runs `outputSpace.reverse()` only; `both` combines reversed output with reconstruction symbols. Any non-`NONE` value enables the full bidirectional training pipeline. |
-| `conceptualOrder` | int | `1` | Iteration depth of the P→C→S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
+| `conceptualOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `useButterflies` | bool | `false` | Butterfly-mode Pi / Sigma layers (N-halving per order). Mutually exclusive with `WordSpace.useGrammar='all'`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. Pairs with `<bivectorOutput>true</bivectorOutput>` on Perceptual / Conceptual / Symbolic spaces for a pole-by-pole monotone chain. See [Architecture.md](Architecture.md) "Sigma and Pi Layers" and [Spaces.md](Spaces.md) "Monotonicity of the lift / lower chain". |
@@ -52,13 +52,13 @@ sub-elements `<training>` and `<data>` (see below).
 | `writeSyntax` | bool | `false` | Dump POS-labelled syntax tree at end of every `MentalModel.forward()`. |
 | `syntaxOutPath` | string | -- | Output path for `writeSyntax`. |
 
-Luminosity and universality are **multiplicative** — they scale the total loss by
+Luminosity and universality are **multiplicative** --- they scale the total loss by
 
 $$
 (1 + \mathit{LuminosityWeight} \cdot (1 - \text{luminosity}) + \mathit{UniversalityWeight} \cdot (1 - \text{universality})).
 $$
 
-`TruthLoss` (in `<training>`, below) is **additive** — it directly
+`TruthLoss` (in `<training>`, below) is **additive** --- it directly
 penalises propositions that contradict the TruthSet. Both coexist. See
 [Ethics.md](../../doc/Ethics.md) Section Universality and
 [Reasoning.md](Reasoning.md) Section TruthLoss for details.
@@ -79,7 +79,7 @@ Data loading and filtering.
 | `classificationMin` | float | -- | Lower bound for classification-accuracy reporting. |
 | `classificationMax` | float | -- | Upper bound for classification-accuracy reporting. |
 
-Inline-mode configs additionally accept `<input use="train|test|validation">…|…|…</input>`
+Inline-mode configs additionally accept `<input use="train|test|validation">...|...|...</input>`
 and matching `<output>` elements directly inside `<data>`.
 
 ---
@@ -109,7 +109,7 @@ Training loop and I/O.
 | `autosave` | bool | `false` | Save weights after training completes. |
 | `checkpointEveryBatches` | int | `0` | Save mid-training checkpoint every N optimizer steps. `0` disables periodic checkpoints. |
 | `profile` | bool | `false` | cProfile the training loop. |
-| `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration → exploitation at different rates. |
+| `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
 | `sentencePrediction` | bool | `false` | Inter-sentence (DiscourseSpace) contrastive loss. Dual-force cosine over the flattened `[S|W]` snapshot: attractive toward the recent context centroid, repulsive from older centroids. No learnable parameters. |
 | `sentenceContextWindow` | int | `12` | Recent-sentence context window length (in sentences). |
 | `sentenceCentroidHistory` | int | `3` | Historical centroids retained for repulsion. |
@@ -119,7 +119,7 @@ Training loop and I/O.
 | `sentenceContrastiveScale` | float | `0.1` | Contrastive-only scale (split from `sentencePredictionScale`). |
 | `sentencePrimingScale` | float | `0.05` | AR prediction cast into `concept_dim` and added as a bias to `concept_input` before the sigma-pi loop. Scaled by `confidence * sentencePrimingScale`. |
 
-#### `<trainEmbedding>` — Embedding Update Modes
+#### `<trainEmbedding>` --- Embedding Update Modes
 
 | Value | Embedding method | Model layers | Gradients through codebook |
 |-------|------------------|--------------|---------------------------|
@@ -146,7 +146,7 @@ HTTP server settings (used by `serve.py`).
 
 ## BasicModel / MentalModel Quick Reference
 
-The two configurations that train the full P→C→S pipeline:
+The two configurations that train the full P$\to$C$\to$S pipeline:
 
 ```xml
 <architecture>
@@ -180,7 +180,7 @@ see [Language.md](Language.md) and [Ethics.md](../../doc/Ethics.md)
 `useGrammar` accepts `none`, `all`, and legacy `thoughtFree`; the
 target Shamatha Speech work adds / aliases `shamathaSpeech` for the
 narrow DNF object grammar. Full grammar mode is mutually exclusive
-with `useButterflies`. Shamatha Speech ≠ serial mode: serial mode is
+with `useButterflies`. Shamatha Speech $\ne$ serial mode: serial mode is
 the rolling-cursor / next-token runtime path; Shamatha Speech is a
 grammar policy that requires every logical merge to preserve
 connected `where()` and continuous `when()` support so the resulting
@@ -192,9 +192,9 @@ DNF denotes one object.
 
 Every space block uses the same sentinel convention:
 
-- `nInput = 0` — InputSpace: derive from `TheData`; other spaces: derive from the previous space's `outputShape[0]`.
-- `nOutput = 0` — same as `nInput` for this space (passthrough count).
-- `nVectors = 0` — same as `nOutput` (used for non-codebook spaces).
+- `nInput = 0` --- InputSpace: derive from `TheData`; other spaces: derive from the previous space's `outputShape[0]`.
+- `nOutput = 0` --- same as `nInput` for this space (passthrough count).
+- `nVectors = 0` --- same as `nOutput` (used for non-codebook spaces).
 
 Per-space `nWhere` / `nWhen` override `architecture.nWhere` / `nWhen`
 when present.
@@ -205,7 +205,7 @@ Lifts raw data into the model's internal representation.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nOutput` | int | sentinel | Sequence length: max tokens per input. For XOR: 2. For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots — a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
+| `nOutput` | int | sentinel | Sequence length: max tokens per input. For XOR: 2. For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots --- a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
@@ -233,7 +233,7 @@ Transforms lifted input into perceptual features via Pi layers
 | `codebook` | bool | `false` | When `true`, `.what` is a learnable `Codebook`; when `false`, a passthrough `Tensor`. |
 | `chunking` | string | `"lexicon"` | Multi-token chunking strategy: `lexicon`, `bpe`. |
 | `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
-| `bivectorOutput` | bool | `false` | Applies the Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ per slot and writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation`. Completes the monotonic chain by joining PerceptualSpace to the C / S-tier bivector regime. Spec §B3 / §Q2 in `specs/2026-04-24-lift-lower-bivector-design.md`. |
+| `bivectorOutput` | bool | `false` | Applies the Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ per slot and writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation`. Completes the monotonic chain by joining PerceptualSpace to the C / S-tier bivector regime. Spec Section B3 / Section Q2 in `specs/2026-04-24-lift-lower-bivector-design.md`. |
 
 Pi layer math: $y_j = b_j \prod_i (1 + W_{ji} x_i)$. See [Architecture.md](Architecture.md).
 `InvertiblePiLayer` has been merged into `PiLayer(invertible=True)`.
@@ -258,7 +258,7 @@ Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md)
 
 ### `<SymbolicSpace>`
 
-Discrete symbolic representation — the information bottleneck between
+Discrete symbolic representation --- the information bottleneck between
 perception and output. See [Language.md](Language.md) for the design.
 
 | Parameter | Type | Default | Description |
@@ -282,7 +282,7 @@ perception and output. See [Language.md](Language.md) for the design.
 
 SymbolicSpace owns one
 `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=monotonic)`
-at `self.sigma` bridging the C ↔ S boundary in both directions via its
+at `self.sigma` bridging the C $\leftrightarrow$ S boundary in both directions via its
 own self-inverse (`forwardSigma` / `reverseSigma` pointer aliases hide
 the one-or-two-layer split). The legacy `SymbolicSpace.layer` PiLayer
 attribute is gone; consumers use `model.symbolicSpace.sigma` directly.

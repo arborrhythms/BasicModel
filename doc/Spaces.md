@@ -7,10 +7,10 @@ BasicModel is a pipeline of five **spaces** plus a grammar host
 transformation. Data flows forward from raw input to task output; the
 reverse pass reconstructs the original input from the symbolic
 representation. Two feedback loops connect the pipeline back upward:
-`S → C` (per-stage symbolic loopback at order ≥ 1) and `C → P`
+$S \to C$ (per-stage symbolic loopback at order $\ge$ 1) and $C \to P$
 (cross-forward subsymbolic loopback). The legacy `SubsymbolicSpace` and
-`SyntacticSpace` classes have been retired — the subsymbolic role is
-filled by `PerceptualSpace` plus the new C→P feedback, and the grammar
+`SyntacticSpace` classes have been retired --- the subsymbolic role is
+filled by `PerceptualSpace` plus the new $C \to P$ feedback, and the grammar
 runs from `WordSpace`'s `SyntacticLayer` attached to `SymbolicSpace`
 (the canonical grammar host / "calculator").
 
@@ -19,8 +19,8 @@ Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> O
 Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
 
 Feedback:
-    SymbolicSpace ──→ ConceptualSpace   (S→C, per stage when bivectorOutput active)
-    ConceptualSpace ──→ PerceptualSpace (C→P, cross-forward; bivector-gated)
+    SymbolicSpace ---> ConceptualSpace   (S->C, per stage when bivectorOutput active)
+    ConceptualSpace ---> PerceptualSpace (C->P, cross-forward; bivector-gated)
 ```
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -41,7 +41,7 @@ All spaces inherit from `Space`, which manages:
 - **`set_sigma` propagation.** Ergodic-mode noise level cascades from the
   top-level model down through every child layer.
 
-### Reset cascade — hard vs. soft
+### Reset cascade --- hard vs. soft
 
 Every space exposes `Reset(batch=None, hard=True)`. The signature is required
 (legacy zero-arg fallback removed).
@@ -58,11 +58,11 @@ accumulator, discourse history, `serial_cache`, `_ar_embedded`,
 
 Soft-reset clears per-sentence working buffers (parse stack rows, `_last_svo[b]`,
 category and reconstruction stacks) and re-arms `_stm_fired[b]`. Does **not**
-touch discourse history (`InterSentenceLayer` ring buffer) or codebook EMA —
+touch discourse history (`InterSentenceLayer` ring buffer) or codebook EMA ---
 those are document-scoped.
 
 Reset is dispatched from `runEpoch`, never from inside `runBatch` (the pure
-compute brick — see [Architecture.md](Architecture.md)).
+compute brick --- see [Architecture.md](Architecture.md)).
 
 ---
 
@@ -76,9 +76,9 @@ to dispatch a separate substrate per rule**.
 
 | Space | Owns | Used in `.forward(IS, CS)` / `.forward(PS, SS)` |
 |---|---|---|
-| **PerceptualSpace** | `pi_input` (`input_dim → percept_dim`) and `pi_concept` (`concept_dim → percept_dim`) | both fire unconditionally each forward; their outputs are **summed** (no /2 averaging) |
-| **ConceptualSpace** | `sigma_percept` (`percept_dim → concept_dim`) only | fires unconditionally on the PS argument; the SS argument has **no default fold layer** |
-| **SymbolicSpace** | (none) | grammar operations only (`intersection`, `union`, `lift`, `lower`, …) — no default sigma or pi |
+| **PerceptualSpace** | `pi_input` (`input_dim -> percept_dim`) and `pi_concept` (`concept_dim -> percept_dim`) | both fire unconditionally each forward; their outputs are **summed** (no /2 averaging) |
+| **ConceptualSpace** | `sigma_percept` (`percept_dim -> concept_dim`) only | fires unconditionally on the PS argument; the SS argument has **no default fold layer** |
+| **SymbolicSpace** | (none) | grammar operations only (`intersection`, `union`, `lift`, `lower`, ...) --- no default sigma or pi |
 
 **Composition** (the end-to-end fold from input to concept):
 
@@ -99,7 +99,7 @@ into **unconditional firing** for two reasons:
 
 1. **Cognitive parsimony.**  "the running boy" (lowering, attribution)
    and "the boy runs" (lifting, predication) involve the **same neural
-   composition act** — fusing a noun representation with a verb
+   composition act** --- fusing a noun representation with a verb
    representation into a single bound state.  The linguistic distinction
    between lift and lower is a *labelling* over a shared composed state,
    not a different composition primitive.  Making `pi_concept` fire
@@ -108,10 +108,10 @@ into **unconditional firing** for two reasons:
    downstream grammar-driven framings.
 
 2. **Idempotence of the symbolic loop.**  `cs.forward(ss.forward(c)) ==
-   c` — SS is a dimensional pass-through (no default sigma/pi at S),
+   c` --- SS is a dimensional pass-through (no default sigma/pi at S),
    and the grammar's S-tier ops are idempotent in their algebra, so
    routing a C-activation through SS and back through CS leaves it
-   unchanged.  That's why CS owns only **one sigma** (for PS) — there
+   unchanged.  That's why CS owns only **one sigma** (for PS) --- there
    is no fold needed on the SS side; SS already returns what C handed
    it.  An unconditional `pi_concept` therefore can't double-apply
    across the symbolic loop's round-trip.
@@ -122,16 +122,16 @@ The cognitively-real distinction between
 **attribution** ("the running boy") and **predication** ("the boy
 runs") is preserved at three downstream sites:
 
-1. **Parse tree / rule_id metadata** *(primary)* — the chart records
+1. **Parse tree / rule_id metadata** *(primary)* --- the chart records
    *"this composition fired under rule `lift`"* vs *"under rule
    `lower`"*; the truth layer and output decoder read the `rule_id` to
    interpret the composed state.  This is the cheapest, structural
    distinction and matches the linguistic view that lift/lower is a
    **derivational labelling** over a shared operation.
-2. **Per-slot catuskoti tag** on `STM._truth_tags` — secondary
+2. **Per-slot catuskoti tag** on `STM._truth_tags` --- secondary
    metadata stamp; useful when downstream readers need O(1) access to
    role without traversing the parse tree.
-3. **Category stack frames** in `WordSpace` — each composition pushes
+3. **Category stack frames** in `WordSpace` --- each composition pushes
    a stack frame tagged with category; NP-frames are attribution
    outcomes, S-frames predication.
 
@@ -199,8 +199,8 @@ see an identical muxed tensor via `materialize()`.
 
 ### Euclidean (Perceptual / Symbolic)
 
-These codebooks store *what something looks like* — `0.5·v` carries half as
-much "of feature v" as `1.0·v`, so the right notion is coordinate-wise
+These codebooks store *what something looks like* --- $0.5 \cdot v$ carries half as
+much "of feature v" as $1.0 \cdot v$, so the right notion is coordinate-wise
 distance. Retrieval expands $\|x - c_i\|^2$:
 
 $$
@@ -220,7 +220,7 @@ indices = (flat @ codebook.T - 0.5 * b_norms_sq).argmax(dim=-1)
 ```
 
 One matmul + one broadcast subtract + one argmax. Skips the `sqrt`, the per-row
-`||x||²` add, and the cdist autograd plumbing.
+$\|x\|^2$ add, and the cdist autograd plumbing.
 
 ### Dot product (Conceptual)
 
@@ -247,7 +247,7 @@ indices = (flat @ codebook.T).argmax(dim=-1)
 ### Configuring the metric
 
 `use_dot_product` is a class attribute on `Codebook` (default `False`). Set it
-on a Space subclass to opt in — `ConceptualSpace` does this. The underlying
+on a Space subclass to opt in --- `ConceptualSpace` does this. The underlying
 `VectorQuantize.use_cosine_sim` flag is historical; after the April 2026 perf
 pass, input-side normalization is gone, so the effective meaning is "codebook
 unit-norm; rank by dot product".
@@ -259,14 +259,14 @@ unit-norm; rank by dot product".
 Every codebook entry must be **unique under both `WhereEncoding` and
 `WhatEncoding`**:
 
-- **`.where` — globally unique positional key.** Enforced structurally via
+- **`.where` --- globally unique positional key.** Enforced structurally via
   the class-level **codebook offset registry** on `WhereEncoding`
   ([`Spaces.py:223-276`](../bin/Spaces.py)). Each codebook calls
   `allocate_codebook_slice(n_vectors)` and gets a contiguous integer offset;
-  all codebooks share `div_term = 2π / total_allocated`. Each codebook's
+  all codebooks share $\mathrm{div\_term} = 2\pi / \mathrm{total\_allocated}$. Each codebook's
   entries live in disjoint `.where` slices.
-- **`.what` — distinct prototype content.** Identical `.what` collapses to the
-  same parthood identity (`equal(A, A) = 1`) — a redundant pair the network
+- **`.what` --- distinct prototype content.** Identical `.what` collapses to the
+  same parthood identity (`equal(A, A) = 1`) --- a redundant pair the network
   can't distinguish.
 
 Current enforcement:
@@ -288,17 +288,17 @@ quotient). Together they guarantee the parthood lattice is well-formed.
 
 The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) backs PerceptualSpace
 word embeddings and SymbolicSpace symbol prototypes. Each row is a vector
-$w_i$ in the **projective unit ball** — the closed ball $B^D = \{x : \|x\|_2
+$w_i$ in the **projective unit ball** --- the closed ball $B^D = \{x : \|x\|_2
 \le 1\}$ with the **negation identification** $w \sim -w$ realizing real
 projective space $\mathbb{RP}^D$.
 
-**Terminology pin** — three notions sometimes conflated:
+**Terminology pin** --- three notions sometimes conflated:
 
 - **Pode** of $(a, b)$: midpoint $(a + b)/2$; SBOW positive-pair attractor.
 - **Wrapped pode**: midpoint via the $\pm$-quotient, $(a - b)/2$; the
   midpoint through *negation* of $b$.
 - **Antipode** of a single point $p$: furthest point. On the flat torus
-  unique ($\mathrm{wrap}(p + 1)$); on $\mathbb{RP}^D$ **not unique** — the
+  unique ($\mathrm{wrap}(p + 1)$); on $\mathbb{RP}^D$ **not unique** --- the
   maximum-distance set is the orthogonal hyperplane.
 
 So $-w$ is the **negation** of $w$, *not* the antipode.
@@ -321,7 +321,7 @@ Sorting by smallest $d_{\mathbb{RP}}^2$ = sorting by largest
 $\operatorname{score}(x, w_i) = |\langle x, w_i\rangle| - \tfrac{1}{2}\|w_i\|_2^2$.
 
 Implementation: cache `W_norm2 = W.square().sum(-1)` once per optimizer
-step; top-k is `(x @ W.T).abs() - 0.5 * W_norm2` followed by `torch.topk` —
+step; top-k is `(x @ W.T).abs() - 0.5 * W_norm2` followed by `torch.topk` ---
 dense matmul + abs + broadcast subtract. No $V \cdot D$ outer-product.
 
 The `Lexicon` API:
@@ -331,10 +331,10 @@ lexicon = Lexicon(V, D)
 lexicon.project_unit_ball_()         # after optimizer.step()
 W_index, W_norm2 = lexicon.lookup_index()
 
-# Projective (RP^D) — antipode-aware, default.
+# Projective (RP^D) --- antipode-aware, default.
 idx, dist_sq, scores = Lexicon.topk_rp(x, W_index, W_norm2, k=32)
 
-# Plain L2 — for sites where w and -w are distinct.
+# Plain L2 --- for sites where w and -w are distinct.
 idx, dist_sq, scores = Lexicon.topk_l2(x, W_index, W_norm2, k=32)
 
 # Pairwise primitives:
@@ -378,9 +378,9 @@ internal working dimensionality.
 **Text mode forward.** Delegates tokenization to `Lex`, producing a span table
 of `(start, end, type)`. Each span $\to$ a vector with two components:
 
-- `nWhat` dims — token content, encoded via `Basis` / `Codebook` (the word
+- `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims — positional information from the character offset.
+- `nWhere` dims --- positional information from the character offset.
 
 Result: `[nActive, nWhat + nWhere]` tensor.
 
@@ -411,12 +411,12 @@ using the span table.
 Documents longer than `nOutput` bytes are not truncated. `TheData` maintains a
 per-row cursor `(doc_idx[b], offset[b])` and `next_tick()` returns
 `(input, output, hard_eos)` where `input` is a `[B, nOutput]` slab containing
-the next ≤`nOutput` bytes from each row's current document. `hard_eos[b]` is
+the next $\le$ `nOutput` bytes from each row's current document. `hard_eos[b]` is
 a host-side bool set when row `b`'s cursor exhausts the current document. A
 short fill at document end NULL-pads the slab tail; `valid_mask: [B, K] bool`
 flips False for padded positions, and state-mutation propagation skips them.
 
-**Cursor universal — trial mode for non-AR data.** `next_tick()` is the single
+**Cursor universal --- trial mode for non-AR data.** `next_tick()` is the single
 dispatch for both AR text byte (rolling cursor) and non-AR data (numeric).
 In trial mode (`slab_bytes` not set), each tick yields one batch of trials
 with `hard_eos = [True] * B`. The runEpoch outer loop drives `ds.next_tick()`
@@ -444,29 +444,29 @@ The serial K-cursor loop itself was retired one day later: the
 benchmark showed `_forward_per_stage_no_unfold` running at ~18
 sent/sec (the K body+head calls dominate) vs the single-shot IR
 fast-path's ~61 sent/sec, and the real AR objective in this
-architecture is **next-sentence** prediction (the discourse layer) —
+architecture is **next-sentence** prediction (the discourse layer) ---
 not next-token within a sentence.
 
 **Within-sentence training is now IR-only.** `InputSpace.forward`
 emits `[B, N, D]` (left-aligned, right-padded to N) and
 `_forward_per_stage` runs a single masked-LM pass:
 
-1. **Stem**: `InputSpace.forward` + `PerceptualSpace.forward` →
+1. **Stem**: `InputSpace.forward` + `PerceptualSpace.forward` $\to$
    `[B, N, D]`.
 2. **Mask**: `create_ir_mask` replaces a `mask_rate` fraction of WHAT
    positions with `NULL_PERCEPT`; pre-mask event stored on
    `_ir_pre_mask_input` as the loss target.
 3. **Body**: T stages on B rows (no per-cursor walk, no causal
    mask).
-4. **Head**: `outputSpace` → `[B, N, predDim]`. The head is a side
-   channel — IR loss is computed at the P-tier, not at the head.
+4. **Head**: `outputSpace` $\to$ `[B, N, predDim]`. The head is a side
+   channel --- IR loss is computed at the P-tier, not at the head.
 
 `runBatch` reads `_ir_mask_positions` and `_ir_pre_mask_input` and
 computes `MSE(perceptualSpace.subspace at masked positions,
 _ir_pre_mask_input at masked positions)`. The
 `<reconstruct>concepts|symbols|both</...>` knob adds optional
 C-tier / S-tier reconstruction terms (target derived by lifting
-`_ir_pre_mask_input` through `sigma_percept`; see Plan §
+`_ir_pre_mask_input` through `sigma_percept`; see Plan Section 
 "Reconstruction-loss target shape" Option B).
 
 `<maskedPrediction>` is retired; `<reconstruct>output</...>` is
@@ -474,8 +474,8 @@ retired (it was the only path that fired the reverse pipeline);
 `<reverseScale>` is renamed to `<reconstructionScale>` (the legacy
 name remains parseable with a one-shot deprecation warning).
 
-Sentence-level AR moves to `InterSentenceLayer` — see
-`doc/Architecture.md` §"Sentence-level AR (`InterSentenceLayer`)"
+Sentence-level AR moves to `InterSentenceLayer` --- see
+`doc/Architecture.md` Section "Sentence-level AR (`InterSentenceLayer`)"
 for the ARMA(p, q) design.
 
 ---
@@ -499,8 +499,8 @@ Addition in log-space corresponds to multiplication of the original features.
 for both directions: `_to_mult(y)`, log, `W^{-1}(z - b)`, exp, `_from_mult`.
 Matrix inverse via `InvertibleLinearLayer` (LDU).
 
-**Reverse (invertible=False, reversible=True).** Two `PiLayer` instances —
-`pi1` for forward, `pi2` for reverse — with independent weights.
+**Reverse (invertible=False, reversible=True).** Two `PiLayer` instances ---
+`pi1` for forward, `pi2` for reverse --- with independent weights.
 
 **Key parameters.**
 
@@ -513,7 +513,7 @@ Matrix inverse via `InvertibleLinearLayer` (LDU).
 | `hasAttention` | Enable attention reweighting |
 | `bivectorOutput` | Applies Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ to the per-slot percept event; writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation` |
 
-**Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation operator —
+**Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation operator ---
 percepts represent feature magnitudes with sign indicating direction.
 
 Under `bivectorOutput=true`, per-slot scalar activation is replaced by a
@@ -532,17 +532,17 @@ space.
 
 **Geometry contrast with the Lexicon.** ConceptualSpace's codebook stores
 **named directions** (unit-norm $c_i \in S^{D-1}$); input magnitude in
-$[-1, +1]$ encodes belief certainty with sign. No antipodal identification —
+$[-1, +1]$ encodes belief certainty with sign. No antipodal identification ---
 sign matters.
 
 **Owned layer (2026-05-13 rebalance).**
 
 | Layer | Direction | Math | Notes |
 |-------|-----------|------|-------|
-| `self.sigma_percept` (`SigmaLayer`) | P $\to$ C | additive linear `tanh(W @ atanh(x) + b)`, non-square in the general case (`percept_dim → concept_dim`) | Canonical forward C-tier fold. The legacy `self.pi` was retired by Phase B; `_pi_reverse` was renamed to `_sigma_percept_reverse`. |
+| `self.sigma_percept` (`SigmaLayer`) | P $\to$ C | additive linear `tanh(W @ atanh(x) + b)`, non-square in the general case (`percept_dim -> concept_dim`) | Canonical forward C-tier fold. The legacy `self.pi` was retired by Phase B; `_pi_reverse` was renamed to `_sigma_percept_reverse`. |
 
 One SigmaLayer handles both directions via self-inverse in the square /
-invertible regime (the bivector configuration forces square dim — the
+invertible regime (the bivector configuration forces square dim --- the
 codebook does the dim adaptation inside `project`). In the
 non-square / non-invertible regime, two SigmaLayers
 (`sigma_percept_1`, `sigma_percept_2`) are constructed when
@@ -600,7 +600,7 @@ flags). `_apply_mask` is shape-disambiguated:
 
 ### ShortTermMemory
 
-ConceptualSpace also owns `self.stm` — a `ShortTermMemory` instance, a
+ConceptualSpace also owns `self.stm` --- a `ShortTermMemory` instance, a
 per-batch stack of unquantized C-tier "ideas" (continuous compositions
 of concepts produced by reduce operations). This is distinct from the
 sentence-scoped `_stm_fired` flag on `WordSpace` (which is a discourse-
@@ -620,7 +620,7 @@ The per-word stem inside `BasicModel._forward_stem_per_word` pushes one
 post-quantized idea per word; the body's `_chart_compose_at_C` consumes
 the buffer via `snapshot()` at every stage. The reverse mirror,
 `_chart_generate_from_stm`, fires at the symmetric C-tier point inside
-the reverse pipeline. The 7±2 cap is enforced by `wMax`-driven capacity
+the reverse pipeline. The 7$\pm$2 cap is enforced by `wMax`-driven capacity
 plus per-row depth pointers.
 
 ### Lift/Lower factorization
@@ -647,18 +647,18 @@ LowerLayer.forward(VP_bivec, NP_bivec):
     return       S.codebook.forward(out_c, project=True)
 ```
 
-The shared `L · U` per-layer LDU basis is reused across every VP. The
+The shared $L \cdot U$ per-layer LDU basis is reused across every VP. The
 per-call gate `VP_c * NP_c` (elementwise multiplicative on the C-tier
-prototype × dim grid) is what makes different VPs produce different
-transformations — "VP is the mask." No `raw_gate` learnable parameter;
+prototype $\times$ dim grid) is what makes different VPs produce different
+transformations --- "VP is the mask." No `raw_gate` learnable parameter;
 the gating signal comes from VP's codebook content. Different
 adjective / verb codebook activations give different outputs from the
 same shared matrix.
 
 Sigma vs Pi asymmetry maps directly to lift vs lower:
-- Lift uses sigma (additive log-domain expansion) — naturally
+- Lift uses sigma (additive log-domain expansion) --- naturally
   "lifting features onto concepts."
-- Lower uses pi (multiplicative log-domain contraction) — naturally
+- Lower uses pi (multiplicative log-domain contraction) --- naturally
   "lowering concepts into specific percept-realizations."
 
 See [Layers.md](Layers.md#liftlayer--lowerlayer) for the GrammarLayer
@@ -711,11 +711,11 @@ prototypes are free patterns, retrieved via Euclidean L2.
 
 The per-prototype catuskoti bivector `[B, V_S, 2]` lives on
 `subspace.activation`, NOT in the codebook. Populated by
-`Codebook.forward(input, project=True)` — the **intrinsic snap**:
+`Codebook.forward(input, project=True)` --- the **intrinsic snap**:
 
 ```
-pos[b, n] = sum_v relu(input[b, v] · W[n])
-neg[b, n] = sum_v relu(-input[b, v] · W[n])
+pos[b, n] = sum_v relu(dot(input[b, v], W[n]))
+neg[b, n] = sum_v relu(dot(-input[b, v], W[n]))
 ```
 
 The matching decode `Codebook.reverse(bivec, project=True)` is the cached SVD
@@ -723,7 +723,7 @@ pseudo-inverse: C $\to$ S $\to$ C round-trip projects the input onto span(W)
 and is a fixed point thereafter (verified by `test/test_idempotent_loop.py`).
 
 The C $\leftrightarrow$ S boundary as **categorization**: calling
-`SymbolicSpace.forward` IS the act of *naming* — projecting concept
+`SymbolicSpace.forward` IS the act of *naming* --- projecting concept
 activation onto the named codebook lattice. Clean prototype match $\to$
 TRUE-corner activation; noisy match $\to$ degraded TRUE pole; off-lattice
 $\to$ NEITHER. The dialectic loop is snap (synthesis) $\to$ grammar (logic)
@@ -762,17 +762,17 @@ $$
 3. **Therefore Pi / Sigma preserve parthood pole-by-pole.**
 
 The bivector layout keeps the contradiction corner `[1, 1]` distinct from the
-ignorance corner `[0, 0]` under positive matmul — a single bitonic axis would
+ignorance corner `[0, 0]` under positive matmul --- a single bitonic axis would
 let $aP - aN$ cancel under summation.
 
 The `ImpenetrableLayer` regularizer maintains an antichain of same-rank
 prototypes, complementing the structural `.where`-uniqueness from the
-codebook offset registry. See [Logic.md §Parthood as Projection](Logic.md)
+codebook offset registry. See [Logic.md Section Parthood as Projection](Logic.md)
 and [BuddhistParallels.md](BuddhistParallels.md).
 
 ---
 
-## SyntacticSpace — retired
+## SyntacticSpace --- retired
 
 The standalone `SyntacticSpace` class has been retired. Grammar /
 chart / derivation-tree machinery now lives on `WordSpace`, which
@@ -780,7 +780,7 @@ attaches a `SyntacticLayer` to `SymbolicSpace` (the canonical grammar
 host). The CNF binary-derivation behavior previously documented here
 is preserved by `WordSpace.compose` + the chart at S; words are still
 concepts encoding grammatical rules, and the derivation is still
-stored as word tuples — just on `WordSpace` rather than on a separate
+stored as word tuples --- just on `WordSpace` rather than on a separate
 Space.
 
 See [Language.md](Language.md) for the grammar and the chart's per-tier
@@ -793,7 +793,7 @@ rule dispatch.
 **Role.** Maps symbolic (or syntactic) vectors to task targets via linear
 projection.
 
-**Forward.** `y = W_out * x + b_out`. Always `reshape=True` — the
+**Forward.** `y = W_out * x + b_out`. Always `reshape=True` --- the
 `[B, nSymbols, symbolDim]` tensor is flattened before projection.
 
 **Reverse.** Pseudoinverse of `W_out`. Text mode snaps each output vector to

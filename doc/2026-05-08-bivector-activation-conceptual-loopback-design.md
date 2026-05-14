@@ -1,4 +1,4 @@
-# Bivector Activation + Conceptual Loopback — Design Spec
+# Bivector Activation + Conceptual Loopback --- Design Spec
 
 ## Context
 
@@ -8,7 +8,7 @@ the C-S boundary IS the bivector projection. Total effect:
 - ConceptualSpace's *output* is the per-prototype catuskoti bivector
   `[B, V_C, 2]`.
 - ConceptualSpace's *input* is the concatenation `[Perceptual ||
-  Symbolic_{t-1}]` — the "right-half loopback".
+  Symbolic_{t-1}]` --- the "right-half loopback".
 - PerceptualSpace serves as the subsymbolic substrate (no parallel
   `SubsymbolicSpace` class at runtime).
 - `useButterflies=false`, `passThrough=false`, and the loopback is always-on.
@@ -27,12 +27,12 @@ referred to as **ConceptualSpace Bivector Projection** (CSBP).
 ### Pipeline shapes (MM_xor)
 
 ```
-Input          [B, 8, 4]      (text → InputSpace lift)
+Input          [B, 8, 4]      (text -> InputSpace lift)
 Perceptual     [B, 8, 4]      (passthrough or codebook-quantized)
-Conceptual_in  [B, 8, 4 + 2]  ← P_event || S_event_{t-1}
-Conceptual_out [B, 8, 2]      ← per-prototype catuskoti bivector
+Conceptual_in  [B, 8, 4 + 2]  <- P_event || S_event_{t-1}
+Conceptual_out [B, 8, 2]      <- per-prototype catuskoti bivector
 Symbolic_in    [B, 8, 2]
-Symbolic_out   [B, 8, 2]      ← per-prototype catuskoti bivector
+Symbolic_out   [B, 8, 2]      <- per-prototype catuskoti bivector
 Output         [B, 1, 1]      (XOR prediction head)
 ```
 
@@ -71,9 +71,9 @@ Six gateable stages. Stages 1-2 trim before architectural changes; stages
 3-6 introduce the bivector + loopback. Butterflies are *not* removed here
 (Note A); bivector configs set `useButterflies=false`.
 
-### Stage 1 — Remove `passThrough=true` codepath
+### Stage 1 --- Remove `passThrough=true` codepath
 
-With architecture locked in, every Space does work — no "skip" mode.
+With architecture locked in, every Space does work --- no "skip" mode.
 
 Touchpoints: `Space.passThrough` short-circuits, `Codebook.passThrough`
 short-circuit, `passThrough=not self.codebook` derivation in
@@ -85,7 +85,7 @@ PerceptualSpace) needs a real config or rewrite using `<codebook>false</codebook
 Acceptance: `passThrough` reads gone; `<passThrough>` removed from XML;
 tests green.
 
-### Stage 2 — Make subsymbolic-loopback always-on
+### Stage 2 --- Make subsymbolic-loopback always-on
 
 Drop `<subsymbolicEnabled>` and `<mode>`; PerceptualSpace serves as the
 subsymbolic substrate.
@@ -103,7 +103,7 @@ Touchpoints:
 Validator: replace the "subsymbolicEnabled requires shared nDim" check
 with `C.nInputDim == P.nOutputDim + S.nOutputDim`.
 
-### Stage 3 — Per-stage widening
+### Stage 3 --- Per-stage widening
 
 After Stage 2 the loopback is always wired, but only stage 0's
 ConceptualSpace is widened. Widen every stage:
@@ -126,13 +126,13 @@ for t, cs in enumerate(self.conceptualSpaces):
     object.__setattr__(cs, 'subsymbolicSpace_ref', None)
 ```
 
-`object.__setattr__` bypasses `nn.Module` submodule registration —
+`object.__setattr__` bypasses `nn.Module` submodule registration ---
 otherwise SymbolicSpace would be in multiple parents in the module tree.
 
 Acceptance: 2-stage MM_xor variant (`conceptualOrder=2`, no butterflies)
 forwards through both stages without shape errors.
 
-### Stage 4 — ConceptualSpace Bivector Projection (CSBP)
+### Stage 4 --- ConceptualSpace Bivector Projection (CSBP)
 
 Wire `Codebook.forward(input, project=True)` into the C-tier forward and
 `Codebook.reverse(bivec, project=True)` into the reverse.
@@ -144,7 +144,7 @@ if self.codebook:
     y = self.subspace.what.forward(y, project=True)        # [B, V_S, 2] bivec
 ```
 
-The wide-codebook `topK` branch goes away — the bivector is per-prototype
+The wide-codebook `topK` branch goes away --- the bivector is per-prototype
 regardless of how many prototypes exist.
 
 **Reverse lift** in `ConceptualSpace.reverse`: prepend a lift step ahead of
@@ -160,7 +160,7 @@ if self.codebook:
 **SVD cache lifecycle.** `Codebook.project` stores `_project_cache` on the
 instance; `project_reverse` reads it. Contract: **one forward followed by
 one reverse on the same codebook instance**, no intervening forward. Cache
-is per-instance, so per-stage ConceptualSpaces each have their own —
+is per-instance, so per-stage ConceptualSpaces each have their own ---
 no cross-stage interference.
 
 **Codebook initialization.** `project_reverse` uses `1/S` (inverse singular
@@ -170,7 +170,7 @@ SVD-orthogonalize at construction:
 ```python
 with torch.no_grad():
     U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-    W.copy_(U @ Vh)   # nearest orthonormal — all singular values 1
+    W.copy_(U @ Vh)   # nearest orthonormal --- all singular values 1
 self._svd_dirty = True
 ```
 
@@ -179,11 +179,11 @@ well-conditioned from the first forward call. EMA/training updates deform
 from this start.
 
 **Range check.** The bivec `[pos, neg]` has values bounded by `V_in *
-max(|input| * |W|)` — not in [-1, 1]. Loosen the range check for
+max(|input| * |W|)` --- not in [-1, 1]. Loosen the range check for
 bivector-output spaces: add `kind="bivector"` to normalize with `lo=0,
 hi=None` (non-negativity only).
 
-### Stage 5 — Symbolic side mirror
+### Stage 5 --- Symbolic side mirror
 
 SymbolicSpace's forward / reverse should symmetrically use `project=True`,
 so its output is also `[B, V_S, 2]`. Same swaps as Stage 4 but in
@@ -192,15 +192,15 @@ so its output is also `[B, V_S, 2]`. Same swaps as Stage 4 but in
 vestigial under the bivector regime; kept for legacy XMLs but not exercised
 by MM_xor.
 
-### Stage 6 — Downstream consumer sweep
+### Stage 6 --- Downstream consumer sweep
 
 After C and S both emit bivectors:
 
-- `OutputSpace` projection from `[B, 8, 2]` to `[B, 1, 1]` — verify shape.
-- `_compute_symbol_terms` / `_emit_symbol_terms` — assumes deep content;
+- `OutputSpace` projection from `[B, 8, 2]` to `[B, 1, 1]` --- verify shape.
+- `_compute_symbol_terms` / `_emit_symbol_terms` --- assumes deep content;
   needs to read the bivec format.
-- Loss broadcasting — trace and fix the `5 vs 4` shape error.
-- TruthLayer / Mereology readers — verify they consume the bivec correctly.
+- Loss broadcasting --- trace and fix the `5 vs 4` shape error.
+- TruthLayer / Mereology readers --- verify they consume the bivec correctly.
 
 ## Test plan
 
@@ -212,13 +212,13 @@ Each stage leaves the test suite green.
 | 2 | `<subsymbolicEnabled>` and `<mode>` reads gone; SubsymbolicSpace not auto-constructed; validator asserts dim contract |
 | 3 | 2-stage MM_xor variant forwards through both stages; each C reads `[P || S_{t-1}]` |
 | 4 | `ConceptualSpace.forward` returns `[B, V, 2]`; reverse returns `[B, V, D]`; SVD-orthogonal init keeps round-trip MSE <1e-3 for in-span inputs |
-| 5 | `SymbolicSpace.forward` returns `[B, V_S, 2]`; C→S→C round-trip MSE ≤5e-2 from fresh init, decreasing with training |
+| 5 | `SymbolicSpace.forward` returns `[B, V_S, 2]`; $C \to S \to C$ round-trip MSE $\le 5e-2$ from fresh init, decreasing with training |
 | 6 | `test_mm_xor.py::test_forward_reverse_reconstructs_input_state` passes (threshold may relax from 1e-2); convergence passes; full `test_basicmodel.py` green |
 
 ## Risks
 
 1. **Untrained-codebook amplification.** Resolved by Stage 4
-   SVD-orthogonalization (`W ← U @ V.T`).
+   SVD-orthogonalization (`W <- U @ V.T`).
 2. **per-prototype vs per-slot shape.** `[B, V_S, 2]` with `V_S != V_in`
    requires diagonal or outer-product disambiguation. Spec assumes
    `V_S == V_in` for now (true in MM_xor).
@@ -230,7 +230,7 @@ Each stage leaves the test suite green.
    instead of `[B, V_S, D_S]`; verify trust-score still makes sense on
    bivector poles. Surfaces in Stage 6.
 
-## Note A — Butterflies removed (2026-05-12 follow-up)
+## Note A --- Butterflies removed (2026-05-12 follow-up)
 
 Butterfly mode (`<useButterflies>true</useButterflies>`) has been retired
 wholesale. The `_butterfly_*` machinery in Layers.py, the `useButterflies`
@@ -248,9 +248,9 @@ of the starting point:
   and `reverse` wrap the snap with `input + (snapped - input).detach()` for
   STE gradient identity. `SymbolicSpace._build_what_basis` passes
   `STE=True`. CSBP replaces the snap; the STE wrap will need to be retained
-  or discarded — Stage 4 decision.
+  or discarded --- Stage 4 decision.
 - **`WhereEncoding._codebook_registry`** + `allocate_codebook_slice` +
-  `Codebook.where_offset` + `addVectors` size assert — sequential per-codebook
+  `Codebook.where_offset` + `addVectors` size assert --- sequential per-codebook
   offset allocation in the global where-space.
 - **`Models._create_per_stage` `conceptOutputShape`** uses explicit
   `<nOutput>` / `<nOutputDim>` instead of the broken volume formula. Don't

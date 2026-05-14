@@ -4,9 +4,9 @@
 
 This document defines the logic system at three levels:
 
-1. **Subsymbolic (vector / field level)** — geometry in ConceptualSpace
-2. **Symbolic (scalar level in [-1,1])** — order + polarity in SymbolicSpace
-3. **Rationality** — propositional truth store built on both
+1. **Subsymbolic (vector / field level)** --- geometry in ConceptualSpace
+2. **Symbolic (scalar level in [-1,1])** --- order + polarity in SymbolicSpace
+3. **Rationality** --- propositional truth store built on both
 
 Executable implementations of the subsymbolic and symbolic operators are the
 `Method` subclasses in Language.md.
@@ -22,9 +22,9 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 - **Union**: `union(A, B) = concat(A, B)`. Combine sets.
 - **Intersection**: Co-supported regions (RBF product / merge).
 - **Negation (affirming)**: `neg(x) = -x`. Antipodal opposition on hypersphere.
-- **Non (non-affirming)**: `Basis.non()` — bitonic returns zero (complete
+- **Non (non-affirming)**: `Basis.non()` --- bitonic returns zero (complete
   withdrawal); monotonic is `relu(x - threshold)`.
-- **Parthood** (fundamental): `Basis.part()` — clipped cosine projection:
+- **Parthood** (fundamental): `Basis.part()` --- clipped cosine projection:
 
 $$
 \operatorname{part}(x, y) = \frac{\max(0,\; x \cdot y)}{\lVert x \rVert \cdot \lVert y \rVert}
@@ -53,7 +53,7 @@ Interpretation: $+1$ = strong presence, $0$ = neutral, $-1$ = absence.
 `Basis` supports **monotonic** (plain min/max, used by P/C/S whenever
 `<bivectorOutput>true</bivectorOutput>`, so the entire P$\to$C$\to$S chain
 operates on the non-negative paired-index cone) and **bitonic** (sign-aware,
-legacy default). Monotonic forms here; bitonic forms (RadMin, RadMax) in §7.
+legacy default). Monotonic forms here; bitonic forms (RadMin, RadMax) in Section 7.
 See [Spaces.md "Monotonicity of the lift / lower
 chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
@@ -61,10 +61,10 @@ Let $a, b \in [-1,1]$.
 
 | Operator | Bitonic | Monotonic |
 |----------|---------|-----------|
-| Negation (affirming) | $\operatorname{neg}(a) = -a$ | — |
+| Negation (affirming) | $\operatorname{neg}(a) = -a$ | --- |
 | Non (non-affirming) | $\operatorname{non}(a) = 0$ | $\operatorname{non}(a) = \operatorname{relu}(a - \tau)$ (learnable $\tau$) |
-| Union | RadMax (§7) | $a \cup b = \max(a, b)$ |
-| Intersection | RadMin (§7) | $a \cap b = \min(a, b)$ |
+| Union | RadMax (Section 7) | $a \cup b = \max(a, b)$ |
+| Intersection | RadMin (Section 7) | $a \cap b = \min(a, b)$ |
 
 ### Parthood as Projection
 
@@ -125,8 +125,8 @@ Rationality is the propositional logic layer, built on S-tier grammar rules
 ### Truth Statements
 
 A **truth statement** is any assertion processed through the full pipeline.
-The `TruthLayer` — owned by `WordSpace`, reached as
-`self.wordSpace.truth_layer` — stores activations **scaled by** DegreeOfTruth:
+The `TruthLayer` --- owned by `WordSpace`, reached as
+`self.wordSpace.truth_layer` --- stores activations **scaled by** DegreeOfTruth:
 
 $$
 \text{stored} = \text{activation} \times \text{degree}
@@ -145,9 +145,9 @@ $$
 `TruthLayer` is instantiated by `WordSpace.__init__`. `SymbolicSpace.forward`
 records activations when `<accumulateTruth>` > 0:
 
-- **`record(activation, degree)`** — store `activation * degree`.
-- **`query(activation)`** — find the closest stored truth by cosine similarity.
-- **`field(concepts)`** — project all stored truths into ConceptualSpace as a
+- **`record(activation, degree)`** --- store `activation * degree`.
+- **`query(activation)`** --- find the closest stored truth by cosine similarity.
+- **`field(concepts)`** --- project all stored truths into ConceptualSpace as a
   scalar field over concept vectors.
 
 ### Truth Field
@@ -163,8 +163,8 @@ where $t_i = \text{activation}_i \times \text{degree}_i$. Two kinds of regions:
 
 ### Consonance and Dissonance
 
-1. **Internal consonance** — stored truths should be mutually consistent.
-2. **External consonance** — incoming statements are evaluated against the
+1. **Internal consonance** --- stored truths should be mutually consistent.
+2. **External consonance** --- incoming statements are evaluated against the
    truth field.
 
 ### Propositional Structure
@@ -172,9 +172,9 @@ where $t_i = \text{activation}_i \times \text{degree}_i$. Two kinds of regions:
 Both parthood and equality are S-tier operations on the bivector
 SymbolicSubSpace:
 
-- **`part(S, S)`** — containment on the bivector symbol subspace. Grammar
+- **`part(S, S)`** --- containment on the bivector symbol subspace. Grammar
   applies it as `score * B`, scaling the whole by parthood degree.
-- **`equals(S, S)`** — identity as mutual parthood; delegates to `Basis.equal`.
+- **`equals(S, S)`** --- identity as mutual parthood; delegates to `Basis.equal`.
 
 Together they define a partial order over symbolic activations.
 
@@ -303,8 +303,8 @@ In bivector space (paired-index `[p0, n0, p1, n1, ...]`), fusion names the
 top-right corner of the smallest hyperrectangle dominating every stored truth
 componentwise. Geometric dual of luminosity:
 
-- **Luminosity** = `||relu(min(truths))||` — GLB / meet, scalar coherence.
-- **Fusion** = `max(truths)` — LUB / join, vector coverage.
+- **Luminosity** = `||relu(min(truths))||` --- GLB / meet, scalar coherence.
+- **Fusion** = `max(truths)` --- LUB / join, vector coverage.
 
 Trust (DoT) is already baked into stored truths, so fusion is trust-weighted
 automatically.

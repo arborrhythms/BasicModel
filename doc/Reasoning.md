@@ -69,9 +69,9 @@ penalty     = max(0, ||truth_union|| - ||extended||)
 
 | Case | Effect |
 |------|--------|
-| Agreeing proposition | Preserves/extends union dims → no penalty |
-| Unknown proposition (zero dims) | Passes through → no penalty |
-| Contradicting proposition | Cancels conflicting dims → positive penalty |
+| Agreeing proposition | Preserves/extends union dims $\to$ no penalty |
+| Unknown proposition (zero dims) | Passes through $\to$ no penalty |
+| Contradicting proposition | Cancels conflicting dims $\to$ positive penalty |
 
 DoT weighting is implicit: stored vectors carry DoT in magnitude, so
 contradicting a high-DoT truth causes a larger norm drop.
@@ -83,10 +83,10 @@ modulation (`totalLoss * (1 + lum_weight * (1 - luminosity))`).
 
 `BasicModel.reason(givens, target, direction, max_steps)`:
 
-- **Forward** (givens → conclusion): Encode givens into TruthSet, extrapolate
+- **Forward** (givens $\to$ conclusion): Encode givens into TruthSet, extrapolate
   new truths each step, check `isTrue(target)` until DoT exceeds threshold
   or `max_steps` is reached.
-- **Reverse** (target → grounding): Encode target, call `ground()` to find
+- **Reverse** (target $\to$ grounding): Encode target, call `ground()` to find
   minimal basis, extrapolate if insufficient.
 
 Luminosity non-decrease is the validity certificate.
@@ -116,17 +116,17 @@ narrow-grammar mode wired as a DNF-object policy with contiguity checks.
 
 ### Flat (useGrammar="none")
 
-A single shared PiLayer (P↔C) and SigmaLayer (C↔S) on a concatenated
+A single shared PiLayer (P$\leftrightarrow$C) and SigmaLayer (C$\leftrightarrow$S) on a concatenated
 `[percepts, symbols]` tensor at every conceptual order. All orders share one
 undifferentiated symbolic space.
 
 Per iteration `t`:
 
 1. **Input.** `concept_input = cat([percepts, sym_feedback], dim=1)`.
-2. **Pi** (`ConceptualSpace.pi`): percepts → concepts via `forwardPi`.
-3. **Sigma** (`SymbolicSpace.sigma`): concepts → symbols via `forwardSigma`.
+2. **Pi** (`ConceptualSpace.pi`): percepts $\to$ concepts via `forwardPi`.
+3. **Sigma** (`SymbolicSpace.sigma`): concepts $\to$ symbols via `forwardSigma`.
 4. **Feedback**: Symbol activation norms broadcast back to the symbol portion.
-5. **Reverse**: `reverseSigma` → peel symbol portion → `reversePi`, per order.
+5. **Reverse**: `reverseSigma` $\to$ peel symbol portion $\to$ `reversePi`, per order.
 
 Key: all conceptual orders share one undifferentiated symbolic space; no way
 to tell from a symbol vector alone which order produced it.
@@ -136,7 +136,7 @@ to tell from a symbol vector alone which order produced it.
 Progressive-bottleneck path with external pair-average merge (`_pair_merge`
 caching `left - right` diffs in `_merge_diffs`), per-level indexed
 Sigma/Pi (`conceptualSpace[t]` / `symbolicSpace[t]`), and cached symbol
-feedback. Symbol dimension geometrically partitioned per order — gives
+feedback. Symbol dimension geometrically partitioned per order --- gives
 **partition-aware reasoning**: truth grounding, consistency, and
 extrapolation respect conceptual order.
 
@@ -162,21 +162,21 @@ for t in reversed(range(conceptualOrder)):
 ```
 
 Pair-unmerge uses cached `_merge_diffs` to recover both originals from each
-averaged pair — inverse is exact.
+averaged pair --- inverse is exact.
 
 ## Configuration
 
 | Parameter | Location | Default | Description |
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
-| `<conceptualOrder>` | `<architecture>` | 1 | Percept→Concept→Symbol iterations |
+| `<conceptualOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
 | `<useGrammar>` | `<WordSpace>` | false | Grammar-directed composition |
 | `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Activation-norm cap driving per-cell trust score in `TruthLayer.record_batch`. Codebook NN lookup at compact time dedupes near-zero/near-duplicate vectors. |
 
 ## Contemplative Awareness Methods
 
 Four stubs on `BaseModel` characterizing stages of contemplative awareness
-as spatial/computational properties. Each raises `NotImplementedError` —
+as spatial/computational properties. Each raises `NotImplementedError` ---
 they define the target characterization, not implementation.
 
 | Method | Stage | Characterization |
@@ -189,10 +189,10 @@ they define the target characterization, not implementation.
 Shamatha Speech is the target grammar mode for `Contiguous()`: complete DNF
 object grammar plus spatiotemporal contiguity. Every `conjunction` /
 `disjunction` over object parts must keep `where()` support connected and
-`when()` support continuous. Differs from serial mode — may reduce over all
+`when()` support continuous. Differs from serial mode --- may reduce over all
 active percepts at once; rejects scattered object fields, not multi-percept
 fields. See
-[Language.md](Language.md) §Shamatha Speech Mode and
+[Language.md](Language.md) Section Shamatha Speech Mode and
 [plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md).
 
 ## Testing

@@ -8,12 +8,12 @@ architecture's **calculator**: the chart at S reads operand cells,
 invokes the grammar layer's compose / forward / reverse, and writes the
 result back. Three pieces cooperate:
 
-- `Grammar` (in [`bin/Language.py`](../bin/Language.py)) — singleton
+- `Grammar` (in [`bin/Language.py`](../bin/Language.py)) --- singleton
   rule table loaded from XML or `data/grammar.cfg`.
-- `Chart` (`Language.py`) — owns the chart parameters, runs the inside
+- `Chart` (`Language.py`) --- owns the chart parameters, runs the inside
   / outside passes, and dispatches each per-cell rule application
   through `wordSpace.host_layer(tier, rule_name)`.
-- `GrammarLayer` subclasses (in [`bin/Layers.py`](../bin/Layers.py)) —
+- `GrammarLayer` subclasses (in [`bin/Layers.py`](../bin/Layers.py)) ---
   one class per grammar operator (`not`, `non`, `intersection`,
   `union`, `conjunction`, `disjunction`, `lift`, `lower`, `equals`,
   `part`, `true`, `false`, `swap`, `query`).
@@ -23,20 +23,20 @@ InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  Out
                                                           chart runs here
 ```
 
-> **Deferred refactor — serial / shift-reduce parser.** A separate
+> **Deferred refactor --- serial / shift-reduce parser.** A separate
 > follow-up pass will replace the batched CKY with a serial /
 > shift-reduce parser driven word-by-word, consuming
 > `ConceptualSpace.stm` as the working-memory stack. The cadence is
 > **per-word**: each word makes a full round trip
-> `P (BPE lex) → C (project) → S (codebook snap = word identity + POS)
-> → C (S→C reverse, the unquantized idea) → stm.push(idea)`, and the
+> `P (BPE lex) -> C (project) -> S (codebook snap = word identity + POS)
+> -> C (S->C reverse, the unquantized idea) -> stm.push(idea)`, and the
 > parser then fires reductions on the STM via the chart's grammar
 > rules. POS rides the codebook hit for free via the bivector
 > codebook's `category_ids` (hard POS tag per atom) and
 > `category_logits` (learnable per-atom soft POS distribution); the
 > chart's `_apply_codebook_pos_seed` already EMA-updates these from
 > the inside pass, so per-word snap returns `(word_id, POS)`
-> simultaneously — no separate POS tagger needed.
+> simultaneously --- no separate POS tagger needed.
 >
 > The chart's launch site is at C (over `ConceptualSpace.stm` snapshot)
 > rather than at S (with S retained as a "calculator" reachable via a
@@ -86,13 +86,13 @@ downward `S -> C` projection.
 
 ### Accessors
 
-- `Grammar.symbolic()` — indices of all S-tier rules
-- `Grammar.symbolic_transition()` — `None` (no cross-tier transitions)
-- `Grammar.binary_rules()` — indices of all arity-2 rules
-- `Grammar.rule_by_id(i)` — canonical production string
-- `Grammar.method_name(i)` — dispatch method name (e.g. `'swap'`)
-- `Grammar.arity(i)` — 1 or 2
-- `Grammar.tier(i)` — `'P'` / `'C'` / `'S'` / `'L'`
+- `Grammar.symbolic()` --- indices of all S-tier rules
+- `Grammar.symbolic_transition()` --- `None` (no cross-tier transitions)
+- `Grammar.binary_rules()` --- indices of all arity-2 rules
+- `Grammar.rule_by_id(i)` --- canonical production string
+- `Grammar.method_name(i)` --- dispatch method name (e.g. `'swap'`)
+- `Grammar.arity(i)` --- 1 or 2
+- `Grammar.tier(i)` --- `'P'` / `'C'` / `'S'` / `'L'`
 
 ### Grammar configuration
 
@@ -102,7 +102,7 @@ start symbol).  When the chart reduces a row's parse to a single node
 of the start category, the layer emits a soft-reset signal: the outer
 doc-streaming loop dispatches `wordSpace.soft_reset(batch=b)`, clearing
 per-sentence working buffers.  Discourse history and codebook EMA are
-*not* cleared — they are document-scoped.
+*not* cleared --- they are document-scoped.
 
 The loader accepts three RHS forms; the **explicit-op** form is canonical:
 
@@ -131,7 +131,7 @@ The loader accepts three RHS forms; the **explicit-op** form is canonical:
 Op names dispatch into `GRAMMAR_LAYER_CLASSES` (Layers.py): `lift`,
 `lower`, `intersection`, `union`, `not`, `non`, `conjunction`,
 `disjunction`, `equals`, `part`, `true`, `false`, `swap`, `query`.
-Reverse productions are derived mechanically at grammar-load time —
+Reverse productions are derived mechanically at grammar-load time ---
 for `LHS = op(arg1, arg2)` the loader synthesizes
 `arg1, arg2 = opReverse(LHS)`.
 
@@ -201,12 +201,12 @@ $$
 These partition unity: $\mathrm{true} + \mathrm{false} + \mathrm{non}
 = 1$ pointwise.  All three are lossy.
 
-### Negation (`not`) — Sym
+### Negation (`not`) --- Sym
 
 Propositional bivector swap on the leading two dims:
 $[x_0, x_1, x_{2..}] \to [x_1, x_0, x_{2..}]$.  Self-inverse.
 
-### Conjunction / disjunction — S-tier (post-codebook scalar) {#conjunction--disjunction--sym}
+### Conjunction / disjunction --- S-tier (post-codebook scalar) {#conjunction--disjunction--sym}
 
 `S = conjunction(S, S)` and `S = disjunction(S, S)` operate on the
 post-codebook scalar activation ``[B, V]`` (non-negative strength per
@@ -221,7 +221,7 @@ Routed through ``Ops.intersection(..., monotonic=True)`` /
 ``Ops.union(..., monotonic=True)``.  Both lossy with
 ``(parent, parent)`` pseudo-inverse on `reverse`.
 
-### Intersection / union — L-tier (lattice on bivectors)
+### Intersection / union --- L-tier (lattice on bivectors)
 
 `L = intersection(L, L)` / `L = union(L, L)` are lattice min/max on a
 **bivector activation** ``[..., 2]``.  The chart binds them at
@@ -229,12 +229,12 @@ whichever space's activation tier the operands live in.
 
 | `monotonic` | kernel                                      |
 |-------------|---------------------------------------------|
-| `False`     | RadMin / RadMax — same-sign min / max       |
+| `False`     | RadMin / RadMax --- same-sign min / max       |
 | `True`      | strict lattice min / max (per channel)      |
 
 L-tier ops are lossy: `decompose` returns `(parent, parent)`.
 
-### Part / equals — Def (tensor scoring)
+### Part / equals --- Def (tensor scoring)
 
 $\mathrm{part}(\ell, r) = \frac{\max(0,\ \ell \cdot r)}{|\ell|\,|r|} \cdot r$.
 The scalar score is broadcast to $r$'s rank.  Empty-operand contract:
@@ -244,28 +244,28 @@ if $|\ell|$ or $|r|$ is near zero, the score is 1.
 and broadcast to $r$.  Under `mask`, equals degenerates to L1-distance
 agreement.  Both lossy.  See [Mereology.md](Mereology.md).
 
-### Absorb — base-class marker
+### Absorb --- base-class marker
 
 `absorb(\ell, r) = \ell`.  Lives on `GrammarLayer.absorb(left, right)
 -> left` so any binary subclass can flag its right operand as
 syntactic sugar.
 
-### Query — Mereological
+### Query --- Mereological
 
 `query(\ell, r) = \ell`.  The chart pushes a marker word elsewhere
 when a norm-drop fires (see [Composition](#composition) below).
 
-### Swap (Sinkhorn soft permutation) — Sym
+### Swap (Sinkhorn soft permutation) --- Sym
 
 A learned $3 \times 3$ logit matrix $M$ is normalized via $k=5$
 Sinkhorn iterations to produce a doubly-stochastic soft permutation
 $P$.  Given operands $\ell, r$ and a learned broadcast marker $m$,
 the output is the first row of $P \cdot [\ell, r, m]^\top$.  Lossy.
 
-### Lift / lower — rule-id annotators over the shared subsymbolic loop
+### Lift / lower --- rule-id annotators over the shared subsymbolic loop
 
 Post-2026-05-13 refactor.  `LiftLayer` and `LowerLayer` are now
-**pure rule-id annotators** — they no longer own (or borrow) a
+**pure rule-id annotators** --- they no longer own (or borrow) a
 substrate sigma/pi.  All composition happens in the unconditional
 subsymbolic loop:
 
@@ -275,7 +275,7 @@ C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )
 
 owned by `ConceptualSpace.sigma_percept` and the
 `PerceptualSpace.pi_input` / `pi_concept` pair.  See
-[Spaces.md §"Sigma / Pi
+[Spaces.md Section "Sigma / Pi
 ownership"](Spaces.md#sigma--pi-ownership-2026-05-13-rebalance).
 
 When the chart fires `S = lift(NP, VP)` or `S = lower(NP, VP)`,
@@ -295,7 +295,7 @@ of that state, not in the substrate operation that produced it.
 
 Linguistically, *"the running boy"* (lowering, attribution) and
 *"the boy runs"* (lifting, predication) share a single neural
-composition act — *fuse a noun representation with a verb
+composition act --- *fuse a noun representation with a verb
 representation into one bound state*.  The lift/lower distinction is a
 **derivational labelling** of that shared state, not a separate
 operation.  Re-firing the loop with a different rule annotation
@@ -315,16 +315,16 @@ pass-through (no default sigma/pi at S, only grammar ops, which are
 idempotent under their algebra), so routing a C-activation through SS
 and back through CS returns the same state.  An unconditional
 `pi_concept` therefore can't double-apply across the symbolic round
-trip — it just re-folds the same C content into the unchanged P
+trip --- it just re-folds the same C content into the unchanged P
 state.
 
-### Chunking — Percepts
+### Chunking --- Percepts
 
 Not a grammar rule.  Implemented by `ChunkLayer` /
 `PerceptualSpace.chunk_static` as a perceptual pre-pass before the
 grammar sees symbol slots.
 
-### Mereological suite — see [Mereology.md](Mereology.md)
+### Mereological suite --- see [Mereology.md](Mereology.md)
 
 `part`, `whole`, `equal`, `overlap`, `underlap`, `boundary`, `copart`
 live in `Ops.*`; the canonical spec is [Mereology.md](Mereology.md).
@@ -422,7 +422,7 @@ class IntersectionLayer(GrammarLayer):
 
 `UnionLayer` is identical with `Ops.union` and `rule_name = "union"`.
 
-### `PiLayer` / `SigmaLayer` — parametrized folds
+### `PiLayer` / `SigmaLayer` --- parametrized folds
 
 `PiLayer` (AND fold) and `SigmaLayer` (OR fold) inherit `ButterflyLayer`.
 Unary `forward(x)` is the log-domain multiplicative fold over the feature
@@ -482,7 +482,7 @@ GRAMMAR_LAYER_CLASSES = {
 
 ## Rule prediction
 
-`SyntacticLayer.predict_rules(x)` — also on `Chart` — predicts a rule
+`SyntacticLayer.predict_rules(x)` --- also on `Chart` --- predicts a rule
 distribution at each derivation depth.  The architecture is weight-tied
 across depths with a learned depth embedding.
 
@@ -596,14 +596,14 @@ codebook-resolved POS for any input position whose nearest atom
 carries a non-wildcard `category_ids` entry and whose dot-product
 similarity exceeds `0.1`.
 
-### Mechanism 1 — RHS POS compatibility mask
+### Mechanism 1 --- RHS POS compatibility mask
 
 Before scoring each binary merge candidate, the chart gathers operand
 POS distributions and adds `log(p_left * p_right)` to the rule's
 candidate score.  Wildcard rules (`rhs_*[r] == 0`) get an unconditional
 `1.0` multiplier.
 
-### Mechanism 3 — Rule-prediction conditioning
+### Mechanism 3 --- Rule-prediction conditioning
 
 After Viterbi extraction, `Chart._populate_category_stack` walks the
 trace and pushes each merge's LHS category embedding onto
@@ -615,18 +615,18 @@ reads a parse history of POS embeddings via the existing
 
 Two reinforcing gradient paths:
 
-1. **Anchored** — codebook atoms with a known category override
+1. **Anchored** --- codebook atoms with a known category override
    `_lex_cat_scorer` deterministically; reconstruction loss pulls
    downstream rules toward those categories.
-2. **Emergent** — untagged atoms fall back to
+2. **Emergent** --- untagged atoms fall back to
    `softmax(_lex_cat_scorer(data))`; a wrong POS at a leaf produces a
    wrong rule firing, bad reconstruction, and a strong gradient back
    through `_lex_cat_scorer.W`.
 
-Coverage matters — tagging closed-class words (DET, AUX, PREP, CONJ)
+Coverage matters --- tagging closed-class words (DET, AUX, PREP, CONJ)
 plus frequent open-class atoms gives a working anchor set.
 
-### `<writeSyntax>true</writeSyntax>` — syntax-tree dump
+### `<writeSyntax>true</writeSyntax>` --- syntax-tree dump
 
 When set, `BasicModel.forward()` calls `write_syntax_tree(path)` at
 the end of every forward pass.  Default path `output/syntax.xml`
@@ -747,7 +747,7 @@ weights (PiLayer / SigmaLayer / SwapLayer logits).
 
 `BasicModel.runBatch()` computes three losses: output, optional
 reconstruction, optional embedding.  No explicit syntax loss; syntax
-fitness emerges indirectly through reconstruction — rules supporting
+fitness emerges indirectly through reconstruction --- rules supporting
 successful reconstruction accumulate weight.
 
 ---
@@ -794,7 +794,7 @@ norm projection.
 
 ### Key properties
 
-- Symbols are zero-dimensional — pure activation scalars.
+- Symbols are zero-dimensional --- pure activation scalars.
 - The PiLayer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
 - Rule firing gated by LHS / RHS POS compatibility via `chart_pos`.
 

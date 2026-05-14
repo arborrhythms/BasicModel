@@ -3,8 +3,8 @@
 ## Purpose
 
 WikiOracle's truth ontology closely parallels Buddhist **pramana theory**,
-particularly as developed by Dignaga, Dharmakirti, and — for the tetralemma
-— Nagarjuna. Pramana theory asks:
+particularly as developed by Dignaga, Dharmakirti, and --- for the tetralemma
+--- Nagarjuna. Pramana theory asks:
 
 > How does a *valid cognizer* obtain reliable knowledge?
 
@@ -29,7 +29,7 @@ WikiOracle mapping:
 - **pratyaksa** $\to$ Feeling (direct, pre-conceptual, *svasamvedana*)
 - **anumana** $\to$ Fact and Operator (conceptual, propositional)
 
-Testimony is inference from trust — exactly how WikiOracle treats Indirect
+Testimony is inference from trust --- exactly how WikiOracle treats Indirect
 Truth.
 
 ## Mapping to WikiOracle Truth Objects
@@ -41,12 +41,12 @@ organized into Direct Truth and Indirect Truth.
 
 | Type | Epistemic Role | Buddhist | Sanskrit |
 | --- | --- | --- | --- |
-| **Feeling** | immediate hedonic tone; ±1 = *vedana* | direct perception / self-awareness | *pratyaksa* / *svasamvedana* |
+| **Feeling** | immediate hedonic tone; $\pm$1 = *vedana* | direct perception / self-awareness | *pratyaksa* / *svasamvedana* |
 | **Fact** | conceptual proposition with truth value in [-1, +1] | inference / conceptual cognition | *anumana* / *kalpana* |
 | **Operator** | logical transformation (and/or/not/non) | logical pervasion / formal reasoning | *vyapti* / *prayoga* |
 
 Feelings are *pratyaksa* because they are pre-conceptual, non-linguistic,
-and immediate — the raw experiential signal before elaboration. Dharmakirti
+and immediate --- the raw experiential signal before elaboration. Dharmakirti
 is explicit: pratyaksa apprehends *svalaksana* and is non-conceptual
 (*nirvikalpaka*). The moment something is formulated as a proposition with a
 truth value, it is conceptual and falls under *anumana*.
@@ -101,7 +101,7 @@ Nagarjuna's tetralemma (*catuskoti*), per *Mulamadhyamakakarika*:
 | Neither (unknown) | *anubhaya* | `[0, 0]` | neither affirmed nor negated |
 
 Operations are 4-valued, respecting De Morgan under pole-swap negation
-`¬[aP, aN] = [aN, aP]`:
+$\neg[aP, aN] = [aN, aP]$:
 
 - Conjunction: `[min(aP, bP), max(aN, bN)]` (truth-min, falsity-max)
 - Disjunction: `[max(aP, bP), min(aN, bN)]`
@@ -112,7 +112,7 @@ can detect and suppress (see `TruthLayer.tetralemma_balance_penalty` and
 `TruthLayer.consistency` / `suggest_clarifications`).
 
 Feelings (*vedana*) continue to occupy the *Neither* position semantically
-— pre-conceptual, outside propositional truth — but are distinguishable
+--- pre-conceptual, outside propositional truth --- but are distinguishable
 from *unknown* concepts by carrying no codebook commitment.
 
 When multiple frames are considered simultaneously, *Both* emerges naturally
@@ -136,7 +136,7 @@ WikiOracle's operators map to Dharmakirti's theory of inference:
 | `<and>` | positive concomitance / co-presence | *anvaya* |
 | `<or>` | negative concomitance / co-absence | *vyatireka* |
 
-All operators are instances of **logical pervasion** (*vyapti*) — the
+All operators are instances of **logical pervasion** (*vyapti*) --- the
 necessary connection between reason and conclusion grounding valid inference.
 
 `non(a)` interprets as: *the conceptual commitment to a is removed*. This
@@ -151,26 +151,26 @@ a truth-weighted energy landscape similar to a Hopfield memory.
 | True (*asti*) | affirmed in frame | `<fact trust="+1">` |
 | False (*nasti*) | rejected in frame | `<fact trust="-1">` |
 | Both (*ubhaya*) | disagreement across frames | `<fact trust="0">` / frame-indexed contradiction |
-| Neither (*anubhaya*) | outside truth lattice | `<feeling>` — excluded from training |
+| Neither (*anubhaya*) | outside truth lattice | `<feeling>` --- excluded from training |
 
 ## Feelings, Vedana, and the "Neither" Position
 
 Feelings occupy the *neither* position. They are not truth-evaluable
-propositions — they are **direct perception** (*pratyaksa*), specifically
+propositions --- they are **direct perception** (*pratyaksa*), specifically
 **self-awareness** (*svasamvedana*): the reflexive presence of experiential
 content.
 
-The ±1 values correspond to **vedana** (hedonic tone):
+The $\pm$1 values correspond to **vedana** (hedonic tone):
 
-- **+1**: *sukha-vedana* — pleasant
-- **-1**: *duhkha-vedana* — unpleasant
+- **+1**: *sukha-vedana* --- pleasant
+- **-1**: *duhkha-vedana* --- unpleasant
 
-Vedana arises from contact (*sparsa*) — the meeting of sense organ, sense
+Vedana arises from contact (*sparsa*) --- the meeting of sense organ, sense
 object, and consciousness. Pre-conceptual and non-linguistic.
 
 In WikiOracle:
 - Feelings are **excluded from model training**.
-- Feelings are **excluded from TruthSets** — they carry no epistemic weight.
+- Feelings are **excluded from TruthSets** --- they carry no epistemic weight.
 - Canonical examples: poetry, greetings, hedged claims, subjective expressions.
 
 This preserves the tetralemma without logical explosion.
@@ -184,7 +184,7 @@ existential predicate. This has a philosophical cost.
 Nagarjuna's *Mulamadhyamakakarika* argues that the fundamental error of
 conceptual thought is attributing **svabhava** (inherent existence) to
 phenomena. "Fire" without an explicit existential predicate appears to
-stand on its own — as if fire possessed permanent, independent self. This
+stand on its own --- as if fire possessed permanent, independent self. This
 is the reification that **sunyata** (emptiness) challenges.
 
 | Concept | Sanskrit | Meaning |
@@ -194,7 +194,7 @@ is the reification that **sunyata** (emptiness) challenges.
 | Dependent origination | *pratityasamutpada* | things arise in dependence on causes |
 | Emptiness | *sunyata* | phenomena are empty of inherent existence |
 
-Making existence explicit — "fire exists" — restores existence as a
+Making existence explicit --- "fire exists" --- restores existence as a
 *relation* rather than an *attribute*. The grammar rule $VP \to \varepsilon$
 iff $MP \to \varepsilon$ reinforces this: absence of existential predicate
 implies absence of modal frame.
@@ -204,7 +204,7 @@ implies absence of modal frame.
 Dakpo Tashi Namgyel's requirement for single-pointedness models as a
 restriction on what counts as one object in speech. A complete DNF specifies
 all logical commitments about an object, but logical completeness alone is
-not contemplative one-pointedness — the parts must also remain a single
+not contemplative one-pointedness --- the parts must also remain a single
 spatiotemporal field.
 
 WikiOracle's Shamatha Speech target adds a contiguity condition to the DNF

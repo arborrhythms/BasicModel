@@ -104,8 +104,8 @@ where $K$ is the number of negative samples and $w_k^-$ are sampled words.
 Dominant cost is the linear output head: `vocab_size * vector_size` parameters
 plus optimizer state. With 200K vocab and 100 dims:
 
-- Embedding: 200K × 100 × 4 bytes = ~80MB
-- Linear head: 100 × 200K × 4 bytes = ~80MB
+- Embedding: 200K $\times$ 100 $\times$ 4 bytes = ~80MB
+- Linear head: 100 $\times$ 200K $\times$ 4 bytes = ~80MB
 - Adam optimizer: ~320MB total
 
 Full softmax computes `(N, vocab_size)` logits per sentence. Training runs on
@@ -125,10 +125,10 @@ Within-sentence training is **always IR** (masked-LM at the P-tier).
 with `NULL_PERCEPT` and snapshots the pre-mask event on
 `_ir_pre_mask_input`; `runBatch` computes
 `MSE(perceptualSpace at masked positions, _ir_pre_mask_input at
-masked positions)` — no head loss, no reverse pipeline.  The legacy
+masked positions)` --- no head loss, no reverse pipeline.  The legacy
 `<maskedPrediction>` knob and the AR / ARUS / ARIR modes were
 retired 2026-05-14; sentence-level AR moved to
-`InterSentenceLayer` (see `doc/Architecture.md` §"Sentence-level AR
+`InterSentenceLayer` (see `doc/Architecture.md` Section "Sentence-level AR
 (`InterSentenceLayer`)").
 
 | Knob | Effect |
@@ -172,7 +172,7 @@ during forward/reverse and whether it appears in the main optimizer:
 - **`CBOW`/`SBOW`** maintains clean EM separation.
 - **`BACKPROP`** is the simplest trainable mode. Embedding shaped entirely
   by the task; best for small vocabularies.
-- **`BOTH` risks gradient interference** — reconstruction pulls embeddings
+- **`BOTH` risks gradient interference** --- reconstruction pulls embeddings
   apart (distinguishability); SBOW pulls co-occurring words together. These
   forces can conflict because they use separate optimizers.
 
@@ -197,7 +197,7 @@ very different curvature, $\lambda$ may need tuning.
 ### Why MSE over Embeddings (not Cross-Entropy)
 
 - "cat" prediction when target is "kitten" incurs less loss than "democracy"
-  — embedding space captures semantic similarity.
+  --- embedding space captures semantic similarity.
 - Output dim is the embedding dim (~100) vs. vocab size (~200K).
 
 ### Training Loop
@@ -217,7 +217,7 @@ For each B-wide batch:
    `_ir_pre_mask_input` and the position mask on
    `_ir_mask_positions`.
 4. `_forward_body` runs T stages on B rows.
-5. `_forward_head` produces `[B, N, predDim]` (a side channel — IR
+5. `_forward_head` produces `[B, N, predDim]` (a side channel --- IR
    loss is computed at the P-tier, not at the head).
 6. `runBatch` computes loss via `TheError.add`:
    - `reconstruction` (P-tier): MSE between post-body
@@ -240,13 +240,13 @@ For each B-wide batch:
 | Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked pos) |
 | Context | Other N-1 words | LOO centroid of N-1 | All unmasked (+ future truncation for AR) |
 | Positive updates | 1 per step | N per step | N per step |
-| Repulsive force | vocab-1 implicit via softmax | N × (vocab-1) | Implicit via MSE |
+| Repulsive force | vocab-1 implicit via softmax | N $\times$ (vocab-1) | Implicit via MSE |
 | Signal density | Low | High | High |
 | Loss | Cross-entropy over vocab | Cross-entropy over vocab | MSE over embeddings |
 | Updates embeddings | Yes (own optimizer) | Yes (own optimizer) | Only for `BACKPROP`/`BOTH`/`JOINT` |
 | Used in (`<trainEmbedding>`) | `CBOW` | `SBOW`, `BOTH`, `JOINT` | `BACKPROP`, `BOTH`, `JOINT` |
 
-SBOW provides richer signal — every word acts as both context (for others)
+SBOW provides richer signal --- every word acts as both context (for others)
 and target (predicted from others). The full softmax pushes vectors to
 distribute across the hypersphere.
 

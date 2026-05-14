@@ -51,7 +51,7 @@ Percepts form a Voronoi tessellation using prototype and/or exemplar vectors,
 related via Self Organizing Map connections, operating in parallel as
 prototype-theory categories.
 
-Perceptual accuracy is the distance between inputs and prototype vectors —
+Perceptual accuracy is the distance between inputs and prototype vectors ---
 similar to cosine similarity, becoming a simple distance measure for poorly
 known percepts.
 
@@ -67,7 +67,7 @@ vectors of perception. Concepts support logical negation; they may refer to
 negative entities. Conceptual spaces are capable of representing negative
 entities. Concepts that do not correspond to percepts are *false*.
 
-Concepts collect percepts into fuzzy sets — linear separating hyperplanes
+Concepts collect percepts into fuzzy sets --- linear separating hyperplanes
 partitioning conceptual space, or sets defined as linear combinations of
 percept activations.
 
@@ -87,7 +87,7 @@ A concept can be split into two percepts without loss.
 
 ## Symbolic Space
 
-*Symbolic Spaces* are composed of percepts that reference concepts — a
+*Symbolic Spaces* are composed of percepts that reference concepts --- a
 subtype of perceptual spaces mapping onto conceptual spaces.
 
 Symbols have no spatial context: zero-dimensional points within perceptual
@@ -95,7 +95,7 @@ space. In humans, perceptual space projects onto a 3D cerebellar subspace
 before symbolic encoding.
 
 Symbols are independent, permanent, and integral (as references). The
-top-down serial activation differs from bottom-up perceptual activation —
+top-down serial activation differs from bottom-up perceptual activation ---
 it casts shadows.
 
 The formation of symbols increases the dimensionality of conceptual space
@@ -108,7 +108,7 @@ information.[^2]
 
 ## Reasoning
 
-Reasoning in symbolic spaces involves computing with parts and wholes —
+Reasoning in symbolic spaces involves computing with parts and wholes ---
 Venn-diagram computations enabling dynamic Bayesian-type statistics. Learned
 probabilities can be stored as unidirectional connection weights between
 concepts, possibly with part-whole structure imposed by corresponding
@@ -167,8 +167,8 @@ Since $W$ is shared, summing the partial derivatives gives:
 $$\frac{\partial e_{y}}{\partial W} + \frac{\partial e_{x}}{\partial W} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x) + \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
 Setting gradient to zero, both errors going to zero when $x = i$ and $y = o$.
-But $xy - iy = ox - yx$ may hold — simultaneous gradient descent
-ping-pongs. A better cost function multiplies the two error partials —
+But $xy - iy = ox - yx$ may hold --- simultaneous gradient descent
+ping-pongs. A better cost function multiplies the two error partials ---
 intersection of the spaces satisfying both:
 
 $$\frac{\partial e_{y}}{\partial W}\frac{\partial e_{x}}{\partial W} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x))\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y) g^{-1}(x)$$
@@ -222,5 +222,5 @@ $$\Delta W_{y}\Delta W_{x} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^
 
 [^2]: For example, {0,1} and {0,1}, if orthogonal, pose no constraint on the
 location of the 1 in their 2x2 grid. However, {0,1,1} and {0,1} partition a
-3x2 space and require two 1's on the same row — a fact present in neither
+3x2 space and require two 1's on the same row --- a fact present in neither
 set alone.

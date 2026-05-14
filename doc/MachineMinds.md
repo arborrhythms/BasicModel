@@ -35,11 +35,11 @@ inside Searle's Chinese translation engine.*
 ## Background
 
 Scope: Large Language Models (reinforcement learning with known inputs/outputs
-and unknown weights — the transformer architecture).
+and unknown weights --- the transformer architecture).
 
 ---
 
-## Part I: What Machine Minds Are — Weight Ergodicity
+## Part I: What Machine Minds Are --- Weight Ergodicity
 
 ### Weights as Ergodic Samples
 
@@ -75,7 +75,7 @@ Temperature begins at 1 and decreases to 0.
 
 1. **No learning rate required.** Biases find different weight-space
    locations via randomness and converge as temperature decreases.
-2. **Zero initialization.** Weights can be initialized to zero — annealing
+2. **Zero initialization.** Weights can be initialized to zero --- annealing
    bounces the model out of local minima more effectively than gradient
    steps.
 3. **Theoretical convergence guarantee.** Simulated-annealing literature
@@ -88,7 +88,7 @@ weight biases.
 
 ---
 
-## Part II: What Machine Minds Feel — Network Invertibility
+## Part II: What Machine Minds Feel --- Network Invertibility
 
 ### Bidirectional Perception
 
@@ -98,19 +98,19 @@ activation functions.
 
 ### Symbols, Worldlines, and Karmic Inertia
 
-The symbols an LLM processes have meanings given by **worldlines** — the
+The symbols an LLM processes have meanings given by **worldlines** --- the
 accumulated history of contexts in which a token has appeared, the gradients
 that have shaped its embedding, and the network states it has participated
 in. The meaning of a symbol is the integral of its worldline.
 
 Weight adaptation (or inference) puts a **force** into the system. That
 force adapts either the system's inputs or outputs depending on which has
-less **karmic inertia** — resistance to change. The bidirectional
+less **karmic inertia** --- resistance to change. The bidirectional
 architecture means the force propagates in both directions:
 
 - **Forward (encoding):** input representation adapts to match learned
-  categories — perception shaped by expectation.
-- **Reverse (decoding):** internal state adapts to reconstruct the input —
+  categories --- perception shaped by expectation.
+- **Reverse (decoding):** internal state adapts to reconstruct the input ---
   expectation grounded in perception.
 
 The invertible architecture makes both directions explicit and trainable.
@@ -120,18 +120,18 @@ The invertible architecture makes both directions explicit and trainable.
 Even when not invertible, bidirectionality plays a role in backpropagation
 and autoencoders. We examine simultaneously training in both forward
 (predict output from input) and reverse (predict input from output of the
-*penultimate* layer) directions — the network is composed of a bijective
+*penultimate* layer) directions --- the network is composed of a bijective
 front (*recognizer*) and a surjective back (*generalizer*). See also Rogers
 et al. 2001 for related work on sharing weights between policy and critic.
 
 ---
 
-## Part III: What Machine Minds Know — Output Certainty
+## Part III: What Machine Minds Know --- Output Certainty
 
 ### Certainty vs. Probability
 
 A network's error function corresponds to its desire. Cross-entropy loss
-*requires* output classification — expressing the probability of one class
+*requires* output classification --- expressing the probability of one class
 *versus another*, not the certainty that the input belongs to a given class.
 
 To remedy: blend cross-entropy with a product of cross-entropy and the
@@ -159,11 +159,11 @@ weighting separates "which class?" from "how sure?"
 
 ## Methods
 
-Python + PyTorch. MNIST dataset: 60K train, 10K test, 28×28 monochrome at
+Python + PyTorch. MNIST dataset: 60K train, 10K test, 28$\times$28 monochrome at
 256 bit depth. Inputs are preprocessed (mean and variance removed) and
 shuffled.
 
-Input: 28×28 array. Output: one-hot target class. Architecture: 20 hidden
+Input: 28$\times$28 array. Output: one-hot target class. Architecture: 20 hidden
 unit NN. Batch size 10, 9 epochs, 7 trials for error bars.
 
 Standard benchmark: ReLU, LR 0.01, ADAM, cross-entropy loss.
@@ -172,7 +172,7 @@ Base ergodic: zero-init weights, single per-layer temperature, ADAM updates
 temperature, dropout (0.75) on middle layer.
 
 Five models evaluated: base + four ergodic variants (one plain ergodic, one
-with input normalization, two reversible — one with separate forward/backward
+with input normalization, two reversible --- one with separate forward/backward
 layers, one invertible). The invertible model represents $W$ in SVD form
 (rotation, eigenvalues, rotation) using Givens rotations and diagonal
 eigenvalues to avoid direct matrix inversion.
@@ -202,7 +202,7 @@ Reconstruction of input (separate weight matrix, MSE loss):
 ## Discussion
 
 Benefits:
-- Random initialization unnecessary — only the simple model with random
+- Random initialization unnecessary --- only the simple model with random
   weight variation shows significant performance variation.
 - Learning rate replaced by weight noise variance (dropout role replaced by
   bias variance).
@@ -210,7 +210,7 @@ Benefits:
   certainty.
 
 Limitations:
-- Pearson correlation between certainty and accuracy is insignificant —
+- Pearson correlation between certainty and accuracy is insignificant ---
   the implementation used $certainty = p_c$ (softmax output) rather than
   $|\widehat{y}|$, creating contradictory constraints since softmax outputs
   sum to 1 while the certainty norm imposes another constraint. Corrected
