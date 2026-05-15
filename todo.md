@@ -1,11 +1,20 @@
 
 * Enforce use of Mereonomy (per-symbol DoT graph).
 
-* Ensure correct sentence-prediction
-
 * Ensure that grammatical pseudo-inverse operations are optimal in some sense
 
 * Make the chart parser predict the words, taking into account the part of speech
+
+* The entire codebook must be passed back from SymbolicSpace in the subspace.what, and its Fusion() is written to an idea
+
+* NP and VP need masks on conceptual space that restrict their operation
+  * Verbs are temporal things, nouns are spatial things, the full expression within conceptual space is possible only after lifting. 
+  * Lifting twice is required for modality.
+
+* Learning a new concept requires iterative sigma/pi application over layers that turn an input vector into a symbol. This implies several things:
+  * A symbol’s basis is expressed at one of several orders, and therefore the symbolic codebook must be ramsified
+  * The process of naming/identifying requires traversing multiple orders before a symbol can be looked up
+  * Full LLM expressivity requires multiple layers of distinct Sigma/Pi matrices. 
 
 Sentences are sometimes composites of ideas (over relations isEqual and isPart).
 * For example, questions relate two ideas:

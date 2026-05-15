@@ -6324,10 +6324,10 @@ class PerceptualSpace(Space):
         * ``self.pi_input``   (input_dim   → percept_dim) — IS-side fold.
         * ``self.pi_concept`` (concept_dim → percept_dim) — C-feedback fold.
 
-    Their outputs are **summed** (the legacy
-    ``(primary + c_event) / 2`` averaging in ``_sourced_input`` is
-    retired). The composition at the surface of ConceptualSpace is
-    therefore::
+    Their outputs are **summed** (``tanh(pi_input + pi_concept)``)
+    inside ``forward`` from the explicit ``IS_subspace`` /
+    ``CS_subspaceForPS`` args supplied by the recurrent cell. The
+    composition at the surface of ConceptualSpace is therefore::
 
         C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
 
@@ -6388,14 +6388,15 @@ class PerceptualSpace(Space):
         self.embedding_source = TheData.train_input if TheData.train_input else None
 
         super().__init__(inputShape, spaceShape, outputShape)
-        # Sibling reference: PerceptualSpace reads the conceptual loopback
-        # (lifted C-tier event from the prior forward) and averages it into
-        # the primary input via ``_sourced_input``, mirroring
-        # ConceptualSpace's symbolic loopback. Wired post-construction in
-        # ``Model.__init__`` / ``_build_pipelines_per_stage``. ``None`` for
-        # standalone unit tests so legacy single-Space forward semantics
-        # hold.
-        self.conceptualSpace_ref = None
+        # C→P feedback is now an explicit ``forward`` argument
+        # (``CS_subspaceForPS``) supplied by the recurrent cell, not a
+        # post-construction sibling ref.
+        # Recurrent-pass index, set by ``_forward_body`` each pass. The
+        # serial-mode warm path is an AR-streaming optimisation across
+        # forward *calls*; it must not fire on in-forward recurrent
+        # passes >0 (those carry distinct C→P feedback and must do the
+        # full cold compute, not splice the prior pass's last slot).
+        self._recurrent_pass_idx = 0
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -6479,9 +6480,9 @@ class PerceptualSpace(Space):
         #     subsymbolic loop.
         #
         # Both fire unconditionally each forward and their outputs are
-        # **summed** (the prior ``(primary + c_event) / 2`` averaging
-        # in ``_sourced_input`` is retired). The composition at the
-        # surface of CS is therefore:
+        # **summed** inside ``forward`` from the explicit recurrent-cell
+        # args (``IS_subspace`` / ``CS_subspaceForPS``). The composition
+        # at the surface of CS is therefore:
         #
         #     C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
         #
@@ -6506,17 +6507,24 @@ class PerceptualSpace(Space):
                 TheXMLConfig.space("ConceptualSpace", "nDim"))
         except KeyError:
             nConceptDim = outputShape[1]
+        # Subsymbolic-loop folds honour the ``architecture.monotonic``
+        # knob (same source as BasicModel.monotonic). Monotone (W>=0)
+        # is order-preserving, which the parthood predicate
+        # (``Ops.part``) requires when symbols are mapped across orders
+        # through the PS<->CS loop. Default False -> unchanged behavior.
+        _mono = bool(TheXMLConfig.get("architecture.monotonic",
+                                      default=False))
         self.pi_input = PiLayer(
             percept_dim, percept_dim,
             naive=naive, ergodic=ergodic,
             invertible=False, nonlinear=nonlinear,
-            stable=True, monotonic=False,
+            stable=True, monotonic=_mono,
         )
         self.pi_concept = PiLayer(
             int(nConceptDim), percept_dim,
             naive=naive, ergodic=ergodic,
             invertible=False, nonlinear=nonlinear,
-            stable=True, monotonic=False,
+            stable=True, monotonic=_mono,
         )
 
         input = percept_dim
@@ -7324,91 +7332,30 @@ class PerceptualSpace(Space):
             dtype=torch.float32, device=byte_indices.device)
         return upstream_vspace
 
-    def _read_event(self, sib):
-        """Return ``sib.subspace.event`` materialised, or None."""
-        if sib is None:
-            return None
-        sub = getattr(sib, 'subspace', None)
-        if sub is None:
-            return None
-        ev = getattr(sub, 'event', None)
-        if ev is None:
-            return None
-        return ev.getW()
+    def forward(self, IS_subspace, CS_subspaceForPS=None):
+        """Perception: map input + C→P feedback to percepts (subsymbolic loop).
 
-    def _sourced_input(self, vspace):
-        """Dual-input: ``pi_input(IS) + pi_concept(C_prev)`` — unconditional sum.
-
-        Phase C (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
-        ownership"): replaces the legacy ``(primary + c_event) / 2``
-        averaging with the canonical composition
-
-            x = pi_input(primary) + pi_concept(c_event)
-
-        Both folds fire unconditionally. ``pi_input`` lifts the upstream
-        InputSpace event from ``input_dim → percept_dim``;
-        ``pi_concept`` lifts the prior C-tier event from
-        ``concept_dim → percept_dim``. Summing (no /2 averaging) keeps
-        the chain mathematically clean: at sentence start ``C_prev``
-        is empty so ``pi_concept(0) = 0`` and the formula degenerates
-        to ``x = pi_input(primary)``.
-
-        Sentence-start / cold-start: ``conceptualSpace_ref`` may be
-        ``None`` (standalone unit tests) or its event tensor may be
-        unset (first forward call before any C output) -- either case
-        degrades cleanly to the single-source ``pi_input(primary)``.
-
-        See ``ConceptualSpace._sourced_input`` for the symbolic
-        loopback at the C-tier.
-        """
-        primary = self.forwardBegin(vspace, returnVectors=True)
-        x_input = self.pi_input.forward(primary)
-        cs = self.conceptualSpace_ref
-        if cs is None:
-            return x_input
-        c_event = self._read_event(cs)
-        if c_event is None:
-            return x_input
-        # The C→P loopback only fires in the bivector regime: the C
-        # event is a ``[B, V, 2]`` per-prototype catuskoti handoff. We
-        # lift it back to concept-content width via the C-tier
-        # codebook's cached SVD pseudo-inverse, then ``pi_concept``
-        # folds concept_dim → percept_dim. Non-bivector ConceptualSpace
-        # writes content directly to ``event`` whose feature dim does
-        # not match ``pi_concept.nInput``; in that case skip the
-        # loopback and return ``pi_input(primary)`` alone.
-        cs_what = getattr(cs.subspace, 'what', None)
-        if not (isinstance(cs_what, ProjectionBasis)
-                and c_event.dim() == 3 and c_event.shape[-1] == 2):
-            return x_input
-        V_orig = int(cs.inputShape[0])
-        c_event = cs_what.reverse(c_event, V=V_orig)
-        if c_event.dim() != 3 or c_event.shape[-1] != self.pi_concept.nInput:
-            return x_input
-        x_concept = self.pi_concept.forward(c_event)
-        if x_concept.shape != x_input.shape:
-            return x_input
-        # Sum-then-tanh: both folds output in ``[-1, 1]`` (PiLayer's
-        # ``nonlinear=True`` ends in tanh). Their raw sum lives in
-        # ``[-2, 2]``, which violates the codebook's ``[-1, 1]``
-        # invariant. The legacy ``(primary + c_event) / 2`` averaging
-        # achieved boundedness by halving; Phase C's ``sum`` form
-        # achieves the same bound via tanh saturation. Math is still
-        # additive: ``tanh`` is monotonic and gradient-preserving.
-        return torch.tanh(x_input + x_concept)
-
-    def forward(self, subspace):
-        """Perception: map input vectors to percepts via attention + VQ + chunking.
+        Two explicit inputs (the ``_sourced_input`` fold, post-2026-05
+        reconciliation): ``IS_subspace`` is the upstream InputSpace
+        subspace; ``CS_subspaceForPS`` is the prior pass's ConceptualSpace
+        output already lifted to ``concept_dim`` (the C-tier
+        ProjectionBasis reverse-lift now lives on ConceptualSpace, exposed
+        as ``ConceptualSpace._subspaceForPS``). ``pi_input`` folds the
+        primary ``input_dim → percept_dim``; ``pi_concept`` folds the
+        feedback ``concept_dim → percept_dim``; the two are combined as
+        ``tanh(pi_input + pi_concept)``. ``CS_subspaceForPS=None`` / empty
+        (sentence start, standalone unit tests) degrades cleanly to
+        ``pi_input(primary)`` alone.
 
         Handles three paths: warm-serial AR (process only new last slot,
         splice into the rolled cache), embedding (text -> lexicon -> percept),
         and numeric (linear -> attention -> VQ). Writes the resulting
         percept tensor to ``self.subspace`` and returns the live subspace.
         """
-        if subspace.is_empty():
-            return subspace
-        self.subspace.copy_context(subspace)
-        vspace = subspace
+        if IS_subspace.is_empty():
+            return IS_subspace
+        self.subspace.copy_context(IS_subspace)
+        vspace = IS_subspace
         quantize = getattr(self, "quantize", True)
 
         # Serial-mode warm path: upstream has pre-embedded AR buffer, cold
@@ -7418,6 +7365,7 @@ class PerceptualSpace(Space):
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
         if (getattr(self, "serial_mode", False)
+                and self._recurrent_pass_idx == 0
                 and cache is not None):
             upstream = vspace.materialize()
             # Check shape compatibility on every dim of the rolled cache
@@ -7463,15 +7411,24 @@ class PerceptualSpace(Space):
                     f"got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        # Conceptual loopback (Phase C, 2026-05-13 rebalance): the
-        # primary input runs through ``pi_input`` (input_dim →
-        # percept_dim) and the lifted C-tier feedback runs through
-        # ``pi_concept`` (concept_dim → percept_dim). Outputs are
-        # **summed** (no /2 averaging). Falls back to
-        # ``pi_input(primary)`` alone when the C ref is None or its
-        # event tensor is unset (sentence start / standalone unit
-        # tests). See ``_sourced_input``.
-        x = self._sourced_input(vspace)
+        # Subsymbolic loop combine (folded ``_sourced_input``): primary
+        # input through ``pi_input`` (input_dim → percept_dim); the
+        # explicit C→P feedback (already concept_dim, lifted on the
+        # ConceptualSpace side) through ``pi_concept`` (concept_dim →
+        # percept_dim); combined as ``tanh(pi_input + pi_concept)``.
+        # ``pi_concept.nInput`` shape-gates non-bivector C output so it
+        # degrades to ``pi_input(primary)`` alone (matches the old
+        # cold-start / non-bivector fallback).
+        primary = self.forwardBegin(vspace, returnVectors=True)
+        x_input = self.pi_input.forward(primary)
+        x = x_input
+        if CS_subspaceForPS is not None and not CS_subspaceForPS.is_empty():
+            c_event = CS_subspaceForPS.materialize()
+            if (c_event is not None and c_event.dim() == 3
+                    and c_event.shape[-1] == self.pi_concept.nInput):
+                x_concept = self.pi_concept.forward(c_event)
+                if x_concept.shape == x_input.shape:
+                    x = torch.tanh(x_input + x_concept)
         # Attention is currently unused in PerceptualSpace; leaving the
         # AttentionLayer attribute intact for backward compat but skipping
         # the call so the codebook lookup can slide (see below) without
@@ -8255,21 +8212,17 @@ class ConceptualSpace(Space):
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         # Right-half loopback widening retired: ConceptualSpace.forward
-        # reads exactly one input source per stage (perceptual at order 0,
-        # lifted-symbolic at order > 0) via ``_sourced_input``, averaging
-        # the two when both are present after a bivector lift on the
-        # symbolic side. The legacy ``subsymbolic_widen_dim`` constructor
-        # parameter and the ``[P_event || S_event]`` concat it gated were
-        # removed together with ``SubsymbolicSpace``.
+        # takes its two inputs as explicit args (``PS_subspace``,
+        # ``SS_subspace``) from the recurrent cell and shape-matched
+        # averages them after a bivector lift on the symbolic side. The
+        # legacy ``subsymbolic_widen_dim`` constructor parameter and the
+        # ``[P_event || S_event]`` concat it gated were removed together
+        # with ``SubsymbolicSpace``.
         self._right_half_dim = 0
-        # Sibling references: ConceptualSpace reads BOTH the perceptual
-        # event (stem-cached, same instance for every stage) AND the
-        # SymbolicSpace's previous event at every stage. Combiner:
-        # additive after bivector-lift (see ``_sourced_input``).
-        # ``perceptualSpace_ref`` is wired post-construction in
-        # ``_build_pipelines_per_stage``.
-        self.symbolicSpace_ref = None
-        self.perceptualSpace_ref = None
+        # ConceptualSpace combines its two inputs (perceptual + symbolic
+        # loop) from explicit ``forward(PS_subspace, SS_subspace)``
+        # arguments supplied by the recurrent cell -- no post-construction
+        # sibling refs.
         # Optional C-tier prior for chat-loop generation: the inference
         # loop (BasicModel.generate_sentence) lifts the ARMA-predicted
         # next sentence rep through InterSentenceLayer.cast into
@@ -8424,148 +8377,6 @@ class ConceptualSpace(Space):
             x = x[..., :-self._right_half_dim]
         return x
 
-    def _read_event(self, sib):
-        """Return ``sib.subspace.event`` materialised, or None."""
-        if sib is None:
-            return None
-        sub = getattr(sib, 'subspace', None)
-        if sub is None:
-            return None
-        ev = getattr(sub, 'event', None)
-        if ev is None:
-            return None
-        return ev.getW()
-
-    def _get_active_input_sibling(self):
-        """Return the sibling whose previous event feeds this stage's input.
-
-        Always returns ``symbolicSpace_ref`` (the verbal / propositional
-        loopback). The earlier ``<architecture><mode>grammar|parallel
-        </mode>`` selector that toggled between a SymbolicSpace and a
-        SubsymbolicSpace sibling has been retired together with
-        ``SubsymbolicSpace`` (PerceptualSpace serves as the subsymbolic
-        substrate; the imagistic loop is now the new C→P
-        ``conceptualSpace_ref`` loopback on PerceptualSpace).
-
-        Returns ``None`` when no sibling is wired (standalone unit tests).
-        """
-        return self.symbolicSpace_ref
-
-    def _sourced_input(self, vspace):
-        """Dual-input: perceptual + sibling-symbolic, length-averaged.
-
-        Combines available shape-compatible contributions by averaging
-        (``sum / count``) instead of plain summation. Averaging keeps
-        the input bounded to the same range as each source so the
-        codebook's [-1, 1] invariant survives both channels firing.
-        Null vectors after reset don't contribute at all (sym is
-        ``None``, not a real zero tensor) -- so the average degrades
-        cleanly to the legacy single-source result.
-
-        Primary input source (preserves all ``forwardBegin`` side
-        effects -- ``subspace.batch`` and ``_pre_reshape_input`` -- so
-        downstream ``forwardEnd`` / ``reverseEnd`` reshape correctly):
-
-          Stage 0  (vspace IS perceptualSpace_ref.subspace):
-              primary = ``forwardBegin(vspace)`` -- perceptual reshape.
-          Stage > 0 (vspace is the previous symbolic subspace):
-              primary = lifted-sibling-symbolic when present, else
-              ``forwardBegin(vspace)`` fallback (sentence start).
-
-        Cross-channel contribution then participates in the average:
-
-          Stage 0:  ``sym`` (lifted sibling) when shape-matched.
-          Stage > 0: stem-cached ``perc`` (reshaped) when shape-matched.
-
-        Stage detection is by object identity (``vspace is
-        perceptualSpace_ref.subspace``); no ``_stage_idx`` flag.
-        """
-        perc_ref_sub = (self.perceptualSpace_ref.subspace
-                        if self.perceptualSpace_ref is not None
-                        else None)
-        at_stage_0 = (perc_ref_sub is not None and vspace is perc_ref_sub)
-
-        sib = self._get_active_input_sibling()
-        sym = self._read_event(sib) if sib is not None else None
-        # Bivector reverse-lift: the SS event arrives as a per-prototype
-        # catuskoti slab [B, V, 2] over the SIBLING's codebook (V_S =
-        # SymbolicSpace.nVectors when ``bivectorOutput=true``).  We
-        # can only invert that with the basis it was produced by --
-        # i.e. the sibling's ProjectionBasis -- so the previous
-        # ``self.subspace.what.reverse(sym, ...)`` path crashed at
-        # conceptualOrder>1 when ``V_S != self.nVectors``.  Try the
-        # sibling's basis first; if it isn't a ProjectionBasis
-        # (legacy / non-bivector SS), fall through with ``sym``
-        # untouched and let the perc_ev fallback below carry the
-        # chain at percept-dim width.
-        if sym is not None and sym.dim() == 3 and sym.shape[-1] == 2:
-            sib_basis = (getattr(sib.subspace, 'what', None)
-                         if sib is not None else None)
-            if (isinstance(sib_basis, ProjectionBasis)
-                    and int(sib_basis.nVectors) == int(sym.shape[1])):
-                V_orig = int(self.inputShape[0])
-                sym = sib_basis.reverse(sym, V=V_orig)
-            else:
-                # Bivector lives in a basis whose V dim we can't invert
-                # against -- leave ``sym`` as the raw [B, V_S, 2] slab
-                # and let downstream shape checks route us to perc_ev.
-                pass
-
-        if at_stage_0 or perc_ref_sub is None:
-            # Primary = perceptual via vspace (legacy stage-0 path or
-            # standalone-construction fallback). Average in sym when
-            # shape-matched.
-            primary = self.forwardBegin(vspace, returnVectors=True)
-            if sym is not None and sym.shape == primary.shape:
-                return (primary + sym) / 2
-            return primary
-
-        # Stage > 0: read the stem-cached perceptual event so the
-        # chain stays at the percept-dim width that
-        # ``self.sigma_percept.nInput`` was configured for.  ``sym``
-        # (the previous SymbolicSpace event) only contributes when
-        # the bivector lift above recovered it to the perceptual-
-        # content shape (i.e. it shape-matches ``perc_ev``). Without
-        # that lift, ``sym`` lives in the concept-dim basis (post the
-        # C->S pass-through introduced when SymbolicSpace.sigma was
-        # retired) and would crash the next ``self.sigma_percept(x)``
-        # matmul -- so we let the chart at C consume the SS event
-        # instead and feed the perceptual cache straight into
-        # sigma_percept.
-        perc_ev = self._read_event(self.perceptualSpace_ref)
-        if perc_ev is not None and perc_ev.dim() == 4:
-            B, K, N, D = perc_ev.shape
-            perc_ev = perc_ev.reshape(B * K, N, D)
-        if (perc_ev is not None and perc_ev.dim() == 3
-                and self.nInputDim != -1):
-            try:
-                perc_ev = perc_ev.reshape(
-                    perc_ev.shape[0], -1, self.nInputDim)
-            except RuntimeError:
-                perc_ev = None
-        # ``_read_event`` returns the basis ``W`` parameter when no
-        # runtime event has been written (Tensor / Codebook surface
-        # over a [N, D] codebook).  That 2D tensor is the prototype
-        # store, not an actual upstream event -- treat it as "no
-        # event" and fall through to the legacy forwardBegin path.
-        perc_ev_valid = (perc_ev is not None and perc_ev.dim() >= 3)
-        if sym is None:
-            # Sentence start: no previous symbolic event -- use the
-            # perceptual cache when it carries a real (3D+) event,
-            # else fall back to legacy forwardBegin(vspace).
-            if perc_ev_valid:
-                return perc_ev
-            return self.forwardBegin(vspace, returnVectors=True)
-        if perc_ev_valid and perc_ev.shape == sym.shape:
-            return (sym + perc_ev) / 2
-        if perc_ev_valid:
-            return perc_ev
-        # ``sym`` is set but ``perc_ev`` isn't a real event (only the
-        # codebook surface is visible).  Returning ``sym`` here would
-        # carry the concept-dim basis into a percept-dim pi and
-        # crash; prefer the legacy forwardBegin fallback over that.
-        return self.forwardBegin(vspace, returnVectors=True)
-
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -8607,18 +8418,26 @@ class ConceptualSpace(Space):
         if stm is not None:
             stm.clear(b=batch)
 
-    def forward(self, subspace):
-        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
+    def forward(self, PS_subspace, SS_subspace=None):
+        """Knowing: combine perceptual + symbolic-loop inputs into concepts.
+
+        Two explicit inputs (the folded ``_sourced_input``, post-2026-05
+        reconciliation): ``PS_subspace`` is the perceptual content;
+        ``SS_subspace`` is the prior pass's SymbolicSpace output (the
+        symbolic recurrent loop). They are shape-matched averaged after a
+        bivector reverse-lift on the symbolic side; ``SS_subspace=None`` /
+        empty (sentence start, standalone unit tests) degrades to the
+        perceptual ``primary`` alone.
 
         The canonical C-tier fold is the additive ``sigma_percept``
         (``percept_dim → concept_dim``), per the 2026-05-13 rebalance
         (doc/Spaces.md §"Sigma / Pi ownership"). When ``nonlinear=True``
         the tanh wrap on SigmaLayer keeps the output in ``[-1, 1]``.
         """
-        if subspace.is_empty():
-            return subspace
-        self.subspace.copy_context(subspace)
-        vspace = subspace
+        if PS_subspace.is_empty():
+            return PS_subspace
+        self.subspace.copy_context(PS_subspace)
+        vspace = PS_subspace
         # SyntacticLayer is unconditional: it dispatches whatever the
         # grammar XML specifies for the C tier (e.g. ``C = sigma(C)``
         # from model.xml's default grammar) -- exact mathematical
@@ -8630,14 +8449,26 @@ class ConceptualSpace(Space):
         # Legacy grammars (``C = pi(C)``) are auto-aliased to
         # ``sigma_percept`` by ``_attach_per_space_syntactic_layer`` so
         # they keep working post-2026-05-13 rebalance.
-        # Per-order input source. Order 0 reads PerceptualSpace.event
-        # (today's behavior); higher orders read the active sibling's
-        # previous event (Symbolic under <mode>grammar</mode>,
-        # Subsymbolic under <mode>parallel</mode>) lifted from the
-        # downstream bivector handoff back into concept content via
-        # the C-tier codebook's SVD pseudo-inverse. Replaces the
-        # legacy `_build_combined_input` concat.
-        x = self._sourced_input(vspace)
+        # Symbolic loop combine (folded ``_sourced_input``): the
+        # perceptual ``primary`` and the explicit prior-pass symbolic
+        # event are shape-matched averaged. The SS event arrives as a
+        # per-prototype catuskoti slab ``[B, V_S, 2]`` over the symbolic
+        # ProjectionBasis; lift it back to concept content with that
+        # basis before averaging. Degrades to ``primary`` alone when SS
+        # is absent/empty or the lift can't shape-match.
+        primary = self.forwardBegin(vspace, returnVectors=True)
+        sym = None
+        if SS_subspace is not None and not SS_subspace.is_empty():
+            sym = SS_subspace.materialize()
+            if sym is not None and sym.dim() == 3 and sym.shape[-1] == 2:
+                sib_basis = SS_subspace.what
+                if (isinstance(sib_basis, ProjectionBasis)
+                        and int(sib_basis.nVectors) == int(sym.shape[1])):
+                    sym = sib_basis.reverse(sym, V=int(self.inputShape[0]))
+        if sym is not None and sym.shape == primary.shape:
+            x = (primary + sym) / 2
+        else:
+            x = primary
         # Post-split: grammar lives at S; C is semantically
         # subsymbolic. The SyntacticLayer dispatch at C is retained
         # here as a backward-compat no-op for grammars that omit
@@ -8748,6 +8579,36 @@ class ConceptualSpace(Space):
             vspace.normalize("concepts", target="what")       # range check
             vspace.normalize("concepts", target="where")      # range check
             vspace.normalize("concepts", target="activation")  # range check
+        # Expose the two consumer views for the recurrent cell:
+        #   _subspaceForSS -- the raw forwardEnd output SymbolicSpace
+        #     consumes (identity-equal to the legacy threaded subspace).
+        #   _subspaceForPS -- CS output lifted back to concept_dim via
+        #     C's own ProjectionBasis (the reverse-lift that used to live
+        #     in PerceptualSpace._sourced_input; the basis is C's, so the
+        #     lift belongs here). PerceptualSpace then applies its own
+        #     pi_concept fold + pi_concept.nInput shape gate (non-bivector
+        #     output falls the gate and PS uses pi_input alone).
+        self._subspaceForSS = vspace
+        cs_what = self.subspace.what
+        ev = vspace.materialize(mode="event")
+        if (self._bivector_output and isinstance(cs_what, ProjectionBasis)
+                and ev is not None and ev.dim() == 3
+                and ev.shape[-1] == 2):
+            lifted = cs_what.reverse(ev, V=int(self.inputShape[0]))
+        else:
+            lifted = ev
+        if lifted is not None and lifted.dim() == 3:
+            forPS = SubSpace(
+                inputShape=(lifted.shape[1], lifted.shape[2]),
+                outputShape=(lifted.shape[1], lifted.shape[2]),
+                nInputDim=lifted.shape[2], nOutputDim=lifted.shape[2])
+            forPS.copy_context(vspace)
+            forPS.set_event(lifted)
+            self._subspaceForPS = forPS
+        else:
+            self._subspaceForPS = SubSpace(
+                inputShape=(0, 1), outputShape=(0, 1),
+                nInputDim=1, nOutputDim=1)
         return vspace
 
     def reverse(self, subspace):
@@ -9946,8 +9807,13 @@ class SymbolicSpace(Space):
 
         return self.subspace
 
-    def forward(self, subspace):
-        """Concept->symbol forward.
+    def forward(self, CS_subspaceForSS):
+        """Concept->symbol forward (symbolic recurrent loop leg).
+
+        Single explicit input ``CS_subspaceForSS`` -- the prior pass's
+        ConceptualSpace output (``ConceptualSpace._subspaceForSS``).
+        SymbolicSpace never combined siblings (no ``_sourced_input``); it
+        consumes this one subspace directly.
 
         Dispatches to the rule-application path when the caller marks the
         incoming subspace with ``_rule_dispatch`` (see
@@ -9960,16 +9826,16 @@ class SymbolicSpace(Space):
         concept space — and runs unconditionally regardless of grammar
         state.
         """
-        if subspace.is_empty():
-            return subspace
-        self.subspace.copy_context(subspace)
+        if CS_subspaceForSS.is_empty():
+            return CS_subspaceForSS
+        self.subspace.copy_context(CS_subspaceForSS)
         # Phase-1 ``parallel`` mode gating: when held at zero the
         # resolve / lift / codebook / TruthLayer paths skip and the
         # event tensor is filled with zeros. Downstream consumers
         # read zeros; the elementwise-sum at the next conceptual
         # order's combined input contributes nothing from this Space.
         if self.held_at_zero:
-            sample = subspace.materialize()
+            sample = CS_subspaceForSS.materialize()
             if sample is not None:
                 B = sample.shape[0]
                 N = self.outputShape[0]
@@ -9981,10 +9847,10 @@ class SymbolicSpace(Space):
         quantize = getattr(self, "quantize", True)
         is_last = getattr(self, "is_last", False)
         wordSpace = getattr(self, "wordSpace", None)
-        if getattr(subspace, '_rule_dispatch', False):
+        if getattr(CS_subspaceForSS, '_rule_dispatch', False):
             return self._forward_with_rule_dispatch(
-                subspace, wordSpace=wordSpace, quantize=quantize)
-        vspace = subspace
+                CS_subspaceForSS, wordSpace=wordSpace, quantize=quantize)
+        vspace = CS_subspaceForSS
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
         # SyntacticLayer is unconditional: per the grammar XML, the

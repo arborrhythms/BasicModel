@@ -125,15 +125,42 @@ def test_grammar_merge_glue_empty_passthrough():
     assert out is ss
 
 
-def test_all_spaces_have_single_arg_forward():
-    """Every Space's forward() accepts a single arg (not counting self)."""
+def test_space_forward_arities():
+    """Each Space's forward() exposes its post-2026-05 reconciliation arity.
+
+    Cross-space combination moved out of ``_sourced_input``/``*_ref``
+    into explicit ``forward`` arguments supplied by the recurrent cell:
+      * PerceptualSpace.forward(IS_subspace, CS_subspaceForPS=None)
+      * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
+      * SymbolicSpace.forward(CS_subspaceForSS)  -- single (no combine)
+      * InputSpace / ModalSpace / OutputSpace    -- single, unchanged
+    The optional second arg defaults to ``None`` so standalone single-arg
+    callers still work.
+    """
     import inspect
-    from Spaces import InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
-    for cls in (InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace):
+    from Spaces import (InputSpace, PerceptualSpace, ModalSpace,
+                        ConceptualSpace, SymbolicSpace, OutputSpace)
+    expected = {
+        InputSpace: (1, 1),
+        PerceptualSpace: (1, 2),   # IS_subspace req, CS_subspaceForPS opt
+        ModalSpace: (1, 1),
+        ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
+        SymbolicSpace: (1, 1),     # CS_subspaceForSS
+        OutputSpace: (1, 1),
+    }
+    for cls, (min_req, max_params) in expected.items():
         sig = inspect.signature(cls.forward)
         params = [p for name, p in sig.parameters.items() if name != "self"]
-        assert len(params) == 1, (
-            f"{cls.__name__}.forward has {len(params)} params (expected 1): {list(sig.parameters)}")
+        required = [p for p in params
+                    if p.default is inspect.Parameter.empty
+                    and p.kind in (p.POSITIONAL_ONLY,
+                                   p.POSITIONAL_OR_KEYWORD)]
+        assert len(params) == max_params, (
+            f"{cls.__name__}.forward has {len(params)} params "
+            f"(expected {max_params}): {list(sig.parameters)}")
+        assert len(required) == min_req, (
+            f"{cls.__name__}.forward has {len(required)} required "
+            f"(expected {min_req}): {list(sig.parameters)}")
 
 
 def test_all_spaces_have_single_arg_reverse():

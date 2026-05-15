@@ -175,8 +175,10 @@ def test_chart_fires_at_C_inside_body():
         "BasicModel must expose ``_chart_compose_at_C`` for chart-at-C wiring")
     assert not hasattr(m, '_chart_compose'), (
         "Legacy ``_chart_compose`` module should have been removed")
-    assert not hasattr(m, '_chart_generate_from_stm'), (
-        "Reverse-side chart mirror was retired with the reverse pipeline")
+    assert hasattr(m, '_chart_generate_from_stm'), (
+        "Reverse-side chart mirror ``_chart_generate_from_stm`` is "
+        "restored with the reverse pipeline (post-2026-05 "
+        "reconciliation: reverse() reconstructs input).")
     assert not hasattr(m, '_chart_generate'), (
         "Legacy ``_chart_generate`` module should have been removed")
 

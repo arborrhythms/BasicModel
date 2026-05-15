@@ -2709,6 +2709,47 @@ class BasicModel(BaseModel):
                 space="InputSpace", category="reconstruction",
             )
 
+            # Reverse-pass input reconstruction (OS→CS→PS→IS): run the
+            # restored reverse pipeline on the head output and compare
+            # the reconstructed input against the forward InputSpace
+            # event. Blended via ``reconstruction_scale`` (the design's
+            # reconRatio model, doc/Architecture.md). Single-input
+            # per-space reverse: the round-trip is the local inverse, so
+            # this is an approximate reconstruction through the averaged
+            # loops -- guarded so a shape edge case in any config
+            # degrades to a zero contribution rather than breaking the
+            # step.
+            lossRev = torch.tensor(0.0, device=TheDevice.get())
+            try:
+                if forwardInput is not None:
+                    rev_sub = self._run_pipeline_rev(self.outputSpace.subspace)
+                    rev_ev = (rev_sub.materialize()
+                              if rev_sub is not None
+                              and hasattr(rev_sub, 'materialize')
+                              else None)
+                    fwd_ev = (forwardInput.materialize()
+                              if hasattr(forwardInput, 'materialize')
+                              else forwardInput)
+                    if (rev_ev is not None and fwd_ev is not None
+                            and rev_ev.dim() == fwd_ev.dim()
+                            and rev_ev.dim() == 3):
+                        Kr = min(rev_ev.shape[1], fwd_ev.shape[1])
+                        Dr = min(rev_ev.shape[-1], fwd_ev.shape[-1])
+                        lossRev = self.loss.compute(
+                            rev_ev[:, :Kr, :Dr],
+                            fwd_ev[:, :Kr, :Dr].detach())
+            except Exception:
+                # Reverse round-trip is approximate through averaged
+                # loops; never let a reconstruction edge case stop the
+                # training step.
+                lossRev = torch.tensor(0.0, device=TheDevice.get())
+            TheError.add(
+                "reconstruction_reverse", lossRev,
+                weight=float(getattr(self.loss, 'reconstruction_scale', 0.0)
+                             or 0.0),
+                space="InputSpace", category="reconstruction",
+            )
+
             # Forward-only C/S reconstruction loss
             # (``<reconstruct>concepts|symbols|both</...>``).  Targets
             # are derived from the pre-mask P-tier event lifted on the
@@ -3922,32 +3963,13 @@ class BasicModel(BaseModel):
             _vq.growth_epsilon = (float(_eps) if _eps is not None
                                   else 0.0)
 
-        # Wire sibling refs on every stage's ConceptualSpace.
-        # ``_sourced_input`` reads BOTH perceptual (stem-cached) AND the
-        # previous stage's SymbolicSpace event, combining them
-        # additively after a bivector lift on the symbolic side.
-        # Stage 0 cold-starts with the same-stage SymbolicSpace (its
-        # event is None at first call, treated as zero); stages t>=1
-        # read stage t-1's SymbolicSpace. ``object.__setattr__``
-        # bypasses nn.Module submodule tracking so the SymbolicSpace
-        # isn't registered as a child of multiple parents (would
-        # double-count parameters and break ``.to(device)``). The
-        # perceptual ref points to the single stem PerceptualSpace
-        # instance for every stage.
-        for t, cs in enumerate(self.conceptualSpaces):
-            ref = (self.symbolicSpaces[0] if t == 0
-                   else self.symbolicSpaces[t - 1])
-            object.__setattr__(cs, 'symbolicSpace_ref', ref)
-            object.__setattr__(cs, 'perceptualSpace_ref', self.perceptualSpace)
-
-        # Conceptual loopback: PerceptualSpace reads C-tier event from the
-        # prior forward (terminal stage in the per-order pipeline) and
-        # averages it into its primary input via ``_sourced_input``
-        # (parallel percept-concept subsymbolic loop). Use the terminal
-        # ConceptualSpace stage so the deepest conceptual refinement
-        # feeds back into the next pass's perception.
-        object.__setattr__(self.perceptualSpace, 'conceptualSpace_ref',
-                           self.conceptualSpaces[-1])
+        # Cross-space forward inputs (perceptual + symbolic loop into C,
+        # C→P feedback into P) are now passed as explicit ``forward``
+        # arguments by the recurrent cell in ``_forward_body`` -- no
+        # post-construction ``symbolicSpace_ref`` / ``perceptualSpace_ref``
+        # / ``conceptualSpace_ref`` plumbing. The SymbolicSpace lexicon
+        # ref below is structural (vocabulary ownership), not forward
+        # input, and is kept.
         # Lexicon ownership (post-lexicon-migration): wire every
         # SymbolicSpace stage to PerceptualSpace so ``S.vocabulary``
         # and the orthographic-API methods reach the physical Embedding
@@ -3959,12 +3981,14 @@ class BasicModel(BaseModel):
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
-        # Output: receives the actual final symbol stream from the pipeline.
-        # Per-stage ConceptualSpace/SymbolicSpace already encode any
-        # N-halving in their outputShape, so the terminal symbolic stage
-        # dictates what enters OutputSpace.
-        output_n = int(self.symbolicSpaces[-1].outputShape[0])
-        outputInputShape = [output_n, symbol_dim + obj_symbol]
+        # Output: primary path is IS→PS→CS→OS, so OutputSpace consumes
+        # the terminal ConceptualSpace output (SymbolicSpace is the
+        # symbolic recurrent loop leg, off the head path).
+        # ``symbol_dim == concept_dim`` is enforced by
+        # ModelFactory.validate_config, so the feature width is safe;
+        # the N count comes from the terminal C stage's outputShape.
+        output_n = int(self.conceptualSpaces[-1].outputShape[0])
+        outputInputShape = [output_n, concept_dim + obj_concept]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        vectors=self.perceptualSpace.vocabulary)
 
@@ -3987,11 +4011,13 @@ class BasicModel(BaseModel):
             concept_dim=concept_dim + obj_concept,
             symbol_dim=symbol_dim + obj_symbol,
         )
-        # Post S-tier merge: compositional rules live on the single
-        # unified SyntacticLayer, which does not need a back-reference
-        # to SymbolicSpace (the older ternary-lift path used by C-tier
-        # compose has been removed).
-        self.conceptualSpace.subspace.basis.monotonic = False
+        # The conceptual basis honours the ``architecture.monotonic``
+        # knob rather than being unconditionally bitonic: monotone
+        # (W>=0) is order-preserving, which the parthood predicate
+        # (``Ops.part``) requires for the ramsified symbolic codebook
+        # to match a symbol mapped through the subsymbolic loop across
+        # orders. Default False -> unchanged (bitonic) behavior.
+        self.conceptualSpace.subspace.basis.monotonic = self.monotonic
 
         self.spaces.extend([self.inputSpace, self.perceptualSpace])
         self.spaces.extend(list(self.conceptualSpaces))
@@ -4143,37 +4169,75 @@ class BasicModel(BaseModel):
         """Head: outputSpace forward."""
         return self.outputSpace(sub)
 
-    def _forward_body(self, sub):
-        """Per-stage body forward.
+    @staticmethod
+    def _empty_subspace(d=1):
+        """A zero-length SubSpace seed: ``is_empty()`` is True so the
+        recurrent cell's pass-0 inputs short-circuit (PS uses pi_input
+        alone; CS uses the perceptual primary alone; SS returns it
+        unchanged)."""
+        return SubSpace(inputShape=(0, d), outputShape=(0, d),
+                        nInputDim=d, nOutputDim=d)
 
-        Walks ``self.body_stages`` (a ModuleList of ModuleDicts, one
-        dict per stage): each stage runs ``cs → chart-at-C → [merge?]
-        → ss``. The body operates on B-shaped tensors throughout —
-        the legacy K-axis flatten/restore wrappers were retired with
-        the AR cursor unfold (2026-05-13). Captures each stage's
-        SymbolicSpace output into ``self._ss_cache[t]``.
+    def _forward_body(self, in_sub):
+        """Recurrent cell: IS→PS→CS→OS with CS→PS and CS→SS loops.
 
-        Per-stage iteration gives T = conceptualOrder passes of chart
-        refinement, each using the prior stage's S->C loopback as
-        feedback through CS.
+        Per pass t over ``self.body_stages`` (T = conceptualOrder):
 
-        When ``self.loss_head`` is set (e.g. by ``embed.py
-        embed_pretrain``) the post-body STM snapshot feeds the head
-        and the resulting loss is stashed on ``self._loss_head_loss``
-        for the training loop to consume.
+          * PS and SS run **in parallel** (no intra-pass dependency --
+            both consume the prior pass's CS views):
+              ``PS_sub = perceptualSpace.forward(in_sub, prevCS_forPS)``
+              ``SS_sub = ss.forward(prevCS_forSS)``
+          * ConceptualSpace combines them (CS is the per-pass terminal):
+              ``CS_sub = cs.forward(PS_sub, SS_sub)``
+          * ``cs._subspaceForPS`` / ``cs._subspaceForSS`` (read
+            post-merge) feed the next pass's subsymbolic / symbolic
+            loops.
+
+        Pass 0 seeds ``prevCS_*`` with empty subspaces so the cell
+        degrades to PS-only / primary-only (matches the old
+        ``ref is None`` cold start). The head consumes the terminal CS
+        (``return last_cs``); SymbolicSpace is the symbolic loop leg,
+        off the head path. ``in_sub`` is the stable InputSpace subspace
+        (InputSpace ran once in the stem).
+
+        When ``self.loss_head`` is set the post-body STM snapshot feeds
+        the head and the loss is stashed on ``self._loss_head_loss``.
         """
+        prevCS_forPS = self._empty_subspace()
+        prevCS_forSS = self._empty_subspace()
+        last_cs = None
         for t, stage in enumerate(self.body_stages):
-            sub = stage["cs"](sub)
-            # Capture C-tier event for the optional concepts /
-            # ``both`` reconstruction loss (forward-only target derived
-            # by ``runBatch`` via ``sigma_percept(_ir_pre_mask_input)``;
-            # see plan §"Reconstruction-loss target shape" Option B).
-            self._cs_cache[t] = sub
+            cs = stage["cs"]
+            ss = stage["ss"]
+            # Gate PerceptualSpace's serial warm-path: it is an
+            # AR-streaming optimisation across forward calls and must
+            # not splice on in-forward recurrent passes >0 (each pass
+            # carries distinct C→P feedback).
+            self.perceptualSpace._recurrent_pass_idx = t
+            PS_sub = self.perceptualSpace.forward(in_sub, prevCS_forPS)
+            if t == 0:
+                # IR masked-LM mask applied once, on the first pass's
+                # perceptual event, before CS consumes it
+                # (``_ir_pre_mask_input`` / ``_ir_mask_positions`` are
+                # read by ``runBatch``).
+                self.create_ir_mask(PS_sub)
+            SS_sub = ss.forward(prevCS_forSS)
+            CS_sub = cs.forward(PS_sub, SS_sub)
+            self._cs_cache[t] = CS_sub
             self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
-                sub = stage["merge"](sub)
-            sub = stage["ss"](sub)
-            self._ss_cache[t] = sub
+                CS_sub = stage["merge"](CS_sub)
+            # Read the two C views after the optional merge (merge
+            # mutates the CS subspace in place; _subspaceForSS aliases
+            # it so it reflects post-merge N).
+            prevCS_forPS = getattr(cs, "_subspaceForPS",
+                                   self._empty_subspace())
+            prevCS_forSS = getattr(cs, "_subspaceForSS", CS_sub)
+            self._ss_cache[t] = SS_sub
+            last_cs = CS_sub
+        # Reset so standalone PerceptualSpace.forward calls (and the
+        # next forward's pass 0) see the AR-streaming serial warm path.
+        self.perceptualSpace._recurrent_pass_idx = 0
         if self.loss_head is not None:
             # Prefer the grad-bearing per-word stack stashed by
             # ``_forward_stem_per_word``; fall back to the (detached)
@@ -4186,7 +4250,7 @@ class BasicModel(BaseModel):
                 self._loss_head_loss = self.loss_head(grad_input)
             else:
                 self._loss_head_loss = None
-        return sub
+        return last_cs
 
     def _chart_compose_at_C(self, stage_idx=0):
         """Fire the chart at C-tier over ``conceptualSpace.stm`` contents.
@@ -4201,6 +4265,82 @@ class BasicModel(BaseModel):
         if snap is None:
             return
         self.wordSpace.compose(snap)
+
+    def _chart_generate_from_stm(self):
+        """Fire ``wordSpace.generate`` over the C-tier STM snapshot.
+
+        Reverse-path mirror of ``_chart_compose_at_C``: populates
+        ``wordSpace.generate_rules`` so each stage's reverse dispatch can
+        pop them via its SyntacticLayer cursor.
+        """
+        ws = getattr(self, 'wordSpace', None)
+        if ws is None:
+            return
+        stm = getattr(self.conceptualSpace, 'stm', None)
+        if stm is None:
+            return
+        snap = stm.snapshot()
+        if snap is None:
+            return
+        ws.generate(snap)
+
+    def _reverse_head(self, sub):
+        """Reverse the head: ``outputSpace.reverse`` (OS → C tier)."""
+        return self.outputSpace.reverse(sub)
+
+    def _reverse_body(self, sub):
+        """Per-stage body reverse, mirroring ``_forward_body`` order.
+
+        Inverts the primary IS→PS→CS→OS path's body: walk stages in
+        reverse, undo the optional N-halving ``merge`` then
+        ``ConceptualSpace.reverse`` (C → percept tier). SymbolicSpace is
+        the symbolic recurrent loop leg, off the OS→CS→PS→IS
+        reconstruction path; its loop contribution was averaged into C
+        in the forward and cannot be decomposed by a single-input
+        reverse (round-trip holds for the local per-space inverse).
+        B-shaped throughout (the legacy K-axis flatten/restore was
+        retired with the AR cursor unfold).
+
+        The merge's forward-cached ``_merge_diff`` is overwritten on
+        each of the T recurrent passes, so its N-halving is only
+        exactly invertible for the last pass; per-stage reverse is
+        guarded so a shape mismatch in an earlier stage degrades the
+        reconstruction (approximate through the averaged loops, per the
+        single-input-reverse contract) instead of aborting.
+        """
+        for t in reversed(range(len(self.body_stages))):
+            stage = self.body_stages[t]
+            if "merge" in stage:
+                try:
+                    sub = stage["merge"].reverse(sub)
+                except (RuntimeError, AssertionError, ValueError):
+                    pass
+            try:
+                sub = stage["cs"].reverse(sub)
+            except (RuntimeError, AssertionError, ValueError):
+                pass
+        return sub
+
+    def _reverse_perceptual(self, sub):
+        """Reverse the perceptual boundary (percept tier → input)."""
+        return self.perceptualSpace.reverse(sub)
+
+    def _run_pipeline_rev(self, x):
+        """Reverse pipeline: reconstruct input from the head output.
+
+        Mirror of the forward path ``IS→PS→CS→OS`` run backwards:
+        ``OS.reverse → chart-generate (C-tier STM) → body.reverse →
+        perceptual.reverse → inputSpace.reverse``. Returns the
+        reconstructed input subspace (or ``None``).
+        """
+        if x is None:
+            return None
+        x = self._reverse_head(x)
+        self._chart_generate_from_stm()
+        x = self._reverse_body(x)
+        x = self._reverse_perceptual(x)
+        x = self.inputSpace.reverse(x)
+        return x
 
 
 
@@ -4262,7 +4402,10 @@ class BasicModel(BaseModel):
             self._predicted_snapshot = d_pred
             self._predicted_confidence = d_conf
 
-        # Stem: InputSpace + PerceptualSpace forward (``[B, N, D]``).
+        # Stem: InputSpace forward only (``[B, N, D]``). PerceptualSpace
+        # now runs inside the recurrent cell (it takes the C→P feedback
+        # as an explicit arg), so it is no longer a once-per-sentence
+        # stem step.
         in_sub = self.inputSpace.forward(inputData)
         if in_sub is None or (
                 hasattr(in_sub, 'is_empty') and in_sub.is_empty()):
@@ -4272,18 +4415,13 @@ class BasicModel(BaseModel):
             self.symbols = self.symbolicSpace.subspace
             self.outputs = self.outputSpace.subspace
             return None, None, None, None
-        p_sub = self.perceptualSpace.forward(in_sub)
 
-        # IR masked-LM: random mask at P-tier replaces a ``mask_rate``
-        # fraction of WHAT positions with NULL_PERCEPT.  Snapshots the
-        # pre-mask event on ``_ir_pre_mask_input`` and the per-position
-        # mask on ``_ir_mask_positions`` for the loss in ``runBatch``.
-        self.create_ir_mask(p_sub)
-
-        # Body: T stages on B rows.  Chart-at-C reads ``ConceptualSpace
-        # .stm`` (empty in the IR fast path; the chart's ``valid_mask``
-        # handles the no-op cleanly).
-        body_sub = self._forward_body(p_sub)
+        # Body: recurrent cell over T stages on B rows. PerceptualSpace
+        # runs per pass with the C→P feedback; the IR masked-LM mask is
+        # applied once inside the cell on pass 0's perceptual event
+        # (``_ir_pre_mask_input`` / ``_ir_mask_positions`` for
+        # ``runBatch``). Chart-at-C reads ``ConceptualSpace.stm``.
+        body_sub = self._forward_body(in_sub)
 
         # Head: outputSpace -> ``[B, N, predDim]``.
         head_sub = self._forward_head(body_sub)
@@ -4871,6 +5009,24 @@ class ModelFactory:
             f"to match <ConceptualSpace><nOutputDim> if present, else "
             f"<ConceptualSpace><nDim>."
         )
+
+        # Monotonicity ⟹ no ConceptualSpace projection codebook.
+        # ``architecture.monotonic`` makes the subsymbolic loop
+        # order-preserving (W>=0) so the ramsified codebook can match a
+        # symbol mapped across orders via ``Ops.part``. A ConceptualSpace
+        # projection codebook is a basis *expansion* to a wide prototype
+        # space and is not reliably order-preserving, so it breaks that
+        # invariant. Require the projection bypassed when monotonic.
+        if bool(arch.get("monotonic", False)) and gsp(
+                cfg, "ConceptualSpace", "codebook"):
+            errors.append(
+                "architecture.monotonic=True requires "
+                "<ConceptualSpace><codebook>false</codebook>: a basis "
+                "expansion (projection codebook) is not order-preserving "
+                "and breaks the monotone-loop invariant the ramsified "
+                "symbolic match (Ops.part) depends on. Set "
+                "<ConceptualSpace><codebook>false</codebook> or "
+                "<architecture><monotonic>false</monotonic>.")
 
         # Invertible PerceptualSpace shape constraints are registered inside
         # PerceptualSpace._register_requirements() (not here) to keep them self-contained.
