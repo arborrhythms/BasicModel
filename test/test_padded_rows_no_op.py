@@ -41,46 +41,25 @@ def _model():
     return model
 
 
-def test_valid_mask_is_set_by_stem_in_ar_mode():
-    """The AR stem populates `subspace.valid_mask` as [B, K] bool."""
-    model = _model()
-    inp = model.inputSpace
-    # Build an embedded tensor with one NULL-padded position per row.
-    inp._lex_and_embed = lambda _x: inp.subspace
-    embedded = torch.tensor(
-        [[[0.1, 0.2],
-          [0.3, 0.4],
-          [0.0, 0.0]]],   # last position is NULL
-        dtype=torch.float32,
-    )
-    inp.subspace.set_event(embedded)
-    sub = inp.forward(_xor_input())
-    assert sub.k_axis is True
-    assert sub.valid_mask is not None
-    assert sub.valid_mask.dtype == torch.bool
-    assert sub.valid_mask.dim() == 2
-    # Last position is invalid for the only row.
-    assert sub.valid_mask[0, -1].item() is False
-
-
 def test_valid_mask_propagates_via_copy_context():
-    """`copy_context` carries `valid_mask` to downstream subspaces.
+    """`copy_context` carries `valid_mask` (and `stem_embedded`) to
+    downstream subspaces.
 
-    Critical for §2 mask propagation: every subspace that runs
+    Critical for mask propagation: every subspace that runs
     `self.subspace.copy_context(vspace)` at the top of its forward
-    must have access to `valid_mask` for per-cell gating.
+    must have access to `valid_mask` for per-cell gating. (The AR
+    `k_axis` flag was retired with the IR-only refactor; the
+    valid_mask propagation contract it rode on is still live.)
     """
     from Spaces import SubSpace
     src = SubSpace([4, 8], [4, 8], nInputDim=8, nOutputDim=8)
     dst = SubSpace([4, 8], [4, 8], nInputDim=8, nOutputDim=8)
     mask = torch.tensor([[True, True, False, False]])
     src.valid_mask = mask
-    src.k_axis = True
     src.stem_embedded = True
     dst.copy_context(src)
     assert dst.valid_mask is not None
     assert torch.equal(dst.valid_mask, mask)
-    assert dst.k_axis is True
     assert dst.stem_embedded is True
 
 

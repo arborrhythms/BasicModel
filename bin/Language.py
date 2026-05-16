@@ -4440,6 +4440,56 @@ class ReconstructionStack:
         """Return current stack depth for row ``b`` (number of entries)."""
         return int(self._top[b].item())
 
+
+class Taxonomy:
+    """Explicit parent->children order hierarchy for ramsified symbols.
+
+    Distinct from the Meronomy (parthood) -- which stays codebook-
+    per-order implicit / geometric (the ``PartLayer`` clipped-cosine,
+    unchanged). The Taxonomy is the explicit hierarchy organizing
+    symbols by order (0 = proper / specific; higher = more general).
+    Pure-Python bookkeeping: no parameters, not an ``nn.Module``;
+    hosted on the WordSpace singleton.
+    """
+
+    def __init__(self):
+        self._order = {}      # node id -> int order
+        self._children = {}   # node id -> list[node id]
+        self._parent = {}     # node id -> parent node id or None
+        self._next = 0
+
+    def add(self, order, parent=None):
+        """Create a node at ``order`` (optionally under ``parent``);
+        return its node id."""
+        nid = self._next
+        self._next += 1
+        self._order[nid] = int(order)
+        self._children[nid] = []
+        self._parent[nid] = parent
+        if parent is not None:
+            self._children.setdefault(parent, []).append(nid)
+        return nid
+
+    def children(self, node):
+        """Direct children of ``node`` (list of node ids)."""
+        return list(self._children.get(node, []))
+
+    def parent(self, node):
+        """Parent node id of ``node`` (or ``None`` for a root)."""
+        return self._parent.get(node)
+
+    def order(self, node):
+        """The order (0..N) recorded for ``node``."""
+        return self._order[node]
+
+    def all(self):
+        """All node ids, in insertion order."""
+        return list(self._order.keys())
+
+    def __len__(self):
+        return len(self._order)
+
+
 class WordSpace(Space):
     """Service space that owns the word-stream buffer, the SyntacticLayer,
     the truth store, and the inter-sentence discourse substrate.
@@ -4694,6 +4744,12 @@ class WordSpace(Space):
         self.category_index = {
             name: idx for idx, name in enumerate(TheGrammar.categories)
         }
+        # Taxonomy: explicit parent->children order hierarchy for the
+        # ramsified symbol space (Meronomy/parthood stays codebook-
+        # per-order implicit, unchanged). Pure-Python; hosted here on
+        # the WordSpace singleton, reached at runtime via
+        # ``vspace.wordSpace.taxonomy``.
+        self.taxonomy = Taxonomy()
         # 6c. Category stack -- push/pop store for category-embedding
         # vectors during parsing. One frame per reduction step.
         self.category_stack = CategoryStack(dim=pos_dim)

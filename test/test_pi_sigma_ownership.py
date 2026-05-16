@@ -1,25 +1,33 @@
 """Tests for Pi / Sigma layer ownership.
 
-Post-2026-05 refactor: SigmaLayer / PiLayer instances are owned ONLY
-by PerceptualSpace and ConceptualSpace. SymbolicSpace and OutputSpace
-hold no SigmaLayer / PiLayer (their previous remap layers were either
-moved or replaced):
+Post-2026-05-13 sigma/pi rebalance (doc/Spaces.md §"Sigma / Pi
+ownership"): SigmaLayer / PiLayer instances are owned ONLY by
+PerceptualSpace and ConceptualSpace, but the ownership SWAPPED vs the
+earlier model -- PS now owns the Pi folds, CS owns the Sigma fold:
 
-    PerceptualSpace.sigma  -- SigmaLayer (P -> sub-percept).
-    ConceptualSpace.pi     -- PiLayer (P -> C). Two-pass ergodic mode
-                              aliases ``self.pi`` to ``self.pi1``;
-                              ``self._pi_reverse`` hides the pi2 dispatch.
+    PerceptualSpace        -- ``pi_input`` (input_dim -> percept_dim)
+                              and ``pi_concept`` (concept_dim ->
+                              percept_dim). Ramsified per conceptualOrder
+                              into ``nn.ModuleList``s, so element [0]
+                              is the order-0 PiLayer.
+    ConceptualSpace.sigma_percept
+                           -- SigmaLayer (percept_dim -> concept_dim),
+                              the canonical C-tier fold. ``invertible``
+                              configs round-trip via
+                              ``_sigma_percept_reverse`` /
+                              ``sigma_percept.reverse``. (The old
+                              ``ConceptualSpace.pi`` was removed by the
+                              rebalance.)
     SymbolicSpace          -- NO sigma / pi attribute. With
-                              ``concept_dim == symbol_dim`` enforced in
-                              ``__init__``, the C->S transform is a
-                              dimensional pass-through. The codebook
-                              snap (and SyntacticLayer dispatch, if
-                              configured) still runs.
+                              ``concept_dim == symbol_dim`` the C->S
+                              transform is a dimensional pass-through;
+                              the codebook snap (and SyntacticLayer
+                              dispatch, if configured) still runs.
     OutputSpace            -- NO `_piLayer`. The ``nonlinear_output``
                               path uses an ``InvertibleLinearLayer``
                               wrapped with ``atanh -> linear -> tanh``.
 
-ConceptualSpace.pi still round-trips through its own inverse.
+ConceptualSpace.sigma_percept round-trips through its own inverse.
 
 See:
 - basicmodel/doc/Spaces.md (ownership tables)
@@ -64,13 +72,20 @@ class TestOwnership(unittest.TestCase):
     attribute. The architectural rule is: only PS / CS may own
     SigmaLayer / PiLayer instances."""
 
-    def test_perceptual_sigma(self):
+    def test_perceptual_pi_folds(self):
+        # Post-rebalance: PS owns pi_input / pi_concept (PiLayers),
+        # ramsified per conceptualOrder into ModuleLists.
         model = _make_plain_model()
-        self.assertIsInstance(model.perceptualSpace.sigma, SigmaLayer)
+        ps = model.perceptualSpace
+        self.assertIsInstance(ps.pi_input[0], PiLayer)
+        self.assertIsInstance(ps.pi_concept[0], PiLayer)
 
-    def test_conceptual_pi(self):
+    def test_conceptual_sigma_percept(self):
+        # Post-rebalance: CS owns sigma_percept (SigmaLayer), the
+        # canonical percept_dim -> concept_dim fold (was ``pi``).
         model = _make_plain_model()
-        self.assertIsInstance(model.conceptualSpace.pi, PiLayer)
+        self.assertIsInstance(model.conceptualSpace.sigma_percept,
+                              SigmaLayer)
 
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
@@ -87,14 +102,15 @@ class TestOwnership(unittest.TestCase):
     def test_conceptual_has_no_sigma(self):
         model = _make_plain_model()
         self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
-                         "ConceptualSpace.sigma is gone after the swap; "
-                         "use conceptualSpace.pi instead.")
+                         "ConceptualSpace owns ``sigma_percept`` (not a "
+                         "bare ``sigma``) post-2026-05-13 rebalance.")
 
     def test_perceptual_has_no_pi(self):
         model = _make_plain_model()
         self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
-                         "PerceptualSpace.pi is gone after the swap; "
-                         "use perceptualSpace.sigma instead.")
+                         "PerceptualSpace owns ``pi_input`` / "
+                         "``pi_concept`` (not a bare ``pi``) "
+                         "post-2026-05-13 rebalance.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()
@@ -136,25 +152,25 @@ class TestForwardReverseAliases(unittest.TestCase):
         self.assertFalse(hasattr(ss, '_sigma_reverse'),
                          "SymbolicSpace._sigma_reverse removed with sigma")
 
-    def test_conceptual_has_pi_forward(self):
+    def test_conceptual_has_sigma_percept_forward(self):
         model = _make_plain_model()
         cs = model.conceptualSpace
-        self.assertTrue(callable(cs.pi.forward))
-        self.assertTrue(callable(cs._pi_reverse))
+        self.assertTrue(callable(cs.sigma_percept.forward))
+        self.assertTrue(callable(cs._sigma_percept_reverse))
 
 
 class TestPerLayerRoundTrip(unittest.TestCase):
-    """ConceptualSpace.pi round-trips through its own inverse."""
+    """ConceptualSpace.sigma_percept round-trips through its own inverse."""
 
-    def test_conceptual_pi_round_trip(self):
-        """Pi.reverse(Pi.forward(p)) ~= p on the conceptual space's pi (P->C path)."""
+    def test_conceptual_sigma_percept_round_trip(self):
+        """sigma.reverse(sigma.forward(p)) ~= p on the C-tier fold (P->C)."""
         model = _make_plain_model()
-        pi = model.conceptualSpace.pi
+        sp = model.conceptualSpace.sigma_percept
         N = 4
         eps = 1e-3
-        x = torch.randn(1, N, pi.nInput).clamp(-1 + eps, 1 - eps)
+        x = torch.randn(1, N, sp.nInput).clamp(-1 + eps, 1 - eps)
         with torch.no_grad():
-            x_back = pi.reverse(pi.forward(x))
+            x_back = sp.reverse(sp.forward(x))
         torch.testing.assert_close(x, x_back, atol=1e-4, rtol=1e-3)
 
 

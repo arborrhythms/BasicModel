@@ -6312,6 +6312,25 @@ class InputSpace(Space):
         return None, None
 
 
+def reconstitute(record, order, sigma_layers, pi_layers):
+    """Walk a concept-space record up through ``order`` subsymbolic loops.
+
+    Convention (locked): order 0 = no loop (identity); order k = k loops.
+    One loop maps the record concept->percept via ``pi_layers[i]`` then
+    percept->concept via ``sigma_layers[i]`` (per-order ramsified
+    weights). Pure function over a tensor (no model state) so parthood
+    tests can pass monotone layer stacks directly; with monotone,
+    zero-preserving layers the relation tested by ``Ops._part_kernel`` is
+    preserved across orders.
+
+    ``sigma_layers`` / ``pi_layers`` are indexable (list / nn.ModuleList)
+    with at least ``order`` elements.
+    """
+    x = record
+    for i in range(order):
+        x = sigma_layers[i](pi_layers[i](x))
+    return x
+
 
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via two PiLayer folds.
@@ -6514,18 +6533,31 @@ class PerceptualSpace(Space):
         # through the PS<->CS loop. Default False -> unchanged behavior.
         _mono = bool(TheXMLConfig.get("architecture.monotonic",
                                       default=False))
-        self.pi_input = PiLayer(
-            percept_dim, percept_dim,
-            naive=naive, ergodic=ergodic,
-            invertible=False, nonlinear=nonlinear,
-            stable=True, monotonic=_mono,
-        )
-        self.pi_concept = PiLayer(
-            int(nConceptDim), percept_dim,
-            naive=naive, ergodic=ergodic,
-            invertible=False, nonlinear=nonlinear,
-            stable=True, monotonic=_mono,
-        )
+        # Ramsification: per-order subsymbolic folds. One ``pi_input`` /
+        # ``pi_concept`` per conceptualOrder so order k uses its own
+        # weights (sigma_percept / the symbolic codebook are already
+        # per-order via the conceptualSpaces/symbolicSpaces ModuleLists).
+        # The recurrent cell selects the order via ``_recurrent_pass_idx``.
+        # conceptualOrder<=1 -> length-1 lists -> bit-identical to the
+        # pre-ramsification single-fold behavior.
+        _T = max(1, int(TheXMLConfig.get(
+            "architecture.conceptualOrder", default=1)))
+        self.pi_input = nn.ModuleList([
+            PiLayer(
+                percept_dim, percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=False, nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+            ) for _ in range(_T)
+        ])
+        self.pi_concept = nn.ModuleList([
+            PiLayer(
+                int(nConceptDim), percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=False, nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+            ) for _ in range(_T)
+        ])
 
         input = percept_dim
         self.attention = AttentionLayer(input, input, type="transformer")
@@ -7419,14 +7451,22 @@ class PerceptualSpace(Space):
         # ``pi_concept.nInput`` shape-gates non-bivector C output so it
         # degrades to ``pi_input(primary)`` alone (matches the old
         # cold-start / non-bivector fallback).
+        # Per-order fold selection (ramsification): the recurrent cell
+        # sets ``_recurrent_pass_idx`` to the order t each pass; clamp to
+        # the available range so standalone callers (idx 0) and any
+        # idx >= conceptualOrder are safe.
+        _oi = min(max(self._recurrent_pass_idx, 0),
+                  len(self.pi_input) - 1)
+        pi_input_k = self.pi_input[_oi]
+        pi_concept_k = self.pi_concept[_oi]
         primary = self.forwardBegin(vspace, returnVectors=True)
-        x_input = self.pi_input.forward(primary)
+        x_input = pi_input_k.forward(primary)
         x = x_input
         if CS_subspaceForPS is not None and not CS_subspaceForPS.is_empty():
             c_event = CS_subspaceForPS.materialize()
             if (c_event is not None and c_event.dim() == 3
-                    and c_event.shape[-1] == self.pi_concept.nInput):
-                x_concept = self.pi_concept.forward(c_event)
+                    and c_event.shape[-1] == pi_concept_k.nInput):
+                x_concept = pi_concept_k.forward(c_event)
                 if x_concept.shape == x_input.shape:
                     x = torch.tanh(x_input + x_concept)
         # Attention is currently unused in PerceptualSpace; leaving the
@@ -8480,8 +8520,14 @@ class ConceptualSpace(Space):
         if getattr(self, 'syntacticLayer', None) is None:
             y = self.sigma_percept(x)
         else:
-            vspace.set_event(x)
-            vspace = self.syntacticLayer.forward(vspace)
+            # Dispatch on CS's OWN subspace (context already copied
+            # above), NOT the caller's ``PS_subspace``: in the recurrent
+            # cell ``PS_subspace IS perceptualSpace.subspace`` (the live
+            # shared object), so ``set_event`` here would clobber
+            # PerceptualSpace's output (e.g. overwrite the BPE
+            # word-masked percepts with the dense C-tier input).
+            self.subspace.set_event(x)
+            vspace = self.syntacticLayer.forward(self.subspace)
             y = vspace.materialize()
         # Chat-loop C-prior injection: when the inference loop staged
         # a predicted next-sentence prior on ``self._c_prior`` (lifted

@@ -79,9 +79,8 @@
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>1024</nDim>
-    <nVectors>512</nVectors> <!-- 8 -->
-    <codebook>true</codebook>
-    <chunking>lexicon</chunking>
+    <nVectors>8</nVectors> <!-- 512 -->
+    <codebook>false</codebook> <!-- true -->
   </ConceptualSpace>
 
   <SymbolicSpace>

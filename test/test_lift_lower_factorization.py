@@ -44,9 +44,16 @@ def _fresh_model():
 
 
 def _random_bivec(shape, seed=0):
-    """Random non-negative bivector activation in [0, 1]^shape."""
-    g = torch.Generator().manual_seed(seed)
-    return torch.rand(*shape, generator=g)
+    """Random non-negative bivector activation in [0, 1]^shape.
+
+    Device-agnostic: an explicit ``torch.Generator()`` is always CPU and
+    mismatches ``torch.rand``'s active default device (MPS on this box,
+    CUDA on metalbaby). Seed the global RNG (covers every device's
+    default generator) and let ``torch.rand`` place the tensor on the
+    active device.
+    """
+    torch.manual_seed(seed)
+    return torch.rand(*shape)
 
 
 class TestRawGateRetired(unittest.TestCase):

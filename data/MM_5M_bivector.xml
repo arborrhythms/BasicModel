@@ -73,8 +73,8 @@
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <nDim>128</nDim>
-    <nVectors>512</nVectors>
-    <codebook>true</codebook>
+    <nVectors>8</nVectors> <!-- 512 -->
+    <codebook>false</codebook> <!-- true -->
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>

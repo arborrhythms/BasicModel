@@ -3983,12 +3983,18 @@ class BasicModel(BaseModel):
 
         # Output: primary path is IS→PS→CS→OS, so OutputSpace consumes
         # the terminal ConceptualSpace output (SymbolicSpace is the
-        # symbolic recurrent loop leg, off the head path).
-        # ``symbol_dim == concept_dim`` is enforced by
-        # ModelFactory.validate_config, so the feature width is safe;
-        # the N count comes from the terminal C stage's outputShape.
-        output_n = int(self.conceptualSpaces[-1].outputShape[0])
-        outputInputShape = [output_n, concept_dim + obj_concept]
+        # symbolic recurrent loop leg, off the head path). Size the head
+        # from the terminal C stage's ACTUAL ``outputShape`` (the
+        # source of truth) rather than a recomputed
+        # ``concept_dim + obj_concept``: under ``bivectorOutput`` the
+        # C-tier emits a per-prototype catuskoti ``[B, V_C, 2]`` slab so
+        # the real emitted width is the bivector width, not the concept
+        # width -- the recomputed form mismatched OutputSpace.nInputDim
+        # vs the fed event (the pre-rebase code happened to coincide
+        # because symbol_dim tracked the bivector width).
+        _term_cs_shape = list(self.conceptualSpaces[-1].outputShape)
+        output_n = int(_term_cs_shape[0])
+        outputInputShape = [output_n, int(_term_cs_shape[1])]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        vectors=self.perceptualSpace.vocabulary)
 
@@ -4178,6 +4184,41 @@ class BasicModel(BaseModel):
         return SubSpace(inputShape=(0, d), outputShape=(0, d),
                         nInputDim=d, nOutputDim=d)
 
+    @staticmethod
+    def _zero_symbol_subspace(ss, ctx_sub):
+        """"Nothing to quantize -> pass zeros": a correctly-batched
+        zero SymbolicSpace output.
+
+        When SS is fed an empty seed (e.g. conceptualOrder=1, where the
+        only pass's ``prevCS_forSS`` is the empty seed) it returns the
+        activation-less empty subspace, breaking the symbol-state
+        contract (``end_state`` / discourse / ARMA / head). The cell
+        knows the real batch (from ``ctx_sub`` = the percept-side input),
+        so it emits a ``[B, N_S, D_S]`` zero symbol here. ``set_event``
+        installs a (non-None) activation, satisfying the contract;
+        zeros are an additive no-op into any downstream consumer.
+        """
+        sample = (ctx_sub.materialize()
+                  if hasattr(ctx_sub, 'materialize') else None)
+        if sample is not None and sample.dim() >= 1:
+            B = int(sample.shape[0])
+            dev, dt = sample.device, sample.dtype
+        else:
+            B = 1
+            dev, dt = TheDevice.get(), torch.get_default_dtype()
+        N = int(ss.outputShape[0])
+        D = int(ss.subspace.muxedSize)
+        # Write onto SS's OWN subspace (mirrors the held_at_zero idiom)
+        # so ``model.symbolicSpace.subspace`` carries the zero event +
+        # activation -- the symbol-state contract inspects that object,
+        # not just the cached return. Place the zeros on the model's
+        # device/dtype (held_at_zero uses ``device=sample.device,
+        # dtype=sample.dtype``); a bare ``torch.zeros`` is CPU and
+        # mismatches a CUDA model (``cuda:0 vs cpu`` on metalbaby).
+        ss.subspace.copy_context(ctx_sub)
+        ss.subspace.set_event(torch.zeros(B, N, D, device=dev, dtype=dt))
+        return ss.subspace
+
     def _forward_body(self, in_sub):
         """Recurrent cell: IS→PS→CS→OS with CS→PS and CS→SS loops.
 
@@ -4233,6 +4274,13 @@ class BasicModel(BaseModel):
             prevCS_forPS = getattr(cs, "_subspaceForPS",
                                    self._empty_subspace())
             prevCS_forSS = getattr(cs, "_subspaceForSS", CS_sub)
+            # "Nothing to quantize -> pass zeros": SS is inert when its
+            # input was the empty seed (conceptualOrder=1, or pass 0).
+            # CS already consumed SS_sub as-is above (pass-0 math
+            # unchanged); cache a correctly-batched zero symbol so the
+            # symbol-state contract holds for the head / discourse.
+            if SS_sub.is_empty():
+                SS_sub = self._zero_symbol_subspace(ss, in_sub)
             self._ss_cache[t] = SS_sub
             last_cs = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the

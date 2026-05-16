@@ -397,7 +397,10 @@ class TestPairedSigmaTraining(unittest.TestCase):
     uses atanh then the configured inverse path of its linear layer.
     """
     def test_paired_roundtrip(self):
-
+        # Deterministic: identical seedless-flaky defect as the paired
+        # Pi test (stochastic Adam vs a tight 5e-4 threshold). A fixed
+        # seed makes the round-trip reproducible without weakening it.
+        torch.manual_seed(0)
         nIn, nOut = 6, 8
         sigma_fwd = Layers.SigmaLayer(nIn, nOut, invertible=True)
         sigma_rev = Layers.SigmaLayer(nIn, nOut, invertible=True)
@@ -426,7 +429,11 @@ class TestPairedPiTraining(unittest.TestCase):
     forward() on one layer, reverse() on the other.
     """
     def test_paired_roundtrip(self):
-
+        # Deterministic: stochastic Adam training vs a tight 5e-4
+        # threshold was seedless and flaky (occasional bad init). A
+        # fixed seed makes the round-trip reproducible (~9e-8, huge
+        # margin) without weakening the assertion.
+        torch.manual_seed(0)
         nIn, nOut = 4, 6
         pi_fwd = Layers.PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
         pi_rev = Layers.PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
@@ -566,7 +573,11 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
-        cspace.pi.set_sigma(0)
+        # 2026-05-13 sigma/pi rebalance: the C-tier fold is ``sigma_percept``
+        # (the old ``ConceptualSpace.pi`` was removed). set_sigma(0)
+        # suppresses ergodic exploration for a deterministic invertible
+        # round-trip (Layer.set_sigma, inherited by SigmaLayer).
+        cspace.sigma_percept.set_sigma(0)
         # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
         x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():

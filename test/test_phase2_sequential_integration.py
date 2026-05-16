@@ -96,29 +96,9 @@ def test_sequential_unrolls_conceptual_order():
 # not the legacy [B, K, N, predDim] AR microbatch shape.
 
 
-def test_input_space_null_byte_emits_zero_validity():
-    """All-zero target embeddings produce False entries in valid_mask.
-
-    The legacy per-call slide loop emitted a sentinel empty subspace
-    when the just-slid token was null. The microbatch path produces all
-    K windows in one call and tags each with [B, K] validity instead;
-    every all-zero target row should map to False.
-    """
-    import torch as _t
-    model = _model()
-    inp = model.inputSpace
-    # Stub the embed step so InputSpace.forward runs the unfold/mask path
-    # against a tensor we control directly.
-    inp._lex_and_embed = lambda _x: inp.subspace
-    embedded = _t.tensor(
-        [[[0.1, 0.2],
-          [0.0, 0.0],
-          [0.3, 0.4]]],
-        dtype=_t.float32,
-    )
-    inp.subspace.set_event(embedded)
-    sub = inp.forward(_xor_input())
-    assert sub.k_axis is True
-    assert sub.valid_mask is not None
-    # Position 1's target embedding is all zeros → that window is invalid.
-    assert sub.valid_mask[0, 1].item() is False
+# ``test_input_space_null_byte_emits_zero_validity`` retired: it asserted
+# the AR per-window ``[B, K]`` InputSpace ``valid_mask`` (zero row at a
+# given window → False). The IR-only refactor retired AR windowing;
+# InputSpace ``valid_mask`` is now row-level ``[B, 1]`` with no
+# per-position equivalent. Per-cell NULL gating under IR is exercised by
+# ``test_padded_rows_no_op`` (valid_mask propagation via copy_context).
