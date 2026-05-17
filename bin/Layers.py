@@ -5473,6 +5473,57 @@ class TruthLayer(Layer):
             )
         return messages
 
+    # -- Client-facing paraconsistent assessment ---------------------
+
+    @torch.no_grad()
+    def assess(self, basis=None):
+        """Terminal paraconsistent read of the truth accumulator.
+
+        Returns per-region ``support`` / ``conflict`` / ``ignorance``
+        in ``[0, 1]`` (the only legitimate terminal bivector surface --
+        every inter-component wire is a single signed scalar; this
+        client-facing assessment recovers the catuskoti corners from
+        the accumulated TruthSet)::
+
+            support   = aP * (1 - aN)             net affirmation
+            conflict  = aP * R_N + aN * R_P       the set both affirms
+                                                  AND denies (contested)
+            ignorance = (1 - max(aP, aN))
+                        * (1 - max(R_P, R_N))     the set is silent
+
+        ``aP`` / ``aN`` are the affirming / denying poles of the
+        TruthSet's mean signed Degree-of-Truth; ``R_P`` / ``R_N`` are
+        its strongest affirming / denying evidence. Keeping ``conflict``
+        (a TruthSet that splits on a proposition) distinct from
+        ``ignorance`` (a TruthSet silent on it) is exactly the
+        degeneracy a scalar ``aP - aN`` collapse loses -- the reason
+        the accumulator stays the paraconsistent surface while the
+        wire is scalar. ``basis`` is accepted for signature parity with
+        ``consistency`` / ``suggest_clarifications``; unused here.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {"support": 0.0, "conflict": 0.0, "ignorance": 1.0}
+        stored = self.truths[:n]
+        # Per-truth signed Degree-of-Truth (mean activation; sign = the
+        # belief direction baked in by record()).
+        s = stored.mean(dim=-1)                          # [n]
+        pos = torch.relu(s)                              # affirming
+        neg = torch.relu(-s)                             # denying
+        aP = float(pos.mean().item())                    # net affirmation
+        aN = float(neg.mean().item())                    # net denial
+        R_P = float(pos.max().item())                    # strongest affirm
+        R_N = float(neg.max().item())                    # strongest deny
+        support = aP * (1.0 - aN)
+        conflict = aP * R_N + aN * R_P
+        ignorance = (1.0 - max(aP, aN)) * (1.0 - max(R_P, R_N))
+        clamp = lambda x: max(0.0, min(1.0, float(x)))
+        return {
+            "support": clamp(support),
+            "conflict": clamp(conflict),
+            "ignorance": clamp(ignorance),
+        }
+
     # -- TruthLoss: Union Norm Reduction -----------------------------
 
     def falsity_penalty(self, symbol_states, basis):

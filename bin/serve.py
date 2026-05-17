@@ -251,6 +251,12 @@ def chat_completions():
         clarifications = getattr(_model, "_last_clarifications", None)
         if clarifications:
             response["clarifications"] = list(clarifications)
+        # Phase 5: terminal paraconsistent truth assessment
+        # (support / conflict / ignorance). Terminal client output,
+        # NOT part of the inference token stream.
+        assessment = getattr(_model, "_last_truth_assessment", None)
+        if assessment:
+            response["truth_assessment"] = assessment
         return jsonify(response)
     except Exception as exc:
         logger.exception("Inference error")

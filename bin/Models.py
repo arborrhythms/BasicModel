@@ -670,7 +670,10 @@ class BaseModel(Mereology, nn.Module):
             # Single-artifact load: state_dict + vocab_extras +
             # bpe_extras all ride in the .ckpt. The separate .kv
             # embedding artifact was retired (2026-05-12).
-            self.load_weights(wpath)
+            # Autoload: fail fast on a stale/mismatched ckpt (the
+            # bivector retirement invalidates pre-refactor weights)
+            # instead of silently proceeding on fresh init then crashing.
+            self.load_weights(wpath, require_match=True)
         self.max_response_length = arch["maxResponseLength"]
         return cfg
 
@@ -1157,7 +1160,7 @@ class BaseModel(Mereology, nn.Module):
             if isinstance(tensor, torch.Tensor):
                 TheMessage(f"    {key:<50s}  {list(tensor.shape)}")
 
-    def load_weights(self, path=None, strict=False):
+    def load_weights(self, path=None, strict=False, require_match=False):
         """Load model state from a single .ckpt bundle.
 
         The new bundle format carries ``state_dict`` plus
@@ -1166,6 +1169,16 @@ class BaseModel(Mereology, nn.Module):
         embedding-stripped .ckpts (state_dict only, no extras) load
         with a warning; the embeddings stay at their construction-time
         random init.
+
+        ``require_match`` (autoload only): when True, a genuine
+        architecture mismatch (shape drift / missing keys / fatal
+        unexpected keys) raises ``ValueError`` with the actionable
+        diagnostic instead of soft-warning and proceeding on fresh
+        weights -> later crash. This is the migration-cliff catcher:
+        the bivector retirement invalidates pre-refactor checkpoints
+        (e.g. data/MM_5M_bivector.ckpt), so autoloading a stale ckpt
+        now fails fast. Non-autoload callers keep ``require_match=False``
+        (soft-warn) so vocab-grow / benign-stale-key loads still work.
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
@@ -1252,6 +1265,11 @@ class BaseModel(Mereology, nn.Module):
             lines.append("  The model config likely changed since this checkpoint was saved.")
             lines.append(f"  To fix: correct the model XML to match the saved weights,")
             lines.append(f"          or delete/move {path} to start fresh.")
+            if require_match:
+                # Autoload migration-cliff catcher: fail fast at the
+                # real detection point instead of soft-warn + later
+                # crash on fresh weights.
+                raise ValueError("\n".join(lines))
             TheMessage("\n".join(lines))
             return False
 
@@ -1790,6 +1808,13 @@ class BasicModel(BaseModel):
             truth_layer.suggest_clarifications(basis=basis)
             if contradictions else []
         )
+        # Phase 5: terminal paraconsistent assessment for the client
+        # (support / conflict / ignorance) -- keeps "contested" (the
+        # TruthSet splits on p) distinct from "unknown" (silent on p).
+        try:
+            self._last_truth_assessment = truth_layer.assess(basis=basis)
+        except Exception:
+            self._last_truth_assessment = None
 
     def infer(self, text, max_length=None, mode=None):
         """IR-mode infill inference.

@@ -235,26 +235,26 @@ class QuadratureEncoding(Encoding):
             buf[batch_idx, pos_idx, idx[0]] = math.sin(angle)
             buf[batch_idx, pos_idx, idx[1]] = math.cos(angle)
 class ActiveEncoding(Encoding):
-    """Per-slot 4-valued (quaternary) truth activation.
+    """Per-slot signed Degree-of-Truth activation (scalar carrier).
 
-    Carries a bivector [aP, aN] per position encoding the four corners of
-    the tetralemma (catuskoti): TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
-    NEITHER=[0,0]. See basicmodel/doc/BuddhistParallels.md for the
-    Nagarjuna-style semantics.
+    Width 1: a single signed scalar in ``[-1, 1]`` per position. The
+    4-valued bivector ``[aP, aN]`` substrate was retired (2026-05): the
+    bivector-activation paths through SubSpace / the Space classes are
+    deleted and every inter-component interface carries one signed
+    Degree-of-Truth (see ``../doc/Logic.md``).
 
-    The ``<codebook>project</codebook>`` path emits a single signed
-    Degree-of-Truth scalar instead (width-1 ``.what``/``.event``);
-    ``SubSpace.resolve`` reads either width. The full bivector-substrate
-    retirement (this carrier -> scalar width, grammar Kleene) is the
-    separately-gated Phase 3.
+    The bivector *operations* themselves are retained for future use
+    (``Layers.NotLayer`` / ``NonLayer`` / ``TrueLayer`` / ``FalseLayer``,
+    the ``Ops`` monotonic kernels, the ``TruthLayer`` accumulator) --
+    only the substrate carrier is scalarized here.
 
     encode/decode are identity -- the producing Space decides how to
     compute activation values. ActiveEncoding is the carrier.
     """
-    nDim = 2
+    nDim = 1
 
     def __init__(self, maxVal=1.0):
-        """Initialize ActiveEncoding at slot ``[-5]`` with bivector width."""
+        """Initialize ActiveEncoding at slot ``[-5]`` with scalar width."""
         super().__init__([-5], maxVal)
 
     def encode(self, activation):
@@ -3753,10 +3753,10 @@ class SubSpace(nn.Module):
         """Compute modal presence flags and 4-valued (quaternary) activation.
 
         active[b, n, m] = 1 if modality m is nonzero at position n, else 0.
-        Activation is the tetralemma bivector [aP, aN]:
+        Activation is the signed Degree-of-Truth scalar ``aP - aN``
+        (the bivector ``[aP, aN]`` substrate was retired 2026-05), where
             aP = ||relu(what)|| / sqrt(nWhat)    (positive content)
             aN = ||relu(-what)|| / sqrt(nWhat)   (negative content)
-        See basicmodel/doc/BuddhistParallels.md for the catuskoti mapping.
 
         Args:
             what_tensor: [B, N, nWhat]
@@ -3774,7 +3774,8 @@ class SubSpace(nn.Module):
         d = max(what_tensor.shape[-1], 1)
         pos = torch.relu(what_tensor).norm(dim=-1) / math.sqrt(d)
         neg = torch.relu(-what_tensor).norm(dim=-1) / math.sqrt(d)
-        act = torch.stack([pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0)], dim=-1)
+        # Signed Degree-of-Truth: balance of positive vs negative content.
+        act = pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)        # [B, N] in [-1, 1]
         self.set_activation(act)
 
     def _coerce_basis(self, value, role):
@@ -4088,10 +4089,12 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
 
     def set_activation_from_event(self):
-        """Compute 4-valued activation and active flags from muxed event vectors.
+        """Compute the signed Degree-of-Truth activation and active flags
+        from the muxed event vectors.
 
-        Activation is the tetralemma bivector [aP, aN] derived from the
-        what-slice:
+        The bivector ``[aP, aN]`` substrate was retired (2026-05): the
+        activation is the signed scalar ``aP - aN`` derived from the
+        what-slice, where
             aP = ||relu(what)|| / sqrt(nWhat)
             aN = ||relu(-what)|| / sqrt(nWhat)
         Active flags are derived by checking each modality slice for
@@ -4103,7 +4106,8 @@ class SubSpace(nn.Module):
         d = max(self.nWhat, 1)
         pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
         neg = torch.relu(-what_slice).norm(dim=-1) / math.sqrt(d)
-        act = torch.stack([pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0)], dim=-1)
+        # Signed Degree-of-Truth: balance of positive vs negative content.
+        act = pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)        # [B, N] in [-1, 1]
         self.set_activation(act)
         # Derive active flags from modality slices
         flags = []
@@ -4120,29 +4124,22 @@ class SubSpace(nn.Module):
     #    # to store a cross-product activation
     #    return
     def set_activation(self, activation_tensor):
-        """Store 4-valued (quaternary) activation for each object vector.
+        """Store the per-slot signed Degree-of-Truth scalar.
 
-        Accepts either the full tetralemma bivector [B, N, 2] = [aP, aN]
-        or a legacy scalar [B, N] which is lifted to the bivector:
-            x > 0  -> [x, 0]   (positive truth)
-            x < 0  -> [0, -x]  (negative truth)
-            x == 0 -> [0, 0]   (NEITHER)
+        The 4-valued bivector ``[aP, aN]`` lift was retired (2026-05):
+        the activation is a single signed scalar; no pole expansion.
 
         Args:
-            activation_tensor: [B, N, 2] bivector or [B, N] legacy scalar.
+            activation_tensor: ``[N]``, ``[B, N]`` or ``[B, N, 1]`` scalar.
         """
         nd = self.activeEncoding.nDim
         # Accept 1-D [N] (legacy direct-setW callers / squeezed tensors)
-        # by treating it as a single-batch [1, N] under the bivector-lift
-        # path.  Strict shapes ([B, N] / [B, N, nd]) pass through unchanged.
+        # by treating it as a single-batch [1, N]. Strict shapes
+        # ([B, N] / [B, N, nd]) pass through unchanged.
         if activation_tensor.ndim == 1:
             activation_tensor = activation_tensor.unsqueeze(0)  # [N] -> [1, N]
         if activation_tensor.ndim == 2:
-            if nd == 2:
-                pos = torch.relu(activation_tensor)
-                neg = torch.relu(-activation_tensor)
-                activation_tensor = torch.stack([pos, neg], dim=-1)
-            # nd == 1 path: leave as [B, N]
+            pass  # scalar [B, N] stored directly (bivector lift retired)
         elif activation_tensor.ndim == 3:
             assert activation_tensor.shape[-1] == nd, (
                 f"activation last dim must be {nd}, got {activation_tensor.shape}"
@@ -4161,20 +4158,21 @@ class SubSpace(nn.Module):
         return self.activation.getW()
 
     def activation_presence(self):
-        """Scalar presence gate reduced from the activation tensor.
+        """Per-slot presence gate = magnitude of the signed
+        Degree-of-Truth scalar (``|DoT|``).
 
-        For the 4-valued bivector [aP, aN], presence = max(aP, aN) --
-        either pole being lit means the position carries information
-        (TRUE, FALSE, or BOTH all count as present; only NEITHER=[0,0]
-        gates the position off).
-        Returns [B, N] or None.
+        The bivector ``max(aP, aN)`` reduction was retired (2026-05);
+        ``|DoT|`` is its scalar successor: a position carries
+        information iff the DoT is non-zero (NEITHER/0 -> gated off,
+        any signed belief -> present). Non-negative, in ``[0, 1]``.
+        Returns ``[B, N]`` or ``None``.
         """
         act = self.get_activation()
         if act is None:
             return None
-        if act.ndim == 3:
-            return act.max(dim=-1).values
-        return act
+        if act.ndim == 3 and act.shape[-1] == 1:
+            act = act.squeeze(-1)        # width-1 scalar carrier -> [B, N]
+        return act.abs()
 
     def get_active(self):
         """Return modal presence flags [B, N, M] or None."""
@@ -4570,28 +4568,19 @@ class SubSpace(nn.Module):
         self.event.setW(torch.cat(parts, dim=-1))
 
     def resolve(self):
-        """Derived **signed Degree of Truth** = pos - neg from the
-        bivector held on ``.what`` (or, for muxed-only subspaces, from
-        ``.event[..., :2]``).  Computed on read; not stored as a
-        separate field.
+        """Read the per-slot signed **Degree of Truth** scalar from the
+        width-1 ``.what`` (or, for muxed-only subspaces, ``.event``)
+        carrier.  Computed on read; not stored as a separate field.
 
-          * ``pos = .what[..., 0]`` — evidence FOR the symbol's truth
-          * ``neg = .what[..., 1]`` — evidence AGAINST it
-          * ``resolve() = pos - neg`` — balance of evidence in [-1, +1]
-
-        Returns ``[B, N]`` (or ``[N]`` for unbatched legacy).  Applies
-        ``.active`` selection when set; returns the full slab when
-        ``.active is None``.  Returns ``None`` when no bivector source
-        is reachable.
+        The bivector ``[aP, aN]`` substrate was retired (2026-05): the
+        carrier is a single signed scalar in ``[-1, +1]`` -- there is no
+        ``pos - neg`` collapse. Returns ``[B, N]`` (or ``[N]`` for
+        unbatched legacy). Applies ``.active`` selection when set;
+        returns ``None`` when no scalar source is reachable.
 
         Public read API for the resolved scalar; replaces the prior
         ``self.activation.getW()`` access pattern.
         """
-        # Bivector retired (2026-05): ``.what`` / ``.event`` now carry a
-        # single signed-DoT scalar in a width-1 trailing dim. The
-        # ``pos - neg`` collapse becomes identity (read ``[..., 0]``).
-        # A width-2 source is still accepted (legacy / transitional)
-        # and collapsed the old way.
         src = self.what.getW() if self.what is not None else None
         if not (src is not None and src.ndim >= 2 and src.shape[-1] >= 1):
             ev = self.event.getW() if self.event is not None else None
@@ -4599,10 +4588,7 @@ class SubSpace(nn.Module):
                          and ev.shape[-1] >= 1) else None
         if src is None:
             return None
-        if src.shape[-1] >= 2:
-            scalar = src[..., 0] - src[..., 1]      # legacy bivector
-        else:
-            scalar = src[..., 0]                    # width-1 scalar DoT
+        scalar = src[..., 0]                         # width-1 scalar DoT
         return self._apply_active_selection(scalar)
 
     def _apply_active_selection(self, src):
@@ -8264,8 +8250,6 @@ class ShortTermMemory(nn.Module):
     """
 
     DEFAULT_CAPACITY = 9
-    # Catuskoti pole width for the per-idea truth tag bivector.
-    _TRUTH_TAG_WIDTH = 2
 
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__()
@@ -8291,16 +8275,6 @@ class ShortTermMemory(nn.Module):
         # those breaks while preserving the trim-to-actual-depth
         # behaviour the chart relies on.
         self._max_depth_host = 0
-        # Per-idea truth-tag bivector ``[B, capacity, 2]``: catuskoti
-        # pole pair attached to each STM slot. Written by
-        # ``query`` / ``equals`` / ``part`` rule firings during chart
-        # compose; read by downstream consumers (e.g. continuation
-        # reductions) as metadata on the operand idea.
-        self.register_buffer(
-            "_truth_tags",
-            torch.zeros(int(batch), self.capacity, self._TRUTH_TAG_WIDTH),
-            persistent=False)
-
     def ensure_batch(self, batch):
         """Resize the STM buffers to ``batch`` rows when the model's
         microbatch dimension changes. Idempotent.
@@ -8312,8 +8286,6 @@ class ShortTermMemory(nn.Module):
         self._buffer = torch.zeros(
             batch, self.capacity, self.concept_dim, device=device)
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
-        self._truth_tags = torch.zeros(
-            batch, self.capacity, self._TRUTH_TAG_WIDTH, device=device)
         # Fresh allocation -> empty buffer -> max depth resets to 0.
         self._max_depth_host = 0
 
@@ -8331,7 +8303,6 @@ class ShortTermMemory(nn.Module):
                 f"({self.capacity}); the parser must reduce before "
                 f"pushing further.")
         self._buffer[b, depth] = idea
-        self._truth_tags[b, depth].zero_()
         self._depth[b] = depth + 1
         # ``push`` already incurs a ``.item()`` sync above (single-row
         # legacy path), so an extra host max() here is cheap.
@@ -8357,9 +8328,6 @@ class ShortTermMemory(nn.Module):
         row_idx = torch.arange(B, device=device)                 # [B]
         depths  = self._depth                                    # [B] long
         self._buffer[row_idx, depths] = ideas
-        self._truth_tags[row_idx, depths] = torch.zeros(
-            B, self._TRUTH_TAG_WIDTH,
-            device=device, dtype=self._truth_tags.dtype)
         self._depth = depths + 1
         # All rows advance by +1 in lockstep; host-side mirror tracks
         # the uniform increment without a ``.item()`` sync.
@@ -8391,10 +8359,6 @@ class ShortTermMemory(nn.Module):
         row_idx = torch.arange(B, device=device).unsqueeze(1) \
             .expand(-1, W)                                    # [B, W]
         self._buffer[row_idx, positions] = ideas
-        # Zero the freshly-allocated truth tags in one scatter.
-        self._truth_tags[row_idx, positions] = torch.zeros(
-            B, W, self._TRUTH_TAG_WIDTH,
-            device=device, dtype=self._truth_tags.dtype)
         self._depth = starts + W
         # All rows advance by +W in lockstep; host-side mirror tracks
         # the increment.
@@ -8411,7 +8375,6 @@ class ShortTermMemory(nn.Module):
         depth -= 1
         idea = self._buffer[b, depth].clone()
         self._buffer[b, depth].zero_()
-        self._truth_tags[b, depth].zero_()
         self._depth[b] = depth
         return idea
 
@@ -8492,7 +8455,6 @@ class ShortTermMemory(nn.Module):
         if b is None:
             self._buffer.zero_()
             self._depth.zero_()
-            self._truth_tags.zero_()
             self._max_depth_host = 0
             return
         b = int(b)
@@ -8505,35 +8467,6 @@ class ShortTermMemory(nn.Module):
         # ``.item()`` is acceptable here -- partial clear is called
         # from sentence-boundary Reset, not the hot path.
         self._max_depth_host = int(self._depth.max().item())
-        self._truth_tags[b].zero_()
-
-    def set_truth_tag(self, b, slot_from_top, tag):
-        """Write the catuskoti truth bivector for the slot at depth
-        ``size(b) - 1 - slot_from_top``.
-
-        Args:
-            b: batch row index.
-            slot_from_top: 0 is the most-recently-pushed idea.
-            tag: ``[2]`` tensor with the truth bivector (pos, neg poles).
-        """
-        depth = int(self._depth[b].item())
-        if depth <= slot_from_top:
-            raise IndexError(
-                f"ShortTermMemory.set_truth_tag: row {b} has "
-                f"{depth} ideas; slot_from_top={slot_from_top} is "
-                f"out of range.")
-        self._truth_tags[b, depth - 1 - slot_from_top] = tag
-
-    def get_truth_tag(self, b, slot_from_top=0):
-        """Read the truth bivector for slot ``slot_from_top`` from the top.
-
-        Returns ``None`` when fewer than ``slot_from_top + 1`` items are
-        on the stack.
-        """
-        depth = int(self._depth[b].item())
-        if depth <= slot_from_top:
-            return None
-        return self._truth_tags[b, depth - 1 - slot_from_top]
 
 
 class ConceptualSpace(Space):
@@ -9693,23 +9626,26 @@ class SymbolicSpace(Space):
         # External clients should call SubSpace.resolve() for a pure
         # read-side derivation, or subspace.materialize(mode="activation")
         # which prefers any stored value over the derivation.
-        event = subspace.event.getW() if subspace.event is not None else None
-        if event is not None and event.ndim == 3 and event.shape[-1] >= 2:
-            bivec = event[..., :2]
-        else:
-            bivec = (subspace.what.getW()
-                     if subspace.what is not None else None)
-            # Narrow-event fallback (post-2026-05-07 rollback): when
-            # neither the muxed event nor the .what content is at least
-            # 2 columns wide there is no bivector to collapse. This
-            # arises in narrow conceptual-order configs (D_C == 1) and
-            # is a graceful no-op rather than an error.
-            if (bivec is None or not torch.is_tensor(bivec)
-                    or bivec.shape[-1] < 2):
+        # Bivector substrate retired (2026-05): read the signed
+        # Degree-of-Truth scalar from the event (preferred) or ``.what``.
+        # Width-1 carrier -> the scalar itself; wider content -> the
+        # signed magnitude balance ``aP - aN`` (consistent with
+        # SubSpace._compute_active / set_activation_from_event).
+        src = subspace.event.getW() if subspace.event is not None else None
+        if not (src is not None and src.ndim == 3 and src.shape[-1] >= 1):
+            src = (subspace.what.getW()
+                   if subspace.what is not None else None)
+            if (src is None or not torch.is_tensor(src)
+                    or src.ndim < 2 or src.shape[-1] < 1):
                 return subspace
-        pos = bivec[..., 0]
-        neg = bivec[..., 1]
-        subspace.activation.setW(pos - neg)
+        if src.shape[-1] == 1:
+            scalar = src[..., 0]
+        else:
+            d = max(src.shape[-1], 1)
+            pos = torch.relu(src).norm(dim=-1) / math.sqrt(d)
+            neg = torch.relu(-src).norm(dim=-1) / math.sqrt(d)
+            scalar = pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)
+        subspace.activation.setW(scalar)
         return subspace
 
     # ``area()`` and ``luminosity()`` were removed when the measure

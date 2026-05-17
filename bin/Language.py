@@ -5490,23 +5490,24 @@ class WordSpace(Space):
                     symbol_acts, basis)
                 total_loss = total_loss + truth_loss_weight * truth_penalty
 
-        # Quaternary-corner balance penalty: discourages forbidden corners
-        # (N, B) on committed symbol activations. Runs whenever the knobs
-        # select a non-permissive corner and symbol_acts are provided.
-        # Under the current SymbolicSpace layout each row is
-        # [pos_pole, neg_pole, where..., when...] -- slice the leading
-        # bivector before passing to the paired-index penalty so that
-        # positional-template dims don't spuriously register as N/B.
-        # See basicmodel/doc/BuddhistParallels.md and doc/Spaces.md.
+        # Quaternary-corner balance penalty: discourages forbidden
+        # corners (N, B). The bivector substrate was retired (Phase 3):
+        # ``symbol_acts`` is now a single signed scalar, so the old
+        # ``symbol_acts[..., :2]`` pole slice is gone. The corner policy
+        # instead reads the TruthLayer-internal accumulator -- the only
+        # legitimate remaining bivector surface. ``tetralemma_balance_
+        # penalty`` is a kept op that returns 0 for a non-paired
+        # accumulator, so the term is inert until a paired/bivector
+        # accumulator is configured; the Phase 5 client assessment
+        # builds on this same accumulator read.
         wants_balance = (int(allow_excluded_middle) == -1
                          or int(allow_contradiction) == 0)
         if (balance_weight > 0 and wants_balance
-                and symbol_acts is not None
-                and torch.is_tensor(symbol_acts)
-                and symbol_acts.shape[-1] >= 2):
-            bivector = symbol_acts[..., :2]
+                and not self.truth_layer.is_empty()):
+            n = self.truth_layer.count.item()
+            accumulator = self.truth_layer.truths[:n]
             balance = self.truth_layer.tetralemma_balance_penalty(
-                bivector,
+                accumulator,
                 allow_excluded_middle=int(allow_excluded_middle),
                 allow_contradiction=int(allow_contradiction))
             total_loss = total_loss + balance_weight * balance

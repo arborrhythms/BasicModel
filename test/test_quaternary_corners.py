@@ -121,53 +121,6 @@ class TestConfigScoping(unittest.TestCase):
         self.assertEqual(default_contra, 0)
 
 
-class TestCatuskotiActivation(unittest.TestCase):
-    """SubSpace activation bivector encodes the four tetralemma corners.
-
-    The activation carrier is `ActiveEncoding` with `nDim=2`:
-        TRUE    (asti)     -> [1, 0]
-        FALSE   (nasti)    -> [0, 1]
-        BOTH    (ubhaya)   -> [1, 1]  -- inconsistency
-        NEITHER (anubhaya) -> [0, 0]  -- unknown
-    """
-
-    def test_activation_encoding_is_bivector(self):
-        """`ActiveEncoding.nDim == 2` -- the 4-valued truth carrier width."""
-        import Spaces
-        self.assertEqual(Spaces.ActiveEncoding.nDim, 2)
-
-    def test_four_corners_roundtrip_through_subspace(self):
-        """Each tetralemma corner survives set_activation / get_activation."""
-        import Spaces
-        B, N = 1, 4
-        ss = Spaces.SubSpace(inputShape=[N, 1], outputShape=[N, 1])
-        # Explicitly carry all four corners at the four positions.
-        corners = torch.tensor(
-            [[[1.0, 0.0],   # TRUE
-              [0.0, 1.0],   # FALSE
-              [1.0, 1.0],   # BOTH (inconsistency)
-              [0.0, 0.0]]]  # NEITHER (unknown)
-        )
-        ss.set_activation(corners)
-        out = ss.get_activation()
-        self.assertEqual(list(out.shape), [B, N, 2])
-        self.assertTrue(torch.allclose(out, corners))
-
-    def test_both_corner_distinguishable_from_neither(self):
-        """`[1, 1]` (BOTH) and `[0, 0]` (NEITHER) are distinct under the new encoding.
-
-        In the legacy 1-dim activation, indeterminate and contradictory
-        states collapse onto a single axis. The bivector representation
-        distinguishes them -- a regression this test guards.
-        """
-        both = torch.tensor([1.0, 1.0])
-        neither = torch.tensor([0.0, 0.0])
-        self.assertFalse(torch.equal(both, neither))
-        # Both corners are valid bivector encodings; their channel-sums differ.
-        self.assertEqual(both.sum().item(), 2.0)
-        self.assertEqual(neither.sum().item(), 0.0)
-
-
 class TestTruthFusion(unittest.TestCase):
     """Mereological fusion of the truth set forms a bivector hyperrectangle.
 

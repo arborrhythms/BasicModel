@@ -705,52 +705,28 @@ class TestSubSpaceConstruction(unittest.TestCase):
 
 
 class TestSubSpaceActiveEncoding(unittest.TestCase):
-    """ActiveEncoding round-trip through SubSpace."""
+    """ActiveEncoding (scalar signed Degree-of-Truth carrier) round-trip
+    through SubSpace.
+
+    The 4-valued bivector ``[aP, aN]`` substrate was retired (2026-05);
+    the bivector *operations* live on in Layers (NotLayer / NonLayer /
+    TrueLayer / FalseLayer, the Ops monotonic kernels, the TruthLayer
+    accumulator) and are exercised by their own op-level tests.
+    """
 
     def test_activation_stored_and_retrievable(self):
-        """Legacy scalar [B, N] is lifted to 4-valued bivector [B, N, 2]."""
+        """A signed scalar ``[B, N]`` activation stores and retrieves
+        unchanged -- no bivector pole expansion."""
         ae = Models.ActiveEncoding()
-        self.assertEqual(ae.nDim, 2)
-        act_scalar = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3]
+        self.assertEqual(ae.nDim, 1)
+        act_scalar = torch.tensor([[0.5, -0.8, 0.1]])  # [1, 3] signed DoT
         ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
         ss.set_activation(act_scalar)
         retrieved = ss.get_activation()
-        # Positive scalars lift to [x, 0] (TRUE pole with magnitude).
-        expected = torch.stack([act_scalar, torch.zeros_like(act_scalar)], dim=-1)
-        torch.testing.assert_close(retrieved, expected)
-
-    def test_activation_bivector_roundtrip(self):
-        """Full [B, N, 2] bivector passes through unchanged."""
-        ae = Models.ActiveEncoding()
-        ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
-        bivec = torch.tensor([[[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]])  # TRUE, FALSE, BOTH
-        ss.set_activation(bivec)
-        retrieved = ss.get_activation()
-        torch.testing.assert_close(retrieved, bivec)
-
-    def test_activation_four_corners(self):
-        """Tetralemma corners round-trip and reduce to expected presence."""
-        ae = Models.ActiveEncoding()
-        ss = Models.SubSpace(activeEncoding=ae, inputShape=[4, 8], outputShape=[4, 8])
-        corners = torch.tensor([[[1.0, 0.0],   # TRUE (asti)
-                                 [0.0, 1.0],   # FALSE (nasti)
-                                 [1.0, 1.0],   # BOTH (ubhaya)
-                                 [0.0, 0.0]]]) # NEITHER (anubhaya)
-        ss.set_activation(corners)
-        retrieved = ss.get_activation()
-        torch.testing.assert_close(retrieved, corners)
-        # Presence = max(aP, aN): TRUE/FALSE/BOTH all present, NEITHER gated off.
+        torch.testing.assert_close(retrieved, act_scalar)
+        # Presence = |DoT|: zero gates the slot off, any belief present.
         pres = ss.activation_presence()
-        torch.testing.assert_close(pres, torch.tensor([[1.0, 1.0, 1.0, 0.0]]))
-
-    def test_activation_negative_scalar_lifts_to_false_pole(self):
-        """Legacy negative scalar lifts to [0, |x|] (FALSE pole)."""
-        ae = Models.ActiveEncoding()
-        ss = Models.SubSpace(activeEncoding=ae, inputShape=[2, 8], outputShape=[2, 8])
-        ss.set_activation(torch.tensor([[-0.7, 0.4]]))
-        retrieved = ss.get_activation()
-        expected = torch.tensor([[[0.0, 0.7], [0.4, 0.0]]])
-        torch.testing.assert_close(retrieved, expected)
+        torch.testing.assert_close(pres, act_scalar.abs())
 
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different muxedSize without shared coupling."""
@@ -2141,6 +2117,31 @@ class TestWeightShapeMismatch(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_require_match_raises_on_shape_mismatch(self):
+        """Fix #2 (bivector-retirement migration-cliff catcher): with
+        ``require_match=True`` a genuine shape mismatch raises
+        ValueError with the actionable diagnostic instead of soft-warn
+        + later crash; the default ``require_match=False`` still
+        soft-warns (returns False) so vocab-grow / benign loads work.
+        """
+        m1 = self._make_model(50)
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            m1.save_weights(path)
+            m2 = self._make_model(80)  # different vocab size -> shape drift
+            # Non-autoload default: soft-warn, returns False.
+            self.assertFalse(m2.load_weights(path))
+            self.assertFalse(m2.load_weights(path, require_match=False))
+            # Autoload: fail fast with the actionable message.
+            with self.assertRaises(ValueError) as ctx:
+                m2.load_weights(path, require_match=True)
+            msg = str(ctx.exception)
+            self.assertIn("Weight file mismatch", msg)
+            self.assertIn("correct the model XML", msg)
+        finally:
+            os.unlink(path)
+
     def test_load_ignores_unexpected_keys_when_all_current_keys_match(self):
         """Stale alias/module keys must not block loading valid weights."""
         m1 = self._make_model(100)
@@ -2375,25 +2376,14 @@ class TestSubspaceActivation(unittest.TestCase):
     def test_set_get_activation(self):
         """set_activation / get_activation round-trip.
 
-        Scalar [B, N] is lifted to the 4-valued bivector [B, N, 2]:
-        positive values go to the TRUE pole, negatives to FALSE.
+        The bivector lift was retired (2026-05): a signed scalar
+        ``[B, N]`` stores and retrieves unchanged.
         """
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
-        expected = torch.stack(
-            [torch.relu(activation), torch.relu(-activation)], dim=-1)
-        self.assertTrue(torch.equal(got, expected))
-
-    def test_set_activation_bivector_passthrough(self):
-        """set_activation accepts [B, N, 2] bivector unchanged."""
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        bivec = torch.rand(2, 4, 2).to(Models.TheDevice.get())
-        ss.set_activation(bivec)
-        got = ss.get_activation()
-        self.assertEqual(got.shape, (2, 4, 2))
-        self.assertTrue(torch.equal(got, bivec))
+        self.assertTrue(torch.equal(got, activation))
 
     def test_materialize_topk(self):
         """Materialize(k) returns top-k vectors by activation, gated."""
@@ -2462,16 +2452,14 @@ class TestSubspaceActivation(unittest.TestCase):
         ss.event.setW(x)
         ss.activation.setW(None)
         result = ss.materialize(mode="activation")
-        # Presence derived from the bivector [aP, aN]:
-        #   aP = ||relu(what)|| / sqrt(nWhat)
-        #   aN = ||relu(-what)|| / sqrt(nWhat)
-        # materialize(mode='activation') returns effective_activation()
-        # which is presence * modal_gate. Since no _active is set, gate = 1.
+        # Bivector retired: the event-derived activation is the signed
+        # scalar aP - aN; effective_activation() returns presence =
+        # |DoT| * modal_gate (no _active set, so gate = 1).
         what_slice = x[:, :, :ss.nWhat]
         d = max(ss.nWhat, 1)
         pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
         neg = torch.relu(-what_slice).norm(dim=-1) / math.sqrt(d)
-        expected_presence = torch.maximum(pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0))
+        expected_presence = (pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)).abs()
         self.assertTrue(torch.allclose(result, expected_presence))
 
     def test_materialize_activation_mode_no_data_asserts(self):
@@ -2898,20 +2886,16 @@ class TestSubspaceNormalize(unittest.TestCase):
         self.assertTrue(torch.allclose(ss.materialize(), x, atol=1e-6))
 
     def test_concepts_range(self):
-        """normalize('concepts') produces bivector entries in [0, 1] via tanh.
-
-        Activation is now a 4-valued bivector [aP, aN]; normalization applies
-        tanh element-wise, so each pole stays non-negative.
+        """normalize('concepts') maps the signed scalar activation into
+        ``[-1, 1]`` via tanh (the bivector pole lift was retired 2026-05).
         """
         ss = self._make_ss()
         scalar = torch.randn(2, 4)
         ss.set_activation(scalar.clone())
-        # set_activation lifted scalar -> bivector [relu(x), relu(-x)].
-        lifted = torch.stack([torch.relu(scalar), torch.relu(-scalar)], dim=-1)
         ss.normalize("concepts", target="activation", normalize=True)
         y = ss.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.tanh(lifted), atol=1e-6))
+        self.assertTrue(torch.allclose(y, torch.tanh(scalar), atol=1e-6))
 
     def test_reverse_requires_normalize_true(self):
         """reverse=True is an inverse transform, not a range check."""

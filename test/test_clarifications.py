@@ -154,3 +154,44 @@ def test_suggest_clarifications_missing_source_fallback():
     assert "trust=unknown" in msg
     assert "A is not red" in msg
     assert "please revise to enable more rational thought." in msg
+
+
+def test_assess_contested_vs_silent():
+    """Phase 5: the terminal paraconsistent assessment keeps a
+    *contested* TruthSet (split on a proposition -> high ``conflict``)
+    distinct from a *silent* one (no evidence -> high ``ignorance``).
+
+    This is exactly the degeneracy a scalar ``aP - aN`` collapse loses:
+    under a plain signed scalar both "contradicted" and "unknown" read
+    as ~0 truth. support / conflict / ignorance separate them -- the
+    reason the accumulator stays the paraconsistent surface.
+    """
+    # Contested: the set both strongly affirms and strongly denies
+    # (scalar accumulator: positive vec = affirm, negative = deny).
+    contested = _make_layer()
+    contested.truths[0] = torch.full((8,), 0.9)    # strong affirmation
+    contested.truths[1] = torch.full((8,), -0.9)   # strong denial
+    contested.count.fill_(2)
+    c = contested.assess()
+
+    # Silent: the set has no commitment either way.
+    silent = _make_layer()
+    silent.truths[0] = torch.full((8,), 1e-4)
+    silent.truths[1] = torch.full((8,), -1e-4)
+    silent.count.fill_(2)
+    s = silent.assess()
+
+    # Contested -> conflict dominates; ignorance suppressed.
+    assert c["conflict"] > 0.3
+    assert c["conflict"] > c["ignorance"]
+    # Silent -> ignorance dominates; conflict negligible.
+    assert s["ignorance"] > 0.5
+    assert s["ignorance"] > s["conflict"]
+    # The crux: the two states are NOT the same reading. A scalar
+    # collapse would map both to ~0 truth and lose the distinction.
+    assert abs(c["conflict"] - s["conflict"]) > 0.2
+    assert abs(c["ignorance"] - s["ignorance"]) > 0.2
+
+    # Empty set -> maximal ignorance, no support / conflict.
+    assert _make_layer().assess() == {
+        "support": 0.0, "conflict": 0.0, "ignorance": 1.0}

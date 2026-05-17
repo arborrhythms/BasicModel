@@ -1,5 +1,7 @@
 * The logic behind the shadow
 
+* doc/plans/2026-05-17-inverse-recommend-union-intersection.md
+* 
 * Add difference() to union() and intersection()
 
 * add isIsomorphic()

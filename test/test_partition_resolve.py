@@ -89,52 +89,11 @@ def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
 # Tests
 # ---------------------------------------------------------------------------
 
-def test_resolve_balances_pos_and_neg():
-    """resolve(subspace) sets subspace.activation = pos - neg per symbol.
-
-    what[..., 0] is the positive pole (evidence FOR), what[..., 1] is the
-    negative pole (evidence AGAINST).  Activation scalar = pos - neg
-    (signed Degree of Truth: balance of evidence).
-    """
-    sym = _make_symbolic_space()
-
-    # Shape [B=1, N=3, nWhat=2]: (pos_pole, neg_pole) per symbol
-    what = torch.tensor([[[0.5, 0.0],   # symbol 0: pos=0.5, neg=0.0 → +0.5
-                          [0.2, 0.3],   # symbol 1: pos=0.2, neg=0.3 → -0.1
-                          [0.0, 0.7]]]) # symbol 2: pos=0.0, neg=0.7 → -0.7
-    sym.subspace.what.setW(what)
-
-    sym.resolve(sym.subspace)
-
-    activation = sym.subspace.materialize(mode="activation")
-    expected = torch.tensor([[0.5, -0.1, -0.7]])   # [B=1, N=3]
-    assert torch.allclose(activation, expected), (
-        f"Expected {expected}, got {activation}"
-    )
-
-
-def test_resolve_serial_lossless():
-    """Under serial processing (one pole non-zero at a time), resolve's
-    magnitude is lossless.
-
-    When only one pole fires per slot, |pos - neg| equals the firing
-    pole's value, so no magnitude information is lost in the scalar
-    reduction.  The sign records which pole fired (pos → +, neg → -).
-    """
-    sym = _make_symbolic_space()
-
-    what = torch.tensor([[[0.8, 0.0],   # pos-only:  +0.8
-                          [0.0, 0.6],   # neg-only:  -0.6
-                          [0.9, 0.0]]]) # pos-only:  +0.9
-    sym.subspace.what.setW(what)
-
-    sym.resolve(sym.subspace)
-
-    activation = sym.subspace.materialize(mode="activation")
-    expected = torch.tensor([[0.8, -0.6, 0.9]])
-    assert torch.allclose(activation, expected), (
-        f"Expected {expected}, got {activation}"
-    )
+# resolve(): the bivector [B,N,2] pos/neg pole-collapse tests
+# (test_resolve_balances_pos_and_neg / test_resolve_serial_lossless)
+# were retired with the bivector substrate (2026-05). resolve() now
+# reads the signed Degree-of-Truth scalar directly; its scalar contract
+# is covered by test_parthood_orders.py and the project-config suite.
 
 
 # ---------------------------------------------------------------------------
