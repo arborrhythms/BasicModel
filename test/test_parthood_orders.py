@@ -235,7 +235,7 @@ class TestTaxonomy:
         import Models
         import Language
         from util import init_config
-        cfg = os.path.join(_PROJECT, "data", "MM_xor_bivector.xml")
+        cfg = os.path.join(_PROJECT, "data", "MM_xor.xml")
         init_config(path=cfg,
                     defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
         Language.TheGrammar._configured = False
