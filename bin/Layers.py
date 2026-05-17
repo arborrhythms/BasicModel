@@ -5624,6 +5624,283 @@ class TruthLayer(Layer):
         conjunction = subset.min(dim=0).values
         return torch.relu(conjunction).norm().item()
 
+    # -- Consolidated truth computation (Phase 1: bivector retirement) --
+    # These four methods own the truth-store computation that previously
+    # lived on the model (Mereology._luminosity_truth_fold,
+    # Models.isConsistent/ground/extrapolate). The bivector poles stay
+    # internal to this accumulator; callers delegate here.
+
+    def luminosity(self, sym=None) -> float:
+        """Cumulative-vs-rest luminosity fold over stored truths.
+
+        Consolidated from ``Mereology._luminosity_truth_fold``. Decode
+        each stored truth to concept-space via ``sym.decode_to_concept``
+        then fold pairwise; result in ``[-1, 1]``. The bivector poles
+        (``[..., :2]``) are internal to this accumulator.
+        """
+        try:
+            n = int(self.count.item())
+        except Exception:
+            return 0.0
+        if n == 0:
+            return 0.0
+        if sym is None:
+            return 0.0
+        try:
+            stored = self.truths[:n]
+        except Exception:
+            return 0.0
+
+        decoded = []
+        decoder = getattr(sym, 'decode_to_concept', None)
+        for i in range(n):
+            row = stored[i:i+1]
+            if decoder is not None:
+                try:
+                    row_c = decoder(row)
+                except Exception:
+                    row_c = row
+            else:
+                row_c = row
+            if not torch.is_tensor(row_c) or row_c.shape[-1] < 2:
+                continue
+            decoded.append(row_c)
+        if not decoded:
+            return 0.0
+        if len(decoded) == 1:
+            box = decoded[0][..., :2]
+            box = box.reshape(*box.shape[:-1], 1, 2) if box.dim() < 3 else box.unsqueeze(-2)
+            vol = float(Ops.hyperrectangle_volume(box).mean().item())
+            return max(-1.0, min(1.0, vol))
+
+        def _box(t):
+            b = t[..., :2]
+            return b.reshape(*b.shape[:-1], 1, 2) if b.dim() < 3 else b.unsqueeze(-2)
+
+        def _dot(t):
+            return float((t[..., 0] - t[..., 1]).mean().item())
+
+        running = decoded[0]
+        running_lum = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
+        running_lum = max(-1.0, min(1.0, running_lum))
+
+        for i in range(1, len(decoded)):
+            t = decoded[i]
+            v_run = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
+            v_new = float(Ops.hyperrectangle_volume(_box(t)).mean().item())
+            shared = float(Ops.hyperrectangle_overlap_volume(
+                _box(running), _box(t)).mean().item())
+            disagree = abs(_dot(running) - _dot(t))
+            pair_lum = (v_run + v_new) - shared * disagree
+            pair_lum = max(-1.0, min(1.0, pair_lum))
+            running_lum = pair_lum
+            try:
+                running = Ops.union(running, t, monotonic=False)
+            except Exception:
+                running = torch.where(running.abs() >= t.abs(), running, t)
+
+        return running_lum
+
+    def isConsistent(self):
+        """Fold stored truths via ``Ops.disjunction``; consistency summary.
+
+        Consolidated from ``Models.BaseModel.isConsistent``. Conflicting
+        +/- assertions cancel dimensions. Returns
+        ``dict(consistent, score, sites, union_vector)``.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {'consistent': True, 'score': 1.0,
+                    'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
+
+        stored = self.truths[:n]
+
+        union = stored[0].clone()
+        for i in range(1, n):
+            union = Ops.disjunction(union, stored[i])
+
+        score = union.abs().mean().item()
+        threshold = 0.1
+        weak_dims = (union.abs() < threshold).nonzero(as_tuple=True)[0]
+        consistent = len(weak_dims) == 0 or score > 0.5
+
+        return {
+            'consistent': consistent,
+            'score': score,
+            'sites': weak_dims,
+            'union_vector': union,
+        }
+
+    @torch.no_grad()
+    def ground(self, activation, threshold=0.6, model=None):
+        """Minimal-subset entailment of a query against stored truths.
+
+        Consolidated from ``Models.BaseModel.ground``. Partition-aware
+        filtering uses ``model._partitions`` / ``model._activation_order``
+        when a model handle is supplied; otherwise it degrades to a
+        plain cosine match. Returns
+        ``dict(grounded, basis, trace, confidence)``.
+        """
+        n = self.count.item()
+        if n == 0:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        stored = self.truths[:n]
+        partitions = getattr(model, '_partitions', None) if model is not None else None
+
+        query_order = None
+        if partitions is not None and len(partitions) > 1:
+            query_order = model._activation_order(activation, partitions)
+
+        activation = activation.to(stored.device)
+
+        a_norm = F.normalize(activation.unsqueeze(0), dim=-1)
+        s_norm = F.normalize(stored, dim=-1)
+        sims = (a_norm @ s_norm.T).squeeze(0)
+
+        if query_order is not None and partitions is not None:
+            for i in range(n):
+                truth_order = model._activation_order(stored[i], partitions)
+                if truth_order != query_order:
+                    sims[i] = 0.0
+
+        mask = sims.abs() > threshold
+        basis_indices = mask.nonzero(as_tuple=True)[0].tolist()
+
+        if not basis_indices:
+            part_cls = GRAMMAR_LAYER_CLASSES.get('part')
+            part_inst = part_cls() if part_cls is not None else None
+            part_fn = (lambda left, right, _inst=part_inst, **kw:
+                       _inst.compose(left, right)) if part_inst is not None else None
+            max_depth = 3
+            for depth in range(max_depth):
+                if part_fn is None:
+                    break
+                derived = self.derive(part_fn, threshold=threshold)
+                if derived == 0:
+                    break
+                n_new = self.count.item()
+                stored_new = self.truths[:n_new]
+                s_norm_new = F.normalize(stored_new, dim=-1)
+                sims_new = (a_norm @ s_norm_new.T).squeeze(0)
+                mask_new = sims_new.abs() > threshold
+                basis_indices = mask_new.nonzero(as_tuple=True)[0].tolist()
+                if basis_indices:
+                    break
+
+        if not basis_indices:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        basis_sims = sims[:self.count.item()][basis_indices] if basis_indices else torch.tensor([0.0])
+        basis_norms = stored[:self.count.item()][basis_indices].norm(dim=-1)
+        confidence = (basis_sims * basis_norms).sum().item() / max(len(basis_indices), 1)
+        confidence = max(-1.0, min(1.0, confidence))
+
+        trace = [{'index': idx, 'similarity': sims[idx].item() if idx < len(sims) else 0.0}
+                 for idx in basis_indices]
+
+        return {
+            'grounded': True,
+            'basis': basis_indices,
+            'trace': trace,
+            'confidence': confidence,
+        }
+
+    @torch.no_grad()
+    def extrapolate(self, model=None, seed_indices=None, max_new=64,
+                    attenuation=0.8):
+        """Generalize ``derive()`` to all two-argument grammar methods.
+
+        Consolidated from ``Models.BaseModel.extrapolate``. Requires a
+        model handle for the SymbolicSpace/ConceptualSpace context, the
+        luminosity non-decrease gate, partition-aware ordering and the
+        basis. Returns ``dict(added, rejected)``.
+        """
+        n = self.count.item()
+        if n < 2:
+            return {'added': [], 'rejected': []}
+
+        stored = self.truths[:n]
+        partitions = getattr(model, '_partitions', None) if model is not None else None
+
+        two_arg_rules = ['union', 'intersection', 'isEqual', 'part']
+
+        indices = seed_indices if seed_indices is not None else list(range(n))
+        added = []
+        rejected = []
+
+        ss = getattr(model, 'symbolicSpace', None) if model is not None else None
+        rule_kernels = {}
+        for rule_name in two_arg_rules:
+            cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+            if cls is not None:
+                try:
+                    rule_kernels[rule_name] = cls()
+                except TypeError:
+                    pass
+
+        basis = model._get_basis() if model is not None else None
+
+        for i in indices:
+            if stored[i].norm() < 1e-6:
+                continue
+            for j in indices:
+                if i == j or stored[j].norm() < 1e-6:
+                    continue
+                if len(added) >= max_new:
+                    return {'added': added, 'rejected': rejected}
+
+                if partitions is not None and len(partitions) > 1:
+                    order_i = model._activation_order(stored[i], partitions)
+                    order_j = model._activation_order(stored[j], partitions)
+                    if order_i != order_j:
+                        continue
+
+                for rule_name in two_arg_rules:
+                    kernel = rule_kernels.get(rule_name)
+                    if kernel is None:
+                        continue
+                    try:
+                        candidate = kernel.compose(
+                            stored[i].unsqueeze(0),
+                            stored[j].unsqueeze(0))
+                    except Exception:
+                        continue
+                    if candidate is None:
+                        continue
+                    candidate = candidate.squeeze(0)
+
+                    if candidate.norm() < 1e-6:
+                        continue
+
+                    if ss is not None and model is not None:
+                        lum_before = model.Luminosity(truth_layer=self)
+                    else:
+                        lum_before = 0.0
+                    saved_count = self.count.item()
+
+                    dot_i = stored[i].norm().item()
+                    dot_j = stored[j].norm().item()
+                    degree = attenuation * min(dot_i, dot_j)
+
+                    direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
+                    self.record(direction, degree, basis=basis)
+                    if ss is not None and model is not None:
+                        lum_after = model.Luminosity(truth_layer=self)
+                    else:
+                        lum_after = lum_before
+
+                    delta = float(lum_after) - float(lum_before)
+
+                    if delta >= 0:
+                        added.append(self.count.item() - 1)
+                    else:
+                        self.count.fill_(saved_count)
+                        self.truths[saved_count:] = 0
+                        rejected.append((i, j, rule_name, delta))
+
+        return {'added': added, 'rejected': rejected}
+
     def is_empty(self) -> bool:
         """True iff no truths are stored -- sync-free.
 

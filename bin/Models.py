@@ -947,40 +947,15 @@ class BaseModel(Mereology, nn.Module):
             sites (tensor of dim indices below threshold),
             union_vector (tensor).
         """
-        from Layers import Ops
+        # Phase 1 (bivector retirement): the disjunction fold lives on
+        # TruthLayer; this is a thin delegator. The basis presence guard
+        # stays here (a model-side concept).
         truth_layer = self._get_truth_layer()
         basis = self._get_basis()
         if truth_layer is None or basis is None:
             return {'consistent': True, 'score': 1.0,
                     'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
-
-        n = truth_layer.count.item()
-        if n == 0:
-            return {'consistent': True, 'score': 1.0,
-                    'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
-
-        stored = truth_layer.truths[:n]  # (n, D)
-
-        # Fold via successive disjunction
-        union = stored[0].clone()
-        for i in range(1, n):
-            union = Ops.disjunction(union, stored[i])
-
-        # Consistency score = mean absolute value of result
-        score = union.abs().mean().item()
-
-        # Inconsistency sites = dimensions with magnitude below threshold
-        threshold = 0.1
-        weak_dims = (union.abs() < threshold).nonzero(as_tuple=True)[0]
-
-        consistent = len(weak_dims) == 0 or score > 0.5
-
-        return {
-            'consistent': consistent,
-            'score': score,
-            'sites': weak_dims,
-            'union_vector': union,
-        }
+        return truth_layer.isConsistent()
 
     @torch.no_grad()
     def ground(self, activation, threshold=0.6):
@@ -993,89 +968,12 @@ class BaseModel(Mereology, nn.Module):
             dict with keys: grounded (bool), basis (list of indices),
             trace (list), confidence (float in [-1, 1]).
         """
+        # Phase 1 (bivector retirement): the entailment search is
+        # consolidated onto TruthLayer; this is a thin delegator.
         truth_layer = self._get_truth_layer()
         if truth_layer is None:
             return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
-
-        n = truth_layer.count.item()
-        if n == 0:
-            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
-
-        stored = truth_layer.truths[:n]  # (n, D)
-        partitions = getattr(self, '_partitions', None)
-
-        # Determine query order from partition energy
-        query_order = None
-        if partitions is not None and len(partitions) > 1:
-            query_order = self._activation_order(activation, partitions)
-
-        # Pin the query to the stored truths' device so the cosine
-        # matmul below doesn't trip a cross-device gather. Tests often
-        # construct activations on the default device while the
-        # truth_layer's buffers live on the model's device.
-        activation = activation.to(stored.device)
-
-        # Normalize for cosine similarity
-        a_norm = F.normalize(activation.unsqueeze(0), dim=-1)  # (1, D)
-        s_norm = F.normalize(stored, dim=-1)                    # (n, D)
-        sims = (a_norm @ s_norm.T).squeeze(0)                   # (n,)
-
-        # Filter by compatible order if partitions exist
-        if query_order is not None and partitions is not None:
-            for i in range(n):
-                truth_order = self._activation_order(stored[i], partitions)
-                if truth_order != query_order:
-                    sims[i] = 0.0  # exclude incompatible orders
-
-        # Direct groundings: similarity > threshold
-        mask = sims.abs() > threshold
-        basis_indices = mask.nonzero(as_tuple=True)[0].tolist()
-
-        if not basis_indices:
-            # Try derivation via TruthLayer.derive() (depth capped).
-            # The 2026-05-01 syntactic-layer refactor replaced
-            # SyntacticLayer.partForward with the standalone PartLayer
-            # GrammarLayer subclass; resolve via GRAMMAR_LAYER_CLASSES.
-            from Layers import GRAMMAR_LAYER_CLASSES
-            part_cls = GRAMMAR_LAYER_CLASSES.get('part')
-            part_inst = part_cls() if part_cls is not None else None
-            part_fn = (lambda left, right, _inst=part_inst, **kw:
-                       _inst.compose(left, right)) if part_inst is not None else None
-            max_depth = 3
-            for depth in range(max_depth):
-                if part_fn is None:
-                    break
-                derived = truth_layer.derive(part_fn, threshold=threshold)
-                if derived == 0:
-                    break
-                # Re-check with expanded truth set
-                n_new = truth_layer.count.item()
-                stored_new = truth_layer.truths[:n_new]
-                s_norm_new = F.normalize(stored_new, dim=-1)
-                sims_new = (a_norm @ s_norm_new.T).squeeze(0)
-                mask_new = sims_new.abs() > threshold
-                basis_indices = mask_new.nonzero(as_tuple=True)[0].tolist()
-                if basis_indices:
-                    break
-
-        if not basis_indices:
-            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
-
-        # Confidence: DoT-weighted similarity of basis entries
-        basis_sims = sims[:truth_layer.count.item()][basis_indices] if basis_indices else torch.tensor([0.0])
-        basis_norms = stored[:truth_layer.count.item()][basis_indices].norm(dim=-1)
-        confidence = (basis_sims * basis_norms).sum().item() / max(len(basis_indices), 1)
-        confidence = max(-1.0, min(1.0, confidence))
-
-        trace = [{'index': idx, 'similarity': sims[idx].item() if idx < len(sims) else 0.0}
-                 for idx in basis_indices]
-
-        return {
-            'grounded': True,
-            'basis': basis_indices,
-            'trace': trace,
-            'confidence': confidence,
-        }
+        return truth_layer.ground(activation, threshold=threshold, model=self)
 
     @torch.no_grad()
     def isTrue(self, activation):
@@ -1103,106 +1001,14 @@ class BaseModel(Mereology, nn.Module):
             dict with 'added' (list of new indices) and
             'rejected' (list of (i, j, rule, delta_lum) tuples).
         """
+        # Phase 1 (bivector retirement): pairwise grammar extrapolation
+        # is consolidated onto TruthLayer; this is a thin delegator.
         truth_layer = self._get_truth_layer()
         if truth_layer is None:
             return {'added': [], 'rejected': []}
-
-        n = truth_layer.count.item()
-        if n < 2:
-            return {'added': [], 'rejected': []}
-
-        stored = truth_layer.truths[:n]
-        partitions = getattr(self, '_partitions', None)
-
-        # Two-argument grammar methods eligible for extrapolation
-        two_arg_rules = ['union', 'intersection', 'isEqual', 'part']
-
-        indices = seed_indices if seed_indices is not None else list(range(n))
-        added = []
-        rejected = []
-
-        ss = getattr(self, 'symbolicSpace', None)
-        cs = getattr(self, 'conceptualSpace', None)
-        # Two-argument grammar ops route through `GRAMMAR_LAYER_CLASSES`
-        # post the 2026-05-01 syntactic-layer refactor (was: legacy
-        # SyntacticLayer.<rule>Forward).
-        from Layers import GRAMMAR_LAYER_CLASSES
-        rule_kernels = {}
-        for rule_name in two_arg_rules:
-            cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
-            if cls is not None:
-                try:
-                    rule_kernels[rule_name] = cls()
-                except TypeError:
-                    pass
-
-        for i in indices:
-            if stored[i].norm() < 1e-6:
-                continue
-            for j in indices:
-                if i == j or stored[j].norm() < 1e-6:
-                    continue
-                if len(added) >= max_new:
-                    return {'added': added, 'rejected': rejected}
-
-                # Determine source order for partition-aware writing
-                if partitions is not None and len(partitions) > 1:
-                    order_i = self._activation_order(stored[i], partitions)
-                    order_j = self._activation_order(stored[j], partitions)
-                    if order_i != order_j:
-                        continue  # skip cross-order pairs
-
-                for rule_name in two_arg_rules:
-                    kernel = rule_kernels.get(rule_name)
-                    if kernel is None:
-                        continue
-                    try:
-                        candidate = kernel.compose(
-                            stored[i].unsqueeze(0),
-                            stored[j].unsqueeze(0))
-                    except Exception:
-                        continue
-                    if candidate is None:
-                        continue
-                    candidate = candidate.squeeze(0)
-
-                    if candidate.norm() < 1e-6:
-                        continue
-
-                    # Luminosity non-decrease check.  Luminosity is the
-                    # mereology-mixin scalar measure on the model itself;
-                    # without a SymbolicSpace we skip the check
-                    # (delta=0 → always accept).
-                    if ss is not None:
-                        lum_before = self.Luminosity(truth_layer=truth_layer)
-                    else:
-                        lum_before = 0.0
-                    saved_count = truth_layer.count.item()
-
-                    # DoT for derived truth
-                    dot_i = stored[i].norm().item()
-                    dot_j = stored[j].norm().item()
-                    degree = attenuation * min(dot_i, dot_j)
-
-                    direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
-                    truth_layer.record(direction, degree, basis=self._get_basis())
-                    if ss is not None:
-                        lum_after = self.Luminosity(truth_layer=truth_layer)
-                    else:
-                        lum_after = lum_before
-
-                    delta = float(lum_after) - float(lum_before)
-
-                    if delta >= 0:
-                        # Accept
-                        added.append(truth_layer.count.item() - 1)
-                    else:
-                        # Reject: rollback
-                        truth_layer.count.fill_(saved_count)
-                        truth_layer.truths[saved_count:] = 0
-                        rejected.append((i, j, rule_name, delta))
-
-        return {'added': added, 'rejected': rejected}
+        return truth_layer.extrapolate(
+            model=self, seed_indices=seed_indices,
+            max_new=max_new, attenuation=attenuation)
 
     # -- Contemplative Awareness Characterizations ---------------------
 

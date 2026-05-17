@@ -986,74 +986,13 @@ class Mereology:
         The result lies in ``[-1, 1]`` because total area is
         normalised to 1 and ``overlap × DoT_disagreement ≤ 2``.
         """
+        # Phase 1 (bivector retirement): the truth-fold computation now
+        # lives on TruthLayer; this is a thin delegator passing the
+        # SymbolicSpace decoder. The bivector poles stay internal to the
+        # accumulator (TruthLayer.luminosity).
         if truth_layer is None:
             return 0.0
-        try:
-            n = int(truth_layer.count.item())
-        except Exception:
-            return 0.0
-        if n == 0:
-            return 0.0
-        sym = getattr(self, 'symbolicSpace', None)
-        if sym is None:
-            return 0.0
-        try:
-            stored = truth_layer.truths[:n]                 # [n, D]
-        except Exception:
-            return 0.0
-
-        # Decode each stored truth to concept-space.
-        decoded = []
-        decoder = getattr(sym, 'decode_to_concept', None)
-        for i in range(n):
-            row = stored[i:i+1]                             # [1, D]
-            if decoder is not None:
-                try:
-                    row_c = decoder(row)
-                except Exception:
-                    row_c = row
-            else:
-                row_c = row
-            if not torch.is_tensor(row_c) or row_c.shape[-1] < 2:
-                continue
-            decoded.append(row_c)
-        if not decoded:
-            return 0.0
-        if len(decoded) == 1:
-            box = decoded[0][..., :2]
-            box = box.reshape(*box.shape[:-1], 1, 2) if box.dim() < 3 else box.unsqueeze(-2)
-            vol = float(Ops.hyperrectangle_volume(box).mean().item())
-            return max(-1.0, min(1.0, vol))
-
-        def _box(t):
-            b = t[..., :2]
-            return b.reshape(*b.shape[:-1], 1, 2) if b.dim() < 3 else b.unsqueeze(-2)
-
-        def _dot(t):
-            return float((t[..., 0] - t[..., 1]).mean().item())
-
-        running = decoded[0]
-        running_lum = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
-        running_lum = max(-1.0, min(1.0, running_lum))
-
-        for i in range(1, len(decoded)):
-            t = decoded[i]
-            v_run = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
-            v_new = float(Ops.hyperrectangle_volume(_box(t)).mean().item())
-            shared = float(Ops.hyperrectangle_overlap_volume(
-                _box(running), _box(t)).mean().item())
-            disagree = abs(_dot(running) - _dot(t))
-            pair_lum = (v_run + v_new) - shared * disagree
-            pair_lum = max(-1.0, min(1.0, pair_lum))
-            running_lum = pair_lum
-            # Update running region as element-wise pole union.
-            try:
-                running = Ops.union(running, t, monotonic=False)
-            except Exception:
-                # Fallback: per-pole max-magnitude.
-                running = torch.where(running.abs() >= t.abs(), running, t)
-
-        return running_lum
+        return truth_layer.luminosity(sym=getattr(self, 'symbolicSpace', None))
 
     def _record_knowing(self, *, leaves, leaf_trust, leaf_vols, area,
                         luminosity):
