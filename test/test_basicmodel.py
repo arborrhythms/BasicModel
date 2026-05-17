@@ -3053,18 +3053,41 @@ class TestNormalizeFlag(unittest.TestCase):
     """Tests for the normalize flag on SubSpace.normalize()."""
 
     def test_normalize_false_does_not_modify(self):
-        """normalize=False asserts range and does not modify the tensor."""
+        """normalize=False never modifies the tensor; its range/finite
+        assert is MODEL_DEBUG-gated.
+
+        The range check forces a per-call host sync
+        (``isfinite().all()`` + ``min()/max().item()``), which breaks
+        the brick's CUDA-graph-capture contract (test_brick_no_sync).
+        Per the codebase's MODEL_DEBUG philosophy (util.py;
+        ``_assert_finite_train_state`` / the runBatch finite-loss guard
+        follow the same pattern) it is gated: a no-op when MODEL_DEBUG
+        is off, the full strict assert when on. Either way it must not
+        mutate the tensor.
+        """
+        import util
         _populate_test_config(inputDim=4, nInput=4)
         ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
         # Set vectors that are NOT in [-1,1] range
         x = torch.randn(2, 4, 4) * 5
         ss.set_event(x.clone())
         original = ss.materialize().clone()
-        with self.assertRaises(AssertionError):
+        try:
+            # MODEL_DEBUG off (default hot path): no sync, no raise.
+            util.init_model_debug(False)
             ss.normalize("percepts", target="what", normalize=False)
-        after = ss.materialize()
-        self.assertTrue(torch.equal(original, after),
-                        "normalize=False should not modify the tensor")
+            self.assertTrue(
+                torch.equal(original, ss.materialize()),
+                "normalize=False must not modify the tensor (gate off)")
+            # MODEL_DEBUG on: the strict range assert fires.
+            util.init_model_debug(True)
+            with self.assertRaises(AssertionError):
+                ss.normalize("percepts", target="what", normalize=False)
+            self.assertTrue(
+                torch.equal(original, ss.materialize()),
+                "normalize=False must not modify the tensor (gate on)")
+        finally:
+            util.init_model_debug(None)  # restore from MODEL_DEBUG env
 
     def test_normalize_true_does_modify(self):
         """normalize=True modifies the tensor."""

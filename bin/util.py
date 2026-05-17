@@ -564,8 +564,16 @@ def _patch_inductor_paths():
         pass
 
 
-def compile(model, verbose=True):
+def compile(model, verbose=True, fullgraph=False):
     """Try to torch.compile the model; return the (possibly compiled) model.
+
+    ``fullgraph=True`` is the strict no-graph-break gate: any graph
+    break raises instead of silently falling back to eager around it.
+    The caller passes it only for the non-grammar forward path (the
+    recon-then-eliminate program drove that to 0 breaks); grammar-
+    bearing configs pass ``fullgraph=False`` so the
+    ``@torch.compiler.disable``'d grammar entry stays a tolerated
+    (deferrable) break instead of a hard error.
 
     Respects ``TheCompileBackend`` (set by ``MODEL_COMPILE`` env var):
       "none" -> skip compilation entirely.
@@ -600,11 +608,26 @@ def compile(model, verbose=True):
          f"{'' if __debug__ else ' [asserts stripped by -O]'}")
     _patch_inductor_paths()
 
+    # dynamo specializes (guards on the value of) integer attributes of
+    # nn.Modules. The grammar rule-cursor / generation counters
+    # (``SyntacticLayer._cursor_compose_gen`` et al.) advance every
+    # batch, so each change fails the guard and forces a recompile --
+    # the measured ``unique_graphs > 1`` that prevents stable CUDAGraph
+    # capture. Treat nn.Module int attributes as dynamic (PyTorch's own
+    # recommended remedy for exactly this recompile symptom); the
+    # cursor logic is plain Python control flow, not graph structure,
+    # so unspecializing it changes no numerics.
+    import torch._dynamo as _dyn
+    _dyn.config.allow_unspec_int_on_nn_module = True
+
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:
-            compiled = torch.compile(model, mode=TheCompileMode, backend=backend)
-            _msg(f"Model compiled ({backend}, mode={TheCompileMode})")
+            compiled = torch.compile(
+                model, mode=TheCompileMode, backend=backend,
+                fullgraph=fullgraph)
+            _msg(f"Model compiled ({backend}, mode={TheCompileMode}, "
+                 f"fullgraph={fullgraph})")
             return compiled
         except Exception as e:
             _msg(f"Model compile failed ({backend}, mode={TheCompileMode}): {e}")

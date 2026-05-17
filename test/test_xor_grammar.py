@@ -14,6 +14,7 @@ Exercises:
     DisjunctionLayer that don't expose a unary forward).
 """
 
+import copy
 import os
 import sys
 import unittest
@@ -31,6 +32,40 @@ _CONFIG = os.path.join(_PROJECT, "data", "XOR_grammar.xml")
 _TEST = os.path.dirname(os.path.abspath(__file__))
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
+
+
+def _snapshot_global_state():
+    """Capture the process-global config + grammar singletons.
+
+    ``init_config(XOR_grammar.xml)`` overlays ``WordSpace.routerKind=signal``
+    onto ``util.TheXMLConfig._data``; ``TheGrammar`` is a module-level
+    singleton too. With no restore, that leaks into every later test --
+    e.g. ``test_chart_wordspace_wiring`` then builds a ``Chart`` whose
+    ``router_kind`` defaults to the leaked ``"signal"`` and explodes in
+    ``SignalRouter.compose`` (the conftest autouse reset clears
+    ``_configured`` / ``_requirements`` but not ``_data``).
+    """
+    import Language
+    from util import TheXMLConfig
+    return {
+        "data": copy.deepcopy(TheXMLConfig._data),
+        "sources": list(TheXMLConfig._sources),
+        "requirements": list(TheXMLConfig._requirements),
+        "grammar": copy.deepcopy(Language.TheGrammar.__dict__),
+    }
+
+
+def _restore_global_state(snap):
+    """Restore the singletons captured by ``_snapshot_global_state``."""
+    import Language
+    from util import TheXMLConfig
+    TheXMLConfig._data = copy.deepcopy(snap["data"])
+    TheXMLConfig._sources = list(snap["sources"])
+    TheXMLConfig._requirements = list(snap["requirements"])
+    Language.TheGrammar.__dict__.clear()
+    Language.TheGrammar.__dict__.update(copy.deepcopy(snap["grammar"]))
+    # Force a clean lazy reconfigure from the restored config on next use.
+    Language.TheGrammar._configured = False
 
 
 class TestXORGrammarConfigParsing(unittest.TestCase):
@@ -69,6 +104,7 @@ class TestXORGrammarRouterWiring(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._global_snap = _snapshot_global_state()
         import Models
         from util import init_config
         xml_path = Models.ModelFactory.resolve_xml(_CONFIG)
@@ -78,6 +114,10 @@ class TestXORGrammarRouterWiring(unittest.TestCase):
         Language.TheGrammar._configured = False
         Language.TheGrammar._ensure_configured()
         cls.grammar_rules = list(Language.TheGrammar.rules)
+
+    @classmethod
+    def tearDownClass(cls):
+        _restore_global_state(cls._global_snap)
 
     def test_grammar_has_three_rules(self):
         # not (arity 1), conjunction (arity 2), disjunction (arity 2).
@@ -112,6 +152,7 @@ class TestXORGrammarSignalRouterIntegration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls._global_snap = _snapshot_global_state()
         try:
             import Models
             import Language
@@ -134,9 +175,16 @@ class TestXORGrammarSignalRouterIntegration(unittest.TestCase):
 
             cls.model, _ = Models.BaseModel.from_config(xml_path, data=TheData)
         except Exception as exc:
+            # setUpClass raised -> tearDownClass won't run; restore here
+            # so the partially-loaded XOR config doesn't leak on skip.
+            _restore_global_state(cls._global_snap)
             raise unittest.SkipTest(
                 f"XOR_grammar model build failed: "
                 f"{type(exc).__name__}: {exc}")
+
+    @classmethod
+    def tearDownClass(cls):
+        _restore_global_state(cls._global_snap)
 
     def test_chart_router_kind_is_signal(self):
         ws = self.model.wordSpace

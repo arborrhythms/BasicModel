@@ -24,6 +24,7 @@ from collections import namedtuple
 epsilon = 1e-7  # to avoid log(0)
 
 # Device used by all layers.
+import util
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
 
@@ -4561,10 +4562,17 @@ class ImpenetrableLayer(Layer):
             overlap_loss = (min_P * damp * trust_diff * keep).sum() / denom
             self.last_overlap_loss = overlap_loss.detach()
             total = total + self.overlap_weight * overlap_loss
-            rels = self._classify(P)
-            self.last_relation_counts = {
-                k: int(v.sum().item()) for k, v in rels.items()
-            }
+            # `last_relation_counts` is diagnostic only; the 5
+            # `v.sum().item()` calls are host syncs (cudaMemcpyDtoH)
+            # that break CUDA-graph capture. Gate behind MODEL_DEBUG
+            # (bucket-2/3 pattern; `last_relation_counts` is already
+            # None-initialised so consumers tolerate it). `_classify`
+            # is only needed for these counts, so skip it too.
+            if util.MODEL_DEBUG:
+                rels = self._classify(P)
+                self.last_relation_counts = {
+                    k: int(v.sum().item()) for k, v in rels.items()
+                }
 
         if want_var:
             std = codebook.std(dim=0, unbiased=False).mean()
@@ -4696,6 +4704,15 @@ class TruthLayer(Layer):
         # it never touches the GPU. Reset to 0 after each compact().
         self._pending_count = 0
 
+        # Host-side emptiness flag. ``len(self)`` reads ``count.item()``
+        # (a GPU->host sync); the only in-brick consumer
+        # (WordSpace.truth_modulated_loss) needs *emptiness*, not the
+        # count. This bool mirrors ``count > 0`` and is maintained
+        # co-located with every ``count`` write from an already-host-side
+        # value, so it never adds a sync and cannot drift. Read via
+        # ``is_empty()``.
+        self._nonempty = False
+
     # -- Record / Query ------------------------------------------------
 
     @torch.no_grad()
@@ -4755,6 +4772,7 @@ class TruthLayer(Layer):
             stored_vec = vec * degree
         self.truths[idx] = stored_vec
         self.count += 1
+        self._nonempty = True  # record() only ever grows the store
 
         # Legacy contradiction warning: anti-parallel cosine only applies
         # to bitonic storage. Under bivector, A and not(A) land on
@@ -4864,6 +4882,7 @@ class TruthLayer(Layer):
             return 0
         self.truths[cur:cur + n_actual] = survivors[:n_actual]
         self.count += n_actual
+        self._nonempty = True  # n_actual >= 1 here (guarded above)
         return n_actual
 
 
@@ -5172,6 +5191,7 @@ class TruthLayer(Layer):
 
         # Restore truth store
         self.count.fill_(saved_count)
+        self._nonempty = saved_count > 0  # saved_count is host-side
         self.truths[saved_count:] = 0
 
         return luminosity_after - luminosity_before
@@ -5527,6 +5547,7 @@ class TruthLayer(Layer):
         self.truths[:new_n] = kept
         self.truths[new_n:] = 0
         self.count.fill_(new_n)
+        self._nonempty = new_n > 0  # new_n is a host-side tensor shape
 
     @torch.no_grad()
     def orthogonalize(self, sim_threshold: float = 0.85):
@@ -5588,6 +5609,7 @@ class TruthLayer(Layer):
         self.truths[:new_n] = kept
         self.truths[new_n:] = 0
         self.count.fill_(new_n)
+        self._nonempty = new_n > 0  # new_n is a host-side tensor shape
         return len(remove)
 
     def _luminosity_without(self, exclude_idx: int) -> float:
@@ -5601,6 +5623,28 @@ class TruthLayer(Layer):
             subset = self._positive_poles(subset)
         conjunction = subset.min(dim=0).values
         return torch.relu(conjunction).norm().item()
+
+    def is_empty(self) -> bool:
+        """True iff no truths are stored -- sync-free.
+
+        Mirror of ``len(self) == 0`` that reads the host-side
+        ``_nonempty`` flag instead of ``count.item()``, so the in-brick
+        consumer (``WordSpace.truth_modulated_loss``) does not force a
+        GPU->host sync (CUDA-graph-capture contract; see
+        doc/BrickHostSyncStatus.md residual F).
+        """
+        return not self._nonempty
+
+    def clear(self) -> None:
+        """Reset the store to empty (count, sources, trusts, flag).
+
+        Single atomic reset so ``_nonempty`` cannot drift from
+        ``count`` -- callers must not zero ``count`` directly.
+        """
+        self.count.zero_()
+        self._sources = []
+        self._trusts = []
+        self._nonempty = False
 
     def __len__(self):
         """Number of stored elements."""
@@ -5824,6 +5868,14 @@ class InterSentenceLayer(Layer):
                             if concept_dim is not None else None)
 
         self._batch = int(batch)
+        # Phase-3-style staging slot: when the compiled step is active,
+        # ``stage_prediction()`` runs the (``@torch.compiler.disable``'d)
+        # ARMA predictor EAGERLY before the traced forward and parks the
+        # ``(pred, conf)`` tuple here.  ``predict()`` then returns the
+        # staged tuple without touching ``predict_next`` (the disabled
+        # function that forced a graph break) or the ``_s_count.item()``
+        # host sync.  ``None`` == not staged (eager path, compute live).
+        self._staged_prediction = None
         self.register_buffer(
             "_s_history",
             torch.zeros(self._batch, self.p, self.sentence_dim),
@@ -5986,43 +6038,65 @@ class InterSentenceLayer(Layer):
             return None
         if s_hat.ndim == 1:
             s_hat = s_hat.unsqueeze(0).expand(B, -1)
-        # Only score rows whose history was primed.
+        # Only score rows whose history was primed. Fully masked: no
+        # ``bool(primed.any())`` host gate and no boolean-mask indexing
+        # ``s_hat[primed]`` (both force a cudaMemcpyDtoH). Zero the
+        # non-primed rows, divide by the primed count. Equivalent to
+        # the old ``diff[primed].pow(2).mean()`` when >=1 row is primed;
+        # on an all-cold-start batch this returns a 0.0 tensor instead
+        # of ``None`` -- training-neutral (the diff is exactly zero so
+        # the term carries no gradient), it just logs ``arma=0`` rather
+        # than skipping the log. Contract change recorded in the
+        # discourse tests.
         primed = self._s_count > 0                        # [B] bool
         if mask is not None:
             primed = primed & mask.to(primed.device)
-        loss = None
-        if bool(primed.any()):
-            diff = (s_hat[primed] - pooled[primed].detach())
-            loss = diff.pow(2).mean()
-        # Update rings.
+        pm = primed.to(s_hat.dtype).unsqueeze(-1)         # [B, 1]
+        diff = (s_hat - pooled.detach()) * pm             # [B, D]
+        n_primed = primed.sum().clamp(min=1).to(diff.dtype)
+        loss = diff.pow(2).sum() / (n_primed * s_hat.shape[-1])
+        # Update rings -- VECTORIZED. The prior per-row Python loop +
+        # ``_push_row`` issued ``_s_count[b].item()`` /
+        # ``bool(active[b])`` per row: B host syncs per call, the
+        # dominant ``cudaMemcpyDtoH`` source (attribution probe on
+        # metalbaby: 192/224 recorded syncs). This is numerically
+        # identical -- same fill-then-shift layout, same per-row
+        # gating -- expressed as masked tensor ops so no GPU->host
+        # round-trip occurs. (Loss block above is untouched.)
         residual = (pooled - s_hat).detach()
         active = (mask if mask is not None
                   else torch.ones(B, dtype=torch.bool, device=pooled.device))
-        for b in range(B):
-            if not bool(active[b]):
-                continue
-            self._push_row(b, pooled[b].detach(), residual[b])
-        return loss
+        s_all = pooled.detach()                              # [B, D]
+        Bv, D = s_all.shape
 
-    def _push_row(self, b, s_row, e_row):
-        """Shift-left + append for row ``b``'s rings."""
-        # s_history: most-recent at the tail, zero-pad at the head
-        # until the ring is full.
-        n = int(self._s_count[b].item())
-        if n < self.p:
-            self._s_history[b, self.p - n - 1] = s_row
-            self._s_count[b] = n + 1
-        else:
-            self._s_history[b, :-1] = self._s_history[b, 1:].clone()
-            self._s_history[b, -1] = s_row
+        def _ring_push(hist, count, cap, new_rows):
+            # hist [B, cap, D]; count [B] long (pre-push); cap int;
+            # new_rows [B, D]. Mirrors ``_push_row``: rows in the
+            # fill phase (count < cap) scatter the new row into slot
+            # ``cap-count-1`` and increment; rows at capacity roll
+            # left (newest at the tail); inactive rows untouched.
+            cnt = count
+            fill = active & (cnt < cap)                      # [B] bool
+            shift = active & (cnt >= cap)                    # [B] bool
+            rolled = torch.roll(hist, shifts=-1, dims=1).clone()
+            rolled[:, -1, :] = new_rows
+            idx = (cap - cnt - 1).clamp(0, cap - 1)          # [B] long
+            scattered = hist.clone()
+            scattered.scatter_(
+                1, idx.view(Bv, 1, 1).expand(Bv, 1, D),
+                new_rows.unsqueeze(1))
+            new_hist = torch.where(
+                shift.view(Bv, 1, 1), rolled,
+                torch.where(fill.view(Bv, 1, 1), scattered, hist))
+            new_count = cnt + fill.to(cnt.dtype)
+            return new_hist, new_count
+
+        self._s_history, self._s_count = _ring_push(
+            self._s_history, self._s_count, self.p, s_all)
         if self.q > 0:
-            m = int(self._e_count[b].item())
-            if m < self.q:
-                self._e_history[b, self.q - m - 1] = e_row
-                self._e_count[b] = m + 1
-            else:
-                self._e_history[b, :-1] = self._e_history[b, 1:].clone()
-                self._e_history[b, -1] = e_row
+            self._e_history, self._e_count = _ring_push(
+                self._e_history, self._e_count, self.q, residual)
+        return loss
 
     # -- lifecycle ----------------------------------------------------
     def Reset(self, batch=None, hard=False):
@@ -6081,6 +6155,26 @@ class InterSentenceLayer(Layer):
         placeholder rather than break that wiring.  Real cold-start
         gating happens via ``_s_count``: rows whose ring is empty
         return ``(None, None)``.
+
+        Compiled path: ``predict()`` is called from two traced sites
+        (``BasicModel._forward_per_stage`` and
+        ``WordSpace.stm_residual_microbatch``), always with ``b is
+        None``.  When ``stage_prediction()`` has parked a tuple, return
+        it directly — the live body calls ``predict_next`` (which is
+        ``@torch.compiler.disable``'d → graph break) and reads
+        ``_s_count.item()`` (host sync), both fatal for fullgraph
+        capture.  Staged tuple == pure tensor read, no break, no sync.
+        """
+        if b is None:
+            staged = self._staged_prediction
+            if staged is not None:
+                return staged
+        return self._predict_live(b=b)
+
+    def _predict_live(self, b=None):
+        """Uncached ARMA prediction (the pre-staging ``predict()``
+        body).  Used on the eager path and to populate the staging
+        slot in ``stage_prediction()``.
         """
         if self.predictor is None:
             return None, None
@@ -6093,6 +6187,20 @@ class InterSentenceLayer(Layer):
         else:
             conf = pred.new_ones(pred.shape[0])
         return pred, conf
+
+    def stage_prediction(self):
+        """Eagerly compute and park ``(pred, conf)`` for the upcoming
+        compiled forward.  Called from ``runBatch`` (eager region,
+        before the traced step) alongside the Phase-3 lex+embed stem
+        staging.  No-op-safe to call repeatedly; ``predict()`` returns
+        the parked tuple until ``clear_staged_prediction()`` runs.
+        """
+        self._staged_prediction = self._predict_live(b=None)
+
+    def clear_staged_prediction(self):
+        """Drop the staged tuple so the eager path computes live
+        again.  Called once after the compiled forward returns."""
+        self._staged_prediction = None
 
     def snapshot(self, s_tensor, w_tensor=None, mask=None):
         """Legacy alias for ``observe`` (ignores ``w_tensor``).
@@ -7782,6 +7890,47 @@ class ModelLoss(Loss):
                 pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
         return loss
 
+    def compute_masked(self, pred, target, mask):
+        """Sync-free equivalent of ``compute(pred[mask], target[mask])``.
+
+        ``pred`` / ``target``: ``[B, K, *]``; ``mask``: ``[B, K]`` bool.
+        Boolean-mask gather (``pred[mask]``) is data-dependent -- its
+        row count must be copied to the host, an implicit
+        cudaMemcpyDtoH that breaks CUDA-graph capture. This computes the
+        identical per-segment weighted-MSE *mean over masked positions*
+        with on-device reductions only (masked-sum / (mask_count *
+        seg_width) == the gather-then-``F.mse_loss`` mean). ``mask_count``
+        stays a device scalar (never ``.item()``-ed). Empty mask -> 0.0
+        with no 0/0 (cleaner than, and replacing, the old
+        ``nan_to_num`` gate). Matches ``compute``'s ``embSize =
+        pred.shape[-1]`` by first clipping to the shared last dim, as
+        the call sites did via ``[:, :D]``. fp reduction order differs
+        from the gather form (ULP-level), not the value.
+        """
+        D = min(pred.shape[-1], target.shape[-1])
+        p = pred[..., :D]
+        t = target[..., :D]
+        nWhere = self.nWhere
+        nWhen = self.nWhen
+        nWhat = D - nWhere - nWhen
+
+        se = (p - t) ** 2                          # [B, K, D]
+        mf = mask.to(se.dtype).unsqueeze(-1)       # [B, K, 1]
+        mcount = mf.sum()                          # device scalar
+
+        def _seg(a, b):
+            denom = (mcount * float(b - a)).clamp(min=1.0)
+            return (se[..., a:b] * mf).sum() / denom
+
+        loss = p.new_zeros(())
+        if nWhat > 0:
+            loss = loss + self.what_scale * _seg(0, nWhat)
+        if nWhere > 0:
+            loss = loss + self.where_scale * _seg(nWhat, nWhat + nWhere)
+        if nWhen > 0:
+            loss = loss + self.when_scale * _seg(nWhat + nWhere, D)
+        return loss
+
     def compute_piecewise(self, pred, target):
         """Piecewise reconstruction loss via Chamfer distance.
 
@@ -7840,7 +7989,20 @@ class ModelLoss(Loss):
         See class docstring for the operation this layer applies.
         """
         total = lossOut
-        if lossIn is not None and torch.isfinite(lossIn).all():
+        if lossIn is not None:
+            # A non-finite reconstruction loss (Inf/NaN) is *divergence*,
+            # not a recoverable edge case -- it must fail LOUD, never be
+            # silently masked (nan_to_num / on-device gate) and left to
+            # corrupt the run. (See memory: fail loud on numerical
+            # divergence.) The prior ``bool(isfinite.all())`` gate did a
+            # per-step cudaMemcpyDtoH. ``torch._assert_async`` keeps the
+            # guarantee without that host sync: on CUDA the assertion is
+            # enqueued on the stream (no DtoH) and a non-finite loss
+            # aborts the process at the next kernel launch -- unmissable,
+            # never a silent success; on CPU it asserts immediately
+            # (tests still catch divergence). Device handling is
+            # internal to the op, so no device-type branching here.
+            torch._assert_async(torch.isfinite(lossIn).all())
             rr = self.reconstruction_scale
             total = (1 - rr) * lossOut + rr * lossIn
         if sbow is not None:
@@ -8897,13 +9059,28 @@ class VectorQuantize(nn.Module):
                 # without ever allocating the [N, V] one-hot tensor: at
                 # body-scale microbatch (N in the millions) that matrix
                 # alone passes the GPU per-buffer cap.
-                cluster_size_batch = torch.bincount(
-                    indices, minlength=V
-                ).to(flat_f.dtype)
+                #
+                # ``torch.bincount`` has a data-dependent output shape
+                # (``max(minlength, indices.max()+1)``) so dynamo graph-
+                # breaks on it ("Dynamic shape operator aten.bincount.
+                # default"). ``indices`` is an argmax/argmin over the V
+                # codebook rows, so every value is in ``[0, V)`` and
+                # ``bincount(minlength=V)`` would always yield exactly
+                # ``[V]``. A fixed ``[V]`` zeros + ``index_add_`` of a
+                # ones source is the identical per-entry count with a
+                # static output shape -- the same idiom ``embed_sum``
+                # uses immediately below.
                 embed_sum = torch.zeros(
                     V, D, device=flat_f.device, dtype=flat_f.dtype,
                 )
                 embed_sum.index_add_(0, indices, flat_f)
+                cluster_size_batch = torch.zeros(
+                    V, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                cluster_size_batch.index_add_(
+                    0, indices,
+                    torch.ones_like(indices, dtype=flat_f.dtype),
+                )
                 self.cluster_size.mul_(self.decay).add_(
                     cluster_size_batch.to(self.cluster_size.dtype),
                     alpha=1.0 - self.decay,

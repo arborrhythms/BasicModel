@@ -726,13 +726,20 @@ class BaseModel(Mereology, nn.Module):
         # touches only the rows that received gradients per step --
         # critical for V=1M-style perceptual codebooks where dense Adam
         # would update O(V*D) optimizer state on every step.
+        # CUDA-graph capture (the brick body; test_brick_no_sync)
+        # requires the optimizer keep its step counter on-device:
+        # stock Adam's _multi_tensor_adam does _get_value(step).item()
+        # per param otherwise -- one cudaMemcpyDtoH per param per step.
+        # capturable=True keeps step on-device. Gated to actual CUDA
+        # params (no-op/overhead on CPU/MPS; SparseAdam has no such flag).
+        _cap = any(getattr(p, "is_cuda", False) for p in params)
         if sparse_ptrs:
             sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
             dense_params = [p for p in params if p.data_ptr() not in sparse_ptrs]
             opt_sparse = optim.SparseAdam(sparse_params, lr=lr)
-            opt_dense = optim.Adam(dense_params, lr=lr)
+            opt_dense = optim.Adam(dense_params, lr=lr, capturable=_cap)
             return _MultiOptimizer([opt_dense, opt_sparse])
-        return optim.Adam(params, lr=lr)
+        return optim.Adam(params, lr=lr, capturable=_cap)
 
     def rebuild_optimizer(self):
         """Rebuild the main optimizer after codebook expansion.
@@ -1655,8 +1662,11 @@ class BaseModel(Mereology, nn.Module):
             ["Input", "Reconstructed", "Label", "Predicted", "Match"],
             rows)
 
-        # Buffer reconstruction via nWhere byte offsets (non-differentiable display)
-        recovered_meta = self.perceptualSpace._recovered_input
+        # Buffer reconstruction via nWhere byte offsets (non-differentiable display).
+        # _materialize_recovered_input() runs the deferred word-recovery
+        # decode (reverse() defers it -- it is report-only and its
+        # per-word .item() would break the brick CUDA-graph contract).
+        recovered_meta = self.perceptualSpace._materialize_recovered_input()
         if use_lex_recon and recovered_meta is not None:
             buf_size = max(len(test_input[0].tolist()) if isinstance(test_input[0], torch.Tensor) else 64, 64)
             buffer_strings = self.perceptualSpace.reconstruct_to_buffer(buf_size=buf_size)
@@ -1932,9 +1942,7 @@ class BasicModel(BaseModel):
             return
 
         # 2. Reset truth store, enable accumulation, run full pipeline
-        truth_layer.count.zero_()
-        truth_layer._sources = []
-        truth_layer._trusts = []
+        truth_layer.clear()
         prev_accum = self.symbolicSpace.accumulateTruth
         self.symbolicSpace.accumulateTruth = 1.0
         self.eval()
@@ -2089,10 +2097,8 @@ class BasicModel(BaseModel):
         # Run the IR forward over the seed text.
         out = self._infer_ir(seed_text)
         # Commit the produced sentence to the ARMA ring.
-        if discourse is not None:
-            s_tensor = getattr(self, '_current_discourse_s', None)
-            if s_tensor is not None:
-                discourse.observe(s_tensor)
+        if discourse is not None and self._current_discourse_s is not None:
+            discourse.observe(self._current_discourse_s)
         return out
 
     def create_ir_mask(self, percept_subspace):
@@ -2148,15 +2154,69 @@ class BasicModel(BaseModel):
         self._ir_pre_mask_input = event.detach().clone()
         self._ir_mask_positions = mask
 
-        if not bool(mask.any()):
-            return
-
+        # No `if mask.any()` early-out: an all-False boolean-mask write
+        # selects zero rows, so the body below is a content-identical
+        # no-op when nothing is masked (new_event == event). Running it
+        # unconditionally keeps the brick CUDA-graph-capturable -- the
+        # data-dependent `bool(mask.any())` skip was a host sync (see
+        # doc/BrickHostSyncStatus.md residual C; same shape as the
+        # `_snap_content` fix).
         null_vec = codebook.getW()[codebook.null_percept_idx]  # [nWhat]
         nWhat = int(null_vec.shape[-1])
         # Replace the WHAT slice at masked positions; preserve WHERE/WHEN.
+        # Dense `torch.where` instead of boolean-mask assignment
+        # ``new_event[mask, :nWhat] = ...``: advanced boolean indexing is
+        # data-dependent (the selected-row count must be read to host) ->
+        # an implicit cudaMemcpyDtoH that breaks CUDA-graph capture. The
+        # where form is static-shape, fully on-device, and bit-identical
+        # (same values written; all-False mask -> no-op). [B,K]->[B,K,1]
+        # broadcasts over the nWhat channel slice.
         new_event = event.clone()
-        new_event[mask, :nWhat] = null_vec.to(new_event.dtype)
+        m = mask.unsqueeze(-1)
+        nv = null_vec.to(new_event.dtype)
+        new_event[..., :nWhat] = torch.where(
+            m, nv, new_event[..., :nWhat])
         event_basis.setW(new_event)
+
+    def enable_compiled_step(self):
+        """Compile the per-batch forward and route runBatch through it.
+
+        O1 fix: ``ModelFactory.run`` used to ``compile(m)`` the whole
+        module and then call ``m.run()``, which delegates to the eager
+        ``_orig_mod`` -- so the compiled callable was never invoked
+        (dynamo traced 0 frames; every "compiled" run was eager).
+        Instead we ``torch.compile`` the ``forward`` *callable* and
+        invoke that from ``runBatch``; the eager run/runEpoch
+        orchestration stays Python (streaming/staging outside the
+        compiled region, per the compile-scoped-to-model design).
+
+        Strict gate, **all configs**: the recon-then-eliminate program
+        drove the forward to **0 graph breaks** (non-grammar *and*
+        grammar; ``total graph breaks: 0; graphs: 1``), so we compile
+        with ``fullgraph=True`` unconditionally -- any regression that
+        reintroduces a host sync / dynamic-shape op / data-dependent
+        control-flow break now *raises* at compile time instead of
+        silently degrading to eager (or wasting GPU hours on a
+        non-capturable run). The grammar path is no longer
+        ``@torch.compiler.disable``'d (a disabled call is itself a
+        break under ``fullgraph=True``); its breaks were eliminated in
+        the same recon loop.
+        """
+        from util import compile as _compile
+        # torch.compile's fake-tensor tracing has incomplete MPS device
+        # propagation (raises "Unhandled FakeTensor Device Propagation"
+        # on ops like mul across mps/implicit-cpu tensors) -- the same
+        # class of gap as MPS `_cdist_backward`. Compile on CUDA (the
+        # capture target) and CPU (CI/correctness); fall back to eager
+        # on MPS so the local dev path stays usable.
+        if TheDevice.get().type == "mps":
+            TheMessage("[compiled-step] MPS: torch.compile fake-tensor "
+                       "device propagation is incomplete -- running "
+                       "eager (compile active on CUDA/CPU only).")
+            self._compiled_step = None
+            return
+        self._compiled_step = _compile(
+            self.forward, verbose=True, fullgraph=True)
 
     def forward(self, inputData):
         """IR-only forward: stem -> body -> head.
@@ -2219,6 +2279,8 @@ class BasicModel(BaseModel):
             outErr, inErr, allOut, lastIn = self.runEpoch(
                 batchSize=batchSize, split="test",
                 max_batches=_test_max_batches)
+            outErr = outErr.item() if torch.is_tensor(outErr) else outErr
+            inErr = inErr.item() if torch.is_tensor(inErr) else inErr
             self.set_sigma(0.5)
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
@@ -2233,6 +2295,8 @@ class BasicModel(BaseModel):
             TheMessage(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
+            outErr = outErr.item() if torch.is_tensor(outErr) else outErr
+            inErr = inErr.item() if torch.is_tensor(inErr) else inErr
             trainLosses[0].append(outErr)
             trainLosses[1].append(inErr)
             TheMessage(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
@@ -2249,6 +2313,8 @@ class BasicModel(BaseModel):
             outErr, inErr, allOut, lastIn = self.runEpoch(
                 batchSize=batchSize, split="test",
                 max_batches=_test_max_batches)
+            outErr = outErr.item() if torch.is_tensor(outErr) else outErr
+            inErr = inErr.item() if torch.is_tensor(inErr) else inErr
             self.set_sigma(0.5)  # re-enable for next training epoch
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
@@ -2503,6 +2569,64 @@ class BasicModel(BaseModel):
                 f"{type(e).__name__}: {e}. Continuing without these "
                 f"hints; util.compile's torch.compile is unaffected.")
 
+    # -- per-step lifecycle (model-level) ------------------------------
+    #
+    # ``runBatch`` orchestrates a step but must talk only to the *model*,
+    # never reach into model *contents* (``self.wordSpace.discourse``,
+    # ``self.inputSpace`` ...). These three methods are that boundary:
+    # the model owns its discourse / input-staging lifecycle; runBatch
+    # just calls ``self._begin_step`` / ``self._discourse_arma_loss`` /
+    # ``self._end_step``. Per-batch timing (identical to the prior
+    # inline code) -- NOT the grammar ``soft_reset`` (that fires only on
+    # chart sentence-completion and never per-batch on the IR/MM_5M
+    # path, so relocating discourse there would silently stop ARMA).
+
+    def _begin_step(self, inputTensor):
+        """Eager pre-forward staging for the compiled step.
+
+        Compiled path only: move the input onto the compute device
+        (outside the trace -- ``TheDevice.get()`` is unproxyable
+        inside it), park the lex+embed stem subspace, and stage the
+        inter-sentence ARMA prediction so the traced forward just reads
+        parked tensors. No-op on the eager/uncompiled path (the forward
+        lexes inline, behaviour unchanged). Returns the (possibly
+        device-moved) input.
+        """
+        if self._compiled_step is None:
+            return inputTensor
+        if isinstance(inputTensor, torch.Tensor):
+            inputTensor = inputTensor.to(TheDevice.get())
+        self._staged_in_sub = self.inputSpace.forward(inputTensor)
+        disc = (self.wordSpace.discourse
+                if self.wordSpace is not None else None)
+        if disc is not None:
+            disc.stage_prediction()
+        return inputTensor
+
+    def _end_step(self):
+        """Per-step teardown: drop the staging parked by ``_begin_step``
+        (consume-once; eager, post-forward)."""
+        self._staged_in_sub = None
+        disc = (self.wordSpace.discourse
+                if self.wordSpace is not None else None)
+        if disc is not None:
+            disc.clear_staged_prediction()
+
+    def _discourse_arma_loss(self):
+        """Inter-sentence ARMA(p, q) loss term for this step, or ``None``.
+
+        Encapsulates ``InterSentenceLayer`` so runBatch sees only a
+        model-level loss contribution. Must be called post-body /
+        pre-backward: the term trains the ARMA predictor, and
+        ``observe`` also commits the sentence rep + residual into the
+        per-row rings (vectorized, sync-free).
+        """
+        disc = (self.wordSpace.discourse
+                if self.wordSpace is not None else None)
+        if disc is None or self._current_discourse_s is None:
+            return None
+        return disc.observe(self._current_discourse_s)
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
@@ -2609,7 +2733,22 @@ class BasicModel(BaseModel):
                 torch.compiler.cudagraph_mark_step_begin()
             except (AttributeError, RuntimeError):
                 pass
-            forwardInput, symbols, predictions, _ = self.forward(inputTensor)
+            # O1: route the per-batch compute through the compiled
+            # callable when enabled (else eager). runEpoch/runBatch stay
+            # eager Python; only this forward+loss+backward unit is
+            # torch.compiled. See doc/plans/2026-05-16-compiled-step-
+            # boundary-design.md.
+            # Per-step lifecycle is model-owned (``_begin_step`` /
+            # ``_end_step``): runBatch stays out of model *contents*.
+            # ``_begin_step`` does the eager pre-forward staging on the
+            # compiled path -- device move (outside the trace), lex+embed
+            # stem park, ARMA prediction stage -- so the traced forward
+            # only reads parked tensors; no-op on the eager/uncompiled
+            # path (forward lexes inline, behaviour unchanged).
+            inputTensor = self._begin_step(inputTensor)
+            _fwd = self._compiled_step or self.forward
+            forwardInput, symbols, predictions, _ = _fwd(inputTensor)
+            self._end_step()
             outputDataPred = predictions
 
             # ε-growing codebook hook (Phase 4 follow-up): when any
@@ -2664,7 +2803,7 @@ class BasicModel(BaseModel):
             # kept wired (with zero weight) for code-path symmetry with
             # downstream Error tracking; the gradient signal flows
             # through ``lossIn`` only.
-            lossOut = torch.tensor(0.0, device=TheDevice.get())
+            lossOut = torch.zeros((), device=TheDevice.get())
             output_weight = 0.0
             TheError.add(
                 "output", lossOut,
@@ -2686,23 +2825,24 @@ class BasicModel(BaseModel):
             pred_full = None
             if hasattr(self.perceptualSpace.subspace, 'materialize'):
                 pred_full = self.perceptualSpace.subspace.materialize()
+            # None checks stay Python (no sync). The masked reconstruction
+            # loss is computed densely via `compute_masked` instead of a
+            # boolean-mask gather `pred[mask]` -- the gather is
+            # data-dependent (its row count is read to host: an implicit
+            # cudaMemcpyDtoH that breaks CUDA-graph capture).
+            # `compute_masked` is the sync-free, value-equivalent form
+            # (masked-sum / masked-count) and returns 0.0 on an empty
+            # mask with no NaN (replacing the old nan_to_num gate). See
+            # doc/BrickHostSyncStatus.md residual D.
             if (mask_pos is not None and pre_mask is not None
-                    and pred_full is not None
-                    and bool(mask_pos.any())):
-                K_pred = pred_full.shape[1]
-                K_mask = mask_pos.shape[1]
-                K_pre = pre_mask.shape[1]
-                K = min(K_pred, K_mask, K_pre)
-                pred_clip = pred_full[:, :K, :]
-                pre_clip = pre_mask[:, :K, :]
-                mask_clip = mask_pos[:, :K]
-                D = min(pred_clip.shape[-1], pre_clip.shape[-1])
-                pred_at_masked = pred_clip[mask_clip][:, :D]
-                target_at_masked = pre_clip[mask_clip][:, :D]
-                lossIn = self.loss.compute(
-                    pred_at_masked, target_at_masked)
+                    and pred_full is not None):
+                K = min(pred_full.shape[1], mask_pos.shape[1],
+                        pre_mask.shape[1])
+                lossIn = self.loss.compute_masked(
+                    pred_full[:, :K, :], pre_mask[:, :K, :],
+                    mask_pos[:, :K])
             else:
-                lossIn = torch.tensor(0.0, device=TheDevice.get())
+                lossIn = torch.zeros((), device=TheDevice.get())
             TheError.add(
                 "reconstruction", lossIn,
                 weight=1.0,
@@ -2719,7 +2859,7 @@ class BasicModel(BaseModel):
             # loops -- guarded so a shape edge case in any config
             # degrades to a zero contribution rather than breaking the
             # step.
-            lossRev = torch.tensor(0.0, device=TheDevice.get())
+            lossRev = torch.zeros((), device=TheDevice.get())
             try:
                 if forwardInput is not None:
                     rev_sub = self._run_pipeline_rev(self.outputSpace.subspace)
@@ -2742,7 +2882,7 @@ class BasicModel(BaseModel):
                 # Reverse round-trip is approximate through averaged
                 # loops; never let a reconstruction edge case stop the
                 # training step.
-                lossRev = torch.tensor(0.0, device=TheDevice.get())
+                lossRev = torch.zeros((), device=TheDevice.get())
             TheError.add(
                 "reconstruction_reverse", lossRev,
                 weight=float(getattr(self.loss, 'reconstruction_scale', 0.0)
@@ -2760,9 +2900,13 @@ class BasicModel(BaseModel):
             # and are blended via ``self.loss.reconstruction_scale``.
             recon_mode = (getattr(self, 'reconstruct', 'none')
                           or 'none').lower()
+            # `recon_mode in (...)` and the None checks are Python (no
+            # sync); the `bool(mask_pos.any())` skip was a host sync.
+            # Run unconditionally and sanitize the empty-mask NaN per
+            # term below (sync-free; 0.0 == not-added for the summed
+            # TheError.total). See doc/BrickHostSyncStatus.md residual D.
             if (recon_mode in ('concepts', 'symbols', 'both')
-                    and mask_pos is not None and pre_mask is not None
-                    and bool(mask_pos.any())):
+                    and mask_pos is not None and pre_mask is not None):
                 # Lift pre_mask through sigma_percept once; this is
                 # the C-tier target both ``concepts`` and ``symbols``
                 # consume (``symbols`` could route through SS for a
@@ -2785,12 +2929,10 @@ class BasicModel(BaseModel):
                         K_c = min(pred_c.shape[1],
                                   target_c.shape[1],
                                   mask_pos.shape[1])
-                        D_c = min(pred_c.shape[-1],
-                                  target_c.shape[-1])
-                        mc = mask_pos[:, :K_c]
-                        loss_c = self.loss.compute(
-                            pred_c[:, :K_c, :D_c][mc],
-                            target_c[:, :K_c, :D_c][mc].detach())
+                        loss_c = self.loss.compute_masked(
+                            pred_c[:, :K_c, :],
+                            target_c[:, :K_c, :].detach(),
+                            mask_pos[:, :K_c])
                         TheError.add(
                             "reconstruction_c", loss_c,
                             weight=recon_weight,
@@ -2811,12 +2953,10 @@ class BasicModel(BaseModel):
                         K_s = min(pred_s.shape[1],
                                   target_c.shape[1],
                                   mask_pos.shape[1])
-                        D_s = min(pred_s.shape[-1],
-                                  target_c.shape[-1])
-                        ms = mask_pos[:, :K_s]
-                        loss_s = self.loss.compute(
-                            pred_s[:, :K_s, :D_s][ms],
-                            target_c[:, :K_s, :D_s][ms].detach())
+                        loss_s = self.loss.compute_masked(
+                            pred_s[:, :K_s, :],
+                            target_c[:, :K_s, :].detach(),
+                            mask_pos[:, :K_s])
                         TheError.add(
                             "reconstruction_s", loss_s,
                             weight=recon_weight,
@@ -2841,20 +2981,13 @@ class BasicModel(BaseModel):
                         space="WordSpace", category="embedding",
                     )
 
-            # Inter-sentence ARMA(p, q) loss.  ``InterSentenceLayer.observe``
-            # captures the current sentence rep, predicts ``s_hat_t``
-            # from the ``p`` lagged reps + ``q`` lagged residuals,
-            # returns the per-batch MSE, and pushes the new rep +
-            # residual into the rings.  Cold-start rows (history
-            # empty) return ``None`` for the loss; the rep still goes
-            # into the ring.
-            arma_loss = None
-            discourse = (getattr(self.wordSpace, 'discourse', None)
-                         if self.wordSpace is not None else None)
-            if train and discourse is not None:
-                s_tensor = getattr(self, '_current_discourse_s', None)
-                if s_tensor is not None:
-                    arma_loss = discourse.observe(s_tensor)
+            # Inter-sentence ARMA(p, q) loss term -- model-owned
+            # (``_discourse_arma_loss``): predicts ``s_hat_t`` from the
+            # lagged reps/residuals, returns the per-batch MSE, and
+            # commits the new rep + residual into the rings (vectorized,
+            # sync-free). Cold-start rows return ``None``. Computed here,
+            # post-body / pre-backward, so the term trains the predictor.
+            arma_loss = self._discourse_arma_loss() if train else None
 
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
             if arma_loss is not None:
@@ -2937,7 +3070,13 @@ class BasicModel(BaseModel):
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
             # even if the step is aborted by a non-finite detector below.
-            TheError.snapshot()
+            # snapshot()'s per-term .item() is a cudaMemcpyDtoH (breaks
+            # the brick CUDA-graph-capture contract, test_brick_no_sync)
+            # and only feeds the diagnostic covariance() API (no
+            # training-loop consumer). Gate behind MODEL_DEBUG, like the
+            # finite-loss guard just below.
+            if _util.MODEL_DEBUG:
+                TheError.snapshot()
 
         # Per-batch finite-loss guard is a GPU sync (.all() materializes).
         # Gate it behind MODEL_DEBUG so production training pays no per-batch
@@ -3064,7 +3203,7 @@ class BasicModel(BaseModel):
         # gated probes; each is a no-op without its env var.
         if os.environ.get("BASIC_PROFILE_DIAG"):
             try:
-                ws_diag = getattr(self, 'wordSpace', None)
+                ws_diag = self.wordSpace
                 tl_diag = getattr(ws_diag, 'truth_layer', None) if ws_diag is not None else None
                 if tl_diag is not None and hasattr(tl_diag, 'count'):
                     tl_count_diag = int(tl_diag.count.item())
@@ -3209,7 +3348,7 @@ class BasicModel(BaseModel):
         (and *after* ``dispatch_per_row_reset`` so a hard-reset row's soft
         signal is dropped — hard subsumes soft).
         """
-        ws = getattr(self, 'wordSpace', None)
+        ws = self.wordSpace
         if ws is None or not hasattr(ws, 'drain_sentence_completed'):
             return
         completed = ws.drain_sentence_completed()
@@ -3223,7 +3362,7 @@ class BasicModel(BaseModel):
         sync-free. Called once per tick by the outer doc-streaming loop
         after ``runBatch`` returns.
         """
-        ws = getattr(self, 'wordSpace', None)
+        ws = self.wordSpace
         if ws is None:
             return
         tl = getattr(ws, 'truth_layer', None)
@@ -3519,7 +3658,12 @@ class BasicModel(BaseModel):
         # split=="train" only -- test/validation passes use the
         # explicit ``max_batches`` arg from --test.
         global_max = None
-        if training and split == "train":
+        if (training and split == "train"
+                and not getattr(self, "_preflight_active", False)):
+            # The brick pre-flight runs bounded throw-away epochs; they
+            # must NOT consume (or be capped by) the BASIC_MAX_BATCHES
+            # ``--batches`` budget, or the warm-up eats it all and the
+            # profiled epoch + real training run zero batches.
             try:
                 _v = os.environ.get("BASIC_MAX_BATCHES", "").strip()
                 global_max = int(_v) if _v else None
@@ -3557,9 +3701,22 @@ class BasicModel(BaseModel):
                 if use_byte_cursor:
                     # Byte slab: convert uint8 -> int8 [B, 1, slab_bytes]
                     # to match prepInput's expected shape downstream.
+                    # Synchronous H2D: correct + race-free (non_blocking
+                    # on an ephemeral pinned buffer corrupts data when
+                    # freed pre-transfer -- the NaN source).
                     inputTensor = inp_items.to(
                         device=TheDevice.get(), dtype=torch.int8
                     ).unsqueeze(1)
+                    # Hand the *host* slab to the lexer (consumed once in
+                    # InputSpace._lex_batch). `inputTensor` is exactly
+                    # `inp_items.to(device,int8).unsqueeze(1)`, so the
+                    # bytes are identical (_to_text masks `& 0xFF`, so
+                    # int8/uint8 agree); lexing the host copy makes
+                    # `_to_text`'s `.tolist()` a CPU op instead of a
+                    # cudaMemcpyDtoH (residual A, doc/BrickHostSyncStatus
+                    # .md). Device path stays the fallback for non-cursor
+                    # callers.
+                    self.inputSpace._host_input_slab = inp_items
                     outputTensor = byte_stub_output
                     B_step = B_eff
                 else:
@@ -3668,12 +3825,13 @@ class BasicModel(BaseModel):
             except (AttributeError, RuntimeError):
                 pass
 
-        # Materialize loss scalars exactly once at epoch end -- avoid
-        # per-batch .item() syncs that drain the GPU pipeline.
-        if torch.is_tensor(outErr):
-            outErr = outErr.item()
-        if torch.is_tensor(inErr):
-            inErr = inErr.item()
+        # Return the loss scalars as tensors; the caller (runTrial)
+        # materializes them with .item(). That keeps the host sync
+        # OUTSIDE the brick's profiled runEpoch -- the pre-flight
+        # profiles runEpoch directly, and an in-runEpoch .item() is a
+        # cudaMemcpyDtoH that breaks the CUDA-graph-capture contract
+        # (test_brick_no_sync). Consumers must materialize before any
+        # ``:.4f`` format / list-accumulation (see runTrial).
         return outErr, inErr, allOutput, allInput
     def _create_per_stage(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
@@ -4045,11 +4203,47 @@ class BasicModel(BaseModel):
             space.normalizer = self.normalizer
             if hasattr(space, 'subspace'):
                 space.subspace.normalizer = self.normalizer
+                # Stamp the model's (build-stable) WordSpace onto every
+                # persistent subspace ONCE, eagerly. The traced forward's
+                # copy_context no longer re-assigns it (assigning a
+                # Module trips nn.Module.__setattr__ -> fullgraph break,
+                # and registering it as a submodule infinitely recurses
+                # model.to()); since wordSpace never changes after build,
+                # this eager stamp keeps every downstream
+                # ``vspace.wordSpace`` read valid with no in-trace work.
+                space.subspace.attach_wordSpace(self.wordSpace)
 
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(symbol_dim + obj_symbol,
                                                    self.conceptualOrder)
         self.symbol_states = []
+        # Per-step lifecycle slots, initialized explicitly so every
+        # read is a plain attribute access (no getattr-with-default):
+        #   _staged_in_sub      -- lex+embed stem subspace parked by
+        #                          _begin_step for the compiled forward
+        #                          (None == not staged: eager/uncompiled
+        #                          path lexes inline).
+        #   _compiled_step      -- the torch.compiled callable, or None
+        #                          (set by enable_compiled_step; None
+        #                          here so the eager path is valid even
+        #                          if that is never called).
+        #   _current_discourse_s -- S-tier sentence rep stashed by the
+        #                          forward for the post-body ARMA term.
+        self._staged_in_sub = None
+        self._compiled_step = None
+        self._current_discourse_s = None
+        # Persistent empty CS seeds for the recurrent cell's pass-0
+        # (prevCS_forPS / prevCS_forSS). Built ONCE here instead of
+        # constructing a fresh SubSpace every _forward_body call: the
+        # per-forward object churn changes traced object-identity and
+        # is the prime suspect for splitting the compiled forward into
+        # 2 guarded graphs. These are zero-length ``is_empty()``
+        # sentinels; the recurrent cell only ``.is_empty()`` /
+        # ``.materialize()``s them (consumers write their own subspace,
+        # never the seed), so a shared persistent instance is
+        # behaviour-identical to the prior fresh-per-forward seed.
+        self._empty_seed_ps = self._empty_subspace()
+        self._empty_seed_ss = self._empty_subspace()
 
         # Phase 2: Sequential pipeline is the only path.
         self.build_pipelines()
@@ -4198,8 +4392,7 @@ class BasicModel(BaseModel):
         installs a (non-None) activation, satisfying the contract;
         zeros are an additive no-op into any downstream consumer.
         """
-        sample = (ctx_sub.materialize()
-                  if hasattr(ctx_sub, 'materialize') else None)
+        sample = ctx_sub.materialize()
         if sample is not None and sample.dim() >= 1:
             B = int(sample.shape[0])
             dev, dt = sample.device, sample.dtype
@@ -4244,8 +4437,8 @@ class BasicModel(BaseModel):
         When ``self.loss_head`` is set the post-body STM snapshot feeds
         the head and the loss is stashed on ``self._loss_head_loss``.
         """
-        prevCS_forPS = self._empty_subspace()
-        prevCS_forSS = self._empty_subspace()
+        prevCS_forPS = self._empty_seed_ps
+        prevCS_forSS = self._empty_seed_ss
         last_cs = None
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
@@ -4270,10 +4463,13 @@ class BasicModel(BaseModel):
                 CS_sub = stage["merge"](CS_sub)
             # Read the two C views after the optional merge (merge
             # mutates the CS subspace in place; _subspaceForSS aliases
-            # it so it reflects post-merge N).
-            prevCS_forPS = getattr(cs, "_subspaceForPS",
-                                   self._empty_subspace())
-            prevCS_forSS = getattr(cs, "_subspaceForSS", CS_sub)
+            # it so it reflects post-merge N). ``_subspaceForPS`` is the
+            # persistent owned subspace allocated in
+            # ``ConceptualSpace.__init__`` (never absent) -> explicit
+            # access, no getattr default (whose ``self._empty_subspace()``
+            # was also constructing a SubSpace every loop iteration).
+            prevCS_forPS = cs._subspaceForPS
+            prevCS_forSS = cs._subspaceForSS
             # "Nothing to quantize -> pass zeros": SS is inert when its
             # input was the empty seed (conceptualOrder=1, or pass 0).
             # CS already consumed SS_sub as-is above (pass-0 math
@@ -4291,7 +4487,7 @@ class BasicModel(BaseModel):
             # ``_forward_stem_per_word``; fall back to the (detached)
             # STM snapshot when the stack is missing (e.g. body-only
             # forward path that bypasses the per-word stem).
-            grad_input = getattr(self, '_loss_head_input', None)
+            grad_input = self._loss_head_input
             if grad_input is None:
                 grad_input = self.conceptualSpace.stm.snapshot()
             if grad_input is not None:
@@ -4321,10 +4517,10 @@ class BasicModel(BaseModel):
         ``wordSpace.generate_rules`` so each stage's reverse dispatch can
         pop them via its SyntacticLayer cursor.
         """
-        ws = getattr(self, 'wordSpace', None)
+        ws = self.wordSpace
         if ws is None:
             return
-        stm = getattr(self.conceptualSpace, 'stm', None)
+        stm = self.conceptualSpace.stm
         if stm is None:
             return
         snap = stm.snapshot()
@@ -4413,17 +4609,28 @@ class BasicModel(BaseModel):
         pipeline retired in the same change.
         """
         if isinstance(inputData, torch.Tensor):
-            inputData = inputData.to(TheDevice.get())
+            # Device placement is the eager producer's job on the
+            # compiled path: runBatch moves inputTensor onto the compute
+            # device *before* the traced step (same principle as the
+            # Phase-3 lex+embed stem). Calling ``TheDevice.get()``
+            # *inside* the trace hands dynamo a ``DeviceHandle`` it
+            # cannot proxy ("Failed to convert args/kwargs to proxy")
+            # -> hard error under ``fullgraph=True``. Skip it when staged
+            # (compiled path; producer already placed it); keep it for
+            # eager / uncompiled callers (tests, MPS) where no producer
+            # ran -- behaviour there is unchanged.
+            if self._staged_in_sub is None:
+                inputData = inputData.to(TheDevice.get())
         self._ar_valid_pos = None  # IR has no per-cursor axis.
 
         # Detach cached events carried over from prior forward to break
         # the autograd graph; in-place writes below restore live grads.
         for sp in (self.perceptualSpace, self.conceptualSpace,
                    self.symbolicSpace):
-            if sp is None or not hasattr(sp, 'subspace'):
+            if sp is None:
                 continue
-            ev = getattr(sp.subspace, 'event', None)
-            if ev is None or not hasattr(ev, 'getW') or not hasattr(ev, 'setW'):
+            ev = sp.subspace.event
+            if ev is None:
                 continue
             w = ev.getW()
             if w is not None and torch.is_tensor(w) and w.requires_grad:
@@ -4445,7 +4652,7 @@ class BasicModel(BaseModel):
         discourse_for_prime = (
             self.wordSpace.discourse
             if self.wordSpace is not None else None)
-        if discourse_for_prime is not None and hasattr(discourse_for_prime, 'predict'):
+        if discourse_for_prime is not None:
             d_pred, d_conf = discourse_for_prime.predict()
             self._predicted_snapshot = d_pred
             self._predicted_confidence = d_conf
@@ -4454,14 +4661,34 @@ class BasicModel(BaseModel):
         # now runs inside the recurrent cell (it takes the C→P feedback
         # as an explicit arg), so it is no longer a once-per-sentence
         # stem step.
-        in_sub = self.inputSpace.forward(inputData)
-        if in_sub is None or (
-                hasattr(in_sub, 'is_empty') and in_sub.is_empty()):
-            self.inputs = self.inputSpace.subspace
-            self.percepts = self.perceptualSpace.subspace
-            self.concepts = self.conceptualSpace.subspace
-            self.symbols = self.symbolicSpace.subspace
-            self.outputs = self.outputSpace.subspace
+        #
+        # Phase 3: when runBatch staged the lex+embed eagerly (compiled
+        # path), read the pre-populated persistent subspace instead of
+        # lexing here -- keeps host tokenisation/OOV out of the traced
+        # region (graph breaks #1-4). Read-only (no attr write in the
+        # traced path). Eager/uncompiled callers don't stage, so this
+        # falls back to inline lexing -- behaviour unchanged.
+        in_sub = self._staged_in_sub
+        if in_sub is None:
+            in_sub = self.inputSpace.forward(inputData)
+        if in_sub is None or in_sub.is_empty():
+            # Non-owning post-forward back-refs. ``object.__setattr__``
+            # (the codebase's non-owning-ref idiom, cf. attach_wordSpace
+            # / _model): a plain ``self.inputs = <SubSpace>`` enters
+            # nn.Module.__setattr__ and mutates ``self._modules`` INSIDE
+            # the traced forward, so the dynamo guard
+            # ``len(self._modules)==N`` fails -> a forced recompile
+            # (the measured unique_graphs=2). __dict__ storage keeps
+            # _modules constant -> no recompile.
+            object.__setattr__(self, "inputs", self.inputSpace.subspace)
+            object.__setattr__(self, "percepts",
+                               self.perceptualSpace.subspace)
+            object.__setattr__(self, "concepts",
+                               self.conceptualSpace.subspace)
+            object.__setattr__(self, "symbols",
+                               self.symbolicSpace.subspace)
+            object.__setattr__(self, "outputs",
+                               self.outputSpace.subspace)
             return None, None, None, None
 
         # Body: recurrent cell over T stages on B rows. PerceptualSpace
@@ -4483,7 +4710,7 @@ class BasicModel(BaseModel):
         for sub in self._ss_cache:
             if sub is None:
                 continue
-            sv = sub.materialize() if hasattr(sub, 'materialize') else None
+            sv = sub.materialize()
             if sv is None:
                 continue
             captured_states.append(sv.clone())
@@ -4491,14 +4718,23 @@ class BasicModel(BaseModel):
         self._unified_j_iterations = min(
             self.conceptualOrder, len(captured_states))
 
-        self.inputs = self.inputSpace.subspace
-        self.percepts = self.perceptualSpace.subspace
-        self.concepts = self.conceptualSpace.subspace
-        self.symbols = self.symbolicSpace.subspace
-        self.outputs = self.outputSpace.subspace
+        # Non-owning post-forward back-refs via object.__setattr__ so
+        # they never mutate self._modules inside the traced forward
+        # (else the dynamo ``len(self._modules)`` guard fails -> the
+        # measured one-time recompile / unique_graphs=2). See the
+        # matching block in the empty-input early return above.
+        object.__setattr__(self, "inputs", self.inputSpace.subspace)
+        object.__setattr__(self, "percepts",
+                           self.perceptualSpace.subspace)
+        object.__setattr__(self, "concepts",
+                           self.conceptualSpace.subspace)
+        object.__setattr__(self, "symbols",
+                           self.symbolicSpace.subspace)
+        object.__setattr__(self, "outputs",
+                           self.outputSpace.subspace)
 
         # forwardInput contract for runBatch: ``[B, N, D]`` embedded input.
-        input_state = getattr(self.inputSpace, '_ar_embedded', None)
+        input_state = self.inputSpace._ar_embedded
         if input_state is None:
             input_state = self.inputSpace.subspace.materialize()
         if input_state is None:
@@ -4537,7 +4773,7 @@ class BasicModel(BaseModel):
             self._predicted_head = head_result['heads']
 
         # Optional syntax tree dump.
-        if getattr(self, '_write_syntax', False):
+        if self._write_syntax:
             try:
                 self.write_syntax_tree(self._syntax_out_path)
             except Exception as e:
@@ -4593,7 +4829,7 @@ class BasicModel(BaseModel):
         """
         import os
         import xml.etree.ElementTree as ET
-        wordSpace = getattr(self, 'wordSpace', None)
+        wordSpace = self.wordSpace
         if wordSpace is None:
             return
         chart = getattr(wordSpace, 'chart', None)
@@ -5125,6 +5361,91 @@ class ModelFactory:
         return path
 
     @staticmethod
+    def _brick_preflight(m, batch_size, lr):
+        """CUDA-graph-capture pre-flight gate (all training entry).
+
+        Profiles ONE short ``runEpoch`` and hard-aborts if the brick
+        body issues any ``cudaMemcpyDtoH``: a host sync defeats
+        CUDA-graph capture and silently wastes GPU on a non-capturable
+        run, so fail fast *before* substantial training rather than
+        after hours. CUDA-only -- on CPU/MPS ``torch.profiler`` records
+        no device memcpy and the capture contract is CUDA-specific, so
+        this is a no-op there (the MPS dev path is unaffected).
+
+        Runs two short *bounded* epochs (warm-up + profiled) at the
+        **real configured ``batchSize``**, ``max_batches`` each. The
+        batch size must match training: a CUDA graph is captured for a
+        specific shape, so a brick that is sync-free at ``bs=2`` says
+        nothing about ``bs=64`` (the only shape that matters is the one
+        training runs). Bounding the *number* of batches -- not their
+        size -- keeps this cheap (a handful of real-shape steps), so the
+        gate validates exactly what training will execute. These do NOT
+        count against ``BASIC_MAX_BATCHES`` (the ``--batches`` budget):
+        the pre-flight is diagnostic, so ``_preflight_active`` exempts
+        it from the cumulative cap in ``runEpoch``. Without both the
+        bound and the exemption, on a large corpus the warm-up consumes
+        the whole ``--batches`` budget, leaving the profiled epoch (and
+        the real training) with zero batches -- the gate then "passes"
+        having profiled nothing, and no training happens.
+
+        **MODEL_DEBUG-gated.** ``enable_compiled_step`` now compiles the
+        forward with ``fullgraph=True`` -- a *static* no-graph-break /
+        no-host-sync guarantee enforced at compile time (a regression
+        *raises* during compile, not after hours of wasted GPU). That
+        supersedes this runtime profiler-based DtoH gate, which costs an
+        extra warm-up compile plus a Kineto-profiled compiled epoch on
+        every production run. Keep it only as an opt-in cross-check
+        under ``MODEL_DEBUG``; skip it (faster compiles, no double
+        warm-up) otherwise.
+        """
+        if not _util.MODEL_DEBUG:
+            return
+        if not torch.cuda.is_available():
+            return
+        # Profile at the real training batch size (CUDA-graph capture is
+        # shape-specialized -- validating a different shape is
+        # meaningless). Cheapness comes from the max_batches bound, not
+        # from shrinking the batch.
+        bs = max(1, int(batch_size))
+        # Bounded so a large corpus (MM_5M: 358k sentences) doesn't run
+        # a full epoch here; enough to clear first-touch lazy-init
+        # before the profiled pass.
+        pf_warmup, pf_profile = 4, 2
+        opt = m.getOptimizer(lr=lr)
+        # O1: ModelFactory.run now calls m.enable_compiled_step() before
+        # this, so runBatch routes through the torch.compiled callable.
+        # This pre-flight therefore profiles the COMPILED step. (Prior
+        # 58/430 cudaMemcpyDtoH figures were measured fully eager --
+        # torch.compile was a no-op then -- and are moot. Re-measured
+        # after the non-grammar break-elimination program.)
+        m._preflight_active = True
+        try:
+            # Warm-up so first-touch lazy-init syncs aren't counted as
+            # steady state (mirrors test_brick_no_sync).
+            m.runEpoch(optimizer=opt, batchSize=bs, split="train",
+                       max_batches=pf_warmup)
+            with torch_profile(activities=[ProfilerActivity.CPU,
+                                           ProfilerActivity.CUDA]) as prof:
+                m.runEpoch(optimizer=opt, batchSize=bs, split="train",
+                           max_batches=pf_profile)
+        finally:
+            m._preflight_active = False
+        dtoh = [e for e in prof.events()
+                if "memcpy" in e.name.lower() and "dtoh" in e.name.lower()]
+        if dtoh:
+            raise RuntimeError(
+                f"Brick pre-flight FAILED: runEpoch issued {len(dtoh)} "
+                f"cudaMemcpyDtoH event(s) -- the brick body is not "
+                f"CUDA-graph-capture-ready. Substantial training is "
+                f"aborted to avoid wasting GPU on a non-capturable run. "
+                f"Example events: {[e.name for e in dtoh[:5]]}. Profile "
+                f"and eliminate the host syncs (see "
+                f"test/test_brick_no_sync.py and "
+                f"doc/plans/2026-04-27-brick-vectorization-and-legacy-"
+                f"removal-handoff.md §6), or train on CPU/MPS.")
+        TheMessage("[brick] pre-flight OK: 0 cudaMemcpyDtoH in runEpoch")
+
+    @staticmethod
     def run(config_path):
         """Main entry point -- create, train, and evaluate a model from XML config.
 
@@ -5165,7 +5486,11 @@ class ModelFactory:
         m, _ = BaseModel.from_config(config_path, data=TheData)
         TheMessage(f"Device: {TheDevice}")
 
-        m = compile(m)
+        # O1: `compile(m)` on the module is a no-op here -- `m.run()`
+        # delegates to the eager `_orig_mod`, so the compiled callable
+        # never ran. Compile the per-batch forward callable and invoke
+        # it from runBatch instead (eager streaming stays outside).
+        m.enable_compiled_step()
 
         def _t(key, default=None):
             return trn.get(key, default)
@@ -5174,6 +5499,14 @@ class ModelFactory:
             return dat.get(key, default)
 
         num_epochs = int(os.environ.get("BASIC_NUM_EPOCHS", _t("numEpochs", 3)))
+
+        # CUDA-graph-capture pre-flight: gates ALL training entry (the
+        # profiled path and the normal path) for every model run via
+        # train.py. Hard-aborts before substantial training if the
+        # brick body still issues host syncs. CUDA-only no-op elsewhere.
+        ModelFactory._brick_preflight(
+            m, _t("batchSize", 10), _t("learningRate", 0.01))
+
         do_profile = os.environ.get("BASIC_PROFILE", "").lower() in ("1", "true") or _t("profile", False)
         if do_profile:
             with torch_profile(

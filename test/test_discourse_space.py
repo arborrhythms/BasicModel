@@ -88,12 +88,17 @@ class TestArmaUnit(_DiscourseTestBase):
         """
         self.assertEqual(self.layer.sentence_dim, self.n_dim)
 
-    def test_observe_pushes_and_returns_none_on_cold_start(self):
+    def test_observe_pushes_and_returns_zero_on_cold_start(self):
         """First observe primes the ring; no AR prediction to score
-        against on the first sentence, so the loss is None."""
+        against on the first sentence. Returns a training-neutral 0.0
+        tensor (the prior ``None`` sentinel required a
+        ``bool(primed.any())`` host gate + boolean-mask gather, i.e. a
+        per-step cudaMemcpyDtoH; the masked form returns zero instead --
+        diff is exactly zero so it carries no gradient)."""
         s = torch.randn(2, self.n_symbols, self.n_dim)
         loss = self.layer.observe(s)
-        self.assertIsNone(loss)
+        self.assertIsNotNone(loss)
+        self.assertEqual(float(loss.detach()), 0.0)
         self.assertEqual(self.layer._s_count.tolist(), [1, 1])
 
     def test_observe_accumulates_loss_after_first_step(self):
@@ -206,10 +211,13 @@ class TestBackCompatShims(_DiscourseTestBase):
     def test_snapshot_alias_calls_observe(self):
         """The ``snapshot`` shim accepts the legacy ``(s, w)`` signature
         and just routes to ``observe`` (w_tensor is ignored)."""
-        # First snapshot -- primes the ring, returns None loss.
+        # First snapshot -- primes the ring; cold-start loss is the
+        # training-neutral 0.0 tensor (see
+        # test_observe_pushes_and_returns_zero_on_cold_start).
         loss = self.layer.snapshot(
             torch.randn(1, 4, 3), torch.zeros(1, 2, 3))
-        self.assertIsNone(loss)
+        self.assertIsNotNone(loss)
+        self.assertEqual(float(loss.detach()), 0.0)
         self.assertEqual(int(self.layer._s_count[0].item()), 1)
 
     def test_contrastive_loss_alias_returns_arma_mse(self):

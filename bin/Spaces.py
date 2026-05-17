@@ -552,7 +552,15 @@ class WhatEncoding(Encoding):
         ``nWhat - 1`` bytes are truncated; a trailing 0 byte terminates
         each slot.
         """
-        buf = torch.zeros(batch, nObj, nWhat, dtype=torch.long, device=device)
+        # Build on the HOST: the per-byte writes below into a *device*
+        # tensor would each be a synchronizing H2D. `device='cpu'` is
+        # explicit so a default-device mode can't place it on the GPU;
+        # the buffer is staged to the device in ONE synchronous copy
+        # (correct + race-free -- a non_blocking copy of an ephemeral
+        # pinned buffer corrupts data when the source is freed before
+        # the transfer lands; see memory / pinmem guide).
+        buf = torch.zeros(batch, nObj, nWhat, dtype=torch.long,
+                          device='cpu')
         for b, row in enumerate(tokens_per_batch):
             for i in range(min(len(row), nObj)):
                 text = row[i]
@@ -561,7 +569,7 @@ class WhatEncoding(Encoding):
                 raw = text.encode('utf-8')[: nWhat - 1]
                 for j, byte in enumerate(raw):
                     buf[b, i, j] = byte
-        return buf
+        return buf.to(device)
 
     def decode_tokens(self, buf):
         """Unpack a [B, N, nWhat] null-terminated byte buffer into strings.
@@ -571,11 +579,18 @@ class WhatEncoding(Encoding):
         """
         batch = buf.shape[0]
         n_obj = buf.shape[1]
+        # One bulk device->host copy for the whole [B, N, nWhat] buffer
+        # instead of B*N per-slot ``.tolist()`` calls. Each per-slot
+        # ``buf[b, n].tolist()`` is a separate cudaMemcpyDtoH; a single
+        # ``buf.tolist()`` is one transfer of identical data and keeps
+        # the brick body's host-sync count flat in B*N (critical for
+        # the CUDA-graph-capture contract -- see test_brick_no_sync).
+        buf_rows = buf.tolist()
         out = []
         for b in range(batch):
             row = []
             for n in range(n_obj):
-                bytes_row = buf[b, n].tolist()
+                bytes_row = buf_rows[b][n]
                 try:
                     end = bytes_row.index(0)
                 except ValueError:
@@ -585,6 +600,43 @@ class WhatEncoding(Encoding):
                 else:
                     row.append(
                         bytes(bytes_row[:end]).decode('utf-8', errors='replace'))
+            out.append(row)
+        return out
+
+    def tokens_to_decoded(self, tokens_per_batch, batch, nObj, nWhat):
+        """Host-side equivalent of ``decode_tokens(encode_tokens(...))``.
+
+        Returns the exact ``list[list[str]]`` that
+        ``decode_tokens(encode_tokens(tokens_per_batch, batch, nObj,
+        nWhat, dev))`` would produce, computed purely on the host with
+        **no tensor / no device round-trip**. The lexer already has the
+        token strings on the host (``InputSpace._lex_batch``); carrying
+        this forward lets ``PerceptualSpace._embed`` skip the
+        ``decode_tokens`` ``buf.tolist()`` GPU->host sync (residual B,
+        doc/BrickHostSyncStatus.md) while staying bit-identical -- it
+        reproduces ``encode_tokens``'s ``nWhat-1`` UTF-8 truncation and
+        the null-terminated ``decode`` (including the rare embedded-NUL
+        early stop), so codebook OOV keys / indices are unchanged.
+        """
+        out = []
+        for b in range(batch):
+            row_in = tokens_per_batch[b] if b < len(tokens_per_batch) else []
+            row = []
+            for i in range(nObj):
+                text = row_in[i] if i < len(row_in) else ""
+                if not text:
+                    row.append("")
+                    continue
+                raw = text.encode('utf-8')[: nWhat - 1]
+                try:
+                    end = raw.index(0)
+                except ValueError:
+                    end = len(raw)
+                if end == 0:
+                    row.append("")
+                else:
+                    row.append(
+                        bytes(raw[:end]).decode('utf-8', errors='replace'))
             out.append(row)
         return out
 class EventEncoding(Encoding):
@@ -852,21 +904,27 @@ class Basis(nn.Module):
         # refer to a single memory location".
         flat = snapped[:, :, :nWhat].reshape(-1, nWhat).clone()
         nonzero = flat.abs().sum(dim=1) >= 1e-8
-        if torch.any(nonzero):
-            if self.unit_ball:
-                scores = _wrapped_mse_score(
-                    flat[nonzero].unsqueeze(1),
-                    weight[:, :nWhat].unsqueeze(0),
-                )
-            else:
-                scores = F.cosine_similarity(
-                    flat[nonzero].unsqueeze(1),
-                    weight[:, :nWhat].unsqueeze(0),
-                    dim=2,
-                )
-            idx = scores.argmax(dim=1)
-            flat[nonzero] = weight[idx, :nWhat]
-            snapped[:, :, :nWhat] = flat.reshape(snapped.shape[0], snapped.shape[1], nWhat)
+        # No ``if torch.any(nonzero)`` guard: every op below already
+        # masks via ``flat[nonzero]``, so an all-zero ``flat`` makes the
+        # block an empty-tensor no-op (``snapped`` returned unchanged) --
+        # bit-identical to the guarded version in all cases (all-zero /
+        # mixed / all-nonzero), minus the ``torch.any().__bool__`` host
+        # sync that broke the brick CUDA-graph-capture contract
+        # (test_brick_no_sync).
+        if self.unit_ball:
+            scores = _wrapped_mse_score(
+                flat[nonzero].unsqueeze(1),
+                weight[:, :nWhat].unsqueeze(0),
+            )
+        else:
+            scores = F.cosine_similarity(
+                flat[nonzero].unsqueeze(1),
+                weight[:, :nWhat].unsqueeze(0),
+                dim=2,
+            )
+        idx = scores.argmax(dim=1)
+        flat[nonzero] = weight[idx, :nWhat]
+        snapped[:, :, :nWhat] = flat.reshape(snapped.shape[0], snapped.shape[1], nWhat)
         return snapped
 
     def norm(self, x):
@@ -1876,7 +1934,13 @@ class Codebook(Basis):
             self.addVectors(max(self.nVectors, input.shape[1]))
         x = input
         batch = x.shape[0]
-        act = torch.zeros([batch, self.codebookSize], device=TheDevice.get())
+        # Derive device from the live input tensor, not ``TheDevice.get()``:
+        # calling the device accessor inside the traced codebook forward
+        # trips ``torch._device.__torch_function__`` with an arg dynamo
+        # cannot proxy ("Failed to convert args/kwargs to proxy"). ``x``
+        # is already on the right device; mirrors the ``best_err``
+        # ``device=err.device`` idiom a few lines down.
+        act = torch.zeros([batch, self.codebookSize], device=x.device)
         if self.customVQ:
             flat = torch.reshape(x, [-1, self.nDim])
             quantized, indices, _ = self.quantize(flat)
@@ -3520,6 +3584,24 @@ class SubSpace(nn.Module):
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
 
+    def attach_wordSpace(self, wordSpace):
+        """Wire the model's shared WordSpace as a non-Module pointer.
+
+        Mirrors ``Space.attach_wordSpace`` (same rationale, same
+        idiom): stored via ``object.__setattr__`` so the WordSpace
+        ``nn.Module`` is NOT registered as a child of this SubSpace.
+        Plain ``self.wordSpace = ws`` enters ``nn.Module.__setattr__``,
+        registers WordSpace as a submodule, and creates a
+        ``subspace -> wordSpace -> ... -> subspace`` cycle that makes
+        ``model.to(device)`` recurse infinitely (verified:
+        ``RecursionError``). This is the project's existing convention
+        for non-owning back-references (cf. ``Space.attach_wordSpace``,
+        the ``_model`` back-ref). Called ONCE eagerly at model build
+        for every persistent subspace; ``copy_context`` no longer
+        touches ``wordSpace`` (it is build-stable, never reassigned).
+        """
+        object.__setattr__(self, 'wordSpace', wordSpace)
+
     def copy_context(self, other):
         """Adopt cross-stage/cross-forward state from ``other``.
 
@@ -3535,10 +3617,23 @@ class SubSpace(nn.Module):
         ``stem_embedded``). These are stage-routing flags whose value
         is set by the stem and read by ``runBatch``; propagating them
         through ``copy_context`` keeps the contract explicit.
+
+        ``wordSpace`` is deliberately NOT copied here. It is the model's
+        single, build-stable WordSpace; ``copy_context`` only ever
+        re-assigned the same object every call. Assigning a Module
+        (``WordSpace`` is a ``Space``/``nn.Module``) to this
+        ``nn.Module`` enters ``nn.Module.__setattr__``'s submodule-
+        registration / ``remove_from`` path, which dynamo cannot trace
+        -> hard error under ``fullgraph=True`` at all ~14 pipeline
+        ``copy_context`` sites. Instead it is stamped ONCE, eagerly, at
+        model build (``BasicModel`` wires ``space.subspace.wordSpace``
+        for every space), so it is already present and never reassigned
+        inside the traced forward. The other four are plain values
+        (Error / dict / tensor / bool) that change per batch and do not
+        trip Module registration.
         """
         if other is None:
             return
-        self.wordSpace = other.wordSpace
         self.errors = other.errors
         self.serial_cache = other.serial_cache
         self.valid_mask = other.valid_mask
@@ -4775,6 +4870,17 @@ class SubSpace(nn.Module):
 
         # -- Range check (normalize=False) ----------------------------
         if not normalize:
+            # Debug-only validation: the finite/range check below has no
+            # functional effect (it asserts or warns, then returns), but
+            # forces a host sync every call -- isfinite().all() __bool__
+            # plus min()/max().item() are each a cudaMemcpyDtoH, which
+            # breaks the brick CUDA-graph-capture contract
+            # (test_brick_no_sync). Gate behind MODEL_DEBUG, mirroring
+            # BaseModel._assert_finite_train_state and the runBatch
+            # finite-loss guard; NaN/range bugs still surface under
+            # MODEL_DEBUG runs and via downstream finite guards.
+            if not util.MODEL_DEBUG:
+                return
             strict = not TheXMLConfig.get("architecture.ergodic")
             xd = x.detach()
             # Non-finite check
@@ -5922,7 +6028,21 @@ class InputSpace(Space):
         if isinstance(inputBatch, list):
             tensors = [self.data.stringTensor(s) if isinstance(s, str) else s
                        for s in inputBatch]
-            return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
+            host = torch.stack(tensors, dim=0).unsqueeze(1)
+            # Stash the host copy (consumed once in _lex_batch) so the
+            # lexer's _to_text `.tolist()` is a CPU op, not a
+            # cudaMemcpyDtoH (residual A). It is exactly the tensor that
+            # becomes inputTensor via `.to(device)`, so lexing it is
+            # byte-identical to lexing the device copy.
+            self._host_input_slab = host
+            # Synchronous H2D: correct and race-free. (A non_blocking
+            # copy of this ephemeral pinned buffer corrupts the GPU
+            # data when `host` is freed before the transfer lands --
+            # the NaN source; see memory / pinmem guide. Eliminating
+            # this sync from the captured region is the job of the
+            # compile-scoped-to-model architecture, not async tricks.)
+            return host.to(TheDevice.get())
+        self._host_input_slab = None  # no host origin -> device fallback
         return inputBatch  # already [B, D, 1] and on device after toDevice()
 
     def set_word_space(self, ws):
@@ -5969,6 +6089,20 @@ class InputSpace(Space):
         vocab = self._peer_perceptual.vocabulary
         dev = TheDevice.get()
 
+        # Lex the *host* byte slab when the byte cursor staged one
+        # (consumed once). It is byte-identical to the device `input`
+        # (runEpoch builds `input = host_slab.to(device,int8)
+        # .unsqueeze(1)`; `_to_text` masks `& 0xFF` so int8/uint8
+        # agree) and carries the same shape, so every line below is
+        # unchanged -- but `_token_stream`/`_to_text`'s `.tolist()` is
+        # now a CPU op, not a cudaMemcpyDtoH (residual A,
+        # doc/BrickHostSyncStatus.md). where_idx/when_idx/what_buf are
+        # still built on `dev` for downstream tensor consumers.
+        host_slab = getattr(self, '_host_input_slab', None)
+        if host_slab is not None:
+            self._host_input_slab = None  # consume once
+            input = host_slab
+
         if input.dim() == 3:
             input = input.squeeze(1)
         if input.dim() == 1:
@@ -5988,7 +6122,15 @@ class InputSpace(Space):
             input = input[..., :nObj]
 
         tokens_per_batch = []
-        where_idx = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+        # Build where_idx on the HOST: it is filled element-by-element
+        # from the lexer's Python int offsets below; per-element writes
+        # into a *device* tensor are each a synchronizing H2D (and break
+        # CUDA-graph capture). `device='cpu'` is explicit so a
+        # default-device mode can't place it on the GPU (same trap as
+        # stringTensor). Staged to the device once, async, after the
+        # loop. when_idx is a pure device arange (no host writes).
+        where_idx = torch.zeros(batch, nObj, dtype=torch.long,
+                                device='cpu')
         when_idx = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1).contiguous()
 
         for b in range(batch):
@@ -6015,10 +6157,20 @@ class InputSpace(Space):
             for i in range(n_tokens, nObj):
                 where_idx[b, i] = final_offset + (i - n_tokens)
 
+        # Single SYNCHRONOUS host->device stage for the host-built
+        # where_idx (correct + race-free; non_blocking on an ephemeral
+        # pinned buffer corrupts data when freed pre-transfer).
+        where_idx = where_idx.to(dev)
+
         what_buf = self.subspace.whatEncoding.encode_tokens(
             tokens_per_batch, batch, nObj, nWhat, dev)
+        # Host-side decode-equivalent carried forward so
+        # PerceptualSpace._embed skips the decode_tokens GPU->host sync
+        # (residual B). Bit-identical to decode_tokens(what_buf).
+        host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
+            tokens_per_batch, batch, nObj, nWhat)
 
-        return what_buf, where_idx, when_idx
+        return what_buf, where_idx, when_idx, host_tokens
 
     def shuffle(self):
         """Shuffle.
@@ -6215,10 +6367,11 @@ class InputSpace(Space):
             # into subspace.when.W. PerceptualSpace decodes the buffer
             # and owns all codebook work (OOV, insert, index resolution,
             # embedding lookup, chunking).
-            what_buf, where_idx, when_idx = self._lex_batch(input)
+            what_buf, where_idx, when_idx, host_tokens = self._lex_batch(input)
             self.subspace.what.setW(what_buf)
             self.subspace.where.setW(where_idx)
             self.subspace.when.setW(when_idx)
+            self.subspace._host_tokens = host_tokens
             self._forward_input = None
             return self.subspace
 
@@ -6487,6 +6640,12 @@ class PerceptualSpace(Space):
                     "PerceptualSpace.chunking='none' requires "
                     "<modelType>embedding</modelType>")
         self._recovered_input = None
+        # Deferred word-recovery decode (set by reverse(); see
+        # _materialize_recovered_input). reverse() stashes the refs
+        # here instead of decoding eagerly -- the decode is report-only
+        # and its per-word .item() is a cudaMemcpyDtoH that breaks the
+        # brick CUDA-graph-capture contract.
+        self._recovered_input_thunk = None
         self._embedded_input = None
 
         # Phase C (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
@@ -6570,6 +6729,16 @@ class PerceptualSpace(Space):
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
+        # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
+        # (``_embed_bpe_gpu``) is bit-identical to the trie path
+        # (test/bpe_gpu_equiv.py) but is NOT the production default --
+        # measured slower at this scale and it does not, by itself,
+        # unlock CUDAGraph capture (other implicit syncs gate that).
+        # Set ``perceptualSpace._bpe_gpu_enabled = True`` (with a frozen
+        # vocab, ``word_learning <= 0``) to route through it; default
+        # off keeps production on the verified trie path. Explicit
+        # attribute (no getattr default) so the toggle is discoverable.
+        self._bpe_gpu_enabled = False
         # Auto-load a previously-saved BPE codebook from the same
         # ``.kv`` artifact that hosts the Lexicon. The artifact format
         # (defined in :mod:`embed`) carries Lexicon + BPE side-by-side
@@ -6776,10 +6945,19 @@ class PerceptualSpace(Space):
         nObj = self.outputShape[0]
         codebook = self.subspace.what  # Embedding (the lexicon lives here)
 
-        # Decode byte buffer -> token text per slot, via the upstream
-        # subspace's WhatEncoding (single source of truth for the
-        # null-terminated layout).
-        batch_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        # Token text per slot. InputSpace._lex_batch already had these
+        # strings on the host and stashed the (bit-identical)
+        # decode-equivalent on the subspace; use it to skip the
+        # decode_tokens ``buf.tolist()`` GPU->host sync (residual B,
+        # doc/BrickHostSyncStatus.md). Fall back to decoding the byte
+        # buffer for callers that set what.W without host tokens
+        # (internal _embed reuse, direct-construction tests).
+        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
+        if host_tokens is not None:
+            batch_tokens = host_tokens
+        else:
+            batch_tokens = upstream_vspace.whatEncoding.decode_tokens(
+                what_buf)
         max_tokens_seen = 0
         for row in batch_tokens:
             # Largest index of a non-empty slot, plus one (0 if all empty).
@@ -6832,8 +7010,11 @@ class PerceptualSpace(Space):
                 text = row[n]
                 if text:
                     indices_2d[b][n] = codebook._token_to_index(text)
+        # Build on the HOST then stage once, SYNCHRONOUSLY (correct +
+        # race-free; non_blocking on an ephemeral pinned buffer
+        # corrupts data when freed pre-transfer -- the NaN source).
         what_indices = torch.tensor(
-            indices_2d, dtype=torch.long, device=dev)
+            indices_2d, dtype=torch.long, device='cpu').to(dev)
 
         # where / when come straight from the upstream buffer.
         where_raw = upstream_vspace.materialize(mode="where")
@@ -6865,9 +7046,83 @@ class PerceptualSpace(Space):
         return self.subspace
 
     def _embed_bpe(self, upstream_vspace):
-        """BPE chunking path. Decode the upstream byte buffer, BPE-tokenize
-        via ChunkLayer, group sub-tokens by whitespace word-boundary, look up
-        each byte-tuple chunk in the codebook, then MAX-fuse sub-token
+        """Dispatch BPE embedding: GPU tensor tokenizer when the vocab
+        is FROZEN (``word_learning <= 0`` -- the CPU-pretrain -> freeze
+        -> GPU-train workflow), else the legacy trie walk.
+
+        The GPU path is zero host-sync (no ``byte_indices.tolist()``);
+        it is asserted bit-identical to the trie path by
+        ``test/bpe_gpu_equiv.py`` before being trusted. Any build/shape
+        problem falls back to the trie path (never silently wrong --
+        the fallback is the verified reference).
+        """
+        cl = self.chunk_layer
+        frozen = (bool(getattr(cl, "bpe", False))
+                  and int(getattr(cl, "word_learning", 0) or 0) <= 0)
+        # Opt-in/opt-out (``self._bpe_gpu_enabled``, default False --
+        # set in __init__). Bit-identical to the trie path but not the
+        # production default: measured slower at this scale and it does
+        # not by itself unlock CUDAGraph capture (other implicit syncs
+        # gate that). Kept gated for future perf work.
+        if frozen and self._bpe_gpu_enabled:
+            import bpe_gpu
+            try:
+                return self._embed_bpe_gpu(upstream_vspace)
+            except bpe_gpu._BPEGpuUnavailable:
+                pass  # fall through to the verified trie reference
+        return self._embed_bpe_trie(upstream_vspace)
+
+    def _embed_bpe_gpu(self, upstream_vspace):
+        """Frozen-vocab GPU tokenizer path: static tensor tables +
+        parallel longest-match + on-device greedy consumption +
+        tensor word-segmentation -> the same ``_bpe_emit`` tail. Zero
+        ``cudaMemcpyDtoH``. Raises ``_BPEGpuUnavailable`` if the static
+        tables cannot be built (caller falls back to the trie path).
+        """
+        import bpe_gpu
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_bpe_gpu: upstream subspace.what "
+                "is empty.")
+        byte_indices = ((what_buf[..., 0] if what_buf.dim() == 3
+                         else what_buf).long())
+        codebook = self.subspace.what
+        batch = what_buf.shape[0]
+        nObj = self.outputShape[0]
+        dev = TheDevice.get()
+        null_idx = codebook.wv.key_to_index.get("\x00", 0)
+
+        # Static tables: build ONCE per (frozen) vocab, cache. Rebuild
+        # only if the vocab size changed (frozen => never after build).
+        cl = self.chunk_layer
+        vsig = int(cl._next_id)
+        tab = getattr(self, "_bpe_static_tables", None)
+        if tab is None or tab.get("_vsig") != vsig:
+            try:
+                tab = bpe_gpu.build_static_tables(
+                    cl, codebook, byte_indices.device)
+            except AssertionError as e:
+                raise bpe_gpu._BPEGpuUnavailable(str(e))
+            tab["_vsig"] = vsig
+            self._bpe_static_tables = tab
+
+        best_id, best_len = bpe_gpu.gpu_longest_match(byte_indices, tab)
+        chunk_ids, tok_count = bpe_gpu.gpu_chunk_ids(
+            byte_indices, best_id, best_len)
+        sub_cb, sub_target, sub_pos, keep = bpe_gpu.segment_words(
+            chunk_ids, tok_count, tab, nObj)
+        return self._bpe_emit_gpu(
+            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            sub_cb, sub_target, sub_pos, keep)
+
+    def _embed_bpe_trie(self, upstream_vspace):
+        """Legacy trie-walk BPE path -- the verified reference and the
+        fallback for non-frozen (growing) vocab.
+
+        Decode the upstream byte buffer, BPE-tokenize via ChunkLayer,
+        group sub-tokens by whitespace word-boundary, look up each
+        byte-tuple chunk in the codebook, then MAX-fuse sub-token
         vectors within each word.  Emit one [nDim] vector per word.
 
         Implementation is **batch-flat**. The previous form built three
@@ -7024,6 +7279,20 @@ class PerceptualSpace(Space):
                     flat_word_seg.append(word_id)
                 word_id += 1
 
+        return self._bpe_emit(
+            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            flat_subtoken_idx, flat_word_seg, per_word_first,
+            per_word_b, per_word_slot, word_id)
+
+    def _bpe_emit(self, upstream_vspace, codebook, batch, nObj, dev,
+                  null_idx, flat_idx, flat_seg, per_word_first,
+                  per_word_b, per_word_slot, word_id):
+        """Shared tail for both _embed_bpe paths: gather codebook
+        vectors, segmented MAX-fuse per word, place at (b, slot), mux
+        where/when, setW. The 5 routing arrays may be Python lists
+        (trie path -> one H2D via ``as_tensor``) or already-on-device
+        tensors (GPU path -> ``as_tensor`` is a no-op, zero DtoH).
+        """
         # ---- Tensor materialization (no Python list-of-tensors) -----
         # Output tensors live on whatever device the codebook's
         # vectors currently sit on; gather + scatter respect that
@@ -7041,16 +7310,17 @@ class PerceptualSpace(Space):
             batch, nObj, nDim, dtype=vectors.dtype, device=target_device)
 
         if word_id > 0:
-            # Single H2D for all the routing ints.
-            flat_idx_t = torch.tensor(
-                flat_subtoken_idx, dtype=torch.long, device=target_device)
-            flat_seg_t = torch.tensor(
-                flat_word_seg, dtype=torch.long, device=target_device)
-            per_word_first_t = torch.tensor(
+            # ``as_tensor``: trie path passes Python lists (one H2D);
+            # GPU path passes device tensors (no-op -> zero DtoH).
+            flat_idx_t = torch.as_tensor(
+                flat_idx, dtype=torch.long, device=target_device)
+            flat_seg_t = torch.as_tensor(
+                flat_seg, dtype=torch.long, device=target_device)
+            per_word_first_t = torch.as_tensor(
                 per_word_first, dtype=torch.long, device=target_device)
-            per_word_b_t = torch.tensor(
+            per_word_b_t = torch.as_tensor(
                 per_word_b, dtype=torch.long, device=target_device)
-            per_word_slot_t = torch.tensor(
+            per_word_slot_t = torch.as_tensor(
                 per_word_slot, dtype=torch.long, device=target_device)
 
             # ONE gather: every sub-token's vector across the batch.
@@ -7072,6 +7342,17 @@ class PerceptualSpace(Space):
             what_indices[per_word_b_t, per_word_slot_t] = per_word_first_t
             word_active[per_word_b_t, per_word_slot_t] = 1.0
 
+        return self._bpe_finalize(
+            upstream_vspace, word_vectors, what_indices, word_active,
+            batch, nObj, dev)
+
+    def _bpe_finalize(self, upstream_vspace, word_vectors,
+                      what_indices, word_active, batch, nObj, dev):
+        """Shared tail of both BPE emitters: pull where/when from the
+        upstream buffer, set_forward_content, mux ``word_vectors`` with
+        the where/when encodings, ``setW`` the muxed event, stash the
+        BPE word mask. Identical for the trie and GPU paths -- they
+        differ only in how the [B,nObj,*] word arrays are built."""
         where_raw = upstream_vspace.materialize(mode="where")
         when_raw = upstream_vspace.materialize(mode="when")
         where_indices = (where_raw[:, :nObj].long()
@@ -7115,6 +7396,66 @@ class PerceptualSpace(Space):
         # back to this fresh unwindowed [B, N] mask.
         self._bpe_word_mask_flat = None
         return self.subspace
+
+    def _bpe_emit_gpu(self, upstream_vspace, codebook, batch, nObj, dev,
+                      null_idx, sub_cb, sub_target, sub_pos, keep):
+        """Static-shape GPU emitter: scatter the per-position
+        ``[B,T]`` segmentation into static ``[B*nObj]`` word buffers
+        (no dense word-id, no ``.item()``, no boolean compaction ->
+        zero DtoH). Produces the same [B,nObj,*] word arrays the trie
+        path builds, then the shared ``_bpe_finalize`` tail. Asserted
+        bit-identical to the trie path by test/bpe_gpu_equiv.py.
+        """
+        vectors = codebook.wv._vectors
+        tdev = vectors.device
+        nDim = self.nDim
+        BN = batch * nObj
+        flat_t = sub_target.reshape(-1).to(tdev)             # [B*T]
+        cb_safe = sub_cb.clamp(min=0).reshape(-1)            # -1 -> 0
+        gathered = vectors[cb_safe]                          # [B*T, nDim]
+
+        # Segmented MAX into [BN(+trash), nDim]; trash row B*nObj
+        # absorbs non-kept positions, then sliced off.
+        per_word_max = torch.full(
+            (BN + 1, nDim), float('-inf'),
+            dtype=vectors.dtype, device=tdev)
+        per_word_max.scatter_reduce_(
+            0, flat_t.unsqueeze(-1).expand(-1, nDim), gathered,
+            reduce='amax', include_self=True)
+
+        keep_f = keep.reshape(-1).to(torch.int64)
+        active_flat = torch.zeros(BN + 1, dtype=torch.int64, device=tdev)
+        active_flat.scatter_reduce_(
+            0, flat_t, keep_f, reduce='amax', include_self=True)
+        word_active = (active_flat[:BN].reshape(batch, nObj)
+                       .to(torch.float32))
+
+        word_max = per_word_max[:BN].reshape(batch, nObj, nDim)
+        word_vectors = torch.where(
+            word_active.unsqueeze(-1) > 0, word_max,
+            torch.zeros((), dtype=vectors.dtype, device=tdev))
+
+        # First sub-token (smallest token pos) per word: pack
+        # ``pos * K + cb`` so ``amin`` keeps the lowest-pos entry and
+        # ``% K`` recovers its codebook row. K > max codebook row.
+        K = int(vectors.shape[0]) + 1
+        BIG = (sub_pos.numel() + 1) * K
+        packed = torch.where(
+            keep, sub_pos.to(torch.int64) * K + sub_cb,
+            torch.full_like(sub_pos, BIG)).reshape(-1).to(tdev)
+        packed_min = torch.full((BN + 1,), BIG, dtype=torch.int64,
+                                device=tdev)
+        packed_min.scatter_reduce_(
+            0, flat_t, packed, reduce='amin', include_self=True)
+        first_cb = packed_min[:BN] % K
+        what_indices = torch.where(
+            packed_min[:BN] < BIG, first_cb,
+            torch.full_like(first_cb, null_idx)
+        ).reshape(batch, nObj)
+
+        return self._bpe_finalize(
+            upstream_vspace, word_vectors, what_indices, word_active,
+            batch, nObj, dev)
 
     def _chunk_key_to_latin1(self, byte_tuple):
         """Convert a byte-tuple key (e.g., (104, 101)) to its latin-1 string."""
@@ -7624,12 +7965,41 @@ class PerceptualSpace(Space):
         content_basis.setW(self.input)
         object_basis.setW(self.input)
         self.subspace.set_event(self.input)
-        self._recovered_input = content_basis.decode_reverse_meta(
-            self.input, subspace=self.subspace)
+        # Lazy: word recovery is report-only (reconstruct_data /
+        # reconstruct_to_buffer / get_recovered_word /
+        # _reconstructionReport) and never feeds the gradient, but its
+        # per-slot _nearest_idx().item() is a cudaMemcpyDtoH per word
+        # (64+/batch) that breaks the brick CUDA-graph-capture
+        # contract. Defer the decode to first consumer access (a no-op
+        # during pure training); the captured tensors are held by ref
+        # so the deferred result is bit-identical to the eager one.
+        self._recovered_input = None
+        self._recovered_input_thunk = (
+            content_basis, self.input, self.subspace)
         self.subspace.normalize("input", target="what", normalize=True)
+
+    def _materialize_recovered_input(self):
+        """Run the deferred reverse word-recovery decode on first access.
+
+        ``reverse()`` stashes ``(content_basis, input, subspace)`` on
+        ``_recovered_input_thunk`` instead of decoding eagerly (the
+        decode is report-only and its per-word ``.item()`` is a
+        ``cudaMemcpyDtoH`` that breaks the brick CUDA-graph-capture
+        contract). The first consumer triggers the actual decode here;
+        because the captured tensors are held by reference, the result
+        is bit-identical to the old eager path. A no-op during pure
+        training (no consumer ever fires -> 0 host syncs).
+        """
+        if (self._recovered_input is None
+                and self._recovered_input_thunk is not None):
+            cb, inp, sub = self._recovered_input_thunk
+            self._recovered_input = cb.decode_reverse_meta(inp, subspace=sub)
+            self._recovered_input_thunk = None
+        return self._recovered_input
 
     def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on PerceptualSpace."""
+        self._materialize_recovered_input()
         if self._recovered_input is None:
             raise RuntimeError("reconstruct_data() called before reverse()")
         return self.subspace.what.reconstruct_data(self._recovered_input, text=text)
@@ -7642,6 +8012,7 @@ class PerceptualSpace(Space):
         covers ``buf_size`` so the sin/cos decode doesn't alias near
         angle=0 and stamp tokens at spurious offsets.
         """
+        self._materialize_recovered_input()
         if self._recovered_input is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
         # WhereEncoding periodicity must cover the render buffer. When
@@ -7664,6 +8035,7 @@ class PerceptualSpace(Space):
 
     def get_recovered_word(self, batch_idx, position):
         """Return one recovered token from the last PerceptualSpace._reverse_text()."""
+        self._materialize_recovered_input()
         if self._recovered_input is None:
             return None
         return self.subspace.what.get_recovered_word(
@@ -8366,6 +8738,22 @@ class ConceptualSpace(Space):
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
 
+        # Persistent CS->PS event carrier, owned + allocated ONCE here
+        # (eager, pre-compile). `forward` reuses it via `set_event`
+        # instead of constructing a fresh `SubSpace(...)` + `copy_context`
+        # every call -- those were torch.compile graph breaks (recon
+        # #5/6/7: SubSpace ctor / copy_context are untraceable object
+        # plumbing). The consumer (`PerceptualSpace.forward`) only reads
+        # it via `.is_empty()` / `.materialize()`, never its context, so
+        # dropping `copy_context` here is safe (it is never the returned
+        # vspace, so the pipeline copy_context invariant does not apply).
+        # `set_event` is shape-agnostic, so the (1,1) init shape is just
+        # a placeholder overwritten per call. See
+        # doc/plans/2026-05-16-compiled-step-boundary-design.md.
+        self._subspaceForPS = SubSpace(
+            inputShape=(1, 1), outputShape=(1, 1),
+            nInputDim=1, nOutputDim=1)
+
     def _build_what_basis(self):
         """Bivector regime: build a ``ProjectionBasis`` on ``.what`` so
         ``forward(input)`` returns the per-prototype catuskoti bivector
@@ -8634,7 +9022,13 @@ class ConceptualSpace(Space):
         #     lift belongs here). PerceptualSpace then applies its own
         #     pi_concept fold + pi_concept.nInput shape gate (non-bivector
         #     output falls the gate and PS uses pi_input alone).
-        self._subspaceForSS = vspace
+        # Non-owning consumer-view back-ref. ``object.__setattr__``: a
+        # plain ``self._subspaceForSS = vspace`` (vspace is a SubSpace
+        # = nn.Module) enters nn.Module.__setattr__ and ADDS a
+        # ``self._modules`` entry on first forward, so the dynamo guard
+        # ``len(cs._modules)==8`` fails -> a forced recompile (measured
+        # unique_graphs=2). __dict__ storage keeps _modules constant.
+        object.__setattr__(self, "_subspaceForSS", vspace)
         cs_what = self.subspace.what
         ev = vspace.materialize(mode="event")
         if (self._bivector_output and isinstance(cs_what, ProjectionBasis)
@@ -8644,17 +9038,23 @@ class ConceptualSpace(Space):
         else:
             lifted = ev
         if lifted is not None and lifted.dim() == 3:
-            forPS = SubSpace(
-                inputShape=(lifted.shape[1], lifted.shape[2]),
-                outputShape=(lifted.shape[1], lifted.shape[2]),
-                nInputDim=lifted.shape[2], nOutputDim=lifted.shape[2])
-            forPS.copy_context(vspace)
-            forPS.set_event(lifted)
-            self._subspaceForPS = forPS
+            # Reuse the owned persistent carrier (allocated once in
+            # __init__): no per-call SubSpace ctor / copy_context
+            # (recon graph-breaks #5/6/7). set_event is a traceable
+            # tensor write; the consumer (PerceptualSpace.forward) only
+            # reads it via .is_empty()/.materialize(), never its
+            # context, and it is never the returned vspace -- so
+            # dropping copy_context preserves the pipeline invariant.
+            self._subspaceForPS.set_event(lifted)
         else:
-            self._subspaceForPS = SubSpace(
+            # Degenerate edge (no concept event); not the recon/compiled
+            # hot path -- keep the original tiny-empty fallback.
+            # object.__setattr__: same _modules-guard reason as
+            # _subspaceForSS above (avoid recompile if this branch is
+            # ever hit under compile).
+            object.__setattr__(self, "_subspaceForPS", SubSpace(
                 inputShape=(0, 1), outputShape=(0, 1),
-                nInputDim=1, nOutputDim=1)
+                nInputDim=1, nOutputDim=1))
         return vspace
 
     def reverse(self, subspace):
@@ -8714,13 +9114,22 @@ class ConceptualSpace(Space):
             if y_post is not None and y_post.dim() == 3:
                 if y_post.shape[-1] != self.subspace.getEncodedInputSize():
                     y = self._sigma_percept_reverse(y_post)
-                elif (y_post.detach().abs().max().item()
-                      > 1.0 + 1e-2):
-                    # Dispatcher skipped — apply the substrate fold
-                    # reverse explicitly to enforce ``[-1, 1]``.
-                    y = self._sigma_percept_reverse(y_post)
                 else:
-                    y = y_post
+                    # Dispatcher may have short-circuited, leaving y_post
+                    # slightly outside [-1, 1] after the LDU inverse; the
+                    # substrate fold reverse re-enforces the range. The
+                    # old `abs().max().item() > 1.01` host bool chose
+                    # fold-vs-passthrough -- a GPU->host sync. Compute the
+                    # fold and select with an on-device 0-dim bool gate
+                    # (no `.item()`); `torch.where` with a scalar
+                    # condition picks all-or-nothing, so this is
+                    # bit-identical to the old branch in every case
+                    # (the doc even sanctions an unconditional fold here;
+                    # selecting is strictly safer). See
+                    # doc/BrickHostSyncStatus.md residual E.
+                    folded = self._sigma_percept_reverse(y_post)
+                    over_range = y_post.detach().abs().max() > 1.0 + 1e-2
+                    y = torch.where(over_range, folded, y_post)
             else:
                 y = y_post
         if self._right_half_dim > 0 and y is not None and y.dim() == 3:
@@ -8743,6 +9152,38 @@ class ConceptualSpace(Space):
 # hyperrectangle-volume formula; this constant remains for
 # backward-compat with any consumer that still keys on it.
 _DEFAULT_SYMBOL_SIGMA = 0.1
+
+
+# VQ chunk-size memory budget. This is host-only config (a Python int
+# used to size a chunk loop), but its old body did `str(TheDevice.get())`
+# -- `DeviceHandle` is a `str` subclass with a C-implemented `__str__`
+# that torch.compile/dynamo cannot trace (graph break, recon #6). It is
+# a per-process constant, so compute it ONCE eagerly at import (where
+# the C str is fine) and have the traced staticmethod return the cached
+# int -- a constant dynamo bakes in, no device-str in the traced path.
+_VQ_CHUNK_BUDGET = None
+
+
+def _compute_vq_chunk_budget():
+    global _VQ_CHUNK_BUDGET
+    if _VQ_CHUNK_BUDGET is not None:
+        return _VQ_CHUNK_BUDGET
+    device = str(TheDevice.get())          # eager-only (import time)
+    if 'cuda' in device:
+        try:
+            props = torch.cuda.get_device_properties(device)
+            _VQ_CHUNK_BUDGET = max(256 << 20, props.total_mem // 4)
+            return _VQ_CHUNK_BUDGET
+        except Exception:
+            pass
+    if 'mps' in device or 'cuda' in device:
+        _VQ_CHUNK_BUDGET = 4 << 30
+    else:
+        _VQ_CHUNK_BUDGET = 2 << 30
+    return _VQ_CHUNK_BUDGET
+
+
+_compute_vq_chunk_budget()                  # prime eagerly at import
 
 
 class SymbolicSpace(Space):
@@ -8835,7 +9276,13 @@ class SymbolicSpace(Space):
         """
         nOutput = int(self.outputShape[0])
         nDim = int(self.outputShape[1])
-        return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
+        # No explicit `device=TheDevice.get()`: that passes a
+        # `DeviceHandle` (C-str subclass) into a traced factory call ->
+        # torch.compile graph break (recon #0; same root cause as #6).
+        # The default-device mode places it correctly and the caller
+        # (`_forward_per_stage`) immediately `.to(inputData.device)`s
+        # it (a real torch.device) -- behaviour-identical, traceable.
+        return torch.zeros(int(batch), nOutput, nDim)
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
         """Initialize SymbolicSpace; allocate state for the class contract.
@@ -9435,20 +9882,15 @@ class SymbolicSpace(Space):
         many rows are processed per matmul.  Larger budgets mean fewer
         sequential chunks -- critical for AR batches where N can
         reach hundreds of thousands.
+
+        Returns the import-time-memoized constant
+        (``_compute_vq_chunk_budget``); no ``str(DeviceHandle)`` in the
+        traced path (was recon graph-break #6 -- C-str on a str
+        subclass). Per-process constant, so this is exact, not an
+        approximation.
         """
-        device = str(TheDevice.get())
-        if 'cuda' in device:
-            try:
-                props = torch.cuda.get_device_properties(device)
-                return max(256 << 20, props.total_mem // 4)
-            except Exception:
-                pass
-        # MPS (Apple Silicon) or ROCm without CUDA properties:
-        # use 4 GiB -- safe on any >=16 GB unified/GPU memory system.
-        if 'mps' in device or 'cuda' in device:
-            return 4 << 30
-        # CPU fallback
-        return 2 << 30
+        return (_VQ_CHUNK_BUDGET if _VQ_CHUNK_BUDGET is not None
+                else _compute_vq_chunk_budget())
 
     def _nearest_symbol_target(self, predicted):
         """Nearest codebook symbols as detached residual targets.
@@ -10312,7 +10754,9 @@ class OutputSpace(Space):
         See class docstring for the operation contract.
         """
         if isinstance(outputBatch, list):
-            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
+            # Synchronous H2D (mirror of prepInput): correct + race-free.
+            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(
+                TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     def forward(self, subspace):
         """Acting: project symbols to task output.

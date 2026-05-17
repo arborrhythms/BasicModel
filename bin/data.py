@@ -1135,7 +1135,12 @@ class Data():
         """
         # Encode to ASCII, replacing non-ASCII chars (smart quotes, accents, etc.)
         ascii_values = list(string.encode('ascii', errors='replace'))[:self.inputLength]
-        tensor = torch.tensor(ascii_values, dtype=torch.int8)
+        # Force CPU: this is a host string->bytes encode. A default-device
+        # mode (e.g. MPS) would otherwise place it on-device, so the
+        # lexer's host-token carry (residual A) would still round-trip
+        # through the GPU. Callers move to the device explicitly when
+        # they need it (prepInput stacks then `.to(device)`).
+        tensor = torch.tensor(ascii_values, dtype=torch.int8, device='cpu')
         if tensor.size(0) < self.inputLength:
             # Pad with NULL (0) -- input buffer is variable-length, null-terminated
             tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 0)

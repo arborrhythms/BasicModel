@@ -74,7 +74,7 @@
     <nOutputDim>2</nOutputDim>
     <nDim>128</nDim>
     <nVectors>8</nVectors> <!-- 512 -->
-    <codebook>false</codebook> <!-- true -->
+    <codebook>true</codebook> <!-- true -->
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>

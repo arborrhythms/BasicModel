@@ -5457,7 +5457,7 @@ class WordSpace(Space):
         are passed explicitly so WordSpace never needs a back-
         reference to the model.
         """
-        if self.truth_layer is None or len(self.truth_layer) == 0:
+        if self.truth_layer is None or self.truth_layer.is_empty():
             return total_loss
 
         # Luminosity is now a Mereology measure on the model itself.

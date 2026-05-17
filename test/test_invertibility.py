@@ -17,6 +17,7 @@ import Layers
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
+import util
 from util import TheDevice
 
 
@@ -492,6 +493,12 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
     Overlays test-specific values on top of model.xml defaults so that
     keys like 'syntax', etc. are always present.
     """
+    # TheXMLConfig is a process-wide singleton: a prior test that loaded
+    # a different model (e.g. data/MM_xor.xml sets <nInputDim>10</nInputDim>)
+    # leaves stale space keys that the partial _data[section].update() below
+    # does not clear. Reload model.xml so this overlay is deterministic
+    # regardless of test-file ordering.
+    Models.TheXMLConfig.load(util._defaults_xml)
     nWhere = objSize // 2 if objSize > 0 else 0
     nWhen = objSize - nWhere if objSize > 0 else 0
     nObjects = nObj * 6  # 6 spaces, each with nObj vectors

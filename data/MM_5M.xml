@@ -33,7 +33,7 @@
            nDim) or the per-stage chain re-sources from a narrower
            bivector handoff (the ``<bivectorOutput>true</...>`` path
            skips the wide concept-dim materialisation entirely). -->
-      <batchSize>8</batchSize>
+      <batchSize>64</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
@@ -87,7 +87,7 @@
     <nInput>1024</nInput>
     <nDim>1024</nDim>
     <nInputDim>8</nInputDim>
-    <nVectors>1024</nVectors>
+    <nVectors>65536</nVectors>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>true</codebook>

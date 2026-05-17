@@ -813,6 +813,8 @@ class PretrainModel:
             return None
 
         device = self.wv._vectors.device
+        # Synchronous H2D: correct + race-free (non_blocking on an
+        # ephemeral pinned buffer corrupts data when freed pre-transfer).
         idx = torch.tensor(word_indices, dtype=torch.long, device=device)
         N = len(word_indices)
 
@@ -844,6 +846,8 @@ class PretrainModel:
             return None
 
         device = self.wv._vectors.device
+        # Synchronous H2D: correct + race-free (non_blocking on an
+        # ephemeral pinned buffer corrupts data when freed pre-transfer).
         idx = torch.tensor(word_indices, dtype=torch.long, device=device)
         N = len(word_indices)
 
