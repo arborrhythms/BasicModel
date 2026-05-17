@@ -86,7 +86,7 @@
     <nOutput>10</nOutput>
     <nOutputDim>100</nOutputDim>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
   </ConceptualSpace>
 
@@ -102,7 +102,7 @@
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
   </SymbolicSpace>

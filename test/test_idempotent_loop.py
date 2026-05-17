@@ -49,9 +49,9 @@ def _make_codebook(D_C=4, V_S=4, invertible=True):
 
 def _cycle(cb, x):
     """One forward (project) + reverse (pseudo-inverse) cycle."""
-    bivec = cb.forward(x)               # [B, V_S, 2]
-    x_back = cb.reverse(bivec)          # [B, V_in, D_C]
-    return x_back, bivec
+    proj = cb.forward(x)               # [B, V_S, 1] signed DoT
+    x_back = cb.reverse(proj)          # [B, V_in, D_C]
+    return x_back, proj
 
 
 class TestIdempotentLoop(unittest.TestCase):
@@ -63,10 +63,13 @@ class TestIdempotentLoop(unittest.TestCase):
         x2, _ = _cycle(cb, x1)
         torch.testing.assert_close(x1, x0, atol=1e-5, rtol=1e-4)
         torch.testing.assert_close(x2, x1, atol=1e-5, rtol=1e-4)
-        # Bivector should be TRUE-corner for prototype 2: pos[2]=1,
-        # all other prototypes ≈ 0 (orthogonal in this codebook).
-        self.assertAlmostEqual(float(bivec1[0, 2, 0].item()), 1.0, places=5)
-        self.assertAlmostEqual(float(bivec1[0, 2, 1].item()), 0.0, places=5)
+        # Scalar projection (bivector retired): prototype 2 ≈ +1 (signed
+        # Degree-of-Truth, the TRUE corner), all other prototypes ≈ 0
+        # (orthogonal in this codebook).
+        dot = bivec1[0, :, 0]                          # [V_S] signed DoT
+        self.assertAlmostEqual(float(dot[2].item()), 1.0, places=5)
+        others = torch.cat([dot[:2], dot[3:]])
+        self.assertLess(float(others.abs().max().item()), 1e-5)
 
     def test_noisy_input_converges_in_one_cycle(self):
         """Noisy near-prototype input: cycle 1 strips off-span noise; cycle 2+ identity."""

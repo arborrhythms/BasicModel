@@ -286,7 +286,7 @@
     <!-- Codebook size; 0 means defer to nOutput. -->
     <nVectors>0</nVectors>
     <!-- Discrete (codebook) input values. -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
     <!-- Tokenization for text inputs: word | sentence | byte. -->
     <lexer>word</lexer>
   </InputSpace>
@@ -305,7 +305,7 @@
     <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
     <!-- Discrete (codebook) percepts; false = passthrough Tensor. -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
     <!-- Multi-token chunking strategy: lexicon | bpe. -->
     <chunking>lexicon</chunking>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
@@ -324,7 +324,7 @@
     <!-- Shared invertible layer for the modal mux / demux. -->
     <invertible>false</invertible>
     <!-- Codebook quantization on the modal output. -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
   </ModalSpace>
 
   <ConceptualSpace>
@@ -342,7 +342,7 @@
     <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
     <!-- Codebook quantization of concept directions. -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -360,7 +360,7 @@
     <nonlinear>true</nonlinear>
     <!-- Discrete symbol prototypes (required for the full symbolic
          pipeline). -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
     <!-- Bitonic-sort regularizer on the codebook ordering. -->
     <sortNetwork>false</sortNetwork>
     <!-- Sort-network depth; 0 disables. -->
@@ -393,7 +393,7 @@
     <!-- Invertible projection (rarely set on OutputSpace). -->
     <invertible>false</invertible>
     <!-- Codebook quantization of the output. -->
-    <codebook>false</codebook>
+    <codebook>none</codebook>
     <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
     <nonlinear>false</nonlinear>
   </OutputSpace>

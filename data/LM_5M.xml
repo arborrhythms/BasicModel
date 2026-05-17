@@ -99,7 +99,7 @@
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>bpe</chunking>
     <wordLearning>0</wordLearning>
   </PerceptualSpace>
@@ -121,7 +121,7 @@
     <nDim>6</nDim>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

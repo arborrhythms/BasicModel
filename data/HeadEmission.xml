@@ -37,7 +37,7 @@
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>

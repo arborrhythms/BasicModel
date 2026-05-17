@@ -64,7 +64,7 @@
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>bpe</chunking>
     <!-- wordLearning=0 at training time: the model uses a frozen
          BPE codebook (carried in the .ckpt bundle alongside the other
@@ -80,7 +80,7 @@
     <nOutput>8</nOutput>
     <nDim>1024</nDim>
     <nVectors>8</nVectors> <!-- 512 -->
-    <codebook>false</codebook> <!-- true -->
+    <codebook>none</codebook> <!-- true -->
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -90,7 +90,7 @@
     <nVectors>65536</nVectors>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

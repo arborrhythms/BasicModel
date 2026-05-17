@@ -42,7 +42,7 @@
     <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: bivector boundary. Forward does Pi then projects
@@ -53,42 +53,40 @@
     <nInput>8</nInput>
     <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim is the codebook prototype content width. Under bivector
-         projection it equals nInputDim so PiLayer can stay a square
-         isomorphism (10x10) and Codebook.project does the 10->2
-         dim adaptation by accumulating per-prototype bivector
-         activations. project_reverse lifts back to nDim-wide content
-         which pi.reverse consumes intact. -->
+    <!-- nDim is the codebook prototype content width. It equals
+         nInputDim so PiLayer stays a square isomorphism (10x10); the
+         scalar projection codebook (<codebook>project</codebook>) does
+         the 10->1 dim adaptation, emitting one signed Degree-of-Truth
+         per prototype. ProjectionBasis.reverse lifts back to nDim-wide
+         content which pi.reverse consumes intact. -->
     <nDim>10</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>1</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>true</codebook>
-    <bivectorOutput>true</bivectorOutput>
+    <codebook>project</codebook>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: width-2 throughout. Symbols carry the bivector
-       activation arriving from Conceptual; their codebook stores
-       2-wide prototypes (no need to span content space). -->
+  <!-- SymbolicSpace: width-1 throughout. Symbols carry the signed
+       Degree-of-Truth scalar arriving from Conceptual; their scalar
+       projection codebook stores width-1 prototypes. -->
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nDim>2</nDim>
-    <nInputDim>2</nInputDim>
+    <nDim>1</nDim>
+    <nInputDim>1</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>1</nOutputDim>
     <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace
          l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <codebook>true</codebook>
-    <bivectorOutput>true</bivectorOutput>
+    <codebook>project</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>1</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

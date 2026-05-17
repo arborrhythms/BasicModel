@@ -60,7 +60,6 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
-    <bivectorOutput>true</bivectorOutput>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -78,9 +77,8 @@
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
-    <bivectorOutput>true</bivectorOutput>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -94,9 +92,8 @@
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
-    <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
 
   <OutputSpace>

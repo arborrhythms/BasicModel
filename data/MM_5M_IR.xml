@@ -50,7 +50,7 @@
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <wordLearning>1</wordLearning>
   </PerceptualSpace>
 
@@ -60,7 +60,7 @@
     <nOutput>8</nOutput>
     <nDim>1024</nDim>
     <nVectors>512</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>lexicon</chunking>
   </ConceptualSpace>
 
@@ -71,7 +71,7 @@
     <nVectors>1024</nVectors>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

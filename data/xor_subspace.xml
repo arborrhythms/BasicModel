@@ -28,7 +28,7 @@
   <PerceptualSpace>
     <nOutput>4</nOutput>
     <nVectors>16</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
@@ -36,7 +36,7 @@
   <ConceptualSpace>
     <nOutput>3</nOutput>
     <nVectors>16</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

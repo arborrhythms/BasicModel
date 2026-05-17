@@ -31,7 +31,7 @@
     <nVectors>512</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>bpe</chunking>
   </PerceptualSpace>
 
@@ -47,7 +47,7 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>

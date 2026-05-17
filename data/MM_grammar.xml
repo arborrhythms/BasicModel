@@ -24,7 +24,7 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -47,7 +47,7 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <useVQVAE>true</useVQVAE>
   </SymbolicSpace>
 

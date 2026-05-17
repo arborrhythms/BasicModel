@@ -33,7 +33,7 @@
     <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -44,7 +44,7 @@
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <bivectorOutput>true</bivectorOutput>
   </ConceptualSpace>
 
@@ -56,7 +56,7 @@
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
 

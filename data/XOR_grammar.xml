@@ -54,7 +54,7 @@
     <nDim>4</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -63,7 +63,7 @@
     <nVectors>200</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -78,7 +78,7 @@
     <nDim>4</nDim>
     <nVectors>6</nVectors>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <useVQVAE>true</useVQVAE>
   </SymbolicSpace>
 

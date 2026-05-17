@@ -102,7 +102,7 @@
     <nOutput>8</nOutput>
     <nDim>16</nDim>
     <nVectors>128</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -124,7 +124,7 @@
     <nDim>16</nDim>
     <nVectors>128</nVectors>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <useVQVAE>true</useVQVAE>
   </SymbolicSpace>
 

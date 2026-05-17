@@ -63,7 +63,7 @@
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
-    <codebook>false</codebook>
+    <codebook>none</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -75,7 +75,7 @@
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>lexicon</chunking>
     <wordLearning>1</wordLearning>
   </PerceptualSpace>
@@ -91,7 +91,7 @@
     <nWhen>0</nWhen>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <chunking>lexicon</chunking>
   </ConceptualSpace>
 
@@ -103,7 +103,7 @@
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

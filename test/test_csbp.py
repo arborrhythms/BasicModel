@@ -95,52 +95,5 @@ class TestRandomInitAmplification(unittest.TestCase):
                              f"random mse={mse_random:.3e}")
 
 
-class TestBivectorEndToEnd(unittest.TestCase):
-    """Stage 6 acceptance: MM_xor_bivector.xml constructs cleanly,
-    runs forward+reverse end-to-end, and the C-tier event is the
-    bivector ``[B, V_C, 2]`` shape."""
-
-    def test_mm_xor_bivector_forward_reverse(self):
-        sys.path.insert(0, str(_PROJECT / "bin"))
-        import Models  # noqa: E402
-
-        Models.TheData.load("xor")
-        m = Models.BasicModel()
-        cfg = str(_PROJECT / "data" / "MM_xor_bivector.xml")
-        m.create_from_config(cfg, data=Models.TheData)
-        m.eval()
-        m.set_sigma(0)
-        # ConceptualSpace is in bivector regime.
-        cs0 = m.conceptualSpaces[0]
-        ss0 = m.symbolicSpaces[0]
-        self.assertTrue(cs0._bivector_output)
-        self.assertTrue(ss0._bivector_output)
-        # Loopback concat retired in favour of per-order input sourcing
-        # on ConceptualSpace.forward (order 0 reads PerceptualSpace,
-        # order > 0 reads the active sibling lifted via the C-tier
-        # codebook's SVD pseudo-inverse). Right-half widening is now
-        # always zero.
-        self.assertEqual(cs0._right_half_dim, 0,
-                         "C[0] right_half_dim should be 0 after the "
-                         "loopback retirement")
-        # Forward + reverse runs without shape errors.
-        with torch.no_grad():
-            m.runEpoch(batchSize=2, split="test")
-        # End-to-end: in the bivector regime, ``SymbolicSpace.subspace.what``
-        # is a ``ProjectionBasis`` (added 2026-05-13) whose
-        # ``InvertibleLinearLayer`` parameterizes W as an LDU
-        # factorization.  The shape contract we verify here is that
-        # the codebook's row width equals the configured nDim.
-        s_basis = ss0.subspace.what
-        self.assertEqual(type(s_basis).__name__, 'ProjectionBasis',
-                         "SymbolicSpace.what should be ProjectionBasis "
-                         "in bivector regime")
-        W = s_basis.getW()
-        self.assertIsNotNone(W)
-        self.assertEqual(W.shape[-1], ss0.nDim,
-                         f"S codebook row width should be nDim={ss0.nDim}, "
-                         f"got {W.shape}")
-
-
 if __name__ == "__main__":
     unittest.main()

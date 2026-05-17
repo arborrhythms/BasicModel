@@ -75,6 +75,7 @@ from typing import List
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, ShortTermMemory
+from Spaces import normalize_codebook_mode
 from Language import WordSpace
 from util import parse
 # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
@@ -3670,7 +3671,8 @@ class BasicModel(BaseModel):
         self.certainty = TheXMLConfig.get("architecture.training.certainty")
         # InputSpace.codebook defaults to false; see the matching note in
         # BasicModel.create.
-        self.codebook = TheXMLConfig.space("InputSpace", "codebook", default=False)
+        self.codebook = normalize_codebook_mode(
+            TheXMLConfig.space("InputSpace", "codebook", default=False)) != "none"
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
@@ -3950,12 +3952,11 @@ class BasicModel(BaseModel):
         # symbolic recurrent loop leg, off the head path). Size the head
         # from the terminal C stage's ACTUAL ``outputShape`` (the
         # source of truth) rather than a recomputed
-        # ``concept_dim + obj_concept``: under ``bivectorOutput`` the
-        # C-tier emits a per-prototype catuskoti ``[B, V_C, 2]`` slab so
-        # the real emitted width is the bivector width, not the concept
-        # width -- the recomputed form mismatched OutputSpace.nInputDim
-        # vs the fed event (the pre-rebase code happened to coincide
-        # because symbol_dim tracked the bivector width).
+        # ``concept_dim + obj_concept``. The bivector regime was retired
+        # (2026-05): the terminal C stage emits a single signed scalar
+        # per prototype, so ``.nOutputDim == .outputShape[1]`` for every
+        # config and the old stale-width mismatch ("Bug #1") is
+        # structurally gone -- this site needs no special-casing.
         _term_cs_shape = list(self.conceptualSpaces[-1].outputShape)
         output_n = int(_term_cs_shape[0])
         outputInputShape = [output_n, int(_term_cs_shape[1])]
@@ -5107,15 +5108,15 @@ class ModelFactory:
         # projection codebook is a basis *expansion* to a wide prototype
         # space and is not reliably order-preserving, so it breaks that
         # invariant. Require the projection bypassed when monotonic.
-        if bool(arch.get("monotonic", False)) and gsp(
-                cfg, "ConceptualSpace", "codebook"):
+        if bool(arch.get("monotonic", False)) and normalize_codebook_mode(
+                gsp(cfg, "ConceptualSpace", "codebook")) != "none":
             errors.append(
                 "architecture.monotonic=True requires "
-                "<ConceptualSpace><codebook>false</codebook>: a basis "
-                "expansion (projection codebook) is not order-preserving "
-                "and breaks the monotone-loop invariant the ramsified "
-                "symbolic match (Ops.part) depends on. Set "
-                "<ConceptualSpace><codebook>false</codebook> or "
+                "<ConceptualSpace><codebook>none</codebook>: a basis "
+                "expansion (quantize/project codebook) is not order-"
+                "preserving and breaks the monotone-loop invariant the "
+                "ramsified symbolic match (Ops.part) depends on. Set "
+                "<ConceptualSpace><codebook>none</codebook> or "
                 "<architecture><monotonic>false</monotonic>.")
 
         # Invertible PerceptualSpace shape constraints are registered inside

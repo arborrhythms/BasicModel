@@ -26,13 +26,13 @@
   <PerceptualSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

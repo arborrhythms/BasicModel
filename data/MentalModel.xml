@@ -214,7 +214,7 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <lexer>sentence</lexer>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>

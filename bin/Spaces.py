@@ -64,6 +64,36 @@ from util import parse
 from collections import namedtuple as _namedtuple
 
 
+def normalize_codebook_mode(raw):
+    """Normalize the tri-state ``<codebook>`` config to a canonical mode.
+
+    Returns one of ``"none"`` / ``"quantize"`` / ``"project"``:
+
+      * ``none``     -- no codebook on ``.what`` (legacy ``false``).
+      * ``quantize`` -- VQ / EMA Codebook snap (legacy ``true``).
+      * ``project``  -- size-changing ProjectionBasis (LDU-invertible;
+                        emits a signed scalar activation ``[B, N]``).
+
+    Legacy booleans are accepted for backward compatibility
+    (``True -> "quantize"``, ``False -> "none"``) so unmigrated configs
+    and programmatic ``codebook=True/False`` overrides still load.
+    """
+    if isinstance(raw, bool):
+        return "quantize" if raw else "none"
+    if raw is None:
+        return "none"
+    v = str(raw).strip().lower()
+    if v in ("none", "false", "0", ""):
+        return "none"
+    if v in ("quantize", "true", "1"):
+        return "quantize"
+    if v == "project":
+        return "project"
+    raise ValueError(
+        f"<codebook> must be one of none|quantize|project "
+        f"(legacy true/false accepted); got {raw!r}")
+
+
 def topk_by_magnitude_per_batch(x: torch.Tensor, k: int) -> torch.Tensor:
     """Zero out all but the top-k entries by |x| along the last dim, per row.
 
@@ -211,6 +241,12 @@ class ActiveEncoding(Encoding):
     the tetralemma (catuskoti): TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
     NEITHER=[0,0]. See basicmodel/doc/BuddhistParallels.md for the
     Nagarjuna-style semantics.
+
+    The ``<codebook>project</codebook>`` path emits a single signed
+    Degree-of-Truth scalar instead (width-1 ``.what``/``.event``);
+    ``SubSpace.resolve`` reads either width. The full bivector-substrate
+    retirement (this carrier -> scalar width, grammar Kleene) is the
+    separately-gated Phase 3.
 
     encode/decode are identity -- the producing Space decides how to
     compute activation values. ActiveEncoding is the carrier.
@@ -2128,12 +2164,13 @@ class Codebook(Basis):
         ratio = torch.minimum(A / (B + epsilon), torch.ones_like(A))
         return torch.prod(ratio).item()
 class ProjectionBasis(Basis):
-    """Bivector projection basis with LDU-parameterized W.
+    """Scalar projection basis with LDU-parameterized W.
 
-    Forward maps ``[B, V, D] -> [B, N, 2]`` via signed projection on N
-    prototypes (positive / negative parts accumulated across V).
-    Reverse maps ``[B, N, 2] -> [B, V, D]`` via the exact LDU inverse
-    of W -- no SVD cache, no per-forward state.
+    Forward maps ``[B, V, D] -> [B, N]`` via the signed mean-over-V
+    projection on N prototypes (the catuskoti pair collapsed to its
+    signed Degree-of-Truth ``pos - neg``).  Reverse maps
+    ``[B, N] -> [B, V, D]`` via the exact LDU inverse of W -- no SVD
+    cache, no per-forward state.
 
     The trainable surface is the LDU factorization on an
     ``InvertibleLinearLayer`` (``W = L @ D_embed @ U``), so the
@@ -2151,9 +2188,9 @@ class ProjectionBasis(Basis):
       * ``compute_Winverse()`` returns ``[nVectors, nDim]`` so
         ``signed @ compute_Winverse()`` directly yields ``[B, nDim]``
 
-    Used by ``SymbolicSpace`` / ``ConceptualSpace`` in the bivector
-    regime (``bivectorOutput=true``) where the per-prototype
-    catuskoti bivector replaces VQ snap as the codebook surface.
+    Selected by ``<codebook>project</codebook>`` (the size-changing
+    codebook mode) -- e.g. on ``ConceptualSpace`` -- where the signed
+    per-prototype projection replaces VQ snap as the codebook surface.
     """
 
     use_dot_product = False
@@ -2262,13 +2299,16 @@ class ProjectionBasis(Basis):
         self._active_payload = value
 
     def forward(self, x):
-        """``[B, V, D]`` (or ``[B, D]``) -> ``[B, N, 2]`` bivector.
+        """``[B, V, D]`` (or ``[B, D]``) -> ``[B, N]`` signed scalar.
 
-        For each batch row and each codebook prototype, accumulates
-        across V the positive and negative parts of the signed dot
-        product ``x[v] · W_norm[n]``.  The unit-norm prototypes bound
-        each per-slot projection by ``||x||_2 ≤ sqrt(D)`` (Cauchy-
-        Schwarz); the V-sum accumulator can still exceed 1 for V>1.
+        Per batch row and codebook prototype, the mean-over-V signed
+        projection ``mean_v (x[v] · W_norm[n])``.  Unit-norm prototypes
+        bound ``|x[v] · W[n]| ≤ 1`` per slot, so the result stays in
+        ``[-1, 1]``.  Returned as ``pos - neg`` (the catuskoti bivector
+        collapsed to its signed Degree-of-Truth) so the matching
+        :meth:`reverse` round-trip stays exact.  The bivector regime is
+        retired (2026-05): every inter-component interface carries a
+        single signed scalar, not the ``[aP, aN]`` pair.
         """
         if isinstance(x, SubSpace):
             x = x.materialize()
@@ -2279,46 +2319,49 @@ class ProjectionBasis(Basis):
         x_d = x[..., :D_min].to(device=W_norm.device, dtype=W_norm.dtype)
         W_d = W_norm[:D_min, :]                                # [D, N]
         proj = x_d @ W_d                                       # [B, V, N]
-        # Mean-over-V (instead of sum) so each pole stays in [0, 1]
-        # regardless of slot count.  With unit-norm W rows and ``x``
-        # in the unit ball, ``|x[v] · W[n]| ≤ 1`` per slot, so
-        # ``mean_v relu(...) ∈ [0, 1]``.  V=1 (orthographic decode)
-        # is identity-preserving by construction; V>1 gives the
-        # per-row mean (the matching reverse below replicates the
-        # recovered summary across V positions, which is the
-        # mathematically correct answer given the V-axis collapse).
-        #
-        # Centralizing the bounding here lets downstream Spaces skip
-        # additional tanh / clamp on the bivector (per user direction
-        # 2026-05-13: bound once at the basis, not at every consumer).
+        # Mean-over-V (instead of sum) so each prototype score stays in
+        # [-1, 1] regardless of slot count.  V=1 (orthographic decode)
+        # is identity-preserving by construction; V>1 gives the per-row
+        # mean (the matching reverse replicates the recovered summary
+        # across V positions -- the mathematically correct answer given
+        # the V-axis collapse).  Bound once here so downstream Spaces
+        # skip extra tanh / clamp (per user direction 2026-05-13).
         pos = torch.relu(proj).mean(dim=1)                     # [B, N] in [0, 1]
         neg = torch.relu(-proj).mean(dim=1)                    # [B, N] in [0, 1]
-        return torch.stack([pos, neg], dim=-1)                 # [B, N, 2]
+        # Width-1 trailing dim: a single signed-DoT feature per
+        # prototype. Keeps the [B, N, D] substrate contract (D=1) so
+        # forwardEnd / materialize / normalize work unchanged, while
+        # remaining "only an activation" (not the [aP, aN] bivector).
+        return (pos - neg).unsqueeze(-1)                       # [B, N, 1] in [-1, 1]
 
-    def reverse(self, bivec, V=1):
-        """``[B, N, 2]`` -> ``[B, V, D]`` via LDU inverse against the
-        normalized codebook.
+    def reverse(self, signed, V=1):
+        """``[B, N]`` signed scalar -> ``[B, V, D]`` via the LDU inverse
+        against the normalized codebook.
 
-        Collapses the bivector to ``signed = pos - neg`` (the
-        per-prototype signed mean-projection from the forward) and
-        maps through the unit-prototype inverse via
-        :meth:`_apply_inverse`.  The column-norm correction keeps the
-        V=1 round-trip exact: ``W_norm @ W_inv_norm = W @ W_inv = I``.
-        For V>1, the per-V information was summed away in the
-        forward; the reverse returns the per-row mean summary vector
-        replicated across V positions, which is the mathematically
-        correct answer given the V-axis collapse.
+        ``signed`` is the per-prototype signed Degree-of-Truth produced
+        by :meth:`forward`.  The column-norm correction keeps the V=1
+        round-trip exact: ``W_norm @ W_inv_norm = W @ W_inv = I``.  For
+        V>1 the per-V information was collapsed in the forward; the
+        reverse returns the per-row summary vector replicated across V
+        positions (the mathematically correct answer given the V-axis
+        collapse).
 
-        No dense ``W^-1`` is materialised on this path -- the
-        triangular solves run directly on the RHS via
-        ``InvertibleLinearLayer.apply_Winverse_current`` for ``O(b *
-        n^2)`` cost.
+        Accepts a legacy ``[B, N, 2]`` bivector (collapsed via
+        ``pos - neg``) and a trailing-singleton ``[B, N, 1]`` for
+        robustness during the bivector retirement.
+
+        No dense ``W^-1`` is materialised -- triangular solves run
+        directly on the RHS via
+        ``InvertibleLinearLayer.apply_Winverse_current`` (``O(b*n^2)``).
         """
-        if bivec is None or not torch.is_tensor(bivec):
+        if signed is None or not torch.is_tensor(signed):
             return None
         if self.layer is None:
             return None
-        signed = bivec[..., 0] - bivec[..., 1]                # [B, N]
+        if signed.dim() >= 3 and signed.shape[-1] == 2:
+            signed = signed[..., 0] - signed[..., 1]          # legacy bivector
+        elif signed.dim() >= 3 and signed.shape[-1] == 1:
+            signed = signed.squeeze(-1)
         x_summary = self._apply_inverse(signed)               # [B, D]
         v = max(int(V) if V is not None else 1, 1)
         return x_summary.unsqueeze(1).expand(-1, v, -1).contiguous()
@@ -4544,19 +4587,22 @@ class SubSpace(nn.Module):
         Public read API for the resolved scalar; replaces the prior
         ``self.activation.getW()`` access pattern.
         """
-        what = self.what.getW() if self.what is not None else None
-        bivec = None
-        if what is not None and what.ndim >= 2 and what.shape[-1] >= 2:
-            bivec = what[..., :2]
-        else:
+        # Bivector retired (2026-05): ``.what`` / ``.event`` now carry a
+        # single signed-DoT scalar in a width-1 trailing dim. The
+        # ``pos - neg`` collapse becomes identity (read ``[..., 0]``).
+        # A width-2 source is still accepted (legacy / transitional)
+        # and collapsed the old way.
+        src = self.what.getW() if self.what is not None else None
+        if not (src is not None and src.ndim >= 2 and src.shape[-1] >= 1):
             ev = self.event.getW() if self.event is not None else None
-            if ev is not None and ev.ndim >= 3 and ev.shape[-1] >= 2:
-                bivec = ev[..., :2]
-        if bivec is None:
+            src = ev if (ev is not None and ev.ndim >= 3
+                         and ev.shape[-1] >= 1) else None
+        if src is None:
             return None
-        pos = bivec[..., 0]
-        neg = bivec[..., 1]
-        scalar = pos - neg
+        if src.shape[-1] >= 2:
+            scalar = src[..., 0] - src[..., 1]      # legacy bivector
+        else:
+            scalar = src[..., 0]                    # width-1 scalar DoT
         return self._apply_active_selection(scalar)
 
     def _apply_active_selection(self, src):
@@ -5599,10 +5645,19 @@ class Space(nn.Module):
         return self.subspace.get_vectors()
 
     @property
+    def codebook_mode(self):
+        """Tri-state codebook mode: ``'none'`` | ``'quantize'`` |
+        ``'project'``. (Was the boolean ``<codebook>``; ``project``
+        selects the size-changing scalar ``ProjectionBasis``.)"""
+        return normalize_codebook_mode(self._codebook)
+
+    @property
     def codebook(self):
-        """Shared learned codebook flag. Reference is immutable (no setter);
-        the Parameter inside it is updated by the optimizer each step."""
-        return self._codebook
+        """True iff a codebook is present (``quantize`` or ``project``).
+
+        Back-compat boolean for the many ``if self.codebook:`` truthiness
+        sites; the quantize-vs-project distinction is ``codebook_mode``."""
+        return self.codebook_mode != "none"
 
     @property
     def vocabulary(self):
@@ -6525,19 +6580,6 @@ class PerceptualSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
-        # Bivector regime flags (spec B3, doc/specs/2026-04-24-lift-lower-
-        # bivector-design.md §B3). When ``bivectorOutput`` is true, the
-        # per-slot percept activation is the catuskoti bivector
-        # ``[aP, aN] = (max(0, x), max(0, -x))`` (Q2 promotion, spec
-        # line 1405). ``svdOrthogonalInit`` is reserved for symmetry with
-        # ConceptualSpace / SymbolicSpace; it is consulted only when a
-        # Codebook is built on ``.what`` (codebook=true mode), not on the
-        # default Embedding lexicon.
-        try:
-            self._bivector_output = bool(
-                TheXMLConfig.space(section, "bivectorOutput"))
-        except KeyError:
-            self._bivector_output = False
         # Always-on (XML knob retired); see ConceptualSpace for rationale.
         self._svd_orthogonal_init_cfg = True
 
@@ -7559,46 +7601,6 @@ class PerceptualSpace(Space):
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
 
-    def _q2_promote_activation(self, event):
-        """Q2 bitonic-to-bivector promotion (spec §Q2, line 1405).
-
-        Reduces the per-slot percept event to a signed scalar via signed-
-        sum across the content dim, then splits onto the non-negative
-        paired-index axes ``(aP, aN) = (max(0, x), max(0, -x))``.
-
-        Args:
-            event: ``[B, N, D_P]`` per-slot percept content.
-
-        Returns:
-            ``[B, N, 2]`` bivector activation, monotonic in ``[0, 1]^2``.
-        """
-        x = event.sum(dim=-1)
-        aP = torch.relu(x)
-        aN = torch.relu(-x)
-        return torch.stack([aP, aN], dim=-1)
-
-    def _q2_lower_activation(self, bivec, content_dim):
-        """Inverse of `_q2_promote_activation`: bivector -> per-slot
-        signed scalar -> broadcast to per-slot content vector.
-
-        The forward Q2 promotion is many-to-one over the content dim
-        (signed sum collapses ``D_P`` features to one scalar), so the
-        reverse cannot recover the per-feature pattern. We broadcast the
-        recovered scalar uniformly across the content dim; downstream
-        ``reverseEnd`` / ``InvertibleLinearLayer.reverse`` handles any
-        further structure recovery.
-
-        Args:
-            bivec: ``[B, N, 2]`` bivector activation.
-            content_dim: target ``D_P`` for the output event.
-
-        Returns:
-            ``[B, N, D_P]`` event tensor with the recovered scalar
-            broadcast across the content axis.
-        """
-        x = bivec[..., 0] - bivec[..., 1]
-        return x.unsqueeze(-1).expand(-1, -1, content_dim).contiguous()
-
     def _slot_forward(self, x, quantize=True):
         """Position-local math (codebook + sparsity) on a [B, K, D] slice.
 
@@ -7878,17 +7880,6 @@ class PerceptualSpace(Space):
             if out is not None:
                 self.subspace.serial_cache[id(self)] = out.detach().clone()
 
-        if self._bivector_output:
-            # Q2 promotion: replace the legacy per-slot scalar activation
-            # with the catuskoti bivector ``[B, N, 2]``. Downstream
-            # ConceptualSpace consumes this as the left half of the
-            # widened ``[P_event || S_event]`` PiLayer input (gated on
-            # ConceptualSpace.bivectorOutput at Models.py:1797-1820).
-            event = vspace.materialize(mode="event")
-            if event is not None and event.dim() == 3:
-                bivec = self._q2_promote_activation(event)
-                vspace.activation.setW(bivec)
-
         return vspace
 
     def reverse(self, subspace):
@@ -7904,24 +7895,14 @@ class PerceptualSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         # NOTE: When ``self.subspace.what`` is an Embedding (text mode),
-        # `_reverse_text` returns earlier and bypasses the bivector
-        # lowering below. Mixing text-mode lexicon with bivectorOutput=true
-        # is outside the current B3 scope; revisit when text-mode bivector
-        # is needed.
+        # `_reverse_text` returns earlier and bypasses the numeric
+        # inverse chain below.
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
             return vspace
         if self.invertible:
             vspace.normalize("percepts", target="event",
                              normalize=True, reverse=True)
-        if self._bivector_output:
-            # Lower the bivector activation back to a per-slot signed
-            # scalar broadcast across the percept input dim, so the
-            # downstream invertible reverse sees the pre-Q2 layout.
-            bivec = vspace.activation.getW()
-            if bivec is not None and bivec.dim() == 3 and bivec.shape[-1] == 2:
-                event = self._q2_lower_activation(bivec, self.inputShape[1])
-                vspace.event.setW(event)
         y = self.reverseBegin(vspace, returnVectors=True)
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("input", target="what", normalize=True)
@@ -8603,18 +8584,6 @@ class ConceptualSpace(Space):
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
         monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
-        # Bivector regime flags — read before super().__init__ since the
-        # what-basis builder runs inside it. ``bivectorOutput`` swaps the
-        # legacy VQ snap on the C-tier output for the per-prototype
-        # catuskoti bivector ``[B, V_C, 2]`` produced by
-        # ``Codebook.forward(...)``.
-        # ``svdOrthogonalInit`` SVD-orthogonalizes the codebook at
-        # construction so ``project_reverse`` (which scales by 1/Σ) is
-        # well-conditioned from the very first forward call.
-        try:
-            self._bivector_output = bool(TheXMLConfig.space(section, "bivectorOutput"))
-        except KeyError:
-            self._bivector_output = False
         # SVD-orthogonalize the codebook at construction so ``project_reverse``
         # (which scales by 1/Σ) is well-conditioned from t=0. Always on; the
         # XML <svdOrthogonalInit> knob has been retired.
@@ -8644,13 +8613,13 @@ class ConceptualSpace(Space):
         # exists so the forward path can read it unconditionally.
         self._c_prior = None
         input = self.subspace.getEncodedInputSize()
-        if self._bivector_output:
-            # Bivector regime: PiLayer stays a square isomorphism inside
-            # conceptual content space. Dim adaptation to the bivector
-            # handoff width happens INSIDE Codebook.project (input
-            # ``[B, V, D] -> [B, N, 2]`` per-prototype accumulator), not
-            # inside Pi. This preserves XOR's discriminative info instead
-            # of squeezing it through a non-square Pi bottleneck.
+        if self.codebook_mode == "project":
+            # project codebook: PiLayer stays a square isomorphism
+            # inside conceptual content space. Dim adaptation to the
+            # prototype width happens INSIDE ProjectionBasis
+            # (``[B, V, D] -> [B, N]``), not inside Pi. This preserves
+            # XOR's discriminative info instead of squeezing it through
+            # a non-square Pi bottleneck.
             output = input
         else:
             output = self.subspace.getEncodedOutputSize()
@@ -8675,7 +8644,7 @@ class ConceptualSpace(Space):
         # bounded by the tanh wrap. The C-tier output feeds a codebook
         # whose prototype range is ``[-1, 1]``, so boundedness must be
         # preserved across the math swap. Configs that set
-        # ``<nonlinear>false</nonlinear>`` (e.g. MM_xor_bivector) still
+        # ``<nonlinear>false</nonlinear>`` (e.g. MM_xor_loopback) still
         # honour the flag for SymbolicSpace, OutputSpace, and other
         # PiLayer / SigmaLayer instances — only the C-tier sigma_percept
         # is force-tanh-wrapped.
@@ -8770,10 +8739,12 @@ class ConceptualSpace(Space):
         basis type so the snap surface and the projection surface
         don't share a class.
         """
-        if not getattr(self, "_bivector_output", False):
+        # ``<codebook>project</codebook>`` -> a scalar ProjectionBasis on
+        # ``.what`` (``[B, V, D] -> [B, N]``). ``quantize`` / ``none``
+        # keep the legacy behaviour: the ``.event`` Codebook built by
+        # ``_build_object_basis`` handles the snap and ``.what`` is None.
+        if self.codebook_mode != "project":
             return None
-        if not self.codebook:
-            return Tensor(nVectors=self.nVectors, nDim=self.nDim)
         basis = ProjectionBasis()
         basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
         basis.create(
@@ -8888,11 +8859,6 @@ class ConceptualSpace(Space):
         sym = None
         if SS_subspace is not None and not SS_subspace.is_empty():
             sym = SS_subspace.materialize()
-            if sym is not None and sym.dim() == 3 and sym.shape[-1] == 2:
-                sib_basis = SS_subspace.what
-                if (isinstance(sib_basis, ProjectionBasis)
-                        and int(sib_basis.nVectors) == int(sym.shape[1])):
-                    sym = sib_basis.reverse(sym, V=int(self.inputShape[0]))
         if sym is not None and sym.shape == primary.shape:
             x = (primary + sym) / 2
         else:
@@ -8902,7 +8868,7 @@ class ConceptualSpace(Space):
         # here as a backward-compat no-op for grammars that omit
         # C-tier rules (it then falls through to ``y = x``
         # passthrough, preserving the legacy behavior of configs like
-        # MM_xor_bivector). Grammars that DO list C-tier rules can
+        # MM_xor_loopback). Grammars that DO list C-tier rules can
         # still fire them, but the canonical home of grammar
         # operations is now S.
         if getattr(self, 'syntacticLayer', None) is None:
@@ -8979,14 +8945,11 @@ class ConceptualSpace(Space):
                     vmask.flatten().view(-1, 1, 1),
                     y,
                     torch.zeros_like(y))
-            if (self._bivector_output
-                    and isinstance(self.subspace.what, ProjectionBasis)):
-                # Bivector regime: per-prototype catuskoti bivector
-                # projection on a ``ProjectionBasis``.  ``y`` becomes
-                # ``[B, V_C, 2]`` (non-negative).  The matching reverse
-                # routes through ProjectionBasis.reverse (exact LDU
-                # inverse via triangular solves; no SVD cache, no
-                # per-forward state).
+            if isinstance(self.subspace.what, ProjectionBasis):
+                # project codebook: signed per-prototype scalar
+                # projection.  ``y`` becomes ``[B, N]`` in [-1, 1]; the
+                # matching reverse routes through ProjectionBasis.reverse
+                # (exact LDU inverse via triangular solves).
                 y = self.subspace.what.forward(y)
             elif (isinstance(self.subspace.what, Codebook)
                     and self.nVectors > self.outputShape[0]):
@@ -9004,11 +8967,11 @@ class ConceptualSpace(Space):
         if ws is not None:
             ws.clear_last_svo()
         vspace = self.forwardEnd(y, returnVectors=True)
-        if self._bivector_output:
-            # Under CSBP the C-tier output is a non-negative bivector;
-            # the legacy ``concepts`` range check (-1..1 on what) does not
-            # apply. The bivector kind asserts non-negativity instead.
-            vspace.normalize("bivector", target="event")
+        if isinstance(self.subspace.what, ProjectionBasis):
+            # project codebook: ProjectionBasis already bounds its
+            # signed-scalar output to [-1, 1] (bound-once-at-the-basis);
+            # the legacy ``concepts`` range checks don't apply.
+            pass
         else:
             vspace.normalize("concepts", target="what")       # range check
             vspace.normalize("concepts", target="where")      # range check
@@ -9031,9 +8994,9 @@ class ConceptualSpace(Space):
         object.__setattr__(self, "_subspaceForSS", vspace)
         cs_what = self.subspace.what
         ev = vspace.materialize(mode="event")
-        if (self._bivector_output and isinstance(cs_what, ProjectionBasis)
-                and ev is not None and ev.dim() == 3
-                and ev.shape[-1] == 2):
+        if isinstance(cs_what, ProjectionBasis) and ev is not None:
+            # project codebook: lift the signed-scalar C event back to
+            # concept content for the C->P feedback view.
             lifted = cs_what.reverse(ev, V=int(self.inputShape[0]))
         else:
             lifted = ev
@@ -9077,17 +9040,15 @@ class ConceptualSpace(Space):
         # populates a C-tier generate sequence, the dispatcher fires
         # those instead.
         y = self.reverseBegin(vspace, returnVectors=True)
-        if (self._bivector_output
-                and isinstance(self.subspace.what, ProjectionBasis)):
-            # CSBP reverse lift: bivec ``[B, V_C, 2]`` -> ``[B, V, D_C]``
-            # via the exact LDU inverse on ProjectionBasis. Runs before
-            # sigma_percept.reverse so the upstream SigmaLayer sees
-            # the natural ``[B, V, nDim]`` shape it produced on forward.
-            # V comes from this space's ``inputShape[0]`` (the slot
-            # count the forward consumed); the per-row summary vector
-            # is then replicated across V positions, which is the
-            # mathematically-correct answer for the V-axis-summed
-            # bivector forward.
+        if isinstance(self.subspace.what, ProjectionBasis):
+            # project codebook reverse lift: signed-scalar ``[B, N]`` ->
+            # ``[B, V, D_C]`` via the exact LDU inverse on
+            # ProjectionBasis. Runs before sigma_percept.reverse so the
+            # upstream SigmaLayer sees the natural ``[B, V, nDim]`` shape
+            # it produced on forward. V comes from this space's
+            # ``inputShape[0]``; the per-row summary vector is replicated
+            # across V positions (the mathematically-correct answer for
+            # the V-axis-collapsed forward).
             V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
         # Post-split: grammar lives at S; C is semantically
@@ -9298,15 +9259,6 @@ class SymbolicSpace(Space):
         """
         section = self.config_section
         nonlinear = TheXMLConfig.space(section, "nonlinear")
-        # Bivector regime flag: mirror of ConceptualSpace.bivectorOutput.
-        # When True, ``forward`` produces ``[B, V_S, 2]`` via
-        # ``Codebook.forward(...)`` and ``reverse`` lifts
-        # via the cached SVD pseudo-inverse, matching the C-tier shape.
-        try:
-            self._bivector_output = bool(
-                TheXMLConfig.space(section, "bivectorOutput"))
-        except KeyError:
-            self._bivector_output = False
         # Always-on (XML knob retired); see ConceptualSpace for rationale.
         self._svd_orthogonal_init_cfg = True
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
@@ -9624,9 +9576,10 @@ class SymbolicSpace(Space):
         with invertible=True, matching the ConceptualSpace bivector
         builder.  The exact LDU inverse replaces the legacy SVD cache.
         """
-        if not self.codebook:
+        mode = self.codebook_mode
+        if mode == "none":
             return Tensor(nVectors=self.nVectors, nDim=self.nDim)
-        if getattr(self, "_bivector_output", False):
+        if mode == "project":
             basis = ProjectionBasis()
             basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
             basis.create(
@@ -10417,19 +10370,16 @@ class SymbolicSpace(Space):
         # subspace.activation = pos - neg.
         self.resolve(self.subspace)
 
-        # Bivector regime: replace the VQ-VAE / hard-quantize / VQ
-        # branches with the per-prototype catuskoti bivector projection.
-        # ``Codebook.forward(act)`` returns ``[B, V_S, 2]``
-        # via the cached SVD pseudo-inverse of W. The result lives on
-        # ``subspace.event`` so downstream consumers (OutputSpace,
-        # _compute_symbol_terms) read it via ``materialize()``.
-        if (getattr(self, "_bivector_output", False)
-                and isinstance(self.subspace.what, ProjectionBasis)):
-            bivec = self.subspace.what.forward(act)
-            self.subspace.set_event(bivec, compute_activation=False)
+        # project codebook: signed per-prototype scalar projection
+        # ``[B, N]`` replaces the VQ-VAE / hard-quantize branches. The
+        # result lives on ``subspace.event`` so downstream consumers
+        # (OutputSpace, _compute_symbol_terms) read it via materialize().
+        if isinstance(self.subspace.what, ProjectionBasis):
+            proj = self.subspace.what.forward(act)
+            self.subspace.set_event(proj, compute_activation=False)
             vspace = self.forwardEnd(self.subspace)
             self._emit_symbol_terms(
-                vspace, self._compute_symbol_terms(bivec))
+                vspace, self._compute_symbol_terms(proj))
             if (self.impenetrable_overlap > 0.0
                     or self.impenetrable_variance > 0.0):
                 imp = self.impenetrable_loss()
@@ -10438,7 +10388,6 @@ class SymbolicSpace(Space):
                     vspace.errors.add(
                         "symbol_impenetrable", imp, weight=1.0,
                         space="SymbolicSpace", category="symbol")
-            vspace.normalize("bivector", target="event")
             return vspace
 
         # VQ-VAE / hard_quantize / continuous branches preserved from
@@ -10573,12 +10522,11 @@ class SymbolicSpace(Space):
         wordSpace = getattr(self, "wordSpace", None)
         vspace = self.reverseBegin(vspace)
         act = vspace.materialize()                        # [B, N, symbol_dim]
-        if (getattr(self, "_bivector_output", False)
-                and isinstance(self.subspace.what, Codebook)
-                and act is not None and act.dim() == 3 and act.shape[-1] == 2):
-            # Bivector regime: lift ``[B, V_S, 2]`` back to ``[B, V, D_S]``
-            # via the cached SVD pseudo-inverse, then continue with the
-            # standard reverse (sigma / sortNetwork / forwardEnd).
+        if isinstance(self.subspace.what, ProjectionBasis):
+            # project codebook reverse lift: signed-scalar ``[B, N]`` ->
+            # ``[B, V, D_S]`` via the exact LDU inverse, then continue
+            # with the standard reverse (sigma / sortNetwork /
+            # forwardEnd).
             act = self.subspace.what.reverse(act)
         if wordSpace is not None:
             act = wordSpace.reverseSymbols(act, self.subspace)

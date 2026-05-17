@@ -41,7 +41,7 @@
     <nOutput>2048</nOutput>
     <nWhere>2</nWhere>
     <lexer>byte</lexer>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -68,7 +68,7 @@
     <nOutput>6</nOutput>
     <nOutputDim>2048</nOutputDim>
     <invertible>true</invertible>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -80,7 +80,7 @@
     <nOutput>2048</nOutput>
     <nOutputDim>6</nOutputDim>
     <accumulateTruth>0</accumulateTruth>
-    <codebook>true</codebook>
+    <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
