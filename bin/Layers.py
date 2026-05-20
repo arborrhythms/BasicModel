@@ -7777,7 +7777,8 @@ class Ops:
 
     @staticmethod
     def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
-                           left_rows=None, right_rows=None):
+                           left_rows=None, right_rows=None,
+                           left_priming=None, right_priming=None):
         """Inverse-recommend ``(x1, x2)`` for ``conjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -7794,14 +7795,21 @@ class Ops:
             ``x1`` / ``x2`` selection. Forwarded to
             ``_binary_op_recommend``. Sentinels remain feasible
             regardless.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity weights per W-row, biasing argmin /
+            argmax toward primed candidates. Default 1.0 (multiplicative
+            identity, no bias). See ``_binary_op_recommend``.
         """
         return Ops._binary_op_inverse_impl(
             result, W, 'intersection', monotonic, unit_ball=unit_ball,
-            left_rows=left_rows, right_rows=right_rows)
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
 
     @staticmethod
     def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
-                           left_rows=None, right_rows=None):
+                           left_rows=None, right_rows=None,
+                           left_priming=None, right_priming=None):
         """Inverse-recommend ``(x1, x2)`` for ``disjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -7817,14 +7825,21 @@ class Ops:
             restricts which learned-codebook rows are eligible for
             ``x1`` / ``x2`` selection. Forwarded to
             ``_binary_op_recommend``.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity weights per W-row, biasing argmin /
+            argmax toward primed candidates. Default 1.0 (multiplicative
+            identity, no bias). See ``_binary_op_recommend``.
         """
         return Ops._binary_op_inverse_impl(
             result, W, 'union', monotonic, unit_ball=unit_ball,
-            left_rows=left_rows, right_rows=right_rows)
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
 
     @staticmethod
     def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False,
-                                left_rows=None, right_rows=None):
+                                left_rows=None, right_rows=None,
+                                left_priming=None, right_priming=None):
         """Backward-compatible shim for the union / intersection inverse.
 
         Delegates to :func:`Ops._binary_op_recommend`. Returns the pair
@@ -7848,7 +7863,8 @@ class Ops:
         op_name = Ops._normalize_lattice_op(op)
         return Ops._binary_op_recommend(
             result, W, op_name, monotonic=monotonic,
-            left_rows=left_rows, right_rows=right_rows)
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
 
     @staticmethod
     def _normalize_lattice_op(op):
@@ -7877,7 +7893,8 @@ class Ops:
 
     @staticmethod
     def _binary_op_recommend(result, W, op_name, monotonic=True,
-                             left_rows=None, right_rows=None):
+                             left_rows=None, right_rows=None,
+                             left_priming=None, right_priming=None):
         """Inverse-recommend a pair ``(x1, x2)`` from an augmented codebook.
 
         ``op_name``:
@@ -7913,6 +7930,20 @@ class Ops:
             attached ``KnowledgeView`` and passes the result, masking
             argmin/argmax to admissible refs only. Plan: §Lift/Lower
             Restricted-Candidate Inverse.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``,
+        length ``K``):
+            soft boost-above-unity weights per W-row (default 1.0 =
+            multiplicative identity). For argmax steps, scores are
+            multiplied by the weight (primed rows preferred). For
+            argmin steps, scores are divided by the weight (primed
+            rows look smaller, hence preferred). The ⊥ / ⊤ sentinels
+            are pinned to 1.0 regardless of input. When both are
+            ``None`` (default), behavior matches the un-primed
+            algorithm byte-for-byte.
+
+            Plan: doc/plans/2026-05-20-primed-reverse-generation.md
+            §Application: multiplied onto .activation (A. selection).
         """
         if W is None or W.shape[0] == 0:
             return result, result
@@ -7956,38 +7987,66 @@ class Ops:
         left_mask = _row_mask(left_rows)
         right_mask = _row_mask(right_rows)
 
+        # Build per-operand priming weights over the augmented C-rows.
+        # Default = 1.0 everywhere (multiplicative identity, no bias).
+        # ⊥ (index 0) and ⊤ (index K_aug-1) are pinned to 1.0 regardless
+        # of caller-supplied weights. W-row weights at index i land at
+        # C-row index i+1 to account for the ⊥ prefix.
+        def _row_weights(priming):
+            w = torch.ones(K_aug, dtype=W.dtype, device=W.device)
+            if priming is None:
+                return w
+            p = torch.as_tensor(priming, dtype=W.dtype, device=W.device)
+            if p.ndim != 1:
+                p = p.reshape(-1)
+            # Truncate or pad to K (W's row count); ignore extras.
+            k_in = min(int(p.shape[0]), K)
+            if k_in > 0:
+                w[1:1 + k_in] = p[:k_in]
+            return w
+        left_w = _row_weights(left_priming)
+        right_w = _row_weights(right_priming)
+
         if op_name == 'union':
-            # 1) x1 = argmax_{S ≤ y, S in left_rows ∪ sentinels} norm(S)
+            # 1) x1 = argmax_{S ≤ y, S in left_rows ∪ sentinels}
+            #        norm(S) * priming(S)
+            #    (argmax: multiply by priming so primed rows preferred)
             le_y = (S <= y).all(dim=-1) & left_mask.unsqueeze(0)  # [N, K]
+            primed_sizes = sizes * left_w               # [K_aug]
             scores = torch.where(
-                le_y, sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
+                le_y, primed_sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
             idx1 = scores.argmax(dim=-1)                # [N]
             x1 = C[idx1]                                # [N, D]
 
             # 2) residual r = y − x1
             r = flat - x1                               # [N, D]
 
-            # 3) x2 = argmin_{S ≥ r, S in right_rows ∪ sentinels} norm(S)
+            # 3) x2 = argmin_{S ≥ r, S in right_rows ∪ sentinels}
+            #        norm(S) / priming(S)
+            #    (argmin: divide by priming so primed rows look smaller)
             r_b = r.unsqueeze(1)                        # [N, 1, D]
             ge_r = (S >= r_b).all(dim=-1) & right_mask.unsqueeze(0)
+            primed_sizes_r = sizes / right_w            # [K_aug]
             scores = torch.where(
-                ge_r, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
+                ge_r, primed_sizes_r.unsqueeze(0).expand(N, K_aug), POS_INF)
             idx2 = scores.argmin(dim=-1)                # [N]
             x2 = C[idx2]                                # [N, D]
 
             return x1.reshape(out_shape), x2.reshape(out_shape)
 
         if op_name == 'intersection':
-            # 1) x1 = argmin_{S ≥ y, S in left_rows ∪ sentinels} norm(S)
+            # 1) x1 = argmin_{S ≥ y, S in left_rows ∪ sentinels}
+            #        norm(S) / priming(S)
             ge_y = (S >= y).all(dim=-1)                 # [N, K]
             ge_y_left = ge_y & left_mask.unsqueeze(0)
+            primed_sizes_l = sizes / left_w             # [K_aug]
             scores = torch.where(
-                ge_y_left, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
+                ge_y_left, primed_sizes_l.unsqueeze(0).expand(N, K_aug), POS_INF)
             idx1 = scores.argmin(dim=-1)                # [N]
             x1 = C[idx1]                                # [N, D]
 
             # 2) x2 = argmin_{S ≥ y, S ≠ x1, S in right_rows ∪ sentinels}
-            #    overlapOf(S, x1).norm, tie-break smaller norm(S).
+            #    (overlapOf(S, x1).norm + tie) / priming(S)
             same_as_x1 = (
                 torch.arange(K_aug, device=W.device).unsqueeze(0)
                 == idx1.unsqueeze(1))                   # [N, K]
@@ -7997,6 +8056,7 @@ class Ops:
             overlap_size = Ops.norm(overlap)            # [N, K]
             tie_weight = sizes.unsqueeze(0).expand(N, K_aug)
             primary = overlap_size + 1e-9 * tie_weight
+            primary = primary / right_w.unsqueeze(0)    # primed → smaller
             scores = torch.where(feasible, primary, POS_INF)
             # If no S ≠ x1 is feasible (degenerate codebook), fall back
             # to x1 itself for x2 (still satisfies S ≥ y).
@@ -8138,7 +8198,9 @@ class Ops:
         return result / (right + epsilon)
 
     @staticmethod
-    def liftReverseAll(Y, W=None, monotonic=False):
+    def liftReverseAll(Y, W=None, monotonic=False,
+                       left_rows=None, right_rows=None,
+                       left_priming=None, right_priming=None):
         """Multi-return reverse for the lift dispatcher (Step 6).
 
         Pairs with the parent plan's Layer-2.5 grammar convention
@@ -8153,10 +8215,17 @@ class Ops:
         This is the new multi-return convention; the existing 2-arg
         ``Ops.liftReverse(result, right)`` remains for analytic-inverse
         callers (it returns a single tensor, not a tuple).
+
+        ``left_rows`` / ``right_rows`` and ``left_priming`` /
+        ``right_priming`` are forwarded to ``disjunctionReverse``; see
+        ``Ops._binary_op_recommend`` for semantics.
         """
         if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
             return (Y, Y)
-        return Ops.disjunctionReverse(Y, Y, W, monotonic=monotonic)
+        return Ops.disjunctionReverse(
+            Y, Y, W, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
 
     @staticmethod
     def _lower_kernel(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
@@ -8238,7 +8307,9 @@ class Ops:
         return 2 * result - right
 
     @staticmethod
-    def lowerReverseAll(Y, W=None, monotonic=False):
+    def lowerReverseAll(Y, W=None, monotonic=False,
+                        left_rows=None, right_rows=None,
+                        left_priming=None, right_priming=None):
         """Multi-return reverse for the lower dispatcher (Step 6).
 
         Pairs with the parent plan's Layer-2.5 grammar convention
@@ -8251,10 +8322,17 @@ class Ops:
         so callers get a tuple of the expected shape.
 
         See ``Ops.liftReverseAll`` for the dual.
+
+        ``left_rows`` / ``right_rows`` and ``left_priming`` /
+        ``right_priming`` are forwarded to ``conjunctionReverse``; see
+        ``Ops._binary_op_recommend`` for semantics.
         """
         if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
             return (Y, Y)
-        return Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
+        return Ops.conjunctionReverse(
+            Y, Y, W, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows,
+            left_priming=left_priming, right_priming=right_priming)
 
     # ---- Axis selectors (what / where / when) ----------------------------
     # The C -> S boundary demux puts content in the canonical

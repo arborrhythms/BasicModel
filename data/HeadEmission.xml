@@ -67,8 +67,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <chartCompose>true</chartCompose>
-    <downwardGeneration>true</downwardGeneration>
+	    <downwardGeneration>true</downwardGeneration>
     <language>
       <grammar>
         <compose>

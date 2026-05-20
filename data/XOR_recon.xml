@@ -1,10 +1,8 @@
 <?xml version="1.0" ?>
 <model>
   <!-- XOR_recon: XOR with reconstruction symbols (last 5 SymbolicSpace
-       slots reserved for reconstruction targets). Bivector regime:
-       PiLayer stays a square isomorphism inside conceptual content
-       space; Codebook.project does the dim adaptation to the bivector
-       handoff downstream. -->
+       slots reserved for reconstruction targets). Scalar codebook regime:
+       PiLayer stays a square isomorphism inside conceptual content space. -->
   <architecture>
     <modelType>embedding</modelType>
 
@@ -45,7 +43,6 @@
     <nOutputDim>2</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
-    <bivectorOutput>true</bivectorOutput>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
@@ -57,7 +54,6 @@
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <codebook>quantize</codebook>
-    <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
 
   <OutputSpace>

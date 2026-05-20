@@ -34,17 +34,15 @@
            per-stage loop).  Together these inflate the per-batch
            activation slab through 3 stages * [B*K, N=1024, D=1028]
            in bf16, which OOMs the 121 GiB GB10 unified pool past
-           batchSize=8.  Sweep on 2026-05-13: bs=2/4/8 fit cleanly,
-           bs=12 OOMs at the codebook commitment-loss MSE.  Restore
-           128 once either the activation slab is reduced (smaller
-           nDim) or the per-stage chain re-sources from a narrower
-           bivector handoff (the ``<bivectorOutput>true</...>`` path
-           skips the wide concept-dim materialisation entirely). -->
+	          batchSize=8.  Sweep on 2026-05-13: bs=2/4/8 fit cleanly,
+	          bs=12 OOMs at the codebook commitment-loss MSE. Restore
+	          128 after the activation slab is reduced or the per-stage
+	          chain re-sources from a narrower representation. -->
       <batchSize>64</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
     </training>
@@ -93,8 +91,8 @@
          idempotent C->S->C symbolic-space loop
          (BasicModel._stm_symbolic_roundtrip), making it the STM
          read/write. Was previously the wMax-or-8 fallback (=8 here:
-         no <stmCapacity>, no <WordSpace><wMax>). Phase-1-D STM-7
-         decision; CKY+resize (=wMax) is the documented perf fallback. -->
+	         no <stmCapacity>, no <WordSpace><wMax>). Phase-1-D STM-7
+	         decision; <wMax> remains the parser span-width fallback. -->
     <stmCapacity>7</stmCapacity>
   </ConceptualSpace>
 

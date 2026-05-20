@@ -19,8 +19,8 @@ Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> O
 Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
 
 Feedback:
-    SymbolicSpace ---> ConceptualSpace   (S->C, per stage when bivectorOutput active)
-    ConceptualSpace ---> PerceptualSpace (C->P, cross-forward; bivector-gated)
+    SymbolicSpace ---> ConceptualSpace   (S->C, per stage at order >= 1)
+    ConceptualSpace ---> PerceptualSpace (C->P, cross-forward)
 ```
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -71,8 +71,8 @@ compute brick --- see [Architecture.md](Architecture.md)).
 The two composition operators sigma and pi live on the spaces in a
 **fixed isomorphic pattern**.  Each space owns only the operator that
 fits its tier; the cross-tier feedback loops thread through those
-operators unconditionally; the **chart's role is to invoke the loop, not
-to dispatch a separate substrate per rule**.
+operators unconditionally; the parser selects grammar rules, not a
+separate substrate per rule.
 
 | Space | Owns | Used in `.forward(IS, CS)` / `.forward(PS, SS)` |
 |---|---|---|
@@ -122,7 +122,7 @@ The cognitively-real distinction between
 **attribution** ("the running boy") and **predication** ("the boy
 runs") is preserved at three downstream sites:
 
-1. **Parse tree / rule_id metadata** *(primary)* --- the chart records
+1. **Parse tree / rule_id metadata** *(primary)* --- the parser records
    *"this composition fired under rule `lift`"* vs *"under rule
    `lower`"*; the truth layer and output decoder read the `rule_id` to
    interpret the composed state.  This is the cheapest, structural
@@ -197,7 +197,7 @@ see an identical muxed tensor via `materialize()`.
 | Space | Codebook geometry | Stored | Metric | Retrieval |
 |-------|------------------|--------|--------|-----------|
 | PerceptualSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| SymbolicSpace | $[-1, +1]^d$ hypercube (bivector slots for tetralemma) | Symbol *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
+| SymbolicSpace | $[-1, +1]^d$ hypercube | Symbol *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
 | ConceptualSpace | Unit L2-norm directions (named directions) | Concept *directions*; input magnitude in $[-1, +1]$ encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ |
 
 ### Euclidean (Perceptual / Symbolic)
@@ -514,16 +514,9 @@ Matrix inverse via `InvertibleLinearLayer` (LDU).
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `codebook` | False -> `.what` is a passthrough `Tensor`; True -> `Codebook` |
 | `hasAttention` | Enable attention reweighting |
-| `bivectorOutput` | Applies Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ to the per-slot percept event; writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation` |
 
 **Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation operator ---
 percepts represent feature magnitudes with sign indicating direction.
-
-Under `bivectorOutput=true`, per-slot scalar activation is replaced by a
-non-negative paired-index pair $[aP, aN] \in [0, 1]^2$. The signed-sum
-`x = sum_d event[..., d]` is split via `aP = max(0, x); aN = max(0, -x)`.
-Reverse recovers `aP - aN` and broadcasts uniformly across the input dim
-(per-feature detail within a slot is intentionally lossy).
 
 ---
 
@@ -545,9 +538,8 @@ sign matters.
 | `self.sigma_percept` (`SigmaLayer`) | P $\to$ C | additive linear `tanh(W @ atanh(x) + b)`, non-square in the general case (`percept_dim -> concept_dim`) | Canonical forward C-tier fold. The legacy `self.pi` was retired by Phase B; `_pi_reverse` was renamed to `_sigma_percept_reverse`. |
 
 One SigmaLayer handles both directions via self-inverse in the square /
-invertible regime (the bivector configuration forces square dim --- the
-codebook does the dim adaptation inside `project`). In the
-non-square / non-invertible regime, two SigmaLayers
+invertible regime; codebook/projection modes handle dimensional adaptation
+where configured. In the non-square / non-invertible regime, two SigmaLayers
 (`sigma_percept_1`, `sigma_percept_2`) are constructed when
 reversible without invertibility, with independent weights.
 
@@ -574,27 +566,15 @@ s = atanh(y)
 x = tanh(W^{-1} @ (s - b))
 ```
 
-**Activation carrier.** `ActiveEncoding.nDim = 2`: activation is a 2-dim
-bivector `[aP, aN]` per position, encoding tetralemma (*catuskoti*) corners:
-
-| State | `[aP, aN]` |
-|-------|------------|
-| TRUE (*asti*) | `[1, 0]` |
-| FALSE (*nasti*) | `[0, 1]` |
-| BOTH (*ubhaya*) | `[1, 1]` |
-| NEITHER (*anubhaya*) | `[0, 0]` |
-
-BOTH encodes first-class inconsistency; NEITHER encodes unknown. Operations
-obey De Morgan under pole-swap negation $\neg[aP, aN] = [aN, aP]$:
-
-- Conjunction: `[min(aP, bP), max(aN, bN)]`
-- Disjunction: `[max(aP, bP), min(aN, bN)]`
-
-See [BuddhistParallels.md](BuddhistParallels.md).
+**Activation carrier.** `subspace.activation` is the scalar/presence
+activation used by the Space pipeline. Paired `[pos, neg]` tensors still
+appear in explicit grammar/truth operators that implement catuskoti logic,
+and in user-supplied truth-set activations, but they are no longer a
+space-wide output mode.
 
 **MASK on `SubSpace._active`.** Two orthogonal per-position tensors:
-`activation` (4-valued bivector) and `_active: [B, N, M]` (modality presence
-flags). `_apply_mask` is shape-disambiguated:
+`activation` and `_active: [B, N, M]` (modality presence flags).
+`_apply_mask` is shape-disambiguated:
 
 | Mask shape | Effect |
 |------------|--------|
@@ -687,7 +667,7 @@ Symmetric to `ConceptualSpace.pi`.
 
 See [Language.md](Language.md) for the language system design.
 
-**Forward (codebook=True).**
+**Forward (codebook=quantize).**
 
 1. Extract concept activation `[B, nConcepts]`.
 2. Map through `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=True)`.
@@ -703,56 +683,38 @@ exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`.
 | Parameter | Description |
 |-----------|-------------|
 | `nActive` | Total symbols (output + reconstruction) |
-| `nVectors` | Codebook size (= nSymbols when codebook=true) |
+| `nVectors` | Codebook size (= nSymbols when codebook=quantize) |
 | `codebook` | Enable codebook quantization |
-| `bivectorOutput` | Returns per-prototype catuskoti bivector $[B, V_S, 2]$ via `Codebook.forward(..., project=True)`; reverse lifts via cached SVD pseudo-inverse |
 
 **Codebook shape.** One row per symbol at the natural `nDim` width:
 `subspace.what.getW().shape == (nVectors, nDim)`. Each row is a free
 coefficient vector over conceptual axes. Codebook is *not* unit-norm; symbol
 prototypes are free patterns, retrieved via Euclidean L2.
 
-The per-prototype catuskoti bivector `[B, V_S, 2]` lives on
-`subspace.activation`, NOT in the codebook. Populated by
-`Codebook.forward(input, project=True)` --- the **intrinsic snap**:
-
-```
-pos[b, n] = sum_v relu(dot(input[b, v], W[n]))
-neg[b, n] = sum_v relu(dot(-input[b, v], W[n]))
-```
-
-The matching decode `Codebook.reverse(bivec, project=True)` is the cached SVD
-pseudo-inverse: C $\to$ S $\to$ C round-trip projects the input onto span(W)
-and is a fixed point thereafter (verified by `test/test_idempotent_loop.py`).
-
 The C $\leftrightarrow$ S boundary as **categorization**: calling
 `SymbolicSpace.forward` IS the act of *naming* --- projecting concept
-activation onto the named codebook lattice. Clean prototype match $\to$
-TRUE-corner activation; noisy match $\to$ degraded TRUE pole; off-lattice
-$\to$ NEITHER. The dialectic loop is snap (synthesis) $\to$ grammar (logic)
-$\to$ decode (analysis) $\to$ next pass.
+activation onto the named codebook lattice. The dialectic loop is snap
+(synthesis) $\to$ grammar (logic) $\to$ decode (analysis) $\to$ next pass.
 
 See [BuddhistParallels.md](BuddhistParallels.md), [Logic.md](Logic.md), and
 [Mereology.md](Mereology.md).
 
-**Hierarchical mode.** When `<useButterflies>true</useButterflies>` or
-`<useGrammar>all</useGrammar>`, BasicModel stores per-stage
-ConceptualSpace/SymbolicSpace instances. Symbol dimension is geometrically
-partitioned per order. See [Reasoning.md](Reasoning.md).
+**Conceptual order.** `BasicModel` stores per-stage
+ConceptualSpace/SymbolicSpace instances for `conceptualOrder`. Symbol
+dimension is geometrically partitioned per order. See [Reasoning.md](Reasoning.md).
 
 ---
 
 ## Monotonicity of the lift / lower chain
 
-Under `<bivectorOutput>true</bivectorOutput>` on P, C, and S, the P $\to$ C
-$\to$ S chain is an **order-preserving map on a positive cone**.
+With `monotonic=true`, the P $\to$ C $\to$ S chain is an
+**order-preserving map on a positive cone**.
 
 Three pieces:
 
-1. **Activations live on the positive cone** `[0, 1]^{2K}` (paired-index
-   bivector). PerceptualSpace's Q2 promotion is the bitonic-to-bivector entry
-   point. The componentwise partial order $\leq$ *is* the parthood order:
-   $s_1 \leq s_2$ componentwise $\Leftrightarrow$ `s1` is part of `s2`.
+1. **Truth-set activations may live on the positive cone** `[0, 1]^{2K}`
+   as user-supplied paired `[pos, neg]` bivectors. The componentwise
+   partial order $\leq$ is the parthood order for that truth surface.
 
 2. **The Pi / Sigma maps are restricted to $W \geq 0$** entry-wise
    (`monotonic=True` selects `NonNegativeInvertibleLinearLayer` or
@@ -762,7 +724,8 @@ $$
 a \leq b \text{ componentwise} \Longrightarrow Wa \leq Wb \text{ componentwise}
 $$
 
-3. **Therefore Pi / Sigma preserve parthood pole-by-pole.**
+3. **Therefore Pi / Sigma preserve parthood pole-by-pole for truth-set
+   bivectors and other positive-cone activations.**
 
 The bivector layout keeps the contradiction corner `[1, 1]` distinct from the
 ignorance corner `[0, 0]` under positive matmul --- a single bitonic axis would
@@ -778,16 +741,15 @@ and [BuddhistParallels.md](BuddhistParallels.md).
 ## SyntacticSpace --- retired
 
 The standalone `SyntacticSpace` class has been retired. Grammar /
-chart / derivation-tree machinery now lives on `WordSpace`, which
+parser / derivation-tree machinery now lives on `WordSpace`, which
 attaches a `SyntacticLayer` to `SymbolicSpace` (the canonical grammar
-host). The CNF binary-derivation behavior previously documented here
-is preserved by `WordSpace.compose` + the chart at S; words are still
+host). The binary-derivation behavior previously documented here
+is preserved by `WordSpace.compose`; words are still
 concepts encoding grammatical rules, and the derivation is still
 stored as word tuples --- just on `WordSpace` rather than on a separate
 Space.
 
-See [Language.md](Language.md) for the grammar and the chart's per-tier
-rule dispatch.
+See [Language.md](Language.md) for grammar and parser dispatch.
 
 ---
 

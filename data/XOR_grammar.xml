@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- XOR_grammar: XOR-via-grammar test config. The chart parser
-       (softChartCompose=true) is the candidate grammar discoverer;
+  <!-- XOR_grammar: XOR-via-grammar test config. The signal router
+       is the candidate grammar discoverer;
        the parse-side grammar names exactly the three Boolean
        primitives XOR's DNF requires (not, intersection, union). The
        chart's recovered (Viterbi-hardened) grammar is then compared
@@ -88,8 +88,6 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>all</useGrammar>
-    <softChartCompose>true</softChartCompose>
     <chartTau>2.0</chartTau>
     <routerKind>signal</routerKind>
     <language>

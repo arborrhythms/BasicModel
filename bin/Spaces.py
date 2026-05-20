@@ -837,10 +837,48 @@ class Basis(nn.Module):
 
     def clearActivation(self):
         """Clear activation.
-        
+
         See class docstring for the operation contract.
         """
         self.activation = None
+
+    def apply_priming(self, priming_mask):
+        """Multiply ``self.activation`` by ``priming_mask`` in place.
+
+        Plan doc/plans/2026-05-20-primed-reverse-generation.md §B —
+        post-snap multiplication. Called by reverse-call wiring after
+        ``Codebook.forward`` has written ``.activation``, so downstream
+        consumers (e.g. ``activeDense``) see the priming boost.
+
+        No-op when either side is ``None``, or when the trailing
+        dimensions of ``.activation`` do not match the priming mask's
+        shape (broadcastability is required, not equality on every
+        axis — typical case is ``activation: [B, V]`` and
+        ``priming_mask: [V]`` or ``[B, V]``).
+
+        With ``priming_mask`` identically 1.0 (default), this is a no-op
+        on the values — current behavior is preserved.
+        """
+        if self.activation is None or priming_mask is None:
+            return
+        act = self.activation
+        if not torch.is_tensor(act):
+            return
+        pm = priming_mask
+        try:
+            pm = pm.to(dtype=act.dtype, device=act.device)
+        except (AttributeError, RuntimeError):
+            return
+        # Broadcast-multiply: require the priming's trailing dims to
+        # match the activation's. The most common shapes are:
+        #   act: [B, V],   priming: [V]      → broadcasts per-batch
+        #   act: [B, V],   priming: [B, V]   → per-row weighting
+        if pm.ndim > act.ndim:
+            return
+        if any(pm.shape[i] != act.shape[act.ndim - pm.ndim + i]
+               for i in range(pm.ndim) if pm.shape[i] != 1):
+            return
+        self.activation = act * pm
 
     def forward(self, x):
         """Forward pass.
@@ -1053,7 +1091,8 @@ class Basis(nn.Module):
     # for the mode dispatch and region semantics.
 
     def lift(self, X1, X2=None, mode='OR', kind='strict', inverse=False,
-             monotonic=False, left_rows=None, right_rows=None):
+             monotonic=False, left_rows=None, right_rows=None,
+             left_priming=None, right_priming=None):
         """Synthesis dispatcher: many → one (∨).
 
         Forward routes through Ops.lift. `kind` selects the point body
@@ -1069,6 +1108,12 @@ class Basis(nn.Module):
             ``refs_by_category[cat] ∩ refs_by_order[k]`` from the
             attached ``KnowledgeView`` (see plan §Lift/Lower
             Restricted-Candidate Inverse).
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            inverse-only — boost-above-unity weights from the
+            Taxonomy's priming buffer that bias argmin/argmax toward
+            primed candidates. Default 1.0 = no bias. See plan
+            doc/plans/2026-05-20-primed-reverse-generation.md.
         """
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lift inverse")
@@ -1076,20 +1121,23 @@ class Basis(nn.Module):
                 return X1, X1
             return Ops.disjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
-                left_rows=left_rows, right_rows=right_rows)
+                left_rows=left_rows, right_rows=right_rows,
+                left_priming=left_priming, right_priming=right_priming)
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1, X1
             return Ops.conjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
-                left_rows=left_rows, right_rows=right_rows)
+                left_rows=left_rows, right_rows=right_rows,
+                left_priming=left_priming, right_priming=right_priming)
         return Ops.lift(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )
 
     def lower(self, X1, X2=None, mode='AND', kind='strict', inverse=False,
-              monotonic=False, left_rows=None, right_rows=None):
+              monotonic=False, left_rows=None, right_rows=None,
+              left_priming=None, right_priming=None):
         """Analysis dispatcher: one → many (∧).
 
         Forward routes through Ops.lower. `kind` selects the point body
@@ -1101,6 +1149,10 @@ class Basis(nn.Module):
         ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
             inverse-only — see ``Basis.lift`` for the typed
             restricted-candidate inverse story.
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            inverse-only — see ``Basis.lift`` for the priming-mask
+            story.
         """
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lower inverse")
@@ -1108,14 +1160,16 @@ class Basis(nn.Module):
                 return X1, X1
             return Ops.conjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
-                left_rows=left_rows, right_rows=right_rows)
+                left_rows=left_rows, right_rows=right_rows,
+                left_priming=left_priming, right_priming=right_priming)
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1, X1
             return Ops.disjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
-                left_rows=left_rows, right_rows=right_rows)
+                left_rows=left_rows, right_rows=right_rows,
+                left_priming=left_priming, right_priming=right_priming)
         return Ops.lower(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )

@@ -7,14 +7,12 @@
 
        The idempotent loop is the round-trip:
 
-         x  =>  Codebook.forward(x, project=True)   =>  bivec [B, V_S, 2]
-         bivec  =>  Codebook.reverse(bivec, project=True)  =>  x'
+         x  =>  SymbolicSpace.forward(x)   =>  scalar activation
+         activation  =>  SymbolicSpace.reverse(activation)  =>  x'
 
        Properties:
          (a) For x in span(W) (codebook row space), x' == x: the round
-             trip is the identity. The bivector reads
-             [pos[n], neg[n]] = [relu(x.W[n]), relu(-x.W[n])]
-             = catuskoti truth corner per prototype.
+             trip is the identity.
          (b) For x with a component orthogonal to span(W), one cycle
              projects it onto span(W); subsequent cycles are the identity
              (idempotent thereafter).
@@ -22,8 +20,7 @@
              NEITHER corner [0, 0] for every prototype.
 
        This config exercises that primitive through a full SymbolicSpace
-       in GENUINELY non-grammatical mode (useGrammar='none', via the
-       default-only unary sigma/pi substrate grammar; see the WordSpace
+       in the default-only unary sigma/pi substrate grammar; see the WordSpace
        grammar block below for why an empty block would NOT be
        non-grammatical). The C to S codebook snap that CREATES symbols
        is a subsymbolic substrate op and runs unconditionally regardless
@@ -127,13 +124,12 @@
     <language>
       <start>S</start>
       <grammar>
-        <!-- Idempotent loop: GENUINELY non-grammatical
-             (useGrammar='none'). An EMPTY grammar block does NOT
-             yield non-grammatical: Grammar._ensure_configured
+	        <!-- Idempotent loop: default-only grammar. An EMPTY grammar
+	             block does NOT yield this mode: Grammar._ensure_configured
              (bin/Language.py) falls back to _NOOP_GRAMMAR =
              S:not(S) when no inline grammar is present, and the
              ``not`` rule is non-substrate, so _derive_use_grammar
-             (bin/Models.py) returns 'all' (chart + per-stage merge
+	             (bin/Models.py) returns 'all' (parser + per-stage merge
              glue wired). To be genuinely non-grammatical the grammar
              must be the "default-only" case: ONLY the trivial unary
              pi / sigma substrate folds at every tier (compose +
@@ -142,12 +138,12 @@
              data/model.xml's canonical default-only grammar verbatim.
 
              The symbolic loop still creates symbols in this mode: the
-             C to S codebook snap (SymbolicSpace.forward, bin/Spaces.py)
+	             C to S codebook snap (SymbolicSpace.forward, bin/Spaces.py)
              is a subsymbolic SUBSTRATE op that runs UNCONDITIONALLY
              regardless of grammar state (same precedent as the
              post-#21 unconditional ``sigma_percept``). Symbol
              creation is the codebook quantize, not a grammatical
-             rule, so it is exercised even with useGrammar='none'.
+	             rule, so it is exercised even without non-default grammar.
              The codebook remains the only learned object in the
              C-S loop. -->
         <compose>

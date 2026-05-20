@@ -43,7 +43,7 @@
   <xs:complexType name="architectureType">
     <xs:all>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
-      <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="conceptualOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
@@ -54,8 +54,7 @@
       <xs:element name="server" type="serverType" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- embeddingPath retired 2026-05-12: embeddings now live inside
-           the single .ckpt bundle, not a separate .kv artifact. -->
+      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
       <xs:element name="monotonic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -85,10 +84,14 @@
            tapered = geometrically narrowing slices (default);
            uniform = equal-width slices. -->
       <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
+      <xs:element name="maxActivePerLayer" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="symbolLearning" type="symbolLearningType" minOccurs="0"/>
       <!-- Per-stage chart re-parse retired 2026-05-12 alongside chart-
            at-stem.  The chart now fires uniformly at C-tier inside
            every body stage; the legacy reparse knob is no longer read. -->
-      <!-- MereologicalTree capacity (matches SymbolicSpace.nVectors). -->
+      <!-- Retired compatibility knob. MereologicalTree has been removed;
+           values are accepted but ignored. -->
       <xs:element name="mereologicalTreeSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Optional: dump POS-labelled syntax tree at end of every
            MentalModel.forward(); see doc/Language.md "POS side-channel". -->
@@ -135,12 +138,41 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:simpleType name="codebookModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="quantize"/>
+      <xs:enumeration value="project"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="chartCollapseEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="root"/>
       <xs:enumeration value="broadcast"/>
     </xs:restriction>
   </xs:simpleType>
+
+  <xs:simpleType name="parserBackendEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="chart"/>
+      <xs:enumeration value="stm"/>
+      <xs:enumeration value="parallel"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="routerKindEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="chart"/>
+      <xs:enumeration value="signal"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="symbolLearningType">
+    <xs:all>
+      <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
 
   <xs:simpleType name="reconstructEnum">
     <xs:restriction base="xs:string">
@@ -239,12 +271,12 @@
   <xs:complexType name="trainingType">
     <xs:all>
       <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="numEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="numEpochs" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- DataLoader prefetch workers. 0 means synchronous in-process
            batch assembly. -->
       <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="learningRate" type="nonNegativeFloat" minOccurs="0"/>
       <!-- reconstructionScale: blend weight between OutputSpace
            prediction loss and reconstruction loss. Higher value =
            more reconstruction. 0 = output-only training.
@@ -301,7 +333,7 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -321,7 +353,7 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
@@ -365,7 +397,7 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
@@ -386,7 +418,7 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
@@ -395,6 +427,7 @@
       <xs:element name="codebookGrowthEpsilon" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+      <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- perWordStemSerial: when true, the per-word stem uses a
            causal cursor loop (option (a) from the K-microbatch
            design discussion) instead of the parallel-over-AR-windows
@@ -420,8 +453,9 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -455,6 +489,7 @@
       <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableOverlap" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
@@ -474,7 +509,7 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -490,17 +525,8 @@
        (armaP / armaQ / armaHiddenDim); the loss weight lives under
        <architecture><training> as <armaScale>.
        ═══════════════════════════════════════════════════════════════════ -->
-  <xs:simpleType name="useGrammarType">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="all"/>
-      <xs:enumeration value="thoughtFree"/>
-      <xs:enumeration value="none"/>
-    </xs:restriction>
-  </xs:simpleType>
-
   <xs:complexType name="wordSpaceType">
     <xs:all>
-      <xs:element name="useGrammar" type="useGrammarType" minOccurs="0"/>
       <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -514,14 +540,12 @@
       <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="chartCompose" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="parserBackend" type="parserBackendEnum" minOccurs="0"/>
+      <xs:element name="routerKind" type="routerKindEnum" minOccurs="0"/>
       <!-- Soft-superposition chart output behavior: root (single root
            sentence node, other positions zero) or broadcast (replicate
            root across all positions). Default 'root'. -->
       <xs:element name="chartCollapse" type="chartCollapseEnum" minOccurs="0"/>
-      <!-- Soft (differentiable) chart compose: CKY inside pass
-           populates current_rules via top-K mixing. -->
-      <xs:element name="softChartCompose" type="xs:boolean" minOccurs="0"/>
       <!-- Temperature for the soft-chart rule-score softmax. -->
       <xs:element name="chartTau" type="positiveFloat" minOccurs="0"/>
       <!-- Max span width considered by the chart. -->
@@ -561,35 +585,19 @@
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="languageType">
     <xs:all>
+      <xs:element name="start" type="xs:string" minOccurs="0"/>
       <xs:element name="grammar" type="grammarType" minOccurs="0"/>
       <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
   <xs:complexType name="grammarType">
-    <!-- <grammar> splits into <parse> (parsing / chart compose, leaves
-         to root) and <generate> (generation from a deep state, root
-         to leaves). Each section contains either <rule> elements
-         directly, or per-tier sub-sections <symbols> / <concepts> /
-         <percepts> each containing <rule> elements. Tier tagging
-         lets each space (PerceptualSpace = percepts, ConceptualSpace
-         = concepts, SymbolicSpace = symbols) read its own subset.
-         A space "can conduct any/all of the operations" -- the
-         tier tag is an inductive-bias hint, not a hard restriction.
-
-         Rule body grammar:
-           parse:    LHS = op.forward(arg, ...)
-           generate: LHS[,LHS] = op.reverse(arg)
-
-         Bare-symbol-sequence rules ('V O' / 'S VO' / 'C') and PROJECT
-         rules ('NP = N') are also accepted for typed structural
-         composition. The legacy section names <upward> / <downward>
-         remain accepted as aliases for back-compat with stale
-         checked-in XMLs but new XMLs should use <parse> / <generate>. -->
-    <xs:all>
-      <xs:element name="compose"  type="grammarSectionType" minOccurs="0"/>
-      <xs:element name="generate" type="grammarSectionType" minOccurs="0"/>
-    </xs:all>
+    <!-- Grammar XML is intentionally open: current configs use bare
+         tier tags (<P>, <C>, <S>) and structured sections such as
+         <compose>/<generate>. Language.py owns rule parsing. -->
+    <xs:sequence>
+      <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="grammarSectionType">

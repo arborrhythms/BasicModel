@@ -1,31 +1,12 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_xor_bivector: PerceptualSpace + ConceptualSpace + SymbolicSpace
-       bivector regime on the XOR dataset. Exercises spec §B3 (Perceptual)
-       alongside Stage 4-6 of the 2026-05-08 conceptual-loopback design:
-         - PerceptualSpace.bivectorOutput=true: forward applies Q2
-           promotion (max(0, x), max(0, -x)) per slot; activation
-           shape becomes [B, N, 2].
-         - ConceptualSpace.bivectorOutput=true: forward returns
-           [B, V_C, 2]; reverse lifts via cached SVD pseudo-inverse.
-         - SymbolicSpace.bivectorOutput=true: same shape on its
-           output, mirror of the C-tier.
-         - svdOrthogonalInit=true on both codebooks so the lift is
-           well-conditioned from t=0.
-         - conceptualOrder=1: single C-S step, no per-stage halving.
-         - subsymbolicEnabled marker (documentation-only; loopback is
-           unconditional under bivector regime). -->
+  <!-- MM_xor_loopback: PerceptualSpace + ConceptualSpace + SymbolicSpace
+       scalar-codebook loopback on the XOR dataset. This is the surviving
+       scalar replacement for the retired bivector smoke config. -->
   <architecture>
-    <!-- Documentation marker: the symbolic loopback (P_event || S_event
-         concat into ConceptualSpace's PiLayer) is unconditional under
-         the bivector regime per
-         doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md
-         Stage 2. The actual gate is <ConceptualSpace><bivectorOutput>;
-         no code reads this flag. -->
-    <subsymbolicEnabled>true</subsymbolicEnabled>
     <modelType>embedding</modelType>
     <!-- Pure forward-only smoke: zero out truth weights and learning so
-         the bivector decode path is the only thing exercised. -->
+         the scalar loopback path is the only thing exercised. -->
     <truthBiasScale>0.0</truthBiasScale>
     <LuminosityWeight>0.0</LuminosityWeight>
     <UniversalityWeight>0.0</UniversalityWeight>
@@ -51,9 +32,7 @@
     <nInput>8</nInput>
     <nInputDim>4</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim is the codebook prototype width; the P-tier output is the
-         per-slot catuskoti bivector [B, N, 2], so nOutputDim is 2
-         regardless of nDim. Mirrors the ConceptualSpace block below. -->
+	    <!-- nDim is the codebook prototype width. -->
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
@@ -66,13 +45,9 @@
     <nInput>8</nInput>
     <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim is the codebook prototype content width. Under bivector
-         projection it equals nInputDim so PiLayer can stay a square
-         isomorphism (2x2) and Codebook.project does the dim adaptation
-         to the bivector handoff via per-prototype accumulators. The
-         right-half loopback widening was retired in favour of per-
-         order input sourcing on ConceptualSpace.forward, so nDim no
-         longer needs to absorb S.nOutputDim. -->
+	    <!-- nDim is the codebook prototype content width. The right-half
+	         loopback widening was retired in favour of per-order input
+	         sourcing on ConceptualSpace.forward. -->
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
@@ -88,7 +63,7 @@
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
-    <!-- Bivector smoke: zero out the codebook regularizers. -->
+	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
     <accumulateTruth>0</accumulateTruth>

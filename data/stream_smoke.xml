@@ -19,7 +19,7 @@
       <numEpochs>1</numEpochs>
       <batchSize>4</batchSize>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autoload>false</autoload>
       <sentencePrediction>true</sentencePrediction>
     </training>

@@ -50,10 +50,9 @@ Interpretation: $+1$ = strong presence, $0$ = neutral, $-1$ = absence.
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
-`Basis` supports **monotonic** (plain min/max, used by P/C/S whenever
-`<bivectorOutput>true</bivectorOutput>`, so the entire P$\to$C$\to$S chain
-operates on the non-negative paired-index cone) and **bitonic** (sign-aware,
-legacy default). Monotonic forms here; bitonic forms (RadMin, RadMax) in Section 7.
+`Basis` supports **monotonic** (plain min/max over positive-cone values,
+including user-supplied truth-set bivectors) and **bitonic** (sign-aware).
+Monotonic forms here; bitonic forms (RadMin, RadMax) in Section 7.
 See [Spaces.md "Monotonicity of the lift / lower
 chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
@@ -169,10 +168,9 @@ where $t_i = \text{activation}_i \times \text{degree}_i$. Two kinds of regions:
 
 ### Propositional Structure
 
-Both parthood and equality are S-tier operations on the bivector
-SymbolicSubSpace:
+Both parthood and equality are S-tier operations over symbolic activations:
 
-- **`part(S, S)`** --- containment on the bivector symbol subspace. Grammar
+- **`part(S, S)`** --- containment by clipped-cosine projection. Grammar
   applies it as `score * B`, scaling the whole by parthood degree.
 - **`equals(S, S)`** --- identity as mutual parthood; delegates to `Basis.equal`.
 

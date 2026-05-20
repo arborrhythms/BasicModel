@@ -18,7 +18,7 @@
     <training>
       <numEpochs>2</numEpochs>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
 
@@ -34,12 +34,10 @@
   </architecture>
 
   <WordSpace>
-    <!-- LearnedSVO: route compose through the chart-like pair-scorer
-         path so SVO rides the grammar's S -> S VO / VO -> V O rules
+    <!-- LearnedSVO: SVO rides the grammar's S -> S VO / VO -> V O rules
          instead of the positional heuristic. Generation stays off by
          default; flip to true to populate ``_predicted_head`` via the
          downward S -> C head emission. -->
-    <chartCompose>true</chartCompose>
 
     <language>
       <!-- English grammar (2026-05-05 rewrite). Inline XML form;

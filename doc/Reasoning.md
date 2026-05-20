@@ -105,64 +105,35 @@ reconstruction objective:
 Paraphrase-invariance holds because semantically similar sentences snap to
 nearby codebook entries.
 
-## Architecture Modes: useGrammar
+## Parser And Conceptual Order
 
-One knob selects among Sigma-Pi architectures. Shamatha Speech is a target
-narrow-grammar mode wired as a DNF-object policy with contiguity checks.
+Grammar mode is derived from the loaded grammar block. Default-only unary
+`pi` / `sigma` rules take the fast path; non-default operator rules enable
+grammar-directed parser dispatch.
 
-| | **useGrammar="none"** | **useGrammar="shamathaSpeech" target** | **useGrammar="all"** |
-|---|---|---|---|
-| Behavior | Flat shared sigma (default) | DNF object grammar + contiguity | Grammar-directed composition |
+`conceptualOrder` controls the number of P$\to$C$\to$S stages and the
+symbol partition geometry. Higher-order symbols write to later partitions,
+so truth grounding, consistency, and extrapolation can respect conceptual
+order.
 
-### Flat (useGrammar="none")
+The parser backend is selected by `WordSpace.parserBackend`:
 
-A single shared PiLayer (P$\leftrightarrow$C) and SigmaLayer (C$\leftrightarrow$S) on a concatenated
-`[percepts, symbols]` tensor at every conceptual order. All orders share one
-undifferentiated symbolic space.
+| Backend | Use |
+|---------|-----|
+| `chart` | Default compatibility path. |
+| `stm` | Shift/reduce over typed STM with admissibility masks from grammar signatures. |
+| `parallel` | Migration bridge: initializes STM while chart remains authoritative. |
 
-Per iteration `t`:
-
-1. **Input.** `concept_input = cat([percepts, sym_feedback], dim=1)`.
-2. **Pi** (`ConceptualSpace.pi`): percepts $\to$ concepts via `forwardPi`.
-3. **Sigma** (`SymbolicSpace.sigma`): concepts $\to$ symbols via `forwardSigma`.
-4. **Feedback**: Symbol activation norms broadcast back to the symbol portion.
-5. **Reverse**: `reverseSigma` $\to$ peel symbol portion $\to$ `reversePi`, per order.
-
-Key: all conceptual orders share one undifferentiated symbolic space; no way
-to tell from a symbol vector alone which order produced it.
-
-### Grammar-directed (useGrammar="all")
-
-Progressive-bottleneck path with external pair-average merge (`_pair_merge`
-caching `left - right` diffs in `_merge_diffs`), per-level indexed
-Sigma/Pi (`conceptualSpace[t]` / `symbolicSpace[t]`), and cached symbol
-feedback. Symbol dimension geometrically partitioned per order --- gives
-**partition-aware reasoning**: truth grounding, consistency, and
-extrapolation respect conceptual order.
-
-Forward:
+Explicit ordered grammar is preferred:
 
 ```
-for t in range(conceptualOrder):
-    x = pair_merge(x)                    # halve vector count (external)
-    x = x + sym_feedback                 # additive feedback
-    concepts = conceptualSpace[t](x)     # per-level sigma
-    symbols  = symbolicSpace[t](concepts) # per-level pi
-    sym_feedback = symbols.norm(...)
+S4 = lift(NP3, VP1)
+S5 = lift(NP4, MP1)
 ```
 
-Reverse:
-
-```
-x = symbolicSpace[last].reverse(sym_vec)
-for t in reversed(range(conceptualOrder)):
-    x = conceptualSpace[t].reverse(x)
-    x = x - cached_feedback[t]           # undo additive feedback
-    x = pair_unmerge(x)                  # restore vector count
-```
-
-Pair-unmerge uses cached `_merge_diffs` to recover both originals from each
-averaged pair --- inverse is exact.
+Here all NPs share base category `NP`; the suffix gives the conceptual
+order. Lift and lower are the only syntactic operations that change
+argument/return order.
 
 ## Configuration
 
@@ -170,7 +141,7 @@ averaged pair --- inverse is exact.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<conceptualOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
-| `<useGrammar>` | `<WordSpace>` | false | Grammar-directed composition |
+| `<parserBackend>` | `<WordSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
 | `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Activation-norm cap driving per-cell trust score in `TruthLayer.record_batch`. Codebook NN lookup at compact time dedupes near-zero/near-duplicate vectors. |
 
 ## Contemplative Awareness Methods

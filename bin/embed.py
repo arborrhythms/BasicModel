@@ -505,6 +505,8 @@ class KnowledgeView:
         self._refs_by_category = ti['refs_by_category']
         tax = knowledge_section['taxonomy']
         self._parent = tax['parent']
+        self._children_values = tax['children_values']
+        self._children_offsets = tax['children_offsets']
         self._taxonomy_names = tax['taxonomy_names']
         self._ordered_taxonomy_names = tax.get('ordered_taxonomy_names', {})
         self._ref_categories = {
@@ -585,6 +587,27 @@ class KnowledgeView:
         if t is None:
             return torch.empty(0, dtype=torch.long)
         return t
+
+    def parent_of(self, ref_id: int) -> Optional[int]:
+        """Taxonomy parent of ``ref_id``; ``None`` for the root or out-of-range."""
+        rid = int(ref_id)
+        if rid < 0 or rid >= self._parent.shape[0]:
+            return None
+        p = int(self._parent[rid].item())
+        return None if p < 0 else p
+
+    def children_of(self, ref_id: int) -> torch.Tensor:
+        """Immediate taxonomy children of ``ref_id`` as a LongTensor of
+        ref_ids. Empty tensor for leaves or out-of-range nodes.
+        """
+        rid = int(ref_id)
+        if rid < 0 or rid >= self._children_offsets.shape[0] - 1:
+            return torch.empty(0, dtype=torch.long)
+        start = int(self._children_offsets[rid].item())
+        end = int(self._children_offsets[rid + 1].item())
+        if end <= start:
+            return torch.empty(0, dtype=torch.long)
+        return self._children_values[start:end]
 
 
 def load_knowledge_view(path: str) -> 'KnowledgeView':

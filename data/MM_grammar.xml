@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_grammar: MentalModel on XOR via the grammar-directed composition
-       path (useGrammar=true) with VQ-VAE enabled.
+  <!-- MM_grammar: MentalModel on XOR via non-default grammar-directed
+       composition (derived from the grammar block) with VQ-VAE enabled.
        Sibling: MM_xor_grammar.xml is the useVQVAE=false variant used for
        isolated regression of the recurrent Pi-Sigma + pairwise compose
        without VQ-VAE muddying the variable. -->
@@ -57,8 +57,6 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>all</useGrammar>
-    <softChartCompose>true</softChartCompose>
     <chartTau>2.0</chartTau>
     <language>
       <grammar>

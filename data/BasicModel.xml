@@ -15,7 +15,7 @@
       <numEpochs>2</numEpochs>
       <batchSize>128</batchSize>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autosave>true</autosave>
       <checkpointEveryBatches>500</checkpointEveryBatches>
       <sentencePrediction>true</sentencePrediction>

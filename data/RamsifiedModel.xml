@@ -17,7 +17,7 @@
     <training>
       <numEpochs>2</numEpochs>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autoload>false</autoload>
     </training>
 

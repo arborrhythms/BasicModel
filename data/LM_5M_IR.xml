@@ -4,12 +4,11 @@
        MM_5M_IR's space parameters exactly (word lexer, lexicon
        chunking, 1M-entry perceptual codebook, hierarchical 8-level
        ConceptualSpace shape) so the .kv lexicon and .ckpt embeddings
-       are interchangeable with MM_5M_IR.  Differs only in:
-         * useGrammar=all (chart-driven constituency)
+      are interchangeable with MM_5M_IR.  Differs only in:
+        * non-default grammar (parser dispatch is derived from the grammar block)
          * grammar block (full English grammar with PP rules)
-         * chart machinery: per-stage re-parse, noisy top-K=4 gating,
-           load-balance loss, per-rule width gates (Shazeer 2017
-           sparse-MoE pattern adapted to CKY rule selection)
+         * chart machinery: noisy top-K=4 gating, load-balance loss,
+           per-rule width gates (Shazeer 2017 sparse-MoE pattern)
        Distinct ckpt/kv paths only because we may want to keep the
        MM_5M_IR training run separate; once the lexicon is shared,
        you can copy MM_5M_IR.kv → LM_5M_IR.kv as a warm start.
@@ -23,7 +22,8 @@
     <weightsPath>LM_5M_IR.ckpt</weightsPath>
     <amp>bf16</amp>
 
-    <!-- MereologicalTree size matches SymbolicSpace nVectors. -->
+    <!-- Retired compatibility knob. Accepted by the schema, ignored by
+         runtime: the codebook is the meronymic structure. -->
     <mereologicalTreeSize>1024</mereologicalTreeSize>
 
     <!-- perStageChartReparse retired 2026-05-12: chart fires at C-tier
@@ -92,7 +92,6 @@
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>quantize</codebook>
-    <chunking>lexicon</chunking>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -116,9 +115,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>all</useGrammar>
-    <chartCompose>true</chartCompose>
-    <softChartCompose>true</softChartCompose>
+    <parserBackend>chart</parserBackend>
     <chartTau>2.0</chartTau>
     <wMax>32</wMax>
     <chartTopK>4</chartTopK>

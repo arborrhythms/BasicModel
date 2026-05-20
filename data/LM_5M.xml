@@ -3,23 +3,18 @@
   <!-- LM_5M: grammar-driven sibling of MM_5M.
 
        Same data / dim budget as MM_5M, but:
-         * useGrammar=all         (per-space SyntacticLayers dispatch
-                                   on the chart's rule selections, not
-                                   the unary pi/sigma defaults)
+         * non-default grammar    (parser dispatch is derived from the
+                                   grammar block; per-space SyntacticLayers
+                                   dispatch on parser rule selections)
          * conceptualOrder=1      (the per-stage Sigma-Pi cascade is
                                    replaced by single-stage chart-driven
                                    composition)
-         * softChartCompose=true  (CKY inside pass populates current_rules)
+         * parserBackend=chart    (compatibility parser path)
          * <wMax>                 (must be set explicitly because the
                                    chart's default w_max=8 would silently
                                    truncate any sentence > 7 tokens)
          * grammar block          (full English grammar instead of the
                                    trivial S=intersection/union pair)
-         * mereologicalTreeSize   (matches symbolic codebook V; the new
-                                   tree is writes-disabled by default,
-                                   so this only affects the size of the
-                                   parents/start/end buffers).
-
        Distinct ckpt/kv paths so LM_5M and MM_5M training can coexist.
        Server port also distinct so both can serve in parallel.
   -->
@@ -36,10 +31,8 @@
     <weightsPath>LM_5M.ckpt</weightsPath>
     <amp>bf16</amp>
 
-    <!-- MereologicalTree size matches SymbolicSpace nVectors so
-         _argmax_prototype indices are always in range. The tree's
-         writes_enabled flag stays False until the chart's POS / rule
-         pipeline is reliable enough to commit assertions. -->
+    <!-- Retired compatibility knob. Accepted by the schema, ignored by
+         runtime: the codebook is the meronymic structure. -->
     <mereologicalTreeSize>1024</mereologicalTreeSize>
 
     <!-- Per-stage chart firing is now built into the per-word stem
@@ -64,15 +57,7 @@
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <!-- ARIR (autoregressive + masked-fill).  AR loop trains the
-           model for next-token generation; IR adds reconstruction loss
-           at masked positions on the same forward.  K microbatch
-           windows per batch (one per AR step) so chart cost scales as
-           K times the per-call inside-pass cost.  The IR-only sibling
-           LM_5M_IR.xml runs the chart once per batch and trains the
-           same parameter shape, so transferring weights between the
-           two configs is straightforward. -->
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
     </training>
@@ -105,7 +90,7 @@
   </PerceptualSpace>
 
   <!-- ConceptualSpace: 3 stages (conceptualOrder=3 above). The chart's
-       CKY-driven composition gives 3 stages enough tree depth for basic
+       chart-driven composition gives 3 stages enough tree depth for basic
        constituency (S, NP/VP, word). -->
   <ConceptualSpace>
     <nOutput>1024</nOutput>
@@ -132,9 +117,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>all</useGrammar>
-    <chartCompose>true</chartCompose>
-    <softChartCompose>true</softChartCompose>
+    <parserBackend>chart</parserBackend>
     <chartTau>2.0</chartTau>
     <!-- N=1024 (input length); chart cost scales as N * w_max^2 * R.
          32 covers any sub-sentence chunk from the byte-level lexer

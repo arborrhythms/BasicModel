@@ -186,10 +186,11 @@ XML knobs (under SymbolicSpace):
 
 - **Trust via VQ EMA.** Already tracked for VQ commit loss.
 
-- **Parthood is preserved by Pi / Sigma.** Under bivectorOutput=true on P/C/S,
-  every activation lives on the non-negative paired-index cone, Pi/Sigma are
-  restricted to $W \geq 0$, and componentwise $\leq$ on the cone *is* the
-  parthood partial order. Each lift / lower preserves parthood pole-by-pole.
-  The bivector layout keeps contradiction `[1, 1]` distinct from ignorance
-  `[0, 0]` under positive matmul. See
+- **Parthood is preserved by Pi / Sigma.** Under `monotonic=true`, Pi/Sigma
+  are restricted to $W \geq 0$. User-supplied truth-set bivectors live on
+  the non-negative paired `[pos, neg]` cone, where componentwise $\leq$ is
+  the parthood partial order. Each lift / lower preserves parthood
+  pole-by-pole for that truth surface. The bivector layout keeps
+  contradiction `[1, 1]` distinct from ignorance `[0, 0]` under positive
+  matmul. See
   [Spaces.md "Monotonicity of the lift / lower chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).

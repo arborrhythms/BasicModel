@@ -8,8 +8,8 @@
        discontinuityLambda, impenetrableOverlap, impenetrableVariance)
        apply regardless of mode. -->
   <architecture>
-    <!-- conceptualOrder=0 is structurally required by useGrammar="thoughtFree"
-         (Models.py: thoughtFree => no higher-order P/C/S cycles). -->
+    <!-- conceptualOrder=0 keeps this one-pointed grammar out of higher-order
+         P/C/S cycles. Parser dispatch is derived from the grammar block. -->
     <conceptualOrder>0</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
@@ -29,7 +29,6 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>thoughtFree</useGrammar>
     <language>
       <start>S</start>
       <grammar>
@@ -86,7 +85,7 @@
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
     <accumulateTruth>0</accumulateTruth>
-    <!-- codebook=true is required so the SparsityRegLayer / VQ-VAE
+    <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE
          path is active; the four regularizer knobs below operate on
          the codebook tensor. -->
     <codebook>quantize</codebook>

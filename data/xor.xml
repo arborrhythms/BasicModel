@@ -16,7 +16,7 @@
     <nVectors>2</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=true. -->
+  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->
   <PerceptualSpace>
     <nOutput>4</nOutput>
     <nVectors>16</nVectors>
@@ -24,7 +24,7 @@
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=true. -->
+  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=quantize. -->
   <ConceptualSpace>
     <nOutput>3</nOutput>
     <nVectors>16</nVectors>

@@ -5556,6 +5556,23 @@ class ReconstructionStack:
         return int(self._top[b].item())
 
 
+def _intersect_long_rows(a, b):
+    """LongTensor intersection by row index, preserving sort order.
+
+    Both inputs are 1-D ``LongTensor`` of unique row indices (typical
+    output of ``refs_by_category`` / ``refs_by_order``). Returns the
+    sorted intersection as a 1-D ``LongTensor``. Either side empty
+    yields an empty result; both empty yields empty.
+    """
+    if a is None or b is None:
+        return torch.empty(0, dtype=torch.long)
+    if a.numel() == 0 or b.numel() == 0:
+        return torch.empty(0, dtype=torch.long)
+    # Boolean ``isin`` is the simplest correct implementation; sizes are
+    # category-bounded (tens, not thousands) so cost is negligible.
+    return a[torch.isin(a, b)]
+
+
 class Taxonomy:
     """Explicit parent->children order hierarchy for ramsified symbols.
 
@@ -5565,13 +5582,45 @@ class Taxonomy:
     symbols by order (0 = proper / specific; higher = more general).
     Pure-Python bookkeeping: no parameters, not an ``nn.Module``;
     hosted on the WordSpace singleton.
+
+    Also hosts the **priming buffer** for reverse-generation working-
+    memory state (plan doc/plans/2026-05-20-primed-reverse-generation.md).
+    The buffer lives on the Taxonomy because propagation walks
+    parent/children adjacency; co-locating the state with the graph
+    avoids indirection. The legacy in-process dicts
+    (``_parent``/``_children``) are unused on the WordSpace's instance
+    — propagation queries the attached ``embed.KnowledgeView`` instead.
     """
+
+    # Default priming knobs (overrideable per instance via
+    # ``configure_priming``). Plan doc/plans/2026-05-20-primed-reverse-
+    # generation.md §Configuration.
+    DEFAULT_PRIMING_DEPTH = 2
+    DEFAULT_HOP_DECAY = 0.5
+    DEFAULT_TEMPORAL_DECAY = 0.9
+    DEFAULT_BOOST_INITIAL = 1.0
+    DEFAULT_PRIMING_ENABLED = True
 
     def __init__(self):
         self._order = {}      # node id -> int order
         self._children = {}   # node id -> list[node id]
         self._parent = {}     # node id -> parent node id or None
         self._next = 0
+        # Priming state (allocated lazily via ``allocate_priming``).
+        self._priming = None      # FloatTensor [B, V_ref_capacity] | None
+        self._priming_B = 0
+        self._priming_capacity = 0
+        self._priming_live = 0
+        self._priming_view = None  # embed.KnowledgeView for adjacency walks
+        # Per-instance priming config (defaults from class constants).
+        self.priming_depth = self.DEFAULT_PRIMING_DEPTH
+        self.hop_decay = self.DEFAULT_HOP_DECAY
+        self.temporal_decay = self.DEFAULT_TEMPORAL_DECAY
+        self.boost_initial = self.DEFAULT_BOOST_INITIAL
+        self.priming_enabled = self.DEFAULT_PRIMING_ENABLED
+        # Telemetry counters (host-side; cheap to read in tests / logs).
+        self._priming_select_count = 0
+        self._priming_boosted_select_count = 0
 
     def add(self, order, parent=None):
         """Create a node at ``order`` (optionally under ``parent``);
@@ -5603,6 +5652,244 @@ class Taxonomy:
 
     def __len__(self):
         return len(self._order)
+
+    # -- priming buffer ---------------------------------------------------
+    # Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Part/whole
+    # priming mask. ``_priming[b, ref_id] = 1 + boost(ref_id)``:
+    #   * 1.0 = multiplicative identity (no priming, no change downstream)
+    #   * >1.0 = boost (recently active or near-neighbor in taxonomy)
+    #   * dissipates back toward 1.0 via ``decay`` and ``propagate``'s
+    #     hop_decay
+    # Allocated to ``capacity`` (V_ref_capacity) with only the first
+    # ``live`` columns active; matches the artifact's capacity-slack
+    # pattern for symbol-learning appends.
+
+    def allocate_priming(self, batch_size, capacity, live, *, device=None,
+                         dtype=None):
+        """Allocate the priming buffer at ``[batch_size, capacity]``,
+        initialized to 1.0 (multiplicative identity).
+
+        ``live`` is the number of currently-occupied ref rows (the rest
+        is slack reserved for symbol-learning appends). Re-allocation
+        with a smaller batch / capacity / live preserves any current
+        primed values in the overlapping region; a larger allocation
+        copies forward and fills the new space with 1.0.
+        """
+        import torch
+        B = int(batch_size)
+        C = int(capacity)
+        L = int(live)
+        if dtype is None:
+            dtype = torch.float32
+        new = torch.ones(B, C, dtype=dtype, device=device)
+        old = self._priming
+        if old is not None:
+            ob = min(B, old.shape[0])
+            oc = min(C, old.shape[1])
+            new[:ob, :oc] = old[:ob, :oc].to(device=device, dtype=dtype)
+        self._priming = new
+        self._priming_B = B
+        self._priming_capacity = C
+        self._priming_live = L
+
+    def attach_view(self, view):
+        """Attach an ``embed.KnowledgeView`` whose parent/children CSR
+        drives priming propagation. Stored as a plain reference (the
+        view is read-only). ``view=None`` detaches.
+        """
+        self._priming_view = view
+        if view is not None:
+            self._priming_live = int(view.n_refs_live)
+
+    def reset(self, batch=None):
+        """Reset the priming buffer to multiplicative identity (1.0).
+        No-op when the buffer hasn't been allocated yet.
+
+        ``batch=None`` resets every row; an integer resets only that
+        row. Called at sentence boundaries — priming is sentence-
+        scoped working memory, not a persistent learned signal.
+        """
+        if self._priming is None:
+            return
+        if batch is None:
+            self._priming.fill_(1.0)
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b].fill_(1.0)
+
+    def decay(self, temporal_decay=0.9, batch=None):
+        """Dissipate priming boost between reverse calls within a
+        sentence: ``priming = 1 + (priming - 1) * temporal_decay``.
+        Identity (1.0) entries stay at 1.0.
+
+        ``batch=None`` decays every row; an integer decays only that
+        row.
+        """
+        if self._priming is None:
+            return
+        td = float(temporal_decay)
+        if batch is None:
+            self._priming.sub_(1.0).mul_(td).add_(1.0)
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b].sub_(1.0).mul_(td).add_(1.0)
+
+    def prime(self, ref_ids, batch=0, boost=1.0):
+        """Set ``priming_mask[batch, ref_ids] = max(current, 1 + boost)``.
+
+        Element-wise max so multiple primings of the same ref within a
+        sentence don't compound past ``1 + boost``. Out-of-range or
+        negative ref_ids are silently dropped.
+        """
+        if self._priming is None:
+            return
+        import torch
+        rids = torch.as_tensor(ref_ids, dtype=torch.long)
+        if rids.ndim == 0:
+            rids = rids.unsqueeze(0)
+        mask = (rids >= 0) & (rids < self._priming_capacity)
+        rids = rids[mask]
+        if rids.numel() == 0:
+            return
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return
+        target = 1.0 + float(boost)
+        cur = self._priming[b, rids]
+        self._priming[b, rids] = torch.maximum(
+            cur, torch.full_like(cur, target))
+
+    def propagate(self, ref_ids, batch=0, depth=2, hop_decay=0.5):
+        """Spread the boost from ``ref_ids`` along the attached view's
+        parent/children adjacency for ``depth`` hops, multiplying the
+        per-hop boost by ``hop_decay`` each step.
+
+        At each hop, every active node ``r`` writes
+        ``1 + (current[r] - 1) * hop_decay`` into its immediate parent
+        and immediate children, taking element-wise max with whatever
+        was already there. The frontier for the next hop is the union
+        of the just-touched neighbors. Siblings are not directly
+        primed — they reach the boost only via a shared parent across
+        two hops.
+
+        ``ref_ids`` is the seed set (typically the freshly-snapped refs
+        that just entered STM). No-op when the buffer is unallocated,
+        depth ≤ 0, or no view is attached.
+        """
+        if self._priming is None or depth <= 0:
+            return
+        view = self._priming_view
+        if view is None:
+            return
+        import torch
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return
+        seeds = torch.as_tensor(ref_ids, dtype=torch.long)
+        if seeds.ndim == 0:
+            seeds = seeds.unsqueeze(0)
+        seeds = seeds[(seeds >= 0) & (seeds < self._priming_capacity)]
+        if seeds.numel() == 0:
+            return
+        frontier = set(int(r) for r in seeds.tolist())
+        decay = float(hop_decay)
+        for _ in range(int(depth)):
+            next_frontier = set()
+            for r in frontier:
+                cur = float(self._priming[b, r].item())
+                if cur <= 1.0:
+                    continue
+                neighbor_value = 1.0 + (cur - 1.0) * decay
+                if neighbor_value <= 1.0:
+                    continue
+                p = view.parent_of(r)
+                if p is not None and 0 <= p < self._priming_capacity:
+                    prev = float(self._priming[b, p].item())
+                    if neighbor_value > prev:
+                        self._priming[b, p] = neighbor_value
+                        next_frontier.add(int(p))
+                kids = view.children_of(r)
+                for c in kids.tolist():
+                    ci = int(c)
+                    if 0 <= ci < self._priming_capacity:
+                        prev = float(self._priming[b, ci].item())
+                        if neighbor_value > prev:
+                            self._priming[b, ci] = neighbor_value
+                            next_frontier.add(ci)
+            if not next_frontier:
+                break
+            frontier = next_frontier
+
+    def priming_mask(self, batch=None):
+        """Return the live slice of the priming buffer.
+
+        ``batch=None`` returns ``[B, V_ref_live]``; an integer returns
+        ``[V_ref_live]`` for that row. ``None`` when the buffer hasn't
+        been allocated yet.
+        """
+        if self._priming is None:
+            return None
+        live = self._priming_live or self._priming_capacity
+        if batch is None:
+            return self._priming[:, :live]
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return None
+        return self._priming[b, :live]
+
+    @property
+    def priming_capacity(self):
+        return self._priming_capacity
+
+    @property
+    def priming_live(self):
+        return self._priming_live
+
+    def configure_priming(self, *,
+                          priming_depth=None,
+                          hop_decay=None,
+                          temporal_decay=None,
+                          boost_initial=None,
+                          priming_enabled=None):
+        """Override per-instance priming knobs.
+
+        Typically called from ``BasicModel`` setup after parsing
+        ``<architecture><priming>`` config. Any ``None`` argument
+        leaves the existing value unchanged.
+        """
+        if priming_depth is not None:
+            self.priming_depth = int(priming_depth)
+        if hop_decay is not None:
+            self.hop_decay = float(hop_decay)
+        if temporal_decay is not None:
+            self.temporal_decay = float(temporal_decay)
+        if boost_initial is not None:
+            self.boost_initial = float(boost_initial)
+        if priming_enabled is not None:
+            self.priming_enabled = bool(priming_enabled)
+
+    def note_selection(self, ref_id, batch=0):
+        """Telemetry: record that ``ref_id`` was selected in row ``batch``.
+        Bumps ``_priming_select_count`` always; bumps
+        ``_priming_boosted_select_count`` when the selected ref's
+        priming was above identity (1.0) at selection time. Host-side
+        counters — safe to read from tests and logs.
+        """
+        self._priming_select_count += 1
+        if self._priming is None:
+            return
+        b = int(batch)
+        r = int(ref_id)
+        if (0 <= b < self._priming_B and 0 <= r < self._priming_capacity):
+            if float(self._priming[b, r].item()) > 1.0:
+                self._priming_boosted_select_count += 1
+
+    def priming_telemetry(self):
+        """Return ``(total, boosted)`` selection counts."""
+        return (self._priming_select_count,
+                self._priming_boosted_select_count)
 
 
 class WordSpace(Space):
@@ -6044,8 +6331,23 @@ class WordSpace(Space):
         ``object.__setattr__`` to bypass nn.Module's submodule
         registration — the view holds tensors but isn't itself a Module
         and shouldn't appear in ``state_dict``.
+
+        Also wires the view into ``self.taxonomy`` (for priming
+        propagation adjacency) and allocates the per-batch priming
+        buffer at multiplicative identity. Plan
+        doc/plans/2026-05-20-primed-reverse-generation.md §Storage.
         """
         object.__setattr__(self, '_knowledge', view)
+        # Bind the taxonomy's adjacency source + allocate priming.
+        tax = getattr(self, 'taxonomy', None)
+        if tax is not None and view is not None:
+            tax.attach_view(view)
+            capacity = int(view._parent.shape[0])
+            tax.allocate_priming(
+                batch_size=int(self.batch),
+                capacity=capacity,
+                live=int(view.n_refs_live),
+            )
 
     @property
     def knowledge(self):
@@ -6053,6 +6355,70 @@ class WordSpace(Space):
         ``attach_knowledge`` has not been called for this WordSpace
         instance."""
         return getattr(self, '_knowledge', None)
+
+    # -- priming kwargs helper ---------------------------------------------
+    # Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Reverse
+    # operation flow. Given a rule's RuleOrderSignature + operand-side
+    # bindings, builds the four kwargs (``left_rows``, ``right_rows``,
+    # ``left_priming``, ``right_priming``) the recommender consumes.
+
+    def priming_kwargs_for_slots(self, *,
+                                 left_category, left_order,
+                                 right_category=None, right_order=None,
+                                 batch=0):
+        """Build (left_rows, right_rows, left_priming, right_priming)
+        kwargs for the inverse recommender from typed slot info.
+
+        ``left_category`` / ``right_category`` are grammar category
+        names (e.g. ``'NP'``, ``'VP'``). ``left_order`` / ``right_order``
+        are the resolved integer conceptual orders for the slot,
+        derived by the caller from the active rule's
+        ``RuleOrderSignature`` and the operand-side order binding.
+
+        Returns a dict with up to four keys (any ``None`` slot is
+        omitted). Empty intersection rows are passed through as empty
+        LongTensors — the recommender's row-mask helper then admits
+        only the ⊥/⊤ sentinels for that slot (graceful degradation
+        rather than failure).
+
+        Priming weights are sliced from ``self.taxonomy.priming_mask
+        (batch=batch)``, sized to ``V_ref_live``. The recommender
+        truncates / pads to ``W.shape[0]`` (``K``) at use time, so
+        passing the live slice is safe even when the codebook is
+        capacity-slack-padded.
+
+        Returns ``{}`` when no knowledge is attached (graceful fallback
+        — caller can still proceed with un-typed, un-primed selection).
+        """
+        view = self.knowledge
+        if view is None:
+            return {}
+        out = {}
+        # Left slot
+        if left_category is not None:
+            cat_rows = view.refs_by_category(left_category)
+            ord_rows = view.refs_by_order(int(left_order))
+            out['left_rows'] = _intersect_long_rows(cat_rows, ord_rows)
+        # Right slot
+        if right_category is not None:
+            cat_rows = view.refs_by_category(right_category)
+            ord_rows = view.refs_by_order(int(right_order))
+            out['right_rows'] = _intersect_long_rows(cat_rows, ord_rows)
+        # Priming (per batch row). One mask covers all rows; the
+        # recommender's row mask already gates feasibility, so the
+        # full ref-id-indexed priming is correct for both slots.
+        tax = getattr(self, 'taxonomy', None)
+        # ``priming_enabled = false`` short-circuits to typed-only
+        # behavior — no priming kwargs emitted at all.
+        enabled = (tax is not None and getattr(tax, 'priming_enabled', True))
+        if enabled:
+            pm = None if tax is None else tax.priming_mask(batch=int(batch))
+            if pm is not None:
+                if left_category is not None:
+                    out['left_priming'] = pm
+                if right_category is not None:
+                    out['right_priming'] = pm
+        return out
 
     # -- STM backend driver wiring -----------------------------------------
     # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
@@ -7717,6 +8083,12 @@ class WordSpace(Space):
                     and self.reconstruction_stack is not None
                     and hasattr(self.reconstruction_stack, 'clear_rows')):
                 self.reconstruction_stack.clear_rows(0, self.batch)
+            # Reset priming working memory at the sentence boundary.
+            # Plan doc/plans/2026-05-20-primed-reverse-generation.md
+            # §Storage — sentence-scoped lifecycle.
+            tax = getattr(self, 'taxonomy', None)
+            if tax is not None:
+                tax.reset()
             return
         b = int(batch)
         self.arm_stm(b)
@@ -7741,6 +8113,14 @@ class WordSpace(Space):
                 and self.reconstruction_stack is not None
                 and hasattr(self.reconstruction_stack, 'clear_rows')):
             self.reconstruction_stack.clear_rows(bk_start, bk_end)
+        # Reset priming working memory for this source row at the
+        # sentence boundary. _priming is sized [self.batch, V_ref_cap],
+        # which matches the body's B*K view, so we reset each window
+        # cell separately.
+        tax = getattr(self, 'taxonomy', None)
+        if tax is not None and tax._priming is not None:
+            for bk in range(bk_start, bk_end):
+                tax.reset(batch=bk)
 
     def _row_K(self):
         """Per-source-row K (microbatch window count) inferred from state.
@@ -7845,6 +8225,18 @@ class WordSpace(Space):
         device = self._last_svo.device
         self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
         self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
+        # Resize priming buffer to match the new batch size. Existing
+        # primed values in the overlapping region are preserved (the
+        # Taxonomy.allocate_priming implementation does the copy).
+        view = getattr(self, '_knowledge', None)
+        tax = getattr(self, 'taxonomy', None)
+        if view is not None and tax is not None and tax._priming is not None:
+            tax.allocate_priming(
+                batch_size=batch,
+                capacity=int(view._parent.shape[0]),
+                live=int(view.n_refs_live),
+                device=device,
+            )
         # ``_stm_fired`` is intentionally NOT reallocated here -- see
         # docstring.  ``ensure_microbatch`` handles the B-sized fields.
 

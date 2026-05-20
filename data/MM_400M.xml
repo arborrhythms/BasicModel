@@ -21,7 +21,7 @@
       <numEpochs>2</numEpochs>
       <learningRate>0.0003</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>

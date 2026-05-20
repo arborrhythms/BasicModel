@@ -24,7 +24,7 @@
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>AR</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
     </training>
@@ -61,7 +61,6 @@
     <nDim>1024</nDim>
     <nVectors>512</nVectors>
     <codebook>quantize</codebook>
-    <chunking>lexicon</chunking>
   </ConceptualSpace>
 
   <SymbolicSpace>

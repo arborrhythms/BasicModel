@@ -51,6 +51,7 @@
     <nWhen>0</nWhen>
 
     <!-- gensim KeyedVectors path; empty disables embedding load. -->
+    <embeddingPath></embeddingPath>
     <!-- Checkpoint path for the neural model weights. -->
     <weightsPath></weightsPath>
 
@@ -92,6 +93,13 @@
          tapered = geometrically narrowing slices (default);
          uniform = equal-width slices. -->
     <conceptualWidth>tapered</conceptualWidth>
+    <maxActivePerLayer>8</maxActivePerLayer>
+    <codebookRetire>false</codebookRetire>
+
+    <!-- Runtime symbol-learning hooks. Disabled by default. -->
+    <symbolLearning>
+      <enabled>false</enabled>
+    </symbolLearning>
 
 
     <data>
@@ -147,8 +155,10 @@
       <!-- Embedding co-occurrence loss weight λ in JOINT mode. -->
       <embeddingScale>0.25</embeddingScale>
 
-      <!-- Load weights from weightsPath at construction (false for fresh
-           training runs). -->
+      <!-- Load weights from weightsPath at construction. Training configs
+           default to true so runs resume from existing checkpoints; stale
+           incompatible checkpoints fail fast and should be moved/deleted
+           or regenerated. -->
       <autoload>true</autoload>
       <!-- Persist weights when training completes. -->
       <autosave>false</autosave>
@@ -184,20 +194,20 @@
   </architecture>
 
   <WordSpace>
-    <!-- Grammar dispatch mode: none | all | thoughtFree. -->
-    <useGrammar>none</useGrammar>
-
     <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
     <syntacticHiddenDim>64</syntacticHiddenDim>
 
     <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
 
-    <!-- Phase B: chart-like pair selection in compose.
-         false = legacy left-associative cascade. -->
-    <chartCompose>false</chartCompose>
+    <!-- Parser backend: chart | stm | parallel. Chart remains the default
+         compatibility path; STM requires an attached knowledge artifact. -->
+    <parserBackend>chart</parserBackend>
 
-    <!-- Soft-superposition CKY chart's output behavior:
+    <!-- Grammar router inside the chart backend: chart | signal. -->
+    <routerKind>chart</routerKind>
+
+    <!-- Soft-superposition chart output behavior:
            root      = chart returns the single root sentence node;
                        other output positions are zero.  Forces the
                        OutputLayer to read the chart's compositional
@@ -206,9 +216,19 @@
                        N output positions.  Lets downstream nonlinear
                        readouts recombine the copies.
          Default ``root`` because that's the structurally-correct
-         single-sentence-node bottleneck for a CKY-derived
+         single-sentence-node bottleneck for a chart-derived
          representation. -->
     <chartCollapse>root</chartCollapse>
+
+    <!-- Chart scorer defaults. wMax is the maximum span width; chartTopK=0
+         disables sparse top-K rule gating. -->
+    <chartTau>1.0</chartTau>
+    <wMax>8</wMax>
+    <chartTopK>0</chartTopK>
+    <chartNoiseEps>0.0</chartNoiseEps>
+
+    <!-- Per-word P->C loop count before parser/body composition. -->
+    <iterationsPerWord>1</iterationsPerWord>
 
     <!-- Phase D: emit a codebook head via WordSpace.reconstruct().
          false = forward() does not populate ``_predicted_head``. -->
@@ -224,14 +244,13 @@
 
              A grammar containing only these unary rules is the
              "default-only" case: WordSpace.compose detects it and
-             skips the chart's CKY-style inside pass entirely.
+             skips parser selection entirely.
 
              Per the 2026-05-07 rollback, the grammar XML is the sole
              source of truth for which rule fires at each tier.  There
              is no ``default_rule`` code-level fallback.  WordSpace
              populates ``current_rules`` / ``generate_rules`` from the
-             rules listed below in the default-only and
-             useGrammar='none' fast paths so per-space SyntacticLayer
+             rules listed below in the default-only fast path so per-space SyntacticLayer
              dispatch resolves to the PiLayer / SigmaLayer registered
              at space construction.  End-to-end cost matches the legacy
              y = self.pi(x) call site.

@@ -2,8 +2,8 @@
 <model>
   <!-- MM_5M_IR: bidirectional masked Input Reconstruction sibling of
        MM_5M. Same brick-body architecture (8 hierarchical levels,
-       N*D=4096); differs in: prediction mode (IR vs ARIR),
-       tokenization (word/lexicon vs byte+BPE), and lexicon size
+       N*D=4096); differs in tokenization (word/lexicon vs byte+BPE)
+       and lexicon size
        (200K vs 4096). See doc/specs/2026-04-29-ir-mode-design.md. -->
   <architecture>
     <conceptualOrder>3</conceptualOrder>
@@ -61,7 +61,6 @@
     <nDim>1024</nDim>
     <nVectors>512</nVectors>
     <codebook>quantize</codebook>
-    <chunking>lexicon</chunking>
   </ConceptualSpace>
 
   <SymbolicSpace>

@@ -4,8 +4,7 @@
        stack at the C-tier. The grammar block lists not/non/intersection/
        union so ConceptualSpace infers the wiring at construction time
        (NegationLayer ternary + SigmaLayer AND-fold + PiLayer OR-fold).
-       useGrammar="none" keeps the SyntacticLayer dormant; the DNF stack
-       is fixed.
+       The grammar block is the source of truth for parser dispatch.
 
        Formula encoded in labels: (A and B) or ((not A) and C).
        Surface forms in inputs: bare ("A"), 'not' prefix ("not A"), and

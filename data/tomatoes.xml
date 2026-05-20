@@ -20,7 +20,7 @@
     <nVectors>8</nVectors>
   </InputSpace>
 
-  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — codebook=true. -->
+  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — codebook=quantize. -->
   <PerceptualSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>

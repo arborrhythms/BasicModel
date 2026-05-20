@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <model>
   <!-- POS_smoke: small inline corpus of basic English sentences for
-       smoke-testing the chart parser's POS tagging and grammar-rule
+       smoke-testing parser POS tagging and grammar-rule
        selection.  Built on the HeadEmission.xml shape (inline
        sentences, modest dims) but with the MentalModel.xml English
        grammar block so we exercise multiple rule alternatives.
@@ -20,7 +20,7 @@
     <data>
       <dataset>inline</dataset>
       <!-- All sentences are exactly 3 content words (5 lex tokens including
-           spaces).  The chart parser's w_max=8 forces this constraint:
+           spaces).  The parser wMax=8 forces this constraint:
            sentences longer than 7 tokens never reach the root S category,
            leaving the derivation trace empty.
 
@@ -47,9 +47,6 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>all</useGrammar>
-    <chartCompose>true</chartCompose>
-    <softChartCompose>true</softChartCompose>
     <chartTau>2.0</chartTau>
     <!-- Default w_max is now nInput; explicit override here documents
          that we want the chart to span the full padded sentence. -->
