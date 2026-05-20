@@ -7776,7 +7776,8 @@ class Ops:
         return Ops._negation_kernel(x, monotonic=monotonic)
 
     @staticmethod
-    def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
+    def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
+                           left_rows=None, right_rows=None):
         """Inverse-recommend ``(x1, x2)`` for ``conjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -7787,12 +7788,20 @@ class Ops:
         algorithm. ``y`` is ignored; kept for backward-compatible
         signature. Falls back to ``(result, result)`` if ``W`` is None
         or empty.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            restricts which learned-codebook rows are eligible for
+            ``x1`` / ``x2`` selection. Forwarded to
+            ``_binary_op_recommend``. Sentinels remain feasible
+            regardless.
         """
         return Ops._binary_op_inverse_impl(
-            result, W, 'intersection', monotonic, unit_ball=unit_ball)
+            result, W, 'intersection', monotonic, unit_ball=unit_ball,
+            left_rows=left_rows, right_rows=right_rows)
 
     @staticmethod
-    def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
+    def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False,
+                           left_rows=None, right_rows=None):
         """Inverse-recommend ``(x1, x2)`` for ``disjunction(x1, x2) ≈ result``.
 
         Replaces the prior brute-force codebook search (which returned
@@ -7803,12 +7812,19 @@ class Ops:
         algorithm. ``y`` is ignored; kept for backward-compatible
         signature. Falls back to ``(result, result)`` if ``W`` is None
         or empty.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            restricts which learned-codebook rows are eligible for
+            ``x1`` / ``x2`` selection. Forwarded to
+            ``_binary_op_recommend``.
         """
         return Ops._binary_op_inverse_impl(
-            result, W, 'union', monotonic, unit_ball=unit_ball)
+            result, W, 'union', monotonic, unit_ball=unit_ball,
+            left_rows=left_rows, right_rows=right_rows)
 
     @staticmethod
-    def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False):
+    def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False,
+                                left_rows=None, right_rows=None):
         """Backward-compatible shim for the union / intersection inverse.
 
         Delegates to :func:`Ops._binary_op_recommend`. Returns the pair
@@ -7821,12 +7837,18 @@ class Ops:
         signature parity with the prior implementation but the new
         mereology-guided recommender is metric-free; the flag is
         currently ignored.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            forwarded to ``_binary_op_recommend`` to restrict the W-row
+            candidate set for each operand. See that function's
+            docstring for the typed restricted-candidate inverse story.
         """
         if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
             return result, result
         op_name = Ops._normalize_lattice_op(op)
         return Ops._binary_op_recommend(
-            result, W, op_name, monotonic=monotonic)
+            result, W, op_name, monotonic=monotonic,
+            left_rows=left_rows, right_rows=right_rows)
 
     @staticmethod
     def _normalize_lattice_op(op):
@@ -7854,7 +7876,8 @@ class Ops:
             "(expected union / intersection / conjunction / disjunction)")
 
     @staticmethod
-    def _binary_op_recommend(result, W, op_name, monotonic=True):
+    def _binary_op_recommend(result, W, op_name, monotonic=True,
+                             left_rows=None, right_rows=None):
         """Inverse-recommend a pair ``(x1, x2)`` from an augmented codebook.
 
         ``op_name``:
@@ -7875,6 +7898,21 @@ class Ops:
         ``monotonic`` is accepted for signature symmetry; the algorithm
         is monotonic-only by construction (the codebase exposes no
         bitonic inverse for these ops).
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            indices into ``W`` (0..K-1) restricting which learned
+            codebook rows may be selected for ``x1`` / ``x2``
+            respectively. The ⊥ / ⊤ sentinels remain feasible
+            regardless of restriction (so the algorithm cannot fail to
+            return a pair). When both are ``None`` (default) behavior
+            matches the unrestricted algorithm byte-for-byte.
+
+            Used by the typed restricted-candidate inverse for
+            lift/lower: the call site computes the intersection
+            ``refs_by_category[cat] ∩ refs_by_order[k]`` from the
+            attached ``KnowledgeView`` and passes the result, masking
+            argmin/argmax to admissible refs only. Plan: §Lift/Lower
+            Restricted-Candidate Inverse.
         """
         if W is None or W.shape[0] == 0:
             return result, result
@@ -7899,9 +7937,28 @@ class Ops:
         POS_INF = torch.tensor(
             float('inf'), dtype=W.dtype, device=W.device)
 
+        # Build per-operand candidate masks over the augmented C-rows.
+        # ⊥ (index 0) and ⊤ (index K_aug-1) are always feasible. W-row
+        # indices from ``left_rows`` / ``right_rows`` shift by +1 to
+        # account for the ⊥ prefix.
+        def _row_mask(rows):
+            if rows is None:
+                return torch.ones(K_aug, dtype=torch.bool, device=W.device)
+            m = torch.zeros(K_aug, dtype=torch.bool, device=W.device)
+            m[0] = True
+            m[K_aug - 1] = True
+            if rows.numel() > 0:
+                c_idx = rows.long().to(W.device) + 1
+                c_idx = c_idx[(c_idx >= 1) & (c_idx <= K)]
+                if c_idx.numel() > 0:
+                    m[c_idx] = True
+            return m
+        left_mask = _row_mask(left_rows)
+        right_mask = _row_mask(right_rows)
+
         if op_name == 'union':
-            # 1) x1 = argmax_{S ≤ y} norm(S)
-            le_y = (S <= y).all(dim=-1)                 # [N, K]
+            # 1) x1 = argmax_{S ≤ y, S in left_rows ∪ sentinels} norm(S)
+            le_y = (S <= y).all(dim=-1) & left_mask.unsqueeze(0)  # [N, K]
             scores = torch.where(
                 le_y, sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
             idx1 = scores.argmax(dim=-1)                # [N]
@@ -7910,9 +7967,9 @@ class Ops:
             # 2) residual r = y − x1
             r = flat - x1                               # [N, D]
 
-            # 3) x2 = argmin_{S ≥ r} norm(S)
+            # 3) x2 = argmin_{S ≥ r, S in right_rows ∪ sentinels} norm(S)
             r_b = r.unsqueeze(1)                        # [N, 1, D]
-            ge_r = (S >= r_b).all(dim=-1)               # [N, K]
+            ge_r = (S >= r_b).all(dim=-1) & right_mask.unsqueeze(0)
             scores = torch.where(
                 ge_r, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
             idx2 = scores.argmin(dim=-1)                # [N]
@@ -7921,28 +7978,23 @@ class Ops:
             return x1.reshape(out_shape), x2.reshape(out_shape)
 
         if op_name == 'intersection':
-            # 1) x1 = argmin_{S ≥ y} norm(S)
+            # 1) x1 = argmin_{S ≥ y, S in left_rows ∪ sentinels} norm(S)
             ge_y = (S >= y).all(dim=-1)                 # [N, K]
+            ge_y_left = ge_y & left_mask.unsqueeze(0)
             scores = torch.where(
-                ge_y, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
+                ge_y_left, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
             idx1 = scores.argmin(dim=-1)                # [N]
             x1 = C[idx1]                                # [N, D]
 
-            # 2) x2 = argmin_{S ≥ y, S ≠ x1} overlapOf(S, x1).norm,
-            #    tie-break smaller norm(S).
+            # 2) x2 = argmin_{S ≥ y, S ≠ x1, S in right_rows ∪ sentinels}
+            #    overlapOf(S, x1).norm, tie-break smaller norm(S).
             same_as_x1 = (
                 torch.arange(K_aug, device=W.device).unsqueeze(0)
                 == idx1.unsqueeze(1))                   # [N, K]
-            feasible = ge_y & ~same_as_x1               # [N, K]
-            # Overlap norm: ‖radmin(S, x1)‖ broadcast over the [N, K]
-            # candidate axis. _radmin is elementwise on equal shapes, so
-            # broadcast x1 against S explicitly.
+            feasible = ge_y & ~same_as_x1 & right_mask.unsqueeze(0)
             x1_b = x1.unsqueeze(1).expand(N, K_aug, D)  # [N, K, D]
             overlap = Ops._radmin(S, x1_b)              # [N, K, D]
             overlap_size = Ops.norm(overlap)            # [N, K]
-            # Lexicographic (overlap_size, size); pack via a tiny weight
-            # on candidate size so it tie-breaks ties in overlap_size
-            # without ever overriding the primary score.
             tie_weight = sizes.unsqueeze(0).expand(N, K_aug)
             primary = overlap_size + 1e-9 * tie_weight
             scores = torch.where(feasible, primary, POS_INF)

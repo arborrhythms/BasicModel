@@ -1039,6 +1039,94 @@ class Mereology:
             'union':        union,
         })
 
+    def isIsomorphic(self, x1=None, x2=None) -> float:
+        """Mereological-isomorphism measure between two bivector inputs.
+
+            ``y = sharedPartsAndWholes(x1, x2) / totalPartsAndWholes(x1, x2)``
+
+        Both inputs are back-projected via :meth:`hoc_shape` into their
+        C(1) constituent leaves (parts). The (x1, x2) whole-vs-whole pair
+        plus each (leaves1[i], leaves2[i]) part-vs-part pair contributes
+        one hyperrectangle overlap volume to the numerator
+        ``sharedPartsAndWholes`` and one union volume to the denominator
+        ``totalPartsAndWholes``. Untrustworthy leaf pairs (any step on
+        the derivation path used a lossy reverse) are dropped, matching
+        the :meth:`Contiguous` / :meth:`Continuous` no-trust convention.
+
+          ``1.0`` -- parts and wholes coincide; x1 and x2 are
+                     mereologically isomorphic.
+          ``0.0`` -- disjoint regions, or no trustworthy pairs to
+                     decide on.
+          intermediate -- Jaccard / IoU of the combined parts-and-
+                          wholes decomposition.
+
+        Args:
+            x1: optional ``[B, V, D]`` bivector. Defaults to
+                ``self.symbolicSpace.subspace.materialize()``.
+            x2: ``[B, V, D]`` bivector to compare against. Required
+                for a non-zero return.
+        """
+        if x1 is None:
+            sym = getattr(self, 'symbolicSpace', None)
+            if sym is None or not hasattr(sym, 'subspace'):
+                return 0.0
+            try:
+                x1 = sym.subspace.materialize()
+            except Exception:
+                return 0.0
+        if (x1 is None or not torch.is_tensor(x1) or x1.numel() == 0 or
+                x2 is None or not torch.is_tensor(x2) or x2.numel() == 0):
+            return 0.0
+        if x1.shape[-1] < 2 or x2.shape[-1] < 2:
+            return 0.0
+
+        shape1 = self.hoc_shape(x1)
+        shape2 = self.hoc_shape(x2)
+        leaves1, leaves2 = shape1.leaves, shape2.leaves
+        trust1 = self._leaf_path_trust(shape1) if leaves1 else []
+        trust2 = self._leaf_path_trust(shape2) if leaves2 else []
+
+        # Whole-vs-whole pair, then matched part-vs-part pairs.
+        pairs = []
+        if x1.shape == x2.shape:
+            pairs.append((x1[..., :2].unsqueeze(-2),
+                          x2[..., :2].unsqueeze(-2)))
+        for i in range(min(len(leaves1), len(leaves2))):
+            if i < len(trust1) and not trust1[i]:
+                continue
+            if i < len(trust2) and not trust2[i]:
+                continue
+            li, lj = leaves1[i], leaves2[i]
+            if not (torch.is_tensor(li) and torch.is_tensor(lj)):
+                continue
+            if li.shape[-1] < 2 or lj.shape[-1] < 2:
+                continue
+            if li.shape != lj.shape:
+                continue
+            pairs.append((li[..., :2].unsqueeze(-2),
+                          lj[..., :2].unsqueeze(-2)))
+
+        if not pairs:
+            return 0.0
+
+        shared_parts_and_wholes = 0.0
+        total_parts_and_wholes = 0.0
+        for a, b in pairs:
+            try:
+                v_a = float(Ops.hyperrectangle_volume(a).mean().item())
+                v_b = float(Ops.hyperrectangle_volume(b).mean().item())
+                v_shared = float(
+                    Ops.hyperrectangle_overlap_volume(a, b).mean().item())
+            except Exception:
+                continue
+            shared_parts_and_wholes += v_shared
+            total_parts_and_wholes += (v_a + v_b - v_shared)
+
+        if total_parts_and_wholes <= 0.0:
+            return 0.0
+        return max(0.0, min(1.0,
+                            shared_parts_and_wholes / total_parts_and_wholes))
+
     def Peaceful(self):
         """One Taste (Emotional Symmetry / Balance).
 

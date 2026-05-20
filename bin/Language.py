@@ -134,6 +134,27 @@ class Grammar:
     )
     RuleDef.__new__.__defaults__ = (0, 0)  # width_min=0, width_max=0 default
 
+    # Order-typing primitives (plan:
+    # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Order-Typed Grammar). A category token like ``NP0`` / ``VP1`` /
+    # ``NP*`` / ``NP*+1`` / ``NP*-1`` / ``DET`` (bare = constant 0) is
+    # parsed into a ``ParsedCategory(name, order)`` where ``order`` is an
+    # ``OrderExpr(kind, delta)``:
+    #   kind='constant', delta=N   ->  literal order N
+    #   kind='variable', delta=D   ->  rule-local '*' plus delta D
+    OrderExpr = _namedtuple('OrderExpr', ['kind', 'delta'])
+    ParsedCategory = _namedtuple('ParsedCategory', ['name', 'order'])
+
+    # Per-rule order signature derived from the rule's parsed categories
+    # plus its op name. ``order_delta``: +1 for ``lift``, -1 for ``lower``,
+    # 0 for every other op (order-preserving by default).
+    RuleOrderSignature = _namedtuple(
+        'RuleOrderSignature',
+        ['lhs_category', 'lhs_order_expr',
+         'rhs_categories', 'rhs_order_exprs',
+         'op_name', 'order_delta'],
+    )
+
     def __init__(self):
         """Initialize an empty rule catalog; XML configuration happens lazily.
 
@@ -469,6 +490,89 @@ class Grammar:
             except ValueError:
                 return 0
         return (_one(lo_s), _one(hi_s))
+
+    @staticmethod
+    def _parse_category(token):
+        """Parse a category token into ``(name, OrderExpr)``.
+
+        Accepts (plan:
+        doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+        §Order-Typed Grammar):
+
+          ``DET``     -> name='DET', order=constant 0   (bare = sugar for 0)
+          ``NP3``     -> name='NP',  order=constant 3
+          ``VP1``     -> name='VP',  order=constant 1
+          ``S4``      -> name='S',   order=constant 4
+
+        Order annotations are **explicit constants only**. The Kleene
+        variable (``*``) form has been removed — all rules must spell
+        out the orders they operate at. Bare categories (no annotation)
+        bind to constant 0.
+
+        Whitespace around the token is stripped. Malformed tokens
+        (including any use of ``*``) raise ``ValueError``.
+        """
+        s = str(token).strip()
+        if not s:
+            raise ValueError(f"Cannot parse category: {token!r}")
+        i = 0
+        while i < len(s) and (s[i].isalpha() or s[i] == '_'):
+            i += 1
+        if i == 0:
+            raise ValueError(f"Cannot parse category: {token!r}")
+        name = s[:i]
+        suffix = s[i:]
+        if not suffix:
+            return Grammar.ParsedCategory(
+                name=name,
+                order=Grammar.OrderExpr(kind='constant', delta=0))
+        try:
+            delta = int(suffix)
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse category: {token!r} "
+                f"(only explicit constant orders are accepted; "
+                f"Kleene variables like '*' have been removed)")
+        return Grammar.ParsedCategory(
+            name=name,
+            order=Grammar.OrderExpr(kind='constant', delta=delta))
+
+    # Operations that change conceptual order. Every other op is
+    # order-preserving (order_delta = 0). See plan §Order-Typed Grammar.
+    _ORDER_CHANGING_OPS = {
+        'lift':  +1,
+        'lower': -1,
+    }
+
+    def _rule_order_signature(self, rule):
+        """Compute the ``RuleOrderSignature`` for a parsed ``RuleDef``.
+
+        Parses ``rule.lhs`` and each ``rule.rhs_symbols`` token through
+        ``_parse_category`` to extract category names + ``OrderExpr``s.
+        ``order_delta`` is +1 for ``lift``, -1 for ``lower``, 0 otherwise.
+        """
+        lhs_parsed = Grammar._parse_category(rule.lhs)
+        rhs_parsed = tuple(
+            Grammar._parse_category(s) for s in (rule.rhs_symbols or ()))
+        op = rule.method_name
+        delta = Grammar._ORDER_CHANGING_OPS.get(op, 0)
+        return Grammar.RuleOrderSignature(
+            lhs_category=lhs_parsed.name,
+            lhs_order_expr=lhs_parsed.order,
+            rhs_categories=tuple(p.name for p in rhs_parsed),
+            rhs_order_exprs=tuple(p.order for p in rhs_parsed),
+            op_name=op,
+            order_delta=delta,
+        )
+
+    # No static validation of ``RuleOrderSignature`` at grammar-load time:
+    # words are mapped to the category codebook by *soft assignment* that
+    # participates in the parser's superposition state. Whether a given
+    # word fills an ``NP3`` vs ``NP4`` slot is a runtime / superposition
+    # question — not a fact the grammar can pre-empt. Order admissibility
+    # therefore lives in STM REDUCE (Phase 2), where the soft category
+    # distributions of operands are matched against the rule's order
+    # signature dynamically.
 
     def _parse_rule(self, lhs, rhs, tier='S'):
         """Parse one ``lhs = rhs`` rule string into a ``RuleDef`` namedtuple.
@@ -5625,6 +5729,24 @@ class WordSpace(Space):
         self._compose_generation = 0
         self._generate_generation = 0
         self._work = None  # per-sentence WorkingState carrier; allocated in soft_reset/Reset (Phase 1)
+
+        # Parser backend selector (plan
+        # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md).
+        # ``chart`` (default) -- existing CKY path, untouched.
+        # ``stm``             -- STM shift/reduce driver (in progress).
+        # ``parallel``        -- both, chart authoritative.
+        # XML knob: <parserBackend>chart</parserBackend> under WordSpace.
+        try:
+            backend_cfg = TheXMLConfig.space(
+                "WordSpace", "parserBackend", default="chart")
+        except (KeyError, TypeError, ValueError):
+            backend_cfg = "chart"
+        backend_str = str(backend_cfg or "chart").strip().lower()
+        if backend_str not in ("chart", "stm", "parallel"):
+            raise ValueError(
+                f"WordSpace parserBackend={backend_cfg!r} is invalid; "
+                "expected one of 'chart' / 'stm' / 'parallel'.")
+        self.parser_backend = backend_str
         chart_hidden = self._resolve_hidden_dim(nSymbols)
         self.chart = Chart(
             nInput=nSymbols, nOutput=nSymbols,
@@ -5879,6 +6001,94 @@ class WordSpace(Space):
         # and dispatches soft_reset(batch=b) for True rows. Host-side
         # list (no GPU sync); resized to B by ensure_microbatch.
         self._sentence_completed = [False] * self.batch
+
+    # -- knowledge-artifact attach -----------------------------------------
+    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Phase 2 — Loaders. ``attach_knowledge(view)`` wires a loaded
+    # ``embed.KnowledgeView`` into the WordSpace so downstream consumers
+    # (chart POS scorer, rule predictor, lift/lower restricted-candidate
+    # inverse, STM REDUCE typed admissibility) consult it instead of the
+    # legacy ``category_codebook`` / empty ``Taxonomy()`` scaffolds. The
+    # legacy fields stay in place during Phase 2 for back-compat; their
+    # retirement is part of Phase 2's closing steps.
+
+    def attach_knowledge(self, view):
+        """Attach a loaded :class:`embed.KnowledgeView`. Replaces any
+        previously attached view (last-write-wins). Stored via
+        ``object.__setattr__`` to bypass nn.Module's submodule
+        registration — the view holds tensors but isn't itself a Module
+        and shouldn't appear in ``state_dict``.
+        """
+        object.__setattr__(self, '_knowledge', view)
+
+    @property
+    def knowledge(self):
+        """The attached :class:`embed.KnowledgeView`, or ``None`` when
+        ``attach_knowledge`` has not been called for this WordSpace
+        instance."""
+        return getattr(self, '_knowledge', None)
+
+    # -- STM backend driver wiring -----------------------------------------
+    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Phase 2 / step 4. ``self.stm_driver`` is lazily constructed on
+    # first ``compose()`` / ``generate()`` call under
+    # ``parser_backend='stm'``, drawing rule signatures from the
+    # attached KnowledgeView and the typed stack from
+    # ``conceptualSpace.stm_typed``. The driver's scorer is sized to
+    # the stm payload dim.
+
+    def _init_stm_driver(self):
+        """Construct ``self.stm_driver`` from attached knowledge +
+        conceptualSpace.stm_typed. Raises a clear error if either
+        prerequisite is missing.
+        """
+        view = self.knowledge
+        if view is None:
+            raise RuntimeError(
+                "WordSpace STM backend requires a knowledge artifact: "
+                "call ``ws.attach_knowledge(view)`` before compose()")
+        cs = getattr(self, 'conceptualSpace', None)
+        stm_typed = getattr(cs, 'stm_typed', None) if cs is not None else None
+        if stm_typed is None:
+            raise RuntimeError(
+                "WordSpace STM backend requires "
+                "conceptualSpace.stm_typed to be allocated")
+        from stm_driver import STMDriver, RuleScorer
+        rule_sigs = view.rule_order_signatures
+        scorer = RuleScorer(
+            payload_dim=stm_typed.dim, n_rules=len(rule_sigs))
+        object.__setattr__(
+            self, '_stm_driver',
+            STMDriver(typed_stack=stm_typed,
+                      rule_signatures=rule_sigs,
+                      scorer=scorer))
+
+    @property
+    def stm_driver(self):
+        """Lazily-constructed STM driver; ``None`` if not yet built."""
+        return getattr(self, '_stm_driver', None)
+
+    def _compose_stm(self, input_vectors, subspace):
+        """STM-backend compose. Lazily allocates ``self.stm_driver``;
+        returns an empty rules dict for now (full SHIFT/REDUCE loop
+        on ``input_vectors`` is the follow-up). Intentionally minimal:
+        ships the wiring so consumers can verify driver presence
+        without committing to a parse semantics yet.
+        """
+        if self.stm_driver is None:
+            self._init_stm_driver()
+        # Empty current_rules — STM run does not (yet) drive per-tier
+        # SyntacticLayer dispatch. The chart still produces
+        # current_rules for that path.
+        self.current_rules = {}
+        return self.current_rules
+
+    def _generate_stm(self, target_vectors, subspace):
+        """STM-backend generate; mirrors ``_compose_stm``."""
+        if self.stm_driver is None:
+            self._init_stm_driver()
+        self.generate_rules = {}
+        return self.generate_rules
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):
@@ -6193,7 +6403,29 @@ class WordSpace(Space):
         ``current_rules`` from the grammar XML's per-tier forward
         rules so per-space dispatch always finds a rule (no
         ``default_rule`` code-level fallback).
+
+        Backend dispatch (plan
+        ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``):
+        ``self.parser_backend`` selects ``'chart'`` (default — current
+        behavior) / ``'stm'`` (STM shift/reduce driver) / ``'parallel'``
+        (both, chart authoritative). Unknown backends raise
+        ``ValueError``; ``'stm'`` / ``'parallel'`` raise
+        ``NotImplementedError`` until their drivers land.
         """
+        backend = getattr(self, 'parser_backend', 'chart')
+        if backend == 'stm':
+            return self._compose_stm(input_vectors, subspace)
+        if backend == 'parallel':
+            # Construct STM driver first (cheap, no compute) so it's
+            # available even if the chart raises. Then the chart runs
+            # authoritatively and its result is returned.
+            if self.stm_driver is None:
+                self._init_stm_driver()
+            # Fall through to the chart path below.
+        elif backend != 'chart':
+            raise ValueError(
+                f"unknown parser_backend: {backend!r} "
+                "(expected 'chart' / 'stm' / 'parallel')")
         # Per-compose cursor reset. The OLD semantics zeroed each
         # per-tier SyntacticLayer cursor lazily on every compose() call
         # (via the ``gen != _cursor_compose_gen`` branch keyed off this
@@ -6253,7 +6485,21 @@ class WordSpace(Space):
         training.  This method is kept on the public surface so that
         unit-level tests of the chart's outside pass (signal-router
         contract, Viterbi backtrace) can still drive it directly.
+
+        Backend dispatch parallels ``compose()``: ``self.parser_backend``
+        selects ``'chart'`` / ``'stm'`` / ``'parallel'``.
         """
+        backend = getattr(self, 'parser_backend', 'chart')
+        if backend == 'stm':
+            return self._generate_stm(target_vectors, subspace)
+        if backend == 'parallel':
+            # See compose() for parallel-mode rationale.
+            if self.stm_driver is None:
+                self._init_stm_driver()
+        elif backend != 'chart':
+            raise ValueError(
+                f"unknown parser_backend: {backend!r} "
+                "(expected 'chart' / 'stm' / 'parallel')")
         self._generate_generation += 1
         if self._grammar_is_default_only:
             self.generate_rules = self._default_generate_rules()

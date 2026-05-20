@@ -1053,7 +1053,7 @@ class Basis(nn.Module):
     # for the mode dispatch and region semantics.
 
     def lift(self, X1, X2=None, mode='OR', kind='strict', inverse=False,
-             monotonic=False):
+             monotonic=False, left_rows=None, right_rows=None):
         """Synthesis dispatcher: many → one (∨).
 
         Forward routes through Ops.lift. `kind` selects the point body
@@ -1061,25 +1061,35 @@ class Basis(nn.Module):
         mode='OR' / 'AND' returns the mereology-guided pair
         ``(x1, x2)`` (see ``Ops._binary_op_recommend``); inverse with
         mode='NOT' is self-inverse and bypasses W.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            inverse-only — restricts which W-row indices are eligible
+            for ``x1`` / ``x2`` selection. The intended call-site
+            computes the intersection
+            ``refs_by_category[cat] ∩ refs_by_order[k]`` from the
+            attached ``KnowledgeView`` (see plan §Lift/Lower
+            Restricted-Candidate Inverse).
         """
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1, X1
             return Ops.disjunctionReverse(
-                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
+                left_rows=left_rows, right_rows=right_rows)
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1, X1
             return Ops.conjunctionReverse(
-                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
+                left_rows=left_rows, right_rows=right_rows)
         return Ops.lift(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )
 
     def lower(self, X1, X2=None, mode='AND', kind='strict', inverse=False,
-              monotonic=False):
+              monotonic=False, left_rows=None, right_rows=None):
         """Analysis dispatcher: one → many (∧).
 
         Forward routes through Ops.lower. `kind` selects the point body
@@ -1087,19 +1097,25 @@ class Basis(nn.Module):
         mode='AND' / 'OR' returns the mereology-guided pair
         ``(x1, x2)`` (see ``Ops._binary_op_recommend``); inverse with
         mode='NOT' is self-inverse and bypasses W.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            inverse-only — see ``Basis.lift`` for the typed
+            restricted-candidate inverse story.
         """
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1, X1
             return Ops.conjunctionReverse(
-                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
+                left_rows=left_rows, right_rows=right_rows)
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1, X1
             return Ops.disjunctionReverse(
-                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball,
+                left_rows=left_rows, right_rows=right_rows)
         return Ops.lower(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )
@@ -5532,6 +5548,28 @@ class Space(nn.Module):
     activation   = None
     config_section = None  # set by subclasses
 
+    # -- knowledge-artifact attach -----------------------------------------
+    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Phase 2 — Loaders. Every Space subclass inherits
+    # ``attach_knowledge(view)`` and the read-only ``.knowledge`` property,
+    # letting per-Space consumers read from a shared ``KnowledgeView``
+    # without each subclass re-implementing the plumbing. The same
+    # mechanism is mirrored on ``WordSpace`` (which doesn't subclass Space
+    # but follows the same pattern).
+
+    def attach_knowledge(self, view):
+        """Attach a loaded ``embed.KnowledgeView``. Replaces any
+        previously attached view. Stored via ``object.__setattr__`` to
+        bypass nn.Module's submodule registration (the view holds
+        tensors but isn't itself a Module)."""
+        object.__setattr__(self, '_knowledge', view)
+
+    @property
+    def knowledge(self):
+        """The attached ``embed.KnowledgeView``, or ``None`` before
+        ``attach_knowledge`` is called."""
+        return getattr(self, '_knowledge', None)
+
     def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
         """Initialize Space; allocate state for the class contract.
         
@@ -7132,6 +7170,27 @@ class PerceptualSpace(Space):
             byte_mode=self.byte_mode,
         )
         return basis
+
+    # ------------------------------------------------------------------
+    # Knowledge artifact attach: PerceptualSpace owns the surface-form
+    # WordVectors (``self.wv``); attach_knowledge stamps the artifact's
+    # ``word_table.ref_ids`` onto ``wv.ref_ids`` so the chart's lexical
+    # lookup step can navigate word → reference via taxonomy / codebook.
+    # See plan §Phase 2 — Loaders.
+    # ------------------------------------------------------------------
+    def attach_knowledge(self, view):
+        """Attach a ``KnowledgeView`` and stamp ``ref_ids`` onto ``self.wv``.
+
+        When ``self.wv`` is absent (e.g., a bare-instance unit test
+        with no Embedding allocated), the attach is a no-op beyond
+        the base-class view storage — no error.
+        """
+        super().attach_knowledge(view)
+        wv = getattr(self, 'wv', None)
+        if wv is None:
+            return
+        wt = view._ks['word_table']
+        wv.ref_ids = wt['ref_ids'].clone().detach().long()
 
     def everything(self, target="what"):
         """The universal whole -- vertex (1,1,...,1) of the perceptual hypercube.
@@ -9271,6 +9330,14 @@ class ConceptualSpace(Space):
         concept_dim = int(outputShape[1])
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+        # Typed STM (plan
+        # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md):
+        # parallel-tensor stack carrying category / order / ref_id
+        # metadata alongside the payload. The STM shift/reduce driver
+        # (on WordSpace) reads from this. Allocated to the same
+        # capacity + dim as the legacy ``self.stm``.
+        self._init_typed_stm(
+            batch=1, max_depth=stm_capacity, dim=concept_dim)
 
         # Persistent CS->PS event carrier, owned + allocated ONCE here
         # (eager, pre-compile). `forward` reuses it via `set_event`
@@ -9340,6 +9407,33 @@ class ConceptualSpace(Space):
         if self._right_half_dim > 0:
             x = x[..., :-self._right_half_dim]
         return x
+
+    # -- Typed STM (parallel-metadata stack) ----------------------------
+    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # The legacy ``self.stm`` carries payload only; ``self.stm_typed``
+    # carries the same payload plus ``category``, ``order``, ``ref_id``
+    # metadata per frame, for the STM shift/reduce driver to consume.
+    # ``stm_typed`` is ``None`` until ``_init_typed_stm`` is called
+    # (which happens in __init__ for real instances; bare-instance
+    # tests can call it directly).
+
+    def _init_typed_stm(self, batch, max_depth, dim):
+        """Allocate (or reallocate) the typed-metadata STM.
+
+        Stored via ``object.__setattr__`` to bypass nn.Module's
+        submodule registration -- ``TypedStack`` is plain Python
+        state, not a Module.
+        """
+        from typed_stack import TypedStack
+        object.__setattr__(
+            self, '_stm_typed',
+            TypedStack(batch=int(batch), max_depth=int(max_depth),
+                       dim=int(dim)))
+
+    @property
+    def stm_typed(self):
+        """The typed-metadata STM, or ``None`` if not yet allocated."""
+        return getattr(self, '_stm_typed', None)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -10167,6 +10261,55 @@ class SymbolicSpace(Space):
         if vq is None or not hasattr(vq, "learnable_codebook"):
             return
         vq.learnable_codebook = True
+
+    # ------------------------------------------------------------------
+    # Knowledge artifact attach: SymbolicSpace owns the trainable scalar
+    # reference codebook the artifact bootstrap initializes. See plan
+    # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    # §Phase 2 — Loaders + W-shape change. Additive against the existing
+    # ``subspace.what.W`` (which stays); the new ``self.references``
+    # Parameter is the home of the scalar prototypes that downstream
+    # consumers will migrate to.
+    # ------------------------------------------------------------------
+    def attach_knowledge(self, view):
+        """Attach a ``KnowledgeView`` and bootstrap the trainable scalar
+        reference codebook + the per-ref ``order`` buffer.
+
+        ``self.references`` is created (or updated in place) as an
+        ``nn.Parameter`` sized to the artifact's reference-codebook
+        *capacity* (live rows + slack). Values are copied from the
+        view's underlying section; the capacity-slack pattern is
+        preserved so symbol-learning appends can re-attach an
+        ``extend_artifact``-grown section without reallocating the
+        Parameter unless capacity itself changed.
+
+        ``self.order`` is a parallel long buffer (not trainable;
+        discrete metadata).
+        """
+        super().attach_knowledge(view)
+        ks = view._ks
+        rc = ks['reference_codebook']
+        full_refs = rc['references']
+        full_order = rc['order']
+        # Parameter create / update.
+        if (hasattr(self, 'references')
+                and isinstance(self.references, nn.Parameter)
+                and self.references.shape == full_refs.shape):
+            with torch.no_grad():
+                self.references.data.copy_(full_refs)
+        else:
+            self.references = nn.Parameter(
+                full_refs.clone().detach().float())
+        # Order buffer create / update.
+        if 'order' in dict(self.named_buffers(recurse=False)):
+            existing = self._buffers['order']
+            if existing.shape == full_order.shape:
+                existing.copy_(full_order)
+            else:
+                self._buffers['order'] = full_order.clone().detach().long()
+        else:
+            self.register_buffer(
+                'order', full_order.clone().detach().long())
 
     # ------------------------------------------------------------------
     # Well-known atoms (meronomy parents).

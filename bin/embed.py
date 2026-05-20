@@ -28,7 +28,7 @@ import sys
 import argparse
 import datetime
 import warnings
-from collections import Counter
+from collections import Counter, namedtuple as _namedtuple
 from pathlib import Path
 
 import numpy as np
@@ -72,7 +72,8 @@ FORMAT_VERSION = 1
 KIND_LEXICON = "lexicon"
 KIND_BPE = "bpe"
 KIND_BOTH = "both"
-_VALID_KINDS = (KIND_LEXICON, KIND_BPE, KIND_BOTH)
+KIND_KNOWLEDGE = "knowledge"
+_VALID_KINDS = (KIND_LEXICON, KIND_BPE, KIND_BOTH, KIND_KNOWLEDGE)
 
 
 def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
@@ -169,22 +170,28 @@ def save_artifact(
     lexicon: Optional[Dict[str, Any]] = None,
     bpe: Optional[Dict[str, Any]] = None,
     truth_data: Optional[Dict[str, Any]] = None,
+    knowledge: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Persist a vocabulary artifact in the unified schema.
 
-    At least one of ``lexicon`` or ``bpe`` must be provided; ``kind`` is
-    inferred from which sections are present.
+    At least one of ``lexicon``, ``bpe``, or ``knowledge`` must be
+    provided; ``kind`` is inferred from which lexicon / bpe sections are
+    present (the knowledge section rides alongside whatever primary
+    sections exist, or stands alone with ``kind=KIND_KNOWLEDGE``).
     """
-    if lexicon is None and bpe is None:
+    if lexicon is None and bpe is None and knowledge is None:
         raise ValueError(
-            "save_artifact: at least one of lexicon / bpe must be provided")
+            "save_artifact: at least one of lexicon / bpe / knowledge "
+            "must be provided")
     if lexicon is not None and bpe is not None:
         kind = KIND_BOTH
     elif lexicon is not None:
         kind = KIND_LEXICON
-    else:
+    elif bpe is not None:
         kind = KIND_BPE
+    else:
+        kind = KIND_KNOWLEDGE
     md = dict(metadata) if metadata else {}
     md.setdefault("created", datetime.datetime.now().isoformat(timespec="seconds"))
     payload: Dict[str, Any] = {
@@ -198,6 +205,8 @@ def save_artifact(
         payload["bpe"] = bpe
     if truth_data is not None:
         payload["truth_data"] = truth_data
+    if knowledge is not None:
+        payload["knowledge"] = knowledge
     atomic_torch_save(payload, path)
 
 
@@ -274,6 +283,572 @@ def bpe_section_from_chunk_layer(chunk_layer) -> Dict[str, Any]:
         "n_vectors": int(chunk_layer.n_vectors),
         "word_learning": int(chunk_layer.word_learning),
     }
+
+
+def build_taxonomy_from_grammar(grammar) -> Dict[str, Any]:
+    """Build the bootstrap taxonomy structure from a Grammar's rules.
+
+    Walks ``grammar.rules``, parsing each category token through
+    ``Grammar._parse_category`` to extract the bare name (stripping
+    order suffixes so ``NP3`` and ``NP4`` collapse to ``NP``).
+    Classifies categories: anything appearing as a rule LHS is a
+    *nonterminal*; categories appearing only in RHS positions are
+    *POS terminals*.
+
+    Builds a flat tree:
+
+      ref_id 0  = root  (parent = -1)
+      ref_ids 1..K  = nonterminal class nodes, sorted by name,
+                      all parented under root
+      ref_ids K+1..N = POS class nodes, sorted by name,
+                      all parented under root
+
+    Word meta-symbol leaves under POS nodes are populated in a separate
+    step (lexicon-driven, when ``wv.index_to_key`` is available).
+
+    Returns a dict with keys ``parent`` (LongTensor[N+1]),
+    ``children_values`` (LongTensor flat), ``children_offsets``
+    (LongTensor[N+2]), and ``taxonomy_names`` (dict[str, int]).
+
+    Plan: §Phase 1 — initial population from ``TheGrammar.rules``.
+    """
+    from Language import Grammar as GrammarClass
+    grammar._ensure_configured()
+    lhs_set: set = set()
+    all_cats: set = set()
+    for rule in grammar.rules:
+        lhs_parsed = GrammarClass._parse_category(rule.lhs)
+        lhs_set.add(lhs_parsed.name)
+        all_cats.add(lhs_parsed.name)
+        for s in (rule.rhs_symbols or ()):
+            rhs_parsed = GrammarClass._parse_category(s)
+            all_cats.add(rhs_parsed.name)
+    nonterminals = sorted(lhs_set)
+    pos_terms = sorted(all_cats - lhs_set)
+    ref_ids: Dict[str, int] = {}
+    next_id = 1  # 0 reserved for root
+    for name in nonterminals:
+        ref_ids[name] = next_id
+        next_id += 1
+    for name in pos_terms:
+        ref_ids[name] = next_id
+        next_id += 1
+    n_nodes = next_id
+    parent = torch.full((n_nodes,), -1, dtype=torch.long)
+    children_of_root: List[int] = []
+    for name in nonterminals + pos_terms:
+        rid = ref_ids[name]
+        parent[rid] = 0
+        children_of_root.append(rid)
+    children_values = torch.tensor(children_of_root, dtype=torch.long)
+    children_offsets = torch.zeros(n_nodes + 1, dtype=torch.long)
+    children_offsets[1:] = len(children_of_root)
+    return {
+        'parent':           parent,
+        'children_values':  children_values,
+        'children_offsets': children_offsets,
+        'taxonomy_names':   ref_ids,
+    }
+
+
+def build_reference_codebook_initial(
+    taxonomy: Dict[str, Any],
+    *,
+    capacity_factor: int = 2,
+    min_capacity: int = 256,
+) -> Dict[str, Any]:
+    """Initialize the reference codebook for Phase 1 bootstrap.
+
+    Allocates ``references`` (float32) and ``order`` (long) tensors at
+    ``V_ref_capacity = max(N_live * capacity_factor, min_capacity)``
+    per the plan's parameter-growth pattern. Only the first
+    ``N_live = taxonomy['parent'].shape[0]`` rows are live; the rest is
+    slack for symbol-learning appends.
+
+    Bootstrap values: all live ``references[i] = 0.0`` and
+    ``order[i] = 0``. Symbol-learning logic will populate actual
+    centroids and orders as it discovers refs.
+
+    Plan: §Phase 1 — reference codebook init.
+    """
+    n_live = int(taxonomy['parent'].shape[0])
+    capacity = max(n_live * capacity_factor, min_capacity)
+    references = torch.zeros(capacity, dtype=torch.float32)
+    order = torch.zeros(capacity, dtype=torch.long)
+    return {
+        'references': references,
+        'v_ref_live': n_live,
+        'order':      order,
+    }
+
+
+def _taxonomy_descendants(
+    rid: int,
+    children_values: torch.Tensor,
+    children_offsets: torch.Tensor,
+) -> List[int]:
+    """BFS descendants of ``rid`` (inclusive)."""
+    out: List[int] = []
+    stack = [int(rid)]
+    while stack:
+        node = stack.pop()
+        out.append(node)
+        start = int(children_offsets[node].item())
+        end = int(children_offsets[node + 1].item())
+        for c in children_values[start:end].tolist():
+            stack.append(int(c))
+    return out
+
+
+def build_typed_indexes(
+    taxonomy: Dict[str, Any],
+    reference_codebook: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Build the typed membership indexes for the knowledge section.
+
+    Two indexes, both keyed by primitive (int / str) → LongTensor of
+    ref_ids:
+
+      ``refs_by_order[k]``      = ref_ids whose ``order == k``.
+                                   Consumed by symbol snapping and the
+                                   inverse recommender's order filter.
+      ``refs_by_category[name]`` = ref_ids in the subtree rooted at
+                                   the category node ``taxonomy_names[name]``,
+                                   walked via parent/children CSR.
+                                   Consumed by typed admissibility and
+                                   the recommender's category filter.
+
+    Plan: §Phase 1 — typed indexes.
+    """
+    n_live = int(reference_codebook['v_ref_live'])
+    order = reference_codebook['order']
+    children_values = taxonomy['children_values']
+    children_offsets = taxonomy['children_offsets']
+    names = taxonomy['taxonomy_names']
+    refs_by_order: Dict[int, torch.Tensor] = {}
+    bucket: Dict[int, List[int]] = {}
+    for i in range(n_live):
+        o = int(order[i].item())
+        bucket.setdefault(o, []).append(i)
+    for k, ids in bucket.items():
+        refs_by_order[k] = torch.tensor(sorted(ids), dtype=torch.long)
+    refs_by_category: Dict[str, torch.Tensor] = {}
+    for name, rid in names.items():
+        descendants = _taxonomy_descendants(
+            int(rid), children_values, children_offsets)
+        refs_by_category[name] = torch.tensor(
+            sorted(descendants), dtype=torch.long)
+    return {
+        'refs_by_order':    refs_by_order,
+        'refs_by_category': refs_by_category,
+    }
+
+
+class KnowledgeView:
+    """Read-only facade over a loaded knowledge section.
+
+    Spaces hold one and consult it at runtime to answer "which refs
+    belong to category X", "what's this ref's order", "what's the ref_id
+    for name N", etc. — without each Space re-implementing taxonomy /
+    typed-index lookup.
+
+    Construct from a knowledge-section dict (the same shape produced by
+    :func:`build_knowledge_section` and stored under
+    ``payload['knowledge']`` after :func:`save_artifact`):
+
+        view = KnowledgeView(payload['knowledge'])
+
+    All accessors return the LIVE slice of underlying tensors (rows
+    ``[0:v_ref_live]``) so consumers never see the capacity-slack
+    zeros.
+
+    Plan: §Phase 2 — Loaders.
+    """
+
+    def __init__(self, knowledge_section: Dict[str, Any]):
+        self._ks = knowledge_section
+        rc = knowledge_section['reference_codebook']
+        self._n_live = int(rc['v_ref_live'])
+        self._references = rc['references']
+        self._order = rc['order']
+        ti = knowledge_section['typed_indexes']
+        self._refs_by_order = ti['refs_by_order']
+        self._refs_by_category = ti['refs_by_category']
+        tax = knowledge_section['taxonomy']
+        self._parent = tax['parent']
+        self._taxonomy_names = tax['taxonomy_names']
+        self._ref_to_name = {v: k for k, v in self._taxonomy_names.items()}
+        self._rule_sigs = knowledge_section['grammar']['rule_order_signatures']
+
+    @property
+    def n_refs_live(self) -> int:
+        """Number of live ref_ids."""
+        return self._n_live
+
+    @property
+    def references(self) -> torch.Tensor:
+        """Live-slice 1-D scalar prototypes (no slack)."""
+        return self._references[:self._n_live]
+
+    @property
+    def orders(self) -> torch.Tensor:
+        """Live-slice long tensor of conceptual orders."""
+        return self._order[:self._n_live]
+
+    @property
+    def taxonomy_names(self) -> Dict[str, int]:
+        """Mapping from well-known category name to its class-node ref_id."""
+        return self._taxonomy_names
+
+    @property
+    def rule_order_signatures(self) -> List[Dict[str, Any]]:
+        """List-of-dicts (JSON-friendly form) of per-rule order signatures."""
+        return self._rule_sigs
+
+    def ref_id_for(self, name: str) -> Optional[int]:
+        """Look up the ref_id for a category name. ``None`` if unknown."""
+        rid = self._taxonomy_names.get(name)
+        return int(rid) if rid is not None else None
+
+    def category_of_ref(self, ref_id: int) -> Optional[str]:
+        """Name of the first taxonomy ancestor (inclusive) with a
+        well-known name. ``None`` if no ancestor (or the ref itself)
+        is named — e.g. the root.
+        """
+        cur = int(ref_id)
+        while cur >= 0:
+            if cur in self._ref_to_name:
+                return self._ref_to_name[cur]
+            cur = int(self._parent[cur].item())
+        return None
+
+    def order_of_ref(self, ref_id: int) -> int:
+        """Conceptual order recorded for ``ref_id``."""
+        return int(self._order[int(ref_id)].item())
+
+    def refs_by_category(self, name: str) -> torch.Tensor:
+        """All ref_ids in the subtree rooted at category ``name``.
+        Empty LongTensor for unknown categories.
+        """
+        t = self._refs_by_category.get(name)
+        if t is None:
+            return torch.empty(0, dtype=torch.long)
+        return t
+
+    def refs_by_order(self, order: int) -> torch.Tensor:
+        """All ref_ids whose conceptual order equals ``order``.
+        Empty LongTensor when no refs at that order yet.
+        """
+        t = self._refs_by_order.get(int(order))
+        if t is None:
+            return torch.empty(0, dtype=torch.long)
+        return t
+
+
+def load_knowledge_view(path: str) -> 'KnowledgeView':
+    """Load a knowledge artifact and return a :class:`KnowledgeView`.
+
+    Convenience bridge over :func:`load_artifact` + ``KnowledgeView``
+    construction. Raises ``ValueError`` if the artifact has no
+    ``knowledge`` section.
+    """
+    payload = load_artifact(path)
+    knowledge = payload.get('knowledge')
+    if knowledge is None:
+        raise ValueError(
+            f"load_knowledge_view: {path!r} has no 'knowledge' section")
+    return KnowledgeView(knowledge)
+
+
+def is_rule_admissible(
+    sig: Dict[str, Any],
+    *,
+    left_cat: str,
+    left_order: int,
+    right_cat: Optional[str] = None,
+    right_order: Optional[int] = None,
+) -> bool:
+    """Hard-category typed admissibility check for STM REDUCE.
+
+    Returns True iff the rule signature's RHS slots exactly match the
+    given operand categories and orders. Used to mask inadmissible
+    rules before the reducer softmax (plan §STM Shift/Reduce Runtime —
+    REDUCE).
+
+    ``sig`` is the serialized form produced by
+    :func:`grammar_signatures_to_serializable`: a dict with
+    ``rhs_categories``, ``rhs_orders``, etc.
+
+    Arity check: when ``right_cat`` is ``None`` the call shape is
+    unary and only matches rules with ``len(rhs_categories) == 1``.
+    When ``right_cat`` is given the call is binary and matches rules
+    with ``len(rhs_categories) == 2``.
+
+    Soft / distributional admissibility (operand carries a category
+    distribution) is a future extension; this initial version uses
+    hard categories and exact-order equality.
+    """
+    rhs_cats = sig.get('rhs_categories') or []
+    rhs_ords = sig.get('rhs_orders') or []
+    if right_cat is None:
+        if len(rhs_cats) != 1:
+            return False
+        return (rhs_cats[0] == left_cat
+                and rhs_ords[0] == int(left_order))
+    if len(rhs_cats) != 2:
+        return False
+    return (rhs_cats[0] == left_cat
+            and rhs_ords[0] == int(left_order)
+            and rhs_cats[1] == right_cat
+            and rhs_ords[1] == int(right_order))
+
+
+def admissibility_mask(
+    rule_signatures: List[Dict[str, Any]],
+    *,
+    left_cat: str,
+    left_order: int,
+    right_cat: Optional[str] = None,
+    right_order: Optional[int] = None,
+) -> torch.Tensor:
+    """Build a boolean admissibility mask over a list of rule signatures.
+
+    Length-``len(rule_signatures)`` ``BoolTensor`` where entry ``i`` is
+    ``True`` iff :func:`is_rule_admissible` returns ``True`` for that
+    rule at the given stack-top state. Used by STM REDUCE to mask
+    inadmissible rules before the reducer softmax (plan §STM
+    Shift/Reduce Runtime — REDUCE).
+
+    Iterates over rules in Python; rule counts are small (dozens, not
+    thousands) so the overhead is negligible. A vectorized form is
+    possible but not needed at current sizes.
+    """
+    flags = [
+        is_rule_admissible(
+            sig,
+            left_cat=left_cat,
+            left_order=left_order,
+            right_cat=right_cat,
+            right_order=right_order,
+        )
+        for sig in rule_signatures
+    ]
+    return torch.tensor(flags, dtype=torch.bool)
+
+
+def mask_logits(
+    logits: torch.Tensor,
+    mask: torch.Tensor,
+) -> torch.Tensor:
+    """Apply an admissibility mask to a logit tensor.
+
+    Inadmissible entries (``mask == False``) get set to ``-inf`` so
+    their post-softmax probability is exactly 0; admissible entries
+    pass through untouched. The relative weighting between admissible
+    rules is preserved.
+
+    Returns a NEW tensor (does not mutate ``logits``). ``mask`` must
+    broadcast against the last dim of ``logits``.
+    """
+    return logits.masked_fill(~mask, float('-inf'))
+
+
+NewRef = _namedtuple('NewRef',
+                     ['scalar', 'order', 'parent_ref_id', 'category'])
+NewRef.__doc__ = (
+    "One symbol-learning promotion. Append-time inputs to "
+    "``extend_artifact``: scalar prototype, conceptual order, "
+    "parent class-node ref_id (for the taxonomy), and category name "
+    "(for ``refs_by_category``).")
+
+
+def extend_artifact(path: str, new_refs) -> None:
+    """Runtime symbol-learning append: add new refs to an existing
+    knowledge artifact and re-save.
+
+    Each ``NewRef(scalar, order, parent_ref_id, category)`` becomes a
+    new row in the reference codebook at the next available ref_id
+    (``v_ref_live``). The taxonomy's ``parent`` and children-CSR are
+    updated, and the typed indexes (``refs_by_order`` /
+    ``refs_by_category``) are rebuilt to reflect the new membership.
+
+    When appending would exceed the reference codebook's allocated
+    capacity, both ``references`` and ``order`` tensors are reallocated
+    to ``max(capacity * 2, v_ref_live + len(new_refs))`` to preserve
+    the capacity-slack pattern. Existing row values are copied through
+    unchanged.
+
+    Empty ``new_refs`` is a no-op (early return). Missing knowledge
+    section raises ``ValueError``.
+
+    Plan: §Phase 1 — runtime symbol-learning append entry point.
+    """
+    if not new_refs:
+        return
+    payload = load_artifact(path)
+    knowledge = payload.get('knowledge')
+    if knowledge is None:
+        raise ValueError(
+            f"extend_artifact: {path!r} has no 'knowledge' section")
+    rc = knowledge['reference_codebook']
+    tax = knowledge['taxonomy']
+    v_live = int(rc['v_ref_live'])
+    n_new = len(new_refs)
+    n_total = v_live + n_new
+    # Grow references / order if capacity is exhausted.
+    references = rc['references']
+    order_tensor = rc['order']
+    capacity = references.shape[0]
+    if n_total > capacity:
+        new_capacity = max(capacity * 2, n_total)
+        bigger_refs = torch.zeros(new_capacity, dtype=references.dtype)
+        bigger_refs[:capacity] = references
+        references = bigger_refs
+        bigger_order = torch.zeros(new_capacity, dtype=order_tensor.dtype)
+        bigger_order[:capacity] = order_tensor
+        order_tensor = bigger_order
+        rc['references'] = references
+        rc['order'] = order_tensor
+    # Write scalars / orders into the slack.
+    for i, nr in enumerate(new_refs):
+        rid = v_live + i
+        references[rid] = float(nr.scalar)
+        order_tensor[rid] = int(nr.order)
+    # Grow parent tensor by exactly n_new (it's not capacity-padded).
+    parent = tax['parent']
+    bigger_parent = torch.full((n_total,), -1, dtype=parent.dtype)
+    bigger_parent[:parent.shape[0]] = parent
+    for i, nr in enumerate(new_refs):
+        bigger_parent[v_live + i] = int(nr.parent_ref_id)
+    tax['parent'] = bigger_parent
+    # Rebuild children CSR from the new full parent tensor.
+    kids: List[List[int]] = [[] for _ in range(n_total)]
+    for c in range(n_total):
+        p = int(bigger_parent[c].item())
+        if 0 <= p < n_total:
+            kids[p].append(c)
+    flat_values: List[int] = []
+    offsets: List[int] = [0]
+    for p in range(n_total):
+        flat_values.extend(kids[p])
+        offsets.append(len(flat_values))
+    tax['children_values'] = torch.tensor(flat_values, dtype=torch.long)
+    tax['children_offsets'] = torch.tensor(offsets, dtype=torch.long)
+    # Commit new live count, then rebuild typed indexes against the
+    # updated structures.
+    rc['v_ref_live'] = n_total
+    knowledge['typed_indexes'] = build_typed_indexes(tax, rc)
+    payload['knowledge'] = knowledge
+    atomic_torch_save(payload, path)
+
+
+def build_word_table_initial(wv) -> Dict[str, Any]:
+    """Build the bootstrap word table from a WordVectors-like object.
+
+    Reads ``wv.index_to_key`` (list of surface strings) and emits:
+
+      ``keys_values``  uint8  CSR-stored UTF-8 bytes of each surface
+                              form, concatenated end-to-end.
+      ``keys_offsets`` long   length-``N_lex + 1``; row ``i``'s bytes
+                              live at ``keys_values[offsets[i]:offsets[i+1]]``.
+      ``ref_ids``      long   length-``N_lex``, initialized to ``-1``
+                              (unassigned POS). A separate
+                              ``assign_word_ref_ids`` step populates
+                              these from a curated POS lexicon /
+                              tagger output.
+
+    Plan: §Phase 1 — word table.
+    """
+    keys = list(getattr(wv, 'index_to_key', []))
+    payloads = [k.encode('utf-8') for k in keys]
+    total = sum(len(p) for p in payloads)
+    keys_values = torch.empty(total, dtype=torch.uint8)
+    keys_offsets = torch.zeros(len(payloads) + 1, dtype=torch.long)
+    cursor = 0
+    for i, p in enumerate(payloads):
+        if len(p) > 0:
+            keys_values[cursor:cursor + len(p)] = torch.tensor(
+                list(p), dtype=torch.uint8)
+        cursor += len(p)
+        keys_offsets[i + 1] = cursor
+    ref_ids = torch.full((len(payloads),), -1, dtype=torch.long)
+    return {
+        'keys_values':  keys_values,
+        'keys_offsets': keys_offsets,
+        'ref_ids':      ref_ids,
+    }
+
+
+def build_knowledge_section(
+    grammar,
+    *,
+    wv=None,
+    capacity_factor: int = 2,
+    min_capacity: int = 256,
+) -> Dict[str, Any]:
+    """Bundle the five knowledge sub-sections into one section dict.
+
+    Composition of the per-piece builders:
+
+      - ``word_table``       from ``build_word_table_initial(wv)``
+                              (empty when ``wv is None``).
+      - ``reference_codebook`` from ``build_reference_codebook_initial(taxonomy)``.
+      - ``typed_indexes``    from ``build_typed_indexes(taxonomy, rc)``.
+      - ``taxonomy``         from ``build_taxonomy_from_grammar(grammar)``.
+      - ``grammar``          ``{'rule_order_signatures': [...]}``.
+
+    Carries ``section_kind='knowledge'`` for inspection tooling.
+
+    Plan: §Phase 1 — single emit point for the knowledge artifact.
+    """
+    taxonomy = build_taxonomy_from_grammar(grammar)
+    reference_codebook = build_reference_codebook_initial(
+        taxonomy,
+        capacity_factor=capacity_factor,
+        min_capacity=min_capacity)
+    typed_indexes = build_typed_indexes(taxonomy, reference_codebook)
+    word_table = build_word_table_initial(wv)
+    return {
+        'section_kind':       'knowledge',
+        'word_table':         word_table,
+        'reference_codebook': reference_codebook,
+        'typed_indexes':      typed_indexes,
+        'taxonomy':           taxonomy,
+        'grammar':            {
+            'rule_order_signatures':
+                grammar_signatures_to_serializable(grammar),
+        },
+    }
+
+
+def grammar_signatures_to_serializable(grammar) -> List[Dict[str, Any]]:
+    """Serialize a Grammar's per-rule ``RuleOrderSignature`` into a
+    JSON-friendly list of dicts for storage in the knowledge section.
+
+    One dict per rule in ``grammar.rules``, with namedtuples flattened
+    to primitives (the nested ``OrderExpr.delta`` becomes an ``int``).
+    No ``OrderExpr.kind`` field is stored — under the post-Kleene
+    design (see
+    ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``)
+    every order is a constant.
+
+    Plan: §Phase 1 — artifact contains
+    ``grammar.rule_order_signatures``. Used by the artifact loader to
+    rebuild ``RuleOrderSignature`` instances at load time.
+    """
+    grammar._ensure_configured()
+    out: List[Dict[str, Any]] = []
+    for rule in grammar.rules:
+        sig = grammar._rule_order_signature(rule)
+        out.append({
+            "lhs_category":  sig.lhs_category,
+            "lhs_order":     int(sig.lhs_order_expr.delta),
+            "rhs_categories": list(sig.rhs_categories),
+            "rhs_orders":    [int(oe.delta) for oe in sig.rhs_order_exprs],
+            "op_name":       sig.op_name,
+            "order_delta":   int(sig.order_delta),
+        })
+    return out
 
 
 def inspect_artifact(path: str) -> Dict[str, Any]:

@@ -1,10 +1,3 @@
-* The logic behind the shadow
-
-* Add difference() to union() and intersection()
-
-* add isIsomorphic()
-
-* add inverses to lift/lower.
 
 * Enforce use of Mereonomy (per-symbol DoT graph).
 
