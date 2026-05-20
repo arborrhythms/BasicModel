@@ -5,6 +5,21 @@
 > Driver: `test/test_brick_no_sync.py` (now parametrized over
 > MM_xor / MM_grammar / MM_5M) + a strict `train.py` pre-flight.
 
+> **Update (2026-05-19) — new deferred residual on the per-word IR path.**
+> The two-loop word-at-a-time IR-reconstruction objective (Reworks A/B,
+> see `doc/plans/2026-05-18-two-loop-pipeline-architecture.md` §MISSION
+> COMPLETION STATUS) introduces a **per-word path that is not
+> fullgraph-capturable**: the variable-length `while (w:=next_word())`
+> loop + `next_word`'s `bool(any_pos.any())` host-sync
+> (`bin/Spaces.py:6508`). This is the **Phase-5 capture-closeout
+> concern** — deep (variable per-word-loop capture), explicitly deferred
+> (spec decision D6); the metalbaby perf gate (shift-reduce vs
+> CKY+resize) is gated behind it, CKY+resize is the documented fallback
+> meanwhile. The eager training path is verified working (objective
+> trains end-to-end). `test_compiled_step_invoked` failing on the
+> grammar/per-word path is this known, accepted residual — not a
+> regression.
+
 > **Status (2026-05-16):** the enumerated residual (`_snap_content`,
 > `runEpoch`-return, F, C, D, E, A, B) is **fully landed** — MM_xor
 > `runEpoch` **attribution = 0** on metalbaby CUDA ("brick body is

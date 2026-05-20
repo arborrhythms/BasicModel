@@ -196,9 +196,17 @@ def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
 
 
 def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
-    """BasicModel.forward(inputData) initializes self.inputs and
-    self.symbolic_state as a side effect — the post-refactor replacement
-    for the old Start(inputData) entry point."""
+    """BasicModel.forward(inputData) populates the InputSpace terminal
+    subspace and self.symbolic_state as a side effect — the post-refactor
+    replacement for the old Start(inputData) entry point.
+
+    Phase 1.5 subsumed the ``self.inputs`` back-ref alias (it was a
+    read-only handle to ``inputSpace.subspace``, stamped by the forward).
+    This contract test now asserts the same side effect at its true owner
+    (``model.inputSpace.subspace`` materializes after forward) -- the
+    forward-populates-input-state intent is unchanged; only the alias
+    name it checked moved to the owning Space.
+    """
     import warnings
 
     import torch
@@ -223,7 +231,10 @@ def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
         warnings.filterwarnings("ignore")
         model.forward(x)
 
-    assert getattr(model, 'inputs', None) is not None
+    # Phase 1.5: assert the InputSpace terminal subspace materializes
+    # post-forward (was: the now-subsumed ``model.inputs`` alias).
+    assert model.inputSpace.subspace is not None
+    assert model.inputSpace.subspace.materialize() is not None
     assert getattr(model, 'symbolic_state', None) is not None
     # symbolic_state shape: [B, nOutput, nDim] from SymbolicSpace.outputShape
     sshape = tuple(model.symbolic_state.shape)

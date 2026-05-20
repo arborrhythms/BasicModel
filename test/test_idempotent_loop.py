@@ -124,5 +124,68 @@ class TestIdempotentLoop(unittest.TestCase):
         self.assertLess(bivec.abs().max().item(), 1e-5)
 
 
+def _widen_roundtrip_perslot(cb, slab):
+    """The H2 widened symbolic-space loop, mirrored from
+    ``BasicModel._stm_symbolic_roundtrip``: fold the ``cap`` axis into the
+    batch dim (one STM slot per row), ``forward`` then ``reverse(V=1)``,
+    unfold. Generalizes the retired single-vector ``V=1`` round-trip to
+    ``V = STM capacity`` while preserving every slot (drops the legacy
+    ``idea_back.sum(dim=1)`` single-slot collapse; does NOT replace it
+    with a V-axis mean collapse).
+    """
+    B, cap, D = slab.shape
+    flat = slab.reshape(B * cap, 1, D)        # [B*cap, 1, D]
+    snap = cb.forward(flat)                   # [B*cap, V_S, 1]
+    back = cb.reverse(snap, V=1)              # [B*cap, 1, D]
+    return back.reshape(B, cap, D)            # [B, cap, D]
+
+
+class TestWidenedIdempotentLoopV7(unittest.TestCase):
+    """H2: the C↔S round-trip widened from the single-vector ``V=1``
+    regime to ``V = STM capacity = 7`` is still a fixed point -- per slot
+    -- so the ``[B, 7, concept_dim]`` STM slab can pass through symbolic
+    space and back idempotently. ADDED alongside (does NOT weaken) the
+    ``V=1`` assertions above: the widening must preserve idempotency.
+    """
+
+    def test_v7_perslot_roundtrip_is_fixed_point(self):
+        """Non-trivial codebook, ``[B, 7, 1024]`` slab (post-H3 dims):
+        round-tripping an already-round-tripped slab returns it
+        bit-identically (the same fixed-point property as ``V=1``, here
+        per-slot over the 7 STM slots)."""
+        torch.manual_seed(1234)
+        B, cap, D = 4, 7, 1024
+        cb = _make_codebook(D_C=D, V_S=cap)   # span(W) is a proper 7-dim
+                                              # subspace of R^1024
+        x0 = torch.randn(B, cap, D)           # large off-span component
+        x1 = _widen_roundtrip_perslot(cb, x0)  # cycle(x): projects onto span(W)
+        x2 = _widen_roundtrip_perslot(cb, x1)  # cycle(cycle(x))
+        # Projection actually happened (input had off-span energy).
+        self.assertGreater((x1 - x0).abs().max().item(), 1e-3)
+        # Fixed point at width 7, bit-identical (strict; the V=1
+        # assertions use atol=1e-5 -- the widened per-slot path is exact).
+        self.assertTrue(torch.equal(x2, x1),
+                        f"V=7 not a fixed point: "
+                        f"max|Δ|={ (x2 - x1).abs().max().item():.3e}")
+        torch.testing.assert_close(x2, x1, atol=1e-5, rtol=1e-4)
+        # All 7 slots stay DISTINCT (the slab is a real per-slot working
+        # memory, not collapsed to one summary -- the failure mode of a
+        # naive ``cb.reverse(snap, V=cap)`` V-axis mean collapse).
+        self.assertGreater((x1 - x1[:, :1, :]).abs().max().item(), 1e-3)
+
+    def test_v7_at_prototype_slab_is_fixed_point_cycle0(self):
+        """A slab whose every slot is a codebook prototype row is already
+        a fixed point at cycle 0 (per-slot generalization of
+        ``test_at_prototype_is_fixed_point``)."""
+        cap = 7
+        cb = _make_codebook(D_C=cap, V_S=cap)  # identity W (unit rows)
+        W = cb.getW()                          # [cap, cap]
+        slab0 = W.unsqueeze(0).expand(3, cap, cap).contiguous()  # [3,7,7]
+        slab1 = _widen_roundtrip_perslot(cb, slab0)
+        slab2 = _widen_roundtrip_perslot(cb, slab1)
+        torch.testing.assert_close(slab1, slab0, atol=1e-5, rtol=1e-4)
+        torch.testing.assert_close(slab2, slab1, atol=1e-5, rtol=1e-4)
+
+
 if __name__ == "__main__":
     unittest.main()

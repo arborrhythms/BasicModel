@@ -115,7 +115,7 @@ if pc is not None:
 with torch.no_grad():
     input_data, input_latent = model.reverse(symbols, outputData)
 
-recon_vecs = model.inputs.materialize()
+recon_vecs = model.inputSpace.subspace.materialize()
 print(f"=== RECONSTRUCTED [B, N, D]={list(recon_vecs.shape)} ===")
 for v in range(recon_vecs.shape[1]):
     norm = recon_vecs[0, v].norm().item()

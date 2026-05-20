@@ -2487,7 +2487,7 @@ class Embedding(Basis):
         if getattr(self, 'lexer_mode', 'word') == 'sentence':
             return parse(self._to_text(text), lex='sentences')
         mode = getattr(self, 'chunking_mode', 'lexicon')
-        if mode == 'bpe':
+        if mode in ('bpe', 'mphf'):
             return self._char_stream(text)
         return parse(self._to_text(text), lex='words')
 
@@ -3406,6 +3406,64 @@ class Embedding(Basis):
     def get_mask_embedding(self):
         """Return a zero vector the same size as a codebook entry."""
         return torch.zeros(self.getW().shape[1], device=TheDevice.get())
+
+class WorkingState:
+    """Per-sentence working state, allocated ONCE in the per-sentence reset
+    path (never in __init__, never in the traced forward) and threaded
+    through every Space.forward()/reverse() as the single carrier of all
+    cross-stage/cross-round state. Fixed-shape, tensor-carrying. Plain
+    Python object -- NOT an nn.Module -- so it never mutates
+    ``_modules``/``_buffers`` inside the trace (the dynamo guard that
+    forces ``unique_graphs=2``).
+
+    NO ``__slots__``: dynamo's ``UserDefinedObjectVariable.var_getattr``
+    inspects ``__dict__`` and the standard nn.Module containers, and
+    does NOT fall through to ``__slots__`` member descriptors -- so
+    a ``__slots__``-bearing WorkingState appears attribute-less to a
+    traced forward and any ``_work.cs_for_ps`` read raises Unsupported
+    under ``fullgraph=True``. Plain ``__dict__`` attributes are visible
+    to dynamo and trace cleanly. The original ``__slots__`` rationale
+    ("avoid nn.Module ``__setattr__``") still holds -- it was about
+    nn.Module, not about ``__slots__`` per se.
+
+    Fields (set by ``new_working_state``):
+      cursor      int64 [n_tiers]  per-tier rule cursor (was _cursor_compose*)
+      gen         int64 []         compose generation (was _compose_generation)
+      recur_pass  int64 []         recurrent pass index (was _recurrent_pass_idx)
+      cs_for_ps   SubSpace|None    CS->PS carrier (was _subspaceForPS)
+      cs_for_ss   SubSpace|None    CS->SS carrier (was _subspaceForSS)
+      valid_mask  Tensor|None      carried by reference (was copy_context)
+      errors      object|None      Error accumulator, carried by reference
+      op_sel      Tensor|None      selection tensor (Phase 2A)
+      op_operands Tensor|None      selection-operand tensor (Phase 2A)
+    """
+
+
+def new_working_state(n_tiers, device, n_ops=0):
+    """Allocate a fresh per-sentence WorkingState (called from the reset
+    path only -- never __init__, never the traced forward)."""
+    ws = WorkingState()
+    ws.cursor = torch.zeros(n_tiers, dtype=torch.int64, device=device)
+    ws.gen = torch.zeros((), dtype=torch.int64, device=device)
+    # D8 capture-gate (2026-05-19): plain Python int instead of 0-d
+    # tensor. Inductor produces an unbacked SymInt when ``int(tensor)``
+    # is the source of a ModuleList index (PerceptualSpace.forward
+    # selects ``pi_input[_oi]`` from a ModuleList by recur_pass-derived
+    # index) -- Min(2, Max(0, u0)) cannot specialize. Python ints are
+    # Dynamo-specialized natively. With ``__slots__`` removed from
+    # WorkingState, this is a plain ``__dict__`` attribute that Dynamo
+    # introspects cleanly.
+    ws.recur_pass = 0
+    ws.cs_for_ps = None
+    ws.cs_for_ss = None
+    ws.valid_mask = None
+    ws.errors = None
+    ws.op_sel = (torch.zeros(n_ops, dtype=torch.float32, device=device)
+                 if n_ops else None)
+    ws.op_operands = (torch.zeros(n_ops, 2, dtype=torch.int64, device=device)
+                      if n_ops else None)
+    return ws
+
 
 class SubSpace(nn.Module):
     """Per-space runtime state container.
@@ -4588,7 +4646,16 @@ class SubSpace(nn.Module):
                          and ev.shape[-1] >= 1) else None
         if src is None:
             return None
-        scalar = src[..., 0]                         # width-1 scalar DoT
+        # Width-1 carrier -> the scalar itself; wider content -> the
+        # signed magnitude balance ``aP - aN`` (consistent with
+        # SubSpace._compute_active / set_activation_from_event).
+        if src.shape[-1] == 1:
+            scalar = src[..., 0]
+        else:
+            d = max(src.shape[-1], 1)
+            pos = torch.relu(src).norm(dim=-1) / math.sqrt(d)
+            neg = torch.relu(-src).norm(dim=-1) / math.sqrt(d)
+            scalar = pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)
         return self._apply_active_selection(scalar)
 
     def _apply_active_selection(self, src):
@@ -6026,6 +6093,38 @@ class InputSpace(Space):
         # generate_sentence) stage a tensor here so forward() skips
         # the lex/embed step on that call.  None during training.
         self._cached_embedding = None
+        # ---- Per-word ground-truth cursor (INERT this increment) ----
+        # ``next_word`` walks ``self._ar_embedded`` ([B, T, D], the
+        # already-lexed whole-sentence buffer set by forward()) one
+        # ground-truth T-position at a time for the IR-reconstruction
+        # loop's word source.  This is a pure ground-truth feed: the
+        # slice is the lexed input, the stop is the input's NULL/end-of-
+        # valid-content sentinel -- there is ZERO AR-prediction here (no
+        # get_recovered_word, no reconstruction feedback, no [MASK], no
+        # model-predicted EOF). It is deliberately NOT the retired
+        # ``arir_step`` AR machine.
+        #
+        # ``_per_word_enabled`` is the deferred wiring point. It defaults
+        # False and is set by NO config/code in this increment, so the
+        # ``next_word`` branch is never taken in any current run and the
+        # live whole-slab ``forward`` contract is byte-identical. The
+        # NEXT increment flips this True and wires the per-word feed into
+        # ConceptualSpace/STM/SHIFT/selector/reverse (explicitly out of
+        # scope here).
+        self._per_word_enabled = False
+        # Host-side int position into the T-axis of ``_ar_embedded``.
+        # Lifecycle mirrors ``_ar_embedded``: born here, reset to 0 in
+        # Start() (per-run) and hard Reset() (per-document), exactly as
+        # ``_ar_embedded``/``_ar_total`` are reset to None/0.
+        self._per_word_cursor = 0
+        # Host-side valid lexed length, computed ONCE per forward and
+        # cached here so ``next_word()`` is a pure host-int compare
+        # (``p >= self._valid_len_host``) with zero DtoH per call. The
+        # single DtoH that would otherwise fire per word is amortised
+        # into the (already non-captured) IS forward boundary; D8's
+        # per-word DtoH budget collapses to zero (well within the "one
+        # byte termination read" allowance).
+        self._valid_len_host = 0
         # Byte lexer inputs are discrete indices (0-255) looked up via
         # Embedding -- a global linear lift over the flattened buffer is
         # unnecessary and prohibitively expensive for large nOutput.
@@ -6225,6 +6324,10 @@ class InputSpace(Space):
         super().Start()
         self._ar_embedded = None
         self._ar_total = 0
+        # Per-word cursor rewinds with the embedded buffer it walks.
+        self._per_word_cursor = 0
+        # Cached valid length rewinds with the buffer it summarises.
+        self._valid_len_host = 0
 
     def Reset(self, batch=None, hard=True):
         """Per-document teardown for AR state.
@@ -6245,6 +6348,12 @@ class InputSpace(Space):
             return
         self._ar_embedded = None
         self._ar_total = 0
+        # The per-word cursor is batch-shared rebuildable scratch over
+        # ``_ar_embedded`` (same as ``_ar_total``); a hard Reset drops
+        # the buffer so the cursor rewinds to 0 with it.
+        self._per_word_cursor = 0
+        # ``_valid_len_host`` is a host-int summary of the same buffer.
+        self._valid_len_host = 0
         self._cached_embedding = None
         # _end_of_stream is a host-side ``list[bool]`` under the
         # rolling-cursor contract (the canonical hard-reset signal is
@@ -6256,7 +6365,7 @@ class InputSpace(Space):
             self._end_of_stream[batch] = False
 
     # The world presenting itself
-    def forward(self, inputData):
+    def forward(self, inputData, work=None):
         """Single-call stem source for the IR-only training pipeline.
 
         Lexes/embeds the input once and emits ``[B, N, D]`` (left-
@@ -6290,6 +6399,8 @@ class InputSpace(Space):
                     peer._embed_bpe(self.subspace)
                 elif peer_mode == "none":
                     peer._embed_byte(self.subspace)
+                elif peer_mode == "mphf":
+                    peer._embed_mphf(self.subspace)
                 else:
                     peer._embed(self.subspace)
                 embedded = peer._embedded_input
@@ -6301,7 +6412,40 @@ class InputSpace(Space):
         self._ar_embedded = embedded
 
         if embedded is None:
+            self._valid_len_host = 0
             return self.subspace
+
+        # D8 piece 2 (2026-05-19, eager-revised after metalbaby): compute
+        # the per-forward valid-len cache EAGERLY here at the IS
+        # boundary (non-captured region) so ``next_word()`` is a pure
+        # host-int compare with NO ``.item()`` inside. The lazy-compute
+        # variant worked for the per-word body in isolation (CPU eager
+        # backend tolerates it), but the WHOLE-FORWARD compile path
+        # (production training, CUDA Inductor fullgraph) traces through
+        # ``next_word`` and an ``.item()`` there blocks the trace:
+        # ``Could not guard on data-dependent expression Eq(u0, 1)``.
+        # Eager-here-once + ``torch.no_grad`` keeps the autograd graph
+        # rooted in ``embedded`` untouched (no new ``.abs().sum()``
+        # fanout), matching the no_grad guard the lazy variant used.
+        with torch.no_grad():
+            _peer_valid = self._peer_perceptual
+            _bpe_mask_valid = (
+                getattr(_peer_valid, "_bpe_word_mask", None)
+                if _peer_valid is not None
+                and getattr(_peer_valid, "chunking_mode", None)
+                in ("bpe", "none", "mphf")
+                else None)
+            _Te = embedded.shape[1]
+            if _bpe_mask_valid is not None:
+                _valid_pos = _bpe_mask_valid[:, :_Te] > 0
+            else:
+                _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
+            _any_pos = _valid_pos.any(dim=0)
+            if torch.is_tensor(_any_pos) and _any_pos.any().item():
+                self._valid_len_host = int(
+                    _any_pos.nonzero().max().item()) + 1
+            else:
+                self._valid_len_host = 0
 
         B, T, D = embedded.shape
         N = int(self.outputShape[0])
@@ -6321,7 +6465,7 @@ class InputSpace(Space):
         peer = self._peer_perceptual
         bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                     if peer is not None
-                    and getattr(peer, "chunking_mode", None) in ("bpe", "none")
+                    and getattr(peer, "chunking_mode", None) in ("bpe", "none", "mphf")
                     else None)
 
         # Pad / truncate to N.
@@ -6368,6 +6512,60 @@ class InputSpace(Space):
         if ws is not None:
             ws.ensure_microbatch(B, 1)
         return sub
+
+    def next_word(self):
+        """Per-word ground-truth feed for the IR-reconstruction loop.
+
+        INERT this increment: returns ``None`` immediately unless
+        ``self._per_word_enabled`` is True, and nothing in the current
+        codebase/config sets that flag, so the body below is unreached
+        in every live run and the whole-slab ``forward`` contract is
+        byte-identical. ``_per_word_enabled`` is the deferred wiring
+        point (next increment enables it and threads the returned slice
+        into ConceptualSpace/STM/SHIFT/selector/reverse -- explicitly
+        out of scope here).
+
+        When enabled, walks the already-lexed whole-sentence buffer
+        ``self._ar_embedded`` ([B, T, D], populated by ``forward``) one
+        T-position per call:
+
+          * returns ``self._ar_embedded[:, p:p+1, :]`` -- the single
+            ground-truth word slice ``[B, 1, D]`` at the cursor's
+            T-position ``p`` -- and advances ``self._per_word_cursor``
+            by 1;
+          * returns ``None`` (the NULL/end-of-sentence seal) once the
+            cursor reaches the end of valid lexed content. End-of-valid
+            is the SAME validity signal ``forward`` uses: the peer's
+            ``_bpe_word_mask`` ([B, T], 1.0 at real word slots) when in
+            ``bpe``/``none`` chunking, else ``abs().sum(-1) > 0`` over
+            the embedded slab. The valid length is the max real-token
+            count across rows (``any`` over the batch, matching how
+            ``forward`` reduces ``valid_mask``). The stop is therefore
+            purely the input's NULL/end sentinel -- NEVER a model output
+            (no get_recovered_word, no reconstruction, no [MASK], no
+            model-predicted EOF). This is deliberately NOT the retired
+            ``arir_step`` AR machine.
+        """
+        if not self._per_word_enabled:
+            return None
+        embedded = self._ar_embedded
+        if embedded is None:
+            return None
+        # D8 piece 2 (eager-revised after metalbaby 2026-05-19):
+        # ``_valid_len_host`` is populated EAGERLY by ``forward()`` at
+        # the IS boundary; ``next_word`` does a pure host-int compare
+        # with ZERO ``.item()`` inside. The lazy-on-first-call variant
+        # was Dynamo-traceable under the per-word-body's isolated
+        # eager-backend compile, but the whole-forward Inductor fullgraph
+        # compile (production training) traces through ``next_word`` and
+        # an ``.item()`` here blocks the trace.
+        p = self._per_word_cursor
+        if p >= self._valid_len_host:
+            # NULL/end-of-sentence sentinel reached -- pure input stop.
+            return None
+        word = embedded[:, p:p + 1, :]
+        self._per_word_cursor = p + 1
+        return word
 
     def _empty_like_subspace(self):
         """Return a SubSpace with materialized shape [B, 0, D] — the termination sentinel."""
@@ -6436,9 +6634,9 @@ class InputSpace(Space):
         self.input = self.subspace.materialize()
         return self.subspace
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Reverse pass; inverse of ``forward``.
-        
+
         See class docstring for the inversion contract.
         """
         if hasattr(subspace, "is_empty") and subspace.is_empty():
@@ -6591,16 +6789,33 @@ class PerceptualSpace(Space):
         # C→P feedback is now an explicit ``forward`` argument
         # (``CS_subspaceForPS``) supplied by the recurrent cell, not a
         # post-construction sibling ref.
-        # Recurrent-pass index, set by ``_forward_body`` each pass. The
-        # serial-mode warm path is an AR-streaming optimisation across
-        # forward *calls*; it must not fire on in-forward recurrent
-        # passes >0 (those carry distinct C→P feedback and must do the
-        # full cold compute, not splice the prior pass's last slot).
+        # Recurrent-pass index. Phase 1 relocated this onto the
+        # per-sentence carrier ``work.recur_pass`` (written by
+        # ``_forward_body`` each pass, read in ``forward``); this
+        # attribute remains as the eager fallback for ``work is None``
+        # (standalone ``forward`` calls / unit tests). The serial-mode
+        # warm path is an AR-streaming optimisation across forward
+        # *calls*; it must not fire on in-forward recurrent passes >0
+        # (those carry distinct C→P feedback and must do the full cold
+        # compute, not splice the prior pass's last slot).
         self._recurrent_pass_idx = 0
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
+
+        # Phase 1A.1: make the PERCEPTUAL VQ codebook learnable by
+        # gradient and drop its in-call EMA Parameter mutation, so
+        # ``PerceptualSpace.forward`` performs NO persistent-state
+        # mutation in-call and is idempotent (a CUDA-graph-capture
+        # prerequisite). ``VectorQuantize`` / ``Codebook`` are SHARED by
+        # the Conceptual and Symbolic codebooks too; this flag is set
+        # ONLY on the perceptual ``.event`` codebook's ``VectorQuantize``
+        # instance here, so the Conceptual/Symbolic EMA paths stay
+        # byte-identical (single-writer invariant). No-op when this
+        # space has no codebook configured (passthrough ``Tensor``
+        # subspace -> no ``.vq``).
+        self._make_perceptual_codebook_learnable()
 
         lexical_basis = self.subspace.what
         if isinstance(lexical_basis, Embedding):
@@ -6628,9 +6843,9 @@ class PerceptualSpace(Space):
             )
         except KeyError:
             self.chunking_mode = "lexicon"
-        if self.chunking_mode not in ("bpe", "lexicon", "none"):
+        if self.chunking_mode not in ("bpe", "lexicon", "none", "mphf"):
             raise ValueError(
-                f"PerceptualSpace.chunking must be bpe|lexicon|none, "
+                f"PerceptualSpace.chunking must be bpe|lexicon|none|mphf, "
                 f"got {self.chunking_mode!r}")
         if isinstance(lexical_basis, Embedding):
             lexical_basis.chunking_mode = self.chunking_mode
@@ -6648,6 +6863,18 @@ class PerceptualSpace(Space):
             if self.model_type != "embedding":
                 raise ValueError(
                     "PerceptualSpace.chunking='bpe' requires "
+                    "<modelType>embedding</modelType>")
+        elif self.chunking_mode == "mphf":
+            # MPHF is BPE+MPHF-fast-path: in-vocab whole words via MPHF
+            # gather, OOV fall back to _embed_bpe_trie. Inherits BPE's
+            # invariants (byte range seeding + Embedding modelType).
+            if self.nVectors < 256:
+                raise ValueError(
+                    f"PerceptualSpace.chunking='mphf' requires nVectors>=256 "
+                    f"(to seed the byte range); got nVectors={self.nVectors}")
+            if self.model_type != "embedding":
+                raise ValueError(
+                    "PerceptualSpace.chunking='mphf' requires "
                     "<modelType>embedding</modelType>")
         elif self.chunking_mode == "none":
             # Byte-direct mode: each byte is its own perceptual atom,
@@ -6724,7 +6951,8 @@ class PerceptualSpace(Space):
         # ``pi_concept`` per conceptualOrder so order k uses its own
         # weights (sigma_percept / the symbolic codebook are already
         # per-order via the conceptualSpaces/symbolicSpaces ModuleLists).
-        # The recurrent cell selects the order via ``_recurrent_pass_idx``.
+        # The recurrent cell selects the order via ``work.recur_pass``
+        # (eager fallback: ``_recurrent_pass_idx``).
         # conceptualOrder<=1 -> length-1 lists -> bit-identical to the
         # pre-ramsification single-fold behavior.
         _T = max(1, int(TheXMLConfig.get(
@@ -6753,7 +6981,7 @@ class PerceptualSpace(Space):
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
-            bpe=(self.chunking_mode == "bpe"),
+            bpe=(self.chunking_mode in ("bpe", "mphf")),
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
@@ -6767,6 +6995,13 @@ class PerceptualSpace(Space):
         # off keeps production on the verified trie path. Explicit
         # attribute (no getattr default) so the toggle is discoverable.
         self._bpe_gpu_enabled = False
+        # Rework A: the frozen MPHF->table static tensors, built ONCE
+        # over the frozen lexicon key set (mirrors ``_bpe_static_tables``;
+        # cache keyed by lexicon row count -- frozen => never rebuilt
+        # after the first build). ``None`` until the first
+        # ``_mphf_resolve`` call; lazily built there so non-grammar /
+        # numeric configs (no per-word MPHF route) never pay for it.
+        self._mphf_static_tables = None
         # Auto-load a previously-saved BPE codebook from the same
         # ``.kv`` artifact that hosts the Lexicon. The artifact format
         # (defined in :mod:`embed`) carries Lexicon + BPE side-by-side
@@ -7587,6 +7822,132 @@ class PerceptualSpace(Space):
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
 
+    def _make_perceptual_codebook_learnable(self):
+        """Phase 1A.1 scoping hook.
+
+        Flip the perceptual codebook's ``VectorQuantize`` into
+        ``learnable_codebook`` mode (gradient-trained codebook, EMA
+        in-call write suppressed, codebook-attached STE). Scoped to
+        exactly this PerceptualSpace instance's ``.event`` codebook so
+        the SHARED ``VectorQuantize``/``Codebook`` class still runs the
+        byte-identical EMA path for the Conceptual/Symbolic codebooks.
+
+        Robust no-op when there is no VQ to flip (passthrough ``Tensor``
+        subspace when ``<codebook>`` is off; ``customVQ`` disabled).
+        Idempotent.
+        """
+        try:
+            cb = self.subspace.get_vectors()
+        except Exception:
+            return
+        vq = getattr(cb, "vq", None)
+        if vq is None or not hasattr(vq, "learnable_codebook"):
+            return
+        vq.learnable_codebook = True
+
+    # ---- Rework A: percept -> MPHF -> table (the consolidated core) ----
+    #
+    # Per the consolidated two-loop spec (§"Percept -> MPHF -> table",
+    # §IMPLEMENTATION DETAILS D2): each percept's byte slot passes
+    # through a minimal perfect hash producing an index in
+    # ``[0, V_percept)``; the index addresses a table whose every entry
+    # holds BOTH the literal surface word AND the ConceptualSpace
+    # activation vector for that token.
+    #
+    # The table's two halves ALREADY EXIST on this PerceptualSpace's
+    # frozen ``Embedding`` codebook and are REUSED verbatim (a second
+    # parallel embedding over the same surface tokens would double-count
+    # gradient -- the spec's explicit NEEDS_CONTEXT trigger, resolved by
+    # reuse):
+    #   * concept-activation half == ``codebook.wv._vectors`` (the
+    #     Phase-1A.1 learnable lexicon ``nn.Parameter`` -- gradient
+    #     trained; the BPE/lexicon ``_embed*`` paths already gather from
+    #     exactly this tensor);
+    #   * surface half == ``codebook.wv.index_to_key`` (ASCII-prefilled
+    #     by ``Embedding.create``: ``\x00`` row 0 == the NULL char / per-
+    #     row cursor seal, ``chr(1..126)`` low rows, ``NULL_PERCEPT_KEY``
+    #     at ``null_percept_idx``; NO MASK row -- MASK is the all-zeros
+    #     gaussian-tail effect, not a row).
+    # Rework A therefore adds ONLY the static O(1) MPHF index function
+    # (percept bytes -> the EXISTING frozen ``key_to_index`` row) and
+    # the non-invertible reverse map (vector -> nearest row -> surface).
+
+    def _mphf_codebook(self):
+        """The ``Embedding`` codebook holding the D2 table (both halves).
+        ``None`` for numeric / non-Embedding codebooks (MPHF inapplicable
+        -- caller leaves the existing path unchanged)."""
+        cb = getattr(self.subspace, "what", None)
+        if isinstance(cb, Embedding) and getattr(cb, "wv", None) is not None:
+            return cb
+        return None
+
+    def _mphf_tables(self):
+        """Build-once / cache the frozen MPHF static tensors (mirrors the
+        ``_bpe_static_tables`` build-once pattern: keyed by lexicon row
+        count; frozen => never rebuilt after the first build). Raises
+        ``mphf_gpu._MPHFUnavailable`` for a non-Embedding codebook."""
+        import mphf_gpu
+        cb = self._mphf_codebook()
+        if cb is None:
+            raise mphf_gpu._MPHFUnavailable(
+                "PerceptualSpace._mphf_tables: non-Embedding codebook.")
+        vsig = len(cb.wv.index_to_key)
+        tab = self._mphf_static_tables
+        if tab is None or tab.get("_vsig") != vsig:
+            dev = cb.wv._vectors.device
+            tab = mphf_gpu.build_mphf_table(cb, dev)
+            tab["_vsig"] = vsig
+            self._mphf_static_tables = tab
+        return tab
+
+    def mphf_index(self, token_byte_slots, return_verified=False):
+        """The MPHF index function: percept byte slots ``[B,K,W]`` (the
+        ``InputSpace.subspace.what.W`` null-terminated utf-8 layout) ->
+        frozen lexicon row indices ``[B,K]``. Pure static tensor ops,
+        O(1) per slot, zero host sync, NON-invertible (reverse is the
+        table lookup, never an inverse hash).
+
+        When ``return_verified=True``, returns ``(row, verified)`` so the
+        caller can gate OOV->BPE-trie fallback on a true hit (vs the
+        ``null_row`` fallback row that ``mphf_index`` returns for both
+        L==0 slots and OOV)."""
+        import mphf_gpu
+        return mphf_gpu.mphf_index(
+            token_byte_slots, self._mphf_tables(),
+            return_verified=return_verified)
+
+    def mphf_table_rows(self, row_idx):
+        """Gather the D2 table's concept-activation rows for ``row_idx``
+        (``[...]`` long) -> ``[..., D]``. The rows ARE the reused
+        Phase-1A.1 learnable ``wv._vectors`` (gradient flows through;
+        no detach)."""
+        cb = self._mphf_codebook()
+        return cb.getW()[row_idx]
+
+    def reverse_map_concept(self, concept_vectors, return_surface=True):
+        """Non-invertible reverse map exposed for the NEXT rework (D3
+        reconstruction loss -- NOT called from the loss here).
+
+        ``concept_vectors`` ``[..., D]`` -> nearest table row index
+        ``[...]`` (tensor, no host sync) and, when ``return_surface``,
+        the parallel surface strings ``surface[idx]`` (== the literal
+        ASCII-prefilled ``index_to_key`` words; the host indexing is the
+        caller's choice, off the training-critical path). The MPHF is
+        never inverted -- this nearest-row table lookup IS the reverse
+        map (spec §"Because the table stores the surface word, the MPHF
+        need not be invertible")."""
+        import mphf_gpu
+        cb = self._mphf_codebook()
+        if cb is None:
+            return (None, None) if return_surface else None
+        idx = mphf_gpu.reverse_map_rows(concept_vectors, cb)
+        if not return_surface:
+            return idx
+        surf = cb.wv.index_to_key
+        flat = idx.reshape(-1).tolist()
+        strings = [surf[i] if 0 <= i < len(surf) else "" for i in flat]
+        return idx, strings
+
     def _slot_forward(self, x, quantize=True):
         """Position-local math (codebook + sparsity) on a [B, K, D] slice.
 
@@ -7693,7 +8054,238 @@ class PerceptualSpace(Space):
             dtype=torch.float32, device=byte_indices.device)
         return upstream_vspace
 
-    def forward(self, IS_subspace, CS_subspaceForPS=None):
+    def _embed_mphf(self, upstream_vspace):
+        """MPHF word recognition (``chunking_mode='mphf'``): per-word,
+        ``idx = MPHF(percept_bytes) in [0, V_percept)`` -> gather from
+        the Phase-1A.1 learnable lookup ``codebook.wv._vectors[idx]``.
+        OOV (the collision-proof byte-verify misses) falls back to
+        ``_embed_bpe_trie`` for that word position only -- the verified
+        BPE reference path is the documented OOV fallback.
+
+        Word boundary detection mirrors ``_embed_bpe_trie``'s walk
+        (``BOUNDARY_BYTES`` over the upstream byte buffer). Output
+        contract matches ``_embed_bpe_trie`` exactly: routes through the
+        shared ``_bpe_emit`` -> ``_bpe_finalize`` tail so the muxed
+        ``subspace.event`` ``[B, nObj, D]``, ``_bpe_word_mask``
+        ``[B, nObj]``, and the where/when slots populate identically to
+        all the other chunking modes.
+
+        Per-word, the routing is:
+          * try MPHF over the full word byte tuple (one row gather);
+          * verified hit -> emit a single sub-token entry holding the
+            MPHF row (MAX-fuse degenerates to identity);
+          * miss (OOV) -> per-word BPE trie sub-token walk (mirrors
+            ``_embed_bpe_trie``'s inner loop), emit each sub-token.
+
+        For MPHF-applicability gate (non-Embedding codebook -- numeric
+        codebooks have no surface key set), the table build raises
+        ``_MPHFUnavailable``; we fall through to ``_embed_bpe_trie``
+        for the whole batch in that case (never silently wrong).
+        """
+        import mphf_gpu
+        # Build / cache MPHF tables; non-Embedding codebooks fall back
+        # to the verified BPE trie for the whole batch.
+        try:
+            tab = self._mphf_tables()
+        except mphf_gpu._MPHFUnavailable:
+            return self._embed_bpe_trie(upstream_vspace)
+
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_mphf: upstream subspace.what is "
+                "empty. InputSpace.forward must lex into subspace.what.W "
+                "before PerceptualSpace.forward runs.")
+
+        dev = TheDevice.get()
+        batch = what_buf.shape[0]
+        nObj = self.outputShape[0]
+        codebook = self.subspace.what
+        boundary = self.chunk_layer.BOUNDARY_BYTES
+        chunk_frozen = (
+            int(getattr(self.chunk_layer, 'word_learning', 0) or 0) <= 0)
+
+        if what_buf.dim() == 3:
+            byte_indices = what_buf[..., 0].long()
+        else:
+            byte_indices = what_buf.long()
+
+        if self.chunk_layer.bpe and self.training:
+            self.chunk_layer.train_step(byte_indices)
+
+        # ---- Phase 1: per-word boundary walk to collect word byte
+        # tuples per (b, word_slot). Mirrors ``_embed_bpe_trie``'s walk
+        # (boundary bytes split words); the result is one byte tuple
+        # per word slot (the WHOLE word's bytes, MPHF candidate key).
+        self.chunk_layer._ensure_trie()
+        trie = self.chunk_layer._trie
+        id_to_bytes = self.chunk_layer.id_to_bytes
+        vocab = self.chunk_layer.vocab
+
+        null_idx = codebook.wv.key_to_index.get("\x00", 0)
+        key_to_index = codebook.pretrain.key_to_index
+        token_to_index = codebook._token_to_index
+        chunk_key_to_latin1 = self._chunk_key_to_latin1
+        byte_mode = bool(getattr(codebook, 'byte_mode', False))
+
+        rows = byte_indices.tolist()
+        N_buf = byte_indices.shape[1]
+        maxL_tab = int(tab["maxL"])
+
+        # Per-word byte tuples + per-word routing tuples (b, slot).
+        # ``word_byte_seq`` accumulates contiguous non-boundary bytes
+        # for the in-progress word; flushed at every boundary byte.
+        per_word_bytes = []      # tuple of ints (the word's bytes)
+        per_word_b = []          # batch row
+        per_word_slot = []       # word slot within row
+
+        for b in range(batch):
+            row = rows[b]
+            word_idx = 0
+            word_byte_seq = []
+            i = 0
+            while i < N_buf:
+                bval = row[i]
+                if bval == 0:
+                    break
+                if bval in boundary:
+                    if word_byte_seq and word_idx < nObj:
+                        per_word_bytes.append(tuple(word_byte_seq))
+                        per_word_b.append(b)
+                        per_word_slot.append(word_idx)
+                        word_idx += 1
+                    word_byte_seq = []
+                else:
+                    word_byte_seq.append(bval)
+                i += 1
+            # Trailing word (row ended without a final boundary byte).
+            if word_byte_seq and word_idx < nObj:
+                per_word_bytes.append(tuple(word_byte_seq))
+                per_word_b.append(b)
+                per_word_slot.append(word_idx)
+
+        N_words = len(per_word_bytes)
+
+        # ---- Phase 2: batch MPHF lookup over all words at once.
+        # Build the [1, N_words, W] null-terminated byte-slot tensor
+        # the same way ``InputSpace.subspace.what.W`` lays out tokens
+        # (each row is the word's utf-8 bytes followed by 0). W is
+        # ``maxL_tab + 1`` so any in-vocab key fits and is properly
+        # terminated. Words longer than ``maxL_tab`` will overflow the
+        # frozen lexicon length range -> guaranteed MPHF miss -> OOV
+        # routes to BPE-trie fallback, the documented behavior.
+        if N_words > 0:
+            W = max(maxL_tab + 1, 1)
+            slot_buf = torch.zeros(
+                (1, N_words, W), dtype=torch.int64, device=dev)
+            # Host-side fill (one-shot, off the GPU critical path; this
+            # is the cold-path word-segmentation cost mirroring the
+            # trie's ``rows = byte_indices.tolist()``).
+            for k, bt in enumerate(per_word_bytes):
+                L = min(len(bt), W - 1)
+                if L:
+                    slot_buf[0, k, :L] = torch.tensor(
+                        [int(x) & 0xFF for x in bt[:L]],
+                        dtype=torch.int64, device=dev)
+            mphf_row, verified = mphf_gpu.mphf_index(
+                slot_buf, tab, return_verified=True)
+            mphf_row = mphf_row[0]            # [N_words]
+            verified = verified[0]            # [N_words]
+            verified_list = verified.tolist()
+            mphf_row_list = mphf_row.tolist()
+        else:
+            verified_list = []
+            mphf_row_list = []
+
+        # ---- Phase 3: per-word routing. MPHF hits emit a single
+        # codebook-row sub-token entry; OOVs route through the BPE
+        # trie walk over their byte span (mirrors
+        # ``_embed_bpe_trie``'s inner loop, scoped to one word).
+        def _resolve(byte_tuple):
+            """Sub-token byte tuple -> codebook int index, or None.
+            Mirrors ``_embed_bpe_trie._resolve``.
+            """
+            latin1 = chunk_key_to_latin1(byte_tuple)
+            if not latin1:
+                return None
+            if latin1 not in key_to_index:
+                if byte_mode:
+                    return None
+                assert not chunk_frozen, (
+                    f"_embed_mphf OOV-fallback: key {latin1!r} missing "
+                    f"from frozen codebook.pretrain (word_learning<=0). "
+                    f".kv load mismatch -- BPE section and lexicon "
+                    f"embeddings disagree.")
+                codebook.insert(latin1)
+            return token_to_index(latin1)
+
+        flat_subtoken_idx = []
+        flat_word_seg = []
+        per_word_first = []
+        per_word_b_out = []
+        per_word_slot_out = []
+        word_id = 0
+
+        for k in range(N_words):
+            b = per_word_b[k]
+            slot = per_word_slot[k]
+            word_bytes = per_word_bytes[k]
+            if verified_list[k]:
+                # MPHF hit: single sub-token entry == the MPHF row.
+                cb_idx = int(mphf_row_list[k])
+                flat_subtoken_idx.append(cb_idx)
+                flat_word_seg.append(word_id)
+                per_word_first.append(cb_idx)
+                per_word_b_out.append(b)
+                per_word_slot_out.append(slot)
+                word_id += 1
+            else:
+                # OOV: per-word BPE-trie sub-token walk. Identical to
+                # ``_embed_bpe_trie``'s inner loop but scoped to this
+                # word's byte span (no boundary checks needed -- the
+                # span is by definition between boundaries).
+                cur_subs = []
+                Lw = len(word_bytes)
+                ii = 0
+                while ii < Lw:
+                    node = trie
+                    matched_id = None
+                    matched_len = 0
+                    jj = ii
+                    while jj < Lw:
+                        child = node[0].get(word_bytes[jj])
+                        if child is None:
+                            break
+                        node = child
+                        jj += 1
+                        if node[1] is not None:
+                            matched_id = node[1]
+                            matched_len = jj - ii
+                    if matched_id is None:
+                        matched_id = vocab.get(
+                            (word_bytes[ii],), word_bytes[ii])
+                        matched_len = 1
+                    matched_key = id_to_bytes.get(
+                        matched_id, (word_bytes[ii],))
+                    resolved = _resolve(matched_key)
+                    if resolved is not None:
+                        cur_subs.append(resolved)
+                    ii += matched_len
+                if cur_subs:
+                    per_word_first.append(cur_subs[0])
+                    per_word_b_out.append(b)
+                    per_word_slot_out.append(slot)
+                    for cb_idx in cur_subs:
+                        flat_subtoken_idx.append(cb_idx)
+                        flat_word_seg.append(word_id)
+                    word_id += 1
+
+        return self._bpe_emit(
+            upstream_vspace, codebook, batch, nObj, dev, null_idx,
+            flat_subtoken_idx, flat_word_seg, per_word_first,
+            per_word_b_out, per_word_slot_out, word_id)
+
+    def forward(self, IS_subspace, CS_subspaceForPS=None, work=None):
         """Perception: map input + C→P feedback to percepts (subsymbolic loop).
 
         Two explicit inputs (the ``_sourced_input`` fold, post-2026-05
@@ -7725,8 +8317,10 @@ class PerceptualSpace(Space):
         # cache. Skips the lexicon _embed (upstream already embedded) and
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
+        _rp = (int(work.recur_pass) if work is not None
+               else self._recurrent_pass_idx)
         if (getattr(self, "serial_mode", False)
-                and self._recurrent_pass_idx == 0
+                and _rp == 0
                 and cache is not None):
             upstream = vspace.materialize()
             # Check shape compatibility on every dim of the rolled cache
@@ -7766,9 +8360,11 @@ class PerceptualSpace(Space):
                 vspace = self._embed_bpe(vspace)
             elif mode == "none":
                 vspace = self._embed_byte(vspace)
+            elif mode == "mphf":
+                vspace = self._embed_mphf(vspace)
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be bpe|lexicon|none, "
+                    f"PerceptualSpace chunking must be bpe|lexicon|none|mphf, "
                     f"got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
@@ -7781,10 +8377,11 @@ class PerceptualSpace(Space):
         # degrades to ``pi_input(primary)`` alone (matches the old
         # cold-start / non-bivector fallback).
         # Per-order fold selection (ramsification): the recurrent cell
-        # sets ``_recurrent_pass_idx`` to the order t each pass; clamp to
+        # sets ``work.recur_pass`` (eager fallback:
+        # ``_recurrent_pass_idx``) to the order t each pass; clamp to
         # the available range so standalone callers (idx 0) and any
         # idx >= conceptualOrder are safe.
-        _oi = min(max(self._recurrent_pass_idx, 0),
+        _oi = min(max(_rp, 0),
                   len(self.pi_input) - 1)
         pi_input_k = self.pi_input[_oi]
         pi_concept_k = self.pi_concept[_oi]
@@ -7836,7 +8433,7 @@ class PerceptualSpace(Space):
         # ``_bpe_word_mask`` (one is real-vs-padding for BPE chunks,
         # the other is byte != 0); the post-VQ reapply is the same
         # under either mode.
-        if self.chunking_mode in ("bpe", "none"):
+        if self.chunking_mode in ("bpe", "none", "mphf"):
             mask = getattr(self, "_bpe_word_mask_flat", None)
             if mask is None:
                 mask = getattr(self, "_bpe_word_mask", None)
@@ -7868,7 +8465,7 @@ class PerceptualSpace(Space):
 
         return vspace
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Manifesting: reconstruct input vectors from percepts.
 
         Branches on text vs numeric: text-mode delegates to ``_reverse_text``
@@ -8093,7 +8690,7 @@ class ModalSpace(Space):
         """ModalSpace manages its own branch requirements."""
         pass
 
-    def forward(self, subspace):
+    def forward(self, subspace, work=None):
         """Route each modality through its branch PerceptualSpace.
 
         Pulls the what / where / when slabs (either directly from a
@@ -8147,7 +8744,7 @@ class ModalSpace(Space):
         out.copy_context(subspace)
         return out
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Split event into modalities, reverse each branch, rebuild.
 
         Slices the muxed event into what / where / when sub-tensors,
@@ -8288,6 +8885,37 @@ class ShortTermMemory(nn.Module):
         self._depth = torch.zeros(batch, dtype=torch.long, device=device)
         # Fresh allocation -> empty buffer -> max depth resets to 0.
         self._max_depth_host = 0
+
+    def ensure_capacity(self, capacity):
+        """Grow the per-slot capacity to at least ``capacity``.
+
+        Idempotent and **grow-only** (mirrors :meth:`ensure_batch`).
+        Used by the per-word IR-reconstruction loop (increment 2b-1) to
+        size the STM to the sentence length -- the CKY+resize-equivalent
+        baseline (two-loop spec Phase-1-D §3: "ship CKY + resized STM,
+        ``<stmCapacity>``=``wMax``"). The bounded soft REDUCE-to-<=7
+        controller (increment 2b-2) is a separate change; until it
+        lands, the producer must not overflow a too-small stack, so the
+        sentence-length resize is the documented, owner-approved
+        baseline. Leaves the configured ``<stmCapacity>`` knob untouched
+        (this only ever *grows* the live buffer, never shrinks it, and
+        is never called on the whole-slab/non-grammar path).
+        """
+        capacity = int(capacity)
+        if capacity <= self.capacity:
+            return
+        device = self._buffer.device
+        B = int(self._buffer.shape[0])
+        new_buf = torch.zeros(
+            B, capacity, self.concept_dim, device=device,
+            dtype=self._buffer.dtype)
+        # Preserve any already-pushed content (grow-only: the existing
+        # slots stay at their indices; the tail is fresh zeros).
+        old_cap = int(self._buffer.shape[1])
+        if old_cap > 0:
+            new_buf[:, :old_cap, :] = self._buffer
+        self._buffer = new_buf
+        self.capacity = capacity
 
     def push(self, b, idea):
         """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
@@ -8750,7 +9378,7 @@ class ConceptualSpace(Space):
         if stm is not None:
             stm.clear(b=batch)
 
-    def forward(self, PS_subspace, SS_subspace=None):
+    def forward(self, PS_subspace, SS_subspace=None, work=None):
         """Knowing: combine perceptual + symbolic-loop inputs into concepts.
 
         Two explicit inputs (the folded ``_sourced_input``, post-2026-05
@@ -8796,26 +9424,63 @@ class ConceptualSpace(Space):
             x = (primary + sym) / 2
         else:
             x = primary
-        # Post-split: grammar lives at S; C is semantically
-        # subsymbolic. The SyntacticLayer dispatch at C is retained
-        # here as a backward-compat no-op for grammars that omit
-        # C-tier rules (it then falls through to ``y = x``
-        # passthrough, preserving the legacy behavior of configs like
-        # MM_xor_loopback). Grammars that DO list C-tier rules can
-        # still fire them, but the canonical home of grammar
-        # operations is now S.
-        if getattr(self, 'syntacticLayer', None) is None:
-            y = self.sigma_percept(x)
-        else:
-            # Dispatch on CS's OWN subspace (context already copied
-            # above), NOT the caller's ``PS_subspace``: in the recurrent
-            # cell ``PS_subspace IS perceptualSpace.subspace`` (the live
-            # shared object), so ``set_event`` here would clobber
-            # PerceptualSpace's output (e.g. overwrite the BPE
-            # word-masked percepts with the dense C-tier input).
-            self.subspace.set_event(x)
-            vspace = self.syntacticLayer.forward(self.subspace)
-            y = vspace.materialize()
+        # SUBSYMBOLIC SUBSTRATE (owner-stated, authoritative): the
+        # ``sigma_percept`` percept→concept fold is the subsymbolic
+        # substrate loop -- it is NOT a grammatical operation. It MUST
+        # run unconditionally on every forward, every stage, with or
+        # without grammar, regardless of chart/cursor state. (Pre-2026-
+        # 05-18 this was wrongly gated behind the C-tier SyntacticLayer
+        # cursor: when the chart is dormant -- MM_5M's STM never pushes,
+        # so ``WordSpace.compose`` never fires and the C-tier cursor
+        # exhausts after the first forward -- the substrate fold was
+        # silently skipped from forward #1 onward, leaving a raw
+        # pre-fold width-mismatched event that crashed OutputSpace's
+        # reshape on batch >= 2.)  The substrate is therefore the base
+        # concept mapping, applied here independent of grammar.
+        y = self.sigma_percept(x)
+        # The C-tier SyntacticLayer is NOT re-run on this substrate path.
+        # Rationale (verified against the whole config corpus, 2026-05-18):
+        # the post-split design moved all genuine grammar to the S tier;
+        # the ONLY arity-1 C-tier rule any config lists is the
+        # ``pi``/``sigma`` substrate alias, which
+        # ``_attach_per_space_syntactic_layer`` registers as the SAME
+        # object as ``self.sigma_percept``.  Genuine compositional C ops
+        # (the only other C-tier rules: ``intersection(C, C)``) are
+        # arity-2 and are executed inside the chart's inside pass --
+        # ``SyntacticLayer.forward`` explicitly skips ``arity != 1`` rules
+        # (Language.py), and the ``<C>P</C>`` passthrough has
+        # ``method_name=None`` (dispatcher no-op).  So routing the
+        # already-sigma'd ``y`` back through ``syntacticLayer.forward``
+        # could ONLY re-fire the substrate alias on top of itself: a
+        # DOUBLE ``sigma_percept`` (mathematically wrong, and a hard
+        # shape error whenever ``percept_dim != concept_dim`` -- e.g.
+        # MM_5M's 10->1024 lift, where the second application sees a
+        # width-1024 input its ``percept_dim`` in-projection can't
+        # accept).  The substrate fold is the subsymbolic substrate, not
+        # a grammatical operation, so it correctly does not pass through
+        # the cursor-dispatched SyntacticLayer.  ``forward``'s compose
+        # cursor is independent of ``reverse``'s generate cursor
+        # (separate counters / rule tables in ``_next_rule_name``), so
+        # not advancing it here does not desync the reverse path.  If a
+        # genuine non-substrate arity-1 C grammar op is ever introduced,
+        # it must be wired as an explicit additive transform on the
+        # sigma'd ``y`` here (with its own no-op-preserving guard), not
+        # by re-enabling the substrate-alias re-dispatch.
+        # Phase 2A.5: read-only nearest-neighbour snap of the post-sigma
+        # concept tensor to the learnable symbol codebook (SymbolicSpace is
+        # the single writer; ConceptualSpace only reads .W). STE keeps
+        # gradient flowing to y; the symbol codebook trains via its own path.
+        _ssr = getattr(self, 'symbolicSpace_ref', None)
+        _what = getattr(_ssr.subspace, 'what', None) if _ssr is not None else None
+        _P = getattr(_what, 'W', None) if _what is not None else None
+        if (_P is not None and torch.is_tensor(_P) and _P.dim() == 2
+                and torch.is_tensor(y) and y.dim() == 3
+                and y.shape[-1] == _P.shape[-1] and _P.shape[0] > 0):
+            _flat = y.reshape(-1, y.shape[-1])
+            _d = torch.cdist(_flat.float(), _P.detach().float())   # [B*C, S]
+            _idx = _d.argmin(dim=-1)                                # [B*C]
+            _snapped = _P.index_select(0, _idx).view_as(y).to(y.dtype)
+            y = y + (_snapped - y).detach()                         # STE, read-only
         # Chat-loop C-prior injection: when the inference loop staged
         # a predicted next-sentence prior on ``self._c_prior`` (lifted
         # through ``InterSentenceLayer.cast`` to ``concept_dim``), sum
@@ -8918,13 +9583,19 @@ class ConceptualSpace(Space):
         #     lift belongs here). PerceptualSpace then applies its own
         #     pi_concept fold + pi_concept.nInput shape gate (non-bivector
         #     output falls the gate and PS uses pi_input alone).
-        # Non-owning consumer-view back-ref. ``object.__setattr__``: a
-        # plain ``self._subspaceForSS = vspace`` (vspace is a SubSpace
-        # = nn.Module) enters nn.Module.__setattr__ and ADDS a
+        # Non-owning consumer-view back-ref. The cross-pass handoff lives
+        # on the per-sentence ``work`` carrier (``work.cs_for_ss``) when
+        # present (Phase 1.4): ``_forward_body`` reads it next pass. Eager
+        # fallback (``work is None``): ``object.__setattr__`` -- a plain
+        # ``self._subspaceForSS = vspace`` (vspace is a SubSpace =
+        # nn.Module) enters nn.Module.__setattr__ and ADDS a
         # ``self._modules`` entry on first forward, so the dynamo guard
         # ``len(cs._modules)==8`` fails -> a forced recompile (measured
         # unique_graphs=2). __dict__ storage keeps _modules constant.
-        object.__setattr__(self, "_subspaceForSS", vspace)
+        if work is not None:
+            work.cs_for_ss = vspace
+        else:
+            object.__setattr__(self, "_subspaceForSS", vspace)
         cs_what = self.subspace.what
         ev = vspace.materialize(mode="event")
         if isinstance(cs_what, ProjectionBasis) and ev is not None:
@@ -8933,6 +9604,12 @@ class ConceptualSpace(Space):
             lifted = cs_what.reverse(ev, V=int(self.inputShape[0]))
         else:
             lifted = ev
+        # The cross-pass handoff *reference* for the C->P view moves to
+        # the per-sentence ``work`` carrier (``work.cs_for_ps``) when
+        # present (Phase 1.4); ``_forward_body`` reads it next pass. The
+        # persistent ``self._subspaceForPS`` SubSpace (allocated once in
+        # __init__) is still mutated in place via ``set_event`` -- only
+        # the handoff reference, not the object reuse, relocates.
         if lifted is not None and lifted.dim() == 3:
             # Reuse the owned persistent carrier (allocated once in
             # __init__): no per-call SubSpace ctor / copy_context
@@ -8942,18 +9619,30 @@ class ConceptualSpace(Space):
             # context, and it is never the returned vspace -- so
             # dropping copy_context preserves the pipeline invariant.
             self._subspaceForPS.set_event(lifted)
+            if work is not None:
+                # Publish the persistent object as the handoff. Eager
+                # fallback (work is None): the original code left
+                # ``self._subspaceForPS`` (the persistent object, set
+                # in __init__) as the handle untouched here -- match
+                # that exactly (no re-bind on the normal path).
+                work.cs_for_ps = self._subspaceForPS
         else:
             # Degenerate edge (no concept event); not the recon/compiled
             # hot path -- keep the original tiny-empty fallback.
-            # object.__setattr__: same _modules-guard reason as
-            # _subspaceForSS above (avoid recompile if this branch is
-            # ever hit under compile).
-            object.__setattr__(self, "_subspaceForPS", SubSpace(
+            fallbackForPS = SubSpace(
                 inputShape=(0, 1), outputShape=(0, 1),
-                nInputDim=1, nOutputDim=1))
+                nInputDim=1, nOutputDim=1)
+            if work is not None:
+                work.cs_for_ps = fallbackForPS
+            else:
+                # object.__setattr__: same _modules-guard reason as
+                # _subspaceForSS above (avoid recompile if this branch
+                # is ever hit under compile). Byte-identical to the
+                # original eager fallback handoff.
+                object.__setattr__(self, "_subspaceForPS", fallbackForPS)
         return vspace
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
 
         When CSBP bivector output is active, first runs the codebook's
@@ -9160,6 +9849,15 @@ class SymbolicSpace(Space):
     # lift / codebook / TruthLayer paths. Default False preserves
     # legacy behaviour. See `2026-05-05-subsymbolic-knowing-handoff`.
     held_at_zero = False
+    # NOTE: ``self.rule_codebook`` is built in ``__init__`` and registered
+    # as an nn.Module submodule (Phase 3 of the SubSpace.what STM
+    # refactor; see
+    # doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
+    # Holds grammar rule identity / .where location; NOT the source of
+    # parent vectors -- parent.what = SyntacticLayer.execute(rule_id,
+    # left, right). A class-level default would shadow the registered
+    # submodule (nn.Module routes Module values through ``_modules``
+    # rather than ``__dict__``), so we intentionally do NOT declare one.
 
     def empty_state(self, batch=1):
         """Return a zero tensor shaped like this space's symbolic state.
@@ -9350,6 +10048,68 @@ class SymbolicSpace(Space):
             # higher.
             cb.set_part_parent(self.well_known_atoms["words"], -1)
 
+        # Phase 3 of the SubSpace.what STM refactor: wire V_sym into the
+        # global Grammar so where_id_for_rule produces correct offsets
+        # (rule slot = V_sym + 1 + rule_id), and build the rule codebook
+        # alongside the existing symbol codebook. Lazy import to avoid
+        # any circular-import risk with Language.py.
+        from Language import TheGrammar, RuleCodebook, LanguageLayer
+        TheGrammar.symbol_vocab_size = int(nSymbols)
+        try:
+            TheGrammar._ensure_configured()
+            n_rules = TheGrammar.num_rules()
+        except Exception:
+            # In tests that build SymbolicSpace without an XML grammar
+            # we still want a valid (empty) RuleCodebook.
+            n_rules = 0
+        self.rule_codebook = RuleCodebook(
+            num_rules=n_rules,
+            embedding_dim=0,
+            grammar=TheGrammar,
+        )
+
+        # Phase 5 of the STM refactor: SymbolicSpace owns its own
+        # LanguageLayer (distinct from Chart's compatibility router) for
+        # the stack-rewrite path. The router has no attached ops on
+        # this path -- it dispatches through self.syntacticLayer.execute
+        # rather than its internal ModuleDicts. Gate dispatch on
+        # ``self.use_stack_router`` (XML <useStackRouter> knob, default
+        # False); when False the legacy forward path runs unchanged.
+        try:
+            use_stack_router_raw = TheXMLConfig.space(section, "useStackRouter")
+        except (KeyError, TypeError, ValueError):
+            use_stack_router_raw = False
+        self.use_stack_router = bool(use_stack_router_raw)
+        # The router itself is cheap (no attached ops -> no parameters)
+        # so we build it unconditionally; the flag only gates dispatch.
+        # feature_dim matches the codebook width; hidden_dim is a
+        # placeholder that the stack-rewrite path does not consult.
+        _ss_dim = int(outputShape[1])
+        self.languageLayer = LanguageLayer(
+            n_input=int(inputShape[0]),
+            n_output=int(outputShape[0]),
+            hidden_dim=max(_ss_dim, 8),
+            feature_dim=_ss_dim,
+            max_depth=max(int(outputShape[0]), 2),
+        )
+
+        # Phase 1A.2: make the SYMBOL VQ codebook learnable by gradient
+        # and drop its in-call EMA Parameter mutation, so
+        # ``SymbolicSpace.forward``'s default VQ snap path performs NO
+        # persistent-state mutation in-call and is idempotent (a
+        # CUDA-graph-capture prerequisite). The concepts symbols encode
+        # live in a conceptual embedding, so this codebook is an
+        # embedding moved by the task loss, not an EMA cluster.
+        # ``VectorQuantize`` / ``Codebook`` are SHARED by the Perceptual
+        # and Conceptual codebooks too; this flag is set ONLY on the
+        # symbol ``.what`` codebook's ``VectorQuantize`` instance here,
+        # so the Conceptual EMA path stays byte-identical (single-writer
+        # invariant: SymbolicSpace still solely owns/writes the symbol
+        # codebook -- only EMA -> gradient changes, not the writer).
+        # No-op when ``.what`` is a ProjectionBasis / passthrough Tensor
+        # / customVQ-disabled Codebook (no ``.vq`` to flip).
+        self._make_symbol_codebook_learnable()
+
         self.params = list(self.parameters())
         self._sparsity = self._build_sparsity_regularizer(
             self.l1_lambda, self.codebook)
@@ -9366,6 +10126,43 @@ class SymbolicSpace(Space):
         # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``,
         # which the chart's lazy-build path resolves via the
         # ``'disjunction'`` entry in ``GRAMMAR_LAYER_CLASSES``.
+
+    def _make_symbol_codebook_learnable(self):
+        """Phase 1A.2 scoping hook.
+
+        Flip the symbol codebook's ``VectorQuantize`` into
+        ``learnable_codebook`` mode (gradient-trained codebook, EMA
+        in-call write suppressed, codebook-attached STE). Scoped to
+        exactly this SymbolicSpace instance's ``.what`` codebook -- the
+        ``[V_sym, nDim]`` learned symbol-prototype basis the default VQ
+        snap (``SymbolicSpace.forward``) queries -- so the SHARED
+        ``VectorQuantize`` / ``Codebook`` class still runs the
+        byte-identical EMA path for the Conceptual codebook.
+
+        Mirrors ``PerceptualSpace._make_perceptual_codebook_learnable``,
+        but targets ``self.subspace.what`` (where the SYMBOL codebook
+        lives) rather than ``get_vectors()`` / ``.event`` (where the
+        PERCEPTUAL codebook lives -- ``SymbolicSpace.what`` is the
+        symbol Codebook; PerceptualSpace.what is the lexicon Embedding).
+
+        Single-writer invariant unchanged: SymbolicSpace remains the
+        sole owner/writer of the symbol codebook; this changes only HOW
+        it learns (in-call EMA -> downstream task-loss gradient in the
+        eager ``optimizer.step``), not WHO writes it.
+
+        Robust no-op when there is no VQ to flip: ``.what`` is a
+        ``ProjectionBasis`` (``<codebook>project``; LDU surface, no
+        VQ-EMA on this path), a passthrough ``Tensor``
+        (``<codebook>none``), or a ``customVQ``-disabled ``Codebook``
+        (``self.vq is None``). Idempotent.
+        """
+        what = getattr(self.subspace, "what", None)
+        if what is None:
+            return
+        vq = getattr(what, "vq", None)
+        if vq is None or not hasattr(vq, "learnable_codebook"):
+            return
+        vq.learnable_codebook = True
 
     # ------------------------------------------------------------------
     # Well-known atoms (meronomy parents).
@@ -10184,7 +10981,255 @@ class SymbolicSpace(Space):
 
         return self.subspace
 
-    def forward(self, CS_subspaceForSS):
+    # ------------------------------------------------------------------
+    # Phase 5 stack-rewrite path
+    #
+    # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 5: Integrate Into SymbolicSpace.forward". Gated by
+    # ``self.use_stack_router``. Runs the LanguageLayer's stack-rewrite
+    # path on a temporary stack-mode SubSpace, then writes the root
+    # state into ``self.subspace``. Implicitly bypasses (Phase 6):
+    #   * WordSpace.current_rules / generate_rules
+    #   * SyntacticLayer cursor (uses .execute instead)
+    #   * Chart.compose / wordSpace.forwardSymbols
+    #   * ConceptualSpace.stm._buffer (_stm_bounded_reduce_step et al.)
+    # ------------------------------------------------------------------
+
+    def _snap_to_terminal_ste(self, x, codebook_W):
+        """Straight-through snap of ``x`` ``[B, D]`` to the nearest row
+        of ``codebook_W`` ``[V, D]``.
+
+        Returns ``(snapped, idx)`` with ``idx`` ``[B]`` long. Gradient
+        flows back through ``x`` via the STE bypass; the snap itself is
+        argmin-by-L2 (no gradient).
+        """
+        if codebook_W is None or codebook_W.ndim != 2 or codebook_W.shape[0] == 0:
+            B = x.shape[0]
+            return x, torch.zeros(B, dtype=torch.long, device=x.device)
+        # L2 distance, no autograd needed for the argmin.
+        with torch.no_grad():
+            # [B, V]
+            dists = (x.unsqueeze(1) - codebook_W.unsqueeze(0)).pow(2).sum(dim=-1)
+            idx = dists.argmin(dim=-1)
+        hard = codebook_W[idx]                                # [B, D]
+        # Straight-through: forward returns the hard snap, backward
+        # routes through x (per the plan's "STE-snapped symbol vector").
+        snapped = x + (hard - x).detach()
+        return snapped, idx
+
+    def _make_stack_subspace_for(self, B, K, D):
+        """Build a fresh stack-mode SubSpace for the router.
+
+        Width-1 ``.where`` carrier (first-patch convention; the integer
+        location lives in element [0] -- see LanguageLayer._encode_where).
+        The stack subspace is local to this forward call; it does NOT
+        replace ``self.subspace`` (which still receives the root state
+        at the end).
+        """
+        W = 1
+        we = WhereEncoding(maxP=max(K + 16, 64), nWhere=W, nWhen=0)
+        sub = SubSpace(
+            [K, D + W], [K, D + W],
+            nInputDim=D + W, nOutputDim=D + W,
+            whereEncoding=we,
+        )
+        sub.set_what(torch.zeros(B, K, D, device=self.subspace.what.W.device
+                                  if self.subspace.what.getW() is not None
+                                  else None))
+        sub.set_where(torch.zeros(B, K, W))
+        sub.set_activation(torch.zeros(B, K))
+        return sub
+
+    def _pick_default_reduce_rule(self):
+        """Pick a default S-tier arity-2 rule for hard reduction.
+
+        First-patch policy: the lowest-id arity-2 S-tier rule that is
+        also registered on ``self.syntacticLayer._by_name``. The plan
+        defers real SHIFT/REDUCE scoring to a later phase. Returns
+        ``None`` when no usable rule exists (no reduction is applied).
+
+        TODO(phase5+): replace this hardcoded pick with the router's
+        learned scoring (binary_tiling_soft_dp / binary_tiling_viterbi).
+        """
+        from Language import TheGrammar
+        if getattr(self, 'syntacticLayer', None) is None:
+            return None
+        registered = self.syntacticLayer._by_name
+        try:
+            candidates = TheGrammar.rules_for_tier('S', arity=2)
+        except Exception:
+            return None
+        for rid in candidates:
+            mn = TheGrammar.method_name(rid)
+            if mn in registered:
+                return rid
+        return None
+
+    def _stack_route_forward(self, CS_subspaceForSS):
+        """Run the stack-rewrite path; write the root into self.subspace.
+
+        Eager Python loops over the input positions are the small
+        "eager bridge" the plan permits for a first correctness patch.
+        TODO(phase5+): vectorize the SHIFT loop and replace the
+        hardcoded reduction rule with the router's learned scoring.
+        """
+        self.subspace.copy_context(CS_subspaceForSS)
+        act_pre = CS_subspaceForSS.materialize()              # [B, N, D]
+        if act_pre is None:
+            return self.subspace
+        B, N, D = act_pre.shape
+
+        # Build the temporary stack subspace; capacity = N (room for
+        # one terminal per input position, then N-1 reductions collapse
+        # to a single root slot).
+        K = max(N, 2)
+        stack_sub = self._make_stack_subspace_for(B, K, D)
+        # Move to the right device once.
+        stack_sub.what.setW(stack_sub.what.getW().to(act_pre.device))
+        stack_sub.where.setW(stack_sub.where.getW().to(act_pre.device))
+        stack_sub.activation.setW(
+            stack_sub.activation.getW().to(act_pre.device))
+
+        codebook_W = self.subspace.what.getW()                # [V_sym, D]
+
+        # Build the action list: snap each input position to a terminal
+        # (the SHIFT actions), then schedule N-1 REDUCEs to collapse to
+        # a single root slot. The snap stays in SymbolicSpace as the
+        # first-patch "eager bridge" the plan permits; future phases
+        # can migrate it into LanguageLayer.forward by consuming the
+        # ``terminal_codebook`` arg.
+        #
+        # First-patch where_id: use the matched symbol id from batch
+        # row 0 (uniform-per-batch). Per-row .where encoding is a
+        # follow-up; see TODO above.
+        from Language import TheGrammar
+        actions = []
+        for n in range(N):
+            x_n = act_pre[:, n, :]                            # [B, D]
+            terminal_what, sym_idx = self._snap_to_terminal_ste(x_n, codebook_W)
+            where_id = TheGrammar.where_id_for_symbol(int(sym_idx[0].item()))
+            actions.append(('shift', terminal_what, where_id))
+
+        rule_id = self._pick_default_reduce_rule()
+        if rule_id is not None and N >= 2:
+            for _ in range(N - 1):
+                actions.append(('reduce', int(rule_id)))
+
+        # Canonical dispatch through LanguageLayer.forward (Layer-style
+        # entry point), so the call shape matches the plan's target
+        # contract instead of bypassing through the shift/reduce
+        # primitives directly.
+        self.languageLayer.forward(
+            stack_sub, self.syntacticLayer,
+            actions=actions,
+            rule_codebook=self.rule_codebook,
+            terminal_codebook=self.subspace.what,
+            grammar=TheGrammar,
+        )
+
+        # Read root state: slot 0 holds the surviving payload.
+        root = stack_sub.materialize(mode="what")[:, 0:1, :]   # [B, 1, D]
+        # Length-N expansion matches the existing SymbolicSpace output
+        # contract (downstream consumers expect [B, N, D]).
+        n_out = int(self.outputShape[0])
+        expanded = root.expand(B, n_out, D).contiguous()
+
+        # Write into self.subspace.what plus a unit activation.
+        self.subspace.set_what(expanded)
+        self.subspace.set_activation(
+            torch.ones(B, n_out, device=expanded.device,
+                       dtype=expanded.dtype))
+        return self.subspace
+
+    def _stack_route_reverse(self, subspace):
+        """Phase 7 reverse-side counterpart to ``_stack_route_forward``.
+
+        Dispatches through ``self.languageLayer.reverse(...)`` (the
+        canonical Layer-style entry into the stack-rewrite unwind path).
+        Builds a temporary stack-mode SubSpace seeded with the incoming
+        payload as a rule-stamped slot, calls ``reverse_stack`` via the
+        LanguageLayer wrapper, then writes the unwound state back into
+        ``self.subspace``.
+
+        Under the identity-stub contract this is intentionally lossy
+        (per plan §"Reverse And Reconstruction": "Do not block the
+        forward refactor on complete reverse math. Preserve existing
+        identity-stub behavior where rule inverses are not
+        implemented."). A full multi-level unwind needs a provenance
+        trail and is Phase 8+ work; this method exists so the
+        LanguageLayer is invoked symmetrically on the reverse path
+        (the user's "ensure SymbolicSpace.reverse calls
+        LanguageLayer.reverse(...)" requirement).
+        """
+        from Language import TheGrammar
+
+        self.subspace.copy_context(subspace)
+        act = subspace.materialize()
+        if act is None or act.ndim != 3:
+            # Nothing to unwind; pass through.
+            return self.subspace
+        B, N, D = act.shape
+
+        rule_id = self._pick_default_reduce_rule()
+        if rule_id is None:
+            # No binary rule to unwind through; degenerate pass-through.
+            self.subspace.set_what(act.contiguous())
+            self.subspace.set_activation(
+                torch.ones(B, N, device=act.device, dtype=act.dtype))
+            return self.subspace
+
+        where_id = TheGrammar.where_id_for_rule(int(rule_id))
+
+        # Build the temporary stack subspace; capacity >= 2 so unreduce
+        # has room for the right-child slot.
+        K = max(N + 2, 4)
+        stack_sub = self._make_stack_subspace_for(B, K, D)
+        # Move the freshly allocated buffers to the input's device.
+        stack_sub.what.setW(stack_sub.what.getW().to(act.device))
+        stack_sub.where.setW(stack_sub.where.getW().to(act.device))
+        stack_sub.activation.setW(
+            stack_sub.activation.getW().to(act.device))
+
+        # Seed slot 0 with the root payload (the input's slot 0 since
+        # _stack_route_forward writes the root expanded across all N
+        # positions, they're all the same). Stamp the slot's .where
+        # with the rule namespace so unreduce will fire.
+        what_init = torch.zeros(B, K, D, device=act.device, dtype=act.dtype)
+        where_init = torch.zeros(B, K, 1, device=act.device, dtype=act.dtype)
+        occ_init = torch.zeros(B, K, device=act.device, dtype=act.dtype)
+        what_init[:, 0, :] = act[:, 0, :]
+        where_init[:, 0, 0] = float(where_id)
+        occ_init[:, 0] = 1.0
+        stack_sub.set_what(what_init)
+        stack_sub.set_where(where_init)
+        stack_sub.set_activation(occ_init)
+
+        # Canonical dispatch through LanguageLayer.reverse (the user's
+        # symmetry requirement: SymbolicSpace.reverse calls
+        # LanguageLayer.reverse(...)). Under the identity-stub this
+        # unwinds one level then halts.
+        self.languageLayer.reverse(
+            stack_sub, self.syntacticLayer,
+            rule_codebook=self.rule_codebook,
+            grammar=TheGrammar,
+        )
+
+        # Read the unwound payloads. After one unreduce, slots 0 and 1
+        # both hold copies of the root (identity stub). Take the first
+        # N slots for the output; pad / expand if K < N (won't happen
+        # with K >= N+2 above but kept defensive).
+        unwound = stack_sub.materialize(mode="what")
+        n_slots = unwound.shape[1]
+        if n_slots >= N:
+            out = unwound[:, :N, :]
+        else:
+            out = unwound[:, :1, :].expand(B, N, D).contiguous()
+        self.subspace.set_what(out.contiguous())
+        self.subspace.set_activation(
+            torch.ones(B, N, device=out.device, dtype=out.dtype))
+        return self.subspace
+
+    def forward(self, CS_subspaceForSS, work=None):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
         Single explicit input ``CS_subspaceForSS`` -- the prior pass's
@@ -10221,6 +11266,15 @@ class SymbolicSpace(Space):
                                          dtype=sample.dtype)
                 self.subspace.set_event(zero_event)
             return self.subspace
+        # Phase 5 of the SubSpace.what STM refactor: when use_stack_router
+        # is True, dispatch through the new stack-rewrite path instead of
+        # the SyntacticLayer cursor + Chart.compose / wordSpace.forwardSymbols
+        # path. This also implicitly bypasses WordSpace.current_rules and
+        # ConceptualSpace.stm in the live forward (Phase 6 "bypass" leg
+        # of the plan). The legacy path is preserved when the flag is
+        # off so existing tests / configs keep working byte-identically.
+        if getattr(self, "use_stack_router", False):
+            return self._stack_route_forward(CS_subspaceForSS)
         quantize = getattr(self, "quantize", True)
         is_last = getattr(self, "is_last", False)
         wordSpace = getattr(self, "wordSpace", None)
@@ -10244,17 +11298,82 @@ class SymbolicSpace(Space):
             # in ConceptualSpace.pi.
             act = act_pre
         else:
-            chart_rules_S = (
-                wordSpace.current_rules.get('S')
-                if (wordSpace is not None
-                    and getattr(wordSpace, 'current_rules', None))
+            # ---- Phase 2A.6: S-tier op selection centralizes HERE ----
+            # SymbolicSpace is the single site that drives S-tier op
+            # application. Selection is delegated to
+            # ``WordSpace.selection_from_current_rules('S', work)`` (the
+            # ONE contract surface). In Phase 2A ``work`` is None or
+            # ``work.op_sel`` is None for every config (the chart is
+            # dormant -- ``new_working_state`` is always called with
+            # ``n_ops=0``), so the helper returns the EXACT
+            # ``current_rules.get('S')`` per-step object the legacy
+            # code read, and the cursor loop below runs UNCHANGED
+            # (byte-identical eager fallback).
+            #
+            # Phase 2B: populate work.op_sel/op_operands from the chart
+            # soft-superposition here. This is the locked centralization
+            # point -- the chart writes the soft op distribution onto
+            # ``work`` and the tensor-driven executor branch below
+            # consumes it. Unreached in 2A (chart dormant); present
+            # only to LOCK where selection lives. It must not change
+            # any dormant behaviour.
+            if work is not None and work.op_sel is not None:
+                # Phase 2B: populate work.op_sel/op_operands from the
+                # chart soft-superposition here. For the default-only
+                # path this is done by
+                # ``WordSpace._populate_op_sel_from_default_rules``
+                # during ``WordSpace.compose``; the chart-based path
+                # would write its own soft distribution here. The
+                # tensor-driven executor below consumes it.
+                pass
+            sel = (
+                wordSpace.selection_from_current_rules('S', work)
+                if wordSpace is not None
                 else None)
-            row_zero = self.syntacticLayer._row_zero_rules(chart_rules_S)
-            n_steps = max(1, len(row_zero))
-            vspace.set_event(act_pre)
-            for _ in range(n_steps):
-                vspace = self.syntacticLayer.forward(vspace)
-            act = vspace.materialize()
+            if work is not None and work.op_sel is not None:
+                # ---- Tensor-driven S-executor (Phase 2B).
+                # Combine the selected S-tier ops by a SINGLE weighted
+                # reduce over the fixed ``TheGrammar.rules`` op axis:
+                # independent per-op contributions, NO shared in-place
+                # accumulator (the proven ``_superposed_op`` /
+                # ``_embed_bpe`` pattern; constraint 3). The static op
+                # table ``syntacticLayer._arity1_ops`` was built at
+                # __init__ time over arity-1 rules registered in
+                # ``_by_name``; its length is statically known so
+                # Dynamo unrolls the loop under ``fullgraph=True``
+                # with zero Python control flow on tensor data.
+                # Arity-2 ops are executed inside the chart's inside
+                # pass and are excluded from the static table (mirrors
+                # ``SyntacticLayer.forward``'s arity gate).
+                # ``op_sel[k]`` weights ``TheGrammar.rules[k]``; a
+                # one-hot ``op_sel`` reproduces the argmax cursor pick.
+                op_sel, _op_operands = sel
+                vspace.set_event(act_pre)
+                # Single read: all arity-1 layers consume the same
+                # materialized view of ``vspace`` after ``set_event``
+                # (``reads_activation`` is False on every registered
+                # arity-1 S-tier op today — sigma/pi/not/part/isEqual/
+                # query are all event-readers). Hoisting the read out
+                # of the loop keeps the unrolled trace flat.
+                x_in = self.syntacticLayer._read_subspace(
+                    vspace, layer=None)
+                total = torch.zeros_like(act_pre)
+                for rule_idx, layer in self.syntacticLayer._arity1_ops:
+                    total = total + layer.forward(x_in) * op_sel[rule_idx]
+                act = total
+            else:
+                # ---- Eager cursor path (op_sel is None -- ALWAYS in
+                # 2A). ``sel`` is the exact ``current_rules.get('S')``
+                # object; this loop is BYTE-IDENTICAL to the pre-2A.6
+                # code (pure pass-through to today's behaviour).
+                chart_rules_S = sel
+                row_zero = self.syntacticLayer._row_zero_rules(
+                    chart_rules_S)
+                n_steps = max(1, len(row_zero))
+                vspace.set_event(act_pre)
+                for _ in range(n_steps):
+                    vspace = self.syntacticLayer.forward(vspace)
+                act = vspace.materialize()
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -10446,13 +11565,21 @@ class SymbolicSpace(Space):
         vspace.normalize("symbols", target="where")
         return vspace
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Pi^-1).
 
         Reverse maps on nDim axis: [B, N, symbol_dim] -> [B, N, concept_dim].
         """
         if subspace.is_empty():
             return subspace
+        # Symmetric to the forward branch: when use_stack_router is True
+        # the reverse runs through LanguageLayer.reverse(...) via
+        # _stack_route_reverse, bypassing the cursor-based SyntacticLayer
+        # .reverse loop + wordSpace.reverseSymbols + WordSpace
+        # .generate_rules path. Phase 7 of the SubSpace.what STM
+        # refactor.
+        if getattr(self, "use_stack_router", False):
+            return self._stack_route_reverse(subspace)
         self.subspace.copy_context(subspace)
         vspace = subspace
         wordSpace = getattr(self, "wordSpace", None)
@@ -10642,7 +11769,7 @@ class OutputSpace(Space):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(
                 TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
-    def forward(self, subspace):
+    def forward(self, subspace, work=None):
         """Acting: project symbols to task output.
 
         Two paths: activation-mode applies PiLayer to the scalar
@@ -10671,7 +11798,7 @@ class OutputSpace(Space):
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
 
-    def reverse(self, subspace):
+    def reverse(self, subspace, work=None):
         """Being acted upon: map output back to symbolic space.
 
         Inverse of ``forward``: activation-mode runs PiLayer.reverse on

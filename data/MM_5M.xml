@@ -81,6 +81,14 @@
     <nDim>1024</nDim>
     <nVectors>8</nVectors> <!-- 512 -->
     <codebook>none</codebook> <!-- true -->
+    <!-- H2: STM capacity = the classical 7±2 working-memory bound. The
+         [B, 7, concept_dim=1024] STM slab passes through the widened
+         idempotent C->S->C symbolic-space loop
+         (BasicModel._stm_symbolic_roundtrip), making it the STM
+         read/write. Was previously the wMax-or-8 fallback (=8 here:
+         no <stmCapacity>, no <WordSpace><wMax>). Phase-1-D STM-7
+         decision; CKY+resize (=wMax) is the documented perf fallback. -->
+    <stmCapacity>7</stmCapacity>
   </ConceptualSpace>
 
   <SymbolicSpace>

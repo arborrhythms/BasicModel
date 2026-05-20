@@ -4,7 +4,7 @@ canonical XOR fixture.
 Exercises:
   - WordSpace.routerKind == "signal" reaches the chart from XML.
   - Grammar wiring: NOT (unary), conjunction / disjunction (binary)
-    from GRAMMAR_LAYER_CLASSES are attached to the SignalRouter at
+    from GRAMMAR_LAYER_CLASSES are attached to the LanguageLayer at
     WordSpace construction time, with global rule_ids preserved.
   - ChartCompose fires on the post-PerceptualSpace subspace (the
     "data is None" failure mode that hid the wiring failure earlier
@@ -42,7 +42,7 @@ def _snapshot_global_state():
     singleton too. With no restore, that leaks into every later test --
     e.g. ``test_chart_wordspace_wiring`` then builds a ``Chart`` whose
     ``router_kind`` defaults to the leaked ``"signal"`` and explodes in
-    ``SignalRouter.compose`` (the conftest autouse reset clears
+    ``LanguageLayer.compose`` (the conftest autouse reset clears
     ``_configured`` / ``_requirements`` but not ``_data``).
     """
     import Language
@@ -99,7 +99,7 @@ class TestXORGrammarConfigParsing(unittest.TestCase):
 
 
 class TestXORGrammarRouterWiring(unittest.TestCase):
-    """Build the model and verify the SignalRouter has the three grammar
+    """Build the model and verify the LanguageLayer has the three grammar
     ops attached, with global rule_ids preserved."""
 
     @classmethod
@@ -139,7 +139,7 @@ class TestXORGrammarRouterWiring(unittest.TestCase):
                     f"Rule {r.method_name} expected at tier 'S', got {r.tier!r}")
 
 
-class TestXORGrammarSignalRouterIntegration(unittest.TestCase):
+class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
     """End-to-end signal-router parse on the XOR_grammar.xml fixture.
 
     Builds the model via the same path Models.py main() uses, runs one
@@ -196,7 +196,7 @@ class TestXORGrammarSignalRouterIntegration(unittest.TestCase):
         ws = self.model.wordSpace
         router = ws.chart._signal_router
         self.assertIsNotNone(
-            router, "SignalRouter must be built when routerKind=signal")
+            router, "LanguageLayer must be built when routerKind=signal")
         self.assertIn("S", router._unary_layers)
         self.assertIn("S", router._binary_layers)
         unary_layer = router._unary_layers["S"]

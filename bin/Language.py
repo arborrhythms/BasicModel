@@ -152,6 +152,12 @@ class Grammar:
         self._configured = False
         self.interpretation = 0.5
         self.thought_free = False
+        # Phase 1 of the SubSpace.what STM refactor: V_sym is the size of
+        # the terminal symbol codebook, which SymbolicSpace wires in once
+        # its symbol codebook is built. Until then, the rule namespace
+        # starts at 1 (treating V_sym=0). Used only by where_id_for_rule.
+        # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+        self.symbol_vocab_size = 0
         # Start symbol -- name of the nonterminal that marks a complete
         # derivation. SyntacticLayer.compose tests row b's top-of-stack
         # category against this name; matches signal a soft sentence
@@ -187,6 +193,95 @@ class Grammar:
     def binary_rules(self):
         """Return the list of rule_ids that have arity 2."""
         return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
+
+    # -- Phase 1 GrammarRegistry surface --------------------------------
+    #
+    # Static lookup API for the SubSpace.what STM refactor. These
+    # accessors do not run the live parser; they are pure rule-table
+    # reads + a stable .where namespace. See
+    # doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 1: Grammar Registry Extraction".
+
+    def num_rules(self):
+        """Total rule count (configures lazily if needed)."""
+        self._ensure_configured()
+        return len(self.rules)
+
+    def rule(self, rule_id):
+        """Return the full ``RuleDef`` for ``rule_id``."""
+        return self.rules[rule_id]
+
+    def rules_for_tier(self, tier, arity=None):
+        """Return rule_ids whose ``RuleDef.tier`` matches ``tier``.
+
+        ``arity`` optionally filters to that arity (1 or 2).
+        """
+        self._ensure_configured()
+        out = []
+        for i, r in enumerate(self.rules):
+            if r.tier != tier:
+                continue
+            if arity is not None and r.arity != arity:
+                continue
+            out.append(i)
+        return out
+
+    # -- Phase 1 .where namespace ---------------------------------------
+    #
+    # The stack-mode .where namespace is:
+    #     0                           empty slot
+    #     1..V_sym                    terminal symbol locations
+    #     V_sym+1..V_sym+R_rule       grammar rule locations
+    # V_sym is ``self.symbol_vocab_size``, populated by SymbolicSpace
+    # in Phase 3. Empty/invalid inputs collapse to 0.
+
+    def where_id_for_symbol(self, symbol_id):
+        """Stack ``.where`` location for a terminal symbol codebook row.
+
+        Returns 0 for invalid/empty inputs (matches the spec's
+        zero-is-empty namespace).
+        """
+        if symbol_id is None or symbol_id < 0:
+            return 0
+        return int(symbol_id) + 1
+
+    def where_id_for_rule(self, rule_id):
+        """Stack ``.where`` location for a grammar rule.
+
+        Returns 0 for invalid/empty inputs.
+        """
+        if rule_id is None or rule_id < 0:
+            return 0
+        return int(self.symbol_vocab_size) + 1 + int(rule_id)
+
+    def decode_where(self, where_id):
+        """Decode a stack ``.where`` location back into ``(kind, id)``.
+
+        Inverse of ``where_id_for_symbol`` / ``where_id_for_rule`` (used
+        in the Phase 7 reverse path; see
+        doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
+
+        Returns:
+            ``('empty', None)``    when ``where_id <= 0``
+            ``('terminal', sym_id)`` when ``1 <= where_id <= V_sym``
+            ``('rule', rule_id)``    when ``where_id > V_sym``
+
+        ``where_id`` may be a Python int, a float (the live router
+        stores the int in a float tensor), or a 0-D tensor; values are
+        coerced to int via ``int(round(...))`` so noisy lookups in a
+        float-encoded carrier still land on the right bucket.
+        """
+        if where_id is None:
+            return ('empty', None)
+        if hasattr(where_id, 'item'):
+            where_id = float(where_id.item())
+        wid = int(round(float(where_id)))
+        if wid <= 0:
+            return ('empty', None)
+        v_sym = int(self.symbol_vocab_size)
+        if wid <= v_sym:
+            return ('terminal', wid - 1)
+        return ('rule', wid - v_sym - 1)
 
     # -- Configuration from XML ----------------------------------------
 
@@ -911,7 +1006,80 @@ TheGrammar = Grammar()
 
 
 # =====================================================================
-# SignalRouter -- inlined from bin/SignalRouter.py (2026-05-11 module
+# RuleCodebook -- grammatical operation codebook (Phase 3 of the
+# SubSpace.what STM refactor; see
+# doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
+#
+# The rule codebook holds rule **identity / location**, NOT parent
+# vectors. Parent vectors for reductions are computed by SyntacticLayer
+# .execute on child arguments. This codebook only provides:
+#   * the ``.where`` location stamped into reduced stack slots
+#     (delegated to ``Grammar.where_id_for_rule``)
+#   * an optional learned per-rule embedding for router scoring
+#   * an optional rule identity vector for diagnostics
+#
+# Distinct from the SymbolicSpace symbol codebook (`SymbolicSpace
+# .subspace.what`), which holds the long-term terminal symbol prototypes
+# the SHIFT path quantizes against.
+# =====================================================================
+class RuleCodebook(nn.Module):
+    """Long-term identity store for grammatical operations.
+
+    Args:
+        num_rules: number of grammar rules (R).
+        embedding_dim: width of the optional per-rule scoring embedding.
+            Default 0 (no learned embedding).
+        grammar: optional non-owning reference to a ``Grammar`` whose
+            ``where_id_for_rule`` provides the ``.where`` namespace.
+            When unset the location falls back to a bare ``rule_id + 1``.
+    """
+
+    def __init__(self, num_rules, *, embedding_dim=0, grammar=None):
+        """Allocate state; see class docstring."""
+        super().__init__()
+        self.num_rules = int(num_rules)
+        # Non-owning reference so the Module graph stays cycle-free
+        # (Grammar is a plain Python object, not an nn.Module, but the
+        # stash-via-object.__setattr__ pattern is conservative).
+        object.__setattr__(self, '_grammar', grammar)
+        if embedding_dim and embedding_dim > 0:
+            self.embedding = nn.Parameter(
+                torch.zeros(self.num_rules, int(embedding_dim))
+            )
+            if self.num_rules > 0:
+                nn.init.xavier_normal_(self.embedding)
+        else:
+            self.register_parameter('embedding', None)
+
+    @property
+    def grammar(self):
+        """Read-only accessor for the bound Grammar (or None)."""
+        return self._grammar
+
+    def attach_grammar(self, grammar):
+        """Late-bind a Grammar reference (used when wiring after construction)."""
+        object.__setattr__(self, '_grammar', grammar)
+
+    def location(self, rule_id):
+        """Return the ``.where`` location for ``rule_id``.
+
+        Routes through ``grammar.where_id_for_rule`` when a Grammar is
+        attached; otherwise uses a bare ``rule_id + 1`` fallback so
+        ``RuleCodebook(num_rules=R)`` is usable in isolation.
+        Returns 0 for invalid inputs (matches the spec's empty sentinel).
+        """
+        if rule_id is None:
+            return 0
+        rid = int(rule_id)
+        if rid < 0:
+            return 0
+        if self._grammar is not None:
+            return self._grammar.where_id_for_rule(rid)
+        return rid + 1
+
+
+# =====================================================================
+# LanguageLayer -- inlined from bin/LanguageLayer.py (2026-05-11 module
 # consolidation). Selected via WordSpace.routerKind = 'signal' in XML.
 # Replaces the Chart's soft-superposition CKY forest with per-layer
 # COPY/REDUCE routing on the subspace tensor. Owned by Chart, lazily
@@ -919,7 +1087,7 @@ TheGrammar = Grammar()
 # =====================================================================
 class _BinaryGrammarOpAdapter(nn.Module):
     """Adapt a GrammarLayer with a `.compose(left, right)` method into a
-    plain binary callable for the SignalRouter's `BinaryStructuredReductionLayer`.
+    plain binary callable for the LanguageLayer's `BinaryStructuredReductionLayer`.
 
     The CKY chart calls `gl.compose(left, right)` on `[..., D]` pairs;
     `BinaryStructuredReductionLayer` calls `op(left, right)` on
@@ -937,14 +1105,32 @@ class _BinaryGrammarOpAdapter(nn.Module):
         return self.gl.compose(left, right)
 
 
-class SignalRouter(nn.Module):
+class LanguageLayer(Layer):
     """Top-level signal-routing parser. Owned by Chart when
-    router_kind == "signal". Parallels Chart.compose / Chart.generate.
+    router_kind == "signal", and by SymbolicSpace for the new
+    stack-rewrite path (Phase 5 of the SubSpace.what STM refactor).
+    Parallels Chart.compose / Chart.generate.
 
     Multi-tier: a unary layer and/or a binary layer can be attached per
     tier (e.g., 'P', 'C', 'S'). On compose, tiers run in sorted order;
     within each tier, unary fires first then binary, with the soft slab
     of the previous step feeding the next so gradient reaches every op.
+
+    **Layer contract** (post-2026-05-20 stack-rewrite refactor):
+
+    The canonical entry points are ``forward(subspace, syntactic_layer,
+    ..., actions=...)`` and ``reverse(subspace, syntactic_layer, ...)``
+    -- both wrap the stack-rewrite primitives (shift/reduce/unreduce)
+    so call sites can treat LanguageLayer like any other Layer subclass.
+
+    The legacy ``compose`` / ``generate`` are preserved verbatim for
+    chart-router (router_kind='signal') back-compat; they operate on a
+    ``[B, N, D]`` slab through the attached ``_unary_layers`` /
+    ``_binary_layers`` ModuleDicts and produce per-row rule lists. The
+    two paths are independent: the Layer-style ``forward`` ignores the
+    ModuleDicts (it dispatches through the supplied SyntacticLayer's
+    ``execute``), and the legacy ``compose`` ignores the Layer-style
+    args.
     """
 
     def __init__(self, n_input, n_output, *, hidden_dim, feature_dim,
@@ -954,8 +1140,17 @@ class SignalRouter(nn.Module):
         ``feature_dim`` is the slab D; ``temperature`` divides logits in
         the inner soft DP. ``max_depth`` caps the number of binary
         reduction rounds; the actual cap is min(N-1, max_depth).
+
+        Calls ``Layer.__init__(n_input, n_output)`` so ``self.nInput``
+        / ``self.nOutput`` / ``self.layers`` follow the standard Layer
+        contract. The ergodic interface (paramUpdate / set_sigma /
+        Start / End) is inherited and dispatches to ``self.layers``
+        (a plain list, kept empty here -- the trainable scoring layers
+        live in ``self._unary_layers`` / ``self._binary_layers``
+        ModuleDicts so the optimizer still sees them via the standard
+        nn.Module parameter walk).
         """
-        super().__init__()
+        super().__init__(int(n_input), int(n_output))
         self.n_input = int(n_input)
         self.n_output = int(n_output)
         self.hidden_dim = int(hidden_dim)
@@ -1032,7 +1227,7 @@ class SignalRouter(nn.Module):
         """
         if not self._unary_layers and not self._binary_layers:
             raise RuntimeError(
-                "SignalRouter.compose called before attach_layer_ops() / "
+                "LanguageLayer.compose called before attach_layer_ops() / "
                 "attach_unary_ops().")
         x = data
         rules = {}
@@ -1121,7 +1316,7 @@ class SignalRouter(nn.Module):
         """
         if not self._unary_layers and not self._binary_layers:
             raise RuntimeError(
-                "SignalRouter.generate called before attach_layer_ops() / "
+                "LanguageLayer.generate called before attach_layer_ops() / "
                 "attach_unary_ops().")
         if not self._last_tier_routings:
             self.compose(target, word_space, subspace=subspace)
@@ -1220,6 +1415,551 @@ class SignalRouter(nn.Module):
                     row.append(int(op[b, j].item()))
             rows.append(row)
         return rows
+
+    # -- Phase 4 stack-rewrite path -------------------------------------
+    #
+    # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 4: LanguageLayer Stack Rewrite Path". These methods operate
+    # on a stack-mode SubSpace whose ``.what`` IS the live STM:
+    #
+    #     subspace.what:       [B, K, D] payloads
+    #     subspace.where:      [B, K, W] codebook locations
+    #     subspace.activation: [B, K]    occupancy mask (1=live, 0=empty)
+    #
+    # Existing ``compose`` / ``generate`` paths above remain intact for
+    # the chart-router compatibility surface; ``shift`` / ``reduce`` /
+    # ``forward_stack`` are the new path.
+    #
+    # First-patch design choices (per the plan's "Implementation Notes
+    # For Claude"):
+    #   * Hard SHIFT/REDUCE only -- no soft DP yet. Soft routing reuses
+    #     the existing scoring utilities (binary_tiling_soft_dp) when
+    #     wired in a later phase.
+    #   * Per-row occupancy reads use a small eager bridge (occ.sum
+    #     along K). This is the documented "small eager bridge" the
+    #     plan permits for a first correctness patch.
+    #   * Gradient flow: parent.what flows through the cloned-then-
+    #     scatter write into subspace.what, then back through the
+    #     SyntacticLayer.execute call to left/right child payloads and
+    #     to the op's parameters.
+
+    @staticmethod
+    def _stack_n_live(subspace):
+        """Per-row count of live stack slots (``activation > 0``)."""
+        occ = subspace.materialize(mode="activation")
+        if occ is None:
+            raise RuntimeError(
+                "LanguageLayer stack-mode: subspace.activation is None; "
+                "set_activation([B, K]) must be called before SHIFT/REDUCE"
+            )
+        if occ.ndim != 2:
+            raise ValueError(
+                f"LanguageLayer stack-mode: activation must be [B, K], "
+                f"got shape {tuple(occ.shape)}"
+            )
+        return (occ.abs() > 0).long().sum(dim=-1)              # [B]
+
+    @staticmethod
+    def _encode_where(where_buf, where_id):
+        """Encode a scalar location into a single-slot ``.where`` vector.
+
+        First-patch convention: stamp the integer into element [0] of
+        the W-wide row; remaining elements are zero. The plan's
+        encode/decode helpers can later swap this for a proper sin/cos
+        encoding without changing the namespace semantics.
+        """
+        W = where_buf.shape[-1]
+        vec = where_buf.new_zeros(W)
+        if W >= 1:
+            vec[0] = float(where_id)
+        return vec
+
+    def shift(self, subspace, terminal_what, where_id):
+        """Push a terminal payload into the next empty stack slot.
+
+        Mutates ``subspace.what`` / ``.where`` / ``.activation`` in
+        place (via setters; the underlying Basis tensors are replaced).
+        Returns the same subspace for fluent call chains.
+
+        Args:
+            subspace: stack-mode SubSpace.
+            terminal_what: ``[B, D]`` payload (the snap of a continuous
+                concept against the terminal symbol codebook).
+            where_id: scalar int location in the stack ``.where``
+                namespace (typically ``grammar.where_id_for_symbol(s)``).
+
+        Raises:
+            RuntimeError: if any batch row's stack is already full
+                (no empty slot to receive the terminal).
+        """
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        if what is None or what.ndim != 3:
+            raise ValueError(
+                f"LanguageLayer.shift: subspace.what must be [B, K, D], "
+                f"got shape {None if what is None else tuple(what.shape)}"
+            )
+        if where is None or where.ndim != 3:
+            raise ValueError(
+                f"LanguageLayer.shift: subspace.where must be [B, K, W], "
+                f"got shape {None if where is None else tuple(where.shape)}"
+            )
+        B, K, D = what.shape
+        if terminal_what.shape != (B, D):
+            raise ValueError(
+                f"LanguageLayer.shift: terminal_what shape {tuple(terminal_what.shape)} "
+                f"!= ({B}, {D})"
+            )
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live >= K).any():
+            raise RuntimeError(
+                f"LanguageLayer.shift: stack full (K={K}); per-row n_live="
+                f"{n_live.tolist()}"
+            )
+        next_empty = n_live                                    # [B] -- push index
+        arange_B = torch.arange(B, device=what.device)
+
+        # Clone-then-scatter preserves gradient flow back through the
+        # untouched slots (autograd path: each row's other slots are
+        # functions of the prior `what` tensor) AND through the new
+        # `terminal_what` (the scatter writes it into slot `next_empty`).
+        what_new = what.clone()
+        what_new[arange_B, next_empty, :] = terminal_what
+
+        where_new = where.clone()
+        where_vec = self._encode_where(where, where_id)        # [W]
+        where_new[arange_B, next_empty, :] = where_vec
+
+        # Activation: stack-mode occupancy is a scalar 1.0 per live slot.
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+        occ_new[arange_B, next_empty] = 1.0
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        subspace.set_activation(occ_new)
+        return subspace
+
+    def reduce(self, subspace, syntactic_layer, rule_id,
+               *, rule_codebook=None, where_id=None):
+        """Reduce the top two live stack slots with the given grammar rule.
+
+        Implements the plan's hard REDUCE pseudo-code:
+
+            parent = syntactic_layer.execute(rule_id, left, right)
+            what[:, i, :] = parent      # surviving slot
+            where[:, i, :] = rule_where
+            occ[:, i] = 1
+            what[:, j, :] = 0           # consumed slot
+            where[:, j, :] = 0
+            occ[:, j] = 0
+
+        where ``i = n_live - 2`` (left, survives) and
+              ``j = n_live - 1`` (right, consumed).
+
+        Args:
+            subspace: stack-mode SubSpace.
+            syntactic_layer: per-tier SyntacticLayer with ``execute``
+                (Phase 2). Computes parent.what from child payloads.
+            rule_id: grammar rule id (must be arity 2 for top-2 reduce).
+            rule_codebook: optional RuleCodebook providing the .where
+                stamp via ``rule_codebook.location(rule_id)``. Either
+                ``rule_codebook`` or ``where_id`` must be supplied.
+            where_id: explicit ``.where`` location override. Wins when
+                both are provided.
+
+        Raises:
+            RuntimeError: if any batch row has fewer than 2 live slots.
+            ValueError: when neither rule_codebook nor where_id supply
+                the rule's .where location.
+        """
+        if where_id is None and rule_codebook is None:
+            raise ValueError(
+                "LanguageLayer.reduce: provide either `rule_codebook` "
+                "(preferred) or `where_id` (override)"
+            )
+        if where_id is None:
+            where_id = rule_codebook.location(rule_id)
+
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live < 2).any():
+            raise RuntimeError(
+                f"LanguageLayer.reduce: stack underflow (need >=2 live "
+                f"slots); per-row n_live={n_live.tolist()}"
+            )
+        B, K, D = what.shape
+        arange_B = torch.arange(B, device=what.device)
+        i_slot = n_live - 2                                    # [B] survives
+        j_slot = n_live - 1                                    # [B] consumed
+
+        left  = what[arange_B, i_slot, :]                      # [B, D]
+        right = what[arange_B, j_slot, :]                      # [B, D]
+        parent = syntactic_layer.execute(int(rule_id), left, right)  # [B, D]
+
+        what_new = what.clone()
+        what_new[arange_B, i_slot, :] = parent
+        what_new[arange_B, j_slot, :] = 0.0
+
+        where_new = where.clone()
+        where_vec = self._encode_where(where, where_id)        # [W]
+        where_new[arange_B, i_slot, :] = where_vec
+        where_new[arange_B, j_slot, :] = 0.0
+
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+        occ_new[arange_B, i_slot] = 1.0
+        occ_new[arange_B, j_slot] = 0.0
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        subspace.set_activation(occ_new)
+        return subspace
+
+    def unreduce(self, subspace, syntactic_layer, *,
+                 grammar=None, rule_codebook=None):
+        """Inverse of ``reduce``: split the top live slot via ``layer.reverse``.
+
+        Phase 7 of the SubSpace.what STM refactor (see plan §"Reverse
+        And Reconstruction"). Decodes the top live slot's ``.where`` to
+        find which rule produced the parent, then calls that rule
+        layer's ``reverse`` on the parent payload to recover children
+        and writes them back into the stack.
+
+        For lossy / non-bijective ops the layer's ``reverse`` is an
+        identity stub (e.g. ``ConjunctionLayer.reverse(parent) ->
+        (parent, parent)``). This is intentional per the plan:
+
+            "use rule-specific reverse/generate if implemented
+             otherwise identity/pass-through stub"
+
+        No-op when the top slot is empty or stamped as a terminal --
+        terminals are leaves on this path; their reverse is the
+        codebook unsnap (Phase 8+ work).
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-tier SyntacticLayer; provides the
+                host layer for the decoded rule via ``_by_name``.
+            grammar: Grammar for ``decode_where``. Required when
+                ``rule_codebook`` is not supplied (or its grammar is
+                None).
+            rule_codebook: optional RuleCodebook with an attached
+                Grammar; falls back to ``grammar`` when None.
+
+        Raises:
+            RuntimeError: on stack underflow (no live slots) or
+                overflow (no room for the new right-child slot).
+            KeyError: when the decoded rule is not registered on the
+                SyntacticLayer's ``_by_name`` table.
+        """
+        # Resolve the Grammar used for .where decoding.
+        if grammar is None and rule_codebook is not None:
+            grammar = rule_codebook.grammar
+        if grammar is None:
+            raise ValueError(
+                "LanguageLayer.unreduce: provide `grammar` or a "
+                "`rule_codebook` with an attached Grammar"
+            )
+
+        what = subspace.materialize(mode="what")
+        where = subspace.materialize(mode="where")
+        n_live = self._stack_n_live(subspace)                  # [B]
+        if (n_live < 1).any():
+            raise RuntimeError(
+                f"LanguageLayer.unreduce: stack underflow (no live "
+                f"slots); per-row n_live={n_live.tolist()}"
+            )
+        B, K, D = what.shape
+        if (n_live >= K).any():
+            raise RuntimeError(
+                f"LanguageLayer.unreduce: stack overflow (K={K}); "
+                f"unreduce needs an empty slot to the right of the "
+                f"top. Per-row n_live={n_live.tolist()}"
+            )
+        arange_B = torch.arange(B, device=what.device)
+        top_slot = n_live - 1                                  # [B]
+
+        # Decode .where to find the rule. First-patch convention:
+        # batch-row-0's slot is canonical; per-row decoding is a
+        # follow-up. The where carrier is float; decode_where rounds.
+        top_where_b0 = where[0, int(top_slot[0].item()), 0]
+        kind, decoded_id = grammar.decode_where(top_where_b0)
+
+        if kind != 'rule':
+            # Empty or terminal -- no reverse on this path.
+            return subspace
+
+        rule_id = int(decoded_id)
+        method_name = grammar.method_name(rule_id)
+        layer = syntactic_layer._by_name.get(method_name)
+        if layer is None:
+            raise KeyError(
+                f"LanguageLayer.unreduce: tier={syntactic_layer.tier!r} "
+                f"has no host layer for rule_id={rule_id} "
+                f"(method_name={method_name!r}). Registered rules: "
+                f"{sorted(syntactic_layer._by_name.keys())}"
+            )
+        arity = int(getattr(layer, 'arity', 2))
+
+        parent = what[arange_B, top_slot, :]                   # [B, D]
+
+        # Identity-stub fallback per plan §"Reverse And Reconstruction":
+        #   "use rule-specific reverse/generate if implemented
+        #    otherwise identity/pass-through stub"
+        # The base ``Layer.reverse`` is a shape-asserting identity (not
+        # a real inverse), so ``hasattr(layer, 'reverse')`` is True even
+        # when no semantic inverse exists. We invoke ``reverse``, then
+        # validate the return shape matches the rule's arity; on bad
+        # shape or any exception we fall back to (parent[, parent]).
+        def _identity_stub():
+            return parent if arity == 1 else (parent, parent)
+
+        try:
+            child = layer.reverse(parent)
+        except Exception:
+            child = _identity_stub()
+        else:
+            if arity == 2 and (not isinstance(child, tuple)
+                                or len(child) != 2):
+                # Arity-2 rules must return (left, right); the base
+                # Layer.reverse returns a single tensor -- treat as
+                # identity-stub.
+                child = _identity_stub()
+
+        what_new = what.clone()
+        where_new = where.clone()
+        occ = subspace.materialize(mode="activation")
+        occ_new = occ.clone()
+
+        if arity == 1:
+            # Reverse returned a single tensor; write back into the
+            # top slot and leave occupancy / where unchanged for the
+            # other slots. (Arity-1 reduce is not yet a primitive --
+            # this branch is forward-looking.)
+            if isinstance(child, tuple):
+                # Some arity-1 reverses return single-tuple wrappings.
+                child = child[0]
+            what_new[arange_B, top_slot, :] = child
+            # Where stays as the rule stamp; downstream callers can
+            # re-decode if they want to track depth.
+        else:
+            # Arity-2: child is (left, right). Write left into the
+            # top slot and right into the next-empty slot (top + 1).
+            if not isinstance(child, tuple) or len(child) != 2:
+                raise TypeError(
+                    f"LanguageLayer.unreduce: arity-2 layer "
+                    f"{method_name!r}.reverse(parent) must return "
+                    f"(left, right); got {type(child).__name__}"
+                )
+            left, right = child
+            new_slot = top_slot + 1                            # [B]
+            what_new[arange_B, top_slot, :] = left
+            what_new[arange_B, new_slot, :] = right
+            # Children's .where is unknown without history -- clear it
+            # to the empty sentinel (the plan permits identity-stub
+            # behavior for reverse). Phase 8+ can carry an in-band
+            # provenance trail if needed.
+            where_new[arange_B, top_slot, :] = 0.0
+            where_new[arange_B, new_slot, :] = 0.0
+            occ_new[arange_B, new_slot] = 1.0
+            # Top slot was already occupied; activation[top_slot] stays
+            # at 1.0.
+
+        subspace.set_what(what_new)
+        subspace.set_where(where_new)
+        subspace.set_activation(occ_new)
+        return subspace
+
+    def reverse_stack(self, subspace, syntactic_layer, *,
+                      grammar=None, rule_codebook=None, max_steps=None):
+        """Repeatedly ``unreduce`` until only terminal / empty slots
+        remain (or ``max_steps`` is reached).
+
+        Inverse-orchestrator counterpart to ``forward_stack``. Each
+        step examines the top live slot's ``.where``; if it decodes
+        to a rule, unreduce; otherwise we are done. ``max_steps``
+        bounds the loop (defaults to ``K-1`` reductions worth).
+
+        Returns the same subspace after unwinding.
+        """
+        if grammar is None and rule_codebook is not None:
+            grammar = rule_codebook.grammar
+        if grammar is None:
+            raise ValueError(
+                "LanguageLayer.reverse_stack: provide `grammar` or a "
+                "`rule_codebook` with an attached Grammar"
+            )
+        what = subspace.materialize(mode="what")
+        K = what.shape[1]
+        budget = (K - 1) if max_steps is None else int(max_steps)
+        for _ in range(budget):
+            where = subspace.materialize(mode="where")
+            n_live = self._stack_n_live(subspace)
+            if int(n_live[0].item()) < 1:
+                break
+            top = int(n_live[0].item()) - 1
+            top_where = where[0, top, 0]
+            kind, _id = grammar.decode_where(top_where)
+            if kind != 'rule':
+                break
+            self.unreduce(subspace, syntactic_layer,
+                          grammar=grammar, rule_codebook=rule_codebook)
+        return subspace
+
+    def forward_stack(self, subspace, syntactic_layer, *,
+                      actions, rule_codebook=None, grammar=None):
+        """Run a sequence of hard SHIFT / REDUCE actions on a stack-mode subspace.
+
+        First-patch orchestrator: takes an explicit ``actions`` list.
+        A full router (scoring SHIFT vs REDUCE, soft DP) is a later
+        phase; the contract pinned here is that the actions, regardless
+        of how they are produced, rewrite ``subspace.what / .where /
+        .activation`` correctly.
+
+        Action format:
+            ('shift', terminal_what: Tensor [B, D], where_id: int)
+            ('reduce', rule_id: int)
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-tier SyntacticLayer for REDUCE.
+            actions: iterable of (kind, ...) tuples.
+            rule_codebook: optional, used to resolve rule .where ids
+                for REDUCE actions. Falls back to ``grammar`` when
+                None.
+            grammar: optional Grammar, used as a secondary fallback
+                for ``where_id_for_rule`` when no rule_codebook is
+                provided.
+
+        Returns:
+            The same subspace.
+        """
+        for step, action in enumerate(actions):
+            if not action:
+                continue
+            kind = action[0]
+            if kind == 'shift':
+                if len(action) != 3:
+                    raise ValueError(
+                        f"forward_stack step {step}: shift expects "
+                        f"(kind, terminal_what, where_id); got {action!r}"
+                    )
+                _, terminal_what, where_id = action
+                self.shift(subspace, terminal_what, where_id)
+            elif kind == 'reduce':
+                if len(action) != 2:
+                    raise ValueError(
+                        f"forward_stack step {step}: reduce expects "
+                        f"(kind, rule_id); got {action!r}"
+                    )
+                _, rule_id = action
+                where_id = None
+                rc = rule_codebook
+                if rc is None and grammar is not None:
+                    where_id = grammar.where_id_for_rule(int(rule_id))
+                self.reduce(subspace, syntactic_layer, rule_id,
+                            rule_codebook=rc, where_id=where_id)
+            else:
+                raise ValueError(
+                    f"forward_stack step {step}: unknown action kind "
+                    f"{kind!r}; expected 'shift' or 'reduce'"
+                )
+        return subspace
+
+    # -- Canonical Layer-style entry points ----------------------------
+    #
+    # Mirrors the plan's "target call shape" (§"LanguageLayer Refactor"):
+    #
+    #     subspace = self.languageLayer.forward(
+    #         subspace=subspace, syntactic_layer=...,
+    #         grammar=..., terminal_codebook=...,
+    #         rule_codebook=...,
+    #     )
+    #
+    # ``forward`` wraps ``forward_stack``; ``reverse`` wraps
+    # ``reverse_stack``. The wrappers exist so callers can treat
+    # LanguageLayer like any other Layer subclass (``languageLayer
+    # .forward(...) / .reverse(...)``) instead of having to know about
+    # the lower-level shift/reduce/unreduce primitives.
+
+    def forward(self, subspace, syntactic_layer, *,
+                grammar=None, rule_codebook=None,
+                terminal_codebook=None, actions=None):
+        """Canonical forward entry: dispatch the stack-rewrite path.
+
+        Args mirror the plan's target call shape. The router needs an
+        explicit ``actions`` list for the first-patch implementation;
+        a learned SHIFT-vs-REDUCE scorer that produces actions from
+        ``terminal_codebook`` + ``rule_codebook`` is Phase 8+ work.
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-tier SyntacticLayer with ``execute``.
+            grammar: Grammar (used for rule .where decoding when
+                ``rule_codebook`` is omitted).
+            rule_codebook: optional RuleCodebook for rule .where
+                stamping.
+            terminal_codebook: accepted for plan-API symmetry but
+                NOT consumed yet -- the terminal snap currently
+                lives in ``SymbolicSpace._stack_route_forward`` as
+                the eager bridge; future phases can move it here.
+            actions: explicit ``[('shift', payload, where_id), ...]``
+                action list. Required until a learned policy is wired.
+
+        Raises:
+            NotImplementedError: when ``actions`` is None (no learned
+                scorer yet). The error message points to the lower-
+                level shift/reduce primitives for the explicit path.
+        """
+        # ``terminal_codebook`` is part of the plan's target signature
+        # but the stack-rewrite path's snap stays in SymbolicSpace for
+        # now (first-patch eager bridge). Accepting + ignoring keeps
+        # the API stable so future phases can move the snap here.
+        del terminal_codebook
+        if actions is None:
+            raise NotImplementedError(
+                "LanguageLayer.forward without explicit `actions` "
+                "requires a learned SHIFT/REDUCE scorer (Phase 8+). "
+                "Either pass actions=[('shift', payload, where_id), "
+                "('reduce', rule_id), ...] explicitly, or call the "
+                "shift()/reduce() primitives directly."
+            )
+        return self.forward_stack(
+            subspace, syntactic_layer,
+            actions=actions,
+            rule_codebook=rule_codebook,
+            grammar=grammar,
+        )
+
+    def reverse(self, subspace, syntactic_layer, *,
+                grammar=None, rule_codebook=None, max_steps=None):
+        """Canonical reverse entry: unwind the stack via reverse_stack.
+
+        Args:
+            subspace: stack-mode SubSpace (mutated in place).
+            syntactic_layer: per-tier SyntacticLayer (provides
+                ``_by_name`` for rule layer lookup).
+            grammar: Grammar for ``.where`` decoding. Required when
+                ``rule_codebook`` is None.
+            rule_codebook: optional RuleCodebook with an attached
+                Grammar; falls back to ``grammar`` when None.
+            max_steps: bound on the unwind loop; defaults to ``K - 1``.
+
+        Note: under the identity-stub contract (lossy ops like
+        ConjunctionLayer where ``reverse(parent) == (parent, parent)``)
+        the unwind only goes one level deep -- the children's .where
+        is cleared by ``unreduce`` so reverse_stack sees an empty
+        top and halts. Full multi-level unwinding requires a
+        provenance trail (Phase 8+).
+        """
+        return self.reverse_stack(
+            subspace, syntactic_layer,
+            grammar=grammar,
+            rule_codebook=rule_codebook,
+            max_steps=max_steps,
+        )
 
 
 def binary_tiling_soft_dp(
@@ -1389,21 +2129,58 @@ def binary_tiling_viterbi(
     copy_mask = copy_score.new_zeros(B, N, R_copy)
     reduce_mask = copy_score.new_zeros(B, max(N - 1, 0), R_reduce)
 
-    for b in range(B):
-        t = N
-        while t > 0:
-            kind = int(back_kind[b, t].item())
-            op = int(back_op[b, t].item())
-            if kind == 0:
-                copy_mask[b, t - 1, op] = 1.0
-                t -= 1
-            elif kind == 1:
-                reduce_mask[b, t - 2, op] = 1.0
-                t -= 2
-            else:
-                raise RuntimeError(
-                    f"Viterbi backtrace at b={b} t={t} has no valid backpointer "
-                    f"(kind={kind}). DP message corrupt.")
+    # Backtrace: walk the DP message from t=N down to t=0, writing
+    # one-hot copy/reduce masks per row. Each step decreases t by 1
+    # (copy) or 2 (reduce), so N iterations is a static upper bound
+    # for any input length. Fully tensorized -- no .item()/host sync,
+    # no data-dependent Python branch -- so this body traces under
+    # fullgraph + max-autotune (CUDA-graph-capturable). Replaces the
+    # earlier ``for b in range(B): while t>0: kind=int(back_kind[b,t]
+    # .item()); if kind == 0:`` walk that emitted cudaMemcpyDtoH per
+    # step and failed dynamo with ``Could not guard on Eq(u0, 0)``.
+    B_idx = torch.arange(B, device=device)
+    t_cur = torch.full((B,), N, device=device, dtype=torch.long)
+    for _ in range(N):
+        alive = t_cur > 0
+        # Clamp gather index so dead rows still produce a valid read.
+        safe_t = t_cur.clamp(min=0, max=N)
+        kind_t = back_kind[B_idx, safe_t]                # [B]
+        op_t = back_op[B_idx, safe_t]                    # [B]
+        is_copy = alive & (kind_t == 0)
+        is_reduce = alive & (kind_t == 1)
+        # ``op_t`` is the back_op value at ``safe_t``: it is a COPY-op
+        # index for kind=0 rows and a REDUCE-op index for kind=1 rows.
+        # When R_copy != R_reduce the same op_t may be out-of-bounds
+        # for the opposite mask's last dim -- the torch.where masks
+        # out the write, but the advanced-index gather itself must
+        # see a valid index. Clamp per mask: it's a no-op when the
+        # row's kind matches; harmless otherwise (write discarded).
+        op_for_copy = op_t.clamp(max=max(R_copy - 1, 0))
+        # Copy write: copy_mask[b, t-1, op] = 1 where is_copy.
+        pos_copy = (safe_t - 1).clamp(min=0)
+        cur_c = copy_mask[B_idx, pos_copy, op_for_copy]
+        copy_mask[B_idx, pos_copy, op_for_copy] = torch.where(
+            is_copy, torch.ones_like(cur_c), cur_c)
+        # Reduce write: reduce_mask[b, t-2, op] = 1 where is_reduce.
+        if R_reduce > 0 and N > 1:
+            op_for_reduce = op_t.clamp(max=max(R_reduce - 1, 0))
+            pos_reduce = (safe_t - 2).clamp(min=0)
+            cur_r = reduce_mask[B_idx, pos_reduce, op_for_reduce]
+            reduce_mask[B_idx, pos_reduce, op_for_reduce] = torch.where(
+                is_reduce, torch.ones_like(cur_r), cur_r)
+        # Advance t: 1 for copy, 2 for reduce, 0 otherwise (dead row
+        # or invalid kind -- the latter is caught by the assert below).
+        step = torch.where(
+            is_copy, torch.ones_like(t_cur),
+            torch.where(is_reduce, torch.full_like(t_cur, 2),
+                        torch.zeros_like(t_cur)))
+        t_cur = t_cur - step
+    # Invariant: a well-formed DP message consumes all positions in
+    # N steps; rows with t_cur > 0 after the unroll mean the DP was
+    # corrupt (the original's ``raise RuntimeError`` case). Loud
+    # async failure -- no host sync, no silent corruption -- per the
+    # project's "fail loud on numerical divergence" rule.
+    torch._assert_async((t_cur <= 0).all())
 
     return {
         "score": dp[:, N],
@@ -1495,39 +2272,105 @@ def compact_hard(
     rm_op = (reduce_mask.argmax(-1) if reduce_mask.numel() > 0
              else torch.zeros_like(cm_op[:, :0]))
 
-    for b in range(B):
-        i = 0
-        j = 0
-        while i < N:
-            do_reduce = (
-                i < N - 1
-                and float(rm_per_pos[b, i].item()) > 0.5
+    # Static-unrolled, fully tensorized walk over source positions
+    # i=0..N-1. Each iteration consumes 1 (copy) or 2 (reduce) source
+    # positions and writes one destination slot j. N iterations is a
+    # static upper bound (the maximum possible action count). All
+    # writes use per-row tensor masks -- no .item()/host sync, no
+    # data-dependent Python branch -- so this body traces under
+    # fullgraph + max-autotune. Replaces the earlier ``for b in
+    # range(B): while i<N: float(rm_per_pos[b,i].item())>0.5; if
+    # do_reduce:`` walk that emitted cudaMemcpyDtoH per step.
+
+    # Safe lookups: pad zero-length per-position tensors to length 1
+    # so unconditional advanced-index reads stay valid when N<=1.
+    if rm_per_pos.shape[1] > 0:
+        rm_per_pos_safe = rm_per_pos
+        rm_op_safe = rm_op
+    else:
+        rm_per_pos_safe = x.new_zeros(B, 1)
+        rm_op_safe = torch.zeros(B, 1, device=device, dtype=torch.long)
+    if reduced.shape[1] > 0:
+        reduced_safe = reduced
+    else:
+        reduced_safe = x.new_zeros(B, 1, D)
+
+    B_idx = torch.arange(B, device=device)
+    cursor = torch.zeros(B, device=device, dtype=torch.long)   # source pos i
+    j_idx = torch.zeros(B, device=device, dtype=torch.long)    # dest pos j
+
+    for _ in range(N):
+        in_range = cursor < N
+        can_reduce = in_range & (cursor < (N - 1))
+        ci = cursor.clamp(max=max(N - 1, 0))
+        ci_r = cursor.clamp(max=max(rm_per_pos_safe.shape[1] - 1, 0))
+        rm_here = rm_per_pos_safe[B_idx, ci_r]                # [B]
+        do_reduce = can_reduce & (rm_here > 0.5)
+        do_copy = in_range & ~do_reduce
+        jc = j_idx.clamp(max=max(N - 1, 0))
+
+        # y[b, j] = reduced[b, ci] if do_reduce else x[b, ci]
+        gathered_reduced = reduced_safe[B_idx, ci_r]          # [B, D]
+        gathered_x = x[B_idx, ci]                             # [B, D]
+        cur_y = y[B_idx, jc]
+        y[B_idx, jc] = torch.where(
+            do_reduce.unsqueeze(-1), gathered_reduced,
+            torch.where(do_copy.unsqueeze(-1), gathered_x, cur_y),
+        )
+
+        # src_left[b, j] = ci (both branches when in_range)
+        cur_sl = src_left[B_idx, jc]
+        src_left[B_idx, jc] = torch.where(in_range, ci, cur_sl)
+        # src_right[b, j] = ci+1 if reduce else -1 if copy
+        cur_sr = src_right[B_idx, jc]
+        src_right[B_idx, jc] = torch.where(
+            do_reduce, ci + 1,
+            torch.where(do_copy, torch.full_like(ci, -1), cur_sr),
+        )
+        # action_kind[b, j] = 1 if reduce, 0 if copy
+        cur_ak = action_kind[B_idx, jc]
+        action_kind[B_idx, jc] = torch.where(
+            do_reduce, torch.ones_like(ci),
+            torch.where(do_copy, torch.zeros_like(ci), cur_ak),
+        )
+        # action_op[b, j]: reduce -> rm_op[ci_r]; copy -> cm_op[ci]
+        #                 if cm_per_pos[ci] > 0 else -1
+        ao_reduce = rm_op_safe[B_idx, ci_r]
+        cm_op_at = cm_op[B_idx, ci]
+        cm_per_at = cm_per_pos[B_idx, ci]
+        ao_copy = torch.where(
+            cm_per_at > 0, cm_op_at, torch.full_like(ci, -1))
+        cur_ao = action_op[B_idx, jc]
+        action_op[B_idx, jc] = torch.where(
+            do_reduce, ao_reduce,
+            torch.where(do_copy, ao_copy, cur_ao),
+        )
+
+        if have_spans:
+            # next_span_start[b, j] = span_start[b, ci] (both branches)
+            cur_ss = next_span_start[B_idx, jc]
+            next_span_start[B_idx, jc] = torch.where(
+                in_range, span_start[B_idx, ci], cur_ss)
+            # next_span_end[b, j] = span_end[b, ci+1] if reduce
+            #                       else span_end[b, ci] if copy
+            ci_plus_1 = (ci + 1).clamp(max=max(N - 1, 0))
+            cur_se = next_span_end[B_idx, jc]
+            next_span_end[B_idx, jc] = torch.where(
+                do_reduce, span_end[B_idx, ci_plus_1],
+                torch.where(do_copy, span_end[B_idx, ci], cur_se),
             )
-            if do_reduce:
-                y[b, j] = reduced[b, i]
-                src_left[b, j] = i
-                src_right[b, j] = i + 1
-                action_kind[b, j] = 1
-                action_op[b, j] = rm_op[b, i]
-                if have_spans:
-                    next_span_start[b, j] = span_start[b, i]
-                    next_span_end[b, j] = span_end[b, i + 1]
-                i += 2
-                j += 1
-            else:
-                # Defensive: if neither copy nor reduce is selected here,
-                # treat as copy of source (legality should prevent this).
-                y[b, j] = x[b, i]
-                src_left[b, j] = i
-                src_right[b, j] = -1
-                action_kind[b, j] = 0
-                action_op[b, j] = cm_op[b, i] if cm_per_pos[b, i] > 0 else -1
-                if have_spans:
-                    next_span_start[b, j] = span_start[b, i]
-                    next_span_end[b, j] = span_end[b, i]
-                i += 1
-                j += 1
-        lengths[b] = j
+
+        # Advance: cursor += 2 if reduce, 1 if copy, 0 otherwise.
+        step = torch.where(
+            do_reduce, torch.full_like(cursor, 2),
+            torch.where(do_copy, torch.ones_like(cursor),
+                        torch.zeros_like(cursor)),
+        )
+        cursor = cursor + step
+        # j advances iff any action fired this iter.
+        j_idx = j_idx + in_range.to(j_idx.dtype)
+
+    lengths = j_idx
 
     meta = {
         "lengths": lengths,
@@ -2006,7 +2849,7 @@ def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
         return torch.tensor(0.0)
     return lambda_dp_prior * total
 
-# -- End inlined SignalRouter section -------------------------------
+# -- End inlined LanguageLayer section -------------------------------
 
 
 
@@ -2049,7 +2892,7 @@ class Chart(nn.Module):
 
         Resolves ``w_max`` (span width bound) and ``chart_tau`` from
         XML when not explicitly set. ``router_kind`` selects between
-        the legacy CKY chart and the SignalRouter alternative.
+        the legacy CKY chart and the LanguageLayer alternative.
         Allocates rule-embedding params and unary / binary scoring nets.
         """
         super().__init__()
@@ -2135,7 +2978,7 @@ class Chart(nn.Module):
                 f"WordSpace.routerKind must be 'chart' or 'signal', "
                 f"got {router_kind!r}.")
         self.router_kind = router_kind
-        # Lazy SignalRouter construction; only built when needed.
+        # Lazy LanguageLayer construction; only built when needed.
         self._signal_router = None
 
         # Rule prediction network (weight-tied across depths). Mirrors
@@ -2238,7 +3081,7 @@ class Chart(nn.Module):
             return 1.0
 
     def _ensure_signal_router(self):
-        """Lazy-build the SignalRouter when router_kind == 'signal'.
+        """Lazy-build the LanguageLayer when router_kind == 'signal'.
 
         Assigning an nn.Module to an attribute auto-registers it as a
         submodule, so it is included in parameters() / state_dict().
@@ -2249,7 +3092,7 @@ class Chart(nn.Module):
                     "WordSpace.signal.temperature", 1.0))
             except Exception:
                 temperature = 1.0
-            self._signal_router = SignalRouter(
+            self._signal_router = LanguageLayer(
                 n_input=self.nInput,
                 n_output=self.nOutput,
                 hidden_dim=self.hidden_dim,
@@ -2586,20 +3429,19 @@ class Chart(nn.Module):
     # ------------------------------------------------------------------
 
     # Fixed tier classification (overrides per-rule authored ``tier``
-    # attributes; 2026-05-12). Drives ``_tier_for_method`` and the
-    # parameter-free fallback's substrate wiring.
-    #   P (subsymbolic) — fires through P.sigma / C.pi via the
-    #     LiftLayer / LowerLayer codebook-gate mechanism.
-    #   C (local)       — runs on the C-tier idea tensors directly;
-    #     no codebook lookup needed.
-    #   S (symbolic)    — needs codebook lookup (parthood / equality
-    #     / query) for its semantics.
+    # attributes; 2026-05-12, C/S split 2026-05-18). Drives
+    # ``_tier_for_method`` and the parameter-free fallback's substrate
+    # wiring. The P tier was retired: there is no subsymbolic chart loop
+    # anymore, only two tiers.
+    #   C (concept) — concept-tensor ops on the concept codebook; act
+    #     directly on the C-tier idea tensors (no symbolic wholeness
+    #     assertion required).
+    #   S (symbolic) — symbolic wholeness ops on the symbol codebook;
+    #     produce a higher-epistemic-level wholeness of arguments
+    #     (parthood / equality / query). lift / lower are S: they bridge
+    #     to/from the symbol codebook.
     _RULE_TIER = {
-        # P-tier: drive the subsymbolic loop.
-        'lift':         'P',
-        'lower':        'P',
-        # C-tier: act directly on concept tensors (no symbolic
-        # wholeness assertion required).
+        # C-tier: concept-tensor ops on the concept codebook.
         'union':        'C',
         'intersection': 'C',
         'swap':         'C',
@@ -2613,12 +3455,13 @@ class Chart(nn.Module):
         'area':         'C',
         'luminosity':   'C',
         'equal':        'C',
-        # S-tier: produce a higher-epistemic-level wholeness of
-        # arguments; cannot be implemented at the subsymbolic level.
+        # S-tier: symbolic wholeness ops on the symbol codebook.
         'conjunction':  'S',
         'disjunction':  'S',
         'isEqual':      'S',
         'isaPart':      'S',
+        'lift':         'S',
+        'lower':        'S',
     }
 
     def _apply_rule_forward(self, method_name, left, right, marker_mask,
@@ -3986,6 +4829,44 @@ class SyntacticLayer(Layer):
         # registry so the chart can dispatch into them.
         for rule_name, layer in self._by_name.items():
             word_space.register_host_layer(self.tier, rule_name, layer)
+        # Phase 2B static op table for the tensor-driven executor:
+        # an ordered list of ``(rule_idx, layer)`` pairs over the global
+        # ``TheGrammar.rules`` op axis, restricted to arity-1 rules
+        # whose ``method_name`` is registered in ``self._by_name`` AND
+        # whose LHS nonterminal maps back to this dispatcher's tier.
+        # The tier gate is essential: two different SyntacticLayers
+        # (e.g. S-tier and P-tier) may both register 'sigma' in their
+        # respective ``_by_name`` dicts; without the gate the S-tier
+        # executor would include the P-tier sigma rule_id and double-
+        # apply when ``op_sel`` is populated per-tier. Length is fixed
+        # at construction time so Dynamo can unroll the executor loop
+        # under ``fullgraph=True`` without any data-dependent branch.
+        # Arity-2 rules are excluded: they're dispatched by the chart's
+        # inside pass, not by the per-step unary executor (mirrors the
+        # arity gate in ``SyntacticLayer.forward``).
+        _LHS_TIER_MAP = {'P': 'P', 'C': 'C', 'S': 'S'}
+        arity1_ops = []
+        for rule_idx, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn is None:
+                continue
+            if int(getattr(r, 'arity', 1)) != 1:
+                continue
+            rule_tier = _LHS_TIER_MAP.get(getattr(r, 'lhs', None))
+            if rule_tier != self.tier:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                # Reverse-direction entries route through the cursor's
+                # generate path, not the compose-side executor.
+                continue
+            layer = self._by_name.get(mn)
+            if layer is None:
+                continue
+            arity1_ops.append((rule_idx, layer))
+        # Stash via object.__setattr__ to avoid nn.Module __setattr__
+        # promoting the tuples into _modules / _parameters scans.
+        object.__setattr__(self, '_arity1_ops', tuple(arity1_ops))
         self._cursor_compose = 0
         self._cursor_generate = 0
         self._cursor_compose_gen = -1
@@ -4004,6 +4885,18 @@ class SyntacticLayer(Layer):
         object.__setattr__(self, '_host_space', host_space)
 
     # -- cursor management ---------------------------------------------
+    def _tier_index(self):
+        """Map this layer's tier label to its slot in the per-sentence
+        WorkingState ``cursor`` tensor (shape ``[n_tiers=3]``).
+
+        ``tier`` is set once at construction to one of the string
+        literals 'P' / 'C' / 'S' (Language.py
+        ``_attach_per_space_syntactic_layer`` passes ``tier='P'`` /
+        ``'C'`` / ``'S'``; ``__init__`` coerces with ``str(tier)``),
+        so this map is total over the live domain.
+        """
+        return {'P': 0, 'C': 1, 'S': 2}[str(self.tier)]
+
     def _next_rule_name(self, *, direction):
         """Pop the next rule name for ``direction`` ('compose' or
         'generate'). Resets the cursor when wordSpace has bumped its
@@ -4020,13 +4913,27 @@ class SyntacticLayer(Layer):
         used in ``self._by_name``.
         """
         ws = self._word_space
+        work = ws._work
         if direction == 'compose':
             rules = ws.current_rules
-            gen = ws._compose_generation
-            if gen != self._cursor_compose_gen:
-                self._cursor_compose = 0
-                self._cursor_compose_gen = gen
-            cursor = self._cursor_compose
+            if work is not None:
+                # Phase 1.2: cursor lives on the per-sentence carrier.
+                # The per-compose reset now happens unconditionally at
+                # the top of WordSpace.compose (cursor.zero_()), so
+                # there is NO data-dependent generation gate here
+                # (removes recompile cause #3). A single host read of
+                # the int64 cursor is acceptable for this phase;
+                # tensorizing the list index is Phase 2.
+                ti = self._tier_index()
+                cursor = int(work.cursor[ti])
+            else:
+                # Eager / uncompiled fallback (tests, pre-soft_reset):
+                # byte-identical to the original gen-gated logic.
+                gen = ws._compose_generation
+                if gen != self._cursor_compose_gen:
+                    self._cursor_compose = 0
+                    self._cursor_compose_gen = gen
+                cursor = self._cursor_compose
         else:
             rules = ws.generate_rules
             gen = ws._generate_generation
@@ -4039,7 +4946,10 @@ class SyntacticLayer(Layer):
         if cursor < len(per_step):
             rule_id = per_step[cursor]
             if direction == 'compose':
-                self._cursor_compose = cursor + 1
+                if work is not None:
+                    work.cursor[self._tier_index()] = cursor + 1
+                else:
+                    self._cursor_compose = cursor + 1
             else:
                 self._cursor_generate = cursor + 1
             try:
@@ -4067,6 +4977,81 @@ class SyntacticLayer(Layer):
             return per_tier[0]
         # Flat list of ints (legacy).
         return per_tier
+
+    # -- Phase 2 executor API (cursor-free) -----------------------------
+    #
+    # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
+    # §"Phase 2: SyntacticLayer Executor API". The LanguageLayer calls
+    # these directly with a rule_id it has already selected; no
+    # WordSpace.current_rules indirection.
+
+    def execute(self, rule_id, left, right=None):
+        """Run the grammar op for ``rule_id`` on ``(left[, right])``.
+
+        Resolves ``rule_id`` to a host layer via ``TheGrammar`` and
+        ``self._by_name`` and calls ``layer.compose`` with the right
+        number of operands for the rule's arity. Returns the parent
+        tensor. No cursor; no WordSpace state read.
+        """
+        method_name = TheGrammar.method_name(int(rule_id))
+        layer = self._by_name.get(method_name)
+        if layer is None:
+            raise KeyError(
+                f"SyntacticLayer.execute: tier={self.tier!r} has no host "
+                f"layer for rule_id={rule_id} (method_name={method_name!r}). "
+                f"Registered rules: {sorted(self._by_name.keys())}"
+            )
+        arity = int(getattr(layer, 'arity', 1))
+        if arity == 1:
+            return layer.compose(left)
+        if right is None:
+            raise ValueError(
+                f"SyntacticLayer.execute: arity-2 rule {method_name!r} "
+                f"requires `right`; got None"
+            )
+        return layer.compose(left, right)
+
+    def execute_superposed(self, rule_weights, left, right=None,
+                           rule_ids=None):
+        """Weighted combination of independent per-rule executions.
+
+        Each candidate op computes on its own copy of ``(left, right)``
+        and the results are combined once by weighted sum. Independent
+        contribution semantics: no shared in-place accumulator one op
+        mutates before the next. Matches the plan's superposed pseudo-
+        code; implementations may optimize internally but must preserve
+        the semantics.
+
+        Args:
+            rule_weights: shape ``[..., R]`` -- soft weights over the R
+                candidate rules. Broadcast against the per-rule output's
+                leading dims.
+            left: arity-1 input (and arity-2 left operand).
+            right: arity-2 right operand (None for arity-1-only mixes).
+            rule_ids: iterable of R rule ids in the same order as the
+                last axis of ``rule_weights``. Required.
+
+        Returns:
+            Tensor with the same per-rule output shape (R axis summed
+            out).
+        """
+        if rule_ids is None:
+            raise ValueError(
+                "SyntacticLayer.execute_superposed: rule_ids is required"
+            )
+        if hasattr(rule_ids, "tolist"):
+            rule_ids = list(rule_ids.tolist())
+        rule_ids = list(rule_ids)
+        if rule_weights.shape[-1] != len(rule_ids):
+            raise ValueError(
+                f"rule_weights last dim {rule_weights.shape[-1]} does not "
+                f"match rule_ids length {len(rule_ids)}"
+            )
+        outs = []
+        for rid in rule_ids:
+            outs.append(self.execute(int(rid), left, right))
+        stacked = torch.stack(outs, dim=-2)              # [..., R, D]
+        return (stacked * rule_weights.unsqueeze(-1)).sum(dim=-2)
 
     # -- forward / reverse dispatch ------------------------------------
     #
@@ -4631,6 +5616,7 @@ class WordSpace(Space):
         # cursor (Q10.1).
         self._compose_generation = 0
         self._generate_generation = 0
+        self._work = None  # per-sentence WorkingState carrier; allocated in soft_reset/Reset (Phase 1)
         chart_hidden = self._resolve_hidden_dim(nSymbols)
         self.chart = Chart(
             nInput=nSymbols, nOutput=nSymbols,
@@ -4668,8 +5654,12 @@ class WordSpace(Space):
         # still fire through the chart's per-tier dispatch.
         if perceptualSpace is not None:
             perceptualSpace.attach_wordSpace(self)
-            self._attach_per_space_syntactic_layer(
-                perceptualSpace, tier='P')
+            # P-tier SyntacticLayer retired (2026-05-18 C/S split): the
+            # perceptual space no longer carries a chart-dispatched
+            # SyntacticLayer. ``attach_wordSpace`` (shared-buffer
+            # back-ref) is unrelated wiring and is kept. The tier='P'
+            # branch in ``_attach_per_space_syntactic_layer`` is now
+            # unreached but left dead-safe.
         if conceptualSpace is not None:
             conceptualSpace.attach_wordSpace(self)
             self._attach_per_space_syntactic_layer(
@@ -4680,7 +5670,7 @@ class WordSpace(Space):
                 symbolicSpace, tier='S')
 
         # 5b. Signal-router grammar wiring. When `WordSpace.routerKind ==
-        # "signal"`, the chart's CKY paths are bypassed; the SignalRouter
+        # "signal"`, the chart's CKY paths are bypassed; the LanguageLayer
         # needs explicit op modules attached to its per-tier scorers
         # before compose() can fire. We wire from the host_layer registry
         # populated in step 5 above.
@@ -4859,6 +5849,20 @@ class WordSpace(Space):
             persistent=False)
         self.stm_residual_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
+        # D8 capture-gate (2026-05-19): discourse-prediction cache.
+        # ``stm_residual_microbatch`` is called per-word from
+        # ``ConceptualSpace.forward`` and used to fire
+        # ``discourse.predict()`` per-word -- which has a Python
+        # ``predict_next(b=b)`` row-loop that's untraceable under
+        # fullgraph=True and produces N DtoHs on CUDA. Discourse
+        # prediction is **sentence-scoped** (the inter-sentence ARMA
+        # state only changes when ``disc.observe()`` is called in
+        # ``runBatch`` post-body), so we cache ``(pred, conf)`` here
+        # and refresh it in ``arm_stm`` (the sentence-boundary
+        # rearm). The per-word body reads the cache; the captured
+        # graph never enters ``disc.predict()``.
+        self._disc_pred = None
+        self._disc_conf = None
 
         # Per-source-row sentence-completed signal driven by
         # SyntacticLayer.compose: True for row b when this tick's parse
@@ -4929,19 +5933,40 @@ class WordSpace(Space):
 
         Resets the per-row single-shot flag so the next ``stm_residual``
         call can fire and stamp a new prediction bias.
+
+        D8 capture-gate (2026-05-19): also refreshes the discourse-
+        prediction cache (``_disc_pred`` / ``_disc_conf``). The
+        inter-sentence ARMA state only updates when ``disc.observe()``
+        fires post-body in ``runBatch``, so ``predict()`` returns the
+        same value for the entire sentence; caching here keeps the
+        per-word body free of any ``disc.predict()`` call.
         """
         if b is None:
             self._stm_fired.zero_()
         else:
             self._stm_fired[b] = False
+        # Refresh discourse-prediction cache at the sentence boundary.
+        disc = self.discourse
+        if disc is not None:
+            try:
+                self._disc_pred, self._disc_conf = disc.predict()
+            except Exception:
+                self._disc_pred, self._disc_conf = None, None
+        else:
+            self._disc_pred, self._disc_conf = None, None
 
     def stm_residual(self, b=0):
         """Discourse prediction bias applied once per sentence per row.
 
-        Reads ``self.discourse.predict()`` and returns
-        ``discourse.prime(predicted, confidence, scale)``, or ``None`` when
-        discourse is unavailable, not yet built, or the bias already fired
-        this sentence for row ``b``.  ``arm_stm(b)`` / ``Reset()`` re-arms.
+        Reads the discourse-prediction cache (populated by ``arm_stm``)
+        and returns ``discourse.prime(predicted, confidence, scale)``,
+        or ``None`` when discourse is unavailable, not yet built, or the
+        bias already fired this sentence for row ``b``.  ``arm_stm(b)``
+        / ``Reset()`` re-arms and refreshes the cache.
+
+        D8 capture-gate (2026-05-19): the cache replaces the per-call
+        ``disc.predict()``, sentence-scoped (refreshed only when
+        ``arm_stm`` fires at the sentence boundary).
 
         ``b`` defaults to 0 for back-compat with single-row callers; the
         Task 9 cutover threads the row index from the body iteration.
@@ -4952,7 +5977,10 @@ class WordSpace(Space):
         disc = self.discourse
         if disc is None:
             return None
-        pred, conf = disc.predict()
+        pred = self._disc_pred
+        conf = self._disc_conf
+        if pred is None or conf is None:
+            return None
         return disc.prime(pred, conf, self.stm_residual_scale)
 
     def stm_residual_microbatch(self, B, K, expected_dim=None):
@@ -4977,13 +6005,19 @@ class WordSpace(Space):
         # The gate at the bottom multiplies the bias by ``not_fired``, so when
         # every row has already fired the returned tensor is all-zero and the
         # caller's `y = y + bias.unsqueeze(1)` is a no-op anyway. The early-out
-        # was a per-batch host sync that blocked CUDA-graph capture. We pay
-        # one extra `disc.predict()` call per tick when no rows fire (cheap;
-        # one matmul) in exchange for no GPU->CPU sync.
+        # was a per-batch host sync that blocked CUDA-graph capture.
+        #
+        # D8 capture-gate (2026-05-19): read the discourse cache instead
+        # of calling ``disc.predict()`` here. The cache is populated once
+        # per sentence in ``arm_stm()`` (the sentence boundary). This
+        # eliminates the per-word ``disc.predict()`` call (which had a
+        # Python row-loop in ``_predict_live(b=b)`` that's untraceable
+        # under fullgraph=True and a per-word DtoH on CUDA).
         disc = self.discourse
         if disc is None:
             return None
-        pred, conf = disc.predict()
+        pred = self._disc_pred
+        conf = self._disc_conf
         if pred is None or conf is None:
             return None
         bias_full = disc.prime(pred, conf, self.stm_residual_scale)
@@ -5152,7 +6186,19 @@ class WordSpace(Space):
         rules so per-space dispatch always finds a rule (no
         ``default_rule`` code-level fallback).
         """
-        self._compose_generation += 1
+        # Per-compose cursor reset. The OLD semantics zeroed each
+        # per-tier SyntacticLayer cursor lazily on every compose() call
+        # (via the ``gen != _cursor_compose_gen`` branch keyed off this
+        # counter). On the carrier path we reproduce that EXACTLY with
+        # an unconditional tensor zero of all tiers' cursors at the top
+        # of compose -- no data-dependent Python branch on a per-batch
+        # nn.Module int (recompile cause #3 eliminated). The eager
+        # fallback keeps the original counter so ``work is None`` runs
+        # (tests / pre-soft_reset) stay byte-identical.
+        if self._work is not None:
+            self._work.cursor.zero_()   # per-compose cursor reset (faithfully replaces the gen-counter)
+        else:
+            self._compose_generation += 1
         # Two firing modes, gated by ``_grammar_is_default_only``
         # (computed from the configured grammar at __init__ time):
         #
@@ -5169,6 +6215,15 @@ class WordSpace(Space):
         # also gate this; the grammar XML is now the sole driver.
         if self._grammar_is_default_only:
             self.current_rules = self._default_compose_rules()
+            # Phase 2B: when the per-sentence carrier has an op_sel
+            # tensor allocated (n_ops>0), mirror the cursor's pick into
+            # a one-hot selection over the fixed ``TheGrammar.rules`` op
+            # axis so the tensor-driven executor in
+            # ``SymbolicSpace.forward`` reproduces the argmax cursor
+            # behaviour without any Python control flow in the traced
+            # body. The default-only path picks the natural unary fold
+            # (sigma at S / P, pi at C) per tier.
+            self._populate_op_sel_from_default_rules()
             return self.current_rules
         self.current_rules = self.chart.compose(
             input_vectors, self, subspace=subspace) or {}
@@ -5297,6 +6352,120 @@ class WordSpace(Space):
         self._default_generate_rules_cache = merged
         return merged
 
+    def _default_op_sel_rule_indices(self):
+        """Per-tier rule indices for the default-only one-hot ``op_sel``.
+
+        Returns ``dict[tier, int]`` mapping each tier to its forward
+        natural-fold rule index in the ``TheGrammar.rules`` op axis
+        (sigma at S/P, pi at C, etc.). Cached after first call — the
+        grammar is fixed at construction time. Mirrors the selection
+        the cursor path would make under ``_default_compose_rules``
+        (the first/only id in ``per_tier[tier][0]``).
+        """
+        cache = getattr(self, '_default_op_sel_rule_indices_cache', None)
+        if cache is not None:
+            return cache
+        per_tier = {}
+        for i, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn not in self._NATURAL_FOLD_METHODS:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                continue
+            if int(getattr(r, 'arity', 1)) != 1:
+                continue
+            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
+            if tier is None:
+                continue
+            # First forward natural-fold rule wins (mirrors the cursor's
+            # row-0/step-0 pick under ``_default_compose_rules``).
+            per_tier.setdefault(tier, i)
+        self._default_op_sel_rule_indices_cache = per_tier
+        return per_tier
+
+    def _populate_op_sel_from_default_rules(self):
+        """Write the per-tier one-hot ``op_sel`` for the default-only
+        compose path.
+
+        Mirrors what an argmax over the cursor's per-step rule list
+        would produce: for each tier present in ``_default_compose_rules``,
+        set ``work.op_sel[rule_idx] = 1.0`` for the chosen rule. No-op
+        when no carrier is allocated yet or when ``op_sel`` is None
+        (n_ops=0 configs — the legacy eager fallback runs unchanged).
+
+        Called from ``compose`` after ``current_rules`` is populated.
+        """
+        work = self._work
+        if work is None or work.op_sel is None:
+            return
+        work.op_sel.zero_()
+        for _tier, rule_idx in self._default_op_sel_rule_indices().items():
+            work.op_sel[int(rule_idx)] = 1.0
+
+    def selection_from_current_rules(self, tier, work):
+        """Phase 2A.6 selection-tensor CONTRACT (single source of op
+        selection for a tier).
+
+        This is the one place that decides, for ``tier``, *which*
+        grammar op(s) the per-step executor fires. It has two branches:
+
+        * **Eager / cursor fallback (op_sel is None — ALWAYS in 2A;
+          BYTE-IDENTICAL).**  When ``work is None`` or
+          ``work.op_sel is None`` (the chart is dormant — every current
+          config builds ``WorkingState`` via
+          ``new_working_state(..., n_ops=0)`` so ``op_sel`` is ``None``),
+          return the EXACT object today's code reads:
+          ``self.current_rules.get(tier)`` — the per-row / per-step
+          ``list[list[int]]`` (or ``None``) consumed by
+          ``SyntacticLayer._next_rule_name`` /
+          ``SyntacticLayer._row_zero_rules``. The caller threads this
+          straight back into the unchanged cursor loop, so the eager
+          path is a pure pass-through (zero behavioural delta).
+
+        * **Tensor-driven selection (Phase 2B — UNREACHED in 2A).**
+          When ``work.op_sel`` is populated (the pending Phase-2B chart
+          soft-superposition writes it), return the tensor pair
+          ``(work.op_sel, work.op_operands)``:
+
+            - ``op_sel`` is a 1-D ``float32`` tensor of shape
+              ``[n_ops]``: a SOFT weight per grammar op. The op axis is
+              the FIXED ``TheGrammar.rules`` index order — i.e.
+              ``op_sel[k]`` is the weight on ``TheGrammar.rules[k]``
+              (upward rules first, then downward; the same canonical
+              union built in ``Grammar`` / consulted by
+              ``_op_for_rule`` and ``_next_rule_name`` via
+              ``TheGrammar.rules[int(rule_id)]``). A one-hot ``op_sel``
+              therefore reproduces an argmax cursor pick of that rule.
+            - ``op_operands`` is an ``int64`` tensor of shape
+              ``[n_ops, 2]``: per-op operand routing (left, right) for
+              binary ops; ignored for the arity-1 path. The executor
+              must read ``TheGrammar.rules[k].arity`` to gate which
+              column applies.
+
+          The S-executor combines per-op contributions by a single
+          weighted reduce over this fixed op axis (NO shared in-place
+          accumulator — the proven ``_superposed_op`` / ``_embed_bpe``
+          pattern). This branch is dead code in Phase 2A because the
+          chart never populates ``op_sel`` yet; it is here only to LOCK
+          the contract for Phase 2B.
+
+        Returning the live ``current_rules`` object (not a copy) is
+        deliberate: the eager fallback MUST be the same Python object
+        the legacy code path used so byte-identity is structural, not
+        merely value-equal.
+        """
+        if work is None or getattr(work, 'op_sel', None) is None:
+            # Eager / dormant-chart fallback: hand back the EXACT
+            # per-step structure today's cursor loop consumes. No copy,
+            # no transformation -- byte-identical pass-through.
+            cur = getattr(self, 'current_rules', None)
+            return cur.get(tier) if cur else None
+        # Phase 2B (unreached in 2A -- op_sel is None everywhere): the
+        # tensor pair drives a weighted reduce over the fixed
+        # TheGrammar.rules op axis. Operand routing rides op_operands.
+        return (work.op_sel, work.op_operands)
+
     def gate_l1_loss(self, lam=0.0):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
         this WordSpace's per-space SyntacticLayers.
@@ -5348,7 +6517,7 @@ class WordSpace(Space):
 
         Walked on WordSpace construction when ``Chart.router_kind ==
         "signal"``. The chart's ``_ensure_signal_router()`` builds the
-        SignalRouter the first time we ask for it; we then call
+        LanguageLayer the first time we ask for it; we then call
         ``attach_unary_ops`` / ``attach_layer_ops`` per tier with the
         live grammar's parametrized fold modules.
 
@@ -5801,6 +6970,10 @@ class WordSpace(Space):
             self.arm_stm()
             self.clear_last_svo()
             self.clear_sentence_completed()
+            from Spaces import new_working_state
+            self._work = new_working_state(
+                n_tiers=3, device=self._stm_fired.device,
+                n_ops=len(TheGrammar.rules))
             # Reset every row's parse-side working state. clear_sentence
             # zeroes the WordSubSpace stack; the category and
             # reconstruction stacks fan out to the same row count.
@@ -5818,6 +6991,10 @@ class WordSpace(Space):
         self.arm_stm(b)
         self.clear_last_svo(b)
         self.clear_sentence_completed(b)
+        from Spaces import new_working_state
+        self._work = new_working_state(
+            n_tiers=3, device=self._stm_fired.device,
+            n_ops=len(TheGrammar.rules))
         # Per-row clear over the K cells [b*K, (b+1)*K) that own this
         # source row in the body's flattened microbatch view.
         K = self._row_K()

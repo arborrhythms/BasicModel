@@ -1,5 +1,17 @@
 # Architecture
 
+> **Status (2026-05-19):** the two-loop / word-at-a-time
+> **IR-reconstruction** objective is implemented and trains end-to-end
+> (eager): per-word gaussian-attentional input → MPHF→table percept
+> mapping → STM bounded soft shift-reduce → single sentence idea **S** →
+> `reverse(S)` (stored WordSpace derivations) → reconstruction vs the
+> complete unmasked input. Authoritative design + completion record:
+> `doc/plans/2026-05-18-two-loop-pipeline-architecture.md` (see
+> §CONSOLIDATED, §IMPLEMENTATION DETAILS, §MISSION COMPLETION STATUS).
+> Deferred (Phase-5): per-word-loop CUDA-graph capture + metalbaby perf
+> gate; owner-pending per-op `reverse()` duals; stale `MM_5M.ckpt`
+> retrain (#22).
+
 ## Overview
 
 BasicModel is a bidirectional neural architecture organized as a pipeline of five

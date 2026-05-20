@@ -2295,63 +2295,136 @@ class UnionLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 class LiftLayer(GrammarLayer):
-    """``S -> lift(VP, NP)`` -- rule-id annotator over the unconditional
-    subsymbolic loop.
+    """``S -> lift(VP, NP)`` -- C-tier gated round-trip with an
+    internal SigmaLayer.
 
-    Post-2026-05-13 refactor.  LiftLayer no longer owns or borrows a
-    substrate sigma; the composition between VP and NP happens in the
-    always-on subsymbolic loop
-    ``C = sigma_percept(pi_input(IS) + pi_concept(C_prev))``.
-    LiftLayer's role at S is purely to **annotate** that the composed
-    state is being framed as a predication (lift), distinguishing it
-    from the same state framed as an attribution (lower).
+    Phase 3 (2026-05-18, owner-ratified per
+    doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7).
+    Restores the pre-2026-05-13 VP-as-mask gated pattern, but with
+    sigma owned **internally** by this layer (its own learnable
+    SigmaLayer; not borrowed from PerceptualSpace.sigma). The chart
+    records rule_id ``lift`` on the surrounding cell.
 
-    Mechanically the layer computes the S-tier lattice OR via
-    ``Ops._lower_kernel`` (parameter-free), then the chart's parse
-    tree records the rule_id ``lift``.  Downstream readers (truth
-    layer, output decoder) consume the rule_id to discriminate
-    predication from attribution; the substrate composition is shared.
+    Forward (wired path, ``symbolicSpace`` populated):
 
-    See ``doc/Language.md`` §"Lift / lower — rule-id annotators" for
-    the cognitive rationale ("the boy runs" vs "the running boy" share
-    the same neural composition; lift/lower is a labelling).
+        cb     = symbolicSpace.subspace.what
+        vp_c   = cb.reverse(VP, project=True)
+        np_c   = cb.reverse(NP, project=True)
+        gated  = vp_c * np_c                 # VP is the mask
+        out_c  = self._sigma(gated)          # OWN internal SigmaLayer
+        return cb.forward(out_c)             # re-snap to S-bivector
+
+    "VP IS the mask": different VPs → different gates → different
+    outputs from the same internal sigma.  The internal sigma trains
+    (registered nn.Module).
+
+    Fallback (standalone construction, ``symbolicSpace is None``):
+    computes ``Ops._lower_kernel(left, right, mode='AND', kind='smooth')``
+    for back-compat with the parameter-free
+    ``GRAMMAR_LAYER_CLASSES['lift']()`` harness.
+
+    Reverse: lossy ``(parent, parent)`` pseudo-inverse.  The
+    elementwise gate ``vp_c * np_c`` is not bijective without VP;
+    per-op duals are tracked under D4.
     """
     rule_name  = "lift"
     arity      = 2
     invertible = True
-    tier       = 'P'
+    tier       = 'S'
 
     def __init__(self, symbolicSpace=None, perceptualSpace=None,
                  conceptualSpace=None):
         """Initialize LiftLayer.
 
-        ``symbolicSpace`` / ``perceptualSpace`` / ``conceptualSpace``
-        are accepted for API compatibility with the legacy
-        gated-substrate constructor signature; the new annotator path
-        does not use them.  They are stored via ``object.__setattr__``
-        to avoid nn.Module submodule tracking that would create
-        cycles in the module tree.
+        ``symbolicSpace`` drives the wired C-tier round-trip; when
+        ``None`` the forward falls back to the static lattice kernel.
+        ``perceptualSpace`` / ``conceptualSpace`` are accepted for API
+        compatibility with the chart's constructor call sites but
+        are no longer used (Phase 3: sigma is owned internally).
+        Back-refs are stored via ``object.__setattr__`` to avoid
+        nn.Module submodule cycles -- the Spaces are already
+        registered under the top-level Model.
+
+        Internal sigma is sized to the C-tier vector width
+        (``symbolicSpace.subspace.what.nDim``, which equals
+        ``concept_dim`` by the symbol_dim==concept_dim invariant).
+        Defaults follow SigmaLayer's standard config:
+        ``invertible=True, nonlinear=True`` (the minimal configuration
+        that exposes the LDU reverse path and the tanh nonlinearity).
         """
         super().__init__(0, 0)
+        # ``object.__setattr__`` bypasses nn.Module submodule tracking
+        # so the back-references don't create cycles in the module
+        # tree (Spaces are already registered under the top-level
+        # Model).
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        # Internal SigmaLayer -- Phase 3: owned, not borrowed.  Sized
+        # to the C-tier vector width out of ``cb.reverse(..., project=True)``
+        # (the symbol codebook's nDim).  When ``symbolicSpace is None``
+        # we leave ``_sigma=None`` and the forward falls back to the
+        # static lattice kernel.
+        if symbolicSpace is not None:
+            cb = symbolicSpace.subspace.what
+            c_dim = int(cb.nDim)
+            self._sigma = SigmaLayer(
+                nInput=c_dim, nOutput=c_dim,
+                invertible=True, nonlinear=True)
+            self.layers.append(self._sigma)
+        else:
+            self._sigma = None
+
+    def _gated_sigma_internal(self, vp_bivec, np_bivec):
+        """Shared helper: elementwise C-tier gate, then internal ``_sigma``.
+
+        Phase 3 implementation notes (post-bivector-retirement
+        reconciliation, doc/plans/2026-05-18 §D7):
+
+        The spec's literal ``cb.reverse(VP, project=True)`` /
+        ``cb.forward(out_c, project=True)`` round-trip refers to the
+        legacy SVD ``project`` codebook path that was retired
+        2026-05-13.  In the current Codebook API:
+          * ``cb.reverse(y)`` is a *quantize-snap* to the nearest
+            prototype (and additionally mutates ``_active_payload``
+            via ``setW``, which would corrupt repeated chart calls).
+          * ``cb.forward(y, project=True)`` raises TypeError --
+            ``project`` is not in the signature.
+
+        The retired ``project=True`` was a *continuous* SVD
+        projection, NOT a quantize-snap; no equivalent exists on
+        the current Codebook API.  Under the post-bivector-
+        retirement invariant ``symbol_dim == concept_dim``, the
+        "lift to C-tier and re-snap to S-bivector" round-trip is
+        width-preserving and degenerates to identity at the spatial
+        level when the legacy SVD projection is unavailable.  We
+        therefore apply only the meaningful Phase 3 operation:
+        the elementwise gate followed by the internal SigmaLayer.
+        The codebook stays the symbol substrate; the internal
+        sigma is the learnable composition operator.
+        """
+        vp_c = vp_bivec
+        np_c = np_bivec
+        gated = vp_c * np_c
+        return self._sigma.forward(gated)
 
     def forward(self, left, right):
-        """Forward: S-tier lattice composition; rule-id ``lift`` is
-        recorded by the chart on the surrounding parse cell.
+        """Forward: C-tier VP-gated round-trip via internal ``_sigma``.
 
-        ``left`` is VP (the predicated operand), ``right`` is NP.
+        ``left`` is VP (the gating operand), ``right`` is NP (the
+        content riding through sigma).  Fallback to the static
+        lattice kernel when ``symbolicSpace`` was not wired.
         """
-        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+        if self.symbolicSpace is None:
+            return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+        return self._gated_sigma_internal(left, right)
 
     def reverse(self, parent):
         """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
 
-        The lattice AND is not bijective in either operand.  Inherit
-        the lossy reverse convention from the legacy LiftLayer; the
-        chart's generate path uses the rule_id to backtrace rather
-        than relying on a bijective inverse here.
+        The elementwise gate ``vp_c * np_c`` is not bijective without
+        VP -- we cannot recover NP from gated_NP alone.  Per-op duals
+        are tracked under doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D4.
         """
         return parent, parent
 
@@ -2365,55 +2438,98 @@ class LiftLayer(GrammarLayer):
 
 
 class LowerLayer(GrammarLayer):
-    """``S -> lower(VP, NP)`` -- rule-id annotator over the unconditional
-    subsymbolic loop.
+    """``S -> lower(ADJ, NP)`` -- C-tier gated round-trip with an
+    internal PiLayer.
 
-    Symmetric to ``LiftLayer`` but records rule_id ``lower`` instead
-    of ``lift``.  The composition between VP and NP happens in the
-    always-on subsymbolic loop (`sigma_percept(pi_input + pi_concept)`);
-    LowerLayer's role at S is purely to annotate that the composed
-    state is being framed as an attribution (lower), distinguishing
-    it from the same state framed as a predication (lift).
+    Phase 3 (2026-05-18, owner-ratified per
+    doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7).
+    Symmetric to ``LiftLayer`` but with two ratified asymmetries:
 
-    Mechanically the layer computes the S-tier lattice OR via
-    ``Ops._lift_kernel`` (parameter-free); the chart's parse tree
-    records the rule_id ``lower``.
+      * Gating operand is **ADJ** (attribute) instead of VP -- the
+        post-Phase-3 lift/lower asymmetry lives in *which operand
+        gates the other*, not in the post-gate transform alone.
+      * Post-gate transform is **internal** ``PiLayer`` (multiplicative
+        log-domain fold), not the additive ``SigmaLayer`` used by lift.
 
-    Post-2026-05-13: no internal substrate sigma/pi; LiftLayer and
-    LowerLayer differ only in their static lattice kernel and the
-    rule_id stamped on the parse cell.
+    Forward (wired path, ``symbolicSpace`` populated):
+
+        cb     = symbolicSpace.subspace.what
+        adj_c  = cb.reverse(ADJ, project=True)
+        np_c   = cb.reverse(NP, project=True)
+        gated  = adj_c * np_c                # ADJ is the mask
+        out_c  = self._pi(gated)             # OWN internal PiLayer
+        return cb.forward(out_c)             # re-snap to S-bivector
+
+    Fallback (standalone construction, ``symbolicSpace is None``):
+    computes ``Ops._lift_kernel(left, right, mode='OR', kind='smooth')``
+    for back-compat with the parameter-free harness.
+
+    Reverse: lossy ``(parent, parent)``; see ``LiftLayer.reverse``.
     """
     rule_name  = "lower"
     arity      = 2
     invertible = True
-    tier       = 'P'
+    tier       = 'S'
 
-    def __init__(self, symbolicSpace=None, conceptualSpace=None,
-                 perceptualSpace=None):
+    def __init__(self, symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None):
         """Initialize LowerLayer.
 
-        Constructor accepts ``symbolicSpace`` / ``conceptualSpace`` /
-        ``perceptualSpace`` for API compatibility with the legacy
-        gated-substrate signature; the new annotator path does not
-        use them.
+        ``symbolicSpace`` drives the wired C-tier round-trip; when
+        ``None`` the forward falls back to the static lattice kernel.
+        ``perceptualSpace`` / ``conceptualSpace`` are accepted for API
+        compatibility with the chart's constructor call sites but
+        are no longer used (Phase 3: pi is owned internally).
+
+        Internal pi is sized to the C-tier vector width
+        (``symbolicSpace.subspace.what.nDim``).  Defaults:
+        ``invertible=True, nonlinear=True``.
         """
         super().__init__(0, 0)
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
-        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        if symbolicSpace is not None:
+            cb = symbolicSpace.subspace.what
+            c_dim = int(cb.nDim)
+            self._pi = PiLayer(
+                nInput=c_dim, nOutput=c_dim,
+                invertible=True, nonlinear=True)
+            self.layers.append(self._pi)
+        else:
+            self._pi = None
+
+    def _gated_pi_internal(self, adj_bivec, np_bivec):
+        """Shared helper: elementwise C-tier gate, then internal ``_pi``.
+
+        See ``LiftLayer._gated_sigma_internal`` for the rationale on
+        why the spec's literal ``cb.reverse(..., project=True)`` /
+        ``cb.forward(..., project=True)`` round-trip degenerates to
+        identity at the spatial level in the post-bivector-retirement
+        codebase (``symbol_dim == concept_dim``; legacy SVD
+        ``project`` path was retired 2026-05-13 with no continuous-
+        projection equivalent on the quantize-mode Codebook).
+        """
+        adj_c = adj_bivec
+        np_c = np_bivec
+        gated = adj_c * np_c
+        return self._pi.forward(gated)
 
     def forward(self, left, right):
-        """Forward: S-tier lattice composition; rule-id ``lower`` is
-        recorded by the chart on the surrounding parse cell.
+        """Forward: C-tier ADJ-gated round-trip via internal ``_pi``.
 
-        ``left`` is VP (the attributed operand), ``right`` is NP.
+        ``left`` is ADJ (the gating operand), ``right`` is NP.
+        Fallback to the static lattice kernel when ``symbolicSpace``
+        was not wired.
         """
-        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+        if self.symbolicSpace is None:
+            return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+        return self._gated_pi_internal(left, right)
 
     def reverse(self, parent):
         """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
 
-        See ``LiftLayer.reverse`` for the lattice-invertibility note.
+        See ``LiftLayer.reverse`` for the gating-invertibility note.
         """
         return parent, parent
 
@@ -9133,10 +9249,11 @@ class VectorQuantize(nn.Module):
         rotation_trick=False,
         eps=1e-5,
         codebook_retire=False,
+        learnable_codebook=False,
         **kwargs,
     ):
         """Initialize VectorQuantize; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
@@ -9148,6 +9265,17 @@ class VectorQuantize(nn.Module):
         self.threshold_ema_dead_code = int(threshold_ema_dead_code)
         self.rotation_trick = bool(rotation_trick)
         self.eps = float(eps)
+        # Learnable-codebook mode (Phase 1A.1 -- perceptual codebook).
+        # When True the in-call EMA Parameter mutation is suppressed (the
+        # codebook is no longer rewritten in ``forward``) and the STE is
+        # switched to the codebook-attached form so the codebook
+        # ``nn.Parameter`` receives the downstream task-loss gradient and
+        # is trained purely by ``optimizer.step`` (eager, OUTSIDE the
+        # traced/compiled forward). This makes ``forward`` idempotent:
+        # no persistent buffer/Parameter is mutated in-call. Default
+        # False preserves the byte-identical EMA path used by the
+        # Conceptual/Symbolic codebooks (single-writer invariant).
+        self.learnable_codebook = bool(learnable_codebook)
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.
@@ -9379,7 +9507,15 @@ class VectorQuantize(nn.Module):
         # side and STE is a no-op for the codes) so codes never track the
         # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
         # ``expire_codes_`` in vector_quantize_pytorch.
-        if self.training and not freeze_codebook:
+        #
+        # ``learnable_codebook`` (Phase 1A.1) suppresses this in-call
+        # Parameter mutation entirely -- the exact same gate as
+        # ``freeze_codebook`` -- because in that mode the codebook is
+        # trained by the downstream task-loss gradient (via the
+        # codebook-attached STE below) in the eager ``optimizer.step``,
+        # not by an in-forward EMA write. This is what makes ``forward``
+        # idempotent for the perceptual codebook.
+        if self.training and not freeze_codebook and not self.learnable_codebook:
             with torch.no_grad():
                 self._sync_ema_buffers()
                 flat_f = flat.float()
@@ -9467,9 +9603,28 @@ class VectorQuantize(nn.Module):
                         )
 
         # Gradient estimator for the quantized output: rotation trick when
-        # requested and the input carries gradient, otherwise vanilla STE.
+        # requested and the input carries gradient, otherwise STE.
+        #
+        # Two STE forms, identical in FORWARD VALUE (both equal
+        # ``quantized_raw``) and identical in the encoder gradient
+        # (``d/dx = identity``); they differ only in whether the
+        # codebook ``nn.Parameter`` receives gradient:
+        #
+        #   * vanilla (EMA codebooks): ``x + (quantized_raw - x).detach()``
+        #     -- ``quantized_raw`` is detached, so the codebook gets NO
+        #     gradient from this output (it is trained by the EMA write
+        #     above instead).
+        #   * learnable (Phase 1A.1, perceptual codebook):
+        #     ``quantized_raw + (x - x.detach())`` -- ``quantized_raw``
+        #     stays attached, so the downstream task-loss gradient flows
+        #     into the selected codebook rows. With EMA suppressed this
+        #     is the ONLY codebook training signal; it lands in the eager
+        #     ``optimizer.step`` (outside the traced forward), so the
+        #     forward performs no in-call persistent mutation.
         if self.rotation_trick and self.training and x.requires_grad:
             quantized = self._rotate_to(x, quantized_raw)
+        elif self.learnable_codebook:
+            quantized = quantized_raw + (x - x.detach())
         else:
             quantized = x + (quantized_raw - x).detach()
         indices = indices.reshape(original_shape[:-1])

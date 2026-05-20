@@ -1,17 +1,33 @@
-"""Lift/Lower factorization acceptance (post-2026-05-12 refactor).
+"""Lift/Lower factorization acceptance (Phase 3, 2026-05-18 owner-ratified).
 
-The refactor: LiftLayer and LowerLayer become elementwise-gate-then-
-substrate-sigma/pi operators. The gate is ``VP_c * NP_c`` at C-tier;
-the substrate sigma (P.sigma, now at concept_dim) runs for lift; the
-substrate pi (C.pi) runs for lower.
+Phase 3 design (doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7):
+LiftLayer and LowerLayer become elementwise-gate-then-internal-sigma/pi
+operators at the S tier.  The gate is the elementwise product of the two
+operands at the C-tier:
+
+    cb     = symbolicSpace.subspace.what
+    left_c  = cb.reverse(left, project=True)
+    right_c = cb.reverse(right, project=True)
+    gated   = left_c * right_c
+    out_c   = self._sigma(gated)    # LiftLayer; own internal SigmaLayer
+                                     #   (or self._pi for LowerLayer)
+    return cb.forward(out_c)
+
+Lift's gating operand is VP (predication); Lower's gating operand is ADJ
+(attribution).  Both layers own their internal SigmaLayer / PiLayer (NOT
+borrowed from PerceptualSpace.sigma / ConceptualSpace.pi); the layers
+train independently.  When constructed parameter-free
+(``LiftLayer()`` / ``LowerLayer()``), forward falls back to the static
+lattice kernel (``Ops._lower_kernel`` for lift / ``Ops._lift_kernel`` for
+lower) for the standalone-test harness path.
 
 Tests in this file:
-  * Different VPs produce different lift outputs for the same NP --
-    proves the gate factorization works (VP determines the operation).
-  * Lift vs Lower differ on the same (VP, NP) -- proves the sigma vs
-    pi post-gate choice is what gives lift/lower their asymmetry.
-  * ``raw_gate`` learnable parameter is gone from both layers.
-  * ``sigma_S`` / ``pi_S`` separate layers on SymbolicSpace are gone.
+  * ``raw_gate`` / ``sigma_S`` / ``pi_S`` retirements still hold.
+  * Wired path: different gating operands produce different outputs.
+  * Wired path: lift vs lower differ on the same (gate, NP) input.
+  * Wired path: the internal sigma / pi expose trainable parameters.
+  * Fallback path: parameter-free construction routes to the static
+    lattice kernel (unchanged from the post-2026-05-13 contract).
 """
 import os
 import sys
@@ -44,16 +60,20 @@ def _fresh_model():
 
 
 def _random_bivec(shape, seed=0):
-    """Random non-negative bivector activation in [0, 1]^shape.
+    """Random bivector activation in [-1, 1]^shape.
 
-    Device-agnostic: an explicit ``torch.Generator()`` is always CPU and
-    mismatches ``torch.rand``'s active default device (MPS on this box,
-    CUDA on metalbaby). Seed the global RNG (covers every device's
+    Internal sigma uses ``atanh(x.clamp(-1+eps, 1-eps))`` on its entry
+    transform, so operand values are bounded to ``[-1, 1]`` to keep the
+    forward in the valid pre-image of tanh.
+
+    Device-agnostic: seed the global RNG (covers every device's
     default generator) and let ``torch.rand`` place the tensor on the
     active device.
     """
     torch.manual_seed(seed)
-    return torch.rand(*shape)
+    # Scale rand from [0, 1) into [-1, 1) with a slight inset so the
+    # internal SigmaLayer / PiLayer's atanh entry stays finite.
+    return torch.rand(*shape) * 1.8 - 0.9
 
 
 class TestRawGateRetired(unittest.TestCase):
@@ -106,7 +126,7 @@ class TestSigmaSPiSRetired(unittest.TestCase):
 
 
 class TestLiftLowerFactorization(unittest.TestCase):
-    """The elementwise-gate-then-sigma/pi factorization works as designed."""
+    """The elementwise-gate-then-internal-sigma/pi factorization works."""
 
     @classmethod
     def setUpClass(cls):
@@ -126,19 +146,21 @@ class TestLiftLowerFactorization(unittest.TestCase):
                           conceptualSpace=self.model.conceptualSpace)
 
     def _bivec_for_test(self):
-        """Build random `[B, V_S, 2]` bivector activations matching S's shape."""
+        """Build random ``[B, V_S, D]`` bivector activations matching S's shape."""
         sym = self.model.symbolicSpace
-        V_S = int(sym.subspace.what.nVectors)
+        cb = sym.subspace.what
+        V_S = int(cb.nVectors)
+        D = int(cb.nDim)
         B = 1
-        return B, V_S
+        return B, V_S, D
 
     def test_different_VPs_give_different_lift_outputs(self):
-        """Different VP bivectors → different gates → different lift output for the same NP."""
+        """Different VP bivectors -> different gates -> different lift outputs."""
         lift = self._make_lift()
-        B, V_S = self._bivec_for_test()
-        NP = _random_bivec((B, V_S, 2), seed=11)
-        VP_a = _random_bivec((B, V_S, 2), seed=42)
-        VP_b = _random_bivec((B, V_S, 2), seed=43)
+        B, V_S, D = self._bivec_for_test()
+        NP = _random_bivec((B, V_S, D), seed=11)
+        VP_a = _random_bivec((B, V_S, D), seed=42)
+        VP_b = _random_bivec((B, V_S, D), seed=43)
         with torch.no_grad():
             out_a = lift.forward(VP_a, NP)
             out_b = lift.forward(VP_b, NP)
@@ -147,55 +169,136 @@ class TestLiftLowerFactorization(unittest.TestCase):
                          "lift outputs for the same NP -- this is the "
                          "VP-IS-the-mask factorization at work.")
 
-    def test_lift_vs_lower_differ(self):
-        """Same (VP, NP) -> lift and lower differ (sigma vs pi asymmetry)."""
+    def test_different_ADJs_give_different_lower_outputs(self):
+        """Different ADJ bivectors -> different gates -> different lower outputs."""
+        lower = self._make_lower()
+        B, V_S, D = self._bivec_for_test()
+        NP = _random_bivec((B, V_S, D), seed=51)
+        ADJ_a = _random_bivec((B, V_S, D), seed=52)
+        ADJ_b = _random_bivec((B, V_S, D), seed=53)
+        with torch.no_grad():
+            out_a = lower.forward(ADJ_a, NP)
+            out_b = lower.forward(ADJ_b, NP)
+        self.assertFalse(torch.allclose(out_a, out_b, atol=1e-6),
+                         "Different ADJ gates must produce different "
+                         "lower outputs for the same NP -- ADJ-IS-the-mask.")
+
+    def test_lift_vs_lower_differ_after_perturbation(self):
+        """Same (gate, NP) -> lift and lower differ once their internal
+        sigma / pi diverge from identity init.
+
+        Phase 3 design note: at fresh construction, both ``_sigma``
+        (SigmaLayer) and ``_pi`` (PiLayer) initialize with the
+        identity LDU (``W=I, bias=0``).  The underlying numerical
+        kernels then collapse to identity at init -- so day-0
+        outputs are numerically indistinguishable.  The asymmetry
+        between additive sigma and multiplicative pi materialises
+        once training (or any explicit weight perturbation) takes
+        the diagonals away from 1.  The test perturbs one
+        diagonal element of each layer with *different* signs and
+        verifies the outputs then diverge -- proving the
+        sigma-vs-pi post-gate transforms are structurally
+        independent learnable maps.
+        """
         lift = self._make_lift()
         lower = self._make_lower()
-        B, V_S = self._bivec_for_test()
-        NP = _random_bivec((B, V_S, 2), seed=21)
-        VP = _random_bivec((B, V_S, 2), seed=22)
+        # Perturb the LDU diagonals so the two layers move off
+        # identity in different directions; this is the smallest
+        # change that proves the structural asymmetry without
+        # depending on a full training step.
         with torch.no_grad():
-            out_lift = lift.forward(VP, NP)
-            out_lower = lower.forward(VP, NP)
+            for p in lift._sigma.parameters():
+                if p.dim() == 1 and p.shape[0] > 0:
+                    p.add_(0.25)
+                    break
+            for p in lower._pi.parameters():
+                if p.dim() == 1 and p.shape[0] > 0:
+                    p.add_(-0.25)
+                    break
+        B, V_S, D = self._bivec_for_test()
+        NP = _random_bivec((B, V_S, D), seed=21)
+        GATE = _random_bivec((B, V_S, D), seed=22)
+        with torch.no_grad():
+            out_lift = lift.forward(GATE, NP)
+            out_lower = lower.forward(GATE, NP)
         self.assertFalse(torch.allclose(out_lift, out_lower, atol=1e-6),
-                         "Lift and Lower must differ on the same "
-                         "(VP, NP) -- the sigma-vs-pi post-gate "
-                         "transform is what gives them asymmetry.")
+                         "Lift and Lower must differ once their "
+                         "internal sigma / pi diverge from identity "
+                         "init -- the sigma-vs-pi post-gate transforms "
+                         "are independent learnable maps.")
 
-    def test_lift_uses_static_lattice_kernel(self):
-        """LiftLayer is a rule-id annotator: forward always computes
-        the static lattice AND via ``Ops._lower_kernel`` (post 2026-05-13
-        refactor; substrate sigma is no longer borrowed).
+    def test_lift_has_internal_sigma_trainable(self):
+        """Wired LiftLayer owns an internal ``_sigma`` with trainable params."""
+        lift = self._make_lift()
+        self.assertIsNotNone(lift._sigma,
+                             "Wired LiftLayer must own an internal SigmaLayer.")
+        # The internal sigma's params must be trainable.
+        from Layers import SigmaLayer
+        self.assertIsInstance(lift._sigma, SigmaLayer)
+        params = list(lift._sigma.parameters())
+        self.assertGreater(len(params), 0,
+                           "Internal SigmaLayer must expose nn.Parameters.")
+        self.assertTrue(all(p.requires_grad for p in params),
+                        "Internal SigmaLayer params must be trainable.")
+
+    def test_lower_has_internal_pi_trainable(self):
+        """Wired LowerLayer owns an internal ``_pi`` with trainable params."""
+        lower = self._make_lower()
+        self.assertIsNotNone(lower._pi,
+                             "Wired LowerLayer must own an internal PiLayer.")
+        from Layers import PiLayer
+        self.assertIsInstance(lower._pi, PiLayer)
+        params = list(lower._pi.parameters())
+        self.assertGreater(len(params), 0,
+                           "Internal PiLayer must expose nn.Parameters.")
+        self.assertTrue(all(p.requires_grad for p in params),
+                        "Internal PiLayer params must be trainable.")
+
+    def test_lift_fallback_uses_static_lattice_kernel(self):
+        """Parameter-free LiftLayer falls back to the static lattice AND
+        (``Ops._lower_kernel``).  This is the standalone-test harness
+        path for ``GRAMMAR_LAYER_CLASSES['lift']()``.
         """
         from Layers import LiftLayer, Ops
         layer = LiftLayer(symbolicSpace=None, perceptualSpace=None)
-        B, V_S = self._bivec_for_test()
-        NP = _random_bivec((B, V_S, 2), seed=31)
-        VP = _random_bivec((B, V_S, 2), seed=32)
+        # Fallback path is the lattice op on [-1, 1] non-negative
+        # bivectors; reuse the [0, 1] shape that the legacy harness
+        # exercised.
+        B = 1
+        V_S = 2
+        D = 10
+        torch.manual_seed(31)
+        NP = torch.rand(B, V_S, D)
+        torch.manual_seed(32)
+        VP = torch.rand(B, V_S, D)
         with torch.no_grad():
             out = layer.forward(VP, NP)
             expected = Ops._lower_kernel(VP, NP, mode='AND', kind='smooth')
         torch.testing.assert_close(out, expected,
-                                   msg="LiftLayer must compute the static "
-                                       "lattice kernel; substrate sigma "
-                                       "borrowing was retired.")
+                                   msg="Parameter-free LiftLayer must "
+                                       "compute the static lattice kernel "
+                                       "(standalone-test fallback path).")
 
-    def test_lower_uses_static_lattice_kernel(self):
-        """LowerLayer is a rule-id annotator: forward always computes
-        the static lattice OR via ``Ops._lift_kernel``.
+    def test_lower_fallback_uses_static_lattice_kernel(self):
+        """Parameter-free LowerLayer falls back to the static lattice OR
+        (``Ops._lift_kernel``).
         """
         from Layers import LowerLayer, Ops
         layer = LowerLayer(symbolicSpace=None, conceptualSpace=None)
-        B, V_S = self._bivec_for_test()
-        NP = _random_bivec((B, V_S, 2), seed=41)
-        VP = _random_bivec((B, V_S, 2), seed=42)
+        B = 1
+        V_S = 2
+        D = 10
+        torch.manual_seed(41)
+        NP = torch.rand(B, V_S, D)
+        torch.manual_seed(42)
+        ADJ = torch.rand(B, V_S, D)
         with torch.no_grad():
-            out = layer.forward(VP, NP)
-            expected = Ops._lift_kernel(VP, NP, mode='OR', kind='smooth')
+            out = layer.forward(ADJ, NP)
+            expected = Ops._lift_kernel(ADJ, NP, mode='OR', kind='smooth')
         torch.testing.assert_close(out, expected,
-                                   msg="LowerLayer must compute the static "
-                                       "lattice kernel; substrate pi "
-                                       "borrowing was retired.")
+                                   msg="Parameter-free LowerLayer must "
+                                       "compute the static lattice kernel "
+                                       "(standalone-test fallback path).")
 
 
 if __name__ == "__main__":

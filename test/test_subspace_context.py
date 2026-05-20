@@ -104,21 +104,35 @@ def test_subspace_has_context_fields():
     assert ss.serial_cache == {}
 
 
-def test_subspace_copy_context_copies_all_fields():
+def test_subspace_copy_context_copies_errors_and_serial_cache():
     src = _mk_subspace()
-    sentinel_ws = object()
-    src.wordSpace = sentinel_ws
     src.errors.add("foo", torch.tensor(1.0))
     src.serial_cache[42] = torch.zeros(2, 4)
 
     dst = _mk_subspace()
     dst.copy_context(src)
 
-    assert dst.wordSpace is sentinel_ws
     # errors carry by reference: both subspaces see the same Error instance
     # so downstream .add() calls continue to accumulate.
     assert dst.errors is src.errors
     assert dst.serial_cache is src.serial_cache
+
+
+def test_subspace_copy_context_does_not_copy_wordSpace():
+    # wordSpace is build-stable, stamped once eagerly by BasicModel via
+    # attach_wordSpace; re-assigning it inside copy_context would enter
+    # nn.Module.__setattr__'s submodule-registration path and break
+    # fullgraph=True tracing. Pin the negative contract here.
+    src = _mk_subspace()
+    sentinel_ws = object()
+    src.wordSpace = sentinel_ws
+
+    dst = _mk_subspace()
+    dst_ws_before = dst.wordSpace
+    dst.copy_context(src)
+
+    assert dst.wordSpace is dst_ws_before
+    assert dst.wordSpace is not sentinel_ws
 
 
 def test_subspace_copy_context_none_is_noop():

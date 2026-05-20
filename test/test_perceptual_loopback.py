@@ -60,11 +60,20 @@ def _fresh_model():
 class TestForwardArityContract(unittest.TestCase):
     """Explicit two-input forward signatures replace _sourced_input/refs."""
 
+    # Phase 1.5 / Part C: Phase 1.1 threaded a per-sentence ``work=None``
+    # carrier through every Space.forward/reverse. These content-arity
+    # guards exclude the ``work`` carrier from the count AND additionally
+    # assert it exists with default ``None`` -- strengthening the contract
+    # (the Phase-1 carrier param is now locked too), not weakening it.
+    # Same pattern Phase 1.1 applied in
+    # test_phase2_pipeline_primitives.py::test_space_forward_arities.
+
     def test_perceptual_forward_arity(self):
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.PerceptualSpace.forward)
-        params = [n for n in sig.parameters if n != "self"]
+        params = [n for n in sig.parameters
+                  if n != "self" and n != "work"]
         self.assertEqual(len(params), 2,
                          f"PerceptualSpace.forward must be "
                          f"(IS_subspace, CS_subspaceForPS=None); got {params}")
@@ -72,27 +81,50 @@ class TestForwardArityContract(unittest.TestCase):
         second = sig.parameters[params[1]]
         self.assertIsNot(second.default, inspect.Parameter.empty,
                          "CS_subspaceForPS must default to None.")
+        # Phase 1 carrier must exist and be optional (defaulted).
+        self.assertIn("work", sig.parameters,
+                       "PerceptualSpace.forward missing the Phase 1 "
+                       "'work' carrier.")
+        self.assertIsNone(sig.parameters["work"].default,
+                          "PerceptualSpace.forward 'work' must default "
+                          "to None.")
 
     def test_conceptual_forward_arity(self):
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.ConceptualSpace.forward)
-        params = [n for n in sig.parameters if n != "self"]
+        params = [n for n in sig.parameters
+                  if n != "self" and n != "work"]
         self.assertEqual(len(params), 2,
                          f"ConceptualSpace.forward must be "
                          f"(PS_subspace, SS_subspace=None); got {params}")
         self.assertIsNot(sig.parameters[params[1]].default,
                          inspect.Parameter.empty,
                          "SS_subspace must default to None.")
+        # Phase 1 carrier must exist and be optional (defaulted).
+        self.assertIn("work", sig.parameters,
+                       "ConceptualSpace.forward missing the Phase 1 "
+                       "'work' carrier.")
+        self.assertIsNone(sig.parameters["work"].default,
+                          "ConceptualSpace.forward 'work' must default "
+                          "to None.")
 
     def test_symbolic_forward_single_arg(self):
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.SymbolicSpace.forward)
-        params = [n for n in sig.parameters if n != "self"]
+        params = [n for n in sig.parameters
+                  if n != "self" and n != "work"]
         self.assertEqual(len(params), 1,
                          f"SymbolicSpace.forward must be "
                          f"(CS_subspaceForSS); got {params}")
+        # Phase 1 carrier must exist and be optional (defaulted).
+        self.assertIn("work", sig.parameters,
+                       "SymbolicSpace.forward missing the Phase 1 "
+                       "'work' carrier.")
+        self.assertIsNone(sig.parameters["work"].default,
+                          "SymbolicSpace.forward 'work' must default "
+                          "to None.")
 
     def test_sourced_input_and_read_event_removed(self):
         import Spaces

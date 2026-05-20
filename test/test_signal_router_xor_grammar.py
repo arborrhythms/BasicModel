@@ -1,5 +1,5 @@
 """End-to-end acceptance: stack NOT (unary) in front of AND/OR (binary)
-inside one SignalRouter and confirm the dispatch produces sensible
+inside one LanguageLayer and confirm the dispatch produces sensible
 per-tier rule selections plus full-graph gradient flow.
 
 The ops here are minimal float-tensor proxies for AND / OR / NOT;

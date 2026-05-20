@@ -613,6 +613,24 @@ class BaseModel(Mereology, nn.Module):
         if getattr(self, 'wordSpace', None) is not None:
             self.wordSpace.serial_mode = False
 
+        # Per-word ground-truth cursor enable. Mirrors the retired
+        # serial-boolean plumbing above (model computes a bool from its
+        # own determination, then pushes it onto a Space) -- InputSpace
+        # was not in the serial push list, so it is added here. The
+        # predicate is "grammar enabled": ``self.useGrammar`` is derived
+        # by ``_derive_use_grammar`` (set in create() above) and is
+        # exactly "all" when the grammar XML carries a real, non-substrate
+        # rule (chart fires / per-stage merge glue wired) else "none".
+        # ``!= "none"`` is therefore precisely "there is grammar
+        # enabled". INERT this increment: ``InputSpace.next_word`` is the
+        # sole reader of ``_per_word_enabled`` and has no live caller, so
+        # setting it True for grammar configs is byte-identical (the
+        # live whole-slab ``forward`` is unchanged). Eager build/init
+        # (here, post-create) -- never in the traced forward.
+        if getattr(self, 'inputSpace', None) is not None:
+            self.inputSpace._per_word_enabled = bool(
+                getattr(self, 'useGrammar', 'none') != 'none')
+
         # Attention on ConceptualSpace violates position locality required
         # by serial_mode; downgrade conceptualSpace only. PerceptualSpace
         # is unaffected.
@@ -1727,11 +1745,15 @@ class BasicModel(BaseModel):
         if isinstance(symbols, torch.Tensor):
             self.outputSpace.subspace.set_event(symbols)
             symbols = self.outputSpace.subspace
-        self.outputs = self.outputSpace.forward(symbols)
+        # Phase 1.5: ``self.outputs`` was the subsumed back-ref alias
+        # name; this Finish-local produce-then-materialize is the only
+        # writer/reader, so keep it as a local (no ``self`` attribute,
+        # behaviour identical).
+        outputs = self.outputSpace.forward(symbols)
         if self.outputSpace.nonlinear_output:
-            outputData = self.outputs.materialize(mode="activation")
+            outputData = outputs.materialize(mode="activation")
         else:
-            outputData = self.outputs.materialize()
+            outputData = outputs.materialize()
         outputData = self.normalizer.denormalize(outputData, which="output")
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
@@ -1934,16 +1956,28 @@ class BasicModel(BaseModel):
         return out
 
     def create_ir_mask(self, percept_subspace):
-        """IR mode: replace embeddings at random positions with NULL_PERCEPT.
+        """Whole-slab IR mask (BERT-style hide-a-token; UNCHANGED).
 
-        Captures the pre-mask embedded event as the loss target and stashes
-        it on ``self`` along with the per-position bool mask so the loss
-        path can compute reconstruction error at masked positions only.
+        This is the **non-grammar / whole-slab** masking, kept
+        byte-identical: ``_per_word_enabled=False`` configs
+        (model.xml / idempotent.xml) take ``_forward_body``'s whole-slab
+        path which calls this once on pass-0's perceptual event, and
+        ``runBatch``'s ``compute_masked`` consumes
+        ``_ir_pre_mask_input`` / ``_ir_mask_positions`` exactly as
+        before. Rework B's gaussian attentional window
+        (:meth:`apply_gaussian_window`) + D3 reconstruction loss replace
+        THIS only on the per-word grammar path; the whole-slab path is
+        untouched (the spec's "whole-slab byte-identical" invariant).
 
-        Mask injection edits only the WHAT slice of the muxed event so the
-        body still has WHERE/WHEN positional info at masked slots.
-        Padding slots (codebook index 0, byte ``\\x00``) are excluded so
-        the model isn't asked to "predict" trailing zeros.
+        Replaces embeddings at random positions with NULL_PERCEPT.
+        Captures the pre-mask embedded event as the loss target and
+        stashes it on ``self`` along with the per-position bool mask so
+        the loss path can compute reconstruction error at masked
+        positions only. Mask injection edits only the WHAT slice of the
+        muxed event so the body still has WHERE/WHEN positional info at
+        masked slots. Padding slots (codebook index 0, byte ``\\x00``)
+        are excluded so the model isn't asked to "predict" trailing
+        zeros.
         """
         self._ir_mask_positions = None
         self._ir_pre_mask_input = None
@@ -2010,6 +2044,81 @@ class BasicModel(BaseModel):
             m, nv, new_event[..., :nWhat])
         event_basis.setW(new_event)
 
+    def gaussian_window_word(self, full_seq, center_k):
+        """Rework B (1): GAUSSIAN ATTENTIONAL WINDOW over the WHOLE
+        percept sequence, centered at the processed word position
+        ``center_k``; returns word k's contextual representation
+        (``[B, 1, D]``).
+
+        This **replaces wholesale** the prior BERT-style hide-a-token
+        ``create_ir_mask`` **on the per-word grammar path**. It is
+        **NOT** target-hiding: the word at the gaussian center
+        (``center_k``) is preserved (multiplier ~1) and words *far*
+        from ``center_k`` are zeroed by the gaussian tail
+        (multiplier ->0).
+
+        ``full_seq`` is the COMPLETE per-sentence input percept slab
+        ``[B, T, D]`` (``inputSpace._ar_embedded`` -- every word). For
+        the processed word at center ``k`` a single gaussian envelope
+        over the whole sequence is built:
+
+            w_i = exp(-(i - k)^2 / (2 * sigma^2))   over percept i in T,
+            sigma = maskRate * N_percepts            (D1; maskRate=0.15,
+                                                      N_percepts == T)
+
+        normalized so the center ``w_k ~= 1``. The gaussian-windowed
+        percepts are mapped into conceptual space and **summed** (the
+        weighted sum over the whole sequence) so word ``k``'s
+        representation carries a *contextual trace* -- the faint
+        gaussian-weighted contribution of nearby words (the local
+        context IS the embedding signal). Per-word context washes out
+        across the whole-sentence D3 reconstruction (overlapping
+        gaussians average). The summed contextual word is what the
+        per-word loop feeds PS->CS->STM (one concept per word, the
+        existing loop structure preserved; only the per-word INPUT now
+        carries the gaussian contextual trace instead of a raw slice).
+
+        Pure static tensor ops (a gaussian over a fixed position arange
+        + a single weighted sum), no host sync,
+        CUDA-graph-capturable -- the bernoulli/where data-dependent
+        path is gone. Returns ``full_seq``'s single-slot fallback
+        (``full_seq[:, k:k+1, :]``) unchanged when the envelope is
+        inapplicable (degenerate rate / shape) so the caller's existing
+        per-word slice contract still holds.
+        """
+        if (full_seq is None or not torch.is_tensor(full_seq)
+                or full_seq.dim() != 3):
+            return full_seq
+        B, T, D = full_seq.shape
+        dev = full_seq.device
+        k = int(center_k)
+        if k < 0:
+            k = 0
+        if k > T - 1:
+            k = T - 1
+        rate = float(self.mask_rate)
+        if rate <= 0.0 or rate > 1.0 or T <= 0:
+            return full_seq[:, k:k + 1, :]
+        # sigma = maskRate * N_percepts (D1; N_percepts == T, the whole
+        # sentence's percept-sequence length).
+        sigma = max(rate * float(T), 1e-3)
+        pos = torch.arange(T, device=dev, dtype=full_seq.dtype)  # [T]
+        w = torch.exp(-((pos - float(k)) ** 2) / (2.0 * sigma * sigma))
+        # Normalize so the center is exactly ~1 (exp(0)==1 already; the
+        # explicit divide keeps the contract robust if sigma underflows).
+        w = w / w.max().clamp(min=1e-12)                         # [T]
+        # Reported-metric side channel only (the D3 trainable loss reads
+        # the COMPLETE UNMASKED _ar_embedded directly, NOT these).
+        self._ir_mask_positions = (
+            (w <= 0.5).view(1, T).expand(B, T).clone())
+        self._ir_pre_mask_input = full_seq.detach().clone()
+        # The gaussian-windowed percepts SUMMED over the whole sequence
+        # -> word k's contextual representation [B, 1, D]. Grad flows
+        # (no detach) so the contextual trace shapes upstream params.
+        wcol = w.view(1, T, 1).to(full_seq.dtype)
+        windowed = full_seq * wcol                                # [B,T,D]
+        return windowed.sum(dim=1, keepdim=True)                  # [B,1,D]
+
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
 
@@ -2047,6 +2156,24 @@ class BasicModel(BaseModel):
                        "eager (compile active on CUDA/CPU only).")
             self._compiled_step = None
             return
+        # D8 capture-gate (2026-05-19): pre-warm any LAZY-built caches
+        # that the captured forward depends on, so Dynamo never traces
+        # their build path. ``_stm_reducer`` constructs a
+        # ``BinaryStructuredReductionLayer`` (calls ``nn.Parameter()``
+        # which Dynamo refuses to trace -- "Attempted to use
+        # torch.nn.Parameter() constructor with Dynamo"). Build it
+        # here, eagerly, before the compile wrapper closes over
+        # ``self.forward``. The build is one-shot and idempotent
+        # (cached on ``_stm_reducer_cached``).
+        if getattr(self, "_stm_reducer_cached", None) is None:
+            try:
+                self._stm_reducer()
+            except Exception:
+                # Build failure (degenerate grammar etc.) caches False;
+                # the per-word body's reducer call returns None
+                # gracefully and the SHIFT-only depth-bound stays via
+                # back-pressure. Not a compile blocker.
+                self._stm_reducer_cached = False
         self._compiled_step = _compile(
             self.forward, verbose=True, fullgraph=True)
 
@@ -2273,9 +2400,18 @@ class BasicModel(BaseModel):
 
         Returns a scalar loss tensor, or None if < 2 percepts.
         """
-        if not hasattr(self, 'percepts') or self.percepts is None:
+        # Phase 1.5: the ``self.percepts`` alias was subsumed -- read the
+        # PerceptualSpace terminal subspace directly. The old
+        # ``hasattr(self,'percepts')`` guard meant "no forward has stamped
+        # the alias yet"; the faithful equivalent is "the subspace has no
+        # materializable event yet" (``materialize()`` -> None), so guard
+        # on ``vecs is None`` below.
+        ps_sub = self.perceptualSpace.subspace
+        if ps_sub is None:
             return None
-        vecs = self.percepts.materialize()          # [B, nPercepts, dim]
+        vecs = ps_sub.materialize()                 # [B, nPercepts, dim]
+        if vecs is None:
+            return None
         B, N, D = vecs.shape
         if N < 2:
             return None
@@ -2666,7 +2802,32 @@ class BasicModel(BaseModel):
             # (masked-sum / masked-count) and returns 0.0 on an empty
             # mask with no NaN (replacing the old nan_to_num gate). See
             # doc/BrickHostSyncStatus.md residual D.
-            if (mask_pos is not None and pre_mask is not None
+            # Rework B (3): on the PER-WORD grammar path the
+            # ``reconstruction`` slot is the D3 reverse(S)->table->
+            # vs-complete-unmasked-input continuous reconstruction
+            # (differentiable; the trainable per-word IR objective),
+            # REPLACING the interim P-tier ``compute_masked`` masked-LM.
+            # The whole-slab / non-grammar (``_per_word_enabled=False``)
+            # path is UNCHANGED -- it keeps ``compute_masked`` exactly,
+            # byte-identical. ``_d3_active`` / ``_d3_word_metric`` are
+            # instrumentation read by the end-to-end objective probe
+            # (which loss term is active + the reported 0/1 metric);
+            # never on the training-critical path.
+            self._d3_active = False
+            self._d3_word_metric = None
+            _isp = self.inputSpace
+            _per_word = (_isp is not None
+                         and getattr(_isp, "_per_word_enabled", False))
+            d3_loss, d3_metric = (self._d3_reconstruction_loss()
+                                  if _per_word else (None, None))
+            if d3_loss is not None:
+                # D3: the continuous reconstruction is the trainable
+                # signal into the existing ``reconstruction`` slot;
+                # the word-level 0/1 distance is reported-only.
+                lossIn = d3_loss
+                self._d3_active = True
+                self._d3_word_metric = d3_metric
+            elif (mask_pos is not None and pre_mask is not None
                     and pred_full is not None):
                 K = min(pred_full.shape[1], mask_pos.shape[1],
                         pre_mask.shape[1])
@@ -3883,10 +4044,38 @@ class BasicModel(BaseModel):
                 # Grammar path: each stage halves N (except last). Shapes
                 # follow _level_shapes but the per-stage ConceptualSpace /
                 # SymbolicSpace are plain.
+                #
+                # Width contract (H3, 2026-05-18): the per-stage
+                # ConceptualSpace input is the true upstream percept
+                # width ``percept_dim + obj_percept`` (``cs_in``), and
+                # its output is the conceptual content width
+                # ``concept_dim`` (``cs_out``).  ``sigma_percept`` is
+                # therefore the percept->concept *lift*
+                # (``percept_dim+obj_percept -> concept_dim``), not a
+                # width-preserving map.  ``concept_dim`` is the BARE
+                # ``<ConceptualSpace><nDim>`` -- where/when ride muxed
+                # *inside* it (``SubSpace`` derives
+                # ``nWhat = concept_dim - nWhere - nWhen``), exactly as
+                # the passing grammar reference MM_xor does
+                # (``cs_out[1] == concept_dim``; obj_concept is NOT
+                # added on this path).  This is what the C->P feedback
+                # gate (``PerceptualSpace.pi_concept.nInput ==
+                # <ConceptualSpace><nDim>``), the Phase-2A.5 symbol
+                # snap (``SymbolicSpace.subspace.what.W`` width ==
+                # ``symbol_dim``), and ``SymbolicSpace.forward``'s
+                # ``[B, N, concept_dim]`` pass-through contract
+                # (validate_config: ``effective_concept_dim ==
+                # symbol_dim``) all require.  For configs where
+                # ``concept_dim == percept_dim + obj_percept`` (e.g.
+                # MM_xor: 10 == 10) this is identical to the prior
+                # width-preserving shapes (no-op); for MM_5M it
+                # activates the previously-dropped C->P feedback +
+                # snap (1024 vs the old 10).
                 n_t = nPercepts >> t
-                d_t = percept_dim + obj_percept
-                cs_in = [n_t, d_t]
-                cs_out = [n_t, d_t] if is_last else [n_t >> 1, d_t]
+                d_in = percept_dim + obj_percept
+                d_out = concept_dim
+                cs_in = [n_t, d_in]
+                cs_out = [n_t, d_out] if is_last else [n_t >> 1, d_out]
                 ss_in = cs_out[:]
                 ss_out = cs_out[:]
             else:
@@ -3910,6 +4099,10 @@ class BasicModel(BaseModel):
                                  is_last=is_last)
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs)
+            # Non-owning back-ref CS->SS (mirrors the perceptualSpace_ref
+            # idiom below): object.__setattr__ so it is NOT registered as
+            # an nn.Module child of cs. Read-only structural pairing.
+            object.__setattr__(cs, 'symbolicSpace_ref', ss)
             # Per-stage flags consumed by build_pipelines / forward.
             ss.is_last = is_last
             ss.quantize = not is_last
@@ -4064,6 +4257,11 @@ class BasicModel(BaseModel):
         self._staged_in_sub = None
         self._compiled_step = None
         self._current_discourse_s = None
+        # MPHF instrumentation handles -- always initialised so the
+        # per-word body can use direct attribute reads (no getattr
+        # fallback, which is a Dynamo graph break).
+        self._mphf_last_idx = None
+        self._mphf_call_count = 0
         # Persistent empty CS seeds for the recurrent cell's pass-0
         # (prevCS_forPS / prevCS_forSS). Built ONCE here instead of
         # constructing a fresh SubSpace every _forward_body call: the
@@ -4269,6 +4467,25 @@ class BasicModel(BaseModel):
         When ``self.loss_head`` is set the post-body STM snapshot feeds
         the head and the loss is stashed on ``self._loss_head_loss``.
         """
+        # 2b-1 capstone: per-word IR-reconstruction loop. When the
+        # InputSpace per-word cursor is enabled (grammar configs;
+        # ``_per_word_enabled = (useGrammar != 'none')``, wired in 2a),
+        # the FRONT of the forward changes from whole-slab to an
+        # internal per-word loop -- ONE forward = ONE sentence. Each
+        # ground-truth word ``[B,1,D]`` is pumped through the SAME
+        # per-stage PS->CS->SS computation and the resulting per-word
+        # concept is SHIFTed onto ConceptualSpace.stm; the NULL seal
+        # (next_word -> None) ends the loop. The accumulated STM then
+        # feeds the EXISTING compose-to-S / chart / head / reverse() /
+        # IR-loss TAIL entirely unchanged (the guiding principle:
+        # minimize new training-critical surface -- reuse the existing
+        # IR machinery verbatim, change only how the representation is
+        # built). ``_per_word_enabled=False`` (non-grammar, model.xml)
+        # falls through to the whole-slab path below, byte-identical.
+        isp = self.inputSpace
+        if isp is not None and getattr(isp, "_per_word_enabled", False):
+            return self._forward_body_per_word(in_sub)
+
         prevCS_forPS = self._empty_seed_ps
         prevCS_forSS = self._empty_seed_ss
         last_cs = None
@@ -4279,29 +4496,41 @@ class BasicModel(BaseModel):
             # AR-streaming optimisation across forward calls and must
             # not splice on in-forward recurrent passes >0 (each pass
             # carries distinct C→P feedback).
-            self.perceptualSpace._recurrent_pass_idx = t
-            PS_sub = self.perceptualSpace.forward(in_sub, prevCS_forPS)
+            _work = (self.wordSpace._work
+                     if self.wordSpace is not None else None)
+            if _work is not None:
+                _work.recur_pass = int(t)
+            else:
+                self.perceptualSpace._recurrent_pass_idx = t
+            PS_sub = self.perceptualSpace.forward(
+                in_sub, prevCS_forPS, work=_work)
             if t == 0:
                 # IR masked-LM mask applied once, on the first pass's
                 # perceptual event, before CS consumes it
                 # (``_ir_pre_mask_input`` / ``_ir_mask_positions`` are
                 # read by ``runBatch``).
                 self.create_ir_mask(PS_sub)
-            SS_sub = ss.forward(prevCS_forSS)
-            CS_sub = cs.forward(PS_sub, SS_sub)
+            SS_sub = ss.forward(prevCS_forSS, work=_work)
+            CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
             self._cs_cache[t] = CS_sub
             self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
                 CS_sub = stage["merge"](CS_sub)
             # Read the two C views after the optional merge (merge
-            # mutates the CS subspace in place; _subspaceForSS aliases
-            # it so it reflects post-merge N). ``_subspaceForPS`` is the
-            # persistent owned subspace allocated in
-            # ``ConceptualSpace.__init__`` (never absent) -> explicit
-            # access, no getattr default (whose ``self._empty_subspace()``
-            # was also constructing a SubSpace every loop iteration).
-            prevCS_forPS = cs._subspaceForPS
-            prevCS_forSS = cs._subspaceForSS
+            # mutates the CS subspace in place; the C->S view aliases
+            # it so it reflects post-merge N). The cross-pass handoff
+            # lives on the per-sentence ``_work`` carrier when present
+            # (Phase 1.4: ``ConceptualSpace.forward`` published it as
+            # ``work.cs_for_ps`` / ``work.cs_for_ss``). Eager fallback
+            # (``_work is None``): the C->P side is the persistent owned
+            # subspace allocated in ``ConceptualSpace.__init__`` (never
+            # absent) -> explicit attr access, no getattr default
+            # (whose ``self._empty_subspace()`` was also constructing a
+            # SubSpace every loop iteration).
+            prevCS_forPS = (_work.cs_for_ps if _work is not None
+                            else cs._subspaceForPS)
+            prevCS_forSS = (_work.cs_for_ss if _work is not None
+                            else cs._subspaceForSS)
             # "Nothing to quantize -> pass zeros": SS is inert when its
             # input was the empty seed (conceptualOrder=1, or pass 0).
             # CS already consumed SS_sub as-is above (pass-0 math
@@ -4313,12 +4542,817 @@ class BasicModel(BaseModel):
             last_cs = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
-        self.perceptualSpace._recurrent_pass_idx = 0
+        _work = (self.wordSpace._work
+                 if self.wordSpace is not None else None)
+        if _work is not None:
+            _work.recur_pass = 0
+        else:
+            self.perceptualSpace._recurrent_pass_idx = 0
         if self.loss_head is not None:
             # Prefer the grad-bearing per-word stack stashed by
             # ``_forward_stem_per_word``; fall back to the (detached)
             # STM snapshot when the stack is missing (e.g. body-only
             # forward path that bypasses the per-word stem).
+            grad_input = self._loss_head_input
+            if grad_input is None:
+                grad_input = self.conceptualSpace.stm.snapshot()
+            if grad_input is not None:
+                self._loss_head_loss = self.loss_head(grad_input)
+            else:
+                self._loss_head_loss = None
+        return last_cs
+
+    # ------------------------------------------------------------------
+    # 2b-2-i: bounded soft shift-reduce producer (STM -> single S).
+    # ------------------------------------------------------------------
+    def _stm_reducer(self):
+        """Lazily build + cache the bounded-reduce scorer/combiner.
+
+        The bounded soft REDUCE reuses the EXISTING reduction math
+        verbatim -- it is NOT re-authored here (two-loop spec
+        Phase-1-D §3 "STM-7": "score top-r of STM with the existing
+        soft reducer ... the ``BinaryStructuredReductionLayer``
+        anchors, Language.py:1608"; "parent = Σ_op weight_op ·
+        op(left,right)  # fixed op axis, one weighted reduce"). One
+        ``BinaryStructuredReductionLayer`` is constructed from the
+        grammar's S-tier arity-2 reduce ops, each wrapped with the
+        SAME ``_BinaryGrammarOpAdapter`` ``_wire_signal_router_grammar_ops``
+        uses (so ``op(left,right)`` dispatches into the registered
+        host fold -- IntersectionLayer/UnionLayer/...). The layer's
+        own forward computes ``chosen_reduced = Σ_op softmax(reduce_
+        score)_op · op(left,right)`` over the fixed op axis (one
+        weighted reduce, no shared in-place accumulator -- the proven
+        ``_superposed_op`` pattern), which IS the spec's ``parent``.
+
+        Returns ``None`` when no S-tier arity-2 host op is available
+        (degenerate grammar) so the caller can skip the REDUCE
+        (SHIFT-only, depth still bounded by back-pressure -- a forced
+        no-op reduce simply pops the older slot).
+        """
+        cached = getattr(self, "_stm_reducer_cached", None)
+        if cached is not None:
+            return cached if cached is not False else None
+        ss = self.symbolicSpace
+        sl = getattr(ss, "syntacticLayer", None)
+        if sl is None or not hasattr(sl, "_by_name"):
+            self._stm_reducer_cached = False
+            return None
+        try:
+            from Language import (TheGrammar,
+                                  BinaryStructuredReductionLayer,
+                                  _BinaryGrammarOpAdapter)
+        except ImportError:
+            self._stm_reducer_cached = False
+            return None
+        ops = []
+        for rid in range(len(TheGrammar.rules)):
+            rdef = TheGrammar.rules[rid]
+            if int(getattr(rdef, "arity", 1)) != 2:
+                continue
+            mn = getattr(rdef, "method_name", None)
+            host = sl._by_name.get(mn) if mn else None
+            if host is None or not hasattr(host, "compose"):
+                continue
+            ops.append(_BinaryGrammarOpAdapter(host))
+        if not ops:
+            self._stm_reducer_cached = False
+            return None
+        D_c = int(self.conceptualSpace.stm.concept_dim)
+        layer = BinaryStructuredReductionLayer(
+            d_model=D_c, ops=ops, r_copy=1, temperature=1.0)
+        layer = layer.to(self.conceptualSpace.stm._buffer.device)
+        # Register as a child so its anchors/op params are optimised
+        # with the rest of the model (grad must shape the reducer).
+        self.add_module("_stm_reducer_module", layer)
+        self._stm_reducer_cached = layer
+        return layer
+
+    def _stm_bounded_reduce_step(self):
+        """ONE statically-unrolled, masked REDUCE micro-step (forced).
+
+        Operates on the live STM ``[B, cap, D]`` buffer + the tensor
+        depth (``stm._depth``). De-sync-safe: pure ``torch.where`` /
+        gather / scatter over a fixed ``[B, cap, D]`` slab + a tensor
+        depth -- NO ``.item()``, NO data-dependent trip count (spec
+        STM-7: "Pop/push are masked roll/scatter/where over [B,7,D]
+        + a tensor depth -- never pop().item()").
+
+        Mechanism (spec STM-7 controller):
+          * Take the top-2 STM constituents (slots ``d-2`` and ``d-1``).
+          * ``parent = Σ_op weight_op · op(left,right)`` via the cached
+            ``BinaryStructuredReductionLayer`` (its ``soft`` slab over a
+            length-2 window IS the single weighted reduce over the
+            fixed op axis -- reused, not re-authored).
+          * Snap the parent C<->S via ``_stm_symbolic_roundtrip`` (the
+            existing idempotent primitive; passthrough for non-
+            ProjectionBasis ``.what`` -- MM_5M/MM_xor ``quantize``).
+          * Replace slot ``d-2`` with ``parent``, clear slot ``d-1``,
+            ``d <- d - 1``.
+
+        Both call sites (back-pressure at capacity AND the NULL-seal
+        sweep) want an unconditional fold whenever a row has >=2
+        constituents -- the FORCED reduce that replaces the legacy
+        ``ShortTermMemory.push`` capacity RuntimeError (spec STM-7:
+        "at d==7 the best reduce is FORCED"). A scored soft gate
+        ``g in (0,1)`` (opportunistic mid-sentence reduce) is the
+        2b-2 refinement; 2b-2-i's bound is the forced fold. Rows with
+        depth < 2 are no-ops (masked to gate 0). Returns nothing;
+        mutates the STM buffer/depth via out-of-place masked ops.
+        """
+        stm = self.conceptualSpace.stm
+        reducer = self._stm_reducer()
+        buf = stm._buffer                                  # [B, cap, D]
+        B, cap, D = buf.shape
+        depth = stm._depth                                 # [B] long
+        device = buf.device
+        # Rows that CAN reduce: at least 2 constituents on the stack.
+        can = (depth >= 2)                                 # [B] bool
+        # Gather the top-2 (left = older = slot d-2, right = top =
+        # slot d-1). Clamp indices for the depth<2 rows (masked out
+        # by ``can`` below so the bogus gather never takes effect).
+        idx_r = (depth - 1).clamp(min=0)                   # [B]
+        idx_l = (depth - 2).clamp(min=0)                   # [B]
+        rows = torch.arange(B, device=device)
+        left = buf[rows, idx_l]                            # [B, D]
+        right = buf[rows, idx_r]                            # [B, D]
+        if reducer is not None:
+            window = torch.stack([left, right], dim=1)      # [B, 2, D]
+            _hard, soft, _routing = reducer(window)
+            # soft[:, 0, :] is the folded root of the length-2 window
+            # (the recursive-reduction leading position -- the
+            # LanguageLayer.compose root-state convention,
+            # Language.py:1100-1104). This is the spec's ``parent``.
+            parent = soft[:, 0, :]                           # [B, D]
+        else:
+            # Degenerate grammar (no S-tier arity-2 op): the FORCED
+            # reduce is a structural pop of the top onto its parent
+            # (mean of the two constituents -- the minimal lattice
+            # join), keeping depth bounded without a host op.
+            parent = 0.5 * (left + right)
+        # C<->S idempotent snap of the parent (reused primitive;
+        # passthrough for non-ProjectionBasis ``.what``).
+        snapped = self._stm_symbolic_roundtrip(
+            parent.unsqueeze(1))                            # [B, 1, D]
+        if snapped is not None and snapped.dim() == 3:
+            parent = snapped[:, 0, :]
+        # Forced fold gate: 1.0 where the row can reduce (>=2
+        # constituents), 0.0 otherwise. The ``can`` mask is what makes
+        # the static unroll safe -- a short row is a pure no-op for
+        # this step. (A scored soft gate g in (0,1) is the 2b-2
+        # opportunistic-reduce refinement; 2b-2-i forces the fold.)
+        g_col = can.to(buf.dtype).view(B, 1)               # [B, 1]
+        # STM[d-2] <- g·parent + (1-g)·STM[d-2]  (masked: only the
+        # can-rows' slot d-2 changes).
+        new_left = g_col * parent + (1.0 - g_col) * left   # [B, D]
+        buf_new = buf.clone()
+        buf_new[rows, idx_l] = torch.where(
+            can.view(B, 1), new_left, left)
+        # Clear the consumed top slot (d-1) for the can-rows.
+        cleared = torch.where(
+            can.view(B, 1), torch.zeros_like(right), right)
+        buf_new[rows, idx_r] = cleared
+        stm._buffer = buf_new
+        # d <- d - 1 for rows that reduced (g==1 there); tensor op,
+        # no sync. ``_max_depth_host`` is the host mirror snapshot()
+        # reads; it tracks the max depth -- a reduce never increases
+        # it, and the post-sweep depth is read explicitly by the
+        # caller, so leave the mirror as the high-water mark (the
+        # snapshot slab is zero-padded past the live depth anyway).
+        dec = can.to(depth.dtype)                          # [B] {0,1}
+        stm._depth = depth - dec
+
+    def _stm_reduce_to_single_S(self):
+        """NULL-seal finalize: bounded reduce sweep over STM -> single S.
+
+        Statically unrolled to ``cap - 1`` forced micro-steps (spec
+        STM-7: "REDUCE micro-steps, bounded to K-1, STATICALLY
+        UNROLLED"; "on NULL seal: final bounded reduce sweep to
+        root"). Each step folds the top-2 into one, so ``cap-1``
+        steps drive any depth in ``[1, cap]`` down to exactly 1. The
+        trip count is the static buffer capacity (NOT data-dependent
+        -- CUDA-graph-capturable), masked when a row already has
+        depth < 2.
+
+        Returns the single root idea ``S`` ``[B, D]`` (slot 0 of every
+        row after the sweep -- the start-symbol root constituent) plus
+        the post-sweep depth tensor for verification.
+        """
+        stm = self.conceptualSpace.stm
+        cap = int(stm.capacity)
+        for _ in range(max(0, cap - 1)):
+            self._stm_bounded_reduce_step()
+        # After cap-1 forced folds every row's stack is collapsed to
+        # its bottom slot: that single slot is the sentence idea S
+        # (the start-symbol root -- this producer reduces toward
+        # ``Grammar.start_symbol`` by construction; the only S-tier
+        # reduce ops the grammar exposes all have lhs == start_symbol
+        # for MM_xor/MM_5M, so the folded root's category tracks
+        # start_symbol).
+        S = stm._buffer[:, 0, :]                            # [B, D]
+        return S, stm._depth
+
+    def _mphf_route_word(self, word_slice, cursor_pos):
+        """Rework A: route the per-word percept -> concept through
+        ``idx = MPHF(percept_bytes)`` -> the D2 table row.
+
+        ``word_slice`` is the ``[B,1,D]`` muxed per-word slice the
+        InputSpace cursor returned (``_ar_embedded[:, p:p+1, :]``);
+        ``cursor_pos`` is its per-word slot index ``p`` (the same
+        ``[B,nObj,M]`` per-word slot axis ``_embed_bpe``'s
+        ``set_forward_content`` writes the per-word frozen lexicon row
+        onto -- ``PerceptualSpace.subspace._active[:,p,0]`` (==
+        ``per_word_first``, the byte-derived O(1) frozen ``key_to_index``
+        resolution that IS the MPHF index for the in-vocab percept; the
+        ``_ar_embedded`` per-word cursor axis shares this exact slot
+        axis -- verified: both ``[B,1024,*]`` for MM_5M). The standalone
+        static byte->row ``PerceptualSpace.mphf_index`` is the explicit
+        formalization, exposed + gated, with the per-word route using
+        this already-computed equivalent so the percept is resolved
+        exactly ONCE, no host sync, no improvised byte-span.
+
+        Substitutes the table's concept-activation row
+        (``wv._vectors[idx]`` -- the REUSED Phase-1A.1 learnable lexicon
+        param, NOT a second embedding; gradient flows, no detach) into
+        the WHAT slab of ``word_slice``, preserving WHERE/WHEN (mirrors
+        ``create_ir_mask``'s WHAT-slice-only edit). Returns
+        ``(routed_slice, idx_or_None)``; a no-op pass-through (returns
+        the input unchanged) when the MPHF table is inapplicable
+        (numeric / non-Embedding codebook -- the existing path is then
+        byte-identical).
+        """
+        ps = self.perceptualSpace
+        isp = self.inputSpace
+        if ps is None or isp is None or word_slice is None:
+            return word_slice, None
+        if ps._mphf_codebook() is None:
+            return word_slice, None
+        # The per-word frozen lexicon row (== the MPHF index for the
+        # in-vocab percept) is written by ``_embed_bpe`` /
+        # ``set_forward_content`` onto the PERCEPTUAL space's subspace
+        # ``_active`` (``[B,nObj,M]``; ``[...,0]`` == ``per_word_first``,
+        # the byte-derived frozen ``key_to_index`` row). It shares the
+        # ``_ar_embedded`` per-word cursor slot axis (both ``[B,nObj,*]``).
+        sub = getattr(ps, "subspace", None)
+        active = getattr(sub, "_active", None) if sub is not None else None
+        if (active is None or active.dim() != 3
+                or cursor_pos >= active.shape[1]):
+            return word_slice, None
+        # The percept's frozen lexicon row at this cursor slot == the
+        # MPHF index (byte-derived, O(1), frozen, NON-invertible). The
+        # static tables are PRE-WARMED by the caller
+        # (``_forward_body_per_word`` setup before the per-word loop,
+        # or the test fixture before ``torch.compile``) so the captured
+        # region never traces the build path -- ``build_mphf_table``
+        # iterates ``bytes`` which is Dynamo-untraceable. ``ps.mphf_table_rows``
+        # below uses the already-resolved row index (no hash lookup);
+        # the table is only consulted via the codebook ``getW()`` gather,
+        # which is pure-tensor and capture-safe.
+        if getattr(ps, "_mphf_static_tables", None) is None:
+            # Availability fallback: caller forgot to pre-warm and we
+            # can't safely build inside a captured region. Pass-through.
+            return word_slice, None
+        idx = active[:, cursor_pos, 0].long()              # [B] MPHF row
+        table_rows = ps.mphf_table_rows(idx)               # [B, D_what]
+        nWhat = table_rows.shape[-1]
+        routed = word_slice.clone()
+        if routed.shape[-1] >= nWhat:
+            routed[:, 0, :nWhat] = table_rows
+        else:
+            routed = table_rows.unsqueeze(1)
+        return routed, idx
+
+    def _per_word_prelude(self, in_sub):
+        """D8 boundary-side setup that MUST run before the per-word
+        loop. Hoisted out of ``_forward_body_per_word`` so the gate
+        test (which calls ``_per_word_body_step`` in isolation) can
+        replay the same contract.
+
+        Side effects:
+          * ``conceptualSpace.stm.ensure_batch + clear`` -- the
+            bounded stack is sized to the live batch and emptied.
+          * ``perceptualSpace._mphf_tables()`` -- lazy build-once
+            cache is primed (build path iterates ``bytes`` which
+            Dynamo refuses to trace).
+          * ``wordSpace._work.recur_pass.fill_(0)`` -- invariant
+            across the per-word loop (pass-index 0 throughout).
+          * ``wordSpace._work.cs_for_ps/ss`` pre-seeded to the
+            persistent empty seeds so the first iteration's PS/SS
+            forwards see a non-None feedback subspace (avoids a
+            None-vs-SubSpace branch inside the captured body that
+            would force a recompile after iteration 1).
+          * Fresh ``_cs_cache`` / ``_ss_cache`` lists.
+
+        Returns ``(stm, N_target, word_carrier, in_event)`` -- the
+        values ``_forward_body_per_word`` needs from the prelude.
+        ``in_event`` is the materialized whole-sentence event the
+        post-loop step uses to restore the InputSpace subspace.
+        """
+        stm = self.conceptualSpace.stm
+        in_event = in_sub.materialize() if in_sub is not None else None
+        if stm is not None:
+            B_in = int(in_event.shape[0]) if in_event is not None else 1
+            stm.ensure_batch(B_in)
+            stm.clear()
+
+        # Fresh per-forward caches (mirrors the whole-slab path).
+        T_cache = len(self._ss_cache)
+        self._cs_cache = [None] * T_cache
+        self._ss_cache = [None] * T_cache
+
+        # MPHF pre-warm (Dynamo-unfriendly build path).
+        ps = self.perceptualSpace
+        if (ps.chunking_mode == "mphf"
+                and ps._mphf_static_tables is None):
+            try:
+                ps._mphf_tables()
+            except Exception:
+                pass
+        # STM bounded-reducer pre-warm: hoisted to ``enable_compiled_step``
+        # (the true eager boundary BEFORE the compile wrapper closes
+        # over ``self.forward``). The prelude itself runs INSIDE the
+        # compiled forward on the production path, so a lazy build
+        # here would still be traced.
+
+        # WorkingState invariants + per-forward pre-seed. The carrier
+        # is allocated by ``wordSpace.soft_reset`` (triggered by
+        # ``post_tick_compact`` when a sentence completes); the first
+        # forward of the first sentence runs BEFORE any soft_reset has
+        # fired, so cold-start allocation falls to this prelude.
+        # ``cs_for_ps/ss`` are UNCONDITIONALLY re-seeded to the empty
+        # seeds each forward so the per-word loop's first iteration
+        # always sees the canonical empty starting context (mirrors
+        # the legacy ``_empty_seed_*`` local-var initialisation just
+        # before the while loop) -- never a stale SubSpace from a
+        # prior sentence's per-word loop. ``cs.forward`` overwrites
+        # these to its own ``vspace`` after the first word; the
+        # sentinel restore is essential at sentence boundaries.
+        if self.wordSpace._work is None:
+            self.wordSpace.soft_reset()
+        _work = self.wordSpace._work
+        _work.recur_pass = 0
+        _work.cs_for_ps = self._empty_seed_ps
+        _work.cs_for_ss = self._empty_seed_ss
+
+        N_target = (int(in_event.shape[1])
+                    if in_event is not None and in_event.dim() == 3
+                    else None)
+        word_carrier = in_sub
+        return stm, N_target, word_carrier, in_event
+
+    def _per_word_body_step(self, w):
+        """D8 piece 1: ONE per-word iteration -- the constant-shape
+        sub-graph that the PS/SS -> CS captured graph wraps (replayed
+        N times per forward).
+
+        Body: gaussian-window over the whole percept sequence (D1) ->
+        MPHF->table route (D2) -> Σ-lift through PS/SS -> CS -> SHIFT
+        onto STM (with capacity-gated forced REDUCE micro-step).
+
+        Loop-carry state lives on ``self.wordSpace._work`` (the
+        WorkingState carrier; ``cs_for_ps`` / ``cs_for_ss`` written by
+        ``ConceptualSpace.forward``); ``word_carrier`` is the live
+        InputSpace subspace (the SAME object the whole-slab path
+        threads). The method consumes a single ``w`` (``[B, 1, D]``
+        ground-truth word slice produced by ``InputSpace.next_word``)
+        and returns ``(CS_sub, idea_bd)`` -- the per-word CS subspace
+        and the ``[B, D_c]`` per-word concept (or ``None`` when CS is
+        empty).
+
+        Capture-gate contract: this is the ONLY callable that runs
+        inside the middle captured graph; every helper it calls is
+        DtoH-free by docstring contract (``gaussian_window_word``,
+        ``_mphf_route_word``, ``push_step``, ``_stm_bounded_reduce_step``).
+        Any new ``.item()`` / ``bool(t)`` / ``int(tensor)`` reaching the
+        call graph re-breaks fullgraph + costs a per-word DtoH;
+        ``test/test_per_word_capture_gate.py`` is the active gate.
+        """
+        isp = self.inputSpace
+        cs = self.conceptualSpace
+        ss = self.symbolicSpace
+        stm = cs.stm
+        # The word carrier is the InputSpace's OWN subspace -- the same
+        # object the whole-slab path threads through PS forward; reusing
+        # it keeps what/where/when encodings, wordSpace and the stem-
+        # route contract byte-identical (mirrors _forward_body_per_word).
+        word_carrier = isp.subspace
+
+        # D8 capture-gate contract: the per-word path is gated on
+        # ``_per_word_enabled`` (grammar configs only), so wordSpace
+        # always exists here and ``_work`` is always allocated by the
+        # outer ``_forward_body_per_word`` prelude (which calls
+        # wordSpace.soft_reset()). WorkingState had ``__slots__``
+        # historically but Phase-5 dropped them precisely because
+        # Dynamo's ``UserDefinedObjectVariable.var_getattr`` doesn't
+        # walk slot member descriptors; with plain ``__dict__`` attrs
+        # ``_work.cs_for_ps`` traces cleanly.
+        _work = self.wordSpace._work
+
+        # The cursor already advanced past this word inside next_word();
+        # its per-word slot is ``_per_word_cursor - 1``. Direct attr
+        # read (no getattr) -- ``_per_word_cursor`` is initialised in
+        # ``InputSpace.__init__`` so it always exists.
+        _p = isp._per_word_cursor - 1
+
+        # Rework B (1): gaussian attentional window over the WHOLE
+        # percept sequence, centered at this word's cursor position.
+        # ``_ar_embedded`` is initialised to None in ``InputSpace
+        # .__init__`` -- direct attr access, no getattr.
+        _full_seq = isp._ar_embedded
+        _ctx_w = self.gaussian_window_word(_full_seq, _p)
+        if (_ctx_w is not None and torch.is_tensor(_ctx_w)
+                and _ctx_w.dim() == 3
+                and _ctx_w.shape[1] == 1
+                and w is not None and torch.is_tensor(w)
+                and _ctx_w.shape[0] == w.shape[0]
+                and _ctx_w.shape[-1] == w.shape[-1]):
+            w = _ctx_w
+
+        # Rework A: percept -> concept via MPHF -> D2 table row (the
+        # REUSED Phase-1A.1 ``wv._vectors`` concept-activation half).
+        w, _mphf_idx = self._mphf_route_word(w, _p)
+        if _mphf_idx is not None:
+            self._mphf_last_idx = _mphf_idx
+            # ``_mphf_call_count`` is initialised in BasicModel.__init__
+            # to 0 so direct addition is safe.
+            self._mphf_call_count = self._mphf_call_count + 1
+
+        word_carrier.set_event(w)
+        word_carrier.stem_embedded = True
+        word_sub = word_carrier
+
+        # NOTE: ``_work.recur_pass.fill_(0)`` is hoisted to
+        # ``_forward_body_per_word``'s prelude (value is invariant
+        # across the per-word loop -- the recurrence depth is the
+        # word loop, not the stage loop, so pass-index is 0 throughout).
+        #
+        # Cross-step C->P / C->S feedback views read directly from
+        # the WorkingState carrier. Phase 1.4 folded these from the
+        # legacy ``cs._subspaceForPS/SS`` attributes; the legacy
+        # fallback is gone (those attributes no longer exist on
+        # ConceptualSpace).
+        prevCS_forPS = _work.cs_for_ps
+        prevCS_forSS = _work.cs_for_ss
+
+        PS_sub = self.perceptualSpace.forward(
+            word_sub, prevCS_forPS, work=_work)
+        SS_sub = ss.forward(prevCS_forSS, work=_work)
+        CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
+        # Terminal-stage slot (``[-1]``): the per-word loop has a
+        # single canonical cell, so the most-recent word's CS/SS is
+        # the terminal-stage representation the tail reads.
+        self._cs_cache[-1] = CS_sub
+        if SS_sub.is_empty():
+            SS_sub = self._zero_symbol_subspace(ss, word_sub)
+        self._ss_cache[-1] = SS_sub
+
+        idea_bd = None
+        if CS_sub is not None:
+            idea = CS_sub.materialize()
+            if (idea is not None and idea.dim() == 3
+                    and idea.shape[1] >= 1):
+                idea_bd = idea[:, 0, :]                 # [B, D_c]
+                if stm is not None:
+                    # 2b-2-i back-pressure: at capacity the next SHIFT
+                    # would overflow the bounded stack; FORCE a bounded
+                    # reduce that folds the top-2 into one (host-int
+                    # mirror compare, no DtoH).
+                    if stm._max_depth_host >= stm.capacity:
+                        self._stm_bounded_reduce_step()
+                        stm._max_depth_host = stm.capacity - 1
+                    stm.push_step(idea_bd)
+        return CS_sub, idea_bd
+
+    def _forward_body_per_word(self, in_sub):
+        """Per-word IR-reconstruction body (2b-1 capstone).
+
+        The FRONT of the forward when the InputSpace per-word cursor is
+        enabled (grammar configs). Replaces the whole-slab
+        representation-build of :meth:`_forward_body` with an internal
+        per-word loop -- **ONE forward = ONE sentence = ONE IR loss =
+        ONE backward**:
+
+          ``while (w := inputSpace.next_word()) is not None:``
+            * the ``[B,1,D]`` ground-truth word ``w`` is run through the
+              SAME per-stage PS->CS->SS recurrent cell as the whole-slab
+              path (``conceptualOrder`` passes, with the C->P / C->S
+              feedback identical to ``_forward_body``), but with a
+              single-word ``in_sub`` instead of the whole slab;
+            * the resulting per-word terminal concept (the last pass's
+              CS event, ``[B,1,D_c]``) is SHIFTed onto
+              ``conceptualSpace.stm`` via ``push_step`` (the existing
+              vectorised single-step push);
+          the NULL seal (``next_word`` returns ``None``) ends the loop.
+
+        Then the accumulated STM feeds the **EXISTING** compose-to-S
+        chart (``_chart_compose_at_C``) and the method returns the
+        terminal CS subspace so the existing ``_forward_head`` +
+        ``runBatch`` P-tier masked-LM IR-loss + ``reverse()`` TAIL run
+        **unchanged** (guiding principle: minimise new training-critical
+        surface -- reuse the existing IR machinery verbatim; only the
+        representation-build FRONT changes from whole-slab to per-word
+        accumulation into STM).
+
+        IR-loss faithfulness: the IR mask is created exactly as in the
+        whole-slab path -- via the unchanged ``self.create_ir_mask`` --
+        on the **first word's** pass-0 perceptual event (the faithful
+        per-word analogue of "pass 0's perceptual event").
+        ``runBatch``'s masked-LM loss then reads the post-body
+        PerceptualSpace event vs the snapshotted pre-mask embedding at
+        the mask positions, byte-identically to today (no new loss
+        surface, no compose/reverse loss rewiring).
+
+        STM is sentence-scoped: ``ConceptualSpace.stm`` is sized to
+        ``<WordSpace><wMax>`` (sentence length -- the CKY+resize-
+        equivalent baseline per the two-loop spec's Phase-1-D §3); the
+        bounded soft REDUCE-to-<=7 over STM is the SEPARATE 2b-2
+        increment (out of scope here). ``push_step`` requires depth to
+        start at 0, so the STM is cleared once at loop entry (the
+        sentence-boundary clear that ``ConceptualSpace.Reset(hard=True)``
+        also performs).
+        """
+        # Prelude: STM resize+clear, MPHF pre-warm, WorkingState
+        # invariants + pre-seed, fresh _cs/_ss caches. Hoisted into
+        # ``_per_word_prelude`` so the capture-gate test can replay
+        # the same boundary-side contract.
+        stm, N_target, word_carrier, in_event = self._per_word_prelude(in_sub)
+        per_word_concepts = []
+
+        # The per-word loop IS the recurrence: it replaces the
+        # whole-slab cell's ``conceptualOrder`` pass loop with a
+        # word-indexed loop. Per the ratified design each word is ONE
+        # PS->CS->SS step (a single ``sigma_percept`` Σ-lift -> one
+        # concept), and the C->P / C->S feedback carries word-to-word
+        # (the cross-step carrier), mirroring exactly how
+        # ``_forward_body`` carries ``prevCS_*`` across its passes:
+        # initialise the feedback ONCE before the loop, update it each
+        # step. (Resetting the feedback per word would cold-start SS
+        # every word -> SS always sees the empty seed -> the symbol
+        # subspace zeroes out; the whole-slab path explicitly carries
+        # this feedback across steps.)
+        #
+        # The canonical cell is the **TERMINAL-stage** PS/CS/SS
+        # (``self.perceptualSpace`` / ``self.conceptualSpace`` /
+        # ``self.symbolicSpace`` == ``*Spaces[-1]``). The whole-slab
+        # path chains the ``conceptualOrder`` per-stage spaces (each a
+        # DISTINCT instance with a progressively N-halved shape, the
+        # terminal one keeping full N); but the per-word loop replaces
+        # that stage-chaining N-bottleneck with the per-word STM
+        # accumulation, so it runs the single terminal cell -- the one
+        # whose shape/codebooks the ENTIRE reused tail reads
+        # (``_chart_compose_at_C`` -> ``self.conceptualSpace.stm``,
+        # ``symbol_cache`` -> ``self.symbolicSpace``, the head sized
+        # from ``conceptualSpaces[-1].outputShape``, ``runBatch``'s
+        # P-tier IR loss -> ``self.perceptualSpace.subspace``). Using a
+        # non-terminal stage would leave ``self.symbolicSpace.subspace``
+        # / ``self.conceptualSpace.stm`` unwritten (the bug an earlier
+        # ``body_stages[0]`` cut hit). The word loop -- not a stage
+        # loop -- provides the recurrence depth.
+        # NOTE: cs/ss handles, prevCS_forPS/SS empty-seed init, MPHF
+        # pre-warm, recur_pass reset, and STM resize+clear all folded
+        # into ``_per_word_prelude`` (called above). The captured body
+        # reads ``_work.cs_for_ps/ss`` uniformly from the WorkingState
+        # carrier -- no per-iteration None branch.
+
+        last_cs = None
+        word_count = 0
+        while True:
+            w = self.inputSpace.next_word()
+            if w is None:
+                # NULL/end-of-sentence seal -- pure input sentinel
+                # (never a model output); ends the per-word loop.
+                break
+            # D8 piece 1 (extraction landed 2026-05-19): the inner
+            # per-iteration body lives on ``_per_word_body_step``. The
+            # while-loop here is the boundary that D8 carves out
+            # (variable Python loop between captured IS and OS graphs);
+            # the extracted step is the constant-shape PS/SS->CS sub-
+            # graph replayed N times. With ``__slots__`` removed from
+            # WorkingState the step reads loop-carry SubSpace refs
+            # directly from ``_work.cs_for_ps/ss`` inside the captured
+            # body -- one arg in (the word slice), one tuple out.
+            CS_sub, idea_bd = self._per_word_body_step(w)
+            if idea_bd is not None:
+                per_word_concepts.append(idea_bd)
+            if CS_sub is not None:
+                last_cs = CS_sub
+            word_count += 1
+
+        _LEGACY_INLINE_BODY = False
+        if _LEGACY_INLINE_BODY:
+            # Rework A: route this percept -> concept through
+            # ``idx = MPHF(percept_bytes)`` -> the D2 table row (the
+            # REUSED Phase-1A.1 ``wv._vectors`` concept-activation half).
+            # The cursor already advanced past this word, so its per-word
+            # slot is ``_per_word_cursor - 1``. Instrumentation handles
+            # (``_mphf_last_idx`` / running call count) are read by the
+            # end-to-end probe; never on the training-critical path.
+            _p = int(getattr(self.inputSpace, "_per_word_cursor", 1)) - 1
+            # Rework B (1): GAUSSIAN ATTENTIONAL WINDOW. Replace the raw
+            # per-word slice with the gaussian-windowed SUM over the
+            # WHOLE percept sequence (``inputSpace._ar_embedded``,
+            # every word) centered at this word's cursor position
+            # ``_p`` (sigma = maskRate * N_percepts; center ~1,
+            # distant ->0). Word k's input now carries a CONTEXTUAL
+            # TRACE (the faint gaussian-weighted contribution of nearby
+            # words); per-word context washes out across the
+            # whole-sentence D3 reconstruction. This REPLACES the prior
+            # once-on-word-0 BERT-style ``create_ir_mask`` wholesale on
+            # the per-word path. The percept's IDENTITY/index is
+            # unchanged (Rework-A's ``_mphf_route_word`` resolves it
+            # from ``_active`` -- written from the original input by
+            # ``_embed_bpe``, not from this contextual sum), so the
+            # MPHF->table route below is byte-identical to Rework-A;
+            # the gaussian contextual trace survives in the muxed
+            # WHERE/WHEN channels (the table row replaces only WHAT,
+            # the existing Rework-A WHAT-slice-only contract).
+            _full_seq = getattr(self.inputSpace, "_ar_embedded", None)
+            _ctx_w = self.gaussian_window_word(_full_seq, _p)
+            if (_ctx_w is not None and torch.is_tensor(_ctx_w)
+                    and _ctx_w.dim() == 3
+                    and _ctx_w.shape[1] == 1
+                    and w is not None and torch.is_tensor(w)
+                    and _ctx_w.shape[0] == w.shape[0]
+                    and _ctx_w.shape[-1] == w.shape[-1]):
+                w = _ctx_w
+            w, _mphf_idx = self._mphf_route_word(w, _p)
+            if _mphf_idx is not None:
+                self._mphf_last_idx = _mphf_idx
+                self._mphf_call_count = (
+                    getattr(self, "_mphf_call_count", 0) + 1)
+            word_carrier.set_event(w)
+            word_carrier.stem_embedded = True
+            word_sub = word_carrier
+
+            _work = (self.wordSpace._work
+                     if self.wordSpace is not None else None)
+            # Per-word step == pass 0 of the canonical cell (the C->P/
+            # C->S feedback is carried across words, so the recurrent-
+            # pass index stays 0; the recurrence depth is the word
+            # loop, not the stage loop).
+            if _work is not None:
+                _work.recur_pass = 0
+            else:
+                self.perceptualSpace._recurrent_pass_idx = 0
+            # Rework B (1): the GAUSSIAN ATTENTIONAL WINDOW is applied
+            # at the INPUT level above (``gaussian_window_word`` over
+            # the whole ``_ar_embedded`` percept sequence centered at
+            # ``_p``, summed -> word k's contextual input), REPLACING
+            # the prior once-on-word-0 BERT-style ``create_ir_mask``
+            # wholesale on the per-word path. No per-word-PS-event
+            # envelope here (the per-word PS event is K=1; the gaussian
+            # is over the WHOLE sentence sequence, applied before this
+            # forward).
+            PS_sub = self.perceptualSpace.forward(
+                word_sub, prevCS_forPS, work=_work)
+            SS_sub = ss.forward(prevCS_forSS, work=_work)
+            CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
+            # Terminal-stage slot (``[-1]``): the per-word loop has a
+            # single canonical cell, so the most-recent word's CS/SS is
+            # the terminal-stage representation the tail reads
+            # (``symbol_cache`` / recon-C / recon-S all index ``[-1]``).
+            self._cs_cache[-1] = CS_sub
+            # NOTE: the optional ``merge`` (GrammarMergeGlue, present for
+            # ``useGrammar=='all'``) is a WHOLE-SLAB progressive
+            # N-bottleneck (halves the N axis to feed the chart's
+            # N-progression). It is intentionally NOT applied per word:
+            # a single word is ``[B,1,D_c]`` and halving N=1 collapses
+            # it to ``[B,0,D_c]`` (the per-word concept would vanish).
+            # Per the ratified design each word maps to exactly ONE
+            # concept -- the pre-merge ``[B,1,D_c]`` CS event; the
+            # whole-slab chart N-progression is replaced here by the
+            # per-word STM accumulation. The C->P / C->S feedback is
+            # therefore read from the pre-merge CS views (a consistent
+            # single-word recurrence carried word-to-word -- the
+            # cross-step analogue of ``_forward_body``'s cross-pass
+            # handoff).
+            prevCS_forPS = (_work.cs_for_ps if _work is not None
+                            else cs._subspaceForPS)
+            prevCS_forSS = (_work.cs_for_ss if _work is not None
+                            else cs._subspaceForSS)
+            if SS_sub.is_empty():
+                SS_sub = self._zero_symbol_subspace(ss, word_sub)
+            self._ss_cache[-1] = SS_sub
+            last_cs = CS_sub
+
+            # SHIFT: push the per-word terminal concept onto STM AND
+            # collect it for the position-aligned head representation.
+            # The (pre-merge) CS event is ``[B,1,D_c]`` (one concept per
+            # word) -> squeeze the length-1 word axis to ``[B,D_c]`` for
+            # ``push_step``'s one-idea-per-row contract. Grad flows
+            # through (no detach) so the chart/compose path can shape
+            # upstream weights.
+            if CS_sub is not None:
+                idea = CS_sub.materialize()
+                if (idea is not None and idea.dim() == 3
+                        and idea.shape[1] >= 1):
+                    idea_bd = idea[:, 0, :]                # [B, D_c]
+                    if stm is not None:
+                        # 2b-2-i back-pressure: at capacity the next
+                        # SHIFT would overflow the bounded stack (the
+                        # legacy ``ShortTermMemory.push`` raised a
+                        # capacity RuntimeError here -- ``push_step``
+                        # has no guard and would write OOB). Replace
+                        # that hard error with a FORCED bounded reduce
+                        # that folds the top-2 into one, freeing a slot
+                        # so depth stays <= cap (spec STM-7: "at d==7
+                        # the best reduce is FORCED"). ``push_step``
+                        # advances all rows in lockstep so the
+                        # host-side ``_max_depth_host`` mirror is the
+                        # de-sync-safe cap predicate.
+                        if stm._max_depth_host >= stm.capacity:
+                            self._stm_bounded_reduce_step()
+                            # ``_stm_bounded_reduce_step`` decremented
+                            # the tensor depth but leaves the host
+                            # mirror as the high-water mark; lower it
+                            # so the freed slot is reused (the next
+                            # ``push_step`` writes at ``_depth`` and
+                            # bumps the mirror by 1 again).
+                            stm._max_depth_host = stm.capacity - 1
+                        stm.push_step(idea_bd)
+                    per_word_concepts.append(idea_bd)
+            word_count += 1
+
+        # Restore the full whole-sentence event onto the InputSpace
+        # subspace so post-body readers (``_forward_per_stage``'s
+        # ``forwardInput``/``input_state``, the guarded ``lossRev``
+        # reverse term) see the same ``[B,T,D]`` surface the whole-slab
+        # path leaves behind. ``_ar_embedded`` itself was never touched
+        # (the cursor source), so this only re-stamps the subspace event
+        # the per-word loop borrowed.
+        if in_event is not None:
+            word_carrier.set_event(in_event)
+
+        # Reset the recurrent-pass index so standalone
+        # PerceptualSpace.forward calls (and the next forward's pass 0)
+        # see the AR-streaming serial warm path -- mirrors the
+        # whole-slab path's tail.
+        _work = (self.wordSpace._work
+                 if self.wordSpace is not None else None)
+        if _work is not None:
+            _work.recur_pass = 0
+        else:
+            self.perceptualSpace._recurrent_pass_idx = 0
+
+        # Build the position-aligned C-tier representation the EXISTING
+        # tail consumes (the whole-slab body's ``[B, N, D_c]``
+        # equivalent): stack the per-word concepts ``[B, n_words, D_c]``
+        # and right-pad to N (left-aligned, right-padded to N -- the
+        # SAME layout ``InputSpace.forward`` produces for the whole-slab
+        # path). Stamp it onto the ConceptualSpace subspace (the same
+        # object the whole-slab ``last_cs`` is) so ``_forward_head`` /
+        # OutputSpace / the ``runBatch`` IR-loss tail run BYTE-UNCHANGED.
+        # ``copy_context`` from the last per-word CS subspace keeps the
+        # pipeline ``wordSpace``/``errors``/stem-route contract intact.
+        if per_word_concepts:
+            stacked = torch.stack(per_word_concepts, dim=1)  # [B,n_w,D_c]
+            Bc, n_w, Dc = stacked.shape
+            if N_target is not None and n_w < N_target:
+                pad = torch.zeros(
+                    Bc, N_target - n_w, Dc,
+                    device=stacked.device, dtype=stacked.dtype)
+                stacked = torch.cat([stacked, pad], dim=1)
+            elif N_target is not None and n_w > N_target:
+                stacked = stacked[:, :N_target, :]
+            cs_sub = self.conceptualSpace.subspace
+            if last_cs is not None:
+                cs_sub.copy_context(last_cs)
+            cs_sub.set_event(stacked)
+            last_cs = cs_sub
+
+        # 2b-2-i: NULL-seal finalize -- the BOUNDED soft REDUCE sweep
+        # composes the accumulated STM down to a SINGLE idea S (the
+        # start-symbol root). The legacy ``_chart_compose_at_C`` CKY
+        # chart stays dormant/dead (it was a 100% runtime no-op on
+        # empty STM and its math was never run); per the two-loop spec
+        # ("Phase 2 rebuilds the producer, it does not tune it") it is
+        # REPLACED -- not resurrected -- by this bounded soft
+        # shift-reduce / selector-in-S producer. The per-word SHIFT
+        # loop above filled STM (bounded <= cap by back-pressure); the
+        # NULL seal (``next_word`` -> None ended the loop) now fires
+        # the final bounded reduce sweep to the root.
+        #
+        # SCOPE FENCE (2b-2-i): the IR loss is UNCHANGED this
+        # increment. ``last_cs`` (the position-aligned ``[B,N,D_c]``
+        # representation, exactly as 2b-1) is what the existing
+        # ``_forward_head`` + ``runBatch`` P-tier masked-LM IR tail
+        # consumes -- the training signal is byte-identical to 2b-1.
+        # The single S is PRODUCED and verified here (depth -> 1,
+        # category tracks ``Grammar.start_symbol``) but NOT yet
+        # consumed by the loss; 2b-2-ii rewires the loss to
+        # ``reverse(S)``-vs-unmasked using exactly this S.
+        if (stm is not None and per_word_concepts
+                and getattr(self.inputSpace, "_per_word_enabled", False)):
+            S, post_depth = self._stm_reduce_to_single_S()
+            # Verification handles for the end-to-end probe / future
+            # 2b-2-ii consumer: the single sentence idea S [B, D_c]
+            # and the post-sweep STM depth (must be 1 across rows).
+            self._stm_single_S = S
+            self._stm_post_depth = post_depth
+
+        # Existing loss_head plumbing (dormant: ``loss_head`` is always
+        # None today) -- kept identical to the whole-slab tail so the
+        # two paths stay structurally symmetric.
+        if self.loss_head is not None:
             grad_input = self._loss_head_input
             if grad_input is None:
                 grad_input = self.conceptualSpace.stm.snapshot()
@@ -4359,6 +5393,80 @@ class BasicModel(BaseModel):
         if snap is None:
             return
         ws.generate(snap)
+
+    def _stm_symbolic_roundtrip(self, slab):
+        """Idempotent C→S→C round-trip over a full ``[B, cap, D_c]`` STM
+        slab (the widened symbolic-space loop -- H2).
+
+        This is the retired ``_forward_stem_per_word`` C→S→C round-trip
+        (``a8737da~1``) -- ``cb.forward(c)`` then ``cb.reverse(snap, V=1)``
+        then ``idea_back.sum(dim=1)`` per single word -- generalized from
+        the single-vector ``V=1`` regime to ``V = STM capacity`` so the
+        whole ``[B, cap, concept_dim]`` STM slab passes through symbolic
+        space and back in one shot, idempotently and **per slot** (all
+        ``cap`` slots preserved -- the legacy single-slot
+        ``idea_back.sum(dim=1)`` collapse is dropped, NOT replaced by a
+        V-axis mean collapse).
+
+        Mechanism (faithful generalization of the retired vectorised
+        path's ``c_flat = c_all.reshape(B_flat * N, 1, D_c)`` trick):
+        fold the ``cap`` axis into the batch dim so each STM slot is its
+        own row through ``ProjectionBasis.forward`` / ``.reverse(V=1)``,
+        then unfold. ``ProjectionBasis.forward`` collapses the V axis
+        (mean-over-V); calling it with ``cb.forward(slab)`` directly +
+        ``cb.reverse(snap, V=cap)`` would therefore replicate ONE summary
+        across all ``cap`` slots (``x_summary.unsqueeze(1).expand(-1, v,
+        -1)``) -- destroying STM as a per-slot working memory. The
+        per-slot fold preserves each slot's own reverse-lift, exactly as
+        the retired loop did, while remaining idempotent (forward then
+        reverse projects each slot onto span(W); a re-snapped slot is a
+        fixed point -- the property ``test_idempotent_loop`` pins for
+        ``V=1``, here per-slot over ``cap``).
+
+        Returns the round-tripped ``[B, cap, D_c]`` slab, or the input
+        unchanged when no ``ProjectionBasis`` codebook is available
+        (matches the retired loop's ``ideas = c_all`` fall-through for
+        non-ProjectionBasis ``.what``: ``quantize`` / ``none`` configs).
+
+        NOTE (H2 Part B / Phase-2B): this is the rebuilt subsymbolic
+        producer's round-trip primitive. It is intentionally NOT yet
+        wired into the live forward as the STM read/write -- the STM
+        producer lifecycle (when to push, when ``snapshot`` is read,
+        the bounded soft shift-reduce controller, the NULL-seal
+        finalize, per-word vs per-sentence) is the still-pending,
+        owner-perf-gated Phase-2B architecture
+        (``doc/plans/2026-05-18-two-loop-pipeline-architecture.md``
+        §"STM-7" / Phase-2B; CKY+resize is the documented fallback).
+        """
+        if slab is None or not torch.is_tensor(slab) or slab.dim() != 3:
+            return slab
+        cb = getattr(self.symbolicSpace.subspace, 'what', None)
+        cb_is_projection = (cb is not None
+                            and type(cb).__name__ == 'ProjectionBasis')
+        if not cb_is_projection:
+            # Non-ProjectionBasis ``.what`` (``quantize`` / ``none``):
+            # no idempotent projection surface -- pass the slab through
+            # unchanged, exactly as the retired ``_forward_stem_per_word``
+            # did (``ideas = c_all``).
+            return slab
+        B, cap, D_c = slab.shape
+        # Fold ``cap`` into the batch dim: one STM slot per row so
+        # ``ProjectionBasis.forward``'s mean-over-V is a no-op (V=1 per
+        # row) and ``reverse(V=1)`` lifts each slot independently. This
+        # is the retired vectorised path's ``reshape(B_flat * N, 1,
+        # D_c)`` -> ``cb.forward`` -> ``cb.reverse(snap_flat, V=1)``
+        # generalized to the whole slab.
+        c_flat = slab.reshape(B * cap, 1, D_c)            # [B*cap, 1, D_c]
+        snap_flat = cb.forward(c_flat)                    # [B*cap, N, 1]
+        back_flat = cb.reverse(snap_flat, V=1)            # [B*cap, 1, D_c]
+        if back_flat is None:
+            return slab
+        if back_flat.dim() == 3:
+            # [B*cap, 1, D_c] -> [B, cap, D_c]. The legacy single-slot
+            # ``idea_back.sum(dim=1)`` is dropped (V=1 here, so the sum
+            # was a no-op squeeze): all ``cap`` slots are kept.
+            return back_flat.reshape(B, cap, D_c)
+        return back_flat.reshape(B, cap, D_c)
 
     def _reverse_head(self, sub):
         """Reverse the head: ``outputSpace.reverse`` (OS → C tier)."""
@@ -4417,6 +5525,155 @@ class BasicModel(BaseModel):
         x = self._reverse_perceptual(x)
         x = self.inputSpace.reverse(x)
         return x
+
+    def _reverse_from_S(self, S):
+        """Rework B (2): ``reverse(S)`` -- replay WordSpace's STORED
+        forward derivations from the single non-NULL sentence idea
+        ``S`` (``_stm_single_S``, ``[B, D_c]``) to reconstitute the
+        per-percept surface representation.
+
+        Drives the EXISTING reverse-trace machinery (NOT new per-op
+        reverse math): stamp ``S`` as a ``[B, 1, D_c]`` event onto the
+        ConceptualSpace subspace, then replay the stored grammatical
+        derivations via ``_chart_generate_from_stm`` (repopulates
+        ``WordSpace.generate_rules`` from the STM snapshot the forward
+        left) and run the existing body/percept reverse chain. The
+        owner's not-yet-written per-op ``reverse()`` methods stay
+        IDENTITY STUBS (``SyntacticLayer.reverse`` returns the subspace
+        unchanged for any layer where ``not invertible`` --
+        ``Language.py:4170``); we do NOT author per-op reverse math.
+        Returns the reconstructed ``[B, N, D]`` per-percept subspace
+        materialization (or ``None``).
+        """
+        if S is None or not torch.is_tensor(S):
+            return None
+        cs = self.conceptualSpace
+        if cs is None or cs.subspace is None:
+            return None
+        S3 = S.unsqueeze(1) if S.dim() == 2 else S         # [B, 1, D_c]
+        cs.subspace.set_event(S3)
+        # D4: replay WordSpace's STORED forward derivations. The
+        # ``generate_rules`` the reverse dispatch pops from were
+        # ALREADY populated by the forward (``_default_generate_rules``
+        # at construction; refreshed by the compose path). We do NOT
+        # re-fire ``ws.generate()`` here -- re-running the chart's
+        # outside pass on the post-reduce single-S STM snapshot would
+        # mis-shape the seed (the chart expects the pre-reduce percept
+        # slab, not the [B,1,D_c] reduced root). The per-op
+        # ``SyntacticLayer.reverse`` consumes the stored rules; the
+        # owner's not-yet-written per-op reverses are identity stubs
+        # (weak, non-corrupting).
+        x = self._reverse_body(cs.subspace)
+        x = self._reverse_perceptual(x)
+        x = self.inputSpace.reverse(x)
+        if x is None:
+            return None
+        return (x.materialize()
+                if hasattr(x, 'materialize') else x)
+
+    def _d3_reconstruction_loss(self):
+        """Rework B (3): the D3 reconstruction loss -- the trainable
+        per-word IR objective that REPLACES the interim P-tier
+        ``compute_masked`` masked-LM on the per-word grammar path.
+
+        Reconstruction = the per-percept predictions from
+        ``reverse(S)`` (driven from ``_stm_single_S``), mapped back
+        through the Rework-A MPHF->table, compared vs the COMPLETE
+        UNMASKED input sentence (``inputSpace._ar_embedded`` -- every
+        word, the full pre-mask muxed slab the per-word loop never
+        touched).
+
+        Returns ``(loss, metric)``:
+          * ``loss`` -- the CONTINUOUS percept/concept-vector
+            reconstruction (differentiable, MSE-style via the existing
+            ``self.loss.compute``); this is the trainable signal that
+            goes into the ``reconstruction`` error slot, replacing
+            ``compute_masked`` for this path. Per-word gaussian context
+            washes out across this whole-sentence comparison.
+          * ``metric`` -- the word-level 0/1 input distance (the
+            fraction of percept positions whose nearest table row
+            (``reverse_map_concept``) differs from the forward percept
+            row). REPORTED only -- NON-differentiable; never
+            backpropped (the lexer-discrete word-level distance cannot
+            be finer-grained than 0/1 and is not the gradient source).
+
+        Returns ``(None, None)`` when the per-word S / unmasked target
+        is unavailable (caller falls back to the existing path).
+        """
+        S = getattr(self, '_stm_single_S', None)
+        if S is None:
+            return None, None
+        # COMPLETE UNMASKED target: every word, full pre-mask slab.
+        target = getattr(self.inputSpace, '_ar_embedded', None)
+        if target is None or not torch.is_tensor(target) or target.dim() != 3:
+            return None, None
+        recon = self._reverse_from_S(S)
+        if recon is None or not torch.is_tensor(recon) or recon.dim() != 3:
+            return None, None
+        # Trainable signal: continuous reconstruction vs the complete
+        # unmasked input (differentiable MSE via the existing
+        # ``self.loss.compute``; the target is detached so backward
+        # flows through the prediction -- the per-word encoder / S /
+        # the bounded reduce -- not the fixed input).
+        Kr = min(recon.shape[1], target.shape[1])
+        Dr = min(recon.shape[-1], target.shape[-1])
+        loss = self.loss.compute(
+            recon[:, :Kr, :Dr],
+            target[:, :Kr, :Dr].detach())
+
+        # REPORTED-ONLY metric (NON-differentiable; never backpropped --
+        # the lexer-discrete word-level distance is not the gradient
+        # source). PREFER the word-level 0/1 input distance via the
+        # Rework-A table (forward ``surface[idx]`` where the percept
+        # index is KNOWN -- the reverse-map concern -- over the
+        # nearest-vector map). The reverse(S) trace currently runs the
+        # owner's identity-stub per-op reverses, so its output width can
+        # differ from the codebook width; when the table-index 0/1 is
+        # not materializable at compatible widths, fall back to a
+        # reported continuous WHAT-distance proxy (still NEVER
+        # backpropped) rather than silently dropping the report. Fully
+        # wrapped: a metric edge case must never perturb the step.
+        metric = None
+        try:
+            ps = self.perceptualSpace
+            cb = ps._mphf_codebook() if ps is not None else None
+            with torch.no_grad():
+                cb_w = (cb.getW().shape[-1]
+                        if cb is not None else None)
+                # Word-level 0/1 (preferred) -- only when the recon
+                # width matches the codebook so the nearest-row lookup
+                # is meaningful.
+                if (cb is not None and cb_w is not None
+                        and recon.shape[-1] == cb_w):
+                    pred_idx = ps.reverse_map_concept(
+                        recon[:, :Kr, :], return_surface=False)
+                    # Forward percept rows where known: the per-word
+                    # frozen lexicon row on PerceptualSpace
+                    # ``_active[:, :, 0]`` IS the MPHF index (preferred
+                    # over a nearest-vector remap of the target).
+                    sub = getattr(ps, 'subspace', None)
+                    active = (getattr(sub, '_active', None)
+                              if sub is not None else None)
+                    if (active is not None and active.dim() == 3
+                            and active.shape[-1] >= 1):
+                        tgt_idx = active[:, :Kr, 0].long()
+                    else:
+                        tgt_idx = ps.reverse_map_concept(
+                            target[:, :Kr, :cb_w], return_surface=False)
+                    Km = min(pred_idx.shape[-1], tgt_idx.shape[-1])
+                    metric = (pred_idx[..., :Km]
+                              != tgt_idx[..., :Km]).float().mean()
+                else:
+                    # Reported continuous WHAT-distance proxy (the
+                    # identity-stub reverse yields a non-codebook-width
+                    # output; the discrete 0/1 needs the owner's
+                    # per-op reverses filled). NEVER backpropped.
+                    metric = F.mse_loss(
+                        recon[:, :Kr, :Dr],
+                        target[:, :Kr, :Dr]).detach()
+        except Exception:
+            metric = None
+        return loss, metric
 
 
 
@@ -4504,23 +5761,11 @@ class BasicModel(BaseModel):
         if in_sub is None:
             in_sub = self.inputSpace.forward(inputData)
         if in_sub is None or in_sub.is_empty():
-            # Non-owning post-forward back-refs. ``object.__setattr__``
-            # (the codebase's non-owning-ref idiom, cf. attach_wordSpace
-            # / _model): a plain ``self.inputs = <SubSpace>`` enters
-            # nn.Module.__setattr__ and mutates ``self._modules`` INSIDE
-            # the traced forward, so the dynamo guard
-            # ``len(self._modules)==N`` fails -> a forced recompile
-            # (the measured unique_graphs=2). __dict__ storage keeps
-            # _modules constant -> no recompile.
-            object.__setattr__(self, "inputs", self.inputSpace.subspace)
-            object.__setattr__(self, "percepts",
-                               self.perceptualSpace.subspace)
-            object.__setattr__(self, "concepts",
-                               self.conceptualSpace.subspace)
-            object.__setattr__(self, "symbols",
-                               self.symbolicSpace.subspace)
-            object.__setattr__(self, "outputs",
-                               self.outputSpace.subspace)
+            # Phase 1.5: the five inputs/percepts/concepts/symbols/outputs
+            # back-ref aliases were subsumed -- every reader now goes
+            # through the owning Space directly
+            # (``self.perceptualSpace.subspace`` etc.), so there is no
+            # alias to (re)stamp here. Empty-input early return unchanged.
             return None, None, None, None
 
         # Body: recurrent cell over T stages on B rows. PerceptualSpace
@@ -4550,20 +5795,14 @@ class BasicModel(BaseModel):
         self._unified_j_iterations = min(
             self.conceptualOrder, len(captured_states))
 
-        # Non-owning post-forward back-refs via object.__setattr__ so
-        # they never mutate self._modules inside the traced forward
-        # (else the dynamo ``len(self._modules)`` guard fails -> the
-        # measured one-time recompile / unique_graphs=2). See the
-        # matching block in the empty-input early return above.
-        object.__setattr__(self, "inputs", self.inputSpace.subspace)
-        object.__setattr__(self, "percepts",
-                           self.perceptualSpace.subspace)
-        object.__setattr__(self, "concepts",
-                           self.conceptualSpace.subspace)
-        object.__setattr__(self, "symbols",
-                           self.symbolicSpace.subspace)
-        object.__setattr__(self, "outputs",
-                           self.outputSpace.subspace)
+        # Phase 1.5: the five inputs/percepts/concepts/symbols/outputs
+        # back-ref aliases (formerly stamped here via object.__setattr__)
+        # were subsumed -- they were read-only handles to each Space's
+        # terminal subspace, not cross-round state. Every reader now goes
+        # through the owning Space directly (``self.perceptualSpace
+        # .subspace`` etc.), so nothing is stamped on ``self`` here and
+        # ``self._modules`` stays constant in the traced forward without
+        # the band-aid.
 
         # forwardInput contract for runBatch: ``[B, N, D]`` embedded input.
         input_state = self.inputSpace._ar_embedded

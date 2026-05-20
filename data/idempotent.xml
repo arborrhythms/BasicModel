@@ -22,9 +22,14 @@
              NEITHER corner [0, 0] for every prototype.
 
        This config exercises that primitive through a full SymbolicSpace
-       (sigma dispatched via the grammar XML, full lifecycle including
-       resolve / set_event / forwardEnd) so the snap can be observed
-       in context, not just on a bare Codebook.
+       in GENUINELY non-grammatical mode (useGrammar='none', via the
+       default-only unary sigma/pi substrate grammar; see the WordSpace
+       grammar block below for why an empty block would NOT be
+       non-grammatical). The C to S codebook snap that CREATES symbols
+       is a subsymbolic substrate op and runs unconditionally regardless
+       of grammar, so the full lifecycle (resolve / set_event /
+       forwardEnd) and the snap are still observed in context, not just
+       on a bare Codebook.
 
        Sizing rationale:
          - V_S = V_C = nDim_C = nDim_S = 4: the V_S = V_C alignment
@@ -88,6 +93,12 @@
     <invertible>true</invertible>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
+    <!-- H2: STM capacity = the classical 7±2 working-memory bound, so
+         the [B, 7, concept_dim] STM slab is what passes through the
+         widened idempotent C->S->C symbolic-space loop
+         (BasicModel._stm_symbolic_roundtrip). Subsymbolic operation
+         can override via this knob (ShortTermMemory docstring). -->
+    <stmCapacity>7</stmCapacity>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -116,14 +127,51 @@
     <language>
       <start>S</start>
       <grammar>
-        <!-- Idempotent loop: no sigma / pi rules listed. Per the
-             2026-05-07 rollback the grammar XML is the sole source
-             of truth for which rule fires at each tier; with no
-             rules listed for P / C / S, every per-space
-             SyntacticLayer dispatch is a no-op and neither
-             sigma nor pi appears in the forward / reverse data
-             flow. The codebook is the only learned object in the
+        <!-- Idempotent loop: GENUINELY non-grammatical
+             (useGrammar='none'). An EMPTY grammar block does NOT
+             yield non-grammatical: Grammar._ensure_configured
+             (bin/Language.py) falls back to _NOOP_GRAMMAR =
+             S:not(S) when no inline grammar is present, and the
+             ``not`` rule is non-substrate, so _derive_use_grammar
+             (bin/Models.py) returns 'all' (chart + per-stage merge
+             glue wired). To be genuinely non-grammatical the grammar
+             must be the "default-only" case: ONLY the trivial unary
+             pi / sigma substrate folds at every tier (compose +
+             generate). That is the one grammar shape
+             _derive_use_grammar maps to 'none'. This block mirrors
+             data/model.xml's canonical default-only grammar verbatim.
+
+             The symbolic loop still creates symbols in this mode: the
+             C to S codebook snap (SymbolicSpace.forward, bin/Spaces.py)
+             is a subsymbolic SUBSTRATE op that runs UNCONDITIONALLY
+             regardless of grammar state (same precedent as the
+             post-#21 unconditional ``sigma_percept``). Symbol
+             creation is the codebook quantize, not a grammatical
+             rule, so it is exercised even with useGrammar='none'.
+             The codebook remains the only learned object in the
              C-S loop. -->
+        <compose>
+          <percepts>
+            <rule>P = sigma(P)</rule>
+          </percepts>
+          <concepts>
+            <rule>C = pi(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma(S)</rule>
+          </symbols>
+        </compose>
+        <generate>
+          <percepts>
+            <rule>P = sigma.reverse(P)</rule>
+          </percepts>
+          <concepts>
+            <rule>C = pi.reverse(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma.reverse(S)</rule>
+          </symbols>
+        </generate>
       </grammar>
     </language>
   </WordSpace>
