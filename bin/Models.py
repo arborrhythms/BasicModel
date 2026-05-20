@@ -5964,11 +5964,13 @@ class BasicModel(BaseModel):
         wordSpace = self.wordSpace
         if wordSpace is None:
             return
+        parse_state = getattr(wordSpace, 'parse_state', None)
         chart = getattr(wordSpace, 'chart', None)
-        if chart is None:
+        if chart is None and parse_state is None:
             return
-        traces = getattr(chart, '_derivation_trace', None)
-        cat_names = getattr(chart, '_category_names', None) or ['?']
+        traces = getattr(chart, '_derivation_trace', None) if chart is not None else None
+        cat_names = getattr(chart, '_category_names', None) if chart is not None else None
+        cat_names = cat_names or ['?']
 
         # Resolve atom_idx -> surface token via InputSpace.wv (word
         # vectors); fall back to a placeholder when wv isn't wired.
@@ -6117,10 +6119,54 @@ class BasicModel(BaseModel):
                    else '?')
             return cat, canon
 
+        def _rule_canon(rule_id):
+            try:
+                if TheGrammar:
+                    return TheGrammar.rules[int(rule_id)].canonical
+                return str(rule_id)
+            except Exception:
+                return str(rule_id)
+
         forward_el = ET.Element(
             'forward',
             {'tick': str(getattr(self, '_current_tick', '?'))})
-        if traces is None:
+        if parse_state is not None and getattr(parse_state, 'actions', None):
+            row_traces = getattr(parse_state, 'row_traces', None) or {
+                0: getattr(parse_state, 'trace', None) or parse_state.actions
+            }
+            for b, actions in sorted(row_traces.items()):
+                batch_el = ET.SubElement(
+                    forward_el, 'batch', {'n': str(b)})
+                if not actions:
+                    ET.SubElement(batch_el, 'noTrace')
+                    continue
+                action_by_parent = {a.parent_index: a for a in actions}
+
+                def _build_frame(frame_idx, parent_el, _b=b):
+                    frame = parse_state.frames[int(frame_idx)]
+                    action = action_by_parent.get(int(frame_idx))
+                    if action is None:
+                        pos = max(0, int(frame.span_start))
+                        ET.SubElement(parent_el, 'leaf', {
+                            'token': _decode_token(_b, pos),
+                            'pos': str(frame.category),
+                            'i': str(pos),
+                        })
+                        return
+                    node_el = ET.SubElement(parent_el, 'node', {
+                        'cat': str(frame.category),
+                        'rule': _rule_canon(action.rule_id),
+                        'i': str(frame.span_start),
+                        'j': str(frame.span_end),
+                    })
+                    for child_idx in action.operand_indices:
+                        _build_frame(child_idx, node_el, _b)
+
+                root = actions[-1]
+                _build_frame(root.parent_index, batch_el)
+                rules_el = ET.SubElement(batch_el, 'rules')
+                rules_el.text = ",".join(str(int(a.rule_id)) for a in actions)
+        elif traces is None:
             ET.SubElement(forward_el, 'noTrace')
         else:
             for b, trace in enumerate(traces):

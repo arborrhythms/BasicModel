@@ -289,19 +289,21 @@ def build_taxonomy_from_grammar(grammar) -> Dict[str, Any]:
     """Build the bootstrap taxonomy structure from a Grammar's rules.
 
     Walks ``grammar.rules``, parsing each category token through
-    ``Grammar._parse_category`` to extract the bare name (stripping
-    order suffixes so ``NP3`` and ``NP4`` collapse to ``NP``).
+    ``Grammar._parse_category``. Base category nodes (``NP``) remain the
+    category identity; explicit ordered variants (``NP3``, ``NP4``) are
+    represented as children of that base node so the parser can carry
+    ``category='NP'`` plus ``order=3`` / ``order=4``.
     Classifies categories: anything appearing as a rule LHS is a
     *nonterminal*; categories appearing only in RHS positions are
     *POS terminals*.
 
-    Builds a flat tree:
+    Builds a shallow tree:
 
       ref_id 0  = root  (parent = -1)
-      ref_ids 1..K  = nonterminal class nodes, sorted by name,
-                      all parented under root
-      ref_ids K+1..N = POS class nodes, sorted by name,
-                      all parented under root
+      ref_ids 1..K  = base category nodes, sorted by name, parented
+                      under root
+      extra refs     = ordered category nodes, parented under their base
+                      category node
 
     Word meta-symbol leaves under POS nodes are populated in a separate
     step (lexicon-driven, when ``wv.index_to_key`` is available).
@@ -314,40 +316,62 @@ def build_taxonomy_from_grammar(grammar) -> Dict[str, Any]:
     """
     from Language import Grammar as GrammarClass
     grammar._ensure_configured()
-    lhs_set: set = set()
     all_cats: set = set()
+    ordered: set = set()
     for rule in grammar.rules:
         lhs_parsed = GrammarClass._parse_category(rule.lhs)
-        lhs_set.add(lhs_parsed.name)
         all_cats.add(lhs_parsed.name)
+        if lhs_parsed.order.kind == 'constant' and lhs_parsed.order.delta != 0:
+            ordered.add((lhs_parsed.name, int(lhs_parsed.order.delta)))
         for s in (rule.rhs_symbols or ()):
             rhs_parsed = GrammarClass._parse_category(s)
             all_cats.add(rhs_parsed.name)
-    nonterminals = sorted(lhs_set)
-    pos_terms = sorted(all_cats - lhs_set)
+            if rhs_parsed.order.kind == 'constant' and rhs_parsed.order.delta != 0:
+                ordered.add((rhs_parsed.name, int(rhs_parsed.order.delta)))
+    base_names = sorted(all_cats)
     ref_ids: Dict[str, int] = {}
+    ordered_ref_ids: Dict[str, int] = {}
+    ref_categories: Dict[int, str] = {0: 'ROOT'}
+    ref_orders: Dict[int, int] = {0: 0}
     next_id = 1  # 0 reserved for root
-    for name in nonterminals:
+    for name in base_names:
         ref_ids[name] = next_id
+        ref_categories[next_id] = name
+        ref_orders[next_id] = 0
         next_id += 1
-    for name in pos_terms:
-        ref_ids[name] = next_id
+    for name, order in sorted(ordered):
+        key = f"{name}{order}"
+        ordered_ref_ids[key] = next_id
+        ref_categories[next_id] = name
+        ref_orders[next_id] = int(order)
         next_id += 1
     n_nodes = next_id
     parent = torch.full((n_nodes,), -1, dtype=torch.long)
-    children_of_root: List[int] = []
-    for name in nonterminals + pos_terms:
+    kids: List[List[int]] = [[] for _ in range(n_nodes)]
+    for name in base_names:
         rid = ref_ids[name]
         parent[rid] = 0
-        children_of_root.append(rid)
-    children_values = torch.tensor(children_of_root, dtype=torch.long)
-    children_offsets = torch.zeros(n_nodes + 1, dtype=torch.long)
-    children_offsets[1:] = len(children_of_root)
+        kids[0].append(rid)
+    for name, order in sorted(ordered):
+        rid = ordered_ref_ids[f"{name}{order}"]
+        base = ref_ids[name]
+        parent[rid] = base
+        kids[base].append(rid)
+    flat_values: List[int] = []
+    offsets: List[int] = [0]
+    for rid in range(n_nodes):
+        flat_values.extend(sorted(kids[rid]))
+        offsets.append(len(flat_values))
+    children_values = torch.tensor(flat_values, dtype=torch.long)
+    children_offsets = torch.tensor(offsets, dtype=torch.long)
     return {
         'parent':           parent,
         'children_values':  children_values,
         'children_offsets': children_offsets,
         'taxonomy_names':   ref_ids,
+        'ordered_taxonomy_names': ordered_ref_ids,
+        'ref_categories':   ref_categories,
+        'ref_orders':       ref_orders,
     }
 
 
@@ -365,9 +389,10 @@ def build_reference_codebook_initial(
     ``N_live = taxonomy['parent'].shape[0]`` rows are live; the rest is
     slack for symbol-learning appends.
 
-    Bootstrap values: all live ``references[i] = 0.0`` and
-    ``order[i] = 0``. Symbol-learning logic will populate actual
-    centroids and orders as it discovers refs.
+    Bootstrap values: all live ``references[i] = 0.0``. Orders come from
+    ``taxonomy['ref_orders']`` when present, so explicit category refs
+    such as ``NP3`` and ``NP4`` enter the artifact at their grammatical
+    order.
 
     Plan: §Phase 1 — reference codebook init.
     """
@@ -375,6 +400,10 @@ def build_reference_codebook_initial(
     capacity = max(n_live * capacity_factor, min_capacity)
     references = torch.zeros(capacity, dtype=torch.float32)
     order = torch.zeros(capacity, dtype=torch.long)
+    for rid, ord_value in (taxonomy.get('ref_orders') or {}).items():
+        rid_i = int(rid)
+        if 0 <= rid_i < n_live:
+            order[rid_i] = int(ord_value)
     return {
         'references': references,
         'v_ref_live': n_live,
@@ -477,6 +506,10 @@ class KnowledgeView:
         tax = knowledge_section['taxonomy']
         self._parent = tax['parent']
         self._taxonomy_names = tax['taxonomy_names']
+        self._ordered_taxonomy_names = tax.get('ordered_taxonomy_names', {})
+        self._ref_categories = {
+            int(k): str(v) for k, v in (tax.get('ref_categories') or {}).items()
+        }
         self._ref_to_name = {v: k for k, v in self._taxonomy_names.items()}
         self._rule_sigs = knowledge_section['grammar']['rule_order_signatures']
 
@@ -501,6 +534,12 @@ class KnowledgeView:
         return self._taxonomy_names
 
     @property
+    def ordered_taxonomy_names(self) -> Dict[str, int]:
+        """Mapping from explicit ordered category tokens, e.g. ``NP3``,
+        to their reference ids."""
+        return self._ordered_taxonomy_names
+
+    @property
     def rule_order_signatures(self) -> List[Dict[str, Any]]:
         """List-of-dicts (JSON-friendly form) of per-rule order signatures."""
         return self._rule_sigs
@@ -516,6 +555,9 @@ class KnowledgeView:
         is named — e.g. the root.
         """
         cur = int(ref_id)
+        category = self._ref_categories.get(cur)
+        if category is not None and category != 'ROOT':
+            return category
         while cur >= 0:
             if cur in self._ref_to_name:
                 return self._ref_to_name[cur]
@@ -681,6 +723,7 @@ def mask_logits(
     Returns a NEW tensor (does not mutate ``logits``). ``mask`` must
     broadcast against the last dim of ``logits``.
     """
+    mask = mask.to(device=logits.device, dtype=torch.bool)
     return logits.masked_fill(~mask, float('-inf'))
 
 

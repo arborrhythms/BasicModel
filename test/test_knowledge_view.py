@@ -37,8 +37,9 @@ def test_knowledge_view_n_refs_live():
     """``view.n_refs_live`` returns the live count (root + categories)."""
     from embed import KnowledgeView
     view = KnowledgeView(_tiny_knowledge_section())
-    # tiny grammar: root + S + NP + VP + DET = 5
-    assert view.n_refs_live == 5
+    # root + base categories {S, NP, VP, DET} + ordered refs
+    # {S4, NP3, VP1, NP4}
+    assert view.n_refs_live == 9
 
 
 def test_knowledge_view_references_slice_shape():
@@ -65,8 +66,8 @@ def test_knowledge_view_refs_by_category():
     np_refs = view.refs_by_category('NP')
     assert isinstance(np_refs, torch.Tensor)
     assert np_refs.dtype == torch.long
-    # Bootstrap: just the NP class node itself
-    assert np_refs.shape[0] == 1
+    # Base NP plus ordered NP3 / NP4 refs.
+    assert np_refs.shape[0] == 3
     # Missing category: empty
     none_refs = view.refs_by_category('NONEXISTENT')
     assert none_refs.shape[0] == 0
@@ -74,11 +75,14 @@ def test_knowledge_view_refs_by_category():
 
 def test_knowledge_view_refs_by_order():
     """``view.refs_by_order(k)`` returns the LongTensor at order k.
-    Bootstrap: all class nodes at order 0."""
+    Bootstrap: base class nodes at order 0, explicit ordered refs at
+    their grammatical order."""
     from embed import KnowledgeView
     view = KnowledgeView(_tiny_knowledge_section())
     refs_o0 = view.refs_by_order(0)
-    assert refs_o0.shape[0] == view.n_refs_live
+    assert refs_o0.shape[0] == 5
+    assert view.refs_by_order(3).shape[0] == 1
+    assert view.refs_by_order(4).shape[0] == 2
     # No order 7 yet
     assert view.refs_by_order(7).shape[0] == 0
 
@@ -145,7 +149,7 @@ def test_knowledge_view_round_trip_from_load(tmp_path):
     save_artifact(path, knowledge=ks)
     loaded = load_artifact(path)['knowledge']
     view = KnowledgeView(loaded)
-    assert view.n_refs_live == 5
+    assert view.n_refs_live == 9
     assert view.ref_id_for('NP') is not None
 
 
@@ -158,7 +162,7 @@ def test_load_knowledge_view_helper(tmp_path):
     path = str(tmp_path / "rt.kv")
     save_artifact(path, knowledge=ks)
     view = load_knowledge_view(path)
-    assert view.n_refs_live == 5
+    assert view.n_refs_live == 9
 
 
 def test_load_knowledge_view_missing_section_raises(tmp_path):

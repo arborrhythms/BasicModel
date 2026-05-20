@@ -77,8 +77,9 @@ def test_phase2_end_to_end_round_trip(tmp_path):
 
     # 3: Load
     view = load_knowledge_view(path)
-    # root + nonterminals {S, NP} + POS terminals {VP, DET} = 5
-    assert view.n_refs_live == 5
+    # root + base categories {S, NP, VP, DET} + explicit ordered refs
+    # {S4, NP3, VP1, NP4, S3}
+    assert view.n_refs_live == 10
 
     # 4: Attach to three Spaces (all bare instances)
     ws = object.__new__(WordSpace); nn.Module.__init__(ws)

@@ -32,6 +32,7 @@ Shapes:
     frames                 list[Frame]
     actions                list[Action]
     trace                  list[Action]    Viterbi / best derivation
+    row_traces             dict[int, list[Action]]
     current_rules          dict[str, list[list[int]]]   per-tier per-row
     generate_rules         dict[str, list[list[int]]]   reversed
     leaf_category_probs    Optional[torch.Tensor]  [N_tokens, N_categories]
@@ -73,6 +74,7 @@ class ParseState:
     frames: List[Frame] = field(default_factory=list)
     actions: List[Action] = field(default_factory=list)
     trace: List[Action] = field(default_factory=list)
+    row_traces: Dict[int, List[Action]] = field(default_factory=dict)
     current_rules: Dict[str, List[List[int]]] = field(default_factory=dict)
     generate_rules: Dict[str, List[List[int]]] = field(default_factory=dict)
     leaf_category_probs: Optional[torch.Tensor] = None
@@ -148,15 +150,19 @@ def project_to_chart_fields(state: ParseState, target: Any,
     Plan: path-to-complete §3 (adapter) and §6 (consumer migration).
     """
     # Derivation trace: list[list[(rule_id, parent_span)]] indexed by
-    # batch row. The STM is single-row by default; we use row 0.
-    if state.trace:
-        trace_row = [
-            (a.rule_id,
-             state.frames[a.parent_index].span_start,
-             state.frames[a.parent_index].span_end)
-            for a in state.trace
-        ]
-        target._derivation_trace = [trace_row]
+    # batch row.
+    rows = getattr(state, 'row_traces', None) or {0: state.trace}
+    if rows:
+        out = []
+        for b in sorted(rows):
+            trace_row = [
+                (a.rule_id,
+                 state.frames[a.parent_index].span_start,
+                 state.frames[a.parent_index].span_end)
+                for a in rows[b]
+            ]
+            out.append(trace_row)
+        target._derivation_trace = out
     else:
         target._derivation_trace = [[]]
     # Chart-cell tensors are stem-only when projecting from STM.

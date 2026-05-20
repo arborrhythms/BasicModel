@@ -6086,15 +6086,10 @@ class WordSpace(Space):
         driver = STMDriver(typed_stack=stm_typed,
                            rule_signatures=rule_sigs,
                            scorer=scorer)
-        # Stash via ``object.__setattr__`` so the driver isn't recursively
-        # registered as a child of this WordSpace (that would put the
-        # typed_stack — which is conceptually owned by the
-        # ConceptualSpace — on two parents at once). The optimizer-feed
-        # list still needs the scorer's params; pull them in explicitly
-        # when a real ``self.params`` exists (bare-WordSpace test
-        # fixtures construct without ``__init__`` and have no params
-        # list).
-        object.__setattr__(self, '_stm_driver', driver)
+        # Register the driver so ``.to(device)`` reaches the scorer. The
+        # scorer params are also mirrored into the legacy manual
+        # optimizer-feed list below.
+        self._stm_driver = driver
         params = self.__dict__.get('params')
         if isinstance(params, list):
             for p in driver.parameters():
@@ -6137,7 +6132,7 @@ class WordSpace(Space):
 
         For each batch row:
           1. SHIFT every token from ``input_vectors[b]``. Snap the
-             token payload to the nearest order-0 reference scalar to
+             token payload to the nearest reference scalar to
              pick a (ref_id, category) so the typed admissibility mask
              can gate REDUCE. Order is the snapped ref's recorded order.
           2. REDUCE until either depth==1 or no admissible rule fires.
@@ -6166,17 +6161,20 @@ class WordSpace(Space):
         stm_typed = self.conceptualSpace.stm_typed
         driver = self.stm_driver
         B, N, D = input_vectors.shape
+        if hasattr(stm_typed, 'ensure_batch'):
+            stm_typed.ensure_batch(B)
         rows = min(B, stm_typed.batch)
         # Reset rows we'll touch.
         for b in range(rows):
             while int(stm_typed._depth[b].item()) > 0:
                 stm_typed.pop(b)
-        # Order-0 candidate set for SHIFT snap. Fall back to all live
-        # refs if no order-0 refs exist yet (bootstrap state).
-        order0_ids = view.refs_by_order(0)
-        if order0_ids.numel() == 0:
-            order0_ids = torch.arange(
-                view.n_refs_live, dtype=torch.long)
+        # SHIFT snaps against all live non-root refs. Written words may
+        # enter at orthographic order 0, but the selected reference is the
+        # grammatical/conceptual meaning and carries its own order
+        # (e.g. NP3 vs NP4).
+        candidate_ids = torch.arange(1, view.n_refs_live, dtype=torch.long)
+        if candidate_ids.numel() == 0:
+            candidate_ids = torch.arange(view.n_refs_live, dtype=torch.long)
         per_tier: dict = {}
         from parse_state import ParseState
         parse_state = ParseState()
@@ -6193,11 +6191,15 @@ class WordSpace(Space):
             if d < 1:
                 return False
             try:
-                result = driver.reduce_step(b)
+                result = driver.reduce_step_soft(b)
             except RuntimeError:
                 return False
             rule_index = int(result['rule_index'])
             sig = result['rule_signature']
+            rule_score = float(
+                result['masked_logits'][rule_index].detach().cpu().item())
+            rule_probability = float(
+                result['probabilities'][rule_index].detach().cpu().item())
             arity = len(sig.get('rhs_categories', ()))
             # Capture operand orders BEFORE popping (popped frames
             # lose their order). The order-of-pop matters: we pop
@@ -6240,7 +6242,11 @@ class WordSpace(Space):
                 parent_payload=parent_payload,
                 parent_category=lhs_cat,
                 parent_order=lhs_order,
+                score=rule_score,
+                probability=rule_probability,
             )
+            parse_state.row_traces.setdefault(b, []).append(
+                parse_state.actions[-1])
             slot_to_frame[b].append(parent_idx)
             tier = self._tier_for_stm_signature(sig, rule_index)
             rows_list = per_tier.setdefault(
@@ -6259,7 +6265,7 @@ class WordSpace(Space):
             for n in range(N):
                 payload = input_vectors[b, n]
                 ref_id, category, order = self._stm_snap_token(
-                    payload, view, order0_ids)
+                    payload, view, candidate_ids)
                 driver.shift(b, payload,
                              category=category, order=order,
                              ref_id=ref_id)
@@ -6283,15 +6289,21 @@ class WordSpace(Space):
                 reduces_done += 1
         # The greedy STM picks one action per REDUCE; the trace IS
         # the chosen action list.
-        parse_state.trace = list(parse_state.actions)
-        parse_state.current_rules = per_tier
-        object.__setattr__(self, 'parse_state', parse_state)
         # Pad rows + (for generate) reverse each row's sequence.
         for tier, rows_list in per_tier.items():
             while len(rows_list) < rows:
                 rows_list.append([])
             if mode == 'generate':
                 per_tier[tier] = [list(reversed(r)) for r in rows_list]
+        parse_state.trace = list(parse_state.row_traces.get(
+            0, parse_state.actions))
+        if mode == 'generate':
+            parse_state.generate_rules = per_tier
+        else:
+            parse_state.current_rules = per_tier
+        object.__setattr__(self, 'parse_state', parse_state)
+        if mode == 'compose':
+            self._extract_svo_from_parse_state(parse_state)
         return per_tier
 
     # -- parser-neutral accessors (path-to-complete §6) --------------------
@@ -6322,8 +6334,15 @@ class WordSpace(Space):
         ps = getattr(self, 'parse_state', None)
         if ps is None or not ps.actions:
             return [[]]
-        # Single-row STM output for now (per-row chart projection is
-        # future work).
+        if getattr(ps, 'row_traces', None):
+            rows = []
+            for b in sorted(ps.row_traces):
+                row = []
+                for a in ps.row_traces[b]:
+                    parent = ps.frames[a.parent_index]
+                    row.append((a.rule_id, parent.span_start, parent.span_end))
+                rows.append(row)
+            return rows
         row = []
         for a in ps.actions:
             parent = ps.frames[a.parent_index]
@@ -6418,25 +6437,84 @@ class WordSpace(Space):
             return 'C'
         return 'S'
 
-    def _stm_snap_token(self, payload, view, order0_ids):
-        """Snap a token payload to the nearest order-0 reference.
+    def _stm_snap_token(self, payload, view, candidate_ids):
+        """Snap a token payload to the nearest live reference.
 
-        The reference codebook scalars are 1-D; we project the multi-D
-        payload by taking its first component as the snap target. (This
-        matches the bivector-retired snap which compares against a
-        single scalar prototype.) Returns ``(ref_id, category, order)``
-        with ``order`` taken from the snapped ref's recorded order.
+        The selected reference supplies the conceptual order, so explicit
+        grammar categories such as ``NP3`` and ``NP4`` can participate in
+        typed admissibility while orthographic input remains just a
+        surface vector.
         """
-        if order0_ids.numel() == 0 or view.n_refs_live == 0:
+        if candidate_ids.numel() == 0 or view.n_refs_live == 0:
             return -1, 'UNK', 0
         scalar = float(payload.reshape(-1)[0].item()) \
             if payload.numel() > 0 else 0.0
-        candidates = view.references[order0_ids]
+        candidate_ids = candidate_ids.to(device=view.references.device)
+        candidates = view.references[candidate_ids]
         idx = int((candidates - scalar).abs().argmin().item())
-        ref_id = int(order0_ids[idx].item())
+        ref_id = int(candidate_ids[idx].item())
         category = view.category_of_ref(ref_id) or 'UNK'
         order = view.order_of_ref(ref_id)
         return ref_id, category, order
+
+    def _extract_svo_from_parse_state(self, parse_state):
+        """Populate WordSpace last_svo from an STM ParseState when a row
+        contains S=lift(NP, VP) over VP=intersection(V, O)."""
+        if not hasattr(self, 'set_last_svo'):
+            return
+        row_traces = getattr(parse_state, 'row_traces', None) or {
+            0: getattr(parse_state, 'trace', None) or parse_state.actions
+        }
+
+        def _base(cat):
+            try:
+                return Grammar._parse_category(cat).name
+            except Exception:
+                return str(cat)
+
+        def _rule(rule_id):
+            try:
+                return TheGrammar.rules[int(rule_id)]
+            except Exception:
+                return None
+
+        try:
+            self.clear_last_svo()
+        except Exception:
+            pass
+        for b, actions in row_traces.items():
+            action_by_parent = {a.parent_index: a for a in actions}
+            for action in actions:
+                rule = _rule(action.rule_id)
+                if rule is None or rule.method_name != 'lift':
+                    continue
+                rhs = tuple(_base(s) for s in (rule.rhs_symbols or ()))
+                if _base(rule.lhs) != 'S' or rhs != ('NP', 'VP'):
+                    continue
+                if len(action.operand_indices) != 2:
+                    continue
+                subj_idx, vp_idx = action.operand_indices
+                vp_action = action_by_parent.get(vp_idx)
+                if vp_action is None:
+                    continue
+                vp_rule = _rule(vp_action.rule_id)
+                if vp_rule is None or vp_rule.method_name != 'intersection':
+                    continue
+                vp_rhs = tuple(_base(s) for s in (vp_rule.rhs_symbols or ()))
+                if _base(vp_rule.lhs) != 'VP' or vp_rhs != ('V', 'O'):
+                    continue
+                if len(vp_action.operand_indices) != 2:
+                    continue
+                verb_idx, obj_idx = vp_action.operand_indices
+                try:
+                    self.set_last_svo(
+                        int(b),
+                        parse_state.frames[subj_idx].payload,
+                        parse_state.frames[verb_idx].payload,
+                        parse_state.frames[obj_idx].payload,
+                    )
+                except Exception:
+                    pass
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):

@@ -9420,15 +9420,13 @@ class ConceptualSpace(Space):
     def _init_typed_stm(self, batch, max_depth, dim):
         """Allocate (or reallocate) the typed-metadata STM.
 
-        Stored via ``object.__setattr__`` to bypass nn.Module's
-        submodule registration -- ``TypedStack`` is plain Python
-        state, not a Module.
+        ``TypedStack`` is an ``nn.Module`` with registered buffers, so it
+        must be assigned normally; otherwise ``.to(device)`` will leave
+        its stack tensors behind.
         """
         from typed_stack import TypedStack
-        object.__setattr__(
-            self, '_stm_typed',
-            TypedStack(batch=int(batch), max_depth=int(max_depth),
-                       dim=int(dim)))
+        self._stm_typed = TypedStack(
+            batch=int(batch), max_depth=int(max_depth), dim=int(dim))
 
     @property
     def stm_typed(self):

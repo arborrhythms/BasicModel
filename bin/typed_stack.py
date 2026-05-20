@@ -95,12 +95,47 @@ class TypedStack(nn.Module):
         d = int(self._depth[b].item())
         assert d < self.max_depth, (
             f"TypedStack overflow at row {b}: max_depth={self.max_depth}")
-        self._buffer[b, d] = vec
+        self._buffer[b, d] = vec.to(
+            device=self._buffer.device, dtype=self._buffer.dtype)
         self._category[b, d] = int(category_id) if category_id is not None else -1
         self._order[b, d] = int(order)
         self._ref_id[b, d] = int(ref_id)
         self._category_names[b][d] = category_id_str
         self._depth[b] = d + 1
+
+    def ensure_batch(self, batch: int) -> None:
+        """Grow the row dimension, preserving existing stack state."""
+        batch = int(batch)
+        if batch <= self.batch:
+            return
+        device = self._buffer.device
+        new_buffer = torch.zeros(
+            batch, self.max_depth, self.dim,
+            dtype=self._buffer.dtype, device=device)
+        new_category = torch.full(
+            (batch, self.max_depth), -1,
+            dtype=self._category.dtype, device=device)
+        new_order = torch.zeros(
+            (batch, self.max_depth),
+            dtype=self._order.dtype, device=device)
+        new_ref_id = torch.full(
+            (batch, self.max_depth), -1,
+            dtype=self._ref_id.dtype, device=device)
+        new_depth = torch.zeros(
+            batch, dtype=self._depth.dtype, device=device)
+        new_buffer[:self.batch] = self._buffer
+        new_category[:self.batch] = self._category
+        new_order[:self.batch] = self._order
+        new_ref_id[:self.batch] = self._ref_id
+        new_depth[:self.batch] = self._depth
+        self._buffer = new_buffer
+        self._category = new_category
+        self._order = new_order
+        self._ref_id = new_ref_id
+        self._depth = new_depth
+        self._category_names.extend(
+            [[None] * self.max_depth for _ in range(batch - self.batch)])
+        self.batch = batch
 
     def pop(self, b: int) -> Dict[str, Any]:
         """Pop the top frame from row ``b`` and return its metadata."""
