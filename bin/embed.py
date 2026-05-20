@@ -1257,6 +1257,129 @@ def project_codebook(wv: "WordVectors", target_dim: int) -> "WordVectors":
 DEFAULT_LEARNING_RATE = 0.01
 
 
+def _mphf_reserved_keys() -> List[str]:
+    """Rows that must exist before corpus words in an MPHF lexicon."""
+    from Spaces import NULL_PERCEPT_KEY
+    return [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+
+
+def _mphf_runtime_tokens(text: str) -> Iterable[str]:
+    """Yield the same byte spans that ``PerceptualSpace._embed_mphf`` hashes.
+
+    Runtime MPHF splits only on ``ChunkLayer.BOUNDARY_BYTES``: NUL, tab,
+    newline, carriage return, and space. Punctuation remains attached to
+    the surrounding word when no whitespace separates it.
+    """
+    boundary = {0x00, 0x09, 0x0A, 0x0D, 0x20}
+    data = text.encode("utf-8") if isinstance(text, str) else bytes(text)
+    buf = bytearray()
+    for b in data:
+        if b == 0:
+            break
+        if b in boundary:
+            if buf:
+                yield bytes(buf).decode("utf-8")
+                buf.clear()
+        else:
+            buf.append(b)
+    if buf:
+        yield bytes(buf).decode("utf-8")
+
+
+def extract_mphf_vocab(shard_paths, output_path, *,
+                       max_docs=10000, n_vectors=1000000,
+                       vector_size=6, min_count=1, seed=0):
+    """Extract a frozen MPHF word-set artifact without embedding training.
+
+    The output is a normal ``WordVectors`` ``.kv``: ``index_to_key`` is
+    the frozen MPHF key set and ``_vectors`` is random trainable payload.
+    The model can then learn those rows during downstream training while
+    MPHF keeps row identity stable.
+    """
+    reserved = _mphf_reserved_keys()
+    reserved_set = set(reserved)
+    if int(n_vectors) < len(reserved):
+        raise ValueError(
+            f"n_vectors={n_vectors} is too small; MPHF vocab needs at "
+            f"least {len(reserved)} reserved rows.")
+
+    counts = Counter()
+    docs_seen = 0
+    tokens_seen = 0
+    print(f"Extracting MPHF vocabulary from {len(shard_paths)} shard(s), "
+          f"max_docs={max_docs}, target rows={n_vectors}, "
+          f"min_count={min_count}...",
+          flush=True)
+    for doc in iter_documents(shard_paths, max_docs=max_docs):
+        doc_tokens = list(_mphf_runtime_tokens(doc))
+        if doc_tokens:
+            counts.update(doc_tokens)
+            tokens_seen += len(doc_tokens)
+        docs_seen += 1
+        if docs_seen % 100 == 0:
+            pct = (docs_seen / max_docs * 100.0) if max_docs else 0.0
+            print(f"  scanned {docs_seen}/{max_docs} docs ({pct:.1f}%), "
+                  f"tokens={tokens_seen:,}, unique={len(counts):,}",
+                  flush=True)
+
+    capacity = int(n_vectors) - len(reserved)
+    corpus_keys: List[str] = []
+    corpus_counts: List[int] = []
+    for word, count in counts.most_common():
+        if count < int(min_count):
+            break
+        if word in reserved_set:
+            continue
+        corpus_keys.append(word)
+        corpus_counts.append(int(count))
+        if len(corpus_keys) >= capacity:
+            break
+
+    keys = reserved + corpus_keys
+    count_values = []
+    for key in reserved:
+        count_values.append(max(int(counts.get(key, 0)), int(min_count)))
+    count_values.extend(corpus_counts)
+    counts_arr = np.asarray(count_values, dtype=np.int64)
+
+    gen = torch.Generator(device="cpu")
+    gen.manual_seed(int(seed))
+    vectors = torch.empty(
+        (len(keys), int(vector_size)), dtype=torch.float32, device="cpu")
+    vectors.uniform_(-1.0, 1.0, generator=gen)
+    wv = WordVectors(vectors, keys,
+                     counts=counts_arr,
+                     total_count=int(tokens_seen))
+
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    wv.save(output_path, metadata={
+        "phase": "mphf-vocab-extract",
+        "tokenizer": "mphf-runtime-byte-boundary",
+        "boundary_bytes": [0, 9, 10, 13, 32],
+        "n_vectors_target": int(n_vectors),
+        "vector_size": int(vector_size),
+        "min_count": int(min_count),
+        "seed": int(seed),
+        "docs_seen": int(docs_seen),
+        "tokens_seen": int(tokens_seen),
+        "unique_observed": int(len(counts)),
+        "reserved_rows": int(len(reserved)),
+        "corpus_rows": int(len(corpus_keys)),
+    })
+    print(f"Saved MPHF vocab to {output_path} "
+          f"({len(keys):,} rows = {len(reserved)} reserved + "
+          f"{len(corpus_keys):,} corpus, D={vector_size})",
+          flush=True)
+    if len(keys) < int(n_vectors):
+        print(f"Warning: requested {n_vectors:,} rows but only "
+              f"{len(keys):,} met min_count={min_count}. "
+              f"Use more docs or lower --min-count to fill the table.",
+              flush=True)
+    return wv
+
+
 def build_embeddings(shard_paths, output_path, max_docs=10000,
                      vector_size=100, epochs=10, min_count=5,
                      batch_size=256, sigma=5.0, normalize=True,
@@ -2056,6 +2179,21 @@ if __name__ == '__main__':
                          help='Compilation backend: none, inductor, eager, aot_eager. '
                               'Overrides MODEL_COMPILE env var.')
 
+    # --- MPHF vocabulary extraction -------------------------------------
+    vocab_p = sub.add_parser(
+        "vocab-extract",
+        help="Extract a frozen MPHF word-set .kv from FineWeb without training.")
+    vocab_p.add_argument('--output',
+                         default='output/embeddings/MM_5M_1M_words.kv')
+    vocab_p.add_argument('--data-dir', default=None)
+    vocab_p.add_argument('--num-shards', type=int, default=1)
+    vocab_p.add_argument('--max-docs', type=int, default=10000)
+    vocab_p.add_argument('--n-vectors', type=int, default=1000000)
+    vocab_p.add_argument('--vector-size', type=int, default=6)
+    vocab_p.add_argument('--min-count', type=int, default=1)
+    vocab_p.add_argument('--seed', type=int, default=0)
+    vocab_p.add_argument('--random-shards', action='store_true')
+
     # --- BPE subcommands -------------------------------------------------
     # Phase A: discover merge table from a corpus
     bpe_disc_p = sub.add_parser(
@@ -2195,6 +2333,27 @@ if __name__ == '__main__':
             normalize=args.normalize,
             latent_vector_size=args.latent_vector_size,
             learning_rate=args.learning_rate,
+        )
+
+    elif args.command == "vocab-extract":
+        data_dir = args.data_dir
+        if data_dir is None:
+            data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
+
+        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards,
+                                      random_select=args.random_shards)
+        if not shard_paths:
+            print("No shards available.")
+            sys.exit(1)
+
+        extract_mphf_vocab(
+            shard_paths=shard_paths,
+            output_path=args.output,
+            max_docs=args.max_docs,
+            n_vectors=args.n_vectors,
+            vector_size=args.vector_size,
+            min_count=args.min_count,
+            seed=args.seed,
         )
 
     elif args.command in ("bpe-discover", "bpe-embed", "bpe-train"):

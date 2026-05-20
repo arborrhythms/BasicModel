@@ -9,6 +9,13 @@
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <weightsPath>MM_5M.ckpt</weightsPath>
+    <!-- Pre-built 1M-word lexicon (built via embed.py vocab-extract).
+         Freezes the embedding vocab at startup so the per-word route
+         does not grow the codebook in-call. Vocab growth re-traces the
+         Inductor graph and triggers per-tick recompiles (visible as
+         repeated "Online softmax is disabled on the fly" warnings and
+         Δ spikes from ~0.5s to 100-300s). -->
+    <embeddingPath>output/embeddings/MM_5M_1M_words.kv</embeddingPath>
     <amp>bf16</amp>
 
     <data>

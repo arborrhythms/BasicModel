@@ -213,11 +213,11 @@ class TestInverse(unittest.TestCase):
         W = torch.rand(K, D) - 0.5
         result = W[2].clone()
         y = W[1].clone()
-        # Direct call to Ops.conjunctionReverse with W should match the
-        # codebook search.
-        recovered = Ops.conjunctionReverse(result, y, W)
-        # Sanity: it returns a vector of shape (D,)
-        self.assertEqual(recovered.shape, result.shape)
+        # conjunctionReverse now returns the recommended pair (x1, x2);
+        # both share the result's shape.
+        x1, x2 = Ops.conjunctionReverse(result, y, W)
+        self.assertEqual(x1.shape, result.shape)
+        self.assertEqual(x2.shape, result.shape)
 
 
 class TestDeprecationAliases(unittest.TestCase):

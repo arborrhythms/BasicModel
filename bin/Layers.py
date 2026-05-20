@@ -7777,67 +7777,187 @@ class Ops:
 
     @staticmethod
     def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
-        """Inverse of conjunction via codebook search.
+        """Inverse-recommend ``(x1, x2)`` for ``conjunction(x1, x2) ≈ result``.
 
-        Find the codebook vector x such that conjunction(x, cb_j) ~= result
-        for some cb_j, returning the best-matching left operand.
-        Falls back to returning result unchanged if W is None or empty.
-        ``unit_ball=True`` switches the distance from raw Euclidean to
-        wrapped Euclidean (torus geometry).
+        Replaces the prior brute-force codebook search (which returned
+        only the best left operand) with the mereology-guided
+        recommender in :func:`Ops._binary_op_recommend`. Returns the
+        pair drawn from the augmented codebook (learned ``W`` plus the
+        synthetic ⊥ / ⊤ sentinels) — see that function for the
+        algorithm. ``y`` is ignored; kept for backward-compatible
+        signature. Falls back to ``(result, result)`` if ``W`` is None
+        or empty.
         """
         return Ops._binary_op_inverse_impl(
-            result, W, Ops.conjunction, monotonic, unit_ball=unit_ball)
+            result, W, 'intersection', monotonic, unit_ball=unit_ball)
 
     @staticmethod
     def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
-        """Inverse of disjunction via codebook search.
+        """Inverse-recommend ``(x1, x2)`` for ``disjunction(x1, x2) ≈ result``.
 
-        Find the codebook vector x such that disjunction(x, cb_j) ~= result
-        for some cb_j, returning the best-matching left operand.
-        Falls back to returning result unchanged if W is None or empty.
-        ``unit_ball=True`` switches the distance from raw Euclidean to
-        wrapped Euclidean (torus geometry).
+        Replaces the prior brute-force codebook search (which returned
+        only the best left operand) with the mereology-guided
+        recommender in :func:`Ops._binary_op_recommend`. Returns the
+        pair drawn from the augmented codebook (learned ``W`` plus the
+        synthetic ⊥ / ⊤ sentinels) — see that function for the
+        algorithm. ``y`` is ignored; kept for backward-compatible
+        signature. Falls back to ``(result, result)`` if ``W`` is None
+        or empty.
         """
         return Ops._binary_op_inverse_impl(
-            result, W, Ops.disjunction, monotonic, unit_ball=unit_ball)
+            result, W, 'union', monotonic, unit_ball=unit_ball)
 
     @staticmethod
     def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False):
-        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ~= result.
+        """Backward-compatible shim for the union / intersection inverse.
 
-        Returns cb[i] (the left operand) for each position in result.
-        result shape: (..., D).  W (codebook) shape: (K, D).
+        Delegates to :func:`Ops._binary_op_recommend`. Returns the pair
+        ``(x1, x2)`` drawn from the augmented codebook. Falls back to
+        ``(result, result)`` when ``W`` is None / empty.
 
-        Under ``unit_ball=True``, the per-pair distance is computed on
-        the wrapped delta (``(d + 1) mod 2 - 1``) so equally-near
-        codebook entries on either side of the periodic boundary are
-        treated symmetrically.
+        ``op`` may be the string ``'union'`` / ``'intersection'``, or one
+        of the legacy callable handles ``Ops.conjunction`` (→ intersection)
+        / ``Ops.disjunction`` (→ union). ``unit_ball`` is accepted for
+        signature parity with the prior implementation but the new
+        mereology-guided recommender is metric-free; the flag is
+        currently ignored.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return result, result
+        op_name = Ops._normalize_lattice_op(op)
+        return Ops._binary_op_recommend(
+            result, W, op_name, monotonic=monotonic)
+
+    @staticmethod
+    def _normalize_lattice_op(op):
+        """Resolve ``op`` to ``'union'`` or ``'intersection'``.
+
+        Accepts the string names directly, the public callables
+        ``Ops.conjunction`` / ``Ops.disjunction`` (or their kernels), and
+        the symmetric ``Ops.intersection`` / ``Ops.union`` aliases. Any
+        other handle raises ``ValueError`` — the recommender is monotonic
+        lattice-only.
+        """
+        if isinstance(op, str):
+            name = op
+        else:
+            name = getattr(op, 'rule_name', None)
+            if name is None:
+                name = getattr(op, '__name__', '') or ''
+            name = name.replace('_kernel', '').replace('_', '')
+        if name in ('conjunction', 'intersection'):
+            return 'intersection'
+        if name in ('disjunction', 'union'):
+            return 'union'
+        raise ValueError(
+            f"Ops._binary_op_inverse_impl: unsupported op {op!r} "
+            "(expected union / intersection / conjunction / disjunction)")
+
+    @staticmethod
+    def _binary_op_recommend(result, W, op_name, monotonic=True):
+        """Inverse-recommend a pair ``(x1, x2)`` from an augmented codebook.
+
+        ``op_name``:
+          * ``'union'``        — ``y = max(x1, x2)``; pick ``x1`` as the
+            largest part ``≤ y`` then ``x2`` as the smallest part
+            ``≥ y − x1``.
+          * ``'intersection'`` — ``y = min(x1, x2)``; pick ``x1`` as the
+            smallest part ``≥ y``, then ``x2`` as the smallest part
+            ``≥ y`` distinct from ``x1`` and minimizing
+            ``Ops.overlapOf(x2, x1)`` (tie-break: smaller ``norm(x2)``).
+
+        ``W`` is the learned codebook (``[K, D]``); we augment it
+        non-mutatingly with sentinels ⊥ = zeros and ⊤ = ones so the
+        ordering filters are never empty. Result shape ``(..., D)`` is
+        preserved; the two returned tensors are shaped like ``result``.
+        Size metric is the canonical last-dim L2 ``Ops.norm``.
+
+        ``monotonic`` is accepted for signature symmetry; the algorithm
+        is monotonic-only by construction (the codebase exposes no
+        bitonic inverse for these ops).
         """
         if W is None or W.shape[0] == 0:
-            return result
+            return result, result
 
         K, D = W.shape
-        flat = result.reshape(-1, D)
+        bottom = torch.zeros(1, D, dtype=W.dtype, device=W.device)
+        top = torch.ones(1, D, dtype=W.dtype, device=W.device)
+        C = torch.cat([bottom, W, top], dim=0)         # [K+2, D]
+        K_aug = C.shape[0]
+
+        out_shape = result.shape
+        flat = result.reshape(-1, D)                    # [N, D]
         N = flat.shape[0]
 
-        cb_i = W.unsqueeze(1).expand(K, K, D)
-        cb_j = W.unsqueeze(0).expand(K, K, D)
-        composed = op(cb_i, cb_j, monotonic=monotonic)
-        composed_flat = composed.reshape(K * K, D)
+        # Broadcast each result position against the augmented codebook.
+        y = flat.unsqueeze(1)                           # [N, 1, D]
+        S = C.unsqueeze(0).expand(N, K_aug, D)          # [N, K, D]
 
-        chunk_size = max(1, min(N, 2048 // K))
-        best_i = torch.empty(N, dtype=torch.long, device=result.device)
+        sizes = Ops.norm(C)                             # [K]
+        NEG_INF = torch.tensor(
+            float('-inf'), dtype=W.dtype, device=W.device)
+        POS_INF = torch.tensor(
+            float('inf'), dtype=W.dtype, device=W.device)
 
-        for start in range(0, N, chunk_size):
-            end = min(start + chunk_size, N)
-            diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
-            if unit_ball:
-                diffs = torch.remainder(diffs + 1.0, 2.0) - 1.0
-            dists = diffs.pow(2).sum(dim=-1)
-            pair_idx = dists.argmin(dim=-1)
-            best_i[start:end] = pair_idx // K
+        if op_name == 'union':
+            # 1) x1 = argmax_{S ≤ y} norm(S)
+            le_y = (S <= y).all(dim=-1)                 # [N, K]
+            scores = torch.where(
+                le_y, sizes.unsqueeze(0).expand(N, K_aug), NEG_INF)
+            idx1 = scores.argmax(dim=-1)                # [N]
+            x1 = C[idx1]                                # [N, D]
 
-        return W[best_i].reshape(result.shape)
+            # 2) residual r = y − x1
+            r = flat - x1                               # [N, D]
+
+            # 3) x2 = argmin_{S ≥ r} norm(S)
+            r_b = r.unsqueeze(1)                        # [N, 1, D]
+            ge_r = (S >= r_b).all(dim=-1)               # [N, K]
+            scores = torch.where(
+                ge_r, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
+            idx2 = scores.argmin(dim=-1)                # [N]
+            x2 = C[idx2]                                # [N, D]
+
+            return x1.reshape(out_shape), x2.reshape(out_shape)
+
+        if op_name == 'intersection':
+            # 1) x1 = argmin_{S ≥ y} norm(S)
+            ge_y = (S >= y).all(dim=-1)                 # [N, K]
+            scores = torch.where(
+                ge_y, sizes.unsqueeze(0).expand(N, K_aug), POS_INF)
+            idx1 = scores.argmin(dim=-1)                # [N]
+            x1 = C[idx1]                                # [N, D]
+
+            # 2) x2 = argmin_{S ≥ y, S ≠ x1} overlapOf(S, x1).norm,
+            #    tie-break smaller norm(S).
+            same_as_x1 = (
+                torch.arange(K_aug, device=W.device).unsqueeze(0)
+                == idx1.unsqueeze(1))                   # [N, K]
+            feasible = ge_y & ~same_as_x1               # [N, K]
+            # Overlap norm: ‖radmin(S, x1)‖ broadcast over the [N, K]
+            # candidate axis. _radmin is elementwise on equal shapes, so
+            # broadcast x1 against S explicitly.
+            x1_b = x1.unsqueeze(1).expand(N, K_aug, D)  # [N, K, D]
+            overlap = Ops._radmin(S, x1_b)              # [N, K, D]
+            overlap_size = Ops.norm(overlap)            # [N, K]
+            # Lexicographic (overlap_size, size); pack via a tiny weight
+            # on candidate size so it tie-breaks ties in overlap_size
+            # without ever overriding the primary score.
+            tie_weight = sizes.unsqueeze(0).expand(N, K_aug)
+            primary = overlap_size + 1e-9 * tie_weight
+            scores = torch.where(feasible, primary, POS_INF)
+            # If no S ≠ x1 is feasible (degenerate codebook), fall back
+            # to x1 itself for x2 (still satisfies S ≥ y).
+            any_feasible = feasible.any(dim=-1)         # [N]
+            idx2 = scores.argmin(dim=-1)                # [N]
+            idx2 = torch.where(any_feasible, idx2, idx1)
+            x2 = C[idx2]                                # [N, D]
+
+            return x1.reshape(out_shape), x2.reshape(out_shape)
+
+        raise ValueError(
+            f"Ops._binary_op_recommend: unsupported op_name {op_name!r} "
+            "(expected 'union' or 'intersection')")
 
     # ---- In-space algebra (lift / lower) ---------------------------------
     # Unified synthesis / analysis dispatchers (Logic.md §8).
@@ -7970,27 +8090,21 @@ class Ops:
         """Multi-return reverse for the lift dispatcher (Step 6).
 
         Pairs with the parent plan's Layer-2.5 grammar convention
-        ``X1, X2 = liftReverse(Y)``.  For mode='OR' (the analysis-of-
-        synthesis direction) the inverse is the codebook-search
-        ``Ops.disjunctionReverse``; with W supplied, returns the pair
-        ``(recovered_left, recovered_right)`` where recovered_right is
-        the search-conditioning operand and recovered_left is the best-
-        matching codebook witness.  Without W, falls back to the legacy
-        analytic single-operand form by returning ``(Y, Y)`` so callers
-        get a tuple of the expected shape; the second slot is the
-        identity placeholder.
+        ``X1, X2 = liftReverse(Y)``. For mode='OR' (the analysis-of-
+        synthesis direction) the inverse is the mereology-guided
+        recommender ``Ops.disjunctionReverse``; with W supplied, returns
+        the recommended pair ``(x1, x2)`` such that
+        ``disjunction(x1, x2) ≈ Y`` (drawn from the augmented codebook;
+        see ``Ops._binary_op_recommend``). Without W, returns ``(Y, Y)``
+        so callers get a tuple of the expected shape.
 
         This is the new multi-return convention; the existing 2-arg
         ``Ops.liftReverse(result, right)`` remains for analytic-inverse
-        callers (it returns a single tensor, not a tuple).  See parent
-        plan §Step 6 lines 577–620 and the Step 6 handoff §Risks
-        ("Multi-return reverse changes call shapes") for the migration
-        path.
+        callers (it returns a single tensor, not a tuple).
         """
         if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
             return (Y, Y)
-        recovered = Ops.disjunctionReverse(Y, Y, W, monotonic=monotonic)
-        return (recovered, Y)
+        return Ops.disjunctionReverse(Y, Y, W, monotonic=monotonic)
 
     @staticmethod
     def _lower_kernel(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
@@ -8076,22 +8190,19 @@ class Ops:
         """Multi-return reverse for the lower dispatcher (Step 6).
 
         Pairs with the parent plan's Layer-2.5 grammar convention
-        ``X1, X2 = lowerReverse(Y)``.  For mode='AND' (the synthesis-of-
-        analysis direction) the inverse is the codebook-search
-        ``Ops.conjunctionReverse``; with W supplied, returns the pair
-        ``(recovered_left, recovered_right)`` where recovered_right is
-        the search-conditioning operand and recovered_left is the best-
-        matching codebook witness.  Without W, falls back to the legacy
-        analytic single-operand form by returning ``(Y, Y)`` so callers
-        get a tuple of the expected shape.
+        ``X1, X2 = lowerReverse(Y)``. For mode='AND' (the synthesis-of-
+        analysis direction) the inverse is the mereology-guided
+        recommender ``Ops.conjunctionReverse``; with W supplied, returns
+        the recommended pair ``(x1, x2)`` such that
+        ``conjunction(x1, x2) ≈ Y`` (drawn from the augmented codebook;
+        see ``Ops._binary_op_recommend``). Without W, returns ``(Y, Y)``
+        so callers get a tuple of the expected shape.
 
-        See ``Ops.liftReverseAll`` for the dual and the parent plan
-        §Step 6 lines 577–620 for the convention.
+        See ``Ops.liftReverseAll`` for the dual.
         """
         if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
             return (Y, Y)
-        recovered = Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
-        return (recovered, Y)
+        return Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
 
     # ---- Axis selectors (what / where / when) ----------------------------
     # The C -> S boundary demux puts content in the canonical
@@ -8228,6 +8339,63 @@ class Ops:
         if scalar:
             return (1.0 - Ops._part_kernel(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
         return y - x
+
+    @staticmethod
+    def _order_align(a, b):
+        """Broadcast ``a`` / ``b`` to a common last-dim shape.
+
+        This codebase carries no formal multivector grade ladder; the only
+        "orders" present are post-codebook scalar ``[...]`` vs. bivector
+        ``[..., 2]``. Align by upcasting a scalar (last dim 1 or missing)
+        to a bivector via the ``[x, x]`` lift, else broadcast on the last
+        dim. Used by ``partOf`` / ``wholeOf`` / ``overlapOf`` so callers
+        don't have to harmonise shapes manually.
+        """
+        D_a = a.shape[-1]
+        D_b = b.shape[-1]
+        if D_a == D_b:
+            return a, b
+        if D_a == 1 and D_b > 1:
+            return a.expand(*a.shape[:-1], D_b), b
+        if D_b == 1 and D_a > 1:
+            return a, b.expand(*b.shape[:-1], D_a)
+        raise ValueError(
+            f"Ops._order_align: incompatible last dims {D_a} vs {D_b}")
+
+    @staticmethod
+    def partOf(S1, S2):
+        """Elementwise ``S1 ≤ S2`` reduced over the last dim with ``all``.
+
+        Mereological "is part of": True iff every component of S1 is
+        bounded above by the matching component of S2. Order-aligned
+        first so scalar and bivector operands compose. Returns a boolean
+        tensor shaped like ``S1.shape[:-1]`` (broadcast over S2).
+        """
+        a, b = Ops._order_align(S1, S2)
+        return (a <= b).all(dim=-1)
+
+    @staticmethod
+    def wholeOf(S1, S2):
+        """Elementwise ``S1 ≥ S2`` reduced over the last dim with ``all``.
+
+        Mereological "contains": True iff every component of S1 is
+        bounded below by the matching component of S2. Order-aligned
+        first.
+        """
+        a, b = Ops._order_align(S1, S2)
+        return (a >= b).all(dim=-1)
+
+    @staticmethod
+    def overlapOf(S1, S2):
+        """Elementwise zero-directed min — same semantics as ``Ops._radmin``.
+
+        Returns a tensor shaped like the broadcast of S1 and S2, holding
+        the same-sign minimum magnitude (zero collapse on sign
+        disagreement). Used by the binary-op inverse recommender to score
+        candidate operand pairs by their mutual overlap.
+        """
+        a, b = Ops._order_align(S1, S2)
+        return Ops._radmin(a, b)
 #endregion
 
 #region Error Functions

@@ -3597,7 +3597,15 @@ class Chart(nn.Module):
             W = what.getW()
         except Exception:
             return lex_log_probs
-        if W is None or not torch.is_tensor(W) or W.ndim < 2:
+        # The rest of this method assumes a 2D ``[V, D]`` codebook: the
+        # slicing ``W_[:, :D_min]`` indexes the second axis (== last when
+        # 2D), and ``cb.T`` is a 2D matrix transpose. Higher-rank codebooks
+        # would mis-index the wrong axis AND trip the PyTorch deprecation
+        # warning ("use of `x.T` on tensors of dimension other than 2")
+        # because ``.T`` would reverse all dims. Early-out keeps this a
+        # 2D-only fast path; restructure here if a batched codebook ever
+        # needs the POS-seed override.
+        if W is None or not torch.is_tensor(W) or W.ndim != 2:
             return lex_log_probs
         # Lazy-allocate the learned per-atom POS buffer once C is
         # known. Idempotent for the same C; no-op when the codebook
@@ -6880,6 +6888,57 @@ class WordSpace(Space):
         starts with an empty word buffer.
         """
         self.subspace.clear()
+
+    def _detach_persistent_state(self):
+        """Sever the autograd graph carried across batches by persistent
+        per-row state tensors.
+
+        In-place writes during forward (``set_last_svo``, ``arm_stm`` →
+        ``self._disc_pred = disc.predict()``, ``subspace.event.setW(...)``,
+        etc.) leave the persistent buffers wired to the previous batch's
+        autograd graph. Once that batch's ``backward()`` runs, the saved
+        tensors are freed; the next batch's forward re-reads the same
+        buffers, so its ``backward()`` walks into freed nodes and raises
+        "Trying to backward through the graph a second time."
+
+        Detaching here breaks history without changing values: the
+        carried numeric state is preserved, but no autograd edges cross
+        the batch boundary.
+
+        Must be called only from the eager post-backward dispatch path
+        (``BasicModel.post_tick_compact``) -- never from inside a
+        ``torch.compile``'d region. ``self.buffers()`` / ``self.modules()``
+        iteration trips Dynamo's "getattr() on nn.Module with pending
+        mutation" guard under ``fullgraph=True``.
+        """
+        if self._disc_pred is not None:
+            self._disc_pred = self._disc_pred.detach()
+        if self._disc_conf is not None:
+            self._disc_conf = self._disc_conf.detach()
+        self._last_svo = self._last_svo.detach()
+        # Catch floating-point buffers carried transitively by
+        # submodules (subspace, category_stack, reconstruction_stack,
+        # discourse, truth_layer).
+        for buf in self.buffers():
+            if buf.is_floating_point():
+                buf.detach_()
+        # Basis ``Tensor`` payloads (``subspace.event``, ``.what``, etc.)
+        # store the live activation in ``_active_payload`` (when ``W`` is
+        # a learned Parameter) or in ``W`` itself (when ``W`` is a plain
+        # tensor) -- both are plain attributes, not registered buffers,
+        # so ``self.buffers()`` misses them. setW() routes grad-tracked
+        # forward outputs into one of these slots; detach to break the
+        # edge. Skip ``W`` when it is an ``nn.Parameter`` (learned weight,
+        # not a transient activation).
+        for mod in self.modules():
+            ap = getattr(mod, '_active_payload', None)
+            if ap is not None and torch.is_tensor(ap) and ap.is_floating_point():
+                mod._active_payload = ap.detach()
+            w = getattr(mod, 'W', None)
+            if (w is not None and torch.is_tensor(w)
+                    and not isinstance(w, nn.Parameter)
+                    and w.is_floating_point()):
+                mod.W = w.detach()
 
     def Reset(self, batch=None, hard=True):
         """Per-document teardown called by the outer doc-streaming loop.

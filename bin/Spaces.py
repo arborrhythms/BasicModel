@@ -1020,28 +1020,30 @@ class Basis(nn.Module):
         return Ops.negationReverse(x, monotonic=monotonic)
 
     def conjunctionReverse(self, result, y, monotonic=False):
-        """Inverse of conjunction via codebook search.
+        """Inverse-recommend ``(x1, x2)`` for conjunction.
 
-        Find the codebook vector x such that conjunction(x, cb_j) ~= result
-        for some cb_j, returning the best-matching left operand.
-        Falls back to returning result unchanged if no codebook is available.
+        Delegates to :func:`Ops.conjunctionReverse`, which draws the
+        pair from the augmented codebook (learned ``self.getW()`` plus
+        the ⊥ / ⊤ sentinels). Returns ``(result, result)`` if no
+        codebook is available.
         """
         W = self._codebook_or_none("conjunctionReverse")
         if W is None:
-            return result
+            return result, result
         return Ops.conjunctionReverse(
             result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
     def disjunctionReverse(self, result, y, monotonic=False):
-        """Inverse of disjunction via codebook search.
+        """Inverse-recommend ``(x1, x2)`` for disjunction.
 
-        Find the codebook vector x such that disjunction(x, cb_j) ~= result
-        for some cb_j, returning the best-matching left operand.
-        Falls back to returning result unchanged if no codebook is available.
+        Delegates to :func:`Ops.disjunctionReverse`, which draws the
+        pair from the augmented codebook (learned ``self.getW()`` plus
+        the ⊥ / ⊤ sentinels). Returns ``(result, result)`` if no
+        codebook is available.
         """
         W = self._codebook_or_none("disjunctionReverse")
         if W is None:
-            return result
+            return result, result
         return Ops.disjunctionReverse(
             result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
@@ -1054,21 +1056,22 @@ class Basis(nn.Module):
              monotonic=False):
         """Synthesis dispatcher: many → one (∨).
 
-        Forward routes through Ops.lift.  `kind` selects the point body
-        (strict/smooth/radial); see Ops.lift for details.  Inverse with
-        mode='OR' or 'AND' runs codebook-search recovery via self.getW();
-        inverse with mode='NOT' is self-inverse and bypasses W.
+        Forward routes through Ops.lift. `kind` selects the point body
+        (strict/smooth/radial); see Ops.lift for details. Inverse with
+        mode='OR' / 'AND' returns the mereology-guided pair
+        ``(x1, x2)`` (see ``Ops._binary_op_recommend``); inverse with
+        mode='NOT' is self-inverse and bypasses W.
         """
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
-                return X1
+                return X1, X1
             return Ops.disjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
-                return X1
+                return X1, X1
             return Ops.conjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         return Ops.lift(
@@ -1079,21 +1082,22 @@ class Basis(nn.Module):
               monotonic=False):
         """Analysis dispatcher: one → many (∧).
 
-        Forward routes through Ops.lower.  `kind` selects the point body
-        (strict/smooth/radial); see Ops.lower for details.  Inverse with
-        mode='AND' or 'OR' runs codebook-search recovery via self.getW();
-        inverse with mode='NOT' is self-inverse and bypasses W.
+        Forward routes through Ops.lower. `kind` selects the point body
+        (strict/smooth/radial); see Ops.lower for details. Inverse with
+        mode='AND' / 'OR' returns the mereology-guided pair
+        ``(x1, x2)`` (see ``Ops._binary_op_recommend``); inverse with
+        mode='NOT' is self-inverse and bypasses W.
         """
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
-                return X1
+                return X1, X1
             return Ops.conjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
-                return X1
+                return X1, X1
             return Ops.disjunctionReverse(
                 X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         return Ops.lower(

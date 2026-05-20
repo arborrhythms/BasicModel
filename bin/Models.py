@@ -3354,13 +3354,74 @@ class BasicModel(BaseModel):
         Lives outside the compute brick so the brick body remains
         sync-free. Called once per tick by the outer doc-streaming loop
         after ``runBatch`` returns.
+
+        Also severs any cross-batch autograd graph carried by persistent
+        state (``WordSpace._disc_pred``, ``_last_svo``; Basis transient
+        activations in ``_active_payload`` / non-Parameter ``W``; all
+        floating-point registered buffers). In-place writes during the
+        brick's forward leave persistent attributes wired to that
+        batch's autograd graph; once ``backward()`` runs and the saved
+        tensors are freed, the next batch's forward re-reads the same
+        attributes and the next ``backward()`` walks into freed nodes
+        ("Trying to backward through the graph a second time"). This
+        hook runs in eager Python every tick after ``backward()``, so
+        ``self.modules()`` iteration is safe here (it would graph-break
+        if placed inside a traced reset path).
         """
         ws = self.wordSpace
-        if ws is None:
-            return
-        tl = getattr(ws, 'truth_layer', None)
-        if tl is not None and hasattr(tl, 'compact'):
-            tl.compact(min_trust=0.5)
+        if ws is not None:
+            tl = getattr(ws, 'truth_layer', None)
+            if tl is not None and hasattr(tl, 'compact'):
+                tl.compact(min_trust=0.5)
+        self._detach_persistent_state()
+
+    def _detach_persistent_state(self):
+        """Walk every submodule under this model and detach the floats
+        that carry cross-batch autograd edges. See ``post_tick_compact``
+        for the full rationale.
+
+        Touches:
+          * registered buffers (``self.buffers()``)
+          * Basis ``_active_payload`` (transient activations stored when
+            ``W`` is a learned Parameter)
+          * Basis ``W`` (when ``W`` is a plain tensor, i.e. not an
+            ``nn.Parameter``)
+          * Model-level cached state tensors that don't live as buffers
+            (``WordSpace._disc_pred`` / ``_disc_conf``,
+            ``InputSpace._ar_embedded``, ``inputSpace._embedded_input``,
+            spaces' ``_embedded_input``).
+        """
+        # 1. All registered FP buffers in the model tree.
+        for buf in self.buffers():
+            if buf.is_floating_point():
+                buf.detach_()
+        # 2. Basis transient slots + plain-tensor W on every submodule.
+        for mod in self.modules():
+            ap = getattr(mod, '_active_payload', None)
+            if ap is not None and torch.is_tensor(ap) and ap.is_floating_point():
+                mod._active_payload = ap.detach()
+            w = getattr(mod, 'W', None)
+            if (w is not None and torch.is_tensor(w)
+                    and not isinstance(w, nn.Parameter)
+                    and w.is_floating_point()):
+                mod.W = w.detach()
+        # 3. Known plain-attribute tensor caches that ride across batches.
+        ws = self.wordSpace
+        if ws is not None:
+            if getattr(ws, '_disc_pred', None) is not None:
+                ws._disc_pred = ws._disc_pred.detach()
+            if getattr(ws, '_disc_conf', None) is not None:
+                ws._disc_conf = ws._disc_conf.detach()
+        for sp_attr in ("inputSpace", "perceptualSpace",
+                        "conceptualSpace", "symbolicSpace", "outputSpace"):
+            sp = getattr(self, sp_attr, None)
+            if sp is None:
+                continue
+            for tn in ("_ar_embedded", "_embedded_input",
+                       "_cached_embedding"):
+                t = getattr(sp, tn, None)
+                if t is not None and torch.is_tensor(t) and t.is_floating_point():
+                    setattr(sp, tn, t.detach())
 
     def flush_word_buffers(self):
         """Drain the per-subspace tensor word buffers (§6c Path B).
