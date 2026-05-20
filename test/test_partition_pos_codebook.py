@@ -95,9 +95,13 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
 # ---------------------------------------------------------------------------
 
 def test_pos_codebook_shape():
-    """PoS codebook is 64 x 4."""
+    """PoS category embedding is 64 x 4.
+
+    Post-2026-05-20: ``category_codebook`` (Codebook) was retired in
+    favor of ``category_embedding`` (nn.Embedding). Shape is preserved.
+    """
     ws = _make_word_space()
-    assert ws.category_codebook.getW().shape == (64, 4)
+    assert ws.category_embedding.weight.shape == (64, 4)
 
 
 def test_pos_codebook_lookup_deterministic():

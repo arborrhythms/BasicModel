@@ -4,9 +4,13 @@ Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
 §Order-Typed Grammar — Grammar syntax.
 
 `Grammar._parse_category(token)` splits a category token like `NP3` /
-`VP1` / `DET` into a `ParsedCategory(name, order)` where `order` is an
-`OrderExpr(kind, delta)`. Order annotations are **explicit constants**
-only; the Kleene variable (``*``) is not supported.
+`VP1` / `DET` / `NP*` / `NP*+1` into a `ParsedCategory(name, order)`
+where `order` is an `OrderExpr(kind, delta)`.
+
+2026-05-20 Kleene restoration (path-to-complete §2): polymorphic
+``*`` order forms are accepted alongside explicit constants. At
+REDUCE time the rule-local ``*`` binds from the operand's order and
+propagates consistently across the rule's other variable slots.
 
 Bare categories (no order annotation) bind to constant order 0 per the
 plan's "bare category is syntactic sugar for order 0" decision.
@@ -14,6 +18,10 @@ plan's "bare category is syntactic sugar for order 0" decision.
 Example fully-explicit rules:
     S4 = lift(NP3, VP1)        # event = lift contiguous noun + verb aspect
     NP3 = lower(DET, NP4)      # specify an abstract count noun
+
+Example polymorphic rules:
+    S = lift(NP*, VP1)         # any NP-order; LHS is variable too
+    NP = conjunction(DET, N*)  # bind * to N's order
 """
 import sys
 from pathlib import Path
@@ -69,18 +77,31 @@ def test_whitespace_tolerant():
     assert parsed.order.delta == 1
 
 
-def test_kleene_variable_is_rejected():
-    """``NP*`` / ``NP*+1`` / ``NP*-1`` are no longer accepted — Kleene
-    has been removed. All order annotations must be explicit constants.
-    """
+def test_kleene_variable_zero_offset():
+    """``NP*`` parses as variable +0."""
     from Language import Grammar
-    import pytest
-    with pytest.raises(ValueError):
-        Grammar._parse_category("NP*")
-    with pytest.raises(ValueError):
-        Grammar._parse_category("NP*+1")
-    with pytest.raises(ValueError):
-        Grammar._parse_category("NP*-1")
+    parsed = Grammar._parse_category("NP*")
+    assert parsed.name == "NP"
+    assert parsed.order.kind == "variable"
+    assert parsed.order.delta == 0
+
+
+def test_kleene_variable_positive_offset():
+    """``NP*+1`` parses as variable +1."""
+    from Language import Grammar
+    parsed = Grammar._parse_category("NP*+1")
+    assert parsed.name == "NP"
+    assert parsed.order.kind == "variable"
+    assert parsed.order.delta == 1
+
+
+def test_kleene_variable_negative_offset():
+    """``NP*-1`` parses as variable -1."""
+    from Language import Grammar
+    parsed = Grammar._parse_category("NP*-1")
+    assert parsed.name == "NP"
+    assert parsed.order.kind == "variable"
+    assert parsed.order.delta == -1
 
 
 def test_invalid_raises():

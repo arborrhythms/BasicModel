@@ -54,12 +54,20 @@ class RuleScorer(nn.Module):
         return self.head(self.body(x))
 
 
-class STMDriver:
+class STMDriver(nn.Module):
     """Coordinates a ``TypedStack`` + rule signatures + a ``RuleScorer``.
 
     SHIFT pushes a token frame onto the stack with category / order /
     ref_id metadata. REDUCE builds the admissibility mask, masks the
     scorer's logits, and picks the highest-scoring admissible rule.
+
+    2026-05-20 substrate fix: ``STMDriver`` inherits ``nn.Module`` so
+    ``scorer`` (a Module) and ``typed_stack`` (now a Module with
+    registered buffers) flow through ``parameters()`` / ``buffers()`` /
+    ``.to(device)`` cleanly. ``rule_signatures`` is a plain Python list
+    of dicts — not a Module / Parameter — so it lives as a regular
+    attribute and is stashed via ``object.__setattr__`` to bypass
+    ``nn.Module.__setattr__``'s child-type checks.
 
     REDUCE returns the chosen rule's index and signature; this initial
     version doesn't apply rule semantics to compute the parent payload
@@ -69,9 +77,15 @@ class STMDriver:
 
     def __init__(self, typed_stack, rule_signatures: List[Dict[str, Any]],
                  scorer: RuleScorer):
+        super().__init__()
+        # ``typed_stack`` and ``scorer`` are nn.Module children — assign
+        # directly so the parent ``nn.Module.__setattr__`` registers them.
         self.typed_stack = typed_stack
-        self.rule_signatures = list(rule_signatures)
         self.scorer = scorer
+        # ``rule_signatures`` is a plain list of dicts; bypass nn.Module's
+        # submodule / parameter detection.
+        object.__setattr__(
+            self, 'rule_signatures', list(rule_signatures))
 
     def shift(self, b: int, payload: torch.Tensor,
               *, category: str, order: int, ref_id: int) -> None:
@@ -90,25 +104,67 @@ class STMDriver:
         is stuck — caller decides whether to backtrack, stall, or fall
         back to a chart oracle).
         """
+        out = self._score_reduce(b)
+        rule_index = int(torch.argmax(out['masked_logits']).item())
+        return {
+            'rule_index': rule_index,
+            'rule_signature': self.rule_signatures[rule_index],
+        }
+
+    def reduce_step_soft(self, b: int) -> Dict[str, Any]:
+        """Same as ``reduce_step`` but additionally returns the
+        post-softmax probability distribution over rules. Inadmissible
+        rules carry probability 0 (because their pre-softmax logits are
+        ``-inf``).
+
+        Plan: path-to-complete §4 — training-time soft path needs the
+        per-rule probability to compute a weighted parent payload
+        mixture. Eval still picks argmax.
+        """
+        out = self._score_reduce(b)
+        masked_logits = out['masked_logits']
+        probs = torch.softmax(masked_logits, dim=-1)
+        # Numerical safety: when all admissible logits collapse, the
+        # softmax can produce NaN. Per the project's "fail loud on
+        # numerical divergence" rule, raise rather than silently
+        # nan_to_num.
+        if torch.isnan(probs).any():
+            raise ValueError(
+                "STMDriver.reduce_step_soft: NaN in softmax probabilities")
+        rule_index = int(torch.argmax(masked_logits).item())
+        return {
+            'rule_index': rule_index,
+            'rule_signature': self.rule_signatures[rule_index],
+            'probabilities': probs,
+            'masked_logits': masked_logits,
+            'admissibility_mask': out['mask'],
+        }
+
+    def _score_reduce(self, b: int) -> Dict[str, Any]:
+        """Shared scoring kernel for the hard and soft reduce paths.
+
+        Builds the admissibility mask, forwards the scorer over the
+        operand payloads, applies the mask to the logits. Returns
+        ``{'mask': BoolTensor, 'logits': Tensor, 'masked_logits': Tensor,
+        'left': Tensor | None, 'right': Tensor | None}``.
+        """
         mask = self.typed_stack.reduce_admissibility(
             b, self.rule_signatures)
         if not mask.any():
             raise RuntimeError(
-                "STMDriver.reduce_step: no admissible rule for current "
-                "stack top. Stack-top frames may need a different SHIFT, "
-                "or the rule set may need extension.")
-        # Pull operand payloads for the scorer.
+                "STMDriver: no admissible rule for current stack top.")
         d = int(self.typed_stack._depth[b].item())
         right = self.typed_stack.top(b, k=1)['payload'] if d >= 1 else None
         left = self.typed_stack.top(b, k=2)['payload'] if d >= 2 else right
-        # For unary REDUCE (d == 1) treat left as the single operand.
         if d == 1:
             logits = self.scorer(left, None)
         else:
             logits = self.scorer(left, right)
         masked = mask_logits(logits, mask)
-        rule_index = int(torch.argmax(masked).item())
         return {
-            'rule_index': rule_index,
-            'rule_signature': self.rule_signatures[rule_index],
+            'mask': mask,
+            'logits': logits,
+            'masked_logits': masked,
+            'left': left,
+            'right': right,
         }

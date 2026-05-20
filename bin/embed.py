@@ -570,37 +570,68 @@ def is_rule_admissible(
 ) -> bool:
     """Hard-category typed admissibility check for STM REDUCE.
 
-    Returns True iff the rule signature's RHS slots exactly match the
-    given operand categories and orders. Used to mask inadmissible
-    rules before the reducer softmax (plan §STM Shift/Reduce Runtime —
+    Returns True iff the rule signature's RHS slots match the given
+    operand categories and orders. Used to mask inadmissible rules
+    before the reducer softmax (plan §STM Shift/Reduce Runtime —
     REDUCE).
 
     ``sig`` is the serialized form produced by
     :func:`grammar_signatures_to_serializable`: a dict with
-    ``rhs_categories``, ``rhs_orders``, etc.
+    ``rhs_categories``, ``rhs_orders``, optionally ``rhs_order_kinds``
+    (the 2026-05-20 Kleene restoration adds variable order
+    expressions).
 
-    Arity check: when ``right_cat`` is ``None`` the call shape is
-    unary and only matches rules with ``len(rhs_categories) == 1``.
-    When ``right_cat`` is given the call is binary and matches rules
-    with ``len(rhs_categories) == 2``.
+    Order matching:
+      * If a slot's order is ``constant N`` it must equal the operand's
+        order exactly.
+      * If the slot is ``variable +D`` the rule's local ``*`` binds to
+        ``operand.order - D``. When multiple slots share the same
+        variable, every slot must yield the same binding.
+      * The LHS order is computed but not checked here (the reducer
+        applies the LHS metadata to the new parent frame).
+
+    Arity check: ``right_cat is None`` matches unary rules; otherwise
+    binary rules.
 
     Soft / distributional admissibility (operand carries a category
-    distribution) is a future extension; this initial version uses
-    hard categories and exact-order equality.
+    distribution) is a future extension; this version still uses hard
+    categories.
     """
     rhs_cats = sig.get('rhs_categories') or []
     rhs_ords = sig.get('rhs_orders') or []
+    rhs_kinds = sig.get('rhs_order_kinds') or (
+        ['constant'] * len(rhs_ords))
     if right_cat is None:
         if len(rhs_cats) != 1:
             return False
-        return (rhs_cats[0] == left_cat
-                and rhs_ords[0] == int(left_order))
+        if rhs_cats[0] != left_cat:
+            return False
+        kind, delta = str(rhs_kinds[0]), int(rhs_ords[0])
+        if kind == 'constant':
+            return delta == int(left_order)
+        # variable: anything matches (binds * = left_order - delta)
+        return True
     if len(rhs_cats) != 2:
         return False
-    return (rhs_cats[0] == left_cat
-            and rhs_ords[0] == int(left_order)
-            and rhs_cats[1] == right_cat
-            and rhs_ords[1] == int(right_order))
+    if rhs_cats[0] != left_cat or rhs_cats[1] != right_cat:
+        return False
+    binding = None  # value of * if any slot is variable
+    for slot_idx, operand_order in enumerate(
+            (int(left_order), int(right_order))):
+        kind = str(rhs_kinds[slot_idx])
+        delta = int(rhs_ords[slot_idx])
+        if kind == 'constant':
+            if delta != operand_order:
+                return False
+        elif kind == 'variable':
+            candidate = operand_order - delta
+            if binding is None:
+                binding = candidate
+            elif binding != candidate:
+                return False
+        else:
+            return False
+    return True
 
 
 def admissibility_mask(
@@ -826,11 +857,16 @@ def grammar_signatures_to_serializable(grammar) -> List[Dict[str, Any]]:
     JSON-friendly list of dicts for storage in the knowledge section.
 
     One dict per rule in ``grammar.rules``, with namedtuples flattened
-    to primitives (the nested ``OrderExpr.delta`` becomes an ``int``).
-    No ``OrderExpr.kind`` field is stored — under the post-Kleene
-    design (see
-    ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``)
-    every order is a constant.
+    to primitives. Both ``OrderExpr.kind`` and ``OrderExpr.delta`` are
+    preserved so the loader (and the admissibility kernel) can tell
+    constant orders from rule-local ``*`` variables — the
+    2026-05-20 Kleene restoration (path-to-complete §2) reintroduced
+    polymorphic order expressions.
+
+    ``rhs_orders`` continues to be emitted as a plain int list (storing
+    each variable's delta) for back-compat with consumers that don't
+    yet read kinds; admissibility readers should consult
+    ``rhs_order_kinds`` to know whether a slot is a variable.
 
     Plan: §Phase 1 — artifact contains
     ``grammar.rule_order_signatures``. Used by the artifact loader to
@@ -843,8 +879,10 @@ def grammar_signatures_to_serializable(grammar) -> List[Dict[str, Any]]:
         out.append({
             "lhs_category":  sig.lhs_category,
             "lhs_order":     int(sig.lhs_order_expr.delta),
+            "lhs_order_kind": str(sig.lhs_order_expr.kind),
             "rhs_categories": list(sig.rhs_categories),
             "rhs_orders":    [int(oe.delta) for oe in sig.rhs_order_exprs],
+            "rhs_order_kinds": [str(oe.kind) for oe in sig.rhs_order_exprs],
             "op_name":       sig.op_name,
             "order_delta":   int(sig.order_delta),
         })

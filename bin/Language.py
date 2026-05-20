@@ -503,14 +503,18 @@ class Grammar:
           ``NP3``     -> name='NP',  order=constant 3
           ``VP1``     -> name='VP',  order=constant 1
           ``S4``      -> name='S',   order=constant 4
+          ``NP*``     -> name='NP',  order=variable +0  (rule-local *)
+          ``NP*+1``   -> name='NP',  order=variable +1
+          ``NP*-1``   -> name='NP',  order=variable -1
 
-        Order annotations are **explicit constants only**. The Kleene
-        variable (``*``) form has been removed — all rules must spell
-        out the orders they operate at. Bare categories (no annotation)
-        bind to constant 0.
+        2026-05-20 Kleene restoration (path-to-complete §2): the
+        polymorphic ``*`` form is restored alongside explicit constants.
+        At REDUCE time the rule-local ``*`` is bound from the operand's
+        order and propagated through the rule's other slots. Bare
+        categories (no annotation) still bind to constant 0.
 
         Whitespace around the token is stripped. Malformed tokens
-        (including any use of ``*``) raise ``ValueError``.
+        raise ``ValueError``.
         """
         s = str(token).strip()
         if not s:
@@ -526,13 +530,27 @@ class Grammar:
             return Grammar.ParsedCategory(
                 name=name,
                 order=Grammar.OrderExpr(kind='constant', delta=0))
+        # Kleene form: '*', '*+N', '*-N'.
+        if suffix.startswith('*'):
+            rest = suffix[1:]
+            if not rest:
+                delta = 0
+            else:
+                try:
+                    delta = int(rest)
+                except ValueError:
+                    raise ValueError(
+                        f"Cannot parse category: {token!r} "
+                        f"(Kleene suffix must be '*', '*+N', or '*-N')")
+            return Grammar.ParsedCategory(
+                name=name,
+                order=Grammar.OrderExpr(kind='variable', delta=delta))
         try:
             delta = int(suffix)
         except ValueError:
             raise ValueError(
                 f"Cannot parse category: {token!r} "
-                f"(only explicit constant orders are accepted; "
-                f"Kleene variables like '*' have been removed)")
+                f"(suffix must be a constant integer or a Kleene '*' form)")
         return Grammar.ParsedCategory(
             name=name,
             order=Grammar.OrderExpr(kind='constant', delta=delta))
@@ -4386,11 +4404,11 @@ class Chart(nn.Module):
         cstack = getattr(word_space, 'category_stack', None)
         if cstack is None:
             return
-        codebook = getattr(word_space, 'category_codebook', None)
-        if codebook is None:
+        embedding = getattr(word_space, 'category_embedding', None)
+        if embedding is None:
             return
         try:
-            W = codebook.getW()
+            W = embedding.weight
         except Exception:
             return
         if W is None or not torch.is_tensor(W):
@@ -5851,16 +5869,24 @@ class WordSpace(Space):
         #     vectors pushed onto ``self.category_stack``)
         # NOT used for symbol quantization -- that runs against the
         # symbolic codebook on SymbolicSpace.subspace.what.
+        #
+        # 2026-05-20 category_codebook retirement (plan
+        # ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``):
+        # the embedding is now an ``nn.Embedding[N_categories, pos_dim]``
+        # rather than a ``Codebook``. The codebook's VQ / polarity /
+        # meronomy / SVD machinery was never used by the category-label
+        # consumers; a plain Embedding is the right type and removes the
+        # weight (no Codebook hidden state in the checkpoint).
         pos_dim = 4  # embedding width; also the category stack vector dim
         category_capacity = max(64, len(TheGrammar.categories))
-        self.category_codebook = Codebook()
-        self.category_codebook.create(
-            nInput=0,           # input-side width unused for direct addressing
-            nVectors=category_capacity,
-            nDim=pos_dim,
-            customVQ=True,
-            monotonic=False,
-        )
+        self.category_embedding = nn.Embedding(category_capacity, pos_dim)
+        # Feed the manual optimizer-feed list (consumed by
+        # ``getParameters``); ``nn.Embedding`` auto-registers its weight
+        # as a Parameter on the parent module via attribute assignment,
+        # but ``self.params`` is the canonical list callers walk.
+        for p in self.category_embedding.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
         self.category_index = {
             name: idx for idx, name in enumerate(TheGrammar.categories)
         }
@@ -5890,7 +5916,7 @@ class WordSpace(Space):
         n_rules = len(TheGrammar.rule_table)
         self.n_rules = n_rules
         max_depth = int(nPercepts)
-        # pos_dim already bound above (category_codebook / category_stack dim).
+        # pos_dim already bound above (category_embedding / category_stack dim).
         rule_in_features = max_depth * pos_dim
         # When nPercepts=0 (minimal test configs with no PerceptualSpace),
         # rule_in_features is 0; nn.Linear(0, 0) would emit a "zero-element
@@ -6008,9 +6034,9 @@ class WordSpace(Space):
     # ``embed.KnowledgeView`` into the WordSpace so downstream consumers
     # (chart POS scorer, rule predictor, lift/lower restricted-candidate
     # inverse, STM REDUCE typed admissibility) consult it instead of the
-    # legacy ``category_codebook`` / empty ``Taxonomy()`` scaffolds. The
-    # legacy fields stay in place during Phase 2 for back-compat; their
-    # retirement is part of Phase 2's closing steps.
+    # legacy ``Taxonomy()`` scaffold; ``category_codebook`` was retired
+    # 2026-05-20 in favor of ``category_embedding: nn.Embedding``. The
+    # remaining legacy fields stay in place during Phase 2 for back-compat.
 
     def attach_knowledge(self, view):
         """Attach a loaded :class:`embed.KnowledgeView`. Replaces any
@@ -6057,11 +6083,23 @@ class WordSpace(Space):
         rule_sigs = view.rule_order_signatures
         scorer = RuleScorer(
             payload_dim=stm_typed.dim, n_rules=len(rule_sigs))
-        object.__setattr__(
-            self, '_stm_driver',
-            STMDriver(typed_stack=stm_typed,
-                      rule_signatures=rule_sigs,
-                      scorer=scorer))
+        driver = STMDriver(typed_stack=stm_typed,
+                           rule_signatures=rule_sigs,
+                           scorer=scorer)
+        # Stash via ``object.__setattr__`` so the driver isn't recursively
+        # registered as a child of this WordSpace (that would put the
+        # typed_stack — which is conceptually owned by the
+        # ConceptualSpace — on two parents at once). The optimizer-feed
+        # list still needs the scorer's params; pull them in explicitly
+        # when a real ``self.params`` exists (bare-WordSpace test
+        # fixtures construct without ``__init__`` and have no params
+        # list).
+        object.__setattr__(self, '_stm_driver', driver)
+        params = self.__dict__.get('params')
+        if isinstance(params, list):
+            for p in driver.parameters():
+                if all(p is not q for q in params):
+                    params.append(p)
 
     @property
     def stm_driver(self):
@@ -6069,26 +6107,336 @@ class WordSpace(Space):
         return getattr(self, '_stm_driver', None)
 
     def _compose_stm(self, input_vectors, subspace):
-        """STM-backend compose. Lazily allocates ``self.stm_driver``;
-        returns an empty rules dict for now (full SHIFT/REDUCE loop
-        on ``input_vectors`` is the follow-up). Intentionally minimal:
-        ships the wiring so consumers can verify driver presence
-        without committing to a parse semantics yet.
+        """STM-backend compose: tokenize ``input_vectors`` via the
+        reference-codebook order-0 snap, shift each token, run REDUCE
+        until either a single root frame remains or no admissible rule
+        fires, emit per-tier rule selections compatible with the
+        ``current_rules`` consumer.
+
+        ``input_vectors=None`` (the wiring-test contract) constructs
+        the driver and returns an empty dict — no SHIFT/REDUCE.
         """
         if self.stm_driver is None:
             self._init_stm_driver()
-        # Empty current_rules — STM run does not (yet) drive per-tier
-        # SyntacticLayer dispatch. The chart still produces
-        # current_rules for that path.
-        self.current_rules = {}
+        self.current_rules = self._stm_drive(input_vectors, mode='compose')
         return self.current_rules
 
     def _generate_stm(self, target_vectors, subspace):
-        """STM-backend generate; mirrors ``_compose_stm``."""
+        """STM-backend generate. Mirror of ``_compose_stm`` with each
+        row's selected-rule sequence reversed — matches
+        ``_collect_generate_selections``' downward-generation convention.
+        """
         if self.stm_driver is None:
             self._init_stm_driver()
-        self.generate_rules = {}
+        self.generate_rules = self._stm_drive(
+            target_vectors, mode='generate')
         return self.generate_rules
+
+    def _stm_drive(self, input_vectors, *, mode):
+        """Shared SHIFT/REDUCE loop for compose / generate.
+
+        For each batch row:
+          1. SHIFT every token from ``input_vectors[b]``. Snap the
+             token payload to the nearest order-0 reference scalar to
+             pick a (ref_id, category) so the typed admissibility mask
+             can gate REDUCE. Order is the snapped ref's recorded order.
+          2. REDUCE until either depth==1 or no admissible rule fires.
+             Each REDUCE pops ``arity`` items, applies the rule's
+             order-typed signature for the parent frame, and pushes
+             back a parent (path-to-complete §4 calls the real grammar
+             op via ``_apply_grammar_op``).
+          3. Collect rule indices per tier into a
+             ``dict[tier -> list[list[int]]]`` structure.
+          4. Populate a parser-neutral ``ParseState`` on the WordSpace
+             (path-to-complete §5): frames carry spans, actions carry
+             backpointers, trace is the chosen derivation. Viterbi /
+             chart-compatible consumers read from here.
+
+        When ``mode='generate'``, each row's list is reversed so the
+        last-applied rule comes out first.
+        """
+        if input_vectors is None:
+            object.__setattr__(self, 'parse_state', None)
+            return {}
+        if not torch.is_tensor(input_vectors):
+            return {}
+        if input_vectors.ndim != 3:
+            return {}
+        view = self.knowledge
+        stm_typed = self.conceptualSpace.stm_typed
+        driver = self.stm_driver
+        B, N, D = input_vectors.shape
+        rows = min(B, stm_typed.batch)
+        # Reset rows we'll touch.
+        for b in range(rows):
+            while int(stm_typed._depth[b].item()) > 0:
+                stm_typed.pop(b)
+        # Order-0 candidate set for SHIFT snap. Fall back to all live
+        # refs if no order-0 refs exist yet (bootstrap state).
+        order0_ids = view.refs_by_order(0)
+        if order0_ids.numel() == 0:
+            order0_ids = torch.arange(
+                view.n_refs_live, dtype=torch.long)
+        per_tier: dict = {}
+        from parse_state import ParseState
+        parse_state = ParseState()
+        # Per-row map: stack-slot index → ParseState frame index. The
+        # TypedStack doesn't carry ParseState indices, so we shadow
+        # them in a Python list per row and update on every push/pop.
+        slot_to_frame: list = [[] for _ in range(rows)]
+
+        def _try_reduce(b):
+            """Attempt one REDUCE on row ``b``. Returns True if it fired
+            and applied; False if no admissible rule or arity mismatch.
+            Records the chosen rule in ``per_tier`` on success."""
+            d = int(stm_typed._depth[b].item())
+            if d < 1:
+                return False
+            try:
+                result = driver.reduce_step(b)
+            except RuntimeError:
+                return False
+            rule_index = int(result['rule_index'])
+            sig = result['rule_signature']
+            arity = len(sig.get('rhs_categories', ()))
+            # Capture operand orders BEFORE popping (popped frames
+            # lose their order). The order-of-pop matters: we pop
+            # right then left to mirror the SHIFT order.
+            op_name = sig.get('op_name')
+            if arity == 2 and d >= 2:
+                right_order = int(stm_typed.top(b, k=1)['order'])
+                left_order = int(stm_typed.top(b, k=2)['order'])
+                right = stm_typed.pop(b)
+                left = stm_typed.pop(b)
+                # Path-to-complete §4: use the real grammar op for the
+                # parent payload (intersection / union / etc.) rather
+                # than the (left + right) / 2 placeholder.
+                parent_payload = self._apply_grammar_op(
+                    op_name, left['payload'], right['payload'])
+                operand_orders = (left_order, right_order)
+                right_frame_idx = slot_to_frame[b].pop()
+                left_frame_idx = slot_to_frame[b].pop()
+                operand_frame_indices = (left_frame_idx, right_frame_idx)
+            elif arity == 1 and d >= 1:
+                only_order = int(stm_typed.top(b, k=1)['order'])
+                only = stm_typed.pop(b)
+                parent_payload = self._apply_grammar_op(
+                    op_name, only['payload'])
+                operand_orders = (only_order,)
+                only_frame_idx = slot_to_frame[b].pop()
+                operand_frame_indices = (only_frame_idx,)
+            else:
+                return False
+            lhs_cat = str(sig.get('lhs_category', 'UNK'))
+            lhs_order = self._resolve_lhs_order(sig, operand_orders)
+            stm_typed.push(b, parent_payload,
+                           category_id_str=lhs_cat,
+                           order=lhs_order, ref_id=-1)
+            # Mirror into ParseState: record the parent frame + the
+            # action (backpointers via operand_indices).
+            parent_idx = parse_state.add_reduce(
+                rule_id=rule_index,
+                operand_indices=operand_frame_indices,
+                parent_payload=parent_payload,
+                parent_category=lhs_cat,
+                parent_order=lhs_order,
+            )
+            slot_to_frame[b].append(parent_idx)
+            tier = self._tier_for_stm_signature(sig, rule_index)
+            rows_list = per_tier.setdefault(
+                tier, [[] for _ in range(rows)])
+            while len(rows_list) < rows:
+                rows_list.append([])
+            rows_list[b].append(rule_index)
+            return True
+
+        # Standard left-corner shift-reduce: shift one token, then
+        # greedily reduce as many times as possible before the next
+        # shift. After all tokens are shifted, do a final cleanup pass.
+        max_reduces_total = max(1, N * 3 + 4)
+        for b in range(rows):
+            reduces_done = 0
+            for n in range(N):
+                payload = input_vectors[b, n]
+                ref_id, category, order = self._stm_snap_token(
+                    payload, view, order0_ids)
+                driver.shift(b, payload,
+                             category=category, order=order,
+                             ref_id=ref_id)
+                # Path-to-complete §5: record the SHIFTed leaf into
+                # the ParseState with span [n, n+1].
+                leaf_idx = parse_state.add_leaf(
+                    payload=payload, category=category,
+                    order=order, ref_id=ref_id, position=n)
+                slot_to_frame[b].append(leaf_idx)
+                # Greedy reduce while admissible.
+                while reduces_done < max_reduces_total:
+                    if not _try_reduce(b):
+                        break
+                    reduces_done += 1
+            # Final cleanup reduces.
+            while reduces_done < max_reduces_total:
+                if int(stm_typed._depth[b].item()) <= 1:
+                    break
+                if not _try_reduce(b):
+                    break
+                reduces_done += 1
+        # The greedy STM picks one action per REDUCE; the trace IS
+        # the chosen action list.
+        parse_state.trace = list(parse_state.actions)
+        parse_state.current_rules = per_tier
+        object.__setattr__(self, 'parse_state', parse_state)
+        # Pad rows + (for generate) reverse each row's sequence.
+        for tier, rows_list in per_tier.items():
+            while len(rows_list) < rows:
+                rows_list.append([])
+            if mode == 'generate':
+                per_tier[tier] = [list(reversed(r)) for r in rows_list]
+        return per_tier
+
+    # -- parser-neutral accessors (path-to-complete §6) --------------------
+    # Consumers should read these rather than reaching into chart-only or
+    # STM-only internals. The accessors prefer ``self.parse_state``
+    # (populated by both backends) and fall back to the legacy
+    # ``current_rules`` attribute for chart fast-paths that haven't been
+    # migrated yet.
+
+    def parse_rules_for_tier(self, tier):
+        """Return ``[[rule_id, ...], ...]`` for the given tier. Empty
+        list when the tier is absent. Reads ``self.parse_state`` first
+        and falls back to ``self.current_rules`` (legacy chart path).
+        """
+        ps = getattr(self, 'parse_state', None)
+        if ps is not None and ps.current_rules:
+            return ps.current_rules.get(tier, [])
+        legacy = getattr(self, 'current_rules', None) or {}
+        return legacy.get(tier, [])
+
+    def parse_derivation_trace(self):
+        """Return the per-row list of ``(rule_id, span_start, span_end)``
+        tuples. STM populates ``parse_state.actions`` with full span
+        info; the chart's projection loses span detail and emits
+        ``(rule_id, -1, -1)`` placeholders. Empty list when no derivation
+        is available.
+        """
+        ps = getattr(self, 'parse_state', None)
+        if ps is None or not ps.actions:
+            return [[]]
+        # Single-row STM output for now (per-row chart projection is
+        # future work).
+        row = []
+        for a in ps.actions:
+            parent = ps.frames[a.parent_index]
+            row.append((a.rule_id, parent.span_start, parent.span_end))
+        return [row]
+
+    @staticmethod
+    def _apply_grammar_op(op_name, left, right=None):
+        """Dispatch a grammar op_name to the corresponding kernel in
+        ``Layers.Ops`` and apply it to the operand payloads.
+
+        Path-to-complete §4: parent payloads use the real grammar op
+        rather than ``(left + right) / 2``. Unknown ops fall back to
+        the midpoint (binary) or identity (unary) so legacy grammars
+        with custom op names don't break.
+
+        Recognized ops (binary unless noted): ``conjunction`` /
+        ``intersection`` (lattice meet), ``disjunction`` / ``union``
+        (lattice join), ``lift`` and ``lower`` are order-changing —
+        their kernels in Ops take additional kwargs and aren't used
+        here for the parent-payload mixture; for those we currently
+        fall back to a per-operand midpoint. Future work: thread the
+        full kwargs through (mode, kind, etc.).
+        """
+        from Layers import Ops
+        # Binary lattice ops
+        if right is not None:
+            if op_name in ('conjunction', 'intersection'):
+                return Ops.intersection(left, right, monotonic=False)
+            if op_name in ('disjunction', 'union'):
+                return Ops.union(left, right, monotonic=False)
+            # Fallback: midpoint placeholder
+            return (left + right) / 2.0
+        # Unary fallback: identity
+        return left
+
+    @staticmethod
+    def _resolve_lhs_order(sig, operand_orders):
+        """Compute the parent (LHS) order for a rule firing.
+
+        Handles both constant LHS (return ``lhs_order`` directly) and
+        variable LHS (bind ``*`` from the RHS operands' variable slots,
+        then ``parent = binding + lhs.delta``). When the rule has no
+        variable slots, this is a no-op pass-through of ``lhs_order``.
+
+        Order_delta semantics (``+1`` for ``lift``, ``-1`` for
+        ``lower``, ``0`` otherwise) is already baked into the LHS's
+        delta by ``_rule_order_signature`` (``S* = lift(NP*, VP1)``
+        gives LHS variable +1), so we don't apply order_delta again
+        here.
+        """
+        lhs_kind = str(sig.get('lhs_order_kind', 'constant'))
+        lhs_delta = int(sig.get('lhs_order', 0))
+        if lhs_kind == 'constant':
+            return lhs_delta
+        rhs_kinds = sig.get('rhs_order_kinds') or []
+        rhs_ords = sig.get('rhs_orders') or []
+        binding = None
+        for slot, op_order in enumerate(operand_orders):
+            if slot >= len(rhs_kinds):
+                break
+            if str(rhs_kinds[slot]) == 'variable':
+                candidate = int(op_order) - int(rhs_ords[slot])
+                if binding is None:
+                    binding = candidate
+        if binding is None:
+            # LHS variable but no RHS variable to bind from — fall
+            # back to lhs_delta as if constant.
+            return lhs_delta
+        return binding + lhs_delta
+
+    def _tier_for_stm_signature(self, sig, rule_index):
+        """Derive the tier ('P' / 'C' / 'S') for a STM-fired rule.
+
+        Preferred path: ``TheGrammar.rules[rule_index].tier`` when the
+        live grammar's rule indices align with the loaded artifact's
+        signatures. Fallback: LHS-category prefix heuristic from the
+        serialized signature (which is all the artifact preserves).
+        """
+        try:
+            rule = TheGrammar.rules[rule_index]
+            tier = getattr(rule, 'tier', None)
+            if tier in ('P', 'C', 'S'):
+                return tier
+        except (IndexError, AttributeError):
+            pass
+        lhs = str(sig.get('lhs_category', '') or '').strip()
+        first = lhs[:1] if lhs else ''
+        if first == 'P':
+            return 'P'
+        if first == 'C':
+            return 'C'
+        return 'S'
+
+    def _stm_snap_token(self, payload, view, order0_ids):
+        """Snap a token payload to the nearest order-0 reference.
+
+        The reference codebook scalars are 1-D; we project the multi-D
+        payload by taking its first component as the snap target. (This
+        matches the bivector-retired snap which compares against a
+        single scalar prototype.) Returns ``(ref_id, category, order)``
+        with ``order`` taken from the snapped ref's recorded order.
+        """
+        if order0_ids.numel() == 0 or view.n_refs_live == 0:
+            return -1, 'UNK', 0
+        scalar = float(payload.reshape(-1)[0].item()) \
+            if payload.numel() > 0 else 0.0
+        candidates = view.references[order0_ids]
+        idx = int((candidates - scalar).abs().argmin().item())
+        ref_id = int(order0_ids[idx].item())
+        category = view.category_of_ref(ref_id) or 'UNK'
+        order = view.order_of_ref(ref_id)
+        return ref_id, category, order
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):
@@ -6271,7 +6619,7 @@ class WordSpace(Space):
 
     # -- Category helpers ---------------------------------------------
     def category_lookup(self, category):
-        """Return the learned codebook embedding for a derivation label.
+        """Return the learned embedding row for a derivation label.
 
         One entry per label: ``category_index['S'] = 0``,
         ``category_index['VO'] = 1``, etc. Looks up directly by index —
@@ -6281,23 +6629,23 @@ class WordSpace(Space):
 
         Args:
             category: string category name ('S', 'VO', ...) or int
-                row index into ``category_codebook``.
+                row index into ``category_embedding``.
 
         Returns:
-            Tensor of shape ``(pos_dim,)`` — the codebook row.
+            Tensor of shape ``(pos_dim,)`` — the embedding row.
         """
         if isinstance(category, str):
             idx = self.category_index[category]
         else:
             idx = int(category)
-        return self.category_codebook.getW()[idx]
+        return self.category_embedding.weight[idx]
 
     # -- PoS helpers (legacy) -----------------------------------------
     def pos_lookup(self, active_symbols):
-        """Activation-similarity nearest-neighbor lookup into the codebook.
+        """Activation-similarity nearest-neighbor lookup into the embedding.
 
         Legacy path kept so ``SymbolicSpace.forward`` (and its tests) can
-        map an active-symbol pattern to a codebook row without knowing
+        map an active-symbol pattern to an embedding row without knowing
         the grammar category up-front. New code that already has the
         category name should use ``category_lookup(name)`` instead.
 
@@ -6308,7 +6656,7 @@ class WordSpace(Space):
         Returns:
             Tensor of shape (pos_dim,) -- the matching prototype row.
         """
-        w = self.category_codebook.getW()  # [nVectors, pos_dim]
+        w = self.category_embedding.weight  # [N_categories, pos_dim]
         # Project active_symbols to a query vector by taking the weighted
         # mean of codebook rows, then snap to the nearest row.
         # For a pure lookup, we map from symbol-index space to a scalar

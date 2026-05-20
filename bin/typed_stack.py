@@ -26,29 +26,44 @@ name; the integer assignment from the codebook comes later).
 from typing import Any, Dict, List, Optional
 
 import torch
+import torch.nn as nn
 
 from embed import admissibility_mask
 
 
-class TypedStack:
+class TypedStack(nn.Module):
     """Per-row stack with parallel metadata tensors.
 
     Push / pop / top operate per-row (host-side index ``b``). All five
     parallel structures stay in sync.
+
+    2026-05-20 substrate fix: ``TypedStack`` is an ``nn.Module`` and
+    its parallel tensors are registered via ``register_buffer`` so
+    ``.to(device)`` / ``.cuda()`` move them together and ``state_dict``
+    sees them as a coherent group. The Python list of string-form
+    category names stays as a regular attribute (no device concept).
     """
 
     def __init__(self, batch: int, max_depth: int, dim: int):
+        super().__init__()
         self.batch = int(batch)
         self.max_depth = int(max_depth)
         self.dim = int(dim)
-        self._buffer = torch.zeros(self.batch, self.max_depth, self.dim)
-        self._category = torch.full(
-            (self.batch, self.max_depth), -1, dtype=torch.long)
-        self._order = torch.zeros(
-            (self.batch, self.max_depth), dtype=torch.long)
-        self._ref_id = torch.full(
-            (self.batch, self.max_depth), -1, dtype=torch.long)
-        self._depth = torch.zeros(self.batch, dtype=torch.long)
+        self.register_buffer(
+            '_buffer',
+            torch.zeros(self.batch, self.max_depth, self.dim))
+        self.register_buffer(
+            '_category',
+            torch.full((self.batch, self.max_depth), -1, dtype=torch.long))
+        self.register_buffer(
+            '_order',
+            torch.zeros((self.batch, self.max_depth), dtype=torch.long))
+        self.register_buffer(
+            '_ref_id',
+            torch.full((self.batch, self.max_depth), -1, dtype=torch.long))
+        self.register_buffer(
+            '_depth',
+            torch.zeros(self.batch, dtype=torch.long))
         # Parallel string-form category names. Populated when ``push``
         # is given ``category_id_str``; left ``None`` when the int id
         # is the primary form.

@@ -9932,10 +9932,11 @@ class SymbolicSpace(Space):
       * ConceptualSpace is a pure-event subspace (``.what``, ``.where``,
         ``.when`` empty); state is on ``.event`` via ``set_event()``.
 
-    Distinct from the WordSpace category codebook:
-      * ``WordSpace.category_codebook``: ``[max(64, |grammar.categories|),
-        4]`` learned embeddings keyed by grammar nonterminal / POS name
-        (S, NP, VP, N, V, ADJ, ...).  Used by the chart's POS scorer.
+    Distinct from the WordSpace category embedding:
+      * ``WordSpace.category_embedding``: ``nn.Embedding[max(64,
+        |grammar.categories|), 4]`` learned embeddings keyed by grammar
+        nonterminal / POS name (S, NP, VP, N, V, ADJ, ...).  Used by
+        the chart's POS scorer.
       * ``SymbolicSpace.subspace.what.W``: ``[V_sym, 2]`` learned
         symbol-prototype bivectors.  Used by the codebook snap.
       Independent codebooks, independent semantics.
