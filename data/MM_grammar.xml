@@ -61,6 +61,7 @@
     <language>
       <grammar>
         <compose>
+          <rule>S = S</rule>
           <rule>S = not.forward(S)</rule>
           <rule>S = intersection.forward(S, S)</rule>
           <rule>S = union.forward(S, S)</rule>

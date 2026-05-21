@@ -47,7 +47,9 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     # Body-side state sized to B*K
     assert model.wordSpace._last_svo.shape[0] == model.wordSpace.batch
     assert model.wordSpace._svo_valid.shape[0] == model.wordSpace.batch
-    assert model.wordSpace.subspace.batch == model.wordSpace.batch
+    # ``wordSpace.subspace`` is None post-WordSubSpace-retirement (2026-05-20);
+    # the SR-parser value tape now lives on ConceptualSpace.stm.
+    assert model.wordSpace.subspace is None
     assert model.wordSpace.category_stack._batch == model.wordSpace.batch
     assert model.wordSpace.reconstruction_stack._batch == model.wordSpace.batch
     # _stm_fired stays at B

@@ -271,9 +271,10 @@ def test_typed_mask_empty_intersection_falls_back_to_sentinels(tmp_path):
     path = str(tmp_path / "phase3_empty.kv")
     save_artifact(path, knowledge=build_knowledge_section(_tiny_grammar()))
     view = load_knowledge_view(path)
-    # No NP refs at order 4 in the bootstrap.
+    # _tiny_grammar declares NP at orders 0 (base), 3 (NP3), and 4
+    # (NP4 in lower's RHS). Order 7 is intentionally absent.
     left_rows = _intersect_long_tensors(
-        view.refs_by_category('NP'), view.refs_by_order(4))
+        view.refs_by_category('NP'), view.refs_by_order(7))
     assert left_rows.numel() == 0
     W = torch.tensor([
         [0.0, 0.0], [0.5, 0.0], [0.5, 0.5], [1.0, 1.0], [0.7, 0.7],

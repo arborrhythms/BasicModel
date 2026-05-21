@@ -1677,9 +1677,9 @@ class StreamingSBOWTrainer:
         the corpus) reuse the reserved slot rather than getting a
         duplicate.
         """
-        from Spaces import NULL_PERCEPT_KEY
+        from Spaces import PerceptualSpace
 
-        reserved = [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        reserved = [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
         for word in reserved:
             self.word_to_idx[word] = len(self.idx_to_word)
             self.idx_to_word.append(word)
@@ -1721,7 +1721,7 @@ class StreamingSBOWTrainer:
         corpus-word indices remain valid. New kvs always have them at
         indices 0..256 by ``build_vocab``'s contract.
         """
-        from Spaces import NULL_PERCEPT_KEY
+        from Spaces import PerceptualSpace
         self.idx_to_word = list(wv.index_to_key)
         self.word_to_idx = {w: i for i, w in enumerate(self.idx_to_word)}
         # Restore frequency counts so any future build_vocab() call (e.g.,
@@ -1733,7 +1733,7 @@ class StreamingSBOWTrainer:
 
         # Backfill any missing reserved entries at the tail. New kvs
         # have these at the head (build_vocab); legacy kvs may not.
-        reserved = [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        reserved = [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
         appended = []
         for word in reserved:
             if word not in self.word_to_idx:
@@ -1938,8 +1938,8 @@ DEFAULT_LEARNING_RATE = 0.01
 
 def _mphf_reserved_keys() -> List[str]:
     """Rows that must exist before corpus words in an MPHF lexicon."""
-    from Spaces import NULL_PERCEPT_KEY
-    return [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+    from Spaces import PerceptualSpace
+    return [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
 
 
 def _mphf_runtime_tokens(text: str) -> Iterable[str]:

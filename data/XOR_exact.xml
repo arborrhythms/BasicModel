@@ -2,15 +2,13 @@
 <model>
   <!-- XOR_exact: end-to-end XOR with reconstruction.
 
-       Bivector regime starts at ConceptualSpace. PerceptualSpace stays
-       wide (nDim=10, nVectors=1000) so the word codebook can pack 1000
-       prototypes pairwise-distinct, which the reconstruction snap
-       relies on. ConceptualSpace and SymbolicSpace use the continuous
-       SVD-pseudo-inverse projection (no quantize), with the per-order
-       input switch on ConceptualSpace.forward replacing the legacy
-       loopback concat. -->
+       This fixture intentionally keeps the reconstruction path
+       full-width. The scalar project codebook is useful for compact
+       truth activation, but it collapses per-slot content and cannot
+       support this exact word-level reconstruction smoke test. -->
   <architecture>
     <modelType>embedding</modelType>
+    <reconstruct>concepts</reconstruct>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -42,51 +40,40 @@
     <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: bivector boundary. Forward does Pi then projects
-       onto the codebook to emit per-prototype catuskoti bivector
-       [B, V_C, 2]; reverse uses the cached SVD pseudo-inverse to lift
-       back to [B, V_C, nDim]. -->
+  <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim is the codebook prototype content width. It equals
-         nInputDim so PiLayer stays a square isomorphism (10x10); the
-         scalar projection codebook (<codebook>project</codebook>) does
-         the 10->1 dim adaptation, emitting one signed Degree-of-Truth
-         per prototype. ProjectionBasis.reverse lifts back to nDim-wide
-         content which pi.reverse consumes intact. -->
     <nDim>10</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1</nOutputDim>
+    <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>project</codebook>
+    <codebook>none</codebook>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: width-1 throughout. Symbols carry the signed
-       Degree-of-Truth scalar arriving from Conceptual; their scalar
-       projection codebook stores width-1 prototypes. -->
+  <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nDim>1</nDim>
-    <nInputDim>1</nInputDim>
+    <nDim>10</nDim>
+    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nOutputDim>1</nOutputDim>
+    <nOutputDim>10</nOutputDim>
     <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace
          l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <codebook>project</codebook>
+    <codebook>none</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1</nInputDim>
+    <nInputDim>10</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

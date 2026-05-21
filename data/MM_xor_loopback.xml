@@ -32,10 +32,14 @@
     <nInput>8</nInput>
     <nInputDim>4</nInputDim>
     <nVectors>8</nVectors>
-	    <!-- nDim is the codebook prototype width. -->
-    <nDim>2</nDim>
+	    <!-- nDim is the codebook prototype width. Post-bivector-
+	         retirement (2026-05-20) nDim was raised from 2 to 4 to
+	         match InputSpace.nDim=4 — the bivector regime previously
+	         promoted nDim=2 to a [B, N, 2] output, but the scalar
+	         codebook now flows the codebook width through unchanged. -->
+    <nDim>4</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>4</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
@@ -43,14 +47,15 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>4</nInputDim>
     <nVectors>8</nVectors>
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input
-	         sourcing on ConceptualSpace.forward. -->
-    <nDim>2</nDim>
+	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep
+	         with PerceptualSpace post-bivector-retirement. -->
+    <nDim>4</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>4</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
@@ -58,11 +63,11 @@
 
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>4</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>2</nDim>
+    <nDim>4</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>4</nOutputDim>
 	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
@@ -73,7 +78,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>4</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

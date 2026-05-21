@@ -104,7 +104,16 @@ class TestMMXorConvergence(unittest.TestCase):
     # test_forward_reverse_reconstructs_input_state retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_forward_keeps_continuous_symbols(self):
-        """The recurrent path should not collapse via symbol VQ."""
+        """The recurrent path should not collapse via symbol VQ.
+
+        Updated 2026-05-20: ``m.forward`` writes a reduced terminal
+        event ([B, 1, D]) into ``symbolicSpace.subspace`` on its way
+        through the head — that final reduction is intentionally
+        sparse on an untrained model and isn't where VQ collapse would
+        show. Probe the per-stage symbolic activation directly (call
+        the symbol space on the percept stage's output) — that's the
+        signal that codebook-snap can collapse and the variance check
+        is meaningful there."""
         import torch
 
         m, _, _ = _fresh_model()
@@ -112,21 +121,20 @@ class TestMMXorConvergence(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
-            inp_items, out_items = next(iter(loader))
+            inp_items, _ = next(iter(loader))
             inputTensor = m.inputSpace.prepInput(inp_items)
-            outputTensor = (m.outputSpace.prepOutput(out_items)
-                            if out_items is not None else None)
-            batch = (inputTensor, outputTensor)
-            inp, _ = batch
             with torch.no_grad():
-                m.forward(inp)
-        symbols = m.symbolicSpace.subspace.materialize()
+                in_sub = m.inputSpace.forward(inputTensor)
+                ps_sub = m.perceptualSpace.forward(in_sub)
+                ss_sub = m.symbolicSpace.forward(ps_sub)
+        symbols = ss_sub.materialize()
         self.assertTrue(torch.isfinite(symbols).all())
-        self.assertGreater(symbols.std().item(), 1e-6)
+        self.assertGreater(symbols.std().item(), 1e-6,
+                           "Symbolic activation collapsed to a single VQ "
+                           "prototype after the per-stage forward.")
 
     # test_runbatch_losses_stay_finite retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
-    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_learns_xor_signal(self):
         """The recurrent forward path should learn XOR."""
         import torch
@@ -216,7 +224,6 @@ class TestMMXorConvergence(unittest.TestCase):
         self.assertGreater(len(data.train_input), 0)
         self.assertLess(best_ever, threshold)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_mm_grammar_learns_xor_signal(self):
         """MM_grammar.xml learns XOR via the grammar-directed composition path.
 
@@ -227,7 +234,6 @@ class TestMMXorConvergence(unittest.TestCase):
         cfg_path = os.path.join(_PROJECT, "data", "MM_grammar.xml")
         self._grammar_xor_convergence(cfg_path)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_mm_grammar_without_vqvae_learns_xor_signal(self):
         """MM_grammar.xml with useVQVAE flipped to false learns XOR.
 
@@ -254,12 +260,6 @@ class TestMMXorConvergence(unittest.TestCase):
 
     # test_vqvae_ste_registers_commitment_and_moves_encoder retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
-    @pytest.mark.xfail(reason=(
-        "Autograd-graph re-entry under per-word stem (pre-existing "
-        "since the 2026-05-12 butterfly removal; the per-word loop's "
-        "iterative codebook updates retain graph state across "
-        "successive forwards).  Needs the optimizer step's "
-        "retain_graph contract revisited as a follow-up."))
     def test_convergence(self):
         """Train for up to 200 epochs; output loss should drop below 0.20.
 

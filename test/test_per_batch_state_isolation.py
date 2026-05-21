@@ -169,9 +169,12 @@ def test_reset_clears_both():
 
 def _attach_discourse(ws, n_dim, concept_dim, batch):
     """Attach a minimal InterSentenceLayer to ws so predict()/prime()
-    return non-None tensors.  Pre-populates the recent buffer with a
-    deterministic snapshot per source row so predict() yields a real
-    prediction instead of (None, None)."""
+    return non-None tensors. Pre-populates the recent buffer with a
+    deterministic snapshot per source row, then arms STM so the
+    discourse-prediction cache (``_disc_pred`` / ``_disc_conf``) is
+    populated. The D8 capture-gate refactor (2026-05-19) moved the
+    ``disc.predict()`` call from ``stm_residual_microbatch`` to
+    ``arm_stm``; tests must arm before they can read the cache."""
     import Layers
     n_sym = ws.subspace.outputShape[0] if hasattr(ws.subspace, 'outputShape') else 3
     disc = Layers.InterSentenceLayer(
@@ -188,6 +191,10 @@ def _attach_discourse(ws, n_dim, concept_dim, batch):
     s = torch.randn(batch, n_sym, n_dim)
     w = torch.randn(batch, 4, n_dim)
     disc.snapshot(s, w)
+    # Refresh the discourse-prediction cache so stm_residual_microbatch
+    # can read ``_disc_pred`` / ``_disc_conf`` without falling back to
+    # None at the cache miss.
+    ws.arm_stm()
     return disc
 
 
@@ -227,8 +234,9 @@ def test_stm_residual_microbatch_returns_zero_when_all_fired():
     """
     B, K = 3, 2
     ws, D = _make_ws(batch=B * K)
-    ws._stm_fired = torch.ones(B, dtype=torch.bool)
     _attach_discourse(ws, n_dim=D, concept_dim=D, batch=B * K)
+    # Pre-fire AFTER attach (which arms STM and clears ``_stm_fired``).
+    ws._stm_fired = torch.ones(B, dtype=torch.bool)
     bias = ws.stm_residual_microbatch(B, K)
     assert bias is not None, "post-fix contract: returns a tensor, not None"
     assert bias.shape == (B * K, D)

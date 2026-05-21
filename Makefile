@@ -74,7 +74,7 @@ train_micro : $(VENV_STAMP)
 		--max-docs 1000000 --num-shards 10 --num-epochs 1 --batches 1440 --random-shards
 
 xor : data/MM_xor.xml
-	$(MAKE) run XML1=$<
+	PYTORCH_ENABLE_MPS_FALLBACK=1 $(MAKE) run XML1=$<
 
 tomatoes : data/tomatoes.xml
 	$(MAKE) run XML1=$<

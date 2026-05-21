@@ -50,9 +50,9 @@ def _tiny_view():
 
 def test_parallel_constructs_stm_driver_before_chart_runs():
     """In parallel mode, the STM driver is constructed before chart
-    execution. On a bare WordSpace the chart will fail (missing
-    ``_work``/other state); we expect that failure, but the STM driver
-    must already exist when the chart error surfaces."""
+    execution. On a bare WordSubSpace the chart will fail (missing
+    cursor / per-sentence state); we expect that failure, but the STM
+    driver must already exist when the chart error surfaces."""
     ws = _bare_word_space()
     ws.parser_backend = 'parallel'
     ws.attach_knowledge(_tiny_view())

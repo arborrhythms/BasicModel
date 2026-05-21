@@ -68,8 +68,8 @@ def _build_gate_model_cuda():
 
 def _stage_for_per_word(m):
     """Run one real ``InputSpace.forward`` so ``_ar_embedded`` /
-    ``_valid_len_host`` / peer BPE state / MPHF tables / WorkingState /
-    loop-carry SubSpaces are all populated."""
+    ``_valid_len_host`` / peer BPE state / MPHF tables / WordSubSpace
+    per-sentence state / loop-carry SubSpaces are all populated."""
     isp = m.inputSpace
     assert isp._per_word_enabled is True, (
         "gate target: MM_5M (grammar-enabled) must wire "
@@ -114,12 +114,14 @@ def test_per_word_step_compiles_and_replays_under_cudagraphs():
         fullgraph=True)
 
     captured_outputs = []
+    out_slot = m._per_word_contributions
     for i in range(N_ITERATIONS):
         w = isp.next_word()
         assert w is not None, (
             f"staged buffer ran out of words before iter {i+1}; "
             "increase staged input or reduce N_ITERATIONS")
-        out = compiled(w)
+        gate = torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
+        out = compiled(w, i, gate, out_slot)
         torch.cuda.synchronize()
         captured_outputs.append(out)
     assert len(captured_outputs) == N_ITERATIONS
@@ -155,10 +157,12 @@ def test_per_word_step_actually_uses_cudagraphs():
         fullgraph=True)
 
     # Two replays (warm + cold-of-cache + warmed).
-    for _ in range(2):
+    out_slot = m._per_word_contributions
+    for i in range(2):
         w = isp.next_word()
         assert w is not None
-        _ = compiled(w)
+        gate = torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
+        _ = compiled(w, i, gate, out_slot)
         torch.cuda.synchronize()
 
     # Inductor's CUDAGraph counter. Any non-zero replays-recorded
@@ -174,12 +178,16 @@ def test_per_word_step_actually_uses_cudagraphs():
     print(f"[D8] cudagraph-related keys: {cudagraph_keys}")
     print(f"[D8] cudagraph signal sum: {cudagraph_signal}")
     # Soft assert: if there is NO cudagraph counter at all, the
-    # signal is not authoritative -- we report the inductor counter
-    # set so a follow-up can decide. The PRIMARY gate (test #1) is
-    # the graph_break==0 + successful replay under reduce-overhead.
-    assert cudagraph_signal > 0 or cudagraph_keys, (
-        f"Expected at least one cudagraph-related inductor counter; "
-        f"got keys={list(inductor_counters.keys())[:20]}")
+    # signal is not authoritative. The PRIMARY gate (test #1) is the
+    # graph_break==0 + successful replay under reduce-overhead, and the
+    # profiler test checks DtoH directly.
+    if not cudagraph_keys:
+        pytest.skip(
+            "Inductor did not expose cudagraph counters; "
+            f"got keys={list(inductor_counters.keys())[:20]}")
+    assert cudagraph_signal > 0, (
+        f"Expected a positive cudagraph-related inductor counter; "
+        f"got {dict(inductor_counters)}")
 
 
 def test_per_word_step_emits_no_dtoh_under_profiler():
@@ -207,13 +215,16 @@ def test_per_word_step_emits_no_dtoh_under_profiler():
         fullgraph=True)
 
     # Warm-up: pay the compile + CUDAGraph capture cost once.
+    out_slot = m._per_word_contributions
     w0 = isp.next_word()
     assert w0 is not None
-    _ = compiled(w0)
+    g0 = torch.ones(w0.shape[0], 1, dtype=torch.bool, device=w0.device)
+    _ = compiled(w0, 0, g0, out_slot)
     torch.cuda.synchronize()
 
     w1 = isp.next_word()
     assert w1 is not None
+    g1 = torch.ones(w1.shape[0], 1, dtype=torch.bool, device=w1.device)
 
     # Profile a SINGLE replay. CUDA activities only -- we want device
     # events, not Python overhead. ``record_shapes=False`` keeps the
@@ -221,7 +232,7 @@ def test_per_word_step_emits_no_dtoh_under_profiler():
     with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CUDA],
             record_shapes=False) as prof:
-        _ = compiled(w1)
+        _ = compiled(w1, 1, g1, out_slot)
         torch.cuda.synchronize()
 
     events = prof.key_averages()

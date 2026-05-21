@@ -1,3 +1,4 @@
+* Implement basicmodel/doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
 
 * Enforce use of Mereonomy (per-symbol DoT graph).
 

@@ -163,52 +163,44 @@ def test_prep_sentence_batch_delegates_to_prepinput():
 # ---------------------------------------------------------------------------
 
 def test_codebook_setw_preserves_parameter_against_activation():
-    """Regression for the checkpoint-corruption bug: once a Codebook holds
-    its VQ codebook as an ``nn.Parameter``, subsequent ``setW(activation)``
-    calls must stash the activation in a transient slot -- never replace
-    the Parameter.
+    """Stage 4 (doc/plans/2026-05-21-active-payload-retirement.md): the
+    original regression — ``setW(activation)`` overwriting the codebook
+    Parameter — is now structurally impossible. ``Codebook.setW`` raises
+    on per-batch (3-D) tensor writes; the prototype-only contract means
+    the Parameter is never multiplexed with batch payload.
 
-    Symptom that used to bite: save_weights serialises
-    ``subspace.event.W`` with a batch-shaped tensor (``[B, N, D]``)
-    instead of the codebook (``[V, D]``), and a fresh model can no
-    longer load the checkpoint.
+    This test pins the new contract:
+    1. ``cb.setW(nn.Parameter)`` registers the Parameter.
+    2. ``cb.setW(per_batch_3D)`` raises with the spec-pointer message.
+    3. ``cb.setW(None)`` preserves the Parameter.
+    4. ``cb.getW()`` always returns the prototype Parameter — never a
+       per-batch shadow.
     """
     import torch.nn as nn
     import Spaces
 
     cb = Spaces.Codebook()
-    # Install a fake codebook Parameter shaped [V=4, D=3] the way
-    # ``addVectors`` would.
     codebook = nn.Parameter(torch.eye(4, 3))
     cb.setW(codebook)
     assert "W" in cb._parameters, "codebook must register as a Parameter"
     saved_shape = list(cb.state_dict()["W"].shape)
     assert saved_shape == [4, 3]
 
-    # Now push an activation through setW -- shape [B=2, N=4, D=3], the
-    # exact pattern that happens during the forward pass.
+    # Per-batch setW on a Parameter-bearing slot is now a hard error.
     activation = torch.randn(2, 4, 3)
-    cb.setW(activation)
+    import pytest as _pytest
+    with _pytest.raises(RuntimeError, match="per-batch"):
+        cb.setW(activation)
 
-    # The codebook Parameter must still be the registered W.
-    assert "W" in cb._parameters, (
-        "setW(activation) must not strip the codebook Parameter"
-    )
+    # The Parameter is still intact (the raise fired before any write).
+    assert "W" in cb._parameters
     state = cb.state_dict()
-    assert "W" in state
     assert list(state["W"].shape) == [4, 3], (
         f"state_dict W must still be the codebook (shape [4, 3]); "
-        f"got {list(state['W'].shape)} -- activations leaked into "
-        "state_dict again"
-    )
+        f"got {list(state['W'].shape)}")
 
-    # getW() must return the transient activation while cached, so the
-    # forward pipeline still sees what it stored.
-    got = cb.getW()
-    assert got.shape == (2, 4, 3)
-    assert torch.equal(got, activation)
-
-    # Clearing the activation via setW(None) must preserve the codebook.
+    # ``setW(None)`` is the cache-clear; it preserves the Parameter
+    # (per-batch storage was retired — there's nothing to clear).
     cb.setW(None)
     assert "W" in cb._parameters
     restored = cb.getW()

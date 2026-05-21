@@ -4701,7 +4701,7 @@ class ImpenetrableLayer(Layer):
 
 # Default Gaussian region width for Phase 1b introspective grammar layers.
 # `area` and `luminosity` use this when the slot has no calibrated extent
-# attached.  Matches `Spaces._DEFAULT_SYMBOL_SIGMA`.
+# attached.
 _DEFAULT_SUBSYMBOLIC_SIGMA = 0.1
 
 

@@ -139,7 +139,13 @@ class TestCudaSanityChecks(unittest.TestCase):
         try:
             model = object()
 
-            def _compile_side_effect(model_arg, backend=None, mode=None):
+            def _compile_side_effect(model_arg, backend=None, mode=None,
+                                     fullgraph=False, **_):
+                # ``util.compile`` passes ``fullgraph`` through to
+                # ``torch.compile``; accept and ignore it here so the
+                # side_effect signature doesn't TypeError on the extra
+                # keyword and silently fall through to the eager
+                # fallback (which previously broke this test).
                 self.assertEqual(mode, "max-autotune")
                 if backend == "inductor":
                     raise RuntimeError("inductor failed")

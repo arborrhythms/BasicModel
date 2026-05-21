@@ -11,7 +11,12 @@ from test.space_equiv import run_space_gate, _clone
 
 
 def _bpe_snapshot(ps, out):
-    ev = out.event.getW() if (out is not None and out.event is not None) else None
+    # Spec doc/specs/2026-05-21-subspace-slot-architecture.md: read the
+    # per-batch event via ``materialize`` so the snapshot reflects
+    # codebook[selection] (the reconstructed content), not the static
+    # prototype Parameter that ``event.getW`` now returns.
+    ev = (out.materialize(mode="event")
+          if (out is not None and hasattr(out, "materialize")) else None)
     return {"event_W": _clone(ev),
             "word_active": _clone(getattr(ps, "_bpe_word_mask", None))}
 
@@ -28,10 +33,20 @@ def test_perturbed_candidate_is_caught():
 
     def perturbed(self, *a, **k):
         out = ref(self, *a, **k)
-        if out is not None and getattr(out, "event", None) is not None:
-            w = out.event.getW()
-            if torch.is_tensor(w) and w.numel():
-                out.event.setW(w + 1e-3)
+        # Spec doc/specs/2026-05-21-subspace-slot-architecture.md: the
+        # per-batch event is reconstructed by ``materialize`` from
+        # prototype + selection — there is no separate per-batch event
+        # tensor to perturb. To inject a detectable perturbation under
+        # the new contract, perturb the selection on ``_active``.
+        if out is not None and getattr(out, "_active", None) is not None:
+            active = out._active
+            if torch.is_tensor(active) and active.numel():
+                # Shift each per-position selection by 1 (mod V) so the
+                # codebook lookup picks a neighbouring row — detectable
+                # downstream via materialize / event_W snapshot.
+                proto = out.prototype() if hasattr(out, "prototype") else None
+                V = proto.shape[0] if proto is not None else 1
+                out._active = (active + 1) % max(V, 1)
         return out
 
     with pytest.raises(AssertionError, match="DIVERGENCE"):

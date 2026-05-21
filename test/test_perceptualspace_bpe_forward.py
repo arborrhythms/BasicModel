@@ -148,7 +148,12 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             with torch.no_grad():
                 _ = model.forward(inp_tensor)
 
-            ps_event = ps.subspace.event.getW()
+            # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:
+            # default ``materialize()`` (mode='active') applies the
+            # activation-presence gate (word_active mask), so non-word
+            # positions zero out. ``mode='event'`` returns the raw
+            # reconstruction without the gate.
+            ps_event = ps.subspace.materialize()
             self.assertIsNotNone(ps_event, "PerceptualSpace.subspace.event must be populated")
             self.assertEqual(ps_event.shape[0], 1)
             self.assertEqual(ps_event.shape[-1], 4)

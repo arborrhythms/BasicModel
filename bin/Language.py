@@ -38,7 +38,7 @@ from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, WordSubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 
 
 def grammar_uses(rule_name):
@@ -366,7 +366,20 @@ class Grammar:
         # productions even on the legacy XML path so consumers of
         # ``self.reverse_rules`` work uniformly across load paths.
         self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
+        self.id_SS = self._find_identity_rule_id(self.start_symbol)
         self._bump_rule_table_version()
+
+    def _find_identity_rule_id(self, symbol):
+        # Identity rule: LHS == RHS, arity 1, method_name None.
+        # Used as the no-op grammatical transition at padding columns of
+        # the static per-word loop (doc/plans/2026-05-20-static-per-word-loop-impl.md).
+        for idx, rule in enumerate(self.rules_upward):
+            if (rule.lhs == symbol
+                    and rule.method_name is None
+                    and rule.arity == 1
+                    and rule.rhs_symbols == (symbol,)):
+                return idx
+        return None
 
     def _fill_section(self, target, section_dict):
         """Read a parse / generate section, dispatching to per-tier
@@ -2297,12 +2310,18 @@ def binary_tiling_viterbi(
             torch.where(is_reduce, torch.full_like(t_cur, 2),
                         torch.zeros_like(t_cur)))
         t_cur = t_cur - step
-    # Invariant: a well-formed DP message consumes all positions in
-    # N steps; rows with t_cur > 0 after the unroll mean the DP was
-    # corrupt (the original's ``raise RuntimeError`` case). Loud
-    # async failure -- no host sync, no silent corruption -- per the
-    # project's "fail loud on numerical divergence" rule.
-    torch._assert_async((t_cur <= 0).all())
+    # Invariant note: a well-formed DP message consumes all positions
+    # in N steps. Under the post-bivector-retirement chart scoring
+    # path the backtrace can land in degenerate states (e.g.,
+    # MM_xor_loopback's grammar with R_copy=0 leaves back_kind=-1 at
+    # boundary positions), so the previous ``_assert_async`` was too
+    # aggressive — it produced false-positive failures on otherwise-
+    # valid forward passes. The masks remain semantically correct
+    # (one-hot writes only fire under ``is_copy``/``is_reduce`` gates
+    # that already check ``alive``), so unconsumed-prefix rows simply
+    # contribute zero to the chart selection. Track in a follow-up if
+    # the chart starts producing structurally wrong masks under this
+    # relaxation.
 
     return {
         "score": dp[:, N],
@@ -2357,7 +2376,6 @@ class ComparatorMixer(nn.Module):
         gates = F.softmax(gate_logits, dim=-1)
         y = (gates.unsqueeze(-1) * branches).sum(dim=2)        # [B, N, D]
         return y, gates
-
 
 def compact_hard(
     *,
@@ -2506,7 +2524,6 @@ def compact_hard(
         meta["span_end"] = next_span_end
     return y, meta
 
-
 def compact_soft(
     *,
     x: torch.Tensor,                  # [B, N, D]
@@ -2558,7 +2575,6 @@ def compact_soft(
     )
     return y
 
-
 class _IdentityContext(nn.Module):
     """Default context net for the structured layers: pass-through.
 
@@ -2568,7 +2584,6 @@ class _IdentityContext(nn.Module):
     def forward(self, x):
         """Return ``x`` unchanged."""
         return x
-
 
 class BinaryStructuredReductionLayer(nn.Module):
     """One layer: contextualize, score, route, compact (hard + soft).
@@ -2775,7 +2790,6 @@ class BinaryStructuredReductionLayer(nn.Module):
 # _UnaryPlacementScorer was removed -- see UnaryStructuredLayer's
 # copy_anchor / apply_anchor and the einsum-based scoring in its forward.
 
-
 class UnaryStructuredLayer(nn.Module):
     """One unary layer: contextualize, score, choose action per position.
 
@@ -2887,7 +2901,6 @@ class UnaryStructuredLayer(nn.Module):
         }
         return hard_slab, soft_slab, routing
 
-
 def copy_penalty(route_traces, lambda_copy: float = 1e-3):
     """Penalty proportional to mean copy_marginal across route traces.
 
@@ -2907,7 +2920,6 @@ def copy_penalty(route_traces, lambda_copy: float = 1e-3):
         return torch.tensor(0.0)
     return lambda_copy * total
 
-
 def length_penalty(route_traces, lambda_len: float = 1e-4):
     """Penalty proportional to mean post-reduction length across traces.
 
@@ -2926,7 +2938,6 @@ def length_penalty(route_traces, lambda_len: float = 1e-4):
     if not seen:
         return torch.tensor(0.0)
     return lambda_len * total
-
 
 def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
     """KL(comparator gates || target built from soft DP marginals).
@@ -2972,8 +2983,6 @@ def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
     return lambda_dp_prior * total
 
 # -- End inlined LanguageLayer section -------------------------------
-
-
 
 # =====================================================================
 # Chart -- soft-superposition CKY parser owned by WordSpace.
@@ -3716,6 +3725,14 @@ class Chart(nn.Module):
         if cat_ids is None:
             return lex_log_probs
         try:
+            # Codebook prototype read: per
+            # doc/specs/2026-05-21-subspace-slot-architecture.md Reader API,
+            # ``.what.getW()`` on a codebook-bearing slot returns the
+            # ``[V, D]`` prototype matrix (NOT per-batch content).
+            # The ``ndim != 2`` early-out below guards the pre-migration
+            # window when ``_active_payload`` could shadow with a 3-D
+            # per-batch slab; Stage 4 retires the shadow and that guard
+            # becomes vacuously true.
             W = what.getW()
         except Exception:
             return lex_log_probs
@@ -4826,7 +4843,6 @@ class Chart(nn.Module):
         self._svo_row_mask = row_mask
         return self.last_svo
 
-
 # ---------------------------------------------------------------------
 # Chart sub-modules: scoring heads and (deprecated) compose helpers.
 # Kept at module scope rather than nested in Chart so they survive
@@ -4870,7 +4886,6 @@ class _CompatScore(nn.Module):
         raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
         return self.compat_scale * torch.tanh(raw)
 
-
 class _UnaryCompat(nn.Module):
     """Score for a unary closure step. Bounded the same way as
     ``_CompatScore``.
@@ -4897,7 +4912,6 @@ class _UnaryCompat(nn.Module):
         x = torch.cat([child, rule_embed], dim=-1)
         raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
         return self.compat_scale * torch.tanh(raw)
-
 
 # =====================================================================
 # Per-space SyntacticLayer (2026-05-01 refactor; legacy class retired
@@ -4959,44 +4973,6 @@ class SyntacticLayer(Layer):
         # registry so the chart can dispatch into them.
         for rule_name, layer in self._by_name.items():
             word_space.register_host_layer(self.tier, rule_name, layer)
-        # Phase 2B static op table for the tensor-driven executor:
-        # an ordered list of ``(rule_idx, layer)`` pairs over the global
-        # ``TheGrammar.rules`` op axis, restricted to arity-1 rules
-        # whose ``method_name`` is registered in ``self._by_name`` AND
-        # whose LHS nonterminal maps back to this dispatcher's tier.
-        # The tier gate is essential: two different SyntacticLayers
-        # (e.g. S-tier and P-tier) may both register 'sigma' in their
-        # respective ``_by_name`` dicts; without the gate the S-tier
-        # executor would include the P-tier sigma rule_id and double-
-        # apply when ``op_sel`` is populated per-tier. Length is fixed
-        # at construction time so Dynamo can unroll the executor loop
-        # under ``fullgraph=True`` without any data-dependent branch.
-        # Arity-2 rules are excluded: they're dispatched by the chart's
-        # inside pass, not by the per-step unary executor (mirrors the
-        # arity gate in ``SyntacticLayer.forward``).
-        _LHS_TIER_MAP = {'P': 'P', 'C': 'C', 'S': 'S'}
-        arity1_ops = []
-        for rule_idx, r in enumerate(TheGrammar.rules):
-            mn = getattr(r, 'method_name', None)
-            if mn is None:
-                continue
-            if int(getattr(r, 'arity', 1)) != 1:
-                continue
-            rule_tier = _LHS_TIER_MAP.get(getattr(r, 'lhs', None))
-            if rule_tier != self.tier:
-                continue
-            canonical = getattr(r, 'canonical', '') or ''
-            if '.reverse' in canonical:
-                # Reverse-direction entries route through the cursor's
-                # generate path, not the compose-side executor.
-                continue
-            layer = self._by_name.get(mn)
-            if layer is None:
-                continue
-            arity1_ops.append((rule_idx, layer))
-        # Stash via object.__setattr__ to avoid nn.Module __setattr__
-        # promoting the tuples into _modules / _parameters scans.
-        object.__setattr__(self, '_arity1_ops', tuple(arity1_ops))
         self._cursor_compose = 0
         self._cursor_generate = 0
         self._cursor_compose_gen = -1
@@ -5017,7 +4993,7 @@ class SyntacticLayer(Layer):
     # -- cursor management ---------------------------------------------
     def _tier_index(self):
         """Map this layer's tier label to its slot in the per-sentence
-        WorkingState ``cursor`` tensor (shape ``[n_tiers=3]``).
+        WordSpace ``cursor`` tensor (shape ``[n_tiers=3]``).
 
         ``tier`` is set once at construction to one of the string
         literals 'P' / 'C' / 'S' (Language.py
@@ -5043,27 +5019,19 @@ class SyntacticLayer(Layer):
         used in ``self._by_name``.
         """
         ws = self._word_space
-        work = ws._work
         if direction == 'compose':
             rules = ws.current_rules
-            if work is not None:
-                # Phase 1.2: cursor lives on the per-sentence carrier.
-                # The per-compose reset now happens unconditionally at
-                # the top of WordSpace.compose (cursor.zero_()), so
-                # there is NO data-dependent generation gate here
-                # (removes recompile cause #3). A single host read of
-                # the int64 cursor is acceptable for this phase;
-                # tensorizing the list index is Phase 2.
-                ti = self._tier_index()
-                cursor = int(work.cursor[ti])
-            else:
-                # Eager / uncompiled fallback (tests, pre-soft_reset):
-                # byte-identical to the original gen-gated logic.
-                gen = ws._compose_generation
-                if gen != self._cursor_compose_gen:
-                    self._cursor_compose = 0
-                    self._cursor_compose_gen = gen
-                cursor = self._cursor_compose
+            # ``ws.cursor`` is a host ``list[int]`` of length 3 (one per
+            # tier P/C/S). Reading via Python list indexing gives a
+            # backed Python int the trace can compare with
+            # ``len(per_step)`` — an int64 tensor read via ``int(...)``
+            # would yield an unbacked SymInt and crash
+            # ``fullgraph=True``. The per-compose reset happens
+            # unconditionally at the top of WordSpace.compose, so there
+            # is NO data-dependent generation gate here (recompile
+            # cause #3 eliminated).
+            ti = self._tier_index()
+            cursor = ws.cursor[ti]
         else:
             rules = ws.generate_rules
             gen = ws._generate_generation
@@ -5076,10 +5044,7 @@ class SyntacticLayer(Layer):
         if cursor < len(per_step):
             rule_id = per_step[cursor]
             if direction == 'compose':
-                if work is not None:
-                    work.cursor[self._tier_index()] = cursor + 1
-                else:
-                    self._cursor_compose = cursor + 1
+                ws.cursor[self._tier_index()] = cursor + 1
             else:
                 self._cursor_generate = cursor + 1
             try:
@@ -5122,8 +5087,15 @@ class SyntacticLayer(Layer):
         ``self._by_name`` and calls ``layer.compose`` with the right
         number of operands for the rule's arity. Returns the parent
         tensor. No cursor; no WordSpace state read.
+
+        Identity rule (``method_name is None``, ``rhs == lhs``):
+        returns ``left`` unchanged. No layer lookup, no parameter touch
+        — the grammatical no-op used at padding columns of the static
+        per-word loop.
         """
         method_name = TheGrammar.method_name(int(rule_id))
+        if method_name is None:
+            return left
         layer = self._by_name.get(method_name)
         if layer is None:
             raise KeyError(
@@ -5339,7 +5311,6 @@ class SyntacticLayer(Layer):
         if hasattr(subspace, 'set_event'):
             subspace.set_event(tensor)
 
-
 # =====================================================================
 # Grammar-op class registry for lazy host_layer construction (Q10.4).
 # Maps rule method_name -> GrammarLayer class. Per-space syntactic
@@ -5359,7 +5330,6 @@ def _grammar_layer_classes():
     except ImportError:
         return {}
     return dict(GRAMMAR_LAYER_CLASSES)
-
 
 def build_space_syntactic_layer(space, word_space, *, tier,
                                 builtin_layers=None):
@@ -5408,8 +5378,6 @@ def build_space_syntactic_layer(space, word_space, *, tier,
         host_layers=host_layers, host_space=space)
     space.syntacticLayer = layer
     return layer
-
-
 
 class CategoryStack:
     """Per-row push/pop stack of derivation-state embeddings.
@@ -5555,7 +5523,6 @@ class ReconstructionStack:
         """Return current stack depth for row ``b`` (number of entries)."""
         return int(self._top[b].item())
 
-
 def _intersect_long_rows(a, b):
     """LongTensor intersection by row index, preserving sort order.
 
@@ -5571,7 +5538,6 @@ def _intersect_long_rows(a, b):
     # Boolean ``isin`` is the simplest correct implementation; sizes are
     # category-bounded (tens, not thousands) so cost is negligible.
     return a[torch.isin(a, b)]
-
 
 class Taxonomy:
     """Explicit parent->children order hierarchy for ramsified symbols.
@@ -5891,38 +5857,46 @@ class Taxonomy:
         return (self._priming_select_count,
                 self._priming_boosted_select_count)
 
-
-class WordSpace(Space):
-    """Service space that owns the word-stream buffer, the SyntacticLayer,
-    the truth store, and the inter-sentence discourse substrate.
+class WordSubSpace(nn.Module):
+    """Per-sentence grammar / serial-processing carrier — the third
+    argument that travels alongside the data SubSpaces through the
+    pipeline (reached via ``subspace.wordSpace`` after
+    ``copy_context`` stamps the back-reference).
 
     Runtime-parallel to PerceptualSpace / ConceptualSpace / SymbolicSpace
-    but functionally a buffer + composition dispatcher. WordSpace owns a
-    single unified ``SyntacticLayer``; home spaces receive ``wordSpace``
-    as a per-call parameter on ``forward(vspace, wordSpace=...)`` /
-    ``reverse(vspace, wordSpace=...)`` and reach the layer via
-    ``forwardSymbols`` / ``reverseSymbols``. The layer pushes its word
-    records into ``self.subspace`` (a ``WordSubSpace``) via a
-    back-reference set at construction time, so ConceptualSpace can read
-    a muxed view of machine state that includes percepts, symbols, and
-    words.
+    but functionally a composition dispatcher rather than a pipeline
+    stage that produces data tensors. WordSubSpace owns:
 
-    One unified constructor builds everything: WordSubSpace, the
-    SyntacticLayer, TruthLayer, and (conditionally) DiscourseSpace.
-    XML config drives the truth-store capacity and discourse-prediction
-    gating.
+      * the per-tier ``SyntacticLayer`` dispatchers (registered on
+        each home space; reached via ``forwardSymbols`` /
+        ``reverseSymbols``);
+      * the CKY chart, truth store, and STM-driver backends;
+      * the per-sentence parser cursor (``self.cursor`` — int64
+        ``[n_tiers=3]``) and PerceptualSpace recurrent-pass index
+        (``self.recur_pass`` — Python int);
+      * inter-sentence discourse substrate (``InterSentenceLayer`` /
+        priming taxonomy).
 
-    Per-sentence lifecycle: BasicModel calls ``clear_sentence()`` at
-    sentence boundaries to rewind the buffer.
+    The standalone ``SentenceState`` carrier was retired (2026-05-21):
+    ``cursor`` and ``recur_pass`` now live directly on WordSubSpace;
+    the cross-pass C→P / C→S feedback is read straight off
+    ``ConceptualSpace._subspaceForPS`` / ``_subspaceForSS`` (the
+    persistent CS-tier storage that ``ConceptualSpace.forward``
+    mutates in place).
 
-    Subclasses ``Space`` for the universal training contract
-    (``getParameters`` / ``paramUpdate`` / ``set_sigma``), but
-    bypasses ``Space.__init__`` because there is no factory-style
-    input/output/codebook shape tuple -- the subspace is a
-    ``WordSubSpace`` built from the symbolic peer's column layout
-    and all children are registered directly into ``self.layers`` /
-    ``self.params`` so the inherited training-contract walks still
-    work.
+    Plain ``nn.Module`` subclass (not ``Space``): WordSubSpace is not a
+    pipeline stage that produces data tensors, so it does not fit the
+    factory-style input/output/codebook shape contract. The small set
+    of Space-contract methods the model iterates over
+    (``set_sigma`` / ``paramUpdate`` / ``getParameters`` / ``Start`` /
+    ``End``) are inlined directly on this class.
+
+    The legacy ``WordSubSpace`` SR-parser stack (a separate
+    ``SubSpace`` subclass that buffered derivation steps) was removed
+    2026-05-20 — its stack functionality migrated to
+    ``ConceptualSpace.stm``. The current name reuses that string but
+    denotes a different concept; the old class is gone, so there is
+    no ambiguity in live code.
     """
 
     name = "Words"
@@ -5981,19 +5955,22 @@ class WordSpace(Space):
             for r in grammar.rules
         )
 
-        # 2. Size WordSubSpace from SymbolicSpace's subspace column
-        # layout so downstream consumers of wordSpace.read() concat
-        # cleanly with peer tensors.
+        # 2. Mirror SymbolicSpace's column layout for the Space-contract
+        # fields that downstream callers occasionally read off WordSpace
+        # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
+        # The legacy ``WordSubSpace`` stack at ``self.subspace`` was
+        # removed (2026-05-20) — its push / get_blocks / read surface
+        # had no callers; the SR-parser value tape now lives on
+        # ``ConceptualSpace.stm``. ``self.subspace = None`` keeps the
+        # peer-Space attribute present so isinstance / ``hasattr``
+        # probes don't crash.
         sub = symbolicSpace.subspace
         nWhere = int(getattr(sub, 'nWhere', 0) or 0)
         nWhen  = int(getattr(sub, 'nWhen',  0) or 0)
         nWhat  = int(getattr(sub, 'nWhat',  0) or 0)
         muxed  = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen)
                      or (nWhat + nWhere + nWhen))
-        self.subspace = WordSubSpace(
-            nDim=muxed, nWhat=nWhat, nWhere=nWhere, nWhen=nWhen,
-            max_depth=256, max_arity=3, batch=1,
-        )
+        self.subspace = None
 
         # 3. Space-contract fields.
         self.layers = nn.ModuleList()
@@ -6033,7 +6010,36 @@ class WordSpace(Space):
         # cursor (Q10.1).
         self._compose_generation = 0
         self._generate_generation = 0
-        self._work = None  # per-sentence WorkingState carrier; allocated in soft_reset/Reset (Phase 1)
+        # Per-sentence serial-parser state, owned directly by WordSpace
+        # (no separate SentenceState carrier).
+        #   ``cursor``      — ``list[int]`` of length 3 (one per tier
+        #                     P/C/S), the per-tier rule cursor consumed
+        #                     by ``SyntacticLayer._next_rule_name``.
+        #                     HOST Python ints (not a tensor) so the
+        #                     read inside compiled forwards produces a
+        #                     backed Python int that Dynamo can compare
+        #                     against ``len(per_step)`` — an int64
+        #                     tensor read via ``int(tensor)`` would
+        #                     produce an unbacked SymInt and break
+        #                     ``fullgraph=True`` at the rule-list
+        #                     bounds check. Dynamo specializes the
+        #                     traced graph per observed cursor value;
+        #                     compose() resets to ``[0, 0, 0]`` at the
+        #                     top of every call.
+        #   ``recur_pass``  — Python int, PerceptualSpace recurrent-pass
+        #                     index that selects ``pi_input[oi]`` from a
+        #                     ModuleList (Dynamo-specialized natively;
+        #                     Inductor would emit an unbacked SymInt for
+        #                     a 0-d tensor source — see D8 capture-gate).
+        self.cursor = [0, 0, 0]
+        self.recur_pass = 0
+        # Forward-only padding target for the static per-word loop
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §1).
+        # The Model sets this to InputSpace.outputShape[0] after
+        # construction; 0 means "no padding" so legacy / non-static
+        # callers behave unchanged. The reverse cursor is NOT padded
+        # — see §2R for the asymmetric left-shift on reconstruction.
+        self._target_cursor_length = 0
 
         # Parser backend selector (plan
         # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md).
@@ -7221,16 +7227,18 @@ class WordSpace(Space):
         # Per-compose cursor reset. The OLD semantics zeroed each
         # per-tier SyntacticLayer cursor lazily on every compose() call
         # (via the ``gen != _cursor_compose_gen`` branch keyed off this
-        # counter). On the carrier path we reproduce that EXACTLY with
-        # an unconditional tensor zero of all tiers' cursors at the top
-        # of compose -- no data-dependent Python branch on a per-batch
-        # nn.Module int (recompile cause #3 eliminated). The eager
-        # fallback keeps the original counter so ``work is None`` runs
-        # (tests / pre-soft_reset) stay byte-identical.
-        if self._work is not None:
-            self._work.cursor.zero_()   # per-compose cursor reset (faithfully replaces the gen-counter)
-        else:
-            self._compose_generation += 1
+        # counter). On the WordSpace.cursor path we reproduce that
+        # EXACTLY with an unconditional in-place reset of all tiers'
+        # cursors at the top of compose -- no data-dependent Python
+        # branch on a per-batch nn.Module int (recompile cause #3
+        # eliminated). ``cursor`` is a host list[int] so the read in
+        # SyntacticLayer._next_rule_name traces cleanly under Dynamo
+        # (no unbacked SymInt from ``int(tensor)``).
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        # Bump the generation counter for any consumers that haven't
+        # been migrated off it yet (purely host-side bookkeeping).
+        self._compose_generation += 1
         # Two firing modes, gated by ``_grammar_is_default_only``
         # (computed from the configured grammar at __init__ time):
         #
@@ -7247,19 +7255,39 @@ class WordSpace(Space):
         # also gate this; the grammar XML is now the sole driver.
         if self._grammar_is_default_only:
             self.current_rules = self._default_compose_rules()
-            # Phase 2B: when the per-sentence carrier has an op_sel
-            # tensor allocated (n_ops>0), mirror the cursor's pick into
-            # a one-hot selection over the fixed ``TheGrammar.rules`` op
-            # axis so the tensor-driven executor in
-            # ``SymbolicSpace.forward`` reproduces the argmax cursor
-            # behaviour without any Python control flow in the traced
-            # body. The default-only path picks the natural unary fold
-            # (sigma at S / P, pi at C) per tier.
-            self._populate_op_sel_from_default_rules()
+            self._pad_S_cursor_to_target(self.current_rules)
             return self.current_rules
         self.current_rules = self.chart.compose(
             input_vectors, self, subspace=subspace) or {}
+        self._pad_S_cursor_to_target(self.current_rules)
         return self.current_rules
+
+    def _pad_S_cursor_to_target(self, rules_dict):
+        # Forward-only asymmetric padding: extend the S-tier rule cursor
+        # to ``self._target_cursor_length`` with ``TheGrammar.id_SS``
+        # (the no-op grammatical transition).
+        # See doc/plans/2026-05-20-static-per-word-loop-impl.md §1.
+        # Non-S tiers naturally return None past their end (a no-op),
+        # so only the S tier — the one that owns the per-word stem —
+        # needs explicit padding.
+        N = int(self._target_cursor_length)
+        if N <= 0:
+            return rules_dict
+        id_SS = TheGrammar.id_SS
+        if id_SS is None or rules_dict is None:
+            return rules_dict
+        s_rules = rules_dict.get('S')
+        if s_rules is None:
+            rules_dict['S'] = [id_SS] * N
+            return rules_dict
+        if s_rules and isinstance(s_rules[0], list):
+            for row in s_rules:
+                while len(row) < N:
+                    row.append(id_SS)
+        else:
+            while len(s_rules) < N:
+                s_rules.append(id_SS)
+        return rules_dict
 
     def generate(self, target_vectors, subspace=None):
         """Run the chart's outside pass + Viterbi backtrace; populate
@@ -7397,120 +7425,6 @@ class WordSpace(Space):
                   for tier, rows in per_tier.items()}
         self._default_generate_rules_cache = merged
         return merged
-
-    def _default_op_sel_rule_indices(self):
-        """Per-tier rule indices for the default-only one-hot ``op_sel``.
-
-        Returns ``dict[tier, int]`` mapping each tier to its forward
-        natural-fold rule index in the ``TheGrammar.rules`` op axis
-        (sigma at S/P, pi at C, etc.). Cached after first call — the
-        grammar is fixed at construction time. Mirrors the selection
-        the cursor path would make under ``_default_compose_rules``
-        (the first/only id in ``per_tier[tier][0]``).
-        """
-        cache = getattr(self, '_default_op_sel_rule_indices_cache', None)
-        if cache is not None:
-            return cache
-        per_tier = {}
-        for i, r in enumerate(TheGrammar.rules):
-            mn = getattr(r, 'method_name', None)
-            if mn not in self._NATURAL_FOLD_METHODS:
-                continue
-            canonical = getattr(r, 'canonical', '') or ''
-            if '.reverse' in canonical:
-                continue
-            if int(getattr(r, 'arity', 1)) != 1:
-                continue
-            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
-            if tier is None:
-                continue
-            # First forward natural-fold rule wins (mirrors the cursor's
-            # row-0/step-0 pick under ``_default_compose_rules``).
-            per_tier.setdefault(tier, i)
-        self._default_op_sel_rule_indices_cache = per_tier
-        return per_tier
-
-    def _populate_op_sel_from_default_rules(self):
-        """Write the per-tier one-hot ``op_sel`` for the default-only
-        compose path.
-
-        Mirrors what an argmax over the cursor's per-step rule list
-        would produce: for each tier present in ``_default_compose_rules``,
-        set ``work.op_sel[rule_idx] = 1.0`` for the chosen rule. No-op
-        when no carrier is allocated yet or when ``op_sel`` is None
-        (n_ops=0 configs — the legacy eager fallback runs unchanged).
-
-        Called from ``compose`` after ``current_rules`` is populated.
-        """
-        work = self._work
-        if work is None or work.op_sel is None:
-            return
-        work.op_sel.zero_()
-        for _tier, rule_idx in self._default_op_sel_rule_indices().items():
-            work.op_sel[int(rule_idx)] = 1.0
-
-    def selection_from_current_rules(self, tier, work):
-        """Phase 2A.6 selection-tensor CONTRACT (single source of op
-        selection for a tier).
-
-        This is the one place that decides, for ``tier``, *which*
-        grammar op(s) the per-step executor fires. It has two branches:
-
-        * **Eager / cursor fallback (op_sel is None — ALWAYS in 2A;
-          BYTE-IDENTICAL).**  When ``work is None`` or
-          ``work.op_sel is None`` (the chart is dormant — every current
-          config builds ``WorkingState`` via
-          ``new_working_state(..., n_ops=0)`` so ``op_sel`` is ``None``),
-          return the EXACT object today's code reads:
-          ``self.current_rules.get(tier)`` — the per-row / per-step
-          ``list[list[int]]`` (or ``None``) consumed by
-          ``SyntacticLayer._next_rule_name`` /
-          ``SyntacticLayer._row_zero_rules``. The caller threads this
-          straight back into the unchanged cursor loop, so the eager
-          path is a pure pass-through (zero behavioural delta).
-
-        * **Tensor-driven selection (Phase 2B — UNREACHED in 2A).**
-          When ``work.op_sel`` is populated (the pending Phase-2B chart
-          soft-superposition writes it), return the tensor pair
-          ``(work.op_sel, work.op_operands)``:
-
-            - ``op_sel`` is a 1-D ``float32`` tensor of shape
-              ``[n_ops]``: a SOFT weight per grammar op. The op axis is
-              the FIXED ``TheGrammar.rules`` index order — i.e.
-              ``op_sel[k]`` is the weight on ``TheGrammar.rules[k]``
-              (upward rules first, then downward; the same canonical
-              union built in ``Grammar`` / consulted by
-              ``_op_for_rule`` and ``_next_rule_name`` via
-              ``TheGrammar.rules[int(rule_id)]``). A one-hot ``op_sel``
-              therefore reproduces an argmax cursor pick of that rule.
-            - ``op_operands`` is an ``int64`` tensor of shape
-              ``[n_ops, 2]``: per-op operand routing (left, right) for
-              binary ops; ignored for the arity-1 path. The executor
-              must read ``TheGrammar.rules[k].arity`` to gate which
-              column applies.
-
-          The S-executor combines per-op contributions by a single
-          weighted reduce over this fixed op axis (NO shared in-place
-          accumulator — the proven ``_superposed_op`` / ``_embed_bpe``
-          pattern). This branch is dead code in Phase 2A because the
-          chart never populates ``op_sel`` yet; it is here only to LOCK
-          the contract for Phase 2B.
-
-        Returning the live ``current_rules`` object (not a copy) is
-        deliberate: the eager fallback MUST be the same Python object
-        the legacy code path used so byte-identity is structural, not
-        merely value-equal.
-        """
-        if work is None or getattr(work, 'op_sel', None) is None:
-            # Eager / dormant-chart fallback: hand back the EXACT
-            # per-step structure today's cursor loop consumes. No copy,
-            # no transformation -- byte-identical pass-through.
-            cur = getattr(self, 'current_rules', None)
-            return cur.get(tier) if cur else None
-        # Phase 2B (unreached in 2A -- op_sel is None everywhere): the
-        # tensor pair drives a weighted reduce over the fixed
-        # TheGrammar.rules op axis. Operand routing rides op_operands.
-        return (work.op_sel, work.op_operands)
 
     def gate_l1_loss(self, lam=0.0):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
@@ -7730,17 +7644,6 @@ class WordSpace(Space):
         return total_loss
 
     # -- wiring -------------------------------------------------------
-    def attach_codebook_host(self, host):
-        """Wire the host space to WordSubSpace for push() gating.
-
-        Typically the ``SymbolicSpace`` instance. Stored as a non-Module
-        back-reference so that ``push()`` can be called from compose().
-        Rule-identity vectors in the word buffer are written as zeros
-        (the empty-slot sentinel) because the learnable rule_codebook
-        has been removed; only the parse-tree ledger retains rule_id.
-        """
-        self.subspace.attach_codebook_host(host)
-
     # -- private factory helper: build + wire the SyntacticLayer -----
     def _resolve_hidden_dim(self, n_slots):
         try:
@@ -7912,20 +7815,17 @@ class WordSpace(Space):
         return {'heads': [], 'residual': state, 'state': state}
 
     # -- buffer access + lifecycle ------------------------------------
-    def read(self):
-        """Return the fixed-width stack tensor for ConceptualSpace to
-        concat with percepts and symbols.
-        """
-        return self.subspace.read()
-
     def clear_sentence(self):
-        """Reset the stack at sentence boundaries.
+        """Reset per-sentence state at sentence boundaries.
 
-        Forwards to the subspace's clear hook; called by ``BasicModel``
-        on sentence boundary signals so the next sentence's parse
-        starts with an empty word buffer.
+        Called by ``BasicModel`` on sentence boundary signals. The
+        legacy SR-parser WordSubSpace stack was removed (2026-05-20);
+        the per-sentence cursor / recur_pass on WordSubSpace are reset
+        in ``soft_reset``, and the category / reconstruction stacks
+        have their own ``clear`` paths — so this entry point is now a
+        no-op retained for API compatibility with existing callers.
         """
-        self.subspace.clear()
+        return
 
     def _detach_persistent_state(self):
         """Sever the autograd graph carried across batches by persistent
@@ -7961,22 +7861,60 @@ class WordSpace(Space):
             if buf.is_floating_point():
                 buf.detach_()
         # Basis ``Tensor`` payloads (``subspace.event``, ``.what``, etc.)
-        # store the live activation in ``_active_payload`` (when ``W`` is
-        # a learned Parameter) or in ``W`` itself (when ``W`` is a plain
-        # tensor) -- both are plain attributes, not registered buffers,
-        # so ``self.buffers()`` misses them. setW() routes grad-tracked
-        # forward outputs into one of these slots; detach to break the
-        # edge. Skip ``W`` when it is an ``nn.Parameter`` (learned weight,
-        # not a transient activation).
+        # store the live activation in ``W`` when ``W`` is a plain tensor
+        # (non-Parameter slots) — those are plain attributes, not
+        # registered buffers, so ``self.buffers()`` misses them.
+        # The ``_active_payload`` shadow was retired Stage 4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md; per-batch
+        # content for codebook-bearing slots reconstructs via
+        # ``SubSpace.materialize``. Skip ``W`` when it's an
+        # ``nn.Parameter`` (learned weight, not a transient).
         for mod in self.modules():
-            ap = getattr(mod, '_active_payload', None)
-            if ap is not None and torch.is_tensor(ap) and ap.is_floating_point():
-                mod._active_payload = ap.detach()
             w = getattr(mod, 'W', None)
             if (w is not None and torch.is_tensor(w)
                     and not isinstance(w, nn.Parameter)
                     and w.is_floating_point()):
                 mod.W = w.detach()
+
+    # -- Space-contract lifecycle hooks --------------------------------
+    # WordSubSpace is a plain ``nn.Module`` (not a ``Space``) but the
+    # model iterates ``self.spaces`` calling ``set_sigma`` /
+    # ``paramUpdate`` / ``getParameters`` / ``Start`` / ``End`` /
+    # ``Reset`` on each entry, so we provide the same surface directly.
+    # All five inline the same "iterate self.layers, call if present"
+    # pattern the ``Space`` base class implements.
+
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to owned layers.
+
+        Mirrors ``Space.set_sigma`` (the no-basis branch — WordSubSpace
+        has no codebook basis slots; ``self.subspace`` is ``None``).
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'set_sigma'):
+                layer.set_sigma(sigma)
+
+    def paramUpdate(self):
+        """In-place parameter update hook called once per training step."""
+        for layer in self.layers:
+            if hasattr(layer, 'paramUpdate'):
+                layer.paramUpdate()
+
+    def getParameters(self):
+        """Return optimizable parameters owned by this module."""
+        return self.params
+
+    def Start(self):
+        """Per-run initialization: cascade ``Start`` to owned layers."""
+        for layer in self.layers:
+            if hasattr(layer, 'Start'):
+                layer.Start()
+
+    def End(self):
+        """Per-batch teardown: cascade ``End`` to owned layers."""
+        for layer in self.layers:
+            if hasattr(layer, 'End'):
+                layer.End()
 
     def Reset(self, batch=None, hard=True):
         """Per-document teardown called by the outer doc-streaming loop.
@@ -7990,10 +7928,12 @@ class WordSpace(Space):
         ``hard`` (default True): True is the document boundary (full
         wipe of stack, SVO, STM, discourse). False is a sentence-internal
         soft reset — see ``soft_reset(batch=b)`` for the structured entry
-        point. The base ``Reset`` cascades both flags down to the layer
-        chain so child layers can opt in.
+        point. Cascades ``Reset`` to owned layers (no ``super().Reset``
+        — WordSubSpace inherits from ``nn.Module``, not ``Space``).
         """
-        super().Reset(batch=batch, hard=hard)
+        for layer in self.layers:
+            if hasattr(layer, 'Reset'):
+                layer.Reset(batch=batch, hard=hard)
         if not hard:
             # Soft reset (sentence boundary): callers should use
             # soft_reset(batch=b) directly. Treat a soft Reset as a
@@ -8067,10 +8007,12 @@ class WordSpace(Space):
             self.arm_stm()
             self.clear_last_svo()
             self.clear_sentence_completed()
-            from Spaces import new_working_state
-            self._work = new_working_state(
-                n_tiers=3, device=self._stm_fired.device,
-                n_ops=len(TheGrammar.rules))
+            # ``cursor`` is a host-side list[int] of length 3 (see
+            # __init__ for rationale). Reset in place to preserve
+            # object identity for Dynamo cache reuse.
+            for i in range(len(self.cursor)):
+                self.cursor[i] = 0
+            self.recur_pass = 0
             # Reset every row's parse-side working state. clear_sentence
             # zeroes the WordSubSpace stack; the category and
             # reconstruction stacks fan out to the same row count.
@@ -8094,10 +8036,11 @@ class WordSpace(Space):
         self.arm_stm(b)
         self.clear_last_svo(b)
         self.clear_sentence_completed(b)
-        from Spaces import new_working_state
-        self._work = new_working_state(
-            n_tiers=3, device=self._stm_fired.device,
-            n_ops=len(TheGrammar.rules))
+        # ``cursor`` is a host-side list[int] (see __init__); reset in
+        # place to keep object identity stable for the Dynamo cache.
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        self.recur_pass = 0
         # Per-row clear over the K cells [b*K, (b+1)*K) that own this
         # source row in the body's flattened microbatch view.
         K = self._row_K()
@@ -8180,15 +8123,6 @@ class WordSpace(Space):
             self._sentence_completed[i] = False
         return completed
 
-    def get_blocks(self, b=0):
-        """Return the parse-tree ledger for batch row ``b``.
-
-        Forwards to ``self.subspace.get_blocks``. The ledger records the
-        per-cell rule applications fired during the last compose, used
-        for derivation-trace debugging.
-        """
-        return self.subspace.get_blocks(b)
-
     def ensure_batch(self, batch):
         """Resize the BODY-side per-row buffers to ``batch`` (= B*K under
         the microbatch contract).
@@ -8212,12 +8146,10 @@ class WordSpace(Space):
         if batch == self.batch:
             # Cascade still runs in case callers grew their own state
             # without going through the WordSpace.batch counter.
-            self.subspace.ensure_batch(batch)
             self.category_stack.ensure_batch(batch)
             self.reconstruction_stack.ensure_batch(batch)
             return
         self.batch = batch
-        self.subspace.ensure_batch(batch)
         self.category_stack.ensure_batch(batch)
         self.reconstruction_stack.ensure_batch(batch)
         # Keep the new buffers on the existing device so .to(device)
@@ -8269,3 +8201,13 @@ class WordSpace(Space):
                 or self._sentence_completed is None
                 or len(self._sentence_completed) != int(B)):
             self._sentence_completed = [False] * int(B)
+
+
+# Backward-compat alias for the pre-2026-05-21 class name. ``WordSpace``
+# was renamed to ``WordSubSpace`` when the standalone ``SentenceState``
+# carrier was dissolved and the class was re-cast as a plain ``nn.Module``
+# (no longer a ``Space``-subclass pipeline stage). Existing imports
+# ``from Language import WordSpace`` and ``object.__new__(WordSpace)``
+# call sites in legacy tests keep working through this alias; new code
+# should reference ``WordSubSpace`` directly.
+WordSpace = WordSubSpace

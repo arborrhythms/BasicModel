@@ -218,12 +218,12 @@ def test_taxonomy_decay_per_batch():
 
 
 def test_word_space_soft_reset_clears_priming():
-    """WordSpace.soft_reset() drops the taxonomy priming back to
+    """WordSubSpace.soft_reset() drops the taxonomy priming back to
     identity at the sentence boundary.
 
     We synthesize the minimum scaffolding soft_reset needs (host-side
-    flags + a stub _work source); the priming-reset branch we care
-    about is the trailing tax.reset() call.
+    flags + a stub cursor / recur_pass source); the priming-reset
+    branch we care about is the trailing tax.reset() call.
     """
     from Language import WordSpace, Taxonomy
     import torch.nn as nn

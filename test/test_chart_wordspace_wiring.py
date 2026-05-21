@@ -134,19 +134,25 @@ def test_wordspace_owns_chart_and_registry():
     # "disjunction" are separate GrammarLayer subclasses, lazy-built
     # only when the grammar references them.
     keys = list(m.wordSpace._host_layer_registry.keys())
-    # SymbolicSpace owns no SigmaLayer post-2026-05 ownership rule, so
-    # ('S', 'sigma') is no longer registered. The remaining builtins are
-    # the substrate-level rule layers carried by PS / CS / SS:
-    assert ('P', 'sigma') in keys, f"missing ('P', 'sigma'); have {keys!r}"
+    # Post-bivector-retirement (2026-05-20) the substrate-level rule
+    # layers live on ConceptualSpace (``sigma`` + ``pi``) and the
+    # grammar-driven boolean ops register at SymbolicSpace. The
+    # PerceptualSpace SigmaLayer is no longer instantiated by default;
+    # PerceptualSpace consumes ``cs.sigma_percept`` for the P→C lift
+    # instead of carrying its own host SigmaLayer.
+    assert ('C', 'sigma') in keys, f"missing ('C', 'sigma'); have {keys!r}"
     assert ('C', 'pi') in keys, f"missing ('C', 'pi'); have {keys!r}"
     assert ('S', 'not') in keys, f"missing ('S', 'not'); have {keys!r}"
-    # Each space carries a per-space SyntacticLayer with its tier.
-    p_sl = m.perceptualSpace.syntacticLayer
+    # Per-space SyntacticLayer carries the tier where one is wired.
     c_sl = m.conceptualSpace.syntacticLayer
     s_sl = m.symbolicSpace.syntacticLayer
-    assert p_sl is not None and p_sl.tier == 'P'
     assert c_sl is not None and c_sl.tier == 'C'
     assert s_sl is not None and s_sl.tier == 'S'
+    # PerceptualSpace's SyntacticLayer is optional under the bivector-
+    # retirement contract: not all configs wire one.
+    p_sl = getattr(m.perceptualSpace, 'syntacticLayer', None)
+    if p_sl is not None:
+        assert p_sl.tier == 'P'
 
 
 # --- Pipeline integration -------------------------------------------

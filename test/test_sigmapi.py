@@ -87,13 +87,6 @@ class TestSigmaLayerForward(unittest.TestCase):
 class TestPiSigmaXOR(unittest.TestCase):
     """An PiLayer+SigmaLayer stack can learn XOR with low temperature."""
 
-    @pytest.mark.xfail(reason=(
-        "Convergence flake post 2026-05-12 seed removal: random init "
-        "lands in a local minimum on some runs.  The PiLayer+SigmaLayer "
-        "stack *can* learn XOR (basin exists), but without pinned seeds "
-        "convergence isn't guaranteed within the configured budget.  "
-        "Tracked for follow-up: either loosen the threshold further or "
-        "scan more seeds programmatically."))
     def test_xor_convergence(self):
         X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice.get())
         Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).to(TheDevice.get())
@@ -107,6 +100,7 @@ class TestPiSigmaXOR(unittest.TestCase):
         from itertools import chain
         best_loss = float('inf')
         for seed in (33, 3, 123, 99, 42, 7, 11, 2024, 17):
+            torch.manual_seed(seed)
 
             pi = Layers.PiLayer(2, 4, nonlinear=True)
             sigma = Layers.SigmaLayer(4, 1, nonlinear=True)

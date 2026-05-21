@@ -48,6 +48,21 @@ def _attach_vq(basis, cluster_size):
 class TestOverlapPenalty(unittest.TestCase):
     """`overlap * |trust-diff|` is the only source of penalty beyond variance."""
 
+    @classmethod
+    def setUpClass(cls):
+        # ``last_relation_counts`` is gated behind ``util.MODEL_DEBUG``
+        # (the per-bucket sum().item() calls are host syncs that would
+        # break CUDA-graph capture in non-debug runs). Enable debug for
+        # these tests since the counts are what they assert.
+        import util
+        cls._prev_debug = util.MODEL_DEBUG
+        util.MODEL_DEBUG = True
+
+    @classmethod
+    def tearDownClass(cls):
+        import util
+        util.MODEL_DEBUG = cls._prev_debug
+
     def test_disjoint_codebook_zero_loss(self):
         """Orthogonal rows -- no overlap -> zero overlap loss regardless of trust."""
 

@@ -76,10 +76,15 @@ def _stage_for_per_word(m):
     isp.Start()
     inputTensor = isp.prepInput(inp_items)
     in_sub = isp.forward(inputTensor)
-    # Per-sentence WorkingState carrier. Production allocates this in
-    # the wordSpace soft_reset path (runBatch triggers it).
-    if m.wordSpace is not None and m.wordSpace._work is None:
+    # Per-sentence WordSubSpace state. Production initializes this in
+    # the first ``_per_word_prelude`` (sentinel
+    # ``_per_sentence_initialized``); replay that here for tests that
+    # call ``_per_word_body_step`` in isolation.
+    if (m.wordSpace is not None
+            and not getattr(m.wordSpace,
+                            '_per_sentence_initialized', False)):
         m.wordSpace.soft_reset()
+        m.wordSpace._per_sentence_initialized = True
     # Mirror ``BasicModel._forward_body_per_word``'s prelude: STM
     # batch resize + clear, MPHF pre-warm, recur_pass reset, and
     # loop-carry SubSpace pre-seed. The capture gate calls
@@ -89,27 +94,33 @@ def _stage_for_per_word(m):
     return isp
 
 
+def _gate_for(isp, w, p=0):
+    """Build a [B, 1] all-True gate tensor for the per-word body call."""
+    return torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
+
+
 def test_per_word_step_runs_eagerly_end_to_end():
     """SANITY gate (eager mode): the extracted per-word step must run
     end-to-end without raising. This catches regressions in the
     refactor that the production targeted suite misses (those tests
-    check structural properties, not runtime behaviour of the body)."""
+    check structural properties, not runtime behaviour of the body).
+
+    Updated 2026-05-20 for the static per-word loop refactor: the body
+    signature is now ``(w, p, gate_b_1, out_slot, active_host=True)``.
+    """
     m = _build_gate_model()
     if not hasattr(m, "_per_word_body_step"):
         pytest.skip("extraction not yet landed")
     isp = _stage_for_per_word(m)
     w = isp.next_word()
     assert w is not None
+    out_slot = m._per_word_contributions
     # No compile -- just eager. Any exception fails the test.
-    CS_sub, idea_bd = m._per_word_body_step(w)
-    # CS_sub is a SubSpace (the live CS subspace); idea_bd may be
-    # None if CS is empty / non-3D, but typically a tensor.
+    CS_sub, idea_bd = m._per_word_body_step(w, 0, _gate_for(isp, w), out_slot)
     assert CS_sub is not None
-    # Run a second iteration to exercise the post-cs.forward state
-    # update (work.cs_for_ps/ss should now be non-None real SubSpaces).
     w2 = isp.next_word()
     assert w2 is not None
-    CS_sub2, idea_bd2 = m._per_word_body_step(w2)
+    CS_sub2, idea_bd2 = m._per_word_body_step(w2, 1, _gate_for(isp, w2), out_slot)
     assert CS_sub2 is not None
 
 
@@ -159,10 +170,10 @@ def test_per_word_step_compiles_fullgraph_clean():
     # spaces (e.g. iCloud Documents) -- orthogonal to the gate.
     compiled = torch.compile(
         m._per_word_body_step, backend="eager", fullgraph=True)
-    # Single-arg call: WorkingState's __dict__ attributes are
-    # introspectable by Dynamo (Phase-5 dropped __slots__), so the
-    # body reads ``_work.cs_for_ps/ss`` directly inside the trace.
-    compiled(w)
+    # Five-arg call: body signature updated for the static per-word loop
+    # refactor (w, p, gate_b_1, out_slot, active_host).
+    out_slot = m._per_word_contributions
+    compiled(w, 0, _gate_for(isp, w), out_slot)
 
 
 def test_per_word_loop_completes_two_steps_under_fullgraph():
@@ -185,5 +196,6 @@ def test_per_word_loop_completes_two_steps_under_fullgraph():
     w1 = isp.next_word()
     w2 = isp.next_word()
     assert w1 is not None and w2 is not None
-    compiled(w1)
-    compiled(w2)
+    out_slot = m._per_word_contributions
+    compiled(w1, 0, _gate_for(isp, w1), out_slot)
+    compiled(w2, 1, _gate_for(isp, w2), out_slot)

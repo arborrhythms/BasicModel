@@ -1,33 +1,13 @@
 import torch
 
-from Spaces import topk_by_magnitude_per_batch, Codebook
+from Spaces import Codebook
 
-
-def test_topk_keeps_largest_magnitude_per_row():
-    x = torch.tensor([
-        [0.0, 1.0, -3.0, 2.0, 0.5],
-        [-0.1, 0.2, 0.0, 0.0, 10.0],
-    ])
-    out = topk_by_magnitude_per_batch(x, k=2)
-    # Row 0: keep -3.0 and 2.0; zero the rest.
-    # Row 1: keep 10.0 and 0.2; zero the rest.
-    expected = torch.tensor([
-        [0.0, 0.0, -3.0, 2.0, 0.0],
-        [0.0, 0.2, 0.0, 0.0, 10.0],
-    ])
-    assert torch.allclose(out, expected)
-
-
-def test_topk_k_equals_width_is_identity():
-    x = torch.randn(3, 7)
-    out = topk_by_magnitude_per_batch(x, k=7)
-    assert torch.allclose(out, x)
-
-
-def test_topk_k_zero_is_zeros():
-    x = torch.randn(2, 5)
-    out = topk_by_magnitude_per_batch(x, k=0)
-    assert torch.allclose(out, torch.zeros_like(x))
+# ``topk_by_magnitude_per_batch`` was retired — the function body was
+# inlined into ``Codebook.forward`` (search for "Inlined
+# ``topk_by_magnitude_per_batch``" in bin/Spaces.py). The standalone
+# unit tests for the helper are removed accordingly; the inlined
+# behavior is exercised by the ``test_codebook_forward_topk_*`` tests
+# below, which drive ``Codebook.forward`` directly.
 
 
 def test_codebook_forward_topk_prunes_activation():

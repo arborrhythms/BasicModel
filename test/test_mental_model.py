@@ -49,11 +49,11 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Grammar should be initialized
         self.assertTrue(Language.TheGrammar._configured)
         # Post 2026-05-08 SyntacticLayer rename: per-space dispatchers
-        # live on the home spaces (P / C / S each own a SyntacticLayer);
-        # the legacy WordSpace-level SyntacticLayer was retired.
-        for space in (model.perceptualSpace,
-                      model.conceptualSpace,
-                      model.symbolicSpace):
+        # live on the home spaces (C / S each own a SyntacticLayer).
+        # Bivector retirement (2026-05-20) made the PerceptualSpace-
+        # tier SyntacticLayer optional — not all configs wire a
+        # ``P`` SyntacticLayer, so accept None there.
+        for space in (model.conceptualSpace, model.symbolicSpace):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")

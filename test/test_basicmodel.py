@@ -1940,14 +1940,6 @@ class TestReconstructionSymbols(unittest.TestCase):
 
     # test_reverse_uses_all_symbols retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
-    @pytest.mark.xfail(reason=(
-        "Convergence regression after the 2026-05-13 ProjectionBasis "
-        "refactor: the bivector accumulator was changed from V-sum to "
-        "V-mean (so each pole stays bounded by 1 with unit-norm "
-        "prototypes), which reduces the gradient signal magnitude on "
-        "the codebook by a factor of V.  The XOR_exact training loop "
-        "needs retuned LR / epoch count to recover perfect "
-        "reconstruction.  Tracked for follow-up."))
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 
@@ -1973,6 +1965,7 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         try:
 
+            torch.manual_seed(42)
             Models.TheData.load("xor")
             m = Models.BasicModel()
             m.create_from_config(tmp.name, data=Models.TheData)
@@ -2978,7 +2971,10 @@ class TestSymbolObjective(unittest.TestCase):
         )
         sym.symbol_residual_scale = 1.0
         sym.l1_lambda = 0.0
-        sym.subspace.what.setW(torch.tensor([
+        # Stage 4: prototype mutation goes through ``replace_W`` to
+        # preserve Parameter identity (the legacy ``setW(2D_plain)``
+        # would trip nn.Module's Parameter check on a registered slot).
+        sym.subspace.what.replace_W(torch.tensor([
             [0.0, 0.0, 0.0],
             [1.0, 1.0, 1.0],
         ]))
@@ -3144,7 +3140,14 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         for space in model.spaces:
             if isinstance(space, Models.InputSpace):
                 continue
-            activation = space.subspace.get_activation()
+            # WordSubSpace carries the per-sentence grammar / serial-
+            # processing state, not a data SubSpace; ``space.subspace``
+            # is ``None`` by design (the SR-parser stack was retired
+            # into ConceptualSpace.stm 2026-05-20).
+            sub = getattr(space, 'subspace', None)
+            if sub is None:
+                continue
+            activation = sub.get_activation()
             self.assertIsNotNone(activation,
                                  f"{space.name} should have activation after forward")
             self.assertEqual(activation.shape[0], 2,

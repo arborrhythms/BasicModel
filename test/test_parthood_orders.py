@@ -10,10 +10,12 @@ order-preserving when the subsymbolic Sigma/Pi are monotone, so the
 preconditions are guarded explicitly.
 
 Green now: parthood invariants, monotone-map preservation, the
-``validate_config`` rule. Documented-pending (xfail, strict=False →
-auto-flips to xpass when Phase 2 lands): ``reconstitute(record, order)``
-and the WordSpace ``Taxonomy`` (explicit parent→children order
-hierarchy; the Meronomy stays codebook-per-order-implicit).
+``validate_config`` rule, and the order-convention walks (order 0 =
+identity, order k = k subsymbolic ``sigma(pi(.))`` loops; inlined per
+test method, no module-level helper). Documented-pending (xfail,
+strict=False → auto-flips to xpass when Phase 2 lands): the WordSpace
+``Taxonomy`` (explicit parent→children order hierarchy; the Meronomy
+stays codebook-per-order-implicit).
 """
 import os
 import sys
@@ -188,37 +190,48 @@ def _mono_stacks(D, n):
 
 
 class TestOrderConvention:
-    """order 0 = identity (no loop); order k = k subsymbolic loops, via
-    the now-built ``Spaces.reconstitute``."""
+    """order 0 = identity (no loop); order k = k subsymbolic loops.
+
+    The reconstitution walk is a 2-line ``concept -> percept -> concept``
+    loop (``sigma_layers[i](pi_layers[i](x))``); inlined per call site
+    below since no production code path needs it (it was previously
+    exported as a module-level helper in Spaces but had no production
+    callers, only these tests)."""
 
     def test_order_zero_is_identity(self):
-        from Spaces import reconstitute
         torch.manual_seed(0)
         sig, pis = _mono_stacks(6, 3)
         r = torch.rand(1, 1, 6)
         with torch.no_grad():
-            assert torch.allclose(reconstitute(r, 0, sig, pis), r)
+            x = r
+            for i in range(0):
+                x = sig[i](pis[i](x))
+            assert torch.allclose(x, r)
 
     def test_order_k_is_k_loops(self):
-        from Spaces import reconstitute
         torch.manual_seed(1)
         sig, pis = _mono_stacks(6, 3)
         r = torch.rand(1, 1, 6)
         with torch.no_grad():
-            once = reconstitute(r, 1, sig, pis)
-            twice = reconstitute(r, 2, sig, pis)
+            once = r
+            for i in range(1):
+                once = sig[i](pis[i](once))
+            twice = r
+            for i in range(2):
+                twice = sig[i](pis[i](twice))
         assert not torch.allclose(once, twice), \
             "order 2 must be a further loop beyond order 1"
 
     def test_cross_order_parthood_via_lift(self):
-        from Spaces import reconstitute
         torch.manual_seed(2)
         sig, pis = _mono_stacks(6, 3)
         a1 = torch.rand(1, 1, 6) * 0.3   # order-1 symbol
         b2 = torch.rand(1, 1, 6)         # order-2 symbol
         with torch.no_grad():
-            lifted = reconstitute(a1, 1, sig, pis)   # a1 lifted one order
-            base = reconstitute(b2, 0, sig, pis)
+            lifted = a1
+            for i in range(1):
+                lifted = sig[i](pis[i](lifted))
+            base = b2  # order 0 == identity
         s = float(_part(lifted.flatten(), base.flatten(),
                         monotonic=True, scalar=True))
         assert 0.0 <= s <= 1.0

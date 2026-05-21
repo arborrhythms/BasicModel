@@ -75,8 +75,10 @@ from typing import List
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, ShortTermMemory
-from Spaces import normalize_codebook_mode
-from Language import WordSpace
+# ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
+# (2026-05-21) so the parsing logic stays namespaced; callers below
+# read it as ``Space.normalize_codebook_mode(...)``.
+from Language import WordSubSpace
 from util import parse
 # -- Inlined from Pipeline.py (2026-05-11 module consolidation) -------
 # Previously in basicmodel/bin/Pipeline.py; inlined here when the body
@@ -527,6 +529,7 @@ class BaseModel(Mereology, nn.Module):
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
         init_config(path=config_path, defaults_path=defaults_path)
         cfg = TheXMLConfig.data
+        self.cfg = cfg
 
         arch = cfg["architecture"]
         ModelFactory.validate_config(cfg)
@@ -1268,8 +1271,20 @@ class BaseModel(Mereology, nn.Module):
         missing = [k for k in model_state if k not in state]
         unexpected = [k for k in state if k not in model_state]
         fatal_unexpected = unexpected if strict else []
-        if mismatches or missing or fatal_unexpected:
-            lines = [f"[{self.name}] Weight file mismatch -- cannot load {path}"]
+        # Under ``require_match`` (autoload path), tolerate missing-only
+        # mismatches: the current architecture may have grown new
+        # parameters since the checkpoint was saved (e.g., the S → S
+        # identity rule or the rule_predictor head's added rule slot).
+        # Those new parameters initialize from their fresh-build random
+        # values, which is the right outcome for the autoload migration
+        # path. Shape mismatches and unexpected keys remain fatal — those
+        # signal a real architecture divergence that needs a regenerated
+        # checkpoint or a config correction.
+        fatal = bool(mismatches or fatal_unexpected)
+        if fatal or missing:
+            lines = [f"[{self.name}] Weight file mismatch -- cannot load {path}"
+                     if fatal
+                     else f"[{self.name}] Weight file partial -- {path}"]
             if mismatches:
                 lines.append("  Shape mismatches:")
                 for key, saved_shape, model_shape in mismatches[:10]:
@@ -1277,19 +1292,18 @@ class BaseModel(Mereology, nn.Module):
                 if len(mismatches) > 10:
                     lines.append(f"    ... and {len(mismatches) - 10} more")
             if missing:
-                lines.append(f"  Keys in model but missing from file: {len(missing)}")
+                lines.append(f"  Keys in model but missing from file: {len(missing)} (initialized fresh)")
             if fatal_unexpected:
                 lines.append(f"  Keys in file not present in model: {len(fatal_unexpected)}")
-            lines.append("  The model config likely changed since this checkpoint was saved.")
-            lines.append(f"  To fix: correct the model XML to match the saved weights,")
-            lines.append(f"          or delete/move {path} to start fresh.")
-            if require_match:
-                # Autoload migration-cliff catcher: fail fast at the
-                # real detection point instead of soft-warn + later
-                # crash on fresh weights.
-                raise ValueError("\n".join(lines))
+            if fatal:
+                lines.append("  The model config likely changed since this checkpoint was saved.")
+                lines.append(f"  To fix: correct the model XML to match the saved weights,")
+                lines.append(f"          or delete/move {path} to start fresh.")
+                if require_match:
+                    raise ValueError("\n".join(lines))
+                TheMessage("\n".join(lines))
+                return False
             TheMessage("\n".join(lines))
-            return False
 
         try:
             self.load_state_dict(state, strict=strict)
@@ -1386,17 +1400,18 @@ class BaseModel(Mereology, nn.Module):
         After resizing, refresh ``emb.null_percept_idx`` (used by IR
         mode's mask injection) so it points to a valid row of the new
         codebook. If the saved vocab already contains
-        ``NULL_PERCEPT_KEY`` (a kv that was saved after IR-mode setup),
-        we reuse its index. Otherwise we append a fresh NULL_PERCEPT
-        slot at the tail and grow the codebook by 1, mirroring what
-        ``Embedding.create`` does on a fresh build.
+        ``PerceptualSpace.NULL_PERCEPT_KEY`` (a kv saved after IR-mode
+        setup), we reuse its index. Otherwise we append a fresh
+        NULL_PERCEPT slot at the tail and grow the codebook by 1,
+        mirroring what ``Embedding.create`` does on a fresh build.
         """
-        from Spaces import NULL_PERCEPT_KEY
+        from Spaces import PerceptualSpace
+        null_key = PerceptualSpace.NULL_PERCEPT_KEY
         dim = emb.wv._vectors.shape[1]
         saved_vocab = list(saved_vocab)
-        had_null = NULL_PERCEPT_KEY in saved_vocab
+        had_null = null_key in saved_vocab
         if not had_null:
-            saved_vocab.append(NULL_PERCEPT_KEY)
+            saved_vocab.append(null_key)
             if counts is not None:
                 counts = list(counts) + [0]
         vocab_size = len(saved_vocab)
@@ -1417,7 +1432,7 @@ class BaseModel(Mereology, nn.Module):
         # Re-anchor null_percept_idx to the canonical slot in the
         # restored codebook. The slot was either present in the saved
         # vocab (reuse its index) or just appended above (last row).
-        emb.null_percept_idx = emb.pretrain.key_to_index[NULL_PERCEPT_KEY]
+        emb.null_percept_idx = emb.pretrain.key_to_index[null_key]
 
     def _get_sentences(self, split):
         """Return raw sentence strings for a data split.
@@ -1988,7 +2003,12 @@ class BasicModel(BaseModel):
         event_basis = percept_subspace.event
         if event_basis is None:
             return
-        event = event_basis.getW()
+        # Spec doc/specs/2026-05-21-subspace-slot-architecture.md: per-batch
+        # event reads go through ``materialize(mode='event')``, not the
+        # ``_active_payload`` shadow on ``.event.getW()``. The result is
+        # the same per-batch ``[B, N, D]`` slab pre-migration; post-
+        # migration it's reconstructed from prototype + selection.
+        event = percept_subspace.materialize(mode="event")
         if event is None or event.dim() != 3:
             return
         codebook = percept_subspace.what
@@ -2042,7 +2062,16 @@ class BasicModel(BaseModel):
         nv = null_vec.to(new_event.dtype)
         new_event[..., :nWhat] = torch.where(
             m, nv, new_event[..., :nWhat])
-        event_basis.setW(new_event)
+        # Spec doc/specs/2026-05-21-subspace-slot-architecture.md Setter
+        # API: per-batch event writes flow through ``set_event`` (which
+        # routes appropriately for codebook-bearing vs plain-Tensor
+        # ``.event`` slots), NOT through ``basis.setW`` directly. The
+        # mocked test path provides ``percept_subspace.set_event``; the
+        # production path is the same call.
+        if hasattr(percept_subspace, "set_event"):
+            percept_subspace.set_event(new_event, compute_activation=False)
+        else:
+            event_basis.setW(new_event)  # legacy fallback for older mocks
 
     def gaussian_window_word(self, full_seq, center_k):
         """Rework B (1): GAUSSIAN ATTENTIONAL WINDOW over the WHOLE
@@ -2177,6 +2206,12 @@ class BasicModel(BaseModel):
         self._compiled_step = _compile(
             self.forward, verbose=True, fullgraph=True)
 
+    def _start_spaces_for_forward(self):
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
+        self._spaces_started_for_forward = True
+
     def forward(self, inputData):
         """IR-only forward: stem -> body -> head.
 
@@ -2185,7 +2220,14 @@ class BasicModel(BaseModel):
         LM at the P-tier; sentence-level AR is delegated to
         ``InterSentenceLayer`` (ARMA(p, q) over sentence reps).
         """
-        return self._forward_per_stage(inputData)
+        external_start = bool(getattr(self, '_spaces_started_for_forward',
+                                      False))
+        if not external_start:
+            self._start_spaces_for_forward()
+        try:
+            return self._forward_per_stage(inputData)
+        finally:
+            self._spaces_started_for_forward = False
 
     def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
@@ -2569,6 +2611,29 @@ class BasicModel(BaseModel):
                 if self.wordSpace is not None else None)
         if disc is not None:
             disc.stage_prediction()
+            # Cast the staged ARMA prediction tuple to the active AMP
+            # dtype so a dtype mismatch inside the compiled forward
+            # doesn't split the graph
+            # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.7).
+            target_dtype = None
+            if _util.MODEL_AMP == "fp16":
+                target_dtype = torch.float16
+            elif _util.MODEL_AMP == "bf16":
+                target_dtype = torch.bfloat16
+            staged = getattr(disc, "_staged_prediction", None)
+            if target_dtype is not None and staged is not None:
+                pred, conf = staged
+                if (pred is not None
+                        and torch.is_tensor(pred)
+                        and pred.is_floating_point()
+                        and pred.dtype != target_dtype):
+                    pred = pred.to(target_dtype)
+                if (conf is not None
+                        and torch.is_tensor(conf)
+                        and conf.is_floating_point()
+                        and conf.dtype != target_dtype):
+                    conf = conf.to(target_dtype)
+                disc._staged_prediction = (pred, conf)
         return inputTensor
 
     def _end_step(self):
@@ -2673,9 +2738,7 @@ class BasicModel(BaseModel):
 
         # Per-batch Space.Start cascade (moved out of forward() so sliding
         # buffers can persist across forward() calls within a stream).
-        for space in self.spaces:
-            if hasattr(space, 'Start'):
-                space.Start()
+        self._start_spaces_for_forward()
 
         # AMP: torch.autocast wrapper from util.amp_context() honors
         # MODEL_AMP env var (hydrated from XML <architecture><amp> in
@@ -2855,7 +2918,16 @@ class BasicModel(BaseModel):
             lossRev = torch.zeros((), device=TheDevice.get())
             try:
                 if forwardInput is not None:
-                    rev_sub = self._run_pipeline_rev(self.outputSpace.subspace)
+                    rev_mode = (getattr(self, 'reconstruct', 'none')
+                                or 'none').lower()
+                    rev_sub = None
+                    if rev_mode in ('concepts', 'both'):
+                        for cs_sub in reversed(getattr(self, '_cs_cache', [])):
+                            if cs_sub is not None:
+                                rev_sub = self._run_pipeline_rev_from_concepts(cs_sub)
+                                break
+                    if rev_sub is None:
+                        rev_sub = self._run_pipeline_rev(self.outputSpace.subspace)
                     rev_ev = (rev_sub.materialize()
                               if rev_sub is not None
                               and hasattr(rev_sub, 'materialize')
@@ -2983,6 +3055,10 @@ class BasicModel(BaseModel):
             arma_loss = self._discourse_arma_loss() if train else None
 
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
+            if lossRev is not None:
+                totalLoss = totalLoss + (
+                    float(getattr(self.loss, 'reconstruction_scale', 0.0)
+                          or 0.0) * lossRev)
             if arma_loss is not None:
                 totalLoss = totalLoss + self.arma_scale * arma_loss
                 TheError.add(
@@ -3395,11 +3471,12 @@ class BasicModel(BaseModel):
         for buf in self.buffers():
             if buf.is_floating_point():
                 buf.detach_()
-        # 2. Basis transient slots + plain-tensor W on every submodule.
+        # 2. Plain-tensor W on every submodule (the ``_active_payload``
+        # shadow was retired Stage 4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md; per-batch
+        # content for codebook-bearing slots now reconstructs via
+        # ``SubSpace.materialize`` from prototype + selection).
         for mod in self.modules():
-            ap = getattr(mod, '_active_payload', None)
-            if ap is not None and torch.is_tensor(ap) and ap.is_floating_point():
-                mod._active_payload = ap.detach()
             w = getattr(mod, 'W', None)
             if (w is not None and torch.is_tensor(w)
                     and not isinstance(w, nn.Parameter)
@@ -3918,7 +3995,7 @@ class BasicModel(BaseModel):
         self.certainty = TheXMLConfig.get("architecture.training.certainty")
         # InputSpace.codebook defaults to false; see the matching note in
         # BasicModel.create.
-        self.codebook = normalize_codebook_mode(
+        self.codebook = Space.normalize_codebook_mode(
             TheXMLConfig.space("InputSpace", "codebook", default=False)) != "none"
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
@@ -4251,7 +4328,7 @@ class BasicModel(BaseModel):
         # buffer from SymbolicSpace's column layout, builds each tier's
         # SyntacticLayer, and back-wires the home spaces so
         # compose/decompose routes through ``self.wordSpace``.
-        self.wordSpace = WordSpace(
+        self.wordSpace = WordSubSpace(
             perceptualSpace=self.perceptualSpace,
             conceptualSpace=self.conceptualSpace,
             symbolicSpace=self.symbolicSpace,
@@ -4287,8 +4364,9 @@ class BasicModel(BaseModel):
         self.normalizer = Normalizer(TheData)
         for space in self.spaces:
             space.normalizer = self.normalizer
-            if hasattr(space, 'subspace'):
-                space.subspace.normalizer = self.normalizer
+            sub = getattr(space, 'subspace', None)
+            if sub is not None:
+                sub.normalizer = self.normalizer
                 # Stamp the model's (build-stable) WordSpace onto every
                 # persistent subspace ONCE, eagerly. The traced forward's
                 # copy_context no longer re-assigns it (assigning a
@@ -4297,7 +4375,7 @@ class BasicModel(BaseModel):
                 # model.to()); since wordSpace never changes after build,
                 # this eager stamp keeps every downstream
                 # ``vspace.wordSpace`` read valid with no in-trace work.
-                space.subspace.attach_wordSpace(self.wordSpace)
+                sub.attach_wordSpace(self.wordSpace)
 
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(symbol_dim + obj_symbol,
@@ -4556,23 +4634,22 @@ class BasicModel(BaseModel):
             # Gate PerceptualSpace's serial warm-path: it is an
             # AR-streaming optimisation across forward calls and must
             # not splice on in-forward recurrent passes >0 (each pass
-            # carries distinct C→P feedback).
-            _work = (self.wordSpace._work
-                     if self.wordSpace is not None else None)
-            if _work is not None:
-                _work.recur_pass = int(t)
+            # carries distinct C→P feedback). ``recur_pass`` lives on
+            # WordSpace; PerceptualSpace.forward reads it via the
+            # ``subspace.wordSpace`` back-reference.
+            if self.wordSpace is not None:
+                self.wordSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
-            PS_sub = self.perceptualSpace.forward(
-                in_sub, prevCS_forPS, work=_work)
+            PS_sub = self.perceptualSpace.forward(in_sub, prevCS_forPS)
             if t == 0:
                 # IR masked-LM mask applied once, on the first pass's
                 # perceptual event, before CS consumes it
                 # (``_ir_pre_mask_input`` / ``_ir_mask_positions`` are
                 # read by ``runBatch``).
                 self.create_ir_mask(PS_sub)
-            SS_sub = ss.forward(prevCS_forSS, work=_work)
-            CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
+            SS_sub = ss.forward(prevCS_forSS)
+            CS_sub = cs.forward(PS_sub, SS_sub)
             self._cs_cache[t] = CS_sub
             self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
@@ -4580,18 +4657,13 @@ class BasicModel(BaseModel):
             # Read the two C views after the optional merge (merge
             # mutates the CS subspace in place; the C->S view aliases
             # it so it reflects post-merge N). The cross-pass handoff
-            # lives on the per-sentence ``_work`` carrier when present
-            # (Phase 1.4: ``ConceptualSpace.forward`` published it as
-            # ``work.cs_for_ps`` / ``work.cs_for_ss``). Eager fallback
-            # (``_work is None``): the C->P side is the persistent owned
-            # subspace allocated in ``ConceptualSpace.__init__`` (never
-            # absent) -> explicit attr access, no getattr default
-            # (whose ``self._empty_subspace()`` was also constructing a
-            # SubSpace every loop iteration).
-            prevCS_forPS = (_work.cs_for_ps if _work is not None
-                            else cs._subspaceForPS)
-            prevCS_forSS = (_work.cs_for_ss if _work is not None
-                            else cs._subspaceForSS)
+            # lives directly on the persistent ``cs._subspaceForPS`` /
+            # ``cs._subspaceForSS`` SubSpaces (mutated in place by
+            # ConceptualSpace.forward); no SentenceState carrier — the
+            # reverse path generates its own estimates of these
+            # intermediate views (reconstruction contract).
+            prevCS_forPS = cs._subspaceForPS
+            prevCS_forSS = cs._subspaceForSS
             # "Nothing to quantize -> pass zeros": SS is inert when its
             # input was the empty seed (conceptualOrder=1, or pass 0).
             # CS already consumed SS_sub as-is above (pass-0 math
@@ -4603,10 +4675,8 @@ class BasicModel(BaseModel):
             last_cs = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
-        _work = (self.wordSpace._work
-                 if self.wordSpace is not None else None)
-        if _work is not None:
-            _work.recur_pass = 0
+        if self.wordSpace is not None:
+            self.wordSpace.recur_pass = 0
         else:
             self.perceptualSpace._recurrent_pass_idx = 0
         if self.loss_head is not None:
@@ -4894,13 +4964,18 @@ class BasicModel(BaseModel):
           * ``perceptualSpace._mphf_tables()`` -- lazy build-once
             cache is primed (build path iterates ``bytes`` which
             Dynamo refuses to trace).
-          * ``wordSpace._work.recur_pass.fill_(0)`` -- invariant
-            across the per-word loop (pass-index 0 throughout).
-          * ``wordSpace._work.cs_for_ps/ss`` pre-seeded to the
-            persistent empty seeds so the first iteration's PS/SS
-            forwards see a non-None feedback subspace (avoids a
+          * ``wordSpace.recur_pass = 0`` -- invariant across the
+            per-word loop (pass-index 0 throughout).
+          * ``self._prev_cs_for_ps`` / ``self._prev_cs_for_ss`` pre-
+            seeded to the persistent empty seeds so iteration 0's
+            PS/SS forwards see a non-None feedback subspace (avoids a
             None-vs-SubSpace branch inside the captured body that
-            would force a recompile after iteration 1).
+            would force a recompile after iteration 1). The body
+            switches these to ``cs._subspaceForPS`` /
+            ``cs._subspaceForSS`` (the persistent CS-tier storage that
+            CS.forward mutates in place) right after iteration 0's
+            cs.forward, so iterations 1+ pick up the in-place updates
+            without any further pointer churn.
           * Fresh ``_cs_cache`` / ``_ss_cache`` lists.
 
         Returns ``(stm, N_target, word_carrier, in_event)`` -- the
@@ -4934,92 +5009,101 @@ class BasicModel(BaseModel):
         # compiled forward on the production path, so a lazy build
         # here would still be traced.
 
-        # WorkingState invariants + per-forward pre-seed. The carrier
-        # is allocated by ``wordSpace.soft_reset`` (triggered by
-        # ``post_tick_compact`` when a sentence completes); the first
-        # forward of the first sentence runs BEFORE any soft_reset has
-        # fired, so cold-start allocation falls to this prelude.
-        # ``cs_for_ps/ss`` are UNCONDITIONALLY re-seeded to the empty
-        # seeds each forward so the per-word loop's first iteration
-        # always sees the canonical empty starting context (mirrors
-        # the legacy ``_empty_seed_*`` local-var initialisation just
-        # before the while loop) -- never a stale SubSpace from a
-        # prior sentence's per-word loop. ``cs.forward`` overwrites
-        # these to its own ``vspace`` after the first word; the
-        # sentinel restore is essential at sentence boundaries.
-        if self.wordSpace._work is None:
+        # WordSpace per-sentence state + per-forward pre-seed. The
+        # cursor / recur_pass are allocated by ``wordSpace.soft_reset``
+        # (triggered by ``post_tick_compact`` when a sentence
+        # completes); the first forward of the first sentence runs
+        # BEFORE any soft_reset has fired, so cold-start allocation
+        # falls to this prelude. ``self._prev_cs_for_ps/ss`` are
+        # UNCONDITIONALLY re-seeded to the empty seeds each forward so
+        # the per-word loop's iteration 0 always sees the canonical
+        # empty starting context -- never a stale SubSpace from a prior
+        # sentence's per-word loop. The body switches these to
+        # ``cs._subspaceForPS`` / ``cs._subspaceForSS`` after the first
+        # iteration's cs.forward; subsequent iterations read the same
+        # persistent objects (in-place updates via set_event keep the
+        # references stable).
+        # Cold-start: the per-sentence state (STM arms, SVO clear, etc.)
+        # is normally re-initialized by ``post_tick_compact`` when a
+        # sentence completes. The first forward of the first sentence
+        # runs BEFORE any compaction has fired, so we run soft_reset
+        # once at construction-time. ``_per_sentence_initialized`` is a
+        # plain Python bool sentinel — Dynamo-friendly (specializes once
+        # then becomes a no-op).
+        if not getattr(self.wordSpace, '_per_sentence_initialized', False):
             self.wordSpace.soft_reset()
-        _work = self.wordSpace._work
-        _work.recur_pass = 0
-        _work.cs_for_ps = self._empty_seed_ps
-        _work.cs_for_ss = self._empty_seed_ss
+            self.wordSpace._per_sentence_initialized = True
+        self.wordSpace.recur_pass = 0
+        self._prev_cs_for_ps = self._empty_seed_ps
+        self._prev_cs_for_ss = self._empty_seed_ss
 
         N_target = (int(in_event.shape[1])
                     if in_event is not None and in_event.dim() == 3
                     else None)
         word_carrier = in_sub
+
+        # Static per-word loop scaffolding
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2).
+        # ``_target_cursor_length`` tells WordSpace.compose to pad the
+        # S-tier rule cursor to N with ``id_SS`` (forward-only). The
+        # per-iteration commit-time gate is sourced from
+        # ``inputSpace._word_active_mask`` (tensor-only, compile-stable);
+        # the rule cursor itself stays aligned for downstream consumers
+        # but does NOT drive control flow inside the captured body.
+        N_static = int(self.inputSpace.outputShape[0])
+        if self.wordSpace is not None:
+            self.wordSpace._target_cursor_length = N_static
+        # ``_per_word_contributions`` accumulates the per-iteration
+        # ``[B, D_c]`` contributions (zero at inactive batch rows /
+        # padding columns) for ``torch.stack`` after the loop. Using a
+        # list + stack preserves autograd flow through the per-position
+        # concept outputs, where an in-place write into a non-grad
+        # buffer would silently detach.
+        self._per_word_contributions: list = []
         return stm, N_target, word_carrier, in_event
 
-    def _per_word_body_step(self, w):
-        """D8 piece 1: ONE per-word iteration -- the constant-shape
-        sub-graph that the PS/SS -> CS captured graph wraps (replayed
-        N times per forward).
+    def _per_word_body_step(self, w, p, gate_b_1, out_slot, active_host=True):
+        """One per-word iteration of the static loop (replaces the
+        legacy data-dependent ``while next_word()`` body).
 
-        Body: gaussian-window over the whole percept sequence (D1) ->
-        MPHF->table route (D2) -> Σ-lift through PS/SS -> CS -> SHIFT
-        onto STM (with capacity-gated forced REDUCE micro-step).
+        Static-N variant of the constant-shape PS/SS -> CS sub-graph
+        replayed ``N = InputSpace.outputShape[0]`` times per forward.
+        Per-iteration side-effects (carrier event commits, STM push,
+        concept-buffer scatter) are masked by ``gate_b_1`` so padding
+        columns leave recurrent state bit-identical to the active
+        prefix. See
+        doc/plans/2026-05-20-static-per-word-loop-impl.md §2.4.
 
-        Loop-carry state lives on ``self.wordSpace._work`` (the
-        WorkingState carrier; ``cs_for_ps`` / ``cs_for_ss`` written by
-        ``ConceptualSpace.forward``); ``word_carrier`` is the live
-        InputSpace subspace (the SAME object the whole-slab path
-        threads). The method consumes a single ``w`` (``[B, 1, D]``
-        ground-truth word slice produced by ``InputSpace.next_word``)
-        and returns ``(CS_sub, idea_bd)`` -- the per-word CS subspace
-        and the ``[B, D_c]`` per-word concept (or ``None`` when CS is
-        empty).
+        Args:
+          w: ``[B, 1, D]`` word slice for position ``p``
+             (``InputSpace.word_at(p)``); zero at inactive batch rows.
+          p: Python int loop position; constant per unrolled iteration.
+          gate_b_1: ``[B, 1]`` bool active mask from
+             ``inputSpace._word_active_mask[:, p:p+1]``. ``torch.where``
+             gate for masked commits.
+          out_slot: preallocated ``[B, N, D_c]`` concept buffer; this
+             call writes column ``p``.
 
-        Capture-gate contract: this is the ONLY callable that runs
-        inside the middle captured graph; every helper it calls is
-        DtoH-free by docstring contract (``gaussian_window_word``,
-        ``_mphf_route_word``, ``push_step``, ``_stm_bounded_reduce_step``).
-        Any new ``.item()`` / ``bool(t)`` / ``int(tensor)`` reaching the
-        call graph re-breaks fullgraph + costs a per-word DtoH;
-        ``test/test_per_word_capture_gate.py`` is the active gate.
+        Returns ``(CS_sub, idea_bd)`` — last_cs tracking and idea
+        broadcast handle. Both are produced unconditionally (PS/SS/CS
+        forwards always fire); only their downstream effects are gated.
+
+        Capture-gate contract: still the ONLY callable that runs inside
+        the middle captured graph; every helper it calls remains
+        DtoH-free. ``test/test_per_word_capture_gate.py`` is the active
+        gate.
         """
         isp = self.inputSpace
         cs = self.conceptualSpace
         ss = self.symbolicSpace
         stm = cs.stm
-        # The word carrier is the InputSpace's OWN subspace -- the same
-        # object the whole-slab path threads through PS forward; reusing
-        # it keeps what/where/when encodings, wordSpace and the stem-
-        # route contract byte-identical (mirrors _forward_body_per_word).
         word_carrier = isp.subspace
 
-        # D8 capture-gate contract: the per-word path is gated on
-        # ``_per_word_enabled`` (grammar configs only), so wordSpace
-        # always exists here and ``_work`` is always allocated by the
-        # outer ``_forward_body_per_word`` prelude (which calls
-        # wordSpace.soft_reset()). WorkingState had ``__slots__``
-        # historically but Phase-5 dropped them precisely because
-        # Dynamo's ``UserDefinedObjectVariable.var_getattr`` doesn't
-        # walk slot member descriptors; with plain ``__dict__`` attrs
-        # ``_work.cs_for_ps`` traces cleanly.
-        _work = self.wordSpace._work
-
-        # The cursor already advanced past this word inside next_word();
-        # its per-word slot is ``_per_word_cursor - 1``. Direct attr
-        # read (no getattr) -- ``_per_word_cursor`` is initialised in
-        # ``InputSpace.__init__`` so it always exists.
-        _p = isp._per_word_cursor - 1
-
-        # Rework B (1): gaussian attentional window over the WHOLE
-        # percept sequence, centered at this word's cursor position.
-        # ``_ar_embedded`` is initialised to None in ``InputSpace
-        # .__init__`` -- direct attr access, no getattr.
+        # Gaussian window + MPHF route — unchanged. ``p`` is the static
+        # loop position; the legacy ``_per_word_cursor - 1`` mirror is
+        # retired with ``next_word()``.
         _full_seq = isp._ar_embedded
-        _ctx_w = self.gaussian_window_word(_full_seq, _p)
+        _ctx_w = self.gaussian_window_word(_full_seq, p)
         if (_ctx_w is not None and torch.is_tensor(_ctx_w)
                 and _ctx_w.dim() == 3
                 and _ctx_w.shape[1] == 1
@@ -5028,43 +5112,72 @@ class BasicModel(BaseModel):
                 and _ctx_w.shape[-1] == w.shape[-1]):
             w = _ctx_w
 
-        # Rework A: percept -> concept via MPHF -> D2 table row (the
-        # REUSED Phase-1A.1 ``wv._vectors`` concept-activation half).
-        w, _mphf_idx = self._mphf_route_word(w, _p)
+        w, _mphf_idx = self._mphf_route_word(w, p)
         if _mphf_idx is not None:
             self._mphf_last_idx = _mphf_idx
-            # ``_mphf_call_count`` is initialised in BasicModel.__init__
-            # to 0 so direct addition is safe.
             self._mphf_call_count = self._mphf_call_count + 1
 
         word_carrier.set_event(w)
         word_carrier.stem_embedded = True
         word_sub = word_carrier
 
-        # NOTE: ``_work.recur_pass.fill_(0)`` is hoisted to
-        # ``_forward_body_per_word``'s prelude (value is invariant
-        # across the per-word loop -- the recurrence depth is the
-        # word loop, not the stage loop, so pass-index is 0 throughout).
-        #
-        # Cross-step C->P / C->S feedback views read directly from
-        # the WorkingState carrier. Phase 1.4 folded these from the
-        # legacy ``cs._subspaceForPS/SS`` attributes; the legacy
-        # fallback is gone (those attributes no longer exist on
-        # ConceptualSpace).
-        prevCS_forPS = _work.cs_for_ps
-        prevCS_forSS = _work.cs_for_ss
+        # Read the cross-iteration C→P / C→S feedback off
+        # ``self._prev_cs_for_ps/ss``. The prelude seeds these to the
+        # empty seeds for iteration 0; the tail of this method switches
+        # them to the persistent ``cs._subspaceForPS/SS`` storage that
+        # cs.forward mutates in place, so iterations 1+ pick up the
+        # latest event without any explicit pointer update.
+        prevCS_forPS = self._prev_cs_for_ps
+        prevCS_forSS = self._prev_cs_for_ss
+        # Snapshot the carriers' event tensors BEFORE cs.forward writes
+        # new ones (set_event mutates in place; without snapshots the
+        # masked-blend below would compare new-vs-new).
+        prev_ps_event_snap = (
+            prevCS_forPS._event
+            if (prevCS_forPS is not None
+                and getattr(prevCS_forPS, '_event', None) is not None)
+            else None)
+        prev_ss_event_snap = (
+            prevCS_forSS._event
+            if (prevCS_forSS is not None
+                and getattr(prevCS_forSS, '_event', None) is not None)
+            else None)
 
-        PS_sub = self.perceptualSpace.forward(
-            word_sub, prevCS_forPS, work=_work)
-        SS_sub = ss.forward(prevCS_forSS, work=_work)
-        CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
-        # Terminal-stage slot (``[-1]``): the per-word loop has a
-        # single canonical cell, so the most-recent word's CS/SS is
-        # the terminal-stage representation the tail reads.
-        self._cs_cache[-1] = CS_sub
+        PS_sub = self.perceptualSpace.forward(word_sub, prevCS_forPS)
+        SS_sub = ss.forward(prevCS_forSS)
+        CS_sub = cs.forward(PS_sub, SS_sub)
+
+        # Masked-blend the persistent CS carriers' new events with the
+        # snapshots so padding columns preserve the recurrent state
+        # from the prior iteration (no ConceptualSpace averaging leak
+        # from SS at zero input). Shapes must match — on iteration 0
+        # the prev is the empty seed (length 0) and the blend is
+        # skipped; the cs.forward result propagates as-is.
+        self._maybe_blend_event(
+            cs._subspaceForPS, prev_ps_event_snap, gate_b_1)
+        self._maybe_blend_event(
+            cs._subspaceForSS, prev_ss_event_snap, gate_b_1)
+
+        # Switch the prev pointer to the persistent CS storage so the
+        # next iteration's first reads see CS.forward's in-place
+        # writes. After this line ``self._prev_cs_for_ps`` aliases
+        # ``cs._subspaceForPS``; subsequent iterations read the same
+        # object whose ``_event`` cs.forward keeps fresh.
+        self._prev_cs_for_ps = cs._subspaceForPS
+        self._prev_cs_for_ss = cs._subspaceForSS
+
+        # Terminal-stage caches — only update at active host positions so
+        # padding iterations don't overwrite the last-real-word state
+        # that downstream reconstruction loss reads. ``active_host`` is
+        # a Python bool derived host-side from
+        # ``inputSpace._valid_len_host``; the body itself stays loop-
+        # body sentence-length-free, but the cache writes here are
+        # gated. Dynamo specializes on the host int.
         if SS_sub.is_empty():
             SS_sub = self._zero_symbol_subspace(ss, word_sub)
-        self._ss_cache[-1] = SS_sub
+        if active_host:
+            self._cs_cache[-1] = CS_sub
+            self._ss_cache[-1] = SS_sub
 
         idea_bd = None
         if CS_sub is not None:
@@ -5072,16 +5185,52 @@ class BasicModel(BaseModel):
             if (idea is not None and idea.dim() == 3
                     and idea.shape[1] >= 1):
                 idea_bd = idea[:, 0, :]                 # [B, D_c]
-                if stm is not None:
-                    # 2b-2-i back-pressure: at capacity the next SHIFT
-                    # would overflow the bounded stack; FORCE a bounded
-                    # reduce that folds the top-2 into one (host-int
-                    # mirror compare, no DtoH).
+                if stm is not None and active_host:
+                    # Capacity back-pressure check fires here; the host
+                    # mirror is also advanced per real push so the
+                    # check is accurate inside the loop.
+                    # ``push_step_masked`` is gated on ``active_host``
+                    # so padding iterations never index past depth and
+                    # never trip a capacity OOB.
                     if stm._max_depth_host >= stm.capacity:
                         self._stm_bounded_reduce_step()
                         stm._max_depth_host = stm.capacity - 1
-                    stm.push_step(idea_bd)
+                    stm.push_step_masked(idea_bd, gate_b_1)
+                    stm._max_depth_host = stm._max_depth_host + 1
+                # Masked contribution: at inactive batch rows / padding
+                # columns the contribution is zero so it doesn't push
+                # bogus state into downstream concept reads. ``out_slot``
+                # is the caller's per-iteration accumulator (a list);
+                # the caller is responsible for ``torch.stack``ing it
+                # back to ``[B, N, D_c]`` post-loop so autograd flows
+                # through the per-position contributions.
+                contribution = torch.where(
+                    gate_b_1, idea_bd, torch.zeros_like(idea_bd))
+                if out_slot is not None and isinstance(out_slot, list):
+                    out_slot.append(contribution)
         return CS_sub, idea_bd
+
+    @staticmethod
+    def _maybe_blend_event(carrier, prev_event, gate_b_1):
+        # Masked-blend ``carrier._event`` against ``prev_event`` using
+        # ``gate_b_1`` ([B, 1] bool). Skips when the carrier is missing,
+        # the new event is missing, or shapes don't match (first
+        # iteration after the empty seed). Same-shape blends are pure
+        # tensor ops — no DtoH, no graph break.
+        #
+        # ``prev_event`` is detached before use so the blend never
+        # chains into the previous iteration's autograd graph at a
+        # padding column — without this, repeated forward/backward
+        # cycles can hit "Trying to backward through the graph a
+        # second time" when an inactive batch row's carrier reuses a
+        # saved intermediate that has already been freed.
+        if carrier is None or prev_event is None:
+            return
+        new_ev = getattr(carrier, '_event', None)
+        if new_ev is None or new_ev.shape != prev_event.shape:
+            return
+        gate_3d = gate_b_1.unsqueeze(-1)  # [B, 1, 1] broadcasts over D
+        carrier._event = torch.where(gate_3d, new_ev, prev_event.detach())
 
     def _forward_body_per_word(self, in_sub):
         """Per-word IR-reconstruction body (2b-1 capstone).
@@ -5131,12 +5280,15 @@ class BasicModel(BaseModel):
         sentence-boundary clear that ``ConceptualSpace.Reset(hard=True)``
         also performs).
         """
-        # Prelude: STM resize+clear, MPHF pre-warm, WorkingState
-        # invariants + pre-seed, fresh _cs/_ss caches. Hoisted into
-        # ``_per_word_prelude`` so the capture-gate test can replay
-        # the same boundary-side contract.
+        # Prelude: STM resize+clear, MPHF pre-warm, WordSubSpace
+        # per-sentence invariants + CS-feedback pre-seed
+        # (``self._prev_cs_for_ps/ss``), fresh _cs/_ss caches. Hoisted
+        # into ``_per_word_prelude`` so the capture-gate test can
+        # replay the same boundary-side contract. Now also: allocate /
+        # zero the preallocated ``_per_word_concept_buf`` [B, N, D_c]
+        # and set ``wordSpace._target_cursor_length = N`` so compose
+        # pads the S-tier rule cursor to N with id_SS.
         stm, N_target, word_carrier, in_event = self._per_word_prelude(in_sub)
-        per_word_concepts = []
 
         # The per-word loop IS the recurrence: it replaces the
         # whole-slab cell's ``conceptualOrder`` pass loop with a
@@ -5171,167 +5323,50 @@ class BasicModel(BaseModel):
         # NOTE: cs/ss handles, prevCS_forPS/SS empty-seed init, MPHF
         # pre-warm, recur_pass reset, and STM resize+clear all folded
         # into ``_per_word_prelude`` (called above). The captured body
-        # reads ``_work.cs_for_ps/ss`` uniformly from the WorkingState
-        # carrier -- no per-iteration None branch.
+        # reads ``self._prev_cs_for_ps/ss`` uniformly (prelude seeds
+        # them to the empty seeds; the body switches to
+        # ``cs._subspaceForPS/SS`` once cs.forward has run for the
+        # first time) -- no per-iteration None branch.
+
+        # Static per-word loop (replaces the data-dependent
+        # ``while next_word() is not None`` boundary). Trip count is the
+        # Python int constant ``N = InputSpace.outputShape[0]``, so
+        # Dynamo unrolls / specializes once and length variation no
+        # longer drives recompiles. The per-iteration gate
+        # ``inputSpace._word_active_mask[:, p:p+1]`` (a [B, 1] bool
+        # tensor, built tensor-only in InputSpace.forward) sourcing
+        # ``gate_b_1`` masks all per-iteration commits in
+        # ``_per_word_body_step``.
+        # See doc/plans/2026-05-20-static-per-word-loop-impl.md §2.
+        N_static = int(self.inputSpace.outputShape[0])
+        word_active = self.inputSpace._word_active_mask
+        out_slot = self._per_word_contributions
+        # ``K_host`` is the active prefix length (host int from the
+        # eager-computed ``_valid_len_host``). The static-N loop runs
+        # ``N_static`` iterations regardless, but cache writes and the
+        # ``last_cs`` tracker gate on ``p < K_host`` so padding
+        # iterations don't overwrite last-real-iter state that
+        # downstream reconstruction reads.
+        K_host = int(self.inputSpace._valid_len_host)
 
         last_cs = None
-        word_count = 0
-        while True:
-            w = self.inputSpace.next_word()
+        for p in range(N_static):
+            w = self.inputSpace.word_at(p)
             if w is None:
-                # NULL/end-of-sentence seal -- pure input sentinel
-                # (never a model output); ends the per-word loop.
                 break
-            # D8 piece 1 (extraction landed 2026-05-19): the inner
-            # per-iteration body lives on ``_per_word_body_step``. The
-            # while-loop here is the boundary that D8 carves out
-            # (variable Python loop between captured IS and OS graphs);
-            # the extracted step is the constant-shape PS/SS->CS sub-
-            # graph replayed N times. With ``__slots__`` removed from
-            # WorkingState the step reads loop-carry SubSpace refs
-            # directly from ``_work.cs_for_ps/ss`` inside the captured
-            # body -- one arg in (the word slice), one tuple out.
-            CS_sub, idea_bd = self._per_word_body_step(w)
-            if idea_bd is not None:
-                per_word_concepts.append(idea_bd)
-            if CS_sub is not None:
-                last_cs = CS_sub
-            word_count += 1
-
-        _LEGACY_INLINE_BODY = False
-        if _LEGACY_INLINE_BODY:
-            # Rework A: route this percept -> concept through
-            # ``idx = MPHF(percept_bytes)`` -> the D2 table row (the
-            # REUSED Phase-1A.1 ``wv._vectors`` concept-activation half).
-            # The cursor already advanced past this word, so its per-word
-            # slot is ``_per_word_cursor - 1``. Instrumentation handles
-            # (``_mphf_last_idx`` / running call count) are read by the
-            # end-to-end probe; never on the training-critical path.
-            _p = int(getattr(self.inputSpace, "_per_word_cursor", 1)) - 1
-            # Rework B (1): GAUSSIAN ATTENTIONAL WINDOW. Replace the raw
-            # per-word slice with the gaussian-windowed SUM over the
-            # WHOLE percept sequence (``inputSpace._ar_embedded``,
-            # every word) centered at this word's cursor position
-            # ``_p`` (sigma = maskRate * N_percepts; center ~1,
-            # distant ->0). Word k's input now carries a CONTEXTUAL
-            # TRACE (the faint gaussian-weighted contribution of nearby
-            # words); per-word context washes out across the
-            # whole-sentence D3 reconstruction. This REPLACES the prior
-            # once-on-word-0 BERT-style ``create_ir_mask`` wholesale on
-            # the per-word path. The percept's IDENTITY/index is
-            # unchanged (Rework-A's ``_mphf_route_word`` resolves it
-            # from ``_active`` -- written from the original input by
-            # ``_embed_bpe``, not from this contextual sum), so the
-            # MPHF->table route below is byte-identical to Rework-A;
-            # the gaussian contextual trace survives in the muxed
-            # WHERE/WHEN channels (the table row replaces only WHAT,
-            # the existing Rework-A WHAT-slice-only contract).
-            _full_seq = getattr(self.inputSpace, "_ar_embedded", None)
-            _ctx_w = self.gaussian_window_word(_full_seq, _p)
-            if (_ctx_w is not None and torch.is_tensor(_ctx_w)
-                    and _ctx_w.dim() == 3
-                    and _ctx_w.shape[1] == 1
-                    and w is not None and torch.is_tensor(w)
-                    and _ctx_w.shape[0] == w.shape[0]
-                    and _ctx_w.shape[-1] == w.shape[-1]):
-                w = _ctx_w
-            w, _mphf_idx = self._mphf_route_word(w, _p)
-            if _mphf_idx is not None:
-                self._mphf_last_idx = _mphf_idx
-                self._mphf_call_count = (
-                    getattr(self, "_mphf_call_count", 0) + 1)
-            word_carrier.set_event(w)
-            word_carrier.stem_embedded = True
-            word_sub = word_carrier
-
-            _work = (self.wordSpace._work
-                     if self.wordSpace is not None else None)
-            # Per-word step == pass 0 of the canonical cell (the C->P/
-            # C->S feedback is carried across words, so the recurrent-
-            # pass index stays 0; the recurrence depth is the word
-            # loop, not the stage loop).
-            if _work is not None:
-                _work.recur_pass = 0
+            if word_active is not None:
+                gate_b_1 = word_active[:, p:p + 1]
             else:
-                self.perceptualSpace._recurrent_pass_idx = 0
-            # Rework B (1): the GAUSSIAN ATTENTIONAL WINDOW is applied
-            # at the INPUT level above (``gaussian_window_word`` over
-            # the whole ``_ar_embedded`` percept sequence centered at
-            # ``_p``, summed -> word k's contextual input), REPLACING
-            # the prior once-on-word-0 BERT-style ``create_ir_mask``
-            # wholesale on the per-word path. No per-word-PS-event
-            # envelope here (the per-word PS event is K=1; the gaussian
-            # is over the WHOLE sentence sequence, applied before this
-            # forward).
-            PS_sub = self.perceptualSpace.forward(
-                word_sub, prevCS_forPS, work=_work)
-            SS_sub = ss.forward(prevCS_forSS, work=_work)
-            CS_sub = cs.forward(PS_sub, SS_sub, work=_work)
-            # Terminal-stage slot (``[-1]``): the per-word loop has a
-            # single canonical cell, so the most-recent word's CS/SS is
-            # the terminal-stage representation the tail reads
-            # (``symbol_cache`` / recon-C / recon-S all index ``[-1]``).
-            self._cs_cache[-1] = CS_sub
-            # NOTE: the optional ``merge`` (GrammarMergeGlue, present for
-            # ``useGrammar=='all'``) is a WHOLE-SLAB progressive
-            # N-bottleneck (halves the N axis to feed the chart's
-            # N-progression). It is intentionally NOT applied per word:
-            # a single word is ``[B,1,D_c]`` and halving N=1 collapses
-            # it to ``[B,0,D_c]`` (the per-word concept would vanish).
-            # Per the ratified design each word maps to exactly ONE
-            # concept -- the pre-merge ``[B,1,D_c]`` CS event; the
-            # whole-slab chart N-progression is replaced here by the
-            # per-word STM accumulation. The C->P / C->S feedback is
-            # therefore read from the pre-merge CS views (a consistent
-            # single-word recurrence carried word-to-word -- the
-            # cross-step analogue of ``_forward_body``'s cross-pass
-            # handoff).
-            prevCS_forPS = (_work.cs_for_ps if _work is not None
-                            else cs._subspaceForPS)
-            prevCS_forSS = (_work.cs_for_ss if _work is not None
-                            else cs._subspaceForSS)
-            if SS_sub.is_empty():
-                SS_sub = self._zero_symbol_subspace(ss, word_sub)
-            self._ss_cache[-1] = SS_sub
-            last_cs = CS_sub
-
-            # SHIFT: push the per-word terminal concept onto STM AND
-            # collect it for the position-aligned head representation.
-            # The (pre-merge) CS event is ``[B,1,D_c]`` (one concept per
-            # word) -> squeeze the length-1 word axis to ``[B,D_c]`` for
-            # ``push_step``'s one-idea-per-row contract. Grad flows
-            # through (no detach) so the chart/compose path can shape
-            # upstream weights.
-            if CS_sub is not None:
-                idea = CS_sub.materialize()
-                if (idea is not None and idea.dim() == 3
-                        and idea.shape[1] >= 1):
-                    idea_bd = idea[:, 0, :]                # [B, D_c]
-                    if stm is not None:
-                        # 2b-2-i back-pressure: at capacity the next
-                        # SHIFT would overflow the bounded stack (the
-                        # legacy ``ShortTermMemory.push`` raised a
-                        # capacity RuntimeError here -- ``push_step``
-                        # has no guard and would write OOB). Replace
-                        # that hard error with a FORCED bounded reduce
-                        # that folds the top-2 into one, freeing a slot
-                        # so depth stays <= cap (spec STM-7: "at d==7
-                        # the best reduce is FORCED"). ``push_step``
-                        # advances all rows in lockstep so the
-                        # host-side ``_max_depth_host`` mirror is the
-                        # de-sync-safe cap predicate.
-                        if stm._max_depth_host >= stm.capacity:
-                            self._stm_bounded_reduce_step()
-                            # ``_stm_bounded_reduce_step`` decremented
-                            # the tensor depth but leaves the host
-                            # mirror as the high-water mark; lower it
-                            # so the freed slot is reused (the next
-                            # ``push_step`` writes at ``_depth`` and
-                            # bumps the mirror by 1 again).
-                            stm._max_depth_host = stm.capacity - 1
-                        stm.push_step(idea_bd)
-                    per_word_concepts.append(idea_bd)
-            word_count += 1
+                gate_b_1 = torch.ones(
+                    w.shape[0], 1, dtype=torch.bool, device=w.device)
+            active_host = p < K_host
+            CS_sub, idea_bd = self._per_word_body_step(
+                w, p, gate_b_1, out_slot, active_host=active_host)
+            if active_host and CS_sub is not None:
+                last_cs = CS_sub
+        word_count = K_host
+        # STM host mirror is advanced inside the body's ``active_host``
+        # branch per real push; no post-loop fixup needed.
 
         # Restore the full whole-sentence event onto the InputSpace
         # subspace so post-body readers (``_forward_per_stage``'s
@@ -5347,25 +5382,21 @@ class BasicModel(BaseModel):
         # PerceptualSpace.forward calls (and the next forward's pass 0)
         # see the AR-streaming serial warm path -- mirrors the
         # whole-slab path's tail.
-        _work = (self.wordSpace._work
-                 if self.wordSpace is not None else None)
-        if _work is not None:
-            _work.recur_pass = 0
+        if self.wordSpace is not None:
+            self.wordSpace.recur_pass = 0
         else:
             self.perceptualSpace._recurrent_pass_idx = 0
 
-        # Build the position-aligned C-tier representation the EXISTING
-        # tail consumes (the whole-slab body's ``[B, N, D_c]``
-        # equivalent): stack the per-word concepts ``[B, n_words, D_c]``
-        # and right-pad to N (left-aligned, right-padded to N -- the
-        # SAME layout ``InputSpace.forward`` produces for the whole-slab
-        # path). Stamp it onto the ConceptualSpace subspace (the same
-        # object the whole-slab ``last_cs`` is) so ``_forward_head`` /
-        # OutputSpace / the ``runBatch`` IR-loss tail run BYTE-UNCHANGED.
-        # ``copy_context`` from the last per-word CS subspace keeps the
-        # pipeline ``wordSpace``/``errors``/stem-route contract intact.
-        if per_word_concepts:
-            stacked = torch.stack(per_word_concepts, dim=1)  # [B,n_w,D_c]
+        # Stack the per-iteration contributions (gradient-preserving)
+        # and pad / truncate to ``N_target``. Inactive batch rows /
+        # padding columns contributed zero so the tail is naturally
+        # zero-padded. ``copy_context`` from the last per-word CS
+        # subspace keeps the pipeline wordSpace/errors/stem-route
+        # contract intact.
+        # See doc/plans/2026-05-20-static-per-word-loop-impl.md §2.5.
+        per_word_contribs = self._per_word_contributions
+        if last_cs is not None and per_word_contribs:
+            stacked = torch.stack(per_word_contribs, dim=1)  # [B, n_w, D_c]
             Bc, n_w, Dc = stacked.shape
             if N_target is not None and n_w < N_target:
                 pad = torch.zeros(
@@ -5375,10 +5406,10 @@ class BasicModel(BaseModel):
             elif N_target is not None and n_w > N_target:
                 stacked = stacked[:, :N_target, :]
             cs_sub = self.conceptualSpace.subspace
-            if last_cs is not None:
-                cs_sub.copy_context(last_cs)
+            cs_sub.copy_context(last_cs)
             cs_sub.set_event(stacked)
             last_cs = cs_sub
+        self._per_word_contributions = []
 
         # 2b-2-i: NULL-seal finalize -- the BOUNDED soft REDUCE sweep
         # composes the accumulated STM down to a SINGLE idea S (the
@@ -5401,7 +5432,7 @@ class BasicModel(BaseModel):
         # category tracks ``Grammar.start_symbol``) but NOT yet
         # consumed by the loss; 2b-2-ii rewires the loss to
         # ``reverse(S)``-vs-unmasked using exactly this S.
-        if (stm is not None and per_word_concepts
+        if (stm is not None and word_count > 0
                 and getattr(self.inputSpace, "_per_word_enabled", False)):
             S, post_depth = self._stm_reduce_to_single_S()
             # Verification handles for the end-to-end probe / future
@@ -5587,6 +5618,22 @@ class BasicModel(BaseModel):
         x = self.inputSpace.reverse(x)
         return x
 
+    def _run_pipeline_rev_from_concepts(self, x):
+        """Reverse pipeline from the terminal ConceptualSpace state.
+
+        This is the surviving reconstruction carrier after the symbolic/output
+        reconstruction modes were retired: the output head may be intentionally
+        lower-dimensional, while the terminal C-tier state still carries the
+        full reversible surface needed for input reconstruction.
+        """
+        if x is None:
+            return None
+        self._chart_generate_from_stm()
+        x = self._reverse_body(x)
+        x = self._reverse_perceptual(x)
+        x = self.inputSpace.reverse(x)
+        return x
+
     def _reverse_from_S(self, S):
         """Rework B (2): ``reverse(S)`` -- replay WordSpace's STORED
         forward derivations from the single non-NULL sentence idea
@@ -5629,8 +5676,50 @@ class BasicModel(BaseModel):
         x = self.inputSpace.reverse(x)
         if x is None:
             return None
-        return (x.materialize()
-                if hasattr(x, 'materialize') else x)
+        recon = (x.materialize()
+                 if hasattr(x, 'materialize') else x)
+        # Asymmetric forward/reverse: forward pads the rule cursor to
+        # N with S→S; reverse decodes only real rules then left-shifts
+        # the per-position surface so it begins with non-NULL content
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2R).
+        # The forward's ``_word_active_mask`` is the per-position source
+        # of truth — left-shift the reverse output to that layout so
+        # downstream consumers (D3 reconstruction loss, reverse_map
+        # eval) see real content packed at the start and zeros at the
+        # tail.
+        if recon is not None and torch.is_tensor(recon) and recon.dim() == 3:
+            real_pos = getattr(self.inputSpace, '_word_active_mask', None)
+            if (real_pos is not None
+                    and real_pos.dim() == 2
+                    and real_pos.shape[0] == recon.shape[0]
+                    and real_pos.shape[1] == recon.shape[1]):
+                recon = self._left_shift_by_mask(recon, real_pos)
+        return recon
+
+    @staticmethod
+    def _left_shift_by_mask(gen, real_pos):
+        # Pack positions marked True in ``real_pos`` [B, N] to the start
+        # of ``gen`` [B, N, D]; positions past the real count become
+        # zeros. Tensor-only (no Python loop, no ``.item()``) so it
+        # stays inside the compiled region without inducing recompiles.
+        B, N, D = gen.shape
+        device = gen.device
+        position_index = torch.arange(N, device=device).unsqueeze(0).expand(B, N)
+        # Composite sort key: real positions get index in [0, N), padding
+        # positions get index in [N, 2N). Stable sort preserves original
+        # order within each group.
+        key = torch.where(
+            real_pos,
+            position_index,
+            position_index + N)
+        sorted_indices = torch.argsort(key, dim=1, stable=True)
+        out = torch.gather(
+            gen, 1,
+            sorted_indices.unsqueeze(-1).expand(-1, -1, D))
+        n_real = real_pos.long().sum(dim=1, keepdim=True)
+        dest_pos = position_index
+        keep = (dest_pos < n_real).unsqueeze(-1).to(out.dtype)
+        return out * keep
 
     def _d3_reconstruction_loss(self):
         """Rework B (3): the D3 reconstruction loss -- the trainable
@@ -5773,18 +5862,33 @@ class BasicModel(BaseModel):
                 inputData = inputData.to(TheDevice.get())
         self._ar_valid_pos = None  # IR has no per-cursor axis.
 
-        # Detach cached events carried over from prior forward to break
-        # the autograd graph; in-place writes below restore live grads.
+        # Detach per-batch event content carried over from the prior
+        # forward to break the autograd graph. Post-Stage-4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md the
+        # per-batch event lives:
+        #   * on ``event.W`` for pure-event (plain Tensor) slots; can
+        #     be detached in place via setW.
+        #   * reconstructed from prototype + selection for muxed
+        #     codebook slots — the Parameter handles grad-tracking
+        #     directly; no cached event to detach.
+        # Skip the detach for codebook-bearing slots (``getW`` returns
+        # the 2-D Parameter, which detach would clobber).
         for sp in (self.perceptualSpace, self.conceptualSpace,
                    self.symbolicSpace):
             if sp is None:
                 continue
-            ev = sp.subspace.event
-            if ev is None:
+            sub = sp.subspace
+            if sub is None or sub.event is None:
                 continue
-            w = ev.getW()
-            if w is not None and torch.is_tensor(w) and w.requires_grad:
-                ev.setW(w.detach())
+            if getattr(sub, "muxed", False):
+                # Per-batch event reconstructs from prototype +
+                # selection; nothing to detach on ``event`` itself.
+                continue
+            w = sub.event.getW()
+            if (w is not None and torch.is_tensor(w)
+                    and not isinstance(w, nn.Parameter)
+                    and w.ndim >= 3 and w.requires_grad):
+                sub.event.setW(w.detach())
 
         # Per-run scratch.
         self.symbol_states = []
@@ -6008,7 +6112,16 @@ class BasicModel(BaseModel):
         try:
             sym_sub = self.symbolicSpace.subspace
             in_sub = self.inputSpace.subspace
-            wbuf = getattr(in_sub.what, 'getW', lambda: None)()
+            # Spec doc/specs/2026-05-21-subspace-slot-architecture.md
+            # Reader API: ``materialize(mode='what')`` is the per-batch
+            # what-content read. InputSpace's ``.what`` is a plain
+            # ``Tensor`` (no Parameter), so this returns the same
+            # ``[B, N, nWhat]`` slab as the legacy ``what.getW()``;
+            # the migrated call is contract-stable AND survives the
+            # Stage-4 strict assertion on Parameter-bearing slots.
+            wbuf = (in_sub.materialize(mode="what")
+                    if in_sub is not None
+                    and hasattr(in_sub, "materialize") else None)
             if wbuf is not None and torch.is_tensor(wbuf) and wbuf.dim() == 3:
                 B_t = wbuf.shape[0]
                 from util import parse as _parse
@@ -6479,7 +6592,7 @@ class ModelFactory:
         # projection codebook is a basis *expansion* to a wide prototype
         # space and is not reliably order-preserving, so it breaks that
         # invariant. Require the projection bypassed when monotonic.
-        if bool(arch.get("monotonic", False)) and normalize_codebook_mode(
+        if bool(arch.get("monotonic", False)) and Space.normalize_codebook_mode(
                 gsp(cfg, "ConceptualSpace", "codebook")) != "none":
             errors.append(
                 "architecture.monotonic=True requires "

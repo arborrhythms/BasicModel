@@ -137,11 +137,10 @@ def test_space_forward_arities():
     The optional second arg defaults to ``None`` so standalone single-arg
     callers still work.
 
-    Phase 1 additionally threads a per-sentence ``work=None`` carrier
-    through every Space.forward (unread until Phase 1.2+). It is excluded
-    from the content-arity check below; its presence as an *optional*
-    (defaulted) param is asserted separately so the threading contract
-    stays locked.
+    Post-2026-05-21 SentenceState dissolution: the per-sentence ``work``
+    carrier was retired. Grammar / serial-processing state lives directly
+    on ``WordSubSpace`` (cursor, recur_pass) and is reached via
+    ``subspace.wordSpace``. Forwards take ONLY data SubSpaces.
     """
     import inspect
     from Spaces import (InputSpace, PerceptualSpace, ModalSpace,
@@ -156,8 +155,7 @@ def test_space_forward_arities():
     }
     for cls, (min_req, max_params) in expected.items():
         sig = inspect.signature(cls.forward)
-        params = [p for name, p in sig.parameters.items()
-                  if name != "self" and name != "work"]
+        params = [p for name, p in sig.parameters.items() if name != "self"]
         required = [p for p in params
                     if p.default is inspect.Parameter.empty
                     and p.kind in (p.POSITIONAL_ONLY,
@@ -168,37 +166,30 @@ def test_space_forward_arities():
         assert len(required) == min_req, (
             f"{cls.__name__}.forward has {len(required)} required "
             f"(expected {min_req}): {list(sig.parameters)}")
-        # Phase 1 carrier must exist and be optional (defaulted).
-        assert "work" in sig.parameters, (
-            f"{cls.__name__}.forward missing the Phase 1 'work' carrier: "
-            f"{list(sig.parameters)}")
-        assert sig.parameters["work"].default is None, (
-            f"{cls.__name__}.forward 'work' must default to None: "
-            f"{list(sig.parameters)}")
+        assert "work" not in sig.parameters, (
+            f"{cls.__name__}.forward must not carry the retired Phase-1 "
+            f"'work' carrier: {list(sig.parameters)}")
 
 
 def test_all_spaces_have_single_arg_reverse():
     """Each Space.reverse() takes exactly one content arg (the subspace).
 
-    Phase 1 threads an optional ``work=None`` carrier through reverse too
-    (unread until Phase 1.2+); it is excluded from the content count and
-    its optional presence asserted, mirroring ``test_space_forward_arities``.
+    Post-2026-05-21 SentenceState dissolution: the ``work`` carrier is
+    gone from reverse too. Reverse generates its own reconstructed
+    estimates of intermediate SubSpaces (reconstruction contract); it
+    never reads forward bookkeeping.
     """
     import inspect
     from Spaces import InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
     for cls in (InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace):
         sig = inspect.signature(cls.reverse)
-        params = [p for name, p in sig.parameters.items()
-                  if name != "self" and name != "work"]
+        params = [p for name, p in sig.parameters.items() if name != "self"]
         assert len(params) == 1, (
             f"{cls.__name__}.reverse has {len(params)} content params "
             f"(expected 1): {list(sig.parameters)}")
-        assert "work" in sig.parameters, (
-            f"{cls.__name__}.reverse missing the Phase 1 'work' carrier: "
-            f"{list(sig.parameters)}")
-        assert sig.parameters["work"].default is None, (
-            f"{cls.__name__}.reverse 'work' must default to None: "
-            f"{list(sig.parameters)}")
+        assert "work" not in sig.parameters, (
+            f"{cls.__name__}.reverse must not carry the retired Phase-1 "
+            f"'work' carrier: {list(sig.parameters)}")
 
 
 # --- build_pipelines() smoke tests ---

@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", message=".*script_method.*",
                         category=DeprecationWarning)
 
 from util import parse
-from Spaces import Embedding, NULL_PERCEPT_KEY
+from Spaces import Embedding, PerceptualSpace
 
 
 class TestWordLexerRegex(unittest.TestCase):
@@ -67,9 +67,10 @@ class TestNullPerceptSlot(unittest.TestCase):
 
     def test_null_percept_key_in_vocab(self):
         emb = self._make_embedding()
-        self.assertIn(NULL_PERCEPT_KEY, emb.wv.key_to_index)
+        self.assertIn(PerceptualSpace.NULL_PERCEPT_KEY, emb.wv.key_to_index)
         self.assertEqual(
-            emb.wv.key_to_index[NULL_PERCEPT_KEY], emb.null_percept_idx)
+            emb.wv.key_to_index[PerceptualSpace.NULL_PERCEPT_KEY],
+            emb.null_percept_idx)
 
     def test_null_percept_vector_in_unit_ball(self):
         emb = self._make_embedding()
@@ -115,11 +116,24 @@ class TestIRInjectMask(unittest.TestCase):
         event_basis.getW = lambda: event_basis._W
         event_basis.setW = lambda v: setattr(event_basis, '_W', v)
         event_basis._W = event_data
+        # ``materialize(mode='event')`` is the spec-canonical per-batch
+        # event read (doc/specs/2026-05-21-subspace-slot-architecture.md);
+        # production code in ``create_ir_mask`` calls it instead of
+        # ``event.getW()``. For this mock, the muxed event is whatever's
+        # currently stashed on ``event_basis._W``.
+        # ``materialize(mode='event')`` is the spec-canonical per-batch
+        # event read (doc/specs/2026-05-21-subspace-slot-architecture.md);
+        # production code in ``create_ir_mask`` calls it instead of
+        # ``event.getW()``. ``set_event`` is the matching write surface.
+        # For this mock, both route through ``event_basis._W``.
         subspace = SimpleNamespace(
             event=event_basis,
             what=codebook,
             _active=active,
             is_empty=lambda: False,
+            materialize=lambda mode="active", k=None: (
+                event_basis._W if mode in ("event", "active") else None),
+            set_event=lambda v, **kw: setattr(event_basis, "_W", v),
         )
         return subspace, codebook_W[7], nWhat
 

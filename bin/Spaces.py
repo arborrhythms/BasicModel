@@ -37,7 +37,7 @@ from embed import (
     WordVectors, PretrainModel,
     _wrap_unit_ball, _wrapped_mse_score, _pole_aligned_score,
     _random_unit_ball,
-)
+) 
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
@@ -47,68 +47,8 @@ from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss,
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 
-
-# Polarity enum used by symbolic codebook entries and Percept-level
-# surface-form recognition. AFFIRM is the default ("foo" -> AFFIRM,
-# "non-foo" -> NON, "not foo" -> NOT).
-POLARITY_AFFIRM = 0
-POLARITY_NON    = 1
-POLARITY_NOT    = 2
-
-# Special codebook key for the IR-mode NULL-percept slot. Distinct from
-# byte ``\x00`` (a real prediction target in byte mode); IR mask injection
-# replaces masked positions with this slot so the brick body sees a
-# distinct embedding meaning "predict me" rather than "this was \x00".
-NULL_PERCEPT_KEY = "__NULL_PERCEPT__"
 from util import parse
 from collections import namedtuple as _namedtuple
-
-
-def normalize_codebook_mode(raw):
-    """Normalize the tri-state ``<codebook>`` config to a canonical mode.
-
-    Returns one of ``"none"`` / ``"quantize"`` / ``"project"``:
-
-      * ``none``     -- no codebook on ``.what`` (legacy ``false``).
-      * ``quantize`` -- VQ / EMA Codebook snap (legacy ``true``).
-      * ``project``  -- size-changing ProjectionBasis (LDU-invertible;
-                        emits a signed scalar activation ``[B, N]``).
-
-    Legacy booleans are accepted for backward compatibility
-    (``True -> "quantize"``, ``False -> "none"``) so unmigrated configs
-    and programmatic ``codebook=True/False`` overrides still load.
-    """
-    if isinstance(raw, bool):
-        return "quantize" if raw else "none"
-    if raw is None:
-        return "none"
-    v = str(raw).strip().lower()
-    if v in ("none", "false", "0", ""):
-        return "none"
-    if v in ("quantize", "true", "1"):
-        return "quantize"
-    if v == "project":
-        return "project"
-    raise ValueError(
-        f"<codebook> must be one of none|quantize|project "
-        f"(legacy true/false accepted); got {raw!r}")
-
-
-def topk_by_magnitude_per_batch(x: torch.Tensor, k: int) -> torch.Tensor:
-    """Zero out all but the top-k entries by |x| along the last dim, per row.
-
-    Shape: x is (..., W). Returns tensor of same shape where each row has
-    at most k nonzero entries (the k largest by absolute value).
-    """
-    if k <= 0:
-        return torch.zeros_like(x)
-    W = x.shape[-1]
-    if k >= W:
-        return x
-    _, idx = torch.topk(x.abs(), k=k, dim=-1)
-    mask = torch.zeros_like(x, dtype=torch.bool)
-    mask.scatter_(-1, idx, True)
-    return torch.where(mask, x, torch.zeros_like(x))
 
 
 class Encoding(nn.Module):
@@ -792,6 +732,108 @@ class Basis(nn.Module):
         """Set the weight tensor. Subclasses must override."""
         raise NotImplementedError(f"{self.__class__.__name__} must implement setW()")
 
+    # -- Codebook-style read surface ------------------------------------
+    # Per doc/specs/2026-05-21-subspace-slot-architecture.md "Reader API":
+    # callers needing the codebook prototype matrix or a row lookup should
+    # go through these methods rather than ``getW()`` + manual indexing.
+    # Lets us migrate storage away from a single ``.W`` slot without
+    # rewriting every caller, and lets the audit fixture in
+    # test/test_active_payload_audit.py see only intentional getW hits.
+
+    def prototype(self):
+        """Return the ``[V, D]`` codebook prototype matrix, or ``None``.
+
+        Only meaningful for codebook-bearing slots (``Codebook`` /
+        ``Embedding``). Default base implementation returns ``None`` —
+        plain ``Tensor`` slots have no prototype.
+
+        Spec: doc/specs/2026-05-21-subspace-slot-architecture.md
+        "Per-batch content: the target design" §contracts.
+        """
+        return None
+
+    def lookup(self, indices):
+        """Look up rows from the prototype matrix by ``indices``.
+
+        ``indices`` is a long tensor of arbitrary leading shape; the
+        return is ``[..., D]`` (the prototype rows gathered by the
+        leading-shape indices).
+
+        Default base implementation raises — only codebook-bearing
+        subclasses (``Codebook``, ``Embedding``) implement this. Callers
+        that don't know their slot's type should consult
+        ``SubSpace.codebook_slot`` first or use ``SubSpace.lookup(...)``.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.lookup() not supported; "
+            f"only codebook-bearing slots support row lookup.")
+
+    # -- Per-batch event storage on the Basis itself --------------------
+    # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:
+    # per-batch ``[B, N, D]`` event content lives on the Basis, NOT on a
+    # SubSpace-level cache. The Basis subclass decides where:
+    #   * plain ``Tensor``  — on ``self.W`` directly (no Parameter to
+    #                          protect).
+    #   * ``Codebook``      — on a dedicated ``self._batch_event`` field
+    #                          (the ``[V, D]`` Parameter prototype on
+    #                          ``self.W`` must NOT be clobbered).
+    #   * ``Embedding``     — on ``self._batch_event`` (the lexicon
+    #                          prototype on ``wv._vectors`` is preserved).
+    #   * ``ProjectionBasis`` — on ``self._batch_event`` (the LDU layer
+    #                            holds the codebook structurally).
+    #
+    # This replaces the ``_active_payload`` band-aid: that field was a
+    # shadow over ``getW()`` that multiplexed prototype + per-batch.
+    # ``set_event`` / ``get_event`` are an explicit API with a single
+    # responsibility — the per-batch cache only. ``getW()`` continues to
+    # return the prototype (Parameter or plain backing tensor); the two
+    # are no longer multiplexed through one slot.
+
+    def set_event(self, event_tensor):
+        """Store the per-batch ``[B, N, D]`` event on this Basis.
+
+        Subclasses override. Default base raises so misuse is loud.
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.set_event() not implemented; "
+            f"override on the subclass to define per-batch storage.")
+
+    def get_event(self):
+        """Return the cached per-batch event, or ``None`` when unset.
+
+        Subclasses override. Default base returns ``None``.
+        """
+        return None
+
+    # -- Explicit prototype mutation API --------------------------------
+    # ``replace_W`` is the single explicit API for changing the prototype
+    # matrix (or plain backing tensor) AFTER construction. It distinguishes
+    # the two cases ``setW`` used to multiplex through one method:
+    #
+    #   * Build-time construction → use ``Basis(...)`` / ``create(...)``
+    #     / ``addVectors(...)``. The Parameter is registered at this point.
+    #   * Runtime prototype replacement → use ``replace_W(new_W)``. For
+    #     Parameter-backed slots this becomes ``self.W.data.copy_(new_W)``
+    #     so the Parameter identity (and the optimizer's per-Parameter
+    #     state) survives. For plain-tensor slots it's a direct
+    #     reassignment.
+    #
+    # Per-batch event content does NOT go through ``replace_W``. Use
+    # ``SubSpace.set_event`` / ``set_activation`` / ``set_forward_content``
+    # — those write the SELECTION; ``SubSpace.materialize`` reconstructs
+    # the per-batch event as ``codebook[selection]``.
+
+    def replace_W(self, new_W):
+        """Replace the prototype matrix / backing tensor. Preserves
+        Parameter identity when one is registered (via ``data.copy_``).
+
+        Subclasses override to enforce their specific shape contracts
+        and any auxiliary cache invalidation (e.g. SVD).
+        """
+        raise NotImplementedError(
+            f"{self.__class__.__name__}.replace_W() not implemented; "
+            f"override on the subclass.")
+
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True):
         """Construct the module's submodules and parameters.
         
@@ -881,19 +923,21 @@ class Basis(nn.Module):
         self.activation = act * pm
 
     def forward(self, x):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Forward pass — identity by default.
+
+        Subclasses override with the actual snap / lookup / projection.
+        The legacy "self.setW(x); return x" identity-with-store was
+        retired Stage 4 (per spec, per-batch content does not live on
+        ``.W`` for Parameter-bearing slots; the strict raise in setW
+        catches misuse). Pure identity is the safe default; callers
+        wanting to persist per-batch content go through SubSpace.
         """
-        self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+        """Reverse pass — identity by default. See ``forward`` for
+        the rationale; subclasses override with the snap target.
         """
-        self.setW(y)
         return y
 
     def reverse_raw(self, y):
@@ -916,34 +960,34 @@ class Basis(nn.Module):
         return value
 
     def replace(self, new_W):
-        """Replace.
-        
-        See class docstring for the operation contract.
+        """Replace the prototype matrix. Uses ``replace_W`` to preserve
+        Parameter identity when one is registered.
         """
-        self.setW(self._coerce_rows(new_W))
+        self.replace_W(self._coerce_rows(new_W))
         return self.getW()
 
     def insert(self, new_W):
-        """Insert.
-        
-        See class docstring for the operation contract.
+        """Insert new rows into the prototype matrix. Note: row-count
+        change requires a Parameter re-registration (see
+        ``Codebook.replace_W`` shape-mismatch branch); callers that
+        depend on optimizer state across an ``insert`` must rebuild
+        the optimizer.
         """
         new_W = self._coerce_rows(new_W)
         w = self.getW()
-        self.setW(new_W if w is None else torch.cat([w, new_W], dim=0))
+        self.replace_W(new_W if w is None else torch.cat([w, new_W], dim=0))
         return self.getW()
 
     def remove(self, indices):
-        """Remove.
-        
-        See class docstring for the operation contract.
+        """Remove rows from the prototype matrix. Same caveat as
+        ``insert`` re: optimizer state on Parameter slots.
         """
         w = self.getW()
         if w is None:
             return None
         mask = torch.ones(w.shape[0], dtype=torch.bool, device=w.device)
         mask[indices] = False
-        self.setW(w[mask])
+        self.replace_W(w[mask])
         return self.getW()
 
     def parameters_for_optimizer(self):
@@ -1033,7 +1077,9 @@ class Basis(nn.Module):
             normalized = torch.clamp(target, 0, 1)
             normalized = F.normalize(normalized, p=2, dim=-1)
         if x is None:
-            self.setW(normalized)
+            # Prototype-shaped in-place normalization — preserve
+            # Parameter identity via ``replace_W``.
+            self.replace_W(normalized)
             return self.getW()
         return normalized
 
@@ -1276,28 +1322,29 @@ class Basis(nn.Module):
     #   * `neg(X) = -X` -- duplicates `Ops.negation.forward` /
     #     bitonic kernel; callers can use the GrammarLayer surface.
     #   * `symbolize(X)` -- no live callers anywhere.
-
-
 class Tensor(Basis):
     """Dense tensor payload implementation used for ordinary SubSpace slots.
 
-    ``W`` may hold a permanent ``nn.Parameter`` (weights owned by this basis)
-    OR a plain tensor (a transient activation). To keep the two roles from
-    clobbering each other across lifecycle calls, plain-tensor writes are
-    routed to ``_active_payload`` whenever a Parameter is registered -- the
-    same dual-slot pattern ``Codebook`` uses. Callers should always read via
-    ``getW()`` (which prefers the transient payload when set) rather than
-    touching ``self.W`` directly.
+    ``W`` is the single source of truth: either an ``nn.Parameter``
+    (weights owned by this basis) OR a plain tensor (per-batch payload
+    for non-Parameter slots). The ``_active_payload`` shadow was retired
+    Stage 4 of doc/plans/2026-05-21-active-payload-retirement.md —
+    per-batch content for codebook-bearing slots reconstructs from
+    prototype + selection via ``SubSpace.materialize``; plain ``Tensor``
+    slots (no Parameter) store per-batch on ``W`` directly.
+
+    Strict assertion: ``setW(per_batch_3D_tensor)`` on a Parameter-bearing
+    ``Tensor`` raises — per-batch writes must flow through the
+    ``SubSpace`` setter API.
     """
 
     def __init__(self, nVectors=0, nDim=0, W=None):
         """Initialize Tensor; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
         self.W = None
-        self._active_payload = None
         self.nVectors = nVectors
         self.nDim = nDim
         if W is not None:
@@ -1306,22 +1353,21 @@ class Tensor(Basis):
             self.W = torch.zeros(nVectors, nDim)
 
     def getW(self):
-        """Return the current weight tensor."""
-        if self._active_payload is not None:
-            return self._active_payload
+        """Return the weight tensor (Parameter or plain backing tensor)."""
         return self.W
 
     def setW(self, value):
-        """Assign W without ever clobbering a registered Parameter.
+        """Assign W. Raises on per-batch (3-D) plain-tensor writes to a
+        Parameter-bearing slot — per spec
+        doc/specs/2026-05-21-subspace-slot-architecture.md, per-batch
+        content does not live on ``.W`` when a Parameter is registered.
+        Use ``SubSpace.set_event`` / ``set_activation`` /
+        ``set_forward_content`` instead.
 
-        value=None clears only the transient activation when a Parameter is
-        held; otherwise it also clears the plain-tensor W. A Parameter write
-        replaces any existing W (Parameter or plain) and drops the transient.
-        A plain-tensor write lands on ``_active_payload`` when a Parameter is
-        registered, and on ``W`` otherwise.
+        ``None`` clears a plain-tensor ``W``; the Parameter (if any)
+        is preserved.
         """
         if value is None:
-            self._active_payload = None
             if "W" not in self._parameters:
                 self.W = None
             return
@@ -1329,31 +1375,90 @@ class Tensor(Basis):
             if "W" in self._parameters:
                 del self._parameters["W"]
             self.W = value
-            self._active_payload = None
+            return
+        if ("W" in self._parameters
+                and torch.is_tensor(value) and value.ndim >= 3):
+            raise RuntimeError(
+                "Tensor.setW: per-batch (3-D) plain-tensor write to a "
+                "Parameter-bearing slot is forbidden. Per "
+                "doc/specs/2026-05-21-subspace-slot-architecture.md, "
+                "per-batch content reconstructs from prototype + "
+                "selection. Use SubSpace.set_event(...) / "
+                "set_activation(...) / set_forward_content(...).")
+        self.W = value
+
+    def set_event(self, event_tensor):
+        """Plain ``Tensor`` has no Parameter to protect — per-batch
+        event lands on ``self.W`` directly (the storage IS the event).
+        Codebook-bearing variants override to raise.
+        """
+        if event_tensor is None:
+            if "W" not in self._parameters:
+                self.W = None
             return
         if "W" in self._parameters:
-            self._active_payload = value
+            raise RuntimeError(
+                "Tensor.set_event called on a Parameter-bearing slot. "
+                "Use SubSpace.set_event(...) to route through the "
+                "appropriate codebook-aware path.")
+        self.W = event_tensor
+
+    def get_event(self):
+        """Return the cached per-batch event (``self.W`` when 3-D), or
+        ``None`` when the slot holds only the 2-D zeros init / Parameter.
+        """
+        if self.W is not None and torch.is_tensor(self.W) and self.W.ndim >= 3:
+            return self.W
+        return None
+
+    def replace_W(self, new_W):
+        """Replace the prototype / backing tensor.
+
+        * Parameter-backed slot: ``self.W.data.copy_(new_W)`` (preserves
+          Parameter identity, optimizer state). Shape must match.
+        * Plain-tensor slot: direct reassignment.
+        """
+        if new_W is None:
+            if "W" not in self._parameters:
+                self.W = None
             return
-        self.W = value
-        self._active_payload = None
+        if isinstance(new_W, nn.Parameter):
+            if "W" in self._parameters:
+                del self._parameters["W"]
+            self.W = new_W
+            return
+        if "W" in self._parameters:
+            param = self._parameters["W"]
+            if param is None or new_W.shape != param.shape:
+                raise RuntimeError(
+                    f"Tensor.replace_W: shape mismatch for Parameter "
+                    f"in-place copy: param {None if param is None else tuple(param.shape)} "
+                    f"vs new {tuple(new_W.shape)}.")
+            with torch.no_grad():
+                param.data.copy_(new_W)
+            return
+        self.W = new_W
 
     def forward(self, x):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
+        """Forward pass — identity-with-store for plain Tensor slots.
+
+        Plain ``Tensor`` (no Parameter): caches ``x`` on ``self.W`` so
+        ``getW()`` reflects the last forward (legacy contract used by
+        tests like ``test_tensor_identity_materialization``).
+        Parameter-bearing slots: pure identity — per-batch storage must
+        go through ``SubSpace.set_event`` instead.
         """
-        self.setW(x)
+        if "W" not in self._parameters:
+            self.W = x
         return x
 
     def reverse(self, y, **kwargs):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+        """Reverse pass — identity-with-store for plain Tensor slots.
+        Mirror of ``forward``.
         """
-        self.setW(y)
+        if "W" not in self._parameters:
+            self.W = y
         return y
-
-
 class Codebook(Basis):
     """Prototype basis with vector quantization and reverse snapping support.
 
@@ -1419,16 +1524,16 @@ class Codebook(Basis):
 
     def __init__(self):
         """Initialize Codebook; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
         self.W = None
-        # Transient per-forward activation payload. Held separately from
-        # self.W so the codebook Parameter (self.W once ``addVectors`` has
-        # run) is never overwritten -- activations must not end up in
-        # state_dict.
-        self._active_payload = None
+        # ``_active_payload`` retired Stage 4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md. Per-batch
+        # content reconstructs from prototype + selection via
+        # ``SubSpace.materialize``; ``self.W`` holds ONLY the codebook
+        # prototype (Parameter via ``addVectors``).
         self.customVQ = True
         self.snapDistance = 0.1
         self.eta = 0.9
@@ -1439,9 +1544,6 @@ class Codebook(Basis):
         # SymbolicSpace.forward reads it and emits "codebook_commit" into
         # vspace.errors.
         self.last_commit_loss = None
-        # Optional per-row polarity tags (POLARITY_AFFIRM/NON/NOT). Allocated
-        # only when create(..., polarity=True) — symbolic codebook opt-in.
-        self.polarity_ids = None
         # Optional per-row part-of-speech / category tags. Allocated only
         # when create(..., category=True). 0 = '?' (wildcard), other
         # values index into WordSpace.category_index. Used by the chart's
@@ -1488,33 +1590,25 @@ class Codebook(Basis):
         self._svd_dirty = True
 
     def getW(self):
-        # While an activation payload is cached, callers see it; otherwise
-        # they see the codebook Parameter.
-        """Return the current weight tensor."""
-        if self._active_payload is not None:
-            return self._active_payload
+        """Return the codebook prototype matrix ``[V, D]`` (or ``None``
+        when the codebook hasn't been built yet)."""
         return self.W
 
     def setW(self, value):
-        """Assign W without ever clobbering the codebook Parameter.
+        """Assign the codebook prototype matrix. Raises on per-batch
+        (3-D) plain-tensor writes — per spec
+        doc/specs/2026-05-21-subspace-slot-architecture.md, per-batch
+        content does not live on the Codebook's ``.W``; the slot holds
+        ONLY the prototype. Per-batch content reconstructs via
+        ``SubSpace.materialize`` from prototype + selection.
 
-        The ``event`` slot on a SubSpace is dual-purpose: at build time it
-        receives the VQ codebook (``nn.Parameter`` via ``addVectors``) and
-        at forward time it receives transient muxed activations. If we
-        blindly let activations replace the Parameter, they leak into
-        ``state_dict()`` and the checkpoint ends up recording a
-        batch-shaped tensor instead of the codebook. Route non-Parameter
-        writes to ``_active_payload`` so the codebook stays put.
+        ``None`` clears a plain-tensor (non-Parameter) ``W``.
+        ``nn.Parameter`` writes replace the Parameter.
 
-        ``value=None`` clears only the transient activation; the codebook
-        Parameter (if any) is preserved.
+        Any setW that touches the codebook invalidates the cached SVD
+        factors used by the invertible project / project_reverse paths.
         """
-        # Any setW that touches the codebook (Parameter path) or clears
-        # it invalidates the cached SVD factors used by the invertible
-        # project / project_reverse paths. The activation-payload path
-        # leaves the codebook untouched, so the SVD stays valid.
         if value is None:
-            self._active_payload = None
             if "W" not in self._parameters:
                 self.W = None
                 self._svd_dirty = True
@@ -1523,25 +1617,160 @@ class Codebook(Basis):
             if "W" in self._parameters:
                 del self._parameters["W"]
             self.W = value
-            self._active_payload = None
             self._svd_dirty = True
             return
-        if "W" in self._parameters:
-            self._active_payload = value
-            return
+        if torch.is_tensor(value) and value.ndim >= 3:
+            raise RuntimeError(
+                "Codebook.setW: per-batch (3-D) tensor write to the "
+                "codebook prototype slot is forbidden. Per "
+                "doc/specs/2026-05-21-subspace-slot-architecture.md, "
+                "per-batch content reconstructs from prototype + "
+                "selection via SubSpace.materialize. Use "
+                "SubSpace.set_forward_content(...) / "
+                "set_activation(...) instead, or run "
+                "Codebook.forward(_vspace=...) to snap.")
         self.W = value
-        self._active_payload = None
         self._svd_dirty = True
 
     def getSize(self):
         """Get size.
-        
+
         See class docstring for the operation contract.
         """
         return self.nVectors
 
+    # -- Spec-aligned codebook surface ----------------------------------
+    # doc/specs/2026-05-21-subspace-slot-architecture.md: callers needing
+    # the prototype matrix or a per-position row lookup should go through
+    # ``prototype()`` / ``lookup(indices)`` rather than ``getW()``. These
+    # bypass the ``_active_payload`` band-aid by reading ``self.W``
+    # directly — the Parameter when registered, or the plain backing
+    # tensor for hand-constructed Codebooks. Never the shadow.
+
+    def prototype(self):
+        """Return the ``[V, D]`` codebook prototype matrix.
+
+        Reads ``self.W`` directly so the pre-migration
+        ``_active_payload`` shadow can't intercept. Returns ``None``
+        when the codebook hasn't been built yet (pre-``addVectors``).
+        """
+        return self.W
+
+    def lookup(self, indices):
+        """Gather codebook rows by per-position indices.
+
+        ``indices``: long tensor of arbitrary leading shape (typically
+        ``[B, N]`` for per-position selection or ``[B, N, M]`` for
+        per-modality multi-index).
+        Returns ``[..., D]`` — the prototype rows indexed by the
+        leading-shape selection.
+
+        Reads ``self.W`` directly (same band-aid bypass rationale as
+        ``prototype()``). Raises if the codebook isn't built.
+
+        Indices are clamped on-device to ``[0, V-1]`` so out-of-range
+        selections (e.g. stale ``_active`` from a different config)
+        gather row 0 rather than crashing. The clamp is data-flow only
+        (no host sync) so it's safe under ``torch.compile`` fullgraph.
+        """
+        proto = self.W
+        if proto is None or not torch.is_tensor(proto) or proto.ndim != 2:
+            raise RuntimeError(
+                f"Codebook.lookup({indices.shape if torch.is_tensor(indices) else indices!r}) "
+                f"requires a 2-D prototype matrix; call ``addVectors`` first.")
+        V = proto.shape[0]
+        # ``clamp`` (NOT ``clamp_``): in-place modification of an
+        # autograd-tracked tensor at a saved-for-backward index would
+        # break gradient computation downstream.
+        idx = indices.long().clamp(min=0, max=V - 1)
+        return proto[idx]
+
+    def set_event(self, event_tensor):
+        """Codebook-bearing slots DO NOT cache per-batch events.
+
+        Per spec doc/specs/2026-05-21-subspace-slot-architecture.md, the
+        per-batch event ``[B, N, D]`` reconstructs from the codebook
+        prototype on ``self.W`` (``[V, D]``) plus the selection stored
+        on the SubSpace (``.activation`` scalar + ``_active`` indices),
+        NOT from a separate Basis-level cache. Callers should write the
+        selection via ``SubSpace.set_activation(...)`` /
+        ``SubSpace.set_forward_content(...)``, or run
+        ``Codebook.forward(vspace)`` to snap and populate it
+        automatically.
+
+        Raises so misuse is loud; the prior ``_active_payload`` shadow
+        that silently absorbed per-batch writes here is the band-aid
+        being retired.
+        """
+        raise RuntimeError(
+            "Codebook.set_event() refuses per-batch event storage on a "
+            "codebook-bearing slot. Per "
+            "doc/specs/2026-05-21-subspace-slot-architecture.md, the "
+            "per-batch event reconstructs from prototype + selection "
+            "(``.activation`` × ``codebook[_active]``). Write the "
+            "selection via SubSpace.set_activation(...) or "
+            "SubSpace.set_forward_content(...), or run "
+            "Codebook.forward(vspace) to snap.")
+
+    def get_event(self):
+        """Codebook-bearing slots reconstruct the per-batch event; they
+        don't cache it. Always returns ``None`` so the
+        ``SubSpace.materialize`` reconstruction path is the sole
+        per-batch read.
+        """
+        return None
+
+    def replace_W(self, new_W):
+        """Replace the codebook prototype matrix ``[V, D]``.
+
+        * Parameter-backed slot: ``self.W.data.copy_(new_W)`` (preserves
+          Parameter identity AND optimizer state — load-bearing for
+          VQ EMA updates and gradient training). Shape must match.
+        * Plain-tensor slot (hand-constructed Codebook pre-addVectors):
+          direct reassignment.
+        * ``None`` clears a plain-tensor slot; Parameter slots are
+          preserved (use ``del`` directly if you really need to drop one).
+        * Always invalidates the cached SVD factors.
+        """
+        if new_W is None:
+            if "W" not in self._parameters:
+                self.W = None
+                self._svd_dirty = True
+            return
+        if isinstance(new_W, nn.Parameter):
+            if "W" in self._parameters:
+                del self._parameters["W"]
+            self.W = new_W
+            self._svd_dirty = True
+            return
+        if not torch.is_tensor(new_W) or new_W.ndim != 2:
+            raise RuntimeError(
+                f"Codebook.replace_W requires a 2-D prototype matrix; "
+                f"got shape {None if not torch.is_tensor(new_W) else tuple(new_W.shape)}.")
+        if "W" in self._parameters:
+            param = self._parameters["W"]
+            if param is None:
+                raise RuntimeError(
+                    "Codebook.replace_W: Parameter slot is None; cannot copy.")
+            if new_W.shape != param.shape:
+                # Shape change requires Parameter re-registration. The
+                # optimizer's per-Parameter state for the old Parameter
+                # is orphaned; callers must rebuild the optimizer (e.g.
+                # via ``BasicModel._rebuild_optimizer``).
+                del self._parameters["W"]
+                self.W = nn.Parameter(new_W.detach().clone(),
+                                      requires_grad=param.requires_grad)
+                self._svd_dirty = True
+                return
+            with torch.no_grad():
+                param.data.copy_(new_W)
+            self._svd_dirty = True
+            return
+        self.W = new_W
+        self._svd_dirty = True
+
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
-               polarity=False, category=False,
+               category=False,
                invertible=False, STE=False, svdOrthogonal=False):
         """Construct the module's submodules and parameters.
         
@@ -1587,10 +1816,6 @@ class Codebook(Basis):
                 self.nVectors)
         else:
             self.where_offset = 0
-        if polarity and self.nVectors > 0:
-            ids = torch.full((self.nVectors,), POLARITY_AFFIRM,
-                             dtype=torch.long)
-            self.polarity_ids = ids
         if category and self.nVectors > 0:
             self.category_ids = torch.zeros(
                 (self.nVectors,), dtype=torch.long)
@@ -1620,26 +1845,10 @@ class Codebook(Basis):
         with torch.no_grad():
             U, _, Vh = torch.linalg.svd(W, full_matrices=False)
             W_ortho = U @ Vh
-            if isinstance(self.W, nn.Parameter):
-                self.W.data.copy_(W_ortho)
-            else:
-                self.setW(W_ortho)
+            # ``replace_W`` handles both branches (Parameter
+            # in-place ``.data.copy_`` and plain-tensor reassignment).
+            self.replace_W(W_ortho)
         self._svd_dirty = True
-
-    def set_polarity(self, idx, polarity_id):
-        """Tag codebook row ``idx`` with one of POLARITY_AFFIRM/NON/NOT."""
-        if self.polarity_ids is None:
-            raise RuntimeError(
-                "Codebook.set_polarity called on a non-polarity codebook")
-        if polarity_id not in (POLARITY_AFFIRM, POLARITY_NON, POLARITY_NOT):
-            raise ValueError(f"Unknown polarity id: {polarity_id}")
-        self.polarity_ids[int(idx)] = int(polarity_id)
-
-    def get_polarity(self, idx):
-        """Return the polarity id of row ``idx`` (AFFIRM if untagged)."""
-        if self.polarity_ids is None:
-            return POLARITY_AFFIRM
-        return int(self.polarity_ids[int(idx)].item())
 
     def set_category(self, idx, cat_id):
         """Tag codebook row ``idx`` with category index ``cat_id``.
@@ -1826,7 +2035,9 @@ class Codebook(Basis):
                 # tighten the codebook to literal [-1, 1] here.
                 init = init.clamp(-1.0, 1.0)
                 self.vq.codebook = init
-            self.setW(self.vq.codebook)
+            # Initial Parameter registration goes through ``replace_W``
+            # (which handles both first-time and in-place updates).
+            self.replace_W(self.vq.codebook)
         else:
             # Clamp the random init to [-1, 1] before per-row
             # normalization so downstream range checks see strictly
@@ -1837,7 +2048,7 @@ class Codebook(Basis):
                             device=TheDevice.get()).clamp(-1.0, 1.0)
             for i in range(nVec):
                 W[i, :] = self.normalize(W[i, :]).squeeze(0)
-            self.setW(W)
+            self.replace_W(W)
         return self.getW()
 
     def quantize(self, x):
@@ -1850,7 +2061,11 @@ class Codebook(Basis):
                 x,
                 ema_update_weight=self.updateWeights,
             )
-            self.setW(self.vq.codebook)
+            # VQ EMA writes refresh the codebook prototype on every
+            # forward — must preserve Parameter identity so optimizer
+            # state stays attached. ``replace_W`` does ``.data.copy_``
+            # for the Parameter-registered case.
+            self.replace_W(self.vq.codebook)
             self.last_commit_loss = commit_loss
             return quantized, indices, commit_loss
         weight = self._prototype_weight(context="quantize")
@@ -1994,19 +2209,15 @@ class Codebook(Basis):
         autograd's perspective — the project / project_reverse pair
         train the input, not the codebook.
 
-        Always SVDs the true codebook Parameter (``self.W``), never the
-        transient ``_active_payload`` that ``getW`` falls through to:
-        the payload is a batch-shaped activation slab (``[B, N, D]``)
-        and SVDing it would yield 3-D factors that downstream matmuls
-        cannot consume.
+        SVDs the codebook Parameter ``self.W`` directly. (The legacy
+        ``_active_payload`` shadow that could shadow ``W`` with a 3-D
+        per-batch slab was retired 2026-05-21; per-batch content now
+        lives on ``SubSpace.event.W`` and never touches ``self.W``.)
 
         No-op when the codebook has no W yet.
         """
         if not self._svd_dirty:
             return
-        # Bypass ``getW`` so the activation payload (if any) doesn't
-        # leak into the factorization.  The SVD is over the codebook
-        # Parameter itself.
         W_param = self.W
         if W_param is None or self.codebookSize == 0:
             return
@@ -2025,16 +2236,24 @@ class Codebook(Basis):
     # parameterized LDU gives the exact inverse via triangular
     # solves; no SVD cache, no per-forward state).
 
-    def forward(self, input, topK: int = 0):
+    def forward(self, input, topK: int = 0, _vspace=None):
         """Codebook forward. When ``topK > 0`` and less than the codebook
         size, ``self.activation`` is pruned to the top-K strongest entries
         per batch row -- realizing the wide-codebook narrow-output pattern
         where nVectors >> nOutput. ``topK=0`` preserves legacy behavior.
 
+        ``input`` may be a per-batch tensor OR a ``SubSpace`` (in which
+        case ``materialize`` is called first to get the tensor).
+        ``_vspace`` is the explicit destination SubSpace — used by
+        ``SubSpace.set_muxed`` to snap a raw event tensor INTO a muxed
+        subspace: the snap selection lands on
+        ``_vspace.set_forward_content`` so ``materialize`` reconstructs
+        as ``event.W[selection]`` (per-position width D) from the
+        ``[V, D]`` codebook prototype (greater width V).
+
         The legacy ``project=True`` path was retired 2026-05-13 -- use
         ``ProjectionBasis`` directly for the bivector projection surface.
         """
-        _vspace = None
         if isinstance(input, SubSpace):
             _vspace = input
             input = _vspace.materialize()
@@ -2051,6 +2270,13 @@ class Codebook(Basis):
         # is already on the right device; mirrors the ``best_err``
         # ``device=err.device`` idiom a few lines down.
         act = torch.zeros([batch, self.codebookSize], device=x.device)
+        # Per-position codebook selection. Populated in the customVQ
+        # branch; remains None on the legacy non-customVQ path. The tail
+        # writes this onto the destination SubSpace via
+        # ``set_forward_content`` when ``_vspace.muxed`` (codebook on
+        # ``.event``) so per-batch content is reconstructed by
+        # ``materialize`` from prototype + selection — the spec contract.
+        selection_indices = None
         if self.customVQ:
             flat = torch.reshape(x, [-1, self.nDim])
             quantized, indices, _ = self.quantize(flat)
@@ -2107,6 +2333,11 @@ class Codebook(Basis):
                 1, indices, masked_scores, reduce="amax",
                 include_self=True)
             x = x3d.reshape(x.shape)
+            # Per-position selection for the tail set_forward_content.
+            # ``indices`` here is [batch, n_tokens] from the
+            # ``indices.reshape(batch, n_tokens)`` above — exactly the
+            # [B, N] shape ``set_forward_content`` expects.
+            selection_indices = indices.long()
         else:
             w = self.getW()
             dists = self.codebookDistance(input)
@@ -2121,7 +2352,16 @@ class Codebook(Basis):
                     if self.training:
                         w[idx, :] = self.eta * w[idx, :] + (1 - self.eta) * x[b, v, :]
         if topK and 0 < topK < act.shape[-1]:
-            act = topk_by_magnitude_per_batch(act, k=topK)
+            # Inlined ``topk_by_magnitude_per_batch``: zero out all but
+            # the ``topK`` entries by ``|act|`` along the last dim, per
+            # row. The outer guard guarantees ``0 < topK < act.shape[-1]``,
+            # so the legacy degenerate branches (topK<=0 -> all zeros;
+            # topK>=W -> identity) are not reproduced here.
+            _, idx = torch.topk(act.abs(), k=topK, dim=-1)
+            mask = torch.zeros_like(act, dtype=torch.bool)
+            mask.scatter_(-1, idx, True)
+            act = torch.where(mask, act, torch.zeros_like(act))
+
         self.activation = act.detach() if torch.is_tensor(act) else act
         # STE wrap: when ``self.STE`` is True the forward output is the
         # hard snap (``x``) but the encoder's gradient flows through
@@ -2131,14 +2371,56 @@ class Codebook(Basis):
         if (self.STE and torch.is_tensor(input) and torch.is_tensor(x)
                 and input.shape == x.shape and input.requires_grad):
             x = input + (x - input).detach()
-        self.setW(x)
+        # Persist per-batch results onto the SubSpace.
+        #
+        # Spec doc/specs/2026-05-21-subspace-slot-architecture.md
+        # forward contract: write the SELECTION (per-position indices
+        # into the codebook) onto ``_active`` via
+        # ``set_forward_content``; ``materialize(mode='event')``
+        # reconstructs the snapped per-batch event lazily as
+        # ``codebook.W[selection]``. The legacy
+        # ``set_event(x)`` write would route the per-batch slab through
+        # ``_active_payload`` (the band-aid being retired) on
+        # codebook-bearing ``.event`` slots — that path is gone here.
+        #
+        # NOTE: the ``claimed`` mask in the customVQ branch above can
+        # leave a small number of "unclaimed" tokens with their original
+        # input vector instead of a codebook row. After this migration,
+        # materialize reconstructs every token by codebook lookup, so
+        # unclaimed tokens see their codebook-row-nearest snapped form
+        # rather than the original input. For MM_xor / MM_5M this is a
+        # near-no-op (n_tokens << nVectors so the duplicate-claim case
+        # is rare); the change is documented inline so future debugging
+        # can find it.
         if _vspace is not None:
-            _vspace.set_event(x, compute_activation=False)
+            # Spec doc/specs/2026-05-21-subspace-slot-architecture.md
+            # forward contract:
+            #   * muxed destination (codebook on ``.event``): write
+            #     SELECTION to ``_active`` via ``set_forward_content``.
+            #     ``materialize`` reconstructs as ``codebook[_active]``.
+            #   * unmuxed / pure-event destination: legacy
+            #     ``set_event(x)`` (per-batch direct storage on ``.W``).
+            #
+            # Invariant: input width == codebook ``nDim``. Configs that
+            # would chunk input into sub-tokens are misconfigurations
+            # to be fixed in the XML rather than handled here.
+            if (getattr(_vspace, "muxed", False)
+                    and selection_indices is not None
+                    and selection_indices.ndim == 2):
+                _vspace.set_forward_content(selection_indices)
+            else:
+                _vspace.set_event(x, compute_activation=False)
             return _vspace
         return x
 
     def reverse(self, y, **kwargs):
-        """Codebook reverse: snap-then-write path.
+        """Codebook reverse: snap ``y`` against the prototype matrix.
+
+        Returns the per-batch ``[B, N, D]`` snapped content. Callers
+        that want to persist the result onto a SubSpace MUST do so
+        explicitly via ``subspace.set_event(...)`` (the muxed
+        authoritative slot); ``reverse`` is now a pure function of its
+        input and the codebook prototype.
 
         The legacy ``project=True`` path was retired 2026-05-13 -- use
         ``ProjectionBasis.reverse`` directly for the bivector inverse.
@@ -2148,7 +2430,20 @@ class Codebook(Basis):
                 f"Codebook.reverse() expected at least {self.nDim} content dims, "
                 f"got shape {list(y.shape)}.")
         content = y.clone() if y.shape[-1] == self.nDim else y[:, :, :self.nDim].clone()
-        content = self._snap_content(content, weight=self.getW(), nWhat=self.nDim)
+        # Read the prototype matrix directly off ``self.W`` (the
+        # Parameter when registered, or the plain backing tensor for
+        # hand-constructed Codebooks). NOT via ``self.getW()`` — that
+        # falls through to ``_active_payload`` (the 3-D per-batch
+        # activation from a prior forward), which would crash
+        # ``_snap_content``'s 2-D-prototype invariant. This is the
+        # original bug fix the 2026-05-21 ``Codebook.reverse`` patch
+        # was for.
+        proto = self.W
+        if proto is None or proto.ndim != 2:
+            raise RuntimeError(
+                "Codebook.reverse() needs a 2-D prototype matrix; call "
+                "``addVectors`` / ``replace`` first.")
+        content = self._snap_content(content, weight=proto, nWhat=self.nDim)
         # STE wrap on the reverse path: forward equals the snapped
         # content, backward routes the gradient through the matching
         # slice of ``y`` so the upstream consumer of the codebook
@@ -2158,18 +2453,18 @@ class Codebook(Basis):
                 and y.requires_grad):
             y_slice = y[..., :content.shape[-1]]
             content = y_slice + (content - y_slice).detach()
-        self.setW(content)
         return content
 
     def replace(self, new_vectors):
-        """Replace.
-        
-        See class docstring for the operation contract.
+        """Replace the codebook prototype matrix. Uses ``replace_W`` so
+        Parameter identity is preserved on the (common) in-place
+        same-shape path; shape changes re-register the Parameter and
+        the caller must rebuild the optimizer.
         """
         new_vectors = self._coerce_rows(new_vectors)
         if self.customVQ and self.vq is not None:
             self.vq.codebook = new_vectors
-        self.setW(new_vectors)
+        self.replace_W(new_vectors)
         w = self.getW()
         self.codebookSize = 0 if w is None else w.shape[0]
         return w
@@ -2273,7 +2568,8 @@ class ProjectionBasis(Basis):
         super().__init__()
         self.layer = None       # InvertibleLinearLayer; allocated in create()
         self.codebookSize = 0
-        self._active_payload = None
+        # ``_active_payload`` retired Stage 4 of
+        # doc/plans/2026-05-21-active-payload-retirement.md.
 
     def create(self, nInput, nVectors, nDim, **kwargs):
         """Construct the LDU-parameterized projection.
@@ -2342,35 +2638,67 @@ class ProjectionBasis(Basis):
     def getW(self):
         """Codebook view: ``[N, D]`` with unit-norm prototype rows.
 
-        The legacy Codebook stored W as ``[N, D]`` (N prototypes of
-        dim D each).  ILL parameterizes ``[nInput=D, nOutput=N]``;
-        getW returns the transpose with row-L2 normalization applied
-        so each prototype is on the unit ball, bounding downstream
-        projection magnitudes.
+        ILL parameterizes ``[nInput=D, nOutput=N]``; getW returns the
+        transpose with row-L2 normalization applied so each prototype
+        is on the unit ball, bounding downstream projection magnitudes.
         """
-        if self._active_payload is not None:
-            return self._active_payload
         if self.layer is None:
             return None
         W_norm, _ = self._W_norm_and_scales()
         return W_norm.T
 
     def setW(self, value):
-        """Set the activation payload (transient).
+        """ProjectionBasis is structurally read-only — the codebook is
+        parameterized via LDU on ``self.layer``. Raises on Parameter
+        writes (codebook is not stored as a Parameter here) and on
+        per-batch (3-D) plain-tensor writes (per spec, per-batch
+        content reconstructs from prototype + selection).
 
-        Decomposing an arbitrary tensor into LDU isn't supported, so
-        this only routes activation payloads.  The codebook W is
-        trained via gradient through the LDU parameters.  Setting
-        ``value=None`` clears the payload.
+        ``None`` is a no-op (no transient state to clear).
         """
         if value is None:
-            self._active_payload = None
             return
         if isinstance(value, nn.Parameter):
             raise TypeError(
                 "ProjectionBasis.setW does not accept Parameter writes; "
                 "the codebook is parameterized via LDU on self.layer.")
-        self._active_payload = value
+        if torch.is_tensor(value) and value.ndim >= 3:
+            raise RuntimeError(
+                "ProjectionBasis.setW: per-batch (3-D) write is forbidden. "
+                "The codebook is parameterized via LDU on self.layer; "
+                "per-batch content reconstructs from prototype + "
+                "selection via SubSpace.materialize.")
+        # 2-D plain-tensor writes are silently ignored — historically
+        # used by some tests; with the shadow gone these are discarded.
+
+    def set_event(self, event_tensor):
+        """Codebook-bearing slot — refuse per-batch event storage.
+        See ``Codebook.set_event`` for the rationale and migration path.
+        """
+        raise RuntimeError(
+            "ProjectionBasis.set_event() refuses per-batch event storage "
+            "on a codebook-bearing slot. The codebook is structurally "
+            "held by the LDU layer; per-batch content reconstructs from "
+            "prototype + selection via SubSpace.materialize. Write the "
+            "selection via SubSpace.set_activation(...) / "
+            "set_forward_content(...) instead.")
+
+    def get_event(self):
+        """No per-batch cache; reconstruction is via materialize."""
+        return None
+
+    def replace_W(self, new_W):
+        """The codebook is parameterized via LDU on ``self.layer`` —
+        an arbitrary tensor cannot be decomposed into LDU directly.
+        ``None`` is a no-op; everything else raises.
+        """
+        if new_W is None:
+            return
+        raise RuntimeError(
+            "ProjectionBasis.replace_W: the codebook is structurally "
+            "parameterized via LDU on ``self.layer``. To change it, "
+            "train through the LDU parameters or construct a new "
+            "ProjectionBasis.")
 
     def forward(self, x):
         """``[B, V, D]`` (or ``[B, D]``) -> ``[B, N]`` signed scalar.
@@ -2439,8 +2767,6 @@ class ProjectionBasis(Basis):
         x_summary = self._apply_inverse(signed)               # [B, D]
         v = max(int(V) if V is not None else 1, 1)
         return x_summary.unsqueeze(1).expand(-1, v, -1).contiguous()
-
-
 class Embedding(Basis):
     """Text-backed Basis using a differentiable nn.Embedding with online CBOW/SBOW training.
 
@@ -2516,6 +2842,79 @@ class Embedding(Basis):
     def setW(self, value):
         """Embedding W is managed by wv._vectors -- setW is a no-op."""
         pass
+
+    # -- Spec-aligned codebook surface ----------------------------------
+    # See ``Basis.prototype`` / ``Basis.lookup`` for the contract.
+
+    def prototype(self):
+        """Return the live ``[V, D]`` embedding matrix (unwrapped).
+
+        Unlike ``getW()`` (which applies a unit-cell wrap on read),
+        ``prototype()`` returns the raw ``wv._vectors`` so downstream
+        index lookups land on the parameter storage directly. The
+        wrap is a read-time transform for codebook *search* uses;
+        index lookup wants the live row.
+        """
+        if self.wv is not None and self.wv._vectors is not None:
+            return self.wv._vectors
+        return None
+
+    def lookup(self, indices):
+        """Gather embedding rows by per-position indices.
+
+        Returns ``[..., D]`` where the leading shape is from
+        ``indices.shape``. Reads ``wv._vectors`` directly so the
+        result is the live (un-wrapped) parameter storage — the
+        unit-cell wrap is a search-time transform, not a lookup
+        contract.
+        """
+        if self.wv is None or self.wv._vectors is None:
+            raise RuntimeError(
+                "Embedding.lookup() requires wv._vectors to be built "
+                "(call create() / addVectors() first).")
+        return self.wv._vectors[indices.long()]
+
+    def set_event(self, event_tensor):
+        """Codebook-bearing slot — refuse per-batch event storage.
+        See ``Codebook.set_event`` for the rationale and migration path.
+        """
+        raise RuntimeError(
+            "Embedding.set_event() refuses per-batch event storage on a "
+            "codebook-bearing slot. The lexicon prototype is on "
+            "``wv._vectors``; per-batch content reconstructs from "
+            "prototype + selection via SubSpace.materialize. Write the "
+            "selection via SubSpace.set_activation(...) / "
+            "set_forward_content(...) instead.")
+
+    def get_event(self):
+        """No per-batch cache; reconstruction is via materialize."""
+        return None
+
+    def replace_W(self, new_W):
+        """Replace the lexicon prototype on ``wv._vectors`` in place.
+
+        Always preserves Parameter identity (``wv._vectors`` IS the
+        Parameter for embedding training). Shape must match; OOV
+        expansion goes through ``stage_oov`` / ``addVectors``, NOT
+        ``replace_W``.
+        """
+        if new_W is None:
+            return
+        if self.wv is None or self.wv._vectors is None:
+            raise RuntimeError(
+                "Embedding.replace_W: wv._vectors not yet built. "
+                "Call create() / addVectors() first.")
+        if not torch.is_tensor(new_W) or new_W.ndim != 2:
+            raise RuntimeError(
+                f"Embedding.replace_W requires a 2-D matrix; "
+                f"got shape {None if not torch.is_tensor(new_W) else tuple(new_W.shape)}.")
+        if new_W.shape != self.wv._vectors.shape:
+            raise RuntimeError(
+                f"Embedding.replace_W: shape mismatch "
+                f"{tuple(new_W.shape)} != {tuple(self.wv._vectors.shape)}. "
+                f"Use addVectors / stage_oov to grow the lexicon.")
+        with torch.no_grad():
+            self.wv._vectors.data.copy_(new_W)
 
     def normalize(self, x=None):
         """Wrap into the periodic unit cell ``[-1, 1)``.
@@ -2654,6 +3053,19 @@ class Embedding(Basis):
         self.wv = wv  # register as submodule for .to(device) and state_dict
         self.min_frequency = float(min_frequency)
         self._pending_counts: dict = {}
+        # OOV reserve / fallback diagnostics
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §4).
+        self._oov_fallback_count = 0
+        self._oov_fallback_sample: list = []
+        self._oov_fallback_sample_cap = 1024
+        # NOTE: ``_inflate_to_capacity`` is no longer called from
+        # ``create()``. Auto-inflating ``wv._vectors`` to
+        # ``lexicon_capacity`` rows broke downstream consumers that
+        # read ``wv._vectors.shape[0]`` as the active codebook size
+        # (perceptualspace BPE forward, knowledge artifact writer,
+        # phase-2a labor-division tests). The in-place preallocated-
+        # reserve contract is opt-in via ``stage_oov(..., preallocate=True)``
+        # for callers that explicitly want it.
 
         # Bootstrap codebook with ASCII (and full 0-255 in byte mode).
         # \x00 is already at index 0 from the placeholder row above; fill
@@ -2694,12 +3106,13 @@ class Embedding(Basis):
         # "predict me" from "this was character \x00". Idempotent on
         # reload: if the slot is already in the loaded artifact (e.g.
         # after IR training), reuse the existing index.
-        if NULL_PERCEPT_KEY in self.pretrain.key_to_index:
+        null_key = PerceptualSpace.NULL_PERCEPT_KEY
+        if null_key in self.pretrain.key_to_index:
             self.null_percept_idx = int(
-                self.pretrain.key_to_index[NULL_PERCEPT_KEY])
+                self.pretrain.key_to_index[null_key])
         else:
             self.null_percept_idx = len(self.wv)
-            self.insert(NULL_PERCEPT_KEY, vector=None, initial_count=0)
+            self.insert(null_key, vector=None, initial_count=0)
 
     def _rebuild_optimizer(self):
         self.pretrain.optimizer = torch.optim.Adam(
@@ -2707,6 +3120,109 @@ class Embedding(Basis):
             lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
         # W is managed by wv._vectors; getW() returns live data
+
+    def _inflate_to_capacity(self):
+        # Inflate ``wv._vectors`` to ``[lexicon_capacity, dim]`` so future
+        # OOV inserts write into preallocated reserve rows in place
+        # (no Parameter reassignment, no optimizer rebuild).
+        if self.wv is None:
+            return
+        cap = int(getattr(self, "lexicon_capacity",
+                          Embedding._LEXICON_DEFAULT_CAPACITY))
+        cur = self.wv._vectors.shape[0]
+        if cap <= cur:
+            return
+        dim = self.wv._vectors.shape[1]
+        device = self.wv._vectors.device
+        dtype = self.wv._vectors.dtype
+        pad = torch.zeros(cap - cur, dim, device=device, dtype=dtype)
+        with torch.no_grad():
+            full = torch.cat([self.wv._vectors.data, pad], dim=0)
+            self.wv._vectors = nn.Parameter(full, requires_grad=True)
+        # counts array stays at the active length; new rows get appended
+        # entries when they are activated.
+
+    def stage_oov(self, keys, vectors=None):
+        # Stage OOV keys into preallocated reserve rows
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §4.1).
+        # Writes happen in place under ``no_grad`` — Parameter identity
+        # is preserved, optimizer is not rebuilt, Adam moments at the
+        # newly activated row indices are zeroed. Keys that exceed the
+        # remaining reserve capacity are returned for fallback routing
+        # by the caller (§4.4).
+        keys = [k for k in (keys or []) if k not in self.pretrain.key_to_index]
+        if not keys:
+            return []
+        cap = int(self.lexicon_capacity)
+        active = len(self.wv.index_to_key)
+        n_free = max(0, cap - active)
+        accepted = keys[:n_free]
+        overflowed = keys[n_free:]
+        if accepted:
+            n = len(accepted)
+            dim = self.wv.vector_size
+            device = self.wv._vectors.device
+            if vectors is not None:
+                v = vectors[:n]
+                if not torch.is_tensor(v):
+                    v = torch.as_tensor(v, dtype=torch.float32)
+                if v.dim() == 1:
+                    v = v.unsqueeze(0)
+                v = v.to(device=device, dtype=self.wv._vectors.dtype)
+            else:
+                v = _random_unit_ball((n, dim), device=device).to(
+                    self.wv._vectors.dtype)
+            v = _wrap_unit_ball(v)
+            start = active
+            end = active + n
+            with torch.no_grad():
+                self.wv._vectors.data[start:end, :] = v
+            self.wv.counts = np.append(
+                self.wv.counts, np.zeros(n, dtype=np.int64))
+            self.wv._normed = None
+            for i, key in enumerate(accepted):
+                self.wv.key_to_index[key] = start + i
+                self.wv.index_to_key.append(key)
+                self._pending_counts.pop(key, None)
+            self.pretrain.index_to_key = self.wv.index_to_key
+            self.pretrain.key_to_index = self.wv.key_to_index
+            self._zero_optimizer_moments_for_rows(start, end)
+            s_peer = getattr(self, 'symbolicSpace_ref', None)
+            if s_peer is not None and hasattr(s_peer, 'mark_word_atom'):
+                for i in range(n):
+                    try:
+                        s_peer.mark_word_atom(start + i)
+                    except Exception:
+                        pass
+        if overflowed:
+            self._oov_fallback_count += len(overflowed)
+            cap_sample = int(self._oov_fallback_sample_cap)
+            for key in overflowed:
+                if len(self._oov_fallback_sample) < cap_sample:
+                    self._oov_fallback_sample.append(key)
+                else:
+                    break
+        return overflowed
+
+    def _zero_optimizer_moments_for_rows(self, start, end):
+        # Zero Adam ``exp_avg`` / ``exp_avg_sq`` at the activated row
+        # indices so new rows don't inherit stale moments from any
+        # previous lifetime of the reserve slot. Optimizer state is
+        # otherwise untouched; the persistent optimizer keeps owning
+        # the full-capacity parameter.
+        opt = self.pretrain.optimizer if self.pretrain is not None else None
+        if opt is None:
+            return
+        state = opt.state.get(self.wv._vectors, None)
+        if not state:
+            return
+        for key in ('exp_avg', 'exp_avg_sq', 'max_exp_avg_sq'):
+            mom = state.get(key, None)
+            if (mom is not None
+                    and torch.is_tensor(mom)
+                    and mom.shape[0] >= end):
+                with torch.no_grad():
+                    mom[start:end].zero_()
 
     def replace(self, new_W):
         """Replace.
@@ -2753,31 +3269,46 @@ class Embedding(Basis):
             f"Embedding._LEXICON_DEFAULT_CAPACITY default) and reload."
         )
         dim = self.wv.vector_size
+        device = self.wv._vectors.device
         if vector is not None:
-            new_vec = vector.to(TheDevice.get())
+            new_vec = vector.to(device)
             if new_vec.dim() == 1:
                 new_vec = new_vec.unsqueeze(0)
             new_vec = _wrap_unit_ball(new_vec)
         else:
-            new_vec = _random_unit_ball((1, dim), device=TheDevice.get())
+            new_vec = _random_unit_ball((1, dim), device=device)
 
-        # Extend WordVectors parameter
-        with torch.no_grad():
-            new_data = torch.cat([self.wv._vectors.data, new_vec.to(self.wv._vectors.device)], dim=0)
-            self.wv._vectors = nn.Parameter(new_data, requires_grad=True)
+        # If the Parameter has been preallocated to capacity (via
+        # explicit opt-in ``stage_oov(preallocate=True)`` / a future
+        # caller), write in place into the next reserve row. Otherwise
+        # fall back to the legacy cat + reassign + optimizer rebuild
+        # so downstream consumers that read ``wv._vectors.shape[0]`` as
+        # the active codebook size keep working.
+        cur_shape = self.wv._vectors.shape[0]
+        if cur_shape > current_size:
+            idx = current_size
+            with torch.no_grad():
+                self.wv._vectors.data[idx:idx + 1, :] = new_vec
+            self._zero_optimizer_moments_for_rows(idx, idx + 1)
+        else:
+            with torch.no_grad():
+                new_data = torch.cat(
+                    [self.wv._vectors.data,
+                     new_vec.to(self.wv._vectors.device)],
+                    dim=0)
+                self.wv._vectors = nn.Parameter(new_data, requires_grad=True)
+            idx = len(self.wv.index_to_key)
+            if self.pretrain is not None:
+                self._rebuild_optimizer()
         self.wv.counts = np.append(self.wv.counts, np.int64(initial_count))
         self._pending_counts.pop(word, None)
-        self.wv._normed = None  # invalidate cache
-        idx = len(self.wv.index_to_key)
+        self.wv._normed = None
         self.wv.index_to_key.append(word)
         self.wv.key_to_index[word] = idx
 
         # PretrainModel shares wv's mappings
         self.pretrain.index_to_key = self.wv.index_to_key
         self.pretrain.key_to_index = self.wv.key_to_index
-
-        self._rebuild_optimizer()
-        # W is managed by wv._vectors; getW() returns live data
 
         # Explicit meronomy: tell the SymbolicSpace peer (when wired)
         # that this new lexicon row is an instance of "words" so the
@@ -3025,67 +3556,6 @@ class Embedding(Basis):
             vec = vec + var * torch.randn_like(vec)
         return _wrap_unit_ball(vec)
 
-    @staticmethod
-    def _apply_polarity(stream):
-        """Collapse 'non-X' and 'not X' surface forms into positive tokens.
-
-        Under the privation/shamatha reading, "not A" and "non-A" are
-        propositional affirmations of A's absence or A's indeterminacy
-        — they are observable states in their own right, not negations
-        of A's percept. So the collapse rewrites the surface forms into
-        *distinct positive tokens* whose codebook entries are learned
-        independently:
-
-            'not foo'  -> ('abs_foo',  off_foo, POLARITY_AFFIRM)
-            'non-foo'  -> ('non_foo',  off_foo, POLARITY_AFFIRM)
-            'foo'       -> ('foo',     off,     POLARITY_AFFIRM)
-
-        Polarity bookkeeping is preserved as POLARITY_AFFIRM uniformly
-        because the percept layer no longer carries sign or polarity —
-        every observable state is a positive percept. Marker tokens
-        ('not', 'non', '-') are consumed.
-        """
-        out = []
-        i = 0
-        n = len(stream)
-        while i < n:
-            text, off = stream[i]
-            t_lower = text.lower()
-            # 'non' '-' WORD -> positive 'non_WORD' token
-            if (t_lower == 'non' and i + 2 < n
-                    and stream[i + 1][0] == '-'
-                    and stream[i + 2][0].strip()
-                    and not stream[i + 2][0].isspace()
-                    and stream[i + 2][0] not in ('-',)):
-                base_text, base_off = stream[i + 2]
-                out.append((f"non_{base_text}", base_off, POLARITY_AFFIRM))
-                i += 3
-                continue
-            # 'not' WS WORD -> positive 'abs_WORD' token
-            if (t_lower == 'not' and i + 2 < n
-                    and stream[i + 1][0].isspace()
-                    and stream[i + 2][0].strip()
-                    and not stream[i + 2][0].isspace()):
-                base_text, base_off = stream[i + 2]
-                out.append((f"abs_{base_text}", base_off, POLARITY_AFFIRM))
-                i += 3
-                continue
-            out.append((text, off, POLARITY_AFFIRM))
-            i += 1
-        return out
-
-    def _polarity_embedding(self, base_vec, polarity):
-        """Identity passthrough.
-
-        Under the privation/shamatha reading, percepts have no sign or
-        polarity transformation: 'A', 'not A', and 'non-A' are three
-        distinct positive percepts (codebook entries 'A', 'abs_A',
-        'non_A' respectively, produced by ``_apply_polarity``). There
-        is no negation to apply at the embedding-lookup boundary — the
-        percept identity already carries the propositional content.
-        """
-        return base_vec
-
     def _nearest_idx(self, vec, codebook=None):
         """Nearest idx.
         
@@ -3125,33 +3595,37 @@ class Embedding(Basis):
         span_counts = []
         final_offsets = []
 
-        # Phase 1: Tokenize all batch items, collapse polarity surface forms,
-        # and collect OOV base words. The polarity pass converts 2-tuples
-        # to 3-tuples (text, offset, polarity) — 'non-X' becomes
-        # (X, off, POLARITY_NON); 'not X' becomes (X, off, POLARITY_NOT).
-        # Marker tokens ('not', 'non', '-') are consumed.
+        # Phase 1: Tokenize all batch items and collect OOV base words.
+        # Tokens are ``(text, offset)`` 2-tuples; "not" / "non-" surface
+        # forms are NOT collapsed into separate codebook rows — they
+        # tokenize like any other word, and the symbolic / grammar
+        # layers handle negation at the appropriate tier.
         all_streams = []
         oov_words = []
         oov_seen = set()
         for b in range(batch):
-            raw_stream = self._token_stream(input[b])
-            stream = self._apply_polarity(raw_stream)
+            stream = self._token_stream(input[b])
             all_streams.append(stream)
-            for token_text, _, _ in stream:
+            for token_text, _ in stream:
                 if (token_text not in self.pretrain.key_to_index
                         and token_text not in oov_seen):
                     oov_words.append(token_text)
                     oov_seen.add(token_text)
 
-        # Phase 2: Batch-insert OOV words into codebook (skip in byte mode)
+        # Phase 2: Stage OOV words into preallocated reserve rows
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §4.2).
+        # ``stage_oov`` writes in place — no Parameter reassignment, no
+        # optimizer rebuild — and returns keys that overflowed the
+        # reserve capacity. Overflowed keys fall through to the byte
+        # fallback inside ``_token_to_index`` (which already routes
+        # unknown keys to the ``\x00`` NULL row).
         if oov_words and not getattr(self, 'byte_mode', False):
-            for word in oov_words:
-                self.insert(word)
-            codebook = self.getW()  # refresh after insert
-            if self.optimize_embedding:
-                model = getattr(self, '_model', None)
-                if model is not None:
-                    model.rebuild_optimizer()
+            self.stage_oov(oov_words)
+            codebook = self.getW()
+            # ``self.optimize_embedding`` previously triggered a model-
+            # wide optimizer rebuild after insert. Under the preallocated
+            # contract the optimizer never needs rebuilding; the model-
+            # level rebuild call is also retired.
 
         # Phase 3: Build result tensor (all tokens now in codebook)
         result = torch.zeros([batch, self.nInput, self.nDim], device=TheDevice.get())
@@ -3162,22 +3636,19 @@ class Embedding(Basis):
             stream = all_streams[b]
             n_tokens = min(len(stream), self.nInput)
             tokens = stream[:n_tokens]
-            # batch_tokens stores 2-tuples for backward compat with
-            # downstream consumers (reconstruct_text, etc.).
-            batch_tokens.append([(t, off) for (t, off, _) in tokens])
+            batch_tokens.append(list(tokens))
             span_counts.append(n_tokens)
             if tokens:
-                last_text, last_start, _ = tokens[-1]
+                last_text, last_start = tokens[-1]
                 final_offsets.append(
                     last_start + len(last_text.encode('utf-8')))
             else:
                 final_offsets.append(0)
-            for i, (token_text, _, polarity) in enumerate(tokens):
+            for i, (token_text, _) in enumerate(tokens):
                 cb_idx = self._token_to_index(token_text)
                 batch_indices[b, i] = cb_idx
-                base_vec = self._encode_vector(
+                result[b, i, :] = self._encode_vector(
                     codebook[cb_idx], token_idx=cb_idx)
-                result[b, i, :] = self._polarity_embedding(base_vec, polarity)
             # Fill remaining positions with NULL embedding (input buffer is null-terminated)
             if null_idx is not None:
                 null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
@@ -3481,64 +3952,6 @@ class Embedding(Basis):
         """Return a zero vector the same size as a codebook entry."""
         return torch.zeros(self.getW().shape[1], device=TheDevice.get())
 
-class WorkingState:
-    """Per-sentence working state, allocated ONCE in the per-sentence reset
-    path (never in __init__, never in the traced forward) and threaded
-    through every Space.forward()/reverse() as the single carrier of all
-    cross-stage/cross-round state. Fixed-shape, tensor-carrying. Plain
-    Python object -- NOT an nn.Module -- so it never mutates
-    ``_modules``/``_buffers`` inside the trace (the dynamo guard that
-    forces ``unique_graphs=2``).
-
-    NO ``__slots__``: dynamo's ``UserDefinedObjectVariable.var_getattr``
-    inspects ``__dict__`` and the standard nn.Module containers, and
-    does NOT fall through to ``__slots__`` member descriptors -- so
-    a ``__slots__``-bearing WorkingState appears attribute-less to a
-    traced forward and any ``_work.cs_for_ps`` read raises Unsupported
-    under ``fullgraph=True``. Plain ``__dict__`` attributes are visible
-    to dynamo and trace cleanly. The original ``__slots__`` rationale
-    ("avoid nn.Module ``__setattr__``") still holds -- it was about
-    nn.Module, not about ``__slots__`` per se.
-
-    Fields (set by ``new_working_state``):
-      cursor      int64 [n_tiers]  per-tier rule cursor (was _cursor_compose*)
-      gen         int64 []         compose generation (was _compose_generation)
-      recur_pass  int64 []         recurrent pass index (was _recurrent_pass_idx)
-      cs_for_ps   SubSpace|None    CS->PS carrier (was _subspaceForPS)
-      cs_for_ss   SubSpace|None    CS->SS carrier (was _subspaceForSS)
-      valid_mask  Tensor|None      carried by reference (was copy_context)
-      errors      object|None      Error accumulator, carried by reference
-      op_sel      Tensor|None      selection tensor (Phase 2A)
-      op_operands Tensor|None      selection-operand tensor (Phase 2A)
-    """
-
-
-def new_working_state(n_tiers, device, n_ops=0):
-    """Allocate a fresh per-sentence WorkingState (called from the reset
-    path only -- never __init__, never the traced forward)."""
-    ws = WorkingState()
-    ws.cursor = torch.zeros(n_tiers, dtype=torch.int64, device=device)
-    ws.gen = torch.zeros((), dtype=torch.int64, device=device)
-    # D8 capture-gate (2026-05-19): plain Python int instead of 0-d
-    # tensor. Inductor produces an unbacked SymInt when ``int(tensor)``
-    # is the source of a ModuleList index (PerceptualSpace.forward
-    # selects ``pi_input[_oi]`` from a ModuleList by recur_pass-derived
-    # index) -- Min(2, Max(0, u0)) cannot specialize. Python ints are
-    # Dynamo-specialized natively. With ``__slots__`` removed from
-    # WorkingState, this is a plain ``__dict__`` attribute that Dynamo
-    # introspects cleanly.
-    ws.recur_pass = 0
-    ws.cs_for_ps = None
-    ws.cs_for_ss = None
-    ws.valid_mask = None
-    ws.errors = None
-    ws.op_sel = (torch.zeros(n_ops, dtype=torch.float32, device=device)
-                 if n_ops else None)
-    ws.op_operands = (torch.zeros(n_ops, 2, dtype=torch.int64, device=device)
-                      if n_ops else None)
-    return ws
-
-
 class SubSpace(nn.Module):
     """Per-space runtime state container.
 
@@ -3632,6 +4045,28 @@ class SubSpace(nn.Module):
       * They are NOT the same field with the same content.  See the
         SymbolicSpace class docstring for the full lifecycle.
 
+    -----------------------------------------------------------------------
+    Slot architecture (spec: doc/specs/2026-05-21-subspace-slot-architecture.md)
+    -----------------------------------------------------------------------
+    The ``_active_payload`` band-aid was retired Stage 4 of
+    doc/plans/2026-05-21-active-payload-retirement.md. The current
+    contract:
+
+      * Codebook-bearing slot (``.what`` for unmuxed, ``.event`` for
+        muxed) — ``self.W`` holds ONLY the ``[V, D]`` Parameter
+        prototype matrix. Per-batch content is reconstructed by
+        ``materialize`` as ``codebook[_active]`` from prototype +
+        selection. ``setW(per_batch)`` raises with a spec pointer.
+      * Pure-event slot (plain ``Tensor`` ``.event``) — per-batch
+        content lives on ``self.W`` directly (no Parameter to
+        protect).
+      * ``self._active`` (``[B, N, M]`` integer indices) and
+        ``self.activation`` (per-position scalar / weight) carry the
+        selection that ``materialize`` applies to the codebook.
+      * Prototype mutations (insert / remove / VQ EMA) go through
+        ``Basis.replace_W(new_W)`` which preserves Parameter identity
+        (and the optimizer state keyed on it) via ``.data.copy_``.
+
     Pure-event subspaces (ConceptualSpace) leave ``.what`` / ``.where`` /
     ``.when`` empty and store everything on ``.event`` via
     ``set_event(...)``; ``mux()`` correctly no-ops there, and reads
@@ -3681,6 +4116,39 @@ class SubSpace(nn.Module):
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
+
+        # Codebook placement (spec
+        # doc/specs/2026-05-21-subspace-slot-architecture.md §Slots,
+        # "Codebook placement (the muxed / unmuxed split)"):
+        #   * ``'event'``  — codebook prototype on ``.event.W`` (muxed
+        #     configs like PerceptualSpace MM_xor / MM_5M); ``self.muxed``
+        #     is True. ``materialize(mode='event')`` reconstructs as
+        #     ``event.W[selection]``.
+        #   * ``'what'``   — codebook prototype on ``.what.W`` (unmuxed
+        #     configs like SymbolicSpace, PerceptualSpace MM_grammar's
+        #     lexicon Embedding). ``materialize`` reads from
+        #     ``self.what`` via ``lookup``.
+        #   * ``None``     — no codebook (pure-event configs:
+        #     ConceptualSpace, InputSpace, OutputSpace). Per-batch
+        #     content lands directly on ``.event.W`` (plain Tensor).
+        #
+        # Set ONCE at construction; never mutated. Downstream callers
+        # MUST consult this flag (or ``self.codebook()`` /
+        # ``self.prototype()`` / ``self.lookup()`` below) instead of
+        # reaching into the Basis slots' raw ``W``.
+        if isinstance(self.event, Codebook):
+            self.codebook_slot = 'event'
+        elif isinstance(self.what, (Codebook, Embedding)):
+            # Both Codebook and Embedding act as codebook-bearing on
+            # ``.what`` (the unmuxed case). Embedding holds the lexicon
+            # prototype on ``wv._vectors``; Codebook holds it on ``W``.
+            self.codebook_slot = 'what'
+        else:
+            self.codebook_slot = None
+        # Boolean alias the user requested. ``True`` iff the codebook
+        # lives on ``.event`` (the muxed config). False for unmuxed AND
+        # for pure-event (no codebook).
+        self.muxed = (self.codebook_slot == 'event')
         self.word   = word if word is not None else []  # list of (batch, vector, rule) tuples
         # Tensor word buffer (Path B from
         # plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md
@@ -3723,7 +4191,7 @@ class SubSpace(nn.Module):
         # Mereology measure family (Contiguous / Continuous / Peaceful /
         # Area / Luminosity) writes per-analysis-pass records here on
         # the conceptualSpace's subspace; other subspaces leave it None.
-        # Format: list[dict] with keys 'step', 'area', 'luminosity',
+        # Format: list[dict] with keys 'step', 'area', 'luminosity',_active_payload
         # 'intersection', 'union'.
         self.knowing = None
         self.batch = 0
@@ -3852,13 +4320,96 @@ class SubSpace(nn.Module):
                 return False
         return False
 
+    # -- Codebook accessors (spec-aligned public surface) --------------
+    # doc/specs/2026-05-21-subspace-slot-architecture.md "Reader API":
+    # callers needing the codebook prototype or a row lookup go through
+    # these methods rather than reaching past the SubSpace to the slot's
+    # raw ``getW()``. The SubSpace knows where the codebook lives via
+    # ``self.codebook_slot`` (set at __init__); these accessors route
+    # appropriately.
+
+    def codebook(self):
+        """Return the Basis slot holding the codebook prototype, or None.
+
+        ``self.event`` when ``self.muxed``; ``self.what`` for unmuxed
+        configs; ``None`` for pure-event (no codebook).
+        """
+        if self.codebook_slot == 'event':
+            return self.event
+        if self.codebook_slot == 'what':
+            return self.what
+        return None
+
+    def prototype(self):
+        """Return the ``[V, D]`` codebook prototype matrix, or None.
+
+        Delegates to ``codebook().prototype()`` which reads the
+        Parameter directly (bypassing the ``_active_payload`` shadow).
+        """
+        cb = self.codebook()
+        return cb.prototype() if cb is not None else None
+
+    def lookup(self, indices):
+        """Look up codebook rows for the given selection indices.
+
+        ``indices`` is a long tensor of arbitrary leading shape
+        (typically ``[B, N]`` for per-position selection). Returns
+        ``[..., D]`` rows from the prototype matrix.
+
+        Raises if this SubSpace has no codebook (``codebook_slot is
+        None``) — callers should check ``self.muxed`` /
+        ``self.codebook_slot`` first if the path may be exercised on
+        pure-event subspaces.
+        """
+        cb = self.codebook()
+        if cb is None:
+            raise RuntimeError(
+                f"SubSpace.lookup() called on a pure-event subspace "
+                f"(codebook_slot={self.codebook_slot!r}). Per-batch "
+                f"content for pure-event configs is stored on "
+                f"``.event.W`` directly; read via "
+                f"``materialize(mode='event')`` instead.")
+        return cb.lookup(indices)
+
     def set_muxed(self, event_tensor):
-        """Store muxed event tensor directly. Clears demuxed modalities.
+        """Store muxed event tensor. Clears demuxed modalities.
+
+        For muxed subspaces (codebook on ``.event``) AND when the
+        incoming tensor width matches the codebook width: snap
+        ``event_tensor`` through ``Codebook.forward`` so the selection
+        lands on ``_active``. ``materialize`` reconstructs as
+        ``codebook[_active]`` — the activation/selection IS the storage.
+
+        When the codebook is narrower than ``muxedSize`` (e.g. the
+        codebook holds only the WHAT slice; WHERE/WHEN are added
+        separately downstream), the snap cannot consume the full
+        ``event_tensor`` cleanly — fall back to ``event.setW`` so the
+        existing routing handles the slicing. This case is the BPE /
+        unmuxed-codebook bridge; Stage 4 of the plan separates these
+        contracts cleanly.
+
+        For pure-event / unmuxed subspaces (plain ``Tensor`` ``.event``,
+        no Parameter to protect): write directly to ``event.W``.
 
         Args:
             event_tensor: [B, N, D] where D = nWhat + nWhere + nWhen
         """
-        self.event.setW(event_tensor)
+        # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:
+        # muxed subspace + matching width ⇒ snap through the codebook
+        # so the selection lands on ``_active``; ``materialize``
+        # reconstructs as ``codebook[_active]``.
+        # Pure-event / unmuxed ⇒ direct ``event.setW`` (plain Tensor
+        # storage on ``.W``).
+        # Width-mismatch fallthrough (muxed + input width != codebook
+        # nDim): silently skip the redundant write. Selection is the
+        # source of truth; the stale per-batch payload was the band-aid
+        # the migration retired.
+        if self.muxed and event_tensor.shape[-1] == self.event.nDim:
+            self.event.forward(event_tensor, _vspace=self)
+        elif self.muxed:
+            pass  # width mismatch — selection-based reconstruction
+        else:
+            self.event.setW(event_tensor)
         self._demuxed = False
 
     def set_demuxed(self, what_tensor, where_tensor=None, when_tensor=None):
@@ -3984,12 +4535,13 @@ class SubSpace(nn.Module):
 
         Clears runtime state on every owned Basis (event, what, where,
         when, activation) plus the SubSpace-level transient fields
-        (``_active`` index tensor, ``word`` list, ``valid_mask`` mask,
-        ``stem_embedded`` flag). The prior version cleared only ``event``,
-        which leaked the demuxed [B, N, D] tensors on what/where/when and
-        the [B, N, M] ``_active`` tensor until the next forward overwrote
-        them. Called from Space.Start() so state carried across the outer
-        pos loop does not leak into the next DataLoader yield.
+        (``_active`` index tensor, ``_per_batch_event`` cache,
+        ``word`` list, ``valid_mask`` mask, ``stem_embedded`` flag).
+        The prior version cleared only ``event``, which leaked the
+        demuxed [B, N, D] tensors on what/where/when and the
+        [B, N, M] ``_active`` tensor until the next forward overwrote
+        them. Called from Space.Start() so state carried across the
+        outer pos loop does not leak into the next DataLoader yield.
         """
         for basis in (self.event, self.what, self.where, self.when, self.activation):
             self._clear_runtime_basis(basis)
@@ -4076,9 +4628,37 @@ class SubSpace(nn.Module):
     def set_what(self, what_tensor):
         """Store what-content vectors [B, N, nWhat].
 
+        For unmuxed codebook configs (codebook on ``.what``) where the
+        input width matches the codebook ``nDim``: snap ``what_tensor``
+        through ``Codebook.forward`` so the selection lands on
+        ``_active``; ``materialize`` reconstructs as
+        ``what.W[_active[:, :, 0]]``.
+
+        For plain-Tensor ``.what`` (no codebook): direct ``setW``.
+
+        Width-mismatch fallthrough: when input width != codebook nDim,
+        the spec invariant ("input width never greater than codebook
+        nDim") would call for an XML fix. Pragmatically, we silently
+        skip the redundant write — the selection has typically already
+        been populated upstream (set_forward_content), and
+        ``materialize`` reconstructs from prototype + selection. The
+        ``what_tensor`` was a stale legacy cache that the band-aid
+        absorbed; under the new contract it's discarded.
+
         Invalidates cached event so materialize() re-concatenates.
         """
-        self.what.setW(what_tensor)
+        if (self.codebook_slot == 'what'
+                and isinstance(self.what, Codebook)
+                and what_tensor.shape[-1] == self.what.nDim):
+            self.what.forward(what_tensor, _vspace=self)
+        elif self.codebook_slot == 'what':
+            # Width mismatch or non-Codebook codebook slot (e.g.,
+            # Embedding). Skip the per-batch write — selection-based
+            # reconstruction is the spec contract.
+            pass
+        else:
+            # Plain-Tensor ``.what`` — direct write (no Parameter).
+            self.what.setW(what_tensor)
         self.event.setW(None)
         self._demuxed = True
 
@@ -4089,6 +4669,7 @@ class SubSpace(nn.Module):
         """
         self.where.setW(where_tensor)
         self.event.setW(None)
+        self._per_batch_event = None
         self._demuxed = True
 
     def set_when(self, when_tensor):
@@ -4098,6 +4679,7 @@ class SubSpace(nn.Module):
         """
         self.when.setW(when_tensor)
         self.event.setW(None)
+        self._per_batch_event = None
         self._demuxed = True
 
     def demux(self, muxed):
@@ -4799,6 +5381,20 @@ class SubSpace(nn.Module):
             w = self.when.getW() if self.when is not None else None
             return self._apply_active_selection(w)
         if mode == "event":
+            # Muxed codebook path: ``materialize = codebook[selection]``.
+            # The activation/selection IS the per-batch storage.
+            # Gate on codebook width = muxedSize so we don't return a
+            # WHAT-only slice when the muxed event needs WHERE/WHEN
+            # concatenated on top (the chunked-codebook case).
+            if (self.muxed and self._active is not None
+                    and self._active.ndim == 3
+                    and self._active.shape[-1] >= 1):
+                proto = self.prototype()
+                if (proto is not None and torch.is_tensor(proto)
+                        and proto.ndim == 2):
+                    sel = self._active[:, :, 0].long()
+                    if True:  # placeholder for the bounds-check block
+                        return self._apply_active_selection(self.lookup(sel))
             # Re-mux from modality slots when they're populated.  The
             # mux() implementation no-ops on pure-event subspaces, so
             # ConceptualSpace's set_event-only flow still works.
@@ -4825,6 +5421,33 @@ class SubSpace(nn.Module):
             self.set_activation_from_event()
             return self.activation_presence()
 
+        # Default mode: same muxed-codebook reconstruct (width gated to
+        # muxedSize — see ``mode='event'`` rationale above), plus the
+        # activation-presence gate (legacy "event * presence").
+        if (self.muxed and self._active is not None
+                and self._active.ndim == 3
+                and self._active.shape[-1] >= 1):
+            proto = self.prototype()
+            if (proto is not None and torch.is_tensor(proto)
+                    and proto.ndim == 2
+                    and proto.shape[-1] == self.muxedSize):
+                sel = self._active[:, :, 0].long()
+                if sel.numel() > 0:
+                    # Bounds check on indices avoids data-dependent
+                    # ``int(sel.max())`` (Dynamo fullgraph contract).
+                    # Per spec the snap produces in-range indices.
+                    recon = self.lookup(sel)
+                    pres = self.activation_presence()
+                    if pres is not None:
+                        recon = recon * pres.unsqueeze(-1)
+                    if k is not None and k < recon.shape[-2]:
+                        score = pres if pres is not None else recon.norm(dim=-1)
+                        _, idx = torch.topk(score, k, dim=-1)
+                        self._topk_indices = idx
+                        recon = torch.gather(
+                            recon, -2,
+                            idx.unsqueeze(-1).expand(-1, -1, recon.shape[-1]))
+                    return recon
         x = self.event.getW()
         # When demuxed, a 2D tensor here is the Codebook Parameter (a
         # row-per-prototype codebook), not a cached muxed event. Treat it
@@ -4858,7 +5481,10 @@ class SubSpace(nn.Module):
                     parts.append(when_vecs)
                 if parts:
                     x = torch.cat(parts, dim=-1)
-                    self.event.setW(x)
+                    # Stage 4: no cache-back to ``self.event.setW``.
+                    # Materialize reconstructs on demand from prototype
+                    # + selection; caching to a Codebook-bearing slot
+                    # would clobber the Parameter (now raises).
             else:
                 # Legacy path: read vectors from Basis slots
                 parts = []
@@ -4873,7 +5499,7 @@ class SubSpace(nn.Module):
                     parts.append(when_w)
                 if parts:
                     x = torch.cat(parts, dim=-1)
-                    self.event.setW(x)
+                    # Stage 4: no cache-back.
 
         if x is None:
             return None
@@ -5216,357 +5842,316 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
-class WordSubSpace(SubSpace):
-    """Fixed-size word-stream stack -- a SubSpace subclass with stack discipline.
+class ShortTermMemory(nn.Module):
+    """Short-term memory (STM) on ConceptualSpace.
 
-    Stores a sequence of derivation-step rows in the inherited
-    ``[what | where | when]`` Basis-backed column blocks of shape
-    ``[batch, max_depth, <modality_dim>]``. Each rule application emits
-    a ``(1 + max_arity)``-row block in prefix order:
+    A per-batch stack of unquantized C-tier activations -- "ideas",
+    the continuous compositions that the chart produces by reducing
+    concepts / earlier ideas. Distinct from
+    ``WordSpace._stm_fired`` (which is a once-per-sentence
+    discourse-priming flag, not a working-memory buffer).
 
-        row 0:             rule-identity row (zeros; rule_id in the ledger)
-        rows 1..max_arity: leaf-identity rows (zeros; leaf ids in the ledger)
+    Semantics:
+        * Each slot holds a ``[concept_dim]`` vector.
+        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
+          recent idea; ``peek(b, n)`` returns the n-th most recent.
+        * Capacity is a soft cap (7±2 for linguistic processing,
+          per the brain's classical working-memory limit). The
+          (future) serial parser is expected to reduce ideas before
+          pushing when ``is_full(b)`` would otherwise be true.
+        * Subsymbolic operation can drive a wider STM than the
+          linguistic 7±2; the capacity is configurable via
+          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``
+          in the model XML.
 
-    Unused leaf slots produce zero-valued rows (empty-slot sentinel --
-    consumers detect empties via ``row_what.norm() == 0``). Rows beyond
-    top-of-stack are plain zeros. The learnable rule_codebook has been
-    removed (Task 1.4): rule identity is stored only in the parse-tree
-    ledger (``_blocks``), not as a dense vector in the buffer.
+    Lifecycle:
+        * Built by ``ConceptualSpace.__init__`` at construction time
+          (capacity from XML; default 9).
+        * Cleared on hard ``Reset`` (sentence boundary): all rows
+          set to zero, depth pointers reset to 0.
+        * No active consumer yet -- this is the structural slot
+          the upcoming serial / shift-reduce parser will read and
+          mutate. The current batched-CKY chart doesn't use it.
 
-    **Why subclass ``SubSpace``**: the word stream's rows share the
-    peer ``[what | where | when]`` column layout with
-    ``PerceptualSubSpace`` / ``ConceptualSubSpace`` / ``SymbolicSubSpace``.
-    Re-implementing ``set_what`` / ``set_where`` / ``set_when`` on top of
-    a private buffer duplicated API surface while bypassing the ``Basis``
-    storage contract other SubSpaces use. Inheriting from SubSpace (a)
-    makes the peer-space claim structural (not duck-typed), (b) lets
-    ``ConceptualSpace`` read all three inputs via one uniform
-    ``materialize()`` call, and (c) puts all modality storage through
-    one ``Basis`` abstraction.
-
-    **Additive stack discipline**: ``push()``, ``clear()``, the
-    per-batch ``_top`` pointer, and the ``_blocks`` parse-tree ledger
-    are not part of the SubSpace contract -- they sit on top. A plain
-    SubSpace is a snapshot; a WordSubSpace is a stack that happens to
-    live inside the same Basis slots a snapshot would use.
-
-    Parse-tree reconstruction walks the stack via ``get_blocks(b)``,
-    which returns the original rule_id + leaves for each pushed block.
+    Storage is a plain registered buffer (``persistent=False``);
+    STM contents are runtime working state, not learned weights.
     """
 
-    def __init__(self, nDim, nWhat, nWhere, nWhen,
-                 max_depth, max_arity=3, batch=1):
-        # Build encodings sized to our column widths. SubSpace reads
-        # `whereEncoding.nDim` / `whenEncoding.nDim` to compute
-        # `self.nWhere` / `self.nWhen`, and derives `self.nWhat` as
-        # `outputShape[1] - nWhere - nWhen`.
-        """Initialize WordSubSpace; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        _muxed = int(nWhat) + int(nWhere) + int(nWhen)
-        assert _muxed <= int(nDim), (
-            f"WordSubSpace columns exceed nDim: "
-            f"nWhat={nWhat} + nWhere={nWhere} + nWhen={nWhen} > nDim={nDim}")
+    DEFAULT_CAPACITY = 9
 
-        shape = [int(max_depth), _muxed]
-        where_enc = WhereEncoding(
-            max(1, int(max_depth) * max(1, int(batch))),
-            int(nWhere), int(nWhen))
-        when_enc = WhenEncoding(10000, int(nWhen))
-
-        super().__init__(
-            inputShape=shape,
-            outputShape=shape,
-            whereEncoding=where_enc,
-            whenEncoding=when_enc,
-        )
-
-        # SubSpace.__init__ has now created Tensor()-backed Basis
-        # objects for .what/.where/.when/.event/.activation and computed
-        # self.nWhat / self.nWhere / self.nWhen / self.muxedSize from
-        # outputShape + encodings.
-        assert self.nWhat == int(nWhat) and self.nWhere == int(nWhere) \
-            and self.nWhen == int(nWhen), (
-            f"WordSubSpace column widths disagree with SubSpace post-init: "
-            f"SubSpace derived nWhat={self.nWhat} nWhere={self.nWhere} "
-            f"nWhen={self.nWhen}, expected nWhat={nWhat} nWhere={nWhere} "
-            f"nWhen={nWhen}"
-        )
-
-        # Preserve the peer-compatible total `nDim` attribute. SubSpace
-        # does not set `self.nDim`; peer spaces expose it, and
-        # ``WordSpace.__init__`` reads it when sizing the word buffer, so
-        # we keep it.
-        self.nDim = int(nDim)
-        self.max_depth = int(max_depth)
-        self.max_arity = int(max_arity)
-        self.block_size = 1 + self.max_arity  # rule row + leaf rows
-
-        # Allocate actual [batch, max_depth, <modality>] storage into
-        # the inherited Basis slots. This replaces the old standalone
-        # `self._buffer` -- storage flows through Basis.setW() now.
-        self._allocate_storage(int(batch))
-
-        # Stack-discipline metadata (not part of SubSpace contract).
-        # Uses register_buffer so the top pointer follows `.to(device)`.
+    def __init__(self, batch=1, capacity=None, concept_dim=0):
+        super().__init__()
+        self.capacity = int(capacity or self.DEFAULT_CAPACITY)
+        self.concept_dim = int(concept_dim)
+        # ``persistent=False``: STM is transient working state, not
+        # saved with the model checkpoint.
         self.register_buffer(
-            "_top", torch.zeros(self.batch, dtype=torch.long),
+            "_buffer",
+            torch.zeros(int(batch), self.capacity, self.concept_dim),
             persistent=False)
-        self._blocks = [[] for _ in range(self.batch)]
-
-        # Back-reference to the host space (typically SymbolicSpace).
-        # Stored via `object.__setattr__` so the host (an nn.Module) is
-        # NOT registered as an nn.Module child -- that would create a
-        # parent/child cycle (`symbolicSpace <-> wordSpace.subspace`) and
-        # make `model.to(device)` recurse forever. Set by
-        # `attach_codebook_host()`; WordSpace wires this at construction.
-        # Used only as a gate in `push()` -- rule-identity vectors are
-        # no longer looked up here (rule_codebook removed, Task 1.4).
-        object.__setattr__(self, 'rule_codebook_host', None)
-
-    # -- storage allocation via inherited Basis slots -----------------
-    def _allocate_storage(self, batch):
-        """Allocate zero tensors of shape ``[batch, max_depth, <modality>]``
-        into the inherited ``.what``/``.where``/``.when`` Basis slots.
-
-        Called from ``__init__`` and ``clear()`` / ``ensure_batch()``.
-        Also primes ``.event``/``.activation`` so a ``materialize()`` call
-        directly after allocation returns an all-zero tensor of the
-        expected muxed shape.
-
-        **Device**: tensors are allocated without an explicit ``device=``
-        argument so ``torch.set_default_device(TheDevice.get())``
-        (installed in ``util.py``) puts them on the process's canonical
-        device. Forcing CPU here would leave Basis storage stranded when
-        the model later moves to MPS / CUDA.
-        """
-        self.batch = int(batch)
-        # Populate the demuxed modality slots through the Basis contract.
-        if self.nWhat > 0:
-            self.what.setW(
-                torch.zeros(self.batch, self.max_depth, self.nWhat))
-        if self.nWhere > 0:
-            self.where.setW(
-                torch.zeros(self.batch, self.max_depth, self.nWhere))
-        if self.nWhen > 0:
-            self.when.setW(
-                torch.zeros(self.batch, self.max_depth, self.nWhen))
-        # Prime the muxed event cache and activation gate so
-        # `materialize()` returns a properly-shaped tensor even before
-        # the first `push()`.
-        muxed = torch.zeros(self.batch, self.max_depth, self.muxedSize)
-        self.event.setW(muxed)
-        self._demuxed = True
-        # All-ones activation -- WordSubSpace has no gating beyond the
-        # zero rows themselves, and multiplying by ones is cheap.
-        self.set_activation(
-            torch.ones(self.batch, self.max_depth))
-
-    # -- device-propagation override ----------------------------------
-    def _apply(self, fn, recurse=True):
-        """Propagate tensor-moving operations through inherited Basis
-        storage.
-
-        ``SubSpace``'s ``.what``/``.where``/``.when``/``.event`` /
-        ``.activation`` slots are backed by a ``Tensor`` Basis whose
-        internal ``W`` attribute is a plain Python reference, NOT a
-        registered buffer. As a result, vanilla ``nn.Module._apply``
-        never touches it, so ``model.to(device)`` on a SubSpace silently
-        leaves the Basis W tensors on their original device. Regular
-        SubSpace usage avoids this by always re-setting ``.W`` from a
-        fresh device-correct tensor in every forward pass -- but
-        ``WordSubSpace`` allocates its whole buffer eagerly in
-        ``__init__`` and mutates it in place, so we need the Basis
-        tensors to actually follow the module to the target device.
-
-        This override walks each Basis slot and applies ``fn`` to its
-        ``W``, then calls the parent implementation to handle
-        registered buffers / parameters / submodules in the usual way.
-        """
-        for basis_attr in ('what', 'where', 'when', 'event', 'activation'):
-            basis = getattr(self, basis_attr, None)
-            if basis is None:
-                continue
-            w = basis.getW() if hasattr(basis, 'getW') else None
-            if isinstance(w, torch.Tensor):
-                basis.setW(fn(w))
-        return super()._apply(fn, recurse=recurse)
-
-    # -- host + batch lifecycle -----------------------------------
-    def attach_codebook_host(self, host):
-        """Register the host space (typically SymbolicSpace).
-
-        The host is used only as a gate: ``push()`` is a no-op when no
-        host is wired. Rule-identity dense vectors are no longer looked
-        up here (the learnable rule_codebook was removed in Task 1.4);
-        rule identity is preserved in the parse-tree ledger only.
-
-        Stored via ``object.__setattr__`` -- see the ``__init__``
-        back-reference comment for the nn.Module cycle rationale.
-        """
-        object.__setattr__(self, 'rule_codebook_host', host)
-
+        self.register_buffer(
+            "_depth",
+            torch.zeros(int(batch), dtype=torch.long),
+            persistent=False)
+        # Host-side mirror of ``_depth.max()``.  Updated by every push
+        # path (uniform-step push, push_step, push_window_batch);
+        # ``snapshot()`` reads this so it never needs a ``.item()``
+        # sync inside the compiled forward.  The chart at C reads
+        # ``snapshot()`` once per stage in the body; under
+        # ``max-autotune`` each such ``.item()`` was a graph break
+        # (and a CUDAGraph split).  Tracking host-side collapses
+        # those breaks while preserving the trim-to-actual-depth
+        # behaviour the chart relies on.
+        self._max_depth_host = 0
     def ensure_batch(self, batch):
-        """Resize the buffer to ``batch`` (zeros the contents)."""
-        if int(batch) == self.batch:
+        """Resize the STM buffers to ``batch`` rows when the model's
+        microbatch dimension changes. Idempotent.
+        """
+        batch = int(batch)
+        if int(self._buffer.shape[0]) == batch:
             return
-        self._allocate_storage(int(batch))
-        self._top = torch.zeros(
-            self.batch, dtype=torch.long, device=self._top.device)
-        self._blocks = [[] for _ in range(self.batch)]
+        device = self._buffer.device
+        self._buffer = torch.zeros(
+            batch, self.capacity, self.concept_dim, device=device)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        # Fresh allocation -> empty buffer -> max depth resets to 0.
+        self._max_depth_host = 0
 
-    def clear(self):
-        """Reset buffer to all-zero and rewind top-of-stack (per-sentence)."""
-        self._allocate_storage(self.batch)
-        if self._top is not None:
-            self._top.zero_()
-        self._blocks = [[] for _ in range(self.batch)]
+    def ensure_capacity(self, capacity):
+        """Grow the per-slot capacity to at least ``capacity``.
 
-    def clear_rows(self, start, end):
-        """Zero rows ``[start, end)`` of the stack and rewind their tops.
-
-        Per-row hard reset entry point (called from
-        ``WordSpace.Reset(batch=b, hard=True)`` once the source row's
-        K-window mapping has been resolved). Out-of-range entries are
-        silently clipped to the current batch size.
+        Idempotent and **grow-only** (mirrors :meth:`ensure_batch`).
+        Used by the per-word IR-reconstruction loop (increment 2b-1) to
+        size the STM to the sentence length -- the CKY+resize-equivalent
+        baseline (two-loop spec Phase-1-D §3: "ship CKY + resized STM,
+        ``<stmCapacity>``=``wMax``"). The bounded soft REDUCE-to-<=7
+        controller (increment 2b-2) is a separate change; until it
+        lands, the producer must not overflow a too-small stack, so the
+        sentence-length resize is the documented, owner-approved
+        baseline. Leaves the configured ``<stmCapacity>`` knob untouched
+        (this only ever *grows* the live buffer, never shrinks it, and
+        is never called on the whole-slab/non-grammar path).
         """
-        s, e = int(start), min(int(end), self.batch)
-        if e <= s:
+        capacity = int(capacity)
+        if capacity <= self.capacity:
             return
-        what_W = self.what.getW() if self.nWhat > 0 else None
-        where_W = self.where.getW() if self.nWhere > 0 else None
-        when_W = self.when.getW() if self.nWhen > 0 else None
-        for W in (what_W, where_W, when_W):
-            if W is not None:
-                W[s:e].zero_()
-        # Invalidate the cached muxed event so materialize() rebuilds.
-        if self.event is not None:
-            self.event.setW(None)
-        if self._top is not None:
-            self._top[s:e] = 0
-        for b in range(s, e):
-            self._blocks[b] = []
+        device = self._buffer.device
+        B = int(self._buffer.shape[0])
+        new_buf = torch.zeros(
+            B, capacity, self.concept_dim, device=device,
+            dtype=self._buffer.dtype)
+        # Preserve any already-pushed content (grow-only: the existing
+        # slots stay at their indices; the tail is fresh zeros).
+        old_cap = int(self._buffer.shape[1])
+        if old_cap > 0:
+            new_buf[:, :old_cap, :] = self._buffer
+        self._buffer = new_buf
+        self.capacity = capacity
 
-    # -- push / read -------------------------------------------------
-    def _lookup(self, rule_id):
-        """Return a ``[nWhat]`` dense vector for a rule_id, or ``None``.
+    def push(self, b, idea):
+        """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
 
-        The learnable rule_codebook was removed in Task 1.4. This method
-        always returns ``None``, leaving the rule-identity row as the
-        zero empty-slot sentinel. Rule identity is preserved in the
-        parse-tree ledger (``_blocks``) instead.
+        Raises if the stack is full -- the parser is expected to
+        reduce before pushing when ``is_full(b)`` would be true.
+        Fresh slot is born with a zero truth tag.
         """
-        return None
+        depth = int(self._depth[b].item())
+        if depth >= self.capacity:
+            raise RuntimeError(
+                f"ShortTermMemory.push: row {b} is at capacity "
+                f"({self.capacity}); the parser must reduce before "
+                f"pushing further.")
+        self._buffer[b, depth] = idea
+        self._depth[b] = depth + 1
+        # ``push`` already incurs a ``.item()`` sync above (single-row
+        # legacy path), so an extra host max() here is cheap.
+        if depth + 1 > self._max_depth_host:
+            self._max_depth_host = depth + 1
 
-    def push(self, b, rule_id, leaves):
-        """Append a ``(1 + max_arity)``-row block to batch row ``b``.
+    def push_step(self, ideas):
+        """Push ONE idea per batch row.  ``ideas`` shape ``[B, D]``.
 
-        All rows in the block are written as zeros (rule-identity and
-        leaf-identity vectors are the empty-slot sentinel since the
-        learnable rule_codebook was removed in Task 1.4). Rule identity
-        and leaf ids are preserved in the parse-tree ledger (``_blocks``).
-        When peer ``nWhere > 0``, each row gets a monotonic derivation-step
-        index in its ``.where`` block. Overflow beyond ``max_depth`` silently
-        drops the push.
+        Vectorised single-step push for the serial cursor-loop stem:
+        each call advances every row's depth by 1 and writes
+        ``ideas[b]`` to slot ``_depth[b]`` for all b in parallel.  No
+        ``.item()`` syncs, no Python per-row loop -- the serial-K stem
+        path dispatches one of these per cursor step and inductor
+        unrolls them when K is shape-bucketed.
 
-        Writes go through the inherited ``Basis.setW()`` /
-        ``Basis.getW()`` contract -- ``self.what.getW()`` returns a
-        mutable reference to the ``[batch, max_depth, nWhat]`` tensor
-        allocated by ``_allocate_storage``, and ``push()`` mutates that
-        in place. After mutation we invalidate the cached ``.event``
-        tensor so the next ``materialize()`` rebuilds the muxed view.
-
-        Args:
-            b: batch index.
-            rule_id: 0-based grammar rule id. Recorded in the ledger.
-            leaves: iterable of rule_ids for the operand slots; entries
-                with value ``None`` or ``< 0`` are treated as empty.
-                Iterable is zero-padded / truncated to exactly
-                ``max_arity``.
+        Caller must ensure ``max(_depth) < capacity`` (the cursor loop's
+        outer guard); the buffer was sized to T or K when the loop
+        was set up so this just costs one scatter per step.
         """
-        if self.rule_codebook_host is None:
+        B, D = ideas.shape
+        device = self._buffer.device
+        row_idx = torch.arange(B, device=device)                 # [B]
+        depths  = self._depth                                    # [B] long
+        self._buffer[row_idx, depths] = ideas
+        self._depth = depths + 1
+        # All rows advance by +1 in lockstep; host-side mirror tracks
+        # the uniform increment without a ``.item()`` sync.
+        self._max_depth_host = self._max_depth_host + 1
+
+    def push_step_masked(self, ideas, gate_b_1):
+        # Masked variant of ``push_step`` for the static per-word loop
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.6).
+        # ``gate_b_1`` is a ``[B, 1]`` bool tensor: rows where it is
+        # True receive the push (buffer write + depth advance); rows
+        # where it is False are left bit-identical. With column-constant
+        # gates (flat rule cursor / uniform word_active) the host
+        # ``_max_depth_host`` mirror advances by ``int(gate.any().item())``,
+        # which is constant across the unrolled loop and incurs at most
+        # one DtoH per iteration (cheap; only needed for capacity back-
+        # pressure). The mirror's correctness is best-effort under
+        # mixed-active batches; capacity back-pressure inside the loop
+        # is opportunistic and a post-loop bounded-reduce sweep is the
+        # canonical safety valve.
+        B, D = ideas.shape
+        device = self._buffer.device
+        row_idx = torch.arange(B, device=device)                 # [B]
+        depths = self._depth                                     # [B] long
+        gate_b = gate_b_1.view(B)                                # [B] bool
+        new_slot = torch.where(
+            gate_b.unsqueeze(-1),
+            ideas,
+            self._buffer[row_idx, depths])
+        self._buffer[row_idx, depths] = new_slot
+        self._depth = depths + gate_b.long()
+
+    def push_window_batch(self, ideas):
+        """Push ``W`` consecutive ideas onto every batch row in one shot.
+
+        ``ideas`` has shape ``[B, W, D]``: row ``b``'s slot ``depth+w`` is
+        written from ``ideas[b, w]`` for w in [0, W).  All rows advance
+        by the same ``W``.
+
+        Avoids the per-(b, w) ``.item()`` syncs that ``push`` incurs --
+        critical for the per-word stem's hot path, where the legacy
+        loop dispatched B*W sync points (B=128 N=1024 -> 130k host
+        round-trips) per forward.
+
+        Caller is responsible for ensuring ``max(_depth) + W <= capacity``;
+        the per-word stem calls ``clear()`` first so depths start at 0
+        and ``W`` is bounded by the buffer's already-sized ``capacity``.
+        """
+        B, W, D = ideas.shape
+        if W == 0:
             return
-        if b < 0 or b >= self.batch:
+        device = self._buffer.device
+        starts = self._depth                                  # [B] long
+        offsets = torch.arange(W, device=device).unsqueeze(0)  # [1, W]
+        positions = starts.unsqueeze(1) + offsets             # [B, W]
+        row_idx = torch.arange(B, device=device).unsqueeze(1) \
+            .expand(-1, W)                                    # [B, W]
+        self._buffer[row_idx, positions] = ideas
+        self._depth = starts + W
+        # All rows advance by +W in lockstep; host-side mirror tracks
+        # the increment.
+        self._max_depth_host = self._max_depth_host + int(W)
+
+    def pop(self, b):
+        """Pop and return the top idea for row ``b``, or ``None`` when empty.
+
+        The popped slot's truth tag is zeroed alongside its content.
+        """
+        depth = int(self._depth[b].item())
+        if depth == 0:
+            return None
+        depth -= 1
+        idea = self._buffer[b, depth].clone()
+        self._buffer[b, depth].zero_()
+        self._depth[b] = depth
+        return idea
+
+    def peek(self, b, n=0):
+        """Return the ``n``-th item from top of row ``b``, or ``None``
+        when fewer than ``n+1`` items are on the stack. ``n=0`` is the
+        most recent (top); ``n=size(b)-1`` is the oldest (bottom).
+        """
+        depth = int(self._depth[b].item())
+        if depth <= n:
+            return None
+        return self._buffer[b, depth - 1 - n]
+
+    def snapshot(self, detach=False):
+        """Return ``[B, max_depth, D]`` slice of the live buffer.
+
+        ``max_depth`` is the largest depth across batch rows so the
+        returned tensor is a single uniform slab; rows with shorter
+        sentences carry zero-padding at the tail.  Returns ``None``
+        when the buffer is empty (no pushes have occurred).
+
+        Uses the host-side ``_max_depth_host`` mirror updated by every
+        push path so the chart at C reads STM without a ``.item()``
+        sync.  Under ``max-autotune`` each ``_depth.max().item()`` was
+        a CUDAGraph split (graph break for the dynamo trace); the
+        mirror collapses those splits.
+
+        Used by ``BasicModel._chart_compose_at_C`` and
+        ``BasicModel._chart_generate_from_stm`` to feed the chart at
+        C-tier without each call site re-implementing the depth/padding
+        slicing contract.
+
+        ``detach=True`` clones away from the autograd graph (e.g. for
+        save_weights snapshots or external diagnostics).  The default
+        keeps grad flowing through the buffer so the chart's per-rule
+        selections can shape upstream PiLayer/SymbolicSpace weights.
+        """
+        B = int(self._buffer.shape[0])
+        if B == 0:
+            return None
+        max_depth = int(self._max_depth_host)
+        if max_depth == 0:
+            return None
+        # Defensive clamp: ``_max_depth_host`` should never exceed
+        # capacity, but if a code path slipped past the contract
+        # we'd rather slice safely than index OOB.
+        if max_depth > self.capacity:
+            max_depth = self.capacity
+        snap = self._buffer[:, :max_depth, :]
+        if detach:
+            snap = snap.detach().clone()
+        else:
+            snap = snap.clone()
+        return snap
+
+    def size(self, b):
+        """Current depth (number of occupied slots) for row ``b``."""
+        return int(self._depth[b].item())
+
+    def is_full(self, b):
+        """True when row ``b`` is at capacity."""
+        return self.size(b) >= self.capacity
+
+    def is_empty(self, b):
+        """True when row ``b`` has no occupants."""
+        return self.size(b) == 0
+
+    def clear(self, b=None):
+        """Clear row ``b`` (or all rows when ``b`` is ``None``).
+
+        Called on hard ``Reset`` (sentence boundary). When ``b`` is
+        outside the currently-allocated batch dimension, the buffer
+        hasn't been grown to include that row yet (no pushes ever
+        happened for it), so there is nothing to clear -- skip
+        gracefully instead of raising IndexError. Clears both the
+        idea buffer and the per-slot truth tags.
+        """
+        if b is None:
+            self._buffer.zero_()
+            self._depth.zero_()
+            self._max_depth_host = 0
             return
-        top = int(self._top[b].item())
-        if top + self.block_size > self.max_depth:
-            return  # buffer full -- silently drop
-
-        # Normalize leaves to a fixed-length tuple.
-        leaves_list = list(leaves) if leaves is not None else []
-        while len(leaves_list) < self.max_arity:
-            leaves_list.append(-1)
-        leaves_list = [int(x) if x is not None else -1
-                       for x in leaves_list[:self.max_arity]]
-
-        step_idx = len(self._blocks[b])  # monotonic derivation step
-        self._blocks[b].append({
-            'start': top,
-            'rule_id': int(rule_id),
-            'leaves': tuple(leaves_list),
-        })
-
-        what_W = self.what.getW() if self.nWhat > 0 else None
-        where_W = self.where.getW() if self.nWhere > 0 else None
-
-        # Row 0: rule identity vector in .what block.
-        rule_vec = self._lookup(int(rule_id))
-        if what_W is not None and rule_vec is not None:
-            what_W[b, top] = rule_vec.to(what_W.device)
-        if where_W is not None:
-            where_W[b, top] = float(step_idx)
-
-        # Rows 1..max_arity: leaf identity vectors in .what block.
-        for k in range(self.max_arity):
-            leaf_id = leaves_list[k]
-            row = top + 1 + k
-            if leaf_id < 0:
-                continue  # empty-slot sentinel (zero row)
-            leaf_vec = self._lookup(leaf_id)
-            if what_W is not None and leaf_vec is not None:
-                what_W[b, row] = leaf_vec.to(what_W.device)
-            if where_W is not None:
-                where_W[b, row] = float(step_idx)
-
-        self._top[b] = top + self.block_size
-
-        # Invalidate the cached muxed event -- next materialize()
-        # rebuilds it from the mutated .what/.where/.when Basis slots.
-        if self.event is not None:
-            self.event.setW(None)
-
-    def read(self):
-        """Return the muxed ``[batch, max_depth, nDim]`` stack tensor.
-
-        Delegates to ``SubSpace.materialize()`` which concatenates the
-        demuxed ``.what``/``.where``/``.when`` Basis blocks into one
-        muxed event tensor (and caches it on ``.event`` until the next
-        ``push()`` invalidates the cache).
-        """
-        return self.materialize()
-
-    def get_blocks(self, b):
-        """Return the parse-tree ledger for batch row ``b``.
-
-        Each entry is a dict with keys ``start`` (row index in the
-        buffer), ``rule_id`` (the pushed rule id), and ``leaves``
-        (tuple of ``max_arity`` operand rule ids; ``-1`` indicates an
-        empty slot). Used by parse-tree reconstruction and
-        invertibility tests.
-        """
-        if 0 <= b < len(self._blocks):
-            return list(self._blocks[b])
-        return []
-
-    def top_of_stack(self, b=None):
-        """Return top-of-stack row index per batch (or for one batch)."""
-        if self._top is None:
-            return 0 if b is not None else []
-        if b is not None:
-            return int(self._top[b].item())
-        return self._top.tolist()
-
+        b = int(b)
+        if b < 0 or b >= int(self._buffer.shape[0]):
+            return
+        self._buffer[b].zero_()
+        self._depth[b] = 0
+        # Per-row clear: the host mirror is a global max over rows.
+        # Re-derive (one host scalar) from the remaining rows' depths.
+        # ``.item()`` is acceptable here -- partial clear is called
+        # from sentence-boundary Reset, not the hot path.
+        self._max_depth_host = int(self._depth.max().item())
 
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
@@ -5793,12 +6378,52 @@ class Space(nn.Module):
         """Convenience accessor -- delegates to subspace."""
         return self.subspace.get_vectors()
 
+    @staticmethod
+    def normalize_codebook_mode(raw):
+        """Normalize the tri-state ``<codebook>`` config to a canonical mode.
+
+        Returns one of ``"none"`` / ``"quantize"`` / ``"project"``:
+
+          * ``none``     -- no codebook on ``.what`` (legacy ``false``).
+          * ``quantize`` -- VQ / EMA Codebook snap (legacy ``true``).
+          * ``project``  -- size-changing ProjectionBasis (LDU-invertible;
+                            emits a signed scalar activation ``[B, N]``).
+
+        Legacy booleans are accepted for backward compatibility
+        (``True -> "quantize"``, ``False -> "none"``) so unmigrated configs
+        and programmatic ``codebook=True/False`` overrides still load.
+
+        Shared by the ``codebook_mode`` property (instance use on
+        ``self._codebook``) AND by Models.py callers that hold the raw
+        XML value before any Space instance exists (InputSpace default
+        wiring, ``architecture.monotonic`` validation). Living on
+        ``Space`` keeps the helper namespaced rather than polluting the
+        module scope.
+        """
+        if isinstance(raw, bool):
+            return "quantize" if raw else "none"
+        if raw is None:
+            return "none"
+        v = str(raw).strip().lower()
+        if v in ("none", "false", "0", ""):
+            return "none"
+        if v in ("quantize", "true", "1"):
+            return "quantize"
+        if v == "project":
+            return "project"
+        raise ValueError(
+            f"<codebook> must be one of none|quantize|project "
+            f"(legacy true/false accepted); got {raw!r}")
+
     @property
     def codebook_mode(self):
         """Tri-state codebook mode: ``'none'`` | ``'quantize'`` |
         ``'project'``. (Was the boolean ``<codebook>``; ``project``
-        selects the size-changing scalar ``ProjectionBasis``.)"""
-        return normalize_codebook_mode(self._codebook)
+        selects the size-changing scalar ``ProjectionBasis``.) Delegates
+        to :meth:`normalize_codebook_mode` so the parsing logic lives
+        in one place.
+        """
+        return Space.normalize_codebook_mode(self._codebook)
 
     @property
     def codebook(self):
@@ -6424,6 +7049,14 @@ class InputSpace(Space):
         self._per_word_cursor = 0
         # Cached valid length rewinds with the buffer it summarises.
         self._valid_len_host = 0
+        # Static per-word loop feeders
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.1).
+        # Padded [B, N, D] view of the lexed slab and per-position
+        # [B, N] bool mask of real-word positions. Rebuilt eagerly on
+        # each forward(); read by ``word_at(p)`` and by the rule-gated
+        # per-word body.
+        self._ar_embedded_N = None
+        self._word_active_mask = None
 
     def Reset(self, batch=None, hard=True):
         """Per-document teardown for AR state.
@@ -6450,6 +7083,8 @@ class InputSpace(Space):
         self._per_word_cursor = 0
         # ``_valid_len_host`` is a host-int summary of the same buffer.
         self._valid_len_host = 0
+        self._ar_embedded_N = None
+        self._word_active_mask = None
         self._cached_embedding = None
         # _end_of_stream is a host-side ``list[bool]`` under the
         # rolling-cursor contract (the canonical hard-reset signal is
@@ -6461,7 +7096,7 @@ class InputSpace(Space):
             self._end_of_stream[batch] = False
 
     # The world presenting itself
-    def forward(self, inputData, work=None):
+    def forward(self, inputData):
         """Single-call stem source for the IR-only training pipeline.
 
         Lexes/embeds the input once and emits ``[B, N, D]`` (left-
@@ -6598,6 +7233,25 @@ class InputSpace(Space):
             sub._demuxed = True
         sub.valid_mask = valid_mask
         sub.stem_embedded = True
+        # Static per-word loop feeders
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.1).
+        # ``_ar_embedded_N`` is the padded [B, N, D] view consumed by
+        # ``word_at(p)``; ``_word_active_mask`` is the per-position
+        # [B, N] bool mask consumed downstream as the rule-gate hint.
+        # Kept as tensors (never ``.item()``'d) so the compiled loop
+        # never gates control flow on a host int.
+        self._ar_embedded_N = embedded_N
+        if bpe_mask_N is not None:
+            if bpe_mask_N.shape[1] >= N:
+                _wam = (bpe_mask_N[:, :N] > 0)
+            else:
+                _wpad = torch.zeros(
+                    B, N - bpe_mask_N.shape[1],
+                    dtype=torch.bool, device=bpe_mask_N.device)
+                _wam = torch.cat([bpe_mask_N > 0, _wpad], dim=1)
+        else:
+            _wam = embedded_N.detach().abs().sum(dim=-1) > 0
+        self._word_active_mask = _wam
         if peer is not None and bpe_mask_N is not None:
             peer._bpe_word_mask_flat = bpe_mask_N
         elif peer is not None:
@@ -6608,6 +7262,20 @@ class InputSpace(Space):
         if ws is not None:
             ws.ensure_microbatch(B, 1)
         return sub
+
+    def word_at(self, p):
+        # Static per-word feeder for the rule-gated loop
+        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.1).
+        # Returns the padded ``[B, 1, D]`` word slice at position ``p``
+        # for ``0 <= p < outputShape[0]``; reads from
+        # ``self._ar_embedded_N``, the padded view populated by
+        # ``forward``. Does NOT advance any cursor and does NOT consult
+        # ``_valid_len_host`` — the rule-gate (``selected_rule != id_SS``)
+        # is the per-iteration mask.
+        slab = self._ar_embedded_N
+        if slab is None:
+            return None
+        return slab[:, p:p + 1, :]
 
     def next_word(self):
         """Per-word ground-truth feed for the IR-reconstruction loop.
@@ -6730,7 +7398,7 @@ class InputSpace(Space):
         self.input = self.subspace.materialize()
         return self.subspace
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Reverse pass; inverse of ``forward``.
 
         See class docstring for the inversion contract.
@@ -6755,7 +7423,9 @@ class InputSpace(Space):
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
         object_basis = self.subspace.get_vectors()
         content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
-        raw = object_basis.reverse_raw(y)
+        raw = (object_basis.reverse_raw(y)
+               if hasattr(object_basis, 'reverse_raw')
+               else y)
         self.reconstructed = raw.detach()
         nWhat = content_basis.content_dim
         object_encoding = self.subspace.objectEncoding
@@ -6798,28 +7468,6 @@ class InputSpace(Space):
         Always returns (None, None); callers fall back to forwardInput.
         """
         return None, None
-
-
-def reconstitute(record, order, sigma_layers, pi_layers):
-    """Walk a concept-space record up through ``order`` subsymbolic loops.
-
-    Convention (locked): order 0 = no loop (identity); order k = k loops.
-    One loop maps the record concept->percept via ``pi_layers[i]`` then
-    percept->concept via ``sigma_layers[i]`` (per-order ramsified
-    weights). Pure function over a tensor (no model state) so parthood
-    tests can pass monotone layer stacks directly; with monotone,
-    zero-preserving layers the relation tested by ``Ops._part_kernel`` is
-    preserved across orders.
-
-    ``sigma_layers`` / ``pi_layers`` are indexable (list / nn.ModuleList)
-    with at least ``order`` elements.
-    """
-    x = record
-    for i in range(order):
-        x = sigma_layers[i](pi_layers[i](x))
-    return x
-
-
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via two PiLayer folds.
 
@@ -6847,6 +7495,17 @@ class PerceptualSpace(Space):
     """
     name = "Percepts"
     config_section = "PerceptualSpace"
+
+    # Reserved codebook key for the IR-mode NULL-percept slot. Distinct
+    # from byte ``\x00`` (a real prediction target in byte mode); IR
+    # mask injection replaces masked positions with this slot so the
+    # brick body sees a distinct embedding meaning "predict me" rather
+    # than "this was \x00". Owned by PerceptualSpace because the IR
+    # mode and the percept-level mask injection are PerceptualSpace
+    # concepts; downstream consumers (Embedding seed path, checkpoint
+    # vocab migration, MPHF byte-fallback table) reference it via
+    # ``PerceptualSpace.NULL_PERCEPT_KEY``.
+    NULL_PERCEPT_KEY = "__NULL_PERCEPT__"
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
@@ -6885,11 +7544,12 @@ class PerceptualSpace(Space):
         # C→P feedback is now an explicit ``forward`` argument
         # (``CS_subspaceForPS``) supplied by the recurrent cell, not a
         # post-construction sibling ref.
-        # Recurrent-pass index. Phase 1 relocated this onto the
-        # per-sentence carrier ``work.recur_pass`` (written by
-        # ``_forward_body`` each pass, read in ``forward``); this
-        # attribute remains as the eager fallback for ``work is None``
-        # (standalone ``forward`` calls / unit tests). The serial-mode
+        # Recurrent-pass index. The post-SentenceState design (2026-05-21)
+        # publishes this on ``WordSubSpace.recur_pass`` (written by
+        # ``_forward_body`` each pass, read in ``forward`` via the
+        # ``self.subspace.wordSpace`` back-reference); this attribute
+        # remains as the eager fallback for standalone ``forward`` calls
+        # / unit tests where no wordSpace is wired. The serial-mode
         # warm path is an AR-streaming optimisation across forward
         # *calls*; it must not fire on in-forward recurrent passes >0
         # (those carry distinct C→P feedback and must do the full cold
@@ -7047,8 +7707,9 @@ class PerceptualSpace(Space):
         # ``pi_concept`` per conceptualOrder so order k uses its own
         # weights (sigma_percept / the symbolic codebook are already
         # per-order via the conceptualSpaces/symbolicSpaces ModuleLists).
-        # The recurrent cell selects the order via ``work.recur_pass``
-        # (eager fallback: ``_recurrent_pass_idx``).
+        # The recurrent cell selects the order via
+        # ``self.subspace.wordSpace.recur_pass`` (eager fallback:
+        # ``_recurrent_pass_idx`` when no wordSpace is wired).
         # conceptualOrder<=1 -> length-1 lists -> bit-identical to the
         # pre-ramsification single-fold behavior.
         _T = max(1, int(TheXMLConfig.get(
@@ -7057,7 +7718,7 @@ class PerceptualSpace(Space):
             PiLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
-                invertible=False, nonlinear=nonlinear,
+                invertible=bool(invertible), nonlinear=nonlinear,
                 stable=True, monotonic=_mono,
             ) for _ in range(_T)
         ])
@@ -7074,6 +7735,10 @@ class PerceptualSpace(Space):
         self.attention = AttentionLayer(input, input, type="transformer")
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
+        for layer in self.pi_input:
+            self.params += layer.getParameters()
+        for layer in self.pi_concept:
+            self.params += layer.getParameters()
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -7758,8 +8423,19 @@ class PerceptualSpace(Space):
         # mismatch against the [B, nObj] BPE word mask. ``materialize``
         # would otherwise gather codebook rows by ``what_indices``,
         # which gives the *first sub-token's* vector, not the
-        # MAX-fused word vector we computed -- hence we must setW
-        # explicitly here.
+        # MAX-fused word vector we computed -- hence we must persist
+        # this per-batch MAX-fused tensor on ``.event`` directly.
+        #
+        # KNOWN OUTLIER under spec
+        # doc/specs/2026-05-21-subspace-slot-architecture.md: this is
+        # neither a codebook lookup nor a pure-event store. For configs
+        # where ``.event`` is codebook-bearing (MM_xor / MM_5M muxed),
+        # this write currently rides the ``_active_payload`` band-aid.
+        # Stage 3 of the retirement plan
+        # (doc/plans/2026-05-21-active-payload-retirement.md) addresses
+        # this case explicitly. Surface here is the public setter so
+        # the migration only has to change ``SubSpace.set_event`` to
+        # route differently — no further changes here.
         event_parts = [word_vectors]
         if self.nWhere > 0 and where_indices is not None:
             event_parts.append(self.subspace.whereEncoding.encode(where_indices))
@@ -7767,7 +8443,16 @@ class PerceptualSpace(Space):
             event_parts.append(self.subspace.whenEncoding.encode(when_indices))
         muxed_event = (torch.cat(event_parts, dim=-1)
                        if len(event_parts) > 1 else word_vectors)
-        self.subspace.event.setW(muxed_event)
+        # Spec-aligned write: route through ``SubSpace.set_muxed`` so
+        # the codebook-bearing case (MM_xor / MM_5M with codebook on
+        # ``.event``) snaps the MAX-pooled fused vector through the
+        # codebook (writing the selection on ``_active``), and the
+        # plain-Tensor case (MM_grammar, byte-mode) stores per-batch on
+        # ``event.W`` directly. ``materialize`` reconstructs as
+        # ``codebook[_active]`` for muxed configs — the selection IS
+        # the storage. Per spec invariant "input width ≤ codebook
+        # nDim", the snap is well-defined here.
+        self.subspace.set_muxed(muxed_event)
         self._embedded_input = muxed_event
         self._bpe_word_mask = word_active
         # Only InputSpace.forward can produce the AR-windowed [B*K, N]
@@ -8402,7 +9087,7 @@ class PerceptualSpace(Space):
             flat_subtoken_idx, flat_word_seg, per_word_first,
             per_word_b_out, per_word_slot_out, word_id)
 
-    def forward(self, IS_subspace, CS_subspaceForPS=None, work=None):
+    def forward(self, IS_subspace, CS_subspaceForPS=None):
         """Perception: map input + C→P feedback to percepts (subsymbolic loop).
 
         Two explicit inputs (the ``_sourced_input`` fold, post-2026-05
@@ -8416,6 +9101,11 @@ class PerceptualSpace(Space):
         ``tanh(pi_input + pi_concept)``. ``CS_subspaceForPS=None`` / empty
         (sentence start, standalone unit tests) degrades cleanly to
         ``pi_input(primary)`` alone.
+
+        The recurrent-pass index (``pi_input[oi]`` ModuleList selector)
+        is read off ``self.subspace.wordSpace.recur_pass`` (Python int,
+        Dynamo-specialized). Standalone / pre-soft_reset callers fall
+        through to the persistent ``self._recurrent_pass_idx``.
 
         Handles three paths: warm-serial AR (process only new last slot,
         splice into the rolled cache), embedding (text -> lexicon -> percept),
@@ -8434,7 +9124,13 @@ class PerceptualSpace(Space):
         # cache. Skips the lexicon _embed (upstream already embedded) and
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
-        _rp = (int(work.recur_pass) if work is not None
+        # ``recur_pass`` lives on WordSpace as the per-sentence recurrent-
+        # pass index. ``self.subspace.wordSpace`` is the back-reference
+        # threaded by ``copy_context``; if it's missing (standalone
+        # PerceptualSpace.forward, pre-soft_reset tests), fall back to
+        # the persistent ``self._recurrent_pass_idx`` attribute.
+        ws = getattr(self.subspace, 'wordSpace', None)
+        _rp = (int(ws.recur_pass) if ws is not None
                else self._recurrent_pass_idx)
         if (getattr(self, "serial_mode", False)
                 and _rp == 0
@@ -8494,10 +9190,10 @@ class PerceptualSpace(Space):
         # degrades to ``pi_input(primary)`` alone (matches the old
         # cold-start / non-bivector fallback).
         # Per-order fold selection (ramsification): the recurrent cell
-        # sets ``work.recur_pass`` (eager fallback:
-        # ``_recurrent_pass_idx``) to the order t each pass; clamp to
-        # the available range so standalone callers (idx 0) and any
-        # idx >= conceptualOrder are safe.
+        # sets ``self.subspace.wordSpace.recur_pass`` (eager fallback:
+        # ``_recurrent_pass_idx`` when no wordSpace is wired) to the
+        # order t each pass; clamp to the available range so standalone
+        # callers (idx 0) and any idx >= conceptualOrder are safe.
         _oi = min(max(_rp, 0),
                   len(self.pi_input) - 1)
         pi_input_k = self.pi_input[_oi]
@@ -8563,8 +9259,21 @@ class PerceptualSpace(Space):
                     # forwardEnd). Match shapes to broadcast on the
                     # trailing axis.
                     if ev.dim() == 3 and ev.shape[:2] == mask.shape:
-                        vspace.event.setW(ev * mask.unsqueeze(-1))
+                        # Spec-aligned: store the word-active mask on
+                        # ``.activation`` instead of zero-multiplying
+                        # the event. ``materialize`` applies the gate
+                        # (`event * activation_presence`) on read, so
+                        # masked-out positions zero out in the
+                        # reconstructed event without requiring a
+                        # per-batch setW.
+                        vspace.set_activation(
+                            mask.to(dtype=ev.dtype))
                     elif ev.dim() == 2 and ev.shape[0] == mask.numel():
+                        # 2-D shape — caller has flattened; for non-
+                        # codebook slots this writes to ``event.W``
+                        # directly. For codebook-bearing slots, the
+                        # strict setW raises and the caller would have
+                        # to migrate to the selection-based contract.
                         vspace.event.setW(
                             ev * mask.reshape(-1).unsqueeze(-1))
                     # else: shape mismatch we don't recognise -- skip
@@ -8582,7 +9291,7 @@ class PerceptualSpace(Space):
 
         return vspace
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Manifesting: reconstruct input vectors from percepts.
 
         Branches on text vs numeric: text-mode delegates to ``_reverse_text``
@@ -8599,7 +9308,7 @@ class PerceptualSpace(Space):
         # inverse chain below.
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
-            return vspace
+            return self.subspace
         if self.invertible:
             vspace.normalize("percepts", target="event",
                              normalize=True, reverse=True)
@@ -8619,13 +9328,18 @@ class PerceptualSpace(Space):
         if self.invertible:
             vspace.normalize("percepts", target="event",
                              normalize=True, reverse=True)
-        # Text mode: the subspace already holds per-position muxed vectors
-        # ([B, nVec, nWhat+nWhere+nWhen]). Skip reverseBegin's flatten-undo
-        # reshape (which assumes a forwardEnd flatten that _embed
-        # does not perform) and work with the raw per-position tensor.
-        y = vspace.materialize()
+        y = self.reverseBegin(vspace, returnVectors=True)
+        if self.codebook:
+            y = object_basis.reverse(y)
+        if self.invertible and hasattr(self, 'pi_input'):
+            _oi = min(max(getattr(self, '_recurrent_pass_idx', 0), 0),
+                      len(self.pi_input) - 1)
+            pi_input_k = self.pi_input[_oi]
+            if getattr(pi_input_k, 'invertible', False):
+                y = pi_input_k.reverse(y)
         self.subspace.batch = y.shape[0]
-        raw = object_basis.reverse_raw(y)
+        raw = (object_basis.reverse_raw(y)
+               if hasattr(object_basis, 'reverse_raw') else y)
         self.reconstructed = raw.detach()
         nWhat = content_basis.content_dim
         object_encoding = self.subspace.objectEncoding
@@ -8636,15 +9350,27 @@ class PerceptualSpace(Space):
                 content, aux = y.clone(), None
             else:
                 content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
-        content = content_basis.reverse(content)
+        # Keep the continuous reverse tensor as the trainable surface.
+        # Text rendering below still nearest-decodes it, matching the old
+        # Embedding pass-through reverse contract while preserving gradient
+        # flow for reconstruction loss.
+        content = content.clone()
         if object_encoding is not None:
             self.input = object_encoding.restore_aux(content, aux)
         elif aux is not None:
             self.input = torch.cat([content, aux], dim=-1)
         else:
             self.input = content
-        content_basis.setW(self.input)
-        object_basis.setW(self.input)
+        # Stage 4: dropped the legacy ``content_basis.setW(self.input)``
+        # and ``object_basis.setW(self.input)`` lines. Both were
+        # band-aid-era duplicates of the SubSpace setter below:
+        #   * ``content_basis`` is the Embedding (.what) — Embedding.setW
+        #     was already a no-op.
+        #   * ``object_basis`` is .event — the per-batch write goes
+        #     through ``SubSpace.set_event`` (which snaps via codebook
+        #     for muxed configs; stores on event.W for pure-event).
+        # ``self.input`` is still kept on the PerceptualSpace itself
+        # for the text-render path (``_recovered_input_thunk`` below).
         self.subspace.set_event(self.input)
         # Lazy: word recovery is report-only (reconstruct_data /
         # reconstruct_to_buffer / get_recovered_word /
@@ -8807,7 +9533,7 @@ class ModalSpace(Space):
         """ModalSpace manages its own branch requirements."""
         pass
 
-    def forward(self, subspace, work=None):
+    def forward(self, subspace):
         """Route each modality through its branch PerceptualSpace.
 
         Pulls the what / where / when slabs (either directly from a
@@ -8861,7 +9587,7 @@ class ModalSpace(Space):
         out.copy_context(subspace)
         return out
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Split event into modalities, reverse each branch, rebuild.
 
         Slices the muxed event into what / where / when sub-tensors,
@@ -8926,294 +9652,6 @@ class ModalSpace(Space):
             self.whereSpace.paramUpdate()
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
-
-
-class ShortTermMemory(nn.Module):
-    """Short-term memory (STM) on ConceptualSpace.
-
-    A per-batch stack of unquantized C-tier activations -- "ideas",
-    the continuous compositions that the chart produces by reducing
-    concepts / earlier ideas. Distinct from
-    ``WordSpace._stm_fired`` (which is a once-per-sentence
-    discourse-priming flag, not a working-memory buffer).
-
-    Semantics:
-        * Each slot holds a ``[concept_dim]`` vector.
-        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
-          recent idea; ``peek(b, n)`` returns the n-th most recent.
-        * Capacity is a soft cap (7±2 for linguistic processing,
-          per the brain's classical working-memory limit). The
-          (future) serial parser is expected to reduce ideas before
-          pushing when ``is_full(b)`` would otherwise be true.
-        * Subsymbolic operation can drive a wider STM than the
-          linguistic 7±2; the capacity is configurable via
-          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``
-          in the model XML.
-
-    Lifecycle:
-        * Built by ``ConceptualSpace.__init__`` at construction time
-          (capacity from XML; default 9).
-        * Cleared on hard ``Reset`` (sentence boundary): all rows
-          set to zero, depth pointers reset to 0.
-        * No active consumer yet -- this is the structural slot
-          the upcoming serial / shift-reduce parser will read and
-          mutate. The current batched-CKY chart doesn't use it.
-
-    Storage is a plain registered buffer (``persistent=False``);
-    STM contents are runtime working state, not learned weights.
-    """
-
-    DEFAULT_CAPACITY = 9
-
-    def __init__(self, batch=1, capacity=None, concept_dim=0):
-        super().__init__()
-        self.capacity = int(capacity or self.DEFAULT_CAPACITY)
-        self.concept_dim = int(concept_dim)
-        # ``persistent=False``: STM is transient working state, not
-        # saved with the model checkpoint.
-        self.register_buffer(
-            "_buffer",
-            torch.zeros(int(batch), self.capacity, self.concept_dim),
-            persistent=False)
-        self.register_buffer(
-            "_depth",
-            torch.zeros(int(batch), dtype=torch.long),
-            persistent=False)
-        # Host-side mirror of ``_depth.max()``.  Updated by every push
-        # path (uniform-step push, push_step, push_window_batch);
-        # ``snapshot()`` reads this so it never needs a ``.item()``
-        # sync inside the compiled forward.  The chart at C reads
-        # ``snapshot()`` once per stage in the body; under
-        # ``max-autotune`` each such ``.item()`` was a graph break
-        # (and a CUDAGraph split).  Tracking host-side collapses
-        # those breaks while preserving the trim-to-actual-depth
-        # behaviour the chart relies on.
-        self._max_depth_host = 0
-    def ensure_batch(self, batch):
-        """Resize the STM buffers to ``batch`` rows when the model's
-        microbatch dimension changes. Idempotent.
-        """
-        batch = int(batch)
-        if int(self._buffer.shape[0]) == batch:
-            return
-        device = self._buffer.device
-        self._buffer = torch.zeros(
-            batch, self.capacity, self.concept_dim, device=device)
-        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
-        # Fresh allocation -> empty buffer -> max depth resets to 0.
-        self._max_depth_host = 0
-
-    def ensure_capacity(self, capacity):
-        """Grow the per-slot capacity to at least ``capacity``.
-
-        Idempotent and **grow-only** (mirrors :meth:`ensure_batch`).
-        Used by the per-word IR-reconstruction loop (increment 2b-1) to
-        size the STM to the sentence length -- the CKY+resize-equivalent
-        baseline (two-loop spec Phase-1-D §3: "ship CKY + resized STM,
-        ``<stmCapacity>``=``wMax``"). The bounded soft REDUCE-to-<=7
-        controller (increment 2b-2) is a separate change; until it
-        lands, the producer must not overflow a too-small stack, so the
-        sentence-length resize is the documented, owner-approved
-        baseline. Leaves the configured ``<stmCapacity>`` knob untouched
-        (this only ever *grows* the live buffer, never shrinks it, and
-        is never called on the whole-slab/non-grammar path).
-        """
-        capacity = int(capacity)
-        if capacity <= self.capacity:
-            return
-        device = self._buffer.device
-        B = int(self._buffer.shape[0])
-        new_buf = torch.zeros(
-            B, capacity, self.concept_dim, device=device,
-            dtype=self._buffer.dtype)
-        # Preserve any already-pushed content (grow-only: the existing
-        # slots stay at their indices; the tail is fresh zeros).
-        old_cap = int(self._buffer.shape[1])
-        if old_cap > 0:
-            new_buf[:, :old_cap, :] = self._buffer
-        self._buffer = new_buf
-        self.capacity = capacity
-
-    def push(self, b, idea):
-        """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
-
-        Raises if the stack is full -- the parser is expected to
-        reduce before pushing when ``is_full(b)`` would be true.
-        Fresh slot is born with a zero truth tag.
-        """
-        depth = int(self._depth[b].item())
-        if depth >= self.capacity:
-            raise RuntimeError(
-                f"ShortTermMemory.push: row {b} is at capacity "
-                f"({self.capacity}); the parser must reduce before "
-                f"pushing further.")
-        self._buffer[b, depth] = idea
-        self._depth[b] = depth + 1
-        # ``push`` already incurs a ``.item()`` sync above (single-row
-        # legacy path), so an extra host max() here is cheap.
-        if depth + 1 > self._max_depth_host:
-            self._max_depth_host = depth + 1
-
-    def push_step(self, ideas):
-        """Push ONE idea per batch row.  ``ideas`` shape ``[B, D]``.
-
-        Vectorised single-step push for the serial cursor-loop stem:
-        each call advances every row's depth by 1 and writes
-        ``ideas[b]`` to slot ``_depth[b]`` for all b in parallel.  No
-        ``.item()`` syncs, no Python per-row loop -- the serial-K stem
-        path dispatches one of these per cursor step and inductor
-        unrolls them when K is shape-bucketed.
-
-        Caller must ensure ``max(_depth) < capacity`` (the cursor loop's
-        outer guard); the buffer was sized to T or K when the loop
-        was set up so this just costs one scatter per step.
-        """
-        B, D = ideas.shape
-        device = self._buffer.device
-        row_idx = torch.arange(B, device=device)                 # [B]
-        depths  = self._depth                                    # [B] long
-        self._buffer[row_idx, depths] = ideas
-        self._depth = depths + 1
-        # All rows advance by +1 in lockstep; host-side mirror tracks
-        # the uniform increment without a ``.item()`` sync.
-        self._max_depth_host = self._max_depth_host + 1
-
-    def push_window_batch(self, ideas):
-        """Push ``W`` consecutive ideas onto every batch row in one shot.
-
-        ``ideas`` has shape ``[B, W, D]``: row ``b``'s slot ``depth+w`` is
-        written from ``ideas[b, w]`` for w in [0, W).  All rows advance
-        by the same ``W``.
-
-        Avoids the per-(b, w) ``.item()`` syncs that ``push`` incurs --
-        critical for the per-word stem's hot path, where the legacy
-        loop dispatched B*W sync points (B=128 N=1024 -> 130k host
-        round-trips) per forward.
-
-        Caller is responsible for ensuring ``max(_depth) + W <= capacity``;
-        the per-word stem calls ``clear()`` first so depths start at 0
-        and ``W`` is bounded by the buffer's already-sized ``capacity``.
-        """
-        B, W, D = ideas.shape
-        if W == 0:
-            return
-        device = self._buffer.device
-        starts = self._depth                                  # [B] long
-        offsets = torch.arange(W, device=device).unsqueeze(0)  # [1, W]
-        positions = starts.unsqueeze(1) + offsets             # [B, W]
-        row_idx = torch.arange(B, device=device).unsqueeze(1) \
-            .expand(-1, W)                                    # [B, W]
-        self._buffer[row_idx, positions] = ideas
-        self._depth = starts + W
-        # All rows advance by +W in lockstep; host-side mirror tracks
-        # the increment.
-        self._max_depth_host = self._max_depth_host + int(W)
-
-    def pop(self, b):
-        """Pop and return the top idea for row ``b``, or ``None`` when empty.
-
-        The popped slot's truth tag is zeroed alongside its content.
-        """
-        depth = int(self._depth[b].item())
-        if depth == 0:
-            return None
-        depth -= 1
-        idea = self._buffer[b, depth].clone()
-        self._buffer[b, depth].zero_()
-        self._depth[b] = depth
-        return idea
-
-    def peek(self, b, n=0):
-        """Return the ``n``-th item from top of row ``b``, or ``None``
-        when fewer than ``n+1`` items are on the stack. ``n=0`` is the
-        most recent (top); ``n=size(b)-1`` is the oldest (bottom).
-        """
-        depth = int(self._depth[b].item())
-        if depth <= n:
-            return None
-        return self._buffer[b, depth - 1 - n]
-
-    def snapshot(self, detach=False):
-        """Return ``[B, max_depth, D]`` slice of the live buffer.
-
-        ``max_depth`` is the largest depth across batch rows so the
-        returned tensor is a single uniform slab; rows with shorter
-        sentences carry zero-padding at the tail.  Returns ``None``
-        when the buffer is empty (no pushes have occurred).
-
-        Uses the host-side ``_max_depth_host`` mirror updated by every
-        push path so the chart at C reads STM without a ``.item()``
-        sync.  Under ``max-autotune`` each ``_depth.max().item()`` was
-        a CUDAGraph split (graph break for the dynamo trace); the
-        mirror collapses those splits.
-
-        Used by ``BasicModel._chart_compose_at_C`` and
-        ``BasicModel._chart_generate_from_stm`` to feed the chart at
-        C-tier without each call site re-implementing the depth/padding
-        slicing contract.
-
-        ``detach=True`` clones away from the autograd graph (e.g. for
-        save_weights snapshots or external diagnostics).  The default
-        keeps grad flowing through the buffer so the chart's per-rule
-        selections can shape upstream PiLayer/SymbolicSpace weights.
-        """
-        B = int(self._buffer.shape[0])
-        if B == 0:
-            return None
-        max_depth = int(self._max_depth_host)
-        if max_depth == 0:
-            return None
-        # Defensive clamp: ``_max_depth_host`` should never exceed
-        # capacity, but if a code path slipped past the contract
-        # we'd rather slice safely than index OOB.
-        if max_depth > self.capacity:
-            max_depth = self.capacity
-        snap = self._buffer[:, :max_depth, :]
-        if detach:
-            snap = snap.detach().clone()
-        else:
-            snap = snap.clone()
-        return snap
-
-    def size(self, b):
-        """Current depth (number of occupied slots) for row ``b``."""
-        return int(self._depth[b].item())
-
-    def is_full(self, b):
-        """True when row ``b`` is at capacity."""
-        return self.size(b) >= self.capacity
-
-    def is_empty(self, b):
-        """True when row ``b`` has no occupants."""
-        return self.size(b) == 0
-
-    def clear(self, b=None):
-        """Clear row ``b`` (or all rows when ``b`` is ``None``).
-
-        Called on hard ``Reset`` (sentence boundary). When ``b`` is
-        outside the currently-allocated batch dimension, the buffer
-        hasn't been grown to include that row yet (no pushes ever
-        happened for it), so there is nothing to clear -- skip
-        gracefully instead of raising IndexError. Clears both the
-        idea buffer and the per-slot truth tags.
-        """
-        if b is None:
-            self._buffer.zero_()
-            self._depth.zero_()
-            self._max_depth_host = 0
-            return
-        b = int(b)
-        if b < 0 or b >= int(self._buffer.shape[0]):
-            return
-        self._buffer[b].zero_()
-        self._depth[b] = 0
-        # Per-row clear: the host mirror is a global max over rows.
-        # Re-derive (one host scalar) from the remaining rows' depths.
-        # ``.item()`` is acceptable here -- partial clear is called
-        # from sentence-boundary Reset, not the hot path.
-        self._max_depth_host = int(self._depth.max().item())
-
-
 class ConceptualSpace(Space):
     """Transforms percepts into concepts via ``sigma_percept`` (additive fold).
 
@@ -9528,7 +9966,7 @@ class ConceptualSpace(Space):
         if stm is not None:
             stm.clear(b=batch)
 
-    def forward(self, PS_subspace, SS_subspace=None, work=None):
+    def forward(self, PS_subspace, SS_subspace=None):
         """Knowing: combine perceptual + symbolic-loop inputs into concepts.
 
         Two explicit inputs (the folded ``_sourced_input``, post-2026-05
@@ -9543,6 +9981,14 @@ class ConceptualSpace(Space):
         (``percept_dim → concept_dim``), per the 2026-05-13 rebalance
         (doc/Spaces.md §"Sigma / Pi ownership"). When ``nonlinear=True``
         the tanh wrap on SigmaLayer keeps the output in ``[-1, 1]``.
+
+        The cross-pass C→P / C→S feedback the per-word / per-stage
+        recurrence consumes is published by writing the post-forward
+        events to ``self._subspaceForPS`` / ``self._subspaceForSS`` (the
+        persistent SubSpace objects allocated once in ``__init__``).
+        Callers read those attributes between iterations and thread them
+        as positional args to the next ``PerceptualSpace.forward`` /
+        ``SymbolicSpace.forward`` call — no carrier object.
         """
         if PS_subspace.is_empty():
             return PS_subspace
@@ -9623,7 +10069,8 @@ class ConceptualSpace(Space):
         _ssr = getattr(self, 'symbolicSpace_ref', None)
         _what = getattr(_ssr.subspace, 'what', None) if _ssr is not None else None
         _P = getattr(_what, 'W', None) if _what is not None else None
-        if (_P is not None and torch.is_tensor(_P) and _P.dim() == 2
+        if (isinstance(_what, (Codebook, ProjectionBasis))
+                and _P is not None and torch.is_tensor(_P) and _P.dim() == 2
                 and torch.is_tensor(y) and y.dim() == 3
                 and y.shape[-1] == _P.shape[-1] and _P.shape[0] > 0):
             _flat = y.reshape(-1, y.shape[-1])
@@ -9733,19 +10180,17 @@ class ConceptualSpace(Space):
         #     lift belongs here). PerceptualSpace then applies its own
         #     pi_concept fold + pi_concept.nInput shape gate (non-bivector
         #     output falls the gate and PS uses pi_input alone).
-        # Non-owning consumer-view back-ref. The cross-pass handoff lives
-        # on the per-sentence ``work`` carrier (``work.cs_for_ss``) when
-        # present (Phase 1.4): ``_forward_body`` reads it next pass. Eager
-        # fallback (``work is None``): ``object.__setattr__`` -- a plain
-        # ``self._subspaceForSS = vspace`` (vspace is a SubSpace =
-        # nn.Module) enters nn.Module.__setattr__ and ADDS a
-        # ``self._modules`` entry on first forward, so the dynamo guard
-        # ``len(cs._modules)==8`` fails -> a forced recompile (measured
-        # unique_graphs=2). __dict__ storage keeps _modules constant.
-        if work is not None:
-            work.cs_for_ss = vspace
-        else:
-            object.__setattr__(self, "_subspaceForSS", vspace)
+        # Non-owning consumer-view back-ref. Stored on the persistent
+        # ``self._subspaceForSS`` attribute; ``_forward_body`` /
+        # ``_forward_body_per_word`` read it next pass and pass it
+        # positionally to ``SymbolicSpace.forward``.
+        # ``object.__setattr__``: a plain ``self._subspaceForSS = vspace``
+        # (vspace is a SubSpace = nn.Module) would enter
+        # ``nn.Module.__setattr__`` and ADD a ``self._modules`` entry on
+        # first forward, so the dynamo guard ``len(cs._modules)==8``
+        # would fail → a forced recompile (measured unique_graphs=2).
+        # ``__dict__`` storage keeps ``_modules`` constant.
+        object.__setattr__(self, "_subspaceForSS", vspace)
         cs_what = self.subspace.what
         ev = vspace.materialize(mode="event")
         if isinstance(cs_what, ProjectionBasis) and ev is not None:
@@ -9754,12 +10199,11 @@ class ConceptualSpace(Space):
             lifted = cs_what.reverse(ev, V=int(self.inputShape[0]))
         else:
             lifted = ev
-        # The cross-pass handoff *reference* for the C->P view moves to
-        # the per-sentence ``work`` carrier (``work.cs_for_ps``) when
-        # present (Phase 1.4); ``_forward_body`` reads it next pass. The
-        # persistent ``self._subspaceForPS`` SubSpace (allocated once in
-        # __init__) is still mutated in place via ``set_event`` -- only
-        # the handoff reference, not the object reuse, relocates.
+        # The C→P handoff is the persistent ``self._subspaceForPS``
+        # SubSpace (allocated once in ``__init__``), mutated in place via
+        # ``set_event``. Callers read ``cs._subspaceForPS`` between
+        # iterations and thread it as ``CS_subspaceForPS=`` to the next
+        # ``PerceptualSpace.forward`` call.
         if lifted is not None and lifted.dim() == 3:
             # Reuse the owned persistent carrier (allocated once in
             # __init__): no per-call SubSpace ctor / copy_context
@@ -9769,30 +10213,19 @@ class ConceptualSpace(Space):
             # context, and it is never the returned vspace -- so
             # dropping copy_context preserves the pipeline invariant.
             self._subspaceForPS.set_event(lifted)
-            if work is not None:
-                # Publish the persistent object as the handoff. Eager
-                # fallback (work is None): the original code left
-                # ``self._subspaceForPS`` (the persistent object, set
-                # in __init__) as the handle untouched here -- match
-                # that exactly (no re-bind on the normal path).
-                work.cs_for_ps = self._subspaceForPS
         else:
             # Degenerate edge (no concept event); not the recon/compiled
             # hot path -- keep the original tiny-empty fallback.
             fallbackForPS = SubSpace(
                 inputShape=(0, 1), outputShape=(0, 1),
                 nInputDim=1, nOutputDim=1)
-            if work is not None:
-                work.cs_for_ps = fallbackForPS
-            else:
-                # object.__setattr__: same _modules-guard reason as
-                # _subspaceForSS above (avoid recompile if this branch
-                # is ever hit under compile). Byte-identical to the
-                # original eager fallback handoff.
-                object.__setattr__(self, "_subspaceForPS", fallbackForPS)
+            # object.__setattr__: same _modules-guard reason as
+            # _subspaceForSS above (avoid recompile if this branch
+            # is ever hit under compile).
+            object.__setattr__(self, "_subspaceForPS", fallbackForPS)
         return vspace
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
 
         When CSBP bivector output is active, first runs the codebook's
@@ -9877,48 +10310,6 @@ class ConceptualSpace(Space):
     def test():
         """Self-test; verifies the round-trip / invariant."""
         pass
-
-
-# Default Gaussian region width retained for callers that calibrate
-# extents by Gaussian σ. The legacy area / luminosity that consumed it
-# migrated to the Mereology mixin (bin/Mereology.py) with a
-# hyperrectangle-volume formula; this constant remains for
-# backward-compat with any consumer that still keys on it.
-_DEFAULT_SYMBOL_SIGMA = 0.1
-
-
-# VQ chunk-size memory budget. This is host-only config (a Python int
-# used to size a chunk loop), but its old body did `str(TheDevice.get())`
-# -- `DeviceHandle` is a `str` subclass with a C-implemented `__str__`
-# that torch.compile/dynamo cannot trace (graph break, recon #6). It is
-# a per-process constant, so compute it ONCE eagerly at import (where
-# the C str is fine) and have the traced staticmethod return the cached
-# int -- a constant dynamo bakes in, no device-str in the traced path.
-_VQ_CHUNK_BUDGET = None
-
-
-def _compute_vq_chunk_budget():
-    global _VQ_CHUNK_BUDGET
-    if _VQ_CHUNK_BUDGET is not None:
-        return _VQ_CHUNK_BUDGET
-    device = str(TheDevice.get())          # eager-only (import time)
-    if 'cuda' in device:
-        try:
-            props = torch.cuda.get_device_properties(device)
-            _VQ_CHUNK_BUDGET = max(256 << 20, props.total_mem // 4)
-            return _VQ_CHUNK_BUDGET
-        except Exception:
-            pass
-    if 'mps' in device or 'cuda' in device:
-        _VQ_CHUNK_BUDGET = 4 << 30
-    else:
-        _VQ_CHUNK_BUDGET = 2 << 30
-    return _VQ_CHUNK_BUDGET
-
-
-_compute_vq_chunk_budget()                  # prime eagerly at import
-
-
 class SymbolicSpace(Space):
     """Codebook-backed symbol stack with swap operations.
 
@@ -10137,9 +10528,11 @@ class SymbolicSpace(Space):
         except (KeyError, TypeError, ValueError):
             self.accumulateTruth = 0.0
 
-        # Per-instance Gaussian region width used by ``area`` / ``luminosity``.
-        # ``None`` means fall back to ``_DEFAULT_SYMBOL_SIGMA``.  Set when
-        # symbols carry a calibrated extent.
+        # Per-instance Gaussian region width used by ``area`` /
+        # ``luminosity``. ``None`` when no calibrated extent is set;
+        # the metrics migrated to the Mereology mixin (with a
+        # hyperrectangle-volume formula) and consumers no longer key
+        # on a global default.
         self.activeSigma = None
 
         # Trust threshold for the per-cell record_batch path: activation
@@ -10277,6 +10670,26 @@ class SymbolicSpace(Space):
         # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``,
         # which the chart's lazy-build path resolves via the
         # ``'disjunction'`` entry in ``GRAMMAR_LAYER_CLASSES``.
+
+        """Memory budget (bytes) for VQ distance matrix chunks.
+
+        With d content dims and K codebook entries, each row of the
+        distance matrix costs K * 4 bytes.  The budget controls how
+        many rows are processed per matmul.  Larger budgets mean fewer
+        sequential chunks -- critical for AR batches where N can
+        reach hundreds of thousands.
+        """
+        device = str(TheDevice.get())          # eager-only (import time)
+        if 'cuda' in device:
+            try:
+                props = torch.cuda.get_device_properties(device)
+                self.vq_chunk_budget = max(256 << 20, props.total_mem // 4)
+            except Exception:
+                pass
+        if 'mps' in device or 'cuda' in device:
+            self.vq_chunk_budget = 4 << 30
+        else:
+            self.vq_chunk_budget = 2 << 30
 
     def _make_symbol_codebook_learnable(self):
         """Phase 1A.2 scoping hook.
@@ -10497,10 +10910,6 @@ class SymbolicSpace(Space):
         exercises that path directly to verify the C↔S round-trip
         projects onto span(W) and is a fixed point thereafter.
 
-        ``polarity=True`` allocates a per-row tag in
-        ``polarity_ids`` (POLARITY_AFFIRM/NON/NOT) so reconstruction
-        can emit the matching surface form ("foo"/"non-foo"/"not foo").
-
         2026-05-13: in the bivector regime, ``.what`` is now a
         ``ProjectionBasis`` (LDU-parameterized) rather than a Codebook
         with invertible=True, matching the ConceptualSpace bivector
@@ -10526,7 +10935,6 @@ class SymbolicSpace(Space):
             self.nDim,
             customVQ=self.customVQ,
             monotonic=True,
-            polarity=True,
             category=True,
             STE=True,
             invertible=False,
@@ -10759,25 +11167,6 @@ class SymbolicSpace(Space):
         log_power = torch.log(power)
         return (log_power - log_power.mean(dim=-1, keepdim=True)).square().mean()
 
-    @staticmethod
-    def _vq_chunk_budget():
-        """Memory budget (bytes) for VQ distance matrix chunks.
-
-        With d content dims and K codebook entries, each row of the
-        distance matrix costs K * 4 bytes.  The budget controls how
-        many rows are processed per matmul.  Larger budgets mean fewer
-        sequential chunks -- critical for AR batches where N can
-        reach hundreds of thousands.
-
-        Returns the import-time-memoized constant
-        (``_compute_vq_chunk_budget``); no ``str(DeviceHandle)`` in the
-        traced path (was recon graph-break #6 -- C-str on a str
-        subclass). Per-process constant, so this is exact, not an
-        approximation.
-        """
-        return (_VQ_CHUNK_BUDGET if _VQ_CHUNK_BUDGET is not None
-                else _compute_vq_chunk_budget())
-
     def _nearest_symbol_target(self, predicted):
         """Nearest codebook symbols as detached residual targets.
 
@@ -10801,7 +11190,7 @@ class SymbolicSpace(Space):
         With d = 1 (activation path) or d = 4 (symbol vector path) the
         matmul is trivially fast; the bottleneck is the [N, K] output
         matrix.  We chunk over N to keep that within the memory budget from
-        ``_vq_chunk_budget()``.
+        self.vq_chunk_budget.
         """
         if not self.codebook:
             return None
@@ -10822,7 +11211,7 @@ class SymbolicSpace(Space):
         weight_sq = (weight_content * weight_content).sum(dim=-1).unsqueeze(0)  # [1, K]
 
         K = weight_content.shape[0]
-        budget = self._vq_chunk_budget()
+        budget = self.vq_chunk_budget
         max_rows = max(1, budget // (K * 4))
         N = flat_content.shape[0]
 
@@ -10959,7 +11348,8 @@ class SymbolicSpace(Space):
         # cleanly.  Safe here because the manufactured ``incoming`` is local
         # scratch with a Tensor (not Codebook) basis on .what.
         inc_what_shape = (1, n, int(self.subspace.nWhat))
-        incoming.set_what(torch.zeros(inc_what_shape, dtype=torch.float32))
+        incoming.set_what(torch.zeros(
+            inc_what_shape, dtype=torch.float32, device=pos_vector.device))
         incoming._rule_dispatch = True
         return incoming
 
@@ -11163,7 +11553,11 @@ class SymbolicSpace(Space):
                 while bump.ndim < new_what.ndim:
                     bump = bump.unsqueeze(0)
                 new_what = new_what + bump
-            self.subspace.what.setW(new_what)
+            # Per spec: per-batch ``.what`` writes flow through
+            # ``set_what`` which snaps via the codebook for unmuxed
+            # configs (codebook on ``.what``) and falls through to
+            # direct ``setW`` for plain-Tensor slots.
+            self.subspace.set_what(new_what)
 
         # Step 5 -- resolve + optional codebook pass.
         self.resolve(self.subspace)
@@ -11233,11 +11627,11 @@ class SymbolicSpace(Space):
             nInputDim=D + W, nOutputDim=D + W,
             whereEncoding=we,
         )
-        sub.set_what(torch.zeros(B, K, D, device=self.subspace.what.W.device
-                                  if self.subspace.what.getW() is not None
-                                  else None))
-        sub.set_where(torch.zeros(B, K, W))
-        sub.set_activation(torch.zeros(B, K))
+        device = (self.subspace.what.W.device
+                  if self.subspace.what.getW() is not None else None)
+        sub.set_what(torch.zeros(B, K, D, device=device))
+        sub.set_where(torch.zeros(B, K, W, device=device))
+        sub.set_activation(torch.zeros(B, K, device=device))
         return sub
 
     def _pick_default_reduce_rule(self):
@@ -11429,7 +11823,7 @@ class SymbolicSpace(Space):
             torch.ones(B, N, device=out.device, dtype=out.dtype))
         return self.subspace
 
-    def forward(self, CS_subspaceForSS, work=None):
+    def forward(self, CS_subspaceForSS):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
         Single explicit input ``CS_subspaceForSS`` -- the prior pass's
@@ -11498,82 +11892,25 @@ class SymbolicSpace(Space):
             # in ConceptualSpace.pi.
             act = act_pre
         else:
-            # ---- Phase 2A.6: S-tier op selection centralizes HERE ----
-            # SymbolicSpace is the single site that drives S-tier op
-            # application. Selection is delegated to
-            # ``WordSpace.selection_from_current_rules('S', work)`` (the
-            # ONE contract surface). In Phase 2A ``work`` is None or
-            # ``work.op_sel`` is None for every config (the chart is
-            # dormant -- ``new_working_state`` is always called with
-            # ``n_ops=0``), so the helper returns the EXACT
-            # ``current_rules.get('S')`` per-step object the legacy
-            # code read, and the cursor loop below runs UNCHANGED
-            # (byte-identical eager fallback).
-            #
-            # Phase 2B: populate work.op_sel/op_operands from the chart
-            # soft-superposition here. This is the locked centralization
-            # point -- the chart writes the soft op distribution onto
-            # ``work`` and the tensor-driven executor branch below
-            # consumes it. Unreached in 2A (chart dormant); present
-            # only to LOCK where selection lives. It must not change
-            # any dormant behaviour.
-            if work is not None and work.op_sel is not None:
-                # Phase 2B: populate work.op_sel/op_operands from the
-                # chart soft-superposition here. For the default-only
-                # path this is done by
-                # ``WordSpace._populate_op_sel_from_default_rules``
-                # during ``WordSpace.compose``; the chart-based path
-                # would write its own soft distribution here. The
-                # tensor-driven executor below consumes it.
-                pass
-            sel = (
-                wordSpace.selection_from_current_rules('S', work)
-                if wordSpace is not None
-                else None)
-            if work is not None and work.op_sel is not None:
-                # ---- Tensor-driven S-executor (Phase 2B).
-                # Combine the selected S-tier ops by a SINGLE weighted
-                # reduce over the fixed ``TheGrammar.rules`` op axis:
-                # independent per-op contributions, NO shared in-place
-                # accumulator (the proven ``_superposed_op`` /
-                # ``_embed_bpe`` pattern; constraint 3). The static op
-                # table ``syntacticLayer._arity1_ops`` was built at
-                # __init__ time over arity-1 rules registered in
-                # ``_by_name``; its length is statically known so
-                # Dynamo unrolls the loop under ``fullgraph=True``
-                # with zero Python control flow on tensor data.
-                # Arity-2 ops are executed inside the chart's inside
-                # pass and are excluded from the static table (mirrors
-                # ``SyntacticLayer.forward``'s arity gate).
-                # ``op_sel[k]`` weights ``TheGrammar.rules[k]``; a
-                # one-hot ``op_sel`` reproduces the argmax cursor pick.
-                op_sel, _op_operands = sel
-                vspace.set_event(act_pre)
-                # Single read: all arity-1 layers consume the same
-                # materialized view of ``vspace`` after ``set_event``
-                # (``reads_activation`` is False on every registered
-                # arity-1 S-tier op today — sigma/pi/not/part/isEqual/
-                # query are all event-readers). Hoisting the read out
-                # of the loop keeps the unrolled trace flat.
-                x_in = self.syntacticLayer._read_subspace(
-                    vspace, layer=None)
-                total = torch.zeros_like(act_pre)
-                for rule_idx, layer in self.syntacticLayer._arity1_ops:
-                    total = total + layer.forward(x_in) * op_sel[rule_idx]
-                act = total
-            else:
-                # ---- Eager cursor path (op_sel is None -- ALWAYS in
-                # 2A). ``sel`` is the exact ``current_rules.get('S')``
-                # object; this loop is BYTE-IDENTICAL to the pre-2A.6
-                # code (pure pass-through to today's behaviour).
-                chart_rules_S = sel
-                row_zero = self.syntacticLayer._row_zero_rules(
-                    chart_rules_S)
-                n_steps = max(1, len(row_zero))
-                vspace.set_event(act_pre)
-                for _ in range(n_steps):
-                    vspace = self.syntacticLayer.forward(vspace)
-                act = vspace.materialize()
+            # ---- Eager cursor path: SymbolicSpace is the single site
+            # that drives S-tier op application. The per-tier rule list
+            # comes straight from ``wordSpace.current_rules.get('S')``
+            # (the live ``list[list[int]]`` populated by
+            # ``WordSpace.compose``). The legacy Phase-2B tensor-driven
+            # op_sel branch was retired with the SentenceState carrier
+            # (op_sel was never populated in production); the cursor
+            # loop below is the one and only S-executor.
+            chart_rules_S = (wordSpace.current_rules.get('S')
+                             if wordSpace is not None
+                             and wordSpace.current_rules is not None
+                             else None)
+            row_zero = self.syntacticLayer._row_zero_rules(
+                chart_rules_S)
+            n_steps = max(1, len(row_zero))
+            vspace.set_event(act_pre)
+            for _ in range(n_steps):
+                vspace = self.syntacticLayer.forward(vspace)
+            act = vspace.materialize()
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -11765,7 +12102,7 @@ class SymbolicSpace(Space):
         vspace.normalize("symbols", target="where")
         return vspace
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Pi^-1).
 
         Reverse maps on nDim axis: [B, N, symbol_dim] -> [B, N, concept_dim].
@@ -11853,8 +12190,6 @@ class SymbolicSpace(Space):
     def test():
         """Self-test; verifies the round-trip / invariant."""
         pass
-
-
 class OutputSpace(Space):
     """Maps symbolic vectors to task targets (classification logits, regression values).
 
@@ -11969,7 +12304,7 @@ class OutputSpace(Space):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(
                 TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
-    def forward(self, subspace, work=None):
+    def forward(self, subspace):
         """Acting: project symbols to task output.
 
         Two paths: activation-mode applies PiLayer to the scalar
@@ -11998,7 +12333,7 @@ class OutputSpace(Space):
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
 
-    def reverse(self, subspace, work=None):
+    def reverse(self, subspace):
         """Being acted upon: map output back to symbolic space.
 
         Inverse of ``forward``: activation-mode runs PiLayer.reverse on
@@ -12060,47 +12395,19 @@ class OutputSpace(Space):
             restored = content
         return restored, emb.decode_reverse_meta(restored, subspace=self.subspace)
 
-    @staticmethod
-    def _format_polarity(base, polarity):
-        """Render a token text with its polarity surface form.
-
-        AFFIRM: passthrough.
-        NON:    'non-' + base.
-        NOT:    'not ' + base (separate token).
-        """
-        if polarity == POLARITY_NON:
-            return f"non-{base}"
-        if polarity == POLARITY_NOT:
-            return f"not {base}"
-        return base
-
     def reconstruct_tokens(self, vectors):
         """Return positioned tokens decoded from symbolic vectors.
 
-        Delegates to the Basis / Embedding reverse() path. When the
-        active vocabulary has per-row polarity tags, prepend the
-        matching surface form ("non-"/"not ") to the base text.
+        Delegates to the Basis / Embedding reverse() path. Returns the
+        ``(text, offset)`` tuples directly; negation surface forms are
+        not synthesized at this layer (the previous "non-"/"not "
+        prefix machinery was retired alongside the codebook polarity
+        tags).
         """
         if not self.text_mode:
             raise RuntimeError("reconstruct_tokens() requires text_mode.")
         _, meta = self._reverse_text_vectors(vectors)
-        tokens = meta['tokens']
-        polarity_ids = getattr(self._vocabulary, "polarity_ids", None)
-        indices = meta.get('indices') if isinstance(meta, dict) else None
-        if polarity_ids is None or indices is None:
-            return tokens
-        formatted = []
-        for b_idx, batch in enumerate(tokens):
-            row = []
-            for i, (text, off) in enumerate(batch):
-                try:
-                    cb_idx = int(indices[b_idx, i].item())
-                    pol = int(polarity_ids[cb_idx].item())
-                except (IndexError, AttributeError, TypeError):
-                    pol = POLARITY_AFFIRM
-                row.append((self._format_polarity(text, pol), off))
-            formatted.append(row)
-        return formatted
+        return meta['tokens']
 
     def reconstruct_data(self, vectors):
         """Reconstruct words and positions from symbolic vectors.

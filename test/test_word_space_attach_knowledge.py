@@ -68,11 +68,15 @@ def test_reattach_replaces_previous_view():
 
 
 def test_knowledge_view_queries_through_word_space():
-    """Once attached, all KnowledgeView queries work via ``ws.knowledge``."""
+    """Once attached, all KnowledgeView queries work via ``ws.knowledge``.
+
+    Updated 2026-05-20 for the order-typed taxonomy: NP now subsumes
+    base + ordered variants (NP3, NP4) — 3 refs total.
+    """
     ws = _bare_word_space()
     ws.attach_knowledge(_tiny_view())
     assert ws.knowledge.ref_id_for('NP') is not None
-    assert ws.knowledge.refs_by_category('NP').shape[0] == 1
+    assert ws.knowledge.refs_by_category('NP').shape[0] == 3
     assert len(ws.knowledge.rule_order_signatures) == 2
 
 

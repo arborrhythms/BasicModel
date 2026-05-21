@@ -205,7 +205,14 @@ def test_taxonomy_handles_order_stripped_categories():
 
 def test_reference_codebook_initial_shape():
     """``build_reference_codebook_initial(taxonomy)`` returns a dict
-    with references / v_ref_live / order at the expected shapes."""
+    with references / v_ref_live / order at the expected shapes.
+
+    Updated 2026-05-20 for the order-typed STM taxonomy (plan
+    ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``):
+    ordered category variants (NP3, NP4, S4, VP1) are emitted as extra
+    ref_ids under their base category nodes, so a tiny grammar with
+    two ordered rules contributes root + 4 base + 4 ordered = 9.
+    """
     from embed import (build_taxonomy_from_grammar,
                        build_reference_codebook_initial)
     g = _tiny_grammar()
@@ -215,12 +222,10 @@ def test_reference_codebook_initial_shape():
     assert 'v_ref_live' in rc
     assert 'order' in rc
     n_live = int(rc['v_ref_live'])
-    # tiny grammar: root + S + NP + VP + DET = 5
-    assert n_live == 5
-    # References + order both [V_ref_capacity], capacity >= live
+    # 1 root + 4 base (S, NP, VP, DET) + 4 ordered (S4, NP3, NP4, VP1) = 9
+    assert n_live == 9
     assert rc['references'].shape[0] >= n_live
     assert rc['order'].shape[0] >= n_live
-    # Capacity slack: at least 256 even for a tiny taxonomy
     assert rc['references'].shape[0] >= 256
 
 
@@ -236,21 +241,24 @@ def test_reference_codebook_dtypes():
 
 
 def test_reference_codebook_initial_values_zero():
-    """Bootstrap: all live references init to 0.0, all live orders
-    init to 0. Slack rows likewise zeros (default tensor init)."""
+    """Bootstrap: live references init to 0.0; base-category nodes init
+    to order 0, ordered variants carry the order encoded in the
+    grammar token (e.g. NP3 → order 3). Slack rows are zero tensors."""
     from embed import (build_taxonomy_from_grammar,
                        build_reference_codebook_initial)
     tax = build_taxonomy_from_grammar(_tiny_grammar())
     rc = build_reference_codebook_initial(tax)
     n_live = int(rc['v_ref_live'])
+    ref_orders = tax['ref_orders']
     for i in range(n_live):
         assert float(rc['references'][i].item()) == 0.0
-        assert int(rc['order'][i].item()) == 0
+        assert int(rc['order'][i].item()) == int(ref_orders.get(i, 0))
 
 
 def test_typed_indexes_refs_by_order():
-    """``refs_by_order[0]`` lists all live ref_ids (everything is order
-    0 in the bootstrap)."""
+    """``refs_by_order[k]`` lists ref_ids whose order equals ``k``. Base
+    nodes (root + S/NP/VP/DET) are at order 0; ordered variants live at
+    their grammar-declared order (NP3 → 3, NP4 → 4, S4 → 4, VP1 → 1)."""
     from embed import (build_taxonomy_from_grammar,
                        build_reference_codebook_initial,
                        build_typed_indexes)
@@ -260,8 +268,12 @@ def test_typed_indexes_refs_by_order():
     assert 'refs_by_order' in ti
     by_order = ti['refs_by_order']
     n_live = int(rc['v_ref_live'])
+    # Every live ref appears in exactly one order bucket.
+    flat = sorted(rid for ids in by_order.values() for rid in ids.tolist())
+    assert flat == list(range(n_live))
+    # The base-category nodes (root + 4 categories) are at order 0.
     assert 0 in by_order
-    assert sorted(by_order[0].tolist()) == list(range(n_live))
+    assert len(by_order[0]) == 5
 
 
 def test_typed_indexes_refs_by_category():
@@ -277,10 +289,15 @@ def test_typed_indexes_refs_by_category():
     ti = build_typed_indexes(tax, rc)
     by_cat = ti['refs_by_category']
     names = tax['taxonomy_names']
+    ordered_names = tax.get('ordered_taxonomy_names', {})
     for cat in ('S', 'NP', 'VP', 'DET'):
         assert cat in by_cat
-        # Just the class node itself (no descendants yet)
-        assert by_cat[cat].tolist() == [names[cat]]
+        expected = {names[cat]}
+        # Include ordered variants under this category (e.g. NP -> NP3, NP4).
+        for ordered_key, rid in ordered_names.items():
+            if ordered_key.startswith(cat) and ordered_key[len(cat):].isdigit():
+                expected.add(int(rid))
+        assert set(by_cat[cat].tolist()) == expected
 
 
 # -- Word table builder ----------------------------------------------
@@ -383,7 +400,8 @@ def test_knowledge_section_works_without_wv():
     # Word table is present but empty
     assert ks['word_table']['ref_ids'].shape[0] == 0
     # Other sections fully populated
-    assert ks['reference_codebook']['v_ref_live'] == 5  # 1 root + 4 categories
+    # 1 root + 4 base + 4 ordered variants (NP3, NP4, S4, VP1).
+    assert ks['reference_codebook']['v_ref_live'] == 9
     assert 'NP' in ks['taxonomy']['taxonomy_names']
     assert len(ks['grammar']['rule_order_signatures']) == 2
 
