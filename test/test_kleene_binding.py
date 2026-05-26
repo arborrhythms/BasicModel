@@ -131,20 +131,20 @@ def test_unary_variable_slot_accepts_any_order():
 
 def test_resolve_lhs_order_constant():
     """``_resolve_lhs_order`` with a constant LHS returns the literal."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     sig = {'lhs_order': 4, 'lhs_order_kind': 'constant',
            'rhs_orders': [3, 1], 'rhs_order_kinds': ['constant', 'constant']}
-    assert WordSpace._resolve_lhs_order(sig, (3, 1)) == 4
+    assert WordSubSpace._resolve_lhs_order(sig, (3, 1)) == 4
 
 
 def test_resolve_lhs_order_variable_with_lift_delta():
     """``S* = lift(NP*, VP1)`` → LHS variable +1; operands (NP3, VP1)
     bind * to 3; parent order = 3 + 1 = 4."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     sig = {'lhs_order': 1, 'lhs_order_kind': 'variable',
            'rhs_orders': [0, 1],
            'rhs_order_kinds': ['variable', 'constant']}
-    assert WordSpace._resolve_lhs_order(sig, (3, 1)) == 4
+    assert WordSubSpace._resolve_lhs_order(sig, (3, 1)) == 4
 
 
 def test_resolve_lhs_order_variable_with_lower_delta():
@@ -152,11 +152,11 @@ def test_resolve_lhs_order_variable_with_lower_delta():
     (DET0, NP3) bind * = 3 - 1 = 2; parent order = 2 + -1? No:
     we apply lhs_delta directly — binding=2 from RHS[1] (NP*+1 means
     op_order=binding+1 so 3-1=2), then parent = 2 + lhs_delta(-1) = 1."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     sig = {'lhs_order': -1, 'lhs_order_kind': 'variable',
            'rhs_orders': [0, 1],
            'rhs_order_kinds': ['constant', 'variable']}
-    assert WordSpace._resolve_lhs_order(sig, (0, 3)) == 1
+    assert WordSubSpace._resolve_lhs_order(sig, (0, 3)) == 1
 
 
 def test_legacy_signature_without_kinds_treats_as_constants():

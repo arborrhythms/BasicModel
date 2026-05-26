@@ -20,9 +20,9 @@ sys.path.insert(0, str(_project / "bin"))
 
 def _bare_word_space():
     """WordSpace with __init__ bypassed (sufficient for backend tests)."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     import torch.nn as nn
-    ws = object.__new__(WordSpace)
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     return ws
 

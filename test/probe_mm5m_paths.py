@@ -33,8 +33,8 @@ TheData.load(dat.get("dataset"), num_shards=1, max_docs=10,
 
 m, _ = BaseModel.from_config(CONFIG_PATH, data=TheData)
 
-ws = getattr(m, 'wordSpace', None)
-print(f"wordSpace: {type(ws).__name__ if ws else None}")
+ws = getattr(m, 'wordSubSpace', None)
+print(f"wordSubSpace: {type(ws).__name__ if ws else None}")
 print(f"useGrammar: {m.useGrammar}")
 print(f"mereological_tree: {getattr(ws, 'mereological_tree', None)}")
 print(f"_grammar_is_default_only: {getattr(ws, '_grammar_is_default_only', None)}")

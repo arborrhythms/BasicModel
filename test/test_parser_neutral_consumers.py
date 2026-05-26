@@ -1,7 +1,7 @@
 """Tests for the parser-neutral consumer migration.
 
 Plan: path-to-complete §6 — "Update syntax dump, SVO extraction,
-reverse/generate, and diagnostics to read ``wordSpace.parse_state``
+reverse/generate, and diagnostics to read ``wordSubSpace.parse_state``
 first, falling back to chart fields."
 
 This suite covers the parser-neutral accessor surface:
@@ -67,8 +67,8 @@ def test_parse_rules_for_tier_falls_back_to_legacy_current_rules():
     """When ``parse_state`` is None (e.g., the chart fast-path didn't
     populate it), ``parse_rules_for_tier`` falls back to the legacy
     ``current_rules`` attribute that chart-mode populates directly."""
-    from Language import WordSpace
-    ws = object.__new__(WordSpace)
+    from Language import WordSubSpace
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     object.__setattr__(ws, 'parse_state', None)
     ws.current_rules = {'S': [[0, 1]]}
@@ -77,8 +77,8 @@ def test_parse_rules_for_tier_falls_back_to_legacy_current_rules():
 
 def test_parse_rules_for_tier_unknown_tier_returns_empty():
     """An unknown tier returns ``[]`` without raising."""
-    from Language import WordSpace
-    ws = object.__new__(WordSpace)
+    from Language import WordSubSpace
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     object.__setattr__(ws, 'parse_state', None)
     ws.current_rules = {}

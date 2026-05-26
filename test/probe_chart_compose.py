@@ -46,8 +46,8 @@ batch = batch.unsqueeze(1)  # [B, 1, inputLength]
 print(f"Batch tensor shape: {batch.shape}")
 
 m.eval()
-ws = m.wordSpace
-print(f"wordSpace: {type(ws).__name__}")
+ws = m.wordSubSpace
+print(f"wordSubSpace: {type(ws).__name__}")
 print(f"chart: {type(ws.chart).__name__}, w_max={ws.chart.w_max}")
 print(f"chart router_kind: {ws.chart.router_kind}")
 print(f"useGrammar: {m.useGrammar}")

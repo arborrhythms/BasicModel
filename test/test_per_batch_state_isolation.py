@@ -53,7 +53,7 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
-    ws = Language.WordSpace(
+    ws = Language.WordSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
         symbolicSpace=symbolic_space,

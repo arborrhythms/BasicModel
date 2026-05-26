@@ -51,7 +51,7 @@ with torch.no_grad():
         captured['cs_pre_sigma'] = x.clone()
         y = self.forwardSigma(x)
         captured['cs_post_sigma'] = y.clone()
-        ws = getattr(self, 'wordSpace', None)
+        ws = getattr(self, 'wordSubSpace', None)
         c_sl = getattr(ws, 'syntacticLayer', None) if ws is not None else None
         if c_sl is not None:
             result = c_sl.compose(y, self.subspace, Language.TheGrammar)

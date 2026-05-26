@@ -315,11 +315,11 @@ class BaseModel(Mereology, nn.Module):
     checkpoint_every_batches = 0
     _training_step_count = 0
     # Scale applied to the DiscourseSpace contrastive loss. The
-    # inter-sentence DiscourseSpace lives on ``self.wordSpace``
-    # (``self.wordSpace.discourse``) rather than directly on the
+    # inter-sentence DiscourseSpace lives on ``self.wordSubSpace``
+    # (``self.wordSubSpace.discourse``) rather than directly on the
     # model. Callers that need it should read through
-    # ``wordSpace``; ``<training><sentencePrediction>false`` in
-    # config leaves ``wordSpace.discourse`` as ``None``.
+    # ``wordSubSpace``; ``<training><sentencePrediction>false`` in
+    # config leaves ``wordSubSpace.discourse`` as ``None``.
     # Class-level defaults for ARMA loss weight + priming scale.
     # Pre-2026-05-14 contrastive sentence-loss knobs retired alongside
     # <maskedPrediction>; the single ARMA MSE replaces the contrastive
@@ -613,8 +613,8 @@ class BaseModel(Mereology, nn.Module):
             self.perceptualSpace.serial_mode = False
         if hasattr(self, 'conceptualSpace'):
             self.conceptualSpace.serial_mode = False
-        if getattr(self, 'wordSpace', None) is not None:
-            self.wordSpace.serial_mode = False
+        if getattr(self, 'wordSubSpace', None) is not None:
+            self.wordSubSpace.serial_mode = False
 
         # Per-word ground-truth cursor enable. Mirrors the retired
         # serial-boolean plumbing above (model computes a bool from its
@@ -930,7 +930,7 @@ class BaseModel(Mereology, nn.Module):
         The TruthLayer now lives on ``WordSpace``; when the grammar
         path that builds WordSpace is disabled there is no layer.
         """
-        return self.wordSpace.truth_layer if self.wordSpace is not None else None
+        return self.wordSubSpace.truth_layer if self.wordSubSpace is not None else None
 
     def _get_basis(self):
         """Return the Basis from symbolicSpace's subspace, else None."""
@@ -1778,14 +1778,14 @@ class BasicModel(BaseModel):
 
         Truths are processed through the full pipeline by running a
         standard inference epoch.  SymbolicSpace.forward() records raw
-        activations into the TruthLayer via ``self.wordSpace.truth_layer``.
+        activations into the TruthLayer via ``self.wordSubSpace.truth_layer``.
         After the epoch completes, each stored activation is scaled by
         its DegreeOfTruth.
 
         Args:
             entries: list of dicts with 'content' and 'trust' keys.
         """
-        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
+        truth_layer = getattr(self.wordSubSpace, 'truth_layer', None) if self.wordSubSpace is not None else None
         if truth_layer is None:
             return
 
@@ -1931,7 +1931,7 @@ class BasicModel(BaseModel):
         """Chat-loop sentence generation via InterSentenceLayer ARMA.
 
         Steps (per plan §4):
-          1. Ask ``self.wordSpace.discourse.predict_next()`` for the
+          1. Ask ``self.wordSubSpace.discourse.predict_next()`` for the
              ARMA-predicted next sentence rep ``s_hat_{t+1}``.
           2. Lift it through ``InterSentenceLayer.cast`` into
              ``concept_dim`` and stage on ``ConceptualSpace._c_prior``
@@ -1951,8 +1951,8 @@ class BasicModel(BaseModel):
         masked positions of the seed).
         """
         del max_chars  # reserved for the iterative variant
-        discourse = (self.wordSpace.discourse
-                     if self.wordSpace is not None else None)
+        discourse = (self.wordSubSpace.discourse
+                     if self.wordSubSpace is not None else None)
         # Stage the C-prior when the discourse layer has primed
         # history (cold-start: no prior, the seed text is the only
         # signal).
@@ -2356,7 +2356,7 @@ class BasicModel(BaseModel):
         # router committed to. Useful for grammar-from-chart inspection
         # (XOR_grammar.xml et al.).
         try:
-            ws = self.wordSpace
+            ws = self.wordSubSpace
             if (ws is not None and ws.chart is not None
                     and ws.chart.router_kind == "signal"):
                 rules = ws.current_rules
@@ -2582,7 +2582,7 @@ class BasicModel(BaseModel):
     # -- per-step lifecycle (model-level) ------------------------------
     #
     # ``runBatch`` orchestrates a step but must talk only to the *model*,
-    # never reach into model *contents* (``self.wordSpace.discourse``,
+    # never reach into model *contents* (``self.wordSubSpace.discourse``,
     # ``self.inputSpace`` ...). These three methods are that boundary:
     # the model owns its discourse / input-staging lifecycle; runBatch
     # just calls ``self._begin_step`` / ``self._discourse_arma_loss`` /
@@ -2607,8 +2607,8 @@ class BasicModel(BaseModel):
         if isinstance(inputTensor, torch.Tensor):
             inputTensor = inputTensor.to(TheDevice.get())
         self._staged_in_sub = self.inputSpace.forward(inputTensor)
-        disc = (self.wordSpace.discourse
-                if self.wordSpace is not None else None)
+        disc = (self.wordSubSpace.discourse
+                if self.wordSubSpace is not None else None)
         if disc is not None:
             disc.stage_prediction()
             # Cast the staged ARMA prediction tuple to the active AMP
@@ -2640,8 +2640,8 @@ class BasicModel(BaseModel):
         """Per-step teardown: drop the staging parked by ``_begin_step``
         (consume-once; eager, post-forward)."""
         self._staged_in_sub = None
-        disc = (self.wordSpace.discourse
-                if self.wordSpace is not None else None)
+        disc = (self.wordSubSpace.discourse
+                if self.wordSubSpace is not None else None)
         if disc is not None:
             disc.clear_staged_prediction()
 
@@ -2654,8 +2654,8 @@ class BasicModel(BaseModel):
         ``observe`` also commits the sentence rep + residual into the
         per-row rings (vectorized, sync-free).
         """
-        disc = (self.wordSpace.discourse
-                if self.wordSpace is not None else None)
+        disc = (self.wordSubSpace.discourse
+                if self.wordSubSpace is not None else None)
         if disc is None or self._current_discourse_s is None:
             return None
         return disc.observe(self._current_discourse_s)
@@ -2712,8 +2712,8 @@ class BasicModel(BaseModel):
         # accessing tensor output of CUDAGraphs that has been
         # overwritten by a subsequent run.`` Hoisting the call up
         # here keeps the resulting tensors Python-owned.
-        if self.wordSpace is not None and not inference_only:
-            ws = self.wordSpace
+        if self.wordSubSpace is not None and not inference_only:
+            ws = self.wordSubSpace
             try:
                 if isinstance(inputTensor, torch.Tensor):
                     B_pre = int(inputTensor.shape[0])
@@ -3086,11 +3086,11 @@ class BasicModel(BaseModel):
             # penalty operand is the last cached symbol activation --
             # stored truths are also recorded from symbol space, so both
             # sides of the disjunction live in the basis's native space.
-            if train and self.wordSpace is not None:
+            if train and self.wordSubSpace is not None:
                 symbol_acts = None
                 if hasattr(self, 'symbol_states') and self.symbol_states:
                     symbol_acts = self.symbol_states[-1]
-                totalLoss = self.wordSpace.truth_modulated_loss(
+                totalLoss = self.wordSubSpace.truth_modulated_loss(
                     totalLoss,
                     symbolic_space=self.symbolicSpace,
                     symbol_acts=symbol_acts,
@@ -3107,7 +3107,7 @@ class BasicModel(BaseModel):
                 # multipliers toward zero so each rule converges to a
                 # low-rank slice of its host operator. Default lambda
                 # is 0.0 -- no penalty unless a config opts in.
-                gate_l1 = self.wordSpace.gate_l1_loss(
+                gate_l1 = self.wordSubSpace.gate_l1_loss(
                     lam=getattr(self, 'gate_l1_lambda', 0.0))
                 if gate_l1 is not None:
                     totalLoss = totalLoss + gate_l1
@@ -3121,10 +3121,10 @@ class BasicModel(BaseModel):
                 # noisy top-K gating doesn't collapse onto 1-2 rules.
                 # Active only when chartTopK > 0 AND loadBalanceWeight > 0.
                 lb_w = getattr(self, 'load_balance_weight', 0.0)
-                if (lb_w > 0.0 and self.wordSpace is not None
-                        and getattr(self.wordSpace, 'chart', None)
+                if (lb_w > 0.0 and self.wordSubSpace is not None
+                        and getattr(self.wordSubSpace, 'chart', None)
                         is not None):
-                    lb_loss = self.wordSpace.chart.load_balance_loss(
+                    lb_loss = self.wordSubSpace.chart.load_balance_loss(
                         weight=lb_w)
                     if isinstance(lb_loss, torch.Tensor):
                         totalLoss = totalLoss + lb_loss
@@ -3134,7 +3134,7 @@ class BasicModel(BaseModel):
                             space="WordSpace", category="reg")
                     # Reset between batches so the next batch's count
                     # reflects only its own gating distribution.
-                    self.wordSpace.chart.reset_load_count()
+                    self.wordSubSpace.chart.reset_load_count()
 
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
@@ -3262,8 +3262,8 @@ class BasicModel(BaseModel):
         #   * Hard reset (per-row, on document boundary) via
         #     ``BasicModel.dispatch_per_row_reset(hard_eos_list)``.
         #   * Soft reset (per-row, on grammar sentence completion) via
-        #     ``wordSpace.drain_sentence_completed()`` →
-        #     ``wordSpace.soft_reset(b)``.
+        #     ``wordSubSpace.drain_sentence_completed()`` →
+        #     ``wordSubSpace.soft_reset(b)``.
         #   * ``truth_layer.compact()`` (one host sync per tick, kept
         #     outside the brick).
         # See doc/plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md.
@@ -3272,7 +3272,7 @@ class BasicModel(BaseModel):
         # gated probes; each is a no-op without its env var.
         if os.environ.get("BASIC_PROFILE_DIAG"):
             try:
-                ws_diag = self.wordSpace
+                ws_diag = self.wordSubSpace
                 tl_diag = getattr(ws_diag, 'truth_layer', None) if ws_diag is not None else None
                 if tl_diag is not None and hasattr(tl_diag, 'count'):
                     tl_count_diag = int(tl_diag.count.item())
@@ -3411,13 +3411,13 @@ class BasicModel(BaseModel):
                 eos[b] = False
 
     def dispatch_soft_reset(self):
-        """Drain ``wordSpace._sentence_completed`` and fire per-row soft reset.
+        """Drain ``wordSubSpace._sentence_completed`` and fire per-row soft reset.
 
         Called by the outer doc-streaming loop after ``runBatch`` returns
         (and *after* ``dispatch_per_row_reset`` so a hard-reset row's soft
         signal is dropped — hard subsumes soft).
         """
-        ws = self.wordSpace
+        ws = self.wordSubSpace
         if ws is None or not hasattr(ws, 'drain_sentence_completed'):
             return
         completed = ws.drain_sentence_completed()
@@ -3444,7 +3444,7 @@ class BasicModel(BaseModel):
         ``self.modules()`` iteration is safe here (it would graph-break
         if placed inside a traced reset path).
         """
-        ws = self.wordSpace
+        ws = self.wordSubSpace
         if ws is not None:
             tl = getattr(ws, 'truth_layer', None)
             if tl is not None and hasattr(tl, 'compact'):
@@ -3483,7 +3483,7 @@ class BasicModel(BaseModel):
                     and w.is_floating_point()):
                 mod.W = w.detach()
         # 3. Known plain-attribute tensor caches that ride across batches.
-        ws = self.wordSpace
+        ws = self.wordSubSpace
         if ws is not None:
             if getattr(ws, '_disc_pred', None) is not None:
                 ws._disc_pred = ws._disc_pred.detach()
@@ -3647,7 +3647,7 @@ class BasicModel(BaseModel):
         inference = split == "runtime" and not training
         self.train(training)
         self.outputSpace.clearBatchResults()
-        ws = self.wordSpace
+        ws = self.wordSubSpace
         if ws is not None and getattr(ws, 'discourse', None) is not None:
             ws.discourse.reset()
         ctx = torch.no_grad() if not training else nullcontext()
@@ -3976,10 +3976,10 @@ class BasicModel(BaseModel):
         ``conceptualOrder`` step) / Symbolic / Output, plus the optional
         WordSpace, subsymbolic, and pipeline modules. Mutates ``self``
         extensively (sets every ``self.*Space`` attribute, ``self.spaces``,
-        ``self.wordSpace``, ``self.reversible``, etc.).
+        ``self.wordSubSpace``, ``self.reversible``, etc.).
         """
         self.spaces = []
-        self.wordSpace = None  # wired below once the home spaces exist
+        self.wordSubSpace = None  # wired below once the home spaces exist
         self.reversible = True
         self.nInput = nInput
         self.nPercepts = nPercepts
@@ -4248,7 +4248,7 @@ class BasicModel(BaseModel):
             self.symbolicSpaces.append(ss)
 
         # Backwards-compat aliases: read-only callers (e.g.
-        # wordSpace.truth_layer = self.symbolicSpace) see the terminal stage.
+        # wordSubSpace.truth_layer = self.symbolicSpace) see the terminal stage.
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
 
@@ -4327,8 +4327,8 @@ class BasicModel(BaseModel):
         # Its ``__init__`` configures the grammar, sizes the word
         # buffer from SymbolicSpace's column layout, builds each tier's
         # SyntacticLayer, and back-wires the home spaces so
-        # compose/decompose routes through ``self.wordSpace``.
-        self.wordSpace = WordSubSpace(
+        # compose/decompose routes through ``self.wordSubSpace``.
+        self.wordSubSpace = WordSubSpace(
             perceptualSpace=self.perceptualSpace,
             conceptualSpace=self.conceptualSpace,
             symbolicSpace=self.symbolicSpace,
@@ -4350,32 +4350,34 @@ class BasicModel(BaseModel):
         self.spaces.extend(list(self.conceptualSpaces))
         self.spaces.extend(list(self.symbolicSpaces))
         self.spaces.extend([self.outputSpace])
-        self.spaces.append(self.wordSpace)
+        self.spaces.append(self.wordSubSpace)
 
         self.inputSpace.outputSpace = self.outputSpace
         # Seed the pipeline context: InputSpace stamps every outgoing
-        # subspace's ``wordSpace`` with this reference so downstream stages
-        # read ``vspace.wordSpace`` instead of reaching back through a
+        # subspace's ``wordSubSpace`` with this reference so downstream stages
+        # read ``vspace.wordSubSpace`` instead of reaching back through a
         # Model back-channel.
-        self.inputSpace.set_word_space(self.wordSpace)
+        self.inputSpace.set_word_space(self.wordSubSpace)
 
         # Phase 1: wire a Normalizer onto every space so spaces can call
         # self.normalizer.{normalize,denormalize} instead of the TheData global.
+        # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+        # retired the per-SubSpace ``wordSubSpace`` back-pointer; the
+        # WordSubSpace reference lives on each ``Space`` via the routing
+        # pointer set by ``Space.attach_wordSubSpace``. WordSubSpace's
+        # constructor wires P/C/S spaces; here we mirror that wiring onto
+        # every other space (InputSpace / OutputSpace / ModalSpace) so
+        # ``space.wordSubSpace`` is non-None project-wide.
         self.normalizer = Normalizer(TheData)
         for space in self.spaces:
             space.normalizer = self.normalizer
             sub = getattr(space, 'subspace', None)
             if sub is not None:
                 sub.normalizer = self.normalizer
-                # Stamp the model's (build-stable) WordSpace onto every
-                # persistent subspace ONCE, eagerly. The traced forward's
-                # copy_context no longer re-assigns it (assigning a
-                # Module trips nn.Module.__setattr__ -> fullgraph break,
-                # and registering it as a submodule infinitely recurses
-                # model.to()); since wordSpace never changes after build,
-                # this eager stamp keeps every downstream
-                # ``vspace.wordSpace`` read valid with no in-trace work.
-                sub.attach_wordSpace(self.wordSpace)
+            if (space is not self.wordSubSpace
+                    and getattr(space, 'wordSubSpace', None) is None
+                    and hasattr(space, 'attach_wordSubSpace')):
+                space.attach_wordSubSpace(self.wordSubSpace)
 
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(symbol_dim + obj_symbol,
@@ -4459,7 +4461,7 @@ class BasicModel(BaseModel):
         # WordSpace ownership hangs off the terminal symbolic stage
         # (Rule 3): ``self.symbolicSpace`` is the alias for
         # ``self.symbolicSpaces[-1]``.
-        self.symbolicSpace.wordSpace = self.wordSpace
+        self.symbolicSpace.wordSubSpace = self.wordSubSpace
 
         # Per-stage symbol output capture. Plain Python list populated
         # by ``_forward_body`` each call; ``symbol_cache`` property
@@ -4636,9 +4638,9 @@ class BasicModel(BaseModel):
             # not splice on in-forward recurrent passes >0 (each pass
             # carries distinct C→P feedback). ``recur_pass`` lives on
             # WordSpace; PerceptualSpace.forward reads it via the
-            # ``subspace.wordSpace`` back-reference.
-            if self.wordSpace is not None:
-                self.wordSpace.recur_pass = int(t)
+            # ``subspace.wordSubSpace`` back-reference.
+            if self.wordSubSpace is not None:
+                self.wordSubSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
             PS_sub = self.perceptualSpace.forward(in_sub, prevCS_forPS)
@@ -4675,8 +4677,8 @@ class BasicModel(BaseModel):
             last_cs = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
-        if self.wordSpace is not None:
-            self.wordSpace.recur_pass = 0
+        if self.wordSubSpace is not None:
+            self.wordSubSpace.recur_pass = 0
         else:
             self.perceptualSpace._recurrent_pass_idx = 0
         if self.loss_head is not None:
@@ -4964,7 +4966,7 @@ class BasicModel(BaseModel):
           * ``perceptualSpace._mphf_tables()`` -- lazy build-once
             cache is primed (build path iterates ``bytes`` which
             Dynamo refuses to trace).
-          * ``wordSpace.recur_pass = 0`` -- invariant across the
+          * ``wordSubSpace.recur_pass = 0`` -- invariant across the
             per-word loop (pass-index 0 throughout).
           * ``self._prev_cs_for_ps`` / ``self._prev_cs_for_ss`` pre-
             seeded to the persistent empty seeds so iteration 0's
@@ -5010,7 +5012,7 @@ class BasicModel(BaseModel):
         # here would still be traced.
 
         # WordSpace per-sentence state + per-forward pre-seed. The
-        # cursor / recur_pass are allocated by ``wordSpace.soft_reset``
+        # cursor / recur_pass are allocated by ``wordSubSpace.soft_reset``
         # (triggered by ``post_tick_compact`` when a sentence
         # completes); the first forward of the first sentence runs
         # BEFORE any soft_reset has fired, so cold-start allocation
@@ -5030,10 +5032,10 @@ class BasicModel(BaseModel):
         # once at construction-time. ``_per_sentence_initialized`` is a
         # plain Python bool sentinel — Dynamo-friendly (specializes once
         # then becomes a no-op).
-        if not getattr(self.wordSpace, '_per_sentence_initialized', False):
-            self.wordSpace.soft_reset()
-            self.wordSpace._per_sentence_initialized = True
-        self.wordSpace.recur_pass = 0
+        if not getattr(self.wordSubSpace, '_per_sentence_initialized', False):
+            self.wordSubSpace.soft_reset()
+            self.wordSubSpace._per_sentence_initialized = True
+        self.wordSubSpace.recur_pass = 0
         self._prev_cs_for_ps = self._empty_seed_ps
         self._prev_cs_for_ss = self._empty_seed_ss
 
@@ -5051,8 +5053,8 @@ class BasicModel(BaseModel):
         # the rule cursor itself stays aligned for downstream consumers
         # but does NOT drive control flow inside the captured body.
         N_static = int(self.inputSpace.outputShape[0])
-        if self.wordSpace is not None:
-            self.wordSpace._target_cursor_length = N_static
+        if self.wordSubSpace is not None:
+            self.wordSubSpace._target_cursor_length = N_static
         # ``_per_word_contributions`` accumulates the per-iteration
         # ``[B, D_c]`` contributions (zero at inactive batch rows /
         # padding columns) for ``torch.stack`` after the loop. Using a
@@ -5286,7 +5288,7 @@ class BasicModel(BaseModel):
         # into ``_per_word_prelude`` so the capture-gate test can
         # replay the same boundary-side contract. Now also: allocate /
         # zero the preallocated ``_per_word_concept_buf`` [B, N, D_c]
-        # and set ``wordSpace._target_cursor_length = N`` so compose
+        # and set ``wordSubSpace._target_cursor_length = N`` so compose
         # pads the S-tier rule cursor to N with id_SS.
         stm, N_target, word_carrier, in_event = self._per_word_prelude(in_sub)
 
@@ -5382,8 +5384,8 @@ class BasicModel(BaseModel):
         # PerceptualSpace.forward calls (and the next forward's pass 0)
         # see the AR-streaming serial warm path -- mirrors the
         # whole-slab path's tail.
-        if self.wordSpace is not None:
-            self.wordSpace.recur_pass = 0
+        if self.wordSubSpace is not None:
+            self.wordSubSpace.recur_pass = 0
         else:
             self.perceptualSpace._recurrent_pass_idx = 0
 
@@ -5391,7 +5393,7 @@ class BasicModel(BaseModel):
         # and pad / truncate to ``N_target``. Inactive batch rows /
         # padding columns contributed zero so the tail is naturally
         # zero-padded. ``copy_context`` from the last per-word CS
-        # subspace keeps the pipeline wordSpace/errors/stem-route
+        # subspace keeps the pipeline wordSubSpace/errors/stem-route
         # contract intact.
         # See doc/plans/2026-05-20-static-per-word-loop-impl.md §2.5.
         per_word_contribs = self._per_word_contributions
@@ -5457,7 +5459,7 @@ class BasicModel(BaseModel):
     def _chart_compose_at_C(self, stage_idx=0):
         """Fire the chart at C-tier over ``conceptualSpace.stm`` contents.
 
-        Populates ``wordSpace.current_rules`` for downstream SS dispatch.
+        Populates ``wordSubSpace.current_rules`` for downstream SS dispatch.
         Uses :meth:`ShortTermMemory.snapshot` to obtain a single uniform
         ``[B, max_depth, D_c]`` slab (rows with shorter sentences carry
         zero-padding at the tail; handled by the chart's ``valid_mask``
@@ -5466,16 +5468,16 @@ class BasicModel(BaseModel):
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
             return
-        self.wordSpace.compose(snap)
+        self.wordSubSpace.compose(snap)
 
     def _chart_generate_from_stm(self):
-        """Fire ``wordSpace.generate`` over the C-tier STM snapshot.
+        """Fire ``wordSubSpace.generate`` over the C-tier STM snapshot.
 
         Reverse-path mirror of ``_chart_compose_at_C``: populates
-        ``wordSpace.generate_rules`` so each stage's reverse dispatch can
+        ``wordSubSpace.generate_rules`` so each stage's reverse dispatch can
         pop them via its SyntacticLayer cursor.
         """
-        ws = self.wordSpace
+        ws = self.wordSubSpace
         if ws is None:
             return
         stm = self.conceptualSpace.stm
@@ -5904,8 +5906,8 @@ class BasicModel(BaseModel):
         self._predicted_snapshot = None
         self._predicted_confidence = None
         discourse_for_prime = (
-            self.wordSpace.discourse
-            if self.wordSpace is not None else None)
+            self.wordSubSpace.discourse
+            if self.wordSubSpace is not None else None)
         if discourse_for_prime is not None:
             d_pred, d_conf = discourse_for_prime.predict()
             self._predicted_snapshot = d_pred
@@ -5999,13 +6001,13 @@ class BasicModel(BaseModel):
             gen_on = bool(TheXMLConfig.get('WordSpace.downwardGeneration'))
         except KeyError:
             gen_on = False
-        if (gen_on and self.wordSpace is not None
+        if (gen_on and self.wordSubSpace is not None
                 and sym_vectors is not None and sym_vectors.ndim >= 3):
             final_state = sym_vectors[:, 0, :]
             codebook_space = (self.perceptualSpace
                               if self.inputSpace.model_type == "embedding"
                               else self.inputSpace)
-            head_result = self.wordSpace.reconstruct(final_state, codebook_space)
+            head_result = self.wordSubSpace.reconstruct(final_state, codebook_space)
             self._predicted_head = head_result['heads']
 
         # Optional syntax tree dump.
@@ -6065,11 +6067,11 @@ class BasicModel(BaseModel):
         """
         import os
         import xml.etree.ElementTree as ET
-        wordSpace = self.wordSpace
-        if wordSpace is None:
+        wordSubSpace = self.wordSubSpace
+        if wordSubSpace is None:
             return
-        parse_state = getattr(wordSpace, 'parse_state', None)
-        chart = getattr(wordSpace, 'chart', None)
+        parse_state = getattr(wordSubSpace, 'parse_state', None)
+        chart = getattr(wordSubSpace, 'chart', None)
         if chart is None and parse_state is None:
             return
         traces = getattr(chart, '_derivation_trace', None) if chart is not None else None

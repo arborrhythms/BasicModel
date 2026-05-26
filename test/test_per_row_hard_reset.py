@@ -40,10 +40,10 @@ def test_dispatch_per_row_reset_skips_rows_without_hard_eos():
     no call for batch=0.
     """
     model = _model()
-    # Size WordSpace state to two source rows so per-row dispatch can
+    # Size WordSubSpace state to two source rows so per-row dispatch can
     # write to indices [0..1] without going out of bounds.
-    if model.wordSpace is not None:
-        model.wordSpace.ensure_microbatch(2, 1)
+    if model.wordSubSpace is not None:
+        model.wordSubSpace.ensure_microbatch(2, 1)
     seen = []  # list of (space_class, batch_arg, hard_arg)
     originals = []
     for space in model.spaces:
@@ -110,7 +110,7 @@ def test_per_row_hard_reset_clears_only_target_row_state():
     asserts _stm_fired[0] is False but [1] is still True.
     """
     model = _model()
-    ws = model.wordSpace
+    ws = model.wordSubSpace
     if ws is None:
         pytest.skip("model has no WordSpace")
     # Ensure state is sized to at least 2 rows.

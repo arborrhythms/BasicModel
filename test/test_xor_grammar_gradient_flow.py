@@ -83,7 +83,7 @@ class TestXORGrammarGradientFlow(unittest.TestCase):
         """Backprop from a forward pass should populate `chart._rule_bias.grad`
         so the chart's grammar choice is on the loss path."""
         m = self._build_model()
-        ws = m.wordSpace
+        ws = m.wordSubSpace
         self.assertIsNotNone(ws)
         # Force the chart to lazy-build its rule-shaped Parameters by
         # running one compose call against a dummy tensor.

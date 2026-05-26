@@ -63,7 +63,7 @@ class TestForwardArityContract(unittest.TestCase):
     # Post-2026-05-21 SentenceState dissolution: the per-sentence
     # ``work`` carrier was retired. Spaces forwards now take only their
     # data SubSpace argument(s); grammar / serial-processing state lives
-    # on ``subspace.wordSpace`` (the back-reference threaded by
+    # on ``subspace.wordSubSpace`` (the back-reference threaded by
     # ``copy_context``). The arity guards below assert the new
     # carrier-free signatures.
 

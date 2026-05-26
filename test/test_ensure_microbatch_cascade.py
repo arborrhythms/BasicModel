@@ -20,14 +20,14 @@ import torch
 
 
 def test_inputspace_forward_triggers_ensure_microbatch():
-    """InputSpace.forward in AR mode calls ensure_microbatch(B, K) on wordSpace."""
+    """InputSpace.forward in AR mode calls ensure_microbatch(B, K) on wordSubSpace."""
     from data import TheData
     from Models import BaseModel
     config = str(_PROJECT / "data" / "MM_xor.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.wordSpace is None:
+    if model.wordSubSpace is None:
         import pytest
         pytest.skip("Model has no WordSpace; cascade is a no-op")
 
@@ -38,23 +38,24 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     with torch.no_grad():
         model.forward(inp)
     # XOR text input lexes to outputShape[0] tokens; AR training sets K=T
-    # so wordSpace.batch must be a multiple of B=3.
+    # so wordSubSpace.batch must be a multiple of B=3.
     B = 3
-    assert model.wordSpace.batch % B == 0, (
-        f"wordSpace.batch={model.wordSpace.batch} not a multiple of B={B}")
-    assert model.wordSpace.batch >= B, (
-        f"wordSpace.batch={model.wordSpace.batch} < B={B}")
+    assert model.wordSubSpace.batch % B == 0, (
+        f"wordSubSpace.batch={model.wordSubSpace.batch} not a multiple of B={B}")
+    assert model.wordSubSpace.batch >= B, (
+        f"wordSubSpace.batch={model.wordSubSpace.batch} < B={B}")
     # Body-side state sized to B*K
-    assert model.wordSpace._last_svo.shape[0] == model.wordSpace.batch
-    assert model.wordSpace._svo_valid.shape[0] == model.wordSpace.batch
-    # ``wordSpace.subspace`` is None post-WordSubSpace-retirement (2026-05-20);
-    # the SR-parser value tape now lives on ConceptualSpace.stm.
-    assert model.wordSpace.subspace is None
-    assert model.wordSpace.category_stack._batch == model.wordSpace.batch
-    assert model.wordSpace.reconstruction_stack._batch == model.wordSpace.batch
+    assert model.wordSubSpace._last_svo.shape[0] == model.wordSubSpace.batch
+    assert model.wordSubSpace._svo_valid.shape[0] == model.wordSubSpace.batch
+    # Post-Phase-D (2026-05-21 WordSubSpace/STM Layer refactor):
+    # ``WordSubSpace`` IS a ``SubSpace`` subclass carrying the typed-
+    # STM stack buffers. There is no longer a separate ``self.subspace``
+    # peer attribute on WordSubSpace.
+    assert model.wordSubSpace.category_stack._batch == model.wordSubSpace.batch
+    assert model.wordSubSpace.reconstruction_stack._batch == model.wordSubSpace.batch
     # _stm_fired stays at B
-    assert model.wordSpace._stm_fired.shape == (B,), (
-        f"_stm_fired must stay at B={B}, got {model.wordSpace._stm_fired.shape}")
+    assert model.wordSubSpace._stm_fired.shape == (B,), (
+        f"_stm_fired must stay at B={B}, got {model.wordSubSpace._stm_fired.shape}")
 
 
 def test_ensure_microbatch_cascades_to_discourse():
@@ -86,17 +87,17 @@ def test_ensure_microbatch_method_explicit_BK():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.wordSpace is None:
+    if model.wordSubSpace is None:
         import pytest
         pytest.skip("Model has no WordSpace")
 
-    model.wordSpace.ensure_microbatch(B=2, K=5)
-    assert model.wordSpace.batch == 10
-    assert model.wordSpace._stm_fired.shape == (2,)
-    assert model.wordSpace._last_svo.shape[0] == 10
-    if model.wordSpace.discourse is not None:
-        assert model.wordSpace.discourse._batch == 2, (
-            f"discourse must stay at B=2, got {model.wordSpace.discourse._batch}")
+    model.wordSubSpace.ensure_microbatch(B=2, K=5)
+    assert model.wordSubSpace.batch == 10
+    assert model.wordSubSpace._stm_fired.shape == (2,)
+    assert model.wordSubSpace._last_svo.shape[0] == 10
+    if model.wordSubSpace.discourse is not None:
+        assert model.wordSubSpace.discourse._batch == 2, (
+            f"discourse must stay at B=2, got {model.wordSubSpace.discourse._batch}")
 
 
 def test_stm_fired_survives_K_change():
@@ -115,10 +116,10 @@ def test_stm_fired_survives_K_change():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.wordSpace is None:
+    if model.wordSubSpace is None:
         import pytest
         pytest.skip("Model has no WordSpace")
-    ws = model.wordSpace
+    ws = model.wordSubSpace
     B = 3
 
     # Initial sizing at (B=3, K=4)  ->  BK=12.

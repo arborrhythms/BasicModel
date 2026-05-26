@@ -15,7 +15,7 @@ minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by test_partition_pos_codebook.py and
 test_partition_rule_predictor.py.  Unlike those builders we return BOTH the
 SymbolicSpace and the WordSpace so the tests can exercise
-``sym.forward(incoming, wordSpace=ws)`` directly.
+``sym.forward(incoming, wordSubSpace=ws)`` directly.
 """
 import os
 import sys
@@ -39,12 +39,12 @@ import Models
 import Spaces
 import Language
 from Spaces import SymbolicSpace
-from Language import WordSpace
+from Language import WordSubSpace
 from test_basicmodel import _populate_test_config
 
 
 # ---------------------------------------------------------------------------
-# Minimal space chain builder -- returns BOTH SymbolicSpace and WordSpace
+# Minimal space chain builder -- returns BOTH SymbolicSpace and WordSubSpace
 # ---------------------------------------------------------------------------
 
 def _make_integrated_system(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
@@ -52,7 +52,7 @@ def _make_integrated_system(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
 
     Identical to the chain builders in test_partition_pos_codebook.py and
     test_partition_rule_predictor.py, but returns both the SymbolicSpace and
-    the WordSpace so callers can invoke ``sym.forward(incoming, wordSpace=ws)``
+    the WordSpace so callers can invoke ``sym.forward(incoming, wordSubSpace=ws)``
     directly.
     """
     _populate_test_config(
@@ -81,10 +81,10 @@ def _make_integrated_system(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space  = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
 
-    # Reset grammar so WordSpace.__init__ can (re)configure it cleanly.
+    # Reset grammar so WordSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ws = Language.WordSpace(
+    ws = Language.WordSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
         symbolicSpace=symbolic_space,
@@ -110,7 +110,7 @@ def _make_integrated_system(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
            "rewrite against the new contract.")
 def test_forward_updates_self_subspace_from_incoming():
     sym, ws = _make_integrated_system()
-    sym.wordSpace = ws
+    sym.wordSubSpace = ws
     # Stage 4 contract: prototype mutation goes through ``replace_W``
     # to preserve Parameter identity.
     sym.subspace.what.replace_W(torch.zeros_like(sym.subspace.what.getW()))
@@ -139,7 +139,7 @@ def test_forward_updates_self_subspace_from_incoming():
            "Stage 4 retired.")
 def test_multiple_forwards_accumulate_until_percepts_exhausted():
     sym, ws = _make_integrated_system()
-    sym.wordSpace = ws
+    sym.wordSubSpace = ws
     percepts = [torch.tensor([0.5, 0.0, 0.0]),
                 torch.tensor([0.0, 0.4, 0.0]),
                 torch.tensor([0.2, 0.1, 0.3])]

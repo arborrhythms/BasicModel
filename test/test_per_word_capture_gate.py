@@ -80,11 +80,11 @@ def _stage_for_per_word(m):
     # the first ``_per_word_prelude`` (sentinel
     # ``_per_sentence_initialized``); replay that here for tests that
     # call ``_per_word_body_step`` in isolation.
-    if (m.wordSpace is not None
-            and not getattr(m.wordSpace,
+    if (m.wordSubSpace is not None
+            and not getattr(m.wordSubSpace,
                             '_per_sentence_initialized', False)):
-        m.wordSpace.soft_reset()
-        m.wordSpace._per_sentence_initialized = True
+        m.wordSubSpace.soft_reset()
+        m.wordSubSpace._per_sentence_initialized = True
     # Mirror ``BasicModel._forward_body_per_word``'s prelude: STM
     # batch resize + clear, MPHF pre-warm, recur_pass reset, and
     # loop-carry SubSpace pre-seed. The capture gate calls

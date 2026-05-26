@@ -91,7 +91,7 @@ def test_svo_extraction_on_real_sentence():
     with torch.no_grad():
         m(batch)
 
-    chart = m.wordSpace.chart
+    chart = m.wordSubSpace.chart
     svo = chart.extract_svo()
     assert svo is not None, (
         "chart.extract_svo() returned None — no S = lift(NP, VP) over "

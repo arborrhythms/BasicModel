@@ -771,7 +771,7 @@ def test_symbolic_space_owns_signal_router(_xor_model):
     # The router must be a different instance from any Chart-owned one
     # so the two paths cannot accidentally share scoring state.
     chart_router = getattr(
-        getattr(ss.wordSpace, 'chart', None), '_signal_router', None)
+        getattr(ss.wordSubSpace, 'chart', None), '_signal_router', None)
     if chart_router is not None:
         assert ss.languageLayer is not chart_router, (
             "SymbolicSpace must own its own router, not share Chart's"
@@ -809,7 +809,7 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
     # Seed event so is_empty() returns False and materialize() yields a tensor.
     in_sub.set_event(torch.randn(1, n, d))
     # Stamp a minimal context the forward path expects.
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(1 * n, dtype=torch.bool)
 
     saved = ss.use_stack_router
@@ -837,20 +837,20 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
 
 def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
     """With use_stack_router=True, the forward must NOT read or write
-    WordSpace.current_rules / generate_rules.
+    WordSubSpace.current_rules / generate_rules.
 
     Plan §"Phase 6: Retire Active WordSpace Parser State" -- "bypass"
     leg: the new path skips the cursor-driven current_rules surface
     entirely.
     """
     ss = _xor_model.symbolicSpace
-    ws = ss.wordSpace
+    ws = ss.wordSubSpace
     from Spaces import SubSpace
     n = int(ss.conceptualSpace.subspace.inputShape[0])
     d = int(ss.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ws
+    in_sub.wordSubSpace = ws
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     # Stamp sentinel values so we can detect any write.
@@ -901,7 +901,7 @@ def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
     d = int(cs.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     pre_buffer = stm._buffer.detach().clone() if hasattr(stm, '_buffer') else None
@@ -955,7 +955,7 @@ def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
     d = int(ss.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     saved = ss.use_stack_router
@@ -1006,7 +1006,7 @@ def test_flag_off_does_not_call_stack_route_forward(_xor_model):
     d = int(ss.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     try:
@@ -1532,7 +1532,7 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
     d = int(ss.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     saved = ss.use_stack_router
@@ -1587,7 +1587,7 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
     d = int(ss.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     saved = ss.use_stack_router
@@ -1625,7 +1625,7 @@ def test_symbolic_space_reverse_flag_off_does_not_call_language_layer(_xor_model
     d = int(ss.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ss.wordSpace
+    in_sub.wordSubSpace = ss.wordSubSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     saved = ss.use_stack_router
@@ -1647,13 +1647,13 @@ def test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules(_xor_model
     cursor-driven generate_rules path is bypassed.
     """
     ss = _xor_model.symbolicSpace
-    ws = ss.wordSpace
+    ws = ss.wordSubSpace
     from Spaces import SubSpace
     n = int(ss.subspace.inputShape[0])
     d = int(ss.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSpace = ws
+    in_sub.wordSubSpace = ws
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     sentinel = {'S': [['SENTINEL_NOT_TOUCHED']]}

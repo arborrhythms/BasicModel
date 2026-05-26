@@ -159,7 +159,7 @@ class _StubModel(Mereology):
     def __init__(self, event_tensor, n_stages=1, threshold=0.0):
         self.symbolicSpace = _StubSymbolicSpace(event_tensor, threshold)
         self.conceptualSpace = _StubConceptualSpace()
-        self.wordSpace = None
+        self.wordSubSpace = None
         self.conceptualOrder = n_stages
 
 

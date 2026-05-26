@@ -1,7 +1,7 @@
 """Tests for the category_codebook → category_embedding retirement.
 
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
-§Phase 2 deferred — "WordSpace.category_codebook retirement". The plan
+§Phase 2 deferred — "WordSubSpace.category_codebook retirement". The plan
 calls for replacing the heavyweight ``Codebook`` (which carried VQ /
 polarity / meronomy / SVD machinery never used by the label consumers)
 with a plain ``nn.Embedding[N_categories, pos_dim]``.
@@ -29,7 +29,7 @@ if _BIN not in sys.path:
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
 
-# Reuse the proven WordSpace builder from the existing partition test.
+# Reuse the proven WordSubSpace builder from the existing partition test.
 from test_partition_pos_codebook import _make_word_space  # noqa: E402
 
 

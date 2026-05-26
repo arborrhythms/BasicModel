@@ -35,6 +35,7 @@ When the byte-equivalent gate clears, the chart-only methods
 """
 import os
 import sys
+from pathlib import Path
 
 import pytest
 import torch
@@ -55,9 +56,9 @@ def test_chart_remains_default_parser_backend():
     retirement requires this default to flip to ``stm`` first AND for
     the deprecated chart path to be opt-in. Neither has happened yet —
     chart is still the default."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     import torch.nn as nn
-    ws = object.__new__(WordSpace)
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     ws.parser_backend = getattr(ws, 'parser_backend', 'chart')
     assert ws.parser_backend == 'chart'
@@ -113,11 +114,12 @@ def test_stm_exposes_chart_score_equivalent():
 
 
 def test_stm_emits_soft_rule_distributions():
-    """``STMDriver.reduce_step_soft`` returns the softmax distribution
-    over rules (inadmissible rules at 0). This is the gradient-flow
-    signal training paths need."""
-    from stm_driver import STMDriver, RuleScorer
-    from typed_stack import TypedStack
+    """``ShortTermMemory.reduce_step_soft`` returns the softmax
+    distribution over rules (inadmissible rules at 0). This is the
+    gradient-flow signal training paths need."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _stm_test_fixtures import make_typed_stack, make_driver
     rule_sigs = [
         {'lhs_category': 'NP', 'lhs_order': 0,
          'lhs_order_kind': 'constant',
@@ -126,13 +128,12 @@ def test_stm_emits_soft_rule_distributions():
          'rhs_order_kinds': ['constant', 'constant'],
          'op_name': 'conjunction', 'order_delta': 0},
     ]
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     ts.push(0, torch.tensor([1.0, 0.0, 0.0, 0.0]),
             category_id_str='DET', order=0, ref_id=0)
     ts.push(0, torch.tensor([0.0, 1.0, 0.0, 0.0]),
             category_id_str='N', order=0, ref_id=1)
-    driver = STMDriver(ts, rule_sigs,
-                       RuleScorer(payload_dim=4, n_rules=1))
+    driver = make_driver(ts, rule_sigs, payload_dim=4)
     result = driver.reduce_step_soft(0)
     assert 'probabilities' in result
     assert torch.is_tensor(result['probabilities'])
@@ -222,9 +223,11 @@ def test_stm_trainable_to_match_oracle_on_ambiguous_grammar():
     training closes the gap on ambiguous regimes (this test +
     trainer tests).
     """
-    from stm_driver import STMDriver, RuleScorer
-    from typed_stack import TypedStack
-    from stm_trainer import train_step
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _stm_test_fixtures import (
+        make_typed_stack, make_driver, make_train_step)
+    train_step = make_train_step()
     torch.manual_seed(0)
     rule_sigs = [
         {'lhs_category': 'NPA', 'lhs_order': 0,
@@ -240,9 +243,8 @@ def test_stm_trainable_to_match_oracle_on_ambiguous_grammar():
          'rhs_order_kinds': ['constant', 'constant'],
          'op_name': 'conjunction', 'order_delta': 0},
     ]
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
-    driver = STMDriver(ts, rule_sigs,
-                       RuleScorer(payload_dim=4, n_rules=2))
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
+    driver = make_driver(ts, rule_sigs, payload_dim=4)
     optim = torch.optim.Adam(driver.parameters(), lr=1e-2)
 
     def snap(payload):

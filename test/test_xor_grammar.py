@@ -187,13 +187,13 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         _restore_global_state(cls._global_snap)
 
     def test_chart_router_kind_is_signal(self):
-        ws = self.model.wordSpace
+        ws = self.model.wordSubSpace
         self.assertIsNotNone(ws, "WordSpace must be built")
         self.assertIsNotNone(ws.chart)
         self.assertEqual(ws.chart.router_kind, "signal")
 
     def test_signal_router_has_grammar_ops_attached(self):
-        ws = self.model.wordSpace
+        ws = self.model.wordSubSpace
         router = ws.chart._signal_router
         self.assertIsNotNone(
             router, "LanguageLayer must be built when routerKind=signal")
@@ -206,7 +206,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             "Expected two binary ops (conjunction, disjunction)")
 
     def test_signal_router_rule_ids_match_grammar(self):
-        ws = self.model.wordSpace
+        ws = self.model.wordSubSpace
         router = ws.chart._signal_router
         TheGrammar = self._Language.TheGrammar
         not_id = next(i for i, r in enumerate(TheGrammar.rules)

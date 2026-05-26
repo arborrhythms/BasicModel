@@ -123,7 +123,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         # which sees every grammar rule directly via ``self.chart.grammar``;
         # the per-tier subsets are read on demand from
         # ``Grammar.symbolic()`` / ``perceptual()`` / ``conceptual()``.
-        self.assertIs(model.wordSpace.chart.grammar, Language.TheGrammar)
+        self.assertIs(model.wordSubSpace.chart.grammar, Language.TheGrammar)
         self.assertIsNone(Language.TheGrammar.symbolic_transition())
 
 

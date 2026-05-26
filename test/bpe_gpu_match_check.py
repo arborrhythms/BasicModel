@@ -30,7 +30,7 @@ from data import TheData
 from Models import BaseModel
 from util import init_config, init_device
 import Spaces
-import bpe_gpu
+from Layers import BPEGpuLayer
 
 
 def main():
@@ -45,8 +45,8 @@ def main():
     cl = ps.chunk_layer
     cl.word_learning = 0  # FREEZE (frozen-vocab GPU-train contract)
 
-    tables = bpe_gpu.build_static_tables(cl, ps.subspace.what,
-                                         torch.device("cpu"))
+    tables = BPEGpuLayer.build_static_tables(cl, ps.subspace.what,
+                                             torch.device("cpu"))
     print(f"[match-check] frozen vocab: V={tables['V']} "
           f"maxL={tables['maxL']}")
 
@@ -77,8 +77,8 @@ def main():
     for cidx, byte_buf in enumerate(captured):
         # Ground truth: the trie walk.
         ref_chunks, _ = cl.forward(byte_buf)         # list[list[int]]
-        bid, blen = bpe_gpu.gpu_longest_match(byte_buf, tables)
-        gpu_ids, gpu_cnt = bpe_gpu.gpu_chunk_ids(byte_buf, bid, blen)
+        bid, blen = BPEGpuLayer.gpu_longest_match(byte_buf, tables)
+        gpu_ids, gpu_cnt = BPEGpuLayer.gpu_chunk_ids(byte_buf, bid, blen)
         B = byte_buf.shape[0]
         for b in range(B):
             total_rows += 1

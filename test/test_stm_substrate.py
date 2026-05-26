@@ -1,19 +1,18 @@
-"""Tests for step 1 of the CKY-retirement path: substrate fixes.
+"""Tests for the STM substrate properties (after the 2026-05-21
+WordSubSpace/STM Layer refactor).
 
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
 §Phase 2 deferred — STM parity work, step 1 ("Fix the substrate
 before adding features"):
 
-  * ``STMDriver`` is an ``nn.Module`` so ``RuleScorer`` parameters
-    register through the standard ``parameters()`` walk.
-  * ``TypedStack`` is an ``nn.Module`` with ``register_buffer`` so
-    ``.to(device)`` moves all parallel tensors together.
-  * ``category_embedding`` parameters land in ``WordSpace.params``
-    (the manual optimizer-feed list, not just ``parameters()``).
-
-Without these, the STM scorer trains on a stale optimizer copy, the
-typed stack stays on CPU when ``.to(device)`` fires elsewhere, and
-the category embedding doesn't appear in optimizer state.
+  * The STM driver is an ``nn.Module`` (now via ``ShortTermMemory``,
+    a ``Layer``) so its rule scorer's parameters register through the
+    standard ``parameters()`` walk.
+  * The typed STM stack is part of an ``nn.Module`` (now WordSubSpace
+    itself, inherited from SubSpace) with the parallel tensors
+    registered as buffers so ``.to(device)`` moves them together.
+  * ``category_embedding`` parameters land in ``WordSpace.params`` (the
+    manual optimizer-feed list, not just ``parameters()``).
 """
 import os
 import sys
@@ -31,45 +30,46 @@ if _BIN not in sys.path:
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
 
+from _stm_test_fixtures import make_typed_stack, make_driver
+
 
 def test_stm_driver_is_nn_module():
-    """``STMDriver`` inherits ``nn.Module`` so its registered scorer's
-    parameters are reachable via the standard ``parameters()`` walk."""
-    from stm_driver import STMDriver, RuleScorer
-    from typed_stack import TypedStack
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=2)
-    driver = STMDriver(typed_stack=ts, rule_signatures=[], scorer=scorer)
-    assert isinstance(driver, nn.Module)
+    """``ShortTermMemory`` (the STM driver Layer) is an ``nn.Module`` so
+    its registered scorer's parameters are reachable via the standard
+    ``parameters()`` walk."""
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
+    driver = make_driver(ts, rule_signatures=[
+        {'lhs_category': 'S', 'lhs_order': 3,
+         'rhs_categories': ['S'], 'rhs_orders': [3],
+         'op_name': 'not', 'order_delta': 0}], payload_dim=4)
+    assert isinstance(driver._stm, nn.Module)
 
 
 def test_stm_driver_parameters_include_scorer_params():
-    """``STMDriver.parameters()`` walks into the registered scorer."""
-    from stm_driver import STMDriver, RuleScorer
-    from typed_stack import TypedStack
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=2)
-    driver = STMDriver(typed_stack=ts, rule_signatures=[], scorer=scorer)
-    driver_param_ids = {id(p) for p in driver.parameters()}
-    scorer_param_ids = {id(p) for p in scorer.parameters()}
+    """``ShortTermMemory.parameters()`` walks into the registered scorer."""
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
+    driver = make_driver(ts, rule_signatures=[
+        {'lhs_category': 'S', 'lhs_order': 3,
+         'rhs_categories': ['S'], 'rhs_orders': [3],
+         'op_name': 'not', 'order_delta': 0}], payload_dim=4)
+    driver_param_ids = {id(p) for p in driver._stm.parameters()}
+    scorer_param_ids = {id(p) for p in driver.scorer.parameters()}
     assert scorer_param_ids
     assert scorer_param_ids.issubset(driver_param_ids)
 
 
 def test_typed_stack_is_nn_module():
-    """``TypedStack`` is an ``nn.Module`` so ``.to(device)`` moves all
-    parallel tensors together."""
-    from typed_stack import TypedStack
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
+    """The typed STM stack lives on WordSubSpace, an ``nn.Module``, so
+    ``.to(device)`` moves all parallel tensors together."""
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     assert isinstance(ts, nn.Module)
 
 
 def test_typed_stack_tensors_are_registered_buffers():
     """``_buffer`` / ``_category`` / ``_order`` / ``_ref_id`` /
-    ``_depth`` are registered as buffers so ``.to(device)`` and
-    ``state_dict`` see them as a single module."""
-    from typed_stack import TypedStack
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
+    ``_depth`` are registered as buffers on the WordSubSpace so
+    ``.to(device)`` and ``state_dict`` see them as a single module."""
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     buffer_names = {n for n, _ in ts.named_buffers()}
     expected = {'_buffer', '_category', '_order', '_ref_id', '_depth'}
     assert expected.issubset(buffer_names), (
@@ -77,16 +77,11 @@ def test_typed_stack_tensors_are_registered_buffers():
 
 
 def test_typed_stack_to_moves_all_tensors():
-    """``ts.to(device)`` propagates to every parallel tensor. Smoke
-    test that all five buffers travel together — we re-route to CPU
-    (the only universally-available target) so the test is portable
-    across MPS / CUDA / CPU."""
-    from typed_stack import TypedStack
-    ts = TypedStack(batch=1, max_depth=4, dim=4)
+    """``ts.to(device)`` propagates to every parallel tensor."""
+    ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     ts.push(0, torch.tensor([1.0, 2.0, 3.0, 4.0]),
             category_id_str='X', order=0, ref_id=0)
     cpu_ts = ts.to('cpu')
-    # Every registered buffer lands on the requested device.
     for name, buf in cpu_ts.named_buffers():
         assert buf.device.type == 'cpu', (
             f"buffer {name} on {buf.device}")
@@ -104,13 +99,12 @@ def test_word_space_params_include_category_embedding():
 
 
 def test_word_space_params_include_stm_driver_scorer_params():
-    """Once the STM driver is constructed, its scorer's parameters
+    """Once the STM driver is initialised, its scorer's parameters
     land in ``WordSpace.params`` too."""
     from test_partition_pos_codebook import _make_word_space
     from Language import Grammar
     from embed import build_knowledge_section, KnowledgeView
     ws = _make_word_space()
-    # Build minimal view + attach + parser_backend so _init_stm_driver runs
     g = Grammar()
     g.rules = [
         g._parse_rule("NP", "conjunction(DET, N)", tier='S'),
@@ -122,9 +116,8 @@ def test_word_space_params_include_stm_driver_scorer_params():
     view = KnowledgeView(build_knowledge_section(g))
     ws.attach_knowledge(view)
     ws.parser_backend = 'stm'
-    # Force driver construction
     ws._init_stm_driver()
-    driver_params = list(ws.stm_driver.parameters())
+    driver_params = list(ws.stm_driver.scorer.parameters())
     assert driver_params
     param_ids = {id(p) for p in ws.params}
     for p in driver_params:

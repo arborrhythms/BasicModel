@@ -63,7 +63,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     each Space sees the expected fields."""
     from embed import (save_artifact, build_knowledge_section,
                        load_knowledge_view, KnowledgeView)
-    from Language import WordSpace
+    from Language import WordSubSpace
     from Spaces import PerceptualSpace, SymbolicSpace
     import torch
     import torch.nn as nn
@@ -82,7 +82,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     assert view.n_refs_live == 10
 
     # 4: Attach to three Spaces (all bare instances)
-    ws = object.__new__(WordSpace); nn.Module.__init__(ws)
+    ws = object.__new__(WordSubSpace); nn.Module.__init__(ws)
     ps = _bare_space(PerceptualSpace)
     ss = _bare_space(SymbolicSpace)
     ps.wv = wv
@@ -91,7 +91,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     ps.attach_knowledge(view)
     ss.attach_knowledge(view)
 
-    # 5a: WordSpace exposes the view
+    # 5a: WordSubSpace exposes the view
     assert ws.knowledge is view
     assert ws.knowledge.ref_id_for('NP') is not None
 

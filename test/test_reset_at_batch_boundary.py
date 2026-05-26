@@ -88,7 +88,7 @@ def test_per_row_state_clears_between_batches():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
 
-    ws = model.wordSpace
+    ws = model.wordSubSpace
     if ws is None:
         pytest.skip("model has no WordSpace")
 

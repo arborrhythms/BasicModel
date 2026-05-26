@@ -45,9 +45,9 @@ def _tiny_view():
 
 
 def _bare_word_space(batch=1):
-    from Language import WordSpace, Taxonomy
+    from Language import WordSubSpace, Taxonomy
     import torch.nn as nn
-    ws = object.__new__(WordSpace)
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     ws.batch = int(batch)
     ws.taxonomy = Taxonomy()

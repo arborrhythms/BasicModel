@@ -1,16 +1,14 @@
 """Tests for the STM shift/reduce driver and its small rule scorer.
 
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
-§Phase 2 / step 3 — STM driver + scorer (new small module, NOT a port
-of the chart's _rule_embed).
+§Phase 2 / step 3 — STM driver + scorer.
 
-The driver coordinates a typed_stack with a rule scorer and a list of
-rule signatures. SHIFT pushes a token frame; REDUCE builds the
-admissibility mask, scores admissible rules, picks one (argmax over
-masked logits), and reports the chosen rule + the operand frames. The
-driver does NOT yet apply rule semantics to compute parent payloads
-(that's a follow-up — for now it returns the choice so callers can
-verify the masking + scoring are correct).
+Post-2026-05-21 (WordSubSpace/STM Layer refactor) the driver+trainer+
+scorer live on ``ShortTermMemory`` (a ``Layer`` in ``bin/Layers.py``);
+the retired ``stm_driver.STMDriver`` / ``stm_driver.RuleScorer`` shapes
+are reconstructed by ``test/_stm_test_fixtures.make_driver`` /
+``make_scorer`` for these legacy tests so the SHIFT/REDUCE semantics
+stay covered.
 """
 import sys
 from pathlib import Path
@@ -19,6 +17,9 @@ _project = Path(__file__).resolve().parent.parent
 _wo_root = _project.parent
 sys.path.insert(0, str(_wo_root / "bin"))
 sys.path.insert(0, str(_project / "bin"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _stm_test_fixtures import make_typed_stack, make_driver, make_scorer
 
 
 def _three_rules():
@@ -37,12 +38,10 @@ def _three_rules():
 
 
 def test_rule_scorer_construct_and_forward():
-    """``RuleScorer(payload_dim, n_rules)`` is a small nn.Module producing
-    per-rule logits from the top-of-stack payload(s)."""
-    from stm_driver import RuleScorer
+    """The private ``_RuleScorer(payload_dim, n_rules)`` produces per-rule
+    logits from the top-of-stack payload(s)."""
     import torch
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    # binary input: two payloads concatenated
+    scorer = make_scorer(payload_dim=4, n_rules=3)
     left = torch.randn(4)
     right = torch.randn(4)
     logits = scorer(left, right)
@@ -50,38 +49,31 @@ def test_rule_scorer_construct_and_forward():
 
 
 def test_rule_scorer_unary():
-    """RuleScorer with only a left operand also produces logits."""
-    from stm_driver import RuleScorer
+    """Scorer with only a left operand also produces logits."""
     import torch
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
+    scorer = make_scorer(payload_dim=4, n_rules=3)
     left = torch.randn(4)
     logits = scorer(left, None)
     assert logits.shape == (3,)
 
 
 def test_stm_driver_construct():
-    """``STMDriver(typed_stack, rule_signatures, scorer)`` wires them
-    together."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    driver = STMDriver(typed_stack=stack, rule_signatures=_three_rules(),
-                       scorer=scorer)
+    """``make_driver(typed_stack, rule_signatures)`` wires a
+    ShortTermMemory + WordSubSpace pair behind the legacy STMDriver
+    surface."""
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     assert driver.typed_stack is stack
-    assert driver.scorer is scorer
+    assert driver.scorer is not None
     assert driver.rule_signatures == _three_rules()
 
 
 def test_stm_driver_shift_pushes_frame():
     """``shift(b, payload, category, order, ref_id)`` pushes onto the
     typed_stack."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
     import torch
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    driver = STMDriver(stack, _three_rules(), scorer)
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     payload = torch.tensor([1.0, 2.0, 3.0, 4.0])
     driver.shift(0, payload, category='NP', order=3, ref_id=42)
     assert int(stack._depth[0].item()) == 1
@@ -94,12 +86,9 @@ def test_stm_driver_shift_pushes_frame():
 def test_reduce_step_picks_admissible_rule_binary():
     """With NP@3, VP@1 on the stack, REDUCE picks the lift rule (the only
     admissible one)."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
     import torch
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    driver = STMDriver(stack, _three_rules(), scorer)
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     driver.shift(0, torch.zeros(4), category='NP', order=3, ref_id=0)
     driver.shift(0, torch.zeros(4), category='VP', order=1, ref_id=0)
     chosen = driver.reduce_step(0)
@@ -109,12 +98,9 @@ def test_reduce_step_picks_admissible_rule_binary():
 
 def test_reduce_step_picks_admissible_rule_unary():
     """With single S@3 on the stack, REDUCE picks the not rule."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
     import torch
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    driver = STMDriver(stack, _three_rules(), scorer)
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     driver.shift(0, torch.zeros(4), category='S', order=3, ref_id=0)
     chosen = driver.reduce_step(0)
     assert chosen['rule_index'] == 2
@@ -123,12 +109,9 @@ def test_reduce_step_picks_admissible_rule_unary():
 
 def test_reduce_step_raises_when_no_rule_admissible():
     """With incompatible stack top, REDUCE raises a clear error."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
     import torch
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
-    driver = STMDriver(stack, _three_rules(), scorer)
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     driver.shift(0, torch.zeros(4), category='XYZ', order=99, ref_id=0)
     driver.shift(0, torch.zeros(4), category='ABC', order=99, ref_id=0)
     import pytest
@@ -140,23 +123,17 @@ def test_reduce_step_uses_softmax_over_admissible_only():
     """The scorer's logits over inadmissible rules don't influence the
     pick (verified by setting scorer logits so an inadmissible rule has
     the highest raw score; argmax should still pick the admissible one)."""
-    from typed_stack import TypedStack
-    from stm_driver import STMDriver, RuleScorer
     import torch
-    import torch.nn as nn
-    stack = TypedStack(batch=1, max_depth=8, dim=4)
-    scorer = RuleScorer(payload_dim=4, n_rules=3)
+    stack = make_typed_stack(batch=1, max_depth=8, dim=4)
+    driver = make_driver(stack, _three_rules(), payload_dim=4)
     # Rig the scorer so rule 1 (lower) has the highest raw logit even
     # though only rule 0 (lift) is admissible for the stack state we
-    # set up. Easiest: replace the final linear layer's weights /
-    # biases with constants.
+    # set up.
     with torch.no_grad():
-        scorer.head.weight.zero_()
-        scorer.head.bias.copy_(torch.tensor([0.0, 10.0, 0.0]))
-    driver = STMDriver(stack, _three_rules(), scorer)
+        driver.scorer.head.weight.zero_()
+        driver.scorer.head.bias.copy_(torch.tensor([0.0, 10.0, 0.0]))
     driver.shift(0, torch.zeros(4), category='NP', order=3, ref_id=0)
     driver.shift(0, torch.zeros(4), category='VP', order=1, ref_id=0)
     chosen = driver.reduce_step(0)
-    # Despite rule 1 having higher raw logit, only rule 0 is
-    # admissible — that's what gets picked.
+    # Despite rule 1 having higher raw logit, only rule 0 is admissible.
     assert chosen['rule_index'] == 0

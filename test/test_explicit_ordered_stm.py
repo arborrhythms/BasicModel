@@ -50,9 +50,9 @@ def _ordered_view():
 
 
 def _word_space():
-    from Language import WordSpace
+    from Language import WordSubSpace
     from Spaces import ConceptualSpace
-    ws = object.__new__(WordSpace)
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     ws.parser_backend = 'stm'
     ws.attach_knowledge(_ordered_view())

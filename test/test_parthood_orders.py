@@ -240,7 +240,7 @@ class TestOrderConvention:
 # ─────────────────────────── Group 6: Taxonomy ──────────────────────────────
 
 class TestTaxonomy:
-    """Explicit parent→children order hierarchy on the WordSpace
+    """Explicit parent→children order hierarchy on the WordSubSpace
     singleton (distinct from the codebook-implicit Meronomy)."""
 
     def _model(self):
@@ -260,12 +260,12 @@ class TestTaxonomy:
 
     def test_wordspace_hosts_taxonomy(self):
         m = self._model()
-        assert hasattr(m.wordSpace, "taxonomy"), \
-            "WordSpace singleton must host the Taxonomy"
+        assert hasattr(m.wordSubSpace, "taxonomy"), \
+            "WordSubSpace singleton must host the Taxonomy"
 
     def test_taxonomy_add_and_walk_by_order(self):
         m = self._model()
-        tax = m.wordSpace.taxonomy
+        tax = m.wordSubSpace.taxonomy
         root = tax.add(order=0)
         child = tax.add(order=1, parent=root)
         assert child in tax.children(root)
@@ -273,7 +273,7 @@ class TestTaxonomy:
 
     def test_taxonomy_flat_enumeration_across_orders(self):
         m = self._model()
-        tax = m.wordSpace.taxonomy
+        tax = m.wordSubSpace.taxonomy
         tax.add(order=0)
         tax.add(order=1)
         tax.add(order=2)

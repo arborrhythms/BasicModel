@@ -25,18 +25,67 @@ sys.path.insert(0, str(_wo_root / "bin"))
 sys.path.insert(0, str(_project / "bin"))
 
 
-def _bare_word_space():
-    from Language import WordSpace
-    ws = object.__new__(WordSpace)
+def _bare_word_space(stm_dim=4, max_depth=12, batch=1):
+    """Bare WordSubSpace with manually-allocated typed-STM buffers.
+
+    Post-2026-05-21 (WordSubSpace/STM Layer refactor) the typed STM
+    stack lives directly on WordSubSpace, not on
+    ``ConceptualSpace._stm_typed``.
+    """
+    from Language import WordSubSpace
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
+    ws.batch = int(batch)
+    ws._stm_capacity = int(max_depth)
+    ws._stm_payload_dim = int(stm_dim)
+    ws.max_depth = ws._stm_capacity
+    ws.dim = ws._stm_payload_dim
+    ws.register_buffer(
+        '_buffer', torch.zeros(ws.batch, max_depth, stm_dim),
+        persistent=False)
+    ws.register_buffer(
+        '_category',
+        torch.full((ws.batch, max_depth), -1, dtype=torch.long),
+        persistent=False)
+    ws.register_buffer(
+        '_order',
+        torch.zeros((ws.batch, max_depth), dtype=torch.long),
+        persistent=False)
+    ws.register_buffer(
+        '_ref_id',
+        torch.full((ws.batch, max_depth), -1, dtype=torch.long),
+        persistent=False)
+    ws.register_buffer(
+        '_depth', torch.zeros(ws.batch, dtype=torch.long),
+        persistent=False)
+    ws._category_names = [
+        [None] * max_depth for _ in range(ws.batch)]
+    # Idea-stack buffers (Phase E completion of the 2026-05-21 refactor).
+    ws._idea_capacity = max_depth
+    ws._idea_max_depth_host = 0
+    ws.register_buffer(
+        '_idea_buffer',
+        torch.zeros(ws.batch, max_depth, stm_dim),
+        persistent=False)
+    ws.register_buffer(
+        '_idea_depth',
+        torch.zeros(ws.batch, dtype=torch.long),
+        persistent=False)
     return ws
 
 
 def _bare_conceptual_space(stm_dim=4, max_depth=12, batch=1):
+    """Bare ConceptualSpace exposing a real ShortTermMemory Layer.
+
+    Post-Phase-E the ShortTermMemory Layer (in bin/Layers.py) holds
+    the rule scorer; the typed-STM stack data is on WordSubSpace.
+    """
     from Spaces import ConceptualSpace
+    from Layers import ShortTermMemory
     cs = object.__new__(ConceptualSpace)
     nn.Module.__init__(cs)
-    cs._init_typed_stm(batch=batch, max_depth=max_depth, dim=stm_dim)
+    cs.stm = ShortTermMemory(batch=int(batch), capacity=int(max_depth),
+                             concept_dim=int(stm_dim))
     return cs
 
 
@@ -96,7 +145,7 @@ def _view_with_distinct_pos_scalars():
 
 
 def _make_word_space_for_stm(stm_dim=4):
-    ws = _bare_word_space()
+    ws = _bare_word_space(stm_dim=stm_dim, max_depth=16, batch=1)
     ws.parser_backend = 'stm'
     view = _view_with_distinct_pos_scalars()
     ws.attach_knowledge(view)

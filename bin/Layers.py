@@ -7210,6 +7210,1326 @@ class ChunkLayer(Layer):
         return data
 #endregion
 
+#region Tokenizer GPU Layers
+
+class BPEGpuLayer(Layer):
+    """GPU BPE tokenizer for the FROZEN-vocab training path.
+
+    The legacy ``ChunkLayer`` greedy longest-match is a Python trie walk
+    that needs ``byte_indices.tolist()`` -- a per-step cudaMemcpyDtoH. When
+    the BPE vocab is frozen (``word_learning <= 0`` -- the CPU-pretrain ->
+    freeze -> GPU-train workflow), the whole tokenizer becomes static
+    tensor ops with zero host sync. ``PerceptualSpace`` owns an instance
+    of this layer and caches the per-(frozen) vocab static tables on
+    itself (``self._bpe_static_tables``); this layer holds the algorithm
+    only.
+
+    Bit-identical to the trie walk is asserted by ``test/bpe_gpu_equiv.py``
+    before the switch -- a one-token silent divergence corrupts all
+    training (fail-loud memory).
+    """
+
+    class _BPEGpuUnavailable(Exception):
+        """Raised when the static GPU tables cannot be built (e.g. a frozen
+        codebook/vocab key mismatch). The caller falls back to the verified
+        trie reference -- never a silent wrong result."""
+
+    # Polynomial rolling hash over bytes. 1099511628211 is the FNV-style
+    # 64-bit prime; arithmetic wraps mod 2**64 via int64 overflow, which is
+    # fine -- the hash only needs to be a consistent bucket; correctness
+    # comes from the explicit byte-verify, not from the hash being perfect.
+    _HASH_MUL = 1099511628211
+
+    def __init__(self):
+        super().__init__(nInput=0, nOutput=0)
+
+    @staticmethod
+    def _poly_hash(windows):
+        """``windows`` [..., L] int64 byte values -> [...] int64 hash."""
+        h = torch.zeros(windows.shape[:-1], dtype=torch.int64,
+                        device=windows.device)
+        L = windows.shape[-1]
+        for k in range(L):
+            h = h * BPEGpuLayer._HASH_MUL + (windows[..., k] + 1)
+        return h
+
+    @staticmethod
+    def build_static_tables(chunk_layer, codebook, device):
+        """Frozen vocab -> static device tensors. Call ONCE per (frozen)
+        chunk_layer/codebook on the target device; cache the result.
+
+        Returns a dict the GPU tokenizer + the rewired _embed_bpe consume.
+        All Python-dict / latin1 work happens HERE (one-time, host), never
+        per batch.
+        """
+        vocab = chunk_layer.vocab               # {byte-tuple: id}
+        id_to_bytes = chunk_layer.id_to_bytes   # {id: byte-tuple}
+        maxL = int(chunk_layer._max_merge_len)
+        V = int(chunk_layer._next_id)           # ids are 0..V-1
+        boundary = set(int(b) for b in chunk_layer.BOUNDARY_BYTES)
+
+        tok_bytes = torch.full((V, maxL), -1, dtype=torch.int64)
+        tok_len = torch.zeros(V, dtype=torch.int64)
+        is_boundary = torch.zeros(V, dtype=torch.bool)
+        for i in range(V):
+            key = id_to_bytes.get(i)
+            if key is None:
+                # 0..255 are always seeded; a gap above that would be a
+                # vocab bug -- single-byte fallback id == byte value.
+                key = (i,) if i < 256 else ()
+            kl = len(key)
+            tok_len[i] = kl
+            if kl:
+                tok_bytes[i, :kl] = torch.tensor(
+                    [int(b) for b in key], dtype=torch.int64)
+                is_boundary[i] = all(int(b) in boundary for b in key)
+
+        # chunk_id -> codebook row (frozen resolve chain). -1 == "skip"
+        # (boundary chunk, or byte_mode key not in the codebook -- the
+        # original returns None and the sub-token is dropped).
+        byte_mode = bool(getattr(codebook, 'byte_mode', False))
+        key_to_index = codebook.pretrain.key_to_index
+        chunk_to_cb = torch.full((V,), -1, dtype=torch.int64)
+        for i in range(V):
+            if bool(is_boundary[i]):
+                continue
+            key = id_to_bytes.get(i, (i,) if i < 256 else ())
+            if not key:
+                continue
+            latin1 = "".join(chr(int(b) & 0xFF) for b in key)
+            idx = key_to_index.get(latin1)
+            if idx is None:
+                if byte_mode:
+                    continue          # original: _resolve -> None -> skip
+                raise AssertionError(
+                    f"build_static_tables: key {latin1!r} missing from "
+                    f"frozen codebook.pretrain (word_learning<=0) -- .kv "
+                    f"load mismatch.")
+            chunk_to_cb[i] = int(idx)
+
+        # Per-length sorted (hash -> id) for longest-match searchsorted.
+        by_len = {}
+        for L in range(1, maxL + 1):
+            ids = [i for i in range(V) if int(tok_len[i]) == L]
+            if not ids:
+                by_len[L] = None
+                continue
+            ids_t = torch.tensor(ids, dtype=torch.int64)
+            windows = tok_bytes[ids_t, :L]                 # [K, L]
+            hashes = BPEGpuLayer._poly_hash(windows)       # [K]
+            order = torch.argsort(hashes)
+            by_len[L] = (hashes[order].to(device),
+                         ids_t[order].to(device))
+
+        return {
+            "maxL": maxL, "V": V,
+            "tok_bytes": tok_bytes.to(device),
+            "tok_len": tok_len.to(device),
+            "is_boundary": is_boundary.to(device),
+            "chunk_to_cb": chunk_to_cb.to(device),
+            "by_len": by_len,
+        }
+
+    @staticmethod
+    def gpu_longest_match(byte_buf, tables):
+        """``byte_buf`` [B, N] long (0..255; 0 terminates a row).
+
+        Returns ``best_id`` [B, N] long and ``best_len`` [B, N] long: the
+        id / length of the longest vocab entry starting at each position
+        (single-byte fallback guarantees ``best_len >= 1``). Pure tensor
+        ops, no host sync.
+        """
+        B, N = byte_buf.shape
+        dev = byte_buf.device
+        maxL = tables["maxL"]
+        tok_bytes = tables["tok_bytes"]
+        # Single-byte baseline: id == byte value (ids 0..255 seeded), len 1.
+        best_id = byte_buf.clone()
+        best_len = torch.ones(B, N, dtype=torch.int64, device=dev)
+
+        for L in range(2, maxL + 1):
+            entry = tables["by_len"].get(L)
+            if entry is None or N < L:
+                continue
+            keys_sorted, ids_sorted = entry
+            # [B, N-L+1, L] windows; pad-free positions only.
+            win = byte_buf.unfold(1, L, 1).to(torch.int64)     # [B, M, L]
+            h = BPEGpuLayer._poly_hash(win)                    # [B, M]
+            pos = torch.searchsorted(keys_sorted, h)
+            pos = pos.clamp(max=keys_sorted.numel() - 1)
+            hit = keys_sorted[pos] == h
+            cand_id = ids_sorted[pos]                          # [B, M]
+            # Byte-verify (collision-proof): window == tok_bytes[cand_id].
+            cb = tok_bytes[cand_id][..., :L]                   # [B, M, L]
+            verified = hit & (win == cb).all(dim=-1)           # [B, M]
+            # A match of length L at position i beats any shorter one.
+            M = win.shape[1]
+            sl = slice(0, M)
+            take = verified
+            best_id[:, sl] = torch.where(take, cand_id, best_id[:, sl])
+            best_len[:, sl] = torch.where(
+                take, torch.full_like(best_len[:, sl], L),
+                best_len[:, sl])
+        return best_id, best_len
+
+    @staticmethod
+    def segment_words(chunk_ids, tok_count, tables, nObj):
+        """Tensor word-segmentation, **fully static** (no ``.item()``, no
+        boolean-mask compaction -> zero DtoH, fullgraph/CUDA-graph safe).
+        Bit-identical semantics to ``_embed_bpe``'s Python sweep:
+
+          * boundary chunk (all bytes in BOUNDARY_BYTES) separates words;
+          * non-boundary chunk resolves via ``chunk_to_cb`` (-1 == skip:
+            byte_mode key not in codebook);
+          * a word = a maximal run of non-boundary chunks, EMITTED only if
+            it has >=1 resolved sub-token (empty/all-unresolved runs take
+            no slot); per-row emitted words are slotted 0..nObj-1 in
+            left-to-right order, later words dropped.
+
+        Everything stays ``[B,T]`` (T = chunk buffer width, static). The
+        emitter scatters these into static ``[B*nObj]`` buffers, so the
+        target id ``b*nObj+slot`` is the only thing needed -- no dense
+        word-id / word-count, hence no host sync.
+
+        Returns (all ``[B,T]``, long/bool): ``sub_cb`` (codebook row, -1
+        where not a kept sub-token), ``sub_target`` (``b*nObj+slot``, or
+        ``B*nObj`` trash bucket where not kept), ``sub_pos`` (token index,
+        for first-sub-token tiebreak), ``keep`` (bool).
+        """
+        B, T = chunk_ids.shape
+        dev = chunk_ids.device
+        pos = torch.arange(T, device=dev).unsqueeze(0).expand(B, T)
+        valid = pos < tok_count.unsqueeze(1)
+        ids = chunk_ids.clamp(min=0)
+        is_bnd = tables["is_boundary"][ids] | (~valid)          # pad => sep
+        cb = tables["chunk_to_cb"][ids]                          # -1 = skip
+        resolved = valid & (~is_bnd) & (cb != -1)                # [B,T]
+
+        # run_key = #boundary chunks strictly before this position (a run
+        # of non-boundary chunks between two boundaries shares one key).
+        bnd_i = is_bnd.to(torch.int64)
+        run_key = torch.cumsum(bnd_i, dim=1) - bnd_i             # [B,T]
+
+        # Per (b, run_key): does the run hold >=1 resolved sub-token?
+        has_res = torch.zeros(B, T, dtype=torch.int64, device=dev)
+        has_res.scatter_reduce_(
+            1, run_key, resolved.to(torch.int64),
+            reduce="amax", include_self=True)                    # 0/1 grid
+
+        # Slot for an emitted run = #emitted runs with smaller run_key
+        # (exclusive cumsum of the has_res grid over the run-key axis).
+        emit_excl = torch.cumsum(has_res, dim=1) - has_res       # [B,T]
+        slot = emit_excl.gather(1, run_key)                      # [B,T]
+        keep = resolved & (slot < nObj)                          # [B,T] bool
+
+        b_idx = (torch.arange(B, device=dev)
+                 .unsqueeze(1).expand(B, T))                     # [B,T]
+        trash = B * nObj
+        sub_target = torch.where(keep, b_idx * nObj + slot,
+                                 torch.full_like(slot, trash))
+        sub_cb = torch.where(keep, cb, torch.full_like(cb, -1))
+        return sub_cb, sub_target, pos, keep
+
+    @staticmethod
+    def gpu_chunk_ids(byte_buf, best_id, best_len):
+        """Greedy left-to-right consumption -> token-major ``chunk_ids``
+        [B, N] long (padded with -1) and ``tok_count`` [B] long.
+
+        Sequential by nature (token k+1 starts at cursor + L[cursor]); a
+        bounded on-device scan over a ``[B]`` cursor, fixed N iterations
+        with masking -- no ``.any()``/``.item()`` host sync. N is the byte
+        buffer width; #tokens per row <= N so N iterations always suffice.
+        """
+        B, N = byte_buf.shape
+        dev = byte_buf.device
+        chunk_ids = torch.full((B, N), -1, dtype=torch.int64, device=dev)
+        cursor = torch.zeros(B, dtype=torch.int64, device=dev)
+        tok_count = torch.zeros(B, dtype=torch.int64, device=dev)
+        ar = torch.arange(B, device=dev)
+        for t in range(N):
+            c = cursor.clamp(max=N - 1)
+            cur_byte = byte_buf[ar, c]
+            active = (cursor < N) & (cur_byte != 0)
+            cur_id = best_id[ar, c]
+            cur_len = best_len[ar, c]
+            chunk_ids[ar, torch.full_like(cursor, t)] = torch.where(
+                active, cur_id, chunk_ids[ar, torch.full_like(cursor, t)])
+            tok_count = tok_count + active.to(torch.int64)
+            cursor = cursor + torch.where(
+                active, cur_len, torch.zeros_like(cur_len))
+        return chunk_ids, tok_count
+
+
+
+class MPHFGpuLayer(Layer):
+    """Static minimal-perfect-hash (MPHF) percept->row index for the
+    FROZEN-vocab training path -- the Rework A core mechanism.
+
+    Per the consolidated two-loop spec (§"Percept -> MPHF -> table",
+    §IMPLEMENTATION DETAILS D2): each percept's byte slot passes through an
+    MPHF producing an ``index in [0, V_percept)``. That index addresses a
+    **table** whose every entry holds BOTH (1) the literal surface word
+    string and (2) the ConceptualSpace activation vector for that token.
+    The table's halves are reused directly from the frozen ``Embedding``
+    codebook (``codebook.wv._vectors`` and ``codebook.wv.index_to_key``)
+    -- no parallel structures.
+
+    Build/verify pattern mirrors ``BPEGpuLayer``: frozen, built ONCE at
+    the CPU->GPU handoff over the frozen lexicon key set, cached on the
+    owning ``PerceptualSpace`` as ``self._mphf_static_tables``; runtime is
+    pure static tensor ops -- poly-hash + ``searchsorted`` + collision-
+    proof byte-verify -- ZERO host sync, O(1) per slot. The MPHF is
+    **non-invertible**: the reverse map is the table lookup, never an
+    inverse hash. A one-row silent mis-resolution corrupts all training,
+    so the byte-verify is exact regardless of hash collisions (fail-loud
+    memory).
+    """
+
+    class _MPHFUnavailable(Exception):
+        """Raised when the static MPHF table cannot be built (e.g. an empty
+        or non-Embedding codebook). The caller falls back to the existing
+        verified path -- never a silent wrong result."""
+
+    def __init__(self):
+        super().__init__(nInput=0, nOutput=0)
+
+    @staticmethod
+    def build_mphf_table(codebook, device):
+        """Frozen lexicon key set -> static device tensors. Call ONCE per
+        (frozen) codebook on the target device; cache the result.
+
+        The frozen key set is ``codebook.wv.index_to_key`` (the ``.kv``
+        lexicon + ASCII bootstrap + NULL rows -- frozen at
+        ``word_learning<=0``). All Python-dict / utf-8 work happens HERE
+        (one-time, host), never per batch.
+
+        Returns a dict the runtime ``mphf_index`` consumes plus the
+        ``surface`` list (== ``index_to_key``) for the reverse map.
+        """
+        wv = getattr(codebook, "wv", None)
+        if wv is None or getattr(wv, "index_to_key", None) is None:
+            raise MPHFGpuLayer._MPHFUnavailable(
+                "build_mphf_table: codebook has no wv.index_to_key "
+                "(non-Embedding / numeric codebook).")
+        keys = list(wv.index_to_key)
+        V = len(keys)
+        if V == 0:
+            raise MPHFGpuLayer._MPHFUnavailable(
+                "build_mphf_table: empty lexicon.")
+
+        # Each key -> its utf-8 byte tuple, EXACTLY as InputSpace lexes a
+        # token slot into ``subspace.what.W`` (null-terminated utf-8). The
+        # MPHF keys on the same byte representation the percept slot carries
+        # so the lookup is byte-for-byte the frozen ``key_to_index`` row.
+        key_bytes = []
+        maxL = 1
+        for k in keys:
+            try:
+                kb = k.encode("utf-8")
+            except Exception:
+                # Non-str keys are not lexable percept slots; map to a
+                # zero-length entry (never matched -> NULL row fallback).
+                kb = b""
+            key_bytes.append(kb)
+            if len(kb) > maxL:
+                maxL = len(kb)
+
+        # Padded row->bytes (-1 pad) + lengths for the collision-proof
+        # byte-verify, mirroring ``BPEGpuLayer``'s ``tok_bytes``/``tok_len``.
+        tok_bytes = torch.full((V, maxL), -1, dtype=torch.int64)
+        tok_len = torch.zeros(V, dtype=torch.int64)
+        for i, kb in enumerate(key_bytes):
+            kl = len(kb)
+            tok_len[i] = kl
+            if kl:
+                tok_bytes[i, :kl] = torch.tensor(
+                    [int(b) for b in kb], dtype=torch.int64)
+
+        # Per-length sorted (poly-hash -> row idx) index for the O(1)
+        # exact-key ``searchsorted`` lookup. A length-0 key (empty / NULL
+        # sentinel slot) is never matched -- the runtime maps an empty slot
+        # to ``null_row`` explicitly, not via the hash.
+        by_len = {}
+        for L in range(1, maxL + 1):
+            ids = [i for i in range(V) if int(tok_len[i]) == L]
+            if not ids:
+                by_len[L] = None
+                continue
+            ids_t = torch.tensor(ids, dtype=torch.int64)
+            windows = tok_bytes[ids_t, :L]                 # [K, L]
+            hashes = BPEGpuLayer._poly_hash(windows)       # [K]
+            order = torch.argsort(hashes)
+            by_len[L] = (hashes[order].to(device),
+                         ids_t[order].to(device))
+
+        # The NULL row: ``\x00`` (byte 0) is the per-row cursor seal / pad
+        # sentinel and ``Embedding.create`` seeds it at row 0. An empty /
+        # all-zero percept slot resolves here (the NULL char surface), NOT
+        # via the hash.
+        null_row = int(wv.key_to_index.get("\x00", 0))
+
+        return {
+            "maxL": int(maxL),
+            "V": int(V),
+            "tok_bytes": tok_bytes.to(device),
+            "tok_len": tok_len.to(device),
+            "by_len": by_len,
+            "null_row": null_row,
+            # The surface-string half of the D2 table == index_to_key
+            # (ASCII-prefilled + NULL; the reverse map's lookup target).
+            "surface": keys,
+        }
+
+    @staticmethod
+    def mphf_index(token_byte_slots, tables, return_verified=False):
+        """``token_byte_slots`` [B, K, W] long (0..255; 0 terminates a slot,
+        EXACTLY ``InputSpace.subspace.what.W``'s per-token null-terminated
+        utf-8 layout).
+
+        Returns ``row`` [B, K] long: the frozen lexicon row index for each
+        percept slot. Pure static tensor ops (poly-hash + ``searchsorted``
+        + collision-proof byte-verify), ZERO host sync, O(1) per slot.
+
+        Resolution per slot:
+          * effective key length L = #leading non-zero bytes (utf-8 token,
+            null-terminated -- the byte AFTER the token is the 0 sentinel);
+          * L == 0 (empty / pad / NULL-sentinel slot) -> ``null_row``;
+          * else poly-hash the L-byte window, ``searchsorted`` the
+            length-L sorted hash table, byte-verify against ``tok_bytes``
+            (collision-proof: exact regardless of hash); a verified hit ->
+            that row, a miss (key not in the frozen lexicon -- OOV) ->
+            ``null_row`` (the documented frozen-vocab fallback: the table
+            only holds the frozen key set; an OOV percept reconstructs to
+            the NULL surface rather than silently aliasing a wrong row).
+
+        When ``return_verified=True``, returns ``(row, verified)`` where
+        ``verified`` ``[B, K]`` bool is True only for slots that hit the
+        frozen lexicon via the collision-proof byte-verify (False for
+        L==0 slots AND OOV slots; the row at those False positions is the
+        ``null_row`` fallback). The ``chunking_mode='mphf'`` selectable
+        runtime path uses this signal to gate the OOV->BPE-trie fallback
+        per spec.
+        """
+        if token_byte_slots.dim() == 2:
+            token_byte_slots = token_byte_slots.unsqueeze(-1)
+        B, K, W = token_byte_slots.shape
+        dev = token_byte_slots.device
+        bb = token_byte_slots.to(torch.int64).clamp(0, 255)  # [B,K,W]
+        null_row = tables["null_row"]
+        maxL = tables["maxL"]
+
+        # Effective key length = #leading non-zero bytes (the slot is one
+        # token's utf-8 bytes then a 0). ``cumprod`` over (byte != 0) gives
+        # 1 for every position up to (not including) the first 0; the sum
+        # is the leading-run length -- pure tensor, no host sync.
+        nonzero = (bb != 0).to(torch.int64)                  # [B,K,W]
+        lead = torch.cumprod(nonzero, dim=-1)                # [B,K,W]
+        eff_len = lead.sum(dim=-1)                            # [B,K]
+
+        row = torch.full((B, K), null_row, dtype=torch.int64, device=dev)
+        verified_any = torch.zeros((B, K), dtype=torch.bool, device=dev)
+        for L in range(1, min(maxL, W) + 1):
+            entry = tables["by_len"].get(L)
+            if entry is None:
+                continue
+            keys_sorted, ids_sorted = entry
+            win = bb[..., :L]                                 # [B,K,L]
+            h = BPEGpuLayer._poly_hash(win)                   # [B,K]
+            pos = torch.searchsorted(keys_sorted, h)
+            pos = pos.clamp(max=keys_sorted.numel() - 1)
+            hit = keys_sorted[pos] == h
+            cand = ids_sorted[pos]                            # [B,K]
+            cb = tables["tok_bytes"][cand][..., :L]           # [B,K,L]
+            verified = hit & (win == cb).all(dim=-1) & (eff_len == L)
+            row = torch.where(verified, cand, row)
+            verified_any = verified_any | verified
+        if return_verified:
+            return row, verified_any
+        return row
+
+    @staticmethod
+    def reverse_map_rows(concept_vectors, codebook):
+        """Non-invertible reverse map: a concept-activation vector ->
+        nearest ``wv._vectors`` row index.
+
+        The MPHF is NOT inverted; the reverse map is the **table lookup**
+        (nearest concept-activation row). ``concept_vectors`` is ``[..., D]``
+        (D == ``wv._vectors`` width). Returns the matching ``[...]`` long
+        row indices; ``surface[idx]`` (== ``codebook.wv.index_to_key[idx]``)
+        is the reconstructed literal surface word. Pure tensor op, no host
+        sync (the host ``index_to_key`` indexing is the caller's choice,
+        done only off the training-critical path).
+        """
+        W = codebook.wv._vectors                              # [V, D]
+        flat = concept_vectors.reshape(-1, concept_vectors.shape[-1])
+        # Cosine-style nearest row (the codebook lives on the periodic unit
+        # cell; dot-product nearest is the same neighbour the codebook
+        # search uses). Static [N, V] then argmax -- no host sync.
+        sims = flat @ W.t()                                   # [N, V]
+        idx = sims.argmax(dim=-1)                              # [N]
+        return idx.reshape(concept_vectors.shape[:-1])
+
+
+class SymbolLearningLayer(Layer):
+    """Symbol-learning statistics + promotion policy.
+
+    Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
+    §Phase 2 / step 6 — scaffold; deferred §Phase 2 → Phase 3 closeout —
+    policy + ``extend_artifact`` integration.
+
+    Disabled-by-default and detached from autograd. Inlines the former
+    ``SymbolLearningStats`` (accumulator), ``SymbolLearningPolicy``
+    (MDL-flavored thresholds), and ``flush_and_promote`` orchestration
+    into a single Layer that ``ConceptualSpace`` owns. Promotion still
+    happens only at explicit flush boundaries -- never inside autograd
+    ``forward``.
+
+    Hook signals:
+      * Zero-order / QE via ``observe_qe(activation, snapped)``: squared
+        quantization error + online leader-clustering producing per-cluster
+        (centroid, qe_ema, stability) summaries.
+      * Higher-order / PMI via ``observe_reduce(left_ref, right_ref,
+        parent_ref, *, parent_scalar=None, parent_category=None,
+        parent_order=None)``: pair counts + the rule's LHS metadata.
+
+    Numerical-divergence policy: NaN / Inf inputs to ``observe_qe`` raise
+    ``ValueError`` rather than getting silently ``nan_to_num``-cleaned.
+    """
+
+    class _Cluster:
+        """One leader-clustering cluster: centroid + EMA of squared QE +
+        stability count. Centroid is a detached 1-D tensor."""
+        __slots__ = ('centroid', 'qe_ema', 'stability')
+
+        def __init__(self, centroid, qe_ema, stability):
+            self.centroid = centroid
+            self.qe_ema = float(qe_ema)
+            self.stability = int(stability)
+
+    def __init__(self, enabled=False, *,
+                 leader_radius=0.5, ema_alpha=0.1,
+                 qe_promote_threshold=0.5, stability_n=10,
+                 pmi_threshold=1.0, count_threshold=5,
+                 default_zero_order_category='NEW',
+                 default_zero_order_parent_ref_id=0,
+                 default_higher_order_category='NEW',
+                 default_higher_order_order=1):
+        super().__init__(nInput=0, nOutput=0)
+        self.enabled = bool(enabled)
+        # Stats hyperparameters.
+        self.leader_radius = float(leader_radius)
+        self.ema_alpha = float(ema_alpha)
+        # Policy thresholds.
+        self.qe_promote_threshold = float(qe_promote_threshold)
+        self.stability_n = int(stability_n)
+        self.pmi_threshold = float(pmi_threshold)
+        self.count_threshold = int(count_threshold)
+        self.default_zero_order_category = str(default_zero_order_category)
+        self.default_zero_order_parent_ref_id = int(
+            default_zero_order_parent_ref_id)
+        self.default_higher_order_category = str(default_higher_order_category)
+        self.default_higher_order_order = int(default_higher_order_order)
+        # Accumulator state — plain Python so nothing leaks into autograd.
+        self.qe_count = 0
+        self.qe_sum_squared = 0.0
+        self.pair_counts = {}
+        self.pair_info = {}
+        self._clusters = []
+
+    @staticmethod
+    def enabled_from_config():
+        """Read ``<architecture><symbolLearning enabled="..."/>`` from XML.
+
+        Defaults to ``False`` when the key is absent. Accepts ``"true"`` /
+        ``"false"`` (case-insensitive) and ``"1"`` / ``"0"``. Any other
+        value falls back to ``False``.
+        """
+        try:
+            raw = TheXMLConfig.get("architecture.symbolLearning.enabled",
+                                   default=False)
+        except (KeyError, TypeError, ValueError, AttributeError):
+            return False
+        if raw is None:
+            return False
+        if isinstance(raw, bool):
+            return raw
+        s = str(raw).strip().lower()
+        return s in ("true", "1", "yes", "on")
+
+    def observe_qe(self, activation, snapped):
+        """Record one quantization-error measurement.
+
+        Computes squared distance between the pre-snap activation and
+        the snapped prototype, updates the aggregate QE counter, and
+        runs online leader clustering on the un-snapped activation.
+
+        NaN / Inf inputs raise ``ValueError`` per the project's "fail
+        loud on numerical divergence" rule.
+        """
+        if not self.enabled:
+            return
+        if torch.isnan(activation).any() or torch.isinf(activation).any():
+            raise ValueError(
+                "SymbolLearningLayer.observe_qe: NaN/Inf in activation")
+        if torch.isnan(snapped).any() or torch.isinf(snapped).any():
+            raise ValueError(
+                "SymbolLearningLayer.observe_qe: NaN/Inf in snapped")
+        with torch.no_grad():
+            act = activation.detach()
+            snap = snapped.detach()
+            diff = act - snap
+            sq = float(diff.pow(2).sum().item())
+            flat = act.reshape(-1)
+        self.qe_count += 1
+        self.qe_sum_squared += sq
+        self._update_clusters(flat, sq)
+
+    def _update_clusters(self, vec, sq_qe):
+        """Online leader clustering."""
+        if not self._clusters:
+            self._clusters.append(self._Cluster(
+                centroid=vec.clone(), qe_ema=sq_qe, stability=1))
+            return
+        radius_sq = self.leader_radius ** 2
+        nearest = None
+        nearest_d = math.inf
+        for c in self._clusters:
+            if c.centroid.shape != vec.shape:
+                continue
+            d = float((vec - c.centroid).pow(2).sum().item())
+            if d < nearest_d:
+                nearest_d = d
+                nearest = c
+        if nearest is None or nearest_d > radius_sq:
+            self._clusters.append(self._Cluster(
+                centroid=vec.clone(), qe_ema=sq_qe, stability=1))
+            return
+        a = self.ema_alpha
+        nearest.qe_ema = (1.0 - a) * nearest.qe_ema + a * sq_qe
+        nearest.centroid = (1.0 - a) * nearest.centroid + a * vec
+        nearest.stability += 1
+
+    def observe_reduce(self, left_ref, right_ref, parent_ref, *,
+                       parent_scalar=None, parent_category=None,
+                       parent_order=None):
+        """Record one REDUCE outcome with rule LHS metadata."""
+        if not self.enabled:
+            return
+        key = (int(left_ref), int(right_ref))
+        self.pair_counts[key] = self.pair_counts.get(key, 0) + 1
+        info = self.pair_info.setdefault(key, {
+            'count': 0,
+            'parent_scalar_sum': 0.0,
+            'parent_ref': int(parent_ref),
+            'parent_category': None,
+            'parent_order': None,
+        })
+        info['count'] += 1
+        info['parent_ref'] = int(parent_ref)
+        if parent_scalar is not None:
+            info['parent_scalar_sum'] += float(parent_scalar)
+        if parent_category is not None:
+            info['parent_category'] = str(parent_category)
+        if parent_order is not None:
+            info['parent_order'] = int(parent_order)
+
+    def flush(self):
+        """Return a snapshot of accumulated stats and reset state."""
+        snap = {
+            'qe_count': self.qe_count,
+            'qe_sum_squared': self.qe_sum_squared,
+            'qe_mean': (self.qe_sum_squared / self.qe_count
+                        if self.qe_count > 0 else 0.0),
+            'pair_counts': dict(self.pair_counts),
+            'pair_info': {k: dict(v) for k, v in self.pair_info.items()},
+            'clusters': [
+                {'centroid': c.centroid.clone(),
+                 'qe_ema': c.qe_ema,
+                 'stability': c.stability}
+                for c in self._clusters
+            ],
+        }
+        self.qe_count = 0
+        self.qe_sum_squared = 0.0
+        self.pair_counts = {}
+        self.pair_info = {}
+        self._clusters = []
+        return snap
+
+    def propose_candidates(self, snapshot):
+        """Apply MDL-flavored thresholds to ``snapshot`` and return a list
+        of ``embed.NewRef`` candidates. May be empty.
+
+        Zero-order:
+          Promote a cluster with ``stability >= stability_n`` AND
+          ``qe_ema >= qe_promote_threshold`` to a new order-0 ref at
+          ``default_zero_order_category`` /
+          ``default_zero_order_parent_ref_id``. The cluster centroid's
+          scalar mean becomes the new ref's learned scalar.
+
+        Higher-order:
+          Promote a pair ``(a, b)`` with ``count >= count_threshold`` AND
+          ``log(P(a,b) / (P(a) P(b))) >= pmi_threshold`` to a new ref at
+          the recorded ``parent_category`` / ``parent_order`` (from the
+          rule's LHS metadata). The new ref's scalar is the mean of the
+          reduce-time parent activations.
+        """
+        from embed import NewRef
+        candidates = []
+        # ---- Zero-order (QE) ----
+        for c in snapshot.get('clusters', []):
+            if c['stability'] < self.stability_n:
+                continue
+            if c['qe_ema'] < self.qe_promote_threshold:
+                continue
+            centroid = c['centroid']
+            if isinstance(centroid, torch.Tensor):
+                scalar = float(centroid.mean().item())
+            else:
+                scalar = float(centroid)
+            candidates.append(NewRef(
+                scalar=scalar,
+                order=0,
+                parent_ref_id=int(self.default_zero_order_parent_ref_id),
+                category=str(self.default_zero_order_category),
+            ))
+        # ---- Higher-order (PMI × frequency) ----
+        pair_counts = snapshot.get('pair_counts', {})
+        pair_info = snapshot.get('pair_info', {})
+        total = sum(pair_counts.values())
+        if total > 0:
+            left_marginal = {}
+            right_marginal = {}
+            for (a, b), n in pair_counts.items():
+                left_marginal[a] = left_marginal.get(a, 0) + n
+                right_marginal[b] = right_marginal.get(b, 0) + n
+            for (a, b), n in pair_counts.items():
+                if n < self.count_threshold:
+                    continue
+                la = left_marginal[a]
+                rb = right_marginal[b]
+                if la <= 0 or rb <= 0:
+                    continue
+                # PMI = log[ (n * total) / (la * rb) ]
+                pmi = math.log((n * total) / (la * rb))
+                if pmi < self.pmi_threshold:
+                    continue
+                info = pair_info.get((a, b), {})
+                count = max(info.get('count', n), 1)
+                scalar_sum = info.get('parent_scalar_sum', 0.0)
+                scalar = scalar_sum / count if count > 0 else 0.0
+                category = info.get('parent_category') \
+                    or self.default_higher_order_category
+                order = info.get('parent_order')
+                if order is None:
+                    order = self.default_higher_order_order
+                parent_ref = info.get(
+                    'parent_ref', self.default_zero_order_parent_ref_id)
+                candidates.append(NewRef(
+                    scalar=float(scalar),
+                    order=int(order),
+                    parent_ref_id=int(parent_ref),
+                    category=str(category),
+                ))
+        return candidates
+
+    def flush_and_promote(self, artifact_path):
+        """Flush accumulated stats, run the policy, call
+        ``embed.extend_artifact`` on any candidates. Returns the
+        candidate list (empty when nothing crossed the thresholds).
+
+        Flush boundary is the caller's responsibility (e.g., end of
+        training batch). By construction this never mutates the
+        artifact inside an autograd forward.
+        """
+        from embed import extend_artifact
+        snap = self.flush()
+        candidates = self.propose_candidates(snap)
+        if candidates:
+            extend_artifact(artifact_path, candidates)
+        return candidates
+
+
+class _RuleScorer(nn.Module):
+    """Small MLP scoring rules from top-of-stack payloads.
+
+    Private to ``ShortTermMemory``; replaces the standalone
+    ``stm_driver.RuleScorer`` (2026-05-21 WordSubSpace/STM Layer
+    refactor). Input: top operand payload(s) — ``left`` (required) and
+    ``right`` (optional, ``None`` for unary REDUCE). Concatenates and
+    projects to a per-rule logit vector. Architecturally minimal -- one
+    hidden layer + linear head -- because admissibility masking does
+    the hard discrimination; the scorer just orders the survivors.
+    """
+
+    def __init__(self, payload_dim, n_rules, hidden_dim=None):
+        super().__init__()
+        self.payload_dim = int(payload_dim)
+        self.n_rules = int(n_rules)
+        # Concatenated input width: 2 * payload_dim. For unary REDUCE we
+        # zero out the right slot so the same head handles both shapes.
+        in_features = 2 * self.payload_dim
+        hidden = int(hidden_dim) if hidden_dim else max(in_features, 16)
+        self.body = nn.Sequential(
+            nn.Linear(in_features, hidden),
+            nn.Tanh(),
+        )
+        self.head = nn.Linear(hidden, self.n_rules)
+
+    def forward(self, left, right):
+        """Return ``[n_rules]`` logits for the given operand payload(s)."""
+        if right is None:
+            right = torch.zeros_like(left)
+        x = torch.cat([left, right], dim=-1)
+        return self.head(self.body(x))
+
+
+class ShortTermMemory(Layer):
+    """Short-term memory (STM) on ConceptualSpace.
+
+    Carries two roles after the 2026-05-21 WordSubSpace/STM Layer refactor:
+
+    1. **Per-batch idea stack** (legacy chart consumer surface). A
+       ``[B, capacity, concept_dim]`` payload buffer that the chart's
+       CKY compose path pushes "ideas" (continuous compositions) onto.
+       Distinct from ``WordSpace._stm_fired`` (once-per-sentence
+       discourse-priming flag). Spec §"Removed Public Surfaces" calls
+       for ``ShortTermMemory`` to become data-free; the legacy push /
+       peek / snapshot surface is retained transitionally for the
+       chart's CKY consumers in ``Models.py`` and ``embed.py``.
+
+    2. **STM shift/reduce driver** (new in this refactor). Inlines the
+       former ``stm_driver.STMDriver`` + ``stm_driver.RuleScorer`` +
+       ``stm_trainer.train_step`` behavior as methods that take a
+       ``word_subspace`` argument (the typed-STM data carrier). The
+       lazy-initialised ``self.scorer`` is a small MLP that scores
+       admissible REDUCE actions; ``ConceptualSpace.attach_knowledge``
+       wires the rule signature list in.
+
+    Semantics of the idea stack:
+        * Each slot holds a ``[concept_dim]`` vector.
+        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
+          recent idea; ``peek(b, n)`` returns the n-th most recent.
+        * Capacity is configurable via
+          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``.
+
+    Lifecycle:
+        * Built by ``ConceptualSpace.__init__`` at construction time
+          (capacity from XML; default 9).
+        * Cleared on hard ``Reset`` (sentence boundary): all rows set
+          to zero, depth pointers reset to 0.
+
+    Storage of the idea stack is a plain registered buffer
+    (``persistent=False``); STM contents are runtime working state,
+    not learned weights.
+    """
+
+    DEFAULT_CAPACITY = 9
+
+    def __init__(self, batch=1, capacity=None, concept_dim=0):
+        super().__init__(nInput=0, nOutput=0)
+        # Phase E completion of doc/specs/2026-05-21-wordsubspace-stm-
+        # layer-refactor.md: the Layer is data-free. ``_init_capacity``
+        # / ``_init_concept_dim`` are the constructor's record of the
+        # requested sizes — used only to seed WordSubSpace's
+        # ``_idea_buffer`` if a standalone (no-WordSubSpace) test
+        # constructs a ShortTermMemory directly. Once
+        # ``attach_word_subspace`` is called the data lives on
+        # WordSubSpace's ``_idea_*`` buffers and the proxy properties /
+        # methods below route there.
+        self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
+        self._init_concept_dim = int(concept_dim)
+        self._init_batch = int(batch)
+        # Standalone fallback: when no WordSubSpace has been attached
+        # yet (e.g. test_conceptual_stm.py constructs ShortTermMemory
+        # bare), we allocate a local idea-stack so the legacy push /
+        # peek / snapshot surface keeps working. ``attach_word_subspace``
+        # later switches the proxy onto the WordSubSpace's buffers and
+        # drops the local allocation.
+        self._word_subspace = None
+        self._fallback_buffer = torch.zeros(
+            self._init_batch, self._init_capacity, self._init_concept_dim)
+        self._fallback_depth = torch.zeros(
+            self._init_batch, dtype=torch.long)
+        self._fallback_capacity = self._init_capacity
+        self._fallback_max_depth_host = 0
+        # STM shift/reduce driver state. Initialised lazily on first
+        # ``shift`` / ``train_scorer_step`` call (or eagerly via
+        # ``init_scorer``); ``rule_signatures`` is a plain Python list
+        # of dicts, stashed via ``object.__setattr__`` to bypass
+        # nn.Module's child-type checks.
+        self.scorer = None
+        object.__setattr__(self, 'rule_signatures', None)
+
+    def attach_word_subspace(self, word_subspace):
+        """Wire a ``WordSubSpace`` so the Layer's data-accessor methods
+        route to its ``_idea_*`` buffers. Stored via
+        ``object.__setattr__`` to bypass nn.Module's submodule
+        registration (the WordSubSpace owns the back-reference; this is
+        a non-owning routing pointer).
+
+        Called from ``WordSubSpace.__init__`` (Phase E completion of the
+        2026-05-21 refactor). Once attached, the local ``_fallback_*``
+        buffers are dropped.
+        """
+        object.__setattr__(self, '_word_subspace', word_subspace)
+        # If the WordSubSpace's idea-stack capacity is smaller than the
+        # one this ShortTermMemory was constructed for, grow it now so
+        # we honour the constructor's sizing contract.
+        if hasattr(word_subspace, 'idea_ensure_capacity'):
+            word_subspace.idea_ensure_capacity(self._init_capacity)
+
+    # -- properties that proxy to the WordSubSpace (data-free) -----------
+
+    @property
+    def _buffer(self):
+        ws = self._word_subspace
+        if ws is None:
+            return self._fallback_buffer
+        return ws._idea_buffer
+
+    @_buffer.setter
+    def _buffer(self, value):
+        ws = self._word_subspace
+        if ws is None:
+            self._fallback_buffer = value
+        else:
+            ws._idea_buffer = value
+
+    @property
+    def _depth(self):
+        ws = self._word_subspace
+        if ws is None:
+            return self._fallback_depth
+        return ws._idea_depth
+
+    @_depth.setter
+    def _depth(self, value):
+        ws = self._word_subspace
+        if ws is None:
+            self._fallback_depth = value
+        else:
+            ws._idea_depth = value
+
+    @property
+    def _max_depth_host(self):
+        ws = self._word_subspace
+        if ws is None:
+            return self._fallback_max_depth_host
+        return ws._idea_max_depth_host
+
+    @_max_depth_host.setter
+    def _max_depth_host(self, value):
+        ws = self._word_subspace
+        if ws is None:
+            self._fallback_max_depth_host = int(value)
+        else:
+            ws._idea_max_depth_host = int(value)
+
+    @property
+    def capacity(self):
+        ws = self._word_subspace
+        if ws is None:
+            return self._fallback_capacity
+        return ws._idea_capacity
+
+    @property
+    def concept_dim(self):
+        ws = self._word_subspace
+        if ws is None:
+            return self._init_concept_dim
+        return ws._stm_payload_dim
+
+    # -- legacy idea-stack API (chart compose consumer surface) -----------
+
+    def ensure_batch(self, batch):
+        """Resize the idea-stack to ``batch`` rows. Idempotent."""
+        batch = int(batch)
+        ws = self._word_subspace
+        if ws is None:
+            if int(self._fallback_buffer.shape[0]) == batch:
+                return
+            device = self._fallback_buffer.device
+            self._fallback_buffer = torch.zeros(
+                batch, self._fallback_capacity, self._init_concept_dim,
+                device=device)
+            self._fallback_depth = torch.zeros(
+                batch, dtype=torch.long, device=device)
+            self._fallback_max_depth_host = 0
+            return
+        ws.idea_ensure_batch(batch)
+
+    def ensure_capacity(self, capacity):
+        """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
+        capacity = int(capacity)
+        ws = self._word_subspace
+        if ws is None:
+            if capacity <= self._fallback_capacity:
+                return
+            device = self._fallback_buffer.device
+            B = int(self._fallback_buffer.shape[0])
+            new_buf = torch.zeros(
+                B, capacity, self._init_concept_dim,
+                device=device, dtype=self._fallback_buffer.dtype)
+            old_cap = int(self._fallback_buffer.shape[1])
+            if old_cap > 0:
+                new_buf[:, :old_cap, :] = self._fallback_buffer
+            self._fallback_buffer = new_buf
+            self._fallback_capacity = capacity
+            return
+        ws.idea_ensure_capacity(capacity)
+
+    def push(self, b, idea):
+        ws = self._word_subspace
+        if ws is None:
+            depth = int(self._fallback_depth[b].item())
+            if depth >= self._fallback_capacity:
+                raise RuntimeError(
+                    f"ShortTermMemory.push: row {b} is at capacity "
+                    f"({self._fallback_capacity}); reduce before pushing "
+                    f"further.")
+            self._fallback_buffer[b, depth] = idea
+            self._fallback_depth[b] = depth + 1
+            if depth + 1 > self._fallback_max_depth_host:
+                self._fallback_max_depth_host = depth + 1
+            return
+        ws.idea_push(b, idea)
+
+    def push_step(self, ideas):
+        ws = self._word_subspace
+        if ws is None:
+            B, D = ideas.shape
+            device = self._fallback_buffer.device
+            row_idx = torch.arange(B, device=device)
+            depths = self._fallback_depth
+            self._fallback_buffer[row_idx, depths] = ideas
+            self._fallback_depth = depths + 1
+            self._fallback_max_depth_host = self._fallback_max_depth_host + 1
+            return
+        ws.idea_push_step(ideas)
+
+    def push_step_masked(self, ideas, gate_b_1):
+        ws = self._word_subspace
+        if ws is None:
+            B, D = ideas.shape
+            device = self._fallback_buffer.device
+            row_idx = torch.arange(B, device=device)
+            depths = self._fallback_depth
+            gate_b = gate_b_1.view(B)
+            new_slot = torch.where(
+                gate_b.unsqueeze(-1),
+                ideas,
+                self._fallback_buffer[row_idx, depths])
+            self._fallback_buffer[row_idx, depths] = new_slot
+            self._fallback_depth = depths + gate_b.long()
+            return
+        ws.idea_push_step_masked(ideas, gate_b_1)
+
+    def push_window_batch(self, ideas):
+        ws = self._word_subspace
+        if ws is None:
+            B, W, D = ideas.shape
+            if W == 0:
+                return
+            device = self._fallback_buffer.device
+            starts = self._fallback_depth
+            offsets = torch.arange(W, device=device).unsqueeze(0)
+            positions = starts.unsqueeze(1) + offsets
+            row_idx = torch.arange(B, device=device).unsqueeze(1) \
+                .expand(-1, W)
+            self._fallback_buffer[row_idx, positions] = ideas
+            self._fallback_depth = starts + W
+            self._fallback_max_depth_host = self._fallback_max_depth_host + int(W)
+            return
+        ws.idea_push_window_batch(ideas)
+
+    def pop(self, b):
+        ws = self._word_subspace
+        if ws is None:
+            depth = int(self._fallback_depth[b].item())
+            if depth == 0:
+                return None
+            depth -= 1
+            idea = self._fallback_buffer[b, depth].clone()
+            self._fallback_buffer[b, depth].zero_()
+            self._fallback_depth[b] = depth
+            return idea
+        return ws.idea_pop(b)
+
+    def peek(self, b, n=0):
+        ws = self._word_subspace
+        if ws is None:
+            depth = int(self._fallback_depth[b].item())
+            if depth <= n:
+                return None
+            return self._fallback_buffer[b, depth - 1 - n]
+        return ws.idea_peek(b, n)
+
+    def snapshot(self, detach=False):
+        ws = self._word_subspace
+        if ws is None:
+            B = int(self._fallback_buffer.shape[0])
+            if B == 0:
+                return None
+            max_depth = int(self._fallback_max_depth_host)
+            if max_depth == 0:
+                return None
+            if max_depth > self._fallback_capacity:
+                max_depth = self._fallback_capacity
+            snap = self._fallback_buffer[:, :max_depth, :]
+            if detach:
+                snap = snap.detach().clone()
+            else:
+                snap = snap.clone()
+            return snap
+        return ws.idea_snapshot(detach=detach)
+
+    def size(self, b):
+        ws = self._word_subspace
+        if ws is None:
+            return int(self._fallback_depth[b].item())
+        return ws.idea_size(b)
+
+    def is_full(self, b):
+        return self.size(b) >= self.capacity
+
+    def is_empty(self, b):
+        return self.size(b) == 0
+
+    def clear(self, b=None):
+        ws = self._word_subspace
+        if ws is None:
+            if b is None:
+                self._fallback_buffer.zero_()
+                self._fallback_depth.zero_()
+                self._fallback_max_depth_host = 0
+                return
+            b = int(b)
+            if b < 0 or b >= int(self._fallback_buffer.shape[0]):
+                return
+            self._fallback_buffer[b].zero_()
+            self._fallback_depth[b] = 0
+            self._fallback_max_depth_host = int(self._fallback_depth.max().item())
+            return
+        ws.idea_clear(b=b)
+
+    # -- STM shift/reduce driver (formerly stm_driver.STMDriver) -----------
+
+    def init_scorer(self, rule_signatures, payload_dim, hidden_dim=None):
+        """Allocate the rule scorer for the STM driver path. Called by
+        ``WordSubSpace._init_stm_driver`` once the knowledge artifact's
+        rule signature list is known. Idempotent — re-calling with the
+        same shape is a no-op; a shape change replaces the scorer.
+        """
+        n_rules = len(rule_signatures)
+        if (self.scorer is not None
+                and getattr(self.scorer, 'payload_dim', None) == int(payload_dim)
+                and getattr(self.scorer, 'n_rules', None) == n_rules):
+            object.__setattr__(self, 'rule_signatures', list(rule_signatures))
+            return
+        self.scorer = _RuleScorer(
+            payload_dim=int(payload_dim), n_rules=n_rules,
+            hidden_dim=hidden_dim)
+        object.__setattr__(self, 'rule_signatures', list(rule_signatures))
+
+    def shift(self, word_subspace, b, payload, *, category, order, ref_id):
+        """SHIFT one token onto ``word_subspace``'s typed STM at row ``b``.
+
+        Mirrors the old ``STMDriver.shift``; the operand state now lives
+        on the WordSubSpace's typed buffers (Phase D of the refactor).
+        """
+        word_subspace.push(
+            b, payload,
+            category_id_str=category,
+            order=int(order),
+            ref_id=int(ref_id))
+
+    def reduce_step(self, word_subspace, b):
+        """Pick the highest-scoring admissible rule for row ``b``.
+
+        Returns ``{'rule_index': int, 'rule_signature': dict}``.
+        Raises ``RuntimeError`` when no rule is admissible.
+        """
+        out = self._score_reduce(word_subspace, b)
+        rule_index = int(torch.argmax(out['masked_logits']).item())
+        return {
+            'rule_index': rule_index,
+            'rule_signature': self.rule_signatures[rule_index],
+        }
+
+    def reduce_step_soft(self, word_subspace, b):
+        """Same as ``reduce_step`` but additionally returns the
+        post-softmax probability distribution over rules. Inadmissible
+        rules carry probability 0.
+
+        NaN softmax probabilities raise ``ValueError`` per the
+        "fail loud on numerical divergence" rule.
+        """
+        out = self._score_reduce(word_subspace, b)
+        masked_logits = out['masked_logits']
+        probs = torch.softmax(masked_logits, dim=-1)
+        if torch.isnan(probs).any():
+            raise ValueError(
+                "ShortTermMemory.reduce_step_soft: NaN in softmax "
+                "probabilities")
+        rule_index = int(torch.argmax(masked_logits).item())
+        return {
+            'rule_index': rule_index,
+            'rule_signature': self.rule_signatures[rule_index],
+            'probabilities': probs,
+            'masked_logits': masked_logits,
+            'admissibility_mask': out['mask'],
+        }
+
+    def _score_reduce(self, word_subspace, b):
+        """Shared scoring kernel for the hard and soft reduce paths.
+
+        Builds the admissibility mask via ``word_subspace``'s typed
+        STM, forwards the scorer over the operand payloads, applies
+        the mask to the logits.
+        """
+        from embed import mask_logits as _mask_logits
+        if self.scorer is None or self.rule_signatures is None:
+            raise RuntimeError(
+                "ShortTermMemory._score_reduce: scorer not initialised. "
+                "Call ``init_scorer(rule_signatures, payload_dim)`` "
+                "first.")
+        mask = word_subspace.reduce_admissibility(b, self.rule_signatures)
+        if not mask.any():
+            raise RuntimeError(
+                "ShortTermMemory: no admissible rule for current "
+                "stack top.")
+        d = int(word_subspace._depth[b].item())
+        right = word_subspace.top(b, k=1)['payload'] if d >= 1 else None
+        left = word_subspace.top(b, k=2)['payload'] if d >= 2 else right
+        if d == 1:
+            logits = self.scorer(left, None)
+        else:
+            logits = self.scorer(left, right)
+        masked = _mask_logits(logits, mask)
+        return {
+            'mask': mask,
+            'logits': logits,
+            'masked_logits': masked,
+            'left': left,
+            'right': right,
+        }
+
+    def train_scorer_step(self, word_subspace, input_vectors,
+                          target_rule_ids, *, snap_fn, optimizer=None):
+        """Supervised training step for the rule scorer (formerly
+        ``stm_trainer.train_step``).
+
+        Replays the SHIFT/REDUCE loop on ``input_vectors[0]``
+        (single-row, batch 1) and accumulates cross-entropy loss
+        between ``softmax(masked_logits)`` and the next
+        ``target_rule_ids[i]`` at each REDUCE position. When
+        ``optimizer`` is given, steps it after backward. Returns the
+        scalar loss tensor.
+        """
+        if input_vectors.ndim != 3 or input_vectors.shape[0] < 1:
+            raise ValueError(
+                "train_scorer_step: expected input_vectors of shape "
+                "[B, N, D]")
+        if optimizer is not None:
+            optimizer.zero_grad()
+        # Reset row 0 of word_subspace's typed STM.
+        while int(word_subspace._depth[0].item()) > 0:
+            word_subspace.pop(0)
+        N = int(input_vectors.shape[1])
+        reduces_done = 0
+        losses = []
+        max_reduces = max(1, N * 3 + 4)
+        for n in range(N):
+            payload = input_vectors[0, n]
+            ref_id, category, order = snap_fn(payload)
+            self.shift(word_subspace, 0, payload,
+                       category=category, order=order, ref_id=ref_id)
+            while reduces_done < max_reduces:
+                try:
+                    score_out = self._score_reduce(word_subspace, 0)
+                except RuntimeError:
+                    break
+                if reduces_done >= len(target_rule_ids):
+                    break
+                target_id = int(target_rule_ids[reduces_done])
+                mask = score_out['mask']
+                if not bool(mask[target_id].item()):
+                    raise ValueError(
+                        f"train_scorer_step: target rule_id={target_id} "
+                        "is inadmissible at REDUCE position "
+                        f"{reduces_done}. Supervision is inconsistent "
+                        "with the typed admissibility mask.")
+                masked_logits = score_out['masked_logits']
+                log_probs = F.log_softmax(masked_logits, dim=-1)
+                loss = -log_probs[target_id]
+                losses.append(loss)
+                # Apply the target rule to advance the stack (not the
+                # argmax — supervision drives the trajectory).
+                sig = self.rule_signatures[target_id]
+                arity = len(sig.get('rhs_categories', ()))
+                d_after_shift = int(word_subspace._depth[0].item())
+                if arity == 2 and d_after_shift >= 2:
+                    right = word_subspace.pop(0)
+                    left = word_subspace.pop(0)
+                    parent_payload = (
+                        left['payload'] + right['payload']) / 2.0
+                elif arity == 1 and d_after_shift >= 1:
+                    only = word_subspace.pop(0)
+                    parent_payload = only['payload']
+                else:
+                    break
+                word_subspace.push(
+                    0, parent_payload,
+                    category_id_str=str(sig.get('lhs_category', 'UNK')),
+                    order=int(sig.get('lhs_order', 0)), ref_id=-1)
+                reduces_done += 1
+        # Final cleanup: REDUCE until depth==1 or out of targets.
+        while reduces_done < min(max_reduces, len(target_rule_ids)):
+            if int(word_subspace._depth[0].item()) <= 1:
+                break
+            try:
+                score_out = self._score_reduce(word_subspace, 0)
+            except RuntimeError:
+                break
+            target_id = int(target_rule_ids[reduces_done])
+            mask = score_out['mask']
+            if not bool(mask[target_id].item()):
+                raise ValueError(
+                    f"train_scorer_step: target rule_id={target_id} is "
+                    "inadmissible during cleanup pass.")
+            masked_logits = score_out['masked_logits']
+            log_probs = F.log_softmax(masked_logits, dim=-1)
+            loss = -log_probs[target_id]
+            losses.append(loss)
+            sig = self.rule_signatures[target_id]
+            arity = len(sig.get('rhs_categories', ()))
+            d_now = int(word_subspace._depth[0].item())
+            if arity == 2 and d_now >= 2:
+                right = word_subspace.pop(0)
+                left = word_subspace.pop(0)
+                parent_payload = (
+                    left['payload'] + right['payload']) / 2.0
+            elif arity == 1 and d_now >= 1:
+                only = word_subspace.pop(0)
+                parent_payload = only['payload']
+            else:
+                break
+            word_subspace.push(
+                0, parent_payload,
+                category_id_str=str(sig.get('lhs_category', 'UNK')),
+                order=int(sig.get('lhs_order', 0)), ref_id=-1)
+            reduces_done += 1
+        if not losses:
+            return torch.tensor(0.0, requires_grad=True)
+        total = torch.stack(losses).sum()
+        if optimizer is not None:
+            total.backward()
+            optimizer.step()
+        return total
+
+#endregion
+
 #region Operations
 
 # Sentinel for the unified lift / lower dispatcher: distinguishes the

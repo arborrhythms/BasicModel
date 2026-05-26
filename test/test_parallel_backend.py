@@ -9,6 +9,10 @@ output is the returned ``current_rules`` — while the STM side is
 present for inspection / future verification / training-stats
 collection. STM errors propagate as well; this is intentional for
 catching driver bugs early.
+
+Post-2026-05-21 (WordSubSpace/STM Layer refactor) the STM driver lives
+on ``conceptualSpace.stm`` (a ``ShortTermMemory`` Layer); ``ws.stm_driver``
+is a compatibility accessor that returns ``cs.stm`` once initialised.
 """
 import sys
 from pathlib import Path
@@ -17,22 +21,28 @@ _project = Path(__file__).resolve().parent.parent
 _wo_root = _project.parent
 sys.path.insert(0, str(_wo_root / "bin"))
 sys.path.insert(0, str(_project / "bin"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from _stm_test_fixtures import make_typed_stack
 
 
-def _bare_word_space():
-    from Language import WordSpace
-    import torch.nn as nn
-    ws = object.__new__(WordSpace)
-    nn.Module.__init__(ws)
-    return ws
+def _bare_word_space(stm_dim=4, max_depth=8):
+    """Bare WordSubSpace with manually-allocated typed-STM buffers."""
+    return make_typed_stack(batch=1, max_depth=max_depth, dim=stm_dim)
 
 
 def _bare_conceptual_space(stm_dim=4, max_depth=8):
+    """Bare ConceptualSpace exposing a ShortTermMemory Layer (the new
+    driver location). The ws-side ``conceptualSpace.stm`` must exist
+    for ``_init_stm_driver`` to populate its scorer.
+    """
     from Spaces import ConceptualSpace
+    from Layers import ShortTermMemory
     import torch.nn as nn
     cs = object.__new__(ConceptualSpace)
     nn.Module.__init__(cs)
-    cs._init_typed_stm(batch=1, max_depth=max_depth, dim=stm_dim)
+    cs.stm = ShortTermMemory(batch=1, capacity=max_depth,
+                             concept_dim=stm_dim)
     return cs
 
 
@@ -52,21 +62,19 @@ def test_parallel_constructs_stm_driver_before_chart_runs():
     """In parallel mode, the STM driver is constructed before chart
     execution. On a bare WordSubSpace the chart will fail (missing
     cursor / per-sentence state); we expect that failure, but the STM
-    driver must already exist when the chart error surfaces."""
+    driver must already be initialised when the chart error surfaces."""
+    from Layers import ShortTermMemory
     ws = _bare_word_space()
     ws.parser_backend = 'parallel'
     ws.attach_knowledge(_tiny_view())
     cs = _bare_conceptual_space(stm_dim=4, max_depth=8)
     object.__setattr__(ws, 'conceptualSpace', cs)
-    # Chart will fail on the bare instance — catch and verify stm_driver
-    # was set up first.
     try:
         ws.compose(input_vectors=None)
     except Exception:
         pass
     assert ws.stm_driver is not None
-    from stm_driver import STMDriver
-    assert isinstance(ws.stm_driver, STMDriver)
+    assert isinstance(ws.stm_driver, ShortTermMemory)
 
 
 def test_parallel_requires_knowledge_for_stm_side():

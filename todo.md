@@ -1,5 +1,7 @@
 * Implement basicmodel/doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
 
+* implement doc/specs/2026-05-21-cross-position-mixing-via-nInputDim.md.
+
 * Enforce use of Mereonomy (per-symbol DoT graph).
 
 * Ensure that grammatical pseudo-inverse operations are optimal in some sense

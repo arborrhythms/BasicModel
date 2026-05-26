@@ -31,8 +31,8 @@ def test_stm_residual_microbatch_has_no_item_early_out():
     The early-out was the only ``.item()`` call in the function; the
     handoff replaced it with a host-sync-free vectorized gate.
     """
-    from Language import WordSpace
-    src = inspect.getsource(WordSpace.stm_residual_microbatch)
+    from Language import WordSubSpace
+    src = inspect.getsource(WordSubSpace.stm_residual_microbatch)
     # The function may mention ``.item()`` in comments (e.g. the
     # "Removed: ..." marker the handoff left as a regression
     # signpost), but no live call should remain.
@@ -62,7 +62,7 @@ def test_stm_residual_microbatch_runs_when_all_fired():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    ws = model.wordSpace
+    ws = model.wordSubSpace
 
     if ws is None or ws.discourse is None:
         pytest.skip("model has no discourse layer; STM-residual is None")

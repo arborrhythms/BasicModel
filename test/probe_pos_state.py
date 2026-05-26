@@ -34,7 +34,7 @@ m.eval()
 # Train a tiny bit so the lex_cat_scorer has nontrivial weights.
 m.run(numTrials=1, numEpochs=20, batchSize=16, lr=0.005)
 
-ws = m.wordSpace
+ws = m.wordSubSpace
 chart = ws.chart
 print("\n===== Chart category names =====")
 print(chart._category_names)

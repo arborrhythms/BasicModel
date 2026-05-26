@@ -3,9 +3,9 @@
 Exercises:
   * WordSpace constructs a Chart instance with chart-tier params.
   * Per-space SyntacticLayers register their host layers in the
-    `wordSpace._host_layer_registry` registry under the right tier.
+    `wordSubSpace._host_layer_registry` registry under the right tier.
   * Chart.compose / Chart.generate populate
-    `wordSpace.current_rules` / `generate_rules`.
+    `wordSubSpace.current_rules` / `generate_rules`.
   * Chart's eval-mode (Viterbi) and train-mode (soft) inside passes
     both run cleanly.
   * Chart-via-host-layer dispatch fires when the chart picks a rule
@@ -125,15 +125,15 @@ def test_wordspace_owns_chart_and_registry():
     m = Models.BasicModel()
     m.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8,
              nOutput=8)
-    assert m.wordSpace is not None
-    assert type(m.wordSpace.chart).__name__ == 'Chart'
+    assert m.wordSubSpace is not None
+    assert type(m.wordSubSpace.chart).__name__ == 'Chart'
     # Registry has at least the SymbolicSpace builtin layers. Per
     # 2026-05-03 layer-naming refactor, SigmaLayer is registered under
     # rule_name "sigma" (the unary multiplicative OR-fold); the binary
     # min/max ops "intersection" / "union" / "conjunction" /
     # "disjunction" are separate GrammarLayer subclasses, lazy-built
     # only when the grammar references them.
-    keys = list(m.wordSpace._host_layer_registry.keys())
+    keys = list(m.wordSubSpace._host_layer_registry.keys())
     # Post-bivector-retirement (2026-05-20) the substrate-level rule
     # layers live on ConceptualSpace (``sigma`` + ``pi``) and the
     # grammar-driven boolean ops register at SymbolicSpace. The

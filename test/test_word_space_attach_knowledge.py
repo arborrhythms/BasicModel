@@ -36,9 +36,9 @@ def _tiny_view():
 def _bare_word_space():
     """A WordSpace instance with __init__ bypassed — just enough for
     attach_knowledge tests."""
-    from Language import WordSpace
+    from Language import WordSubSpace
     import torch.nn as nn
-    ws = object.__new__(WordSpace)
+    ws = object.__new__(WordSubSpace)
     nn.Module.__init__(ws)
     return ws
 

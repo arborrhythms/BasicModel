@@ -4199,12 +4199,17 @@ class SubSpace(nn.Module):
         # Pipeline-carried context. These travel with the subspace through
         # every Space.forward via copy_context(), replacing the old pattern
         # of cross-stage and cross-forward back-channels on Space instances.
-        #   wordSpace    -- Model's WordSpace reference (stamped by InputSpace)
         #   errors       -- per-batch auxiliary-loss accumulator; SymbolicSpace
         #                   writes symbol_commitment / codebook_commit / etc.
         #                   here and runBatch folds them into TheError.
         #   serial_cache -- {id(owner_space): tensor} for serial-mode warm cache
-        self.wordSpace = None
+        #
+        # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+        # retired the per-SubSpace ``wordSubSpace`` back-pointer; the
+        # WordSubSpace is now reached via the owning ``Space.wordSubSpace``
+        # routing pointer (set by ``BasicModel`` at construction) or passed
+        # explicitly to functions that need it (e.g.
+        # ``ConceptualSpace.forward(subspace, word_subspace)``).
         self.errors = Error()
         self.serial_cache = {}
 
@@ -4227,33 +4232,15 @@ class SubSpace(nn.Module):
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
 
-    def attach_wordSpace(self, wordSpace):
-        """Wire the model's shared WordSpace as a non-Module pointer.
-
-        Mirrors ``Space.attach_wordSpace`` (same rationale, same
-        idiom): stored via ``object.__setattr__`` so the WordSpace
-        ``nn.Module`` is NOT registered as a child of this SubSpace.
-        Plain ``self.wordSpace = ws`` enters ``nn.Module.__setattr__``,
-        registers WordSpace as a submodule, and creates a
-        ``subspace -> wordSpace -> ... -> subspace`` cycle that makes
-        ``model.to(device)`` recurse infinitely (verified:
-        ``RecursionError``). This is the project's existing convention
-        for non-owning back-references (cf. ``Space.attach_wordSpace``,
-        the ``_model`` back-ref). Called ONCE eagerly at model build
-        for every persistent subspace; ``copy_context`` no longer
-        touches ``wordSpace`` (it is build-stable, never reassigned).
-        """
-        object.__setattr__(self, 'wordSpace', wordSpace)
-
     def copy_context(self, other):
         """Adopt cross-stage/cross-forward state from ``other``.
 
         Pipeline invariant: every ``Space.forward`` that returns a subspace
         other than the incoming ``vspace`` must first ``copy_context(vspace)``
-        so ``wordSpace``, ``errors``, and ``serial_cache`` travel unbroken
-        through the pipeline.  ``errors`` and ``serial_cache`` are carried
-        by reference so later writes (e.g., ``SymbolicSpace.forward`` adding
-        a commitment term) land in the same accumulator that
+        so ``errors`` and ``serial_cache`` travel unbroken through the
+        pipeline. ``errors`` and ``serial_cache`` are carried by reference
+        so later writes (e.g., ``SymbolicSpace.forward`` adding a
+        commitment term) land in the same accumulator that
         ``OutputSpace`` / ``runBatch`` will read.
 
         Also propagates the stem-route contracts (``valid_mask``,
@@ -4261,19 +4248,11 @@ class SubSpace(nn.Module):
         is set by the stem and read by ``runBatch``; propagating them
         through ``copy_context`` keeps the contract explicit.
 
-        ``wordSpace`` is deliberately NOT copied here. It is the model's
-        single, build-stable WordSpace; ``copy_context`` only ever
-        re-assigned the same object every call. Assigning a Module
-        (``WordSpace`` is a ``Space``/``nn.Module``) to this
-        ``nn.Module`` enters ``nn.Module.__setattr__``'s submodule-
-        registration / ``remove_from`` path, which dynamo cannot trace
-        -> hard error under ``fullgraph=True`` at all ~14 pipeline
-        ``copy_context`` sites. Instead it is stamped ONCE, eagerly, at
-        model build (``BasicModel`` wires ``space.subspace.wordSpace``
-        for every space), so it is already present and never reassigned
-        inside the traced forward. The other four are plain values
-        (Error / dict / tensor / bool) that change per batch and do not
-        trip Module registration.
+        Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+        removed the ``wordSubSpace`` back-pointer from SubSpace; the
+        WordSubSpace reference is reached via the owning ``Space``
+        instance (``space.wordSubSpace``) or passed explicitly to
+        functions that need it.
         """
         if other is None:
             return
@@ -4589,7 +4568,7 @@ class SubSpace(nn.Module):
         SubSpace itself has no per-row sentence state, so soft resets
         are no-ops here.
 
-        ``errors`` and ``wordSpace`` persist (per-batch, per-document
+        ``errors`` and ``wordSubSpace`` persist (per-batch, per-document
         respectively; both owned by BasicModel lifecycle, not per-Reset).
         Serial cache is per-tick warm state and applies to the whole
         batch by construction; per-row clears still drop it because the
@@ -5842,317 +5821,22 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
-class ShortTermMemory(nn.Module):
-    """Short-term memory (STM) on ConceptualSpace.
-
-    A per-batch stack of unquantized C-tier activations -- "ideas",
-    the continuous compositions that the chart produces by reducing
-    concepts / earlier ideas. Distinct from
-    ``WordSpace._stm_fired`` (which is a once-per-sentence
-    discourse-priming flag, not a working-memory buffer).
-
-    Semantics:
-        * Each slot holds a ``[concept_dim]`` vector.
-        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
-          recent idea; ``peek(b, n)`` returns the n-th most recent.
-        * Capacity is a soft cap (7±2 for linguistic processing,
-          per the brain's classical working-memory limit). The
-          (future) serial parser is expected to reduce ideas before
-          pushing when ``is_full(b)`` would otherwise be true.
-        * Subsymbolic operation can drive a wider STM than the
-          linguistic 7±2; the capacity is configurable via
-          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``
-          in the model XML.
-
-    Lifecycle:
-        * Built by ``ConceptualSpace.__init__`` at construction time
-          (capacity from XML; default 9).
-        * Cleared on hard ``Reset`` (sentence boundary): all rows
-          set to zero, depth pointers reset to 0.
-        * No active consumer yet -- this is the structural slot
-          the upcoming serial / shift-reduce parser will read and
-          mutate. The current batched-CKY chart doesn't use it.
-
-    Storage is a plain registered buffer (``persistent=False``);
-    STM contents are runtime working state, not learned weights.
+# ShortTermMemory moved to bin/Layers.py (Phase E of doc/specs/
+# 2026-05-21-wordsubspace-stm-layer-refactor.md). Re-exported here so
+# ``from Spaces import ShortTermMemory`` continues to resolve for the
+# Models.py import site.
+from Layers import ShortTermMemory as _ShortTermMemory_relocated
+ShortTermMemory = _ShortTermMemory_relocated
+class _ShortTermMemory_PlaceholderRemoved:
+    """Sentinel — the ShortTermMemory class body that lived here is now
+    in :mod:`Layers`. This stub exists only so the surrounding lines
+    keep their offsets while the file is intermediate-state during the
+    refactor; ignore at runtime.
     """
-
-    DEFAULT_CAPACITY = 9
-
     def __init__(self, batch=1, capacity=None, concept_dim=0):
-        super().__init__()
-        self.capacity = int(capacity or self.DEFAULT_CAPACITY)
-        self.concept_dim = int(concept_dim)
-        # ``persistent=False``: STM is transient working state, not
-        # saved with the model checkpoint.
-        self.register_buffer(
-            "_buffer",
-            torch.zeros(int(batch), self.capacity, self.concept_dim),
-            persistent=False)
-        self.register_buffer(
-            "_depth",
-            torch.zeros(int(batch), dtype=torch.long),
-            persistent=False)
-        # Host-side mirror of ``_depth.max()``.  Updated by every push
-        # path (uniform-step push, push_step, push_window_batch);
-        # ``snapshot()`` reads this so it never needs a ``.item()``
-        # sync inside the compiled forward.  The chart at C reads
-        # ``snapshot()`` once per stage in the body; under
-        # ``max-autotune`` each such ``.item()`` was a graph break
-        # (and a CUDAGraph split).  Tracking host-side collapses
-        # those breaks while preserving the trim-to-actual-depth
-        # behaviour the chart relies on.
-        self._max_depth_host = 0
-    def ensure_batch(self, batch):
-        """Resize the STM buffers to ``batch`` rows when the model's
-        microbatch dimension changes. Idempotent.
-        """
-        batch = int(batch)
-        if int(self._buffer.shape[0]) == batch:
-            return
-        device = self._buffer.device
-        self._buffer = torch.zeros(
-            batch, self.capacity, self.concept_dim, device=device)
-        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
-        # Fresh allocation -> empty buffer -> max depth resets to 0.
-        self._max_depth_host = 0
-
-    def ensure_capacity(self, capacity):
-        """Grow the per-slot capacity to at least ``capacity``.
-
-        Idempotent and **grow-only** (mirrors :meth:`ensure_batch`).
-        Used by the per-word IR-reconstruction loop (increment 2b-1) to
-        size the STM to the sentence length -- the CKY+resize-equivalent
-        baseline (two-loop spec Phase-1-D §3: "ship CKY + resized STM,
-        ``<stmCapacity>``=``wMax``"). The bounded soft REDUCE-to-<=7
-        controller (increment 2b-2) is a separate change; until it
-        lands, the producer must not overflow a too-small stack, so the
-        sentence-length resize is the documented, owner-approved
-        baseline. Leaves the configured ``<stmCapacity>`` knob untouched
-        (this only ever *grows* the live buffer, never shrinks it, and
-        is never called on the whole-slab/non-grammar path).
-        """
-        capacity = int(capacity)
-        if capacity <= self.capacity:
-            return
-        device = self._buffer.device
-        B = int(self._buffer.shape[0])
-        new_buf = torch.zeros(
-            B, capacity, self.concept_dim, device=device,
-            dtype=self._buffer.dtype)
-        # Preserve any already-pushed content (grow-only: the existing
-        # slots stay at their indices; the tail is fresh zeros).
-        old_cap = int(self._buffer.shape[1])
-        if old_cap > 0:
-            new_buf[:, :old_cap, :] = self._buffer
-        self._buffer = new_buf
-        self.capacity = capacity
-
-    def push(self, b, idea):
-        """Push ``idea`` (a ``[concept_dim]`` tensor) onto row ``b``.
-
-        Raises if the stack is full -- the parser is expected to
-        reduce before pushing when ``is_full(b)`` would be true.
-        Fresh slot is born with a zero truth tag.
-        """
-        depth = int(self._depth[b].item())
-        if depth >= self.capacity:
-            raise RuntimeError(
-                f"ShortTermMemory.push: row {b} is at capacity "
-                f"({self.capacity}); the parser must reduce before "
-                f"pushing further.")
-        self._buffer[b, depth] = idea
-        self._depth[b] = depth + 1
-        # ``push`` already incurs a ``.item()`` sync above (single-row
-        # legacy path), so an extra host max() here is cheap.
-        if depth + 1 > self._max_depth_host:
-            self._max_depth_host = depth + 1
-
-    def push_step(self, ideas):
-        """Push ONE idea per batch row.  ``ideas`` shape ``[B, D]``.
-
-        Vectorised single-step push for the serial cursor-loop stem:
-        each call advances every row's depth by 1 and writes
-        ``ideas[b]`` to slot ``_depth[b]`` for all b in parallel.  No
-        ``.item()`` syncs, no Python per-row loop -- the serial-K stem
-        path dispatches one of these per cursor step and inductor
-        unrolls them when K is shape-bucketed.
-
-        Caller must ensure ``max(_depth) < capacity`` (the cursor loop's
-        outer guard); the buffer was sized to T or K when the loop
-        was set up so this just costs one scatter per step.
-        """
-        B, D = ideas.shape
-        device = self._buffer.device
-        row_idx = torch.arange(B, device=device)                 # [B]
-        depths  = self._depth                                    # [B] long
-        self._buffer[row_idx, depths] = ideas
-        self._depth = depths + 1
-        # All rows advance by +1 in lockstep; host-side mirror tracks
-        # the uniform increment without a ``.item()`` sync.
-        self._max_depth_host = self._max_depth_host + 1
-
-    def push_step_masked(self, ideas, gate_b_1):
-        # Masked variant of ``push_step`` for the static per-word loop
-        # (doc/plans/2026-05-20-static-per-word-loop-impl.md §2.6).
-        # ``gate_b_1`` is a ``[B, 1]`` bool tensor: rows where it is
-        # True receive the push (buffer write + depth advance); rows
-        # where it is False are left bit-identical. With column-constant
-        # gates (flat rule cursor / uniform word_active) the host
-        # ``_max_depth_host`` mirror advances by ``int(gate.any().item())``,
-        # which is constant across the unrolled loop and incurs at most
-        # one DtoH per iteration (cheap; only needed for capacity back-
-        # pressure). The mirror's correctness is best-effort under
-        # mixed-active batches; capacity back-pressure inside the loop
-        # is opportunistic and a post-loop bounded-reduce sweep is the
-        # canonical safety valve.
-        B, D = ideas.shape
-        device = self._buffer.device
-        row_idx = torch.arange(B, device=device)                 # [B]
-        depths = self._depth                                     # [B] long
-        gate_b = gate_b_1.view(B)                                # [B] bool
-        new_slot = torch.where(
-            gate_b.unsqueeze(-1),
-            ideas,
-            self._buffer[row_idx, depths])
-        self._buffer[row_idx, depths] = new_slot
-        self._depth = depths + gate_b.long()
-
-    def push_window_batch(self, ideas):
-        """Push ``W`` consecutive ideas onto every batch row in one shot.
-
-        ``ideas`` has shape ``[B, W, D]``: row ``b``'s slot ``depth+w`` is
-        written from ``ideas[b, w]`` for w in [0, W).  All rows advance
-        by the same ``W``.
-
-        Avoids the per-(b, w) ``.item()`` syncs that ``push`` incurs --
-        critical for the per-word stem's hot path, where the legacy
-        loop dispatched B*W sync points (B=128 N=1024 -> 130k host
-        round-trips) per forward.
-
-        Caller is responsible for ensuring ``max(_depth) + W <= capacity``;
-        the per-word stem calls ``clear()`` first so depths start at 0
-        and ``W`` is bounded by the buffer's already-sized ``capacity``.
-        """
-        B, W, D = ideas.shape
-        if W == 0:
-            return
-        device = self._buffer.device
-        starts = self._depth                                  # [B] long
-        offsets = torch.arange(W, device=device).unsqueeze(0)  # [1, W]
-        positions = starts.unsqueeze(1) + offsets             # [B, W]
-        row_idx = torch.arange(B, device=device).unsqueeze(1) \
-            .expand(-1, W)                                    # [B, W]
-        self._buffer[row_idx, positions] = ideas
-        self._depth = starts + W
-        # All rows advance by +W in lockstep; host-side mirror tracks
-        # the increment.
-        self._max_depth_host = self._max_depth_host + int(W)
-
-    def pop(self, b):
-        """Pop and return the top idea for row ``b``, or ``None`` when empty.
-
-        The popped slot's truth tag is zeroed alongside its content.
-        """
-        depth = int(self._depth[b].item())
-        if depth == 0:
-            return None
-        depth -= 1
-        idea = self._buffer[b, depth].clone()
-        self._buffer[b, depth].zero_()
-        self._depth[b] = depth
-        return idea
-
-    def peek(self, b, n=0):
-        """Return the ``n``-th item from top of row ``b``, or ``None``
-        when fewer than ``n+1`` items are on the stack. ``n=0`` is the
-        most recent (top); ``n=size(b)-1`` is the oldest (bottom).
-        """
-        depth = int(self._depth[b].item())
-        if depth <= n:
-            return None
-        return self._buffer[b, depth - 1 - n]
-
-    def snapshot(self, detach=False):
-        """Return ``[B, max_depth, D]`` slice of the live buffer.
-
-        ``max_depth`` is the largest depth across batch rows so the
-        returned tensor is a single uniform slab; rows with shorter
-        sentences carry zero-padding at the tail.  Returns ``None``
-        when the buffer is empty (no pushes have occurred).
-
-        Uses the host-side ``_max_depth_host`` mirror updated by every
-        push path so the chart at C reads STM without a ``.item()``
-        sync.  Under ``max-autotune`` each ``_depth.max().item()`` was
-        a CUDAGraph split (graph break for the dynamo trace); the
-        mirror collapses those splits.
-
-        Used by ``BasicModel._chart_compose_at_C`` and
-        ``BasicModel._chart_generate_from_stm`` to feed the chart at
-        C-tier without each call site re-implementing the depth/padding
-        slicing contract.
-
-        ``detach=True`` clones away from the autograd graph (e.g. for
-        save_weights snapshots or external diagnostics).  The default
-        keeps grad flowing through the buffer so the chart's per-rule
-        selections can shape upstream PiLayer/SymbolicSpace weights.
-        """
-        B = int(self._buffer.shape[0])
-        if B == 0:
-            return None
-        max_depth = int(self._max_depth_host)
-        if max_depth == 0:
-            return None
-        # Defensive clamp: ``_max_depth_host`` should never exceed
-        # capacity, but if a code path slipped past the contract
-        # we'd rather slice safely than index OOB.
-        if max_depth > self.capacity:
-            max_depth = self.capacity
-        snap = self._buffer[:, :max_depth, :]
-        if detach:
-            snap = snap.detach().clone()
-        else:
-            snap = snap.clone()
-        return snap
-
-    def size(self, b):
-        """Current depth (number of occupied slots) for row ``b``."""
-        return int(self._depth[b].item())
-
-    def is_full(self, b):
-        """True when row ``b`` is at capacity."""
-        return self.size(b) >= self.capacity
-
-    def is_empty(self, b):
-        """True when row ``b`` has no occupants."""
-        return self.size(b) == 0
-
-    def clear(self, b=None):
-        """Clear row ``b`` (or all rows when ``b`` is ``None``).
-
-        Called on hard ``Reset`` (sentence boundary). When ``b`` is
-        outside the currently-allocated batch dimension, the buffer
-        hasn't been grown to include that row yet (no pushes ever
-        happened for it), so there is nothing to clear -- skip
-        gracefully instead of raising IndexError. Clears both the
-        idea buffer and the per-slot truth tags.
-        """
-        if b is None:
-            self._buffer.zero_()
-            self._depth.zero_()
-            self._max_depth_host = 0
-            return
-        b = int(b)
-        if b < 0 or b >= int(self._buffer.shape[0]):
-            return
-        self._buffer[b].zero_()
-        self._depth[b] = 0
-        # Per-row clear: the host mirror is a global max over rows.
-        # Re-derive (one host scalar) from the remaining rows' depths.
-        # ``.item()`` is acceptable here -- partial clear is called
-        # from sentence-boundary Reset, not the hot path.
-        self._max_depth_host = int(self._depth.max().item())
-
+        raise NotImplementedError(
+            "Use Layers.ShortTermMemory (re-exported as "
+            "Spaces.ShortTermMemory).")
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
 
@@ -6291,32 +5975,32 @@ class Space(nn.Module):
             if _vq is not None:
                 _vq.name = f"{self.config_section}.{_role}"
 
-        # wordSpace is still held as a non-Module pointer so the few
-        # call sites that reach across to ``wordSpace.truth_layer``
+        # wordSubSpace is still held as a non-Module pointer so the few
+        # call sites that reach across to ``wordSubSpace.truth_layer``
         # (SymbolicSpace) keep working; composition dispatch is no
-        # longer done here -- home spaces take ``wordSpace`` as a
-        # per-call parameter and call ``wordSpace.forwardSymbols`` /
+        # longer done here -- home spaces take ``wordSubSpace`` as a
+        # per-call parameter and call ``wordSubSpace.forwardSymbols`` /
         # ``.reverseSymbols`` explicitly.
-        self.wordSpace = None
+        self.wordSubSpace = None
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
 
-    def attach_wordSpace(self, wordSpace):
+    def attach_wordSubSpace(self, wordSubSpace):
         """Wire the shared WordSpace as a non-Module routing pointer.
 
-        The wordSpace reference is stored via ``object.__setattr__`` so
+        The wordSubSpace reference is stored via ``object.__setattr__`` so
         the WordSpace nn.Module is NOT registered as a child of this
-        Space -- that would create a ``space -> wordSpace -> space`` cycle
+        Space -- that would create a ``space -> wordSubSpace -> space`` cycle
         (WordSpace already owns the SyntacticLayer and its codebook
         host is the SymbolicSpace) and make ``model.to(device)``
-        recurse forever. The wordSpace is owned at the model level
+        recurse forever. The wordSubSpace is owned at the model level
         instead, with each Space holding only this non-Module pointer.
         Layer attachment is done directly via
-        ``wordSpace.attach_layer(kind, layer)`` by the WordSpace
+        ``wordSubSpace.attach_layer(kind, layer)`` by the WordSpace
         factory methods, not by this helper.
         """
-        object.__setattr__(self, 'wordSpace', wordSpace)
+        object.__setattr__(self, 'wordSubSpace', wordSubSpace)
 
     def _build_object_basis(self):
         """Build object basis.
@@ -6796,7 +6480,7 @@ class InputSpace(Space):
         # stamps this onto every outgoing subspace and downstream stages
         # propagate via copy_context. Registered by BaseModel.create_from_config
         # once WordSpace exists.
-        self._model_wordSpace = None
+        self._model_wordSubSpace = None
         # End-of-stream diagnostic: ``list[bool]`` of per-row "this row
         # has no valid windows in the current tick" flags. Sized lazily
         # by the AR forward() path. Under the rolling-cursor handoff
@@ -6907,18 +6591,24 @@ class InputSpace(Space):
         return inputBatch  # already [B, D, 1] and on device after toDevice()
 
     def set_word_space(self, ws):
-        """Register the Model's WordSpace so the pipeline carries it downstream.
+        """Register the Model's WordSpace so the pipeline can reach it.
 
-        ``forward()`` stamps ``self._model_wordSpace`` onto every outgoing
-        subspace so ConceptualSpace/SymbolicSpace stages can read
-        ``vspace.wordSpace`` without reaching back through a Model
-        back-channel.  Empty-return sentinels are stamped too so
-        skip-on-empty logic downstream still carries the reference.
+        Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
+        retired the per-SubSpace back-pointer; the reference is held on
+        each ``Space`` via ``space.wordSubSpace`` (set by
+        ``Space.attach_wordSubSpace``) and passed explicitly to functions
+        that need it (e.g. ``ConceptualSpace.forward``). The
+        ``self._model_wordSubSpace`` attribute stays as the Model-build-
+        time mirror so ``forward()`` paths that consult it (cf. the
+        SymbolicSpace forward stamping) continue to work.
         """
-        self._model_wordSpace = ws
-        # Pre-stamp our own subspace; regular returns hand it out unchanged.
-        if self.subspace is not None:
-            self.subspace.wordSpace = ws
+        self._model_wordSubSpace = ws
+        # Stamp the routing pointer on this InputSpace too so consumers
+        # can read ``inputSpace.wordSubSpace`` without going through the
+        # Model. (WordSubSpace.__init__ also calls
+        # ``perceptualSpace.attach_wordSubSpace(self)`` for PCS spaces,
+        # but InputSpace and OutputSpace are wired here.)
+        self.attach_wordSubSpace(ws)
 
     def prep_sentence_batch(self, sentences):
         """Turn a tuple/list of B sentence strings into a [B, nVec, 1] tensor.
@@ -7258,7 +6948,7 @@ class InputSpace(Space):
             peer._bpe_word_mask_flat = None
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
-        ws = self._model_wordSpace
+        ws = self._model_wordSubSpace
         if ws is not None:
             ws.ensure_microbatch(B, 1)
         return sub
@@ -7340,8 +7030,8 @@ class InputSpace(Space):
             nInputDim=template._nInputDim,
             nOutputDim=template._nOutputDim,
         )
-        # Stamp wordSpace so downstream skip-on-empty logic still sees it.
-        ss.wordSpace = self._model_wordSpace
+        # Stamp wordSubSpace so downstream skip-on-empty logic still sees it.
+        ss.wordSubSpace = self._model_wordSubSpace
         return ss
 
     def _lex_and_embed(self, input):
@@ -7547,9 +7237,9 @@ class PerceptualSpace(Space):
         # Recurrent-pass index. The post-SentenceState design (2026-05-21)
         # publishes this on ``WordSubSpace.recur_pass`` (written by
         # ``_forward_body`` each pass, read in ``forward`` via the
-        # ``self.subspace.wordSpace`` back-reference); this attribute
+        # ``self.subspace.wordSubSpace`` back-reference); this attribute
         # remains as the eager fallback for standalone ``forward`` calls
-        # / unit tests where no wordSpace is wired. The serial-mode
+        # / unit tests where no wordSubSpace is wired. The serial-mode
         # warm path is an AR-streaming optimisation across forward
         # *calls*; it must not fire on in-forward recurrent passes >0
         # (those carry distinct C→P feedback and must do the full cold
@@ -7708,8 +7398,8 @@ class PerceptualSpace(Space):
         # weights (sigma_percept / the symbolic codebook are already
         # per-order via the conceptualSpaces/symbolicSpaces ModuleLists).
         # The recurrent cell selects the order via
-        # ``self.subspace.wordSpace.recur_pass`` (eager fallback:
-        # ``_recurrent_pass_idx`` when no wordSpace is wired).
+        # ``self.subspace.wordSubSpace.recur_pass`` (eager fallback:
+        # ``_recurrent_pass_idx`` when no wordSubSpace is wired).
         # conceptualOrder<=1 -> length-1 lists -> bit-identical to the
         # pre-ramsification single-fold behavior.
         _T = max(1, int(TheXMLConfig.get(
@@ -7756,6 +7446,19 @@ class PerceptualSpace(Space):
         # off keeps production on the verified trie path. Explicit
         # attribute (no getattr default) so the toggle is discoverable.
         self._bpe_gpu_enabled = False
+        # BPE / MPHF GPU tokenizer Layers (algorithms only; static tables
+        # cached on this PerceptualSpace as ``self._bpe_static_tables`` /
+        # ``self._mphf_static_tables`` keyed by frozen-vocab size).
+        # Construction is cheap (no params); the layers are kept on
+        # ``self.layers`` so the standard Layer cascade (Start/End,
+        # set_sigma, paramUpdate) reaches them -- they are no-ops for
+        # those hooks but participate in the inventory.
+        from Layers import BPEGpuLayer as _BPEGpuLayer
+        from Layers import MPHFGpuLayer as _MPHFGpuLayer
+        self._bpe_gpu_layer = _BPEGpuLayer()
+        self._mphf_gpu_layer = _MPHFGpuLayer()
+        self.layers.append(self._bpe_gpu_layer)
+        self.layers.append(self._mphf_gpu_layer)
         # Rework A: the frozen MPHF->table static tensors, built ONCE
         # over the frozen lexicon key set (mirrors ``_bpe_static_tables``;
         # cache keyed by lexicon row count -- frozen => never rebuilt
@@ -8110,10 +7813,9 @@ class PerceptualSpace(Space):
         # not by itself unlock CUDAGraph capture (other implicit syncs
         # gate that). Kept gated for future perf work.
         if frozen and self._bpe_gpu_enabled:
-            import bpe_gpu
             try:
                 return self._embed_bpe_gpu(upstream_vspace)
-            except bpe_gpu._BPEGpuUnavailable:
+            except self._bpe_gpu_layer._BPEGpuUnavailable:
                 pass  # fall through to the verified trie reference
         return self._embed_bpe_trie(upstream_vspace)
 
@@ -8121,10 +7823,11 @@ class PerceptualSpace(Space):
         """Frozen-vocab GPU tokenizer path: static tensor tables +
         parallel longest-match + on-device greedy consumption +
         tensor word-segmentation -> the same ``_bpe_emit`` tail. Zero
-        ``cudaMemcpyDtoH``. Raises ``_BPEGpuUnavailable`` if the static
-        tables cannot be built (caller falls back to the trie path).
+        ``cudaMemcpyDtoH``. Raises ``BPEGpuLayer._BPEGpuUnavailable`` if
+        the static tables cannot be built (caller falls back to the
+        trie path).
         """
-        import bpe_gpu
+        bpe = self._bpe_gpu_layer
         what_buf = upstream_vspace.materialize(mode="what")
         if what_buf is None:
             raise RuntimeError(
@@ -8145,17 +7848,17 @@ class PerceptualSpace(Space):
         tab = getattr(self, "_bpe_static_tables", None)
         if tab is None or tab.get("_vsig") != vsig:
             try:
-                tab = bpe_gpu.build_static_tables(
+                tab = bpe.build_static_tables(
                     cl, codebook, byte_indices.device)
             except AssertionError as e:
-                raise bpe_gpu._BPEGpuUnavailable(str(e))
+                raise bpe._BPEGpuUnavailable(str(e))
             tab["_vsig"] = vsig
             self._bpe_static_tables = tab
 
-        best_id, best_len = bpe_gpu.gpu_longest_match(byte_indices, tab)
-        chunk_ids, tok_count = bpe_gpu.gpu_chunk_ids(
+        best_id, best_len = bpe.gpu_longest_match(byte_indices, tab)
+        chunk_ids, tok_count = bpe.gpu_chunk_ids(
             byte_indices, best_id, best_len)
-        sub_cb, sub_target, sub_pos, keep = bpe_gpu.segment_words(
+        sub_cb, sub_target, sub_pos, keep = bpe.segment_words(
             chunk_ids, tok_count, tab, nObj)
         return self._bpe_emit_gpu(
             upstream_vspace, codebook, batch, nObj, dev, null_idx,
@@ -8687,17 +8390,17 @@ class PerceptualSpace(Space):
         """Build-once / cache the frozen MPHF static tensors (mirrors the
         ``_bpe_static_tables`` build-once pattern: keyed by lexicon row
         count; frozen => never rebuilt after the first build). Raises
-        ``mphf_gpu._MPHFUnavailable`` for a non-Embedding codebook."""
-        import mphf_gpu
+        ``MPHFGpuLayer._MPHFUnavailable`` for a non-Embedding codebook."""
+        mphf = self._mphf_gpu_layer
         cb = self._mphf_codebook()
         if cb is None:
-            raise mphf_gpu._MPHFUnavailable(
+            raise mphf._MPHFUnavailable(
                 "PerceptualSpace._mphf_tables: non-Embedding codebook.")
         vsig = len(cb.wv.index_to_key)
         tab = self._mphf_static_tables
         if tab is None or tab.get("_vsig") != vsig:
             dev = cb.wv._vectors.device
-            tab = mphf_gpu.build_mphf_table(cb, dev)
+            tab = mphf.build_mphf_table(cb, dev)
             tab["_vsig"] = vsig
             self._mphf_static_tables = tab
         return tab
@@ -8713,8 +8416,7 @@ class PerceptualSpace(Space):
         caller can gate OOV->BPE-trie fallback on a true hit (vs the
         ``null_row`` fallback row that ``mphf_index`` returns for both
         L==0 slots and OOV)."""
-        import mphf_gpu
-        return mphf_gpu.mphf_index(
+        return self._mphf_gpu_layer.mphf_index(
             token_byte_slots, self._mphf_tables(),
             return_verified=return_verified)
 
@@ -8738,11 +8440,10 @@ class PerceptualSpace(Space):
         never inverted -- this nearest-row table lookup IS the reverse
         map (spec §"Because the table stores the surface word, the MPHF
         need not be invertible")."""
-        import mphf_gpu
         cb = self._mphf_codebook()
         if cb is None:
             return (None, None) if return_surface else None
-        idx = mphf_gpu.reverse_map_rows(concept_vectors, cb)
+        idx = self._mphf_gpu_layer.reverse_map_rows(concept_vectors, cb)
         if not return_surface:
             return idx
         surf = cb.wv.index_to_key
@@ -8881,15 +8582,15 @@ class PerceptualSpace(Space):
 
         For MPHF-applicability gate (non-Embedding codebook -- numeric
         codebooks have no surface key set), the table build raises
-        ``_MPHFUnavailable``; we fall through to ``_embed_bpe_trie``
-        for the whole batch in that case (never silently wrong).
+        ``MPHFGpuLayer._MPHFUnavailable``; we fall through to
+        ``_embed_bpe_trie`` for the whole batch in that case (never
+        silently wrong).
         """
-        import mphf_gpu
         # Build / cache MPHF tables; non-Embedding codebooks fall back
         # to the verified BPE trie for the whole batch.
         try:
             tab = self._mphf_tables()
-        except mphf_gpu._MPHFUnavailable:
+        except self._mphf_gpu_layer._MPHFUnavailable:
             return self._embed_bpe_trie(upstream_vspace)
 
         what_buf = upstream_vspace.materialize(mode="what")
@@ -8989,7 +8690,7 @@ class PerceptualSpace(Space):
                     slot_buf[0, k, :L] = torch.tensor(
                         [int(x) & 0xFF for x in bt[:L]],
                         dtype=torch.int64, device=dev)
-            mphf_row, verified = mphf_gpu.mphf_index(
+            mphf_row, verified = self._mphf_gpu_layer.mphf_index(
                 slot_buf, tab, return_verified=True)
             mphf_row = mphf_row[0]            # [N_words]
             verified = verified[0]            # [N_words]
@@ -9103,7 +8804,7 @@ class PerceptualSpace(Space):
         ``pi_input(primary)`` alone.
 
         The recurrent-pass index (``pi_input[oi]`` ModuleList selector)
-        is read off ``self.subspace.wordSpace.recur_pass`` (Python int,
+        is read off ``self.subspace.wordSubSpace.recur_pass`` (Python int,
         Dynamo-specialized). Standalone / pre-soft_reset callers fall
         through to the persistent ``self._recurrent_pass_idx``.
 
@@ -9125,11 +8826,13 @@ class PerceptualSpace(Space):
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
         # ``recur_pass`` lives on WordSpace as the per-sentence recurrent-
-        # pass index. ``self.subspace.wordSpace`` is the back-reference
-        # threaded by ``copy_context``; if it's missing (standalone
-        # PerceptualSpace.forward, pre-soft_reset tests), fall back to
-        # the persistent ``self._recurrent_pass_idx`` attribute.
-        ws = getattr(self.subspace, 'wordSpace', None)
+        # pass index. Post-Phase-G the WordSubSpace is reached via the
+        # owning Space's routing pointer (``self.wordSubSpace`` —
+        # ``object.__setattr__`` keeps it out of nn.Module's child
+        # registration); if it's missing (standalone PerceptualSpace
+        # .forward, pre-soft_reset tests), fall back to the persistent
+        # ``self._recurrent_pass_idx`` attribute.
+        ws = getattr(self, 'wordSubSpace', None)
         _rp = (int(ws.recur_pass) if ws is not None
                else self._recurrent_pass_idx)
         if (getattr(self, "serial_mode", False)
@@ -9190,8 +8893,8 @@ class PerceptualSpace(Space):
         # degrades to ``pi_input(primary)`` alone (matches the old
         # cold-start / non-bivector fallback).
         # Per-order fold selection (ramsification): the recurrent cell
-        # sets ``self.subspace.wordSpace.recur_pass`` (eager fallback:
-        # ``_recurrent_pass_idx`` when no wordSpace is wired) to the
+        # sets ``self.subspace.wordSubSpace.recur_pass`` (eager fallback:
+        # ``_recurrent_pass_idx`` when no wordSubSpace is wired) to the
         # order t each pass; clamp to the available range so standalone
         # callers (idx 0) and any idx >= conceptualOrder are safe.
         _oi = min(max(_rp, 0),
@@ -9820,16 +9523,16 @@ class ConceptualSpace(Space):
                 w_max = 8
             stm_capacity = int(w_max)
         concept_dim = int(outputShape[1])
+        # ``stm_capacity`` / ``concept_dim`` published as attributes so
+        # WordSubSpace.__init__ can size its typed-STM buffers to match
+        # (Phase D of doc/specs/2026-05-21-wordsubspace-stm-layer-
+        # refactor.md). The typed-metadata stack formerly allocated here
+        # via ``_init_typed_stm`` now lives directly on WordSubSpace; the
+        # ``ShortTermMemory`` Layer reads / writes those buffers.
+        self.stm_capacity = int(stm_capacity)
+        self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
-        # Typed STM (plan
-        # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md):
-        # parallel-tensor stack carrying category / order / ref_id
-        # metadata alongside the payload. The STM shift/reduce driver
-        # (on WordSpace) reads from this. Allocated to the same
-        # capacity + dim as the legacy ``self.stm``.
-        self._init_typed_stm(
-            batch=1, max_depth=stm_capacity, dim=concept_dim)
 
         # Persistent CS->PS event carrier, owned + allocated ONCE here
         # (eager, pre-compile). `forward` reuses it via `set_event`
@@ -9846,6 +9549,19 @@ class ConceptualSpace(Space):
         self._subspaceForPS = SubSpace(
             inputShape=(1, 1), outputShape=(1, 1),
             nInputDim=1, nOutputDim=1)
+
+        # Symbol-learning Layer: detached accumulator + MDL-flavored
+        # promotion policy. Off by default; enabled via
+        # ``<architecture><symbolLearning enabled="true"/>``. Owned by
+        # ``ConceptualSpace`` because the QE / PMI hook points fire at
+        # the C-tier snap and the C-tier REDUCE; placed in
+        # ``self.layers`` so the Layer cascade reaches it. Promotion is
+        # at explicit flush boundaries only (see ``flush_symbol_learning``);
+        # never inside autograd ``forward``.
+        from Layers import SymbolLearningLayer as _SymbolLearningLayer
+        self.symbolLearningLayer = _SymbolLearningLayer(
+            enabled=_SymbolLearningLayer.enabled_from_config())
+        self.layers.append(self.symbolLearningLayer)
 
     def _build_what_basis(self):
         """Bivector regime: build a ``ProjectionBasis`` on ``.what`` so
@@ -9900,31 +9616,6 @@ class ConceptualSpace(Space):
             x = x[..., :-self._right_half_dim]
         return x
 
-    # -- Typed STM (parallel-metadata stack) ----------------------------
-    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
-    # The legacy ``self.stm`` carries payload only; ``self.stm_typed``
-    # carries the same payload plus ``category``, ``order``, ``ref_id``
-    # metadata per frame, for the STM shift/reduce driver to consume.
-    # ``stm_typed`` is ``None`` until ``_init_typed_stm`` is called
-    # (which happens in __init__ for real instances; bare-instance
-    # tests can call it directly).
-
-    def _init_typed_stm(self, batch, max_depth, dim):
-        """Allocate (or reallocate) the typed-metadata STM.
-
-        ``TypedStack`` is an ``nn.Module`` with registered buffers, so it
-        must be assigned normally; otherwise ``.to(device)`` will leave
-        its stack tensors behind.
-        """
-        from typed_stack import TypedStack
-        self._stm_typed = TypedStack(
-            batch=int(batch), max_depth=int(max_depth), dim=int(dim))
-
-    @property
-    def stm_typed(self):
-        """The typed-metadata STM, or ``None`` if not yet allocated."""
-        return getattr(self, '_stm_typed', None)
-
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -9966,16 +9657,22 @@ class ConceptualSpace(Space):
         if stm is not None:
             stm.clear(b=batch)
 
-    def forward(self, PS_subspace, SS_subspace=None):
+    def forward(self, subspace, word_subspace=None):
         """Knowing: combine perceptual + symbolic-loop inputs into concepts.
 
-        Two explicit inputs (the folded ``_sourced_input``, post-2026-05
-        reconciliation): ``PS_subspace`` is the perceptual content;
-        ``SS_subspace`` is the prior pass's SymbolicSpace output (the
-        symbolic recurrent loop). They are shape-matched averaged after a
-        bivector reverse-lift on the symbolic side; ``SS_subspace=None`` /
-        empty (sentence start, standalone unit tests) degrades to the
-        perceptual ``primary`` alone.
+        Post-Phase-F (2026-05-21 WordSubSpace/STM Layer refactor):
+        ``subspace`` is the perceptual content (was ``PS_subspace``);
+        ``word_subspace`` is the symbolic-loop data carrier (was
+        ``SS_subspace``) — WordSubSpace IS a SubSpace subclass and
+        carries the symbolic-loop role formerly held by a separate
+        per-pass SS SubSpace. Both contracts work: callers may pass
+        either the model's ``WordSubSpace`` (preferred) or the legacy
+        SS-output SubSpace; ``materialize()`` is called either way.
+
+        They are shape-matched averaged after a bivector reverse-lift
+        on the symbolic side; ``word_subspace=None`` / empty (sentence
+        start, standalone unit tests) degrades to the perceptual
+        ``primary`` alone.
 
         The canonical C-tier fold is the additive ``sigma_percept``
         (``percept_dim → concept_dim``), per the 2026-05-13 rebalance
@@ -9990,10 +9687,10 @@ class ConceptualSpace(Space):
         as positional args to the next ``PerceptualSpace.forward`` /
         ``SymbolicSpace.forward`` call — no carrier object.
         """
-        if PS_subspace.is_empty():
-            return PS_subspace
-        self.subspace.copy_context(PS_subspace)
-        vspace = PS_subspace
+        if subspace.is_empty():
+            return subspace
+        self.subspace.copy_context(subspace)
+        vspace = subspace
         # SyntacticLayer is unconditional: it dispatches whatever the
         # grammar XML specifies for the C tier (e.g. ``C = sigma(C)``
         # from model.xml's default grammar) -- exact mathematical
@@ -10010,12 +9707,13 @@ class ConceptualSpace(Space):
         # event are shape-matched averaged. The SS event arrives as a
         # per-prototype catuskoti slab ``[B, V_S, 2]`` over the symbolic
         # ProjectionBasis; lift it back to concept content with that
-        # basis before averaging. Degrades to ``primary`` alone when SS
-        # is absent/empty or the lift can't shape-match.
+        # basis before averaging. Degrades to ``primary`` alone when the
+        # word_subspace carrier is absent/empty or the lift can't
+        # shape-match.
         primary = self.forwardBegin(vspace, returnVectors=True)
         sym = None
-        if SS_subspace is not None and not SS_subspace.is_empty():
-            sym = SS_subspace.materialize()
+        if word_subspace is not None and not word_subspace.is_empty():
+            sym = word_subspace.materialize()
         if sym is not None and sym.shape == primary.shape:
             x = (primary + sym) / 2
         else:
@@ -10103,12 +9801,15 @@ class ConceptualSpace(Space):
                     prior_b = prior.repeat_interleave(K, dim=0)
                 y = y + prior_b.unsqueeze(1)
             self._c_prior = None
-        # STM-residual bias (once per sentence; wordSpace gates itself).
+        # STM-residual bias (once per sentence; wordSubSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
         # not to the pre-Sigma upstream event (which lives at the percept
-        # basis dim and would shape-mismatch).
-        ws = vspace.wordSpace
+        # basis dim and would shape-mismatch). Phase G of doc/specs/
+        # 2026-05-21-wordsubspace-stm-layer-refactor.md retired the
+        # per-SubSpace back-pointer; the WordSubSpace is reached via the
+        # owning Space's routing pointer (``self.wordSubSpace``).
+        ws = getattr(self, 'wordSubSpace', None)
         if ws is not None and y is not None:
             B = int(ws._stm_fired.shape[0])
             BK_actual = int(y.shape[0])
@@ -10158,7 +9859,7 @@ class ConceptualSpace(Space):
         # Shared sparsity regularizer on the concept activations. No-op when
         # l1_lambda defaults to 0; attribute-only so configs opt in.
         y = self._sparsity(y)
-        ws = vspace.wordSpace
+        ws = getattr(self, 'wordSubSpace', None)
         if ws is not None:
             ws.clear_last_svo()
         vspace = self.forwardEnd(y, returnVectors=True)
@@ -10521,7 +10222,7 @@ class SymbolicSpace(Space):
         # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
         # Default 0 (off). Server sets to 1 when processing the TruthSet,
         # then resets to 0. The TruthLayer lives on ``WordSpace``; callers
-        # reach it via ``self.wordSpace.truth_layer`` (see forward() below
+        # reach it via ``self.wordSubSpace.truth_layer`` (see forward() below
         # and the truth-using paths in BasicModel).
         try:
             self.accumulateTruth = float(TheXMLConfig.space(section, "accumulateTruth"))
@@ -11289,7 +10990,7 @@ class SymbolicSpace(Space):
     # The new forward path consumes an "incoming subspace" built by
     # ``_build_incoming_subspace`` (a minimal SubSpace whose activation
     # carries the percept-level pos_vector).  It pushes a PoS vector onto
-    # ``wordSpace.category_stack``, asks the rule predictor for a distribution
+    # ``wordSubSpace.category_stack``, asks the rule predictor for a distribution
     # over grammar rules, and applies that rule to ``self.subspace.what``.
     #
     # Regular callers flow through the main forward body; dispatch is
@@ -11353,12 +11054,12 @@ class SymbolicSpace(Space):
         incoming._rule_dispatch = True
         return incoming
 
-    def _op_for_rule(self, rule_id, wordSpace=None):
+    def _op_for_rule(self, rule_id, wordSubSpace=None):
         """Return a callable ``(self_sub, inc_sub) -> new_what`` for ``rule_id``.
 
-        Dispatches through the ``wordSpace.host_layer(tier, rule_name)``
+        Dispatches through the ``wordSubSpace.host_layer(tier, rule_name)``
         registry (the same path WordSpace's grammar applies during chart
-        compose). When ``wordSpace`` is missing, no host layer is
+        compose). When ``wordSubSpace`` is missing, no host layer is
         registered for the rule, or the rule_id is out of range, returns
         a pass-through that yields the left operand unchanged.
 
@@ -11376,7 +11077,7 @@ class SymbolicSpace(Space):
         """
         host = None
         method_name = None
-        if wordSpace is not None:
+        if wordSubSpace is not None:
             try:
                 from Language import TheGrammar
                 method_name = TheGrammar.rules[int(rule_id)].method_name
@@ -11397,7 +11098,7 @@ class SymbolicSpace(Space):
                 _SUBSYMBOLIC = {'lift', 'lower', 'union', 'intersection'}
                 tier = 'C' if method_name in _SUBSYMBOLIC else 'S'
                 try:
-                    host = wordSpace.host_layer(tier, method_name)
+                    host = wordSubSpace.host_layer(tier, method_name)
                 except Exception:
                     host = None
                 # Fallback: some grammar configs only register one tier
@@ -11406,7 +11107,7 @@ class SymbolicSpace(Space):
                 if host is None:
                     fallback = 'S' if tier == 'C' else 'C'
                     try:
-                        host = wordSpace.host_layer(fallback, method_name)
+                        host = wordSubSpace.host_layer(fallback, method_name)
                     except Exception:
                         host = None
 
@@ -11438,7 +11139,7 @@ class SymbolicSpace(Space):
 
         return op
 
-    def _superposed_op(self, rule_probs, wordSpace=None):
+    def _superposed_op(self, rule_probs, wordSubSpace=None):
         """Return a callable that weights every rule's output by ``rule_probs``.
 
         Training-mode analogue of argmax dispatch: every rule fires and
@@ -11458,7 +11159,7 @@ class SymbolicSpace(Space):
             for rid, p_val in enumerate(probs_list):
                 if p_val < 1e-6:
                     continue
-                out = self._op_for_rule(rid, wordSpace=wordSpace)(
+                out = self._op_for_rule(rid, wordSubSpace=wordSubSpace)(
                     self_sub, inc_sub)
                 if out is None:
                     continue
@@ -11468,23 +11169,23 @@ class SymbolicSpace(Space):
 
         return mixed
 
-    def _forward_with_rule_dispatch(self, incoming_subspace, wordSpace=None,
+    def _forward_with_rule_dispatch(self, incoming_subspace, wordSubSpace=None,
                                     quantize=True):
         """Rule-dispatch forward (Task 6.2).
 
         Five-step flow per the plan:
           1. Read active (symbol-axis activation) from the incoming subspace.
-          2. Look up the PoS vector via ``wordSpace.pos_lookup`` and push
-             onto ``wordSpace.category_stack``.
+          2. Look up the PoS vector via ``wordSubSpace.pos_lookup`` and push
+             onto ``wordSubSpace.category_stack``.
           3. Ask the rule predictor for a softmax distribution over rules.
           4. Pick a rule (argmax for eval, superposed for training) and
              apply it to update ``self.subspace.what``.
           5. Resolve the bivector and (optionally) quantize through the
              symbol codebook.
         """
-        if wordSpace is None:
+        if wordSubSpace is None:
             raise ValueError(
-                "SymbolicSpace.forward requires wordSpace for rule dispatch; "
+                "SymbolicSpace.forward requires wordSubSpace for rule dispatch; "
                 "none was provided.")
 
         # Step 1 -- active symbols (1-D [N]).  Read through the public
@@ -11504,19 +11205,19 @@ class SymbolicSpace(Space):
         # NB(microbatch): hard-coded b=0 because the surrounding code path
         # already collapses to row-0 (active=active[0] above). Once the body
         # iterates over B*K rows (Task 9 cutover), thread the row index here.
-        pos_vec = wordSpace.pos_lookup(active)
-        wordSpace.category_stack.push(0, pos_vec)
+        pos_vec = wordSubSpace.pos_lookup(active)
+        wordSubSpace.category_stack.push(0, pos_vec)
 
         # Step 3 -- rule distribution.
-        rule_logits = wordSpace.predict_rule(0)
+        rule_logits = wordSubSpace.predict_rule(0)
         rule_probs = torch.softmax(rule_logits, dim=-1)
 
         # Step 4 -- apply chosen rule.
         if self.training:
-            rule_op = self._superposed_op(rule_probs, wordSpace=wordSpace)
+            rule_op = self._superposed_op(rule_probs, wordSubSpace=wordSubSpace)
         else:
             rule_id = int(rule_probs.argmax().item())
-            rule_op = self._op_for_rule(rule_id, wordSpace=wordSpace)
+            rule_op = self._op_for_rule(rule_id, wordSubSpace=wordSubSpace)
 
         new_what = rule_op(self.subspace, incoming_subspace)
         if new_what is not None:
@@ -11585,7 +11286,7 @@ class SymbolicSpace(Space):
     # state into ``self.subspace``. Implicitly bypasses (Phase 6):
     #   * WordSpace.current_rules / generate_rules
     #   * SyntacticLayer cursor (uses .execute instead)
-    #   * Chart.compose / wordSpace.forwardSymbols
+    #   * Chart.compose / wordSubSpace.forwardSymbols
     #   * ConceptualSpace.stm._buffer (_stm_bounded_reduce_step et al.)
     # ------------------------------------------------------------------
 
@@ -11862,7 +11563,7 @@ class SymbolicSpace(Space):
             return self.subspace
         # Phase 5 of the SubSpace.what STM refactor: when use_stack_router
         # is True, dispatch through the new stack-rewrite path instead of
-        # the SyntacticLayer cursor + Chart.compose / wordSpace.forwardSymbols
+        # the SyntacticLayer cursor + Chart.compose / wordSubSpace.forwardSymbols
         # path. This also implicitly bypasses WordSpace.current_rules and
         # ConceptualSpace.stm in the live forward (Phase 6 "bypass" leg
         # of the plan). The legacy path is preserved when the flag is
@@ -11871,10 +11572,10 @@ class SymbolicSpace(Space):
             return self._stack_route_forward(CS_subspaceForSS)
         quantize = getattr(self, "quantize", True)
         is_last = getattr(self, "is_last", False)
-        wordSpace = getattr(self, "wordSpace", None)
+        wordSubSpace = getattr(self, "wordSubSpace", None)
         if getattr(CS_subspaceForSS, '_rule_dispatch', False):
             return self._forward_with_rule_dispatch(
-                CS_subspaceForSS, wordSpace=wordSpace, quantize=quantize)
+                CS_subspaceForSS, wordSubSpace=wordSubSpace, quantize=quantize)
         vspace = CS_subspaceForSS
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
@@ -11894,15 +11595,15 @@ class SymbolicSpace(Space):
         else:
             # ---- Eager cursor path: SymbolicSpace is the single site
             # that drives S-tier op application. The per-tier rule list
-            # comes straight from ``wordSpace.current_rules.get('S')``
+            # comes straight from ``wordSubSpace.current_rules.get('S')``
             # (the live ``list[list[int]]`` populated by
             # ``WordSpace.compose``). The legacy Phase-2B tensor-driven
             # op_sel branch was retired with the SentenceState carrier
             # (op_sel was never populated in production); the cursor
             # loop below is the one and only S-executor.
-            chart_rules_S = (wordSpace.current_rules.get('S')
-                             if wordSpace is not None
-                             and wordSpace.current_rules is not None
+            chart_rules_S = (wordSubSpace.current_rules.get('S')
+                             if wordSubSpace is not None
+                             and wordSubSpace.current_rules is not None
                              else None)
             row_zero = self.syntacticLayer._row_zero_rules(
                 chart_rules_S)
@@ -11924,8 +11625,8 @@ class SymbolicSpace(Space):
                 act,
                 torch.zeros_like(act))
 
-        if self.accumulateTruth > 0 and wordSpace is not None:
-            truth_layer = getattr(wordSpace, 'truth_layer', None)
+        if self.accumulateTruth > 0 and wordSubSpace is not None:
+            truth_layer = getattr(wordSubSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
                 BK, N, D = act.shape
@@ -11954,8 +11655,8 @@ class SymbolicSpace(Space):
         if self.sortNetwork is not None:
             act = self.sortNetwork.forward(act)
 
-        if wordSpace is not None:
-            act = wordSpace.forwardSymbols(act, self.subspace)
+        if wordSubSpace is not None:
+            act = wordSubSpace.forwardSymbols(act, self.subspace)
 
         # Resolve [pos, neg] bivector to 1-D per-symbol activation
         # before the codebook sees it. resolve() writes
@@ -12112,14 +11813,14 @@ class SymbolicSpace(Space):
         # Symmetric to the forward branch: when use_stack_router is True
         # the reverse runs through LanguageLayer.reverse(...) via
         # _stack_route_reverse, bypassing the cursor-based SyntacticLayer
-        # .reverse loop + wordSpace.reverseSymbols + WordSpace
+        # .reverse loop + wordSubSpace.reverseSymbols + WordSpace
         # .generate_rules path. Phase 7 of the SubSpace.what STM
         # refactor.
         if getattr(self, "use_stack_router", False):
             return self._stack_route_reverse(subspace)
         self.subspace.copy_context(subspace)
         vspace = subspace
-        wordSpace = getattr(self, "wordSpace", None)
+        wordSubSpace = getattr(self, "wordSubSpace", None)
         vspace = self.reverseBegin(vspace)
         act = vspace.materialize()                        # [B, N, symbol_dim]
         if isinstance(self.subspace.what, ProjectionBasis):
@@ -12128,8 +11829,8 @@ class SymbolicSpace(Space):
             # with the standard reverse (sigma / sortNetwork /
             # forwardEnd).
             act = self.subspace.what.reverse(act)
-        if wordSpace is not None:
-            act = wordSpace.reverseSymbols(act, self.subspace)
+        if wordSubSpace is not None:
+            act = wordSubSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
         # SyntacticLayer dispatches whatever the grammar XML specifies
@@ -12143,9 +11844,9 @@ class SymbolicSpace(Space):
             pass
         else:
             gen_rules_S = (
-                wordSpace.generate_rules.get('S')
-                if (wordSpace is not None
-                    and getattr(wordSpace, 'generate_rules', None))
+                wordSubSpace.generate_rules.get('S')
+                if (wordSubSpace is not None
+                    and getattr(wordSubSpace, 'generate_rules', None))
                 else None)
             row_zero = self.syntacticLayer._row_zero_rules(gen_rules_S)
             n_steps = max(1, len(row_zero))
@@ -12173,7 +11874,7 @@ class SymbolicSpace(Space):
         result.normalize("concepts", target="where")
         return result
 
-    def evaluate_truth(self, vspace, wordSpace=None):
+    def evaluate_truth(self, vspace, wordSubSpace=None):
         """Top-level: evaluate truth of the full stack -> scalar.
 
         Post-2026-05-01 refactor: routes through the standalone

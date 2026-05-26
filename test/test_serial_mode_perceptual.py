@@ -116,7 +116,7 @@ def test_warm_path_skips_slot_forward_embed():
     class _FakeSubspace:
         def __init__(self, t):
             self._t = t
-            self.wordSpace = None
+            self.wordSubSpace = None
             self.errors = Error()
             self.serial_cache = {}
             # Microbatch-AR routing attrs propagated by copy_context.
