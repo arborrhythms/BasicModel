@@ -1,5 +1,5 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:a312051865068228c1c2dd1059b5fce71700c249d2d06350d3bd62fd40b9d562
-size 145
+data/*.ckpt filter=lfs diff=lfs merge=lfs -text
+data/*.kv filter=lfs diff=lfs merge=lfs -text
 data/mnist_train.csv filter=lfs diff=lfs merge=lfs -text
+"data/mnist_train 2.csv" filter=lfs diff=lfs merge=lfs -text
 data/mnist_train[[:space:]]2.csv filter=lfs diff=lfs merge=lfs -text
