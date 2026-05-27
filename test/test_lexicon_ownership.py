@@ -49,6 +49,35 @@ class TestLexiconOwnership(unittest.TestCase):
         # lives here.
         self.assertNotIsInstance(m.inputSpace.vocabulary, Embedding)
 
+    def test_symbolic_space_has_paired_row_api(self):
+        """Stage 1.B contract (2026-05-27): SS exposes
+        ``insert_paired_word`` for creating orth + semantic paired rows
+        on SS.codebook (``self.subspace.what``) when a new PS-side
+        lexicon entry is inserted. PS still owns the Embedding; SS
+        owns the paired-row mirror.
+        """
+        m = _build_text_model()
+        ss = m.symbolicSpace
+        self.assertTrue(hasattr(ss, 'insert_paired_word'),
+                        "SymbolicSpace.insert_paired_word must exist "
+                        "after Stage 1.B (paired-row contract).")
+        self.assertTrue(callable(ss.insert_paired_word))
+
+    def test_embedding_symbolic_back_ref_wired(self):
+        """The PS-side Embedding carries ``symbolicSpace_ref`` so its
+        ``insert`` / ``stage_oov`` paths can trigger
+        ``ss.insert_paired_word`` on every word added to the lexicon.
+        Wired in BasicModel after both spaces are built.
+        """
+        m = _build_text_model()
+        emb = m.perceptualSpace.vocabulary
+        self.assertIsInstance(emb, Embedding)
+        peer = getattr(emb, 'symbolicSpace_ref', None)
+        self.assertIsNotNone(
+            peer,
+            "Embedding.symbolicSpace_ref must be wired so the PS-side "
+            "OOV insert path triggers SS-side paired-row insertion.")
+
     def test_get_embedding_returns_perceptual(self):
         m = _build_text_model()
         emb = m._get_embedding()

@@ -5,6 +5,9 @@
        PiLayer stays a square isomorphism inside conceptual content space. -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -15,20 +18,23 @@
     </training>
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
+       the same flat slab. CS terminal projects to nOutputDim=2; align
+       IS/PS to 8*2=16 to preserve the bottleneck shape end-to-end. -->
   <InputSpace>
     <nVectors>3</nVectors>
-    <nDim>10</nDim>
+    <nDim>2</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
+    <nOutputDim>2</nOutputDim>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
+    <nInputDim>2</nInputDim>
     <nVectors>1000</nVectors>
-    <nDim>10</nDim>
+    <nDim>2</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
+    <nOutputDim>2</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
@@ -36,9 +42,9 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
+    <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <invertible>true</invertible>

@@ -5,6 +5,9 @@
        scalar replacement for the retired bivector smoke config. -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <!-- Pure forward-only smoke: zero out truth weights and learning so
          the scalar loopback path is the only thing exercised. -->
     <truthBiasScale>0.0</truthBiasScale>

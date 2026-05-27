@@ -7,6 +7,9 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <weightsPath>stream_smoke.ckpt</weightsPath>
     <data>
       <dataset>text</dataset>

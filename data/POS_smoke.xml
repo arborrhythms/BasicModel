@@ -10,6 +10,9 @@
        the chart picked. -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
 
     <writeSyntax>true</writeSyntax>
     <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>

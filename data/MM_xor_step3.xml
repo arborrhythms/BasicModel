@@ -3,6 +3,9 @@
   <!-- Step 3: Step 2 + grammar -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <ergodic>true</ergodic>
     <nWhere>2</nWhere>
 
@@ -51,10 +54,11 @@
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS. -->
   <ConceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>

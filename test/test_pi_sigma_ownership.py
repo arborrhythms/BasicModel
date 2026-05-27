@@ -1,23 +1,18 @@
 """Tests for Pi / Sigma layer ownership.
 
-Post-2026-05-13 sigma/pi rebalance (doc/Spaces.md §"Sigma / Pi
-ownership"): SigmaLayer / PiLayer instances are owned ONLY by
-PerceptualSpace and ConceptualSpace, but the ownership SWAPPED vs the
-earlier model -- PS now owns the Pi folds, CS owns the Sigma fold:
+Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
+2026-05-26-two-loop-pi-sigma-substrate.md):
 
-    PerceptualSpace        -- ``pi_input`` (input_dim -> percept_dim)
-                              and ``pi_concept`` (concept_dim ->
-                              percept_dim). Ramsified per conceptualOrder
-                              into ``nn.ModuleList``s, so element [0]
-                              is the order-0 PiLayer.
-    ConceptualSpace.sigma_percept
-                           -- SigmaLayer (percept_dim -> concept_dim),
-                              the canonical C-tier fold. ``invertible``
-                              configs round-trip via
-                              ``_sigma_percept_reverse`` /
-                              ``sigma_percept.reverse``. (The old
-                              ``ConceptualSpace.pi`` was removed by the
-                              rebalance.)
+    PerceptualSpace        -- ``pi`` (PiLayer) and ``sigma``
+                              (SigmaLayer); both percept_dim ->
+                              percept_dim. forward composes them as
+                              ``pi(x) + sigma(x)`` on the SAME input.
+                              (Stage 1.A.)
+    ConceptualSpace        -- NO ``sigma_percept`` attribute. Stage 1.C
+                              retired the atomic forward C-tier fold;
+                              CS.forward is STM bookkeeping (see
+                              test_cs_stm_bookkeeping.py for the
+                              positive-contract gates).
     SymbolicSpace          -- NO sigma / pi attribute. With
                               ``concept_dim == symbol_dim`` the C->S
                               transform is a dimensional pass-through;
@@ -27,16 +22,21 @@ earlier model -- PS now owns the Pi folds, CS owns the Sigma fold:
                               path uses an ``InvertibleLinearLayer``
                               wrapped with ``atanh -> linear -> tanh``.
 
-ConceptualSpace.sigma_percept round-trips through its own inverse.
-
 See:
 - basicmodel/doc/Spaces.md (ownership tables)
+- basicmodel/doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md
 """
 
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+
+_BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
+_PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _BIN not in sys.path:
+    sys.path.insert(0, _BIN)
 
 import unittest
 import warnings
@@ -48,21 +48,25 @@ import Language
 from Layers import PiLayer, SigmaLayer, InvertibleLinearLayer
 from util import init_config
 
-_DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
+_DATA_DIR = os.path.join(_PROJECT, 'data')
+# Switched from MentalModel.xml to MM_xor_loopback.xml because the
+# former is broken on ``main`` (WordSubSpace.__init__ reads
+# ``self.subspace`` which doesn't exist for that config path).
+# MM_xor_loopback.xml exercises the same PS/CS/SS ownership rules
+# and is what ``test_perceptual_loopback.py`` already uses cleanly.
+_CONFIG_PATH = os.path.join(_DATA_DIR, "MM_xor_loopback.xml")
+_DEFAULTS_PATH = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _make_plain_model(config='MentalModel.xml'):
+def _make_plain_model():
     """Build a plain-mode model so the ownership asserts hit the
     PiLayer / SigmaLayer instances."""
-    init_config(
-        path=os.path.join(_DATA_DIR, config),
-        defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
-    )
+    init_config(path=_CONFIG_PATH, defaults_path=_DEFAULTS_PATH)
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        model, _ = Models.BasicModel.from_config(
-            os.path.join(_DATA_DIR, config))
+        model, _ = Models.BasicModel.from_config(_CONFIG_PATH)
+    Models.TheData.load("xor")
     model.eval()
     return model
 
@@ -73,19 +77,23 @@ class TestOwnership(unittest.TestCase):
     SigmaLayer / PiLayer instances."""
 
     def test_perceptual_pi_folds(self):
-        # Post-rebalance: PS owns pi_input / pi_concept (PiLayers),
-        # ramsified per conceptualOrder into ModuleLists.
+        # Post-Stage-1.A: PS owns a single ``pi`` (PiLayer) and a
+        # single ``sigma`` (SigmaLayer); the per-order Ramsified
+        # ``pi_input`` / ``pi_concept`` ModuleLists are retired.
         model = _make_plain_model()
         ps = model.perceptualSpace
-        self.assertIsInstance(ps.pi_input[0], PiLayer)
-        self.assertIsInstance(ps.pi_concept[0], PiLayer)
+        self.assertIsInstance(ps.pi, PiLayer)
+        self.assertIsInstance(ps.sigma, SigmaLayer)
 
-    def test_conceptual_sigma_percept(self):
-        # Post-rebalance: CS owns sigma_percept (SigmaLayer), the
-        # canonical percept_dim -> concept_dim fold (was ``pi``).
+    def test_conceptual_no_sigma_percept(self):
+        # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
+        # forward C-tier fold is retired; CS.forward is STM bookkeeping
+        # (see test_cs_stm_bookkeeping.py for the positive contract).
         model = _make_plain_model()
-        self.assertIsInstance(model.conceptualSpace.sigma_percept,
-                              SigmaLayer)
+        self.assertFalse(
+            hasattr(model.conceptualSpace, 'sigma_percept'),
+            "ConceptualSpace.sigma_percept must be retired by "
+            "Stage 1.C.")
 
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
@@ -100,17 +108,27 @@ class TestOwnership(unittest.TestCase):
                          "PiLayer in the P->C->S pipeline.")
 
     def test_conceptual_has_no_sigma(self):
+        # Post-Stage-1.C: CS owns NEITHER ``sigma`` NOR ``sigma_percept``;
+        # the atomic forward C-tier fold operator is retired entirely.
         model = _make_plain_model()
         self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
-                         "ConceptualSpace owns ``sigma_percept`` (not a "
-                         "bare ``sigma``) post-2026-05-13 rebalance.")
+                         "ConceptualSpace must NOT own a bare ``sigma`` "
+                         "attribute; the atomic C-tier fold is retired "
+                         "by Stage 1.C.")
 
-    def test_perceptual_has_no_pi(self):
+    def test_perceptual_has_pi_and_sigma(self):
+        # Post-Stage-1.A: PS owns a bare ``pi`` AND a bare ``sigma``
+        # (single-layer instances, not ModuleLists). The legacy
+        # ``pi_input`` / ``pi_concept`` ModuleList interface is
+        # retired -- the grep gate in the refactor task enforces that
+        # they don't reappear in ``bin/Spaces.py``.
         model = _make_plain_model()
-        self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
-                         "PerceptualSpace owns ``pi_input`` / "
-                         "``pi_concept`` (not a bare ``pi``) "
-                         "post-2026-05-13 rebalance.")
+        self.assertTrue(hasattr(model.perceptualSpace, 'pi'),
+                        "PerceptualSpace must own a bare ``pi`` "
+                        "(PiLayer) post-Stage-1.A.")
+        self.assertTrue(hasattr(model.perceptualSpace, 'sigma'),
+                        "PerceptualSpace must own a bare ``sigma`` "
+                        "(SigmaLayer) post-Stage-1.A.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()
@@ -152,40 +170,56 @@ class TestForwardReverseAliases(unittest.TestCase):
         self.assertFalse(hasattr(ss, '_sigma_reverse'),
                          "SymbolicSpace._sigma_reverse removed with sigma")
 
-    def test_conceptual_has_sigma_percept_forward(self):
+    def test_conceptual_no_sigma_percept_forward(self):
+        # Post-Stage-1.C: the ``sigma_percept`` SigmaLayer (and the
+        # ``_sigma_percept_reverse`` two-pass ergodic helper) are
+        # retired with the atomic C-tier fold. CS.forward is now STM
+        # bookkeeping (see test_cs_stm_bookkeeping.py).
         model = _make_plain_model()
         cs = model.conceptualSpace
-        self.assertTrue(callable(cs.sigma_percept.forward))
-        self.assertTrue(callable(cs._sigma_percept_reverse))
+        self.assertFalse(hasattr(cs, 'sigma_percept'),
+                         "CS.sigma_percept retired by Stage 1.C.")
+        self.assertFalse(hasattr(cs, '_sigma_percept_reverse'),
+                         "CS._sigma_percept_reverse retired with "
+                         "``sigma_percept``.")
 
 
-class TestPerLayerRoundTrip(unittest.TestCase):
-    """ConceptualSpace.sigma_percept round-trips through its own inverse."""
+class TestConceptualSpaceSTMBookkeeping(unittest.TestCase):
+    """Stage-1.C contract gate (light mirror of
+    test_cs_stm_bookkeeping.py): CS.forward mutates STM rather than
+    applying a parameterised fold."""
 
-    def test_conceptual_sigma_percept_round_trip(self):
-        """sigma.reverse(sigma.forward(p)) ~= p on the C-tier fold (P->C).
-
-        ``sigma_percept`` is generally dimension-reducing
-        (``nInput=nDim+nWhere+nWhen``, ``nOutput=nDim``) — the
-        positional (where/when) suffix is dropped on forward and zeroed
-        on reverse. Verify invertibility on the content prefix only;
-        the suffix is non-invertible by construction. Inputs are
-        narrowly clamped so the linear operator stays inside the tanh
-        wrap's linear region."""
+    def test_cs_forward_uses_stm_not_fold(self):
+        """A single CS.forward(PS_sub) call must increase the STM
+        depth (per the bookkeeping contract). The retired fold layer
+        ``sigma_percept`` is gone so there is no atomic operator the
+        forward could dispatch on."""
         model = _make_plain_model()
-        sp = model.conceptualSpace.sigma_percept
-        N = 4
-        n_in, n_out = int(sp.nInput), int(sp.nOutput)
-        x = torch.randn(1, N, n_in).clamp(-0.3, 0.3)
-        # Zero the positional suffix so the round-trip is meaningful
-        # over the dims that ``sigma_percept`` actually encodes.
-        if n_out < n_in:
-            x[..., n_out:] = 0.0
-        with torch.no_grad():
-            x_back = sp.reverse(sp.forward(x))
-        # Only the first ``n_out`` dims survive the bottleneck.
-        torch.testing.assert_close(
-            x[..., :n_out], x_back[..., :n_out], atol=1e-3, rtol=1e-2)
+        cs = model.conceptualSpace
+        # Empty the STM at the start of the test so the depth delta
+        # is unambiguous.
+        cs.stm.ensure_batch(1)
+        cs.stm.clear()
+        # Build a small concrete PS subspace by running an IS forward.
+        loader = model.inputSpace.data.data_loader(
+            split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        x_input = model.inputSpace.prepInput(inp_items)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            with torch.no_grad():
+                in_sub = model.inputSpace.forward(x_input)
+                ps_sub = model.perceptualSpace.forward(in_sub)
+                # Ensure STM is correctly sized for the batch.
+                cs.stm.ensure_batch(
+                    max(1, int(ps_sub.materialize().shape[0])))
+                cs.stm.clear()
+                depth_before = cs.stm.size(0)
+                cs.forward(ps_sub)
+                depth_after = cs.stm.size(0)
+        self.assertGreater(
+            depth_after, depth_before,
+            "CS.forward must push to STM (Stage 1.C bookkeeping).")
 
 
 if __name__ == "__main__":

@@ -3187,13 +3187,30 @@ class Embedding(Basis):
             self.pretrain.index_to_key = self.wv.index_to_key
             self.pretrain.key_to_index = self.wv.key_to_index
             self._zero_optimizer_moments_for_rows(start, end)
+            # Stage 1.B paired-row contract (2026-05-27): bulk OOV
+            # insert through stage_oov triggers paired-row insertion on
+            # the SS-side peer for every accepted key. Falls back to
+            # the legacy mark_word_atom tag if the peer pre-dates the
+            # insert_paired_word API.
             s_peer = getattr(self, 'symbolicSpace_ref', None)
-            if s_peer is not None and hasattr(s_peer, 'mark_word_atom'):
-                for i in range(n):
-                    try:
-                        s_peer.mark_word_atom(start + i)
-                    except Exception:
-                        pass
+            if s_peer is not None:
+                has_paired = hasattr(s_peer, 'insert_paired_word')
+                has_mark = hasattr(s_peer, 'mark_word_atom')
+                if has_paired:
+                    for i, key in enumerate(accepted):
+                        row = start + i
+                        try:
+                            ps_vec = self.wv._vectors.data[row].detach()
+                            s_peer.insert_paired_word(key, ps_vec)
+                        except Exception:
+                            # Best-effort; never block the bulk insert.
+                            pass
+                elif has_mark:
+                    for i in range(n):
+                        try:
+                            s_peer.mark_word_atom(start + i)
+                        except Exception:
+                            pass
         if overflowed:
             self._oov_fallback_count += len(overflowed)
             cap_sample = int(self._oov_fallback_sample_cap)
@@ -3310,20 +3327,35 @@ class Embedding(Basis):
         self.pretrain.index_to_key = self.wv.index_to_key
         self.pretrain.key_to_index = self.wv.key_to_index
 
-        # Explicit meronomy: tell the SymbolicSpace peer (when wired)
-        # that this new lexicon row is an instance of "words" so the
-        # codebook quantizer doesn't treat it as a fresh root atom.
-        # Wiring is via ``symbolicSpace_ref`` on this Embedding's owning
-        # space; unset in standalone construction (tests), in which case
-        # the call is a no-op.
+        # Stage 1.B paired-row contract (2026-05-27): hand the freshly-
+        # inserted PS-side per-word vector to the SymbolicSpace peer
+        # (when wired) so SS.codebook gains an orth + semantic paired
+        # row pointing at the same word. Wiring is via
+        # ``symbolicSpace_ref`` on this Embedding (set in Models.py
+        # after both spaces are built); unset in standalone
+        # construction (tests) -- in which case the call is a no-op.
+        # Fall back to the legacy ``mark_word_atom`` path if the SS peer
+        # is too old to know about ``insert_paired_word``.
         s_peer = getattr(self, 'symbolicSpace_ref', None)
-        if s_peer is not None and hasattr(s_peer, 'mark_word_atom'):
-            try:
-                s_peer.mark_word_atom(idx)
-            except Exception:
-                # Tagging the meronomy is best-effort; never block an
-                # insert because the symbolic peer isn't ready.
-                pass
+        if s_peer is not None:
+            if hasattr(s_peer, 'insert_paired_word'):
+                try:
+                    # Per the flat-slab invariant, this PS vector is
+                    # already CS-space-dimensioned; SS.codebook's orth
+                    # row is a direct copy (no pi/sigma transform at
+                    # insert time).
+                    s_peer.insert_paired_word(word, new_vec.squeeze(0))
+                except Exception:
+                    # Paired-row insertion is best-effort; never block
+                    # the PS-side insert because the symbolic peer
+                    # codebook is exhausted (caller can pre-size
+                    # SS.nVectors to ~2*lexicon_cap to avoid this).
+                    pass
+            elif hasattr(s_peer, 'mark_word_atom'):
+                try:
+                    s_peer.mark_word_atom(idx)
+                except Exception:
+                    pass
 
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
@@ -7159,22 +7191,29 @@ class InputSpace(Space):
         """
         return None, None
 class PerceptualSpace(Space):
-    """Transforms raw input vectors into percepts via two PiLayer folds.
+    """Transforms raw input vectors into percepts via parallel pi+sigma folds.
 
     In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Owns two PiLayer instances (log-space multiplicative layers), both
-    firing unconditionally per the 2026-05-13 sigma/pi rebalance
-    (``doc/Spaces.md §"Sigma / Pi ownership"``):
+    Owns one ``PiLayer`` (``self.pi``) and one ``SigmaLayer``
+    (``self.sigma``) (Stage 1.A substrate refactor, doc/plans/
+    2026-05-26-two-loop-pi-sigma-substrate.md). Both are
+    ``percept_dim → percept_dim``.
 
-        * ``self.pi_input``   (input_dim   → percept_dim) — IS-side fold.
-        * ``self.pi_concept`` (concept_dim → percept_dim) — C-feedback fold.
+        * ``self.pi``    -- log-space multiplicative AND fold.
+        * ``self.sigma`` -- additive (atanh→linear→tanh) OR fold.
 
-    Their outputs are **summed** (``tanh(pi_input + pi_concept)``)
-    inside ``forward`` from the explicit ``IS_subspace`` /
-    ``CS_subspaceForPS`` args supplied by the recurrent cell. The
-    composition at the surface of ConceptualSpace is therefore::
+    The two are summed inside ``forward`` from the SAME materialized
+    input ``x``::
 
-        C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
+        P = pi(x) + sigma(x)
+
+    No outer ``tanh`` wrap -- pi / sigma each apply their own internal
+    nonlinearity (each returns a tanh-bounded contribution).
+
+    The earlier two-input ``tanh(pi_input(IS) + pi_concept(C_prev))``
+    contract (with CS-feedback entering PS directly) is retired: the
+    CS-feedback path no longer enters PS this way (it re-enters via
+    the chart / signal-router dispatch over STM in later stages).
 
     Optionally followed by self-attention and VQ codebook quantization.
 
@@ -7349,25 +7388,22 @@ class PerceptualSpace(Space):
         self._recovered_input_thunk = None
         self._embedded_input = None
 
-        # Phase C (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
-        # ownership"): PerceptualSpace owns two PiLayer instances:
+        # Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
+        # sigma-substrate.md): PerceptualSpace owns a single PiLayer
+        # (``self.pi``) and a single SigmaLayer (``self.sigma``), both
+        # shaped ``percept_dim → percept_dim``. The legacy per-order
+        # Ramsified ``pi_input`` / ``pi_concept`` ModuleLists are
+        # retired; the ``conceptualOrder`` knob's new role is driving
+        # the PARALLEL-mode forward iteration count (the same
+        # ``self.pi`` / ``self.sigma`` are called T times with
+        # different inputs), not selecting per-order weights.
         #
-        #   * ``self.pi_input``   (input_dim → percept_dim) — folds the
-        #     upstream InputSpace argument.
-        #   * ``self.pi_concept`` (concept_dim → percept_dim) — folds
-        #     the C-tier feedback ``C_prev`` from the cross-forward
-        #     subsymbolic loop.
+        # ``forward`` composes them on the SAME materialized input::
         #
-        # Both fire unconditionally each forward and their outputs are
-        # **summed** inside ``forward`` from the explicit recurrent-cell
-        # args (``IS_subspace`` / ``CS_subspaceForPS``). The composition
-        # at the surface of CS is therefore:
+        #     P = pi(x) + sigma(x)
         #
-        #     C = sigma_percept( pi_input(IS) + pi_concept(C_prev) )
-        #
-        # The earlier ``self.sigma`` at concept_dim (which served the
-        # legacy borrowed-substrate ``LiftLayer.forward``) is retired
-        # by Phase A — LiftLayer is now a pure rule-id annotator.
+        # No outer ``tanh`` wrap — each layer applies its own internal
+        # nonlinearity and returns a tanh-bounded contribution.
         #
         # Dim choice: ``percept_dim`` is the per-slot dim
         # PerceptualSpace operates on INTERNALLY — i.e. the post-
@@ -7376,16 +7412,9 @@ class PerceptualSpace(Space):
         # ``nInputDim != nOutputDim`` slot-redistribution at
         # forwardEnd is preserved (the codebook + forwardEnd reshape
         # together remap the per-slot output dim and grow/shrink slot
-        # count by the same factor). ``pi_input`` is therefore square
-        # at ``nInputDim → nInputDim``; ``pi_concept`` is
-        # ``concept_dim → nInputDim`` (potentially non-square when the
-        # C-tier handoff width differs from the percept-tier width).
+        # count by the same factor). Both ``pi`` and ``sigma`` are
+        # therefore square at ``nInputDim → nInputDim``.
         percept_dim = int(self.subspace.getEncodedInputSize())
-        try:
-            nConceptDim = int(
-                TheXMLConfig.space("ConceptualSpace", "nDim"))
-        except KeyError:
-            nConceptDim = outputShape[1]
         # Subsymbolic-loop folds honour the ``architecture.monotonic``
         # knob (same source as BasicModel.monotonic). Monotone (W>=0)
         # is order-preserving, which the parthood predicate
@@ -7393,42 +7422,25 @@ class PerceptualSpace(Space):
         # through the PS<->CS loop. Default False -> unchanged behavior.
         _mono = bool(TheXMLConfig.get("architecture.monotonic",
                                       default=False))
-        # Ramsification: per-order subsymbolic folds. One ``pi_input`` /
-        # ``pi_concept`` per conceptualOrder so order k uses its own
-        # weights (sigma_percept / the symbolic codebook are already
-        # per-order via the conceptualSpaces/symbolicSpaces ModuleLists).
-        # The recurrent cell selects the order via
-        # ``self.subspace.wordSubSpace.recur_pass`` (eager fallback:
-        # ``_recurrent_pass_idx`` when no wordSubSpace is wired).
-        # conceptualOrder<=1 -> length-1 lists -> bit-identical to the
-        # pre-ramsification single-fold behavior.
-        _T = max(1, int(TheXMLConfig.get(
-            "architecture.conceptualOrder", default=1)))
-        self.pi_input = nn.ModuleList([
-            PiLayer(
-                percept_dim, percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-            ) for _ in range(_T)
-        ])
-        self.pi_concept = nn.ModuleList([
-            PiLayer(
-                int(nConceptDim), percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=False, nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-            ) for _ in range(_T)
-        ])
+        self.pi = PiLayer(
+            percept_dim, percept_dim,
+            naive=naive, ergodic=ergodic,
+            invertible=bool(invertible), nonlinear=nonlinear,
+            stable=True, monotonic=_mono,
+        )
+        self.sigma = SigmaLayer(
+            percept_dim, percept_dim,
+            naive=naive, ergodic=ergodic,
+            invertible=bool(invertible), nonlinear=nonlinear,
+            stable=True, monotonic=_mono,
+        )
 
         input = percept_dim
         self.attention = AttentionLayer(input, input, type="transformer")
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
-        for layer in self.pi_input:
-            self.params += layer.getParameters()
-        for layer in self.pi_concept:
-            self.params += layer.getParameters()
+        self.params += self.pi.getParameters()
+        self.params += self.sigma.getParameters()
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -8788,35 +8800,30 @@ class PerceptualSpace(Space):
             flat_subtoken_idx, flat_word_seg, per_word_first,
             per_word_b_out, per_word_slot_out, word_id)
 
-    def forward(self, IS_subspace, CS_subspaceForPS=None):
-        """Perception: map input + C→P feedback to percepts (subsymbolic loop).
+    def forward(self, x_subspace):
+        """Perception: map input to percepts via ``pi(x) + sigma(x)``.
 
-        Two explicit inputs (the ``_sourced_input`` fold, post-2026-05
-        reconciliation): ``IS_subspace`` is the upstream InputSpace
-        subspace; ``CS_subspaceForPS`` is the prior pass's ConceptualSpace
-        output already lifted to ``concept_dim`` (the C-tier
-        ProjectionBasis reverse-lift now lives on ConceptualSpace, exposed
-        as ``ConceptualSpace._subspaceForPS``). ``pi_input`` folds the
-        primary ``input_dim → percept_dim``; ``pi_concept`` folds the
-        feedback ``concept_dim → percept_dim``; the two are combined as
-        ``tanh(pi_input + pi_concept)``. ``CS_subspaceForPS=None`` / empty
-        (sentence start, standalone unit tests) degrades cleanly to
-        ``pi_input(primary)`` alone.
+        Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
+        sigma-substrate.md): single positional arg ``x_subspace``. The
+        body composes ``self.pi(x) + self.sigma(x)`` on the same
+        materialized input -- two folds of the SAME input, summed (no
+        outer ``tanh`` wrap; each layer applies its own internal
+        nonlinearity).
 
-        The recurrent-pass index (``pi_input[oi]`` ModuleList selector)
-        is read off ``self.subspace.wordSubSpace.recur_pass`` (Python int,
-        Dynamo-specialized). Standalone / pre-soft_reset callers fall
-        through to the persistent ``self._recurrent_pass_idx``.
+        The CS-feedback ``CS_subspaceForPS`` argument is retired by
+        this refactor; CS feedback no longer enters PS directly (it
+        re-enters via the chart / signal-router dispatch over STM in
+        later stages).
 
         Handles three paths: warm-serial AR (process only new last slot,
         splice into the rolled cache), embedding (text -> lexicon -> percept),
         and numeric (linear -> attention -> VQ). Writes the resulting
         percept tensor to ``self.subspace`` and returns the live subspace.
         """
-        if IS_subspace.is_empty():
-            return IS_subspace
-        self.subspace.copy_context(IS_subspace)
-        vspace = IS_subspace
+        if x_subspace.is_empty():
+            return x_subspace
+        self.subspace.copy_context(x_subspace)
+        vspace = x_subspace
         quantize = getattr(self, "quantize", True)
 
         # Serial-mode warm path: upstream has pre-embedded AR buffer, cold
@@ -8831,7 +8838,10 @@ class PerceptualSpace(Space):
         # ``object.__setattr__`` keeps it out of nn.Module's child
         # registration); if it's missing (standalone PerceptualSpace
         # .forward, pre-soft_reset tests), fall back to the persistent
-        # ``self._recurrent_pass_idx`` attribute.
+        # ``self._recurrent_pass_idx`` attribute. Stage 1.A refactor: the
+        # per-order ModuleList selection is gone, but the warm-path
+        # ``_rp == 0`` gate (an AR-streaming optimisation across forward
+        # calls, distinct from in-forward recurrent passes) is preserved.
         ws = getattr(self, 'wordSubSpace', None)
         _rp = (int(ws.recur_pass) if ws is not None
                else self._recurrent_pass_idx)
@@ -8884,33 +8894,16 @@ class PerceptualSpace(Space):
                     f"got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        # Subsymbolic loop combine (folded ``_sourced_input``): primary
-        # input through ``pi_input`` (input_dim → percept_dim); the
-        # explicit C→P feedback (already concept_dim, lifted on the
-        # ConceptualSpace side) through ``pi_concept`` (concept_dim →
-        # percept_dim); combined as ``tanh(pi_input + pi_concept)``.
-        # ``pi_concept.nInput`` shape-gates non-bivector C output so it
-        # degrades to ``pi_input(primary)`` alone (matches the old
-        # cold-start / non-bivector fallback).
-        # Per-order fold selection (ramsification): the recurrent cell
-        # sets ``self.subspace.wordSubSpace.recur_pass`` (eager fallback:
-        # ``_recurrent_pass_idx`` when no wordSubSpace is wired) to the
-        # order t each pass; clamp to the available range so standalone
-        # callers (idx 0) and any idx >= conceptualOrder are safe.
-        _oi = min(max(_rp, 0),
-                  len(self.pi_input) - 1)
-        pi_input_k = self.pi_input[_oi]
-        pi_concept_k = self.pi_concept[_oi]
+        # Stage 1.A substrate refactor: compose ``pi(x) + sigma(x)`` on
+        # the same materialized input. No outer ``tanh`` -- each layer
+        # applies its own internal nonlinearity. The legacy two-input
+        # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating
+        # (non-bivector C-feedback degraded to pi_input-alone) is no
+        # longer needed: there is no C-feedback path entering PS at this
+        # level (CS feedback re-enters via the chart / signal-router
+        # over STM in later stages).
         primary = self.forwardBegin(vspace, returnVectors=True)
-        x_input = pi_input_k.forward(primary)
-        x = x_input
-        if CS_subspaceForPS is not None and not CS_subspaceForPS.is_empty():
-            c_event = CS_subspaceForPS.materialize()
-            if (c_event is not None and c_event.dim() == 3
-                    and c_event.shape[-1] == pi_concept_k.nInput):
-                x_concept = pi_concept_k.forward(c_event)
-                if x_concept.shape == x_input.shape:
-                    x = torch.tanh(x_input + x_concept)
+        x = self.pi.forward(primary) + self.sigma.forward(primary)
         # Attention is currently unused in PerceptualSpace; leaving the
         # AttentionLayer attribute intact for backward compat but skipping
         # the call so the codebook lookup can slide (see below) without
@@ -9034,12 +9027,21 @@ class PerceptualSpace(Space):
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.codebook:
             y = object_basis.reverse(y)
-        if self.invertible and hasattr(self, 'pi_input'):
-            _oi = min(max(getattr(self, '_recurrent_pass_idx', 0), 0),
-                      len(self.pi_input) - 1)
-            pi_input_k = self.pi_input[_oi]
-            if getattr(pi_input_k, 'invertible', False):
-                y = pi_input_k.reverse(y)
+        # Stage 1.A substrate refactor: reverse the single-layer ``pi``
+        # fold (no per-order ModuleList). ``sigma.reverse`` is NOT
+        # applied on the text path: the forward composed ``pi + sigma``
+        # additively, and the codebook snap collapses the sum to a
+        # single prototype slot whose membership is recovered via
+        # ``object_basis.reverse`` above. Mirroring the legacy
+        # text-mode behaviour (which only inverted the primary fold)
+        # keeps this path's recovered-input contract stable.
+        # TODO (revisit in Stage 1.B or later): if downstream numerical
+        # reconstruction needs a paired pi/sigma inverse (e.g. for
+        # masked-LM IR loss tightness), define the inversion contract
+        # explicitly. The current decision parks the asymmetry.
+        if self.invertible and hasattr(self, 'pi'):
+            if getattr(self.pi, 'invertible', False):
+                y = self.pi.reverse(y)
         self.subspace.batch = y.shape[0]
         raw = (object_basis.reverse_raw(y)
                if hasattr(object_basis, 'reverse_raw') else y)
@@ -9356,23 +9358,25 @@ class ModalSpace(Space):
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
 class ConceptualSpace(Space):
-    """Transforms percepts into concepts via ``sigma_percept`` (additive fold).
+    """STM bookkeeping (shift / push) + grammatical CPU on the C tier.
 
     In the forward data flow: PerceptualSpace -> **ConceptualSpace** -> SymbolicSpace.
-    Owns the canonical forward C-tier fold ``self.sigma_percept`` — a
-    SigmaLayer mapping ``percept_dim → concept_dim`` (non-square in the
-    general case; square in the bivector regime where the codebook does
-    the dim adaptation inside ``project``). The earlier
-    ``self.pi`` (multiplicative log-domain, square-iso percept_dim →
-    percept_dim) was retired by the 2026-05-13 sigma/pi rebalance —
-    see ``doc/Spaces.md §"Sigma / Pi ownership"``.
 
-    Supports optional self-attention and VQ codebook quantization.
+    Post Stage 1.C of the two-loop pi/sigma substrate refactor
+    (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the atomic
+    forward C-tier fold ``sigma_percept`` is RETIRED. The C tier no
+    longer holds a parameterised percept→concept fold at the
+    substrate level. ``forward(PS_subspace, SS_subspace)`` performs
+    STM bookkeeping only: shift the per-batch idea stack one slot
+    (``STM[0..N-2] = STM[1..N-1]``) and push the materialised PS+SS
+    combination onto the top slot (Miller cap). The signal-router
+    grammar dispatch that consumes STM is Stage 3; until then,
+    downstream consumers (SymbolicSpace.forward and the cross-pass
+    C→P / C→S carriers ``_subspaceForPS`` / ``_subspaceForSS``) see
+    the pushed idea verbatim.
 
-    When ``invertible=True``, uses ``SigmaLayer(invertible=True)`` whose
-    inverse is exact (requires square dim). When ``reversible=True``
-    without invertibility, a separate SigmaLayer is trained for the
-    reverse direction.
+    Supports optional self-attention and VQ codebook quantization on
+    the pushed idea (read-only snap; codebook writes happen at SS).
     """
     name = "Concepts"
     config_section = "ConceptualSpace"
@@ -9426,10 +9430,12 @@ class ConceptualSpace(Space):
         # Optional C-tier prior for chat-loop generation: the inference
         # loop (BasicModel.generate_sentence) lifts the ARMA-predicted
         # next sentence rep through InterSentenceLayer.cast into
-        # concept_dim and stages it here.  When set, it is summed
-        # into the post-sigma_percept activation before the codebook
-        # lookup, then cleared.  None during training -- the attribute
-        # exists so the forward path can read it unconditionally.
+        # concept_dim and stages it here. When set under Stage 1.C, the
+        # prior is added to the pushed-idea activation before the
+        # codebook lookup (the residual injection point is preserved on
+        # the bookkeeping path), then cleared. None during training --
+        # the attribute exists so the forward path can read it
+        # unconditionally.
         self._c_prior = None
         input = self.subspace.getEncodedInputSize()
         if self.codebook_mode == "project":
@@ -9445,59 +9451,26 @@ class ConceptualSpace(Space):
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
-        # Phase B (2026-05-13 rebalance, doc/Spaces.md §"Sigma / Pi
-        # ownership"): the canonical C-tier fold is the additive
-        # SigmaLayer ``self.sigma_percept`` (``percept_dim →
-        # concept_dim``), not the multiplicative PiLayer.  The earlier
-        # ``self.pi`` (square-iso ``percept_dim → percept_dim``) is
-        # retired — pi is no longer the C-tier substrate.  In the
-        # asymmetric two-pass ergodic path, ``self.sigma_percept``
-        # aliases ``self.sigma_percept_1`` (forward direction) and
-        # ``self.sigma_percept_2`` is preserved for the reverse
-        # path via ``self._sigma_percept_reverse``.
+        # Stage 1.C of the two-loop pi/sigma substrate refactor
+        # (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+        # ``self.sigma_percept`` (and the paired ``sigma_percept_1`` /
+        # ``sigma_percept_2`` ergodic variants and the
+        # ``_sigma_percept_reverse`` helper) are RETIRED. The C tier no
+        # longer holds an atomic percept→concept fold operator at the
+        # substrate level. ``ConceptualSpace.forward`` now performs STM
+        # bookkeeping only (shift the per-batch idea stack one slot;
+        # push the new idea onto the Miller-cap top slot). The
+        # signal-router-based grammar dispatch that consumes STM
+        # contents to produce a fold is Stage 3; until then, downstream
+        # consumers (SS.forward and the cross-pass C→P feedback) see
+        # the pushed idea pass-through verbatim.
         #
-        # Force ``nonlinear=True`` regardless of XML config: the
-        # legacy ``PiLayer`` stayed in ``(-1, 1)`` intrinsically via
-        # its ``_to_mult`` / ``_from_mult`` log-domain transform even
-        # with ``nonlinear=False``; ``SigmaLayer`` is linear and only
-        # bounded by the tanh wrap. The C-tier output feeds a codebook
-        # whose prototype range is ``[-1, 1]``, so boundedness must be
-        # preserved across the math swap. Configs that set
-        # ``<nonlinear>false</nonlinear>`` (e.g. MM_xor_loopback) still
-        # honour the flag for SymbolicSpace, OutputSpace, and other
-        # PiLayer / SigmaLayer instances — only the C-tier sigma_percept
-        # is force-tanh-wrapped.
-        nonlinear_sigma_percept = True
-        if self.reversible:
-            if invertible:
-                self.sigma_percept = SigmaLayer(
-                    input, output, naive=naive, ergodic=ergodic,
-                    invertible=True, nonlinear=nonlinear_sigma_percept,
-                    stable=True, monotonic=monotonic)
-                self.params = self.sigma_percept.getParameters()
-                self.layers = nn.ModuleList([self.sigma_percept])
-            else:
-                self.sigma_percept_1 = SigmaLayer(
-                    input, output, naive=naive, ergodic=ergodic,
-                    invertible=True, nonlinear=nonlinear_sigma_percept,
-                    stable=True, monotonic=monotonic)
-                self.sigma_percept_2 = SigmaLayer(
-                    input, output, naive=naive, ergodic=ergodic,
-                    invertible=True, nonlinear=nonlinear_sigma_percept,
-                    stable=True, monotonic=monotonic)
-                self.sigma_percept = self.sigma_percept_1
-                self.params = (
-                    self.sigma_percept_1.getParameters()
-                    + self.sigma_percept_2.getParameters())
-                self.layers = nn.ModuleList(
-                    [self.sigma_percept_1, self.sigma_percept_2])
-        else:
-            self.sigma_percept = SigmaLayer(
-                input, output, naive=naive, ergodic=ergodic,
-                nonlinear=nonlinear_sigma_percept,
-                stable=True, monotonic=monotonic)
-            self.params = self.sigma_percept.getParameters()
-            self.layers = nn.ModuleList([self.sigma_percept])
+        # ``self.layers`` / ``self.params`` are kept as empty containers
+        # so the Space's Layer cascade and parameter aggregation
+        # contract (other GrammarLayer attachments, optional
+        # SymbolLearningLayer) remain valid.
+        self.params = []
+        self.layers = nn.ModuleList([])
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -9594,27 +9567,56 @@ class ConceptualSpace(Space):
         )
         return basis
 
-    def _sigma_percept_reverse(self, y):
-        """SigmaLayer reverse, hiding the two-pass ergodic mode split.
+    def _stm_shift_and_push(self, idea):
+        """STM bookkeeping primitive: shift slots left by 1 on rows at
+        capacity, then write the new idea to the top slot. For rows
+        below capacity, this degenerates to an ordinary push.
 
-        Single-Sigma modes call ``self.sigma_percept.reverse``. The
-        two-pass ergodic mode (where ``self.sigma_percept`` aliases
-        ``self.sigma_percept_1`` for the forward path) routes the
-        reverse through ``self.sigma_percept_2`` instead.
+        ``idea`` is the per-batch payload tensor of shape ``[B, D]`` —
+        the materialised PS+SS combination ConceptualSpace.forward
+        produces. Routes through the underlying buffer + depth
+        primitives on ``self.stm`` (which proxies to WordSubSpace when
+        attached, or its own fallback buffer otherwise).
 
-        When the input layer is widened for the subsymbolic loop, the
-        reverse output carries the right-half re-entrant contribution
-        which is not consumable by upstream PerceptualSpace; slice it
-        off so downstream reverse stages see only the perceptual half.
+        Per the Miller cap (default 7±2 via ``<stmCapacity>`` /
+        ``<wMax>``), the oldest idea drops out when overflowing — the
+        STM is a rolling window. This is the substrate-level analogue
+        of the chart's reduce-then-push when the chart was the
+        consumer; here the consumer is the signal-router-based grammar
+        dispatch (Stage 3, not wired yet).
         """
-        sigma2 = getattr(self, 'sigma_percept_2', None)
-        if sigma2 is not None:
-            x = sigma2.reverse(y)
-        else:
-            x = self.sigma_percept.reverse(y)
-        if self._right_half_dim > 0:
-            x = x[..., :-self._right_half_dim]
-        return x
+        stm = self.stm
+        stm.ensure_batch(int(idea.shape[0]))
+        B = int(idea.shape[0])
+        cap = int(stm.capacity)
+        if cap <= 0:
+            return
+        # Resolve buffer / depth refs through the STM proxy (handles
+        # both the WordSubSpace-attached and fallback paths uniformly).
+        buf = stm._buffer
+        depth = stm._depth
+        # Row-by-row: rows at capacity get a left-shift of the slots
+        # [1..cap) -> [0..cap-1), then the new idea is written to slot
+        # ``cap - 1``. Rows below capacity get a plain push at
+        # ``depth[b]``. The depth pointer saturates at ``cap``.
+        new_depth = depth.clone()
+        for b in range(B):
+            d = int(depth[b].item())
+            if d >= cap:
+                # Shift left by one slot, drop oldest, write new at top.
+                buf[b, : cap - 1] = buf[b, 1 : cap].clone()
+                buf[b, cap - 1] = idea[b]
+                # depth saturates at cap (no further growth).
+            else:
+                buf[b, d] = idea[b]
+                new_depth[b] = d + 1
+        stm._depth = new_depth
+        # Track the host-side maximum depth high-watermark (used by
+        # snapshot()). Bumped to current saturating depth across rows.
+        if B > 0:
+            cur_max = int(new_depth.max().item())
+            if cur_max > int(stm._max_depth_host):
+                stm._max_depth_host = cur_max
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -9658,353 +9660,176 @@ class ConceptualSpace(Space):
             stm.clear(b=batch)
 
     def forward(self, subspace, word_subspace=None):
-        """Knowing: combine perceptual + symbolic-loop inputs into concepts.
+        """STM bookkeeping: shift the per-batch idea stack and push the
+        new idea onto the Miller-cap top slot.
 
-        Post-Phase-F (2026-05-21 WordSubSpace/STM Layer refactor):
-        ``subspace`` is the perceptual content (was ``PS_subspace``);
-        ``word_subspace`` is the symbolic-loop data carrier (was
-        ``SS_subspace``) — WordSubSpace IS a SubSpace subclass and
-        carries the symbolic-loop role formerly held by a separate
-        per-pass SS SubSpace. Both contracts work: callers may pass
-        either the model's ``WordSubSpace`` (preferred) or the legacy
-        SS-output SubSpace; ``materialize()`` is called either way.
+        Post Stage 1.C of the two-loop pi/sigma substrate refactor
+        (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the
+        atomic forward C-tier fold ``sigma_percept`` is retired. This
+        method no longer applies a parameterised percept→concept
+        operator; it only does STM bookkeeping. The signal-router
+        grammar dispatch that consumes STM contents is Stage 3.
 
-        They are shape-matched averaged after a bivector reverse-lift
-        on the symbolic side; ``word_subspace=None`` / empty (sentence
-        start, standalone unit tests) degrades to the perceptual
-        ``primary`` alone.
+        Args:
+            subspace: the perceptual content (was ``PS_subspace``).
+                Materialised event is shape ``[B, N, D]``; one idea
+                per batch row is derived (mean over N) and pushed to
+                the STM.
+            word_subspace: optional symbolic-loop data carrier (was
+                ``SS_subspace``). When non-empty AND shape-matched to
+                the perceptual event, the materialised SS event is
+                summed with the PS event before the per-row reduction
+                (a placeholder PS+SS combine for Stage 1.C — the
+                signal-router-based grammar dispatch in Stage 3 will
+                replace this simple sum with the proper rule
+                composition). Otherwise PS alone is pushed.
 
-        The canonical C-tier fold is the additive ``sigma_percept``
-        (``percept_dim → concept_dim``), per the 2026-05-13 rebalance
-        (doc/Spaces.md §"Sigma / Pi ownership"). When ``nonlinear=True``
-        the tanh wrap on SigmaLayer keeps the output in ``[-1, 1]``.
-
-        The cross-pass C→P / C→S feedback the per-word / per-stage
-        recurrence consumes is published by writing the post-forward
-        events to ``self._subspaceForPS`` / ``self._subspaceForSS`` (the
+        The cross-pass C→P / C→S feedback the per-word recurrence
+        consumes is still published by writing the pushed idea event
+        to ``self._subspaceForPS`` / ``self._subspaceForSS`` (the
         persistent SubSpace objects allocated once in ``__init__``).
-        Callers read those attributes between iterations and thread them
-        as positional args to the next ``PerceptualSpace.forward`` /
-        ``SymbolicSpace.forward`` call — no carrier object.
+        Downstream callers thread those attributes to the next
+        ``SymbolicSpace.forward`` / ``PerceptualSpace.forward`` call —
+        no atomic fold applied; the consumers see the pushed idea
+        verbatim until Stage 3 wires the signal router in.
+
+        Returns:
+            The materialised ``subspace`` (post-context-copy), so
+            downstream consumers continue to receive a SubSpace whose
+            event matches what was pushed onto STM.
         """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
-        vspace = subspace
-        # SyntacticLayer is unconditional: it dispatches whatever the
-        # grammar XML specifies for the C tier (e.g. ``C = sigma(C)``
-        # from model.xml's default grammar) -- exact mathematical
-        # replacement for the bare ``y = self.sigma_percept(x)`` call.
-        # Per the 2026-05-07 rollback, ``WordSpace.compose`` populates
-        # ``current_rules`` from the grammar XML in default-only /
-        # useGrammar='none' fast paths, so the cursor always finds the
-        # configured rule (no ``default_rule`` code-level fallback).
-        # Legacy grammars (``C = pi(C)``) are auto-aliased to
-        # ``sigma_percept`` by ``_attach_per_space_syntactic_layer`` so
-        # they keep working post-2026-05-13 rebalance.
-        # Symbolic loop combine (folded ``_sourced_input``): the
-        # perceptual ``primary`` and the explicit prior-pass symbolic
-        # event are shape-matched averaged. The SS event arrives as a
-        # per-prototype catuskoti slab ``[B, V_S, 2]`` over the symbolic
-        # ProjectionBasis; lift it back to concept content with that
-        # basis before averaging. Degrades to ``primary`` alone when the
-        # word_subspace carrier is absent/empty or the lift can't
-        # shape-match.
-        primary = self.forwardBegin(vspace, returnVectors=True)
+        # Materialise the perceptual input event. Stage 1.C contract
+        # leaves the dim as-is (no percept→concept lift); downstream
+        # consumers see the pushed idea verbatim.
+        primary = subspace.materialize()
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
+        # Stage 1.C placeholder PS+SS combine: sum if shapes match,
+        # else PS alone. The signal-router-based grammar dispatch in
+        # Stage 3 will replace this with the proper rule composition.
         if sym is not None and sym.shape == primary.shape:
-            x = (primary + sym) / 2
+            combined = primary + sym
         else:
-            x = primary
-        # SUBSYMBOLIC SUBSTRATE (owner-stated, authoritative): the
-        # ``sigma_percept`` percept→concept fold is the subsymbolic
-        # substrate loop -- it is NOT a grammatical operation. It MUST
-        # run unconditionally on every forward, every stage, with or
-        # without grammar, regardless of chart/cursor state. (Pre-2026-
-        # 05-18 this was wrongly gated behind the C-tier SyntacticLayer
-        # cursor: when the chart is dormant -- MM_5M's STM never pushes,
-        # so ``WordSpace.compose`` never fires and the C-tier cursor
-        # exhausts after the first forward -- the substrate fold was
-        # silently skipped from forward #1 onward, leaving a raw
-        # pre-fold width-mismatched event that crashed OutputSpace's
-        # reshape on batch >= 2.)  The substrate is therefore the base
-        # concept mapping, applied here independent of grammar.
-        y = self.sigma_percept(x)
-        # The C-tier SyntacticLayer is NOT re-run on this substrate path.
-        # Rationale (verified against the whole config corpus, 2026-05-18):
-        # the post-split design moved all genuine grammar to the S tier;
-        # the ONLY arity-1 C-tier rule any config lists is the
-        # ``pi``/``sigma`` substrate alias, which
-        # ``_attach_per_space_syntactic_layer`` registers as the SAME
-        # object as ``self.sigma_percept``.  Genuine compositional C ops
-        # (the only other C-tier rules: ``intersection(C, C)``) are
-        # arity-2 and are executed inside the chart's inside pass --
-        # ``SyntacticLayer.forward`` explicitly skips ``arity != 1`` rules
-        # (Language.py), and the ``<C>P</C>`` passthrough has
-        # ``method_name=None`` (dispatcher no-op).  So routing the
-        # already-sigma'd ``y`` back through ``syntacticLayer.forward``
-        # could ONLY re-fire the substrate alias on top of itself: a
-        # DOUBLE ``sigma_percept`` (mathematically wrong, and a hard
-        # shape error whenever ``percept_dim != concept_dim`` -- e.g.
-        # MM_5M's 10->1024 lift, where the second application sees a
-        # width-1024 input its ``percept_dim`` in-projection can't
-        # accept).  The substrate fold is the subsymbolic substrate, not
-        # a grammatical operation, so it correctly does not pass through
-        # the cursor-dispatched SyntacticLayer.  ``forward``'s compose
-        # cursor is independent of ``reverse``'s generate cursor
-        # (separate counters / rule tables in ``_next_rule_name``), so
-        # not advancing it here does not desync the reverse path.  If a
-        # genuine non-substrate arity-1 C grammar op is ever introduced,
-        # it must be wired as an explicit additive transform on the
-        # sigma'd ``y`` here (with its own no-op-preserving guard), not
-        # by re-enabling the substrate-alias re-dispatch.
-        # Phase 2A.5: read-only nearest-neighbour snap of the post-sigma
-        # concept tensor to the learnable symbol codebook (SymbolicSpace is
-        # the single writer; ConceptualSpace only reads .W). STE keeps
-        # gradient flowing to y; the symbol codebook trains via its own path.
-        _ssr = getattr(self, 'symbolicSpace_ref', None)
-        _what = getattr(_ssr.subspace, 'what', None) if _ssr is not None else None
-        _P = getattr(_what, 'W', None) if _what is not None else None
-        if (isinstance(_what, (Codebook, ProjectionBasis))
-                and _P is not None and torch.is_tensor(_P) and _P.dim() == 2
-                and torch.is_tensor(y) and y.dim() == 3
-                and y.shape[-1] == _P.shape[-1] and _P.shape[0] > 0):
-            _flat = y.reshape(-1, y.shape[-1])
-            _d = torch.cdist(_flat.float(), _P.detach().float())   # [B*C, S]
-            _idx = _d.argmin(dim=-1)                                # [B*C]
-            _snapped = _P.index_select(0, _idx).view_as(y).to(y.dtype)
-            y = y + (_snapped - y).detach()                         # STE, read-only
-        # Chat-loop C-prior injection: when the inference loop staged
-        # a predicted next-sentence prior on ``self._c_prior`` (lifted
-        # through ``InterSentenceLayer.cast`` to ``concept_dim``), sum
-        # it into the C-tier event before the codebook lookup so the
-        # mask-position predictions get a sentence-level conditioning
-        # signal.  Cleared after each consumer so it doesn't leak
-        # across forwards.
-        if self._c_prior is not None and y is not None:
+            combined = primary
+        # Per-row reduction to a single idea vector: mean over the N
+        # axis. STM holds one idea per batch row per slot; the N-axis
+        # of the materialised event collapses to that single payload.
+        if combined.dim() == 3:
+            idea = combined.mean(dim=1)         # [B, D]
+            event_for_carrier = combined         # preserve [B, N, D]
+        elif combined.dim() == 2:
+            idea = combined                      # [B, D]
+            event_for_carrier = combined.unsqueeze(1)   # [B, 1, D]
+        else:
+            # Defensive: degenerate shape — fall back to a no-op
+            # (don't crash; return the input subspace unchanged).
+            return subspace
+        # STM bookkeeping: shift-then-push (Miller cap rolling window).
+        self._stm_shift_and_push(idea)
+        # Optional C-prior injection (chat-loop generation): preserved
+        # for backward compatibility with InterSentenceLayer.cast /
+        # BasicModel.generate_sentence consumers that stage a prior
+        # before the forward call. Added to the pushed-idea event so
+        # downstream consumers see the conditioned vector.
+        if self._c_prior is not None:
             prior = self._c_prior
-            # Shape-match: prior is [B, concept_dim] or [concept_dim].
-            # ``y`` is [B*K, N, concept_dim].  Broadcast as a per-row
-            # bias across N positions.
             if prior.dim() == 1:
                 prior = prior.unsqueeze(0)
-            if y.dim() == 3 and prior.dim() == 2:
+            if event_for_carrier.dim() == 3 and prior.dim() == 2:
                 if prior.shape[0] == 1:
-                    prior_b = prior.expand(y.shape[0], -1)
-                elif prior.shape[0] == y.shape[0]:
+                    prior_b = prior.expand(
+                        event_for_carrier.shape[0], -1)
+                elif prior.shape[0] == event_for_carrier.shape[0]:
                     prior_b = prior
                 else:
-                    # Broadcast a B-shaped prior across B*K rows.
-                    K = max(1, y.shape[0] // max(1, prior.shape[0]))
+                    K = max(1, event_for_carrier.shape[0]
+                            // max(1, prior.shape[0]))
                     prior_b = prior.repeat_interleave(K, dim=0)
-                y = y + prior_b.unsqueeze(1)
+                if prior_b.shape[-1] == event_for_carrier.shape[-1]:
+                    event_for_carrier = (
+                        event_for_carrier + prior_b.unsqueeze(1))
             self._c_prior = None
-        # STM-residual bias (once per sentence; wordSubSpace gates itself).
-        # disc.prime() casts into concept_dim, so the bias must be added
-        # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
-        # not to the pre-Sigma upstream event (which lives at the percept
-        # basis dim and would shape-mismatch). Phase G of doc/specs/
-        # 2026-05-21-wordsubspace-stm-layer-refactor.md retired the
-        # per-SubSpace back-pointer; the WordSubSpace is reached via the
-        # owning Space's routing pointer (``self.wordSubSpace``).
-        ws = getattr(self, 'wordSubSpace', None)
-        if ws is not None and y is not None:
-            B = int(ws._stm_fired.shape[0])
-            BK_actual = int(y.shape[0])
-            K = max(1, BK_actual // max(1, B))
-            assert B * K == BK_actual, (
-                f"ConceptualSpace stm gating: y batch={BK_actual} "
-                f"not a multiple of source-row count B={B}")
-            bias = ws.stm_residual_microbatch(B, K, expected_dim=y.shape[-1])
-            if bias is not None:
-                # bias: [B*K, concept_dim]; broadcast over N_out positions.
-                # Mask invalid (NULL-padded) cells so they don't receive
-                # the discourse bias, which would propagate downstream
-                # as a non-no-op into the codebook and parse stack.
-                vmask = self.subspace.valid_mask
-                if vmask is not None:
-                    bias = torch.where(
-                        vmask.flatten().unsqueeze(-1),
-                        bias,
-                        torch.zeros_like(bias))
-                y = y + bias.unsqueeze(1)
-        if self.hasAttention:
-            y = self.attention.forward(y)
-        if self.codebook:
-            # Per-cell mask: zero NULL-padded cells before VQ codebook
-            # so EMA does not learn from padding.
-            vmask = self.subspace.valid_mask
-            if vmask is not None and y.dim() == 3:
-                y = torch.where(
-                    vmask.flatten().view(-1, 1, 1),
-                    y,
-                    torch.zeros_like(y))
-            if isinstance(self.subspace.what, ProjectionBasis):
-                # project codebook: signed per-prototype scalar
-                # projection.  ``y`` becomes ``[B, N]`` in [-1, 1]; the
-                # matching reverse routes through ProjectionBasis.reverse
-                # (exact LDU inverse via triangular solves).
-                y = self.subspace.what.forward(y)
-            elif (isinstance(self.subspace.what, Codebook)
-                    and self.nVectors > self.outputShape[0]):
-                # Wide-codebook top-K: when nVectors > nOutput, route through
-                # the content Codebook with topK=nOutput so the per-codebook-
-                # entry activation is pruned to the nOutput strongest
-                # survivors.
-                y = self.subspace.what.forward(y, topK=self.outputShape[0])
-            else:
-                y = self.subspace.get_vectors().forward(y)
-        # Shared sparsity regularizer on the concept activations. No-op when
-        # l1_lambda defaults to 0; attribute-only so configs opt in.
-        y = self._sparsity(y)
+        # Write the pushed-idea event back to the carrier subspace so
+        # downstream consumers (SymbolicSpace.forward via
+        # ``_subspaceForSS``) see the bookkept event.
+        subspace.set_event(event_for_carrier)
+        # ``clear_last_svo`` was an end-of-CS-forward bookkeeping hook
+        # in the prior fold-and-snap design; retained here because the
+        # WordSubSpace consumers still expect the SVO slot cleared at
+        # the cycle boundary.
         ws = getattr(self, 'wordSubSpace', None)
         if ws is not None:
             ws.clear_last_svo()
-        vspace = self.forwardEnd(y, returnVectors=True)
-        if isinstance(self.subspace.what, ProjectionBasis):
-            # project codebook: ProjectionBasis already bounds its
-            # signed-scalar output to [-1, 1] (bound-once-at-the-basis);
-            # the legacy ``concepts`` range checks don't apply.
-            pass
-        else:
-            vspace.normalize("concepts", target="what")       # range check
-            vspace.normalize("concepts", target="where")      # range check
-            vspace.normalize("concepts", target="activation")  # range check
         # Expose the two consumer views for the recurrent cell:
-        #   _subspaceForSS -- the raw forwardEnd output SymbolicSpace
-        #     consumes (identity-equal to the legacy threaded subspace).
-        #   _subspaceForPS -- CS output lifted back to concept_dim via
-        #     C's own ProjectionBasis (the reverse-lift that used to live
-        #     in PerceptualSpace._sourced_input; the basis is C's, so the
-        #     lift belongs here). PerceptualSpace then applies its own
-        #     pi_concept fold + pi_concept.nInput shape gate (non-bivector
-        #     output falls the gate and PS uses pi_input alone).
-        # Non-owning consumer-view back-ref. Stored on the persistent
-        # ``self._subspaceForSS`` attribute; ``_forward_body`` /
-        # ``_forward_body_per_word`` read it next pass and pass it
-        # positionally to ``SymbolicSpace.forward``.
-        # ``object.__setattr__``: a plain ``self._subspaceForSS = vspace``
-        # (vspace is a SubSpace = nn.Module) would enter
-        # ``nn.Module.__setattr__`` and ADD a ``self._modules`` entry on
-        # first forward, so the dynamo guard ``len(cs._modules)==8``
-        # would fail → a forced recompile (measured unique_graphs=2).
-        # ``__dict__`` storage keeps ``_modules`` constant.
-        object.__setattr__(self, "_subspaceForSS", vspace)
-        cs_what = self.subspace.what
-        ev = vspace.materialize(mode="event")
-        if isinstance(cs_what, ProjectionBasis) and ev is not None:
-            # project codebook: lift the signed-scalar C event back to
-            # concept content for the C->P feedback view.
-            lifted = cs_what.reverse(ev, V=int(self.inputShape[0]))
+        #   _subspaceForSS -- the pushed-idea subspace SS.forward
+        #     consumes next pass.
+        #   _subspaceForPS -- the persistent C→P feedback carrier
+        #     (mutated in place via ``set_event``) the per-word loop
+        #     reads next iteration. Stage 1.A retired PS's direct
+        #     consumption of this view, but the lift belongs to CS
+        #     architecturally so the carrier is still emitted.
+        # ``object.__setattr__`` matches the pre-1.C reasoning: avoids
+        # mutating ``self._modules`` under torch.compile guards.
+        object.__setattr__(self, "_subspaceForSS", subspace)
+        if event_for_carrier is not None and event_for_carrier.dim() == 3:
+            self._subspaceForPS.set_event(event_for_carrier)
         else:
-            lifted = ev
-        # The C→P handoff is the persistent ``self._subspaceForPS``
-        # SubSpace (allocated once in ``__init__``), mutated in place via
-        # ``set_event``. Callers read ``cs._subspaceForPS`` between
-        # iterations and thread it as ``CS_subspaceForPS=`` to the next
-        # ``PerceptualSpace.forward`` call.
-        if lifted is not None and lifted.dim() == 3:
-            # Reuse the owned persistent carrier (allocated once in
-            # __init__): no per-call SubSpace ctor / copy_context
-            # (recon graph-breaks #5/6/7). set_event is a traceable
-            # tensor write; the consumer (PerceptualSpace.forward) only
-            # reads it via .is_empty()/.materialize(), never its
-            # context, and it is never the returned vspace -- so
-            # dropping copy_context preserves the pipeline invariant.
-            self._subspaceForPS.set_event(lifted)
-        else:
-            # Degenerate edge (no concept event); not the recon/compiled
-            # hot path -- keep the original tiny-empty fallback.
+            # Degenerate edge fallback (preserved from pre-1.C
+            # behavior; not the hot path).
             fallbackForPS = SubSpace(
                 inputShape=(0, 1), outputShape=(0, 1),
                 nInputDim=1, nOutputDim=1)
-            # object.__setattr__: same _modules-guard reason as
-            # _subspaceForSS above (avoid recompile if this branch
-            # is ever hit under compile).
             object.__setattr__(self, "_subspaceForPS", fallbackForPS)
-        return vspace
+        return subspace
 
     def reverse(self, subspace):
-        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
+        """Reverse pass: thin pass-through under Stage 1.C.
 
-        When CSBP bivector output is active, first runs the codebook's
-        cached SVD pseudo-inverse to lift the bivector ``[B, V, 2]`` back
-        to ``[B, V, D_C]``. Then dispatches to the SyntacticLayer (or the
-        bare ``sigma_percept.reverse``) for the rule-driven reverse pass.
+        The atomic ``sigma_percept`` SigmaLayer (and its
+        ``_sigma_percept_reverse`` two-pass helper) are retired by
+        Stage 1.C; there is no inverse fold to apply. The reverse
+        pipeline still calls ``CS.reverse`` between PS.reverse and
+        SS.reverse, so this method preserves the contract (early
+        return on empty, copy_context for downstream plumbing) but
+        otherwise passes the subspace through. Stage 3's signal
+        router will own the reverse-direction substitute for the
+        fold inverse once it lands.
+
+        ProjectionBasis-backed configs still lift the signed-scalar
+        ``[B, N]`` event back to ``[B, V, D]`` via the LDU inverse
+        (this is the codebook's own inverse, owned by the basis, not
+        a substrate fold), so reverse stages see the natural shape.
         """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
-        # SyntacticLayer is unconditional: its default rule fires
-        # ``SigmaLayer.reverse(y)`` (or two-pass ergodic
-        # ``_sigma_percept_reverse`` via Phase 3 adapter), exact
-        # mathematical replacement for the bare
-        # ``y = self._sigma_percept_reverse(y)`` call. When the chart
-        # populates a C-tier generate sequence, the dispatcher fires
-        # those instead.
         y = self.reverseBegin(vspace, returnVectors=True)
         if isinstance(self.subspace.what, ProjectionBasis):
-            # project codebook reverse lift: signed-scalar ``[B, N]`` ->
-            # ``[B, V, D_C]`` via the exact LDU inverse on
-            # ProjectionBasis. Runs before sigma_percept.reverse so the
-            # upstream SigmaLayer sees the natural ``[B, V, nDim]`` shape
-            # it produced on forward. V comes from this space's
-            # ``inputShape[0]``; the per-row summary vector is replicated
-            # across V positions (the mathematically-correct answer for
-            # the V-axis-collapsed forward).
+            # Codebook-side LDU inverse: own contract of ProjectionBasis,
+            # not the retired substrate fold. Keeps the reverse shape
+            # contract intact for downstream PS.reverse consumers.
             V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
-        # Post-split: grammar lives at S; C is semantically
-        # subsymbolic on reverse too. The SyntacticLayer dispatch at
-        # C is retained for backward compat — no-op when the grammar
-        # has no C-tier reverse rule.
-        if getattr(self, 'syntacticLayer', None) is None:
-            y = self._sigma_percept_reverse(y)
-        else:
-            vspace.set_event(y)
-            vspace = self.syntacticLayer.reverse(vspace)
-            y_post = vspace.materialize()
-            # Phase B: under the legacy ``pi`` alias the SyntacticLayer
-            # dispatcher's fast-path may short-circuit (no-op when the
-            # generate queue is empty for default-only grammars). In
-            # that case the bivector-codebook-reverse output (which can
-            # be slightly outside ``[-1, 1]`` after the LDU inverse) is
-            # left unwrapped and downstream range checks on
-            # ``percepts.what`` fail. The legacy PiLayer's reverse via
-            # ``_from_mult(exp(...))`` always clamped to ``(-1, 1)``
-            # intrinsically; SigmaLayer's reverse only clamps via its
-            # tanh wrap, which requires us to fire the wrap explicitly
-            # when the dispatcher didn't reach it.
-            if y_post is not None and y_post.dim() == 3:
-                if y_post.shape[-1] != self.subspace.getEncodedInputSize():
-                    y = self._sigma_percept_reverse(y_post)
-                else:
-                    # Dispatcher may have short-circuited, leaving y_post
-                    # slightly outside [-1, 1] after the LDU inverse; the
-                    # substrate fold reverse re-enforces the range. The
-                    # old `abs().max().item() > 1.01` host bool chose
-                    # fold-vs-passthrough -- a GPU->host sync. Compute the
-                    # fold and select with an on-device 0-dim bool gate
-                    # (no `.item()`); `torch.where` with a scalar
-                    # condition picks all-or-nothing, so this is
-                    # bit-identical to the old branch in every case
-                    # (the doc even sanctions an unconditional fold here;
-                    # selecting is strictly safer). See
-                    # doc/BrickHostSyncStatus.md residual E.
-                    folded = self._sigma_percept_reverse(y_post)
-                    over_range = y_post.detach().abs().max() > 1.0 + 1e-2
-                    y = torch.where(over_range, folded, y_post)
-            else:
-                y = y_post
+        # Optional right-half slice (kept for any config that widens
+        # the input; with the bookkeeping body this is generally a
+        # no-op since ``_right_half_dim`` is 0).
         if self._right_half_dim > 0 and y is not None and y.dim() == 3:
             y = y[..., :-self._right_half_dim]
-        self.concepts = y.detach()
+        if y is not None:
+            self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("percepts", target="what")   # range check
-        vspace.normalize("percepts", target="where")  # range check
+        if y is not None and not isinstance(
+                self.subspace.what, ProjectionBasis):
+            # Range-check on the pass-through reverse: matches the
+            # pre-1.C downstream invariant. Skipped for ProjectionBasis
+            # (which bounds its own output).
+            vspace.normalize("percepts", target="what")
+            vspace.normalize("percepts", target="where")
         return vspace
 
     @staticmethod
@@ -10526,6 +10351,148 @@ class SymbolicSpace(Space):
         if int(atom_idx) < 0 or int(atom_idx) >= cb.part_parents.numel():
             return
         cb.set_part_parent(int(atom_idx), int(self.words_atom_id))
+
+    # ------------------------------------------------------------------
+    # Stage 1.B paired-row insertion (orth + semantic) on SS.codebook
+    # ------------------------------------------------------------------
+    # Locked design (2026-05-27, doc/plans/2026-05-26-two-loop-pi-
+    # sigma-substrate.md): when a new word lands in PS's Lexicon, SS's
+    # codebook (``self.subspace.what``) gains TWO paired rows:
+    #   * orthographic row = a COPY of the per-word PS vector (flat-slab
+    #     invariant guarantees PS-side per-word is CS-space-dimensioned;
+    #     no pi/sigma transform at insert time);
+    #   * semantic row     = a fresh RANDOM CS-space vector (trainable,
+    #     no init bias toward orth; per Quine / Saussure -- word != object,
+    #     orth and semantic are free to diverge).
+    # The two are DIRECTLY parented: orth row -> semantic row, via the
+    # existing ``Codebook.set_part_parent``. No meta-symbol (skipped per
+    # the controller; orth and semantic remain free to diverge).
+    def insert_paired_word(self, word, ps_vector):
+        """Insert paired orthographic + semantic rows for ``word`` into
+        ``self.subspace.what`` (the SS codebook). Returns
+        ``(orth_idx, sem_idx)``.
+
+        ``ps_vector`` is a 1-D tensor of width ``self.nDim`` (the PS-
+        side per-word vector, which is CS-space-dimensioned per the
+        flat-slab invariant). The orth row is a copy of this vector;
+        the semantic row is freshly randomized.
+
+        Direct parenthood: ``part_parents[orth_idx] = sem_idx``. No
+        meta-symbol; orth and semantic are free to diverge during
+        training (per Quine / Saussure -- word != object).
+
+        Raises ``RuntimeError`` if the codebook lacks room for a pair
+        (``nVectors`` exhausted) -- caller must size SS.nVectors at
+        least 2x the expected lexicon capacity (see MM_5M.xml where
+        SS.nVectors=131072 = 2 * PS lexicon cap).
+        """
+        cb = getattr(self.subspace, 'what', None)
+        if cb is None or not isinstance(cb, Codebook):
+            raise RuntimeError(
+                f"SymbolicSpace.insert_paired_word requires "
+                f"self.subspace.what to be a Codebook; got "
+                f"{type(cb).__name__ if cb is not None else 'None'}.")
+        if cb.part_parents is None:
+            raise RuntimeError(
+                "SymbolicSpace.insert_paired_word requires the SS "
+                "codebook to carry meronomy storage "
+                "(create with category=True). _build_what_basis must "
+                "have built it with category=True; this looks like a "
+                "stale Codebook.")
+        # Lazy init: usable rows start after the highest reserved
+        # well-known atom index. Convention today: row 0 = "words".
+        # Re-entry is idempotent: ``_paired_next_row`` survives across
+        # inserts.
+        if not hasattr(self, '_paired_next_row'):
+            base = max(self.well_known_atoms.values())
+            self._paired_next_row = int(base) + 1
+            # Per-word orth_idx -> sem_idx mapping (precomputed so
+            # downstream lookup can collapse to ONE gather, not a
+            # runtime intersection). Built up at insert time.
+            self._paired_orth_to_sem = {}
+
+        orth_idx = int(self._paired_next_row)
+        sem_idx = orth_idx + 1
+        cap = int(cb.nVectors)
+        if sem_idx >= cap:
+            raise RuntimeError(
+                f"SymbolicSpace.insert_paired_word: codebook is full "
+                f"({orth_idx} / {cap} rows used); cannot insert "
+                f"paired rows for {word!r}. Raise <SymbolicSpace>"
+                f"<nVectors> to at least 2x the expected lexicon "
+                f"capacity (currently {cap}).")
+
+        # Resolve ps_vector to [nDim] float on the codebook's device.
+        if not torch.is_tensor(ps_vector):
+            ps_vector = torch.as_tensor(ps_vector, dtype=torch.float32)
+        if ps_vector.dim() == 2 and ps_vector.shape[0] == 1:
+            ps_vector = ps_vector.squeeze(0)
+        if ps_vector.dim() != 1:
+            raise RuntimeError(
+                f"insert_paired_word: ps_vector must be 1-D "
+                f"(shape [nDim={self.nDim}]); got shape "
+                f"{tuple(ps_vector.shape)}.")
+        if ps_vector.shape[0] != int(self.nDim):
+            raise RuntimeError(
+                f"insert_paired_word: ps_vector width "
+                f"{ps_vector.shape[0]} != SymbolicSpace.nDim "
+                f"({self.nDim}). Flat-slab invariant must hold so "
+                f"the orth row is a direct copy.")
+
+        W = cb.getW()
+        if W is None:
+            raise RuntimeError(
+                "SymbolicSpace.insert_paired_word: SS codebook W is "
+                "None; _build_what_basis did not allocate prototypes.")
+        ps_v = ps_vector.detach().to(device=W.device, dtype=W.dtype)
+        # Random semantic vector. Sample in the same scale as the
+        # codebook init (random in [-1, 1] before any per-row
+        # normalization). No bias toward orth: orth and semantic are
+        # free to diverge during training.
+        sem_v = torch.empty(
+            int(self.nDim), device=W.device, dtype=W.dtype
+        ).uniform_(-1.0, 1.0)
+
+        # In-place write into the codebook's prototype rows. ``W.data``
+        # preserves Parameter identity (the optimizer keeps owning the
+        # full-capacity prototype tensor).
+        with torch.no_grad():
+            W.data[orth_idx, :].copy_(ps_v)
+            W.data[sem_idx, :].copy_(sem_v)
+
+        # Direct parenthood: orth -> semantic. Per design (no meta-
+        # symbol), parent of orth is the semantic row, not a "words"
+        # atom. This means the legacy ``mark_word_atom`` (which would
+        # set part_parents[orth] = words_atom_id) is overridden by
+        # this insert path -- a paired-row insertion sets the orth's
+        # parent to its semantic partner.
+        cb.set_part_parent(orth_idx, sem_idx)
+        # Semantic row is a root atom in the orth->sem graph (it
+        # doesn't parent anything itself; -1 = no parent).
+        # Leave part_parents[sem_idx] at the default -1.
+
+        self._paired_orth_to_sem[orth_idx] = sem_idx
+        self._paired_next_row = sem_idx + 1
+        return (orth_idx, sem_idx)
+
+    def get_semantic_row(self, orth_idx):
+        """Look up the semantic row index for a given orthographic row.
+
+        Returns ``-1`` if the orth row has no paired semantic partner
+        (e.g. it pre-dates the paired-row contract, or was inserted
+        via the legacy ``mark_word_atom`` path).
+        """
+        cb = getattr(self.subspace, 'what', None)
+        if cb is None or not isinstance(cb, Codebook):
+            return -1
+        # Prefer the cached map (built at insert time) -- O(1).
+        if hasattr(self, '_paired_orth_to_sem'):
+            mapped = self._paired_orth_to_sem.get(int(orth_idx), None)
+            if mapped is not None:
+                return int(mapped)
+        # Fallback: read part_parents[orth_idx]; the paired-row
+        # contract stores the semantic partner there. -1 if unset.
+        return cb.get_part_parent(int(orth_idx))
 
     @property
     def vocabulary(self):

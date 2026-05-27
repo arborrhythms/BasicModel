@@ -6,6 +6,9 @@
        plumbing fixture referenced from test_head_emission.py. -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).
          model.xml's default nWhere=nWhen=0 already keeps D=nDim, so the
          SyntacticLayer's pair_scorer linear is shape-compatible with the

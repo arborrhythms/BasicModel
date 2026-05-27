@@ -29,6 +29,22 @@
          the symbolic codebook geometrically (see Reasoning.md). -->
     <conceptualOrder>1</conceptualOrder>
 
+    <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+         explicit two-mode forward dispatch.
+           serial    = GRAMMATICAL: per-word body via
+                       _forward_body_per_word (one IS_t per word, push
+                       to STM per word). Grammar configs default here.
+           parallel  = per-stage body via _forward_per_stage
+                       (T iterations from <conceptualOrder>). Non-grammar
+                       configs (whole-slab path) default here.
+         The default is OMITTED here so each config inherits via the
+         grammar-derived default: ``serial`` when the XML enables a
+         non-substrate rule (``useGrammar != 'none'``), else
+         ``parallel``. Concrete configs should set this explicitly so
+         the mode is documented at the config level. -->
+    <!-- <conceptualMode>serial|parallel</conceptualMode> -->
+
+
     <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
 

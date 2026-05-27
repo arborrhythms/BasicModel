@@ -3,6 +3,9 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <modelType>passthrough</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <weightsPath>mnist_weights.ckpt</weightsPath>
 
     <data>
@@ -17,6 +20,8 @@
     </training>
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): modelType=passthrough,
+       validator doesn't fire. Original shape preserved. -->
   <InputSpace>
     <nOutput>1</nOutput>
     <nVectors>1</nVectors>

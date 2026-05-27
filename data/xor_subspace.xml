@@ -9,6 +9,9 @@
 <model>
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <useSubspaceActivation>true</useSubspaceActivation>
     <weightsPath>xor_subspace_weights.ckpt</weightsPath>
 
@@ -19,8 +22,10 @@
     </training>
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
+       the same flat slab (4*1=4). -->
   <InputSpace>
-    <nOutput>2</nOutput>
+    <nOutput>4</nOutput>
     <nVectors>2</nVectors>
   </InputSpace>
 
@@ -32,15 +37,15 @@
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=quantize. -->
+  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->
   <ConceptualSpace>
-    <nOutput>3</nOutput>
+    <nOutput>4</nOutput>
     <nVectors>16</nVectors>
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nOutput>3</nOutput>
+    <nOutput>4</nOutput>
     <nVectors>3</nVectors>
   </SymbolicSpace>
 

@@ -3,6 +3,9 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <weightsPath>tomatoes_weights.ckpt</weightsPath>
     <data>
       <dataset>tomatoes</dataset>

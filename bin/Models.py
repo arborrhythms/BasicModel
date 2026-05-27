@@ -616,23 +616,45 @@ class BaseModel(Mereology, nn.Module):
         if getattr(self, 'wordSubSpace', None) is not None:
             self.wordSubSpace.serial_mode = False
 
-        # Per-word ground-truth cursor enable. Mirrors the retired
-        # serial-boolean plumbing above (model computes a bool from its
-        # own determination, then pushes it onto a Space) -- InputSpace
-        # was not in the serial push list, so it is added here. The
-        # predicate is "grammar enabled": ``self.useGrammar`` is derived
-        # by ``_derive_use_grammar`` (set in create() above) and is
-        # exactly "all" when the grammar XML carries a real, non-substrate
-        # rule (chart fires / per-stage merge glue wired) else "none".
-        # ``!= "none"`` is therefore precisely "there is grammar
-        # enabled". INERT this increment: ``InputSpace.next_word`` is the
-        # sole reader of ``_per_word_enabled`` and has no live caller, so
-        # setting it True for grammar configs is byte-identical (the
-        # live whole-slab ``forward`` is unchanged). Eager build/init
-        # (here, post-create) -- never in the traced forward.
+        # Stage 1.E: explicit two-mode forward dispatch knob
+        # ``<architecture><conceptualMode>``. Values:
+        #   * ``"serial"`` (= GRAMMATICAL) -- per-word body via
+        #     ``_forward_body_per_word`` (one IS_t per word, push to
+        #     STM per word).
+        #   * ``"parallel"`` -- per-stage body via ``_forward_per_stage``
+        #     (T iterations from ``<conceptualOrder>``).
+        # The substrate-level SERIAL / GRAMMATICAL collapse is the
+        # spec's design decision: grammar dispatch is a chart /
+        # rule-catalog config, not a substrate mode.
+        #
+        # Default selection: if the grammar XML enables a non-substrate
+        # rule (the existing ``_per_word_enabled=True`` predicate) we
+        # default to ``"serial"`` for back-compat; otherwise
+        # ``"parallel"`` (the legacy whole-slab path). Explicit
+        # ``<conceptualMode>`` in the XML overrides the default.
+        _grammar_default_mode = (
+            "serial" if getattr(self, 'useGrammar', 'none') != 'none'
+            else "parallel")
+        _mode_raw = TheXMLConfig.get(
+            "architecture.conceptualMode", default=None)
+        _mode = (str(_mode_raw).strip()
+                 if _mode_raw is not None else _grammar_default_mode)
+        if _mode not in ("serial", "parallel"):
+            raise ValueError(
+                f"<architecture><conceptualMode> must be 'serial' or "
+                f"'parallel' (got {_mode_raw!r}).")
+        self.conceptualMode = _mode
+
+        # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
+        # derived directly from ``useGrammar``; post-Stage-1.E it mirrors
+        # ``self.conceptualMode`` (the new explicit knob). Kept as a
+        # back-ref attribute on InputSpace because ``InputSpace.next_word``
+        # and a handful of late-stage per-word loops still consult it;
+        # Stage 3 (signal-router parser cleanup) is the appropriate site
+        # to retire the boolean entirely.
         if getattr(self, 'inputSpace', None) is not None:
             self.inputSpace._per_word_enabled = bool(
-                getattr(self, 'useGrammar', 'none') != 'none')
+                self.conceptualMode == "serial")
 
         # Attention on ConceptualSpace violates position locality required
         # by serial_mode; downgrade conceptualSpace only. PerceptualSpace
@@ -2922,10 +2944,30 @@ class BasicModel(BaseModel):
                                 or 'none').lower()
                     rev_sub = None
                     if rev_mode in ('concepts', 'both'):
-                        for cs_sub in reversed(getattr(self, '_cs_cache', [])):
-                            if cs_sub is not None:
-                                rev_sub = self._run_pipeline_rev_from_concepts(cs_sub)
-                                break
+                        # Stage 1.F substrate refactor (doc/plans/
+                        # 2026-05-26-two-loop-pi-sigma-substrate.md):
+                        # the per-stage ``_cs_cache`` forward capture
+                        # is retired. The terminal C-tier idea (the
+                        # one ``_cs_cache[-1]`` previously held) now
+                        # comes from the canonical ConceptualSpace
+                        # ShortTermMemory snapshot — the most recently
+                        # pushed idea built up over the sentence is at
+                        # the tail of ``stm.snapshot()`` along the
+                        # depth axis. We stamp it onto the CS subspace
+                        # as the ``[B, 1, D_c]`` reverse-path seed
+                        # (same shape contract as ``_reverse_from_S``'s
+                        # ``S3 = S.unsqueeze(1)`` lift).
+                        stm = (self.conceptualSpace.stm
+                               if self.conceptualSpace is not None
+                               else None)
+                        snap = stm.snapshot() if stm is not None else None
+                        if (snap is not None and torch.is_tensor(snap)
+                                and snap.dim() == 3 and snap.shape[1] >= 1):
+                            terminal_idea = snap[:, -1:, :]
+                            cs = self.conceptualSpace
+                            cs.subspace.set_event(terminal_idea)
+                            rev_sub = self._run_pipeline_rev_from_concepts(
+                                cs.subspace)
                     if rev_sub is None:
                         rev_sub = self._run_pipeline_rev(self.outputSpace.subspace)
                     rev_ev = (rev_sub.materialize()
@@ -2956,78 +2998,32 @@ class BasicModel(BaseModel):
             )
 
             # Forward-only C/S reconstruction loss
-            # (``<reconstruct>concepts|symbols|both</...>``).  Targets
-            # are derived from the pre-mask P-tier event lifted on the
-            # fly through ``sigma_percept`` (plan §"Reconstruction-loss
-            # target shape" Option B); the model's own sigma_percept
-            # supplies the lift so no second body forward is needed.
-            # The C/S losses fire alongside the IR P-tier loss above
-            # and are blended via ``self.loss.reconstruction_scale``.
+            # (``<reconstruct>concepts|symbols|both</...>``). Post Stage
+            # 1.C of the two-loop pi/sigma substrate refactor
+            # (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+            # ``ConceptualSpace.sigma_percept`` is retired, so the
+            # legacy "lift pre_mask through sigma_percept" target shape
+            # is no longer available. Per the master plan doctrine
+            # ("no per-stage caches; terminal STM only"), the per-stage
+            # C/S reconstruction targets are dropped here; the C-tier
+            # target now comes from the terminal STM snapshot once the
+            # signal-router-based grammar dispatch is wired (Stage 3).
+            # Until then, this loss term is a no-op; the IR P-tier
+            # reconstruction loss above remains the active gradient
+            # source for the reconstruction objective.
             recon_mode = (getattr(self, 'reconstruct', 'none')
                           or 'none').lower()
-            # `recon_mode in (...)` and the None checks are Python (no
-            # sync); the `bool(mask_pos.any())` skip was a host sync.
-            # Run unconditionally and sanitize the empty-mask NaN per
-            # term below (sync-free; 0.0 == not-added for the summed
-            # TheError.total). See doc/BrickHostSyncStatus.md residual D.
             if (recon_mode in ('concepts', 'symbols', 'both')
                     and mask_pos is not None and pre_mask is not None):
-                # Lift pre_mask through sigma_percept once; this is
-                # the C-tier target both ``concepts`` and ``symbols``
-                # consume (``symbols`` could route through SS for a
-                # tighter target — left to a later refinement; the
-                # plan accepts the C-tier lift as the Option-B
-                # approximation for both).
-                sigma_p = getattr(self.conceptualSpace,
-                                  'sigma_percept', None)
-                target_c = (sigma_p(pre_mask) if sigma_p is not None
-                            else None)
-                recon_weight = self.loss.reconstruction_scale
-                if (recon_mode in ('concepts', 'both')
-                        and target_c is not None and self._cs_cache):
-                    cs_sub = self._cs_cache[-1]
-                    pred_c = (cs_sub.materialize()
-                              if cs_sub is not None
-                              and hasattr(cs_sub, 'materialize')
-                              else None)
-                    if pred_c is not None and pred_c.dim() == 3:
-                        K_c = min(pred_c.shape[1],
-                                  target_c.shape[1],
-                                  mask_pos.shape[1])
-                        loss_c = self.loss.compute_masked(
-                            pred_c[:, :K_c, :],
-                            target_c[:, :K_c, :].detach(),
-                            mask_pos[:, :K_c])
-                        TheError.add(
-                            "reconstruction_c", loss_c,
-                            weight=recon_weight,
-                            space="ConceptualSpace",
-                            category="reconstruction",
-                        )
-                if (recon_mode in ('symbols', 'both')
-                        and target_c is not None and self._ss_cache):
-                    ss_sub = self._ss_cache[-1]
-                    pred_s = (ss_sub.materialize()
-                              if ss_sub is not None
-                              and hasattr(ss_sub, 'materialize')
-                              else None)
-                    if pred_s is not None and pred_s.dim() == 3:
-                        # Match dims: target_c is at C-tier width;
-                        # SS may have a different muxed width.  Use
-                        # the leading shared dims.
-                        K_s = min(pred_s.shape[1],
-                                  target_c.shape[1],
-                                  mask_pos.shape[1])
-                        loss_s = self.loss.compute_masked(
-                            pred_s[:, :K_s, :],
-                            target_c[:, :K_s, :].detach(),
-                            mask_pos[:, :K_s])
-                        TheError.add(
-                            "reconstruction_s", loss_s,
-                            weight=recon_weight,
-                            space="SymbolicSpace",
-                            category="reconstruction",
-                        )
+                # Stage 1.C retirement: no sigma_percept target lift.
+                # Stage 1.F retirement: ``_cs_cache`` / ``_ss_cache``
+                # are gone — the terminal C-tier idea lives at
+                # ``self.conceptualSpace.stm.snapshot()[:, -1, :]``
+                # (the reverse-pass reconstruction above already reads
+                # it via the migrated dispatch). Stage 3 will
+                # reinstate the C/S forward-only reconstruction by
+                # consuming that same STM snapshot as the target.
+                pass
 
             # JOINT mode: compute SBOW embedding loss
             sbow = None
@@ -4187,10 +4183,14 @@ class BasicModel(BaseModel):
                 # ConceptualSpace input is the true upstream percept
                 # width ``percept_dim + obj_percept`` (``cs_in``), and
                 # its output is the conceptual content width
-                # ``concept_dim`` (``cs_out``).  ``sigma_percept`` is
-                # therefore the percept->concept *lift*
-                # (``percept_dim+obj_percept -> concept_dim``), not a
-                # width-preserving map.  ``concept_dim`` is the BARE
+                # ``concept_dim`` (``cs_out``). Pre Stage 1.C the
+                # ``sigma_percept`` SigmaLayer did the per-stage
+                # percept→concept *lift* here; Stage 1.C retired that
+                # atomic fold (see ConceptualSpace docstring) so the
+                # per-stage shapes still describe input/output widths
+                # for the CS recurrent cell but the lift itself is now
+                # the signal-router's responsibility (Stage 3).
+                # ``concept_dim`` is the BARE
                 # ``<ConceptualSpace><nDim>`` -- where/when ride muxed
                 # *inside* it (``SubSpace`` derives
                 # ``nWhat = concept_dim - nWhere - nWhen``), exactly as
@@ -4299,6 +4299,24 @@ class BasicModel(BaseModel):
         for ss in self.symbolicSpaces:
             object.__setattr__(ss, 'perceptualSpace_ref',
                                self.perceptualSpace)
+
+        # Stage 1.B paired-row contract (2026-05-27): wire the back-ref
+        # SS <- Embedding so PS-side OOV inserts (Embedding.insert /
+        # Embedding.stage_oov) can trigger ``ss.insert_paired_word`` to
+        # create the orth + semantic paired rows on SS.codebook. The
+        # ref points from the lexicon Embedding back to the TERMINAL SS
+        # stage (``symbolicSpaces[-1]`` == ``self.symbolicSpace``), per
+        # the user's 2026-05-27 multi-stage decision: the terminal SS
+        # is the canonical lexicon-mirror owner because downstream
+        # consumers already reach it via ``model.symbolicSpace``. For
+        # multi-stage configs (e.g. MM_xor with 4 SS stages), the
+        # terminal stage may have lower nVectors than the widest stage
+        # — verify SS.nVectors >= 2 * max_OOV per config.
+        terminal_ss = (self.symbolicSpaces[-1]
+                       if self.symbolicSpaces else None)
+        emb = getattr(self.perceptualSpace, 'vocabulary', None)
+        if terminal_ss is not None and isinstance(emb, Embedding):
+            object.__setattr__(emb, 'symbolicSpace_ref', terminal_ss)
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -4442,12 +4460,18 @@ class BasicModel(BaseModel):
                     K-axis flatten/restore is hoisted into _forward_body.
             head  : FlattenK(outputSpace)
 
-        T = len(self.conceptualSpaces). Each per-stage SymbolicSpace
-        output is captured into ``self._ss_cache[t]`` (plain Python list)
-        by ``_forward_body``. ``_forward_per_stage`` reads them to
-        rebuild ``symbol_states`` (un-flattened back to [B,K,N,D]).
+        T = len(self.conceptualSpaces). Per-stage SymbolicSpace and
+        ConceptualSpace outputs are persisted directly on the stage
+        spaces' ``.subspace`` — the per-stage forward capture lists
+        ``_ss_cache`` / ``_cs_cache`` were retired by Stage 1.F of the
+        two-loop pi/sigma substrate refactor (doc/plans/
+        2026-05-26-two-loop-pi-sigma-substrate.md). Reverse-pass
+        consumers read the terminal C-tier idea from
+        ``self.conceptualSpace.stm.snapshot()``; ``symbol_states`` is
+        rebuilt by iterating ``self.symbolicSpaces`` directly.
         ``self.symbol_cache`` is a property returning the terminal
-        entry — same role as before, no longer a CachePoint module.
+        SymbolicSpace's ``.subspace`` — same role as before, no longer
+        a CachePoint module and no longer a per-stage list lookup.
         """
         T = len(self.conceptualSpaces)
         use_grammar_merge = (self.useGrammar == "all")
@@ -4463,15 +4487,16 @@ class BasicModel(BaseModel):
         # ``self.symbolicSpaces[-1]``.
         self.symbolicSpace.wordSubSpace = self.wordSubSpace
 
-        # Per-stage symbol output capture. Plain Python list populated
-        # by ``_forward_body`` each call; ``symbol_cache`` property
-        # resolves to the terminal entry. Replaces the prior CachePoint
-        # ModuleList (CachePoints existed only to fit nn.Sequential).
-        self._ss_cache = [None] * T
-        # Per-stage concept output capture (parallel to ``_ss_cache``)
-        # for the ``<reconstruct>concepts</...>`` / ``both`` forward-
-        # only reconstruction loss in ``runBatch``.
-        self._cs_cache = [None] * T
+        # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
+        # pi-sigma-substrate.md): the per-stage forward capture lists
+        # ``_ss_cache`` / ``_cs_cache`` are retired entirely. The
+        # terminal C-tier idea built up over the sentence lives on
+        # ``self.conceptualSpace.stm`` (ShortTermMemory snapshot); the
+        # terminal symbolic subspace lives directly on
+        # ``self.symbolicSpace.subspace`` (each stage's
+        # ``ss.forward(...)`` writes there in place). Both
+        # ``symbol_cache`` and the reverse-pass reconstruction loss
+        # consumer were migrated to read from those canonical owners.
 
         # Determine initial_n per stage for the N-halving GrammarMergeGlue.
         try:
@@ -4525,12 +4550,21 @@ class BasicModel(BaseModel):
 
     @property
     def symbol_cache(self):
-        """Terminal stage's captured symbolic subspace, or None if not yet set.
+        """Terminal stage's symbolic subspace, or None if not yet set.
 
-        Replaces the prior ``self.symbol_cache = self.ss_caches[T-1]``
-        CachePoint. Read-only — populated by ``_forward_body``.
+        Post Stage 1.F of the two-loop pi/sigma substrate refactor
+        (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the
+        per-stage ``_ss_cache`` capture list is retired. The terminal
+        SymbolicSpace's ``.subspace`` is the canonical owner of the
+        terminal symbolic state — each stage's ``ss.forward(...)``
+        writes there in place — so this property resolves directly to
+        ``self.symbolicSpace.subspace``. Read-only consumer surface;
+        same role as before, no per-stage list lookup.
         """
-        return self._ss_cache[-1] if self._ss_cache else None
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is None:
+            return None
+        return getattr(ss, 'subspace', None)
 
 
 
@@ -4589,8 +4623,9 @@ class BasicModel(BaseModel):
         Per pass t over ``self.body_stages`` (T = conceptualOrder):
 
           * PS and SS run **in parallel** (no intra-pass dependency --
-            both consume the prior pass's CS views):
-              ``PS_sub = perceptualSpace.forward(in_sub, prevCS_forPS)``
+            SS still consumes the prior pass's CS view; PS is single-
+            arg post-Stage-1.A substrate refactor):
+              ``PS_sub = perceptualSpace.forward(in_sub)``
               ``SS_sub = ss.forward(prevCS_forSS)``
           * ConceptualSpace combines them (CS is the per-pass terminal):
               ``CS_sub = cs.forward(PS_sub, SS_sub)``
@@ -4608,42 +4643,57 @@ class BasicModel(BaseModel):
         When ``self.loss_head`` is set the post-body STM snapshot feeds
         the head and the loss is stashed on ``self._loss_head_loss``.
         """
-        # 2b-1 capstone: per-word IR-reconstruction loop. When the
-        # InputSpace per-word cursor is enabled (grammar configs;
-        # ``_per_word_enabled = (useGrammar != 'none')``, wired in 2a),
-        # the FRONT of the forward changes from whole-slab to an
-        # internal per-word loop -- ONE forward = ONE sentence. Each
-        # ground-truth word ``[B,1,D]`` is pumped through the SAME
-        # per-stage PS->CS->SS computation and the resulting per-word
-        # concept is SHIFTed onto ConceptualSpace.stm; the NULL seal
-        # (next_word -> None) ends the loop. The accumulated STM then
-        # feeds the EXISTING compose-to-S / chart / head / reverse() /
-        # IR-loss TAIL entirely unchanged (the guiding principle:
-        # minimize new training-critical surface -- reuse the existing
-        # IR machinery verbatim, change only how the representation is
-        # built). ``_per_word_enabled=False`` (non-grammar, model.xml)
-        # falls through to the whole-slab path below, byte-identical.
-        isp = self.inputSpace
-        if isp is not None and getattr(isp, "_per_word_enabled", False):
+        # Stage 1.E: explicit two-mode dispatch on
+        # ``self.conceptualMode`` (XML knob
+        # ``<architecture><conceptualMode>``, parsed in
+        # ``create_from_config``).
+        #
+        #   * ``"serial"`` (= GRAMMATICAL) -- per-word IR-reconstruction
+        #     loop via :meth:`_forward_body_per_word`. ONE forward = ONE
+        #     sentence: each ground-truth word ``[B,1,D]`` is pumped
+        #     through the SAME per-stage PS->CS->SS computation and the
+        #     resulting per-word concept is SHIFTed onto
+        #     ConceptualSpace.stm; the NULL seal (next_word -> None)
+        #     ends the loop. The accumulated STM then feeds the EXISTING
+        #     compose-to-S / chart / head / reverse() / IR-loss TAIL
+        #     entirely unchanged.
+        #
+        #   * ``"parallel"`` -- T iterations of the per-stage body
+        #     (whole-slab path, T = ``<conceptualOrder>``), the legacy
+        #     non-grammar path. Falls through to the loop below.
+        #
+        # Pre-Stage-1.E this dispatch was implicit (driven by the
+        # InputSpace-side ``_per_word_enabled`` boolean derived from
+        # ``useGrammar``); ``_per_word_enabled`` is now a back-ref
+        # mirrored from ``self.conceptualMode`` (see
+        # ``create_from_config``) and retained for the remaining InputSpace
+        # / per-word-loop late-stage consumers.
+        if self.conceptualMode == "serial":
             return self._forward_body_per_word(in_sub)
 
-        prevCS_forPS = self._empty_seed_ps
         prevCS_forSS = self._empty_seed_ss
         last_cs = None
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
             ss = stage["ss"]
-            # Gate PerceptualSpace's serial warm-path: it is an
-            # AR-streaming optimisation across forward calls and must
-            # not splice on in-forward recurrent passes >0 (each pass
-            # carries distinct C→P feedback). ``recur_pass`` lives on
+            # Gate PerceptualSpace's serial warm-path: ``recur_pass`` /
+            # ``_recurrent_pass_idx`` is preserved for the AR-streaming
+            # warm-cache gate (forward-call-level, not in-forward
+            # recurrent passes >0). It no longer selects a pi_input
+            # ModuleList order — PS owns a single ``self.pi`` /
+            # ``self.sigma`` pair post-Stage-1.A. The recur_pass=0 gate
+            # in PerceptualSpace.forward consults this for the
+            # cross-call serial cache. ``recur_pass`` lives on
             # WordSpace; PerceptualSpace.forward reads it via the
             # ``subspace.wordSubSpace`` back-reference.
             if self.wordSubSpace is not None:
                 self.wordSubSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
-            PS_sub = self.perceptualSpace.forward(in_sub, prevCS_forPS)
+            # Stage 1.A substrate refactor: PerceptualSpace.forward
+            # is single-arg now (``pi(x) + sigma(x)`` on the same input
+            # — no CS-feedback path entering PS at this level).
+            PS_sub = self.perceptualSpace.forward(in_sub)
             if t == 0:
                 # IR masked-LM mask applied once, on the first pass's
                 # perceptual event, before CS consumes it
@@ -4652,7 +4702,10 @@ class BasicModel(BaseModel):
                 self.create_ir_mask(PS_sub)
             SS_sub = ss.forward(prevCS_forSS)
             CS_sub = cs.forward(PS_sub, SS_sub)
-            self._cs_cache[t] = CS_sub
+            # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
+            # terminal C-tier idea lives on ``conceptualSpace.stm``
+            # (the bookkeeping push happens inside cs.forward); the
+            # reverse path reads ``stm.snapshot()[:, -1, :]``.
             self._chart_compose_at_C(stage_idx=t)
             if "merge" in stage:
                 CS_sub = stage["merge"](CS_sub)
@@ -4664,16 +4717,23 @@ class BasicModel(BaseModel):
             # ConceptualSpace.forward); no SentenceState carrier — the
             # reverse path generates its own estimates of these
             # intermediate views (reconstruction contract).
-            prevCS_forPS = cs._subspaceForPS
+            # ``prevCS_forPS`` retired post-Stage-1.A — PerceptualSpace
+            # is single-arg now and no longer consumes the C→P handoff
+            # at this site. ``prevCS_forSS`` is still load-bearing for
+            # the next iteration's ``ss.forward(prevCS_forSS)`` call.
             prevCS_forSS = cs._subspaceForSS
             # "Nothing to quantize -> pass zeros": SS is inert when its
             # input was the empty seed (conceptualOrder=1, or pass 0).
             # CS already consumed SS_sub as-is above (pass-0 math
-            # unchanged); cache a correctly-batched zero symbol so the
-            # symbol-state contract holds for the head / discourse.
+            # unchanged); the correctly-batched zero symbol is
+            # produced here so the symbol-state contract holds for
+            # the head / discourse.
             if SS_sub.is_empty():
                 SS_sub = self._zero_symbol_subspace(ss, in_sub)
-            self._ss_cache[t] = SS_sub
+            # Stage 1.F: ``_ss_cache[t] = SS_sub`` retired. The
+            # terminal symbolic state lives on
+            # ``self.symbolicSpace.subspace`` (written by
+            # ``ss.forward(...)``); ``symbol_cache`` resolves there.
             last_cs = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
@@ -4978,7 +5038,14 @@ class BasicModel(BaseModel):
             CS.forward mutates in place) right after iteration 0's
             cs.forward, so iterations 1+ pick up the in-place updates
             without any further pointer churn.
-          * Fresh ``_cs_cache`` / ``_ss_cache`` lists.
+
+        Stage 1.F of the two-loop pi/sigma substrate refactor
+        (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md) retired
+        the per-stage ``_cs_cache`` / ``_ss_cache`` capture lists —
+        no per-forward reallocation here either; the terminal C-tier
+        idea lives on ``stm`` (cleared above), and the terminal
+        symbolic subspace is the persistent ``self.symbolicSpace
+        .subspace`` (overwritten in place by each ``ss.forward``).
 
         Returns ``(stm, N_target, word_carrier, in_event)`` -- the
         values ``_forward_body_per_word`` needs from the prelude.
@@ -4991,11 +5058,6 @@ class BasicModel(BaseModel):
             B_in = int(in_event.shape[0]) if in_event is not None else 1
             stm.ensure_batch(B_in)
             stm.clear()
-
-        # Fresh per-forward caches (mirrors the whole-slab path).
-        T_cache = len(self._ss_cache)
-        self._cs_cache = [None] * T_cache
-        self._ss_cache = [None] * T_cache
 
         # MPHF pre-warm (Dynamo-unfriendly build path).
         ps = self.perceptualSpace
@@ -5145,7 +5207,10 @@ class BasicModel(BaseModel):
                 and getattr(prevCS_forSS, '_event', None) is not None)
             else None)
 
-        PS_sub = self.perceptualSpace.forward(word_sub, prevCS_forPS)
+        # Stage 1.A substrate refactor: PerceptualSpace.forward is
+        # single-arg now (``pi(x) + sigma(x)`` on the same input —
+        # no CS-feedback path entering PS at this level).
+        PS_sub = self.perceptualSpace.forward(word_sub)
         SS_sub = ss.forward(prevCS_forSS)
         CS_sub = cs.forward(PS_sub, SS_sub)
 
@@ -5168,18 +5233,19 @@ class BasicModel(BaseModel):
         self._prev_cs_for_ps = cs._subspaceForPS
         self._prev_cs_for_ss = cs._subspaceForSS
 
-        # Terminal-stage caches — only update at active host positions so
-        # padding iterations don't overwrite the last-real-word state
-        # that downstream reconstruction loss reads. ``active_host`` is
-        # a Python bool derived host-side from
-        # ``inputSpace._valid_len_host``; the body itself stays loop-
-        # body sentence-length-free, but the cache writes here are
-        # gated. Dynamo specializes on the host int.
+        # Stage 1.F substrate refactor (doc/plans/2026-05-26-two-loop-
+        # pi-sigma-substrate.md): the per-stage ``_cs_cache`` /
+        # ``_ss_cache`` capture lists are retired. The terminal C-tier
+        # idea is owned by ``cs.stm`` (the bookkeeping push fires
+        # below via ``stm.push_step_masked``, which is host-gated to
+        # active iterations); the terminal symbolic subspace is owned
+        # by ``self.symbolicSpace.subspace`` (overwritten in place by
+        # ``ss.forward`` above on every iteration). On padding
+        # iterations the SS write is harmless (the input was empty)
+        # and downstream readers gate on the active-host mask
+        # / STM depth, so no extra guard is needed here.
         if SS_sub.is_empty():
             SS_sub = self._zero_symbol_subspace(ss, word_sub)
-        if active_host:
-            self._cs_cache[-1] = CS_sub
-            self._ss_cache[-1] = SS_sub
 
         idea_bd = None
         if CS_sub is not None:
@@ -5295,8 +5361,10 @@ class BasicModel(BaseModel):
         # The per-word loop IS the recurrence: it replaces the
         # whole-slab cell's ``conceptualOrder`` pass loop with a
         # word-indexed loop. Per the ratified design each word is ONE
-        # PS->CS->SS step (a single ``sigma_percept`` Σ-lift -> one
-        # concept), and the C->P / C->S feedback carries word-to-word
+        # PS->CS->SS step (Pre Stage 1.C this was a single
+        # ``sigma_percept`` Σ-lift; post 1.C it is a single STM push of
+        # the materialised PS/SS combine onto ``cs.stm``), and the
+        # C->P / C->S feedback carries word-to-word
         # (the cross-step carrier), mirroring exactly how
         # ``_forward_body`` carries ``prevCS_*`` across its passes:
         # initialise the feedback ONCE before the loop, update it each
@@ -5840,7 +5908,13 @@ class BasicModel(BaseModel):
           stem -> ``[B, N, D]`` (InputSpace.forward + PerceptualSpace
                   .forward; no K-axis).
           body -> per-stage CS/SS chain on B-shaped tensors; each
-                  SymbolicSpace output captured into ``self._ss_cache``.
+                  SymbolicSpace output lives on that stage's
+                  ``.subspace`` (the per-stage ``_ss_cache`` /
+                  ``_cs_cache`` capture lists were retired by Stage
+                  1.F of doc/plans/2026-05-26-two-loop-pi-sigma-
+                  substrate.md — terminal STM owns the C-tier idea
+                  and ``self.symbolicSpaces[*]`` own the per-stage
+                  symbolic state).
           head -> ``outputSpace``; result event ``[B, N, predDim]``.
 
         Within-sentence training is IR-only (BERT-style masked-LM at
@@ -5948,10 +6022,30 @@ class BasicModel(BaseModel):
         if pred is not None:
             pred = self.normalizer.denormalize(pred, which="output")
 
-        # Capture symbol_states from the per-stage cache list (plain
-        # Python ``self._ss_cache`` populated by ``_forward_body``).
+        # Capture symbol_states by iterating per-stage SymbolicSpaces
+        # directly. Each stage's ``ss.forward(...)`` in
+        # ``_forward_body`` writes its result onto that stage's
+        # ``.subspace``; reading per-stage straight off
+        # ``self.symbolicSpaces`` is the canonical replacement for the
+        # retired ``self._ss_cache`` per-forward capture list (Stage
+        # 1.F of doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md).
+        # Per-word path only fires the terminal stage's ss.forward, so
+        # match the legacy ``_ss_cache`` populating pattern by walking
+        # only the terminal stage there — preserves the legacy
+        # symbol_states cardinality (1 entry in per-word path; T
+        # entries in the whole-slab path).
+        isp = getattr(self, 'inputSpace', None)
+        per_word_path = (isp is not None
+                         and getattr(isp, '_per_word_enabled', False))
+        if per_word_path:
+            stages_iter = (
+                [self.symbolicSpaces[-1]] if self.symbolicSpaces
+                else [])
+        else:
+            stages_iter = list(self.symbolicSpaces)
         captured_states = []
-        for sub in self._ss_cache:
+        for ss in stages_iter:
+            sub = getattr(ss, 'subspace', None)
             if sub is None:
                 continue
             sv = sub.materialize()
@@ -6586,6 +6680,75 @@ class ModelFactory:
             f"to match <ConceptualSpace><nOutputDim> if present, else "
             f"<ConceptualSpace><nDim>."
         )
+
+        # ---- Flat-slab invariant ------------------------------------
+        # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
+        # substrate.md): IS, PS, CS must carry the same FLAT slab width
+        # (nOutput * effective_out_dim) so the IS->PS->CS handoff is
+        # a pure reshape, not a re-dimensioning. The lexicon vector
+        # carried at PS is CS-space-dimensioned -- the flat-slab equality
+        # is the precondition for the SS.codebook paired-rows contract
+        # (the orth row is a copy of PS's per-word vector, sized to CS).
+        #
+        # Embedding-mode only: the SimpleModel / passthrough / vq paths
+        # don't carry a lexicon, so the "PS per-word is CS-space"
+        # rationale doesn't apply -- the slab can re-dimension across
+        # tiers for those (e.g. MNIST IS=784 pixels, CS=20 features).
+        # The invariant fires only when ``modelType=embedding`` so
+        # legacy SimpleModel / numeric configs survive.
+        # Default matches model.xml defaults (modelType=simple, i.e.
+        # not embedding). The invariant fires only when an XML config
+        # explicitly opts in via <modelType>embedding</modelType>.
+        model_type_raw = arch.get("modelType", "simple")
+        is_embedding_mode = (str(model_type_raw).strip().lower()
+                             == "embedding")
+
+        def _effective_out_dim(space_name, fallback_dim):
+            """Return nOutputDim if set, else nDim, else the chained
+            ``fallback_dim`` from the previous tier."""
+            try:
+                raw = gsp(cfg, space_name, "nOutputDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            try:
+                raw = gsp(cfg, space_name, "nDim")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_dim)
+
+        def _effective_out_count(space_name, fallback_count):
+            try:
+                raw = gsp(cfg, space_name, "nOutput")
+                if raw and int(raw) > 0:
+                    return int(raw)
+            except KeyError:
+                pass
+            return int(fallback_count)
+
+        is_dim = _effective_out_dim("InputSpace", input_dim)
+        is_n = _effective_out_count("InputSpace", 1)
+        ps_dim = _effective_out_dim("PerceptualSpace", is_dim)
+        ps_n = _effective_out_count("PerceptualSpace", is_n)
+        cs_dim = _effective_out_dim("ConceptualSpace", ps_dim)
+        cs_n = _effective_out_count("ConceptualSpace", ps_n)
+
+        is_slab = is_n * is_dim
+        ps_slab = ps_n * ps_dim
+        cs_slab = cs_n * cs_dim
+        if is_embedding_mode and not (is_slab == ps_slab == cs_slab):
+            errors.append(
+                f"flat-slab invariant violated: IS.nOutput*IS.nDim "
+                f"({is_n}*{is_dim}={is_slab}) must equal "
+                f"PS.nOutput*PS.nDim ({ps_n}*{ps_dim}={ps_slab}) must "
+                f"equal CS.nOutput*CS.nDim ({cs_n}*{cs_dim}={cs_slab}). "
+                f"The IS->PS->CS handoff must be a pure reshape, not a "
+                f"re-dimensioning; PS's per-word vector is CS-space-"
+                f"dimensioned and SS.codebook's orth row is a copy of it."
+            )
 
         # Monotonicity ⟹ no ConceptualSpace projection codebook.
         # ``architecture.monotonic`` makes the subsymbolic loop

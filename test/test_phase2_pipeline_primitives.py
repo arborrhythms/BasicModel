@@ -130,12 +130,19 @@ def test_space_forward_arities():
 
     Cross-space combination moved out of ``_sourced_input``/``*_ref``
     into explicit ``forward`` arguments supplied by the recurrent cell:
-      * PerceptualSpace.forward(IS_subspace, CS_subspaceForPS=None)
+      * PerceptualSpace.forward(x_subspace)        -- Stage 1.A single-arg
       * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
       * SymbolicSpace.forward(CS_subspaceForSS)  -- single (no combine)
       * InputSpace / ModalSpace / OutputSpace    -- single, unchanged
-    The optional second arg defaults to ``None`` so standalone single-arg
-    callers still work.
+    The optional second arg on CS defaults to ``None`` so standalone
+    single-arg callers still work.
+
+    Stage 1.A substrate refactor (doc/plans/
+    2026-05-26-two-loop-pi-sigma-substrate.md): PerceptualSpace.forward
+    is single-arg now. The body composes ``pi(x) + sigma(x)`` on the
+    same materialized input; the legacy two-input
+    ``tanh(pi_input(IS) + pi_concept(C_prev))`` contract (with
+    CS_subspaceForPS as the second arg) is retired.
 
     Post-2026-05-21 SentenceState dissolution: the per-sentence ``work``
     carrier was retired. Grammar / serial-processing state lives directly
@@ -147,7 +154,7 @@ def test_space_forward_arities():
                         ConceptualSpace, SymbolicSpace, OutputSpace)
     expected = {
         InputSpace: (1, 1),
-        PerceptualSpace: (1, 2),   # IS_subspace req, CS_subspaceForPS opt
+        PerceptualSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
         ModalSpace: (1, 1),
         ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
         SymbolicSpace: (1, 1),     # CS_subspaceForSS

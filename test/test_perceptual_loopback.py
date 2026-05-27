@@ -68,17 +68,20 @@ class TestForwardArityContract(unittest.TestCase):
     # carrier-free signatures.
 
     def test_perceptual_forward_arity(self):
+        # Post-Stage-1.A substrate refactor (doc/plans/
+        # 2026-05-26-two-loop-pi-sigma-substrate.md): PS.forward is
+        # single-arg. Body composes ``pi(x) + sigma(x)`` on the same
+        # materialized input; the legacy ``CS_subspaceForPS`` second
+        # arg is gone (CS feedback no longer enters PS at this level —
+        # it re-enters via chart / signal-router over STM in later
+        # stages).
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.PerceptualSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
-        self.assertEqual(len(params), 2,
+        self.assertEqual(len(params), 1,
                          f"PerceptualSpace.forward must be "
-                         f"(IS_subspace, CS_subspaceForPS=None); got {params}")
-        # Second arg optional so standalone single-arg callers still work.
-        second = sig.parameters[params[1]]
-        self.assertIsNot(second.default, inspect.Parameter.empty,
-                         "CS_subspaceForPS must default to None.")
+                         f"(x_subspace); got {params}")
         self.assertNotIn("work", sig.parameters,
                          "PerceptualSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
@@ -219,10 +222,12 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
                         "ConceptualSpace._subspaceForSS must exist after "
                         "forward.")
 
-    def test_cold_start_none_equals_default(self):
-        """forward(IS) and forward(IS, None) are the same call; an empty
-        CS_subspaceForPS also degrades to the primary pi_input path
-        (no crash, produces a percept event)."""
+    def test_forward_produces_percept_event(self):
+        """Post-Stage-1.A: PS.forward is single-arg
+        (``pi(x) + sigma(x)`` on the same input). Two successive calls
+        with the same upstream IS subspace produce a non-None percept
+        event with the same shape -- the in-call composition is
+        deterministic, no CS-feedback branching."""
         import warnings
         m = self.model
         m.eval()
@@ -230,19 +235,18 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
             warnings.filterwarnings("ignore")
             with torch.no_grad():
                 in_sub = m.inputSpace.forward(self._one_input())
-                empty = m._empty_subspace()
                 a = self.percep.forward(in_sub)
                 ev_a = a.materialize() if a is not None else None
-                b = self.percep.forward(in_sub, empty)
+                b = self.percep.forward(in_sub)
                 ev_b = b.materialize() if b is not None else None
         self.assertIsNotNone(ev_a,
                              "forward(IS) must produce a percept event.")
         self.assertIsNotNone(ev_b,
-                             "forward(IS, empty) must produce a percept "
-                             "event (cold-start degrades to pi_input).")
+                             "second forward(IS) must produce a percept "
+                             "event.")
         self.assertEqual(tuple(ev_a.shape), tuple(ev_b.shape),
-                         "None vs empty CS feedback must not change the "
-                         "percept shape (both take the primary path).")
+                         "Two successive forward(IS) calls must produce "
+                         "events of the same shape.")
 
 
 class TestLexiconOnSymbolicSpace(unittest.TestCase):

@@ -15,6 +15,9 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <monotonic>true</monotonic>
 
     <training>
@@ -52,26 +55,30 @@
     </language>
   </WordSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
+       the same flat slab. CS terminal is 16*12=192; align IS/PS to
+       16*12=192 (nOutput=16, nDim=12). SS keeps nDim=12 (concept_dim
+       == symbol_dim invariant). -->
   <InputSpace>
-    <nDim>10</nDim>
-    <nVectors>8</nVectors>
-    <nOutput>8</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
+    <nOutput>16</nOutput>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
-    <nVectors>8</nVectors>
+    <nOutput>16</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
-       nPercepts=8 × dim=12.  Final level: 1 vector × 96 dim.
+       nPercepts=16 × dim=12.  Final level: 1 vector × 192 dim.
        XML nDim/nVectors describe the final level for non-hierarchical compat. -->
   <ConceptualSpace>
     <nOutput>16</nOutput>

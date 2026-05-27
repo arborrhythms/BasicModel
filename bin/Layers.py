@@ -1759,7 +1759,7 @@ class GrammarLayer(Layer):
         return self.generate(*args, **kwargs)
 
 
-class SigmaLayer(Layer):
+class SigmaLayer(GrammarLayer):
     """Additive (summation) fold feature of the subsymbolic loop.
 
     Substrate, not a grammar operation. Instantiated directly by spaces
@@ -3384,7 +3384,7 @@ GRAMMAR_LAYER_CLASSES = {
 CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
 
 
-class PiLayer(Layer):
+class PiLayer(GrammarLayer):
     r"""Multiplicative boundary fold feature of the subsymbolic loop:
     ``[-1, 1] -> [-1, 1]``.
 

@@ -8,6 +8,9 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <weightsPath>MM_5M.ckpt</weightsPath>
     <!-- Pre-built 1M-word lexicon (built via embed.py vocab-extract).
          Freezes the embedding vocab at startup so the per-word route
@@ -53,9 +56,20 @@
 
   </architecture>
 
+  <!-- Stage 1.D re-architecture (2026-05-27): the flat-slab invariant
+       requires IS.nOutput*IS.nDim == PS.nOutput*PS.nDim == CS.nOutput*CS.nDim
+       so the IS->PS->CS handoff is a pure reshape, not a re-dimensioning.
+       The CS terminal width was 8*1024=8192; to satisfy the invariant
+       while preserving the 1024-slot input character of the architecture,
+       IS/PS slot dim raised from 6 to 8 (1024*8=8192). The progressive
+       bottleneck preserved: 1024 wide slots -> 8 wide concept slots,
+       same flat slab 8192 carried throughout.
+
+       Other knobs preserved: PS.nVectors=4096 (BPE codebook capacity);
+       SS.nVectors=65536 (lexicon capacity); CS.stmCapacity=7. -->
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
     <nWhere>2</nWhere>
@@ -65,7 +79,7 @@
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <hasAttention>false</hasAttention>
@@ -79,7 +93,7 @@
     <wordLearning>0</wordLearning>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: final level shape is 4x1024.
+  <!-- ConceptualSpace: final level shape is 8x1024 (flat slab 8192).
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
@@ -100,7 +114,12 @@
     <nInput>1024</nInput>
     <nDim>1024</nDim>
     <nInputDim>8</nInputDim>
-    <nVectors>65536</nVectors>
+    <!-- Stage 1.B paired-row contract (2026-05-27): SS.codebook gains
+         paired orth + semantic rows per word in PS's lexicon, so
+         SS.nVectors must be at least 2*PS_lexicon_capacity to hold
+         the paired rows. PS uses Embedding._LEXICON_DEFAULT_CAPACITY=65536,
+         doubled to 131072 for the orth+semantic pair. -->
+    <nVectors>131072</nVectors>
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>

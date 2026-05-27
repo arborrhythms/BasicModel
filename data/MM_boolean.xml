@@ -11,6 +11,9 @@
        'non-' prefix ("non-A"). The 0 token represents non-entity. -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <!-- Boolean DNF test: disable truth weights so loss reflects only
          the prediction objective. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -52,10 +55,14 @@
 
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
+       to PS/CS (8) so the flat slab is uniform 8*10=80 across the
+       IS->PS->CS pipeline. IS.nVectors stays at 16 (vocabulary size
+       headroom for the boolean atoms; nOutput is the active span). -->
   <InputSpace>
     <nDim>10</nDim>
     <nVectors>16</nVectors>
-    <nOutput>16</nOutput>
+    <nOutput>8</nOutput>
   </InputSpace>
 
   <PerceptualSpace>

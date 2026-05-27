@@ -6,6 +6,9 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -18,10 +21,15 @@
 
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
+       to PS/CS (8) so the flat slab is uniform 8*10=80 across the
+       IS->PS->CS pipeline. Previously IS.nOutput=32 widened the byte
+       span 4x relative to PS; the BPE chunker on PS still emits per
+       its own merging logic from the lexed byte input. -->
   <InputSpace>
     <nDim>10</nDim>
     <nVectors>8</nVectors>
-    <nOutput>32</nOutput>
+    <nOutput>8</nOutput>
     <lexer>byte</lexer>
   </InputSpace>
 

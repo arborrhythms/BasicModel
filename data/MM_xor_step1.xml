@@ -3,6 +3,9 @@
   <!-- Step 1: XOR_exact + type=mental (only change) -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <ergodic>true</ergodic>
 
     <training>
@@ -32,10 +35,12 @@
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS
+       (slab 6*10=60). nOutput halved from 12 to 6 to match. -->
   <ConceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>

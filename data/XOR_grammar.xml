@@ -25,6 +25,9 @@
          position copies via its own nonlinearity. -->
     <conceptualWidth>uniform</conceptualWidth>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -50,10 +53,12 @@
        (e.g. "hello world" -> 2 word tokens, padded) need that many
        slots. The shrink applies downstream of the input. -->
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
+       to PS/CS (6). nVectors stays at 8 for vocab headroom. -->
   <InputSpace>
     <nDim>4</nDim>
     <nVectors>8</nVectors>
-    <nOutput>8</nOutput>
+    <nOutput>6</nOutput>
     <codebook>quantize</codebook>
   </InputSpace>
 

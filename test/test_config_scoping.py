@@ -109,18 +109,22 @@ class TestCreateFromConfig(unittest.TestCase):
         return f.name
 
     def test_reads_space_nOutput(self):
+        # Stage 1.D flat-slab invariant: <modelType>passthrough</modelType>
+        # so the validator doesn't fire on the deliberately-mismatched
+        # per-space nOutput values (the point of this test is that
+        # nOutput is read per-space, not architectural correctness).
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <modelType>embedding</modelType>
+    <modelType>passthrough</modelType>
     <data><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>2</nOutput><nDim>1</nDim></InputSpace>
   <PerceptualSpace>
     <nOutput>4</nOutput><nDim>1</nDim>
-    
+
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
   <ConceptualSpace>
@@ -129,7 +133,7 @@ class TestCreateFromConfig(unittest.TestCase):
   </ConceptualSpace>
   <SymbolicSpace>
     <nOutput>3</nOutput><nDim>1</nDim><nVectors>3</nVectors>
-    
+
   </SymbolicSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
 </model>""")

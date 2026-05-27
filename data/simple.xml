@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <data>
       <dataset>mnist</dataset>
     </data>
@@ -20,6 +23,8 @@
     <nVectors>784</nVectors>
   </PerceptualSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): SimpleModel (no
+       embedding modelType); validator doesn't fire. Original shape. -->
   <ConceptualSpace>
     <nOutput>20</nOutput>
     <nVectors>20</nVectors>

@@ -5,6 +5,9 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <ergodic>true</ergodic>
     <nWhere>2</nWhere>
 
@@ -35,19 +38,22 @@
     </language>
   </WordSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
+       the same flat slab. CS terminal is 16*12=192; IS/PS aligned to
+       16*12=192 (nOutput=16, nDim=12). -->
   <InputSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
-    <nVectors>8</nVectors>
+    <nOutput>16</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
     <nInputDim>-1</nInputDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
-    <nVectors>8</nVectors>
+    <nOutput>16</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>

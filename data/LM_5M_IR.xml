@@ -19,6 +19,9 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
+         forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
     <weightsPath>LM_5M_IR.ckpt</weightsPath>
     <amp>bf16</amp>
 
@@ -55,11 +58,13 @@
        the .kv lexicon and the perceptual / conceptual / symbolic
        codebooks are share-compatible. -->
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): re-architected to a
+       uniform 8*1024=8192 slab; mirrors MM_5M_IR / MM_5M. -->
   <InputSpace>
-    <nInput>4096</nInput>
-    <nDim>6</nDim>
-    <nVectors>4096</nVectors>
-    <nOutput>4096</nOutput>
+    <nInput>1024</nInput>
+    <nDim>8</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
@@ -69,7 +74,7 @@
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
@@ -98,7 +103,8 @@
     <nInput>1024</nInput>
     <nDim>1024</nDim>
     <nInputDim>8</nInputDim>
-    <nVectors>1024</nVectors>
+    <!-- Stage 1.B paired-row contract: doubled for orth + semantic. -->
+    <nVectors>2000000</nVectors>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>

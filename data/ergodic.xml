@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <ergodic>true</ergodic>
 
     <data>
@@ -23,6 +26,10 @@
     <nVectors>784</nVectors>
   </PerceptualSpace>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): the invariant fires
+       only in embedding mode; this config is SimpleModel (no
+       <modelType>embedding</modelType>) so the architectural slab
+       can re-dimension across tiers. CS shape unchanged. -->
   <ConceptualSpace>
     <nOutput>20</nOutput>
     <nVectors>20</nVectors>

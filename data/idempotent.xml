@@ -45,6 +45,9 @@
   -->
   <architecture>
     <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
     <!-- idempotent reuses the snap primitive only; disable the truth
          weights so loss = reconstruction error alone. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -65,24 +68,35 @@
 
   </architecture>
 
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS must
+       carry the same flat slab (nOutput*nDim). Pre-Stage-1.D this
+       config had IS slab=1, PS slab=40, CS slab=1000 - intent was
+       a "fat concept" C-S round trip. Re-architected so the entire
+       pipeline carries a uniform 10*100=1000 slab; the V_S=V_C=10,
+       nDim_C=nDim_S=100 idempotent invariants are preserved (the
+       points where idempotency is tested). PS widens from 10*4 to
+       10*100 to keep the slab consistent. -->
   <InputSpace>
+    <nOutput>10</nOutput>
+    <nDim>100</nDim>
+    <nOutputDim>100</nOutputDim>
     <nVectors>40</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>10</nInput>
-    <nInputDim>4</nInputDim>
+    <nInputDim>100</nInputDim>
     <nVectors>10</nVectors>
-    <nDim>4</nDim>
+    <nDim>100</nDim>
     <nOutput>10</nOutput>
-    <nOutputDim>4</nOutputDim>
+    <nOutputDim>100</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nInput>10</nInput>
-    <nInputDim>4</nInputDim>
+    <nInputDim>100</nInputDim>
     <nVectors>10</nVectors>
     <nDim>100</nDim>
     <nOutput>10</nOutput>
