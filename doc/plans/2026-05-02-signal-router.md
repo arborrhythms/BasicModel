@@ -1,5 +1,7 @@
 # Signal Router Implementation Plan
 
+> **Subordination note (2026-05-27):** consolidated into the integrated multi-stage substrate refactor plan at [`doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md`](2026-05-26-two-loop-pi-sigma-substrate.md). Architectural framing — why the signal router becomes canonical, how it relates to PS / CS / SS / GrammarLayer / butterfly mode, and the retirement of the CKY chart and STM shift-reduce paths — lives in the master plan. **This document is the detailed task-by-task implementation reference for Stage 3 of the master plan** (parser cleanup + signal router promotion). The master plan adds the chart / STM-S/R retirement work and the LanguageLayer-at-WordSpace promotion that completes the consolidation.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
 > **Git policy for this project:** the user (Alec) manages all commits personally. Treat every "Commit" step as **"pause, summarize the change, and wait for user direction"** — never run `git commit`, `git add`, `git push`, or any branch-mutating command without explicit per-step approval. Read-only `git status` / `git diff` is fine.

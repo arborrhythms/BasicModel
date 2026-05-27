@@ -1,4 +1,3 @@
-* Implement basicmodel/doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
 
 * implement doc/specs/2026-05-21-cross-position-mixing-via-nInputDim.md.
 
