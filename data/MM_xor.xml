@@ -6,9 +6,13 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <modelType>embedding</modelType>
-    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
-         forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+         butterfly cascade on PerceptualSpace.pi requires the parallel
+         (whole-slab) forward path so the cascade sees all N positions
+         at once. Serial / per-word mode iterates the cascade with a
+         single position per call (the cascade then passes through as
+         a no-op). -->
+    <conceptualMode>parallel</conceptualMode>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -37,7 +41,19 @@
     <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
+    <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
+         2026-05-27 revision): FFT-style element-pair butterfly cascade
+         on self.pi AND self.sigma for cross-element mixing on the
+         flattened ``[B, N*D]`` view (auto-computed as nInput *
+         nInputDim = 8 * 10 = 80, padded internally to 128). 2x2 LDU
+         per node — no torch.linalg.solve in reverse.
+         For the cascade to actually flow gradient into the butterfly
+         params, the perceptual codebook must NOT muxed-snap the
+         pi+sigma output; set ``<codebook>none</codebook>`` on this
+         Space and let the downstream SS / OS handle quantisation. -->
+    <codebook>none</codebook>
+    <chunking>lexicon</chunking>
+    <butterfly>false</butterfly>
   </PerceptualSpace>
 
   <ConceptualSpace>

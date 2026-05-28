@@ -172,20 +172,9 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <xs:simpleType name="parserBackendEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="chart"/>
-      <xs:enumeration value="stm"/>
-      <xs:enumeration value="parallel"/>
-    </xs:restriction>
-  </xs:simpleType>
-
-  <xs:simpleType name="routerKindEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="chart"/>
-      <xs:enumeration value="signal"/>
-    </xs:restriction>
-  </xs:simpleType>
+  <!-- Stage 3 cleanup (2026-05-27): parserBackendEnum and
+       routerKindEnum retired alongside the chart. The signal router
+       (LanguageLayer) is the canonical parser. -->
 
   <xs:complexType name="symbolLearningType">
     <xs:all>
@@ -372,6 +361,19 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+           butterfly cascade mode on PerceptualSpace.pi. When
+           ``butterfly=true``, ``self.pi`` is constructed as
+           ``PiLayer(D, D, invertible=True, butterfly=True,
+           N=<butterflyN>)`` enabling cross-position mixing via an
+           O(N log N) cascade. ``butterflyN`` MUST be a power of two;
+           for non-power-of-two slot counts, pad to the next power of
+           two with identity-init on the extra slot and mask it from
+           the loss (the cascade itself only supports N = 2^k). Default
+           off; configs that don't opt in see the legacy PiLayer
+           construction unchanged. -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="butterflyN" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
@@ -389,6 +391,7 @@
         <xs:simpleType>
           <xs:restriction base="xs:string">
             <xs:enumeration value="bpe"/>
+            <xs:enumeration value="mphf"/>
             <xs:enumeration value="lexicon"/>
             <!-- ``none``: byte-direct.  Each byte becomes its own
                  perceptual slot via a 256-entry codebook lookup; no
@@ -559,20 +562,15 @@
       <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="parserBackend" type="parserBackendEnum" minOccurs="0"/>
-      <xs:element name="routerKind" type="routerKindEnum" minOccurs="0"/>
-      <!-- Soft-superposition chart output behavior: root (single root
-           sentence node, other positions zero) or broadcast (replicate
-           root across all positions). Default 'root'. -->
+      <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,
+           chartTau, wMax, chartTopK, chartNoiseEps retired alongside
+           the chart. The signal router (LanguageLayer) is the
+           canonical parser. The retired elements raise loud
+           ValueError at config load time -- see
+           Language._assert_retired_chart_knobs_absent. -->
+      <!-- Soft-superposition output collapse mode; preserved for the
+           signal router's root-state writeback contract. -->
       <xs:element name="chartCollapse" type="chartCollapseEnum" minOccurs="0"/>
-      <!-- Temperature for the soft-chart rule-score softmax. -->
-      <xs:element name="chartTau" type="positiveFloat" minOccurs="0"/>
-      <!-- Max span width considered by the chart. -->
-      <xs:element name="wMax" type="xs:positiveInteger" minOccurs="0"/>
-      <!-- Sparse-MoE: keep top-K rules per (cell, split); 0 disables. -->
-      <xs:element name="chartTopK" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Gaussian noise epsilon for chartTopK gating. -->
-      <xs:element name="chartNoiseEps" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Per-word stem is the only path. Each word does an individual
            P->C->S->C round trip in the stem, ideas accumulate on
            ConceptualSpace.stm, and the chart fires at C over STM in the

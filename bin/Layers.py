@@ -1588,12 +1588,85 @@ class GrammarLayer(Layer):
     # authority -> layers run unconditionally (backward-compat).
     _chart_authority = None
 
-    def __init__(self, nInput=0, nOutput=0):
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         """Initialize GrammarLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
+
+        Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
+        2026-05-27 revision): when ``butterfly=True``, allocate an
+        FFT-style element-pair butterfly cascade over a flattened
+        ``[B, M]`` view where ``M`` is the total element count
+        (rounded up to the next power of two). Each cascade node is a
+        single ``2 x 2`` LDU-factored block (``L``: unit lower-tri /
+        one off-diag scalar; ``d``: 2 diagonal scalars; ``U``: unit
+        upper-tri / one off-diag scalar). The 2-element per-pair op
+        mixes pairs of elements; ``log2(M)`` levels with bit-reversal
+        permutations between them connect every pair of elements
+        across the whole flattened vector.
+
+        ``N`` is the **flattened element count** (e.g., ``nInput *
+        nInputDim`` for a per-position-D layer). Padded to the next
+        power of two internally; the pad slots are zero-init and
+        contribute identity at forward / reverse. Callers may pass
+        ``N=None`` to defer; the wrapping space (e.g. ``PerceptualSpace``)
+        auto-computes it.
+
+        Per-node LDU storage (vs the prior single packed ``W`` Parameter
+        and ``torch.linalg.solve`` inverse): for ``2 x 2`` nodes the
+        inverse is closed-form (sign-flip on off-diagonals + reciprocals
+        on diagonals), no matrix solve required. This matches what
+        PiLayer / SigmaLayer's invertibility already does at the layer
+        level — the cascade uses the same parameterization on each
+        node.
         """
         super().__init__(nInput, nOutput)
+        # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --
+        # FFT-style element-pair cascade over a flattened element axis.
+        # Each node is a 2-element op with a 2x2 LDU block (4 scalars).
+        # Identity init makes ``forward(x) == x`` at init.
+        self.butterfly = bool(butterfly)
+        if self.butterfly:
+            if N is None or int(N) <= 0:
+                raise ValueError(
+                    "GrammarLayer: butterfly=True requires N >= 2 "
+                    "(total flattened element count); got N={N!r}")
+            N_in = int(N)
+            if N_in < 2:
+                raise ValueError(
+                    f"GrammarLayer.butterfly: N must be >= 2; got {N_in}")
+            # Pad to next power of two (FFT cascade structurally
+            # requires 2^k); the extra slots are zero-padded at
+            # forward time and stripped at the end.
+            M = 1
+            while M < N_in:
+                M *= 2
+            n_levels = int(math.log2(M))
+            self.N = N_in            # nominal (unpadded) element count
+            self.M_total = M         # padded power-of-two for the cascade
+            self.n_levels = n_levels
+            # The cascade composes square (nInput == nOutput required
+            # so reverse round-trips at the layer level).
+            if int(nInput) != int(nOutput):
+                raise ValueError(
+                    "GrammarLayer.butterfly: nInput must equal "
+                    f"nOutput (got {nInput} vs {nOutput})")
+            # Packed per-pair LDU storage. Each node owns 4 scalars:
+            #   L: single sub-diagonal entry (the [1, 0] of the 2x2 L)
+            #   d0, d1: the two diagonal entries
+            #   U: single super-diagonal entry (the [0, 1] of the 2x2 U)
+            # Identity init: L=0, d0=d1=1, U=0 → W=I per node.
+            pair_count = M // 2
+            self.butterfly_L = nn.Parameter(
+                torch.zeros(n_levels, pair_count))
+            self.butterfly_d = nn.Parameter(
+                torch.ones(n_levels, pair_count, 2))
+            self.butterfly_U = nn.Parameter(
+                torch.zeros(n_levels, pair_count))
+            # Per-level bit-reversal permutations placing XOR-
+            # neighbour elements adjacent before pair-pack.
+            perms = self._build_butterfly_perms(M, n_levels)
+            self.register_buffer('butterfly_perms', perms)
         # Auto-register with the chart authority (if any). Only
         # layers that carry a non-empty rule_name participate; the
         # base GrammarLayer with rule_name="" stays anonymous.
@@ -1606,6 +1679,222 @@ class GrammarLayer(Layer):
                 # registrar; ignore so we don't trip back-compat
                 # construction paths.
                 pass
+
+    # ---------------------------------------------------------------
+    # Butterfly cascade machinery (Stage 5).
+    # ---------------------------------------------------------------
+    @staticmethod
+    def _build_butterfly_perms(N, n_levels):
+        """Per-level permutation that makes XOR-neighbours adjacent.
+
+        At level ``k`` (0-indexed) the cascade pairs slot ``i`` with
+        slot ``i XOR (1 << k)``.  The permutation reorders the slot
+        axis so that XOR-neighbours land in adjacent positions; the
+        pair-pack reshape then groups them, the per-pair op fires,
+        and the inverse permutation re-scatters the result.
+
+        Returns a buffer ``[n_levels, N]`` of forward permutation
+        indices.  ``_butterfly_inverse_perm`` is computed on demand
+        from this -- not stored separately because each forward perm
+        already costs ``N`` ints per level and the inverse is just
+        a scatter.
+        """
+        perms = torch.empty((n_levels, N), dtype=torch.long)
+        for k in range(n_levels):
+            stride = 1 << k
+            block = stride << 1
+            order = []
+            for start in range(0, N, block):
+                for offset in range(stride):
+                    order.append(start + offset)
+                    order.append(start + offset + stride)
+            perms[k] = torch.tensor(order, dtype=torch.long)
+        return perms
+
+    @staticmethod
+    def _butterfly_inverse_perm(perm):
+        """Return the inverse permutation: ``inv[perm[i]] = i``."""
+        inv = torch.empty_like(perm)
+        inv[perm] = torch.arange(perm.numel(), device=perm.device)
+        return inv
+
+    # -- 2x2 LDU per-pair scalar ops (the cascade primitive) -----------
+    #
+    # Each node owns 4 scalars: L (sub-diag), d0, d1 (diag), U (super-
+    # diag). The full 2x2 matrix is W = L_node @ D_node @ U_node where
+    #   L_node = [[1, 0], [L, 1]]
+    #   D_node = diag(d0, d1)
+    #   U_node = [[1, U], [0, 1]]
+    # Forward pair op: y = L_node @ D_node @ U_node @ x
+    #   u_x_0 = x0 + U*x1
+    #   u_x_1 = x1
+    #   du_x_0 = d0 * u_x_0
+    #   du_x_1 = d1 * u_x_1
+    #   y0 = du_x_0
+    #   y1 = L * du_x_0 + du_x_1
+    # Reverse pair op: x = U_node^-1 @ D_node^-1 @ L_node^-1 @ y
+    #   L_inv @ y: [y0, y1 - L*y0]
+    #   D_inv @ ...: [.../d0, .../d1]
+    #   U_inv @ ...: [a - U*b, b]
+    # No torch.linalg.solve; no matrix inverse. Pure scalar ops.
+
+    def _butterfly_pair_forward(self, x_pair, L_node, d_node, U_node):
+        """Apply 2x2 LDU pair op forward: y = L @ D @ U @ x_pair.
+
+        Args:
+            x_pair: ``[B, M, 2]`` paired input (M = total // 2).
+            L_node: ``[M]`` sub-diagonal scalars.
+            d_node: ``[M, 2]`` diagonal scalars.
+            U_node: ``[M]`` super-diagonal scalars.
+
+        Returns:
+            ``[B, M, 2]`` paired output.
+        """
+        x0 = x_pair[..., 0]
+        x1 = x_pair[..., 1]
+        # U: [[1, U], [0, 1]]
+        u_x0 = x0 + U_node * x1
+        u_x1 = x1
+        # D: diag(d0, d1)
+        du_x0 = d_node[..., 0] * u_x0
+        du_x1 = d_node[..., 1] * u_x1
+        # L: [[1, 0], [L, 1]]
+        y0 = du_x0
+        y1 = L_node * du_x0 + du_x1
+        return torch.stack([y0, y1], dim=-1)
+
+    def _butterfly_pair_reverse(self, y_pair, L_node, d_node, U_node):
+        """Apply 2x2 LDU pair op reverse: x = U^-1 @ D^-1 @ L^-1 @ y.
+
+        Closed-form inverse from the LDU scalars (sign-flips on the
+        off-diagonals + reciprocals on the diagonals). No matrix
+        solve required.
+        """
+        y0 = y_pair[..., 0]
+        y1 = y_pair[..., 1]
+        # L^-1 = [[1, 0], [-L, 1]]
+        a0 = y0
+        a1 = y1 - L_node * y0
+        # D^-1 = diag(1/d0, 1/d1)
+        b0 = a0 / d_node[..., 0]
+        b1 = a1 / d_node[..., 1]
+        # U^-1 = [[1, -U], [0, 1]]
+        x0 = b0 - U_node * b1
+        x1 = b1
+        return torch.stack([x0, x1], dim=-1)
+
+    def _butterfly_flatten(self, x):
+        """Flatten ``x`` to ``[B, M_total]`` (padded with zeros).
+
+        Accepts any shape with leading batch dim B; flattens the
+        remaining dims, then right-pads with zeros to reach
+        ``self.M_total`` (the next power of two ≥ ``self.N``).
+
+        Returns ``(flat, original_shape)`` where ``original_shape`` is
+        the tuple of dims after B (for unflatten).
+        """
+        original_shape = tuple(x.shape[1:])
+        B = x.shape[0]
+        flat = x.reshape(B, -1)
+        n = flat.shape[1]
+        if n < self.M_total:
+            pad = torch.zeros(
+                B, self.M_total - n,
+                device=flat.device, dtype=flat.dtype)
+            flat = torch.cat([flat, pad], dim=1)
+        elif n > self.M_total:
+            # Should not happen if constructor sized M_total correctly,
+            # but guard against caller passing larger input than spec'd.
+            raise RuntimeError(
+                f"butterfly_flatten: input has {n} elements per batch "
+                f"row but cascade is sized for M_total={self.M_total}.")
+        return flat, original_shape
+
+    def _butterfly_unflatten(self, flat, original_shape):
+        """Inverse of ``_butterfly_flatten``: strip pad, reshape."""
+        B = flat.shape[0]
+        n = 1
+        for d in original_shape:
+            n *= d
+        return flat[:, :n].reshape((B,) + original_shape)
+
+    def _butterfly_forward(self, x):
+        """FFT-style element-pair butterfly cascade forward.
+
+        Flattens ``x`` to a 1-D-per-batch vector of length ``M_total``
+        (padded power-of-two). At each level:
+          1. Permute along the element axis (XOR-neighbour pairs
+             adjacent).
+          2. Pack adjacent pairs into ``[B, M_total // 2, 2]``.
+          3. Apply 2x2 LDU pair op with the level's L, d, U scalars.
+          4. Unpack to ``[B, M_total]``.
+          5. Inverse-permute to restore the natural element order.
+
+        Identity init (L=0, d0=d1=1, U=0) makes ``forward(x) == x``
+        at init (modulo the zero-pad strip).
+        """
+        flat, original_shape = self._butterfly_flatten(x)
+        for level in range(self.n_levels):
+            perm = self.butterfly_perms[level]
+            inv_perm = self._butterfly_inverse_perm(perm)
+            flat = flat[:, perm]
+            pair = flat.reshape(flat.shape[0], -1, 2)
+            pair = self._butterfly_pair_forward(
+                pair,
+                self.butterfly_L[level],
+                self.butterfly_d[level],
+                self.butterfly_U[level])
+            flat = pair.reshape(flat.shape[0], -1)
+            flat = flat[:, inv_perm]
+        return self._butterfly_unflatten(flat, original_shape)
+
+    def _butterfly_reverse(self, y):
+        """Inverse of ``_butterfly_forward`` (LDU sign-flip + reciprocal).
+
+        Runs the per-level inverse pair op in reverse level order.
+        Composed with ``_butterfly_forward`` this restores the input
+        up to numerical precision (zero-pad slots stay at zero
+        through the inverse cascade since identity init).
+        """
+        flat, original_shape = self._butterfly_flatten(y)
+        for level in reversed(range(self.n_levels)):
+            perm = self.butterfly_perms[level]
+            inv_perm = self._butterfly_inverse_perm(perm)
+            flat = flat[:, perm]
+            pair = flat.reshape(flat.shape[0], -1, 2)
+            pair = self._butterfly_pair_reverse(
+                pair,
+                self.butterfly_L[level],
+                self.butterfly_d[level],
+                self.butterfly_U[level])
+            flat = pair.reshape(flat.shape[0], -1)
+            flat = flat[:, inv_perm]
+        return self._butterfly_unflatten(flat, original_shape)
+
+    def forward(self, x):
+        """Default forward dispatch.
+
+        When ``self.butterfly`` is True, runs the butterfly cascade.
+        Otherwise raises: subclasses must override ``forward`` for
+        their non-butterfly behaviour.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(x)
+        raise NotImplementedError(
+            f"{type(self).__name__}.forward: not implemented "
+            "(set butterfly=True to use the cascade or override "
+            "forward in the subclass)")
+
+    def reverse(self, y):
+        """Default reverse dispatch.
+
+        When ``self.butterfly`` is True, runs the butterfly cascade
+        inverse. Otherwise raises.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(y)
+        raise NotImplementedError(
+            f"{type(self).__name__}.reverse: not implemented")
 
     @classmethod
     def set_chart_authority(cls, syntactic_layer):
@@ -1788,26 +2077,43 @@ class SigmaLayer(GrammarLayer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
-                 monotonic=False):
+                 monotonic=False, butterfly=False, N=None):
         """Initialize SigmaLayer; allocate state for the class contract.
 
         See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 5, doc/plans/2026-05-26-two-loop-
+        pi-sigma-substrate.md): when ``butterfly=True``, the layer
+        delegates ``forward`` / ``reverse`` to the inherited
+        GrammarLayer butterfly cascade. ``N`` is the per-position
+        slot count and must be a power of two; ``nInput == nOutput``
+        defines D, the per-slot feature width. The per-pair op is
+        sigma-style (atanh -> matmul -> tanh) applied at each
+        cascade node.
         """
-        super().__init__(nInput, nOutput)
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         self.invertible = invertible
         self.ergodic    = ergodic
         self.nonlinear  = nonlinear
         self.stable     = stable
         self.monotonic  = monotonic
         self.activation = torch.zeros(1, nOutput, 1)
-        if invertible:
-            if monotonic:
-                self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
-            else:
-                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+        if self.butterfly:
+            # In butterfly mode the cascade owns the parameterised
+            # weight; no separate inner LDU layer is needed for the
+            # unary feature fold (per-pair op runs on packed pairs).
+            # ``self.layer`` is left unset; the legacy unary forward
+            # path is replaced by ``_butterfly_forward``.
+            self.layer = None
         else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
-        self.layers.append(self.layer)
+            if invertible:
+                if monotonic:
+                    self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+                else:
+                    self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+            else:
+                self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+            self.layers.append(self.layer)
 
     @property
     def bias(self): return self.layer.bias
@@ -1839,6 +2145,30 @@ class SigmaLayer(GrammarLayer):
         self.activation = out.detach()
         return out
 
+    # -- Butterfly per-pair op -----------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Sigma-style per-pair op for the butterfly cascade.
+
+        atanh -> einsum -> tanh applied per pair (the same math the
+        unary ``forward`` path uses, but per-pair-batched over the
+        packed pair axis).
+        """
+        if self.nonlinear:
+            x_pair = torch.atanh(x_pair.clamp(-1 + epsilon, 1 - epsilon))
+        out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
+        if self.nonlinear:
+            y_pair = torch.atanh(y_pair.clamp(-1 + epsilon, 1 - epsilon))
+        out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
     def forward(self, x, binary=False, gate=None):
         """Apply the additive OR fold.
 
@@ -1852,7 +2182,22 @@ class SigmaLayer(GrammarLayer):
         on its diagonal. Used by rule layers (LiftLayer / LowerLayer)
         to select a low-rank slice of the operator. The gating lives
         inside the LDU layer; SigmaLayer just passes it through.
+
+        Butterfly mode (``self.butterfly``): wrap the FFT-style
+        element-pair cascade (per the 2026-05-27 revision) with the
+        same atanh / tanh transforms as the per-position path. The
+        cascade replaces the ``W @ x`` linear core; the surrounding
+        nonlinearity preserves the sigma semantics. ``binary`` and
+        ``gate`` are not honoured in butterfly mode.
         """
+        if self.butterfly:
+            if self.nonlinear:
+                x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+            y = self._butterfly_forward(x)
+            if self.nonlinear:
+                y = torch.tanh(y)
+            self.activation = y.detach()
+            return y
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
@@ -1869,7 +2214,18 @@ class SigmaLayer(GrammarLayer):
         ``gate`` (optional): same gate tensor passed to ``forward``;
         flows through to the inner LDU layer's reverse so the inverse
         uses ``1/(d * gate)``.
+
+        Butterfly mode: wrap ``_butterfly_reverse`` with atanh / tanh
+        symmetric to forward.
         """
+        if self.butterfly:
+            if self.nonlinear:
+                y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
+            x = self._butterfly_reverse(y)
+            if self.nonlinear:
+                x = torch.tanh(x)
+            self.activation = x.detach()
+            return x
         if self.nonlinear:
             y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
         x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
@@ -2161,6 +2517,19 @@ class IntersectionLayer(GrammarLayer):
     Lossy: min collapses dominated operands. ``decompose`` returns
     ``(parent, parent)`` as the best-effort identity recovery
     without auxiliary structure.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode (``butterfly=True, N=N``) lifts the
+    binary fold to a cross-STM aggregator. At each cascade level
+    the per-pair op takes the packed ``[a, b]`` (each ``[B, M, D]``),
+    computes the intersection kernel element-wise across the two
+    halves (RadMin in radial mode, lattice min in monotonic mode),
+    broadcasts the result back into the packed ``2D`` form, and
+    applies the per-node weight. After ``log2(N)`` levels every
+    output position holds the cross-position intersection of all
+    inputs, weighted by the cascade's per-node parameters.
+    Identity-on-constant-input is preserved (min is idempotent on
+    the diagonal); general inputs lose information (lossy fold).
     """
     rule_name        = "intersection"
     arity            = 2
@@ -2169,31 +2538,101 @@ class IntersectionLayer(GrammarLayer):
     tier             = 'C'
     reads_activation = True
 
-    def __init__(self, monotonic=False):
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
         """Initialize IntersectionLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): when ``butterfly=True``, the
+        layer becomes a cross-STM cascade aggregator. ``N`` is the
+        per-position slot count (power of two); ``nInput == nOutput``
+        defines D, the per-slot feature width.
         """
-        super().__init__(0, 0)
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         self.monotonic = bool(monotonic)
 
-    def forward(self, left, right):
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Intersection per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``
+        (each ``[B, M, D]``), apply the intersection kernel element-
+        wise (RadMin radial / lattice min monotonic), broadcast the
+        result into the ``2D`` packed form, and weight by
+        ``W_node: [M, 2D, 2D]``.
+
+        At identity init (``W_node = I``) the output is
+        ``cat([min(a,b), min(a,b)])`` -- idempotent on constant input.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.minimum(a, b)
+        else:
+            m = Ops._radmin(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; approximate (lossy).
+
+        The forward broadcasts the per-pair fold into both halves
+        and applies the per-node weight. The reverse un-weights with
+        ``W_inv_node`` then averages the two halves and re-broadcasts
+        -- the natural ``(parent, parent)`` pseudo-inverse adapted to
+        the cascade's packed-pair form.
+        """
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
         """Forward pass.
-        
+
+        Non-butterfly mode (default): binary ``forward(left, right)``
+        applies the intersection kernel directly on the operand pair.
+
+        Butterfly mode (``self.butterfly``): unary ``forward(x)``
+        runs the cascade over the per-position axis of ``x: [B, N, D]``;
+        ``right`` is ignored.
+
         See class docstring for the operation this layer applies.
         """
+        if self.butterfly:
+            return self._butterfly_forward(left)
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
+
+        Non-butterfly mode: lossy ``(parent, parent)`` pseudo-inverse.
+
+        Butterfly mode: cross-STM cascade reverse via the per-pair
+        pseudo-inverse (broadcast averaged form).
+
         See class docstring for the inversion contract.
         """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
         return parent, parent
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        return self.forward(left, right)
+        if self.butterfly:
+            # In butterfly mode the binary op is the cross-STM cascade
+            # on a single packed tensor; compose still expects the
+            # binary signature for chart parsing, so we concatenate
+            # ``left`` and ``right`` along the position axis and run
+            # the cascade. Caller responsibility: shapes must match
+            # the configured N (typically left and right are halves).
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.intersection(left, right, monotonic=self.monotonic)
 
     def generate(self, parent):
         """Drive the reverse / generation pass."""
@@ -2217,6 +2656,12 @@ class UnionLayer(GrammarLayer):
         monotonic=True            -> strict lattice max.
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode is the cross-STM dual of ``IntersectionLayer``
+    -- per-pair op computes the union kernel element-wise across
+    the two halves, broadcasts, and weights by the per-node matrix.
+    See ``IntersectionLayer`` for the cascade-shape contract.
     """
     rule_name        = "union"
     arity            = 2
@@ -2225,31 +2670,73 @@ class UnionLayer(GrammarLayer):
     tier             = 'C'
     reads_activation = True
 
-    def __init__(self, monotonic=False):
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
         """Initialize UnionLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
         """
-        super().__init__(0, 0)
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         self.monotonic = bool(monotonic)
 
-    def forward(self, left, right):
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Union per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``,
+        apply the union kernel element-wise (RadMax radial / lattice
+        max monotonic), broadcast into ``2D``, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.maximum(a, b)
+        else:
+            m = Ops._radmax(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        analogue adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
         """Forward pass.
-        
+
+        Non-butterfly: binary ``forward(left, right)`` -> ``Ops.union``.
+        Butterfly: unary ``forward(x)`` -> cross-STM cascade; ``right``
+        ignored.
+
         See class docstring for the operation this layer applies.
         """
+        if self.butterfly:
+            return self._butterfly_forward(left)
         return Ops.union(left, right, monotonic=self.monotonic)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
+
         See class docstring for the inversion contract.
         """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
         return parent, parent
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        return self.forward(left, right)
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.union(left, right, monotonic=self.monotonic)
 
     def generate(self, parent):
         """Drive the reverse / generation pass."""
@@ -2295,250 +2782,321 @@ class UnionLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 class LiftLayer(GrammarLayer):
-    """``S -> lift(VP, NP)`` -- C-tier gated round-trip with an
-    internal SigmaLayer.
+    """``lift(idea_a, idea_b)`` -- binary C-tier grammar op (sigma-style
+    synthesis over a STM pair).
 
-    Phase 3 (2026-05-18, owner-ratified per
-    doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7).
-    Restores the pre-2026-05-13 VP-as-mask gated pattern, but with
-    sigma owned **internally** by this layer (its own learnable
-    SigmaLayer; not borrowed from PerceptualSpace.sigma). The chart
-    records rule_id ``lift`` on the surrounding cell.
+    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    LiftLayer becomes a first-class binary ``GrammarLayer`` subclass
+    dispatched by the signal router over STM pairs. The previous
+    substrate-borrow pattern (reaching into a PerceptualSpace-owned
+    sigma fold via a gating round-trip through the symbol codebook)
+    is retired -- LiftLayer owns its own internal SigmaLayer for the
+    pairwise math and is fully self-contained.
 
-    Forward (wired path, ``symbolicSpace`` populated):
+    Math (sigma-style binary fold, additive log-domain):
 
-        cb     = symbolicSpace.subspace.what
-        vp_c   = cb.reverse(VP, project=True)
-        np_c   = cb.reverse(NP, project=True)
-        gated  = vp_c * np_c                 # VP is the mask
-        out_c  = self._sigma(gated)          # OWN internal SigmaLayer
-        return cb.forward(out_c)             # re-snap to S-bivector
+        s = atanh(idea_a) + atanh(idea_b)      (clamped)
+        y = tanh(W @ s + b)
 
-    "VP IS the mask": different VPs → different gates → different
-    outputs from the same internal sigma.  The internal sigma trains
-    (registered nn.Module).
+        # reverse / generate (balanced split):
+        s_hat = W^-1 @ atanh(y) - b            (LDU inverse)
+        half  = s_hat / 2
+        return tanh(half), tanh(half)
 
-    Fallback (standalone construction, ``symbolicSpace is None``):
-    computes ``Ops._lower_kernel(left, right, mode='AND', kind='smooth')``
-    for back-compat with the parameter-free
-    ``GRAMMAR_LAYER_CLASSES['lift']()`` harness.
+    Inherits ``compose`` / ``generate`` semantics from ``SigmaLayer``'s
+    binary-tensor-op contract (``SigmaLayer.compose`` / ``.generate``)
+    -- the internal SigmaLayer carries the LDU-invertible
+    parameterisation.  ``reverse(parent)`` returns a ``(left, right)``
+    pair via the balanced split.
 
-    Reverse: lossy ``(parent, parent)`` pseudo-inverse.  The
-    elementwise gate ``vp_c * np_c`` is not bijective without VP;
-    per-op duals are tracked under D4.
+    The construction is self-contained: no PerceptualSpace /
+    ConceptualSpace / SymbolicSpace references.  Pass ``nInput`` /
+    ``nOutput`` to size the internal SigmaLayer; the back-compat
+    keyword arguments ``symbolicSpace`` / ``perceptualSpace`` /
+    ``conceptualSpace`` are still accepted (for legacy call sites in
+    ``Language.WordSubSpace._attach_per_space_syntactic_layer``) but
+    only their codebook dimension is consulted to determine the
+    operand width when ``nInput`` is not provided.
     """
     rule_name  = "lift"
     arity      = 2
     invertible = True
-    tier       = 'S'
+    tier       = 'C'
 
-    def __init__(self, symbolicSpace=None, perceptualSpace=None,
-                 conceptualSpace=None):
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None):
         """Initialize LiftLayer.
 
-        ``symbolicSpace`` drives the wired C-tier round-trip; when
-        ``None`` the forward falls back to the static lattice kernel.
-        ``perceptualSpace`` / ``conceptualSpace`` are accepted for API
-        compatibility with the chart's constructor call sites but
-        are no longer used (Phase 3: sigma is owned internally).
-        Back-refs are stored via ``object.__setattr__`` to avoid
-        nn.Module submodule cycles -- the Spaces are already
-        registered under the top-level Model.
+        ``nInput`` / ``nOutput`` size the internal SigmaLayer; both
+        default to the symbol codebook width when ``symbolicSpace`` is
+        supplied (back-compat with the per-space syntactic-layer
+        construction path).  ``invertible`` / ``nonlinear`` are passed
+        through to the internal SigmaLayer.
 
-        Internal sigma is sized to the C-tier vector width
-        (``symbolicSpace.subspace.what.nDim``, which equals
-        ``concept_dim`` by the symbol_dim==concept_dim invariant).
-        Defaults follow SigmaLayer's standard config:
-        ``invertible=True, nonlinear=True`` (the minimal configuration
-        that exposes the LDU reverse path and the tanh nonlinearity).
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a butterfly
+        cascade on the GrammarLayer base alongside the inner sigma. The
+        binary ``forward(left, right)`` retains its existing semantics;
+        the new ``forward_butterfly(x)`` form (or the GrammarLayer
+        ``_butterfly_forward`` directly) runs the cascade over a
+        ``[B, N, D]`` per-position tensor. The cascade's per-pair op
+        delegates to the internal SigmaLayer's ``_butterfly_pair_op``.
+
+        Back-references via ``object.__setattr__`` bypass nn.Module
+        submodule tracking so the Space refs don't create module-tree
+        cycles (the Spaces are registered under the top-level Model).
         """
-        super().__init__(0, 0)
-        # ``object.__setattr__`` bypasses nn.Module submodule tracking
-        # so the back-references don't create cycles in the module
-        # tree (Spaces are already registered under the top-level
-        # Model).
+        # Resolve operand width: prefer explicit ``nInput`` / ``nOutput``;
+        # else fall back to the symbol codebook width for the legacy
+        # ``LiftLayer(symbolicSpace=ss)`` call shape.
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        # Back-references kept for back-compat with the
+        # ``LiftLayer(symbolicSpace=...)`` legacy construction path.
+        # They are NOT consulted by ``forward`` / ``reverse`` -- the
+        # binary fold runs entirely through ``self._sigma``.
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
-        # Internal SigmaLayer -- Phase 3: owned, not borrowed.  Sized
-        # to the C-tier vector width out of ``cb.reverse(..., project=True)``
-        # (the symbol codebook's nDim).  When ``symbolicSpace is None``
-        # we leave ``_sigma=None`` and the forward falls back to the
-        # static lattice kernel.
-        if symbolicSpace is not None:
-            cb = symbolicSpace.subspace.what
-            c_dim = int(cb.nDim)
+        # Internal SigmaLayer -- additive log-domain pairwise fold.
+        # LDU-invertible so ``reverse`` is exact at the spatial level.
+        # The inner sigma is used both for the binary forward(left, right)
+        # path and (via its ``_butterfly_pair_op`` method) for the
+        # butterfly per-pair op when the cascade is enabled.
+        if int(nInput) > 0:
             self._sigma = SigmaLayer(
-                nInput=c_dim, nOutput=c_dim,
-                invertible=True, nonlinear=True)
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
             self.layers.append(self._sigma)
         else:
+            # Zero-width construction (parameter-free harness probe).
             self._sigma = None
 
-    def _gated_sigma_internal(self, vp_bivec, np_bivec):
-        """Shared helper: elementwise C-tier gate, then internal ``_sigma``.
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal SigmaLayer.
 
-        Phase 3 implementation notes (post-bivector-retirement
-        reconciliation, doc/plans/2026-05-18 §D7):
-
-        The spec's literal ``cb.reverse(VP, project=True)`` /
-        ``cb.forward(out_c, project=True)`` round-trip refers to the
-        legacy SVD ``project`` codebook path that was retired
-        2026-05-13.  In the current Codebook API:
-          * ``cb.reverse(y)`` is a *quantize-snap* to the nearest
-            prototype (and additionally mutates ``_active_payload``
-            via ``setW``, which would corrupt repeated chart calls).
-          * ``cb.forward(y, project=True)`` raises TypeError --
-            ``project`` is not in the signature.
-
-        The retired ``project=True`` was a *continuous* SVD
-        projection, NOT a quantize-snap; no equivalent exists on
-        the current Codebook API.  Under the post-bivector-
-        retirement invariant ``symbol_dim == concept_dim``, the
-        "lift to C-tier and re-snap to S-bivector" round-trip is
-        width-preserving and degenerates to identity at the spatial
-        level when the legacy SVD projection is unavailable.  We
-        therefore apply only the meaningful Phase 3 operation:
-        the elementwise gate followed by the internal SigmaLayer.
-        The codebook stays the symbol substrate; the internal
-        sigma is the learnable composition operator.
+        The cascade weight ``W_node`` is supplied by the LiftLayer's
+        own ``butterfly_W`` (inherited from GrammarLayer); the inner
+        sigma contributes only the atanh / tanh nonlinearity around
+        the einsum. This keeps LiftLayer's invertibility contract on
+        the cascade while reusing sigma's per-pair kernel.
         """
-        vp_c = vp_bivec
-        np_c = np_bivec
-        gated = vp_c * np_c
-        return self._sigma.forward(gated)
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op: no internal sigma "
+                "(zero-width construction).")
+        return self._sigma._butterfly_pair_op(x_pair, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner sigma."""
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op_reverse: no internal sigma.")
+        return self._sigma._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over a ``[B, N, D]`` tensor.
+
+        Distinct entry point from the binary ``forward(left, right)``
+        so the existing binary-fold callers (chart / signal-router
+        pair dispatch) are not surprised by the cascade semantics.
+        """
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.forward_butterfly: butterfly mode not enabled "
+                "at construction.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
 
     def forward(self, left, right):
-        """Forward: C-tier VP-gated round-trip via internal ``_sigma``.
+        """Sigma-style binary fold over the STM pair ``(left, right)``.
 
-        ``left`` is VP (the gating operand), ``right`` is NP (the
-        content riding through sigma).  Fallback to the static
-        lattice kernel when ``symbolicSpace`` was not wired.
+        Delegates to ``SigmaLayer.compose`` which packs the operands
+        in atanh-domain (``a + b``), applies the inner linear
+        transform, and returns ``tanh(W @ (atanh(a) + atanh(b)) + b)``.
         """
-        if self.symbolicSpace is None:
-            return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
-        return self._gated_sigma_internal(left, right)
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a symbolicSpace whose subspace "
+                "carries a non-empty codebook.")
+        return self._sigma.compose(left, right)
 
     def reverse(self, parent):
-        """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
+        """Split ``parent`` back into a ``(left, right)`` pair.
 
-        The elementwise gate ``vp_c * np_c`` is not bijective without
-        VP -- we cannot recover NP from gated_NP alone.  Per-op duals
-        are tracked under doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D4.
+        Delegates to ``SigmaLayer.generate`` which inverts the inner
+        LDU transform and returns the balanced split
+        ``tanh(s/2), tanh(s/2)`` where ``s = atanh(left) + atanh(right)``.
+
+        The split is approximate in the sense that the original
+        ``(left, right)`` cannot be uniquely recovered from their
+        atanh-sum alone -- but ``forward(*reverse(parent)) == parent``
+        round-trip-consistently when the internal sigma is invertible.
         """
-        return parent, parent
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        return self._sigma.generate(parent)
 
     def compose(self, left, right):
-        """Compose the input via this layer's parse contract."""
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
         return self.forward(left, right)
 
     def generate(self, parent):
-        """Drive the reverse / generation pass."""
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
         return self.reverse(parent)
 
 
 class LowerLayer(GrammarLayer):
-    """``S -> lower(ADJ, NP)`` -- C-tier gated round-trip with an
-    internal PiLayer.
+    """``lower(idea_a, idea_b)`` -- binary C-tier grammar op (pi-style
+    lowering over a STM pair).
 
-    Phase 3 (2026-05-18, owner-ratified per
-    doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7).
-    Symmetric to ``LiftLayer`` but with two ratified asymmetries:
+    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    LowerLayer becomes a first-class binary ``GrammarLayer`` subclass
+    dispatched by the signal router over STM pairs. The previous
+    substrate-borrow pattern (reaching into a ConceptualSpace-owned
+    pi fold via a gating round-trip through the symbol codebook) is
+    retired -- LowerLayer owns its own internal PiLayer for the
+    pairwise math and is fully self-contained.
 
-      * Gating operand is **ADJ** (attribute) instead of VP -- the
-        post-Phase-3 lift/lower asymmetry lives in *which operand
-        gates the other*, not in the post-gate transform alone.
-      * Post-gate transform is **internal** ``PiLayer`` (multiplicative
-        log-domain fold), not the additive ``SigmaLayer`` used by lift.
+    Math (pi-style binary fold, multiplicative log-domain):
 
-    Forward (wired path, ``symbolicSpace`` populated):
+        ell = log_mult(idea_a) + log_mult(idea_b)
+        y   = tanh((W @ ell + b) / 2)
 
-        cb     = symbolicSpace.subspace.what
-        adj_c  = cb.reverse(ADJ, project=True)
-        np_c   = cb.reverse(NP, project=True)
-        gated  = adj_c * np_c                # ADJ is the mask
-        out_c  = self._pi(gated)             # OWN internal PiLayer
-        return cb.forward(out_c)             # re-snap to S-bivector
+        # reverse / generate (balanced split):
+        ell_hat = W^-1 @ (atanh-style transform of y) - b
+        half    = ell_hat / 2
+        return from_mult(exp(half)), from_mult(exp(half))
 
-    Fallback (standalone construction, ``symbolicSpace is None``):
-    computes ``Ops._lift_kernel(left, right, mode='OR', kind='smooth')``
-    for back-compat with the parameter-free harness.
+    Inherits ``compose`` / ``generate`` semantics from ``PiLayer``'s
+    binary-tensor-op contract (``PiLayer.compose`` / ``.generate``)
+    -- the internal PiLayer carries the LDU-invertible
+    parameterisation.
 
-    Reverse: lossy ``(parent, parent)``; see ``LiftLayer.reverse``.
+    The construction is self-contained: no Space references.  See
+    ``LiftLayer`` for the keyword-arg compatibility shim.
     """
     rule_name  = "lower"
     arity      = 2
     invertible = True
-    tier       = 'S'
+    tier       = 'C'
 
-    def __init__(self, symbolicSpace=None, perceptualSpace=None,
-                 conceptualSpace=None):
-        """Initialize LowerLayer.
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None):
+        """Initialize LowerLayer; symmetric to ``LiftLayer.__init__``
+        but with an internal PiLayer (multiplicative log-domain
+        fold) instead of a SigmaLayer.
 
-        ``symbolicSpace`` drives the wired C-tier round-trip; when
-        ``None`` the forward falls back to the static lattice kernel.
-        ``perceptualSpace`` / ``conceptualSpace`` are accepted for API
-        compatibility with the chart's constructor call sites but
-        are no longer used (Phase 3: pi is owned internally).
-
-        Internal pi is sized to the C-tier vector width
-        (``symbolicSpace.subspace.what.nDim``).  Defaults:
-        ``invertible=True, nonlinear=True``.
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a
+        butterfly cascade on the GrammarLayer base. The per-pair op
+        delegates to the internal PiLayer's ``_butterfly_pair_op``.
         """
-        super().__init__(0, 0)
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
-        if symbolicSpace is not None:
-            cb = symbolicSpace.subspace.what
-            c_dim = int(cb.nDim)
+        if int(nInput) > 0:
             self._pi = PiLayer(
-                nInput=c_dim, nOutput=c_dim,
-                invertible=True, nonlinear=True)
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
             self.layers.append(self._pi)
         else:
             self._pi = None
 
-    def _gated_pi_internal(self, adj_bivec, np_bivec):
-        """Shared helper: elementwise C-tier gate, then internal ``_pi``.
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal PiLayer."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op: no internal pi "
+                "(zero-width construction).")
+        return self._pi._butterfly_pair_op(x_pair, W_node)
 
-        See ``LiftLayer._gated_sigma_internal`` for the rationale on
-        why the spec's literal ``cb.reverse(..., project=True)`` /
-        ``cb.forward(..., project=True)`` round-trip degenerates to
-        identity at the spatial level in the post-bivector-retirement
-        codebase (``symbol_dim == concept_dim``; legacy SVD
-        ``project`` path was retired 2026-05-13 with no continuous-
-        projection equivalent on the quantize-mode Codebook).
-        """
-        adj_c = adj_bivec
-        np_c = np_bivec
-        gated = adj_c * np_c
-        return self._pi.forward(gated)
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner pi."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op_reverse: no internal pi.")
+        return self._pi._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over ``[B, N, D]``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.forward_butterfly: butterfly mode not enabled.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
 
     def forward(self, left, right):
-        """Forward: C-tier ADJ-gated round-trip via internal ``_pi``.
+        """Pi-style binary fold (multiplicative log-domain) over the
+        STM pair ``(left, right)``.
 
-        ``left`` is ADJ (the gating operand), ``right`` is NP.
-        Fallback to the static lattice kernel when ``symbolicSpace``
-        was not wired.
+        Delegates to ``PiLayer.compose`` which packs the operands in
+        log-mult domain (``log_mult(a) + log_mult(b)``), applies the
+        inner linear transform, and returns
+        ``tanh((W @ (log_mult(a) + log_mult(b)) + b) / 2)``.
         """
-        if self.symbolicSpace is None:
-            return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
-        return self._gated_pi_internal(left, right)
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a symbolicSpace whose subspace "
+                "carries a non-empty codebook.")
+        return self._pi.compose(left, right)
 
     def reverse(self, parent):
-        """Reverse: lossy ``(parent, parent)`` pseudo-inverse.
-
-        See ``LiftLayer.reverse`` for the gating-invertibility note.
+        """Split ``parent`` back into a ``(left, right)`` pair via the
+        balanced log-mult-domain split (``PiLayer.generate``).
         """
-        return parent, parent
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        return self._pi.generate(parent)
 
     def compose(self, left, right):
-        """Compose the input via this layer's parse contract."""
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
         return self.forward(left, right)
 
     def generate(self, parent):
-        """Drive the reverse / generation pass."""
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
         return self.reverse(parent)
 
 
@@ -2570,6 +3128,13 @@ class ConjunctionLayer(GrammarLayer):
     codebook activation and is strictly monotonic.
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode applies the monotonic min cross-STM
+    pair-wise (per-pair op = ``torch.minimum`` on the two halves,
+    broadcast, weight). See ``IntersectionLayer`` for the cascade-
+    shape contract; this op is hard-coded monotonic so the radial
+    branch is never taken.
     """
     rule_name        = "conjunction"
     arity            = 2
@@ -2578,32 +3143,71 @@ class ConjunctionLayer(GrammarLayer):
     tier             = 'S'
     reads_activation = True
 
-    def __init__(self):
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         """Initialize ConjunctionLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__(0, 0)
 
-    def forward(self, left, right):
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Conjunction per-pair op for the butterfly cascade.
+
+        Element-wise ``torch.minimum`` on the two halves (monotonic
+        only -- post-codebook activations are non-negative scalar),
+        broadcast into the packed ``2D`` form, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        m = torch.minimum(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
         # Post-codebook activation is monotonic-only -- no negative
         # pole to manage, so RadMin would be wrong.
         """Forward pass.
-        
+
+        Non-butterfly: binary ``forward(left, right)`` -> monotonic
+        intersection (lattice min).
+        Butterfly: unary ``forward(x)`` -> cross-STM monotonic-min
+        cascade; ``right`` ignored.
+
         See class docstring for the operation this layer applies.
         """
+        if self.butterfly:
+            return self._butterfly_forward(left)
         return Ops.intersection(left, right, monotonic=True)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
+
         See class docstring for the inversion contract.
         """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
         return parent, parent
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        return self.forward(left, right)
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.intersection(left, right, monotonic=True)
 
     def generate(self, parent):
         """Drive the reverse / generation pass."""
@@ -2629,6 +3233,12 @@ class DisjunctionLayer(GrammarLayer):
     ``[B, V]`` post-codebook activation and is strictly monotonic.
 
     Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode applies the monotonic max cross-STM
+    pair-wise (per-pair op = ``torch.maximum``). See
+    ``ConjunctionLayer`` / ``IntersectionLayer`` for the cascade-
+    shape contract.
     """
     rule_name        = "disjunction"
     arity            = 2
@@ -2637,30 +3247,69 @@ class DisjunctionLayer(GrammarLayer):
     tier             = 'S'
     reads_activation = True
 
-    def __init__(self):
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         """Initialize DisjunctionLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
-        super().__init__(0, 0)
 
-    def forward(self, left, right):
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Disjunction per-pair op for the butterfly cascade.
+
+        Element-wise ``torch.maximum`` on the two halves (monotonic
+        only -- post-codebook activations are non-negative scalar),
+        broadcast into the packed ``2D`` form, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        m = torch.maximum(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
         """Forward pass.
-        
+
+        Non-butterfly: binary ``forward(left, right)`` -> monotonic
+        union (lattice max).
+        Butterfly: unary ``forward(x)`` -> cross-STM monotonic-max
+        cascade; ``right`` ignored.
+
         See class docstring for the operation this layer applies.
         """
+        if self.butterfly:
+            return self._butterfly_forward(left)
         return Ops.union(left, right, monotonic=True)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
+
         See class docstring for the inversion contract.
         """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
         return parent, parent
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        return self.forward(left, right)
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.union(left, right, monotonic=True)
 
     def generate(self, parent):
         """Drive the reverse / generation pass."""
@@ -3412,41 +4061,62 @@ class PiLayer(GrammarLayer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, hasBias=True, stable=True,
-                 monotonic=False, nonlinear=True):
+                 monotonic=False, nonlinear=True,
+                 butterfly=False, N=None):
         """Initialize PiLayer; allocate state for the class contract.
 
         See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 5, doc/plans/2026-05-26-two-loop-
+        pi-sigma-substrate.md): when ``butterfly=True``, the layer
+        delegates ``forward`` / ``reverse`` to the inherited
+        GrammarLayer butterfly cascade. ``N`` is the per-position
+        slot count and must be a power of two; ``nInput == nOutput``
+        defines D. The per-pair op is pi-style (atanh -> matmul ->
+        tanh) applied at each cascade node.
         """
-        super().__init__(nInput, nOutput)
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         self.invertible = invertible
         self.stable     = stable
         self.hasBias    = hasBias
         self.monotonic  = monotonic
         self.nonlinear  = nonlinear
-        if invertible:
-            if monotonic:
-                self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                                              naive=naive, ergodic=ergodic,
-                                                              stable=stable)
-            else:
-                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                                   naive=naive, ergodic=ergodic,
-                                                   stable=stable)
+        if self.butterfly:
+            # Butterfly mode owns the per-position weight cascade;
+            # the legacy unary inner layer is not constructed.
+            self.layer = None
         else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
-        self.layers.append(self.layer)
+            if invertible:
+                if monotonic:
+                    self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                                  naive=naive, ergodic=ergodic,
+                                                                  stable=stable)
+                else:
+                    self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                       naive=naive, ergodic=ergodic,
+                                                       stable=stable)
+            else:
+                self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
+            self.layers.append(self.layer)
 
     @property
-    def bias(self): return self.layer.bias
+    def bias(self):
+        if self.layer is None:
+            return None
+        return self.layer.bias
     @property
-    def var(self):  return self.layer.var
+    def var(self):
+        if self.layer is None:
+            return None
+        return self.layer.var
 
     def resample_noise(self):
         """Resample noise.
-        
+
         See class docstring for the operation contract.
         """
-        self.layer.resample_noise()
+        if self.layer is not None:
+            self.layer.resample_noise()
 
     # -- Symmetric domain transforms ----------------------------------
 
@@ -3459,6 +4129,33 @@ class PiLayer(GrammarLayer):
     def _from_mult(self, y):
         """Map (0, inf) -> (-1, 1), identity at 1 -> 0."""
         return (y - 1) / (y + 1)
+
+    # -- Butterfly per-pair op (Stage 5) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Pi-style per-pair op for the butterfly cascade.
+
+        atanh -> einsum -> tanh applied per pair. The atanh / tanh
+        framing is the unary pi math (the multiplicative AND fold in
+        log-mult domain reduces to the same atanh-> linear -> tanh
+        kernel once the bias term is dropped, which the cascade does
+        intentionally -- the per-node weights carry all parametric
+        flexibility).
+        """
+        if self.nonlinear:
+            x_pair = torch.atanh(x_pair.clamp(-1 + epsilon, 1 - epsilon))
+        out = torch.einsum('bmi,mij->bmj', x_pair, W_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; inverts the per-pair op."""
+        if self.nonlinear:
+            y_pair = torch.atanh(y_pair.clamp(-1 + epsilon, 1 - epsilon))
+        out = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
 
     # -- forward / reverse --------------------------------------------
 
@@ -3475,7 +4172,24 @@ class PiLayer(GrammarLayer):
         ``self.layer._current_gate`` so that ``compute_W_current``
         -> ``_d_effective`` picks it up. Used by rule layers
         (LiftLayer / LowerLayer) for low-rank operator slicing.
+
+        Butterfly mode: wrap the FFT-style element-pair cascade with
+        the pi log-domain transforms (``_to_mult`` / log / cascade /
+        exp / ``_from_mult``). The cascade replaces the ``W @ l``
+        linear core in log-mult space; the surrounding nonlinearity
+        preserves the pi semantics.
         """
+        if self.butterfly:
+            if binary:
+                x = Ops.top2_select_ste(x)
+            m = self._to_mult(x)
+            l = torch.log(m)
+            wl = self._butterfly_forward(l)
+            if self.nonlinear:
+                out = torch.tanh(wl / 2)
+            else:
+                out = torch.exp(wl)
+            return out
         # Inline inner-forward: log-domain multiplicative AND fold.
         self.layer._current_gate = gate
         try:
@@ -3503,7 +4217,22 @@ class PiLayer(GrammarLayer):
 
         ``gate`` flows through ``compute_Winverse_current`` ->
         ``_d_effective`` -> ``1/(d * gate)``.
+
+        Butterfly mode: wrap ``_butterfly_reverse`` with pi log-domain
+        transforms symmetric to forward.
         """
+        if self.butterfly:
+            if self.nonlinear:
+                m = self._to_mult(y)
+                l = torch.log(m)
+            else:
+                l = torch.log(y)
+            lx = self._butterfly_reverse(l)
+            if self.nonlinear:
+                out = torch.tanh(lx / 2)
+            else:
+                out = self._from_mult(torch.exp(lx))
+            return out
         # Inline inner-reverse: log-domain multiplicative AND fold inverse.
         self.layer._current_gate = gate
         try:
@@ -10058,13 +10787,26 @@ class ModelLoss(Loss):
             # corrupt the run. (See memory: fail loud on numerical
             # divergence.) The prior ``bool(isfinite.all())`` gate did a
             # per-step cudaMemcpyDtoH. ``torch._assert_async`` keeps the
-            # guarantee without that host sync: on CUDA the assertion is
+            # guarantee without that host sync on CUDA: the assertion is
             # enqueued on the stream (no DtoH) and a non-finite loss
             # aborts the process at the next kernel launch -- unmissable,
             # never a silent success; on CPU it asserts immediately
-            # (tests still catch divergence). Device handling is
-            # internal to the op, so no device-type branching here.
-            torch._assert_async(torch.isfinite(lossIn).all())
+            # (tests still catch divergence).
+            #
+            # MPS exception: ``torch._assert_async`` is not implemented
+            # for the MPS backend as of 2026-05-27 (PyTorch issue #141287).
+            # Fall back to the sync ``bool(isfinite.all())`` path on MPS
+            # -- it costs a per-step host sync, but preserves the
+            # fail-loud contract on Apple Silicon. The compiled / CUDA
+            # paths remain sync-free.
+            if lossIn.device.type == "mps":
+                if not bool(torch.isfinite(lossIn).all()):
+                    raise RuntimeError(
+                        "ModelLoss.forward: non-finite reconstruction "
+                        "loss (Inf/NaN) -- divergence. Fail-loud per "
+                        "project numerical contract; do NOT nan_to_num.")
+            else:
+                torch._assert_async(torch.isfinite(lossIn).all())
             rr = self.reconstruction_scale
             total = (1 - rr) * lossOut + rr * lossIn
         if sbow is not None:

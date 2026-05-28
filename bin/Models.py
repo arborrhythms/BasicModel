@@ -1485,132 +1485,186 @@ class BaseModel(Mereology, nn.Module):
         chars = [chr(int(b) & 0xFF) for b in tensor.tolist()]
         return "".join(chars).rstrip("\x00")
 
+    @staticmethod
+    def _data_len(items):
+        if items is None:
+            return 0
+        if isinstance(items, torch.Tensor):
+            return int(items.shape[0])
+        return len(items)
+
+    @staticmethod
+    def _slice_data(items, n):
+        if items is None:
+            return []
+        if isinstance(items, torch.Tensor):
+            return [items[i] for i in range(min(n, int(items.shape[0])))]
+        return list(items[:n])
+
+    @staticmethod
+    def _display_value(value):
+        if isinstance(value, str):
+            return value
+        if isinstance(value, torch.Tensor):
+            x = value.detach().cpu().squeeze()
+            if x.numel() == 1:
+                return f"{float(x.reshape(-1)[0]):.4f}"
+            vals = x.reshape(-1)
+            if vals.numel() <= 8:
+                return "[" + ", ".join(f"{float(v):.4f}" for v in vals) + "]"
+            return f"shape={tuple(x.shape)}"
+        if isinstance(value, (list, tuple)):
+            return "[" + ", ".join(BaseModel._display_value(v) for v in value) + "]"
+        return str(value)
+
+    def _input_token_count(self, original):
+        if not isinstance(original, str):
+            return None
+        lex = str(getattr(self, 'lexer', 'word') or 'word').lower()
+        if lex in ('word', 'words'):
+            try:
+                return len([tok for tok, _ in parse(original, lex='words') if tok])
+            except Exception:
+                return len(original.split())
+        if lex in ('byte', 'bytes'):
+            return len(original.encode('utf-8'))
+        if lex == 'sentence':
+            return 1
+        return len(original.split())
+
+    def _decode_reconstructed_inputs(self, recon, originals):
+        if not isinstance(recon, torch.Tensor) or recon.numel() == 0:
+            return []
+        if getattr(self.inputSpace, 'model_type', None) != "embedding":
+            return [self._display_value(recon[i]) for i in range(recon.shape[0])]
+
+        emb = getattr(getattr(self.perceptualSpace, 'subspace', None),
+                      'what', None)
+        if not isinstance(emb, Embedding):
+            emb = getattr(self.perceptualSpace, 'vocabulary', None)
+        if not isinstance(emb, Embedding):
+            return [self._display_value(recon[i]) for i in range(recon.shape[0])]
+
+        vectors = recon.detach()
+        # 2026-05-27: surface decode errors via an env-gated probe so
+        # the silent-except path doesn't mask real bugs. Set
+        # ``BASICMODEL_DECODE_DEBUG=1`` to see the traceback instead
+        # of the shape-only fallback.
+        _decode_debug = bool(int(os.environ.get(
+            "BASICMODEL_DECODE_DEBUG", "0") or "0"))
+        try:
+            codebook = emb.getW()
+            if torch.is_tensor(codebook):
+                vectors = vectors.to(codebook.device)
+            decoded = emb.decode_reverse_meta(
+                vectors, subspace=self.perceptualSpace.subspace)
+            word_rows = emb.reconstruct_data(decoded, text=False)
+        except Exception as primary_err:
+            if _decode_debug:
+                import traceback
+                TheMessage(
+                    "[_decode_reconstructed_inputs] primary decode "
+                    f"raised {type(primary_err).__name__}: "
+                    f"{primary_err}")
+                traceback.print_exc()
+            try:
+                word_rows = self.perceptualSpace.reconstruct_data(text=False)
+            except Exception as fallback_err:
+                if _decode_debug:
+                    import traceback
+                    TheMessage(
+                        "[_decode_reconstructed_inputs] fallback "
+                        f"raised {type(fallback_err).__name__}: "
+                        f"{fallback_err}")
+                    traceback.print_exc()
+                return [self._display_value(recon[i])
+                        for i in range(recon.shape[0])]
+
+        rendered = []
+        for i, words in enumerate(word_rows):
+            words = [w for w in words if w not in ("", "\x00")]
+            expected = (self._input_token_count(originals[i])
+                        if i < len(originals) else None)
+            if expected is not None:
+                words = words[:expected]
+            rendered.append(" ".join(words))
+        return rendered
+
     def _reconstructionReport(self):
-        """Stub retained for API parity with the legacy reverse pipeline.
+        """Run a final eval pass and print input reconstruction per row."""
+        data = self.inputSpace.data
+        split = "test"
+        split_input = getattr(data, f"{split}_input", None)
+        split_output = getattr(data, f"{split}_output", None)
+        if self._data_len(split_input) == 0:
+            split = "train"
+            split_input = getattr(data, f"{split}_input", None)
+            split_output = getattr(data, f"{split}_output", None)
+        n_rows = self._data_len(split_input)
+        if n_rows == 0:
+            return
+        try:
+            max_rows = int(os.environ.get("BASIC_RECON_REPORT_MAX", "64"))
+        except ValueError:
+            max_rows = 64
+        if max_rows > 0 and n_rows > max_rows:
+            TheMessage(f"=== Input Reconstruction ({split}) ===")
+            TheMessage(
+                f"  skipped: {n_rows} rows exceeds "
+                f"BASIC_RECON_REPORT_MAX={max_rows}; set it to 0 to "
+                f"print every row.")
+            return
 
-        The full input-reconstruction report relied on
-        ``BasicModel.reverse`` and the input-space round trip, both of
-        which were retired together with ``<reconstruct>output</...>``
-        on 2026-05-14.  Within-sentence training is now IR-only; the
-        masked-LM accuracy is reported via the per-batch
-        ``reconstruction`` term in ``TheError`` and does not need a
-        separate text-level dump.
-        """
-        return
+        self.set_sigma(0)
+        try:
+            _, _, allOut, allIn = self.runEpoch(batchSize=n_rows, split=split)
+        finally:
+            self.set_sigma(0.5)
 
-        if not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
-            return  # no predictions to report
+        if not isinstance(allIn, torch.Tensor) or allIn.numel() == 0:
+            TheMessage(f"=== Input Reconstruction ({split}) ===")
+            TheMessage("  (no reconstructed input was produced)")
+            return
+
+        n = min(n_rows, int(allIn.shape[0]))
+        originals = self._slice_data(split_input, n)
+        labels = self._slice_data(split_output, n)
+        reconstructed = self._decode_reconstructed_inputs(allIn[:n], originals)
 
         rows = []
-        # Use reconstruct_data() for lex-based models (embedding vectors, not bytes)
-        use_lex_recon = (self.inputSpace.model_type == "embedding" and
-                         self.perceptualSpace.get_recovered_word(0, 0) is not None)
-        if use_lex_recon:
-            recon_text_list = self.perceptualSpace.reconstruct_data(text=True)
-        for i in range(len(test_input)):
-            original = self._bytes_to_text(test_input[i])
-            if use_lex_recon:
-                recon = recon_text_list[i]
-            elif hasattr(self.inputSpace, 'reconstructed'):
-                recon = self._bytes_to_text(self.inputSpace.reconstructed[i])
-            else:
-                recon = "(no reconstruction)"
-            # Strip \x00 padding from both sides before comparing words
+        TheMessage(f"=== Input Reconstruction ({split}) ===")
+        for i in range(n):
+            original = self._display_value(originals[i])
+            recon = reconstructed[i] if i < len(reconstructed) else ""
+            label = self._display_value(labels[i]) if i < len(labels) else ""
+            pred = ""
+            if isinstance(allOut, torch.Tensor) and allOut.numel() > 0:
+                pred = self._display_value(allOut[i])
             orig_words = original.replace("\x00", " ").split()
             recon_words = recon.replace("\x00", " ").split()
             match = orig_words == recon_words
+            status = "OK" if match else "MISMATCH"
             css = "match" if match else "mismatch"
-            label = test_output[i]
-            if isinstance(label, torch.Tensor):
-                label = label.squeeze().tolist()
-            pred_val = allOut[i]
-            if pred_val.numel() == 1:
-                pred_str = f'{pred_val.item():.4f}'
-            else:
-                pred_str = f'[{pred_val.shape}]'
+            TheMessage(
+                f"  row[{i}] input={original!r} -> "
+                f"reconstructed={recon!r} label={label} "
+                f"predicted={pred} {status}")
             rows.append([
-                f'{original}',
+                original,
                 f'<span class="{css}">{recon}</span>',
-                f'{label}',
-                pred_str,
+                label,
+                pred,
                 f'<span class="{css}">{"Yes" if match else "No"}</span>',
             ])
-            TheMessage(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred_str} {'OK' if match else 'MISMATCH'}")
 
         TheReport.add_table(
-            "Input vs Reconstructed",
+            f"Input vs Reconstructed ({split})",
             ["Input", "Reconstructed", "Label", "Predicted", "Match"],
             rows)
-
-        # Buffer reconstruction via nWhere byte offsets (non-differentiable display).
-        # _materialize_recovered_input() runs the deferred word-recovery
-        # decode (reverse() defers it -- it is report-only and its
-        # per-word .item() would break the brick CUDA-graph contract).
-        recovered_meta = self.perceptualSpace._materialize_recovered_input()
-        if use_lex_recon and recovered_meta is not None:
-            buf_size = max(len(test_input[0].tolist()) if isinstance(test_input[0], torch.Tensor) else 64, 64)
-            buffer_strings = self.perceptualSpace.reconstruct_to_buffer(buf_size=buf_size)
-            buf_rows = []
-            total_chars = 0
-            matching_chars = 0
-            for i in range(len(test_input)):
-                original = self._bytes_to_text(test_input[i])
-                buf_recon = buffer_strings[i] if i < len(buffer_strings) else ""
-                orig_stripped = original.rstrip('\x00')
-                n = max(len(orig_stripped), len(buf_recon))
-                chars_match = sum(
-                    a == b for a, b in zip(orig_stripped.ljust(n, '\x00'),
-                                           buf_recon.ljust(n, '\x00')))
-                total_chars += n
-                matching_chars += chars_match
-                acc = chars_match / max(n, 1) * 100
-                css = "match" if acc > 90 else "mismatch"
-                buf_rows.append([
-                    f'{orig_stripped}',
-                    f'{buf_recon}',
-                    f'<span class="{css}">{acc:.0f}%</span>',
-                ])
-                TheMessage(f"  Buffer: {orig_stripped:30s} -> {buf_recon:30s} ({acc:.0f}% char accuracy)")
-            overall_acc = matching_chars / max(total_chars, 1) * 100
-            buf_rows.append(["<strong>Overall</strong>", "", f"<strong>{overall_acc:.1f}%</strong>"])
-            TheReport.add_table(
-                "Buffer Reconstruction (nWhere placement)",
-                ["Original", "Buffer", "Char Accuracy"],
-                buf_rows)
-
-            # Piecewise token-level metrics (no buffer shadowing)
-            meta = recovered_meta if isinstance(recovered_meta, dict) else {}
-            orig_tokens = meta.get('tokens', None)
-            if orig_tokens is not None:
-                pw_rows = []
-                total_tok = 0
-                match_tok = 0
-                for i in range(min(len(test_input), len(orig_tokens))):
-                    original = self._bytes_to_text(test_input[i]).rstrip('\x00')
-                    tokens = orig_tokens[i]
-                    n_tok = len(tokens)
-                    n_match = 0
-                    for word, offset in tokens:
-                        if word in ("", "\x00"):
-                            continue
-                        total_tok += 1
-                        # Check if this word appears at this offset in original
-                        if offset is not None and 0 <= offset <= len(original) - len(word):
-                            if original[offset:offset + len(word)] == word:
-                                n_match += 1
-                                match_tok += 1
-                    tok_acc = n_match / max(n_tok, 1) * 100
-                    TheMessage(f"  Piecewise: {original:30s} -> {n_match}/{n_tok} tokens matched ({tok_acc:.0f}%)")
-                pw_overall = match_tok / max(total_tok, 1) * 100
-                TheMessage(f"  Piecewise overall: {match_tok}/{total_tok} ({pw_overall:.0f}%)")
-
-            # Push reconstructed data to TheData
-            self.inputSpace.data.reconstructed_input = buffer_strings
-
-        # Push reconstructed output predictions to TheData
-        if allOut is not None:
+        self.inputSpace.data.reconstructed_input = reconstructed
+        if isinstance(allOut, torch.Tensor):
             self.inputSpace.data.reconstructed_output = [
-                allOut[i].detach().cpu() for i in range(allOut.shape[0])]
+                allOut[i].detach().cpu() for i in range(min(n, allOut.shape[0]))]
 
 class BasicModel(BaseModel):
     """Core model: assembles Spaces into a forward and (optionally) reverse pipeline.
@@ -2379,8 +2433,8 @@ class BasicModel(BaseModel):
         # (XOR_grammar.xml et al.).
         try:
             ws = self.wordSubSpace
-            if (ws is not None and ws.chart is not None
-                    and ws.chart.router_kind == "signal"):
+            router = getattr(ws, 'languageLayer', None) if ws is not None else None
+            if router is not None:
                 rules = ws.current_rules
                 gen_rules = ws.generate_rules
                 from Language import TheGrammar
@@ -2390,7 +2444,7 @@ class BasicModel(BaseModel):
                         rd = TheGrammar.rules[rid]
                         return f"{rid}:{rd.canonical}"
                     return f"{rid}:?"
-                TheMessage("=== Chart-extracted grammar (signal/Viterbi) ===")
+                TheMessage("=== Signal-router-extracted grammar (Viterbi) ===")
                 for tier, rows in (rules or {}).items():
                     TheMessage(f"  compose tier={tier!r}:")
                     for b, row in enumerate(rows):
@@ -2401,8 +2455,7 @@ class BasicModel(BaseModel):
                     for b, row in enumerate(rows):
                         decoded = [_decode(rid) for rid in row]
                         TheMessage(f"    row[{b}] = {decoded}")
-                router = ws.chart._signal_router
-                if router is not None and getattr(router, '_last_root_state', None) is not None:
+                if getattr(router, '_last_root_state', None) is not None:
                     rs = router._last_root_state.detach()
                     TheMessage(f"  S root state shape = {tuple(rs.shape)}")
                     for b in range(rs.shape[0]):
@@ -2974,6 +3027,9 @@ class BasicModel(BaseModel):
                               if rev_sub is not None
                               and hasattr(rev_sub, 'materialize')
                               else None)
+                    if (not train and rev_ev is not None
+                            and torch.is_tensor(rev_ev)):
+                        inputDataPred = rev_ev.detach()
                     fwd_ev = (forwardInput.materialize()
                               if hasattr(forwardInput, 'materialize')
                               else forwardInput)
@@ -3112,25 +3168,10 @@ class BasicModel(BaseModel):
                         weight=getattr(self, 'gate_l1_lambda', 0.0),
                         space="WordSpace", category="reg")
 
-                # Sparse-MoE load-balance penalty (Shazeer et al. 2017).
-                # Penalises CV² of per-rule activation counts so the
-                # noisy top-K gating doesn't collapse onto 1-2 rules.
-                # Active only when chartTopK > 0 AND loadBalanceWeight > 0.
-                lb_w = getattr(self, 'load_balance_weight', 0.0)
-                if (lb_w > 0.0 and self.wordSubSpace is not None
-                        and getattr(self.wordSubSpace, 'chart', None)
-                        is not None):
-                    lb_loss = self.wordSubSpace.chart.load_balance_loss(
-                        weight=lb_w)
-                    if isinstance(lb_loss, torch.Tensor):
-                        totalLoss = totalLoss + lb_loss
-                        TheError.add(
-                            "load_balance", lb_loss,
-                            weight=lb_w,
-                            space="WordSpace", category="reg")
-                    # Reset between batches so the next batch's count
-                    # reflects only its own gating distribution.
-                    self.wordSubSpace.chart.reset_load_count()
+                # Stage 3 cleanup: the chart's sparse-MoE load-balance
+                # bookkeeping retired with the chart itself. The
+                # <loadBalanceWeight> knob stands by for any future
+                # signal-router rule load-balancing; no consumer yet.
 
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
@@ -4317,6 +4358,20 @@ class BasicModel(BaseModel):
         emb = getattr(self.perceptualSpace, 'vocabulary', None)
         if terminal_ss is not None and isinstance(emb, Embedding):
             object.__setattr__(emb, 'symbolicSpace_ref', terminal_ss)
+            # Tied-storage refactor (2026-05-27 follow-up): after the
+            # back-ref is wired, retarget the PS-side WordVectors
+            # ``_vectors`` Parameter at the SS codebook's ``W``
+            # Parameter. The previously-bootstrapped ASCII rows on the
+            # local PS Parameter are migrated row-by-row into the SS
+            # codebook (each surface byte gets a paired (orth, sem)
+            # allocation on SS, and the PS-side ``key_to_index`` is
+            # remapped to the new orth row index). After this call,
+            # ``wv._vectors`` and ``ss.subspace.what.W`` are the SAME
+            # nn.Parameter; mutations through either view are visible
+            # to the other.
+            ss_cb = getattr(terminal_ss.subspace, 'what', None)
+            if ss_cb is not None and hasattr(emb, '_tie_lexicon_to_codebook'):
+                emb._tie_lexicon_to_codebook(terminal_ss, ss_cb)
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -5525,13 +5580,16 @@ class BasicModel(BaseModel):
         return last_cs
 
     def _chart_compose_at_C(self, stage_idx=0):
-        """Fire the chart at C-tier over ``conceptualSpace.stm`` contents.
+        """Fire the signal router at C-tier over
+        ``conceptualSpace.stm`` contents.
 
-        Populates ``wordSubSpace.current_rules`` for downstream SS dispatch.
-        Uses :meth:`ShortTermMemory.snapshot` to obtain a single uniform
-        ``[B, max_depth, D_c]`` slab (rows with shorter sentences carry
-        zero-padding at the tail; handled by the chart's ``valid_mask``
-        machinery).
+        Populates ``wordSubSpace.current_rules`` for downstream SS
+        dispatch. Uses :meth:`ShortTermMemory.snapshot` to obtain a
+        single uniform ``[B, max_depth, D_c]`` slab (rows with shorter
+        sentences carry zero-padding at the tail).
+
+        Method name preserved across the Stage 3 chart retirement; it
+        now drives ``WordSubSpace.compose`` -> ``languageLayer.compose``.
         """
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
@@ -5542,8 +5600,11 @@ class BasicModel(BaseModel):
         """Fire ``wordSubSpace.generate`` over the C-tier STM snapshot.
 
         Reverse-path mirror of ``_chart_compose_at_C``: populates
-        ``wordSubSpace.generate_rules`` so each stage's reverse dispatch can
-        pop them via its SyntacticLayer cursor.
+        ``wordSubSpace.generate_rules`` so each stage's reverse dispatch
+        can pop them via its SyntacticLayer cursor.
+
+        Method name preserved across the Stage 3 chart retirement; it
+        now drives ``WordSubSpace.generate`` -> ``languageLayer.generate``.
         """
         ws = self.wordSubSpace
         if ws is None:
@@ -6165,12 +6226,17 @@ class BasicModel(BaseModel):
         if wordSubSpace is None:
             return
         parse_state = getattr(wordSubSpace, 'parse_state', None)
-        chart = getattr(wordSubSpace, 'chart', None)
-        if chart is None and parse_state is None:
-            return
-        traces = getattr(chart, '_derivation_trace', None) if chart is not None else None
-        cat_names = getattr(chart, '_category_names', None) if chart is not None else None
-        cat_names = cat_names or ['?']
+        # Stage 3 (chart retirement): the chart's per-row
+        # ``_derivation_trace`` and per-leaf POS / atom side-channels
+        # were the source of truth for the syntax dump. The signal
+        # router's per-tier rule lists on WordSubSpace.current_rules
+        # provide the same per-row commitment, but the chart's POS
+        # category names + per-leaf atom_idx aren't populated yet by
+        # the router. Fall back to empty for now; consumers that need
+        # POS-decorated trees should consult the ParseState carrier.
+        chart = None
+        traces = None
+        cat_names = ['?']
 
         # Resolve atom_idx -> surface token via InputSpace.wv (word
         # vectors); fall back to a placeholder when wv isn't wired.

@@ -121,11 +121,9 @@
   </OutputSpace>
 
   <WordSpace>
-    <parserBackend>chart</parserBackend>
-    <chartTau>2.0</chartTau>
-    <wMax>32</wMax>
-    <chartTopK>4</chartTopK>
-    <chartNoiseEps>0.1</chartNoiseEps>
+    <!-- Stage 3 cleanup: parserBackend, chartTau, wMax, chartTopK,
+         chartNoiseEps retired alongside the chart. The signal router
+         (LanguageLayer) is the canonical parser. -->
     <downwardGeneration>false</downwardGeneration>
     <language>
       <start>S</start>

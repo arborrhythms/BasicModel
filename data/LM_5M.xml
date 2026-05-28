@@ -7,14 +7,13 @@
                                    grammar block; per-space SyntacticLayers
                                    dispatch on parser rule selections)
          * conceptualOrder=1      (the per-stage Sigma-Pi cascade is
-                                   replaced by single-stage chart-driven
+                                   replaced by single-stage signal-router
                                    composition)
-         * parserBackend=chart    (compatibility parser path)
-         * <wMax>                 (must be set explicitly because the
-                                   chart's default w_max=8 would silently
-                                   truncate any sentence > 7 tokens)
          * grammar block          (full English grammar instead of the
                                    trivial S=intersection/union pair)
+         (Stage 3 cleanup: parserBackend, chartTau, chartTopK,
+          chartNoiseEps, and wMax retired when the chart was retired
+          in favour of the signal router.)
        Distinct ckpt/kv paths so LM_5M and MM_5M training can coexist.
        Server port also distinct so both can serve in parallel.
   -->
@@ -44,9 +43,9 @@
          legacy perStageChartReparse knob was retired 2026-05-12. -->
 
     <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
-         Penalises CV² of per-rule activation counts so the noisy
-         top-K gating spreads mass across rules instead of collapsing
-         onto 1-2 rules.  Active only when chartTopK > 0. -->
+         The chart's top-K gating retired in Stage 3 alongside the
+         chart; the knob remains for any future signal-router rule
+         load-balancing. -->
     <loadBalanceWeight>0.01</loadBalanceWeight>
 
     <data>
@@ -120,23 +119,9 @@
   </OutputSpace>
 
   <WordSpace>
-    <parserBackend>chart</parserBackend>
-    <chartTau>2.0</chartTau>
-    <!-- N=1024 (input length); chart cost scales as N * w_max^2 * R.
-         32 covers any sub-sentence chunk from the byte-level lexer
-         while keeping per-row cost at ~ N * 1024 * R = 1M cell-rule
-         evaluations, which fits the MM_5M perf envelope. Raise to N
-         for full-sentence parsing (cost goes ~32x). -->
-    <wMax>32</wMax>
-    <!-- Sparse-MoE rule gating (Shazeer et al. 2017).  At each
-         (cell, split), keep only the top-K rules by (score + Gaussian
-         noise); the rest are masked.  Cuts effective per-cell rule
-         cost from R=23 to chart_top_k=4 (~6x speedup on the
-         per-rule grammar-layer forward pass) while keeping rare-rule
-         gradients alive via the noise.  Disabled at eval (no
-         exploration during Viterbi). -->
-    <chartTopK>4</chartTopK>
-    <chartNoiseEps>0.1</chartNoiseEps>
+    <!-- Stage 3 cleanup: parserBackend, chartTau, wMax, chartTopK,
+         chartNoiseEps retired alongside the chart. The signal router
+         (LanguageLayer) is the canonical parser. -->
     <language>
       <start>S</start>
       <grammar>

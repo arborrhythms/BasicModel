@@ -117,13 +117,11 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
                          f"ops: {missing}")
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
-        # Post 2026-05-08 SyntacticLayer rename: the legacy WordSpace
-        # ``syntacticLayer`` (which held ``all_rules`` / ``transition_rule``)
-        # was retired. Rule selection now flows through ``WordSpace.chart``
-        # which sees every grammar rule directly via ``self.chart.grammar``;
-        # the per-tier subsets are read on demand from
-        # ``Grammar.symbolic()`` / ``perceptual()`` / ``conceptual()``.
-        self.assertIs(model.wordSubSpace.chart.grammar, Language.TheGrammar)
+        # Stage 3 (2026-05-27): the chart retired; the signal router
+        # (``WordSubSpace.languageLayer``) carries the grammar reference
+        # for diagnostics and gating.
+        self.assertIs(model.wordSubSpace.languageLayer.grammar,
+                      Language.TheGrammar)
         self.assertIsNone(Language.TheGrammar.symbolic_transition())
 
 

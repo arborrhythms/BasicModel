@@ -1,4 +1,23 @@
 
+
+
+Pre-existing MentalModel.xml / WordSubSpace.subspace bug (defensively shimmed in Stage 3; deserves a proper fix).
+
+The <codebook>none</codebook> workaround in MM_xor.xml from Stage 5 — STE-through-muxed-codebook would let butterfly compose with VQ cleanly.
+
+
+Stage 5 XOR caveat — required <codebook>none</codebook> on MM_xor.xml's PerceptualSpace to let the butterfly weights learn through. A future STE-through-muxed-snap variant would let butterfly compose with the VQ bottleneck cleanly.
+
+Pre-existing MM_5M / WordSubSpace.subspace bug — defensively shimmed in Stage 3 (__dict__.get('subspace', None)). Worth a proper fix.
+
+test_mm_xor.py thresholds passed at 0.20/0.15 (closed) — but test_reasoning::TestWriteMask::test_partition_isolation is a pre-existing failure on RamsifiedModel.xml, unrelated.
+
+Documentation updates pending: doc/Architecture.md (Sigma/Pi ownership table, modes section), doc/Spaces.md (CS/SS/PS sections) — both need rewriting to reflect the new architecture. Master plan calls these out as part of Stage 3 cross-cutting work; they didn't land in this session.
+
+XML grammars still declare <S>lift(S, S)</S> — the C-tier wiring is structurally ready but dormant until grammar configs migrate to <C>lift(C, C)</C>. Stage 4 implementer flagged.
+
+
+
 * implement doc/specs/2026-05-21-cross-position-mixing-via-nInputDim.md.
 
 * Enforce use of Mereonomy (per-symbol DoT graph).

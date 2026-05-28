@@ -99,27 +99,10 @@ def test_word_space_params_include_category_embedding():
 
 
 def test_word_space_params_include_stm_driver_scorer_params():
-    """Once the STM driver is initialised, its scorer's parameters
-    land in ``WordSpace.params`` too."""
-    from test_partition_pos_codebook import _make_word_space
-    from Language import Grammar
-    from embed import build_knowledge_section, KnowledgeView
-    ws = _make_word_space()
-    g = Grammar()
-    g.rules = [
-        g._parse_rule("NP", "conjunction(DET, N)", tier='S'),
-        g._parse_rule("S", "disjunction(NP, VP)", tier='S'),
-    ]
-    g._configured = True
-    import Language
-    Language.TheGrammar = g
-    view = KnowledgeView(build_knowledge_section(g))
-    ws.attach_knowledge(view)
-    ws.parser_backend = 'stm'
-    ws._init_stm_driver()
-    driver_params = list(ws.stm_driver.scorer.parameters())
-    assert driver_params
-    param_ids = {id(p) for p in ws.params}
-    for p in driver_params:
-        assert id(p) in param_ids, (
-            f"scorer param {p.shape} missing from ws.params")
+    """Stage 3 (2026-05-27): the STM shift-reduce driver retired
+    alongside the chart. The signal router's per-tier scorer
+    parameters are still registered via the LanguageLayer's
+    nn.Module walk (covered by test_signal_router_layer.py); this
+    test stub stays as a placeholder so the suite size is stable."""
+    import pytest
+    pytest.skip("STM shift-reduce driver retired in Stage 3")

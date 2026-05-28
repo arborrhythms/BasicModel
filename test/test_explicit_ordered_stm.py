@@ -76,30 +76,15 @@ def test_ordered_taxonomy_preserves_np3_np4_orders():
 
 
 def test_stm_parses_explicit_np3_lift_to_s4():
-    ws = _word_space()
-    inp = torch.tensor([[
-        [1.0, 0.0, 0.0, 0.0],  # NP3
-        [2.0, 0.0, 0.0, 0.0],  # VP1
-    ]])
-    rules = ws.compose(inp)
-    assert rules['S'][0] == [0]
-    ps = ws.parse_state
-    root = ps.frames[ps.trace[-1].parent_index]
-    assert root.category == 'S'
-    assert root.order == 4
-    assert ps.trace[-1].probability == 1.0
+    """Stage 3 (2026-05-27): the STM shift-reduce parser is retired.
+    Order-typed parsing now flows through the signal router and the
+    grammar's per-rule probability head; coverage moves to
+    test_signal_router_*."""
+    import pytest
+    pytest.skip("STM shift-reduce parser retired in Stage 3")
 
 
 def test_stm_parses_explicit_np4_lift_to_s5():
-    ws = _word_space()
-    inp = torch.tensor([[
-        [3.0, 0.0, 0.0, 0.0],  # NP4
-        [4.0, 0.0, 0.0, 0.0],  # MP1
-    ]])
-    rules = ws.compose(inp)
-    assert rules['S'][0] == [1]
-    ps = ws.parse_state
-    root = ps.frames[ps.trace[-1].parent_index]
-    assert root.category == 'S'
-    assert root.order == 5
-    assert ps.trace[-1].probability == 1.0
+    """Stage 3 (2026-05-27): see above."""
+    import pytest
+    pytest.skip("STM shift-reduce parser retired in Stage 3")

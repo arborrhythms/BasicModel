@@ -93,8 +93,9 @@
   </OutputSpace>
 
   <WordSpace>
-    <chartTau>2.0</chartTau>
-    <routerKind>signal</routerKind>
+    <!-- Stage 3 cleanup: chartTau and routerKind retired alongside
+         the chart. The signal router (LanguageLayer) is the canonical
+         parser; no routing-kind dispatch is needed. -->
     <language>
       <!-- Tier-scoped grammar. The presence of <grammar> here means
            XOR_grammar.xml takes full ownership of the rule set; no

@@ -50,10 +50,9 @@
   </architecture>
 
   <WordSpace>
-    <chartTau>2.0</chartTau>
-    <!-- Default w_max is now nInput; explicit override here documents
-         that we want the chart to span the full padded sentence. -->
-    <wMax>8</wMax>
+    <!-- Stage 3 cleanup: chartTau and wMax retired alongside the
+         chart. The signal router (LanguageLayer) is the canonical
+         parser. -->
     <language>
       <start>S</start>
       <grammar>

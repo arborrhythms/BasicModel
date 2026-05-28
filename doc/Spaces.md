@@ -1,27 +1,38 @@
 # Spaces
 
+> **Status (2026-05-27):** updated for the substrate refactor. PS is a
+> single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
+> container + grammatical CPU; no atomic forward fold. SS owns the
+> unified word lexicon codebook with paired (orth, semantic) rows.
+> Grammar dispatch lives on the signal router (`LanguageLayer`) at
+> `WordSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
+> parsers are retired. `LiftLayer` / `LowerLayer` are binary
+> `GrammarLayer` subclasses with internal Sigma / Pi (no longer
+> substrate-borrowing). `GrammarLayer` gains an optional butterfly
+> cascade mode.
+
 ## Overview
 
 BasicModel is a pipeline of five **spaces** plus a grammar host
 (`WordSpace`), each performing a distinct representational
 transformation. Data flows forward from raw input to task output; the
 reverse pass reconstructs the original input from the symbolic
-representation. Two feedback loops connect the pipeline back upward:
-$S \to C$ (per-stage symbolic loopback at order $\ge$ 1) and $C \to P$
-(cross-forward subsymbolic loopback). The legacy `SubsymbolicSpace` and
-`SyntacticSpace` classes have been retired --- the subsymbolic role is
-filled by `PerceptualSpace` plus the new $C \to P$ feedback, and the grammar
-runs from `WordSpace`'s `SyntacticLayer` attached to `SymbolicSpace`
-(the canonical grammar host / "calculator").
+representation. The legacy `SubsymbolicSpace` and `SyntacticSpace`
+classes have been retired — the subsymbolic role is filled by
+`PerceptualSpace` itself, and the grammar runs from
+`WordSubSpace.languageLayer` (the signal router; subsumed the retired
+`Chart`).
 
 ```
 Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
 Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
-
-Feedback:
-    SymbolicSpace ---> ConceptualSpace   (S->C, per stage at order >= 1)
-    ConceptualSpace ---> PerceptualSpace (C->P, cross-forward)
 ```
+
+The pre-2026-05-27 "two feedback loops" (S → C per-stage, C → P
+cross-forward) are retired. The recurrent character lives in (a) STM
+accumulation across words in SERIAL / GRAMMATICAL mode, and (b) the T-pass
+PARALLEL refinement loop driven by `<conceptualOrder>` via
+`PS.forward(CS)` iterations.
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
 
@@ -66,97 +77,89 @@ compute brick --- see [Architecture.md](Architecture.md)).
 
 ---
 
-## Sigma / Pi ownership (2026-05-13 rebalance)
+## Sigma / Pi ownership (2026-05-27 substrate refactor)
 
-The two composition operators sigma and pi live on the spaces in a
-**fixed isomorphic pattern**.  Each space owns only the operator that
-fits its tier; the cross-tier feedback loops thread through those
-operators unconditionally; the parser selects grammar rules, not a
-separate substrate per rule.
+The 2026-05-13 rebalance described "each space owns one operator." The
+2026-05-27 substrate refactor revised again: PS owns **both** pi and
+sigma (single-arg input processor); CS has **no atomic forward operator**
+(STM bookkeeper); SS owns the unified word lexicon codebook (paired
+rows); Lift / Lower become **binary `GrammarLayer` subclasses** with
+internal Sigma / Pi (no longer substrate-borrowing).
 
-| Space | Owns | Used in `.forward(IS, CS)` / `.forward(PS, SS)` |
+| Space | Owns | Forward signature |
 |---|---|---|
-| **PerceptualSpace** | `pi_input` (`input_dim -> percept_dim`) and `pi_concept` (`concept_dim -> percept_dim`) | both fire unconditionally each forward; their outputs are **summed** (no /2 averaging) |
-| **ConceptualSpace** | `sigma_percept` (`percept_dim -> concept_dim`) only | fires unconditionally on the PS argument; the SS argument has **no default fold layer** |
-| **SymbolicSpace** | (none) | grammar operations only (`intersection`, `union`, `lift`, `lower`, ...) --- no default sigma or pi |
+| **PerceptualSpace** | one `self.pi` (PiLayer), one `self.sigma` (SigmaLayer), MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument**. `x` is IS at bootstrap (SERIAL) or PARALLEL bootstrap, then CS in PARALLEL refinement. Body: `result = self.pi(x.materialize()) + self.sigma(x.materialize())` (no outer tanh). |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~7) | `CS.forward(new_idea_subspace)` — STM bookkeeping (shift slots, push to slot 7). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
+| **SymbolicSpace** | unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | No atomic forward fold. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
-**Composition** (the end-to-end fold from input to concept):
+**Composition (per-mode):**
 
-```
-C  =  sigma_percept(  pi_input(IS)  +  pi_concept(C_prev)  )
-```
+- **SERIAL / GRAMMATICAL** (`<conceptualMode>serial</...>`): one
+  iteration per word.
 
-where `C_prev` is the prior C-tier event fed back via the subsymbolic
-loop.  At the very first forward of a sentence, `C_prev` is zero/empty,
-so `pi_concept(0) = 0` and the formula degenerates to
-`C = sigma_percept(pi_input(IS))`.
+  ```
+  PS_t = PS.forward(IS_t)            # MPHF + pi + sigma on per-word surface
+  CS_t = CS.forward(PS_t)             # STM shift + push
+  router.dispatch_at_C(STM)           # read-only grammar ops on STM contents
+  router.dispatch_at_S(STM)           # codebook-write-required ops via SS
+  ```
 
-### Why the subsymbolic loop fires unconditionally
+- **PARALLEL** (`<conceptualMode>parallel</...>`): T iterations of PS over
+  CS.
 
-The earlier design dispatched `pi_concept` only when the chart's
-syntactic dispatch fired a "lowering" grammar rule.  We collapsed that
-into **unconditional firing** for two reasons:
+  ```
+  PS_0 = PS.forward(IS); CS_0 = PS_0
+  for t in 1..T = <conceptualOrder>:
+      PS_t = PS.forward(CS_{t-1})    # refinement pass
+      CS_t = CS.forward(PS_t)         # STM[t] = PS_t (parallel write; no shift)
+  router.dispatch_at_C(STM)           # grammar ops after STM population
+  ```
 
-1. **Cognitive parsimony.**  "the running boy" (lowering, attribution)
-   and "the boy runs" (lifting, predication) involve the **same neural
-   composition act** --- fusing a noun representation with a verb
-   representation into a single bound state.  The linguistic distinction
-   between lift and lower is a *labelling* over a shared composed state,
-   not a different composition primitive.  Making `pi_concept` fire
-   unconditionally puts the composition machinery at the substrate
-   layer, where it can be invoked once and re-read by any number of
-   downstream grammar-driven framings.
+The legacy formula `C = sigma_percept(pi_input(IS) + pi_concept(C_prev))`
+is retired entirely.
 
-2. **Idempotence of the symbolic loop.**  `cs.forward(ss.forward(c)) ==
-   c` --- SS is a dimensional pass-through (no default sigma/pi at S),
-   and the grammar's S-tier ops are idempotent in their algebra, so
-   routing a C-activation through SS and back through CS leaves it
-   unchanged.  That's why CS owns only **one sigma** (for PS) --- there
-   is no fold needed on the SS side; SS already returns what C handed
-   it.  An unconditional `pi_concept` therefore can't double-apply
-   across the symbolic loop's round-trip.
+### Lift / Lower in the new ownership
 
-### Where lift vs lower lives, if not at the substrate
+`LiftLayer` and `LowerLayer` are no longer "rule-id annotators over
+shared substrate." They are first-class binary `GrammarLayer`
+subclasses (Stage 4 of the substrate refactor):
 
-The cognitively-real distinction between
-**attribution** ("the running boy") and **predication** ("the boy
-runs") is preserved at three downstream sites:
+- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `tier='C'`.
+  Owns an internal `self._sigma: SigmaLayer` for the pairwise additive
+  (sigma-style) math. `forward(left, right)` delegates to `_sigma.compose`.
+- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `tier='C'`.
+  Owns an internal `self._pi: PiLayer` for the pairwise multiplicative
+  (pi-style) log-domain math. `forward(left, right)` delegates to
+  `_pi.compose`.
 
-1. **Parse tree / rule_id metadata** *(primary)* --- the parser records
-   *"this composition fired under rule `lift`"* vs *"under rule
-   `lower`"*; the truth layer and output decoder read the `rule_id` to
-   interpret the composed state.  This is the cheapest, structural
-   distinction and matches the linguistic view that lift/lower is a
-   **derivational labelling** over a shared operation.
-2. **Per-slot catuskoti tag** on `STM._truth_tags` --- secondary
-   metadata stamp; useful when downstream readers need O(1) access to
-   role without traversing the parse tree.
-3. **Category stack frames** in `WordSpace` --- each composition pushes
-   a stack frame tagged with category; NP-frames are attribution
-   outcomes, S-frames predication.
+Both reverse cleanly via their internal layer's reverse. Both gain
+butterfly mode for free via `GrammarLayer` base inheritance (Stage 5).
 
-`LiftLayer` and `LowerLayer` are therefore **pure rule-id
-annotators**.  They do *not* own internal substrate sigma/pi layers
-(the legacy "borrowed substrate" pattern is retired); they record the
-rule firing and let the unconditional subsymbolic loop compute the
-composed state.
+The signal router dispatches them as binary reduce ops at the C tier,
+weighted by `Grammar.rule_probability` (the per-position copy/reduce
+score head).
 
-### Grammar XML migration
+### Butterfly mode on `GrammarLayer` (Stage 5)
 
-The old rule names matched the **old** ownership (`P = sigma(P)`,
-`C = pi(C)`); under the new rebalance they're inverted at the operator
-level.  Rules re-label as:
+`GrammarLayer(butterfly=True, N=N)` allocates a packed `nn.Parameter`
+of shape `[n_levels, N // 2, 2D, 2D]` (`n_levels = log2(N)`), a
+bit-reversal permutations buffer, and LDU-parameterized invertibility
+per node. Identity init: cascade is identity at construction. Each
+subclass implements `_butterfly_pair_op(x_pair, W_node)` with its
+per-pair math:
 
-| Old | New | Meaning |
-|---|---|---|
-| `P = sigma(P)` | `P = pi(IS)`            | `pi_input` always fires |
-| (none)         | `P = lower(C)`          | `pi_concept`; grammar can also fire `lower` as an S-tier rule that records the lowering role |
-| `C = pi(C)`    | `C = sigma(PS)`         | `sigma_percept` always fires |
-| `S = lift(NP, VP)` | unchanged           | now a rule-id annotator over the same loop |
-| `S = lower(NP, VP)` | unchanged          | rule-id annotator |
+- `PiLayer._butterfly_pair_op`: atanh → einsum → tanh (multiplicative
+  log-domain pairwise).
+- `SigmaLayer._butterfly_pair_op`: atanh → einsum → tanh (additive
+  pairwise — same surface, different gradient regime).
+- `LiftLayer` / `LowerLayer`: delegate to their internal sigma / pi.
+- `IntersectionLayer` / `UnionLayer`: min / max kernels.
+- `ConjunctionLayer` / `DisjunctionLayer`: hard-coded monotonic min / max.
 
-Legacy XMLs keep working via an alias layer in the rule parser that
-maps old names to new layer bindings (parser-side, no runtime cost).
+Parameter savings: `O(N · log N · D²)` cascade vs `O(N² · D²)` for a
+single big matrix. Wired into `PerceptualSpace.pi` when
+`<PerceptualSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`
+is set. Closes the XOR convergence target (`test_mm_xor.py`).
 
 ---
 
@@ -485,38 +488,74 @@ for the ARMA(p, q) design.
 
 ## PerceptualSpace
 
-**Role.** Transforms raw input vectors into perceptual representations via
-multiplicative interactions. Models prototype-based feature detection.
+**Role.** Single-arg input processor. Applies `self.pi` and `self.sigma`
+additively to its argument (either an IS-typed subspace for surface
+input or a CS-typed subspace for PARALLEL-mode refinement). Owns the
+surface-keyed Lexicon (`self.vocabulary`) and the MPHF + index table for
+per-word surface → row lookup.
 
-**Forward operation (log-space linear).**
+**Owned state (post-substrate-refactor 2026-05-27):**
+
+- `self.pi`: a single `PiLayer` (`percept_dim → percept_dim`). Post-Stage-2,
+  `PiLayer` inherits from `GrammarLayer`; post-Stage-5, accepts
+  `butterfly=True, N=N` for cross-position cascade mode.
+- `self.sigma`: a single `SigmaLayer` (`percept_dim → percept_dim`). Same
+  GrammarLayer inheritance + butterfly capability.
+- `self.vocabulary`: the Lexicon (`Embedding`), keyed by MPHF over
+  surface bytes. Per-word vectors are `nDim`-wide (CS-space-dim per the
+  flat-slab invariant).
+- `self._mphf_gpu_layer`: MPHF infrastructure for fast surface lookup.
+- `self.chunk_layer`: BPE machinery (the `ChunkLayer` from `bin/Layers.py`).
+
+The legacy `pi_input` / `pi_concept` ModuleLists are retired. The
+sigma_percept-style additive fold on CS is also retired (lives on PS
+now as `self.sigma`).
+
+**Forward (`PS.forward(x_subspace)`):**
+
+```python
+def forward(self, x_subspace):
+    x = x_subspace.materialize()
+    return self.pi(x) + self.sigma(x)   # no outer tanh; pi/sigma have own internal tanh
+```
+
+In SERIAL / GRAMMATICAL mode, `x_subspace` is the per-word IS subspace
+(surface bytes → Lexicon lookup → CS-space vector). In PARALLEL mode,
+the first call passes IS; subsequent T-1 calls pass CS for refinement
+iterations (T = `<conceptualOrder>`).
+
+**Math (pi component):**
 
 ```
-s_i = log((1 + x_i) / (1 - x_i))          # atanh domain transform
-z_j = W @ s + b                            # linear in log-multiplicative space
-y_j = (exp(z_j) - 1) / (exp(z_j) + 1)     # tanh back to [-1, 1]
+s = log((1 + x) / (1 - x))                # atanh domain transform
+z = W_pi @ s + b_pi                       # linear in log-multiplicative space
+pi(x) = (exp(z) - 1) / (exp(z) + 1)        # tanh back to [-1, 1]
 ```
 
-Addition in log-space corresponds to multiplication of the original features.
+**Math (sigma component):**
 
-**Reverse (invertible=True).** A single `PiLayer(invertible=True)` is shared
-for both directions: `_to_mult(y)`, log, `W^{-1}(z - b)`, exp, `_from_mult`.
-Matrix inverse via `InvertibleLinearLayer` (LDU).
+```
+sigma(x) = tanh(W_sigma @ atanh(x) + b_sigma)   # additive log-domain
+```
 
-**Reverse (invertible=False, reversible=True).** Two `PiLayer` instances ---
-`pi1` for forward, `pi2` for reverse --- with independent weights.
+**Reverse.** `PS.reverse` applies `self.pi.reverse` on the text path
+(LDU inverse via `InvertibleLinearLayer`). `self.sigma` is intentionally
+not inverted on the text path — the additive forward `pi + sigma`
+collapses through the codebook snap to a single prototype; recovery
+goes through `object_basis.reverse`. Documented at `bin/Spaces.py:8998`.
 
-**Key parameters.**
+**Butterfly mode (Stage 5):** when
+`<PerceptualSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`,
+`self.pi` is constructed with `butterfly=True, N=N`. Internal storage
+becomes a packed `nn.Parameter[n_levels, N//2, 2D, 2D]` cascade with
+bit-reversal permutations. Closes the XOR convergence target. Note:
+butterfly weight gradient flow requires bypassing the muxed codebook
+snap (`<codebook>none</codebook>` on PS in `MM_xor.xml`); STE-through-snap
+variant is a known follow-up.
 
-| Parameter | Description |
-|-----------|-------------|
-| `nActive` | Number of active perceptual vectors |
-| `nVectors` | Codebook size; enables VQ when > nActive |
-| `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
-| `codebook` | False -> `.what` is a passthrough `Tensor`; True -> `Codebook` |
-| `hasAttention` | Enable attention reweighting |
-
-**Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation operator ---
-percepts represent feature magnitudes with sign indicating direction.
+**Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation
+operator — percepts represent feature magnitudes with sign indicating
+direction.
 
 ---
 
@@ -535,36 +574,17 @@ sign matters.
 
 | Layer | Direction | Math | Notes |
 |-------|-----------|------|-------|
-| `self.sigma_percept` (`SigmaLayer`) | P $\to$ C | additive linear `tanh(W @ atanh(x) + b)`, non-square in the general case (`percept_dim -> concept_dim`) | Canonical forward C-tier fold. The legacy `self.pi` was retired by Phase B; `_pi_reverse` was renamed to `_sigma_percept_reverse`. |
+| (none) | — | ConceptualSpace owns **no atomic forward operator** post-substrate-refactor (2026-05-27). `sigma_percept` and its `_1` / `_2` variants are retired. | `CS.forward(new_idea_subspace)` is STM bookkeeping (shift + push); see ShortTermMemory below. |
 
-One SigmaLayer handles both directions via self-inverse in the square /
-invertible regime; codebook/projection modes handle dimensional adaptation
-where configured. In the non-square / non-invertible regime, two SigmaLayers
-(`sigma_percept_1`, `sigma_percept_2`) are constructed when
-reversible without invertibility, with independent weights.
+**No atomic fold layer.** Pre-substrate-refactor, ConceptualSpace owned
+`sigma_percept` (a SigmaLayer that folded percept-tier input into
+concept-tier output). That layer is retired. The composition role moves
+to **PerceptualSpace** (`PS.forward(x) = self.pi(x) + self.sigma(x)`); CS
+becomes a pure STM container + grammatical CPU.
 
-**Binary forward (legacy `binary=True` flag).** Preserved on the
-SigmaLayer surface for grammar layers that need it; defaults to off.
-The SigmaLayer's additive fold is the OR-side of the tetralemma
-(disjunction of features into a concept), the inverse of PiLayer's
-AND-side multiplicative fold (intersection of features).
-
-**Forward (P $\to$ C).**
-
-```
-s = atanh(x)                            # entry transform; clamps |x| < 1
-y = tanh(W @ s + b)                     # back to (-1, 1)
-```
-
-`monotonic` constrains $W \ge 0$ in the invertible variant;
-`nonlinear=True` keeps output in `[-1, 1]`.
-
-**Reverse (invertible=True, square dim).**
-
-```
-s = atanh(y)
-x = tanh(W^{-1} @ (s - b))
-```
+**Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
+invert). The reverse chain operates on the terminal STM contents; per
+the master plan, no per-stage caches.
 
 **Activation carrier.** `subspace.activation` is the scalar/presence
 activation used by the Space pipeline. Paired `[pos, neg]` tensors still
@@ -583,15 +603,14 @@ space-wide output mode.
 
 ### ShortTermMemory
 
-ConceptualSpace also owns `self.stm` --- a `ShortTermMemory` instance, a
-per-batch stack of unquantized C-tier "ideas" (continuous compositions
-of concepts produced by reduce operations). This is distinct from the
-sentence-scoped `_stm_fired` flag on `WordSpace` (which is a discourse-
-priming single-shot signal, not a working-memory buffer).
+ConceptualSpace owns `self.stm` — a `ShortTermMemory` instance, a
+per-batch stack of unquantized C-tier "ideas." Post-substrate-refactor,
+this is **the primary structure CS manages** — `CS.forward` is STM
+bookkeeping (shift + push), with no atomic fold layer.
 
 | Property | Default | Configurable via |
 |---|---|---|
-| Capacity | Auto-sized to `<WordSpace><wMax>` (sentence length bound), fallback 8 | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` (explicit override) |
+| Capacity | 7 (Miller, ±2) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
 | Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
 | Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
 
@@ -599,109 +618,130 @@ API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
 `size(b)`, `is_full(b)`, `is_empty(b)`, `clear(b=None)`,
 `ensure_batch(batch)`.
 
-The per-word stem inside `BasicModel._forward_stem_per_word` pushes one
-post-quantized idea per word; the body's `_chart_compose_at_C` consumes
-the buffer via `snapshot()` at every stage. The reverse mirror,
-`_chart_generate_from_stm`, fires at the symmetric C-tier point inside
-the reverse pipeline. The 7$\pm$2 cap is enforced by `wMax`-driven capacity
-plus per-row depth pointers.
+**STM transition by mode:**
 
-### Lift/Lower factorization
+- **SERIAL / GRAMMATICAL**: `_stm_shift_and_push(idea)` — shift slots 0..6
+  to take values from slots 1..7, write new idea to slot 7. Per-word
+  cadence: one push per `PS.forward(IS_t)` call.
+- **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
+  simultaneously; no shift. T = `<conceptualOrder>`.
 
-ConceptualSpace's `self.pi` plays double duty: it's the bare C-forward
-operator (no grammar dispatch), AND the substrate that `LowerLayer`
-routes through. Similarly, the activated `PerceptualSpace.sigma` is the
-substrate that `LiftLayer` routes through (it's also nominally the
-sub-percept aggregator, currently a single-role surface).
+The signal router (`WordSubSpace.languageLayer`) consumes
+`stm.snapshot()` as its slab input for grammar op dispatch.
 
-Both grammar layers factor as:
+### Lift / Lower as binary GrammarLayer subclasses
 
+(Pre-2026-05-27, Lift / Lower were "substrate-borrowing" — they reached
+into `PerceptualSpace.sigma` and `ConceptualSpace.pi` for their math.
+That pattern is retired in Stage 4 of the substrate refactor.)
+
+`LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
+subclasses**, each owning its own internal sub-layer for the pairwise
+math:
+
+```python
+class LiftLayer(GrammarLayer):
+    arity = 2
+    rule_name = "lift"
+    tier = 'C'
+    # Internal substrate: self._sigma = SigmaLayer(...)
+    def forward(self, left, right):
+        return self._sigma.compose(left, right)
+    def reverse(self, parent):
+        return self._sigma.generate(parent)
+
+class LowerLayer(GrammarLayer):
+    arity = 2
+    rule_name = "lower"
+    tier = 'C'
+    # Internal substrate: self._pi = PiLayer(...)
+    def forward(self, left, right):
+        return self._pi.compose(left, right)
+    def reverse(self, parent):
+        return self._pi.generate(parent)
 ```
-LiftLayer.forward(VP_bivec, NP_bivec):
-    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
-    gated_NP   = VP_c * NP_c                       # elementwise mask at C-tier
-    out_c      = P.sigma.forward(gated_NP)         # substrate sigma (lift)
-    return       S.codebook.forward(out_c, project=True)
 
-LowerLayer.forward(VP_bivec, NP_bivec):
-    VP_c, NP_c = S.codebook.reverse(VP_bivec, NP_bivec, project=True)
-    gated_NP   = VP_c * NP_c                       # same gate
-    out_c      = C.pi.forward(gated_NP)            # substrate pi (lower)
-    return       S.codebook.forward(out_c, project=True)
-```
+Both register with the signal router (`WordSubSpace.languageLayer`) as
+C-tier reduce ops via the existing host-layer registry path. Both
+inherit `GrammarLayer` butterfly mode (Stage 5) — set
+`butterfly=True, N=N` at construction to enable cross-position cascade.
 
-The shared $L \cdot U$ per-layer LDU basis is reused across every VP. The
-per-call gate `VP_c * NP_c` (elementwise multiplicative on the C-tier
-prototype $\times$ dim grid) is what makes different VPs produce different
-transformations --- "VP is the mask." No `raw_gate` learnable parameter;
-the gating signal comes from VP's codebook content. Different
-adjective / verb codebook activations give different outputs from the
-same shared matrix.
+Cognitive correspondence:
+- **Lift** (sigma-style additive synthesis) — "lifting features onto
+  concepts" / predication: `"the boy runs"`.
+- **Lower** (pi-style multiplicative contraction) — "lowering concepts
+  into specific percept-realizations" / attribution: `"the running boy"`.
 
-Sigma vs Pi asymmetry maps directly to lift vs lower:
-- Lift uses sigma (additive log-domain expansion) --- naturally
-  "lifting features onto concepts."
-- Lower uses pi (multiplicative log-domain contraction) --- naturally
-  "lowering concepts into specific percept-realizations."
+The distinction is preserved at the rule-id level (parser records which
+op fired) plus the operational difference in the per-pair math.
 
-See [Language.md](Language.md#grammarlayer-implementations) for the GrammarLayer
-specifics.
+See [Language.md](Language.md#grammarlayer-implementations) for the
+GrammarLayer specifics.
 
 ---
 
 ## SymbolicSpace
 
-**Role.** Converts continuous concept activations into a discrete set of
-active symbols. The information bottleneck.
+**Role.** Owns the **unified word lexicon codebook** with paired
+(orthographic, semantic) rows. Hosts grammar ops that need codebook write
+access. The information bottleneck for word identity.
 
-**Owned layer.**
+**Owned state.**
 
-| Layer | Direction | Math | Notes |
-|-------|-----------|------|-------|
-| `self.sigma` (`SigmaLayer`) | C $\leftrightarrow$ S | atanh-domain additive, monotonic | `forwardSigma`/`reverseSigma` aliases |
+- `self.subspace.what`: a `Codebook` carrying symbol prototypes at width
+  `nDim`. Includes per-row meronomy storage (`category_ids`,
+  `part_parents`, `category_logits`).
+- `insert_paired_word(word, ps_vector)` API: at OOV insert time, creates
+  a paired (orth, semantic) entry — the orth row is initialized from
+  `ps_vector` (a CS-space-dimensioned per-word vector from PS's
+  Lexicon, per the flat-slab invariant); the semantic row is randomly
+  initialized; the two are parented via `Codebook.set_part_parent(orth_idx, sem_idx)`.
+- `get_semantic_row(orth_idx)`: O(1) lookup via `_paired_orth_to_sem` map
+  precomputed at insert time.
+- Signal router dispatch site for **codebook-write-required grammar ops**
+  (insert, EMA updates, codebook expansion / culling).
 
-Symmetric to `ConceptualSpace.pi`.
+No atomic forward fold layer on SS. The pre-substrate-refactor
+`self.sigma` (C ↔ S monotonic SigmaLayer) is retired; the C → S "naming"
+is now the codebook snap performed in CS via `SS_subspace.materialize()`
+or directly via `insert_paired_word` at write time. Symbol-side grammar
+math lives on the GrammarLayer subclasses (intersection, union,
+lift, lower, etc.), not on SS itself.
 
-**Symbols are percepts.** Each symbol represents presence (`1`) or absence
-(`0`) of a named entity. Mapping: `symbol = (activation + 1) / 2`.
+**Symbols are percepts.** Each symbol represents presence (`1`) or
+absence (`0`) of a named entity. Mapping: `symbol = (activation + 1) / 2`.
 
-See [Language.md](Language.md) for the language system design.
+**Lookup chain (surface → meaning):**
 
-**Forward (codebook=quantize).**
+1. Surface bytes enter PS via `InputSpace`.
+2. MPHF on PS produces a row index into `PS.vocabulary` (the Lexicon
+   Embedding).
+3. The PS Lexicon vector (CS-space-dimensioned) flows through
+   `PS.forward` → CS via STM push.
+4. When CS-state activations need to match a symbol, they quantize
+   against `SS.subspace.what` (the codebook).
+5. Quantization can resolve to an orth row; `get_semantic_row(orth_idx)`
+   returns the parented semantic row → the meaning.
 
-1. Extract concept activation `[B, nConcepts]`.
-2. Map through `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=True)`.
-3. Store as symbolic presence `[0, 1]` via `set_symbols()`.
-4. Reshape to `[B, nSymbols, 1]`; codebook produces a one-hot activation
-   weighted by similarity.
+**Codebook geometry.** `subspace.what.getW().shape == (nVectors, nDim)`.
+Each row is a free coefficient vector over conceptual axes; not unit-norm.
+Retrieved via Euclidean L2 (per Codebook's metric contract).
+`SS.nVectors` must be sized to at least `2 * expected_OOV_word_count` to
+accommodate paired rows (e.g., MM_5M sets `nVectors=131072 = 2 * 65536`).
 
-**Reverse.** Reads symbolic presence via `get_symbols()`, then the PiLayer's
-exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`.
-
-**Key parameters.**
-
-| Parameter | Description |
-|-----------|-------------|
-| `nActive` | Total symbols (output + reconstruction) |
-| `nVectors` | Codebook size (= nSymbols when codebook=quantize) |
-| `codebook` | Enable codebook quantization |
-
-**Codebook shape.** One row per symbol at the natural `nDim` width:
-`subspace.what.getW().shape == (nVectors, nDim)`. Each row is a free
-coefficient vector over conceptual axes. Codebook is *not* unit-norm; symbol
-prototypes are free patterns, retrieved via Euclidean L2.
-
-The C $\leftrightarrow$ S boundary as **categorization**: calling
-`SymbolicSpace.forward` IS the act of *naming* --- projecting concept
-activation onto the named codebook lattice. The dialectic loop is snap
-(synthesis) $\to$ grammar (logic) $\to$ decode (analysis) $\to$ next pass.
-
-See [BuddhistParallels.md](BuddhistParallels.md), [Logic.md](Logic.md), and
-[Mereology.md](Mereology.md).
+**Multi-stage SS.** In multi-stage configs, the lexicon mirror is wired
+to **`self.symbolicSpaces[-1]`** (the terminal stage; `model.symbolicSpace`).
+The terminal SS must be sized for paired-row capacity. See
+[doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md)
+for the dispatch rationale.
 
 **Conceptual order.** `BasicModel` stores per-stage
-ConceptualSpace/SymbolicSpace instances for `conceptualOrder`. Symbol
-dimension is geometrically partitioned per order. See [Reasoning.md](Reasoning.md).
+ConceptualSpace / SymbolicSpace instances for `conceptualOrder`. Symbol
+dimension is geometrically partitioned per order. See
+[Reasoning.md](Reasoning.md).
+
+See [BuddhistParallels.md](BuddhistParallels.md), [Logic.md](Logic.md),
+[Mereology.md](Mereology.md), and [Language.md](Language.md).
 
 ---
 

@@ -1884,6 +1884,112 @@ class Codebook(Basis):
                 "meronomy storage (create with category=True).")
         self.part_parents[int(idx)] = int(parent_idx)
 
+    def grow_to(self, new_nVectors):
+        """Resize this codebook so it carries at least ``new_nVectors``
+        prototype rows. In-place on the underlying Parameter (a new
+        Parameter is registered with the extended storage; the previous
+        rows are copied byte-for-byte). Meronomy / category buffers are
+        re-allocated and copied over too.
+
+        2026-05-27 (tied-storage refactor): SymbolicSpace.insert_paired_word
+        calls this when the configured SS ``nVectors`` is smaller than the
+        PS-side lexicon at tie time. Growing here keeps the where-space
+        registry's last slice extended past the configured count (it lives
+        at the end of the registry; no downstream codebook overlap).
+
+        Notes
+        -----
+        * Existing optimizer state on the previous Parameter is invalidated
+          (a fresh Parameter is registered). Callers that own an optimizer
+          should rebuild it after growth.
+        * The new rows are zero-initialized; callers must overwrite them
+          (via ``set_event`` / ``replace_W`` / direct ``.data`` writes)
+          before they are looked up.
+        * Where-space registry: the last entry corresponding to this
+          codebook is extended in place so ``global_max_val`` keeps the
+          encoding range correct. If this codebook isn't the LAST entry
+          in the registry, the call refuses (growing a middle slice would
+          shift downstream offsets).
+        """
+        new_n = int(new_nVectors)
+        if new_n <= int(self.nVectors):
+            return
+        W = self.getW()
+        if W is None:
+            # No prototype yet -- ``addVectors`` will allocate to the right
+            # size next time it runs. Just bump nVectors.
+            self.nVectors = new_n
+            return
+        # Refuse if this codebook is not the last in the where-space
+        # registry (growth would overrun the next slice).
+        try:
+            _reg = WhereEncoding._codebook_registry
+            offset = int(getattr(self, "where_offset", 0))
+            last_offset, last_n = _reg[-1] if _reg else (-1, -1)
+            if int(last_offset) != offset:
+                raise RuntimeError(
+                    f"Codebook.grow_to: this codebook is not the last in "
+                    f"the where-space registry (offset={offset}, "
+                    f"last_in_registry={last_offset}); growing would "
+                    f"overrun a downstream codebook's slice.")
+            # Extend the last registry entry's count in place.
+            _reg[-1] = (last_offset, new_n)
+        except Exception:
+            # If the registry shape is unexpected, fail fast.
+            raise
+
+        old_n = int(W.shape[0])
+        D = int(W.shape[1])
+        new_data = torch.zeros(
+            new_n, D, device=W.device, dtype=W.dtype)
+        with torch.no_grad():
+            new_data[:old_n, :].copy_(W.data)
+        # Register the new Parameter (or plain tensor for non-Parameter
+        # codebooks).
+        if "W" in self._parameters:
+            del self._parameters["W"]
+            self.W = nn.Parameter(new_data, requires_grad=W.requires_grad)
+        else:
+            self.W = new_data
+        # Resize meronomy buffer.
+        if self.part_parents is not None:
+            new_pp = torch.full(
+                (new_n,), -1, dtype=torch.long,
+                device=self.part_parents.device)
+            new_pp[:old_n].copy_(self.part_parents)
+            self.part_parents = new_pp
+        # Resize category_ids buffer.
+        if self.category_ids is not None:
+            new_cid = torch.zeros(
+                (new_n,), dtype=torch.long,
+                device=self.category_ids.device)
+            new_cid[:old_n].copy_(self.category_ids)
+            self.category_ids = new_cid
+        # Resize category_logits buffer if allocated.
+        if self.category_logits is not None:
+            C = int(self.category_logits.shape[1])
+            new_cl = torch.zeros(
+                (new_n, C), dtype=self.category_logits.dtype,
+                device=self.category_logits.device)
+            new_cl[:old_n, :].copy_(self.category_logits)
+            self.category_logits = new_cl
+        # Resize VQ codebook (if customVQ is on, the VQ holds its own
+        # codebook tensor that mirrors W). Keep the two in sync.
+        if self.vq is not None and hasattr(self.vq, "codebook"):
+            try:
+                vq_cb = self.vq.codebook
+                if torch.is_tensor(vq_cb) and vq_cb.shape[0] == old_n:
+                    new_vq = torch.zeros(
+                        new_n, D, device=vq_cb.device, dtype=vq_cb.dtype)
+                    new_vq[:old_n, :].copy_(vq_cb)
+                    self.vq.codebook = new_vq
+            except Exception:
+                pass
+        self.nVectors = new_n
+        self.codebookSize = max(int(self.codebookSize), new_n)
+        # Cached SVD factors are sized to the old W; invalidate.
+        self._svd_dirty = True
+
     def get_part_parent(self, idx):
         """Return the meronomy parent index of row ``idx`` (-1 = none)."""
         if self.part_parents is None:
@@ -3121,6 +3227,68 @@ class Embedding(Basis):
         )
         # W is managed by wv._vectors; getW() returns live data
 
+    # ------------------------------------------------------------------
+    # Tied-storage refactor (2026-05-27 follow-up)
+    # ------------------------------------------------------------------
+    # The orthographic vector for a word should live in ONE place only --
+    # the SymbolicSpace codebook (``ss.subspace.what.W``). Stage 1.D+1.B
+    # left orth as a COPY on SS plus a separate Parameter on
+    # ``wv._vectors``. This method completes the tie: each ASCII /
+    # bootstrap row is allocated a paired (orth, sem) slot on SS via
+    # ``insert_paired_word``, the PS-side key_to_index map is remapped
+    # to the SS orth_idx, and ``wv._vectors`` is unregistered as a
+    # nn.Parameter (it becomes a property routing through ``cb.getW()``).
+    def _tie_lexicon_to_codebook(self, symbolic_space, codebook):
+        """Migrate the PS-side lexicon onto ``codebook`` and tie storage.
+
+        Called from ``Models.py`` after SS is wired so ASCII bootstrap
+        rows that were inserted into the local PS Parameter during
+        ``Embedding.create`` get a corresponding SS paired-row
+        allocation. After this call, ``wv._vectors`` reads through the
+        SS codebook's ``W`` Parameter -- a single trainable storage.
+        """
+        if self.wv is None:
+            return
+        wv = self.wv
+        if getattr(wv, "_tied_param_getter", None) is not None:
+            # Already tied; idempotent.
+            return
+        if codebook is None or codebook.getW() is None:
+            # No SS codebook prototype yet; tying is impossible.
+            return
+        # Migrate each PS-side surface key to SS via insert_paired_word.
+        # The local Parameter rows carry the PS-side initialization
+        # (ASCII bootstrap values); SS picks orth_idx sequentially via
+        # its own counter. After migration the PS-side key_to_index
+        # is replaced by SS-allocated orth_idx values.
+        local = wv._local_vectors
+        new_key_to_index = {}
+        new_index_to_key = []
+        # Preserve insertion order via the existing index_to_key list.
+        for old_idx, key in enumerate(list(wv.index_to_key)):
+            ps_vec = local.data[old_idx]
+            try:
+                orth_idx, _sem_idx = symbolic_space.insert_paired_word(
+                    key, ps_vec)
+            except Exception:
+                # Best-effort migration; if SS lacks capacity, leave the
+                # PS-side local Parameter in place for the overflow keys
+                # so reverse-mapping doesn't lose data.
+                return
+            new_key_to_index[key] = int(orth_idx)
+            # ``index_to_key`` is sparse by SS row index; we still keep
+            # a parallel list for callers that iterate insertion order.
+            new_index_to_key.append(key)
+        wv.key_to_index = new_key_to_index
+        wv.index_to_key = new_index_to_key
+        wv._normed = None
+        # Tie ``_vectors`` to the SS codebook. After this, no PS-side
+        # Parameter named ``_vectors`` remains in ``wv._parameters``.
+        wv.tie_to_codebook(codebook)
+        # Rebuild the SBOW optimizer so it trains the SS Parameter.
+        if self.pretrain is not None:
+            self._rebuild_optimizer()
+
     def _inflate_to_capacity(self):
         # Inflate ``wv._vectors`` to ``[lexicon_capacity, dim]`` so future
         # OOV inserts write into preallocated reserve rows in place
@@ -3872,13 +4040,28 @@ class Embedding(Basis):
         recovered_words = [[] for _ in range(batch)]
         recovered_offsets = [[] for _ in range(batch)]
         recovered_tokens = [[] for _ in range(batch)]
+        # The codebook may have more rows than ``words_list`` has
+        # entries -- ``nVectors`` is the capacity (pre-allocated for
+        # vocabulary growth); ``index_to_key`` only contains the
+        # words actually inserted via OOV-insert. The nearest-
+        # neighbour lookup can return an idx into an unused-but-
+        # initialised codebook row. Guard with a bounds check; map
+        # out-of-vocabulary indices to the empty string (rendered
+        # later as a blank slot, then stripped by reconstruct_data).
+        n_known_words = len(words_list)
         for b in range(batch):
             for v in range(nVec):
                 offset = self._decode_offset(positions, b, v, subspace=subspace) if positions is not None else None
                 vec = vectors[b, v, :nWhat]
                 # Content is already snapped; _nearest_idx confirms the word label
                 idx = self._nearest_idx(vec, codebook=codebook)
-                word = words_list[idx]
+                if 0 <= idx < n_known_words:
+                    word = words_list[idx]
+                else:
+                    # Reconstructed vector snapped to an unused
+                    # codebook row (vocabulary capacity > learned
+                    # words). Render as empty; downstream strips it.
+                    word = ""
                 recovered_words[b].append(word)
                 recovered_offsets[b].append(offset)
                 recovered_tokens[b].append((word, offset))
@@ -7422,18 +7605,57 @@ class PerceptualSpace(Space):
         # through the PS<->CS loop. Default False -> unchanged behavior.
         _mono = bool(TheXMLConfig.get("architecture.monotonic",
                                       default=False))
-        self.pi = PiLayer(
-            percept_dim, percept_dim,
-            naive=naive, ergodic=ergodic,
-            invertible=bool(invertible), nonlinear=nonlinear,
-            stable=True, monotonic=_mono,
-        )
-        self.sigma = SigmaLayer(
-            percept_dim, percept_dim,
-            naive=naive, ergodic=ergodic,
-            invertible=bool(invertible), nonlinear=nonlinear,
-            stable=True, monotonic=_mono,
-        )
+        # Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
+        # 2026-05-27 revision): optional butterfly cascade on
+        # ``self.pi`` AND ``self.sigma`` for cross-element FFT-style
+        # mixing on the flattened ``[B, N*D]`` view. Driven by the
+        # per-space ``<butterfly>`` XML knob. ``N`` is **auto-computed**
+        # from ``nInput * nInputDim`` (total flattened element count)
+        # — no explicit ``<butterflyN>`` knob needed. The cascade
+        # internally pads to the next power of two; the 2x2 LDU per
+        # node makes the cascade element-pair (one op per pair of
+        # adjacent flattened elements).
+        _butterfly = bool(TheXMLConfig.space(section, "butterfly",
+                                             default=False))
+        # Auto-compute total element count from the Space's shape.
+        # ``inputShape[0]`` is the per-position count (N); per-position
+        # dim (D) comes from ``getEncodedInputSize`` (= percept_dim).
+        # Flattened total = N * D.
+        _butterfly_total = int(inputShape[0]) * int(percept_dim)
+        if _butterfly:
+            if _butterfly_total < 2:
+                raise ValueError(
+                    "PerceptualSpace.butterfly=True requires "
+                    f"nInput * nInputDim >= 2; got {_butterfly_total}")
+            self.pi = PiLayer(
+                percept_dim, percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=bool(invertible), nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+                butterfly=True, N=_butterfly_total,
+            )
+            self.sigma = SigmaLayer(
+                percept_dim, percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=bool(invertible), nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+                butterfly=True, N=_butterfly_total,
+            )
+        else:
+            self.pi = PiLayer(
+                percept_dim, percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=bool(invertible), nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+            )
+            self.sigma = SigmaLayer(
+                percept_dim, percept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=bool(invertible), nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+            )
+        self.butterfly_enabled = _butterfly
+        self.butterflyN = _butterfly_total if _butterfly else None
 
         input = percept_dim
         self.attention = AttentionLayer(input, input, type="transformer")
@@ -10415,12 +10637,25 @@ class SymbolicSpace(Space):
         sem_idx = orth_idx + 1
         cap = int(cb.nVectors)
         if sem_idx >= cap:
-            raise RuntimeError(
-                f"SymbolicSpace.insert_paired_word: codebook is full "
-                f"({orth_idx} / {cap} rows used); cannot insert "
-                f"paired rows for {word!r}. Raise <SymbolicSpace>"
-                f"<nVectors> to at least 2x the expected lexicon "
-                f"capacity (currently {cap}).")
+            # 2026-05-27 tied-storage refactor: instead of refusing the
+            # insert when the configured ``nVectors`` is exhausted, grow
+            # the codebook in place. The where-space registry's last
+            # slice is extended to cover the new rows (see
+            # ``Codebook.grow_to``); this is safe because SS.subspace.what
+            # is the last codebook to register. Doubling on overflow
+            # amortizes the resize cost across bursty bootstrap inserts
+            # (e.g. PS-side ASCII migration).
+            target = max(sem_idx + 1, cap * 2)
+            try:
+                cb.grow_to(target)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"SymbolicSpace.insert_paired_word: codebook is full "
+                    f"({orth_idx} / {cap} rows used) and grow_to failed: "
+                    f"{exc}. Raise <SymbolicSpace><nVectors> to at least "
+                    f"2x the expected lexicon capacity (currently {cap}).")
+            cap = int(cb.nVectors)
+            # The Parameter was re-registered; refresh ``W``.
 
         # Resolve ps_vector to [nDim] float on the codebook's device.
         if not torch.is_tensor(ps_vector):
@@ -10473,6 +10708,44 @@ class SymbolicSpace(Space):
 
         self._paired_orth_to_sem[orth_idx] = sem_idx
         self._paired_next_row = sem_idx + 1
+
+        # 2026-05-27 tied-storage refactor: after the row is written, the
+        # PS-side Lexicon's ``wv._vectors`` should resolve to the SS
+        # codebook's ``W`` Parameter via the tie mechanism (see
+        # ``embed.WordVectors.tie_to_codebook``). Idempotent on subsequent
+        # inserts. The PS-side ``key_to_index`` is updated so the new
+        # word lookup lands on the freshly written orth row.
+        try:
+            peer = getattr(self, 'perceptualSpace_ref', None)
+            emb = peer.vocabulary if peer is not None else None
+            wv = getattr(emb, 'wv', None) if emb is not None else None
+            if wv is not None:
+                # Remap PS-side key_to_index for this word to the SS
+                # orth_idx so wv._vectors[wv.key_to_index[word]] resolves
+                # to the same row as cb.getW()[orth_idx].
+                # This must happen BEFORE tying because, after tying,
+                # ``_local_vectors`` is unregistered and the prior local
+                # row at the OLD index is lost.
+                old_idx = wv.key_to_index.get(word, None)
+                wv.key_to_index[word] = int(orth_idx)
+                if old_idx is not None and word in wv.index_to_key:
+                    # ``index_to_key`` is a parallel list whose order is
+                    # insertion order; we don't re-sparsify it here.
+                    pass
+                if getattr(wv, '_tied_param_getter', None) is None:
+                    wv.tie_to_codebook(cb)
+                    # Rebuild the embedding's optimizer so it tracks the
+                    # newly-tied SS Parameter rather than the unregistered
+                    # local one.
+                    if emb is not None and hasattr(emb, '_rebuild_optimizer'):
+                        try:
+                            emb._rebuild_optimizer()
+                        except Exception:
+                            pass
+        except Exception:
+            # Best-effort tying; never block insert_paired_word.
+            pass
+
         return (orth_idx, sem_idx)
 
     def get_semantic_row(self, orth_idx):

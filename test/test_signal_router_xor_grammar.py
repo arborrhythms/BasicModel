@@ -13,7 +13,14 @@ import torch
 import torch.nn as nn
 
 import Language
-from Language import Chart
+from Language import LanguageLayer
+
+
+def _make_router():
+    return LanguageLayer(
+        n_input=4, n_output=4, hidden_dim=16, feature_dim=4,
+        max_depth=3, temperature=1.0,
+    )
 
 
 class _StubWordSpace:
@@ -45,14 +52,12 @@ class _NotOp(nn.Module):
 
 
 def test_xor_router_emits_per_tier_rule_dict():
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16,
-                  feature_dim=4, router_kind="signal")
-    router = chart._ensure_signal_router()
+    router = _make_router()
     # Single tier "S": unary NOT (rule_id 0) and binary AND/OR (rule_ids 1, 2).
     router.attach_unary_ops(ops=[_NotOp()], rule_ids=[0], tier="S")
     router.attach_layer_ops(ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], tier="S")
     ws = _StubWordSpace()
-    rules = chart.compose(torch.randn(2, 4, 4), word_space=ws)
+    rules = router.compose(torch.randn(2, 4, 4), word_space=ws)
     # One key per tier; unary + binary rule_ids merged in route order.
     assert list(rules.keys()) == ["S"]
     for row in rules["S"]:
@@ -61,9 +66,7 @@ def test_xor_router_emits_per_tier_rule_dict():
 
 
 def test_xor_router_gradients_reach_all_three_ops():
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16,
-                  feature_dim=4, router_kind="signal")
-    router = chart._ensure_signal_router()
+    router = _make_router()
 
     class _ParamApply(nn.Module):
         def __init__(self, D, op, arity):
@@ -85,7 +88,7 @@ def test_xor_router_gradients_reach_all_three_ops():
 
     ws = _StubWordSpace()
     x = torch.randn(2, 4, D, requires_grad=True)
-    chart.compose(x, word_space=ws)
+    router.compose(x, word_space=ws)
     # The unary op is exercised on the soft slab (mixture). Binary ops
     # show up in the marginal_slab path (which sums per-op reductions
     # via the soft DP marginals). Combine all three slabs into the loss.

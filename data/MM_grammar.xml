@@ -60,7 +60,8 @@
   </OutputSpace>
 
   <WordSpace>
-    <chartTau>2.0</chartTau>
+    <!-- Stage 3 cleanup: chartTau retired alongside the chart. The
+         signal router (LanguageLayer) is the canonical parser. -->
     <language>
       <grammar>
         <compose>

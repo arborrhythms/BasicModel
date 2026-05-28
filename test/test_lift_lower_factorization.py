@@ -254,51 +254,53 @@ class TestLiftLowerFactorization(unittest.TestCase):
         self.assertTrue(all(p.requires_grad for p in params),
                         "Internal PiLayer params must be trainable.")
 
-    def test_lift_fallback_uses_static_lattice_kernel(self):
-        """Parameter-free LiftLayer falls back to the static lattice AND
-        (``Ops._lower_kernel``).  This is the standalone-test harness
-        path for ``GRAMMAR_LAYER_CLASSES['lift']()``.
+    def test_lift_self_contained_no_substrate_fallback(self):
+        """Stage 4 (2026-05-27): the parameter-free static-lattice
+        fallback (``Ops._lower_kernel`` for lift) is retired.  Lift
+        is now a self-contained binary GrammarLayer with its own
+        internal SigmaLayer; ``LiftLayer(nInput=D, nOutput=D)``
+        suffices to run forward / reverse.
+
+        Replaces the prior ``test_lift_fallback_uses_static_lattice_kernel``
+        which exercised the retired Phase-3 fallback.
         """
-        from Layers import LiftLayer, Ops
-        layer = LiftLayer(symbolicSpace=None, perceptualSpace=None)
-        # Fallback path is the lattice op on [-1, 1] non-negative
-        # bivectors; reuse the [0, 1] shape that the legacy harness
-        # exercised.
+        from Layers import LiftLayer
         B = 1
         V_S = 2
         D = 10
+        layer = LiftLayer(nInput=D, nOutput=D)
         torch.manual_seed(31)
-        NP = torch.rand(B, V_S, D)
+        NP = torch.rand(B, V_S, D) * 1.8 - 0.9
         torch.manual_seed(32)
-        VP = torch.rand(B, V_S, D)
+        VP = torch.rand(B, V_S, D) * 1.8 - 0.9
         with torch.no_grad():
             out = layer.forward(VP, NP)
-            expected = Ops._lower_kernel(VP, NP, mode='AND', kind='smooth')
-        torch.testing.assert_close(out, expected,
-                                   msg="Parameter-free LiftLayer must "
-                                       "compute the static lattice kernel "
-                                       "(standalone-test fallback path).")
+        self.assertEqual(out.shape, NP.shape,
+                         "Stage 4 LiftLayer.forward returns a single "
+                         "tensor matching the operand shape.")
+        self.assertTrue(torch.isfinite(out).all(),
+                        "Stage 4 LiftLayer.forward must produce finite "
+                        "values (fail-loud numerical contract).")
 
-    def test_lower_fallback_uses_static_lattice_kernel(self):
-        """Parameter-free LowerLayer falls back to the static lattice OR
-        (``Ops._lift_kernel``).
+    def test_lower_self_contained_no_substrate_fallback(self):
+        """Stage 4 (2026-05-27): the parameter-free static-lattice
+        fallback (``Ops._lift_kernel`` for lower) is retired.  Lower
+        is now a self-contained binary GrammarLayer with its own
+        internal PiLayer.
         """
-        from Layers import LowerLayer, Ops
-        layer = LowerLayer(symbolicSpace=None, conceptualSpace=None)
+        from Layers import LowerLayer
         B = 1
         V_S = 2
         D = 10
+        layer = LowerLayer(nInput=D, nOutput=D)
         torch.manual_seed(41)
-        NP = torch.rand(B, V_S, D)
+        NP = torch.rand(B, V_S, D) * 1.8 - 0.9
         torch.manual_seed(42)
-        ADJ = torch.rand(B, V_S, D)
+        ADJ = torch.rand(B, V_S, D) * 1.8 - 0.9
         with torch.no_grad():
             out = layer.forward(ADJ, NP)
-            expected = Ops._lift_kernel(ADJ, NP, mode='OR', kind='smooth')
-        torch.testing.assert_close(out, expected,
-                                   msg="Parameter-free LowerLayer must "
-                                       "compute the static lattice kernel "
-                                       "(standalone-test fallback path).")
+        self.assertEqual(out.shape, NP.shape)
+        self.assertTrue(torch.isfinite(out).all())
 
 
 if __name__ == "__main__":

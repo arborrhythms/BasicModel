@@ -97,7 +97,9 @@
     <gateL1Lambda>0.0</gateL1Lambda>
 
     <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
-         Active only when WordSpace.chartTopK > 0; 0 disables. -->
+         Originally active only when WordSpace.chartTopK > 0; chart
+         retired Stage 3 and the knob now stands by for any future
+         signal-router rule load-balancing. -->
     <loadBalanceWeight>0.0</loadBalanceWeight>
 
     <!-- Architecture-wide L1 / discontinuity penalties (legacy hooks).
@@ -216,32 +218,16 @@
     <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
 
-    <!-- Parser backend: chart | stm | parallel. Chart remains the default
-         compatibility path; STM requires an attached knowledge artifact. -->
-    <parserBackend>chart</parserBackend>
+    <!-- Stage 3 cleanup (2026-05-27): the chart and STM shift-reduce
+         parsers retired in favour of the signal router (LanguageLayer).
+         The retired knobs (parserBackend, routerKind, chartTau,
+         wMax, chartTopK, chartNoiseEps) raise a loud ValueError at
+         config load time. See
+         Language._assert_retired_chart_knobs_absent. -->
 
-    <!-- Grammar router inside the chart backend: chart | signal. -->
-    <routerKind>chart</routerKind>
-
-    <!-- Soft-superposition chart output behavior:
-           root      = chart returns the single root sentence node;
-                       other output positions are zero.  Forces the
-                       OutputLayer to read the chart's compositional
-                       commitment, not a per-position recombination.
-           broadcast = legacy: replicate the root vector across all
-                       N output positions.  Lets downstream nonlinear
-                       readouts recombine the copies.
-         Default ``root`` because that's the structurally-correct
-         single-sentence-node bottleneck for a chart-derived
-         representation. -->
+    <!-- Soft-superposition output collapse mode; preserved for the
+         signal router's root-state writeback contract. -->
     <chartCollapse>root</chartCollapse>
-
-    <!-- Chart scorer defaults. wMax is the maximum span width; chartTopK=0
-         disables sparse top-K rule gating. -->
-    <chartTau>1.0</chartTau>
-    <wMax>8</wMax>
-    <chartTopK>0</chartTopK>
-    <chartNoiseEps>0.0</chartNoiseEps>
 
     <!-- Per-word P->C loop count before parser/body composition. -->
     <iterationsPerWord>1</iterationsPerWord>
@@ -341,7 +327,7 @@
     <nonlinear>true</nonlinear>
     <!-- Discrete (codebook) percepts; false = passthrough Tensor. -->
     <codebook>none</codebook>
-    <!-- Multi-token chunking strategy: lexicon | bpe. -->
+    <!-- Multi-token chunking strategy: lexicon | bpe | mphf | none. -->
     <chunking>lexicon</chunking>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>

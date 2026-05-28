@@ -1,32 +1,41 @@
-"""Dispatch test: routerKind selects between chart and signal paths."""
+"""Signal-router-on-WordSubSpace tests.
+
+Stage 3 cleanup (2026-05-27): the chart was retired; the signal router
+(``LanguageLayer``) is the canonical parser, owned directly by
+``WordSubSpace.languageLayer``. These tests exercise the LanguageLayer
+in isolation, the way the chart tests used to drive ``Chart`` directly.
+"""
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import pytest
 import torch
-import Language
-from Language import Chart
-
-
-def test_chart_default_routerkind_is_chart():
-    # Force a clean XML state so a previously-loaded fixture (e.g.
-    # XOR_grammar.xml setting routerKind=signal) doesn't leak through
-    # the singleton. Pass router_kind explicitly to bypass the XML read.
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16,
-                  feature_dim=4, router_kind="chart")
-    assert chart.router_kind == "chart"
-
-
-def test_chart_routerkind_signal_dispatches_to_signal_router():
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16, feature_dim=4,
-                  router_kind="signal")
-    assert chart.router_kind == "signal"
-    # Without attach_layer_ops, compose raises a clear runtime error.
-    with pytest.raises(RuntimeError, match="attach_layer_ops"):
-        chart.compose(torch.randn(1, 4, 4), word_space=None)
-
-
 import torch.nn as nn
+
+import Language
+from Language import LanguageLayer
+
+
+def _make_signal_router():
+    return LanguageLayer(
+        n_input=4, n_output=4,
+        hidden_dim=16, feature_dim=4,
+        max_depth=3, temperature=1.0,
+    )
+
+
+def test_language_layer_constructs_without_ops():
+    """LanguageLayer can be constructed before any ops are attached."""
+    router = _make_signal_router()
+    assert isinstance(router, LanguageLayer)
+    assert not router._unary_layers and not router._binary_layers
+
+
+def test_language_layer_compose_without_ops_raises():
+    """Calling compose before any ops are attached fails loud."""
+    router = _make_signal_router()
+    with pytest.raises(RuntimeError, match="attach_layer_ops"):
+        router.compose(torch.randn(1, 4, 4), word_space=None)
 
 
 class _Stub(nn.Module):
@@ -44,15 +53,13 @@ class _StubWordSpace:
         return None
 
 
-def test_signal_generate_emits_rules_dict_after_compose():
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16,
-                  feature_dim=4, router_kind="signal")
-    router = chart._ensure_signal_router()
+def test_language_layer_generate_emits_rules_dict_after_compose():
+    router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[3], tier="S")
     ws = _StubWordSpace()
     target = torch.randn(2, 4, 4)
-    chart.compose(target, word_space=ws)
-    g = chart.generate(target, word_space=ws)
+    router.compose(target, word_space=ws)
+    g = router.generate(target, word_space=ws)
     assert isinstance(g, dict)
     assert "S" in g
     rows = g["S"]
@@ -63,13 +70,11 @@ def test_signal_generate_emits_rules_dict_after_compose():
             assert rid == 3
 
 
-def test_signal_compose_populates_current_rules():
-    chart = Chart(nInput=4, nOutput=4, max_depth=3, hidden_dim=16,
-                  feature_dim=4, router_kind="signal")
-    router = chart._ensure_signal_router()
+def test_language_layer_compose_populates_current_rules():
+    router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[7], tier="S")
     ws = _StubWordSpace()
-    rules = chart.compose(torch.randn(2, 4, 4), word_space=ws)
+    rules = router.compose(torch.randn(2, 4, 4), word_space=ws)
     assert isinstance(rules, dict)
     assert "S" in rules
     rows = rules["S"]

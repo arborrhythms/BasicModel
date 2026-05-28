@@ -1053,6 +1053,15 @@ class WordVectors(nn.Module):
 
     Being an nn.Module, the parameter moves to device via ``.to(device)``
     and participates in ``state_dict()`` / ``parameters()``.
+
+    Tied-storage (2026-05-27 lexicon refactor): when this WordVectors is
+    attached to a model, ``Models.py`` may call ``tie_to_codebook(cb)`` to
+    retarget ``_vectors`` at the SymbolicSpace codebook's ``W`` Parameter.
+    After tying, the local ``_vectors`` Parameter is unregistered (so
+    ``self._parameters`` no longer contains ``_vectors``) and the property
+    routes reads through the SS codebook -- a single trainable storage
+    for the orth rows, no divergence possible. Untied WordVectors keep
+    their local Parameter for back-compat with standalone SBOW training.
     """
 
     def __init__(self, vectors, index_to_key: List[str],
@@ -1070,7 +1079,14 @@ class WordVectors(nn.Module):
         else:
             vectors = vectors.detach().float()
         vectors = _wrap_unit_ball(vectors)
-        self._vectors = nn.Parameter(vectors, requires_grad=True)
+        # Tied-storage state (2026-05-27): when ``_tied_param_getter`` is
+        # set (via ``tie_to_codebook``), it is a callable returning the
+        # tied Parameter on SS.codebook. While unset, ``_vectors`` is the
+        # locally-owned Parameter (back-compat path; standalone SBOW
+        # trainers etc.). Both paths satisfy the same ``wv._vectors``
+        # access shape; only the underlying storage moves.
+        object.__setattr__(self, "_tied_param_getter", None)
+        self._local_vectors = nn.Parameter(vectors, requires_grad=True)
         self.index_to_key = list(index_to_key)
         self.key_to_index = {w: i for i, w in enumerate(self.index_to_key)}
         n = len(self.index_to_key)
@@ -1080,6 +1096,106 @@ class WordVectors(nn.Module):
             self.counts = np.zeros(n, dtype=np.int64)
         self.total_count = np.int64(total_count)
         self._normed: Optional[torch.Tensor] = None
+
+    # ------------------------------------------------------------------
+    # Tied-storage API (2026-05-27)
+    # ------------------------------------------------------------------
+    # ``_vectors`` is a property so that reads transparently route to the
+    # tied SS codebook Parameter when the wiring is in place. The local
+    # ``_local_vectors`` Parameter remains for back-compat with untied
+    # callers (standalone WordVectors used by SBOW trainers without a
+    # SymbolicSpace).
+    #
+    # The setter handles legacy reassignments (``wv._vectors =
+    # nn.Parameter(...)``) by routing the new Parameter at the local
+    # storage slot. Tied callers should not reassign; they should write
+    # in place via ``_vectors.data[...]``.
+    @property
+    def _vectors(self) -> nn.Parameter:
+        """Live storage for word vectors. Tied path: returns the SS
+        codebook ``W`` Parameter (single trainable storage). Untied path:
+        returns the locally-owned ``_local_vectors`` Parameter.
+        """
+        getter = object.__getattribute__(self, "_tied_param_getter")
+        if getter is not None:
+            tied = getter()
+            if tied is not None:
+                return tied
+        return self._local_vectors
+
+    @_vectors.setter
+    def _vectors(self, value):
+        """Reassign local storage. Tied callers should NOT reassign --
+        their job is in-place writes via ``_vectors.data[...]``. Untied
+        callers (legacy ``insert`` / ``stage_oov`` cat+reassign paths)
+        route to ``_local_vectors``.
+        """
+        getter = object.__getattribute__(self, "_tied_param_getter")
+        if getter is not None and getter() is not None:
+            raise RuntimeError(
+                "WordVectors._vectors cannot be reassigned while tied to "
+                "SS.codebook (single-storage invariant). Use in-place "
+                "writes (``_vectors.data[...]``) instead, or untie first.")
+        if value is None:
+            # Treat None as 'clear local Parameter'. Unusual but supported.
+            if "_local_vectors" in self._parameters:
+                del self._parameters["_local_vectors"]
+            object.__setattr__(self, "_local_vectors", None)
+            return
+        if isinstance(value, nn.Parameter):
+            self._local_vectors = value
+        else:
+            # Coerce tensor to Parameter for the legacy code path.
+            self._local_vectors = nn.Parameter(
+                value if torch.is_tensor(value)
+                else torch.as_tensor(value, dtype=torch.float32),
+                requires_grad=True,
+            )
+
+    def __setattr__(self, name, value):
+        """Route ``_vectors`` writes through the property setter.
+
+        ``nn.Module.__setattr__`` short-circuits to ``register_parameter``
+        when the value is an ``nn.Parameter``, which collides with our
+        ``_vectors`` property descriptor (it would raise
+        ``KeyError("attribute '_vectors' already exists")``). Intercept
+        the name explicitly so the property setter owns the storage
+        decision (tied vs local).
+        """
+        if name == "_vectors":
+            # Use the descriptor protocol explicitly: invoke the
+            # property setter defined on this class.
+            type(self)._vectors.fset(self, value)
+            return
+        super().__setattr__(name, value)
+
+    def tie_to_codebook(self, codebook):
+        """Tie ``_vectors`` to ``codebook.W`` (an SS-codebook Parameter).
+
+        After this call, ``wv._vectors`` reads through ``codebook.getW()``
+        -- there is a single trainable Parameter (on the codebook), and
+        no separate PS-side Parameter named ``_vectors`` remains in
+        ``self._parameters``.
+
+        The local ``_local_vectors`` Parameter is unregistered (removed
+        from the module's parameter list) so the optimizer does not
+        double-count the storage.
+        """
+        # Capture by closure so the tied lookup tolerates downstream
+        # Parameter re-registration on the codebook (e.g. EMA writes
+        # via Codebook.replace_W).
+        def _getter(cb=codebook):
+            try:
+                return cb.getW()
+            except Exception:
+                return None
+        object.__setattr__(self, "_tied_param_getter", _getter)
+        # Drop the local Parameter so it does not appear in
+        # state_dict() / parameters(). The tied Parameter (on the
+        # codebook) is the sole trainable storage from this point on.
+        if "_local_vectors" in self._parameters:
+            del self._parameters["_local_vectors"]
+        object.__setattr__(self, "_local_vectors", None)
 
     @property
     def vectors(self) -> nn.Parameter:

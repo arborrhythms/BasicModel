@@ -3,13 +3,15 @@
 Plan: path-to-complete §3 — "Introduce a parser-neutral ParseState. Do
 not make STM fake _chart_score first."
 
-Both the chart (CKY) and the STM (shift/reduce) backends populate the
-same ``ParseState`` type. Downstream consumers (SVO extraction, syntax
-dumps, reverse/generate, diagnostics) read from ``ParseState`` rather
-than reaching into chart-only or STM-only internals. A legacy adapter
-projects ``ParseState`` back to ``_chart_score`` / ``_chart_vec`` /
-``_chart_pos`` / ``_derivation_trace`` for code that still depends on
-those fields during the migration window.
+Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md,
+2026-05-27): the CKY chart and STM shift-reduce backends both retired
+in favour of the signal router (``LanguageLayer``). The
+``ParseState`` carrier survives -- downstream consumers (SVO
+extraction, syntax dumps, derivation trace) read from it. The
+``project_to_chart_fields`` legacy adapter is preserved as a dead-safe
+shim: it stamps the chart-named attributes on a target object so the
+remaining legacy consumers (xfail / slow tests) keep importing
+without errors. The signal router itself does not call this adapter.
 
 Shapes:
 
@@ -36,11 +38,6 @@ Shapes:
     current_rules          dict[str, list[list[int]]]   per-tier per-row
     generate_rules         dict[str, list[list[int]]]   reversed
     leaf_category_probs    Optional[torch.Tensor]  [N_tokens, N_categories]
-
-The legacy adapter is :func:`project_to_chart_fields`; it sets the
-named attributes on a target object (typically the chart) so callers
-that still read ``chart._chart_score`` / ``chart._derivation_trace``
-keep working.
 """
 from __future__ import annotations
 

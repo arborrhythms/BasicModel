@@ -82,8 +82,11 @@ class TestXORGrammarConfigParsing(unittest.TestCase):
         self.assertIn("WordSpace", self.cfg)
 
     def test_router_kind_is_signal(self):
+        """Stage 3: routerKind retired -- the signal router is the
+        canonical (and only) parser. The XML no longer carries the
+        knob; this test verifies the absence."""
         ws_cfg = self.cfg["WordSpace"]
-        self.assertEqual(ws_cfg.get("routerKind"), "signal")
+        self.assertNotIn("routerKind", ws_cfg)
 
     def test_grammar_has_not_conjunction_disjunction(self):
         ws_cfg = self.cfg["WordSpace"]
@@ -187,16 +190,21 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         _restore_global_state(cls._global_snap)
 
     def test_chart_router_kind_is_signal(self):
+        """Stage 3: chart retired; the canonical parser is the signal
+        router (LanguageLayer) directly on WordSubSpace."""
         ws = self.model.wordSubSpace
         self.assertIsNotNone(ws, "WordSpace must be built")
-        self.assertIsNotNone(ws.chart)
-        self.assertEqual(ws.chart.router_kind, "signal")
+        self.assertIsNotNone(ws.languageLayer)
+        # router_kind is no longer a meaningful attribute (the chart
+        # vs. signal dispatch is gone), but the languageLayer is.
+        from Language import LanguageLayer
+        self.assertIsInstance(ws.languageLayer, LanguageLayer)
 
     def test_signal_router_has_grammar_ops_attached(self):
         ws = self.model.wordSubSpace
-        router = ws.chart._signal_router
+        router = ws.languageLayer
         self.assertIsNotNone(
-            router, "LanguageLayer must be built when routerKind=signal")
+            router, "LanguageLayer must be built")
         self.assertIn("S", router._unary_layers)
         self.assertIn("S", router._binary_layers)
         unary_layer = router._unary_layers["S"]
@@ -207,7 +215,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
 
     def test_signal_router_rule_ids_match_grammar(self):
         ws = self.model.wordSubSpace
-        router = ws.chart._signal_router
+        router = ws.languageLayer
         TheGrammar = self._Language.TheGrammar
         not_id = next(i for i, r in enumerate(TheGrammar.rules)
                       if r.method_name == "not")
