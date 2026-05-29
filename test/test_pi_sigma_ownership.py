@@ -1,18 +1,18 @@
 """Tests for Pi / Sigma layer ownership.
 
 Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
-2026-05-26-two-loop-pi-sigma-substrate.md):
+2026-05-26-two-loop-pi-sigma-substrate.md). Stage 10 (doc/plans/
+2026-05-27-perceptstore-meta-taxonomy-reentrancy.md) revisions noted.
 
-    PerceptualSpace        -- ``pi`` (PiLayer) and ``sigma``
-                              (SigmaLayer); both percept_dim ->
-                              percept_dim. forward composes them as
-                              ``pi(x) + sigma(x)`` on the SAME input.
-                              (Stage 1.A.)
-    ConceptualSpace        -- NO ``sigma_percept`` attribute. Stage 1.C
-                              retired the atomic forward C-tier fold;
-                              CS.forward is STM bookkeeping (see
-                              test_cs_stm_bookkeeping.py for the
-                              positive-contract gates).
+    PerceptualSpace        -- ``pi`` (PiLayer). Stage 10 retired
+                              ``self.sigma`` from PS — PS is pi-only.
+                              The sigma half migrates to
+                              ``ConceptualSpace.sigma_in`` per stage.
+    ConceptualSpace        -- NO ``sigma_percept`` attribute (Stage 1.C
+                              retired the atomic forward C-tier fold).
+                              Stage 10: each per-stage ConceptualSpace
+                              instance owns ``sigma_in`` and
+                              ``sigma_cs`` SigmaLayers (Ramsified).
     SymbolicSpace          -- NO sigma / pi attribute. With
                               ``concept_dim == symbol_dim`` the C->S
                               transform is a dimensional pass-through;
@@ -25,6 +25,7 @@ Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
 See:
 - basicmodel/doc/Spaces.md (ownership tables)
 - basicmodel/doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md
+- basicmodel/doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md
 """
 
 import os
@@ -77,13 +78,23 @@ class TestOwnership(unittest.TestCase):
     SigmaLayer / PiLayer instances."""
 
     def test_perceptual_pi_folds(self):
-        # Post-Stage-1.A: PS owns a single ``pi`` (PiLayer) and a
-        # single ``sigma`` (SigmaLayer); the per-order Ramsified
-        # ``pi_input`` / ``pi_concept`` ModuleLists are retired.
+        # Post-Stage-1.A: PS owns a single ``pi`` (PiLayer); the
+        # per-order Ramsified ``pi_input`` / ``pi_concept`` ModuleLists
+        # are retired. Stage 10: PS sigma also retired (migrated to
+        # ConceptualSpace.sigma_in per stage).
         model = _make_plain_model()
         ps = model.perceptualSpace
         self.assertIsInstance(ps.pi, PiLayer)
-        self.assertIsInstance(ps.sigma, SigmaLayer)
+        self.assertFalse(
+            hasattr(ps, 'sigma'),
+            "Stage 10: PerceptualSpace.sigma is retired; PS is "
+            "pi-only.")
+        # CS stages each own their own sigma_in (the migrated PS
+        # sigma's new home). At least one stage must expose it.
+        cs = model.conceptualSpaces[0]
+        self.assertIsInstance(cs.sigma_in, SigmaLayer,
+                              "Stage 10: ConceptualSpace[0].sigma_in "
+                              "must be a SigmaLayer.")
 
     def test_conceptual_no_sigma_percept(self):
         # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
@@ -107,28 +118,30 @@ class TestOwnership(unittest.TestCase):
                          "SymbolicSpace.pi is gone; only CS owns the "
                          "PiLayer in the P->C->S pipeline.")
 
-    def test_conceptual_has_no_sigma(self):
-        # Post-Stage-1.C: CS owns NEITHER ``sigma`` NOR ``sigma_percept``;
-        # the atomic forward C-tier fold operator is retired entirely.
+    def test_conceptual_has_no_bare_sigma(self):
+        # Post-Stage-1.C: the bare ``sigma`` attribute (and
+        # ``sigma_percept``) is retired. Stage 10 reintroduces
+        # ``sigma_in`` / ``sigma_cs`` as the per-stage owned sigmas;
+        # the BARE ``sigma`` attribute is still retired (it never
+        # existed under either contract).
         model = _make_plain_model()
         self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
                          "ConceptualSpace must NOT own a bare ``sigma`` "
                          "attribute; the atomic C-tier fold is retired "
-                         "by Stage 1.C.")
+                         "by Stage 1.C. Stage 10's sigma_in / sigma_cs "
+                         "are differently named.")
 
-    def test_perceptual_has_pi_and_sigma(self):
-        # Post-Stage-1.A: PS owns a bare ``pi`` AND a bare ``sigma``
-        # (single-layer instances, not ModuleLists). The legacy
-        # ``pi_input`` / ``pi_concept`` ModuleList interface is
-        # retired -- the grep gate in the refactor task enforces that
-        # they don't reappear in ``bin/Spaces.py``.
+    def test_perceptual_has_pi(self):
+        # Post-Stage-1.A: PS owns a bare ``pi`` (single-layer instance,
+        # not ModuleList). Stage 10: PS sigma is retired (migrated to
+        # CS.sigma_in per stage). The legacy ``pi_input`` /
+        # ``pi_concept`` ModuleList interface stays retired.
         model = _make_plain_model()
         self.assertTrue(hasattr(model.perceptualSpace, 'pi'),
                         "PerceptualSpace must own a bare ``pi`` "
                         "(PiLayer) post-Stage-1.A.")
-        self.assertTrue(hasattr(model.perceptualSpace, 'sigma'),
-                        "PerceptualSpace must own a bare ``sigma`` "
-                        "(SigmaLayer) post-Stage-1.A.")
+        self.assertFalse(hasattr(model.perceptualSpace, 'sigma'),
+                         "Stage 10: PerceptualSpace.sigma is retired.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()

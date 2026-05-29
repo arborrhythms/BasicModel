@@ -9,10 +9,15 @@ Overlay merge order:
 
 Note on naming: the schema and the XML configs use `nInput` / `nOutput`
 (sequence-length sentinels), `nDim` (per-vector dim), `nVectors`
-(codebook size), `nWhere` / `nWhen` (positional / temporal encoding
-widths), and `nInputDim` / `nOutputDim` (raw shape hints for the
-LiftingLayer). Older docs sometimes call these `nActive`; treat that as
-the same thing as `nOutput`.
+(codebook size), and `nInputDim` / `nOutputDim` (raw shape hints for the
+LiftingLayer). Older docs sometimes call `nOutput` / `nInput` `nActive`;
+treat that as the same thing as `nOutput`.
+
+> 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
+> `data/model.xml` carries per-Space defaults (`<nWhere>2</nWhere>` on
+> InputSpace / PerceptualSpace / SymbolicSpace, `0` elsewhere). The
+> `.where` field is now the canonical positional identifier (quadrature
+> sinusoidal); see [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
 
 ---
 
@@ -24,14 +29,13 @@ sub-elements `<training>` and `<data>` (see below).
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `modelType` | string | `"simple"` | `simple` (feedforward), `embedding` (LM / chat with sequence processing), `passthrough` (identity bench), `vq` (codebook-only). |
-| `reconstruct` | string | `"symbols"` | Reverse-pass mode: `none` disables; `symbols` reconstructs from cached output symbols; `concepts` reconstructs at the conceptual tier; `both` combines both reconstruction losses. |
+| `reconstruct` | string | `"concepts"` | Reverse-pass mode: `none` disables; `symbols` reconstructs from cached output symbols; `concepts` reconstructs at the conceptual tier (default); `both` combines both reconstruction losses. (Default flipped from `symbols` to `concepts` on 2026-05-29; per-experiment XMLs no longer need to override.) |
 | `conceptualOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: every Layer uses `W_eff = bias * W + temp * noise`. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
-| `nWhere` | int | `0` | Positional-encoding dimensions appended to each vector. `> 0` enables `PositionalEncoding` model-wide. |
-| `nWhen` | int | `0` | Temporal-encoding dimensions appended to each vector. `> 0` enables `TemporalEncoding` model-wide. |
+| `conceptualMode` | string | `"parallel"` | `parallel` (whole-slab `[B, N, D]` forward; required for the butterfly cascade), `serial` (per-word `[B, 1, D]`). The class-level default on `BaseModel` is `parallel` (2026-05-29). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -181,8 +185,9 @@ Every space block uses the same sentinel convention:
 - `nOutput = 0` --- same as `nInput` for this space (passthrough count).
 - `nVectors = 0` --- same as `nOutput` (used for non-codebook spaces).
 
-Per-space `nWhere` / `nWhen` override `architecture.nWhere` / `nWhen`
-when present.
+Per-Space `<nWhere>` / `<nWhen>` declarations were retired on
+2026-05-28 (see top-of-file note); the per-Space defaults live in
+`data/model.xml` and don't need re-declaration in per-experiment configs.
 
 ### `<InputSpace>`
 
@@ -194,7 +199,6 @@ Lifts raw data into the model's internal representation.
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
-| `nWhere` / `nWhen` | int | inherit | Positional / temporal dim overrides. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
 | `lexer` | string | `"word"` | Tokenization mode: `word`, `sentence`, `byte`. |
 
@@ -215,8 +219,9 @@ Transforms lifted input into perceptual features via Pi layers
 | `invertible` | bool | `false` | `true`: one `PiLayer(invertible=True)` handles both directions; `false`: separate `pi1` (forward) and `pi2` (reverse). |
 | `hasAttention` | bool | `true` | Attention reweighting of percepts before the Pi fold. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
-| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted. |
-| `chunking` | string | `"lexicon"` | Multi-token chunking strategy: `lexicon`, `bpe`. |
+| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted. Set to `none` to make PS a pure input-encoder (the butterfly cascade carries the trainable transform); set to `quantize` for VQ-EMA snapping. `MM_xor.xml` uses `none` (the snap kills gradient flow into the butterfly weights). |
+| `chunking` | string | `"lexicon"` | Multi-token chunking strategy: `lexicon`, `bpe`, `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `RadixLayer` is in `bin/Layers.py` (relocated 2026-05-29 from `bin/PerceptStore.py`). |
+| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on `self.pi` (and `self.sigma` historically) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md). |
 | `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
 
 Pi layer math: $y_j = b_j \prod_i (1 + W_{ji} x_i)$. See [Architecture.md](Architecture.md).
@@ -236,9 +241,21 @@ Transforms perceptual features into abstract concepts via Sigma layers
 | `hasAttention` | bool | `false` | Attention in conceptual processing. Violates position locality required by `serial_mode`. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
+| `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PerceptualSpace). Required by `MM_xor.xml`. |
+| `stmCapacity` | int | `7` | STM ring depth (Miller, 7±2). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
 `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`.
+
+> 2026-05-29 (clean-stack STM): `ConceptualSpace.forward` no longer
+> applies `sigma_in` / `sigma_cs` on the forward path. The Stage-10
+> additive composition `sigma_in(combined) + sigma_cs(prev)` is
+> replaced with per-stage tier attribution (`folded = primary` at
+> stage 0, `folded = sym` at k > 0). The sigma layers remain
+> allocated and are still invoked on the reverse path, but their
+> parameters get no gradient on forward — they're dead weight under
+> the current experiment. See
+> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ### `<SymbolicSpace>`
 
@@ -257,8 +274,7 @@ perception and output. See [Language.md](Language.md) for the design.
 | `l1Lambda` | decimal | `0.01` | L1 sparsity penalty on the symbolic activation. |
 | `symbolResidualScale` | decimal | `1.0` | Symbol-residual injection scale (legacy mereology hook). |
 | `outputSymbolResidualScale` | decimal | `0.0` | Output-side symbol-residual injection scale. |
-| `commitmentBeta` | float | `0.25` | VQ-VAE commitment-loss $\beta$ (when `useVQVAE=true`). |
-| `useVQVAE` | bool | `false` | VQ-VAE-style quantization rather than EMA codebook. |
+| `commitmentBeta` | float | `0.25` | VQ-VAE commitment-loss $\beta$. Active whenever `<codebook>quantize</codebook>` is set (2026-05-29: the prior `<useVQVAE>` toggle was retired; codebook training is implicit). |
 | `decorrelationWeight` | decimal | `0.0` | `ImpenetrableLayer` decorrelation regularizer on codebook rows. |
 | `spectralFlatnessWeight` | decimal | `0.0` | `ImpenetrableLayer` spectral-flatness regularizer. |
 | `truthMinMagnitude` | decimal | `0.3` | Minimum magnitude before a SymbolicSpace activation contributes to TruthLayer commit. |
@@ -410,8 +426,6 @@ Everything not listed inherits from `data/model.xml`.
 <model>
   <architecture>
     <modelType>embedding</modelType>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <weightsPath>BasicModel.ckpt</weightsPath>
     <embeddingPath>BasicModel.kv</embeddingPath>
 

@@ -341,9 +341,14 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out_lower = Ops.lower(self.x, self.y, mode='AND', kind='strict')
         self.assertTrue(torch.equal(out_conj, out_lower))
 
-    def test_conjunction_bitonic_equals_lower_radial(self):
+    def test_conjunction_bitonic_equals_lower_soft(self):
+        # 2026-05-29: non-monotonic conjunction now routes to
+        # ``kind='soft'`` (LSE-smoothed RadMin), not ``kind='radial'``
+        # (hard min). The hard-radial path remains reachable via
+        # ``Ops.lower(..., kind='radial')`` and is tested below
+        # under ``test_lower_radial_matches_pre_step2_radmin``.
         out_conj = Ops.conjunction(self.x, self.y, monotonic=False)
-        out_lower = Ops.lower(self.x, self.y, mode='AND', kind='radial')
+        out_lower = Ops.lower(self.x, self.y, mode='AND', kind='soft')
         self.assertTrue(torch.equal(out_conj, out_lower))
 
     def test_disjunction_monotonic_equals_lift_strict(self):
@@ -351,9 +356,10 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out_lift = Ops.lift(self.x, self.y, mode='OR', kind='strict')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
-    def test_disjunction_bitonic_equals_lift_radial(self):
+    def test_disjunction_bitonic_equals_lift_soft(self):
+        # 2026-05-29: see test_conjunction_bitonic_equals_lower_soft.
         out_disj = Ops.disjunction(self.x, self.y, monotonic=False)
-        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='radial')
+        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='soft')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
     def test_conjunction_monotonic_matches_torch_min(self):
@@ -361,9 +367,12 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out = Ops.conjunction(self.x, self.y, monotonic=True)
         self.assertTrue(torch.equal(out, torch.min(self.x, self.y)))
 
-    def test_conjunction_bitonic_matches_pre_step2_radmin(self):
-        # Bit-exact pre-Step-2 body: same-sign min magnitude (zero collapse).
-        out = Ops.conjunction(self.x, self.y, monotonic=False)
+    def test_lower_radial_matches_pre_step2_radmin(self):
+        # 2026-05-29: was test_conjunction_bitonic_matches_pre_step2_radmin.
+        # The hard-radial bitonic body still exists -- it's just no
+        # longer the default conjunction kind. Explicit kind='radial'
+        # on Ops.lower still matches the pre-Step-2 body bit-exactly.
+        out = Ops.lower(self.x, self.y, mode='AND', kind='radial')
         same_sign = (self.x * self.y > 0).float()
         min_mag = torch.min(self.x.abs(), self.y.abs())
         expected = same_sign * torch.sign(self.x) * min_mag
@@ -374,9 +383,10 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
         out = Ops.disjunction(self.x, self.y, monotonic=True)
         self.assertTrue(torch.equal(out, torch.max(self.x, self.y)))
 
-    def test_disjunction_bitonic_matches_pre_step2_radmax(self):
-        # Bit-exact pre-Step-2 body: same-sign max magnitude with zero passthrough.
-        out = Ops.disjunction(self.x, self.y, monotonic=False)
+    def test_lift_radial_matches_pre_step2_radmax(self):
+        # 2026-05-29: was test_disjunction_bitonic_matches_pre_step2_radmax.
+        # Same pivot as test_lower_radial_matches_pre_step2_radmin.
+        out = Ops.lift(self.x, self.y, mode='OR', kind='radial')
         same_sign = (self.x * self.y > 0).float()
         max_mag = torch.max(self.x.abs(), self.y.abs())
         core = same_sign * torch.sign(self.x) * max_mag

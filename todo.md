@@ -1,6 +1,4 @@
 
-
-
 Pre-existing MentalModel.xml / WordSubSpace.subspace bug (defensively shimmed in Stage 3; deserves a proper fix).
 
 The <codebook>none</codebook> workaround in MM_xor.xml from Stage 5 — STE-through-muxed-codebook would let butterfly compose with VQ cleanly.

@@ -314,6 +314,11 @@ class BaseModel(Mereology, nn.Module):
     _optimizer     = None
     checkpoint_every_batches = 0
     _training_step_count = 0
+    # Class-level default for ``conceptualMode`` so that BasicModel()
+    # constructed directly (without going through ``init_config``)
+    # still answers ``self.conceptualMode``. ``init_config`` overrides
+    # this via instance attribute when XML is loaded.
+    conceptualMode = "parallel"
     # Scale applied to the DiscourseSpace contrastive loss. The
     # inter-sentence DiscourseSpace lives on ``self.wordSubSpace``
     # (``self.wordSubSpace.discourse``) rather than directly on the
@@ -693,13 +698,26 @@ class BaseModel(Mereology, nn.Module):
             te = "NONE"
         self.train_embedding = te.upper()
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.perceptualSpace.vocabulary, Embedding):
-            emb_params = self.perceptualSpace.vocabulary.embedding_parameters()
+        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): radix mode reroutes ``vocabulary`` to the
+        # PerceptStore, but the orthographic-API Embedding still lives
+        # on ``subspace.what`` (constructed by ``_build_what_basis``).
+        # Resolve the Embedding via ``subspace.what`` so the back-ref
+        # wiring + optimizer hook reach the right object regardless of
+        # chunking mode.
+        _emb_legacy = getattr(self.perceptualSpace.subspace, "what", None)
+        if not isinstance(_emb_legacy, Embedding):
+            _emb_legacy = (self.perceptualSpace.vocabulary
+                           if isinstance(self.perceptualSpace.vocabulary,
+                                         Embedding)
+                           else None)
+        if self.optimize_embedding and _emb_legacy is not None:
+            emb_params = _emb_legacy.embedding_parameters()
             self.perceptualSpace.params = self.perceptualSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        if isinstance(self.perceptualSpace.vocabulary, Embedding):
-            self.perceptualSpace.vocabulary.optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.perceptualSpace.vocabulary, "_model", self)
+        if _emb_legacy is not None:
+            _emb_legacy.optimize_embedding = self.optimize_embedding
+            object.__setattr__(_emb_legacy, "_model", self)
 
         self.checkpoint_every_batches = int(os.environ.get(
             "BASIC_CHECKPOINT_EVERY_BATCHES",
@@ -939,9 +957,22 @@ class BaseModel(Mereology, nn.Module):
             s.set_sigma(sigma)
 
     def _get_embedding(self):
-        """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'perceptualSpace') and isinstance(self.perceptualSpace.vocabulary, Embedding):
-            return self.perceptualSpace.vocabulary
+        """Return the Embedding instance if this model uses one, else None.
+
+        Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        reentrancy.md): in radix-mode the ``vocabulary`` property
+        returns a PerceptStore, but the orthographic Embedding still
+        lives on ``perceptualSpace.subspace.what``; look there first
+        so the rest of the orthographic API keeps working in radix mode.
+        """
+        if not hasattr(self, 'perceptualSpace'):
+            return None
+        _what = getattr(self.perceptualSpace.subspace, 'what', None)
+        if isinstance(_what, Embedding):
+            return _what
+        _vocab = self.perceptualSpace.vocabulary
+        if isinstance(_vocab, Embedding):
+            return _vocab
         return None
 
     # -- Reasoning Methods --------------------------------------------
@@ -1144,22 +1175,48 @@ class BaseModel(Mereology, nn.Module):
         atoms dict that don't ride in state_dict.
 
         Returns ``None`` when no Embedding is present.
+
+        Stage 8 addition: also includes SymbolicSpace's META taxonomy
+        (``taxonomy``, ``taxonomy_parent``, ``meta_pair_to_idx``) so
+        the structural decode path survives a checkpoint roundtrip.
         """
         emb = self._get_embedding()
+        sym_space = getattr(self, 'symbolicSpace', None)
+        # Always include SS taxonomy when SymbolicSpace exists, even if
+        # there's no Embedding on PS (the radix path replaces the
+        # Embedding with a PerceptStore; the lexicon-extras blob is
+        # vacuous but the taxonomy must still travel).
+        ss_extras = (sym_space.vocab_extras()
+                     if sym_space is not None
+                     and hasattr(sym_space, 'vocab_extras')
+                     else None)
         if emb is None or getattr(emb, 'wv', None) is None:
-            return None
+            if ss_extras is None:
+                return None
+            # Lexicon-less radix mode: only the SS state needs to
+            # travel; we still wrap it in the standard envelope so
+            # ``_restore_vocab_extras`` finds the keys.
+            return {
+                "index_to_key": [],
+                "counts": [],
+                "total_count": 0,
+                "well_known_atoms": ss_extras.get("well_known_atoms", {}),
+                "ss_taxonomy_extras": ss_extras,
+            }
         wv = emb.wv
         counts = getattr(wv, 'counts', None)
         if counts is not None and hasattr(counts, 'tolist'):
             counts = counts.tolist()
-        sym_space = getattr(self, 'symbolicSpace', None)
         well_known = dict(getattr(sym_space, 'well_known_atoms', {}) or {})
-        return {
+        blob = {
             "index_to_key": list(getattr(wv, 'index_to_key', []) or []),
             "counts": counts or [],
             "total_count": int(getattr(wv, 'total_count', 0) or 0),
             "well_known_atoms": well_known,
         }
+        if ss_extras is not None:
+            blob["ss_taxonomy_extras"] = ss_extras
+        return blob
 
     def _collect_bpe_extras(self):
         """Snapshot the ChunkLayer's pure-Python state into a dict
@@ -1393,6 +1450,13 @@ class BaseModel(Mereology, nn.Module):
             sym_space.well_known_atoms = {
                 str(k): int(v) for k, v in well_known.items()
             }
+        # Stage 8: restore META taxonomy + parent map + meta-pair lookup
+        # so the structural decode path survives checkpoint roundtrip.
+        ss_extras = extras.get("ss_taxonomy_extras")
+        if (sym_space is not None
+                and isinstance(ss_extras, dict)
+                and hasattr(sym_space, 'load_vocab_extras')):
+            sym_space.load_vocab_extras(ss_extras)
 
     def _restore_bpe_extras(self, extras):
         """Write the BPE codebook from a saved bundle back onto the
@@ -1523,7 +1587,11 @@ class BaseModel(Mereology, nn.Module):
         lex = str(getattr(self, 'lexer', 'word') or 'word').lower()
         if lex in ('word', 'words'):
             try:
-                return len([tok for tok, _ in parse(original, lex='words') if tok])
+                # parse(..., lex='words') yields the inter-word space as
+                # its own token ('hello world' -> 3 tokens). Filter to
+                # non-whitespace so the count matches actual word slots.
+                return len([tok for tok, _ in parse(original, lex='words')
+                            if tok and tok.strip()])
             except Exception:
                 return len(original.split())
         if lex in ('byte', 'bytes'):
@@ -1532,12 +1600,75 @@ class BaseModel(Mereology, nn.Module):
             return 1
         return len(original.split())
 
+    def _reverse_decode_one(self, vec):
+        """Stage 8 structural decode of a single terminal CS vector.
+
+        Thin wrapper around :meth:`RadixLayer.reverse` (Task F): the
+        canonical body now lives on the PS-side layer that owns the
+        inverse table, so BasicModel no longer reaches across PS, SS,
+        and the codebook itself. Returns ``b""`` when the radix path
+        is not active (no ``percept_store``) or either space is
+        unwired.
+        """
+        ps_space = getattr(self, "perceptualSpace", None)
+        if ps_space is None:
+            return b""
+        ps_store = getattr(ps_space, "percept_store", None)
+        if ps_store is None:
+            return b""
+        ss = getattr(self, "symbolicSpace", None)
+        return ps_store.reverse(vec, symbolic_space=ss)
+
     def _decode_reconstructed_inputs(self, recon, originals):
         if not isinstance(recon, torch.Tensor) or recon.numel() == 0:
             return []
         if getattr(self.inputSpace, 'model_type', None) != "embedding":
             return [self._display_value(recon[i]) for i in range(recon.shape[0])]
 
+        # Stage 8 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md §Stage 8): when the radix path is active the
+        # reverse decode is *structural* -- SS nearest match -> META
+        # children -> PS percept id -> inverse_table bytes. No
+        # nearest-neighbour against PS vectors at the surface step.
+        ps_space = getattr(self, "perceptualSpace", None)
+        ps_store = (getattr(ps_space, "percept_store", None)
+                    if ps_space is not None else None)
+        if ps_store is not None:
+            vectors = recon.detach()
+            # Normalise to [B, N, D].
+            while vectors.ndim > 3 and 1 in vectors.shape[2:-1]:
+                for ax in range(2, vectors.ndim - 1):
+                    if vectors.shape[ax] == 1:
+                        vectors = vectors.squeeze(ax)
+                        break
+            if vectors.ndim == 2:
+                vectors = vectors.unsqueeze(0)
+            batch = int(vectors.shape[0]) if vectors.ndim >= 1 else 0
+            n_vec = int(vectors.shape[1]) if vectors.ndim >= 2 else 0
+            rendered = []
+            for b in range(batch):
+                words = []
+                for v in range(n_vec):
+                    raw = self._reverse_decode_one(vectors[b, v])
+                    if not raw:
+                        # Preserve the slot with an empty placeholder so
+                        # the per-row token-count clip aligns with the
+                        # original sentence length; dropping it shortens
+                        # the rendered output and misaligns words[:N].
+                        words.append("")
+                        continue
+                    try:
+                        words.append(raw.decode("utf-8"))
+                    except UnicodeDecodeError:
+                        words.append(raw.decode("utf-8", errors="replace"))
+                expected = (self._input_token_count(originals[b])
+                            if b < len(originals) else None)
+                if expected is not None:
+                    words = words[:expected]
+                rendered.append(" ".join(words))
+            return rendered
+
+        # Legacy lexicon / BPE / MPHF path: keep the existing decode.
         emb = getattr(getattr(self.perceptualSpace, 'subspace', None),
                       'what', None)
         if not isinstance(emb, Embedding):
@@ -1546,12 +1677,6 @@ class BaseModel(Mereology, nn.Module):
             return [self._display_value(recon[i]) for i in range(recon.shape[0])]
 
         vectors = recon.detach()
-        # 2026-05-27: surface decode errors via an env-gated probe so
-        # the silent-except path doesn't mask real bugs. Set
-        # ``BASICMODEL_DECODE_DEBUG=1`` to see the traceback instead
-        # of the shape-only fallback.
-        _decode_debug = bool(int(os.environ.get(
-            "BASICMODEL_DECODE_DEBUG", "0") or "0"))
         try:
             codebook = emb.getW()
             if torch.is_tensor(codebook):
@@ -1559,30 +1684,28 @@ class BaseModel(Mereology, nn.Module):
             decoded = emb.decode_reverse_meta(
                 vectors, subspace=self.perceptualSpace.subspace)
             word_rows = emb.reconstruct_data(decoded, text=False)
-        except Exception as primary_err:
-            if _decode_debug:
-                import traceback
-                TheMessage(
-                    "[_decode_reconstructed_inputs] primary decode "
-                    f"raised {type(primary_err).__name__}: "
-                    f"{primary_err}")
-                traceback.print_exc()
+        except Exception:
             try:
                 word_rows = self.perceptualSpace.reconstruct_data(text=False)
-            except Exception as fallback_err:
-                if _decode_debug:
-                    import traceback
-                    TheMessage(
-                        "[_decode_reconstructed_inputs] fallback "
-                        f"raised {type(fallback_err).__name__}: "
-                        f"{fallback_err}")
-                    traceback.print_exc()
+            except Exception:
                 return [self._display_value(recon[i])
                         for i in range(recon.shape[0])]
 
         rendered = []
         for i, words in enumerate(word_rows):
-            words = [w for w in words if w not in ("", "\x00")]
+            # 2026-05-28: filter empties, NUL sentinels, AND
+            # whitespace-only tokens. The lexer transmits the inter-
+            # word space as its own slot (see ``Embedding._token_stream``
+            # appending ``\x00`` after ``parse(lex='words')``), so the
+            # per-slot decode for "hello world" yields
+            # ['hello', ' ', 'world', '\x00', '\x00', ...]. The display
+            # contract is "show non-whitespace word tokens"; spaces and
+            # nulls are transmitted but not displayed. Without
+            # ``w.strip()`` the prior clip ``words[:expected]`` would
+            # consume the space token slot and drop the real second
+            # word.
+            words = [w for w in words
+                     if w not in ("", "\x00") and w.strip()]
             expected = (self._input_token_count(originals[i])
                         if i < len(originals) else None)
             if expected is not None:
@@ -2904,13 +3027,44 @@ class BasicModel(BaseModel):
                     "For inference use split='runtime'."
                 )
 
-            # IR head is purely a side channel — the prediction lives in
-            # the masked P-tier slots, not in the head.  ``lossOut`` is
-            # kept wired (with zero weight) for code-path symmetry with
-            # downstream Error tracking; the gradient signal flows
-            # through ``lossIn`` only.
+            # 2026-05-28: restore supervised output-head loss for
+            # tasks that need it (e.g. XOR_exact with binary labels).
+            # The prior IR-only regime hardcoded output_weight=0 and
+            # routed all gradient through the masked-LM ``lossIn``;
+            # that path is preserved (when ``outputTensor`` is absent
+            # or the labels are zero-width, the supervised branch
+            # degenerates to the original "side channel" semantics).
+            # When ``outputTensor`` IS supplied, compare the head
+            # prediction against the labels and apply a non-zero
+            # weight so the head receives gradient. Mirrors the
+            # ``reconstruction_reverse`` pattern (try-guarded so a
+            # shape edge case degrades to zero contribution rather
+            # than crashing the step).
             lossOut = torch.zeros((), device=TheDevice.get())
             output_weight = 0.0
+            try:
+                if (outputTensor is not None
+                        and torch.is_tensor(outputTensor)
+                        and outputTensor.numel() > 0
+                        and outputDataPred is not None
+                        and torch.is_tensor(outputDataPred)
+                        and outputDataPred.numel() > 0):
+                    # Match shapes -- the head and the labels may differ
+                    # in trailing dim (label is scalar per row; pred may
+                    # be [B, K] or [B, K, D]). Reduce over trailing dims
+                    # on the pred side until shapes line up.
+                    _pred = outputDataPred
+                    _tgt = outputTensor
+                    while _pred.dim() > _tgt.dim():
+                        _pred = _pred.mean(dim=-1)
+                    if _pred.shape == _tgt.shape:
+                        lossOut = self.loss.compute(_pred, _tgt)
+                        output_weight = 1.0
+            except Exception:
+                # Supervised loss best-effort; never let a shape edge
+                # stop the training step.
+                lossOut = torch.zeros((), device=TheDevice.get())
+                output_weight = 0.0
             TheError.add(
                 "output", lossOut,
                 weight=output_weight,
@@ -3000,23 +3154,32 @@ class BasicModel(BaseModel):
                         # Stage 1.F substrate refactor (doc/plans/
                         # 2026-05-26-two-loop-pi-sigma-substrate.md):
                         # the per-stage ``_cs_cache`` forward capture
-                        # is retired. The terminal C-tier idea (the
-                        # one ``_cs_cache[-1]`` previously held) now
-                        # comes from the canonical ConceptualSpace
-                        # ShortTermMemory snapshot — the most recently
-                        # pushed idea built up over the sentence is at
-                        # the tail of ``stm.snapshot()`` along the
-                        # depth axis. We stamp it onto the CS subspace
-                        # as the ``[B, 1, D_c]`` reverse-path seed
-                        # (same shape contract as ``_reverse_from_S``'s
-                        # ``S3 = S.unsqueeze(1)`` lift).
+                        # is retired. The reverse-path seed comes from
+                        # the canonical ConceptualSpace ShortTermMemory
+                        # snapshot.
+                        #
+                        # 2026-05-28 fix: mode-dependent seed shape.
+                        # In PARALLEL the STM is the [B, N, D] slab --
+                        # every position is its own slot and the
+                        # reverse pipeline should walk them all back.
+                        # In SERIAL the STM accumulates per-word ideas
+                        # and ``snap[:, -1:, :]`` is the most-recent
+                        # idea (the sentence-level accumulator).
+                        # Picking last-slot in parallel mode caused
+                        # the reverse pipeline to broadcast one vec to
+                        # every slot, producing identical recon per
+                        # position.
                         stm = (self.conceptualSpace.stm
                                if self.conceptualSpace is not None
                                else None)
                         snap = stm.snapshot() if stm is not None else None
                         if (snap is not None and torch.is_tensor(snap)
                                 and snap.dim() == 3 and snap.shape[1] >= 1):
-                            terminal_idea = snap[:, -1:, :]
+                            if (getattr(self, 'conceptualMode', None)
+                                    == 'parallel'):
+                                terminal_idea = snap         # [B, N, D]
+                            else:
+                                terminal_idea = snap[:, -1:, :]
                             cs = self.conceptualSpace
                             cs.subspace.set_event(terminal_idea)
                             rev_sub = self._run_pipeline_rev_from_concepts(
@@ -3280,6 +3443,24 @@ class BasicModel(BaseModel):
                 optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
+            # 2026-05-28: enforce the |W| <= 1 invariant on the
+            # Embedding (Lexicon) by re-projecting rows onto the unit
+            # ball after each optimizer step. Matches the SBOW
+            # pre-training pattern at bin/embed.py:1976. Without this,
+            # JOINT training drifts Embedding rows beyond [-1, 1]
+            # (measured: |W|.max ~ 1.54 after 200 epochs on XOR_exact),
+            # which breaks the nearest-Embedding reverse decode -- the
+            # bounded recon vector from pi.reverse cannot reach the
+            # unbounded target rows.
+            _emb = getattr(getattr(self.perceptualSpace, 'subspace',
+                                   None), 'what', None)
+            if _emb is not None and hasattr(_emb, 'normalize'):
+                try:
+                    _emb.normalize()
+                except Exception:
+                    # Non-Lexicon subspace.what (Codebook, Tensor) has no
+                    # normalize(); silently skip rather than crash.
+                    pass
             self._training_step_count = (
                 int(getattr(self, "_training_step_count", 0) or 0) + 1
             )
@@ -4166,7 +4347,17 @@ class BasicModel(BaseModel):
         # configs route to ModalSpace).
         self.perceptualSpace = self._make_perceptual_space(
             inputShape, spaceShape_percept, perceptShape)
-        if isinstance(self.perceptualSpace.vocabulary, Embedding):
+        # Wire ``_peer_perceptual`` whenever there is an Embedding-
+        # backed surface form -- the lexer needs a peer reference for
+        # tokenizer dispatch. Stage 7 (doc/plans/2026-05-27-perceptstore
+        # -meta-taxonomy-reentrancy.md): radix mode exposes a
+        # PerceptStore via ``vocabulary``, but the underlying Embedding
+        # still lives on ``subspace.what`` (constructed by
+        # ``_build_what_basis``). Check the structural attribute so
+        # text mode in any chunking variant gets the peer wired.
+        _vocab = self.perceptualSpace.vocabulary
+        _what = getattr(self.perceptualSpace.subspace, "what", None)
+        if isinstance(_vocab, Embedding) or isinstance(_what, Embedding):
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
 
@@ -4340,6 +4531,30 @@ class BasicModel(BaseModel):
         for ss in self.symbolicSpaces:
             object.__setattr__(ss, 'perceptualSpace_ref',
                                self.perceptualSpace)
+
+        # Task G auto-META on word learning: the auto-bind moved from
+        # PerceptualSpace to ConceptualSpace. Each ``cs`` already has
+        # ``symbolicSpace_ref`` (wired above per stage); add the
+        # matching ``perceptualSpace_ref`` so the stage-0 cs.forward
+        # can read the pid grid stashed on
+        # ``perceptualSpace_ref._forward_input['indices']``. The
+        # back-ref points at the canonical PerceptualSpace; the autobind
+        # gate (``if int(self.stage_idx) == 0``) restricts firing to
+        # the first stage where the pid grid still aligns with the
+        # incoming subspace event.
+        #
+        # The autobind grows the META taxonomy, which is owned by the
+        # TERMINAL SymbolicSpace (``self.symbolicSpace`` ==
+        # ``symbolicSpaces[-1]``). Per-stage SS codebooks are slot-fixed
+        # by the where-space registry and cannot grow without overrunning
+        # a downstream slice -- so wire a separate
+        # ``terminalSymbolicSpace_ref`` distinct from the per-stage
+        # ``symbolicSpace_ref`` used by other CS consumers.
+        for cs in self.conceptualSpaces:
+            object.__setattr__(cs, 'perceptualSpace_ref',
+                               self.perceptualSpace)
+            object.__setattr__(cs, 'terminalSymbolicSpace_ref',
+                               self.symbolicSpace)
 
         # Stage 1.B paired-row contract (2026-05-27): wire the back-ref
         # SS <- Embedding so PS-side OOV inserts (Embedding.insert /
@@ -4726,37 +4941,112 @@ class BasicModel(BaseModel):
         if self.conceptualMode == "serial":
             return self._forward_body_per_word(in_sub)
 
+        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): PARALLEL mode walks the per-stage CS pipeline:
+        #
+        #   * Stage 0 ingests ``PS.pi(IS)`` as its contribution; the
+        #     stage's owned ``sigma_in[0]`` folds it (inside
+        #     ``cs.forward``).
+        #   * Stage k > 0 ingests the PRIOR stage's CS output as its
+        #     contribution; the stage's owned ``sigma_in[k]`` folds it.
+        #     Additionally, ``sigma_cs[k]`` lifts the prior CS state
+        #     (residual lift) and is added to the new contribution per
+        #     the unified equation:
+        #
+        #       ``CS_t1[k] = sigma_in[k](contribution) + SS_t1[k]
+        #                   + sigma_cs[k](CS_t0[k])``
+        #
+        #     PARALLEL: ``SS_t1[k] = 0`` per the plan's mode table; the
+        #     legacy ``ss.forward(prevCS_forSS)`` call is preserved
+        #     (the SS state contract still updates) but the SS
+        #     contribution at C-tier is the empty seed when the seed
+        #     was empty.
+        #
+        # The merge step (when ``useGrammar=='all'``) halves N
+        # between stages; the next stage's sigma_in is sized for that
+        # halved shape at construction time.
         prevCS_forSS = self._empty_seed_ss
         last_cs = None
+        # Run PS ONCE for stage-0 ingestion (subsymbolic is single-
+        # pass per the locked decision; PS.pi(IS) is the canonical
+        # contribution at stage 0).
+        # Gate PerceptualSpace's serial warm-path on pass 0.
+        if self.wordSubSpace is not None:
+            self.wordSubSpace.recur_pass = 0
+        else:
+            self.perceptualSpace._recurrent_pass_idx = 0
+        PS_sub_stage0 = self.perceptualSpace.forward(in_sub)
+        self.create_ir_mask(PS_sub_stage0)
+        # ``contribution`` is the incoming subspace for each stage's
+        # ``cs.forward``. Stage 0 -> PS output; stage k > 0 -> prior
+        # stage's post-merge CS output.
+        contribution = PS_sub_stage0
+        # Stage 10 PARALLEL reverse-roundtrip cache: clear each stage's
+        # ``_prev_cs_event_cache`` at the start of this forward pass so
+        # stale data from a prior call doesn't leak into the upcoming
+        # reverse path. The cache is per-stage (lives on the CS
+        # instance); we populate it below when (and only when) the
+        # residual lift actually fires at that stage.
+        for stage in self.body_stages:
+            stage["cs"]._prev_cs_event_cache = None
+        # Track the prior stage's CS_sub for the sigma_cs residual lift.
+        prev_cs_for_residual = None
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
             ss = stage["ss"]
-            # Gate PerceptualSpace's serial warm-path: ``recur_pass`` /
-            # ``_recurrent_pass_idx`` is preserved for the AR-streaming
-            # warm-cache gate (forward-call-level, not in-forward
-            # recurrent passes >0). It no longer selects a pi_input
-            # ModuleList order — PS owns a single ``self.pi`` /
-            # ``self.sigma`` pair post-Stage-1.A. The recur_pass=0 gate
-            # in PerceptualSpace.forward consults this for the
-            # cross-call serial cache. ``recur_pass`` lives on
-            # WordSpace; PerceptualSpace.forward reads it via the
-            # ``subspace.wordSubSpace`` back-reference.
+            # Preserve the recur_pass back-ref for any consumer that
+            # still reads it (the AR-streaming warm-cache gate, sparse
+            # state tests).
             if self.wordSubSpace is not None:
                 self.wordSubSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
-            # Stage 1.A substrate refactor: PerceptualSpace.forward
-            # is single-arg now (``pi(x) + sigma(x)`` on the same input
-            # — no CS-feedback path entering PS at this level).
-            PS_sub = self.perceptualSpace.forward(in_sub)
-            if t == 0:
-                # IR masked-LM mask applied once, on the first pass's
-                # perceptual event, before CS consumes it
-                # (``_ir_pre_mask_input`` / ``_ir_mask_positions`` are
-                # read by ``runBatch``).
-                self.create_ir_mask(PS_sub)
             SS_sub = ss.forward(prevCS_forSS)
-            CS_sub = cs.forward(PS_sub, SS_sub)
+            CS_sub = cs.forward(contribution, SS_sub)
+            # Stage 10 PARALLEL residual lift: add ``sigma_cs[t]`` of
+            # the prior stage's CS output to the just-bookkept event so
+            # the per-stage equation holds. At t == 0 there is no prior
+            # CS state, so the residual term is zero (skipped). The
+            # residual lift acts on the CS subspace's materialised event
+            # *after* sigma_in has folded the incoming contribution
+            # inside cs.forward.
+            #
+            # Reverse-roundtrip note: when the lift fires we ALSO cache
+            # the exact ``prev_ev`` we lifted onto the stage's CS
+            # instance (``cs._prev_cs_event_cache``). ``CS.reverse``
+            # reads that cache to recompute the SAME ``sigma_cs[t](prev)``
+            # tensor and subtract it before applying ``sigma_in.reverse``,
+            # closing the per-stage equation
+            #
+            #   contribution = sigma_in[t].reverse(
+            #       CS_t1[t] - sigma_cs[t](CS_t0[t]))
+            #
+            # If the lift did not fire (shape mismatch, t == 0), the
+            # cache stays None and reverse degenerates to the simple
+            # ``sigma_in.reverse(CS_t1)`` path.
+            if t > 0 and prev_cs_for_residual is not None:
+                prev_ev = prev_cs_for_residual.materialize()
+                cur_ev = CS_sub.materialize()
+                if (prev_ev is not None and cur_ev is not None
+                        and prev_ev.shape == cur_ev.shape
+                        and int(prev_ev.shape[-1])
+                            == int(cs.concept_dim)):
+                    residual = cs.sigma_cs.forward(prev_ev)
+                    CS_sub.set_event(cur_ev + residual)
+                    # Cache the prior CS event for the matching
+                    # reverse subtraction. Detached so the reverse
+                    # path doesn't hold autograd refs unnecessarily;
+                    # the actual lift is recomputed by
+                    # ``cs.sigma_cs.forward(...)`` in reverse so
+                    # parameter gradients still flow through that
+                    # call when reverse is run in a grad context.
+                    cs._prev_cs_event_cache = prev_ev.detach()
+                # else: shape mismatch — degenerate config (e.g.
+                # conceptualOrder=1 or pass-0 seed). Skip the residual
+                # lift; the per-stage equation degenerates to
+                # ``CS_t1[k] = sigma_in[k](contrib)`` (matches the
+                # single-stage substrate). Cache stays None so reverse
+                # follows the same degenerate path.
             # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
             # terminal C-tier idea lives on ``conceptualSpace.stm``
             # (the bookkeeping push happens inside cs.forward); the
@@ -4769,13 +5059,7 @@ class BasicModel(BaseModel):
             # it so it reflects post-merge N). The cross-pass handoff
             # lives directly on the persistent ``cs._subspaceForPS`` /
             # ``cs._subspaceForSS`` SubSpaces (mutated in place by
-            # ConceptualSpace.forward); no SentenceState carrier — the
-            # reverse path generates its own estimates of these
-            # intermediate views (reconstruction contract).
-            # ``prevCS_forPS`` retired post-Stage-1.A — PerceptualSpace
-            # is single-arg now and no longer consumes the C→P handoff
-            # at this site. ``prevCS_forSS`` is still load-bearing for
-            # the next iteration's ``ss.forward(prevCS_forSS)`` call.
+            # ConceptualSpace.forward).
             prevCS_forSS = cs._subspaceForSS
             # "Nothing to quantize -> pass zeros": SS is inert when its
             # input was the empty seed (conceptualOrder=1, or pass 0).
@@ -4790,6 +5074,10 @@ class BasicModel(BaseModel):
             # ``self.symbolicSpace.subspace`` (written by
             # ``ss.forward(...)``); ``symbol_cache`` resolves there.
             last_cs = CS_sub
+            # Stage 10 cascade: this stage's output becomes next
+            # stage's contribution (residual-CS pipeline).
+            contribution = CS_sub
+            prev_cs_for_residual = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
         if self.wordSubSpace is not None:

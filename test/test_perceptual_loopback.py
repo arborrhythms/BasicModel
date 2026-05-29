@@ -332,5 +332,201 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
                          f"rules; found {c_rules}")
 
 
+class TestPerceptStoreIntegration(unittest.TestCase):
+    """Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+    reentrancy.md): PerceptualSpace exposes ``self.percept_store`` when
+    ``<chunking>radix</chunking>`` is selected; legacy chunking modes
+    (``lexicon|bpe|mphf|none``) keep their existing ``ChunkLayer`` /
+    Embedding-based wiring with ``self.percept_store is None``.
+    """
+
+    def test_radix_config_builds_percept_store(self):
+        """MM_xor.xml selects ``<chunking>radix</chunking>`` post-Stage-7
+        and the constructed PerceptualSpace must expose a PerceptStore.
+        """
+        import warnings
+        import Models
+        import Language
+        from util import init_config
+        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        init_config(path=cfg_path, defaults_path=_DEFAULTS)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m, _ = Models.BasicModel.from_config(cfg_path)
+        ps_space = m.perceptualSpace
+        self.assertEqual(ps_space.chunking_mode, "radix",
+                         "MM_xor.xml should now use radix chunking")
+        self.assertIsNotNone(ps_space.percept_store,
+                             "radix-mode PerceptualSpace must expose "
+                             "self.percept_store")
+        # Importing PerceptStore directly verifies the class identity.
+        from PerceptStore import PerceptStore
+        self.assertIsInstance(ps_space.percept_store, PerceptStore)
+        # vocabulary property returns the percept store in radix mode.
+        self.assertIs(ps_space.vocabulary, ps_space.percept_store)
+
+    def test_legacy_lexicon_mode_keeps_chunklayer_path(self):
+        """The MM_xor_loopback config doesn't set chunking; the default
+        path remains ``lexicon`` for backward compatibility, with
+        ``percept_store`` set to ``None``."""
+        m = _fresh_model()
+        ps_space = m.perceptualSpace
+        # MM_xor_loopback doesn't set chunking, so the default lexicon
+        # path stays active and percept_store should be None.
+        self.assertEqual(ps_space.chunking_mode, "lexicon")
+        self.assertIsNone(ps_space.percept_store,
+                          "lexicon mode must leave percept_store unset "
+                          "so the legacy ChunkLayer / Embedding path "
+                          "stays authoritative")
+        # vocabulary property falls back to subspace.vocabulary in
+        # non-radix mode (the base Space behaviour).
+        self.assertIs(ps_space.vocabulary, ps_space.subspace.vocabulary)
+
+    def test_radix_percept_store_roundtrips_inserted_words(self):
+        """Stage 7 acceptance: 'words are inserted into the PerceptStore;
+        inverse table reproduces the surface bytes exactly'.
+
+        Post-review fix (Issue 1): _embed_radix now routes through
+        ``ps.lookup_with_id`` so promotion is gated by
+        ``<chunkPromotionThreshold>`` / ``<chunkPromotionMinLength>``.
+        Words become permanent percepts only after the threshold is
+        reached. We force promotion by feeding the same batch
+        ``promotion_threshold`` times, then verify the inverse table
+        roundtrip on the resulting permanent percept IDs.
+
+        We bypass the full model forward (which would also exercise CS
+        / SS / OS layers and isn't required for the Stage 7 contract).
+        Instead we directly drive ``_embed_radix`` with a hand-built
+        upstream SubSpace whose ``_host_tokens`` carry a small sentence.
+        """
+        import warnings
+        import Models
+        import Language
+        from util import init_config
+        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        init_config(path=cfg_path, defaults_path=_DEFAULTS)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m, _ = Models.BasicModel.from_config(cfg_path)
+            Models.TheData.load("xor")
+        ps_space = m.perceptualSpace
+        ps = ps_space.percept_store
+        self.assertEqual(len(ps), 0,
+                         "PerceptStore should start empty")
+        # Build a fake upstream SubSpace with host tokens stamped on.
+        # The _embed_radix path uses _host_tokens when present and
+        # only touches what_buf to decide non-emptiness, so we just
+        # need a non-None what_buf and a list-of-lists host_tokens.
+        words_per_row = [
+            ["hello", "world"],
+            ["the", "quick", "brown"],
+        ]
+        # All words are >= promotion_min_length=2, so each one will
+        # promote after ``promotion_threshold`` (default 4) hits.
+        what_buf = torch.zeros(2, 8, 1, dtype=torch.long)
+        upstream = ps_space.subspace
+        upstream._host_tokens = words_per_row
+        upstream.set_what(what_buf)
+        upstream.batch = 2
+        # Drive the radix-mode embedding path ``promotion_threshold``
+        # times so every distinct word promotes into the store.
+        threshold = ps.promotion_threshold
+        for _ in range(threshold):
+            ps_space._embed_radix(upstream)
+        # Every distinct word should now have landed in the store.
+        seen_words = set()
+        for row in words_per_row:
+            for w in row:
+                seen_words.add(w)
+        for w in seen_words:
+            pid = ps.get_id(w.encode("utf-8"))
+            self.assertIsNotNone(
+                pid,
+                f"word {w!r} should have been promoted into the "
+                f"PerceptStore by _embed_radix after {threshold} hits")
+        # Roundtrip every percept_id -> bytes -> percept_id.
+        for pid in range(len(ps)):
+            recovered = ps.bytes_for(pid)
+            self.assertEqual(ps.get_id(recovered), pid,
+                             f"inverse table roundtrip failed for "
+                             f"percept_id {pid}: bytes={recovered!r}")
+
+    def test_embed_radix_respects_promotion_threshold(self):
+        """Issue 1 regression guard: ``_embed_radix`` must route
+        through ``lookup_with_id`` so the
+        ``<chunkPromotionThreshold>`` / ``<chunkPromotionMinLength>``
+        knobs gate permanent installation.
+
+        Contract:
+          * A word at or above ``promotion_min_length`` does NOT get a
+            permanent percept_id until ``promotion_threshold`` calls
+            have happened.
+          * Exactly at ``promotion_threshold`` hits the word is in the
+            store.
+          * A word below ``promotion_min_length`` NEVER promotes
+            regardless of how many times we see it.
+        """
+        import warnings
+        import Models
+        import Language
+        from util import init_config
+        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        init_config(path=cfg_path, defaults_path=_DEFAULTS)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            m, _ = Models.BasicModel.from_config(cfg_path)
+            Models.TheData.load("xor")
+        ps_space = m.perceptualSpace
+        ps = ps_space.percept_store
+        # Override the knobs to make the assertions sharper without
+        # touching the production config.
+        ps.promotion_threshold = 3
+        ps.promotion_min_length = 3
+        threshold = ps.promotion_threshold
+        min_length = ps.promotion_min_length
+        # Pick one word that promotes (len >= min_length) and one
+        # that never does (len < min_length).
+        promoting_word = "promotable"   # len 10, >= 3
+        short_word = "ab"               # len 2, < 3
+        words_per_row = [
+            [promoting_word, short_word],
+        ]
+        self.assertGreaterEqual(len(promoting_word), min_length)
+        self.assertLess(len(short_word), min_length)
+        what_buf = torch.zeros(1, 4, 1, dtype=torch.long)
+        upstream = ps_space.subspace
+        upstream._host_tokens = words_per_row
+        upstream.set_what(what_buf)
+        upstream.batch = 1
+        # Before the threshold is reached, the promoting word stays
+        # transient -- get_id must return None.
+        for i in range(threshold - 1):
+            ps_space._embed_radix(upstream)
+            self.assertIsNone(
+                ps.get_id(promoting_word.encode("utf-8")),
+                f"{promoting_word!r} promoted prematurely on hit "
+                f"{i + 1} (threshold={threshold})")
+            self.assertIsNone(
+                ps.get_id(short_word.encode("utf-8")),
+                f"{short_word!r} (below min_length) promoted on hit "
+                f"{i + 1} -- min_length gate ignored")
+        # The threshold-th call should promote the promoting word.
+        ps_space._embed_radix(upstream)
+        self.assertIsNotNone(
+            ps.get_id(promoting_word.encode("utf-8")),
+            f"{promoting_word!r} should have promoted on hit "
+            f"{threshold} (threshold reached)")
+        # The short word never promotes regardless of how many hits.
+        for _ in range(threshold * 3):
+            ps_space._embed_radix(upstream)
+        self.assertIsNone(
+            ps.get_id(short_word.encode("utf-8")),
+            f"{short_word!r} (below min_length={min_length}) must "
+            f"never promote regardless of hit count")
+
+
 if __name__ == "__main__":
     unittest.main()

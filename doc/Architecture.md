@@ -1,5 +1,39 @@
 # Architecture
 
+> **Status (2026-05-29 update):** further architectural pivots landed
+> on top of the 2026-05-27 substrate refactor:
+>
+> - **PerceptStore → RadixLayer.** The radix-trie input encoder is
+>   now a first-class `Layer` subclass in `bin/Layers.py`;
+>   `PerceptualSpace.reverse` invokes `RadixLayer.reverse` for the
+>   structural decode.
+> - **MetaLayer → SymbolizeLayer.** The binary GrammarLayer that
+>   promotes a freshly-seen percept to a symbolic prototype is now
+>   `SymbolizeLayer`; no semantic change.
+> - **Auto-META moves PS → CS.** The cross-codebook bind (META entry:
+>   PS chunk-id $\leftrightarrow$ SS prototype-id) fires from
+>   `ConceptualSpace._maybe_autobind_meta` at stage 0; PS no longer
+>   holds a back-ref to SS.
+> - **Clean-stack STM.** `ConceptualSpace.forward` bypasses
+>   `sigma_in` / `sigma_cs` on forward — `folded = primary` at stage
+>   0, `folded = sym` at k > 0. The Stage-10 additive composition is
+>   retired; per-stage tier attribution is trivially invertible.
+> - **`basis=` kwarg for grammar reverses.** `UnionLayer.reverse(parent,
+>   basis=None)` / `IntersectionLayer.reverse(parent, basis=None)`
+>   accept a Codebook / Basis object (typically
+>   `SymbolicSpace.subspace.what`) instead of a raw `W` tensor;
+>   `bin/Language.py::unreduce()` dispatches accordingly.
+> - **LSE soft-max kernels.** `Ops._disjunction_kernel` /
+>   `Ops._conjunction_kernel` default to LogSumExp smooth variants
+>   when `monotonic=False`; the hard branch is retained for
+>   monotonic-mode and exact idempotency tests.
+> - **LBG-style SS codebook splitting.** Gray (1990) EMA + per-row
+>   variance tracking; rows whose running variance exceeds a
+>   threshold split along the top-variance eigendirection.
+>
+> See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md)
+> for the consolidated rationale.
+
 > **Status (2026-05-27):** the **substrate refactor** has landed end-to-end
 > ([doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md)).
 > PS is a single-arg input processor (pi + sigma). CS is a STM container +

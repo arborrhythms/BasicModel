@@ -3053,8 +3053,18 @@ class Embedding(Basis):
 
     def _token_stream(self, text):
         """Token stream.
-        
+
         See class docstring for the operation contract.
+
+        2026-05-28: word/words mode appends a ``'\\x00'`` null
+        sentinel token after the parsed tokens so the model sees an
+        explicit end-of-sequence marker distinct from zero padding.
+        ``parse()`` does not emit this naturally for whitespace-split
+        input; the lexer adds it here. ``'\\x00'`` is the existing
+        well-known NULL row in the lexicon (see the placeholder seed
+        at line ~3117) and has its own non-zero embedding, so the
+        sentinel embeds to a distinguishable vector rather than a
+        zero vector (which would alias with padding slots).
         """
         if getattr(self, 'byte_mode', False):
             # Pass raw bytes / byte tensors directly to parse so
@@ -3068,7 +3078,15 @@ class Embedding(Basis):
         mode = getattr(self, 'chunking_mode', 'lexicon')
         if mode in ('bpe', 'mphf'):
             return self._char_stream(text)
-        return parse(self._to_text(text), lex='words')
+        # word / words mode: parse + explicit null-sentinel append.
+        as_text = self._to_text(text)
+        toks = list(parse(as_text, lex='words'))
+        # Append the null sentinel only when the parsed text does not
+        # already end with ``\x00`` (idempotent on already-terminated
+        # input). Position is the byte offset just past the last char.
+        if not toks or toks[-1][0] != '\x00':
+            toks.append(('\x00', len(as_text)))
+        return toks
 
     def _char_stream(self, text):
         """Tokenize text as per-character units with positional indices."""
@@ -6852,7 +6870,17 @@ class InputSpace(Space):
         """
         assert self._peer_perceptual is not None, \
             "InputSpace._lex_batch requires _peer_perceptual (lexer owner)"
-        vocab = self._peer_perceptual.vocabulary
+        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): in radix mode ``peer.vocabulary`` is the
+        # PerceptStore (no _token_stream). The orthographic tokenizer
+        # still lives on the Embedding at ``peer.subspace.what``;
+        # resolve there first so the lexer reaches the right object
+        # regardless of chunking mode.
+        _what = getattr(self._peer_perceptual.subspace, "what", None)
+        if hasattr(_what, "_token_stream"):
+            vocab = _what
+        else:
+            vocab = self._peer_perceptual.vocabulary
         dev = TheDevice.get()
 
         # Lex the *host* byte slab when the byte cursor staged one
@@ -7037,6 +7065,13 @@ class InputSpace(Space):
                     peer._embed_byte(self.subspace)
                 elif peer_mode == "mphf":
                     peer._embed_mphf(self.subspace)
+                elif peer_mode == "radix":
+                    # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-
+                    # taxonomy-reentrancy.md): radix-mode embedding via
+                    # the PerceptStore. The peer reads the InputSpace
+                    # subspace's host tokens and writes the percept-
+                    # space event tensor.
+                    peer._embed_radix(self.subspace)
                 else:
                     peer._embed(self.subspace)
                 embedded = peer._embedded_input
@@ -7377,21 +7412,22 @@ class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via parallel pi+sigma folds.
 
     In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Owns one ``PiLayer`` (``self.pi``) and one ``SigmaLayer``
-    (``self.sigma``) (Stage 1.A substrate refactor, doc/plans/
-    2026-05-26-two-loop-pi-sigma-substrate.md). Both are
-    ``percept_dim → percept_dim``.
+    Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+    reentrancy.md): PS owns ONLY a ``PiLayer`` (``self.pi``); the
+    sigma half migrates to ``ConceptualSpace.sigma_in`` per stage
+    (Ramsified via the ``self.conceptualSpaces`` ModuleList). PS is
+    pi-only — subsymbolic is single-pass per the locked
+    architectural decision.
 
-        * ``self.pi``    -- log-space multiplicative AND fold.
-        * ``self.sigma`` -- additive (atanh→linear→tanh) OR fold.
+        * ``self.pi``    -- log-space multiplicative AND fold;
+                            ``percept_dim → percept_dim``.
 
-    The two are summed inside ``forward`` from the SAME materialized
-    input ``x``::
+    Forward body::
 
-        P = pi(x) + sigma(x)
+        P = pi(x)
 
-    No outer ``tanh`` wrap -- pi / sigma each apply their own internal
-    nonlinearity (each returns a tanh-bounded contribution).
+    Each layer applies its own internal nonlinearity (tanh-bounded
+    contribution).
 
     The earlier two-input ``tanh(pi_input(IS) + pi_concept(C_prev))``
     contract (with CS-feedback entering PS directly) is retired: the
@@ -7511,10 +7547,29 @@ class PerceptualSpace(Space):
             )
         except KeyError:
             self.chunking_mode = "lexicon"
-        if self.chunking_mode not in ("bpe", "lexicon", "none", "mphf"):
+        if self.chunking_mode not in (
+                "bpe", "lexicon", "none", "mphf", "radix"):
             raise ValueError(
-                f"PerceptualSpace.chunking must be bpe|lexicon|none|mphf, "
+                f"PerceptualSpace.chunking must be "
+                f"bpe|lexicon|none|mphf|radix, "
                 f"got {self.chunking_mode!r}")
+        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): radix-mode promotion knobs. Defaults match the
+        # plan's defaults (threshold=4, min_length=2). When chunking !=
+        # 'radix' these are read but unused -- the PerceptStore isn't
+        # constructed for legacy paths.
+        try:
+            self.chunk_promotion_threshold = int(
+                TheXMLConfig.space(section, "chunkPromotionThreshold")
+                or 4)
+        except (KeyError, TypeError, ValueError):
+            self.chunk_promotion_threshold = 4
+        try:
+            self.chunk_promotion_min_length = int(
+                TheXMLConfig.space(section, "chunkPromotionMinLength")
+                or 2)
+        except (KeyError, TypeError, ValueError):
+            self.chunk_promotion_min_length = 2
         if isinstance(lexical_basis, Embedding):
             lexical_basis.chunking_mode = self.chunking_mode
             lexical_basis.lexer_mode = self.lexer
@@ -7573,20 +7628,22 @@ class PerceptualSpace(Space):
 
         # Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
         # sigma-substrate.md): PerceptualSpace owns a single PiLayer
-        # (``self.pi``) and a single SigmaLayer (``self.sigma``), both
-        # shaped ``percept_dim → percept_dim``. The legacy per-order
-        # Ramsified ``pi_input`` / ``pi_concept`` ModuleLists are
-        # retired; the ``conceptualOrder`` knob's new role is driving
-        # the PARALLEL-mode forward iteration count (the same
-        # ``self.pi`` / ``self.sigma`` are called T times with
-        # different inputs), not selecting per-order weights.
+        # (``self.pi``) and a single SigmaLayer. Stage 10 (doc/plans/
+        # 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): drop
+        # the SigmaLayer here — PS is pi-only. The sigma half migrates
+        # to ``ConceptualSpace.sigma_in`` per stage (Ramsified across
+        # ``self.conceptualSpaces``). The legacy per-order Ramsified
+        # ``pi_input`` / ``pi_concept`` ModuleLists are retired; the
+        # ``conceptualOrder`` knob's new role is driving the PARALLEL-
+        # mode forward iteration count over the per-stage CS pipeline,
+        # not selecting per-order PS weights.
         #
-        # ``forward`` composes them on the SAME materialized input::
+        # ``forward`` body is now pi-only::
         #
-        #     P = pi(x) + sigma(x)
+        #     P = pi(x)
         #
-        # No outer ``tanh`` wrap — each layer applies its own internal
-        # nonlinearity and returns a tanh-bounded contribution.
+        # Each layer applies its own internal nonlinearity and returns
+        # a tanh-bounded contribution.
         #
         # Dim choice: ``percept_dim`` is the per-slot dim
         # PerceptualSpace operates on INTERNALLY — i.e. the post-
@@ -7595,8 +7652,8 @@ class PerceptualSpace(Space):
         # ``nInputDim != nOutputDim`` slot-redistribution at
         # forwardEnd is preserved (the codebook + forwardEnd reshape
         # together remap the per-slot output dim and grow/shrink slot
-        # count by the same factor). Both ``pi`` and ``sigma`` are
-        # therefore square at ``nInputDim → nInputDim``.
+        # count by the same factor). ``pi`` is square at
+        # ``nInputDim → nInputDim``.
         percept_dim = int(self.subspace.getEncodedInputSize())
         # Subsymbolic-loop folds honour the ``architecture.monotonic``
         # knob (same source as BasicModel.monotonic). Monotone (W>=0)
@@ -7607,14 +7664,16 @@ class PerceptualSpace(Space):
                                       default=False))
         # Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
         # 2026-05-27 revision): optional butterfly cascade on
-        # ``self.pi`` AND ``self.sigma`` for cross-element FFT-style
-        # mixing on the flattened ``[B, N*D]`` view. Driven by the
-        # per-space ``<butterfly>`` XML knob. ``N`` is **auto-computed**
-        # from ``nInput * nInputDim`` (total flattened element count)
-        # — no explicit ``<butterflyN>`` knob needed. The cascade
-        # internally pads to the next power of two; the 2x2 LDU per
-        # node makes the cascade element-pair (one op per pair of
-        # adjacent flattened elements).
+        # ``self.pi`` for cross-element FFT-style mixing on the
+        # flattened ``[B, N*D]`` view. Driven by the per-space
+        # ``<butterfly>`` XML knob. ``N`` is **auto-computed** from
+        # ``nInput * nInputDim`` (total flattened element count) — no
+        # explicit ``<butterflyN>`` knob needed. The cascade internally
+        # pads to the next power of two; the 2x2 LDU per node makes the
+        # cascade element-pair (one op per pair of adjacent flattened
+        # elements). Stage 10: butterfly applies on PS.pi only (sigma
+        # half retired here; the per-stage CS sigma_in inherits its own
+        # butterfly cascade).
         _butterfly = bool(TheXMLConfig.space(section, "butterfly",
                                              default=False))
         # Auto-compute total element count from the Space's shape.
@@ -7622,19 +7681,19 @@ class PerceptualSpace(Space):
         # dim (D) comes from ``getEncodedInputSize`` (= percept_dim).
         # Flattened total = N * D.
         _butterfly_total = int(inputShape[0]) * int(percept_dim)
+        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): drop ``self.sigma`` from PerceptualSpace —
+        # PS is pi-only. The sigma half migrates to ``ConceptualSpace``
+        # per stage (Ramsified via the ``self.conceptualSpaces``
+        # ModuleList). The cascade machinery still inherits onto
+        # ``self.pi`` (butterfly knob preserved); only the sigma branch
+        # is excised.
         if _butterfly:
             if _butterfly_total < 2:
                 raise ValueError(
                     "PerceptualSpace.butterfly=True requires "
                     f"nInput * nInputDim >= 2; got {_butterfly_total}")
             self.pi = PiLayer(
-                percept_dim, percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-                butterfly=True, N=_butterfly_total,
-            )
-            self.sigma = SigmaLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
                 invertible=bool(invertible), nonlinear=nonlinear,
@@ -7648,12 +7707,6 @@ class PerceptualSpace(Space):
                 invertible=bool(invertible), nonlinear=nonlinear,
                 stable=True, monotonic=_mono,
             )
-            self.sigma = SigmaLayer(
-                percept_dim, percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-            )
         self.butterfly_enabled = _butterfly
         self.butterflyN = _butterfly_total if _butterfly else None
 
@@ -7662,7 +7715,6 @@ class PerceptualSpace(Space):
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.params += self.pi.getParameters()
-        self.params += self.sigma.getParameters()
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -7670,6 +7722,24 @@ class PerceptualSpace(Space):
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
+        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): when ``<chunking>radix</chunking>`` is active,
+        # build a ``PerceptStore`` and expose it as ``self.percept_store``.
+        # The store is the authoritative surface-form codebook for the
+        # radix path: a radix trie + hash-map cache + inverse table +
+        # learned codebook + byte fallback + promotion. Legacy paths
+        # (lexicon|bpe|mphf|none) keep using ``self.chunk_layer`` and the
+        # Embedding-resident codebook.
+        if self.chunking_mode == "radix":
+            from Layers import RadixLayer as _PerceptStore
+            self.percept_store = _PerceptStore(
+                self.nDim,
+                initial_cap=max(int(self.nVectors), 1),
+                promotion_threshold=self.chunk_promotion_threshold,
+                promotion_min_length=self.chunk_promotion_min_length,
+            )
+        else:
+            self.percept_store = None
         # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
         # (``_embed_bpe_gpu``) is bit-identical to the trie path
         # (test/bpe_gpu_equiv.py) but is NOT the production default --
@@ -7848,6 +7918,22 @@ class PerceptualSpace(Space):
         wt = view._ks['word_table']
         wv.ref_ids = wt['ref_ids'].clone().detach().long()
 
+    @property
+    def vocabulary(self):
+        """Return the surface-form codebook for this Space.
+
+        Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        reentrancy.md): in ``<chunking>radix</chunking>`` mode the
+        authoritative store is the ``PerceptStore`` (radix trie + hash
+        map + inverse table + codebook + byte fallback). Legacy
+        chunking modes keep the existing Embedding/Codebook on
+        ``self.subspace.what`` -- the base-class property handles them.
+        """
+        if (getattr(self, "chunking_mode", None) == "radix"
+                and getattr(self, "percept_store", None) is not None):
+            return self.percept_store
+        return super().vocabulary
+
     def everything(self, target="what"):
         """The universal whole -- vertex (1,1,...,1) of the perceptual hypercube.
 
@@ -8025,6 +8111,142 @@ class PerceptualSpace(Space):
         self._embedded_input = self.subspace.materialize()
         self._last_tokens = batch_tokens
         self._forward_input = {'tokens': batch_tokens, 'indices': what_indices}
+        return self.subspace
+
+    def _embed_radix(self, upstream_vspace):
+        """Stage 7: radix-mode embedding via ``self.percept_store``.
+
+        Whitespace-split each row's text into chunks and route each
+        chunk through ``PerceptStore.lookup_with_id`` -- the spec'd
+        5-step Forward path (hash-map / radix longest-match / byte
+        fallback / promotion gate). The returned vector lands in a
+        ``[B, N, nDim]`` event tensor; the returned percept ID (or
+        ``-1`` for unpromoted slots) is stashed on ``_forward_input``
+        for downstream consumers.
+
+        This mirrors ``self._embed`` (lexicon path) but routes through
+        the PerceptStore Forward path. The traditional
+        ``self.subspace.what`` Embedding still exists for legacy
+        reasons (constructed in ``_build_what_basis``); in radix mode
+        we bypass it and write per-slot vectors directly via
+        ``set_event``. The ``<chunkPromotionThreshold>`` /
+        ``<chunkPromotionMinLength>`` knobs on the PerceptStore gate
+        permanent installation of first-sight chunks.
+        """
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_radix: upstream subspace.what is "
+                "empty. InputSpace.forward must lex into subspace.what.W "
+                "before PerceptualSpace.forward runs.")
+        dev = TheDevice.get()
+        batch = what_buf.shape[0]
+        nObj = self.outputShape[0]
+        ps = self.percept_store
+        # Token text per slot. Mirror the lexicon-path host-token
+        # shortcut so we skip the decode_tokens GPU->host sync.
+        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
+        if host_tokens is not None:
+            batch_tokens = host_tokens
+        else:
+            batch_tokens = upstream_vspace.whatEncoding.decode_tokens(
+                what_buf)
+        # Lookup each chunk via the spec'd Forward path; build a flat
+        # list of percept_ids per row alongside a [B, N, D] vector
+        # tensor. Unpromoted (byte-fallback / partial-match) slots
+        # surface as pid=-1.
+        D = int(self.nDim)
+        # Fallback row for padded slots: a zero vector. Use a single
+        # buffer and view it per-batch to avoid per-slot allocation.
+        zero_row = torch.zeros(D, device=dev, dtype=ps.codebook.dtype)
+        rows: list = []
+        pid_2d: list = []
+        for b, row in enumerate(batch_tokens):
+            row_vecs: list = []
+            row_pids: list = []
+            for n in range(min(len(row), nObj)):
+                text = row[n]
+                # 2026-05-28: whitespace-only chunks (the space between
+                # words, trailing nulls) are not symbolic tokens -- they
+                # are delimiters. The lex produces them as parse output
+                # (``parse('hello world', lex='words')`` yields three
+                # tokens: 'hello', ' ', 'world'); without this guard the
+                # space character takes its own PerceptStore slot via
+                # byte_fallback and the recon shows N+1 word slots for
+                # an N-word input. Treating them as null (zero vec,
+                # pid=-1) keeps slot alignment intact while suppressing
+                # the bogus "word" output.
+                if not text or (isinstance(text, str) and not text.strip()):
+                    row_vecs.append(zero_row)
+                    row_pids.append(-1)
+                    continue
+                if isinstance(text, str):
+                    chunk = text.encode("utf-8")
+                else:
+                    chunk = bytes(text)
+                if len(chunk) == 0:
+                    row_vecs.append(zero_row)
+                    row_pids.append(-1)
+                    continue
+                # Spec'd Forward path: hash-map fast path / radix
+                # longest-match + residual byte fallback / promotion
+                # gate. The PerceptStore decides whether the chunk
+                # warrants a permanent percept ID; first-sight chunks
+                # below the promotion threshold stay transient.
+                vec, pid = ps.lookup_with_id(chunk)
+                row_vecs.append(vec.to(dev))
+                row_pids.append(-1 if pid is None else int(pid))
+                # Task G: auto-META binding moved to
+                # ``ConceptualSpace._maybe_autobind_meta`` (fired from
+                # ``cs.forward`` at stage 0 using the pid grid stashed
+                # below). PerceptualSpace no longer reaches across to
+                # SymbolicSpace -- the autobind layer is the one that
+                # sees BOTH PS and SS contributions during cs.forward.
+            # Pad the row to nObj with zero vectors / pid=-1.
+            while len(row_vecs) < nObj:
+                row_vecs.append(zero_row)
+                row_pids.append(-1)
+            rows.append(torch.stack(row_vecs[:nObj], dim=0))
+            pid_2d.append(row_pids[:nObj])
+        what_event = torch.stack(rows, dim=0)  # [B, N, D]
+        # where / when are pass-through indices when configured. The
+        # event-direct write below produces a what-only tensor; if the
+        # SubSpace expects a muxed layout, append zero-pads for where
+        # and when sections so downstream materialize() sees a
+        # consistent muxed width.
+        nWhat = int(self.subspace.nWhat)
+        nWhere = int(self.subspace.nWhere)
+        nWhen = int(self.subspace.nWhen)
+        muxed_width = nWhat + nWhere + nWhen
+        if what_event.shape[-1] != muxed_width:
+            # Pad along the last dim with zeros for the where/when
+            # sections so the muxed shape matches.
+            pad_width = muxed_width - what_event.shape[-1]
+            if pad_width < 0:
+                raise RuntimeError(
+                    f"PerceptualSpace._embed_radix: percept_store dim "
+                    f"({what_event.shape[-1]}) exceeds subspace muxed "
+                    f"width ({muxed_width}); shrink PS.nDim or grow "
+                    f"the SubSpace's nWhat.")
+            pad = torch.zeros(
+                what_event.shape[0], what_event.shape[1], pad_width,
+                device=dev, dtype=what_event.dtype)
+            what_event = torch.cat([what_event, pad], dim=-1)
+        self.subspace.whereEncoding.p = 0
+        self.subspace.set_event(what_event)
+        self._embedded_input = what_event
+        self._last_tokens = batch_tokens
+        # Stash percept_ids on _forward_input so downstream callers
+        # that want the indices can find them (mirrors the lexicon
+        # path's 'indices' key). Unpromoted slots carry pid=-1 --
+        # downstream consumers that need a permanent ID per slot
+        # must handle the sentinel; the canonical recipe is to skip
+        # the slot or fall back to byte-direct on pid<0.
+        what_indices = torch.tensor(pid_2d, dtype=torch.long, device=dev)
+        self._forward_input = {
+            'tokens': batch_tokens, 'indices': what_indices,
+            'percept_store': ps,
+        }
         return self.subspace
 
     def _embed_bpe(self, upstream_vspace):
@@ -9023,14 +9245,14 @@ class PerceptualSpace(Space):
             per_word_b_out, per_word_slot_out, word_id)
 
     def forward(self, x_subspace):
-        """Perception: map input to percepts via ``pi(x) + sigma(x)``.
+        """Perception: map input to percepts via ``pi(x)``.
 
         Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
-        sigma-substrate.md): single positional arg ``x_subspace``. The
-        body composes ``self.pi(x) + self.sigma(x)`` on the same
-        materialized input -- two folds of the SAME input, summed (no
-        outer ``tanh`` wrap; each layer applies its own internal
-        nonlinearity).
+        sigma-substrate.md): single positional arg ``x_subspace``.
+        Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        reentrancy.md): body becomes ``return self.pi(x.materialize())``
+        — PS is pi-only. The sigma half migrates to per-stage
+        ``ConceptualSpace.sigma_in``.
 
         The CS-feedback ``CS_subspaceForPS`` argument is retired by
         this refactor; CS feedback no longer enters PS directly (it
@@ -9110,22 +9332,30 @@ class PerceptualSpace(Space):
                 vspace = self._embed_byte(vspace)
             elif mode == "mphf":
                 vspace = self._embed_mphf(vspace)
+            elif mode == "radix":
+                # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-
+                # taxonomy-reentrancy.md): PerceptStore-backed
+                # chunking. The percept store IS the authoritative
+                # surface-form codebook in this mode.
+                vspace = self._embed_radix(vspace)
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be bpe|lexicon|none|mphf, "
-                    f"got {mode!r}")
+                    f"PerceptualSpace chunking must be "
+                    f"bpe|lexicon|none|mphf|radix, got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        # Stage 1.A substrate refactor: compose ``pi(x) + sigma(x)`` on
-        # the same materialized input. No outer ``tanh`` -- each layer
-        # applies its own internal nonlinearity. The legacy two-input
-        # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating
-        # (non-bivector C-feedback degraded to pi_input-alone) is no
-        # longer needed: there is no C-feedback path entering PS at this
-        # level (CS feedback re-enters via the chart / signal-router
-        # over STM in later stages).
+        # Stage 1.A substrate refactor (initial): compose
+        # ``pi(x) + sigma(x)`` on the same materialized input.
+        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): drop the sigma term — PS is pi-only. The
+        # sigma half migrates to ``ConceptualSpace.sigma_in`` per stage
+        # (Ramsified across ``self.conceptualSpaces``). Each PS pi
+        # output is then folded into a stage's ``sigma_in`` inside
+        # ``ConceptualSpace.forward``. The legacy two-input
+        # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating is
+        # also retired (no C-feedback path entering PS at this level).
         primary = self.forwardBegin(vspace, returnVectors=True)
-        x = self.pi.forward(primary) + self.sigma.forward(primary)
+        x = self.pi.forward(primary)
         # Attention is currently unused in PerceptualSpace; leaving the
         # AttentionLayer attribute intact for backward compat but skipping
         # the call so the codebook lookup can slide (see below) without
@@ -9633,6 +9863,13 @@ class ConceptualSpace(Space):
         # (which scales by 1/Σ) is well-conditioned from t=0. Always on; the
         # XML <svdOrthogonalInit> knob has been retired.
         self._svd_orthogonal_init_cfg = True
+        # Stage position within the per-stage cascade (Task G). Read by
+        # ``forward`` to gate auto-META binding to stage 0 only -- pids
+        # on the upstream ``perceptualSpace_ref._forward_input`` align
+        # with the PS contribution, not with the prior-stage CS output
+        # that higher stages receive.
+        self.stage_idx = (int(stage_idx)
+                          if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
         self.nonlinear = nonlinear
         self.ergodic = ergodic
@@ -9679,18 +9916,32 @@ class ConceptualSpace(Space):
         # ``sigma_percept_2`` ergodic variants and the
         # ``_sigma_percept_reverse`` helper) are RETIRED. The C tier no
         # longer holds an atomic percept→concept fold operator at the
-        # substrate level. ``ConceptualSpace.forward`` now performs STM
-        # bookkeeping only (shift the per-batch idea stack one slot;
-        # push the new idea onto the Miller-cap top slot). The
-        # signal-router-based grammar dispatch that consumes STM
-        # contents to produce a fold is Stage 3; until then, downstream
-        # consumers (SS.forward and the cross-pass C→P feedback) see
-        # the pushed idea pass-through verbatim.
+        # substrate level under the substrate-refactor baseline.
         #
-        # ``self.layers`` / ``self.params`` are kept as empty containers
-        # so the Space's Layer cascade and parameter aggregation
-        # contract (other GrammarLayer attachments, optional
-        # SymbolLearningLayer) remain valid.
+        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): the per-stage CS pipeline owns TWO SigmaLayers
+        # per stage. Each ``ConceptualSpace`` instance in the
+        # ``self.conceptualSpaces`` ModuleList (length
+        # ``<conceptualOrder>``) gets its own Ramsified pair:
+        #
+        #   * ``self.sigma_in``  -- incoming-contribution fold. Fires
+        #     in BOTH SERIAL and PARALLEL: at stage 0 it folds
+        #     ``PS.pi(IS)`` (the role ``sigma_percept`` played pre-
+        #     Stage-1.C); at higher stages it folds the prior stage's
+        #     CS output. ``butterfly=True`` so the cascade is inherited
+        #     transparently per stage; ``N`` is the per-stage flattened
+        #     element count (``inputShape[0] * concept_dim``).
+        #   * ``self.sigma_cs`` -- residual-CS iteration kernel for
+        #     PARALLEL mode (order ``k`` -> ``k+1`` residual lift).
+        #     In SERIAL mode the per-stage ``SyntacticLayer.compose``
+        #     dispatch replaces ``sigma_cs``; the layer is constructed
+        #     unconditionally but dormant on the SERIAL path. Per-
+        #     position (no butterfly flattening) so it consumes a
+        #     ``[B, N, D]`` CS state slot-wise.
+        #
+        # ``self.layers`` / ``self.params`` lift the two layers'
+        # parameters into the Space's aggregated contract so the cascade
+        # reaches them (paramUpdate, ergodic plumbing).
         self.params = []
         self.layers = nn.ModuleList([])
         self._sparsity = SparsityRegLayer(
@@ -9728,6 +9979,71 @@ class ConceptualSpace(Space):
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+
+        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md): construct the per-stage owned SigmaLayers
+        # AFTER ``concept_dim`` is bound (it is the per-slot feature
+        # width these layers act on). Each ``ConceptualSpace`` instance
+        # in the per-stage ModuleList gets its own pair (Ramsified
+        # automatically — ``nn.ModuleList`` registration). The
+        # ``invertible=True, monotonic=False, nonlinear=self.nonlinear``
+        # combo matches the rest of the C-tier substrate machinery so
+        # the LDU reverse is well-defined. ``naive`` / ``ergodic`` /
+        # ``stable=True`` follow the PS pi/sigma pattern (line 7666+).
+        #
+        # ``sigma_in`` uses butterfly=True so the FFT-style element-
+        # pair cascade applies per stage; ``N`` is the per-stage
+        # flattened slot count (``inputShape[0] * concept_dim``),
+        # mirroring the PS auto-computation. ``sigma_cs`` is per-
+        # position (no butterfly flattening) — it consumes a [B, N, D]
+        # CS state slot-wise (the legacy unary SigmaLayer path).
+        _butterfly_total_in = int(inputShape[0]) * int(concept_dim)
+        # Guard against degenerate shapes (N*D < 2 fails LDU butterfly
+        # construction; fall back to non-butterfly for those configs).
+        _use_butterfly_in = _butterfly_total_in >= 2
+        if _use_butterfly_in:
+            self.sigma_in = SigmaLayer(
+                concept_dim, concept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=True, nonlinear=nonlinear,
+                stable=True, monotonic=monotonic,
+                butterfly=True, N=_butterfly_total_in,
+            )
+        else:
+            self.sigma_in = SigmaLayer(
+                concept_dim, concept_dim,
+                naive=naive, ergodic=ergodic,
+                invertible=True, nonlinear=nonlinear,
+                stable=True, monotonic=monotonic,
+            )
+        self.sigma_cs = SigmaLayer(
+            concept_dim, concept_dim,
+            naive=naive, ergodic=ergodic,
+            invertible=True, nonlinear=nonlinear,
+            stable=True, monotonic=monotonic,
+        )
+        self.params += self.sigma_in.getParameters()
+        self.params += self.sigma_cs.getParameters()
+        self.layers.append(self.sigma_in)
+        self.layers.append(self.sigma_cs)
+
+        # Stage 10 PARALLEL reverse-roundtrip cache (doc/plans/
+        # 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md):
+        # The forward path's per-stage equation for k > 0 is
+        #
+        #   ``CS_t1[k] = sigma_in[k](contribution) + sigma_cs[k](CS_t0[k])``
+        #
+        # so the matching reverse needs the *exact* ``sigma_cs[k](CS_t0[k])``
+        # term that was added in forward, to subtract before applying
+        # ``sigma_in[k].reverse``. ``_prev_cs_event_cache`` stashes the
+        # prior stage's materialised CS event (``CS_t0[k] = CS_t1[k-1]``)
+        # so reverse can recompute the lift and subtract it. Cleared at
+        # the start of each forward pass (in ``_forward_body``) to avoid
+        # stale leakage across calls. ``None`` means "no residual lift
+        # was added at this stage" (stage 0, or a degenerate fallback in
+        # forward); reverse then degenerates to the simple
+        # ``sigma_in.reverse`` path.
+        self._prev_cs_event_cache = None
 
         # Persistent CS->PS event carrier, owned + allocated ONCE here
         # (eager, pre-compile). `forward` reuses it via `set_event`
@@ -9788,6 +10104,51 @@ class ConceptualSpace(Space):
             self.nDim,
         )
         return basis
+
+    def _stm_set_all_slots(self, slab):
+        """STM primitive (parallel mode): write all N positions of
+        ``slab`` ``[B, N, D]`` directly into STM as the slot stack.
+
+        In parallel mode the per-stage forward sees the whole sentence
+        at once -- ``slab`` IS the STM: each of the N positions is its
+        own STM slot. There is no "single idea" to push; the mean-
+        reduce-then-shift-push pattern is for serial per-word ingestion
+        where the STM accumulates over time.
+
+        Capacity-clip semantics: if N > cap, take the LAST cap
+        positions (drop the oldest, mirroring the rolling-window
+        contract of ``_stm_shift_and_push``). If N < cap, unfilled
+        slots reset to zero so stale state from a prior pass doesn't
+        leak through.
+        """
+        stm = self.stm
+        B = int(slab.shape[0])
+        N = int(slab.shape[1])
+        stm.ensure_batch(B)
+        cap = int(stm.capacity)
+        if cap <= 0:
+            return
+        buf = stm._buffer
+        depth_dtype = stm._depth.dtype
+        depth_device = stm._depth.device
+        if N >= cap:
+            # Take the last cap positions; older ones drop.
+            buf[:, :cap] = slab[:, N - cap:N]
+            filled = cap
+        else:
+            buf[:, :N] = slab
+            if cap > N:
+                # Defensive: clear stale tail so the next snapshot()
+                # returns only the freshly-set slots.
+                buf[:, N:cap].zero_()
+            filled = N
+        new_depth = torch.full(
+            (B,), int(filled), dtype=depth_dtype, device=depth_device)
+        stm._depth = new_depth
+        if B > 0:
+            cur_max = int(filled)
+            if cur_max > int(stm._max_depth_host):
+                stm._max_depth_host = cur_max
 
     def _stm_shift_and_push(self, idea):
         """STM bookkeeping primitive: shift slots left by 1 on rows at
@@ -9880,6 +10241,98 @@ class ConceptualSpace(Space):
         stm = getattr(self, 'stm', None)
         if stm is not None:
             stm.clear(b=batch)
+        # Stage 10: clear the per-stage PARALLEL residual-lift cache so
+        # a reverse called between Reset and the next forward doesn't
+        # pick up stale data. ``_forward_body`` clears it again at the
+        # start of the next pass; this is just defence-in-depth so the
+        # invariant holds across hard-reset boundaries.
+        self._prev_cs_event_cache = None
+
+    def _maybe_autobind_meta(self, pid_2d, vec_tensor):
+        """Auto-bind PS percepts to fresh SS symbols + META edges.
+
+        Task G relocation: moved here from ``PerceptualSpace`` so the
+        cross-space PS<->SS allocation fires from the layer that sees
+        BOTH contributions during ``cs.forward(PS_sub, SS_sub)``.
+        ``PerceptualSpace`` no longer holds a back-ref to SymbolicSpace.
+
+        Args:
+            pid_2d: ``[B, N]`` int tensor of percept ids (``-1`` for
+                unpromoted / padded slots). The shape stashed on
+                ``PerceptualSpace._forward_input['indices']`` by
+                ``_embed_radix``.
+            vec_tensor: ``[B, N, D]`` event tensor matching ``pid_2d``;
+                each slot's vector is used to seed the freshly-allocated
+                SS row when its pid first lands on the autobind path.
+
+        Idempotent per pid: tracks bound ids in
+        ``self._autobound_percept_ids`` (a plain Python set) to avoid
+        the per-call hash-map lookup against
+        ``SymbolicSpace.meta_pair_to_idx``.
+
+        Silently no-ops when the SymbolicSpace back-ref is not wired
+        (standalone-CS unit tests) OR when ``pid_2d`` carries no
+        promoted ids (all ``-1``). Errors during the SS-side allocation
+        propagate -- they indicate a real bug in the taxonomy / codebook
+        machinery and should surface loudly per the project's
+        "fail loud" policy.
+
+        Targets the TERMINAL SymbolicSpace via ``terminalSymbolicSpace_ref``
+        (wired by BasicModel) when present; the META taxonomy is owned
+        by the canonical (terminal) SS and growing a per-stage SS codebook
+        would overrun the where-space registry. Falls back to the
+        per-stage ``symbolicSpace_ref`` for standalone tests.
+        """
+        ss = getattr(self, 'terminalSymbolicSpace_ref', None)
+        if ss is None:
+            ss = getattr(self, 'symbolicSpace_ref', None)
+        if ss is None:
+            return
+        if pid_2d is None or vec_tensor is None:
+            return
+        if not torch.is_tensor(pid_2d) or not torch.is_tensor(vec_tensor):
+            return
+        bound = getattr(self, '_autobound_percept_ids', None)
+        if bound is None:
+            bound = set()
+            object.__setattr__(self, '_autobound_percept_ids', bound)
+        B = int(pid_2d.shape[0])
+        N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
+        for b in range(B):
+            for n in range(N):
+                pid = int(pid_2d[b, n].item())
+                if pid < 0:
+                    continue
+                # Detach so the SS row seed and META fused_vec don't
+                # carry autograd graph from the PerceptStore lookup; the
+                # SS row is an nn.Parameter (its own optimization
+                # variable) and the in-place copy under insert_symbol /
+                # insert_meta happens under no_grad anyway.
+                seed = vec_tensor[b, n].detach().clone()
+                sym_signed = None
+                if pid not in bound:
+                    sym_signed = ss.insert_symbol(init_vec=seed)
+                    ps_signed = ss._ps_signed(pid)
+                    ss.insert_meta(ps_signed, sym_signed, fused_vec=seed)
+                    bound.add(pid)
+                else:
+                    # Already bound. Look up the SS child of the META
+                    # binding so LBG accumulators record this re-visit
+                    # against the right row.
+                    ps_signed = ss._ps_signed(pid)
+                    meta_signed = ss.taxonomy_parent(ps_signed)
+                    if meta_signed is not None:
+                        children = ss.taxonomy_children(int(meta_signed))
+                        sym_signed = next(
+                            (int(c) for c in children if int(c) < 0),
+                            None)
+                # LBG accumulation: track the pull this percept exerts
+                # on its bound SS row. When the row collects enough
+                # opposite-direction pulls (assignment variance >
+                # threshold), maybe_split_lbg splits it into two.
+                if sym_signed is not None:
+                    ss.record_lbg_pull(int(sym_signed), seed)
+                    ss.maybe_split_lbg(int(sym_signed))
 
     def forward(self, subspace, word_subspace=None):
         """STM bookkeeping: shift the per-batch idea stack and push the
@@ -9927,31 +10380,120 @@ class ConceptualSpace(Space):
         # leaves the dim as-is (no percept→concept lift); downstream
         # consumers see the pushed idea verbatim.
         primary = subspace.materialize()
+        # Task G auto-META on word learning: at stage 0 the incoming PS
+        # contribution carries the freshly-seen percept ids on
+        # ``perceptualSpace_ref._forward_input['indices']`` (stashed by
+        # ``PerceptualSpace._embed_radix``). Fire the auto-bind here so
+        # the cross-space PS<->SS allocation happens from the layer that
+        # sees BOTH contributions; PS no longer holds a back-ref to SS.
+        # Higher stages skip: the pid grid does not align with the
+        # prior-stage CS output that lands in ``subspace`` at k > 0.
+        if int(self.stage_idx) == 0:
+            # Autobind gate (2026-05-29): require only that the
+            # terminal SS subspace.what is a Codebook -- that's the
+            # structural prerequisite for ``insert_symbol`` /
+            # ``insert_meta``. Configs with SS ``<codebook>none</codebook>``
+            # (the symbolic-codebook-off mode) silently no-op here.
+            # Configs with SS Codebook + lexicon-mode PS would treat
+            # Embedding row indices as if they were PerceptStore pids
+            # at META-creation time; the resulting taxonomy is only
+            # meaningful at reverse-decode time when the bound pid is
+            # resolvable to bytes, which the radix path provides via
+            # ``PerceptStore.bytes_for``. Other modes will never round-
+            # trip those META entries (the legacy lexicon decode path
+            # ignores the taxonomy entirely), so the stale rows are
+            # inert dead weight rather than incorrect output.
+            ss_peer = (getattr(self, 'terminalSymbolicSpace_ref', None)
+                       or getattr(self, 'symbolicSpace_ref', None))
+            ss_what = (getattr(getattr(ss_peer, 'subspace', None),
+                               'what', None)
+                       if ss_peer is not None else None)
+            ps_peer = getattr(self, 'perceptualSpace_ref', None)
+            ps_fwd = (getattr(ps_peer, '_forward_input', None)
+                      if isinstance(ss_what, Codebook) else None)
+            if isinstance(ps_fwd, dict):
+                pid_2d = ps_fwd.get('indices')
+                # 2026-05-28 fix: use the PRE-pi embedded input as the
+                # autobind seed, not ``primary`` (which is post-pi).
+                # The SS codebook needs to align with the PerceptStore
+                # codebook row (the raw chunk vector) so that
+                # ``record_lbg_pull`` accumulates deterministic
+                # direction per chunk -- otherwise PS.pi's training
+                # shifts the seed direction across forwards and LBG
+                # variance spuriously exceeds the split threshold.
+                seed_event = getattr(ps_peer, '_embedded_input', None)
+                if seed_event is None:
+                    seed_event = primary
+                if (pid_2d is not None
+                        and torch.is_tensor(pid_2d)
+                        and pid_2d.dim() == 2
+                        and torch.is_tensor(seed_event)
+                        and seed_event.dim() == 3
+                        and seed_event.shape[:2] == pid_2d.shape):
+                    self._maybe_autobind_meta(pid_2d, seed_event)
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
-        # Stage 1.C placeholder PS+SS combine: sum if shapes match,
-        # else PS alone. The signal-router-based grammar dispatch in
-        # Stage 3 will replace this with the proper rule composition.
-        if sym is not None and sym.shape == primary.shape:
-            combined = primary + sym
+        # 2026-05-29 EXPERIMENT (per user direction): clean-stack STM.
+        # Replace the Stage-10 ``sigma_in(combined) + sigma_cs(prev)``
+        # additive composition with per-stage tier attribution:
+        #
+        #     stage 0      STM = PS event (the incoming `primary`)
+        #     stage k > 0  STM = SS event (the SS contribution `sym`)
+        #
+        # No additive mixing across tiers; no residual lift; each
+        # stage's STM is exactly the tier-specific contribution at
+        # that stage. Trivially invertible (read-back).
+        #
+        # When the SS contribution is missing or shape-mismatched at a
+        # higher stage we fall back to ``primary`` so the cascade does
+        # not silently lose its content -- the higher stage degrades
+        # to "pass the prior PS along" rather than zero. This keeps
+        # the experiment runnable on configs where SS doesn't emit
+        # per-stage events yet (e.g. SS codebook=none).
+        is_stage_zero = (int(self.stage_idx) == 0)
+        if is_stage_zero:
+            folded = primary
         else:
-            combined = primary
-        # Per-row reduction to a single idea vector: mean over the N
-        # axis. STM holds one idea per batch row per slot; the N-axis
-        # of the materialised event collapses to that single payload.
-        if combined.dim() == 3:
-            idea = combined.mean(dim=1)         # [B, D]
-            event_for_carrier = combined         # preserve [B, N, D]
-        elif combined.dim() == 2:
-            idea = combined                      # [B, D]
-            event_for_carrier = combined.unsqueeze(1)   # [B, 1, D]
+            if (sym is not None
+                    and sym.shape == primary.shape):
+                folded = sym
+            else:
+                folded = primary
+        # STM bookkeeping (2026-05-28 fix). Mode-dependent:
+        #
+        #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the
+        #     STM -- each of the N positions is its own slot. Set all
+        #     slots directly via ``_stm_set_all_slots`` (no mean
+        #     reduction, no shift-and-push).
+        #   * SERIAL per-word (or any [B, 1, D] / [B, D] call): the
+        #     single position is a "new idea" to push onto the STM
+        #     stack via ``_stm_shift_and_push``. The shift-and-push
+        #     accumulates ideas word-by-word; grammatical reduction
+        #     (chart / signal-router compose) may further collapse
+        #     multi-slot states into composites.
+        #
+        # The mean-reduce-to-single-idea pattern previously here was a
+        # bug carried over from Stage 1.C: it destroyed per-slot
+        # identity in parallel mode, causing the reverse pipeline to
+        # produce identical recon vectors per slot (and the
+        # reconstruction report to show the same word in every slot).
+        if folded.dim() == 3:
+            if folded.shape[1] > 1:
+                self._stm_set_all_slots(folded)
+            else:
+                # N == 1: serial per-word call.
+                idea = folded.squeeze(1)              # [B, D]
+                self._stm_shift_and_push(idea)
+            event_for_carrier = folded               # preserve [B, N, D]
+        elif folded.dim() == 2:
+            idea = folded                            # [B, D]
+            event_for_carrier = folded.unsqueeze(1)   # [B, 1, D]
+            self._stm_shift_and_push(idea)
         else:
             # Defensive: degenerate shape — fall back to a no-op
             # (don't crash; return the input subspace unchanged).
             return subspace
-        # STM bookkeeping: shift-then-push (Miller cap rolling window).
-        self._stm_shift_and_push(idea)
         # Optional C-prior injection (chat-loop generation): preserved
         # for backward compatibility with InterSentenceLayer.cast /
         # BasicModel.generate_sentence consumers that stage a prior
@@ -10009,17 +10551,39 @@ class ConceptualSpace(Space):
         return subspace
 
     def reverse(self, subspace):
-        """Reverse pass: thin pass-through under Stage 1.C.
+        """Reverse pass: undo this stage's owned folds.
 
-        The atomic ``sigma_percept`` SigmaLayer (and its
-        ``_sigma_percept_reverse`` two-pass helper) are retired by
-        Stage 1.C; there is no inverse fold to apply. The reverse
-        pipeline still calls ``CS.reverse`` between PS.reverse and
-        SS.reverse, so this method preserves the contract (early
-        return on empty, copy_context for downstream plumbing) but
-        otherwise passes the subspace through. Stage 3's signal
-        router will own the reverse-direction substitute for the
-        fold inverse once it lands.
+        Stage 1.C retired the atomic ``sigma_percept`` SigmaLayer.
+        Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        reentrancy.md) reintroduces per-stage owned sigmas and a
+        matching reverse contract. The per-stage forward equation for
+        PARALLEL, stage k > 0, is
+
+            CS_t1[k] = sigma_in[k](contribution) + sigma_cs[k](CS_t0[k])
+
+        where ``CS_t0[k] == CS_t1[k-1]`` (the prior stage's output).
+        Inverting it requires the *exact* ``sigma_cs[k](CS_t0[k])`` term
+        that was added in forward; we obtain it by recomputing the lift
+        from the cached prior CS event ``self._prev_cs_event_cache``
+        (populated by ``BasicModel._forward_body`` when the lift fires)
+        and subtracting:
+
+            contribution = sigma_in[k].reverse(
+                CS_t1[k] - sigma_cs[k](CS_t0[k]))
+
+        Note we use ``sigma_cs.forward`` (not ``reverse``) to recompute
+        the lift: the residual was ADDED in forward, so reverse SUBTRACTS
+        the same forward-direction tensor. ``sigma_cs.reverse`` would
+        invert sigma_cs itself, which is the wrong operation.
+
+        When the cache is ``None`` (stage 0, or a degenerate fallback
+        where the lift did not fire in forward), the equation reduces to
+        ``contribution = sigma_in[k].reverse(CS_t1[k])`` and the
+        subtraction is skipped.
+
+        The reverse pipeline calls ``CS.reverse`` between PS.reverse
+        and SS.reverse, so this method preserves the contract (early
+        return on empty, copy_context for downstream plumbing).
 
         ProjectionBasis-backed configs still lift the signed-scalar
         ``[B, N]`` event back to ``[B, V, D]`` via the LDU inverse
@@ -10037,6 +10601,36 @@ class ConceptualSpace(Space):
             # contract intact for downstream PS.reverse consumers.
             V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
+        # Stage 10 PARALLEL residual subtraction: when the matching
+        # forward at this stage actually added ``sigma_cs[k](CS_t0[k])``,
+        # subtract the exact same tensor so the inverse equation closes.
+        # The forward path stashes ``CS_t0[k]`` on
+        # ``self._prev_cs_event_cache`` when the lift fires; we
+        # recompute ``sigma_cs.forward(prev_ev)`` here (gradient still
+        # flows through ``sigma_cs`` params if reverse is run in a grad
+        # context) and subtract.
+        prev_ev_cached = getattr(self, '_prev_cs_event_cache', None)
+        if (prev_ev_cached is not None and y is not None and y.dim() == 3
+                and int(y.shape[-1]) == int(self.concept_dim)
+                and prev_ev_cached.shape == y.shape):
+            lifted = self.sigma_cs.forward(prev_ev_cached)
+            y = y - lifted
+        # else: shape mismatch / degenerate config (no cached prior CS
+        # event, or its shape no longer matches y) — skip the
+        # subtraction. ``sigma_in.reverse`` will still run below,
+        # giving the smoke-quality reverse that the pre-Stage-10-fix
+        # code path produced.
+        # Stage 10: undo the per-stage sigma_in fold on the
+        # materialised CS event. ``sigma_in`` was applied to the
+        # combined contribution in forward; here we apply its inverse
+        # to (CS_t1 - residual) recovering the contribution.
+        if (y is not None and y.dim() == 3
+                and int(y.shape[-1]) == int(self.concept_dim)):
+            y = self.sigma_in.reverse(y)
+        # else: shape mismatch (degenerate config — e.g. concept_dim 0
+        # or the reverse upstream produced a 2-D tensor). Skip the
+        # inverse rather than crash. Mirrors the forward path's
+        # explicit shape guard.
         # Optional right-half slice (kept for any config that widens
         # the input; with the bookkeeping body this is generally a
         # no-op since ``_right_half_dim`` is 0).
@@ -10194,6 +10788,52 @@ class SymbolicSpace(Space):
         # ``None`` for standalone unit tests so legacy single-Space
         # construction still works.
         self.perceptualSpace_ref = None
+        # Stage 8 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+        # reentrancy.md) META taxonomy storage. Pure-Python dicts; all
+        # indices are *signed* per the locked sign convention:
+        #   * positive i  ->  PS.percept_store.codebook[i] /
+        #                     PS.percept_store.inverse_table[i]
+        #   * negative i  ->  SS.codebook[-i - 1]
+        # ``taxonomy``           : parent_signed -> [child_signed, ...]
+        # ``taxonomy_parent_map``: child_signed  -> parent_signed
+        # ``meta_pair_to_idx``   : (ps_pos, ss_neg) -> meta_neg
+        #   (idempotency check; second call to ``insert_meta`` on the
+        #    same pair returns this cached meta idx + EMAs the vec.)
+        # Persisted via ``vocab_extras`` for checkpoint roundtrip.
+        self.taxonomy: dict = {}
+        self.taxonomy_parent_map: dict = {}
+        self.meta_pair_to_idx: dict = {}
+        # LBG (Linde-Buzo-Gray) codebook-splitting state (2026-05-28).
+        # When an SS row collects training pulls in opposite directions
+        # (assignment-variance > threshold), split it into two perturbed
+        # copies along the principal pull direction; the new row
+        # inherits a META edge from the original. The "frozen zeros
+        # anchor" the user described maps to row 0 (held at zero, never
+        # trained); displacement is measured relative to each row's
+        # current centroid, not the anchor, but the anchor exists so
+        # downstream consumers can compute "direction from origin"
+        # without indexing into the trainable codebook.
+        # Per-row accumulators are keyed by signed_idx (negative for SS
+        # rows). Reset after a successful split.
+        self._lbg_disp_sum: dict = {}        # signed_idx -> tensor[D]
+        self._lbg_disp_sum_sq: dict = {}     # signed_idx -> tensor[D]
+        self._lbg_count: dict = {}           # signed_idx -> int
+        # Thresholds (XML knobs; defaults chosen for MM_xor-scale data).
+        try:
+            self._lbg_threshold = float(
+                TheXMLConfig.space("SymbolicSpace", "lbgThreshold") or 0.5)
+        except (KeyError, TypeError, ValueError):
+            self._lbg_threshold = 0.5
+        try:
+            self._lbg_min_count = int(
+                TheXMLConfig.space("SymbolicSpace", "lbgMinCount") or 8)
+        except (KeyError, TypeError, ValueError):
+            self._lbg_min_count = 8
+        try:
+            self._lbg_epsilon = float(
+                TheXMLConfig.space("SymbolicSpace", "lbgEpsilon") or 0.1)
+        except (KeyError, TypeError, ValueError):
+            self._lbg_epsilon = 0.1
         self.nonlinear = nonlinear
         # Post-2026-05-07 rollback: SymbolicSpace inherits the natural
         # ``nWhat == self.nDim`` and ``muxedSize`` from
@@ -10238,11 +10878,16 @@ class SymbolicSpace(Space):
         self.output_symbol_residual_scale = _symbol_cfg(
             "outputSymbolResidualScale", 0.0)
         self.commitment_beta = _symbol_cfg("commitmentBeta", 0.25)
-        try:
-            use_vqvae_raw = TheXMLConfig.space(section, "useVQVAE")
-        except (KeyError, TypeError, ValueError):
-            use_vqvae_raw = False
-        self.use_vqvae = bool(use_vqvae_raw)
+        # 2026-05-29: ``self.use_vqvae`` is derived from the codebook
+        # mode rather than read from a separate ``<useVQVAE>`` XML knob.
+        # Whenever a codebook is configured (``<codebook>quantize</codebook>``
+        # or ``project``) we train it via the VQ-VAE / EMA path; the
+        # earlier ``hard_quantize`` branch (codebook present, no
+        # training) was a footgun — the SS codebook stays at random
+        # init for the full run with no learning signal. To disable
+        # codebook training at inference, use ``model.eval()`` /
+        # ``requires_grad_(False)`` at the call site, not an XML toggle.
+        self.use_vqvae = bool(self.codebook)
         try:
             raw_mode = TheXMLConfig.space(section, "gradientMode")
         except (KeyError, TypeError, ValueError):
@@ -10747,6 +11392,481 @@ class SymbolicSpace(Space):
             pass
 
         return (orth_idx, sem_idx)
+
+    # ------------------------------------------------------------------
+    # Stage 8: Two-codebook split + META taxonomy.
+    # ------------------------------------------------------------------
+    # doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md §Stage 8.
+    #
+    # SignedSign convention (locked):
+    #   * positive i  -> PS.percept_store.codebook[i] /
+    #                    PS.percept_store.inverse_table[i]
+    #   * negative i  -> SS.codebook[-i - 1]
+    #
+    # Helpers ``_ps_row_of`` / ``_ss_row_of`` / ``_ps_signed`` /
+    # ``_ss_signed`` convert between sign-encoded references and the
+    # raw row indices used by the underlying stores.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _ps_signed(row_idx):
+        """PS row idx -> positive signed idx (= the row idx)."""
+        return int(row_idx)
+
+    @staticmethod
+    def _ss_signed(row_idx):
+        """SS row idx -> negative signed idx ``-(row_idx + 1)``."""
+        return -int(row_idx) - 1
+
+    @staticmethod
+    def _ps_row_of(signed_idx):
+        """Positive signed idx -> PS row idx. Raises if negative."""
+        i = int(signed_idx)
+        if i < 0:
+            raise ValueError(
+                f"SymbolicSpace._ps_row_of: expected positive signed idx, "
+                f"got {i}")
+        return i
+
+    @staticmethod
+    def _ss_row_of(signed_idx):
+        """Negative signed idx -> SS row idx. Raises if non-negative."""
+        i = int(signed_idx)
+        if i >= 0:
+            raise ValueError(
+                f"SymbolicSpace._ss_row_of: expected negative signed idx, "
+                f"got {i}")
+        return -i - 1
+
+    def _peer_percept_store(self):
+        """Return the peer PerceptualSpace's ``percept_store`` or None.
+
+        Stage 8 uses the percept_store as the authoritative PS-side
+        codebook for the radix path. Standalone tests construct a
+        SymbolicSpace without a peer; callers that need the store must
+        check for None explicitly.
+        """
+        peer = getattr(self, "perceptualSpace_ref", None)
+        if peer is None:
+            return None
+        return getattr(peer, "percept_store", None)
+
+    def insert_percept(self, canonical_bytes, *, percept_store=None):
+        """Insert ``canonical_bytes`` into the PS-side PerceptStore.
+
+        Returns the **positive** signed idx (= the percept id) per the
+        sign convention.
+
+        ``percept_store`` (optional kwarg) lets callers without a wired
+        peer pass a store explicitly. By default the method walks
+        ``self.perceptualSpace_ref.percept_store``.
+
+        Raises ``RuntimeError`` if no PerceptStore is reachable.
+        """
+        ps = percept_store
+        if ps is None:
+            ps = self._peer_percept_store()
+        if ps is None:
+            raise RuntimeError(
+                "SymbolicSpace.insert_percept: no PerceptStore reachable; "
+                "wire perceptualSpace_ref or pass percept_store=ps.")
+        if not isinstance(canonical_bytes, (bytes, bytearray)):
+            raise TypeError(
+                f"SymbolicSpace.insert_percept: canonical_bytes must be "
+                f"bytes, got {type(canonical_bytes)!r}")
+        pid = ps.insert(bytes(canonical_bytes))
+        return self._ps_signed(int(pid))
+
+    def insert_symbol(self, init_vec=None):
+        """Allocate a fresh SS.codebook row; return the **negative**
+        signed idx (= ``-(row_idx + 1)``).
+
+        ``init_vec`` (optional) sizes ``[nDim]``. When None, the row is
+        seeded with a small uniform sample (same scale as the existing
+        ``insert_paired_word`` semantic init).
+        """
+        cb = getattr(self.subspace, "what", None)
+        if cb is None or not isinstance(cb, Codebook):
+            raise RuntimeError(
+                f"SymbolicSpace.insert_symbol requires self.subspace.what "
+                f"to be a Codebook; got "
+                f"{type(cb).__name__ if cb is not None else 'None'}.")
+        # Shared cursor with the legacy ``insert_paired_word`` so the
+        # two paths never collide. Lazy-init on first use.
+        if not hasattr(self, "_paired_next_row"):
+            base = max(self.well_known_atoms.values())
+            self._paired_next_row = int(base) + 1
+            self._paired_orth_to_sem = {}
+        row = int(self._paired_next_row)
+        cap = int(cb.nVectors)
+        if row >= cap:
+            target = max(row + 1, cap * 2)
+            cb.grow_to(target)
+        W = cb.getW()
+        if W is None:
+            raise RuntimeError(
+                "SymbolicSpace.insert_symbol: SS codebook W is None; "
+                "_build_what_basis did not allocate prototypes.")
+        # Resolve init_vec.
+        if init_vec is None:
+            vec = torch.empty(
+                int(self.nDim), device=W.device, dtype=W.dtype
+            ).uniform_(-1.0, 1.0)
+        else:
+            if not torch.is_tensor(init_vec):
+                init_vec = torch.as_tensor(init_vec, dtype=torch.float32)
+            if init_vec.dim() == 2 and init_vec.shape[0] == 1:
+                init_vec = init_vec.squeeze(0)
+            if init_vec.dim() != 1 or init_vec.shape[0] != int(self.nDim):
+                raise RuntimeError(
+                    f"SymbolicSpace.insert_symbol: init_vec must be shape "
+                    f"[nDim={self.nDim}]; got {tuple(init_vec.shape)}")
+            vec = init_vec.detach().to(device=W.device, dtype=W.dtype)
+        with torch.no_grad():
+            W.data[row, :].copy_(vec)
+        self._paired_next_row = row + 1
+        return self._ss_signed(row)
+
+    def insert_meta(self, ps_idx, ss_idx, fused_vec=None,
+                    *, ema=0.1):
+        """Allocate (or update) a META node binding ``(ps_idx, ss_idx)``.
+
+        ``ps_idx`` must be the positive signed idx of a percept (in
+        ``PS.percept_store``). ``ss_idx`` must be the negative signed
+        idx of an SS row.
+
+        Returns the **negative** signed idx of the META node.
+
+        Behaviour:
+          * First call for the pair: allocates a fresh SS row via
+            :meth:`insert_symbol` and seeds its vector. If
+            ``fused_vec`` is supplied, it is the seed; otherwise the
+            default seed is ``(PS.codebook[ps_idx] + SS.codebook[ss_row])
+            / 2`` (the "average combine" documented in the plan).
+            The META row is recorded in ``self.taxonomy`` (parent ->
+            children) and ``self.taxonomy_parent_map`` (children ->
+            parent), and the ``(ps_idx, ss_idx)`` pair is cached in
+            ``self.meta_pair_to_idx`` for idempotency.
+          * Subsequent calls for the same pair: return the existing
+            META idx. If ``fused_vec`` is supplied, EMA-blend it into
+            the stored META vector: ``new = (1 - ema) * old + ema *
+            fresh`` (``ema`` default 0.1).
+        """
+        # EMA bounds check: out-of-range ema silently corrupts the
+        # codebook row (negative weights / >1 extrapolation), so refuse
+        # at the top of the method.
+        ema_f = float(ema)
+        if not (0.0 <= ema_f <= 1.0):
+            raise ValueError(
+                f"SymbolicSpace.insert_meta: ema must be in [0.0, 1.0]; "
+                f"got {ema_f}")
+        # Type / sign checks.
+        ps_i = int(ps_idx)
+        ss_i = int(ss_idx)
+        if ps_i < 0:
+            raise ValueError(
+                f"SymbolicSpace.insert_meta: ps_idx must be positive (a "
+                f"signed PS idx); got {ps_i}")
+        if ss_i >= 0:
+            raise ValueError(
+                f"SymbolicSpace.insert_meta: ss_idx must be negative (a "
+                f"signed SS idx); got {ss_i}")
+        # Idempotency: if a META already exists for this pair, return
+        # it and (optionally) EMA-update the stored vector.
+        key = (ps_i, ss_i)
+        existing = self.meta_pair_to_idx.get(key)
+        if existing is not None:
+            if fused_vec is not None:
+                meta_row = self._ss_row_of(existing)
+                cb = self.subspace.what
+                W = cb.getW()
+                if not torch.is_tensor(fused_vec):
+                    fused_vec = torch.as_tensor(
+                        fused_vec, dtype=torch.float32)
+                # Fail loud on NaN/Inf -- silently EMA-blending a
+                # non-finite vector would propagate divergence into
+                # the codebook row.
+                if not torch.isfinite(fused_vec).all():
+                    raise RuntimeError(
+                        "SymbolicSpace.insert_meta: fused_vec contains "
+                        "NaN/Inf on idempotent EMA-update. Numerical "
+                        "divergence must surface, not be silently "
+                        "blended into the codebook.")
+                fv = fused_vec.detach().to(W.device, W.dtype)
+                if fv.dim() == 2 and fv.shape[0] == 1:
+                    fv = fv.squeeze(0)
+                if fv.dim() != 1 or fv.shape[0] != int(self.nDim):
+                    raise RuntimeError(
+                        f"SymbolicSpace.insert_meta: fused_vec must be "
+                        f"shape [nDim={self.nDim}]; got {tuple(fv.shape)}")
+                with torch.no_grad():
+                    old = W.data[meta_row, :].clone()
+                    blended = (1.0 - ema_f) * old + ema_f * fv
+                    # Guard the EMA *result* too: a numerically-
+                    # degenerate weights configuration (e.g. very
+                    # large old) can produce Inf even when both
+                    # inputs are finite.
+                    if not torch.isfinite(blended).all():
+                        raise RuntimeError(
+                            "SymbolicSpace.insert_meta: EMA blend "
+                            "produced NaN/Inf result. Refusing to "
+                            "write a non-finite vector into the "
+                            "codebook row.")
+                    W.data[meta_row, :].copy_(blended)
+            return existing
+        # Fresh META: compute the seed vector, then allocate the SS row.
+        cb = self.subspace.what
+        W = cb.getW()
+        if W is None:
+            raise RuntimeError(
+                "SymbolicSpace.insert_meta: SS codebook W is None; "
+                "_build_what_basis did not allocate prototypes.")
+        if fused_vec is None:
+            ps_store = self._peer_percept_store()
+            if ps_store is None:
+                raise RuntimeError(
+                    "SymbolicSpace.insert_meta: fused_vec=None requires a "
+                    "wired PerceptStore peer for the default average "
+                    "combine; wire perceptualSpace_ref or pass fused_vec.")
+            ps_vec = ps_store.codebook[ps_i].detach().to(W.device, W.dtype)
+            ss_row = self._ss_row_of(ss_i)
+            sym_vec = W[ss_row].detach().to(W.device, W.dtype)
+            seed = (ps_vec + sym_vec) / 2.0
+        else:
+            if not torch.is_tensor(fused_vec):
+                fused_vec = torch.as_tensor(fused_vec, dtype=torch.float32)
+            # Fail loud on NaN/Inf -- seeding a fresh META row with a
+            # divergent vector silently corrupts the codebook for the
+            # entire lifetime of the row.
+            if not torch.isfinite(fused_vec).all():
+                raise RuntimeError(
+                    "SymbolicSpace.insert_meta: fused_vec contains "
+                    "NaN/Inf on fresh META insert. Numerical "
+                    "divergence must surface, not be silently seeded "
+                    "into the codebook.")
+            if fused_vec.dim() == 2 and fused_vec.shape[0] == 1:
+                fused_vec = fused_vec.squeeze(0)
+            if (fused_vec.dim() != 1
+                    or fused_vec.shape[0] != int(self.nDim)):
+                raise RuntimeError(
+                    f"SymbolicSpace.insert_meta: fused_vec must be shape "
+                    f"[nDim={self.nDim}]; got {tuple(fused_vec.shape)}")
+            seed = fused_vec.detach().to(W.device, W.dtype)
+        meta_signed = self.insert_symbol(init_vec=seed)
+        # Register taxonomy + parent maps.
+        self.taxonomy[meta_signed] = [ps_i, ss_i]
+        self.taxonomy_parent_map[ps_i] = meta_signed
+        self.taxonomy_parent_map[ss_i] = meta_signed
+        self.meta_pair_to_idx[key] = meta_signed
+        return meta_signed
+
+    def taxonomy_children(self, signed_idx):
+        """Return the children list for ``signed_idx`` or ``[]``."""
+        return list(self.taxonomy.get(int(signed_idx), []))
+
+    def taxonomy_parent(self, signed_idx):
+        """Return the parent of ``signed_idx`` or ``None``."""
+        return self.taxonomy_parent_map.get(int(signed_idx))
+
+    def is_meta(self, signed_idx):
+        """True iff the node has children spanning both PS and SS."""
+        children = self.taxonomy.get(int(signed_idx))
+        if not children:
+            return False
+        has_pos = any(int(c) >= 0 for c in children)
+        has_neg = any(int(c) < 0 for c in children)
+        return has_pos and has_neg
+
+    # ------------------------------------------------------------------
+    # LBG (Linde-Buzo-Gray) codebook splitting (2026-05-28)
+    # ------------------------------------------------------------------
+
+    def record_lbg_pull(self, signed_idx, vec):
+        """Accumulate a training pull from ``vec`` onto the SS row at
+        ``signed_idx``.
+
+        Tracks per-row displacement sum + sum-of-squares so a later
+        ``maybe_split_lbg`` call can decide whether the row's assignment
+        variance is high enough to warrant a split. Cheap: O(D) per
+        call; meant to fire from the SymbolizeLayer.forward / auto-bind
+        hot paths.
+
+        Positive ``signed_idx`` (PS percepts) are ignored -- LBG only
+        splits SS rows. NaN/Inf in ``vec`` raises per the project's
+        "fail loud" policy.
+        """
+        i = int(signed_idx)
+        if i >= 0:
+            return
+        W = self.subspace.what.getW() if self.subspace.what is not None else None
+        if W is None:
+            return
+        row = self._ss_row_of(i)
+        if row >= W.shape[0]:
+            return
+        if not torch.is_tensor(vec):
+            return
+        vec_d = vec.detach().to(W.device, W.dtype).reshape(-1)
+        if vec_d.shape[0] != W.shape[1]:
+            return
+        if not torch.isfinite(vec_d).all():
+            raise RuntimeError(
+                f"SymbolicSpace.record_lbg_pull: vec for signed_idx={i} "
+                f"contains NaN/Inf. Numerical divergence must surface, "
+                f"not be silently accumulated into the LBG counter.")
+        delta = (vec_d - W[row].detach()).clone()
+        if i in self._lbg_disp_sum:
+            self._lbg_disp_sum[i] = self._lbg_disp_sum[i] + delta
+            self._lbg_disp_sum_sq[i] = (
+                self._lbg_disp_sum_sq[i] + delta * delta)
+            self._lbg_count[i] = self._lbg_count[i] + 1
+        else:
+            self._lbg_disp_sum[i] = delta.clone()
+            self._lbg_disp_sum_sq[i] = (delta * delta).clone()
+            self._lbg_count[i] = 1
+
+    def maybe_split_lbg(self, signed_idx):
+        """Check if SS row ``signed_idx`` warrants splitting; if so,
+        perform the split and return the new SS row's signed idx.
+
+        Trigger: per-coordinate variance has max value above
+        ``self._lbg_threshold`` AND the hit count is at least
+        ``self._lbg_min_count``. The split direction is the unit-norm
+        of the mean displacement (the principal "pull" direction).
+
+        The split creates two new centroids: ``old + eps*dir`` (kept
+        in the existing row) and ``old - eps*dir`` (allocated to a
+        fresh row via ``insert_symbol``). If the original row was the
+        child of a META node, a new META edge is registered for the
+        split-off row so both halves remain discoverable via the
+        reverse-decode walk.
+
+        Returns the new signed idx on success, ``None`` if no split
+        fired. Resets the LBG accumulators for the original row after
+        a successful split.
+        """
+        i = int(signed_idx)
+        if i >= 0:
+            return None
+        if self._lbg_count.get(i, 0) < self._lbg_min_count:
+            return None
+        count = self._lbg_count[i]
+        disp_sum = self._lbg_disp_sum[i]
+        disp_sum_sq = self._lbg_disp_sum_sq[i]
+        mean_disp = disp_sum / float(count)
+        # Per-coord variance: E[X²] - E[X]². The max axis indicates the
+        # direction of greatest spread; trigger split when that exceeds
+        # the threshold.
+        variance = disp_sum_sq / float(count) - mean_disp * mean_disp
+        if float(variance.max()) < self._lbg_threshold:
+            return None
+        # Direction: unit-norm of mean displacement (the principal pull).
+        norm = float(mean_disp.norm())
+        if norm < 1e-9:
+            # No meaningful direction -- nothing to split along.
+            del self._lbg_disp_sum[i]
+            del self._lbg_disp_sum_sq[i]
+            del self._lbg_count[i]
+            return None
+        direction = mean_disp / norm
+        W = self.subspace.what.getW()
+        old_row = self._ss_row_of(i)
+        old_centroid = W[old_row].detach().clone()
+        eps = self._lbg_epsilon
+        new_a = old_centroid + eps * direction
+        new_b = old_centroid - eps * direction
+        # Update the original row in place (no_grad: the codebook is an
+        # nn.Parameter and the in-place mutation must not record gradient).
+        with torch.no_grad():
+            W.data[old_row].copy_(new_a)
+        # Allocate the split-off row.
+        new_signed = self.insert_symbol(init_vec=new_b)
+        # If the original row was bound under a META, mirror the binding
+        # onto the split-off so both halves remain discoverable.
+        parent = self.taxonomy_parent(i)
+        if parent is not None and self.is_meta(int(parent)):
+            children = self.taxonomy_children(int(parent))
+            ps_child = next(
+                (int(c) for c in children if int(c) >= 0), None)
+            if ps_child is not None:
+                self.insert_meta(ps_child, new_signed,
+                                 fused_vec=new_b.clone())
+        # Reset accumulators for the original row.
+        del self._lbg_disp_sum[i]
+        del self._lbg_disp_sum_sq[i]
+        del self._lbg_count[i]
+        return new_signed
+
+    def vocab_extras(self):
+        """Pure-Python state for ``vocab_extras`` save/load.
+
+        Stage 8 persistence: taxonomy + parent map + meta-pair lookup
+        survive checkpoint roundtrip via this blob alongside the
+        existing ``well_known_atoms`` + ``_paired_orth_to_sem`` state.
+        Lists/dicts are JSON-friendly; tuple keys are stringified.
+        """
+        return {
+            "well_known_atoms": dict(self.well_known_atoms),
+            "paired_orth_to_sem": {
+                int(k): int(v)
+                for k, v in getattr(self, "_paired_orth_to_sem", {}).items()
+            },
+            "paired_next_row": int(
+                getattr(self, "_paired_next_row", -1)),
+            "taxonomy": {
+                int(k): [int(c) for c in v]
+                for k, v in self.taxonomy.items()
+            },
+            "taxonomy_parent": {
+                int(k): int(v)
+                for k, v in self.taxonomy_parent_map.items()
+            },
+            "meta_pair_to_idx": {
+                f"{int(ps_i)},{int(ss_i)}": int(meta_i)
+                for (ps_i, ss_i), meta_i in self.meta_pair_to_idx.items()
+            },
+        }
+
+    def load_vocab_extras(self, extras):
+        """Restore the pure-Python state from a :meth:`vocab_extras` blob.
+
+        Backwards-compatible: keys missing from the blob default to
+        empty / zero, so older checkpoints (pre-Stage-8 vocab_extras
+        layouts) load without crashing.
+        """
+        wka = extras.get("well_known_atoms")
+        if isinstance(wka, dict) and wka:
+            self.well_known_atoms = {str(k): int(v) for k, v in wka.items()}
+        pos = extras.get("paired_orth_to_sem")
+        if isinstance(pos, dict):
+            self._paired_orth_to_sem = {
+                int(k): int(v) for k, v in pos.items()
+            }
+        pnr = extras.get("paired_next_row")
+        if pnr is not None and int(pnr) >= 0:
+            self._paired_next_row = int(pnr)
+        tax = extras.get("taxonomy")
+        if isinstance(tax, dict):
+            self.taxonomy = {
+                int(k): [int(c) for c in v]
+                for k, v in tax.items()
+            }
+        tp = extras.get("taxonomy_parent")
+        if isinstance(tp, dict):
+            self.taxonomy_parent_map = {
+                int(k): int(v) for k, v in tp.items()
+            }
+        mp = extras.get("meta_pair_to_idx")
+        if isinstance(mp, dict):
+            decoded = {}
+            for raw_key, mi in mp.items():
+                parts = str(raw_key).split(",")
+                if len(parts) != 2:
+                    continue
+                ps_i = int(parts[0])
+                ss_i = int(parts[1])
+                decoded[(ps_i, ss_i)] = int(mi)
+            self.meta_pair_to_idx = decoded
 
     def get_semantic_row(self, orth_idx):
         """Look up the semantic row index for a given orthographic row.
@@ -11923,19 +13043,23 @@ class SymbolicSpace(Space):
                         space="SymbolicSpace", category="symbol")
             return vspace
 
-        # VQ-VAE / hard_quantize / continuous branches preserved from
-        # the pre-rollback forward — these implement the codebook snap
-        # and commitment-loss objectives that drive symbol learning.
-        # The snap behaviour itself (the "name the closest point"
-        # categorization) is the inversion-equivalent of
-        # ``Codebook.forward(input)`` exposed directly
-        # via ``Codebook.project`` for the new idempotent-loop test
-        # (test/test_idempotent_loop.py).
-        use_vqvae_reversible = self.use_vqvae and self.reversible and self.codebook
-        use_vqvae_nonreversible = (self.use_vqvae and not self.reversible
-                                   and self.codebook)
-        hard_quantize = (not self.use_vqvae) and self.codebook and quantize
-        if use_vqvae_reversible:
+        # Codebook-training dispatch: when a codebook is configured we
+        # always train it (the prior ``hard_quantize`` "frozen-codebook"
+        # branch was retired 2026-05-29 because nothing supplied the
+        # codebook a learning signal — the SS prototypes stayed at
+        # random init for the full run). The two branches below are an
+        # internal dispatch on ``self.reversible``, not a user-facing
+        # toggle:
+        #   * reversible       -- continuous flow, commitment loss via
+        #                         _nearest_symbol_target
+        #   * non-reversible   -- STE-through-snap, commitment loss +
+        #                         codebook_commit
+        # The earlier ``<useVQVAE>`` XML knob is gone — set
+        # ``<codebook>quantize</codebook>`` to opt into a learned
+        # codebook, ``<codebook>none</codebook>`` to opt out.
+        codebook_reversible = self.codebook and self.reversible
+        codebook_nonreversible = self.codebook and not self.reversible
+        if codebook_reversible:
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
@@ -11953,7 +13077,7 @@ class SymbolicSpace(Space):
                         space="SymbolicSpace", category="symbol")
             self._emit_symbol_terms(
                 vspace, self._compute_symbol_terms(predicted, target=target))
-        elif use_vqvae_nonreversible:
+        elif codebook_nonreversible:
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
@@ -11980,25 +13104,6 @@ class SymbolicSpace(Space):
             self._emit_symbol_terms(
                 vspace,
                 self._compute_symbol_terms(predicted, target=quantized_detached))
-        elif hard_quantize:
-            self.subspace.set_event(act)
-            vspace = self.forwardEnd(self.subspace)
-            self.resolve(self.subspace)
-            act_1d = self.subspace.materialize(mode="activation")
-            if act_1d is not None and act_1d.ndim == 2:
-                predicted_1d = act_1d.unsqueeze(-1)
-                target_1d = self._nearest_symbol_target(predicted_1d)
-                if target_1d is not None:
-                    self.subspace.set_activation(target_1d.squeeze(-1))
-                    self._emit_symbol_terms(
-                        vspace,
-                        self._compute_symbol_terms(predicted_1d, target=target_1d))
-                else:
-                    self._emit_symbol_terms(
-                        vspace, self._compute_symbol_terms(predicted_1d))
-            else:
-                self._emit_symbol_terms(
-                    vspace, self._compute_symbol_terms(act))
         else:
             # VQ snap when a codebook is configured but neither VQ-VAE
             # nor hard-quantize fires (the typical post-rollback,

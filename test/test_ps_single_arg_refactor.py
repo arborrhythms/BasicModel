@@ -2,20 +2,24 @@
 
 Post-Stage-1.A contract:
 
-  * ``PerceptualSpace`` owns ``self.pi: PiLayer`` and
-    ``self.sigma: SigmaLayer`` (single layer instances, NOT
-    ``nn.ModuleList``\\s); the per-order Ramsified ``pi_input`` /
-    ``pi_concept`` lists are retired. The ``conceptualOrder`` knob's
-    new role is driving PARALLEL-mode forward iteration count (the
-    same ``pi`` / ``sigma`` are called T times with different
-    inputs), not selecting per-order weights.
+  * ``PerceptualSpace`` owns ``self.pi: PiLayer`` (single layer
+    instance, NOT an ``nn.ModuleList``); the per-order Ramsified
+    ``pi_input`` / ``pi_concept`` lists are retired. The
+    ``conceptualOrder`` knob's new role is driving PARALLEL-mode
+    forward iteration count over the per-stage CS pipeline.
 
-  * ``PerceptualSpace.forward(x_subspace)`` takes a single positional
-    arg. The body composes ``self.pi(x) + self.sigma(x)`` on the
-    materialized input (no outer ``tanh`` wrap -- pi / sigma each
-    apply their own internal nonlinearity).
+Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+reentrancy.md) revision:
 
-  * ``PerceptualSpace.reverse(y_subspace)`` is symmetric.
+  * ``PerceptualSpace.sigma`` is RETIRED. PS is pi-only. The sigma
+    half migrates to ``ConceptualSpace.sigma_in`` per stage
+    (Ramsified across ``self.conceptualSpaces``).
+
+  * ``PerceptualSpace.forward(x_subspace)`` body becomes
+    ``return self.pi(x.materialize())`` (drop the ``+ self.sigma(x)``
+    term).
+
+  * ``PerceptualSpace.reverse(y_subspace)`` is symmetric (pi-only).
 
 This file is the targeted TDD gate for the refactor. It is independent
 of the broader pipeline (loopback test) and uses the same plain config
@@ -40,7 +44,7 @@ if _BIN not in sys.path:
 
 import Models
 import Language
-from Layers import PiLayer, SigmaLayer
+from Layers import PiLayer
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -67,8 +71,8 @@ def _make_plain_model():
 
 
 class TestPSOwnsSingleLayers(unittest.TestCase):
-    """PerceptualSpace owns ``self.pi`` and ``self.sigma`` directly,
-    not ``ModuleList`` containers."""
+    """PerceptualSpace owns ``self.pi`` directly, not a ``ModuleList``
+    container. Stage 10 retired ``self.sigma`` from PS."""
 
     def test_ps_has_pi_attribute(self):
         model = _make_plain_model()
@@ -83,18 +87,17 @@ class TestPSOwnsSingleLayers(unittest.TestCase):
                                  "PerceptualSpace.pi must NOT be a "
                                  "ModuleList (single-layer contract).")
 
-    def test_ps_has_sigma_attribute(self):
+    def test_ps_sigma_attribute_retired(self):
+        """Stage 10: ``self.sigma`` on PerceptualSpace is retired.
+        The sigma half migrates to ``ConceptualSpace.sigma_in`` per
+        stage (Ramsified across ``self.conceptualSpaces``)."""
         model = _make_plain_model()
         ps = model.perceptualSpace
-        self.assertTrue(hasattr(ps, 'sigma'),
-                        "PerceptualSpace must own a ``sigma`` attribute "
-                        "after Stage 1.A.")
-        self.assertIsInstance(ps.sigma, SigmaLayer,
-                              "PerceptualSpace.sigma must be a single "
-                              "SigmaLayer (not a ModuleList).")
-        self.assertNotIsInstance(ps.sigma, torch.nn.ModuleList,
-                                 "PerceptualSpace.sigma must NOT be a "
-                                 "ModuleList (single-layer contract).")
+        self.assertFalse(
+            hasattr(ps, 'sigma'),
+            "Stage 10: PerceptualSpace.sigma must be retired (PS is "
+            "pi-only). The sigma half is on ConceptualSpace.sigma_in "
+            "per stage.")
 
 
 class TestPSForwardSingleArg(unittest.TestCase):
@@ -156,10 +159,11 @@ class TestPSForwardReturnsValidSubspace(unittest.TestCase):
                          f"got shape {tuple(ev.shape)}.")
 
 
-class TestPSPiSigmaShapes(unittest.TestCase):
-    """``pi`` and ``sigma`` are both ``percept_dim -> percept_dim``."""
+class TestPSPiShapes(unittest.TestCase):
+    """``pi`` is ``percept_dim -> percept_dim``. Stage 10: PS sigma
+    retired; only pi remains on PS."""
 
-    def test_pi_and_sigma_share_input_output_dims(self):
+    def test_pi_input_output_dims(self):
         model = _make_plain_model()
         ps = model.perceptualSpace
         percept_dim = int(ps.subspace.getEncodedInputSize())
@@ -167,10 +171,6 @@ class TestPSPiSigmaShapes(unittest.TestCase):
                          "pi.nInput must equal PS encoded input size.")
         self.assertEqual(int(ps.pi.nOutput), percept_dim,
                          "pi.nOutput must equal PS encoded input size.")
-        self.assertEqual(int(ps.sigma.nInput), percept_dim,
-                         "sigma.nInput must equal PS encoded input size.")
-        self.assertEqual(int(ps.sigma.nOutput), percept_dim,
-                         "sigma.nOutput must equal PS encoded input size.")
 
 
 class TestPSLegacyAttributesGone(unittest.TestCase):

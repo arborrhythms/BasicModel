@@ -1,5 +1,33 @@
 # Lexicon
 
+> **2026-05-29 deltas:**
+>
+> - **Two-codebook split (Stage 8, 2026-05-27).** PerceptualSpace owns
+>   the orthographic Lexicon Embedding (`PS.subspace.what`, learned
+>   surface-keyed); SymbolicSpace owns a separate VQ-quantized
+>   prototype Codebook (`SS.subspace.what`). The two are bound
+>   per-row via the META cross-codebook taxonomy
+>   (`(ps_row, ss_row) → meta_row`), populated by
+>   `ConceptualSpace._maybe_autobind_meta` at stage 0.
+> - **LBG-style splitting on SS codebook (2026-05-29 Task C).** The
+>   SS Codebook is updated under Gray (1990) EMA with per-row
+>   running-variance tracking. When a row's variance exceeds a
+>   threshold, it splits along the top-variance eigendirection; new
+>   prototypes are seeded around the parent
+>   $\pm \delta \cdot \text{variance\_axis}$. EMA continues independently on each
+>   child. This replaces the previous random-direction VQ init,
+>   which landed too many prototypes in degenerate basins on
+>   small-codebook configs.
+> - **Embedding unit-ball normalization in train loop.** PS's
+>   Embedding is unit-ball-projected via `Lexicon.normalize()` after
+>   each `optimizer.step()` so joint training doesn't drift the rows
+>   off the ball.
+> - **PS `<codebook>none</codebook>` mode.** `MM_xor.xml` and
+>   `XOR_exact.xml` turn off the PS-side VQ snap so the butterfly
+>   cascade weights actually train. The orthographic Lexicon
+>   Embedding remains live; only the VQ snap on top is retired.
+> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+
 The Lexicon's narrative description and distance math have moved into
 [Spaces.md --- Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball),
 co-located with the Codebook Similarity Metric and the per-space

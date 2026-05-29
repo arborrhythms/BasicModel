@@ -4,6 +4,21 @@ Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
 `ImpenetrableLayer` regularizer.
 
+> **2026-05-29 delta — binary GrammarLayer reverses take Basis, not W.**
+> `Ops._binary_op_recommend(result, W, op_name, …)` (the
+> mereology-guided recommender that walks `W` rows to find an
+> operand pair such that $\mathrm{op}(x_1, x_2) \approx \mathit{result}$) is still keyed on
+> the raw `W` tensor at the low-level kernel signature. But the
+> public `UnionLayer.reverse(parent, basis=None)` /
+> `IntersectionLayer.reverse(parent, basis=None)` now accept a
+> Codebook / Basis object (typically `SymbolicSpace.subspace.what`)
+> and extract `W = basis.getW()` internally before dispatching to
+> `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. The chart
+> reverse / signal-router dispatch (`bin/Language.py::unreduce()`)
+> passes `basis=tier_basis` at the call site; no back-ref is stored
+> on the layer. See
+> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+
 > **Codebook IS the meronymic structure.** The standalone
 > `MereologicalTree` sidecar that formerly stored explicit parent /
 > equality links was retired in favour of pure-geometric parthood

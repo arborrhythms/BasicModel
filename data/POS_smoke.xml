@@ -124,7 +124,6 @@
     <nVectors>128</nVectors>
     <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
-    <useVQVAE>true</useVQVAE>
   </SymbolicSpace>
 
   <OutputSpace>

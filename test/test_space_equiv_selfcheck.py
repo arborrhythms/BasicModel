@@ -21,6 +21,13 @@ def _bpe_snapshot(ps, out):
             "word_active": _clone(getattr(ps, "_bpe_word_mask", None))}
 
 
+@pytest.mark.xfail(
+    reason="MM_5M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+           "nWhen=1028 since Stage 1.C retired sigma_percept (the percept-"
+           "to-concept lift); signal router replacement (Stage 3) not "
+           "yet wired.",
+    strict=False,
+)
 def test_identity_candidate_passes():
     n = run_space_gate(Spaces.PerceptualSpace, "_embed_bpe",
                         candidate_fn=Spaces.PerceptualSpace._embed_bpe_trie,

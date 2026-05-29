@@ -1,5 +1,16 @@
 # Reasoning System
 
+> **2026-05-29 delta:** the chart / signal-router reverse path now
+> passes the tier-local Basis (`subspace.what`) to binary GrammarLayer
+> reverses as `basis=tier_basis`. The mereology-guided recommender
+> (`Ops._binary_op_recommend`) walks the Codebook's `W` rows to find
+> operand pairs $(x_1, x_2)$ such that $\mathrm{op}(x_1, x_2) \approx \mathit{parent}$. Under
+> `<codebook>none</codebook>` on SymbolicSpace the recommender has no
+> rows to walk and falls back to the lossy `(parent, parent)`
+> pseudo-inverse — degrading the reasoning loop's structural recovery
+> on multi-stage chart parses. See
+> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+
 Four methods on `BaseModel` for truth-aware inference, a bidirectional
 reasoning loop, and a grammar learning mode. Builds on the TruthLayer
 infrastructure ([Logic.md](Logic.md)) and grammar composition

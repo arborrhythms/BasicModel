@@ -386,7 +386,12 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims --- positional information from the character offset.
+- `nWhere` dims --- positional information, materialized as a
+  quadrature-sinusoidal vector via `WhereEncoding` (see the 2026-05-28
+  where-keyed-taxonomy plan). The integer position is recoverable via
+  `atan2(sin, cos) / $\omega_0$` and serves as the canonical positional
+  identifier across IS / PS / SS taxonomies (no more signed-int
+  cross-codebook hack).
 
 Result: `[nActive, nWhat + nWhere]` tensor.
 
@@ -403,11 +408,15 @@ scaled to `[-1, 1]` via the global data min/max.
 |-----------|-------------|
 | `nActive` | Sequence length |
 | `nDim` | Output dim per vector |
-| `nWhere` | Positional dims |
-| `nWhen` | Temporal dims |
 | `lexer` | Tokenization mode: `"word"` or `"sentence"` |
 | `codebook` | Whether input values are discrete |
 | `demuxed` | Store what/where/when independently |
+
+> 2026-05-28: per-Space `<nWhere>` / `<nWhen>` XML knobs are retired.
+> `model.xml` carries the per-Space defaults (`<nWhere>2</nWhere>` on
+> InputSpace / PerceptualSpace / SymbolicSpace, `0` elsewhere). Per-file
+> configs no longer declare them. See
+> [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
 
 **Invertibility.** Always non-invertible; reverse is a separate reconstruction
 using the span table.
@@ -506,6 +515,13 @@ per-word surface → row lookup.
   flat-slab invariant).
 - `self._mphf_gpu_layer`: MPHF infrastructure for fast surface lookup.
 - `self.chunk_layer`: BPE machinery (the `ChunkLayer` from `bin/Layers.py`).
+- `self.radix_layer`: when `<chunking>radix</chunking>`, the input lookup
+  routes through `RadixLayer` (radix trie + inverse table + learned
+  codebook + byte fallback). `RadixLayer` is a first-class `Layer`
+  subclass in `bin/Layers.py` (formerly the standalone
+  `PerceptStore`). `PerceptualSpace.reverse` invokes
+  `RadixLayer.reverse` for the structural decode (chunk-id → bytes →
+  slot). Promotion knobs default to `threshold=4, min_length=2`.
 
 The legacy `pi_input` / `pi_concept` ModuleLists are retired. The
 sigma_percept-style additive fold on CS is also retired (lives on PS
@@ -570,17 +586,37 @@ space.
 $[-1, +1]$ encodes belief certainty with sign. No antipodal identification ---
 sign matters.
 
-**Owned layer (2026-05-13 rebalance).**
+**Owned layer (2026-05-13 rebalance, revised 2026-05-29 clean-stack).**
 
 | Layer | Direction | Math | Notes |
 |-------|-----------|------|-------|
-| (none) | — | ConceptualSpace owns **no atomic forward operator** post-substrate-refactor (2026-05-27). `sigma_percept` and its `_1` / `_2` variants are retired. | `CS.forward(new_idea_subspace)` is STM bookkeeping (shift + push); see ShortTermMemory below. |
+| `self.sigma_in` | incoming-contribution fold | per-stage SigmaLayer (Ramsified across stages) | Stage 10 (2026-05-27 plan). **Bypassed on forward under clean-stack STM (2026-05-29)** — `folded = primary` at stage 0, `folded = sym` at k > 0. Reverse path still calls `sigma_in.reverse`. |
+| `self.sigma_cs` | residual-CS iteration kernel for stages k > 0 | per-stage SigmaLayer | Same Stage 10 / clean-stack story as `sigma_in`. |
 
-**No atomic fold layer.** Pre-substrate-refactor, ConceptualSpace owned
-`sigma_percept` (a SigmaLayer that folded percept-tier input into
-concept-tier output). That layer is retired. The composition role moves
-to **PerceptualSpace** (`PS.forward(x) = self.pi(x) + self.sigma(x)`); CS
-becomes a pure STM container + grammatical CPU.
+**Clean-stack STM (2026-05-29 experiment).** The Stage-10 additive
+composition
+
+```
+folded = sigma_in(combined) + sigma_cs(prev)
+```
+
+is replaced with per-stage tier attribution:
+
+```
+stage 0      folded = primary    (PS event from subspace.materialize())
+stage k > 0  folded = sym        (SS event from word_subspace.materialize())
+```
+
+No additive mixing across tiers; no residual lift; trivially invertible
+(read-back, no inverse-Sigma needed). The `STM_k = STM_{k-1} + SS_k`
+carry-forward variant was tested and reverted — the pure clean-stack
+form is the landing point. See
+[doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+
+Side effect: `sigma_in` / `sigma_cs` are dead-weight on the forward
+path (no gradient). Convergence on MM_xor continues via the PiLayer
+butterfly cascade. A forward / reverse semantic mismatch (reverse
+inverts a fold forward never applied) is a documented follow-up.
 
 **Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
 invert). The reverse chain operates on the terminal STM contents; per
@@ -633,7 +669,12 @@ The signal router (`WordSubSpace.languageLayer`) consumes
 
 (Pre-2026-05-27, Lift / Lower were "substrate-borrowing" — they reached
 into `PerceptualSpace.sigma` and `ConceptualSpace.pi` for their math.
-That pattern is retired in Stage 4 of the substrate refactor.)
+That pattern is retired in Stage 4 of the substrate refactor.
+`PerceptualSpace.sigma` itself was subsequently retired in Stage 5 / 10
+of the two-loop pi-sigma plan; the sigma half migrated to
+`ConceptualSpace.sigma_in` per stage. The 2026-05-29 clean-stack STM
+experiment further bypasses `sigma_in` on the forward path — see
+[doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).)
 
 `LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
 subclasses**, each owning its own internal sub-layer for the pairwise
@@ -690,7 +731,16 @@ access. The information bottleneck for word identity.
 
 - `self.subspace.what`: a `Codebook` carrying symbol prototypes at width
   `nDim`. Includes per-row meronomy storage (`category_ids`,
-  `part_parents`, `category_logits`).
+  `part_parents`, `category_logits`). When the configured codebook is
+  `<codebook>quantize</codebook>`, the codebook is a trainable
+  `nn.Parameter` updated under Gray (1990) EMA with **LBG-style
+  variance tracking and splitting**: rows whose running per-component
+  variance exceeds a threshold split along the top-variance
+  eigendirection, with children seeded around the parent ±
+  $\delta \cdot \text{variance\_axis}$. (2026-05-29 Task C.) Set
+  `<codebook>none</codebook>` to retire the SS codebook entirely
+  (degraded mode; the grammar bivector recommender has no `W` to walk
+  on reverse — see `test_mm_grammar_without_vqvae_learns_xor_signal`.)
 - `insert_paired_word(word, ps_vector)` API: at OOV insert time, creates
   a paired (orth, semantic) entry — the orth row is initialized from
   `ps_vector` (a CS-space-dimensioned per-word vector from PS's
@@ -698,11 +748,20 @@ access. The information bottleneck for word identity.
   initialized; the two are parented via `Codebook.set_part_parent(orth_idx, sem_idx)`.
 - `get_semantic_row(orth_idx)`: O(1) lookup via `_paired_orth_to_sem` map
   precomputed at insert time.
+- **META taxonomy** (2026-05-27 Stage 8): a separate cross-codebook
+  taxonomy mapping `(ps_row, ss_row) → meta_row`. Originally keyed by
+  signed-int refs (positive=PS, negative=SS); the 2026-05-28 plan
+  migrates this to a `.where`-keyed integer-position scheme. META
+  entries are populated by `ConceptualSpace._maybe_autobind_meta` at
+  stage 0 when PS promotes a chunk and SS has a Codebook
+  (2026-05-29 Task G — the auto-bind moved from PS to CS so the
+  cross-space allocation fires from the layer that sees both
+  contributions).
 - Signal router dispatch site for **codebook-write-required grammar ops**
   (insert, EMA updates, codebook expansion / culling).
 
 No atomic forward fold layer on SS. The pre-substrate-refactor
-`self.sigma` (C ↔ S monotonic SigmaLayer) is retired; the C → S "naming"
+`self.sigma` (C $\leftrightarrow$ S monotonic SigmaLayer) is retired; the C $\to$ S "naming"
 is now the codebook snap performed in CS via `SS_subspace.materialize()`
 or directly via `insert_paired_word` at write time. Symbol-side grammar
 math lives on the GrammarLayer subclasses (intersection, union,

@@ -11,10 +11,9 @@
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <conceptualMode>parallel</conceptualMode>
-    <reconstruct>concepts</reconstruct>
 
     <training>
-      <numEpochs>400</numEpochs>
+      <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
       <autoload>false</autoload>
       <trainEmbedding>JOINT</trainEmbedding>
@@ -44,6 +43,13 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>none</codebook>
+    <!-- Butterfly cascade on pi (and historically sigma) gives pi
+         cross-element reach across the flattened [B, N*D] view.
+         Without it, pi is per-slot and cannot compute XOR (or any
+         function that requires combining information across slot
+         positions). XOR_exact relies on this for the exact-XOR
+         convergence property. -->
+    <butterfly>true</butterfly>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->

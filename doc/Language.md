@@ -1,8 +1,23 @@
 # Language
 
-This document is synchronized to the code as of 2026-05-20. The source
-of truth is `bin/Language.py`, `bin/embed.py`, `bin/typed_stack.py`,
+This document is synchronized to the code as of 2026-05-20, with
+2026-05-29 deltas noted in line. The source of truth is
+`bin/Language.py`, `bin/embed.py`, `bin/typed_stack.py`,
 `bin/stm_driver.py`, and `bin/parse_state.py`.
+
+> **2026-05-29 deltas:**
+>
+> - `unreduce()` passes the tier-local Basis (Codebook) to binary
+>   GrammarLayer reverses as `basis=tier_basis` (replacing the prior
+>   raw-`W` form). `UnionLayer.reverse` / `IntersectionLayer.reverse`
+>   extract `W = basis.getW()` internally and dispatch to
+>   `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. Layers that
+>   don't accept the `basis` kwarg yet are handled by a `TypeError`
+>   fallback. No back-ref is stored on the layer.
+> - `MetaLayer` was renamed to `SymbolizeLayer` (no semantic change).
+> - Word-mode parse appends a `\x00` null sentinel after the words
+>   slab for explicit end-of-sequence on the forward path.
+> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Current Parser Surface
 
@@ -91,8 +106,8 @@ children of their base category:
 
 ```text
 NP
-├── NP3
-└── NP4
+|-- NP3
+`-- NP4
 ```
 
 `KnowledgeView.category_of_ref(ref_id)` returns the base category

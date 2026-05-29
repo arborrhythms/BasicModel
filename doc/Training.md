@@ -1,5 +1,25 @@
 # Training
 
+> **2026-05-29 deltas:**
+>
+> - **Embedding unit-ball normalization.** The training loop calls
+>   `Lexicon.normalize()` (unit-ball projection on the per-row
+>   vectors) right after `optimizer.step()` in
+>   `bin/Models.py::train_loop`. Keeps embedding vectors from drifting
+>   off the unit ball under `JOINT` / `BACKPROP` modes.
+> - **Seeded retries for MM_xor tests.** `test_learns_xor_signal`
+>   and `test_convergence` in `test/test_mm_xor.py` use
+>   `for seed in (42, 123, 7): torch.manual_seed(seed); …` (the
+>   previously-dead `seed` loop variable in `test_convergence` is now
+>   actually consumed). Pass-if-any-attempt-converges semantics.
+> - **Reconstruction default.** `<reconstruct>concepts</reconstruct>`
+>   is the default in `data/model.xml`; per-experiment XMLs no longer
+>   override it.
+> - **Supervised output loss restored.** `bin/Models.py::train_loop`
+>   computes MSE on the supervised output in addition to the
+>   reconstruction loss (`reconstructionScale`-weighted).
+> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+
 ## Overview
 
 Two phases: **embedding pretraining** and **network training**. Embedding

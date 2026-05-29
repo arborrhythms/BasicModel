@@ -171,23 +171,33 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # C-tier intersection is RadMin (same-sign min magnitude,
-        # zero passthrough) via Ops.intersection.
+        # C-tier intersection is LSE-smoothed RadMin (2026-05-29):
+        # same-sign min magnitude, but smoothed via log-sum-exp so
+        # gradient flows to both operands per cell. Bit-exact match
+        # with Ops.intersection (both go through _soft_radmin).
         self.assertTrue(torch.allclose(y, Ops.intersection(left, right), atol=1e-6))
-        # Idempotent on the diagonal.
+        # Approximate idempotency on the diagonal. The LSE smooth
+        # min satisfies LSE(|x|, |x|) = |x| + tau * log(2), i.e.
+        # soft_min_mag(|x|, |x|) = |x| - tau * log(2). With tau=0.1
+        # the magnitude offset is ~0.069. Pre-LSE (hard RadMin) gave
+        # exact idempotency; the soft form trades that for gradient
+        # flow to both children per the union-grad-flows test.
         diag = layer.compose(left, left)
-        self.assertTrue(torch.allclose(diag, left, atol=1e-6))
+        self.assertTrue(torch.allclose(diag, left, atol=0.1))
 
     def test_intersection_decompose_pseudo_inverse(self):
         layer = IntersectionLayer()
         parent = torch.rand(2, 5, 4) * 1.6 - 0.8
         l_rec, r_rec = layer.decompose(parent)
-        # Lossy fold: pseudo-inverse returns parent for both children.
+        # Lossy fold: pseudo-inverse returns parent for both children
+        # when no codebook W is supplied (the back-compat fallback).
         self.assertTrue(torch.equal(l_rec, parent))
         self.assertTrue(torch.equal(r_rec, parent))
-        # Recomposing the pseudo-inverse with itself is idempotent.
+        # Recomposing the pseudo-inverse with itself is APPROXIMATELY
+        # idempotent under LSE smooth min (2026-05-29). Hard RadMin
+        # gave exact idempotency; LSE trades that for gradient flow.
         self.assertTrue(torch.allclose(
-            layer.compose(l_rec, r_rec), parent, atol=1e-6))
+            layer.compose(l_rec, r_rec), parent, atol=0.1))
 
     def test_union_compose_is_max_kernel(self):
         from Layers import Ops
@@ -195,11 +205,15 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # C-tier union is RadMax (same-sign max magnitude, zero
-        # passthrough) via Ops.union.
+        # C-tier union is LSE-smoothed RadMax (2026-05-29): same-sign
+        # max magnitude with zero passthrough, smoothed via LSE so
+        # gradient flows to both operands per cell.
         self.assertTrue(torch.allclose(y, Ops.union(left, right), atol=1e-6))
+        # Approximate idempotency on the diagonal: LSE smooth max
+        # satisfies LSE(|x|, |x|) = |x| + tau * log(2), so
+        # soft_max_mag(|x|, |x|) = |x| + ~0.069 at tau=0.1.
         diag = layer.compose(left, left)
-        self.assertTrue(torch.allclose(diag, left, atol=1e-6))
+        self.assertTrue(torch.allclose(diag, left, atol=0.1))
 
     def test_union_decompose_pseudo_inverse(self):
         layer = UnionLayer()

@@ -43,6 +43,16 @@
   <xs:complexType name="architectureType">
     <xs:all>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
+      <!-- conceptualOrder = T = number of per-stage ConceptualSpace
+           instances in self.conceptualSpaces. Stage 10 (doc/plans/
+           2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): each
+           stage owns its own Ramsified sigma_in (incoming fold) and
+           sigma_cs (PARALLEL-mode residual lift). In PARALLEL mode the
+           pipeline walks stages 0..T-1 with each stage's sigma_cs
+           applied to the prior stage's CS output; in SERIAL mode
+           SyntacticLayer.compose dispatch per stage replaces
+           sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
+           currently the per-word loop uses the terminal CS). -->
       <xs:element name="conceptualOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
            explicit two-mode forward dispatch knob.
@@ -401,9 +411,27 @@
                  and modelType=embedding.  See doc/Spaces.md
                  §"Chunking modes" for the cognitive rationale. -->
             <xs:enumeration value="none"/>
+            <!-- Stage 7 (doc/plans/2026-05-27-perceptstore-meta-
+                 taxonomy-reentrancy.md): ``radix`` routes chunking
+                 through a ``PerceptStore`` (radix trie + hash map +
+                 inverse table + learned codebook + byte fallback +
+                 promotion). Replaces Lexicon/MPHF/BPE for the surface-
+                 form authoritative store.  The legacy values stay
+                 valid for revival but radix is the new default. -->
+            <xs:enumeration value="radix"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
+      <!-- Stage 7: radix-mode promotion knobs. ``chunkPromotionThreshold``
+           is the byte-fallback hit count at which an unknown chunk
+           gets promoted into the trie + codebook (default 4).
+           ``chunkPromotionMinLength`` is the minimum chunk length
+           (in bytes) below which promotion never fires (default 2).
+           Both are ignored when chunking != "radix". -->
+      <xs:element name="chunkPromotionThreshold"
+                  type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="chunkPromotionMinLength"
+                  type="xs:positiveInteger" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -486,7 +514,6 @@
       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="useVQVAE" type="xs:boolean" minOccurs="0"/>
       <!-- VQ-VAE EMA decay (``VectorQuantize.decay``).  Higher = slower
            adaptation, more stable assignment across time; lower =
            faster drift but less stable.  Default 0.9 (see
@@ -516,6 +543,19 @@
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+      <!-- Stage 8 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+           reentrancy.md §Stage 8): META taxonomy storage placeholder.
+           The actual taxonomy graph (parent -> children, child -> parent,
+           and (ps_idx, ss_idx) -> meta_idx) is a runtime structure on
+           ``SymbolicSpace`` (``self.taxonomy``,
+           ``self.taxonomy_parent_map``, ``self.meta_pair_to_idx``);
+           it serialises through ``vocab_extras`` (the same sidecar that
+           carries WordVectors mappings). This optional XSD element exists
+           so configs can ship a comment about the storage location and
+           future seeded-taxonomy bootstraps without schema drift. The
+           string contents are advisory only; no runtime knob is
+           consumed from here. -->
+      <xs:element name="taxonomy" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

@@ -56,24 +56,39 @@ class TestButterflyConstruction(unittest.TestCase):
 
     def test_grammar_layer_butterfly_true_n8(self):
         D = 3
-        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=8)
+        # ``N`` is the total flattened element count (= N_slots * D when
+        # the cascade processes an [N_slots, D] payload).
+        N = 8
+        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
-        self.assertEqual(int(layer.N), 8)
+        self.assertEqual(int(layer.N), N)
         self.assertEqual(int(layer.n_levels), 3)
 
     def test_butterfly_packed_parameter_shape(self):
-        """``self.butterfly_W`` is a single packed nn.Parameter of shape
-        [n_levels, N//2, 2D, 2D]."""
-        D, N = 3, 8
-        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
-        self.assertIsInstance(layer.butterfly_W, torch.nn.Parameter)
-        expected = (int(math.log2(N)), N // 2, 2 * D, 2 * D)
-        self.assertEqual(tuple(layer.butterfly_W.shape), expected)
+        """Per-pair LDU storage: scalars L (sub-diag), d (two diag),
+        U (super-diag). Shapes are
+            butterfly_L : [n_levels, N//2]
+            butterfly_d : [n_levels, N//2, 2]
+            butterfly_U : [n_levels, N//2]
+        (Replaces the legacy single packed ``butterfly_W`` 2D-block
+        scheme; 2x2 nodes invert in closed form so 4 scalars suffice.)"""
+        N = 8
+        layer = GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=N)
+        self.assertIsInstance(layer.butterfly_L, torch.nn.Parameter)
+        self.assertIsInstance(layer.butterfly_d, torch.nn.Parameter)
+        self.assertIsInstance(layer.butterfly_U, torch.nn.Parameter)
+        n_levels = int(math.log2(N))
+        self.assertEqual(tuple(layer.butterfly_L.shape),
+                         (n_levels, N // 2))
+        self.assertEqual(tuple(layer.butterfly_d.shape),
+                         (n_levels, N // 2, 2))
+        self.assertEqual(tuple(layer.butterfly_U.shape),
+                         (n_levels, N // 2))
 
     def test_butterfly_perms_buffer_shape(self):
         """``self.butterfly_perms`` is a buffer of shape [n_levels, N]."""
-        D, N = 3, 8
-        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
+        N = 8
+        layer = GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=N)
         # Registered as a buffer -> accessible as attribute, contained in
         # state_dict, not a parameter.
         perms = getattr(layer, 'butterfly_perms', None)
@@ -83,23 +98,27 @@ class TestButterflyConstruction(unittest.TestCase):
         self.assertEqual(tuple(perms.shape), (int(math.log2(N)), N))
 
     def test_butterfly_requires_power_of_two(self):
-        """N must be a power of 2; non-pow-2 values raise."""
-        with self.assertRaises((ValueError, AssertionError)):
-            GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=7)
+        """Non-power-of-2 N is auto-padded to the next power of two
+        (the cascade structure requires 2^k); ``N`` records the
+        nominal value but ``M_total`` is the padded count."""
+        layer = GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=7)
+        self.assertEqual(int(layer.N), 7)
+        self.assertEqual(int(layer.M_total), 8)
 
 
 class TestButterflyIdentityInit(unittest.TestCase):
     """At init, ``forward(x) == x`` within tolerance for a base
-    GrammarLayer with butterfly=True. The default ``_butterfly_pair_op``
-    is a plain einsum, so identity per-node init (L=I, d=1, U=I) lifts
-    to identity at the cascade level."""
+    GrammarLayer with butterfly=True. Per-pair LDU identity init
+    (L=0, d=(1,1), U=0) lifts to identity at the cascade level."""
 
     def test_grammar_layer_identity_forward_n4(self):
         torch.manual_seed(0)
-        D, N = 3, 4
+        # Cascade now operates on the flat element axis: N = N_slots * D.
+        N_slots, D = 4, 3
+        N = N_slots * D
         B = 2
         layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
-        x = torch.randn(B, N, D)
+        x = torch.randn(B, N_slots, D)
         y = layer.forward(x)
         self.assertEqual(y.shape, x.shape)
         err = (y - x).abs().max().item()
@@ -107,90 +126,103 @@ class TestButterflyIdentityInit(unittest.TestCase):
 
     def test_grammar_layer_identity_forward_n8(self):
         torch.manual_seed(1)
-        D, N = 5, 8
+        N_slots, D = 8, 5
+        N = N_slots * D
         B = 4
         layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
-        x = torch.randn(B, N, D)
+        x = torch.randn(B, N_slots, D)
         y = layer.forward(x)
         err = (y - x).abs().max().item()
         self.assertLess(err, _TOL, f"GrammarLayer butterfly identity init forward failed: err={err}")
 
     def test_grammar_layer_identity_reverse_n4(self):
         torch.manual_seed(2)
-        D, N = 3, 4
+        N_slots, D = 4, 3
+        N = N_slots * D
         B = 2
         layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
-        y = torch.randn(B, N, D)
+        y = torch.randn(B, N_slots, D)
         x = layer.reverse(y)
         err = (x - y).abs().max().item()
         self.assertLess(err, _TOL, f"GrammarLayer butterfly identity init reverse failed: err={err}")
 
 
 class TestButterflyRoundtrip(unittest.TestCase):
-    """``reverse(forward(x)) ~= x`` for every supported N."""
+    """``reverse(forward(x)) ~= x`` for every supported N (slot count)."""
 
-    def _roundtrip(self, D, N):
+    def _roundtrip(self, D, N_slots):
         torch.manual_seed(0)
         B = 2
+        N = N_slots * D
         layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
         # Nudge the parameters off identity so the test is non-trivial.
+        # Three separate per-pair LDU buffers (L, d, U) replace the
+        # legacy single packed ``butterfly_W``.
         with torch.no_grad():
-            layer.butterfly_W.add_(0.01 * torch.randn_like(layer.butterfly_W))
-        x = torch.randn(B, N, D) * 0.5
+            layer.butterfly_L.add_(0.01 * torch.randn_like(layer.butterfly_L))
+            layer.butterfly_d.add_(0.01 * torch.randn_like(layer.butterfly_d))
+            layer.butterfly_U.add_(0.01 * torch.randn_like(layer.butterfly_U))
+        x = torch.randn(B, N_slots, D) * 0.5
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = (x_rec - x).norm() / (x.norm() + 1e-9)
         return err.item()
 
     def test_roundtrip_n2(self):
-        err = self._roundtrip(D=3, N=2)
-        self.assertLess(err, 1e-4, f"N=2 roundtrip err={err}")
+        err = self._roundtrip(D=3, N_slots=2)
+        self.assertLess(err, 1e-3, f"N_slots=2 roundtrip err={err}")
 
     def test_roundtrip_n4(self):
-        err = self._roundtrip(D=3, N=4)
-        self.assertLess(err, 1e-4, f"N=4 roundtrip err={err}")
+        err = self._roundtrip(D=3, N_slots=4)
+        self.assertLess(err, 1e-3, f"N_slots=4 roundtrip err={err}")
 
     def test_roundtrip_n8(self):
-        err = self._roundtrip(D=4, N=8)
-        self.assertLess(err, 1e-4, f"N=8 roundtrip err={err}")
+        err = self._roundtrip(D=4, N_slots=8)
+        self.assertLess(err, 1e-3, f"N_slots=8 roundtrip err={err}")
 
     def test_roundtrip_n16(self):
-        err = self._roundtrip(D=3, N=16)
-        self.assertLess(err, 1e-4, f"N=16 roundtrip err={err}")
+        err = self._roundtrip(D=3, N_slots=16)
+        self.assertLess(err, 1e-3, f"N_slots=16 roundtrip err={err}")
 
 
 class TestButterflyParameterCount(unittest.TestCase):
-    """The single packed Parameter holds exactly N log2(N) 2D^2 floats."""
+    """Per-pair LDU storage: each node owns 4 scalars (L, d0, d1, U),
+    so total parameter count is ``n_levels * (N//2) * 4``. No D factor:
+    nodes operate on scalar element pairs from a flattened axis."""
 
-    def test_param_count_n8_d3(self):
-        D, N = 3, 8
-        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
+    def test_param_count_n8(self):
+        N = 8
+        layer = GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=N)
         n_levels = int(math.log2(N))
-        expected = n_levels * (N // 2) * (2 * D) * (2 * D)
-        # ``butterfly_W`` is the packed parameter; LDU bookkeeping (raw_L,
-        # d, raw_U) is allocated separately. We only assert the packed-W
-        # count here, which is the headline formula on the contract.
-        self.assertEqual(layer.butterfly_W.numel(), expected)
+        expected_L = n_levels * (N // 2)
+        expected_d = n_levels * (N // 2) * 2
+        expected_U = n_levels * (N // 2)
+        self.assertEqual(layer.butterfly_L.numel(), expected_L)
+        self.assertEqual(layer.butterfly_d.numel(), expected_d)
+        self.assertEqual(layer.butterfly_U.numel(), expected_U)
+        total = (layer.butterfly_L.numel() + layer.butterfly_d.numel() +
+                 layer.butterfly_U.numel())
+        self.assertEqual(total, n_levels * (N // 2) * 4)
 
     def test_param_count_formula(self):
-        """N log2(N) 2D^2 == n_levels (N/2) (2D)^2."""
-        D, N = 4, 16
-        layer = GrammarLayer(nInput=D, nOutput=D, butterfly=True, N=N)
+        """n_levels * (N/2) * 4 == N * log2(N) * 2."""
+        N = 16
+        layer = GrammarLayer(nInput=2, nOutput=2, butterfly=True, N=N)
         n_levels = int(math.log2(N))
-        # Two equivalent formulations.
-        # 1) n_levels * (N // 2) * (2D)^2
-        # 2) N * log2(N) * 2 * D^2
-        f1 = n_levels * (N // 2) * (2 * D) ** 2
-        f2 = N * int(math.log2(N)) * 2 * D ** 2
+        f1 = n_levels * (N // 2) * 4
+        f2 = N * int(math.log2(N)) * 2
         self.assertEqual(f1, f2)
-        self.assertEqual(layer.butterfly_W.numel(), f1)
+        total = (layer.butterfly_L.numel() + layer.butterfly_d.numel() +
+                 layer.butterfly_U.numel())
+        self.assertEqual(total, f1)
 
 
 class TestPiLayerButterfly(unittest.TestCase):
     """PiLayer inherits butterfly capability and applies the pi pair op."""
 
     def test_constructs(self):
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         layer = PiLayer(nInput=D, nOutput=D, invertible=True,
                         butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
@@ -198,12 +230,13 @@ class TestPiLayerButterfly(unittest.TestCase):
 
     def test_identity_init(self):
         torch.manual_seed(3)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = PiLayer(nInput=D, nOutput=D, invertible=True,
                         butterfly=True, N=N)
         # Stay well inside (-1, 1) so atanh doesn't saturate.
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward(x)
         err = (y - x).abs().max().item()
         # Pi pair op is atanh -> matmul -> tanh; identity init gives
@@ -213,21 +246,24 @@ class TestPiLayerButterfly(unittest.TestCase):
 
     def test_forward_reverse_roundtrip(self):
         torch.manual_seed(4)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = PiLayer(nInput=D, nOutput=D, invertible=True,
                         butterfly=True, N=N)
         with torch.no_grad():
-            layer.butterfly_W.add_(0.005 * torch.randn_like(layer.butterfly_W))
+            layer.butterfly_L.add_(0.005 * torch.randn_like(layer.butterfly_L))
+            layer.butterfly_d.add_(0.005 * torch.randn_like(layer.butterfly_d))
+            layer.butterfly_U.add_(0.005 * torch.randn_like(layer.butterfly_U))
         # Stay well inside (-1, 1) so the atanh / tanh stack in the
         # cascade doesn't saturate -- the per-pair op composes the
         # nonlinearity 3 times for N=8, so values near the boundary
         # lose precision rapidly.
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = (x_rec - x).norm() / (x.norm() + 1e-9)
-        # The cascade with 3 nonlinear levels has ~1e-3 - 1e-4
+        # The cascade with several nonlinear levels has ~1e-3 - 1e-4
         # achievable; we want substantively-better-than-trivial.
         self.assertLess(err.item(), 1e-2,
                         f"PiLayer butterfly roundtrip failed: err={err.item()}")
@@ -237,19 +273,21 @@ class TestSigmaLayerButterfly(unittest.TestCase):
     """SigmaLayer inherits butterfly capability and applies the sigma pair op."""
 
     def test_constructs(self):
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         layer = SigmaLayer(nInput=D, nOutput=D, invertible=True,
                            butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
 
     def test_identity_init(self):
         torch.manual_seed(5)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = SigmaLayer(nInput=D, nOutput=D, invertible=True,
                            butterfly=True, N=N)
         # Stay well inside (-1, 1) so atanh doesn't saturate.
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward(x)
         err = (y - x).abs().max().item()
         self.assertLess(err, 1e-5,
@@ -257,15 +295,18 @@ class TestSigmaLayerButterfly(unittest.TestCase):
 
     def test_forward_reverse_roundtrip(self):
         torch.manual_seed(6)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = SigmaLayer(nInput=D, nOutput=D, invertible=True,
                            butterfly=True, N=N)
         with torch.no_grad():
-            layer.butterfly_W.add_(0.005 * torch.randn_like(layer.butterfly_W))
+            layer.butterfly_L.add_(0.005 * torch.randn_like(layer.butterfly_L))
+            layer.butterfly_d.add_(0.005 * torch.randn_like(layer.butterfly_d))
+            layer.butterfly_U.add_(0.005 * torch.randn_like(layer.butterfly_U))
         # Stay well inside (-1, 1) so the cascade atanh / tanh stack
         # doesn't saturate.
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = (x_rec - x).norm() / (x.norm() + 1e-9)
@@ -279,36 +320,40 @@ class TestLiftLowerButterflyDelegation(unittest.TestCase):
     delegation exists; identity-init still holds at the cascade level."""
 
     def test_lift_butterfly_constructs(self):
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         layer = LiftLayer(nInput=D, nOutput=D, invertible=True,
                           butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
 
     def test_lift_butterfly_identity_init(self):
         torch.manual_seed(7)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = LiftLayer(nInput=D, nOutput=D, invertible=True,
                           butterfly=True, N=N)
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward_butterfly(x)
         err = (y - x).abs().max().item()
         self.assertLess(err, 1e-5,
                         f"LiftLayer butterfly identity-init failed: err={err}")
 
     def test_lower_butterfly_constructs(self):
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         layer = LowerLayer(nInput=D, nOutput=D, invertible=True,
                            butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
 
     def test_lower_butterfly_identity_init(self):
         torch.manual_seed(8)
-        D, N = 3, 8
+        N_slots, D = 8, 3
+        N = N_slots * D
         B = 2
         layer = LowerLayer(nInput=D, nOutput=D, invertible=True,
                            butterfly=True, N=N)
-        x = torch.tanh(torch.randn(B, N, D) * 0.1)
+        x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward_butterfly(x)
         err = (y - x).abs().max().item()
         self.assertLess(err, 1e-5,

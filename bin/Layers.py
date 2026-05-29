@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from itertools import chain
 import torch.optim as optim
 import time
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from collections import namedtuple
 
 epsilon = 1e-7  # to avoid log(0)
@@ -2607,18 +2607,36 @@ class IntersectionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def reverse(self, parent):
+    def reverse(self, parent, basis=None):
         """Reverse pass; inverse of ``forward``.
 
-        Non-butterfly mode: lossy ``(parent, parent)`` pseudo-inverse.
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse (kept for callers that don't have a
+            codebook handy).
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.conjunctionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``intersection(x1, x2) ≈ parent``.
 
         Butterfly mode: cross-STM cascade reverse via the per-pair
-        pseudo-inverse (broadcast averaged form).
+        pseudo-inverse (broadcast averaged form); ``basis`` is ignored.
 
-        See class docstring for the inversion contract.
+        Callers (signal-router dispatch, chart reverse) are expected
+        to pass the relevant Basis (typically ``SymbolicSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
+        if basis is not None:
+            # Mereology recommender; falls back internally to
+            # (parent, parent) when W is empty.
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.conjunctionReverse(
+                    parent, parent, W, monotonic=self.monotonic)
         return parent, parent
 
     def compose(self, left, right):
@@ -2634,9 +2652,14 @@ class IntersectionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def generate(self, parent):
-        """Drive the reverse / generation pass."""
-        return self.reverse(parent)
+    def generate(self, parent, basis=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``;
+        see its docstring for the recommender vs lossy-fallback
+        semantics.
+        """
+        return self.reverse(parent, basis=basis)
 
 
 class UnionLayer(GrammarLayer):
@@ -2722,13 +2745,31 @@ class UnionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.union(left, right, monotonic=self.monotonic)
 
-    def reverse(self, parent):
+    def reverse(self, parent, basis=None):
         """Reverse pass; inverse of ``forward``.
 
-        See class docstring for the inversion contract.
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse.
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.disjunctionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``union(x1, x2) ≈ parent``.
+
+        Butterfly mode: cross-STM cascade reverse; ``basis`` is ignored.
+
+        Callers pass the relevant Basis (typically ``SymbolicSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.disjunctionReverse(
+                    parent, parent, W, monotonic=self.monotonic)
         return parent, parent
 
     def compose(self, left, right):
@@ -2738,9 +2779,12 @@ class UnionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.union(left, right, monotonic=self.monotonic)
 
-    def generate(self, parent):
-        """Drive the reverse / generation pass."""
-        return self.reverse(parent)
+    def generate(self, parent, basis=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``.
+        """
+        return self.reverse(parent, basis=basis)
 
 
 # ===========================================================================
@@ -3090,6 +3134,312 @@ class LowerLayer(GrammarLayer):
                 "LowerLayer was constructed without operand-width "
                 "information; cannot run reverse.")
         return self._pi.generate(parent)
+
+    def compose(self, left, right):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent)
+
+
+class SymbolizeLayer(GrammarLayer):
+    """``symbolize(percept, symbol)`` -- binary C-tier grammar op that
+    binds a perceptual idea to a semantic idea, creating a META node in
+    the SS taxonomy.
+
+    Stage 9 (2026-05-27, doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+    reentrancy.md): SymbolizeLayer is registered with the signal router
+    as a binary reduce op at tier 'C'. Enforced at sentence-parse
+    boundaries (the parser dispatches it for every word + object pairing
+    in a sentence's parse). Off-parse, it fires opportunistically when
+    CS state's quantization-to-symbol pairs with the next STM slot's
+    quantization.
+
+    Originally named ``MetaLayer``; renamed 2026-05-28 to better reflect
+    the operation ("symbolize a percept into a symbol") rather than the
+    artifact produced (a META node in the taxonomy). The META node
+    concept survives unchanged on the SymbolicSpace side (see
+    ``SymbolicSpace.insert_meta`` / ``taxonomy``).
+
+    Semantic contract (forward):
+
+        forward(left, right):
+          - left:  CS-tier vector derived from a PS percept.
+          - right: CS-tier vector derived from an SS symbol.
+          1. Identify the percept_id by nearest-row search in
+             ``PerceptualSpace.percept_store.codebook``.
+          2. Identify the symbol_idx by nearest-row search in
+             ``SymbolicSpace.subspace.what.getW()``.
+          3. Call ``SymbolicSpace.insert_meta(ps_idx, ss_idx,
+             fused_vec=(left + right) / 2)``. The call is idempotent on
+             the pair: a fresh allocation on first sight, EMA-blend on
+             subsequent calls.
+          4. Return the META node's SS.codebook vector.
+
+    Semantic contract (reverse):
+
+        reverse(parent):
+          parent is a META vector.
+          1. Find the nearest SS row to ``parent``.
+          2. If the row is a META node, walk
+             ``SymbolicSpace.taxonomy_children`` to recover the
+             ``(ps_idx, ss_idx)`` children.
+          3. Return ``(PS.codebook[ps_row], SS.codebook[ss_row])`` as
+             the ``(left, right)`` recovery.
+          4. If the nearest row is not a META, fall back to the
+             balanced split ``(parent / 2, parent / 2)`` (analogous to
+             LiftLayer.reverse's split convention; the discrete
+             recovery is approximate when no META binding exists for
+             the parent's identity).
+
+    Fallback: when the wired ``PerceptualSpace`` lacks a
+    ``percept_store`` (legacy lexicon mode), SymbolizeLayer cannot
+    identify the percept_id structurally; forward then returns the
+    no-op average ``(left + right) / 2`` without registering a META
+    node. This keeps the layer harmless when not in radix mode.
+
+    Numerical guard: ``NaN`` / ``Inf`` in ``left`` or ``right`` raises
+    immediately per the project's "fail loud on numerical divergence"
+    policy. Silent ``nan_to_num`` would let divergence propagate into
+    the SS codebook through the META row seed.
+
+    The construction back-references ``symbolicSpace`` /
+    ``perceptualSpace`` via ``object.__setattr__`` to bypass nn.Module
+    submodule tracking (the Spaces are registered under the top-level
+    Model; reattaching them here would create a module-tree cycle).
+    """
+    rule_name  = "symbolize"
+    arity      = 2
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 butterfly=False, N=None):
+        """Initialize SymbolizeLayer.
+
+        ``nInput`` / ``nOutput`` size the layer's nominal input / output
+        widths; both default to the symbol codebook width when
+        ``symbolicSpace`` is supplied. The layer is parameter-free
+        (all gradient flows through the SS / PS codebooks owned by
+        the wired Spaces); the GrammarLayer base allocates a butterfly
+        cascade if requested but the binary forward / reverse path
+        does not consult it.
+
+        Back-references kept for the discrete-identity lookups in
+        ``forward`` / ``reverse``: PS percept_id (nearest-row in
+        ``perceptualSpace.percept_store.codebook``), SS symbol_idx
+        (nearest-row in ``symbolicSpace.subspace.what.getW()``), and
+        the META insert via ``symbolicSpace.insert_meta``.
+        """
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _finite_or_raise(name, tensor):
+        """Fail loud on NaN / Inf in operand tensors.
+
+        Per the project's "fail loud" policy (MEMORY:
+        feedback_fail_loud_on_divergence): silent ``nan_to_num`` would
+        propagate divergence into the SS codebook row holding the META
+        seed. Raise immediately so the stack trace surfaces.
+        """
+        if not torch.is_tensor(tensor):
+            return
+        if not torch.isfinite(tensor).all():
+            raise RuntimeError(
+                f"SymbolizeLayer: operand '{name}' contains NaN/Inf. "
+                f"Numerical divergence must surface, not be silently "
+                f"propagated into the SS codebook via the META seed. "
+                f"finite={int(torch.isfinite(tensor).sum().item())}/"
+                f"{int(tensor.numel())}.")
+
+    @staticmethod
+    def _nearest_row(codebook, query):
+        """Return the row idx of ``codebook`` nearest to ``query``.
+
+        ``codebook``: ``[V, D]``. ``query``: ``[D]`` (or shape that
+        squeezes to ``[D]``). Empty codebook returns ``None``.
+        """
+        if codebook is None:
+            return None
+        if codebook.dim() < 2 or codebook.shape[0] == 0:
+            return None
+        # Collapse query to a 1-D vector and move to codebook's
+        # device/dtype.
+        q = query.detach().to(codebook.device, codebook.dtype).reshape(-1)
+        if q.shape[0] != codebook.shape[1]:
+            return None
+        diffs = codebook - q.unsqueeze(0)
+        sq = (diffs * diffs).sum(dim=1)
+        return int(torch.argmin(sq).item())
+
+    def _ps_store(self):
+        """Resolve the PerceptStore (or None if not in radix mode)."""
+        ps_space = getattr(self, 'perceptualSpace', None)
+        if ps_space is None:
+            return None
+        return getattr(ps_space, 'percept_store', None)
+
+    def _ss_codebook(self):
+        """Resolve the SS codebook tensor (or None)."""
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is None:
+            return None
+        sub = getattr(ss, 'subspace', None)
+        if sub is None:
+            return None
+        cb = getattr(sub, 'what', None)
+        if cb is None:
+            return None
+        return cb.getW()
+
+    # ------------------------------------------------------------------
+    # Forward / reverse / compose / generate
+    # ------------------------------------------------------------------
+
+    def forward(self, left, right):
+        """Bind ``(left, right)`` into a META node and return its vector.
+
+        See the class docstring for the full contract. Returns the
+        META row's SS.codebook vector (post-insert / EMA-update).
+        Falls back to ``(left + right) / 2`` when no PerceptStore is
+        wired (legacy lexicon mode).
+        """
+        # Fail loud on NaN/Inf in either operand before any
+        # store access -- a divergent operand would silently seed a
+        # divergent META row.
+        self._finite_or_raise('left', left)
+        self._finite_or_raise('right', right)
+        ss = getattr(self, 'symbolicSpace', None)
+        ps_store = self._ps_store()
+        # Legacy / no-PerceptStore fallback: cannot resolve percept_id
+        # structurally, so return the average without registering a
+        # META node. This keeps SymbolizeLayer harmless in lexicon mode.
+        if ss is None or ps_store is None:
+            return (left + right) / 2.0
+        ps_codebook = getattr(ps_store, 'codebook', None)
+        ss_W = self._ss_codebook()
+        if ps_codebook is None or ss_W is None:
+            return (left + right) / 2.0
+        # Identify the PS percept_id by nearest-row in PS.codebook.
+        ps_row = self._nearest_row(ps_codebook, left)
+        # Identify the SS symbol_idx by nearest-row in SS.codebook.
+        ss_row = self._nearest_row(ss_W, right)
+        if ps_row is None or ss_row is None:
+            # Empty stores: nothing to bind. Fall back to the average.
+            return (left + right) / 2.0
+        # Sign-encode via the SymbolicSpace helpers.
+        ps_idx = ss._ps_signed(ps_row)
+        ss_idx = ss._ss_signed(ss_row)
+        # Fused vec = combine(left, right). Stage 9 spec: start with the
+        # simple average; learnable combine is a future revision.
+        fused = (left + right) / 2.0
+        # Cast / shape the fused vec to match SS.codebook.
+        fused_for_insert = fused.detach().to(ss_W.device, ss_W.dtype)
+        if fused_for_insert.dim() > 1:
+            fused_for_insert = fused_for_insert.reshape(-1)
+        if fused_for_insert.shape[0] != ss_W.shape[1]:
+            # Width mismatch: caller passed a non-codebook-shaped vec.
+            # Fall back to the no-op average.
+            return fused
+        # Delegate to SymbolicSpace.insert_meta. Idempotent on the
+        # pair: first call allocates a fresh META row; subsequent calls
+        # return the cached META idx and EMA-update the stored vec.
+        meta_idx = ss.insert_meta(ps_idx, ss_idx,
+                                  fused_vec=fused_for_insert)
+        meta_row = ss._ss_row_of(meta_idx)
+        # LBG (Linde-Buzo-Gray) accumulation + split-trigger on the SS
+        # row this binding pulls on. The pull direction is the SS
+        # operand ``right`` (a CS-tier vector derived from a SS symbol);
+        # accumulated displacement variance > threshold triggers a row
+        # split, creating a new SS row + META binding so the codebook
+        # grows organically as training reveals sub-clusters within
+        # what was a single symbol.
+        right_for_lbg = right.detach().to(ss_W.device, ss_W.dtype)
+        if right_for_lbg.dim() > 1:
+            right_for_lbg = right_for_lbg.reshape(-1)
+        if right_for_lbg.shape[0] == ss_W.shape[1]:
+            ss.record_lbg_pull(ss_idx, right_for_lbg)
+            ss.maybe_split_lbg(ss_idx)
+        # Return the (possibly EMA-updated) META row's vector. We read
+        # the *current* codebook so callers see the EMA-blended state.
+        ss_W_current = self._ss_codebook()
+        return ss_W_current[meta_row]
+
+    def reverse(self, parent):
+        """Recover the ``(left, right)`` pair from a META vector.
+
+        Walks SS.codebook nearest-match to find the META row, then
+        looks up the children via the taxonomy. Returns ``(ps_vec,
+        ss_vec)`` for the children's codebook rows. Falls back to the
+        balanced split ``(parent / 2, parent / 2)`` when the nearest
+        SS row is not a registered META node (no surface-bytes path
+        to recover).
+        """
+        self._finite_or_raise('parent', parent)
+        ss = getattr(self, 'symbolicSpace', None)
+        ps_store = self._ps_store()
+        ss_W = self._ss_codebook()
+        # Fallback: no Spaces wired or no PS store -- balanced split.
+        if ss is None or ps_store is None or ss_W is None:
+            half = parent / 2.0
+            return half, half
+        # Nearest SS row to parent.
+        nearest_row = self._nearest_row(ss_W, parent)
+        if nearest_row is None:
+            half = parent / 2.0
+            return half, half
+        nearest_signed = ss._ss_signed(nearest_row)
+        children = ss.taxonomy_children(nearest_signed)
+        if not children:
+            # Nearest match wasn't a META node -- nothing to walk.
+            half = parent / 2.0
+            return half, half
+        # Separate children by sign: positive = PS child, negative =
+        # SS child.
+        ps_child = None
+        ss_child = None
+        for child in children:
+            ci = int(child)
+            if ci >= 0:
+                ps_child = ci
+            else:
+                ss_child = ci
+        if ps_child is None or ss_child is None:
+            # Malformed META (missing a side); fall back.
+            half = parent / 2.0
+            return half, half
+        ps_row = ss._ps_row_of(ps_child)
+        ss_row = ss._ss_row_of(ss_child)
+        # Range-check the rows; a stale taxonomy entry could carry an
+        # out-of-bounds row idx, which would crash the index op.
+        ps_codebook = getattr(ps_store, 'codebook', None)
+        if (ps_codebook is None
+                or ps_row >= ps_codebook.shape[0]
+                or ss_row >= ss_W.shape[0]):
+            half = parent / 2.0
+            return half, half
+        left = ps_codebook[ps_row]
+        right = ss_W[ss_row]
+        return left, right
 
     def compose(self, left, right):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
@@ -7939,6 +8289,815 @@ class ChunkLayer(Layer):
         return data
 #endregion
 
+#region RadixLayer (canonical PerceptStore)
+
+
+# ---------------------------------------------------------------------------
+# RadixTrie
+# ---------------------------------------------------------------------------
+
+
+class _RadixNode:
+    """Single node in the :class:`RadixTrie`.
+
+    Each node holds a (possibly empty) ``prefix`` byte-string and a dict
+    of ``children`` keyed by the first byte of the child's prefix. A
+    non-``None`` ``percept_id`` marks the node as terminal -- the
+    walk from the root concatenating prefixes reaches the canonical
+    byte sequence assigned that ID.
+
+    Internal nodes (``percept_id is None``) carry shared prefixes; the
+    longest-match walk records the deepest terminal it has seen so
+    far and returns it when no further child matches.
+    """
+
+    __slots__ = ("prefix", "percept_id", "children")
+
+    def __init__(self, prefix: bytes = b"",
+                 percept_id: Optional[int] = None) -> None:
+        self.prefix: bytes = prefix
+        self.percept_id: Optional[int] = percept_id
+        self.children: Dict[int, "_RadixNode"] = {}
+
+
+class RadixTrie:
+    """Radix trie over byte-strings with percept-ID payloads.
+
+    Supports:
+
+    * :meth:`insert` -- online insertion of ``(bytes -> percept_id)``;
+      forks existing edges as needed.
+    * :meth:`longest_match` -- O(L) longest-prefix match; returns the
+      ``(percept_id, length)`` of the deepest terminal prefix that
+      matches the input.
+    * :meth:`get` -- exact lookup for an existing key; ``None`` if
+      absent or only a partial match exists.
+    * :meth:`serialize` / :meth:`load_state` -- flat ``(prefix,
+      percept_id, [child_byte])`` triples for persistence.
+    """
+
+    def __init__(self) -> None:
+        self.root: _RadixNode = _RadixNode(prefix=b"")
+        self._size: int = 0
+
+    # ------------------------------------------------------------------
+    # Basic queries
+    # ------------------------------------------------------------------
+
+    def __len__(self) -> int:
+        return self._size
+
+    def __contains__(self, key: bytes) -> bool:
+        return self.get(key) is not None
+
+    def get(self, key: bytes) -> Optional[int]:
+        """Exact lookup: return the percept ID for ``key`` or ``None``."""
+        node = self.root
+        remaining = key
+        while remaining:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                return None
+            cp = child.prefix
+            if not remaining.startswith(cp):
+                return None
+            remaining = remaining[len(cp):]
+            node = child
+        return node.percept_id
+
+    def longest_match(self, key: bytes) -> Tuple[Optional[int], int]:
+        """Return ``(percept_id, match_length)`` for the longest known
+        prefix of ``key``.
+
+        If no inserted key is a prefix of ``key``, returns
+        ``(None, 0)`` so the caller can route the entire input to the
+        byte-fallback path.
+        """
+        node = self.root
+        consumed = 0
+        best_id: Optional[int] = None
+        best_len: int = 0
+        if node.percept_id is not None:
+            best_id = node.percept_id
+            best_len = 0
+        remaining = key
+        while remaining:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                break
+            cp = child.prefix
+            if not remaining.startswith(cp):
+                break
+            consumed += len(cp)
+            remaining = remaining[len(cp):]
+            node = child
+            if node.percept_id is not None:
+                best_id = node.percept_id
+                best_len = consumed
+        return best_id, best_len
+
+    # ------------------------------------------------------------------
+    # Mutation
+    # ------------------------------------------------------------------
+
+    def insert(self, key: bytes, percept_id: int) -> bool:
+        """Insert ``key`` with the supplied ``percept_id``.
+
+        Returns ``True`` if a new terminal was created and ``False`` if
+        the key was already terminal (existing ID is preserved -- this
+        method does not overwrite; callers should check :meth:`get`
+        first if they want re-key semantics).
+        """
+        if not isinstance(key, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixTrie.insert: key must be bytes, got {type(key)!r}")
+        key = bytes(key)
+        if len(key) == 0:
+            if self.root.percept_id is None:
+                self.root.percept_id = int(percept_id)
+                self._size += 1
+                return True
+            return False
+        node = self.root
+        remaining = key
+        while True:
+            first = remaining[0]
+            child = node.children.get(first)
+            if child is None:
+                # Pure tail-append: new leaf carrying the remainder.
+                new_leaf = _RadixNode(prefix=remaining,
+                                      percept_id=int(percept_id))
+                node.children[first] = new_leaf
+                self._size += 1
+                return True
+            cp = child.prefix
+            # Find shared prefix length with the child's edge.
+            common = 0
+            limit = min(len(cp), len(remaining))
+            while common < limit and cp[common] == remaining[common]:
+                common += 1
+            if common == len(cp):
+                # The whole child edge matches; descend.
+                remaining = remaining[common:]
+                node = child
+                if not remaining:
+                    if node.percept_id is None:
+                        node.percept_id = int(percept_id)
+                        self._size += 1
+                        return True
+                    return False
+                continue
+            # Partial overlap -> fork the child edge at `common`.
+            old_child = child
+            split = _RadixNode(prefix=cp[:common])
+            # Re-key the old child by its first remaining byte.
+            old_child.prefix = cp[common:]
+            split.children[old_child.prefix[0]] = old_child
+            node.children[first] = split
+            if common == len(remaining):
+                # New key terminates at the split point.
+                split.percept_id = int(percept_id)
+                self._size += 1
+                return True
+            # Branch sibling for the new tail.
+            tail = remaining[common:]
+            new_leaf = _RadixNode(prefix=tail, percept_id=int(percept_id))
+            split.children[tail[0]] = new_leaf
+            self._size += 1
+            return True
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def serialize(self) -> List[Tuple[bytes, Optional[int], List[int]]]:
+        """Pre-order flat dump: ``(prefix, percept_id, child_keys)`` per
+        node. ``child_keys`` is the ordered list of first-byte keys for
+        the node's children (so :meth:`load_state` can reconstruct the
+        edges by re-walking the same list).
+        """
+        out: List[Tuple[bytes, Optional[int], List[int]]] = []
+        stack: List[_RadixNode] = [self.root]
+        while stack:
+            node = stack.pop()
+            keys = sorted(node.children.keys())
+            out.append((node.prefix, node.percept_id, list(keys)))
+            # Push in reverse so traversal pops in sorted order.
+            for k in reversed(keys):
+                stack.append(node.children[k])
+        return out
+
+    def load_state(
+        self, dump: List[Tuple[bytes, Optional[int], List[int]]]
+    ) -> None:
+        """Rebuild the trie from a :meth:`serialize` dump."""
+        if not dump:
+            self.root = _RadixNode(prefix=b"")
+            self._size = 0
+            return
+        it = iter(dump)
+        prefix, percept_id, keys = next(it)
+        root = _RadixNode(prefix=prefix, percept_id=percept_id)
+        size = 1 if percept_id is not None else 0
+        stack: List[Tuple[_RadixNode, List[int]]] = [(root, list(keys))]
+        # Build children depth-first so the iterator matches the
+        # pre-order serialisation.
+        for node_prefix, node_id, node_keys in it:
+            parent, pending = stack[-1]
+            while not pending:
+                stack.pop()
+                if not stack:
+                    raise ValueError(
+                        "RadixTrie.load_state: dangling node after the "
+                        "tree was fully consumed")
+                parent, pending = stack[-1]
+            first_key = pending.pop(0)
+            child = _RadixNode(prefix=node_prefix, percept_id=node_id)
+            parent.children[first_key] = child
+            if node_id is not None:
+                size += 1
+            stack.append((child, list(node_keys)))
+        self.root = root
+        self._size = size
+
+
+# ---------------------------------------------------------------------------
+# BytesFallbackEncoder
+# ---------------------------------------------------------------------------
+
+
+class BytesFallbackEncoder(nn.Module):
+    """Per-byte vector codebook + hit-count bookkeeping for unknown chunks.
+
+    The encoder owns a ``[256, D]`` ``nn.Parameter`` and computes the
+    fallback vector for an unknown chunk as
+
+        v(chunk) = sum_{b in chunk} byte_codebook[b] / sqrt(len(chunk))
+
+    The division by ``sqrt(L)`` keeps the encoded norm O(1) instead of
+    growing linearly with the chunk length, matching the
+    expectation of downstream layers operating on unit-scale vectors.
+
+    Hit counts are tracked in a plain Python dict so promotion logic can
+    poll them cheaply; they are persisted via the parent
+    RadixLayer's ``vocab_extras`` blob.
+    """
+
+    def __init__(self, dim: int) -> None:
+        super().__init__()
+        if dim <= 0:
+            raise ValueError(
+                f"BytesFallbackEncoder: dim must be positive, got {dim}")
+        self.dim: int = int(dim)
+        # Small-stddev init so the fallback contribution starts near
+        # zero and the codebook can learn whatever scale it wants.
+        self.byte_codebook = nn.Parameter(
+            torch.randn(256, self.dim) * 0.02)
+        # Pure-Python hit counters; persisted via vocab_extras.
+        self.hit_counts: Dict[bytes, int] = {}
+
+    # ------------------------------------------------------------------
+    # Encoding
+    # ------------------------------------------------------------------
+
+    def encode(self, chunk: bytes) -> torch.Tensor:
+        """Return the fallback vector for ``chunk`` and bump its hit
+        counter.
+
+        ``chunk`` must be a non-empty ``bytes`` object.
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"BytesFallbackEncoder.encode: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "BytesFallbackEncoder.encode: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        self.hit_counts[chunk_b] = self.hit_counts.get(chunk_b, 0) + 1
+        idx = torch.tensor(list(chunk_b),
+                           dtype=torch.long,
+                           device=self.byte_codebook.device)
+        rows = self.byte_codebook.index_select(0, idx)
+        return rows.sum(dim=0) / math.sqrt(len(chunk_b))
+
+    def hits(self, chunk: bytes) -> int:
+        """Read the hit counter for ``chunk`` (0 if never seen)."""
+        return int(self.hit_counts.get(bytes(chunk), 0))
+
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+
+    def extras_dump(self) -> Dict[bytes, int]:
+        """Serialise the hit-count dict for storage in ``vocab_extras``."""
+        return dict(self.hit_counts)
+
+    def extras_load(self, hit_counts: Dict[bytes, int]) -> None:
+        """Restore hit counters from a :meth:`extras_dump` payload."""
+        self.hit_counts = {bytes(k): int(v) for k, v in hit_counts.items()}
+
+
+# ---------------------------------------------------------------------------
+# RadixLayer (canonical class; formerly PerceptStore)
+# ---------------------------------------------------------------------------
+
+
+class RadixLayer(Layer):
+    """Authoritative store for perceptual identity + invertibility.
+
+    Formerly ``PerceptStore`` in ``bin/PerceptStore.py``; promoted to a
+    proper ``Layer`` subclass so the layer-API ``forward()`` /
+    ``reverse()`` symmetry holds and the standard Layer cascades
+    (Start/End, paramUpdate, sigma) apply uniformly.
+
+    See module docstring for the broader architectural context; see the
+    class spec in
+    ``doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md``
+    Sec. Design - PerceptStore for the verbatim contract.
+
+    Components:
+
+    * ``radix_trie`` -- canonical byte sequences with longest-match
+      lookup. Authoritative.
+    * ``hash_map: dict[bytes -> int]`` -- fast cache mirroring the
+      trie's terminal nodes; rebuilt on load.
+    * ``inverse_table: list[bytes]`` -- index by percept ID; maps ID
+      back to canonical bytes. Structural invertibility.
+    * ``codebook`` -- ``nn.Parameter[V, D]`` learned vector payload per
+      percept. ``V`` grows by doubling as inserts overflow.
+    * ``byte_fallback`` -- :class:`BytesFallbackEncoder` for unknown
+      chunks; tracks promotion-candidate hit counts.
+    * ``promotion_threshold`` / ``promotion_min_length`` -- when a chunk's
+      hit count reaches the threshold AND its length is at least the
+      minimum, it is promoted into the trie + hash_map + inverse_table
+      + codebook.
+
+    Forward path (chunk bytes -> vector):
+
+      1. ``hash_map.get(chunk)`` -> existing percept ID (fast cache hit).
+      2. Else ``radix_trie.longest_match(chunk)`` -> permanent percept
+         ID + residual bytes. The residual falls through to
+         :meth:`byte_fallback.encode`.
+      3. ``byte_fallback.encode(residual)`` -> temporary fallback
+         vector; increments hit count.
+      4. If hit count >= ``promotion_threshold`` AND
+         ``len(residual) >= promotion_min_length`` and the residual is
+         the whole chunk (so we're learning the full chunk, not just
+         the suffix), promote: insert into trie + hash_map +
+         inverse_table + codebook (init from the byte-fallback
+         encoding).
+
+    Reverse path (percept ID -> canonical bytes):
+
+      1. ``inverse_table[percept_id]`` -> bytes. Exact, no learning.
+    """
+
+    # Cap at construction time; grow by doubling when an insert would
+    # otherwise overflow.
+    DEFAULT_INITIAL_CAP: int = 64
+
+    def __init__(
+        self,
+        dim: int,
+        *,
+        initial_cap: Optional[int] = None,
+        promotion_threshold: int = 4,
+        promotion_min_length: int = 2,
+    ) -> None:
+        super().__init__(nInput=int(dim), nOutput=int(dim))
+        if dim <= 0:
+            raise ValueError(
+                f"RadixLayer: dim must be positive, got {dim}")
+        self.dim: int = int(dim)
+        self.promotion_threshold: int = int(promotion_threshold)
+        self.promotion_min_length: int = int(promotion_min_length)
+        cap = int(initial_cap) if initial_cap is not None \
+            else self.DEFAULT_INITIAL_CAP
+        if cap <= 0:
+            raise ValueError(
+                f"RadixLayer: initial_cap must be positive, got {cap}")
+        self._capacity: int = cap
+        self._size: int = 0
+        # Codebook starts as a tanh-bounded small-init parameter; grows by
+        # doubling, mirroring the Codebook.grow_to pattern in Spaces.py.
+        self.codebook = nn.Parameter(
+            torch.randn(self._capacity, self.dim) * 0.02)
+        # Authoritative trie + cache + inverse table.
+        self.radix_trie: RadixTrie = RadixTrie()
+        self.hash_map: Dict[bytes, int] = {}
+        self.inverse_table: List[bytes] = []
+        # Byte-fallback encoder. Owns its own [256, D] Parameter.
+        self.byte_fallback: BytesFallbackEncoder = BytesFallbackEncoder(
+            self.dim)
+
+    # ------------------------------------------------------------------
+    # Basic queries
+    # ------------------------------------------------------------------
+
+    def __len__(self) -> int:
+        return self._size
+
+    @property
+    def capacity(self) -> int:
+        return self._capacity
+
+    def __contains__(self, key: bytes) -> bool:
+        return bytes(key) in self.hash_map
+
+    def get_id(self, chunk: bytes) -> Optional[int]:
+        """Hash-map lookup. Returns ``None`` if ``chunk`` is unknown."""
+        return self.hash_map.get(bytes(chunk))
+
+    def bytes_for(self, percept_id: int) -> bytes:
+        """Reverse path: percept ID -> canonical bytes. Raises
+        :class:`IndexError` for invalid IDs."""
+        pid = int(percept_id)
+        if pid < 0 or pid >= self._size:
+            raise IndexError(
+                f"RadixLayer.bytes_for: percept_id {pid} out of range "
+                f"[0, {self._size})")
+        return self.inverse_table[pid]
+
+    def vector_for(self, percept_id: int) -> torch.Tensor:
+        """Codebook row for ``percept_id`` (size [D])."""
+        pid = int(percept_id)
+        if pid < 0 or pid >= self._size:
+            raise IndexError(
+                f"RadixLayer.vector_for: percept_id {pid} out of range "
+                f"[0, {self._size})")
+        return self.codebook[pid]
+
+    # ------------------------------------------------------------------
+    # Mutation
+    # ------------------------------------------------------------------
+
+    def insert(
+        self,
+        chunk: bytes,
+        *,
+        init_vector: Optional[torch.Tensor] = None,
+    ) -> int:
+        """Insert ``chunk`` (canonical bytes) and return its percept ID.
+
+        If ``chunk`` is already known, returns the existing ID without
+        modifying state. Otherwise grows the codebook if needed and
+        seeds the new row with ``init_vector`` if supplied (else with
+        a small-stddev random vector).
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixLayer.insert: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "RadixLayer.insert: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        existing = self.hash_map.get(chunk_b)
+        if existing is not None:
+            return int(existing)
+        # Allocate the next percept ID.
+        new_id = self._size
+        # Grow the codebook if the new ID would overflow.
+        if new_id >= self._capacity:
+            self._grow_to(max(new_id + 1, self._capacity * 2))
+        # Seed the new row.
+        with torch.no_grad():
+            if init_vector is None:
+                self.codebook.data[new_id, :].normal_(
+                    mean=0.0, std=0.02)
+            else:
+                if not torch.is_tensor(init_vector):
+                    raise TypeError(
+                        "RadixLayer.insert: init_vector must be a "
+                        f"Tensor, got {type(init_vector)!r}")
+                if init_vector.shape != (self.dim,):
+                    raise ValueError(
+                        f"RadixLayer.insert: init_vector shape "
+                        f"{tuple(init_vector.shape)} != ({self.dim},)")
+                self.codebook.data[new_id, :].copy_(
+                    init_vector.detach().to(
+                        self.codebook.device, self.codebook.dtype))
+        # Update the auxiliary structures.
+        self.radix_trie.insert(chunk_b, new_id)
+        self.hash_map[chunk_b] = new_id
+        self.inverse_table.append(chunk_b)
+        self._size += 1
+        return new_id
+
+    # ------------------------------------------------------------------
+    # Lookup path
+    # ------------------------------------------------------------------
+
+    def lookup(self, chunk: bytes) -> torch.Tensor:
+        """Forward path: canonical bytes -> a vector of size [D].
+
+        Walks the spec'd path:
+
+          1. hash-map hit -> permanent codebook row.
+          2. radix longest-match -> known prefix + residual fallback.
+          3. byte fallback over residual; bumps hit counter; may promote.
+
+        See :meth:`lookup_with_id` for the same path plus the resolved
+        percept ID (``None`` for unpromoted slots).
+        """
+        vec, _ = self.lookup_with_id(chunk)
+        return vec
+
+    def lookup_with_id(
+        self, chunk: bytes
+    ) -> Tuple[torch.Tensor, Optional[int]]:
+        """Forward path with percept-ID resolution.
+
+        Returns ``(vector, percept_id_or_None)``:
+          * Hash-map hit -> ``(codebook[pid], pid)``.
+          * Whole input matched a known prefix exactly -> ``(vec, pid)``.
+          * Promotion fired during the call -> ``(vec, new_pid)``.
+          * Unpromoted byte-fallback / partial-match -> ``(vec, None)``.
+
+        Sibling of :meth:`lookup`; both share this single implementation
+        so the spec'd Forward path is one routine.
+        """
+        if not isinstance(chunk, (bytes, bytearray)):
+            raise TypeError(
+                f"RadixLayer.lookup_with_id: chunk must be bytes, got "
+                f"{type(chunk)!r}")
+        if len(chunk) == 0:
+            raise ValueError(
+                "RadixLayer.lookup_with_id: chunk must be non-empty.")
+        chunk_b = bytes(chunk)
+        # Step 1: hash-map fast path.
+        cached = self.hash_map.get(chunk_b)
+        if cached is not None:
+            return self.codebook[cached], int(cached)
+        # Step 2: radix longest-match on the input.
+        match_id, match_len = self.radix_trie.longest_match(chunk_b)
+        prefix_vec: Optional[torch.Tensor] = None
+        if match_id is not None and match_len > 0:
+            prefix_vec = self.codebook[match_id]
+        residual = chunk_b[match_len:]
+        if not residual:
+            # Whole chunk matched (rare here since the hash-map miss
+            # came first; defensive guard).
+            vec = prefix_vec if prefix_vec is not None \
+                else self.codebook[match_id]
+            return vec, (int(match_id) if match_id is not None else None)
+        # Step 3: byte-fallback encode the residual.
+        fallback_vec = self.byte_fallback.encode(residual)
+        if prefix_vec is None:
+            combined = fallback_vec
+        else:
+            combined = prefix_vec + fallback_vec
+        # Step 4: promotion check + hit-counter bookkeeping.
+        # Three regimes:
+        #   (a) full miss (match_len == 0): encode() already bumped
+        #       hit_counts[chunk_b] since residual == chunk_b.
+        #   (b) partial miss, first sight: hit_counts[chunk_b] is 0
+        #       because encode() bumped only the residual; seed it to 1.
+        #   (c) partial miss, repeat sight: hit_counts[chunk_b] was
+        #       seeded on a prior call but encode() bumped only the
+        #       residual this time, so bump the full-chunk counter too.
+        full_hits = self.byte_fallback.hits(chunk_b)
+        if (full_hits == 0 and len(residual) < len(chunk_b)):
+            self.byte_fallback.hit_counts[chunk_b] = 1
+            full_hits = 1
+        elif len(residual) < len(chunk_b):
+            self.byte_fallback.hit_counts[chunk_b] = full_hits + 1
+            full_hits = full_hits + 1
+        if (full_hits >= self.promotion_threshold
+                and len(chunk_b) >= self.promotion_min_length):
+            new_pid = self.insert(chunk_b, init_vector=combined.detach())
+            return combined, int(new_pid)
+        return combined, None
+
+    # ------------------------------------------------------------------
+    # Layer-API forward / reverse
+    # ------------------------------------------------------------------
+
+    def forward(self, chunks):
+        """Layer-API forward: alias of :meth:`lookup_with_id`.
+
+        Accepts a single ``bytes`` / ``bytearray`` chunk and returns
+        the ``(vector, percept_id_or_None)`` tuple. Batched / tensor
+        inputs are NOT supported here -- the PerceptualSpace's
+        ``_embed_radix`` loop calls :meth:`lookup_with_id` per slot for
+        clarity; this overload just exposes the same routine under the
+        canonical Layer name so the symmetric ``forward()`` /
+        ``reverse()`` contract holds.
+        """
+        return self.lookup_with_id(chunks)
+
+    def reverse(self, vec, *, symbolic_space=None):
+        """Layer-API reverse: vec -> canonical bytes (or list-of-bytes).
+
+        Stage 8 structural decode formerly resident on
+        :meth:`BasicModel._reverse_decode_one`; relocated here so
+        ``RadixLayer.forward`` / ``RadixLayer.reverse`` are symmetric
+        Layer-API operations and the cross-space reach lives on the
+        layer that owns the inverse table.
+
+        Accepts:
+          * ``vec`` of shape ``[D]`` -> returns ``bytes``.
+          * ``vec`` of shape ``[N, D]`` -> returns ``List[bytes]``.
+          * ``vec`` of shape ``[B, N, D]`` -> returns ``List[List[bytes]]``.
+
+        When ``symbolic_space`` is supplied, the walk goes
+        ``vec -> SS.codebook nearest -> META taxonomy children
+        -> positive PS percept id -> bytes_for(pid)``. When it is
+        ``None`` the fallback is nearest-PS-codebook directly (no META
+        walk); useful for standalone tests without a full SymbolicSpace
+        wired.
+
+        Numerical-divergence policy:
+          * NaN/Inf entries raise ``RuntimeError`` (fail loud); silently
+            masking them via ``nan_to_num`` would hide upstream bugs.
+          * Width mismatch / empty codebook / near-zero norm slots
+            return ``b""``; those are legitimate "no symbol here"
+            conditions, not divergences.
+        """
+        if not torch.is_tensor(vec):
+            return b""
+        if vec.dim() == 3:
+            return [
+                [self.reverse(vec[b, n], symbolic_space=symbolic_space)
+                 for n in range(vec.shape[1])]
+                for b in range(vec.shape[0])
+            ]
+        if vec.dim() == 2:
+            return [
+                self.reverse(vec[n], symbolic_space=symbolic_space)
+                for n in range(vec.shape[0])
+            ]
+        # 1-D path: actual structural decode.
+        # Fail loud on NaN/Inf: with NaN, all (diffs*diffs) comparisons
+        # are False and argmin silently returns row 0, masking a real
+        # numerical divergence upstream.
+        if not torch.isfinite(vec).all():
+            raise RuntimeError(
+                "RadixLayer.reverse: input vector contains NaN/Inf. "
+                "Numerical divergence must surface, not be silently "
+                "masked. "
+                f"vec[finite]={int(torch.isfinite(vec).sum().item())}/"
+                f"{int(vec.numel())}.")
+        # Pick the comparison codebook. SS-driven walk if a SS peer is
+        # supplied (preferred); else nearest-PS-codebook fallback.
+        if symbolic_space is not None:
+            cb = getattr(symbolic_space.subspace, "what", None)
+            W = cb.getW() if cb is not None else None
+        else:
+            W = self.codebook
+        if W is None:
+            return b""
+        # Empty codebook is a clean no-symbol situation, not a
+        # divergence -- bail before argmin sees a [0, D] tensor.
+        if W.shape[0] == 0:
+            return b""
+        # Move both to the same device + dtype; collapse to [D].
+        target = vec.detach().to(W.device, W.dtype).reshape(-1)
+        if target.shape[0] != W.shape[1]:
+            # Width mismatch -- caller passed a non-matching vec. Bail.
+            return b""
+        # Null-slot guard (2026-05-28). Padding / inter-word-space slots
+        # produce near-zero recon vectors. Matching them against any
+        # codebook via argmin would land on whichever row is closest to
+        # the origin and surface a spurious word. Return b"" instead so
+        # the slot renders as empty in the join. Threshold is
+        # conservative: well below the typical recon norm (~1-2 in
+        # MM_xor) but above numerical noise.
+        if float(target.norm()) < 1e-3:
+            return b""
+        # Nearest-row search.
+        diffs = W - target.unsqueeze(0)
+        sq = (diffs * diffs).sum(dim=1)
+        nearest_row = int(torch.argmin(sq).item())
+        # Standalone fallback: no SS, decode directly via PS table.
+        if symbolic_space is None:
+            try:
+                return self.bytes_for(nearest_row)
+            except IndexError:
+                return b""
+        # SS-walk: nearest may be the META itself, or its SS child.
+        # Use the row's *signed* index per the sign convention.
+        ss = symbolic_space
+        nearest_signed = ss._ss_signed(nearest_row)
+        # Walk to a META node: either the nearest row IS a META, or
+        # it's the SS-child of one (auto-bound under word learning
+        # initializes both the META row and its SS child to the same
+        # seed vector; the META row drifts during training while the
+        # child stays close to seed, so the nearest match often lands
+        # on the child, not the META). Climb one level via
+        # ``taxonomy_parent`` to recover the META in that case.
+        meta_signed = None
+        children = ss.taxonomy_children(nearest_signed)
+        if children:
+            meta_signed = nearest_signed
+        else:
+            parent = ss.taxonomy_parent(nearest_signed)
+            if parent is not None and ss.is_meta(int(parent)):
+                meta_signed = int(parent)
+                children = ss.taxonomy_children(meta_signed)
+        if meta_signed is None or not children:
+            return b""
+        for child in children:
+            ci = int(child)
+            if ci >= 0:
+                ps_row = ss._ps_row_of(ci)
+                try:
+                    return self.bytes_for(ps_row)
+                except IndexError:
+                    return b""
+        return b""
+
+    # ------------------------------------------------------------------
+    # Growth
+    # ------------------------------------------------------------------
+
+    def _grow_to(self, new_cap: int) -> None:
+        """Grow the codebook to ``new_cap`` rows, preserving existing rows.
+
+        Mirrors the ``Codebook.grow_to`` pattern: rebuild the
+        ``nn.Parameter`` with the new capacity, copy the old rows,
+        small-stddev init the new ones. Existing optimizer state is
+        not preserved -- callers that hold an optimizer over
+        :attr:`codebook` must rebuild it (PerceptualSpace does this via
+        the standard ``rebuild_optimizer`` plumbing on insert).
+        """
+        new_cap = int(new_cap)
+        if new_cap <= self._capacity:
+            return
+        old = self.codebook.data
+        device = old.device
+        dtype = old.dtype
+        fresh = torch.randn(new_cap, self.dim,
+                            device=device, dtype=dtype) * 0.02
+        with torch.no_grad():
+            fresh[:self._size, :].copy_(old[:self._size, :])
+        # Re-register the parameter at the new capacity.
+        self.codebook = nn.Parameter(fresh)
+        self._capacity = new_cap
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def vocab_extras(self) -> Dict[str, object]:
+        """Pure-Python dump of the non-tensor state for ``vocab_extras``.
+
+        The trie, hash map, inverse table, byte-fallback hit counts,
+        and the promotion knobs all live in pure-Python structures; the
+        codebook + byte-fallback's ``[256, D]`` Parameters travel via
+        the standard ``state_dict`` mechanism.
+        """
+        return {
+            "dim": self.dim,
+            "capacity": self._capacity,
+            "size": self._size,
+            "promotion_threshold": self.promotion_threshold,
+            "promotion_min_length": self.promotion_min_length,
+            "radix_trie": self.radix_trie.serialize(),
+            "hash_map": dict(self.hash_map),
+            "inverse_table": list(self.inverse_table),
+            "byte_fallback_hits": self.byte_fallback.extras_dump(),
+        }
+
+    def load_vocab_extras(self, extras: Dict[str, object]) -> None:
+        """Restore the pure-Python state from a :meth:`vocab_extras` blob.
+
+        Note: ``codebook`` Parameter shape must already match the
+        ``capacity`` recorded in ``extras`` (the caller should have
+        loaded the state_dict first, or be calling this on a freshly
+        constructed RadixLayer with the matching ``initial_cap``).
+        """
+        cap = int(extras["capacity"])
+        size = int(extras["size"])
+        if cap != self._capacity:
+            # Re-allocate the codebook to the saved capacity, copying
+            # what we already have (typically the freshly-init'd state).
+            self._grow_to(cap)
+        self._size = size
+        self.promotion_threshold = int(extras["promotion_threshold"])
+        self.promotion_min_length = int(extras["promotion_min_length"])
+        self.radix_trie = RadixTrie()
+        # The serialised entries are lists of ints (JSON-friendly);
+        # rebuild them as proper tuples of (bytes, Optional[int], list[int]).
+        dump_in = extras["radix_trie"]
+        dump_norm: List[Tuple[bytes, Optional[int], List[int]]] = []
+        for prefix, percept_id, keys in dump_in:
+            dump_norm.append((bytes(prefix),
+                              None if percept_id is None
+                              else int(percept_id),
+                              [int(k) for k in keys]))
+        self.radix_trie.load_state(dump_norm)
+        self.hash_map = {bytes(k): int(v)
+                         for k, v in extras["hash_map"].items()}
+        self.inverse_table = [bytes(b) for b in extras["inverse_table"]]
+        self.byte_fallback.extras_load(extras["byte_fallback_hits"])
+
+
+#endregion
+
 #region Tokenizer GPU Layers
 
 class BPEGpuLayer(Layer):
@@ -9496,6 +10655,49 @@ class Ops:
         y_zero = (y == 0).float()
         return core + x_zero * y + y_zero * x
 
+    # ---- Soft (LogSumExp) RadMin / RadMax -------------------------------
+    # 2026-05-29: LSE is the canonical smooth approximation of ``max`` --
+    # ``max(x) <= tau * LSE(x/tau) <= max(x) + tau * log(n)``; the
+    # gradient is the softmax (every input receives non-zero gradient
+    # proportional to its softmax weight). As ``tau -> 0`` the soft
+    # form approaches the hard ``_radmax`` / ``_radmin`` exactly; at
+    # training-meaningful ``tau`` (default 0.1) both operands receive
+    # gradient through the magnitude pool, which the hard form denies
+    # to the per-cell loser.
+
+    @staticmethod
+    def _soft_radmax(x, y, tau=0.1):
+        """LSE smooth same-sign maximum magnitude. See ``_radmax`` for
+        the hard form; this is the gradient-friendly drop-in.
+
+        ``soft_max_mag = tau * LSE([|x|/tau, |y|/tau])``. The
+        zero-passthrough tail of the hard form is preserved so the
+        function still degenerates correctly when one operand is
+        exactly zero.
+        """
+        same_sign = (x * y > 0).float()
+        sx, sy = torch.abs(x), torch.abs(y)
+        stacked = torch.stack([sx / tau, sy / tau], dim=-1)
+        soft_max_mag = tau * torch.logsumexp(stacked, dim=-1)
+        core = same_sign * torch.sign(x) * soft_max_mag
+        x_zero = (x == 0).float()
+        y_zero = (y == 0).float()
+        return core + x_zero * y + y_zero * x
+
+    @staticmethod
+    def _soft_radmin(x, y, tau=0.1):
+        """LSE smooth same-sign minimum magnitude. Mirror of
+        ``_soft_radmax`` for the conjunction kernel.
+
+        ``soft_min_mag = -tau * LSE([-|x|/tau, -|y|/tau])`` (the
+        canonical soft-min via negation of LSE on negatives).
+        """
+        same_sign = (x * y > 0).float()
+        sx, sy = torch.abs(x), torch.abs(y)
+        stacked = torch.stack([-sx / tau, -sy / tau], dim=-1)
+        soft_min_mag = -tau * torch.logsumexp(stacked, dim=-1)
+        return same_sign * torch.sign(x) * soft_min_mag
+
     @staticmethod
     def corner_overlap(a, b):
         """Pairwise hyperrectangle-overlap measure on bivector leaves.
@@ -9724,10 +10926,16 @@ class Ops:
 
         Thin forwarder to Ops._lower_kernel(mode='AND'):
             monotonic=True  → kind='strict' (lattice min)
-            monotonic=False → kind='radial' (RadMin same-sign min magnitude)
-        Bit-exact match to the pre-Step-2 body.
+            monotonic=False → kind='soft'   (LSE-smoothed RadMin)
+        2026-05-29: the non-monotonic kind was flipped from 'radial'
+        (hard RadMin -- gradient routes only to the winning operand
+        per cell) to 'soft' (LSE smooth min; both operands receive
+        softmax-weighted gradient). LSE is the canonical smooth-max
+        approximation in the optimization literature; the soft form
+        approaches the hard one as ``tau -> 0`` while remaining
+        differentiable everywhere at finite ``tau``.
         """
-        kind = 'strict' if monotonic else 'radial'
+        kind = 'strict' if monotonic else 'soft'
         return Ops._lower_kernel(x, y, mode='AND', kind=kind)
 
     @staticmethod
@@ -9736,11 +10944,16 @@ class Ops:
 
         Thin forwarder to Ops._lift_kernel(mode='OR'):
             monotonic=True  → kind='strict' (lattice max)
-            monotonic=False → kind='radial' (RadMax same-sign max magnitude
-                              with zero passthrough)
-        Bit-exact match to the pre-Step-2 body.
+            monotonic=False → kind='soft'   (LSE-smoothed RadMax)
+        2026-05-29: the non-monotonic kind was flipped from 'radial'
+        (hard RadMax -- gradient routes only to the winning operand
+        per cell, leaving the other operand with ``.grad == 0``) to
+        'soft' (LSE smooth max; both operands receive softmax-weighted
+        gradient). The failing
+        ``test_union_grad_flows_to_both_children`` regression was the
+        gating reason for the flip.
         """
-        kind = 'strict' if monotonic else 'radial'
+        kind = 'strict' if monotonic else 'soft'
         return Ops._lift_kernel(x, y, mode='OR', kind=kind)
 
     @staticmethod
@@ -10231,6 +11444,11 @@ class Ops:
                 return (X1 + X2) / 2
             if kind == 'radial':
                 return Ops._radmax(X1, X2)
+            if kind == 'soft':
+                # LSE smooth same-sign max magnitude. Gradient-friendly
+                # drop-in for 'radial'; both operands receive non-zero
+                # softmax-weighted gradient per cell.
+                return Ops._soft_radmax(X1, X2)
             raise ValueError(f"Ops.lift: unknown kind {kind!r}")
         raise ValueError(f"Ops.lift: unknown mode {mode!r}")
 
@@ -10340,6 +11558,11 @@ class Ops:
                 return X1 * X2
             if kind == 'radial':
                 return Ops._radmin(X1, X2)
+            if kind == 'soft':
+                # LSE smooth same-sign min magnitude. Gradient-friendly
+                # drop-in for 'radial'; both operands receive non-zero
+                # softmax-weighted gradient per cell.
+                return Ops._soft_radmin(X1, X2)
             raise ValueError(f"Ops.lower: unknown kind {kind!r}")
         raise ValueError(f"Ops.lower: unknown mode {mode!r}")
 

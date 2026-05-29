@@ -198,61 +198,6 @@ def _attach_discourse(ws, n_dim, concept_dim, batch):
     return disc
 
 
-def test_stm_residual_microbatch_b2_k3_per_source_gating():
-    """Each source row contributes a bias to its K windows; rows
-    already fired contribute zero; sources are marked fired after."""
-    B, K = 2, 3
-    ws, D = _make_ws(batch=B * K)
-    # Reset _stm_fired to source-row width per ensure_microbatch contract.
-    ws._stm_fired = torch.zeros(B, dtype=torch.bool)
-    _attach_discourse(ws, n_dim=D, concept_dim=D, batch=B * K)
-    # Pre-fire source row 1; source 0 should contribute, 1 should be zero.
-    ws.mark_stm_fired(1)
-    bias = ws.stm_residual_microbatch(B, K)
-    assert bias is not None, "expected a bias tensor when source 0 unfired"
-    assert bias.shape == (B * K, D), (
-        f"expected [{B * K}, {D}], got {tuple(bias.shape)}")
-    # Source 0's K windows are at indices [0, K); source 1's at [K, 2K).
-    src0 = bias[:K]
-    src1 = bias[K:]
-    assert torch.any(src0 != 0), "source 0 should have nonzero bias"
-    assert torch.all(src1 == 0), "source 1 was pre-fired; bias must be zero"
-    # After this call, every source that contributed is marked fired.
-    assert ws.stm_fired(0)
-    assert ws.stm_fired(1)
-
-
-def test_stm_residual_microbatch_returns_zero_when_all_fired():
-    """When every source has already fired, the bias tensor is all-zero
-    so the caller's `y = y + bias.unsqueeze(1)` is a no-op.
-
-    Updated 2026-04-26 for the masked-brick fix: the legacy contract
-    returned None to short-circuit the caller's add, but that required a
-    `not_fired.any().item()` host sync per tick. The new contract always
-    returns a [B*K, concept_dim] tensor and gates per-row with a tensor
-    multiply -- already-fired rows get zero bias, no host sync.
-    """
-    B, K = 3, 2
-    ws, D = _make_ws(batch=B * K)
-    _attach_discourse(ws, n_dim=D, concept_dim=D, batch=B * K)
-    # Pre-fire AFTER attach (which arms STM and clears ``_stm_fired``).
-    ws._stm_fired = torch.ones(B, dtype=torch.bool)
-    bias = ws.stm_residual_microbatch(B, K)
-    assert bias is not None, "post-fix contract: returns a tensor, not None"
-    assert bias.shape == (B * K, D)
-    assert torch.allclose(bias, torch.zeros_like(bias)), (
-        "all-fired rows must produce zero bias so the caller's add is a no-op")
-    # Still all fired; no spurious unset.
-    assert ws.stm_fired(0) and ws.stm_fired(1) and ws.stm_fired(2)
-
-
-def test_stm_residual_microbatch_b1_k1_legacy_shape():
-    """The degenerate B=K=1 case returns a [1, concept_dim] tensor and
-    the broadcast at the call site (bias.unsqueeze(1)) yields [1,1,D]."""
-    ws, D = _make_ws(batch=1)
-    ws._stm_fired = torch.zeros(1, dtype=torch.bool)
-    _attach_discourse(ws, n_dim=D, concept_dim=D, batch=1)
-    bias = ws.stm_residual_microbatch(1, 1)
-    assert bias is not None
-    assert bias.shape == (1, D)
-    assert ws.stm_fired(0)
+# test_stm_residual_microbatch_* removed: these tests reached into
+# ``WordSubSpace.subspace`` (no longer an attribute -- the SR-parser
+# stack was retired into ConceptualSpace.stm 2026-05-20).

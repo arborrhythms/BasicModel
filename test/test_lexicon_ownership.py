@@ -272,11 +272,15 @@ class TestCheckpointBundle(unittest.TestCase):
                                weights_only=False)
             state = saved["state_dict"] if isinstance(saved, dict) \
                                            and "state_dict" in saved else saved
-            present = [k for k in state.keys() if "wv._vectors" in k]
+            # The Parameter underlying ``wv._vectors`` is stored as
+            # ``wv._local_vectors`` (the property is a back-compat
+            # alias; the registered Parameter has the local-prefixed
+            # name).
+            present = [k for k in state.keys() if "wv._local_vectors" in k]
             self.assertGreater(
                 len(present), 0,
                 ".ckpt must include embedding vectors after the integrated-"
-                "weights refactor; got no wv._vectors keys."
+                "weights refactor; got no wv._local_vectors keys."
             )
 
     def test_ckpt_includes_vocab_and_bpe_extras(self):

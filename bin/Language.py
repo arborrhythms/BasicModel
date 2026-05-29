@@ -1894,8 +1894,32 @@ class LanguageLayer(Layer):
         def _identity_stub():
             return parent if arity == 1 else (parent, parent)
 
+        # 2026-05-29: pass the tier-local Basis (codebook) as an
+        # explicit arg so binary reverses (UnionLayer /
+        # IntersectionLayer) can use the mereology-guided recommender
+        # (``Ops.disjunctionReverse`` / ``Ops.conjunctionReverse``)
+        # to recover an actual operand pair instead of returning the
+        # lossy ``(parent, parent)`` pseudo-inverse. The layer's
+        # ``reverse`` accepts ``basis`` as a keyword and falls back to
+        # ``(parent, parent)`` when ``basis`` is None or has no W.
+        # Passing the Basis (rather than its W tensor) keeps the door
+        # open for richer codebook methods on reverse without changing
+        # the call site.
+        tier_basis = getattr(subspace, 'what', None)
         try:
-            child = layer.reverse(parent)
+            child = layer.reverse(parent, basis=tier_basis)
+        except TypeError:
+            # Backward-compat for layer reverses that don't accept the
+            # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
+            # ...). The retry call must also be guarded: subclasses of
+            # the base GrammarLayer that don't override .reverse inherit
+            # ``raise NotImplementedError`` from the Layer base (when
+            # ``self.butterfly`` is False), which must degrade to the
+            # identity stub, not propagate.
+            try:
+                child = layer.reverse(parent)
+            except Exception:
+                child = _identity_stub()
         except Exception:
             child = _identity_stub()
         else:
@@ -5823,6 +5847,7 @@ class WordSubSpace(SubSpace):
                 r.method_name for r in TheGrammar.rules
                 if r.tier == 'C' and r.method_name is not None}
             symbolicSpace = getattr(self, 'symbolicSpace', None)
+            perceptualSpace = getattr(self, 'perceptualSpace', None)
             if 'lift' in grammar_C_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
@@ -5831,6 +5856,19 @@ class WordSubSpace(SubSpace):
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
                     symbolicSpace=symbolicSpace)
+            # Stage 9 (2026-05-27 doc/plans/2026-05-27-perceptstore-meta-
+            # taxonomy-reentrancy.md): SymbolizeLayer (originally
+            # MetaLayer, renamed 2026-05-28) is the binary C-tier grammar
+            # op that binds a perceptual idea to a semantic idea,
+            # creating a META node in the SS taxonomy. Needs BOTH the
+            # symbolicSpace (for ``insert_meta`` + SS codebook nearest-
+            # match) AND the perceptualSpace (for the PerceptStore
+            # codebook nearest-match that identifies the percept_id).
+            if 'symbolize' in grammar_C_methods:
+                from Layers import SymbolizeLayer
+                builtin_layers['symbolize'] = SymbolizeLayer(
+                    symbolicSpace=symbolicSpace,
+                    perceptualSpace=perceptualSpace)
         elif tier == 'S':
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:

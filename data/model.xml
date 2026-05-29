@@ -22,8 +22,13 @@
          'symbols' / 'concepts' compare the body's tier event at masked
          positions to a derived target (lifted through sigma_percept
          on the fly); 'both' fires both losses.  Forward-only — there
-         is no reverse pipeline. -->
-    <reconstruct>symbols</reconstruct>
+         is no reverse pipeline. 2026-05-28: 'concepts' is the only
+         supported reconstructor today (it routes reverse through
+         ``_run_pipeline_rev_from_concepts``); other values fall
+         through to the legacy OutputSpace reverse path. Default is
+         'concepts'; per-config overrides should not be needed and
+         have been stripped from non-default XMLs. -->
+    <reconstruct>concepts</reconstruct>
 
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
          the symbolic codebook geometrically (see Reasoning.md). -->
@@ -391,10 +396,8 @@
     <!-- Symbol-residual injection scales (legacy mereology hooks). -->
     <symbolResidualScale>1.0</symbolResidualScale>
     <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
-    <!-- VQ-VAE commitment-loss β (when useVQVAE=true). -->
     <commitmentBeta>0.25</commitmentBeta>
     <!-- Enable VQ-VAE-style quantization rather than EMA codebook. -->
-    <useVQVAE>false</useVQVAE>
     <!-- ImpenetrableLayer regularizers (decorrelation / spectral
          flatness on codebook rows).  0 disables. -->
     <decorrelationWeight>0.0</decorrelationWeight>

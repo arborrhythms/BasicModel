@@ -569,35 +569,9 @@ class TestPiLayerInvertibleTrained(unittest.TestCase):
     def test_dim_10(self):  self._check(10)
 
 
-class TestConceptualSpaceInvertible(unittest.TestCase):
-    """ConceptualSpace with invertible=True should roundtrip well."""
-    def _check(self, objSize, flatten):
-        _setup_object_encoding(objSize=objSize, invertible=True,                               ergodic=False, flatten=flatten, hasAttention=False)
-        nObj, contentDim = 3, 6
-        embDim = contentDim + objSize
-
-        cspace = Models.ConceptualSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
-        )
-        cspace.eval()
-        # 2026-05-13 sigma/pi rebalance: the C-tier fold is ``sigma_percept``
-        # (the old ``ConceptualSpace.pi`` was removed). set_sigma(0)
-        # suppresses ergodic exploration for a deterministic invertible
-        # round-trip (Layer.set_sigma, inherited by SigmaLayer).
-        cspace.sigma_percept.set_sigma(0)
-        # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
-        x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
-        with torch.no_grad():
-            y = cspace.forward(_wrap_tensor(cspace, x))
-            x_rec = _unwrap(cspace.reverse(y))
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-2,
-                        f"objSize={objSize}, flatten={flatten}: err={err:.2e}")
-
-    def test_reshape_objsize0(self):      self._check(0, True)
-    def test_reshape_objsize4(self):      self._check(4, True)
-    def test_no_reshape_objsize0(self):   self._check(0, False)
-    def test_no_reshape_objsize4(self):   self._check(4, False)
+# TestConceptualSpaceInvertible removed 2026-05-28: depended on
+# ConceptualSpace.sigma_percept which Stage 1.C retired (the C-tier
+# fold is now a single STM push of upstream PS output).
 
 
 class TestConceptualSpacePairedSigma(unittest.TestCase):

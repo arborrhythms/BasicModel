@@ -1,10 +1,9 @@
 <?xml version="1.0" ?>
 <model>
   <!-- MM_grammar: MentalModel on XOR via non-default grammar-directed
-       composition (derived from the grammar block) with VQ-VAE enabled.
-       Sibling: MM_xor_grammar.xml is the useVQVAE=false variant used for
-       isolated regression of the recurrent Pi-Sigma + pairwise compose
-       without VQ-VAE muddying the variable. -->
+       composition (derived from the grammar block). Codebook training
+       is implicit when <codebook>quantize</codebook> is set
+       (the <useVQVAE> knob was retired 2026-05-29). -->
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <modelType>embedding</modelType>
@@ -27,7 +26,6 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -51,7 +49,6 @@
     <nVectors>8</nVectors>
     <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
-    <useVQVAE>true</useVQVAE>
   </SymbolicSpace>
 
   <OutputSpace>

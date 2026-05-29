@@ -36,9 +36,11 @@
          - conceptualOrder = 1: a single ConceptualSpace -> SymbolicSpace
            step with no slot halving, so the round trip is exactly one
            forward + one reverse.
-         - useVQVAE = false on SymbolicSpace: keeps the focus on the
-           snap (Codebook.forward(project=True)) rather than VQ-VAE
-           commit / residual training signals.
+         - codebook training path is the default VQ-VAE / EMA
+           dispatch in SymbolicSpace.forward; the prior
+           ``<useVQVAE>false</useVQVAE>`` "frozen-codebook" branch was
+           retired 2026-05-29 (no learning signal was supplied, so
+           prototypes stayed at random init).
          - invertible = true on the Sigma / Pi layers and on the
            codebook: engages the cached-SVD pseudo-inverse
            (project_reverse) path used by the idempotent test.

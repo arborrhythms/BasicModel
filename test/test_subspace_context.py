@@ -249,43 +249,11 @@ def test_pipeline_spaces_carry_wordSubSpace(model):
     assert model.outputSpace.wordSubSpace is model.wordSubSpace
 
 
-def test_stm_residual_flows_through_conceptualspace(model):
-    """When wordSubSpace.stm_residual_microbatch returns a non-None bias,
-    ConceptualSpace.forward stages a biased tensor into its own subspace."""
-    ws = model.wordSubSpace
-    cs = model.conceptualSpace
-
-    # Build an upstream subspace carrying wordSubSpace + a known event.
-    from Spaces import SubSpace
-    upstream = SubSpace(cs.inputShape, cs.outputShape,
-                        nInputDim=cs.nInputDim, nOutputDim=cs.nOutputDim)
-    upstream.copy_context(cs.subspace)  # seed serial_cache/errors dicts
-    upstream.wordSubSpace = ws
-    B = 2
-    N = int(cs.inputShape[0])
-    D = int(cs.inputShape[1])
-    # The body sees a flattened [B*K, N, D] event; here K=1 so BK=B=2.
-    # Resize ws._stm_fired to the source batch so the call site derives K=1.
-    ws._stm_fired = torch.zeros(B, dtype=torch.bool, device=ws._stm_fired.device)
-    event_in = torch.zeros(B, N, D)
-    upstream.set_event(event_in)
-
-    # Baseline: no residual. forward() must not mutate upstream.
-    ws.discourse = None
-    ws.arm_stm()
-    ws.stm_residual_microbatch = lambda B_arg, K_arg, expected_dim=None: None
-    cs.forward(upstream)
-    baseline_event = cs.subspace.event.getW()
-
-    # Primed: non-None residual. forward() stages event+bias in cs.subspace.
-    # The new microbatch contract returns [B*K, D]; the call site
-    # broadcasts over N via .unsqueeze(1).
-    bias = torch.ones(B, D) * 0.3
-    ws.arm_stm()
-    ws.stm_residual_microbatch = lambda B_arg, K_arg, expected_dim=None: bias
-    upstream.set_event(event_in)  # reset upstream
-    cs.forward(upstream)
-    primed_event = cs.subspace.event.getW()
-
-    assert not torch.allclose(baseline_event, primed_event), (
-        "STM-residual should change the ConceptualSpace forward event")
+# 2026-05-29: removed test_stm_residual_flows_through_conceptualspace.
+# The test asserted that ``ConceptualSpace.forward`` reads
+# ``ws.stm_residual_microbatch`` and adds it to the event. That wiring
+# was retired by the parallel-mode STM-set-all-slots fix (2026-05-28);
+# CS.forward writes the [B, N, D] slab directly to STM and no longer
+# consumes the per-word residual injection point. The
+# ``stm_residual_microbatch`` API survives but is consumed elsewhere
+# (Language.py per-word path and Layers.py).

@@ -927,5 +927,135 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_grammar.xml"))
 
 
+# ==========================================================================
+# Stage 8: structural META-taxonomy replacement of the orth-row-copy contract
+# (doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md §Stage 8).
+#
+# The Stage 1.B "orth row in SS.codebook = COPY of PS-side vector" contract
+# is retired under the radix-mode pipeline. The replacement is structural:
+#   * a percept is inserted into PS.percept_store (PS-side bytes + vector);
+#   * an SS row is allocated for the meaning;
+#   * a META node binds (ps_idx, ss_idx) and records cross-codebook signed
+#     references in SS.taxonomy / SS.taxonomy_parent_map.
+# These tests assert the structural shape, in addition to the legacy
+# orth-row-copy assertions which remain valid for the legacy lexicon
+# chunking path (MM_xor_loopback.xml uses the lexicon path; MM_xor.xml
+# uses radix).
+# ==========================================================================
+
+
+class TestStage8MetaTaxonomyStructural(unittest.TestCase):
+    """Stage 8 structural assertions over (insert_percept, insert_symbol,
+    insert_meta) on the radix-mode model.
+
+    The legacy ``insert_paired_word`` tests above continue to assert the
+    orth-row-copy contract under the lexicon path; this class is the
+    Stage-8 replacement: in radix mode the percept lives on
+    ``PS.percept_store`` and the SS-side row for the meaning is freshly
+    allocated, bound via a META node that records cross-codebook signed
+    references rather than copying the PS vector into SS.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import warnings
+        import Models as _Models
+        import Language as _Language
+        from util import init_config as _init_config
+        # 2026-05-29: use MM_xor_fixture.xml (dedicated test fixture
+        # with chunking=radix AND SS codebook=quantize) so runtime
+        # experiments on MM_xor.xml don't break the META taxonomy
+        # tests, which inherently require an SS Codebook for
+        # ``insert_symbol`` to allocate rows.
+        cfg = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+        _init_config(path=cfg, defaults_path=_DEFAULTS)
+        _Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            cls.model, _ = _Models.BasicModel.from_config(cfg)
+        _Models.TheData.load("xor")
+
+    def test_radix_mode_supplies_percept_store(self):
+        ps_space = self.model.perceptualSpace
+        self.assertIsNotNone(
+            ps_space.percept_store,
+            "MM_xor radix-mode model must expose percept_store on PS")
+
+    def test_insert_meta_records_signed_cross_codebook_references(self):
+        """The META node's children list contains a positive PS signed
+        ref and a negative SS signed ref. PS-side bytes are recoverable
+        via ``PerceptStore.bytes_for(ps_idx)``.
+        """
+        ss = self.model.symbolicSpace
+        ps_store = self.model.perceptualSpace.percept_store
+        # Insert PS-side bytes + SS-side meaning row; bind via META.
+        ps_idx = ss.insert_percept(b"structural_meta")
+        ss_idx = ss.insert_symbol()
+        meta_idx = ss.insert_meta(ps_idx, ss_idx)
+        # Signed-convention checks.
+        self.assertGreaterEqual(ps_idx, 0,
+                                "insert_percept must return a positive "
+                                "signed idx")
+        self.assertLess(ss_idx, 0,
+                        "insert_symbol must return a negative signed idx")
+        self.assertLess(meta_idx, 0,
+                        "insert_meta must return a negative signed idx")
+        # Children list contains both a positive and a negative ref.
+        children = ss.taxonomy_children(meta_idx)
+        positives = [c for c in children if c >= 0]
+        negatives = [c for c in children if c < 0]
+        self.assertTrue(
+            positives and negatives,
+            f"META children must contain both positive (PS) and negative "
+            f"(SS) signed refs; got {children!r}")
+        # PS-side bytes recoverable through the inverse table.
+        ps_row = positives[0]
+        self.assertEqual(ps_store.bytes_for(ps_row), b"structural_meta")
+
+    def test_orth_row_no_longer_copied_into_ss_codebook(self):
+        """The retired contract: the META node's SS row is NOT a copy of
+        the PS vector. (Under the new structural binding, SS gets a fresh
+        symbolic row + a separately allocated META row; neither is a
+        copy of the percept_store row.)
+        """
+        ss = self.model.symbolicSpace
+        ps_store = self.model.perceptualSpace.percept_store
+        ps_idx = ss.insert_percept(b"distinct_storage")
+        # Pin the PS row to a known vector so we can prove the SS-side
+        # rows are not duplicates of it.
+        D = int(ss.nDim)
+        marker = torch.zeros(D)
+        marker[0] = 1.0  # distinctive shape
+        with torch.no_grad():
+            ps_store.codebook.data[ps_idx].copy_(
+                marker.to(ps_store.codebook.device, ps_store.codebook.dtype))
+        # Allocate a *random* SS row and bind via META using a custom
+        # fused vec also distinct from the pinned PS row.
+        sym_init = torch.zeros(D)
+        sym_init[1] = 1.0
+        ss_idx = ss.insert_symbol(init_vec=sym_init)
+        fused_init = torch.zeros(D)
+        fused_init[2] = 1.0
+        meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused_init)
+        # SS row for ss_idx must not equal the PS row.
+        ss_row = -ss_idx - 1
+        W = ss.subspace.what.getW()
+        ps_vec = ps_store.codebook[ps_idx].detach()
+        ss_vec = W[ss_row].detach()
+        self.assertFalse(
+            torch.allclose(ss_vec.to(ps_vec.device, ps_vec.dtype),
+                           ps_vec, atol=1e-5),
+            "SS row must NOT be a copy of the PS vector under the Stage 8 "
+            "structural-binding contract")
+        # Same for the META row.
+        meta_row = -meta_idx - 1
+        meta_vec = W[meta_row].detach()
+        self.assertFalse(
+            torch.allclose(meta_vec.to(ps_vec.device, ps_vec.dtype),
+                           ps_vec, atol=1e-5),
+            "META row must NOT be a copy of the PS vector under the "
+            "Stage 8 structural-binding contract")
+
+
 if __name__ == "__main__":
     unittest.main()

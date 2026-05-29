@@ -129,34 +129,8 @@ def test_unary_variable_slot_accepts_any_order():
         assert is_rule_admissible(sig, left_cat='N', left_order=k)
 
 
-def test_resolve_lhs_order_constant():
-    """``_resolve_lhs_order`` with a constant LHS returns the literal."""
-    from Language import WordSubSpace
-    sig = {'lhs_order': 4, 'lhs_order_kind': 'constant',
-           'rhs_orders': [3, 1], 'rhs_order_kinds': ['constant', 'constant']}
-    assert WordSubSpace._resolve_lhs_order(sig, (3, 1)) == 4
-
-
-def test_resolve_lhs_order_variable_with_lift_delta():
-    """``S* = lift(NP*, VP1)`` → LHS variable +1; operands (NP3, VP1)
-    bind * to 3; parent order = 3 + 1 = 4."""
-    from Language import WordSubSpace
-    sig = {'lhs_order': 1, 'lhs_order_kind': 'variable',
-           'rhs_orders': [0, 1],
-           'rhs_order_kinds': ['variable', 'constant']}
-    assert WordSubSpace._resolve_lhs_order(sig, (3, 1)) == 4
-
-
-def test_resolve_lhs_order_variable_with_lower_delta():
-    """``NP* = lower(DET, NP*+1)`` shape: LHS variable -1; operands
-    (DET0, NP3) bind * = 3 - 1 = 2; parent order = 2 + -1? No:
-    we apply lhs_delta directly — binding=2 from RHS[1] (NP*+1 means
-    op_order=binding+1 so 3-1=2), then parent = 2 + lhs_delta(-1) = 1."""
-    from Language import WordSubSpace
-    sig = {'lhs_order': -1, 'lhs_order_kind': 'variable',
-           'rhs_orders': [0, 1],
-           'rhs_order_kinds': ['constant', 'variable']}
-    assert WordSubSpace._resolve_lhs_order(sig, (0, 3)) == 1
+# test_resolve_lhs_order_* removed: ``WordSubSpace._resolve_lhs_order``
+# was retired with the signal-router parser cleanup.
 
 
 def test_legacy_signature_without_kinds_treats_as_constants():

@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_xor_fixture: dedicated test fixture for the META taxonomy /
+       SymbolizeLayer / RadixLayer regression suite. Decoupled from
+       MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling
+       SS <codebook>quantize</codebook> -> <codebook>none</codebook>)
+       don't break the tests, which inherently require:
+         - <chunking>radix</chunking> so PerceptStore is constructed.
+         - <codebook>quantize</codebook> on SymbolicSpace so
+           ``SymbolicSpace.subspace.what`` is a Codebook and
+           ``insert_symbol`` can allocate rows.
+       Used by test/test_two_codebook_meta_taxonomy.py,
+       test/test_symbolize_layer.py, test/test_autobind_from_cs.py,
+       test/test_radix_layer_reverse.py. Do not consume this from
+       production code. -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <modelType>embedding</modelType>
+    <conceptualMode>parallel</conceptualMode>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>true</codebook>
+    <chunking>radix</chunking>
+    <butterfly>false</butterfly>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>quantize</codebook>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <WordSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+    </language>
+  </WordSpace>
+
+</model>
