@@ -1,29 +1,27 @@
-"""Stage 8: Two-codebook split + META taxonomy.
+"""Stage 8 + Stage 3+4: Two-codebook split + META taxonomy (positive-int keyed).
 
-Tests the new SymbolicSpace API surface:
+Tests the SymbolicSpace API surface as it exists post-`.where`-keyed
+taxonomy refactor (doc/plans/2026-05-28-where-keyed-taxonomy.md):
 
-  * ``insert_percept(canonical_bytes) -> int (positive)`` delegates to
-    ``PerceptualSpace.percept_store``.
-  * ``insert_symbol(init_vec=None) -> int (negative)`` allocates a new
-    SS.codebook row.
-  * ``insert_meta(ps_idx, ss_idx, fused_vec=None) -> int (negative)``
-    allocates a META node binding ``(ps_idx, ss_idx)``; idempotent on
-    the (ps_idx, ss_idx) pair (subsequent calls return the same META
-    idx and EMA-update the stored fused vec).
+  * ``insert_percept(canonical_bytes) -> int (position)`` delegates to
+    ``PerceptualSpace.percept_store`` and binds a position.
+  * ``insert_symbol(init_vec=None) -> int (position)`` allocates a new
+    SS.codebook row + position; tagged ``"ss"`` in ``_pos_kind``.
+  * ``insert_meta(ps_pos, ss_pos, fused_vec=None) -> int (position)``
+    allocates a META node binding ``(ps_pos, ss_pos)``; idempotent on
+    the pair (subsequent calls return the same META position and
+    EMA-update the stored fused vec). Tagged ``"meta"`` in
+    ``_pos_kind``.
   * ``taxonomy``, ``taxonomy_parent`` (dicts), ``taxonomy_children``,
-    ``is_meta`` helpers.
+    ``is_meta`` helpers (positive-int keys / values).
+  * ``_pos_kind[pos]`` / ``_{ps,ss}_pos_to_row`` lookup tables resolve
+    positions back to their underlying codebook rows.
   * Reverse decode: terminal CS state -> SS nearest match -> walk META
     taxonomy -> PS percept_id -> ``inverse_table`` -> canonical bytes.
-  * Persistence roundtrip: taxonomy + parent + meta-key map survive
-    ``vocab_extras`` save/load.
+  * Persistence roundtrip: taxonomy + parent + meta-key map +
+    lookup-tables survive ``vocab_extras`` save/load.
 
-The sign convention (locked in the plan §Architectural decisions #3):
-
-  * positive ``i`` -> ``PS.percept_store.codebook[i]``,
-    ``PS.percept_store.inverse_table[i]`` for surface bytes.
-  * negative ``i`` -> ``SS.codebook[-i - 1]``.
-
-Stage 8 of doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md.
+Sign convention retired 2026-05-29 (positive-int positions throughout).
 """
 
 from __future__ import annotations
@@ -65,24 +63,28 @@ def _make_radix_model():
 
 
 # ---------------------------------------------------------------------------
-# Sign-convention helpers (mirror the implementation contract).
+# Position → row helpers (mirror the implementation lookup tables).
 # ---------------------------------------------------------------------------
 
 
-def _ss_row_from_signed(signed_idx):
-    """``signed_idx`` -> SS.codebook row index. Raises if positive."""
-    if signed_idx >= 0:
+def _ss_row_from_pos(ss, pos):
+    """``pos`` -> SS.codebook row index via ``SymbolicSpace._ss_pos_to_row``."""
+    row = ss._ss_pos_to_row.get(int(pos))
+    if row is None:
         raise AssertionError(
-            f"SS row expected from negative signed idx, got {signed_idx}")
-    return -signed_idx - 1
+            f"position {pos} has no SS-side row binding; expected an "
+            f"SS or META position")
+    return int(row)
 
 
-def _ps_row_from_signed(signed_idx):
-    """``signed_idx`` -> PS.percept_store row index. Raises if negative."""
-    if signed_idx < 0:
+def _ps_row_from_pos(ss, pos):
+    """``pos`` -> PerceptStore row index via ``SymbolicSpace._ps_pos_to_row``."""
+    row = ss._ps_pos_to_row.get(int(pos))
+    if row is None:
         raise AssertionError(
-            f"PS row expected from positive signed idx, got {signed_idx}")
-    return int(signed_idx)
+            f"position {pos} has no PS-side row binding; expected a "
+            f"PS position")
+    return int(row)
 
 
 # ---------------------------------------------------------------------------
@@ -102,26 +104,28 @@ class TestInsertPercept(unittest.TestCase):
                              "MM_xor radix-mode model must have a "
                              "percept_store on PerceptualSpace")
         starting_size = len(ps)
-        signed_idx = ss.insert_percept(b"hello")
-        self.assertIsInstance(signed_idx, int)
-        self.assertGreaterEqual(signed_idx, 0,
-                                "insert_percept must return a positive "
-                                f"signed idx; got {signed_idx}")
-        ps_row = _ps_row_from_signed(signed_idx)
+        pos = ss.insert_percept(b"hello")
+        self.assertIsInstance(pos, int)
+        self.assertGreater(pos, 0,
+                           f"insert_percept must return a positive position; "
+                           f"got {pos}")
+        self.assertEqual(ss._pos_kind.get(pos), "ps",
+                         "PS position must be tagged 'ps' in _pos_kind")
+        ps_row = _ps_row_from_pos(ss, pos)
         self.assertEqual(ps_row, starting_size,
                          "the new percept id should be the next slot")
         self.assertEqual(ps.bytes_for(ps_row), b"hello",
                          "inverse_table lookup must match insertion")
-        # Repeat insert of the same canonical bytes returns the same id.
+        # Repeat insert of the same canonical bytes returns the same position.
         again = ss.insert_percept(b"hello")
-        self.assertEqual(again, signed_idx,
-                         "re-inserting same bytes must return the same idx")
+        self.assertEqual(again, pos,
+                         "re-inserting same bytes must return the same position")
 
 
 class TestInsertSymbol(unittest.TestCase):
-    """``insert_symbol`` allocates a fresh SS row; returns negative idx."""
+    """``insert_symbol`` allocates a fresh SS row + position (positive int)."""
 
-    def test_insert_symbol_returns_negative_idx_and_writes_row(self):
+    def test_insert_symbol_returns_positive_position_and_writes_row(self):
         m = _make_radix_model()
         ss = m.symbolicSpace
         cb = ss.subspace.what
@@ -130,12 +134,14 @@ class TestInsertSymbol(unittest.TestCase):
         init_vec = torch.zeros(int(ss.nDim))
         init_vec[0] = 0.7
         init_vec[1] = -0.3
-        signed_idx = ss.insert_symbol(init_vec=init_vec)
-        self.assertIsInstance(signed_idx, int)
-        self.assertLess(signed_idx, 0,
-                        "insert_symbol must return a negative signed idx; "
-                        f"got {signed_idx}")
-        ss_row = _ss_row_from_signed(signed_idx)
+        pos = ss.insert_symbol(init_vec=init_vec)
+        self.assertIsInstance(pos, int)
+        self.assertGreater(pos, 0,
+                           f"insert_symbol must return a positive position; "
+                           f"got {pos}")
+        self.assertEqual(ss._pos_kind.get(pos), "ss",
+                         "fresh SS symbol must be tagged 'ss' in _pos_kind")
+        ss_row = _ss_row_from_pos(ss, pos)
         self.assertGreaterEqual(ss_row, 0)
         self.assertLess(ss_row, cb.nVectors)
         W_after = cb.getW().detach()
@@ -157,11 +163,11 @@ class TestInsertSymbol(unittest.TestCase):
         """init_vec=None falls back to a random-ish init."""
         m = _make_radix_model()
         ss = m.symbolicSpace
-        idx_a = ss.insert_symbol()
-        idx_b = ss.insert_symbol()
-        self.assertNotEqual(idx_a, idx_b,
+        pos_a = ss.insert_symbol()
+        pos_b = ss.insert_symbol()
+        self.assertNotEqual(pos_a, pos_b,
                             "Distinct insert_symbol calls must return "
-                            "distinct signed idxs")
+                            "distinct positions")
 
 
 class TestInsertMeta(unittest.TestCase):
@@ -170,48 +176,51 @@ class TestInsertMeta(unittest.TestCase):
     def test_insert_meta_basic_creates_taxonomy_entry(self):
         m = _make_radix_model()
         ss = m.symbolicSpace
-        ps_idx = ss.insert_percept(b"meta_a")
-        ss_idx = ss.insert_symbol()
-        meta_idx = ss.insert_meta(ps_idx, ss_idx)
-        self.assertLess(meta_idx, 0,
-                        "insert_meta must return a negative signed idx (a "
-                        f"new SS row hosting the META vector); got {meta_idx}")
+        ps_pos = ss.insert_percept(b"meta_a")
+        ss_pos = ss.insert_symbol()
+        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        self.assertGreater(meta_pos, 0,
+                           f"insert_meta must return a positive position; "
+                           f"got {meta_pos}")
+        self.assertEqual(ss._pos_kind.get(meta_pos), "meta",
+                         "META position must be tagged 'meta' in _pos_kind")
         # taxonomy_children: meta -> [ps, ss]
-        children = ss.taxonomy_children(meta_idx)
-        self.assertEqual(set(children), {ps_idx, ss_idx},
-                         f"META node children should be {{ps_idx, ss_idx}}; "
+        children = ss.taxonomy_children(meta_pos)
+        self.assertEqual(set(children), {ps_pos, ss_pos},
+                         f"META node children should be {{ps_pos, ss_pos}}; "
                          f"got {children!r}")
         # taxonomy_parent: ps -> meta, ss -> meta
-        self.assertEqual(ss.taxonomy_parent(ps_idx), meta_idx)
-        self.assertEqual(ss.taxonomy_parent(ss_idx), meta_idx)
+        self.assertEqual(ss.taxonomy_parent(ps_pos), meta_pos)
+        self.assertEqual(ss.taxonomy_parent(ss_pos), meta_pos)
         # is_meta predicate
-        self.assertTrue(ss.is_meta(meta_idx),
+        self.assertTrue(ss.is_meta(meta_pos),
                         "is_meta must return True for a META node")
-        self.assertFalse(ss.is_meta(ps_idx),
-                         "is_meta must return False for a pure percept idx")
-        self.assertFalse(ss.is_meta(ss_idx),
-                         "is_meta must return False for a pure symbol idx")
+        self.assertFalse(ss.is_meta(ps_pos),
+                         "is_meta must return False for a PS position")
+        self.assertFalse(ss.is_meta(ss_pos),
+                         "is_meta must return False for a plain SS position")
 
     def test_insert_meta_default_fused_vec_is_average(self):
         """When fused_vec is None, the META row defaults to the average of
-        PS.codebook[ps_idx] and SS.codebook[ss_idx]."""
+        the PS-row vector and SS-row vector for the bound positions."""
         m = _make_radix_model()
         ss = m.symbolicSpace
         ps = m.perceptualSpace.percept_store
-        ps_idx = ss.insert_percept(b"meta_b")
+        ps_pos = ss.insert_percept(b"meta_b")
+        ps_row = _ps_row_from_pos(ss, ps_pos)
         # Pin PS row to a known value so we can predict the average.
         with torch.no_grad():
-            ps.codebook.data[ps_idx, :].zero_()
-            ps.codebook.data[ps_idx, 0] = 1.0
+            ps.codebook.data[ps_row, :].zero_()
+            ps.codebook.data[ps_row, 0] = 1.0
         sym_init = torch.zeros(int(ss.nDim))
         sym_init[1] = 1.0
-        ss_idx = ss.insert_symbol(init_vec=sym_init)
-        ss_row_of_input = _ss_row_from_signed(ss_idx)
+        ss_pos = ss.insert_symbol(init_vec=sym_init)
+        ss_row_of_input = _ss_row_from_pos(ss, ss_pos)
 
-        meta_idx = ss.insert_meta(ps_idx, ss_idx)
-        meta_row = _ss_row_from_signed(meta_idx)
+        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        meta_row = _ss_row_from_pos(ss, meta_pos)
         W = ss.subspace.what.getW()
-        expected = (ps.codebook[ps_idx] + W[ss_row_of_input]) / 2.0
+        expected = (ps.codebook[ps_row] + W[ss_row_of_input]) / 2.0
         actual = W[meta_row]
         # Tolerance handles device/dtype variation.
         self.assertTrue(
@@ -224,33 +233,33 @@ class TestInsertMeta(unittest.TestCase):
     def test_insert_meta_is_idempotent_with_ema_update(self):
         m = _make_radix_model()
         ss = m.symbolicSpace
-        ps_idx = ss.insert_percept(b"meta_c")
-        ss_idx = ss.insert_symbol()
+        ps_pos = ss.insert_percept(b"meta_c")
+        ss_pos = ss.insert_symbol()
         # First insert with an explicit fused_vec.
         fused1 = torch.zeros(int(ss.nDim))
         fused1[0] = 1.0
-        meta_idx_1 = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused1)
-        meta_row = _ss_row_from_signed(meta_idx_1)
+        meta_pos_1 = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused1)
+        meta_row = _ss_row_from_pos(ss, meta_pos_1)
         W = ss.subspace.what.getW()
         first_stored = W[meta_row].detach().clone()
-        # Second call with the same (ps_idx, ss_idx) MUST return the same
-        # META idx AND ema-update the stored vec.
+        # Second call with the same (ps_pos, ss_pos) MUST return the same
+        # META position AND ema-update the stored vec.
         fused2 = torch.zeros(int(ss.nDim))
         fused2[1] = 1.0
-        meta_idx_2 = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused2)
-        self.assertEqual(meta_idx_1, meta_idx_2,
-                         "insert_meta on the same (ps, ss) pair must return "
-                         "the same meta idx")
+        meta_pos_2 = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused2)
+        self.assertEqual(meta_pos_1, meta_pos_2,
+                         "insert_meta on the same (ps_pos, ss_pos) pair "
+                         "must return the same meta position")
         # New stored vec is somewhere between first and fused2 (EMA).
         second_stored = ss.subspace.what.getW()[meta_row].detach()
         self.assertFalse(
             torch.allclose(second_stored, first_stored, atol=1e-6),
             "Second insert_meta call should EMA-update the stored vec")
         # Children list AND parent map must remain consistent.
-        self.assertEqual(set(ss.taxonomy_children(meta_idx_1)),
-                         {ps_idx, ss_idx})
-        self.assertEqual(ss.taxonomy_parent(ps_idx), meta_idx_1)
-        self.assertEqual(ss.taxonomy_parent(ss_idx), meta_idx_1)
+        self.assertEqual(set(ss.taxonomy_children(meta_pos_1)),
+                         {ps_pos, ss_pos})
+        self.assertEqual(ss.taxonomy_parent(ps_pos), meta_pos_1)
+        self.assertEqual(ss.taxonomy_parent(ss_pos), meta_pos_1)
 
 
 class TestReverseDecodeStructural(unittest.TestCase):
@@ -284,7 +293,7 @@ class TestReverseDecodeStructural(unittest.TestCase):
         D = int(ss.nDim)
         pinned = {}
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_signed(mid)
+            row = _ss_row_from_pos(ss,mid)
             vec = torch.zeros(D, device=cb.getW().device, dtype=cb.getW().dtype)
             vec[i] = 1.0
             with torch.no_grad():
@@ -334,7 +343,7 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
         W = cb.getW()
         D = int(ss.nDim)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_signed(mid)
+            row = _ss_row_from_pos(ss,mid)
             vec = torch.zeros(D, device=W.device, dtype=W.dtype)
             vec[i] = 1.0
             with torch.no_grad():
@@ -344,7 +353,7 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
         n_slots = len(words)
         recon = torch.zeros(1, n_slots, D, device=W.device, dtype=W.dtype)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_signed(mid)
+            row = _ss_row_from_pos(ss,mid)
             recon[0, i, :] = W[row].detach()
         # Originals only used for the per-row token-count clip; for the
         # decode call it's a single sentence with N tokens.

@@ -64,20 +64,24 @@ def _make_radix_model():
     return m
 
 
-def _ss_row_from_signed(signed_idx):
-    """Negative signed idx -> SS.codebook row index."""
-    if signed_idx >= 0:
+def _ss_row_from_pos(ss, pos):
+    """Position -> SS.codebook row index via ``_ss_pos_to_row``."""
+    row = ss._ss_pos_to_row.get(int(pos))
+    if row is None:
         raise AssertionError(
-            f"SS row expected from negative signed idx, got {signed_idx}")
-    return -signed_idx - 1
+            f"position {pos} has no SS-side row binding; expected an "
+            f"SS or META position")
+    return int(row)
 
 
-def _ps_row_from_signed(signed_idx):
-    """Positive signed idx -> PS.percept_store row index."""
-    if signed_idx < 0:
+def _ps_row_from_pos(ss, pos):
+    """Position -> PS.percept_store row index via ``_ps_pos_to_row``."""
+    row = ss._ps_pos_to_row.get(int(pos))
+    if row is None:
         raise AssertionError(
-            f"PS row expected from positive signed idx, got {signed_idx}")
-    return int(signed_idx)
+            f"position {pos} has no PS-side row binding; expected a "
+            f"PS position")
+    return int(row)
 
 
 # ---------------------------------------------------------------------------
@@ -140,9 +144,9 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         # Pre-seed a percept and a symbol so the nearest-match lookups
         # can identify them.
         ps_idx = ss.insert_percept(b"hello")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         # Pin the codebook rows to deterministic vectors so nearest-
         # match is unambiguous.
         D = int(ss.nDim)
@@ -187,9 +191,9 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"world")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[2] = 1.0
@@ -202,7 +206,7 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         explicit_fused = torch.zeros(D)
         explicit_fused[4] = 0.5
         meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=explicit_fused)
-        meta_row = _ss_row_from_signed(meta_idx)
+        meta_row = _ss_row_from_pos(ss,meta_idx)
         meta_vec = ss.subspace.what.getW()[meta_row].detach().clone()
         # Forward through SymbolizeLayer; must return the existing META vec
         # (post-EMA-update with the new fused), not allocate a new row.
@@ -242,9 +246,9 @@ class TestSymbolizeLayerReverse(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"alpha")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 0.9
@@ -258,7 +262,7 @@ class TestSymbolizeLayerReverse(unittest.TestCase):
         fused = torch.zeros(D)
         fused[2] = 1.0
         meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused)
-        meta_row = _ss_row_from_signed(meta_idx)
+        meta_row = _ss_row_from_pos(ss,meta_idx)
         meta_vec = ss.subspace.what.getW()[meta_row].detach().clone()
         meta = SymbolizeLayer(
             symbolicSpace=ss,
@@ -302,9 +306,9 @@ class TestSymbolizeLayerIdempotency(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"gamma")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[5] = 1.0
@@ -597,9 +601,9 @@ class TestSymbolizeLayerComposeGenerate(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"compose_word")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         a = torch.zeros(D)
         a[0] = 1.0
@@ -713,9 +717,9 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ps_store = ps_space.percept_store
         # Pre-seed PS + SS so nearest-match resolves deterministically.
         ps_idx = ss.insert_percept(b"grad_word")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
@@ -763,7 +767,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         self.assertIsNotNone(meta_idx,
                              "Test precondition: META row must have been "
                              "registered by forward.")
-        meta_row = _ss_row_from_signed(meta_idx)
+        meta_row = _ss_row_from_pos(ss,meta_idx)
         self.assertTrue(
             torch.any(ss_param.grad[meta_row] != 0),
             f"SS.codebook gradient at META row {meta_row} must be "
@@ -788,9 +792,9 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"detach_word")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
@@ -835,9 +839,9 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"existing_grad")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[2] = 1.0
@@ -871,7 +875,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
             "SS.codebook Parameter must accumulate gradient even on "
             "the existing-META idempotent branch.")
         meta_idx = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
-        meta_row = _ss_row_from_signed(meta_idx)
+        meta_row = _ss_row_from_pos(ss,meta_idx)
         self.assertTrue(
             torch.any(ss_param.grad[meta_row] != 0),
             f"SS.codebook gradient at META row {meta_row} must be "
@@ -995,9 +999,9 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         # Pre-seed a PS row + SS row so forward can resolve nearest-
         # match cleanly and register a META.
         ps_idx = ss.insert_percept(b"dispatch_word")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
@@ -1059,9 +1063,9 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         ps_idx = ss.insert_percept(b"adapter_word")
-        ps_row = _ps_row_from_signed(ps_idx)
+        ps_row = _ps_row_from_pos(ss,ps_idx)
         ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_signed(ss_idx)
+        ss_row = _ss_row_from_pos(ss,ss_idx)
         D = int(ss.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0

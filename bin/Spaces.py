@@ -321,6 +321,63 @@ class WhereEncoding(QuadratureEncoding):
         assert self.p < self.maxVal, "Overflow in object embedding"
         return y
 
+    def recover(self, vec):
+        """Recover an integer position from a sinusoidal-encoded vector.
+
+        The atan2-based inverse of :meth:`encode`: delegates to
+        :meth:`QuadratureEncoding.decode` for the continuous angle
+        recovery, snaps to the nearest integer, and validates the
+        result lies in ``[0, maxP)``.
+
+        Used by the ``.where``-keyed taxonomy
+        (`doc/plans/2026-05-28-where-keyed-taxonomy.md`) as the inverse
+        view onto a position stored in a row's ``.where`` slot. With
+        the current ``nWhere=0`` default the encoding is a no-op; this
+        method then raises rather than silently returning 0.
+
+        Args:
+            vec: torch.Tensor ``[..., 2]`` or scalar ``(sin, cos)`` pair.
+
+        Returns:
+            int — the recovered position in ``[0, maxP)``.
+
+        Raises:
+            ValueError: if the encoding is disabled (``nDim == 0``), the
+                input encodes more than one position, or the recovered
+                position falls outside ``[0, maxP)``.
+        """
+        if self.nDim == 0:
+            raise ValueError(
+                "WhereEncoding.recover: encoding is disabled (nWhere=0); "
+                "no integer position can be recovered from a zero-width "
+                "slot. Configure <nWhere> > 0 to enable positional "
+                "materialization.")
+        decoded = self.decode(vec)
+        # ``decode`` returns either a tensor (preserving leading dims) or
+        # a Python float (scalar fallback path). Normalize to a single
+        # float; refuse multi-position inputs — ``recover`` is scalar.
+        if isinstance(decoded, torch.Tensor):
+            if decoded.numel() != 1:
+                raise ValueError(
+                    "WhereEncoding.recover: expected a single (sin, cos) "
+                    f"pair; got tensor with {decoded.numel()} positions.")
+            pos_float = float(decoded.item())
+        else:
+            pos_float = float(decoded)
+        # Snap to nearest integer. ``decode`` already takes ``% 2π`` so
+        # the result is in ``[0, maxP)`` modulo float drift; a final
+        # ``maxP``→``0`` wrap covers the round-up edge case at the seam.
+        pos_int = int(round(pos_float))
+        maxP = int(self.maxVal)
+        if pos_int == maxP:
+            pos_int = 0
+        if pos_int < 0 or pos_int >= maxP:
+            raise ValueError(
+                f"WhereEncoding.recover: recovered position {pos_int} "
+                f"is outside [0, {maxP}); the encoded vector is not a "
+                f"valid sinusoidal position.")
+        return pos_int
+
     @staticmethod
     def test():
         """Self-test: encode then decode positions; print round-trip values."""
@@ -10309,30 +10366,30 @@ class ConceptualSpace(Space):
                 # variable) and the in-place copy under insert_symbol /
                 # insert_meta happens under no_grad anyway.
                 seed = vec_tensor[b, n].detach().clone()
-                sym_signed = None
+                sym_pos = None
+                ps_pos = ss.ensure_ps_position(pid)
                 if pid not in bound:
-                    sym_signed = ss.insert_symbol(init_vec=seed)
-                    ps_signed = ss._ps_signed(pid)
-                    ss.insert_meta(ps_signed, sym_signed, fused_vec=seed)
+                    sym_pos = ss.insert_symbol(init_vec=seed)
+                    ss.insert_meta(ps_pos, sym_pos, fused_vec=seed)
                     bound.add(pid)
                 else:
                     # Already bound. Look up the SS child of the META
                     # binding so LBG accumulators record this re-visit
                     # against the right row.
-                    ps_signed = ss._ps_signed(pid)
-                    meta_signed = ss.taxonomy_parent(ps_signed)
-                    if meta_signed is not None:
-                        children = ss.taxonomy_children(int(meta_signed))
-                        sym_signed = next(
-                            (int(c) for c in children if int(c) < 0),
+                    meta_pos = ss.taxonomy_parent(ps_pos)
+                    if meta_pos is not None:
+                        children = ss.taxonomy_children(int(meta_pos))
+                        sym_pos = next(
+                            (int(c) for c in children
+                             if ss._pos_kind.get(int(c)) == "ss"),
                             None)
                 # LBG accumulation: track the pull this percept exerts
                 # on its bound SS row. When the row collects enough
                 # opposite-direction pulls (assignment variance >
                 # threshold), maybe_split_lbg splits it into two.
-                if sym_signed is not None:
-                    ss.record_lbg_pull(int(sym_signed), seed)
-                    ss.maybe_split_lbg(int(sym_signed))
+                if sym_pos is not None:
+                    ss.record_lbg_pull(int(sym_pos), seed)
+                    ss.maybe_split_lbg(int(sym_pos))
 
     def forward(self, subspace, word_subspace=None):
         """STM bookkeeping: shift the per-batch idea stack and push the
@@ -10818,6 +10875,37 @@ class SymbolicSpace(Space):
         self._lbg_disp_sum: dict = {}        # signed_idx -> tensor[D]
         self._lbg_disp_sum_sq: dict = {}     # signed_idx -> tensor[D]
         self._lbg_count: dict = {}           # signed_idx -> int
+        # ``.where``-keyed taxonomy position counter (2026-05-28).
+        # Monotonic positive-int allocator shared across IS/PS/SS/META
+        # entries. Position 0 is reserved as the frozen-zeros anchor
+        # (its sinusoidal encoding is ``[0, 1, 0, 1, …]``); the counter
+        # starts at 1 so the anchor is never assigned to a content row.
+        # Persisted via ``vocab_extras`` so positions resume across
+        # checkpoint roundtrip.
+        # See ``doc/plans/2026-05-28-where-keyed-taxonomy.md``.
+        self._next_position: int = 1
+        # ``.where``-keyed taxonomy lookup tables (2026-05-28 Stage 3+4).
+        # Taxonomy refs are unsigned positive ints (positions). These
+        # tables index each position back to the underlying codebook
+        # row and tag the position's kind:
+        #
+        #   _pos_kind[pos]        -> "ps" / "ss" / "meta"
+        #   _ps_pos_to_row[pos]   -> PerceptStore row (PS side)
+        #   _ps_row_to_pos[row]   -> position for that PS row (inverse)
+        #   _ss_pos_to_row[pos]   -> SS codebook row (SS side; META
+        #                            positions also resolve here because
+        #                            META vectors live on the SS codebook)
+        #   _ss_row_to_pos[row]   -> position for that SS row (inverse)
+        #
+        # All five tables are pure-Python dicts persisted via
+        # ``vocab_extras``. The sign-convention helpers
+        # (``_ps_signed`` / ``_ss_signed`` / ``_ps_row_of`` /
+        # ``_ss_row_of``) retire with this change.
+        self._pos_kind: dict = {}
+        self._ps_pos_to_row: dict = {}
+        self._ps_row_to_pos: dict = {}
+        self._ss_pos_to_row: dict = {}
+        self._ss_row_to_pos: dict = {}
         # Thresholds (XML knobs; defaults chosen for MM_xor-scale data).
         try:
             self._lbg_threshold = float(
@@ -11394,49 +11482,83 @@ class SymbolicSpace(Space):
         return (orth_idx, sem_idx)
 
     # ------------------------------------------------------------------
-    # Stage 8: Two-codebook split + META taxonomy.
+    # Stage 3+4: ``.where``-keyed taxonomy (positive-int positions).
     # ------------------------------------------------------------------
-    # doc/plans/2026-05-27-perceptstore-meta-taxonomy-reentrancy.md §Stage 8.
+    # doc/plans/2026-05-28-where-keyed-taxonomy.md.
     #
-    # SignedSign convention (locked):
-    #   * positive i  -> PS.percept_store.codebook[i] /
-    #                    PS.percept_store.inverse_table[i]
-    #   * negative i  -> SS.codebook[-i - 1]
+    # The signed-int sign convention (positive=PS row, negative=
+    # -(SS row + 1)) retires with this stage. All taxonomy refs are
+    # positive ints drawn from :meth:`allocate_position`; the
+    # ``_pos_kind`` / ``_{ps,ss}_pos_to_row`` / ``_{ps,ss}_row_to_pos``
+    # tables initialized in ``__init__`` carry the indirection.
     #
-    # Helpers ``_ps_row_of`` / ``_ss_row_of`` / ``_ps_signed`` /
-    # ``_ss_signed`` convert between sign-encoded references and the
-    # raw row indices used by the underlying stores.
+    # Retired helpers (no live call sites in bin/ or test/):
+    #   _ps_signed, _ss_signed, _ps_row_of, _ss_row_of.
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _ps_signed(row_idx):
-        """PS row idx -> positive signed idx (= the row idx)."""
-        return int(row_idx)
+    def allocate_position(self) -> int:
+        """Allocate the next monotonic positive-integer position.
 
-    @staticmethod
-    def _ss_signed(row_idx):
-        """SS row idx -> negative signed idx ``-(row_idx + 1)``."""
-        return -int(row_idx) - 1
+        Each call returns ``self._next_position`` and advances the
+        counter. Position 0 is reserved as the frozen-zeros anchor
+        and is never returned. Positions are persisted via
+        :meth:`vocab_extras` so the counter resumes across checkpoint
+        roundtrip.
 
-    @staticmethod
-    def _ps_row_of(signed_idx):
-        """Positive signed idx -> PS row idx. Raises if negative."""
-        i = int(signed_idx)
-        if i < 0:
-            raise ValueError(
-                f"SymbolicSpace._ps_row_of: expected positive signed idx, "
-                f"got {i}")
-        return i
+        Introduced by the ``.where``-keyed taxonomy refactor
+        (`doc/plans/2026-05-28-where-keyed-taxonomy.md`); the
+        canonical positional identity shared across IS / PS / SS /
+        META post-Stage 3+4.
+        """
+        pos = self._next_position
+        self._next_position += 1
+        return pos
 
-    @staticmethod
-    def _ss_row_of(signed_idx):
-        """Negative signed idx -> SS row idx. Raises if non-negative."""
-        i = int(signed_idx)
-        if i >= 0:
-            raise ValueError(
-                f"SymbolicSpace._ss_row_of: expected negative signed idx, "
-                f"got {i}")
-        return -i - 1
+    def ensure_ps_position(self, ps_row) -> int:
+        """Return the position for a PS (PerceptStore) row, allocating
+        one if the row hasn't been bound yet.
+
+        Lazy bind: hot paths like
+        :meth:`ConceptualSpace._maybe_autobind_meta` see a raw
+        ``percept_id`` from the PerceptStore that may pre-date the
+        position counter (the percept was inserted via
+        ``RadixLayer.insert`` directly, bypassing
+        :meth:`insert_percept`). This helper allocates a position the
+        first time the row is referenced and tags ``_pos_kind`` so the
+        position can route through the unified taxonomy from then on.
+        """
+        row = int(ps_row)
+        existing = self._ps_row_to_pos.get(row)
+        if existing is not None:
+            return int(existing)
+        pos = self.allocate_position()
+        self._pos_kind[pos] = "ps"
+        self._ps_pos_to_row[pos] = row
+        self._ps_row_to_pos[row] = pos
+        return pos
+
+    def ensure_ss_position(self, ss_row, *, kind="ss") -> int:
+        """Return the position for an SS-codebook row, allocating one
+        if the row hasn't been bound yet.
+
+        Used by :class:`SymbolizeLayer.forward` (nearest-row lookups
+        may land on pre-existing rows that pre-date :meth:`insert_symbol`)
+        and by :meth:`insert_meta` (which re-tags an SS row as
+        ``"meta"`` after allocating it through :meth:`insert_symbol`).
+        ``kind`` may be ``"ss"`` or ``"meta"`` and overrides the
+        existing tag.
+        """
+        row = int(ss_row)
+        existing = self._ss_row_to_pos.get(row)
+        if existing is not None:
+            # Allow re-tag (e.g. "ss" -> "meta" inside insert_meta).
+            self._pos_kind[int(existing)] = str(kind)
+            return int(existing)
+        pos = self.allocate_position()
+        self._pos_kind[pos] = str(kind)
+        self._ss_pos_to_row[pos] = row
+        self._ss_row_to_pos[row] = pos
+        return pos
 
     def _peer_percept_store(self):
         """Return the peer PerceptualSpace's ``percept_store`` or None.
@@ -11452,10 +11574,13 @@ class SymbolicSpace(Space):
         return getattr(peer, "percept_store", None)
 
     def insert_percept(self, canonical_bytes, *, percept_store=None):
-        """Insert ``canonical_bytes`` into the PS-side PerceptStore.
+        """Insert ``canonical_bytes`` into the PS-side PerceptStore and
+        return the position (positive int) bound to that row.
 
-        Returns the **positive** signed idx (= the percept id) per the
-        sign convention.
+        Idempotent: re-inserting the same bytes returns the same
+        position. Allocates a fresh position via
+        :meth:`allocate_position` only the first time the underlying
+        PerceptStore row is seen.
 
         ``percept_store`` (optional kwarg) lets callers without a wired
         peer pass a store explicitly. By default the method walks
@@ -11474,16 +11599,20 @@ class SymbolicSpace(Space):
             raise TypeError(
                 f"SymbolicSpace.insert_percept: canonical_bytes must be "
                 f"bytes, got {type(canonical_bytes)!r}")
-        pid = ps.insert(bytes(canonical_bytes))
-        return self._ps_signed(int(pid))
+        pid = int(ps.insert(bytes(canonical_bytes)))
+        return self.ensure_ps_position(pid)
 
     def insert_symbol(self, init_vec=None):
-        """Allocate a fresh SS.codebook row; return the **negative**
-        signed idx (= ``-(row_idx + 1)``).
+        """Allocate a fresh SS.codebook row and return its position
+        (positive int).
 
         ``init_vec`` (optional) sizes ``[nDim]``. When None, the row is
         seeded with a small uniform sample (same scale as the existing
         ``insert_paired_word`` semantic init).
+
+        The freshly allocated row is tagged ``"ss"`` in
+        :attr:`_pos_kind`. :meth:`insert_meta` re-tags it to ``"meta"``
+        when allocating a META node through this method.
         """
         cb = getattr(self.subspace, "what", None)
         if cb is None or not isinstance(cb, Codebook):
@@ -11525,32 +11654,34 @@ class SymbolicSpace(Space):
         with torch.no_grad():
             W.data[row, :].copy_(vec)
         self._paired_next_row = row + 1
-        return self._ss_signed(row)
+        # Bind a position for the new row + tag as "ss". insert_meta
+        # overrides this tag to "meta" after the call returns.
+        return self.ensure_ss_position(row, kind="ss")
 
-    def insert_meta(self, ps_idx, ss_idx, fused_vec=None,
+    def insert_meta(self, ps_pos, ss_pos, fused_vec=None,
                     *, ema=0.1):
-        """Allocate (or update) a META node binding ``(ps_idx, ss_idx)``.
+        """Allocate (or update) a META node binding ``(ps_pos, ss_pos)``.
 
-        ``ps_idx`` must be the positive signed idx of a percept (in
-        ``PS.percept_store``). ``ss_idx`` must be the negative signed
-        idx of an SS row.
-
-        Returns the **negative** signed idx of the META node.
+        Both ``ps_pos`` and ``ss_pos`` must be positive integer
+        positions allocated through :meth:`allocate_position` (typically
+        returned by :meth:`insert_percept` and :meth:`insert_symbol`).
+        Returns the META node's position (positive int).
 
         Behaviour:
           * First call for the pair: allocates a fresh SS row via
-            :meth:`insert_symbol` and seeds its vector. If
-            ``fused_vec`` is supplied, it is the seed; otherwise the
-            default seed is ``(PS.codebook[ps_idx] + SS.codebook[ss_row])
-            / 2`` (the "average combine" documented in the plan).
-            The META row is recorded in ``self.taxonomy`` (parent ->
+            :meth:`insert_symbol`, re-tags its position to ``"meta"``,
+            and seeds its vector. If ``fused_vec`` is supplied, it is
+            the seed; otherwise the default seed is
+            ``(PS.codebook[ps_row] + SS.codebook[ss_row]) / 2`` (the
+            "average combine" documented in the plan).
+            The META is recorded in ``self.taxonomy`` (parent ->
             children) and ``self.taxonomy_parent_map`` (children ->
-            parent), and the ``(ps_idx, ss_idx)`` pair is cached in
+            parent), and the ``(ps_pos, ss_pos)`` pair is cached in
             ``self.meta_pair_to_idx`` for idempotency.
           * Subsequent calls for the same pair: return the existing
-            META idx. If ``fused_vec`` is supplied, EMA-blend it into
-            the stored META vector: ``new = (1 - ema) * old + ema *
-            fresh`` (``ema`` default 0.1).
+            META position. If ``fused_vec`` is supplied, EMA-blend it
+            into the stored META vector: ``new = (1 - ema) * old +
+            ema * fresh`` (``ema`` default 0.1).
         """
         # EMA bounds check: out-of-range ema silently corrupts the
         # codebook row (negative weights / >1 extrapolation), so refuse
@@ -11560,24 +11691,26 @@ class SymbolicSpace(Space):
             raise ValueError(
                 f"SymbolicSpace.insert_meta: ema must be in [0.0, 1.0]; "
                 f"got {ema_f}")
-        # Type / sign checks.
-        ps_i = int(ps_idx)
-        ss_i = int(ss_idx)
-        if ps_i < 0:
+        # Both positions must be positive (post-Stage-3). Position 0
+        # is the reserved anchor and is never a content slot.
+        ps_pos_i = int(ps_pos)
+        ss_pos_i = int(ss_pos)
+        if ps_pos_i <= 0:
             raise ValueError(
-                f"SymbolicSpace.insert_meta: ps_idx must be positive (a "
-                f"signed PS idx); got {ps_i}")
-        if ss_i >= 0:
+                f"SymbolicSpace.insert_meta: ps_pos must be a positive "
+                f"position (post-Stage-3 .where-keyed taxonomy); "
+                f"got {ps_pos_i}.")
+        if ss_pos_i <= 0:
             raise ValueError(
-                f"SymbolicSpace.insert_meta: ss_idx must be negative (a "
-                f"signed SS idx); got {ss_i}")
+                f"SymbolicSpace.insert_meta: ss_pos must be a positive "
+                f"position; got {ss_pos_i}.")
         # Idempotency: if a META already exists for this pair, return
         # it and (optionally) EMA-update the stored vector.
-        key = (ps_i, ss_i)
+        key = (ps_pos_i, ss_pos_i)
         existing = self.meta_pair_to_idx.get(key)
         if existing is not None:
             if fused_vec is not None:
-                meta_row = self._ss_row_of(existing)
+                meta_row = int(self._ss_pos_to_row[existing])
                 cb = self.subspace.what
                 W = cb.getW()
                 if not torch.is_tensor(fused_vec):
@@ -11628,9 +11761,21 @@ class SymbolicSpace(Space):
                     "SymbolicSpace.insert_meta: fused_vec=None requires a "
                     "wired PerceptStore peer for the default average "
                     "combine; wire perceptualSpace_ref or pass fused_vec.")
-            ps_vec = ps_store.codebook[ps_i].detach().to(W.device, W.dtype)
-            ss_row = self._ss_row_of(ss_i)
-            sym_vec = W[ss_row].detach().to(W.device, W.dtype)
+            # Resolve PS / SS rows from positions.
+            ps_row = self._ps_pos_to_row.get(ps_pos_i)
+            ss_row = self._ss_pos_to_row.get(ss_pos_i)
+            if ps_row is None:
+                raise RuntimeError(
+                    f"SymbolicSpace.insert_meta: ps_pos={ps_pos_i} has no "
+                    f"bound PS row. Call insert_percept or ensure_ps_position "
+                    f"before insert_meta.")
+            if ss_row is None:
+                raise RuntimeError(
+                    f"SymbolicSpace.insert_meta: ss_pos={ss_pos_i} has no "
+                    f"bound SS row. Call insert_symbol or ensure_ss_position "
+                    f"before insert_meta.")
+            ps_vec = ps_store.codebook[int(ps_row)].detach().to(W.device, W.dtype)
+            sym_vec = W[int(ss_row)].detach().to(W.device, W.dtype)
             seed = (ps_vec + sym_vec) / 2.0
         else:
             if not torch.is_tensor(fused_vec):
@@ -11652,58 +11797,59 @@ class SymbolicSpace(Space):
                     f"SymbolicSpace.insert_meta: fused_vec must be shape "
                     f"[nDim={self.nDim}]; got {tuple(fused_vec.shape)}")
             seed = fused_vec.detach().to(W.device, W.dtype)
-        meta_signed = self.insert_symbol(init_vec=seed)
-        # Register taxonomy + parent maps.
-        self.taxonomy[meta_signed] = [ps_i, ss_i]
-        self.taxonomy_parent_map[ps_i] = meta_signed
-        self.taxonomy_parent_map[ss_i] = meta_signed
-        self.meta_pair_to_idx[key] = meta_signed
-        return meta_signed
+        # Allocate a fresh SS row + position for the META; insert_symbol
+        # tags as "ss", which we override to "meta" immediately.
+        meta_pos = self.insert_symbol(init_vec=seed)
+        self._pos_kind[meta_pos] = "meta"
+        # Register taxonomy + parent maps with positive-int positions.
+        self.taxonomy[meta_pos] = [ps_pos_i, ss_pos_i]
+        self.taxonomy_parent_map[ps_pos_i] = meta_pos
+        self.taxonomy_parent_map[ss_pos_i] = meta_pos
+        self.meta_pair_to_idx[key] = meta_pos
+        return meta_pos
 
-    def taxonomy_children(self, signed_idx):
-        """Return the children list for ``signed_idx`` or ``[]``."""
-        return list(self.taxonomy.get(int(signed_idx), []))
+    def taxonomy_children(self, pos):
+        """Return the children list (positive ints) for ``pos`` or ``[]``."""
+        return list(self.taxonomy.get(int(pos), []))
 
-    def taxonomy_parent(self, signed_idx):
-        """Return the parent of ``signed_idx`` or ``None``."""
-        return self.taxonomy_parent_map.get(int(signed_idx))
+    def taxonomy_parent(self, pos):
+        """Return the parent position of ``pos`` or ``None``."""
+        return self.taxonomy_parent_map.get(int(pos))
 
-    def is_meta(self, signed_idx):
-        """True iff the node has children spanning both PS and SS."""
-        children = self.taxonomy.get(int(signed_idx))
-        if not children:
-            return False
-        has_pos = any(int(c) >= 0 for c in children)
-        has_neg = any(int(c) < 0 for c in children)
-        return has_pos and has_neg
+    def is_meta(self, pos):
+        """True iff ``pos`` is tagged as a META node in ``_pos_kind``."""
+        return self._pos_kind.get(int(pos)) == "meta"
 
     # ------------------------------------------------------------------
     # LBG (Linde-Buzo-Gray) codebook splitting (2026-05-28)
     # ------------------------------------------------------------------
 
-    def record_lbg_pull(self, signed_idx, vec):
-        """Accumulate a training pull from ``vec`` onto the SS row at
-        ``signed_idx``.
+    def record_lbg_pull(self, pos, vec):
+        """Accumulate a training pull from ``vec`` onto the SS-side row
+        at position ``pos`` (an SS or META position).
 
-        Tracks per-row displacement sum + sum-of-squares so a later
-        ``maybe_split_lbg`` call can decide whether the row's assignment
-        variance is high enough to warrant a split. Cheap: O(D) per
-        call; meant to fire from the SymbolizeLayer.forward / auto-bind
-        hot paths.
+        Tracks per-position displacement sum + sum-of-squares so a
+        later ``maybe_split_lbg`` call can decide whether the row's
+        assignment variance is high enough to warrant a split. Cheap:
+        O(D) per call; meant to fire from the SymbolizeLayer.forward /
+        auto-bind hot paths.
 
-        Positive ``signed_idx`` (PS percepts) are ignored -- LBG only
-        splits SS rows. NaN/Inf in ``vec`` raises per the project's
-        "fail loud" policy.
+        PS positions (and unknown / non-SS-side kinds) are ignored --
+        LBG only splits SS-codebook rows. NaN/Inf in ``vec`` raises
+        per the project's "fail loud" policy.
         """
-        i = int(signed_idx)
-        if i >= 0:
+        p = int(pos)
+        # Only SS-side rows (raw SS prototypes + META rows whose vectors
+        # live on the SS codebook) participate.
+        if self._pos_kind.get(p) not in ("ss", "meta"):
             return
         W = self.subspace.what.getW() if self.subspace.what is not None else None
         if W is None:
             return
-        row = self._ss_row_of(i)
-        if row >= W.shape[0]:
+        row = self._ss_pos_to_row.get(p)
+        if row is None or int(row) >= W.shape[0]:
             return
+        row = int(row)
         if not torch.is_tensor(vec):
             return
         vec_d = vec.detach().to(W.device, W.dtype).reshape(-1)
@@ -11711,23 +11857,24 @@ class SymbolicSpace(Space):
             return
         if not torch.isfinite(vec_d).all():
             raise RuntimeError(
-                f"SymbolicSpace.record_lbg_pull: vec for signed_idx={i} "
+                f"SymbolicSpace.record_lbg_pull: vec for pos={p} "
                 f"contains NaN/Inf. Numerical divergence must surface, "
                 f"not be silently accumulated into the LBG counter.")
         delta = (vec_d - W[row].detach()).clone()
-        if i in self._lbg_disp_sum:
-            self._lbg_disp_sum[i] = self._lbg_disp_sum[i] + delta
-            self._lbg_disp_sum_sq[i] = (
-                self._lbg_disp_sum_sq[i] + delta * delta)
-            self._lbg_count[i] = self._lbg_count[i] + 1
+        if p in self._lbg_disp_sum:
+            self._lbg_disp_sum[p] = self._lbg_disp_sum[p] + delta
+            self._lbg_disp_sum_sq[p] = (
+                self._lbg_disp_sum_sq[p] + delta * delta)
+            self._lbg_count[p] = self._lbg_count[p] + 1
         else:
-            self._lbg_disp_sum[i] = delta.clone()
-            self._lbg_disp_sum_sq[i] = (delta * delta).clone()
-            self._lbg_count[i] = 1
+            self._lbg_disp_sum[p] = delta.clone()
+            self._lbg_disp_sum_sq[p] = (delta * delta).clone()
+            self._lbg_count[p] = 1
 
-    def maybe_split_lbg(self, signed_idx):
-        """Check if SS row ``signed_idx`` warrants splitting; if so,
-        perform the split and return the new SS row's signed idx.
+    def maybe_split_lbg(self, pos):
+        """Check if the SS-side row at position ``pos`` warrants
+        splitting; if so, perform the split and return the new row's
+        position (positive int).
 
         Trigger: per-coordinate variance has max value above
         ``self._lbg_threshold`` AND the hit count is at least
@@ -11741,18 +11888,18 @@ class SymbolicSpace(Space):
         split-off row so both halves remain discoverable via the
         reverse-decode walk.
 
-        Returns the new signed idx on success, ``None`` if no split
+        Returns the new position on success, ``None`` if no split
         fired. Resets the LBG accumulators for the original row after
         a successful split.
         """
-        i = int(signed_idx)
-        if i >= 0:
+        p = int(pos)
+        if self._pos_kind.get(p) not in ("ss", "meta"):
             return None
-        if self._lbg_count.get(i, 0) < self._lbg_min_count:
+        if self._lbg_count.get(p, 0) < self._lbg_min_count:
             return None
-        count = self._lbg_count[i]
-        disp_sum = self._lbg_disp_sum[i]
-        disp_sum_sq = self._lbg_disp_sum_sq[i]
+        count = self._lbg_count[p]
+        disp_sum = self._lbg_disp_sum[p]
+        disp_sum_sq = self._lbg_disp_sum_sq[p]
         mean_disp = disp_sum / float(count)
         # Per-coord variance: E[X²] - E[X]². The max axis indicates the
         # direction of greatest spread; trigger split when that exceeds
@@ -11764,13 +11911,13 @@ class SymbolicSpace(Space):
         norm = float(mean_disp.norm())
         if norm < 1e-9:
             # No meaningful direction -- nothing to split along.
-            del self._lbg_disp_sum[i]
-            del self._lbg_disp_sum_sq[i]
-            del self._lbg_count[i]
+            del self._lbg_disp_sum[p]
+            del self._lbg_disp_sum_sq[p]
+            del self._lbg_count[p]
             return None
         direction = mean_disp / norm
         W = self.subspace.what.getW()
-        old_row = self._ss_row_of(i)
+        old_row = int(self._ss_pos_to_row[p])
         old_centroid = W[old_row].detach().clone()
         eps = self._lbg_epsilon
         new_a = old_centroid + eps * direction
@@ -11779,23 +11926,25 @@ class SymbolicSpace(Space):
         # nn.Parameter and the in-place mutation must not record gradient).
         with torch.no_grad():
             W.data[old_row].copy_(new_a)
-        # Allocate the split-off row.
-        new_signed = self.insert_symbol(init_vec=new_b)
+        # Allocate the split-off row + its position.
+        new_pos = self.insert_symbol(init_vec=new_b)
         # If the original row was bound under a META, mirror the binding
         # onto the split-off so both halves remain discoverable.
-        parent = self.taxonomy_parent(i)
+        parent = self.taxonomy_parent(p)
         if parent is not None and self.is_meta(int(parent)):
             children = self.taxonomy_children(int(parent))
             ps_child = next(
-                (int(c) for c in children if int(c) >= 0), None)
+                (int(c) for c in children
+                 if self._pos_kind.get(int(c)) == "ps"),
+                None)
             if ps_child is not None:
-                self.insert_meta(ps_child, new_signed,
+                self.insert_meta(ps_child, new_pos,
                                  fused_vec=new_b.clone())
         # Reset accumulators for the original row.
-        del self._lbg_disp_sum[i]
-        del self._lbg_disp_sum_sq[i]
-        del self._lbg_count[i]
-        return new_signed
+        del self._lbg_disp_sum[p]
+        del self._lbg_disp_sum_sq[p]
+        del self._lbg_count[p]
+        return new_pos
 
     def vocab_extras(self):
         """Pure-Python state for ``vocab_extras`` save/load.
@@ -11825,14 +11974,38 @@ class SymbolicSpace(Space):
                 f"{int(ps_i)},{int(ss_i)}": int(meta_i)
                 for (ps_i, ss_i), meta_i in self.meta_pair_to_idx.items()
             },
+            # ``.where``-keyed taxonomy position counter + lookup tables
+            # (doc/plans/2026-05-28-where-keyed-taxonomy.md). The counter
+            # records the NEXT unused position so it resumes exactly
+            # where it left off across checkpoint roundtrip. The lookup
+            # tables resolve positions back to their underlying codebook
+            # rows; ``pos_kind`` tags each position as "ps"/"ss"/"meta".
+            "next_position": int(getattr(self, "_next_position", 1)),
+            "pos_kind": {
+                int(k): str(v) for k, v in self._pos_kind.items()
+            },
+            "ps_pos_to_row": {
+                int(k): int(v) for k, v in self._ps_pos_to_row.items()
+            },
+            "ss_pos_to_row": {
+                int(k): int(v) for k, v in self._ss_pos_to_row.items()
+            },
         }
 
     def load_vocab_extras(self, extras):
         """Restore the pure-Python state from a :meth:`vocab_extras` blob.
 
-        Backwards-compatible: keys missing from the blob default to
-        empty / zero, so older checkpoints (pre-Stage-8 vocab_extras
-        layouts) load without crashing.
+        Backwards-compatible at two layers:
+
+          * **Pre-Stage-8 blobs**: missing taxonomy / parent / pair
+            keys default to empty.
+          * **Pre-Stage-3 signed-int taxonomy blobs**: detected by the
+            presence of negative ints in ``taxonomy`` keys or values;
+            rekeyed to positive integer positions on load. PS / SS /
+            META rows recover their kinds + row indices from the
+            sign convention (positive = PS row, negative = -(SS row + 1);
+            META rows are those whose keys appear in ``taxonomy`` and
+            had children spanning both signs).
         """
         wka = extras.get("well_known_atoms")
         if isinstance(wka, dict) and wka:
@@ -11845,28 +12018,148 @@ class SymbolicSpace(Space):
         pnr = extras.get("paired_next_row")
         if pnr is not None and int(pnr) >= 0:
             self._paired_next_row = int(pnr)
-        tax = extras.get("taxonomy")
-        if isinstance(tax, dict):
+        # ``.where``-keyed taxonomy position counter
+        # (doc/plans/2026-05-28-where-keyed-taxonomy.md). Older blobs
+        # without ``next_position`` keep the counter at the default
+        # value (1) set in :meth:`__init__`; that is the right
+        # behaviour for pre-Stage-2 checkpoints where positions had
+        # not yet been allocated.
+        np_ = extras.get("next_position")
+        if np_ is not None:
+            self._next_position = max(1, int(np_))
+        # Detect legacy signed-int taxonomy blob: any negative key in
+        # ``taxonomy`` or ``taxonomy_parent``, or any negative value in
+        # taxonomy children / pair encoding.
+        tax = extras.get("taxonomy") or {}
+        tp_blob = extras.get("taxonomy_parent") or {}
+        mp_blob = extras.get("meta_pair_to_idx") or {}
+        legacy = (
+            any(int(k) < 0 for k in tax.keys())
+            or any(int(c) < 0 for vs in tax.values() for c in vs)
+            or any(int(k) < 0 for k in tp_blob.keys())
+            or any(int(v) < 0 for v in tp_blob.values())
+            or any(
+                "-" in str(rk) or int(mi) < 0
+                for rk, mi in mp_blob.items()
+            )
+        )
+        if legacy:
+            self._migrate_signed_int_taxonomy(tax, tp_blob, mp_blob)
+        else:
+            # Modern (positive-int) load path.
             self.taxonomy = {
                 int(k): [int(c) for c in v]
                 for k, v in tax.items()
             }
-        tp = extras.get("taxonomy_parent")
-        if isinstance(tp, dict):
             self.taxonomy_parent_map = {
-                int(k): int(v) for k, v in tp.items()
+                int(k): int(v) for k, v in tp_blob.items()
             }
-        mp = extras.get("meta_pair_to_idx")
-        if isinstance(mp, dict):
-            decoded = {}
-            for raw_key, mi in mp.items():
+            decoded_pairs = {}
+            for raw_key, mi in mp_blob.items():
                 parts = str(raw_key).split(",")
                 if len(parts) != 2:
                     continue
                 ps_i = int(parts[0])
                 ss_i = int(parts[1])
-                decoded[(ps_i, ss_i)] = int(mi)
-            self.meta_pair_to_idx = decoded
+                decoded_pairs[(ps_i, ss_i)] = int(mi)
+            self.meta_pair_to_idx = decoded_pairs
+            # Load the new lookup tables.
+            pk = extras.get("pos_kind")
+            if isinstance(pk, dict):
+                self._pos_kind = {int(k): str(v) for k, v in pk.items()}
+            pp = extras.get("ps_pos_to_row")
+            if isinstance(pp, dict):
+                self._ps_pos_to_row = {
+                    int(k): int(v) for k, v in pp.items()
+                }
+                self._ps_row_to_pos = {
+                    v: k for k, v in self._ps_pos_to_row.items()
+                }
+            sp = extras.get("ss_pos_to_row")
+            if isinstance(sp, dict):
+                self._ss_pos_to_row = {
+                    int(k): int(v) for k, v in sp.items()
+                }
+                self._ss_row_to_pos = {
+                    v: k for k, v in self._ss_pos_to_row.items()
+                }
+
+    def _migrate_signed_int_taxonomy(self, tax, tp_blob, mp_blob):
+        """Rekey a legacy signed-int taxonomy blob to positive-int
+        positions in-place on ``self``.
+
+        Legacy sign convention: positive = PS row; negative = -(SS row
+        + 1). A signed_idx that appears as a key in ``tax`` (and has
+        children of both signs) is a META; otherwise it's a plain
+        SS row (negative) or PS row (positive).
+        """
+        # Collect every signed index that appears anywhere in the blob.
+        all_signed = set()
+        for k, vs in tax.items():
+            all_signed.add(int(k))
+            for v in vs:
+                all_signed.add(int(v))
+        for k, v in tp_blob.items():
+            all_signed.add(int(k))
+            all_signed.add(int(v))
+        for raw_key, mi in mp_blob.items():
+            parts = str(raw_key).split(",")
+            if len(parts) == 2:
+                all_signed.add(int(parts[0]))
+                all_signed.add(int(parts[1]))
+            all_signed.add(int(mi))
+        # Which signed indices are METAs? Those whose taxonomy entry has
+        # children spanning both signs.
+        meta_set = set()
+        for k, vs in tax.items():
+            ki = int(k)
+            has_pos = any(int(c) >= 0 for c in vs)
+            has_neg = any(int(c) < 0 for c in vs)
+            if has_pos and has_neg:
+                meta_set.add(ki)
+        # Allocate a fresh position per signed index (sorted for
+        # determinism across reloads).
+        signed_to_pos = {}
+        for s in sorted(all_signed):
+            new_pos = self.allocate_position()
+            signed_to_pos[s] = new_pos
+            if s in meta_set:
+                kind = "meta"
+                row = -s - 1
+                self._ss_pos_to_row[new_pos] = row
+                self._ss_row_to_pos[row] = new_pos
+            elif s >= 0:
+                kind = "ps"
+                row = int(s)
+                self._ps_pos_to_row[new_pos] = row
+                self._ps_row_to_pos[row] = new_pos
+            else:
+                kind = "ss"
+                row = -s - 1
+                self._ss_pos_to_row[new_pos] = row
+                self._ss_row_to_pos[row] = new_pos
+            self._pos_kind[new_pos] = kind
+        # Rebuild the taxonomy dicts with positive-int keys.
+        self.taxonomy = {
+            signed_to_pos[int(k)]: [signed_to_pos[int(c)] for c in vs]
+            for k, vs in tax.items()
+        }
+        self.taxonomy_parent_map = {
+            signed_to_pos[int(k)]: signed_to_pos[int(v)]
+            for k, v in tp_blob.items()
+        }
+        rekeyed_pairs = {}
+        for raw_key, mi in mp_blob.items():
+            parts = str(raw_key).split(",")
+            if len(parts) != 2:
+                continue
+            ps_signed = int(parts[0])
+            ss_signed = int(parts[1])
+            ps_pos = signed_to_pos[ps_signed]
+            ss_pos = signed_to_pos[ss_signed]
+            meta_pos = signed_to_pos[int(mi)]
+            rekeyed_pairs[(ps_pos, ss_pos)] = meta_pos
+        self.meta_pair_to_idx = rekeyed_pairs
 
     def get_semantic_row(self, orth_idx):
         """Look up the semantic row index for a given orthographic row.

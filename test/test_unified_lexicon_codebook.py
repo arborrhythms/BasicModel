@@ -981,38 +981,41 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
             ps_space.percept_store,
             "MM_xor radix-mode model must expose percept_store on PS")
 
-    def test_insert_meta_records_signed_cross_codebook_references(self):
-        """The META node's children list contains a positive PS signed
-        ref and a negative SS signed ref. PS-side bytes are recoverable
-        via ``PerceptStore.bytes_for(ps_idx)``.
+    def test_insert_meta_records_positive_int_cross_codebook_references(self):
+        """The META node's children list contains a PS-tagged position
+        and an SS-tagged position. PS-side bytes are recoverable via
+        ``PerceptStore.bytes_for(ps_row)`` where ``ps_row`` resolves
+        through ``SymbolicSpace._ps_pos_to_row``.
         """
         ss = self.model.symbolicSpace
         ps_store = self.model.perceptualSpace.percept_store
         # Insert PS-side bytes + SS-side meaning row; bind via META.
-        ps_idx = ss.insert_percept(b"structural_meta")
-        ss_idx = ss.insert_symbol()
-        meta_idx = ss.insert_meta(ps_idx, ss_idx)
-        # Signed-convention checks.
-        self.assertGreaterEqual(ps_idx, 0,
-                                "insert_percept must return a positive "
-                                "signed idx")
-        self.assertLess(ss_idx, 0,
-                        "insert_symbol must return a negative signed idx")
-        self.assertLess(meta_idx, 0,
-                        "insert_meta must return a negative signed idx")
-        # Children list contains both a positive and a negative ref.
-        children = ss.taxonomy_children(meta_idx)
-        positives = [c for c in children if c >= 0]
-        negatives = [c for c in children if c < 0]
+        ps_pos = ss.insert_percept(b"structural_meta")
+        ss_pos = ss.insert_symbol()
+        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        # All three are positive positions; kinds are tagged accordingly.
+        self.assertGreater(ps_pos, 0,
+                           "insert_percept must return a positive position")
+        self.assertGreater(ss_pos, 0,
+                           "insert_symbol must return a positive position")
+        self.assertGreater(meta_pos, 0,
+                           "insert_meta must return a positive position")
+        self.assertEqual(ss._pos_kind.get(ps_pos), "ps")
+        self.assertEqual(ss._pos_kind.get(ss_pos), "ss")
+        self.assertEqual(ss._pos_kind.get(meta_pos), "meta")
+        # Children list contains both PS and SS positions.
+        children = ss.taxonomy_children(meta_pos)
+        ps_children = [c for c in children if ss._pos_kind.get(c) == "ps"]
+        ss_children = [c for c in children if ss._pos_kind.get(c) == "ss"]
         self.assertTrue(
-            positives and negatives,
-            f"META children must contain both positive (PS) and negative "
-            f"(SS) signed refs; got {children!r}")
-        # PS-side bytes recoverable through the inverse table.
-        ps_row = positives[0]
+            ps_children and ss_children,
+            f"META children must contain both PS- and SS-tagged "
+            f"positions; got {children!r}")
+        # PS-side bytes recoverable via the position -> row lookup.
+        ps_row = ss._ps_pos_to_row[ps_children[0]]
         self.assertEqual(ps_store.bytes_for(ps_row), b"structural_meta")
 
-    def test_orth_row_no_longer_copied_into_ss_codebook(self):
+    def test_ss_row_not_copied_from_ps_vector(self):
         """The retired contract: the META node's SS row is NOT a copy of
         the PS vector. (Under the new structural binding, SS gets a fresh
         symbolic row + a separately allocated META row; neither is a
@@ -1020,27 +1023,28 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         """
         ss = self.model.symbolicSpace
         ps_store = self.model.perceptualSpace.percept_store
-        ps_idx = ss.insert_percept(b"distinct_storage")
+        ps_pos = ss.insert_percept(b"distinct_storage")
+        ps_row = ss._ps_pos_to_row[ps_pos]
         # Pin the PS row to a known vector so we can prove the SS-side
         # rows are not duplicates of it.
         D = int(ss.nDim)
         marker = torch.zeros(D)
         marker[0] = 1.0  # distinctive shape
         with torch.no_grad():
-            ps_store.codebook.data[ps_idx].copy_(
+            ps_store.codebook.data[ps_row].copy_(
                 marker.to(ps_store.codebook.device, ps_store.codebook.dtype))
         # Allocate a *random* SS row and bind via META using a custom
         # fused vec also distinct from the pinned PS row.
         sym_init = torch.zeros(D)
         sym_init[1] = 1.0
-        ss_idx = ss.insert_symbol(init_vec=sym_init)
+        ss_pos = ss.insert_symbol(init_vec=sym_init)
         fused_init = torch.zeros(D)
         fused_init[2] = 1.0
-        meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused_init)
-        # SS row for ss_idx must not equal the PS row.
-        ss_row = -ss_idx - 1
+        meta_pos = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused_init)
+        # SS row for ss_pos must not equal the PS row.
+        ss_row = ss._ss_pos_to_row[ss_pos]
         W = ss.subspace.what.getW()
-        ps_vec = ps_store.codebook[ps_idx].detach()
+        ps_vec = ps_store.codebook[ps_row].detach()
         ss_vec = W[ss_row].detach()
         self.assertFalse(
             torch.allclose(ss_vec.to(ps_vec.device, ps_vec.dtype),
@@ -1048,7 +1052,7 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
             "SS row must NOT be a copy of the PS vector under the Stage 8 "
             "structural-binding contract")
         # Same for the META row.
-        meta_row = -meta_idx - 1
+        meta_row = ss._ss_pos_to_row[meta_pos]
         meta_vec = W[meta_row].detach()
         self.assertFalse(
             torch.allclose(meta_vec.to(ps_vec.device, ps_vec.dtype),

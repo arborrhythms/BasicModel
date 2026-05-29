@@ -3346,9 +3346,11 @@ class SymbolizeLayer(GrammarLayer):
         if ps_row is None or ss_row is None:
             # Empty stores: nothing to bind. Fall back to the average.
             return (left + right) / 2.0
-        # Sign-encode via the SymbolicSpace helpers.
-        ps_idx = ss._ps_signed(ps_row)
-        ss_idx = ss._ss_signed(ss_row)
+        # Resolve nearest-row hits to positive-int positions, lazy-
+        # binding if a row hasn't been seen before (pre-Stage-3 rows in
+        # the SS codebook may pre-date the position counter).
+        ps_pos = ss.ensure_ps_position(ps_row)
+        ss_pos = ss.ensure_ss_position(ss_row, kind="ss")
         # Fused vec = combine(left, right). Stage 9 spec: start with the
         # simple average; learnable combine is a future revision.
         fused = (left + right) / 2.0
@@ -3362,10 +3364,10 @@ class SymbolizeLayer(GrammarLayer):
             return fused
         # Delegate to SymbolicSpace.insert_meta. Idempotent on the
         # pair: first call allocates a fresh META row; subsequent calls
-        # return the cached META idx and EMA-update the stored vec.
-        meta_idx = ss.insert_meta(ps_idx, ss_idx,
+        # return the cached META position and EMA-update the stored vec.
+        meta_pos = ss.insert_meta(ps_pos, ss_pos,
                                   fused_vec=fused_for_insert)
-        meta_row = ss._ss_row_of(meta_idx)
+        meta_row = int(ss._ss_pos_to_row[meta_pos])
         # LBG (Linde-Buzo-Gray) accumulation + split-trigger on the SS
         # row this binding pulls on. The pull direction is the SS
         # operand ``right`` (a CS-tier vector derived from a SS symbol);
@@ -3377,8 +3379,8 @@ class SymbolizeLayer(GrammarLayer):
         if right_for_lbg.dim() > 1:
             right_for_lbg = right_for_lbg.reshape(-1)
         if right_for_lbg.shape[0] == ss_W.shape[1]:
-            ss.record_lbg_pull(ss_idx, right_for_lbg)
-            ss.maybe_split_lbg(ss_idx)
+            ss.record_lbg_pull(ss_pos, right_for_lbg)
+            ss.maybe_split_lbg(ss_pos)
         # Return the (possibly EMA-updated) META row's vector. We read
         # the *current* codebook so callers see the EMA-blended state.
         ss_W_current = self._ss_codebook()
@@ -3407,28 +3409,38 @@ class SymbolizeLayer(GrammarLayer):
         if nearest_row is None:
             half = parent / 2.0
             return half, half
-        nearest_signed = ss._ss_signed(nearest_row)
-        children = ss.taxonomy_children(nearest_signed)
+        nearest_pos = ss._ss_row_to_pos.get(nearest_row)
+        if nearest_pos is None:
+            # Row isn't bound to a position (pre-Stage-3 SS row); no
+            # taxonomy entry to walk.
+            half = parent / 2.0
+            return half, half
+        children = ss.taxonomy_children(nearest_pos)
         if not children:
             # Nearest match wasn't a META node -- nothing to walk.
             half = parent / 2.0
             return half, half
-        # Separate children by sign: positive = PS child, negative =
-        # SS child.
+        # Separate children by kind: "ps" child + "ss" child.
         ps_child = None
         ss_child = None
         for child in children:
             ci = int(child)
-            if ci >= 0:
+            kind = ss._pos_kind.get(ci)
+            if kind == "ps" and ps_child is None:
                 ps_child = ci
-            else:
+            elif kind == "ss" and ss_child is None:
                 ss_child = ci
         if ps_child is None or ss_child is None:
             # Malformed META (missing a side); fall back.
             half = parent / 2.0
             return half, half
-        ps_row = ss._ps_row_of(ps_child)
-        ss_row = ss._ss_row_of(ss_child)
+        ps_row = ss._ps_pos_to_row.get(ps_child)
+        ss_row = ss._ss_pos_to_row.get(ss_child)
+        if ps_row is None or ss_row is None:
+            half = parent / 2.0
+            return half, half
+        ps_row = int(ps_row)
+        ss_row = int(ss_row)
         # Range-check the rows; a stale taxonomy entry could carry an
         # out-of-bounds row idx, which would crash the index op.
         ps_codebook = getattr(ps_store, 'codebook', None)
@@ -8979,9 +8991,14 @@ class RadixLayer(Layer):
             except IndexError:
                 return b""
         # SS-walk: nearest may be the META itself, or its SS child.
-        # Use the row's *signed* index per the sign convention.
+        # Resolve the row's position via SymbolicSpace's lookup tables;
+        # an unbound row (not in _ss_row_to_pos) has no taxonomy entry
+        # and no surface-bytes path -- return b"" rather than
+        # mis-indexing the PS table with an SS row id.
         ss = symbolic_space
-        nearest_signed = ss._ss_signed(nearest_row)
+        nearest_pos = ss._ss_row_to_pos.get(nearest_row)
+        if nearest_pos is None:
+            return b""
         # Walk to a META node: either the nearest row IS a META, or
         # it's the SS-child of one (auto-bound under word learning
         # initializes both the META row and its SS child to the same
@@ -8989,23 +9006,25 @@ class RadixLayer(Layer):
         # child stays close to seed, so the nearest match often lands
         # on the child, not the META). Climb one level via
         # ``taxonomy_parent`` to recover the META in that case.
-        meta_signed = None
-        children = ss.taxonomy_children(nearest_signed)
+        meta_pos = None
+        children = ss.taxonomy_children(nearest_pos)
         if children:
-            meta_signed = nearest_signed
+            meta_pos = nearest_pos
         else:
-            parent = ss.taxonomy_parent(nearest_signed)
+            parent = ss.taxonomy_parent(nearest_pos)
             if parent is not None and ss.is_meta(int(parent)):
-                meta_signed = int(parent)
-                children = ss.taxonomy_children(meta_signed)
-        if meta_signed is None or not children:
+                meta_pos = int(parent)
+                children = ss.taxonomy_children(meta_pos)
+        if meta_pos is None or not children:
             return b""
         for child in children:
             ci = int(child)
-            if ci >= 0:
-                ps_row = ss._ps_row_of(ci)
+            if ss._pos_kind.get(ci) == "ps":
+                ps_row = ss._ps_pos_to_row.get(ci)
+                if ps_row is None:
+                    continue
                 try:
-                    return self.bytes_for(ps_row)
+                    return self.bytes_for(int(ps_row))
                 except IndexError:
                     return b""
         return b""

@@ -35,12 +35,14 @@ _CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _ss_row_from_signed(signed_idx):
-    """``signed_idx`` -> SS.codebook row index. Raises if positive."""
-    if signed_idx >= 0:
+def _ss_row_from_pos(ss, pos):
+    """``pos`` -> SS.codebook row index via ``SymbolicSpace._ss_pos_to_row``."""
+    row = ss._ss_pos_to_row.get(int(pos))
+    if row is None:
         raise AssertionError(
-            f"SS row expected from negative signed idx, got {signed_idx}")
-    return -signed_idx - 1
+            f"position {pos} has no SS-side row binding; expected an "
+            f"SS or META position")
+    return int(row)
 
 
 def _make_radix_model():
@@ -123,7 +125,7 @@ class TestRadixLayerReverseWithSS(unittest.TestCase):
         W = cb.getW()
         D = int(ss.nDim)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_signed(mid)
+            row = _ss_row_from_pos(ss,mid)
             v = torch.zeros(D, device=W.device, dtype=W.dtype)
             v[i] = 1.0
             with torch.no_grad():
