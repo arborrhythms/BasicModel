@@ -41,7 +41,11 @@ from embed import (
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
-from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
+from Layers import GrammarLayer
+# NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
+# (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
+# of use below to avoid the Layers <-> Language circular dependency during
+# Language.py's own module load.
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
@@ -10949,6 +10953,7 @@ class SymbolicSpace(Space):
         # Same Layer-shaped interface as the parameterized fold operators
         # -- uniform invocation from both bottom-up forward gating and
         # top-down SyntacticLayer dispatch.
+        from Language import NotLayer  # lazy: see top-of-file note
         self.propositional_negation = NotLayer()
         self.layers.append(self.propositional_negation)
 
@@ -12989,28 +12994,37 @@ class SymbolicSpace(Space):
         return sub
 
     def _pick_default_reduce_rule(self):
-        """Pick a default S-tier arity-2 rule for hard reduction.
+        """Pick a default arity-2 rule for hard reduction.
 
-        First-patch policy: the lowest-id arity-2 S-tier rule that is
-        also registered on ``self.syntacticLayer._by_name``. The plan
-        defers real SHIFT/REDUCE scoring to a later phase. Returns
-        ``None`` when no usable rule exists (no reduction is applied).
+        First-patch policy: the lowest-id arity-2 rule (S-tier preferred,
+        then C-tier, then any tier) that's either (a) registered on
+        ``self.syntacticLayer._by_name`` or (b) instantiable from
+        ``GRAMMAR_LAYER_CLASSES``. The lookup widened in the 2026-05-29
+        grammar-file-refactor (\xa75): rules can now bind at any host
+        space's syntacticLayer (intersection / union / lift / lower
+        moved to ``tier='C'`` per their layer class, so they no longer
+        appear on the SymbolicSpace syntactic layer). The reverse path's
+        rule pick should still find them because LanguageLayer dispatch
+        knows how to route any GRAMMAR_LAYER_CLASSES-resolved op.
 
         TODO(phase5+): replace this hardcoded pick with the router's
         learned scoring (binary_tiling_soft_dp / binary_tiling_viterbi).
         """
-        from Language import TheGrammar
+        from Language import TheGrammar, GRAMMAR_LAYER_CLASSES
         if getattr(self, 'syntacticLayer', None) is None:
             return None
         registered = self.syntacticLayer._by_name
-        try:
-            candidates = TheGrammar.rules_for_tier('S', arity=2)
-        except Exception:
-            return None
-        for rid in candidates:
-            mn = TheGrammar.method_name(rid)
-            if mn in registered:
-                return rid
+        for tier in ('S', 'C', 'P', 'L'):
+            try:
+                candidates = TheGrammar.rules_for_tier(tier, arity=2)
+            except Exception:
+                continue
+            for rid in candidates:
+                mn = TheGrammar.method_name(rid)
+                if mn is None:
+                    continue
+                if mn in registered or mn in GRAMMAR_LAYER_CLASSES:
+                    return rid
         return None
 
     def _stack_route_forward(self, CS_subspaceForSS):

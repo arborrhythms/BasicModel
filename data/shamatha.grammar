@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<grammar name="shamatha">
+
+  <compose>
+    <!-- Same C / S split as default.grammar. Contiguity-aware ops will
+         be added when doc/plans/2026-04-28-shamatha-speech-contiguity-handoff.md
+         is implemented. Tier / arity / invertibility derive from each
+         rule's GrammarLayer subclass. -->
+    <rule>S = union.forward(S, S)</rule>
+    <rule>S = intersection.forward(S, S)</rule>
+    <rule>S = lift.forward(S, S)</rule>
+    <rule>S = lower.forward(S, S)</rule>
+    <rule>S = not.forward(S)</rule>
+    <rule>S = conjunction.forward(S, S)</rule>
+    <rule>S = disjunction.forward(S, S)</rule>
+    <rule>S = part.forward(S, S)</rule>
+    <rule>S = isEqual.forward(S, S)</rule>
+    <rule>S = query.forward(S)</rule>
+  </compose>
+
+  <generate>
+    <!-- Mirror of <compose> with head and arguments swapped. -->
+    <rule>S, S = union.reverse(S)</rule>
+    <rule>S, S = intersection.reverse(S)</rule>
+    <rule>S, S = lift.reverse(S)</rule>
+    <rule>S, S = lower.reverse(S)</rule>
+    <rule>S = not.reverse(S)</rule>
+    <rule>S, S = conjunction.reverse(S)</rule>
+    <rule>S, S = disjunction.reverse(S)</rule>
+    <rule>S, S = part.reverse(S)</rule>
+    <rule>S, S = isEqual.reverse(S)</rule>
+    <rule>S = query.reverse(S)</rule>
+  </generate>
+
+</grammar>

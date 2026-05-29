@@ -60,23 +60,7 @@
     <!-- Stage 3 cleanup: chartTau retired alongside the chart. The
          signal router (LanguageLayer) is the canonical parser. -->
     <language>
-      <grammar>
-        <compose>
-          <rule>S = S</rule>
-          <rule>S = not.forward(S)</rule>
-          <rule>S = intersection.forward(S, S)</rule>
-          <rule>S = union.forward(S, S)</rule>
-          <rule>S = lower.forward(S, S)</rule>
-          <rule>S = lift.forward(S, S)</rule>
-        </compose>
-        <generate>
-          <rule>S = not.reverse(S)</rule>
-          <rule>S,S = intersection.reverse(S)</rule>
-          <rule>S,S = union.reverse(S)</rule>
-          <rule>S,S = lower.reverse(S)</rule>
-          <rule>S,S = lift.reverse(S)</rule>
-        </generate>
-      </grammar>
+      <grammar>default.grammar</grammar>
     </language>
   </WordSpace>
 

@@ -36,9 +36,87 @@ from Layers import LinearLayer, AttentionLayer
 from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 
+# Per doc/plans/2026-05-29-grammar-file-refactor.md §5: GrammarLayer
+# stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
+# FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /
+# IsaPartLayer also derive from it and stay). The grammar rule operator
+# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, LiftLayer,
+# LowerLayer, SymbolizeLayer, ConjunctionLayer, DisjunctionLayer,
+# IsEqualLayer, PartLayer, QueryLayer) physically live in this module
+# below, after the Grammar singleton.
+from Layers import GrammarLayer
+from Layers import (
+    EqualLayer, TrueLayer, FalseLayer, SwapLayer, CopyLayer,
+    AreaLayer, LuminosityLayer, IsaPartLayer,
+)
+
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+
+import xml.etree.ElementTree as _ET
+from pathlib import Path as _Path
+
+_GRAMMAR_DIR = _Path(__file__).parent.parent / "data"
+
+
+def load_grammar(filename):
+    """Load a ``.grammar`` XML file from ``data/`` and return a
+    ``Grammar.configure()``-compatible dict.
+
+    The .grammar format reuses the same inline rule syntax as the
+    legacy ``<grammar>...</grammar>`` block:
+
+        <?xml version="1.0"?>
+        <grammar name="default">
+          <compose>
+            <rule>S = lift(NP, VP)</rule>
+            <rule>S = intersection(S, S)</rule>
+            ...
+          </compose>
+          <generate>
+            <rule>S = not.reverse(S)</rule>
+            ...
+          </generate>
+        </grammar>
+
+    Each rule's category (head / argument labels), arity (argument
+    count), function name, and return-value count are inferred from the
+    body. Tier, invertibility, and any other class-level metadata come
+    from the rule's ``GrammarLayer`` subclass via ``GRAMMAR_LAYER_CLASSES``
+    (set later in ``Grammar.load_from_grammar_file``).
+    """
+    path = _GRAMMAR_DIR / filename
+    if not path.exists():
+        raise FileNotFoundError(f"Grammar file not found: {path}")
+    root = _ET.parse(path).getroot()
+    return _grammar_xml_to_dict(root)
+
+
+def _grammar_xml_to_dict(node):
+    """Convert an ``ElementTree`` grammar node into the nested-dict
+    shape that ``Grammar.configure()`` consumes.
+
+    Element nodes with children become dicts; leaf element nodes contribute
+    their stripped text. Repeated tags (most importantly ``<rule>``) merge
+    into a list under that tag, matching the shape ``TheXMLConfig`` emits
+    for the legacy inline ``<grammar>...</grammar>`` block.
+    """
+    result = {}
+    for child in node:
+        tag = child.tag
+        if len(list(child)) > 0:
+            value = _grammar_xml_to_dict(child)
+        else:
+            text = (child.text or '').strip()
+            value = text
+        if tag in result:
+            if not isinstance(result[tag], list):
+                result[tag] = [result[tag]]
+            result[tag].append(value)
+        else:
+            result[tag] = value
+    return result
 
 
 # --------------------------------------------------------------------
@@ -936,13 +1014,121 @@ class Grammar:
         """Clear the per-derivation single-application bookkeeping."""
         self._fired_bodies = set()
 
+    def load_from_grammar_file(self, filename):
+        """Configure rules from a ``data/<filename>.grammar`` XML file.
+
+        Delegates parsing to the module-level :func:`load_grammar` (which
+        returns a ``configure()``-compatible nested-dict) and then runs
+        the standard ``configure()`` path. Once that's done, each
+        ``RuleDef``'s tier is overwritten with the tier declared on its
+        rule's ``GrammarLayer`` subclass -- the .grammar file lists the
+        rule body only (``<rule>S = lift(NP, VP)</rule>``); category,
+        arity, function name, and return-value count come from the body
+        and tier / invertibility come from the layer class.
+
+        An implicit identity rule (``S = S``, method_name=None) is added
+        when one isn't already present -- it's the no-op grammatical
+        transition the static per-word loop's cursor bookkeeping relies
+        on (see ``_find_identity_rule_id``).
+        """
+        cfg = load_grammar(filename)
+        cfg = self._ensure_identity_rule(cfg)
+        self.configure(cfg)
+        self._reassign_tiers_from_layer_classes()
+
+    @staticmethod
+    def _ensure_identity_rule(cfg):
+        """Return ``cfg`` augmented with an ``S = S`` rule in <compose> if
+        none is present (handles bare-dict, ``{'rule': [...]}``, and
+        named-section ``{'compose': {...}}`` shapes)."""
+        identity_body = "S = S"
+
+        def has_identity(section):
+            if not isinstance(section, dict):
+                return False
+            raw = section.get('rule')
+            if isinstance(raw, str):
+                return raw.replace(' ', '') == identity_body.replace(' ', '')
+            if isinstance(raw, list):
+                return any(
+                    (isinstance(r, str)
+                     and r.replace(' ', '') == identity_body.replace(' ', ''))
+                    for r in raw)
+            for k, v in section.items():
+                if k == 'rule':
+                    continue
+                if isinstance(v, dict) and has_identity(v):
+                    return True
+            return False
+
+        def add_identity(section):
+            raw = section.get('rule')
+            if raw is None:
+                section['rule'] = [identity_body]
+            elif isinstance(raw, str):
+                section['rule'] = [identity_body, raw]
+            elif isinstance(raw, list):
+                section['rule'] = [identity_body] + list(raw)
+            return section
+
+        if not isinstance(cfg, dict):
+            cfg = {'compose': {'rule': [identity_body]}}
+            return cfg
+        if 'compose' in cfg or 'generate' in cfg:
+            compose = cfg.get('compose')
+            if compose is None:
+                cfg['compose'] = {'rule': [identity_body]}
+            elif isinstance(compose, dict) and not has_identity(compose):
+                cfg['compose'] = add_identity(dict(compose))
+            return cfg
+        if not has_identity(cfg):
+            cfg = add_identity(dict(cfg))
+        return cfg
+
+    def _reassign_tiers_from_layer_classes(self):
+        """Replace each rule's ``tier`` with the value declared on its
+        ``GrammarLayer`` subclass.
+
+        The .grammar file format leaves tier off the rule body; per the
+        2026-05-29 refactor the layer class is the source of truth for
+        tier (and other class-level metadata such as ``invertible``).
+        Rules whose ``method_name`` isn't registered in
+        ``GRAMMAR_LAYER_CLASSES`` keep the tier the parser inferred from
+        the section header (default 'S').
+        """
+        registry = GRAMMAR_LAYER_CLASSES
+
+        def fixup(rules):
+            out = []
+            for rule in rules:
+                cls = registry.get(rule.method_name)
+                if cls is not None:
+                    new_tier = getattr(cls, 'tier', rule.tier) or rule.tier
+                    if new_tier != rule.tier:
+                        rule = rule._replace(tier=new_tier)
+                out.append(rule)
+            return out
+
+        self.rules_upward = fixup(self.rules_upward)
+        self.rules_downward = fixup(self.rules_downward)
+        self.rules = list(self.rules_upward) + list(self.rules_downward)
+        self.rule_table = {idx: rule.canonical
+                           for idx, rule in enumerate(self.rules)}
+        self._bump_rule_table_version()
+
     def _ensure_configured(self):
         """Lazily configure the grammar from XML on first use.
 
-        Resolves the start symbol, looks up the inline XML grammar or
-        a ``grammarCfg`` file path, and dispatches to ``configure`` or
-        ``load_from_cfg``. Subsequent calls are no-ops via the
-        ``_configured`` guard.
+        Resolves the start symbol, then dispatches to one of three
+        loaders by precedence:
+          1. ``<grammar>name.grammar</grammar>`` -- string body whose
+             text matches ``*.grammar``: loaded via
+             :py:meth:`load_from_grammar_file`.
+          2. ``<grammarCfg>path</grammarCfg>`` -- text-format
+             ``data/grammar.cfg``-style file (legacy ``.cfg``).
+          3. ``<grammar>...</grammar>`` -- inline XML grammar dict
+             (legacy explicit form).
+        Subsequent calls are no-ops via the ``_configured`` guard.
         """
         if self._configured:
             return
@@ -957,18 +1143,54 @@ class Grammar:
                 self.start_symbol = str(start_raw).strip() or "S"
         except (KeyError, AttributeError):
             pass
-        cfg = None
+
+        # Defensive: warn loudly if a deprecated <useGrammar> tag still
+        # sits in the XML (the knob was retired 2026-05-13 but configs
+        # that survived from before that may still carry it).
         try:
-            candidate = TheXMLConfig.get("WordSpace.language.grammar")
-            if isinstance(candidate, dict):
-                cfg = candidate
+            legacy_use = TheXMLConfig.get("WordSpace.language.useGrammar")
+            if legacy_use is not None:
+                warnings.warn(
+                    "<useGrammar> is deprecated; use "
+                    "<grammar>NAME.grammar</grammar> instead. Falling "
+                    "back to default.grammar.",
+                    DeprecationWarning, stacklevel=2)
+                self.load_from_grammar_file("default.grammar")
+                try:
+                    interp = TheXMLConfig.get(
+                        "WordSpace.language.interpretation")
+                    self.interpretation = float(interp)
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                return
         except (KeyError, AttributeError):
             pass
-        # New (Step 6) path: prefer ``WordSpace.language.grammarCfg`` —
-        # a string path to a ``data/grammar.cfg`` file in explicit-op
-        # form.  Resolved relative to ``ProjectPaths.PROJECT_DIR`` if
-        # not absolute.  Falls through to the XML grammar (legacy path)
-        # when absent or unreadable.
+
+        candidate = None
+        try:
+            candidate = TheXMLConfig.get("WordSpace.language.grammar")
+        except (KeyError, AttributeError):
+            candidate = None
+
+        # New path: ``<grammar>NAME.grammar</grammar>`` -- string body
+        # whose text resolves to a ``.grammar`` file in ``data/``.
+        if isinstance(candidate, str):
+            name = candidate.strip()
+            if name.endswith(".grammar"):
+                self.load_from_grammar_file(name)
+                try:
+                    interp = TheXMLConfig.get(
+                        "WordSpace.language.interpretation")
+                    self.interpretation = float(interp)
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                return
+
+        cfg = candidate if isinstance(candidate, dict) else None
+        # Legacy path: ``WordSpace.language.grammarCfg`` -- a string
+        # path to a ``data/grammar.cfg`` file in explicit-op form.
+        # Resolved relative to ``ProjectPaths.PROJECT_DIR`` if not
+        # absolute. Falls through to the XML grammar when absent.
         cfg_path = None
         try:
             cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
@@ -1181,6 +1403,1691 @@ class Grammar:
 
 TheGrammar = Grammar()
 
+# =====================================================================
+# Grammar rule operator classes -- moved from Layers.py per
+# doc/plans/2026-05-29-grammar-file-refactor.md §5. All derive from
+# the GrammarLayer base class which stays in Layers.py (alongside
+# PiLayer / SigmaLayer and the unmoved subsymbolic-computation
+# grammar layers).
+# =====================================================================
+
+class NotLayer(GrammarLayer):
+    """Parameter-free propositional negation on the bivalent symbol bivector.
+
+    Implements the grammar rule ``S = not(S)``. Operates on the
+    materialized muxed event tensor ``[B, V, nWhat + nWhere + nWhen]``;
+    the ``.what`` bivector ``[pos, neg]`` lives at ``[..., :2]``
+    (nWhat == 2 by convention) and any nWhere / nWhen channels follow.
+    Negation swaps the leading 2 dims of the last axis to ``[neg, pos]``
+    at every ``(B, V)`` position; nWhere / nWhen pass through unchanged.
+
+    Contradictions are preserved: a position with both ``pos`` and
+    ``neg`` high stays contradictory after the swap (new
+    ``pos = old neg`` and new ``neg = old pos`` are still both high).
+    Contrast with bitonic ``-x`` negation, which collapses
+    contradictions onto opposite-sign components.
+
+    The dispatcher hands NotLayer the materialized tensor (with the
+    ``.active`` mask applied) -- never the codebook ``W``. Forward
+    returns the muxed tensor with only the bivector channels swapped;
+    the dispatcher writes back via ``set_event``.
+
+    Shape-preserving and self-inverse.
+    """
+    rule_name  = "not"
+    arity      = 1
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self):
+        """Initialize NotLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        self._check_bivector_shape(x)
+        bivector = x[..., :2].flip(dims=(-1,))
+        rest     = x[..., 2:]
+        if rest.shape[-1] == 0:
+            return bivector
+        return torch.cat([bivector, rest], dim=-1)
+
+    def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
+        return self.forward(y)
+
+class NonLayer(GrammarLayer):
+    """Non-affirming negation (indeterminacy) on a bivector.
+
+    For a ``[pos, neg]`` bivector at each axis, ``non`` returns
+    ``[1 - pos, 1 - neg]`` per pole independently. This is the
+    pole-wise complement: a position fully affirmed
+    (``pos = 1, neg = 0``) becomes ``[0, 1]`` (pure negation);
+    indeterminate (``pos = 0, neg = 0``) becomes ``[1, 1]`` (full
+    contradiction); contradictory (``pos = 1, neg = 1``) becomes
+    ``[0, 0]`` (full indeterminacy). The four corners of the
+    tetralemma exchange via this map:
+
+        affirm    [1,0] <-> [0,1] negate
+        unknown   [0,0] <-> [1,1] contradict
+
+    Self-inverse on each pole independently
+    (``non(non(x)) = 1 - (1 - x) = x``), shape-preserving. Operates
+    on the leading bivector slice ``[..., :2]`` of the muxed event;
+    nWhere / nWhen channels at ``[..., 2:]`` pass through unchanged
+    (same convention as ``NotLayer``).
+    """
+    rule_name  = "non"
+    arity      = 1
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self):
+        """Initialize NonLayer; allocate state for the class contract.
+        
+        See class docstring for invariants.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        """Forward pass.
+        
+        See class docstring for the operation this layer applies.
+        """
+        self._check_bivector_shape(x)
+        bivector = 1.0 - x[..., :2]
+        rest     = x[..., 2:]
+        if rest.shape[-1] == 0:
+            return bivector
+        return torch.cat([bivector, rest], dim=-1)
+
+    def reverse(self, y):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
+        return self.forward(y)
+
+class IntersectionLayer(GrammarLayer):
+    """``L -> intersection(L, L)`` -- per-pole "min toward zero" on
+    a bivector activation tensor.
+
+    Tiered ``L`` (logical) per the 2026-05-05 directive: the
+    operator is a pure logical (lattice-min) primitive, neither
+    purely conceptual nor purely symbolic. The dispatcher feeds
+    it the bivector activation -- ``[B, V, 2]`` per position,
+    ``[pos, neg]`` poles -- via ``reads_activation = True``. The
+    operands' upstream tier (C vs S codebook activation) is
+    determined by the chart binding, not by this layer.
+
+    Math via ``Ops.intersection`` (a public alias of
+    ``Ops._conjunction_kernel``):
+        monotonic=False (default) -> RadMin: same-sign min
+            magnitude, zero passthrough. The pole closer to
+            zero wins per channel.
+        monotonic=True            -> strict lattice min.
+
+    Lossy: min collapses dominated operands. ``decompose`` returns
+    ``(parent, parent)`` as the best-effort identity recovery
+    without auxiliary structure.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode (``butterfly=True, N=N``) lifts the
+    binary fold to a cross-STM aggregator. At each cascade level
+    the per-pair op takes the packed ``[a, b]`` (each ``[B, M, D]``),
+    computes the intersection kernel element-wise across the two
+    halves (RadMin in radial mode, lattice min in monotonic mode),
+    broadcasts the result back into the packed ``2D`` form, and
+    applies the per-node weight. After ``log2(N)`` levels every
+    output position holds the cross-position intersection of all
+    inputs, weighted by the cascade's per-node parameters.
+    Identity-on-constant-input is preserved (min is idempotent on
+    the diagonal); general inputs lose information (lossy fold).
+    """
+    rule_name        = "intersection"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'C'
+    reads_activation = True
+
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
+        """Initialize IntersectionLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): when ``butterfly=True``, the
+        layer becomes a cross-STM cascade aggregator. ``N`` is the
+        per-position slot count (power of two); ``nInput == nOutput``
+        defines D, the per-slot feature width.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.monotonic = bool(monotonic)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Intersection per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``
+        (each ``[B, M, D]``), apply the intersection kernel element-
+        wise (RadMin radial / lattice min monotonic), broadcast the
+        result into the ``2D`` packed form, and weight by
+        ``W_node: [M, 2D, 2D]``.
+
+        At identity init (``W_node = I``) the output is
+        ``cat([min(a,b), min(a,b)])`` -- idempotent on constant input.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.minimum(a, b)
+        else:
+            m = Ops._radmin(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; approximate (lossy).
+
+        The forward broadcasts the per-pair fold into both halves
+        and applies the per-node weight. The reverse un-weights with
+        ``W_inv_node`` then averages the two halves and re-broadcasts
+        -- the natural ``(parent, parent)`` pseudo-inverse adapted to
+        the cascade's packed-pair form.
+        """
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        """Forward pass.
+
+        Non-butterfly mode (default): binary ``forward(left, right)``
+        applies the intersection kernel directly on the operand pair.
+
+        Butterfly mode (``self.butterfly``): unary ``forward(x)``
+        runs the cascade over the per-position axis of ``x: [B, N, D]``;
+        ``right`` is ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.intersection(left, right, monotonic=self.monotonic)
+
+    def reverse(self, parent, basis=None):
+        """Reverse pass; inverse of ``forward``.
+
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse (kept for callers that don't have a
+            codebook handy).
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.conjunctionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``intersection(x1, x2) ≈ parent``.
+
+        Butterfly mode: cross-STM cascade reverse via the per-pair
+        pseudo-inverse (broadcast averaged form); ``basis`` is ignored.
+
+        Callers (signal-router dispatch, chart reverse) are expected
+        to pass the relevant Basis (typically ``SymbolicSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            # Mereology recommender; falls back internally to
+            # (parent, parent) when W is empty.
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.conjunctionReverse(
+                    parent, parent, W, monotonic=self.monotonic)
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            # In butterfly mode the binary op is the cross-STM cascade
+            # on a single packed tensor; compose still expects the
+            # binary signature for chart parsing, so we concatenate
+            # ``left`` and ``right`` along the position axis and run
+            # the cascade. Caller responsibility: shapes must match
+            # the configured N (typically left and right are halves).
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.intersection(left, right, monotonic=self.monotonic)
+
+    def generate(self, parent, basis=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``;
+        see its docstring for the recommender vs lossy-fallback
+        semantics.
+        """
+        return self.reverse(parent, basis=basis)
+
+class UnionLayer(GrammarLayer):
+    """``L -> union(L, L)`` -- per-pole "max toward zero" (max
+    magnitude, away from zero) on a bivector activation tensor.
+
+    Tiered ``L`` (logical) -- counterpart to ``IntersectionLayer``.
+    Same dispatch contract: feeds on bivector activation
+    ``[B, V, 2]`` via the ``reads_activation = True`` flag. The
+    operands' upstream tier is determined by the chart binding,
+    not by this layer.
+
+    Math via ``Ops.union`` (a public alias of
+    ``Ops._disjunction_kernel``):
+        monotonic=False (default) -> RadMax: same-sign max
+            magnitude with zero passthrough.
+        monotonic=True            -> strict lattice max.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode is the cross-STM dual of ``IntersectionLayer``
+    -- per-pair op computes the union kernel element-wise across
+    the two halves, broadcasts, and weights by the per-node matrix.
+    See ``IntersectionLayer`` for the cascade-shape contract.
+    """
+    rule_name        = "union"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'C'
+    reads_activation = True
+
+    def __init__(self, monotonic=False, nInput=0, nOutput=0,
+                 butterfly=False, N=None):
+        """Initialize UnionLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        self.monotonic = bool(monotonic)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Union per-pair op for the butterfly cascade.
+
+        Split ``x_pair: [B, M, 2D]`` into the two halves ``a, b``,
+        apply the union kernel element-wise (RadMax radial / lattice
+        max monotonic), broadcast into ``2D``, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        if self.monotonic:
+            m = torch.maximum(a, b)
+        else:
+            m = Ops._radmax(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        analogue adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        """Forward pass.
+
+        Non-butterfly: binary ``forward(left, right)`` -> ``Ops.union``.
+        Butterfly: unary ``forward(x)`` -> cross-STM cascade; ``right``
+        ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.union(left, right, monotonic=self.monotonic)
+
+    def reverse(self, parent, basis=None):
+        """Reverse pass; inverse of ``forward``.
+
+        Non-butterfly mode:
+          * ``basis is None`` (default) -- lossy ``(parent, parent)``
+            pseudo-inverse.
+          * ``basis`` supplied (a Codebook / Basis with ``getW()``) --
+            mereology-guided recommender via
+            :py:meth:`Ops.disjunctionReverse`: walks ``W = basis.getW()``
+            for an operand pair ``(x1, x2)`` such that
+            ``union(x1, x2) ≈ parent``.
+
+        Butterfly mode: cross-STM cascade reverse; ``basis`` is ignored.
+
+        Callers pass the relevant Basis (typically ``SymbolicSpace.
+        subspace.what``) at the call site -- no back-ref is stored on
+        the layer. See class docstring for the inversion contract.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.disjunctionReverse(
+                    parent, parent, W, monotonic=self.monotonic)
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.union(left, right, monotonic=self.monotonic)
+
+    def generate(self, parent, basis=None):
+        """Drive the reverse / generation pass.
+
+        ``basis`` (optional Codebook/Basis) forwarded to ``reverse``.
+        """
+        return self.reverse(parent, basis=basis)
+
+
+# ===========================================================================
+# Grammar-op GrammarLayer subclasses (Surface 3 facade, 2026-05-01).
+#
+# Each class below names one grammar operation (`rule_name`) and exposes
+# the canonical GrammarLayer interface (forward / reverse / compose /
+# decompose, plus `gated_run` from the base class). The math kernel
+# delegates to the corresponding `SyntacticLayer.*Forward` /
+# `*Reverse` method so semantics are byte-identical to the existing
+# `_RULE_METHODS` dispatch path. The benefit is uniform surface:
+# `isinstance(x, GrammarLayer)` and `x.rule_name` work for every op,
+# the chart's per-rule per-cell dispatch can route through these
+# subclasses without a separate `_RULE_METHODS` table, and
+# `_chart_authority`'s gating applies uniformly via `gated_run`.
+#
+# The subclasses are stateless wrappers that look up the method by
+# name on a SyntacticLayer instance passed in at call time -- they
+# don't own a SyntacticLayer reference (which would be a circular
+# ownership: SyntacticLayer constructs them via the chart's eager
+# build, and they'd point back at SyntacticLayer). Pattern:
+#
+#     out = LiftLayer().forward(left, right, layer=syntactic_layer,
+#                               subspace=subspace)
+#
+# Existing `_RULE_METHODS` dispatch in SyntacticLayer.project still
+# works -- this is an addition, not a replacement. A follow-up can
+# migrate the chart to dispatch through these classes.
+
+# =====================================================================
+# Grammar-op GrammarLayer subclasses (Step 8 of the 2026-05-01 syntactic-
+# layer refactor). Each class is a self-contained GrammarLayer with
+# direct Ops-based math. Replaces the prior `_GrammarOpFacade` /
+# SyntacticLayer-dispatch pattern.
+#
+# `_GrammarOpFacade._registry` is retired: the chart now consults
+# `wordSpace.host_layer(tier, rule_name)` first (Step 7) and falls
+# back to a hardcoded class lookup `GRAMMAR_LAYER_CLASSES` declared
+# at module scope below.
+# =====================================================================
+
+class LiftLayer(GrammarLayer):
+    """``lift(idea_a, idea_b)`` -- binary C-tier grammar op (sigma-style
+    synthesis over a STM pair).
+
+    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    LiftLayer becomes a first-class binary ``GrammarLayer`` subclass
+    dispatched by the signal router over STM pairs. The previous
+    substrate-borrow pattern (reaching into a PerceptualSpace-owned
+    sigma fold via a gating round-trip through the symbol codebook)
+    is retired -- LiftLayer owns its own internal SigmaLayer for the
+    pairwise math and is fully self-contained.
+
+    Math (sigma-style binary fold, additive log-domain):
+
+        s = atanh(idea_a) + atanh(idea_b)      (clamped)
+        y = tanh(W @ s + b)
+
+        # reverse / generate (balanced split):
+        s_hat = W^-1 @ atanh(y) - b            (LDU inverse)
+        half  = s_hat / 2
+        return tanh(half), tanh(half)
+
+    Inherits ``compose`` / ``generate`` semantics from ``SigmaLayer``'s
+    binary-tensor-op contract (``SigmaLayer.compose`` / ``.generate``)
+    -- the internal SigmaLayer carries the LDU-invertible
+    parameterisation.  ``reverse(parent)`` returns a ``(left, right)``
+    pair via the balanced split.
+
+    The construction is self-contained: no PerceptualSpace /
+    ConceptualSpace / SymbolicSpace references.  Pass ``nInput`` /
+    ``nOutput`` to size the internal SigmaLayer; the back-compat
+    keyword arguments ``symbolicSpace`` / ``perceptualSpace`` /
+    ``conceptualSpace`` are still accepted (for legacy call sites in
+    ``Language.WordSubSpace._attach_per_space_syntactic_layer``) but
+    only their codebook dimension is consulted to determine the
+    operand width when ``nInput`` is not provided.
+    """
+    rule_name  = "lift"
+    arity      = 2
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None):
+        """Initialize LiftLayer.
+
+        ``nInput`` / ``nOutput`` size the internal SigmaLayer; both
+        default to the symbol codebook width when ``symbolicSpace`` is
+        supplied (back-compat with the per-space syntactic-layer
+        construction path).  ``invertible`` / ``nonlinear`` are passed
+        through to the internal SigmaLayer.
+
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a butterfly
+        cascade on the GrammarLayer base alongside the inner sigma. The
+        binary ``forward(left, right)`` retains its existing semantics;
+        the new ``forward_butterfly(x)`` form (or the GrammarLayer
+        ``_butterfly_forward`` directly) runs the cascade over a
+        ``[B, N, D]`` per-position tensor. The cascade's per-pair op
+        delegates to the internal SigmaLayer's ``_butterfly_pair_op``.
+
+        Back-references via ``object.__setattr__`` bypass nn.Module
+        submodule tracking so the Space refs don't create module-tree
+        cycles (the Spaces are registered under the top-level Model).
+        """
+        # Resolve operand width: prefer explicit ``nInput`` / ``nOutput``;
+        # else fall back to the symbol codebook width for the legacy
+        # ``LiftLayer(symbolicSpace=ss)`` call shape.
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        # Back-references kept for back-compat with the
+        # ``LiftLayer(symbolicSpace=...)`` legacy construction path.
+        # They are NOT consulted by ``forward`` / ``reverse`` -- the
+        # binary fold runs entirely through ``self._sigma``.
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        # Internal SigmaLayer -- additive log-domain pairwise fold.
+        # LDU-invertible so ``reverse`` is exact at the spatial level.
+        # The inner sigma is used both for the binary forward(left, right)
+        # path and (via its ``_butterfly_pair_op`` method) for the
+        # butterfly per-pair op when the cascade is enabled.
+        if int(nInput) > 0:
+            self._sigma = SigmaLayer(
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
+            self.layers.append(self._sigma)
+        else:
+            # Zero-width construction (parameter-free harness probe).
+            self._sigma = None
+
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal SigmaLayer.
+
+        The cascade weight ``W_node`` is supplied by the LiftLayer's
+        own ``butterfly_W`` (inherited from GrammarLayer); the inner
+        sigma contributes only the atanh / tanh nonlinearity around
+        the einsum. This keeps LiftLayer's invertibility contract on
+        the cascade while reusing sigma's per-pair kernel.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op: no internal sigma "
+                "(zero-width construction).")
+        return self._sigma._butterfly_pair_op(x_pair, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner sigma."""
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer._butterfly_pair_op_reverse: no internal sigma.")
+        return self._sigma._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over a ``[B, N, D]`` tensor.
+
+        Distinct entry point from the binary ``forward(left, right)``
+        so the existing binary-fold callers (chart / signal-router
+        pair dispatch) are not surprised by the cascade semantics.
+        """
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.forward_butterfly: butterfly mode not enabled "
+                "at construction.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LiftLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
+
+    def forward(self, left, right):
+        """Sigma-style binary fold over the STM pair ``(left, right)``.
+
+        Delegates to ``SigmaLayer.compose`` which packs the operands
+        in atanh-domain (``a + b``), applies the inner linear
+        transform, and returns ``tanh(W @ (atanh(a) + atanh(b)) + b)``.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a symbolicSpace whose subspace "
+                "carries a non-empty codebook.")
+        return self._sigma.compose(left, right)
+
+    def reverse(self, parent):
+        """Split ``parent`` back into a ``(left, right)`` pair.
+
+        Delegates to ``SigmaLayer.generate`` which inverts the inner
+        LDU transform and returns the balanced split
+        ``tanh(s/2), tanh(s/2)`` where ``s = atanh(left) + atanh(right)``.
+
+        The split is approximate in the sense that the original
+        ``(left, right)`` cannot be uniquely recovered from their
+        atanh-sum alone -- but ``forward(*reverse(parent)) == parent``
+        round-trip-consistently when the internal sigma is invertible.
+        """
+        if self._sigma is None:
+            raise RuntimeError(
+                "LiftLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        return self._sigma.generate(parent)
+
+    def compose(self, left, right):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent)
+
+class LowerLayer(GrammarLayer):
+    """``lower(idea_a, idea_b)`` -- binary C-tier grammar op (pi-style
+    lowering over a STM pair).
+
+    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    LowerLayer becomes a first-class binary ``GrammarLayer`` subclass
+    dispatched by the signal router over STM pairs. The previous
+    substrate-borrow pattern (reaching into a ConceptualSpace-owned
+    pi fold via a gating round-trip through the symbol codebook) is
+    retired -- LowerLayer owns its own internal PiLayer for the
+    pairwise math and is fully self-contained.
+
+    Math (pi-style binary fold, multiplicative log-domain):
+
+        ell = log_mult(idea_a) + log_mult(idea_b)
+        y   = tanh((W @ ell + b) / 2)
+
+        # reverse / generate (balanced split):
+        ell_hat = W^-1 @ (atanh-style transform of y) - b
+        half    = ell_hat / 2
+        return from_mult(exp(half)), from_mult(exp(half))
+
+    Inherits ``compose`` / ``generate`` semantics from ``PiLayer``'s
+    binary-tensor-op contract (``PiLayer.compose`` / ``.generate``)
+    -- the internal PiLayer carries the LDU-invertible
+    parameterisation.
+
+    The construction is self-contained: no Space references.  See
+    ``LiftLayer`` for the keyword-arg compatibility shim.
+    """
+    rule_name  = "lower"
+    arity      = 2
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 invertible=True, nonlinear=True,
+                 butterfly=False, N=None):
+        """Initialize LowerLayer; symmetric to ``LiftLayer.__init__``
+        but with an internal PiLayer (multiplicative log-domain
+        fold) instead of a SigmaLayer.
+
+        ``butterfly`` / ``N`` (Stage 5): when True, allocate a
+        butterfly cascade on the GrammarLayer base. The per-pair op
+        delegates to the internal PiLayer's ``_butterfly_pair_op``.
+        """
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+        if int(nInput) > 0:
+            self._pi = PiLayer(
+                nInput=int(nInput), nOutput=int(nOutput),
+                invertible=invertible, nonlinear=nonlinear)
+            self.layers.append(self._pi)
+        else:
+            self._pi = None
+
+    # -- Butterfly per-pair op delegation (Stage 5) -----------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Delegate per-pair op to the internal PiLayer."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op: no internal pi "
+                "(zero-width construction).")
+        return self._pi._butterfly_pair_op(x_pair, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; delegate to inner pi."""
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer._butterfly_pair_op_reverse: no internal pi.")
+        return self._pi._butterfly_pair_op_reverse(y_pair, W_inv_node)
+
+    def forward_butterfly(self, x):
+        """Run the butterfly cascade forward over ``[B, N, D]``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.forward_butterfly: butterfly mode not enabled.")
+        return self._butterfly_forward(x)
+
+    def reverse_butterfly(self, y):
+        """Inverse of ``forward_butterfly``."""
+        if not self.butterfly:
+            raise RuntimeError(
+                "LowerLayer.reverse_butterfly: butterfly mode not enabled.")
+        return self._butterfly_reverse(y)
+
+    def forward(self, left, right):
+        """Pi-style binary fold (multiplicative log-domain) over the
+        STM pair ``(left, right)``.
+
+        Delegates to ``PiLayer.compose`` which packs the operands in
+        log-mult domain (``log_mult(a) + log_mult(b)``), applies the
+        inner linear transform, and returns
+        ``tanh((W @ (log_mult(a) + log_mult(b)) + b) / 2)``.
+        """
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run forward. Pass nInput / "
+                "nOutput, or supply a symbolicSpace whose subspace "
+                "carries a non-empty codebook.")
+        return self._pi.compose(left, right)
+
+    def reverse(self, parent):
+        """Split ``parent`` back into a ``(left, right)`` pair via the
+        balanced log-mult-domain split (``PiLayer.generate``).
+        """
+        if self._pi is None:
+            raise RuntimeError(
+                "LowerLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        return self._pi.generate(parent)
+
+    def compose(self, left, right):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent)
+
+class SymbolizeLayer(GrammarLayer):
+    """``symbolize(percept, symbol)`` -- binary C-tier grammar op that
+    binds a perceptual idea to a semantic idea, creating a META node in
+    the SS taxonomy.
+
+    Stage 9 (2026-05-27, doc/plans/2026-05-27-perceptstore-meta-taxonomy-
+    reentrancy.md): SymbolizeLayer is registered with the signal router
+    as a binary reduce op at tier 'C'. Enforced at sentence-parse
+    boundaries (the parser dispatches it for every word + object pairing
+    in a sentence's parse). Off-parse, it fires opportunistically when
+    CS state's quantization-to-symbol pairs with the next STM slot's
+    quantization.
+
+    Originally named ``MetaLayer``; renamed 2026-05-28 to better reflect
+    the operation ("symbolize a percept into a symbol") rather than the
+    artifact produced (a META node in the taxonomy). The META node
+    concept survives unchanged on the SymbolicSpace side (see
+    ``SymbolicSpace.insert_meta`` / ``taxonomy``).
+
+    Semantic contract (forward):
+
+        forward(left, right):
+          - left:  CS-tier vector derived from a PS percept.
+          - right: CS-tier vector derived from an SS symbol.
+          1. Identify the percept_id by nearest-row search in
+             ``PerceptualSpace.percept_store.codebook``.
+          2. Identify the symbol_idx by nearest-row search in
+             ``SymbolicSpace.subspace.what.getW()``.
+          3. Call ``SymbolicSpace.insert_meta(ps_idx, ss_idx,
+             fused_vec=(left + right) / 2)``. The call is idempotent on
+             the pair: a fresh allocation on first sight, EMA-blend on
+             subsequent calls.
+          4. Return the META node's SS.codebook vector.
+
+    Semantic contract (reverse):
+
+        reverse(parent):
+          parent is a META vector.
+          1. Find the nearest SS row to ``parent``.
+          2. If the row is a META node, walk
+             ``SymbolicSpace.taxonomy_children`` to recover the
+             ``(ps_idx, ss_idx)`` children.
+          3. Return ``(PS.codebook[ps_row], SS.codebook[ss_row])`` as
+             the ``(left, right)`` recovery.
+          4. If the nearest row is not a META, fall back to the
+             balanced split ``(parent / 2, parent / 2)`` (analogous to
+             LiftLayer.reverse's split convention; the discrete
+             recovery is approximate when no META binding exists for
+             the parent's identity).
+
+    Fallback: when the wired ``PerceptualSpace`` lacks a
+    ``percept_store`` (legacy lexicon mode), SymbolizeLayer cannot
+    identify the percept_id structurally; forward then returns the
+    no-op average ``(left + right) / 2`` without registering a META
+    node. This keeps the layer harmless when not in radix mode.
+
+    Numerical guard: ``NaN`` / ``Inf`` in ``left`` or ``right`` raises
+    immediately per the project's "fail loud on numerical divergence"
+    policy. Silent ``nan_to_num`` would let divergence propagate into
+    the SS codebook through the META row seed.
+
+    The construction back-references ``symbolicSpace`` /
+    ``perceptualSpace`` via ``object.__setattr__`` to bypass nn.Module
+    submodule tracking (the Spaces are registered under the top-level
+    Model; reattaching them here would create a module-tree cycle).
+    """
+    rule_name  = "symbolize"
+    arity      = 2
+    invertible = True
+    tier       = 'C'
+
+    def __init__(self, nInput=None, nOutput=None, *,
+                 symbolicSpace=None, perceptualSpace=None,
+                 conceptualSpace=None,
+                 butterfly=False, N=None):
+        """Initialize SymbolizeLayer.
+
+        ``nInput`` / ``nOutput`` size the layer's nominal input / output
+        widths; both default to the symbol codebook width when
+        ``symbolicSpace`` is supplied. The layer is parameter-free
+        (all gradient flows through the SS / PS codebooks owned by
+        the wired Spaces); the GrammarLayer base allocates a butterfly
+        cascade if requested but the binary forward / reverse path
+        does not consult it.
+
+        Back-references kept for the discrete-identity lookups in
+        ``forward`` / ``reverse``: PS percept_id (nearest-row in
+        ``perceptualSpace.percept_store.codebook``), SS symbol_idx
+        (nearest-row in ``symbolicSpace.subspace.what.getW()``), and
+        the META insert via ``symbolicSpace.insert_meta``.
+        """
+        if nInput is None:
+            if symbolicSpace is not None:
+                nInput = int(symbolicSpace.subspace.what.nDim)
+            else:
+                nInput = 0
+        if nOutput is None:
+            nOutput = nInput
+        super().__init__(int(nInput), int(nOutput),
+                         butterfly=butterfly, N=N)
+        object.__setattr__(self, 'symbolicSpace', symbolicSpace)
+        object.__setattr__(self, 'perceptualSpace', perceptualSpace)
+        object.__setattr__(self, 'conceptualSpace', conceptualSpace)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _finite_or_raise(name, tensor):
+        """Fail loud on NaN / Inf in operand tensors.
+
+        Per the project's "fail loud" policy (MEMORY:
+        feedback_fail_loud_on_divergence): silent ``nan_to_num`` would
+        propagate divergence into the SS codebook row holding the META
+        seed. Raise immediately so the stack trace surfaces.
+        """
+        if not torch.is_tensor(tensor):
+            return
+        if not torch.isfinite(tensor).all():
+            raise RuntimeError(
+                f"SymbolizeLayer: operand '{name}' contains NaN/Inf. "
+                f"Numerical divergence must surface, not be silently "
+                f"propagated into the SS codebook via the META seed. "
+                f"finite={int(torch.isfinite(tensor).sum().item())}/"
+                f"{int(tensor.numel())}.")
+
+    @staticmethod
+    def _nearest_row(codebook, query):
+        """Return the row idx of ``codebook`` nearest to ``query``.
+
+        ``codebook``: ``[V, D]``. ``query``: ``[D]`` (or shape that
+        squeezes to ``[D]``). Empty codebook returns ``None``.
+        """
+        if codebook is None:
+            return None
+        if codebook.dim() < 2 or codebook.shape[0] == 0:
+            return None
+        # Collapse query to a 1-D vector and move to codebook's
+        # device/dtype.
+        q = query.detach().to(codebook.device, codebook.dtype).reshape(-1)
+        if q.shape[0] != codebook.shape[1]:
+            return None
+        diffs = codebook - q.unsqueeze(0)
+        sq = (diffs * diffs).sum(dim=1)
+        return int(torch.argmin(sq).item())
+
+    def _ps_store(self):
+        """Resolve the PerceptStore (or None if not in radix mode)."""
+        ps_space = getattr(self, 'perceptualSpace', None)
+        if ps_space is None:
+            return None
+        return getattr(ps_space, 'percept_store', None)
+
+    def _ss_codebook(self):
+        """Resolve the SS codebook tensor (or None)."""
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is None:
+            return None
+        sub = getattr(ss, 'subspace', None)
+        if sub is None:
+            return None
+        cb = getattr(sub, 'what', None)
+        if cb is None:
+            return None
+        return cb.getW()
+
+    # ------------------------------------------------------------------
+    # Forward / reverse / compose / generate
+    # ------------------------------------------------------------------
+
+    def forward(self, left, right):
+        """Bind ``(left, right)`` into a META node and return its vector.
+
+        See the class docstring for the full contract. Returns the
+        META row's SS.codebook vector (post-insert / EMA-update).
+        Falls back to ``(left + right) / 2`` when no PerceptStore is
+        wired (legacy lexicon mode).
+        """
+        # Fail loud on NaN/Inf in either operand before any
+        # store access -- a divergent operand would silently seed a
+        # divergent META row.
+        self._finite_or_raise('left', left)
+        self._finite_or_raise('right', right)
+        ss = getattr(self, 'symbolicSpace', None)
+        ps_store = self._ps_store()
+        # Legacy / no-PerceptStore fallback: cannot resolve percept_id
+        # structurally, so return the average without registering a
+        # META node. This keeps SymbolizeLayer harmless in lexicon mode.
+        if ss is None or ps_store is None:
+            return (left + right) / 2.0
+        ps_codebook = getattr(ps_store, 'codebook', None)
+        ss_W = self._ss_codebook()
+        if ps_codebook is None or ss_W is None:
+            return (left + right) / 2.0
+        # Identify the PS percept_id by nearest-row in PS.codebook.
+        ps_row = self._nearest_row(ps_codebook, left)
+        # Identify the SS symbol_idx by nearest-row in SS.codebook.
+        ss_row = self._nearest_row(ss_W, right)
+        if ps_row is None or ss_row is None:
+            # Empty stores: nothing to bind. Fall back to the average.
+            return (left + right) / 2.0
+        # Resolve nearest-row hits to positive-int positions, lazy-
+        # binding if a row hasn't been seen before (pre-Stage-3 rows in
+        # the SS codebook may pre-date the position counter).
+        ps_pos = ss.ensure_ps_position(ps_row)
+        ss_pos = ss.ensure_ss_position(ss_row, kind="ss")
+        # Fused vec = combine(left, right). Stage 9 spec: start with the
+        # simple average; learnable combine is a future revision.
+        fused = (left + right) / 2.0
+        # Cast / shape the fused vec to match SS.codebook.
+        fused_for_insert = fused.detach().to(ss_W.device, ss_W.dtype)
+        if fused_for_insert.dim() > 1:
+            fused_for_insert = fused_for_insert.reshape(-1)
+        if fused_for_insert.shape[0] != ss_W.shape[1]:
+            # Width mismatch: caller passed a non-codebook-shaped vec.
+            # Fall back to the no-op average.
+            return fused
+        # Delegate to SymbolicSpace.insert_meta. Idempotent on the
+        # pair: first call allocates a fresh META row; subsequent calls
+        # return the cached META position and EMA-update the stored vec.
+        meta_pos = ss.insert_meta(ps_pos, ss_pos,
+                                  fused_vec=fused_for_insert)
+        meta_row = int(ss._ss_pos_to_row[meta_pos])
+        # LBG (Linde-Buzo-Gray) accumulation + split-trigger on the SS
+        # row this binding pulls on. The pull direction is the SS
+        # operand ``right`` (a CS-tier vector derived from a SS symbol);
+        # accumulated displacement variance > threshold triggers a row
+        # split, creating a new SS row + META binding so the codebook
+        # grows organically as training reveals sub-clusters within
+        # what was a single symbol.
+        right_for_lbg = right.detach().to(ss_W.device, ss_W.dtype)
+        if right_for_lbg.dim() > 1:
+            right_for_lbg = right_for_lbg.reshape(-1)
+        if right_for_lbg.shape[0] == ss_W.shape[1]:
+            ss.record_lbg_pull(ss_pos, right_for_lbg)
+            ss.maybe_split_lbg(ss_pos)
+        # Return the (possibly EMA-updated) META row's vector. We read
+        # the *current* codebook so callers see the EMA-blended state.
+        ss_W_current = self._ss_codebook()
+        return ss_W_current[meta_row]
+
+    def reverse(self, parent):
+        """Recover the ``(left, right)`` pair from a META vector.
+
+        Walks SS.codebook nearest-match to find the META row, then
+        looks up the children via the taxonomy. Returns ``(ps_vec,
+        ss_vec)`` for the children's codebook rows. Falls back to the
+        balanced split ``(parent / 2, parent / 2)`` when the nearest
+        SS row is not a registered META node (no surface-bytes path
+        to recover).
+        """
+        self._finite_or_raise('parent', parent)
+        ss = getattr(self, 'symbolicSpace', None)
+        ps_store = self._ps_store()
+        ss_W = self._ss_codebook()
+        # Fallback: no Spaces wired or no PS store -- balanced split.
+        if ss is None or ps_store is None or ss_W is None:
+            half = parent / 2.0
+            return half, half
+        # Nearest SS row to parent.
+        nearest_row = self._nearest_row(ss_W, parent)
+        if nearest_row is None:
+            half = parent / 2.0
+            return half, half
+        nearest_pos = ss._ss_row_to_pos.get(nearest_row)
+        if nearest_pos is None:
+            # Row isn't bound to a position (pre-Stage-3 SS row); no
+            # taxonomy entry to walk.
+            half = parent / 2.0
+            return half, half
+        children = ss.taxonomy_children(nearest_pos)
+        if not children:
+            # Nearest match wasn't a META node -- nothing to walk.
+            half = parent / 2.0
+            return half, half
+        # Separate children by kind: "ps" child + "ss" child.
+        ps_child = None
+        ss_child = None
+        for child in children:
+            ci = int(child)
+            kind = ss._pos_kind.get(ci)
+            if kind == "ps" and ps_child is None:
+                ps_child = ci
+            elif kind == "ss" and ss_child is None:
+                ss_child = ci
+        if ps_child is None or ss_child is None:
+            # Malformed META (missing a side); fall back.
+            half = parent / 2.0
+            return half, half
+        ps_row = ss._ps_pos_to_row.get(ps_child)
+        ss_row = ss._ss_pos_to_row.get(ss_child)
+        if ps_row is None or ss_row is None:
+            half = parent / 2.0
+            return half, half
+        ps_row = int(ps_row)
+        ss_row = int(ss_row)
+        # Range-check the rows; a stale taxonomy entry could carry an
+        # out-of-bounds row idx, which would crash the index op.
+        ps_codebook = getattr(ps_store, 'codebook', None)
+        if (ps_codebook is None
+                or ps_row >= ps_codebook.shape[0]
+                or ss_row >= ss_W.shape[0]):
+            half = parent / 2.0
+            return half, half
+        left = ps_codebook[ps_row]
+        right = ss_W[ss_row]
+        return left, right
+
+    def compose(self, left, right):
+        """Binary GrammarLayer compose entry -- routes to ``forward``."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Binary GrammarLayer generate entry -- routes to ``reverse``."""
+        return self.reverse(parent)
+
+class ConjunctionLayer(GrammarLayer):
+    """``S -> conjunction(S, S)`` -- monotonic min on the
+    post-codebook scalar activation.
+
+    Symbolic-tier conjunction is the AND of two **codebook
+    activation patterns**. Per the 2026-05-05 directive,
+    SymbolicSpace's ``materialize(mode='activation')`` returns
+    the **post-codebook** activation -- a ``[B, V]`` *scalar*
+    strength per prototype (``effective_activation()``: the
+    bivector ``[pos, neg]`` reduced via ``max(pos, neg)`` and
+    gated by modal presence). Conjunction over two such patterns
+    asks "which prototypes are active in *both* operands".
+
+    Because the post-codebook activation is non-negative scalar,
+    the natural composition kernel is the **monotonic** lattice
+    min: ``torch.minimum(x, y)``. RadMin (the bivector kernel)
+    would be wrong here -- there's no negative pole to manage.
+    The class hard-codes ``monotonic=True`` and forwards to
+    ``Ops.intersection`` so the kernel collapses to ``torch.min``
+    via ``_lower_kernel(kind='strict')``.
+
+    Distinct from ``IntersectionLayer`` (C-tier): IntersectionLayer
+    operates on a bivector ``[..., 2]`` activation (concept-tier
+    pre-codebook) and supports both RadMin and lattice-min;
+    ConjunctionLayer operates on a *scalar* ``[B, V]`` post-
+    codebook activation and is strictly monotonic.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode applies the monotonic min cross-STM
+    pair-wise (per-pair op = ``torch.minimum`` on the two halves,
+    broadcast, weight). See ``IntersectionLayer`` for the cascade-
+    shape contract; this op is hard-coded monotonic so the radial
+    branch is never taken.
+    """
+    rule_name        = "conjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Initialize ConjunctionLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Conjunction per-pair op for the butterfly cascade.
+
+        Element-wise ``torch.minimum`` on the two halves (monotonic
+        only -- post-codebook activations are non-negative scalar),
+        broadcast into the packed ``2D`` form, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        m = torch.minimum(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        # Post-codebook activation is monotonic-only -- no negative
+        # pole to manage, so RadMin would be wrong.
+        """Forward pass.
+
+        Non-butterfly: binary ``forward(left, right)`` -> monotonic
+        intersection (lattice min).
+        Butterfly: unary ``forward(x)`` -> cross-STM monotonic-min
+        cascade; ``right`` ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.intersection(left, right, monotonic=True)
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        See class docstring for the inversion contract.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.intersection(left, right, monotonic=True)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+class DisjunctionLayer(GrammarLayer):
+    """``S -> disjunction(S, S)`` -- monotonic max on the
+    post-codebook scalar activation.
+
+    Symbolic-tier disjunction is the OR of two **codebook
+    activation patterns**: ``[B, V]`` post-codebook scalar
+    activation (see ``ConjunctionLayer`` for the activation-
+    semantics rationale). The natural composition kernel is the
+    monotonic lattice max ``torch.maximum(x, y)``; the class
+    hard-codes ``monotonic=True`` and forwards to ``Ops.union``,
+    which collapses to ``torch.max`` via
+    ``_lift_kernel(kind='strict')``.
+
+    Distinct from ``UnionLayer`` (C-tier): UnionLayer operates on
+    a bivector ``[..., 2]`` activation and supports both RadMax
+    and lattice-max; DisjunctionLayer operates on a scalar
+    ``[B, V]`` post-codebook activation and is strictly monotonic.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+
+    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+    butterfly cascade mode applies the monotonic max cross-STM
+    pair-wise (per-pair op = ``torch.maximum``). See
+    ``ConjunctionLayer`` / ``IntersectionLayer`` for the cascade-
+    shape contract.
+    """
+    rule_name        = "disjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Initialize DisjunctionLayer; allocate state for the class contract.
+
+        See class docstring for invariants.
+
+        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
+        """
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (Stage 6) ------------------------------
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Disjunction per-pair op for the butterfly cascade.
+
+        Element-wise ``torch.maximum`` on the two halves (monotonic
+        only -- post-codebook activations are non-negative scalar),
+        broadcast into the packed ``2D`` form, weight by ``W_node``.
+        """
+        D = self._butterfly_D
+        a = x_pair[..., :D]
+        b = x_pair[..., D:]
+        m = torch.maximum(a, b)
+        packed = torch.cat([m, m], dim=-1)
+        return torch.einsum('bmi,mij->bmj', packed, W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """Reverse of ``_butterfly_pair_op``; lossy ``(parent, parent)``
+        adapted to the packed-pair form."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        a_rec = unweighted[..., :D]
+        b_rec = unweighted[..., D:]
+        avg = 0.5 * (a_rec + b_rec)
+        return torch.cat([avg, avg], dim=-1)
+
+    def forward(self, left, right=None):
+        """Forward pass.
+
+        Non-butterfly: binary ``forward(left, right)`` -> monotonic
+        union (lattice max).
+        Butterfly: unary ``forward(x)`` -> cross-STM monotonic-max
+        cascade; ``right`` ignored.
+
+        See class docstring for the operation this layer applies.
+        """
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return Ops.union(left, right, monotonic=True)
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        See class docstring for the inversion contract.
+        """
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            x = torch.cat([left, right], dim=-2)
+            return self._butterfly_forward(x)
+        return Ops.union(left, right, monotonic=True)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+def _argmax_prototype(x):
+    """Per-batch top-1 prototype index from a ``[B, V, D]`` muxed
+    event tensor.
+
+    Computes the L2 norm of the ``.what`` bivector slice
+    ``[..., :2]`` only (not the full muxed event) so the ranking
+    reflects symbol identity / presence, not the nWhere / nWhen
+    positional channels. When the input has last_dim < 2 the full
+    last dim is used (degenerate, single-channel fallback).
+
+    Returns a ``[B]`` long tensor where each entry is the position
+    (codebook prototype index) with the largest ``.what`` L2 norm
+    in that batch row -- the most-active prototype for that
+    operand. Used by ``PartLayer`` / ``IsEqualLayer`` / ``QueryLayer``
+    to map continuous activations to discrete codebook indices for
+    mereological-tree bookkeeping.
+    """
+    if not torch.is_tensor(x):
+        return torch.zeros(0, dtype=torch.long)
+    if x.dim() < 2:
+        return torch.zeros(1, dtype=torch.long, device=x.device)
+    # Slice .what bivector when available; else use whole last-dim.
+    what = x[..., :2] if x.shape[-1] >= 2 else x
+    norms = what.norm(dim=-1)            # [B, V]
+    if norms.dim() < 2:
+        norms = norms.unsqueeze(0)
+    return norms.argmax(dim=-1)          # [B]
+
+
+def _parthood_geometric(left, right):
+    """Clipped cosine parthood on per-batch dominant bivector activations.
+
+    Replaces the explicit ``MereologicalTree`` lookup for
+    ``PartLayer`` / ``IsEqualLayer`` / ``QueryLayer`` after the
+    "codebook IS the meronymic tree" unification: parthood is
+    expressed by codebook geometry on the bivector cone (see
+    ``Architecture.md`` §"Monotonicity of the bivector chain").
+
+    For per-batch dominant slot bivectors ``a = left[b, argmax_left]``
+    and ``b = right[b, argmax_right]``, returns the clipped cosine
+    similarity
+
+        part(a, b) = max(0, a · b) / (|a| * |b|)
+
+    which is the canonical mereological projection on the
+    non-negative paired-index cone. The return is a ``[B]`` tensor
+    in ``[0, 1]`` -- 1 means "fully a part of", 0 means disjoint.
+    """
+    a_idx = _argmax_prototype(left)             # [B]
+    b_idx = _argmax_prototype(right)            # [B]
+    B = int(left.shape[0])
+    a_vec = left[torch.arange(B, device=left.device), a_idx]    # [B, K]
+    b_vec = right[torch.arange(B, device=right.device), b_idx]  # [B, K]
+    # Restrict to bivector head [pos, neg]; if last_dim < 2 use full.
+    K = min(2, a_vec.shape[-1])
+    a_biv = a_vec[..., :K]
+    b_biv = b_vec[..., :K]
+    dot = (a_biv * b_biv).sum(dim=-1)
+    na = a_biv.norm(dim=-1)
+    nb = b_biv.norm(dim=-1)
+    return (dot.clamp(min=0.0) / (na * nb + 1e-9))               # [B]
+
+class IsEqualLayer(GrammarLayer):
+    """``S -> isEqual(S, S)`` -- symbolic identity assertion.
+
+    S-tier identity: ``isEqual(A, B)`` asserts that A and B name the
+    same concept by producing a single parent symbol that represents
+    the wholeness of its arguments — a higher-epistemic-level
+    assertion that cannot be expressed at the subsymbolic level.
+    Compare with the C-tier ``equal`` which performs the geometric
+    identity check on concept bivectors directly.
+
+    Post-MereologicalTree retirement: equality is expressed purely
+    geometrically. The codebook is now the meronymic structure; an
+    asserted equality between ``A`` and ``B`` shows up as
+    bivector co-location on the cone (mutual parthood
+    ``part(A, B) ≈ 1`` AND ``part(B, A) ≈ 1``), which the codebook
+    learns through training. No explicit equivalence-class table
+    is stored.
+
+    The forward returns ``torch.maximum(left, right)`` -- the
+    lattice join under the bivector cone's max-as-disjunction
+    interpretation -- so the chart's CKY consumer sees a single
+    parent vector (semantics unchanged from the tree-backed
+    version; the difference is only the absence of the tree write).
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "isEqual"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """Initialize IsEqualLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Lattice join on the bivector cone (max element-wise)."""
+        return torch.maximum(left, right)
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        Lossy ``(parent, parent)`` pseudo-inverse -- the max-fold
+        is not bijective.
+        """
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+class PartLayer(GrammarLayer):
+    """``S -> part(S, S)`` -- mereological part-of on the bivector
+    codebook.
+
+    Post-MereologicalTree retirement: parthood is expressed
+    geometrically by codebook position on the non-negative
+    paired-index bivector cone (see ``Architecture.md``
+    §"Monotonicity of the bivector chain"). The codebook IS the
+    meronymic tree: A is part of B iff the clipped cosine
+    projection of A's prototype onto B's prototype is high. The
+    codebook learns this geometry through training on the rule
+    composition; no separate adjacency table is stored.
+
+    The forward returns ``right`` -- the encompassing parent --
+    so the chart's CKY consumer sees a single parent vector
+    (semantics unchanged from the tree-backed version; the
+    difference is only the absence of the tree write).
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "part"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'C'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """Initialize PartLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Pass the encompassing parent ``right`` through to the
+        CKY consumer. The parthood relationship between ``left``
+        and ``right`` is captured by the codebook geometry that
+        learns under training -- no explicit tree write.
+        """
+        return right
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+
+        Lossy ``(parent, parent)`` pseudo-inverse -- ``part(A, B)``
+        does not preserve A's identity in the parent vector.
+        """
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+class QueryLayer(GrammarLayer):
+    """``S -> query(S, S)`` -- mereological-truth query "is A part
+    of B?" answered geometrically against the bivector codebook.
+
+    Post-MereologicalTree retirement: the answer is the clipped
+    cosine parthood between the per-batch dominant bivector
+    activations of ``left`` and ``right`` (see
+    ``_parthood_geometric``). Returns a continuous truth value
+    in ``[0, 1]`` rather than the prior tree-lookup boolean --
+    the codebook geometry IS the meronymic structure, so
+    parthood is *always* defined for any two symbols (no
+    "unknown" state). Returns a ``[B, V, 2]`` truth bivector
+    broadcast across the V dimension:
+
+        part(A, B) ≈ 1  -> [pos=1, neg=0] (full affirmation)
+        part(A, B) ≈ 0  -> [pos=0, neg=0] (disjoint / no overlap)
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "query"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'C'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """Initialize QueryLayer.
+
+        ``tree`` is accepted but ignored for backward compatibility
+        with the chart's lazy-build call sites; the
+        ``MereologicalTree`` has been retired in favour of
+        codebook geometry.
+        """
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Geometric parthood query: returns a per-batch ``[B, V, K]``
+        truth bivector broadcast across V, with the bivector head
+        carrying ``[pos=parthood, neg=0]``.
+        """
+        parthood = _parthood_geometric(left, right)    # [B] in [0, 1]
+        pos = parthood.to(dtype=right.dtype)
+        neg = torch.zeros_like(pos)
+        truth = torch.stack([pos, neg], dim=-1)        # [B, 2]
+        if right.dim() < 3:
+            return truth
+        V = right.shape[1]
+        rest_dim = right.shape[-1] - 2
+        if rest_dim > 0:
+            # Match right's nWhere/nWhen tail by zero-padding so the
+            # caller can still do bivector slicing on [..., :2].
+            tail = torch.zeros(truth.shape[0], rest_dim,
+                               dtype=right.dtype, device=right.device)
+            truth = torch.cat([truth, tail], dim=-1)
+        return truth.unsqueeze(1).expand(-1, V, -1)
+
+    def reverse(self, parent):
+        """Reverse pass; inverse of ``forward``.
+        
+        See class docstring for the inversion contract.
+        """
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+# Hardcoded module-level lookup -- replaces the retired
+# -- Conceptual introspection (2026-05-12) ----------------------------
+#
+# Per-stage introspective grammar operations that read mental content
+# and produce scalar / vector annotations the network can condition on
+# at subsequent conceptual orders. Design source:
+# doc/plans/2026-05-04-conceptual-introspection-handoff.md
+#
+# Each is implemented as a fully differentiable function of the input
+# activation (no learned parameters of its own). Plug them in by
+# registering an op-class entry in `GRAMMAR_LAYER_CLASSES` and a
+# `<rule>area(S)</rule>`-style entry in the model's grammar XML.
+
+def area_op(x, sigma=None):
+    """Normalised Gaussian region area: ``min(sigma**2, 1)``.
+
+    Args:
+        x: ``[..., D]`` activation (the proposition whose extent we
+            measure). Used only for device / dtype routing -- the area
+            depends solely on `sigma`.
+        sigma: scalar or tensor (mean reduced). When None falls back to
+            `_DEFAULT_SUBSYMBOLIC_SIGMA`.
+
+    Returns:
+        Scalar tensor on `x.device` / `x.dtype` in [0, 1].
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    if torch.is_tensor(sigma):
+        s = sigma.float().mean()
+    else:
+        s = float(sigma)
+        s = (x.new_tensor(s) if torch.is_tensor(x) else torch.tensor(s))
+    return torch.clamp(s.pow(2), max=1.0)
+
+
+def luminosity_op(x_a, x_b, sigma=None):
+    """Pairwise luminosity ``area − overlapArea * |t_A − t_B|`` ∈ [-1, 1].
+
+    Both inputs are bivector-tail activations ``[..., D]`` (D >= 2);
+    the first two components carry the [pos, neg] poles. Returns a
+    scalar consistent with `Mereology.Luminosity`'s pairwise term.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    a_flat = x_a.reshape(-1, x_a.shape[-1])
+    b_flat = x_b.reshape(-1, x_b.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        a_flat, b_flat, sigma_f, sigma_f).mean()
+    if x_a.shape[-1] >= 2 and x_b.shape[-1] >= 2:
+        dot_a = (x_a[..., 0] - x_a[..., 1]).mean()
+        dot_b = (x_b[..., 0] - x_b[..., 1]).mean()
+    else:
+        dot_a = x_a.mean()
+        dot_b = x_b.mean()
+    disagree = (dot_a - dot_b).abs()
+    area = area_op(x_a, sigma_f).to(device=overlap.device, dtype=overlap.dtype)
+    lum = area - overlap * disagree
+    return torch.clamp(lum, min=-1.0, max=1.0)
+
+
+def isa_part_op(child, parent, sigma=None):
+    """One-step kernel overlap ``K(child, parent) ∈ (0, 1]`` per the
+    plan's "is the child contained in the parent at this conceptual
+    order" semantics.
+    """
+    if sigma is None:
+        sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
+    sigma_f = float(sigma) if not torch.is_tensor(sigma) else float(
+        sigma.float().mean().item())
+    c_flat = child.reshape(-1, child.shape[-1])
+    p_flat = parent.reshape(-1, parent.shape[-1])
+    overlap = _gaussian_kernel_overlap(
+        c_flat, p_flat, sigma_f, sigma_f)
+    return overlap.mean()
+
+# Method-name -> GrammarLayer subclass mapping. Moved from Layers.py
+# per the 2026-05-29 grammar refactor (§5); most concrete subclasses
+# now live above in this module, the remaining ones (Equal/True/False/
+# Swap/Copy/Area/Luminosity/IsaPart) are imported at the top from Layers.
+GRAMMAR_LAYER_CLASSES = {
+    'not':          NotLayer,
+    'non':          NonLayer,
+    'intersection': IntersectionLayer,
+    'union':        UnionLayer,
+    'lift':         LiftLayer,
+    'lower':        LowerLayer,
+    'conjunction':  ConjunctionLayer,
+    'disjunction':  DisjunctionLayer,
+    'isEqual':      IsEqualLayer,
+    'equal':        EqualLayer,
+    'part':         PartLayer,
+    'true':         TrueLayer,
+    'false':        FalseLayer,
+    'swap':         SwapLayer,
+    'copy':         CopyLayer,
+    'query':        QueryLayer,
+    'area':         AreaLayer,
+    'luminosity':   LuminosityLayer,
+    'isaPart':      IsaPartLayer,
+}
+
+
+def _bind_moved_ops_singletons():
+    """Bind ``Ops.<grammar_op>`` to ``_OpHandle`` instances for the grammar
+    rule operator classes that moved here from Layers.py per the
+    2026-05-29 grammar-file-refactor (\xa75).
+
+    Mirrors ``Layers._bind_ops_singletons`` for the moved subset
+    (negation / non / conjunction / disjunction / lift / lower / part).
+    Called once at module load. The ``equal`` binding remains in
+    Layers.py because EqualLayer stays there.
+    """
+    from Layers import _OpHandle
+    bindings = (
+        ('negation',    Ops._negation_kernel,    NotLayer),
+        ('non',         Ops._non_kernel,         NonLayer),
+        ('conjunction', Ops._conjunction_kernel, ConjunctionLayer),
+        ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
+        ('lift',        Ops._lift_kernel,        LiftLayer),
+        ('lower',       Ops._lower_kernel,       LowerLayer),
+        ('part',        Ops._part_kernel,        PartLayer),
+    )
+    for name, kernel, cls in bindings:
+        try:
+            inst = cls()
+        except TypeError:
+            continue
+        setattr(Ops, name, _OpHandle(kernel, inst))
+
+
+_bind_moved_ops_singletons()
+
 
 # =====================================================================
 # RuleCodebook -- grammatical operation codebook (Phase 3 of the
@@ -1347,11 +3254,17 @@ class LanguageLayer(Layer):
         self._last_output = None
         self._last_tier_routings = {}
 
-    def attach_unary_ops(self, *, ops, rule_ids=None, r_copy=1, tier="S"):
+    def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
+                         op_tiers=None, r_copy=1, tier="S"):
         """Attach a unary tier; ops fire per-position with one selection.
 
         ``rule_ids`` parallels ``ops`` and maps local op_id to the
-        grammar's global rule_id (defaults to identity range). Mutates
+        grammar's global rule_id (defaults to identity range).
+        ``op_names`` and ``op_tiers`` parallel ``ops`` and carry the
+        per-rule method-name and tier letter ('C' / 'S' / ...) declared
+        in the .grammar file. Both are optional; they enable downstream
+        consumers (tier-gated scoring, diagnostics) to look at each op
+        without crawling back through ``TheGrammar``. Mutates
         ``self._unary_layers[tier]`` and ``self._unary_rule_ids[tier]``.
         """
         tier = str(tier)
@@ -1360,6 +3273,8 @@ class LanguageLayer(Layer):
             ops=ops, r_copy=r_copy,
             temperature=self.temperature,
         )
+        layer.op_names = list(op_names) if op_names is not None else None
+        layer.op_tiers = list(op_tiers) if op_tiers is not None else None
         self._unary_layers[tier] = layer
         if rule_ids is None:
             rule_ids = list(range(len(ops)))
@@ -1371,17 +3286,26 @@ class LanguageLayer(Layer):
                 f"len(ops)={len(ops)} for tier {tier!r}")
         self._unary_rule_ids[tier] = rule_ids
 
-    def attach_layer_ops(self, *, ops, rule_ids=None, r_copy=1, tier="S"):
+    def attach_layer_ops(self, *, ops, rule_ids=None, op_names=None,
+                         op_tiers=None, r_copy=1, tier="S"):
         """Attach a binary tier; ops reduce adjacent pairs via Viterbi DP.
 
         ``rule_ids`` parallels ``ops`` and maps local op_id to grammar
-        global rule_id. Mutates ``self._binary_layers[tier]`` and
+        global rule_id. ``op_names`` and ``op_tiers`` carry the per-rule
+        method-name and tier letter declared in the .grammar file; when
+        supplied, the binary layer uses them to (a) gate scores so a
+        C-tier op only fires at C-tier positions and an S-tier op only
+        at S-tier positions, and (b) update each position's tier after a
+        ``lift`` (C->S) or ``lower`` (S->C) reduce. Both are optional;
+        when omitted the layer falls back to ungated behaviour
+        (backward-compat). Mutates ``self._binary_layers[tier]`` and
         ``self._binary_rule_ids[tier]``.
         """
         tier = str(tier)
         layer = BinaryStructuredReductionLayer(
             d_model=self.feature_dim,
-            ops=ops, r_copy=r_copy,
+            ops=ops, op_tiers=op_tiers, op_names=op_names,
+            r_copy=r_copy,
             temperature=self.temperature,
         )
         self._binary_layers[tier] = layer
@@ -1444,11 +3368,32 @@ class LanguageLayer(Layer):
                 # tail positions get pad-weighted as reductions fire);
                 # the canonical [B, 1, D] root state is x[:, 0:1, :]
                 # after the final round.
+                #
+                # Per-position tier state (plan \xa76): initialized to all C
+                # at the start of this tier's binary reductions; passed to
+                # each round and threaded forward via the
+                # ``next_position_tier`` field in the routing dict, so
+                # ``lift`` / ``lower`` rules can promote / demote operands
+                # as the slab folds.
                 rid_table = self._binary_rule_ids[tier]
                 max_rounds = max(0, x.shape[1] - 1)
                 round_routings = []
+                use_tier_track = (
+                    getattr(binary_layer, 'op_tier_idx', None) is not None)
+                if use_tier_track:
+                    position_tier = torch.zeros(
+                        x.shape[0], x.shape[1],
+                        dtype=torch.long, device=x.device)
+                else:
+                    position_tier = None
                 for _ in range(max_rounds):
-                    b_hard, b_soft, b_routing = binary_layer(x)
+                    if use_tier_track:
+                        b_hard, b_soft, b_routing = binary_layer(
+                            x, position_tier=position_tier)
+                        position_tier = b_routing.get(
+                            "next_position_tier", position_tier)
+                    else:
+                        b_hard, b_soft, b_routing = binary_layer(x)
                     round_routings.append(b_routing)
                     kind = b_routing["action_kind"]
                     op = b_routing["action_op"]
@@ -1872,6 +3817,20 @@ class LanguageLayer(Layer):
         rule_id = int(decoded_id)
         method_name = grammar.method_name(rule_id)
         layer = syntactic_layer._by_name.get(method_name)
+        if layer is None:
+            # Post-2026-05-29 grammar-file-refactor (\xa75): rule's class
+            # tier may differ from this syntactic_layer's tier (e.g.
+            # intersection lives in IntersectionLayer with tier='C', so it
+            # binds on ConceptualSpace's syntactic layer rather than the
+            # SymbolicSpace one). Fall back to a fresh GRAMMAR_LAYER_CLASSES
+            # instance so the dispatch path still completes; the identity-
+            # stub reverse logic below will run on it.
+            cls = GRAMMAR_LAYER_CLASSES.get(method_name)
+            if cls is not None:
+                try:
+                    layer = cls()
+                except TypeError:
+                    layer = None
         if layer is None:
             raise KeyError(
                 f"LanguageLayer.unreduce: tier={syntactic_layer.tier!r} "
@@ -2660,14 +4619,33 @@ class BinaryStructuredReductionLayer(nn.Module):
         ops: sequence of binary nn.Modules; len(ops) = R_reduce. Each
              receives (left[B, N-1, D], right[B, N-1, D]) and returns
              [B, N-1, D]. The Viterbi route picks one op per reduce site.
+        op_tiers: optional list of tier letters ('C' / 'S' / ...)
+             parallel to ``ops``. When supplied alongside ``op_names``,
+             enables per-position tier-gated scoring: a rule only scores
+             at a pair whose left and right operands are both at the
+             rule's tier. ``lift`` flips the carried operand's tier from
+             C to S and ``lower`` flips S to C (plan \xa76).
+        op_names: optional list of method names parallel to ``ops``;
+             used to identify the lift / lower ops for tier flipping.
         r_copy: number of copy "ops" (typically 1; >1 lets the router
              distinguish copy specializations like typed identities).
         context_net: optional contextualizer for h. Defaults to identity.
         temperature: comparator-mixer softmax temperature.
+
+    Per-position tier state:
+        Each call to ``forward`` takes an optional ``position_tier``
+        Long tensor ``[B, N]`` (0 = C, 1 = S; default all 0). The forward
+        masks ``reduce_score`` at any (b, p, r) where ``op_tiers[r]`` does
+        not match ``position_tier[b, p]`` and ``position_tier[b, p+1]``,
+        then returns ``next_position_tier`` ``[B, N']`` in the routing
+        dict so the caller can thread the state through subsequent
+        rounds.
     """
 
+    _TIER_TO_INT = {'C': 0, 'S': 1, 'P': 2, 'L': 3}
+
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0):
+                 temperature=1.0, op_tiers=None, op_names=None):
         """Wire ops list, per-rule anchor params, and the comparator mixer.
 
         Builds learnable ``copy_anchor`` ``[r_copy, D]`` and
@@ -2690,6 +4668,30 @@ class BinaryStructuredReductionLayer(nn.Module):
         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * 0.02)
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
+        # Per-rule tier / name metadata (plan \xa76). Stored as buffers so
+        # ``forward`` can build masks without re-encoding strings each
+        # call. Both default to None when the caller doesn't pass them,
+        # in which case ``forward`` skips the tier gate (backward-compat).
+        if op_tiers is not None and op_names is not None:
+            tier_idx = torch.tensor(
+                [self._TIER_TO_INT.get(t, 0) for t in op_tiers],
+                dtype=torch.long)
+            self.register_buffer('op_tier_idx', tier_idx, persistent=False)
+            self.op_names = list(op_names)
+            self.op_tiers = list(op_tiers)
+            # Per-rule tier delta: +1 for lift (C->S), -1 for lower
+            # (S->C), 0 otherwise. The chosen op's delta picks the new
+            # tier for the carried operand of each pair.
+            delta = torch.tensor(
+                [(+1 if n == 'lift' else (-1 if n == 'lower' else 0))
+                 for n in op_names],
+                dtype=torch.long)
+            self.register_buffer('op_tier_delta', delta, persistent=False)
+        else:
+            self.op_tier_idx = None
+            self.op_names = None
+            self.op_tiers = None
+            self.op_tier_delta = None
 
     def _stacked_reduced(self, x):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
@@ -2729,13 +4731,25 @@ class BinaryStructuredReductionLayer(nn.Module):
         return torch.stack(
             [x, r_padded, x_shift, pad_slab.expand_as(x)], dim=2)
 
-    def forward(self, x, *, span_start=None, span_end=None):
+    def forward(self, x, *, span_start=None, span_end=None,
+                position_tier=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
+
+        ``position_tier`` is an optional ``[B, N]`` Long tensor encoding
+        each position's current tier (0=C, 1=S, ...). When provided
+        together with the layer's ``op_tier_idx`` / ``op_tier_delta``
+        buffers, the reduce score is masked at pair / rule combinations
+        whose tiers disagree, and the returned routing dict carries the
+        post-reduction ``next_position_tier`` ``[B, N']`` so callers can
+        thread the state through subsequent rounds. Default behaviour
+        (``position_tier`` None or layer constructed without tier
+        metadata) is unchanged from the pre-2026-05-29 layer.
 
         Returns:
             hard_slab: [B, N, D] argmax-selected per-position action.
             soft_slab: [B, N, D] DP-marginal-weighted blend (gradient surrogate).
-            routing:   dict with masks, scores, marginals, lengths, gates.
+            routing:   dict with masks, scores, marginals, lengths, gates,
+                       optionally ``next_position_tier``.
         Degenerate N<=1 returns the input twice with a stub routing.
         """
         B, N, D = x.shape
@@ -2749,6 +4763,8 @@ class BinaryStructuredReductionLayer(nn.Module):
                 "logZ": x.new_zeros(B),
                 "degenerate": True,
             }
+            if position_tier is not None:
+                routing["next_position_tier"] = position_tier
             return x, x, routing
 
         h = self.context_net(x)
@@ -2766,6 +4782,30 @@ class BinaryStructuredReductionLayer(nn.Module):
                 'bnrd,rd->bnr', stacked_reduced, self.reduce_anchor)
         else:
             reduce_score = x.new_zeros(B, max(N - 1, 0), self.r_reduce)
+
+        # Tier-gated scoring (plan \xa76): mask out (pair, rule)
+        # combinations whose rule tier doesn't match BOTH operand tiers.
+        # The mask is additive (-inf at disallowed cells) so log-domain
+        # DP / Viterbi treat them as structurally impossible.
+        tier_mask_used = (
+            position_tier is not None
+            and self.op_tier_idx is not None
+            and reduce_score.numel() > 0
+        )
+        if tier_mask_used:
+            op_tier_idx = self.op_tier_idx.to(x.device)         # [R]
+            left_tier  = position_tier[:, :-1]                  # [B, N-1]
+            right_tier = position_tier[:, 1:]                   # [B, N-1]
+            # match[b, p, r] = (op_tier_idx[r] == left_tier[b, p]
+            #                  and op_tier_idx[r] == right_tier[b, p])
+            match_left  = (left_tier.unsqueeze(-1)
+                           == op_tier_idx.view(1, 1, -1))       # [B, N-1, R]
+            match_right = (right_tier.unsqueeze(-1)
+                           == op_tier_idx.view(1, 1, -1))       # [B, N-1, R]
+            tier_match = match_left & match_right               # [B, N-1, R]
+            disallowed = ~tier_match
+            reduce_score = reduce_score.masked_fill(
+                disallowed, float('-inf'))
 
         soft = binary_tiling_soft_dp(copy_score, reduce_score)
         hard = binary_tiling_viterbi(copy_score, reduce_score)
@@ -2850,6 +4890,31 @@ class BinaryStructuredReductionLayer(nn.Module):
         if span_start is not None and span_end is not None:
             routing["span_start"] = hard_meta["span_start"]
             routing["span_end"] = hard_meta["span_end"]
+
+        # Tier propagation through compaction (plan \xa76). For each output
+        # slot j the new tier is:
+        #   action_kind==0 (copy):   position_tier[b, src_left[b, j]]
+        #   action_kind==1 (reduce): position_tier[b, src_left[b, j]]
+        #                            + op_tier_delta[action_op[b, j]]
+        # Padded slots (action_kind == -1) keep tier=0 (C). Trailing pad
+        # is meaningless to downstream tier mask anyway since the slab's
+        # ``lengths`` already gate those positions out.
+        if position_tier is not None and self.op_tier_delta is not None:
+            src_left  = hard_meta["src_left"].clamp(min=0)        # [B, N]
+            action_kind = hard_meta["action_kind"]                # [B, N]
+            action_op = hard_meta["action_op"].clamp(min=0)       # [B, N]
+            op_delta = self.op_tier_delta.to(x.device)            # [R]
+            src_tier = torch.gather(position_tier, 1, src_left)   # [B, N]
+            reduce_delta_at = op_delta[action_op]                 # [B, N]
+            new_tier_if_reduce = (src_tier + reduce_delta_at).clamp(min=0)
+            # action_kind == 1 -> reduce path; action_kind in (0, -1) ->
+            # copy / pad path (keep source tier).
+            next_position_tier = torch.where(
+                action_kind == 1,
+                new_tier_if_reduce,
+                src_tier,
+            )
+            routing["next_position_tier"] = next_position_tier
 
         return hard_slab, soft_slab, routing
 
@@ -3252,6 +5317,23 @@ class SyntacticLayer(Layer):
         if method_name is None:
             return left
         layer = self._by_name.get(method_name)
+        if layer is None:
+            # Post-2026-05-29 grammar-file-refactor (\xa75): the rule may
+            # bind at a different tier's syntactic layer than self
+            # (intersection / union / lift / lower carry the C-tier class
+            # tier so they register on ConceptualSpace rather than
+            # SymbolicSpace; an S-tier execute that hits one of those
+            # rule_ids needs the layer even though _by_name doesn't have
+            # it). Fall back to a fresh GRAMMAR_LAYER_CLASSES instance for
+            # the dispatch; parameterized layers that need an inner pi /
+            # sigma won't instantiate (TypeError) and we re-raise the
+            # original KeyError so the failure mode stays loud.
+            cls = GRAMMAR_LAYER_CLASSES.get(method_name)
+            if cls is not None:
+                try:
+                    layer = cls()
+                except TypeError:
+                    layer = None
         if layer is None:
             raise KeyError(
                 f"SyntacticLayer.execute: tier={self.tier!r} has no host "
@@ -5607,13 +7689,18 @@ class WordSubSpace(SubSpace):
             return 1.0
 
     def _wire_signal_router_grammar_ops(self):
-        """Pull host_layer instances out of the registry and attach them
-        to the signal router, grouped by (tier, arity).
+        """Attach grammar-rule layers to the signal router, grouped by
+        (tier, arity), driven by the loaded rule list.
 
-        Walked on WordSubSpace construction. The signal router
-        (``self.languageLayer``) is the canonical parser as of Stage 3;
-        we call ``attach_unary_ops`` / ``attach_layer_ops`` per tier
-        with the live grammar's parametrized fold modules.
+        Post-2026-05-29 grammar-file-refactor (\xa75): the rule list is
+        the canonical source of (name, tier, arity) — the .grammar XML
+        the model config points to is decoded into ``TheGrammar.rules``
+        by ``Grammar.load_from_grammar_file``; this method consumes the
+        decoded list, resolves a layer for each entry, and calls
+        ``attach_unary_ops`` / ``attach_layer_ops`` per (tier, arity).
+        Per-rule tier and op-name metadata is now propagated to the
+        attached layers so the binary reduction layer can do
+        tier-respecting position gating (plan \xa76).
 
         Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
         their pair-wise math via ``.compose(left, right)``; unary ones
@@ -5625,9 +7712,20 @@ class WordSubSpace(SubSpace):
         router = self.languageLayer
 
         # Group: (tier, arity) -> list of (rule_id, layer, rule_name)
+        #
+        # Only compose rules (rules_upward) participate in the
+        # forward-direction wiring: each one becomes an op the router
+        # can dispatch in ``compose()``. Generate rules (rules_downward
+        # — bodies like ``S, S = lower(S)``) describe the *reverse*
+        # operation of the same op, not a separate op. Their arity counts
+        # the LHS multi-output -- e.g. ``S, S = lower(S)`` has body arity
+        # 1 but the underlying layer is binary, so attaching it again as
+        # a unary op would call ``LowerLayer.forward(x)`` with one
+        # argument and trip the layer's binary kernel.
         by_tier_arity = {}
-        for rule_id in range(len(TheGrammar.rules)):
-            rule = TheGrammar.rules[rule_id]
+        n_upward = len(TheGrammar.rules_upward)
+        for rule_id in range(n_upward):
+            rule = TheGrammar.rules_upward[rule_id]
             tier = rule.tier
             arity = int(rule.arity)
             if arity not in (1, 2):
@@ -5635,48 +7733,69 @@ class WordSubSpace(SubSpace):
             rule_name = rule.method_name
             if not rule_name:
                 continue
-            layer = self._host_layer_registry.get((tier, rule_name))
+            layer = self._resolve_rule_layer(tier, rule_name)
             if layer is None:
-                # Fallback 1: same rule registered under a different
-                # tier. The grammar may declare a rule at the symbolic
-                # tier whose host_layer was set up at the conceptual
-                # tier (e.g. IntersectionLayer wraps a PiLayer that
-                # ConceptualSpace owns).
-                for (other_tier, other_rule), other_layer in (
-                        self._host_layer_registry.items()):
-                    if other_rule == rule_name:
-                        layer = other_layer
-                        break
-            if layer is None:
-                # Fallback 2: instantiate a fresh module from the
-                # GRAMMAR_LAYER_CLASSES facade. Parametrized wrappers
-                # (IntersectionLayer, UnionLayer) require an inner
-                # pi/sigma layer; skip if we can't construct one.
-                from Layers import GRAMMAR_LAYER_CLASSES
-                cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
-                if cls is None:
-                    continue
-                try:
-                    layer = cls()
-                except TypeError:
-                    continue
+                continue
             by_tier_arity.setdefault((tier, arity), []).append(
                 (rule_id, layer, rule_name))
 
-        # Attach per (tier, arity).
+        # Attach per (tier, arity). ``op_tiers`` / ``op_names`` carry the
+        # .grammar-declared metadata for the binary tier-gating path
+        # (BinaryStructuredReductionLayer; see plan \xa76).
         for (tier, arity), entries in sorted(by_tier_arity.items()):
             ops = []
             rule_ids = []
-            for rule_id, layer, _name in entries:
+            op_names = []
+            op_tiers = []
+            for rule_id, layer, name in entries:
                 if arity == 2:
                     ops.append(_BinaryGrammarOpAdapter(layer))
                 else:
                     ops.append(layer)
                 rule_ids.append(rule_id)
+                op_names.append(name)
+                op_tiers.append(tier)
             if arity == 1:
-                router.attach_unary_ops(ops=ops, rule_ids=rule_ids, tier=tier)
+                router.attach_unary_ops(
+                    ops=ops, rule_ids=rule_ids,
+                    op_names=op_names, op_tiers=op_tiers,
+                    tier=tier)
             else:
-                router.attach_layer_ops(ops=ops, rule_ids=rule_ids, tier=tier)
+                router.attach_layer_ops(
+                    ops=ops, rule_ids=rule_ids,
+                    op_names=op_names, op_tiers=op_tiers,
+                    tier=tier)
+
+    def _resolve_rule_layer(self, tier, rule_name):
+        """Return a Layer instance for ``(tier, rule_name)`` from the host
+        registry, falling back to a fresh GRAMMAR_LAYER_CLASSES instance.
+
+        Lookup order:
+          1. Exact ``(tier, rule_name)`` match in ``_host_layer_registry``
+             -- the canonical wiring set up when the host space (e.g.
+             ConceptualSpace) constructs its parametrized fold.
+          2. Same ``rule_name`` registered under any other tier --
+             IntersectionLayer's PiLayer is owned by ConceptualSpace; the
+             grammar may name it at the symbolic tier.
+          3. Fresh ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance --
+             parameter-free ops (NotLayer, NonLayer, ...) that don't need
+             a learned host module.
+        Returns None if no resolution succeeds.
+        """
+        layer = self._host_layer_registry.get((tier, rule_name))
+        if layer is not None:
+            return layer
+        for (_other_tier, other_rule), other_layer in (
+                self._host_layer_registry.items()):
+            if other_rule == rule_name:
+                return other_layer
+        cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+        if cls is None:
+            return None
+        try:
+            return cls()
+        except TypeError:
+            return None
 
     # -- truth-modulated loss -----------------------------------------
     def truth_modulated_loss(self, total_loss, symbolic_space,

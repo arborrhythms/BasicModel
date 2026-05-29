@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<grammar name="default">
+
+  <compose>
+    <!-- Subsymbolic tier (C): operate on continuous activations.
+         Tier, arity, invertibility derive from each rule's
+         GrammarLayer subclass (e.g. LiftLayer.tier == 'C'). -->
+    <rule>S = union.forward(S, S)</rule>
+    <rule>S = intersection.forward(S, S)</rule>
+    <rule>S = lift.forward(S, S)</rule>
+    <rule>S = lower.forward(S, S)</rule>
+
+    <!-- Symbolic tier (S): operate on resolved codebook activations. -->
+    <rule>S = not.forward(S)</rule>
+    <rule>S = conjunction.forward(S, S)</rule>
+    <rule>S = disjunction.forward(S, S)</rule>
+    <rule>S = part.forward(S, S)</rule>
+    <rule>S = isEqual.forward(S, S)</rule>
+    <rule>S = query.forward(S)</rule>
+  </compose>
+
+  <generate>
+    <!-- Mirror of <compose> with head and arguments swapped. A binary
+         forward rule ``head = f.forward(a, b)`` becomes a reverse rule
+         ``a, b = f.reverse(head)``; unary forward rules ``head = f.forward(x)``
+         keep the same shape ``x = f.reverse(head)``. -->
+    <rule>S, S = union.reverse(S)</rule>
+    <rule>S, S = intersection.reverse(S)</rule>
+    <rule>S, S = lift.reverse(S)</rule>
+    <rule>S, S = lower.reverse(S)</rule>
+
+    <rule>S = not.reverse(S)</rule>
+    <rule>S, S = conjunction.reverse(S)</rule>
+    <rule>S, S = disjunction.reverse(S)</rule>
+    <rule>S, S = part.reverse(S)</rule>
+    <rule>S, S = isEqual.reverse(S)</rule>
+    <rule>S = query.reverse(S)</rule>
+  </generate>
+
+</grammar>
