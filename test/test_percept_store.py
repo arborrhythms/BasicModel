@@ -36,7 +36,7 @@ class TestRadixTrie(unittest.TestCase):
     """Item 1: radix trie insertion + longest-match."""
 
     def test_empty_trie_returns_none(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         self.assertEqual(len(trie), 0)
         self.assertIsNone(trie.get(b"hello"))
@@ -45,7 +45,7 @@ class TestRadixTrie(unittest.TestCase):
         self.assertEqual(match_len, 0)
 
     def test_single_insert_and_exact_lookup(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         self.assertTrue(trie.insert(b"hello", 0))
         self.assertEqual(len(trie), 1)
@@ -53,7 +53,7 @@ class TestRadixTrie(unittest.TestCase):
         self.assertIsNone(trie.get(b"hel"))
 
     def test_insert_returns_false_on_duplicate(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         self.assertTrue(trie.insert(b"hi", 7))
         self.assertFalse(trie.insert(b"hi", 99),
@@ -62,7 +62,7 @@ class TestRadixTrie(unittest.TestCase):
                          "Existing percept_id must be preserved")
 
     def test_shared_prefix_forks_correctly(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         trie.insert(b"cat", 1)
         trie.insert(b"car", 2)
@@ -71,7 +71,7 @@ class TestRadixTrie(unittest.TestCase):
         self.assertEqual(len(trie), 2)
 
     def test_longest_match_returns_deepest_terminal(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         trie.insert(b"cat", 1)
         trie.insert(b"category", 2)
@@ -81,7 +81,7 @@ class TestRadixTrie(unittest.TestCase):
         self.assertEqual(match_len, len(b"category"))
 
     def test_longest_match_returns_shorter_when_deep_terminal_missing(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         trie.insert(b"cat", 1)
         # No "category" entry -- the input "categoryweight" only
@@ -91,7 +91,7 @@ class TestRadixTrie(unittest.TestCase):
         self.assertEqual(match_len, 3)
 
     def test_insert_splits_existing_edge_at_partial_overlap(self):
-        from PerceptStore import RadixTrie
+        from Layers import RadixTrie
         trie = RadixTrie()
         trie.insert(b"hello", 1)
         # Forking on the shared prefix "he"; "help" forks off the old edge.
@@ -106,8 +106,8 @@ class TestHashMapCache(unittest.TestCase):
     """Item 2: hash map cache consistency."""
 
     def test_hash_map_mirrors_trie_after_insert(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=8, initial_cap=4)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=8, initial_cap=4)
         pid = ps.insert(b"hello")
         self.assertEqual(ps.hash_map[b"hello"], pid)
         self.assertEqual(ps.radix_trie.get(b"hello"), pid)
@@ -116,8 +116,8 @@ class TestHashMapCache(unittest.TestCase):
         self.assertEqual(ps.get_id(b"hello"), pid)
 
     def test_hash_map_unknown_keys_return_none(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=8)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=8)
         self.assertIsNone(ps.get_id(b"never_seen"))
         self.assertNotIn(b"never_seen", ps)
 
@@ -126,8 +126,8 @@ class TestInverseTableRoundtrip(unittest.TestCase):
     """Item 3: inverse table exact roundtrip."""
 
     def test_roundtrip_percept_id_to_bytes_to_percept_id(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=8, initial_cap=8)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=8, initial_cap=8)
         for word in (b"cat", b"dog", b"category", b"do"):
             ps.insert(word)
         for pid in range(len(ps)):
@@ -137,8 +137,8 @@ class TestInverseTableRoundtrip(unittest.TestCase):
                              f"bytes={recovered!r}")
 
     def test_inverse_table_indexing_is_exact(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=4)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=4)
         words = [b"alpha", b"beta", b"gamma"]
         ids = [ps.insert(w) for w in words]
         self.assertEqual(ids, [0, 1, 2])
@@ -146,8 +146,8 @@ class TestInverseTableRoundtrip(unittest.TestCase):
             self.assertEqual(ps.bytes_for(pid), w)
 
     def test_invalid_percept_id_raises(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4)
         ps.insert(b"x")
         with self.assertRaises(IndexError):
             ps.bytes_for(7)
@@ -160,14 +160,14 @@ class TestByteFallback(unittest.TestCase):
     counter."""
 
     def test_byte_fallback_returns_a_vector(self):
-        from PerceptStore import BytesFallbackEncoder
+        from Layers import BytesFallbackEncoder
         enc = BytesFallbackEncoder(dim=8)
         v = enc.encode(b"abc")
         self.assertEqual(v.shape, (8,))
         self.assertTrue(torch.isfinite(v).all().item())
 
     def test_byte_fallback_increments_hit_counter(self):
-        from PerceptStore import BytesFallbackEncoder
+        from Layers import BytesFallbackEncoder
         enc = BytesFallbackEncoder(dim=4)
         self.assertEqual(enc.hits(b"foo"), 0)
         enc.encode(b"foo")
@@ -181,8 +181,8 @@ class TestByteFallback(unittest.TestCase):
         self.assertEqual(enc.hits(b"bar"), 1)
 
     def test_lookup_via_percept_store_increments_hits(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, promotion_threshold=1000)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, promotion_threshold=1000)
         v = ps.lookup(b"novel")
         self.assertEqual(v.shape, (4,))
         # The full chunk's hit counter must have been bumped.
@@ -193,8 +193,8 @@ class TestPromotion(unittest.TestCase):
     """Item 5: promotion triggers after threshold hits and >= min_length."""
 
     def test_promotion_after_threshold_hits(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, promotion_threshold=3,
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, promotion_threshold=3,
                           promotion_min_length=2)
         self.assertNotIn(b"abc", ps)
         # Hit count must reach the threshold before promotion fires.
@@ -214,8 +214,8 @@ class TestPromotion(unittest.TestCase):
                          "counter")
 
     def test_promotion_respects_min_length(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, promotion_threshold=2,
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, promotion_threshold=2,
                           promotion_min_length=3)
         # "ab" has length 2, below the min_length=3 threshold.
         for _ in range(5):
@@ -235,8 +235,8 @@ class TestCodebookGrowth(unittest.TestCase):
     """Item 6: codebook grows on insert; existing rows preserved."""
 
     def test_codebook_grows_when_capacity_exceeded(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=2)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=2)
         self.assertEqual(ps.capacity, 2)
         ids = []
         for w in (b"a", b"b", b"c", b"d", b"e"):
@@ -246,8 +246,8 @@ class TestCodebookGrowth(unittest.TestCase):
                                 "Capacity must have grown to fit 5 inserts")
 
     def test_existing_codebook_rows_preserved_through_growth(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=2)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=2)
         ps.insert(b"a")
         ps.insert(b"b")
         # Snapshot rows before growth.
@@ -263,8 +263,8 @@ class TestCodebookGrowth(unittest.TestCase):
                         "Row 1 changed after codebook growth")
 
     def test_capacity_doubles_on_overflow(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=2)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=2)
         ps.insert(b"a")
         ps.insert(b"b")
         self.assertEqual(ps.capacity, 2)
@@ -280,8 +280,8 @@ class TestForwardLookupPath(unittest.TestCase):
     composes prefix + fallback residual."""
 
     def test_hashmap_hit_returns_codebook_row(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=4)
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=4)
         pid = ps.insert(b"hello")
         # Force a known row value so we can check identity.
         with torch.no_grad():
@@ -293,8 +293,8 @@ class TestForwardLookupPath(unittest.TestCase):
 
     def test_partial_match_composes_prefix_plus_residual(self):
         import math
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=4,
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=4,
                           promotion_threshold=1000)
         pid = ps.insert(b"hel")
         with torch.no_grad():
@@ -333,8 +333,8 @@ class TestPersistence(unittest.TestCase):
     """``vocab_extras`` + ``state_dict`` round trip."""
 
     def test_vocab_extras_dump_and_load_preserves_state(self):
-        from PerceptStore import PerceptStore
-        ps = PerceptStore(dim=4, initial_cap=4,
+        from Layers import RadixLayer
+        ps = RadixLayer(dim=4, initial_cap=4,
                           promotion_threshold=2,
                           promotion_min_length=2)
         ps.insert(b"cat")
@@ -343,7 +343,7 @@ class TestPersistence(unittest.TestCase):
         extras = ps.vocab_extras()
         state = ps.state_dict()
         # Build a fresh PerceptStore and load.
-        ps2 = PerceptStore(dim=4, initial_cap=4,
+        ps2 = RadixLayer(dim=4, initial_cap=4,
                            promotion_threshold=2,
                            promotion_min_length=2)
         # The replay codebook needs to be at the target capacity

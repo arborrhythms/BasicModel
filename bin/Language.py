@@ -7072,50 +7072,6 @@ class WordSubSpace(SubSpace):
                     out['right_priming'] = pm
         return out
 
-    # -- Parser-neutral accessors (path-to-complete §6) --
-    #
-    # Consumers should read these rather than reaching into parser
-    # internals. The accessors prefer ``self.parse_state`` (populated
-    # by the signal-router compose path when wired) and fall back to
-    # the per-tier ``current_rules`` attribute populated by
-    # ``WordSubSpace.compose``.
-
-    # Consumers should read these rather than reaching into chart-only or
-    # (populated by both backends) and fall back to the legacy
-    # ``current_rules`` attribute for chart fast-paths that haven't been
-    # migrated yet.
-    def parse_rules_for_tier(self, tier):
-        """Return ``[[rule_id, ...], ...]`` for the given tier. Empty
-        list when the tier is absent. Reads ``self.parse_state`` first
-        and falls back to ``self.current_rules`` (legacy chart path).
-        """
-        ps = getattr(self, 'parse_state', None)
-        if ps is not None and ps.current_rules:
-            return ps.current_rules.get(tier, [])
-        legacy = getattr(self, 'current_rules', None) or {}
-        return legacy.get(tier, [])
-    def parse_derivation_trace(self):
-        """Return the per-row list of ``(rule_id, span_start, span_end)``
-        is available.
-        """
-        ps = getattr(self, 'parse_state', None)
-        if ps is None or not ps.actions:
-            return [[]]
-        if getattr(ps, 'row_traces', None):
-            rows = []
-            for b in sorted(ps.row_traces):
-                row = []
-                for a in ps.row_traces[b]:
-                    parent = ps.frames[a.parent_index]
-                    row.append((a.rule_id, parent.span_start, parent.span_end))
-                rows.append(row)
-            return rows
-        row = []
-        for a in ps.actions:
-            parent = ps.frames[a.parent_index]
-            row.append((a.rule_id, parent.span_start, parent.span_end))
-        return [row]
-
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):
         """Write the SVO triple for batch row ``b``.

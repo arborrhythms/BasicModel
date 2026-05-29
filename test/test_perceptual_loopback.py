@@ -360,9 +360,9 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         self.assertIsNotNone(ps_space.percept_store,
                              "radix-mode PerceptualSpace must expose "
                              "self.percept_store")
-        # Importing PerceptStore directly verifies the class identity.
-        from PerceptStore import PerceptStore
-        self.assertIsInstance(ps_space.percept_store, PerceptStore)
+        # Importing RadixLayer directly verifies the class identity.
+        from Layers import RadixLayer
+        self.assertIsInstance(ps_space.percept_store, RadixLayer)
         # vocabulary property returns the percept store in radix mode.
         self.assertIs(ps_space.vocabulary, ps_space.percept_store)
 
