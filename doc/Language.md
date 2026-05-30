@@ -1,9 +1,10 @@
 # Language
 
-This document is synchronized to the code as of 2026-05-20, with
-2026-05-29 deltas noted in line. The source of truth is
-`bin/Language.py`, `bin/embed.py`, `bin/typed_stack.py`,
-`bin/stm_driver.py`, and `bin/parse_state.py`.
+This document is synchronized to the code as of 2026-05-29. The source
+of truth is `bin/Language.py` and `bin/embed.py`. (The earlier
+`bin/typed_stack.py`, `bin/stm_driver.py`, and `bin/parse_state.py`
+modules were retired in the 2026-05-21 / 2026-05-29 refactors; their
+functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 > **2026-05-29 deltas:**
 >
@@ -155,36 +156,11 @@ left:  category NP, order 3
 right: category VP, order 1
 ```
 
-## ParseState
-
-STM writes parser-neutral state to `WordSpace.parse_state`:
-
-- `frames`: leaves and reduce parents with payload, category, order, and span.
-- `actions`: REDUCE operations with rule id, operand frame indices, parent frame,
-  score, and probability.
-- `row_traces`: per-row selected derivations.
-- `current_rules` / `generate_rules`: per-tier rule selections for existing
-  `SyntacticLayer` consumers.
-
-New consumers should prefer `ParseState` or the parser-neutral accessors:
-
-```python
-wordSpace.parse_rules_for_tier(tier)
-wordSpace.parse_derivation_trace()
-```
-
-Chart-only fields (`_chart_score`, `_chart_vec`, `_derivation_trace`) are
-compatibility internals. Do not add new consumers of them.
-
 ## Syntax And SVO
 
-`BasicModel.write_syntax_tree()` reads `ParseState` when available and
-falls back to chart traces. STM also extracts SVO from `ParseState` for
-the canonical pattern:
-
-```text
-S  = lift(NP, VP)
-VP = intersection(V, O)
-```
-
-This avoids requiring `_chart_vec` for STM diagnostics.
+`BasicModel.write_syntax_tree()` (in `bin/Models.py`) emits an XML
+syntax-tree dump per batch row when configured with a syntax output
+path. It reads the chart's per-row derivation trace and the symbolic
+codebook's per-atom category tags; see the function docstring for the
+exact format. SVO extraction is performed by the STM path on the
+canonical `S = lift(NP, VP)` / `VP = intersection(V, O)` shape.

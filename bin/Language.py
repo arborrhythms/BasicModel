@@ -30,12 +30,6 @@ from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, S
 from util import parse
 from collections import namedtuple as _namedtuple
 
-
-from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
-from Layers import LinearLayer, AttentionLayer
-from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import Error, TheError
-
 # Per doc/plans/2026-05-29-grammar-file-refactor.md §5: GrammarLayer
 # stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
 # FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /

@@ -6513,17 +6513,9 @@ class BasicModel(BaseModel):
         wordSubSpace = self.wordSubSpace
         if wordSubSpace is None:
             return
-        # Stage 3 (chart retirement): the chart's per-row
-        # ``_derivation_trace`` and per-leaf POS / atom side-channels
-        # were the source of truth for the syntax dump. The signal
-        # router's per-tier rule lists on WordSubSpace.current_rules
-        # provide the same per-row commitment, but the chart's POS
-        # category names + per-leaf atom_idx aren't populated yet by
-        # the router. Fall back to empty for now; this branch emits
-        # ``<noTrace/>`` until the router populates richer trace info.
-        # (2026-05-29: the ParseState-based dump branch was retired
-        # alongside ``bin/parse_state.py`` — no producer ever wrote to
-        # ``wordSubSpace.parse_state`` so the branch was always dead.)
+        # Chart's per-leaf POS category names and per-leaf atom_idx
+        # aren't populated by the signal router yet; until they are,
+        # this branch emits ``<noTrace/>``.
         chart = None
         traces = None
         cat_names = ['?']
