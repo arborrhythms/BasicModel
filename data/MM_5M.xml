@@ -123,7 +123,6 @@
     <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
-    <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 
   <OutputSpace>

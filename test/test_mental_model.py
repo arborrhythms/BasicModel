@@ -60,12 +60,15 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Post-2026-05-29 grammar-file refactor: tier comes from the
         # layer class (per ``_reassign_tiers_from_layer_classes``), so
         # ``s_methods`` returns only methods whose layer declares
-        # ``tier='S'``. ``isEqual`` / ``conjunction`` / ``disjunction``
-        # are S-tier; ``part`` / ``not`` / ``union`` / ``intersection``
-        # moved to C-tier per their GrammarLayer subclasses.
+        # ``tier='S'``. Assertive ``isEqual`` / ``conjunction`` /
+        # ``disjunction`` / ``exist`` are S-tier; query and logical
+        # answer operations live on C-tier per their GrammarLayer
+        # subclasses. Equality questions keep method_name='isEqual'
+        # with rule.query=True, but dispatch through the query layer.
         self.assertIn('isEqual', Language.TheGrammar.s_methods)
         self.assertIn('conjunction', Language.TheGrammar.s_methods)
         self.assertIn('disjunction', Language.TheGrammar.s_methods)
+        self.assertIn('exist', Language.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all tiers."""
@@ -87,16 +90,19 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     versioned in MentalModel.xml.
     """
 
-    # S-tier op names the post-2026-05-05 grammar guarantees as
-    # rule.method_name entries.  Retired 2026-05-04: what, where,
-    # when, absorb, Contiguous, Fusion.
-    REQUIRED_S_OPS = {
-        'true', 'false', 'non', 'not',
+    # Dispatchable op names the current complete grammar guarantees as
+    # rule.method_name entries. Retired 2026-05-04: what, where, when,
+    # absorb, Contiguous, Fusion. The relation rewrite split old
+    # query/part into explicit queryPart/assertPart forms, while
+    # equality stays ``isEqual`` with rule.query metadata.
+    REQUIRED_OPS = {
+        'non', 'not',
         'conjunction', 'disjunction',
         'intersection', 'union',
         'lift', 'lower',
-        'isEqual', 'part',
-        'query', 'swap',
+        'isEqual', 'assertPart',
+        'queryPart',
+        'exist', 'copy', 'swap',
     }
 
     def setUp(self):
@@ -112,9 +118,9 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         method_names = {rule.method_name
                         for rule in Language.TheGrammar.rules
                         if rule.method_name}
-        missing = self.REQUIRED_S_OPS - method_names
+        missing = self.REQUIRED_OPS - method_names
         self.assertEqual(missing, set(),
-                         f"cfg-loaded grammar missing required S-tier "
+                         f"cfg-loaded grammar missing required "
                          f"ops: {missing}")
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 

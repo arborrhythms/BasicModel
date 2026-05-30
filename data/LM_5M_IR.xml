@@ -109,7 +109,6 @@
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
-    <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 
   <OutputSpace>

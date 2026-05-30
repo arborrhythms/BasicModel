@@ -85,7 +85,6 @@
     <nWhere>2</nWhere>
     <nOutput>2048</nOutput>
     <nOutputDim>6</nOutputDim>
-    <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 

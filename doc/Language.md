@@ -57,6 +57,19 @@ Grammar mode is derived from the loaded grammar: default-only unary
 `pi` / `sigma` rules derive `useGrammar == "none"` internally; any
 non-default operator rule derives `useGrammar == "all"`.
 
+> **SS-analysis vs CS-execution.** `WordSubSpace.compose` is the
+> SS-side *analysis* stage (it selects the per-tier hard rule dict
+> `current_rules`); the CS-side *execution* (applying lift / lower /
+> union / intersection / swap / quantize / not to the concept tensors)
+> runs in `ConceptualSpace.forward` and the per-tier `SyntacticLayer`
+> cursors. This split is a clean code boundary **only on the
+> default-only path**: on the full-router path
+> `LanguageLayer.compose` does both selection and tensor reduction, and
+> the per-tier cursors are deliberately bypassed
+> (`not _grammar_is_default_only`). See
+> [STM.md Section 5](STM.md#5-routing-parser-ss-analysis-vs-cs-execution)
+> for the accurate, audited account.
+
 ## Grammar
 
 `TheGrammar` is the singleton `Grammar` instance. Rules are loaded from
@@ -163,4 +176,6 @@ syntax-tree dump per batch row when configured with a syntax output
 path. It reads the chart's per-row derivation trace and the symbolic
 codebook's per-atom category tags; see the function docstring for the
 exact format. SVO extraction is performed by the STM path on the
-canonical `S = lift(NP, VP)` / `VP = intersection(V, O)` shape.
+canonical subject lift over a transitive verb-phrase derivation; the
+object role is the NP operand inside that verb-phrase derivation, not a
+separate semantic category.

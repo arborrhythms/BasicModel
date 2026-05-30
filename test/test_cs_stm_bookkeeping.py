@@ -232,6 +232,149 @@ class TestSTMShiftAtCapacity(unittest.TestCase):
             f"idea (marker {cap + 1}); got {float(top[0].item())}.")
 
 
+class TestCSPredictThenPerceive(unittest.TestCase):
+    """Task 3 (STM serial/parallel modes): ``CS.forward`` runs the
+    intra-sentence predictor predict-then-perceive. The held prediction
+    is stashed on ``cs._stm_predicted_idea`` (serial per-word) and the
+    per-step ``L_intra`` accumulates so ``consume_intra_loss`` returns a
+    finite grad-bearing scalar after a serial sentence (grad enabled)."""
+
+    def _synthetic_serial_pushes(self, cs, ps_sub, D, B, dtype, device,
+                                 n_words):
+        """Push ``n_words`` distinguishable [B, 1, D] ideas through
+        ``cs.forward`` (serial per-word path)."""
+        for k in range(n_words):
+            marker = torch.full(
+                (D,), float(k + 1), dtype=dtype, device=device)
+            synth = marker.view(1, 1, D).expand(B, 1, D).clone()
+            ps_sub.set_event(synth)
+            cs.forward(ps_sub)
+
+    def test_predicted_idea_populated_after_per_word_push(self):
+        """After a per-word push, ``cs._stm_predicted_idea`` is a
+        populated ``[B, D]`` tensor (degenerate zeros on the first word,
+        a real prediction thereafter)."""
+        model = _make_plain_model()
+        cs = model.conceptualSpace
+        # Ensure the loss weight is positive so accumulation is active.
+        cs.intra_loss_weight = 0.1
+        ps = model.perceptualSpace
+        loader = model.inputSpace.data.data_loader(
+            split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        x_input = model.inputSpace.prepInput(inp_items)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            # Grad ENABLED (no torch.no_grad) so the loss path is live.
+            in_sub = model.inputSpace.forward(x_input)
+            ps_sub = ps.forward(in_sub)
+            ps_ev = ps_sub.materialize()
+            B = int(ps_ev.shape[0])
+            D = int(ps_ev.shape[-1])
+            cs.stm.ensure_batch(B)
+            cs.stm.clear()
+            # First word: STM empty -> degenerate zero prediction.
+            self._synthetic_serial_pushes(
+                cs, ps_sub, D, B, ps_ev.dtype, ps_ev.device, n_words=1)
+            self.assertIsNotNone(
+                cs._stm_predicted_idea,
+                "first per-word push must stash a (degenerate) prediction")
+            self.assertEqual(
+                tuple(cs._stm_predicted_idea.shape), (B, D),
+                "stashed serial prediction must be [B, D]")
+            self.assertTrue(
+                torch.isfinite(cs._stm_predicted_idea).all(),
+                "stashed prediction must be finite")
+            # Second word: STM now has a slot -> a REAL prediction.
+            self._synthetic_serial_pushes(
+                cs, ps_sub, D, B, ps_ev.dtype, ps_ev.device, n_words=1)
+            self.assertIsNotNone(
+                cs._stm_predicted_idea,
+                "second per-word push must stash a prediction")
+            self.assertEqual(
+                tuple(cs._stm_predicted_idea.shape), (B, D))
+            self.assertTrue(
+                torch.isfinite(cs._stm_predicted_idea).all())
+
+    def test_consume_intra_loss_finite_after_serial_sentence(self):
+        """After a serial sentence (several per-word pushes) with grad
+        enabled, ``consume_intra_loss`` returns a finite scalar tensor
+        that carries grad; a second consume returns ``None`` (reset)."""
+        model = _make_plain_model()
+        cs = model.conceptualSpace
+        cs.intra_loss_weight = 0.1
+        ps = model.perceptualSpace
+        loader = model.inputSpace.data.data_loader(
+            split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        x_input = model.inputSpace.prepInput(inp_items)
+        self.assertTrue(
+            torch.is_grad_enabled(),
+            "test harness must run with grad enabled for L_intra to "
+            "accumulate")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            in_sub = model.inputSpace.forward(x_input)
+            ps_sub = ps.forward(in_sub)
+            ps_ev = ps_sub.materialize()
+            B = int(ps_ev.shape[0])
+            D = int(ps_ev.shape[-1])
+            cs.stm.ensure_batch(B)
+            cs.stm.clear()
+            # 4 words: word 1 degenerate (no loss), words 2-4 accumulate.
+            self._synthetic_serial_pushes(
+                cs, ps_sub, D, B, ps_ev.dtype, ps_ev.device, n_words=4)
+            loss = cs.consume_intra_loss()
+        self.assertIsNotNone(
+            loss, "consume_intra_loss must return a tensor after a serial "
+            "sentence with >=2 words and grad enabled")
+        self.assertTrue(torch.is_tensor(loss))
+        self.assertEqual(loss.dim(), 0, "L_intra must be a scalar")
+        self.assertTrue(
+            torch.isfinite(loss).all(),
+            "L_intra must be finite (fail-loud on divergence is the "
+            "training-path contract, not silently nan'd here)")
+        self.assertTrue(
+            loss.requires_grad,
+            "L_intra must carry grad to the predictor's params")
+        # Consumed + reset: a second consume returns None.
+        self.assertIsNone(
+            cs.consume_intra_loss(),
+            "consume_intra_loss must reset the accumulator")
+
+    def test_no_accumulation_under_no_grad(self):
+        """Under ``torch.no_grad`` the loss does not accumulate (eval-time
+        graph-growth guard); ``consume_intra_loss`` returns ``None`` even
+        though the prediction is still stashed."""
+        model = _make_plain_model()
+        cs = model.conceptualSpace
+        cs.intra_loss_weight = 0.1
+        ps = model.perceptualSpace
+        loader = model.inputSpace.data.data_loader(
+            split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        x_input = model.inputSpace.prepInput(inp_items)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            with torch.no_grad():
+                in_sub = model.inputSpace.forward(x_input)
+                ps_sub = ps.forward(in_sub)
+                ps_ev = ps_sub.materialize()
+                B = int(ps_ev.shape[0])
+                D = int(ps_ev.shape[-1])
+                cs.stm.ensure_batch(B)
+                cs.stm.clear()
+                self._synthetic_serial_pushes(
+                    cs, ps_sub, D, B, ps_ev.dtype, ps_ev.device, n_words=4)
+                loss = cs.consume_intra_loss()
+                # Prediction still stashed even though loss is off.
+                pred = cs._stm_predicted_idea
+        self.assertIsNone(
+            loss, "no-grad forwards must NOT accumulate L_intra")
+        self.assertIsNotNone(
+            pred, "the prediction is still stashed under no_grad")
+
+
 class TestCSForwardArity(unittest.TestCase):
     """Stage-1.A test_perceptual_loopback.py already asserts CS.forward
     has exactly 2 positional args (PS_subspace, SS_subspace=None).

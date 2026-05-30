@@ -16,7 +16,7 @@ buffer is zeros) so the Viterbi extract picks degenerate rules and
 extract_svo returns None or the wrong tokens.
 
 When the model is trained well enough that the chart commits to
-``S = lift(NP, VP)`` over ``VP = intersection(V, O)`` for this
+subject-lift over a transitive verb-phrase derivation for this
 sentence, the test will start passing (xpass = unexpected pass), at
 which point the @pytest.mark.xfail decorator should be removed.
 """
@@ -94,8 +94,8 @@ def test_svo_extraction_on_real_sentence():
     chart = m.wordSubSpace.chart
     svo = chart.extract_svo()
     assert svo is not None, (
-        "chart.extract_svo() returned None — no S = lift(NP, VP) over "
-        "VP = intersection(V, O) signature found in the derivation trace"
+        "chart.extract_svo() returned None — no subject lift over a "
+        "transitive verb-phrase derivation found in the trace"
     )
     subj_vec, verb_vec, obj_vec = svo
     assert subj_vec.shape[0] == 1

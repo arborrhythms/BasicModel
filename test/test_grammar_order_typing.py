@@ -116,6 +116,28 @@ def test_invalid_raises():
         Grammar._parse_category("NP*+")
 
 
+def test_compact_order_set_rule_expands_pairwise():
+    """In .grammar source, ``S45`` means concrete orders ``S4`` and
+    ``S5``. Repeated use of the same suffix is correlated pairwise."""
+    from Language import _expand_compact_order_sets_in_rule
+    assert _expand_compact_order_sets_in_rule(
+        "S45 = not.forward(NOT_S45)"
+    ) == [
+        "S4 = not.forward(NOT_S4)",
+        "S5 = not.forward(NOT_S5)",
+    ]
+
+
+def test_parse_category_still_accepts_multi_digit_constant():
+    """The expansion is grammar-file sugar; direct category parsing
+    still treats multi-digit constants literally."""
+    from Language import Grammar
+    parsed = Grammar._parse_category("S45")
+    assert parsed.name == "S"
+    assert parsed.order.kind == "constant"
+    assert parsed.order.delta == 45
+
+
 # -- RuleOrderSignature tests -----------------------------------------
 # Each parsed rule has an order signature capturing LHS / RHS categories,
 # their OrderExprs, the op name, and the order_delta (+1 / -1 / 0).
@@ -219,6 +241,61 @@ def test_modal_sentence_lift():
     assert sig.rhs_order_exprs[1].delta == 1
     assert sig.op_name == "lift"
     assert sig.order_delta == 1
+
+
+def test_complete_grammar_relation_ops_registered_and_mirrored():
+    """The relation-truth rewrite uses productive op names, including
+    queryPart as the interrogative counterpart to assertPart."""
+    from Language import Grammar, GRAMMAR_LAYER_CLASSES
+
+    def cats(text):
+        return tuple(part.strip() for part in text.split(',')
+                     if part.strip())
+
+    g = Grammar()
+    g.load_from_grammar_file("complete.grammar")
+    methods = {r.method_name for r in g.rules_upward if r.method_name}
+    assert "queryPart" in methods
+    assert "assertPart" in methods
+    assert "isEqual" in methods
+    assert "queryEqual" not in methods
+    assert "assertEqual" not in methods
+    assert any(
+        rule.method_name == "isEqual" and rule.query
+        for rule in g.rules_upward)
+    assert any(
+        rule.method_name == "isEqual" and not rule.query
+        for rule in g.rules_upward)
+    assert any(
+        rule.method_name == "isEqual" and rule.query
+        for rule in g.rules_downward)
+
+    unknown = {
+        method for method in methods
+        if method != "merge" and method not in GRAMMAR_LAYER_CLASSES
+    }
+    assert unknown == set()
+
+    up = {
+        (r.method_name, tuple(r.rhs_symbols or ()), cats(r.lhs))
+        for r in g.rules_upward
+    }
+    down = {
+        (r.method_name, tuple(r.rhs_symbols or ()), cats(r.lhs))
+        for r in g.rules_downward
+    }
+    missing = []
+    for rule in g.rules_upward:
+        if rule.method_name is None:
+            continue
+        reverse = (
+            rule.method_name,
+            cats(rule.lhs),
+            tuple(rule.rhs_symbols or ()),
+        )
+        if reverse not in down:
+            missing.append(rule.canonical)
+    assert missing == []
 
 
 def test_signatures_capture_explicit_orders_for_runtime_use():

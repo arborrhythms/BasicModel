@@ -1,4 +1,13 @@
-"""ConceptualSpace serial_mode invariants + attention guard tests."""
+"""ConceptualSpace serial_mode invariants + serial-with-attention doctrine.
+
+Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §"Serial mode =
+attentional filtering"): the former serial/attention guard — which forced
+``conceptualSpace.serial_mode = False`` whenever
+``serial_mode and conceptualSpace.hasAttention`` — is LIFTED. Serial mode
+**is** the attentional-filtering regime; MentalModel.xml runs serial WITH
+attention by design. ``test_serial_with_attention_is_not_downgraded`` pins
+the new doctrine (the guard does not fire).
+"""
 import sys
 import warnings
 from pathlib import Path
@@ -65,30 +74,39 @@ def test_conceptual_serial_mode_matches_non_serial():
             f"{(out_s[2] - out_b[2]).abs().max().item()}")
 
 
-def test_attention_guard_forces_serial_mode_off():
-    """When hasAttention=True, serial_mode is forced off on ConceptualSpace.
+def test_serial_with_attention_is_not_downgraded():
+    """DOCTRINE (Task 4): serial mode + ConceptualSpace.hasAttention is a
+    SUPPORTED regime — the former guard that forced
+    ``conceptualSpace.serial_mode = False`` is LIFTED.
 
-    Simulates the attention guard by setting hasAttention=True on the
-    conceptualSpace and re-running the derive logic from
-    create_from_config.
+    Builds a model through the real ``BaseModel.from_config`` path (which
+    runs ``BaseModel.__init__`` where the guard used to live), then sets
+    ``conceptualSpace.hasAttention = True`` and ``serial_mode = True`` and
+    asserts that ``conceptualSpace.serial_mode`` is NOT forced off. Serial
+    mode IS the attentional-filtering regime
+    (doc/plans/2026-05-29-stm-serial-parallel-modes.md §"Serial mode =
+    attentional filtering"); MentalModel.xml runs serial WITH attention by
+    design.
+
+    No ``RuntimeWarning`` about ``hasAttention`` should be emitted by the
+    framework — the downgrade-and-warn path is gone.
     """
     TheData.load("xor")
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
         m.conceptualSpace.hasAttention = True
-        # Re-derive (mirrors create_from_config's guard).
         m.serial_mode = True
         m.perceptualSpace.serial_mode = True
         m.conceptualSpace.serial_mode = True
-        if (m.serial_mode
-                and getattr(m.conceptualSpace, 'hasAttention', False)):
-            warnings.warn(
-                "ConceptualSpace.hasAttention=True violates position-"
-                "locality; forcing conceptualSpace.serial_mode=False.",
-                RuntimeWarning,
-            )
-            m.conceptualSpace.serial_mode = False
-        assert m.conceptualSpace.serial_mode is False
+        # The guard is lifted: nothing downgrades conceptualSpace here.
+        assert m.conceptualSpace.serial_mode is True, (
+            "serial mode IS the attentional regime; the guard that "
+            "forced conceptualSpace.serial_mode=False is lifted (Task 4).")
         assert m.perceptualSpace.serial_mode is True
-        assert any("hasAttention" in str(x.message) for x in w)
+        # No framework-emitted hasAttention downgrade warning.
+        assert not any(
+            "hasAttention" in str(x.message)
+            and "serial_mode=False" in str(x.message)
+            for x in w), (
+            "the serial/attention downgrade-and-warn path must be gone")

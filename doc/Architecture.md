@@ -373,6 +373,14 @@ STM is cleared on hard `Reset` (sentence boundary) and survives soft
 reset. The signal router consumes `stm.snapshot()` for its slab input.
 See [Spaces.md](Spaces.md#shorttermmemory).
 
+The STM data model, the predict-then-perceive cadence (serial and
+parallel), the in-STM and inter-sentence predictors, masked-word
+reconstruction, relative-vs-absolute end-states, and the LTM chain are
+documented in full in the dedicated [STM.md](STM.md) chapter. Note in
+particular that **serial mode runs WITH attention by design** (the old
+serial-vs-attention guard was lifted; `MentalModel.xml` is serial +
+`hasAttention`) — see [STM.md Section 4](STM.md#4-attentional-filtering).
+
 ### Per-word operational flow (SERIAL mode)
 
 In SERIAL / GRAMMATICAL mode, each word traverses a per-word path:

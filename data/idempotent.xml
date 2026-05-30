@@ -125,7 +125,6 @@
          only operation training touches. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>

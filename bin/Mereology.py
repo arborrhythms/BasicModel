@@ -80,7 +80,10 @@ class HoCShape:
               tree. List length is 1 for default-only / unary-only
               paths; doubles for each binary op along the path.
     mask   -- ``[B, V]`` bool. True where the input symbolic vector
-              had a per-position norm above ``truthMinMagnitude``.
+              had a nonzero per-position norm (Mereology no longer
+              applies the ``truthMinMagnitude`` magnitude threshold;
+              the knob now serves as the gold-``<truth>`` recording
+              gate elsewhere).
     per_step -- list of StepInfo, DFS pre-order, one entry per
               layer-level reverse executed.
     """
@@ -300,9 +303,11 @@ class Mereology:
                 ``1`` for default-only / no-binary-op runs;
                 ``2^k_binary`` for k_binary binary ops along the path.
               * ``mask``: ``[B, V]`` bool -- True where the input
-                position was above ``truthMinMagnitude``. Leaves
-                carry full ``[B, V, ...]`` shape regardless;
-                consumers AND-fold via the mask.
+                position had nonzero norm (Mereology no longer applies
+                the ``truthMinMagnitude`` magnitude threshold; the knob
+                now serves as the gold-``<truth>`` recording gate
+                elsewhere). Leaves carry full ``[B, V, ...]`` shape
+                regardless; consumers AND-fold via the mask.
               * ``per_step``: list of ``StepInfo``, one per layer-
                 level reverse executed during the walk, in
                 outer-to-inner traversal order. Each StepInfo
@@ -319,9 +324,17 @@ class Mereology:
                                      dtype=torch.bool, device=symbolic_vector.device)
             return HoCShape(leaves=[], mask=empty_mask, per_step=[])
 
-        # Step 1: per-position activity mask.
-        sym = self.symbolicSpace
-        threshold = float(getattr(sym, '_truth_min_magnitude', 0.0) or 0.0)
+        # Step 1: per-position activity mask. Mereology no longer applies
+        # the ``truthMinMagnitude`` magnitude threshold (the magnitude
+        # threshold is not how truths are accepted -- see the content-aware
+        # ``truthCriterion`` path; the knob itself now serves as the
+        # gold-``<truth>`` recording gate elsewhere). The threshold
+        # collapses to 0.0 here, so any position with nonzero norm counts
+        # as active and the all-zero / NULL-padded inputs still fold to an
+        # empty shape. ``threshold`` is
+        # threaded into ``_walk_reverse`` / ``_build_step`` (per-step
+        # activity gate) so it stays a named local here.
+        threshold = 0.0
         norms = symbolic_vector.norm(dim=-1)
         mask = norms > threshold
         if not bool(mask.any().item()):

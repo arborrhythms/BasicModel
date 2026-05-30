@@ -48,7 +48,7 @@ from Layers import GrammarLayer
 # Language.py's own module load.
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 
 from util import parse
@@ -9957,6 +9957,15 @@ class ConceptualSpace(Space):
         # the attribute exists so the forward path can read it
         # unconditionally.
         self._c_prior = None
+        # Slot-wise staging flag (Task 8, plan §9). When the chat-loop's
+        # ``BasicModel.generate_sentence`` stages a predicted next-end-state
+        # SHAPE ``payload_hat[depth, D]`` (one row per STM slot) rather than
+        # a single sentence-prior vector, it sets this True so the forward
+        # path aligns the prior on the SLOT axis (stage across the first
+        # ``depth`` slots of ``event_for_carrier``) instead of the legacy
+        # batch-broadcast-over-all-slots path. ``False`` keeps the existing
+        # ``[D]`` / ``[1, D]`` / ``[B, D]`` behavior byte-identical.
+        self._c_prior_slotwise = False
         input = self.subspace.getEncodedInputSize()
         if self.codebook_mode == "project":
             # project codebook: PiLayer stays a square isomorphism
@@ -10029,6 +10038,16 @@ class ConceptualSpace(Space):
             except Exception:
                 w_max = 8
             stm_capacity = int(w_max)
+        # The STM buffer width is the full CS output width ``outputShape[1]``
+        # so the forward<->reverse roundtrip is loss-free even when the CS
+        # carries positional/temporal columns (nWhere/nWhen > 0, e.g.
+        # test_invertibility objSize=4 where embDim = nWhat(6) + nWhere(2)
+        # + nWhen(2) = 10). ``forward`` trims the materialised event to this
+        # buffer width (``self.concept_dim``), NOT to ``nWhat`` -- the two
+        # coincide for the shipped configs (CS nWhere=nWhen=0 so
+        # outputShape[1] == nWhat) but diverge for a positional CS, where
+        # trimming to nWhat would drop columns the buffer reserves and the
+        # reverse expects back.
         concept_dim = int(outputShape[1])
         # ``stm_capacity`` / ``concept_dim`` published as attributes so
         # WordSubSpace.__init__ can size its typed-STM buffers to match
@@ -10087,6 +10106,76 @@ class ConceptualSpace(Space):
         self.params += self.sigma_cs.getParameters()
         self.layers.append(self.sigma_in)
         self.layers.append(self.sigma_cs)
+
+        # In-STM autoregressive predictor (Task 2, STM serial/parallel
+        # modes plan). Combined PI-then-Sigma with NO intermediate tanh:
+        # the PI body lifts the low-rank STM slots into the working width
+        # and the raw-linear Sigma collapses them into the predicted
+        # idea (serial) or maps them per-slot (parallel). Owned here so
+        # the Start/Reset cascade reaches it via ``self.layers``; its
+        # ``forward`` is NOT called from ``ConceptualSpace.forward`` yet
+        # (Task 3 wires predict-then-perceive) and ``routing`` is left
+        # unpopulated (Task 4 wires the per-word router). ``intra_loss``
+        # is exposed on the layer for the later training-path wiring.
+        #
+        # ``routing_dim`` is a best-effort placeholder until Task 4
+        # supplies the rule-distribution width: ``concept_dim`` is a
+        # safe non-zero default (the ``routing_proj`` is built but only
+        # applied when a non-None routing tensor is passed). ``naive`` /
+        # ``ergodic`` / ``stable``/``monotonic`` follow the sigma_in /
+        # sigma_cs construction convention above.
+        self._intra_routing_dim = int(concept_dim)
+        self.intraSentenceLayer = IntraSentenceLayer(
+            concept_dim=concept_dim,
+            stm_capacity=self.stm_capacity,
+            routing_dim=self._intra_routing_dim,
+            naive=naive, ergodic=ergodic,
+            stable=True, monotonic=monotonic)
+        self.params += self.intraSentenceLayer.getParameters()
+        self.layers.append(self.intraSentenceLayer)
+
+        # L_intra loss weight (new knob under <architecture><training>).
+        # Read once at construction; consumed by the later training-path
+        # wiring (Task 3). Defaults to 0.1 when the knob is absent.
+        self.intra_loss_weight = float(
+            TheXMLConfig.training("intraLossWeight", 0.1) or 0.1)
+
+        # Acceptance bar in [0, 1] for content-aware learned-relation
+        # insertion into the relative-sentence codebook. Declared under
+        # <architecture>; overridable per-space (``space()`` checks the
+        # ConceptualSpace section before the architecture fallback). The
+        # ``learn_score >= truth_criterion`` gating that consumes this is
+        # wired by a later task; read here so the hook has it on the
+        # ConceptualSpace. This is the content-aware acceptance bar for
+        # learned-relation codebook insertion; it is distinct from
+        # ``truthMinMagnitude`` (now the gold-``<truth>`` recording gate)
+        # and from the retired per-sentence truth accumulator
+        # (accumulateTruth). Defaults to 0.3 when absent.
+        self.truth_criterion = float(
+            TheXMLConfig.space("ConceptualSpace", "truthCriterion", 0.3))
+
+        # Task 3 (STM serial/parallel modes): explicit predict-then-
+        # perceive state. ``forward`` now runs the intra-sentence
+        # predictor from the RETAINED STM context BEFORE writing the
+        # freshly-perceived event into the STM, stashing the held
+        # prediction here so the training-error path can consume it as
+        # the next-idea predictor target (``L_intra``).
+        #   * ``_stm_predicted_idea``  -- serial held prediction [B, D].
+        #   * ``_stm_predicted_slab``  -- parallel held prediction [B, N, D].
+        #   * ``_intra_loss_accum``    -- live (grad-carrying) running sum
+        #       of per-step MSE(prediction, perceived); ``None`` until the
+        #       first accumulated step.
+        #   * ``_intra_loss_count``    -- number of accumulated steps (the
+        #       mean denominator in ``consume_intra_loss``).
+        # Accumulation is gated on ``torch.is_grad_enabled()`` and a
+        # positive ``intra_loss_weight`` so eval-time forwards never grow
+        # the graph. ``consume_intra_loss`` returns the per-batch mean and
+        # resets accum/count; ``Reset`` clears all four at document/
+        # sentence boundaries.
+        self._stm_predicted_idea = None
+        self._stm_predicted_slab = None
+        self._intra_loss_accum = None
+        self._intra_loss_count = 0
 
         # Stage 10 PARALLEL reverse-roundtrip cache (doc/plans/
         # 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md):
@@ -10222,9 +10311,9 @@ class ConceptualSpace(Space):
         primitives on ``self.stm`` (which proxies to WordSubSpace when
         attached, or its own fallback buffer otherwise).
 
-        Per the Miller cap (default 7±2 via ``<stmCapacity>`` /
-        ``<wMax>``), the oldest idea drops out when overflowing — the
-        STM is a rolling window. This is the substrate-level analogue
+        Per the Miller cap (default 8, within the 7±2 band, via
+        ``<stmCapacity>`` / ``<wMax>``), the oldest idea drops out when
+        overflowing — the STM is a rolling window. This is the substrate-level analogue
         of the chart's reduce-then-push when the chart was the
         consumer; here the consumer is the signal-router-based grammar
         dispatch (Stage 3, not wired yet).
@@ -10262,6 +10351,201 @@ class ConceptualSpace(Space):
             if cur_max > int(stm._max_depth_host):
                 stm._max_depth_host = cur_max
 
+    # -- Task 3: explicit predict-then-perceive helpers ----------------
+    def _stm_shift_for_predict(self):
+        """STM primitive: rotate slots so the free (top) slot is free,
+        WITHOUT writing a new idea.
+
+        The plan asks for this extracted helper as the "rotate slots so
+        the free slot is free" step of predict-then-perceive. In THIS
+        codebase the free/newest slot is the TOP (``cap - 1``) and the
+        rolling window shifts LEFT, dropping slot 0 (oldest). At capacity
+        this performs that left-shift and decrements the depth pointer by
+        one so the top slot is logically free; below capacity it is a
+        no-op (there is already room, nothing falls off).
+
+        NOTE: the serial ``forward`` path does NOT call this in the hot
+        path. Correctness of the prediction only needs the PRE-perceive
+        ``snapshot()`` (the retained context ``snap[:, 1:]``), and the
+        actual perceive is the existing ``_stm_shift_and_push(idea)``
+        (which already does shift-left + write-to-top in one pass). A
+        separate physical shift here would double-shift the buffer and
+        corrupt STM contents. This helper exists so the named primitive
+        from the plan is present and independently unit-testable; it is
+        deliberately kept off the forward path. It is a structural
+        analogue of ``_stm_shift_and_push`` with the write elided.
+        """
+        stm = self.stm
+        B = int(stm._buffer.shape[0])
+        cap = int(stm.capacity)
+        if cap <= 0 or B == 0:
+            return
+        buf = stm._buffer
+        depth = stm._depth
+        new_depth = depth.clone()
+        for b in range(B):
+            d = int(depth[b].item())
+            if d >= cap:
+                # Shift left by one slot, drop oldest; top slot freed.
+                buf[b, : cap - 1] = buf[b, 1 : cap].clone()
+                buf[b, cap - 1].zero_()
+                new_depth[b] = cap - 1
+            # else: below capacity -- there is already a free top slot,
+            # nothing falls off, depth unchanged.
+        stm._depth = new_depth
+
+    def _intra_routing_for_predict(self):
+        """Resolve the soft routing distribution for the intra-sentence
+        predictor, or ``None``.
+
+        Reads ``current_rules`` off the owning ``wordSubSpace`` (the
+        per-word router writes it in Task 4) and returns it ONLY if it is
+        a tensor whose last dim matches ``self._intra_routing_dim`` (the
+        width ``IntraSentenceLayer.routing_proj`` expects). Until Task 4
+        wires the producer, ``current_rules`` is absent / None and this
+        returns ``None`` -- the layer then skips the routing bias and the
+        predictor still runs. Keeping the gate here makes Task 3
+        independent of Task 4's routing representation.
+        """
+        ws = getattr(self, 'wordSubSpace', None)
+        if ws is None:
+            return None
+        routing = getattr(ws, 'current_rules', None)
+        if routing is None or not torch.is_tensor(routing):
+            return None
+        if int(routing.shape[-1]) != int(self._intra_routing_dim):
+            return None
+        return routing
+
+    def _stm_run_intra_predict(self, context, routing, parallel=False):
+        """Invoke the intra-sentence predictor on ``context`` and stash
+        the held prediction. Does NOT mutate the STM buffer or depth.
+
+        ``context``: ``[B, K, D]`` prior STM slots (the retained
+        predictive context). ``routing``: ``[B, routing_dim]`` or None.
+        ``parallel``: when True stash ``[B, N, D]`` on
+        ``self._stm_predicted_slab``; when False stash the collapsed
+        ``[B, D]`` on ``self._stm_predicted_idea``.
+
+        Returns the stashed prediction tensor.
+        """
+        pred = self.intraSentenceLayer.forward(
+            context, routing=routing, parallel=parallel)
+        if parallel:
+            self._stm_predicted_slab = pred
+        else:
+            self._stm_predicted_idea = pred
+        return pred
+
+    def _accumulate_intra_loss(self, prediction, target):
+        """Accumulate one step of ``L_intra = MSE(prediction, target)``
+        into the live running sum, gated on grad-enabled + positive
+        weight.
+
+        Keeps the accumulator a live (grad-carrying) tensor so the term
+        backprops into the predictor's params. No-op when grad is
+        disabled (eval) or ``intra_loss_weight <= 0`` -- this avoids
+        eval-time graph growth and a wasted MSE when the term is off. The
+        first-word degenerate case (no retained context) is handled by
+        the caller skipping this entirely.
+        """
+        if not torch.is_grad_enabled():
+            return
+        if float(self.intra_loss_weight) <= 0.0:
+            return
+        step_loss = self.intraSentenceLayer.intra_loss(prediction, target)
+        if self._intra_loss_accum is None:
+            self._intra_loss_accum = step_loss
+        else:
+            self._intra_loss_accum = self._intra_loss_accum + step_loss
+        self._intra_loss_count += 1
+
+    def consume_intra_loss(self):
+        """Return the per-step MEAN of the accumulated intra-sentence
+        prediction loss and RESET the accumulator.
+
+        Returns a live scalar tensor (mean over the accumulated per-word
+        steps) carrying grad to the predictor's params, or ``None`` when
+        nothing was accumulated this batch (eval-time, weight off, or an
+        all-degenerate sentence). The reset makes the term per-batch:
+        ``BasicModel.runBatch`` consumes it once, post-body / pre-
+        backward, mirroring the ARMA term.
+        """
+        if self._intra_loss_accum is None:
+            self._intra_loss_count = 0
+            return None
+        mean_loss = self._intra_loss_accum / max(1, self._intra_loss_count)
+        self._intra_loss_accum = None
+        self._intra_loss_count = 0
+        return mean_loss
+
+    def _stm_predict_then_perceive_serial(self, idea):
+        """SERIAL predict step (single-position call). Snapshot the
+        current slots, run the intra-sentence predictor from the RETAINED
+        context, stash the held prediction on ``self._stm_predicted_idea``,
+        and accumulate ``L_intra`` against ``idea`` (the about-to-be-
+        perceived event). Does NOT perceive -- the caller invokes the
+        existing ``_stm_shift_and_push(idea)`` immediately after.
+
+        ``idea``: ``[B, D]`` the materialised event about to be pushed.
+
+        Retained-context rule (per the codebook's newest-at-TOP /
+        shift-LEFT convention -- the oldest slot 0 is the one that falls
+        off at capacity):
+          * snapshot depth >= 2: context = ``snap[:, 1:]`` (drop oldest).
+          * snapshot depth == 1: context = ``snap`` (nothing falls off
+            yet; STM is below capacity).
+          * snapshot empty (first word): the prediction degenerates --
+            stash ``torch.zeros_like(idea)`` and SKIP loss accumulation
+            for this step (no prior context to predict from).
+        """
+        snap = self.stm.snapshot()
+        if snap is None or snap.dim() != 3 or int(snap.shape[1]) == 0:
+            # First word / empty STM: degenerate prediction, no loss.
+            self._stm_predicted_idea = torch.zeros_like(idea)
+            return
+        if int(snap.shape[1]) >= 2:
+            context = snap[:, 1:]                     # drop oldest [B, K-1, D]
+        else:
+            context = snap                            # single slot [B, 1, D]
+        routing = self._intra_routing_for_predict()
+        prediction = self._stm_run_intra_predict(
+            context, routing, parallel=False)         # [B, D]
+        self._accumulate_intra_loss(prediction, idea)
+
+    def _stm_predict_then_perceive_parallel(self, folded):
+        """PARALLEL predict step (whole-slab call). Snapshot the prev STM,
+        run the intra-sentence predictor per-slot, stash the held slab
+        prediction on ``self._stm_predicted_slab``, and accumulate
+        ``L_intra`` against ``folded`` ONLY when the prediction shape
+        matches. Does NOT perceive -- the caller invokes the existing
+        ``_stm_set_all_slots(folded)`` immediately after.
+
+        ``folded``: ``[B, N, D]`` the slab about to be written as the slot
+        stack.
+
+        Degenerate / shape-mismatch handling (pinned):
+          * prev STM empty (first pass): stash ``torch.zeros_like(folded)``
+            and SKIP loss (the predictor has no prior slab to map).
+          * prev STM slot count != N: the per-slot prediction over
+            ``prev`` has shape ``[B, prev_N, D]`` which does not align
+            with the target ``[B, N, D]``. Per the pinned decision, stash
+            the prediction as-is but SKIP loss accumulation this pass
+            (we do not fabricate an overlap). Loss resumes once the STM
+            steady-state slot count matches the slab width.
+        """
+        prev = self.stm.snapshot()
+        if prev is None or prev.dim() != 3 or int(prev.shape[1]) == 0:
+            # First pass / empty STM: degenerate prediction, no loss.
+            self._stm_predicted_slab = torch.zeros_like(folded)
+            return
+        routing = self._intra_routing_for_predict()
+        prediction = self._stm_run_intra_predict(
+            prev, routing, parallel=True)             # [B, prev_N, D]
+        # Only accumulate loss when shapes align (pinned: skip otherwise).
+        if prediction.shape == folded.shape:
+            self._accumulate_intra_loss(prediction, folded)
+
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -10291,6 +10575,15 @@ class ConceptualSpace(Space):
         See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
         """
         super().Reset(batch=batch, hard=hard)
+        # Task 3: clear the predict-then-perceive held predictions and the
+        # intra-loss accumulator on EVERY reset (hard or soft) so neither a
+        # stale prediction nor a dangling grad-bearing loss tensor leaks
+        # across a sentence/document boundary. Hoisted above the soft-reset
+        # early return below; safe there because these stashes are None-able.
+        self._stm_predicted_idea = None
+        self._stm_predicted_slab = None
+        self._intra_loss_accum = None
+        self._intra_loss_count = 0
         if not hard:
             return
         sub = getattr(self, 'subspace', None)
@@ -10395,6 +10688,336 @@ class ConceptualSpace(Space):
                     ss.record_lbg_pull(int(sym_pos), seed)
                     ss.maybe_split_lbg(int(sym_pos))
 
+    # ------------------------------------------------------------------
+    # Task 6c: content-aware learn-score acceptance gate + tetralemma
+    # trust + relative-sentence codebook insertion.
+    # (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7c)
+    #
+    # A relative sentence ``predicate(idea1, idea2)`` is accepted into
+    # the SS codebook iff its LEARN-SCORE clears ``self.truth_criterion``.
+    # learn_score = children_in_codebook * is_truth_obvious *
+    #               resolves_contradiction   (each factor in [0, 1]).
+    # The three factors are SEPARATE overridable methods so tests can
+    # monkeypatch each independently (the plan's required test seam).
+    # ------------------------------------------------------------------
+
+    # Distance below which a child idea counts as an "already-known"
+    # codebook concept (the ``children_in_codebook`` factor). A loose
+    # default; the factor is a test seam so the exact bar is swappable.
+    _learn_children_dist_threshold = 1.0
+
+    def _terminal_ss_for_learning(self):
+        """Return the terminal SymbolicSpace that owns the META taxonomy
+        (the relation codebook), or ``None`` when not wired (standalone-CS
+        unit tests). Mirrors :meth:`_maybe_autobind_meta`'s ref lookup."""
+        ss = getattr(self, 'terminalSymbolicSpace_ref', None)
+        if ss is None:
+            ss = getattr(self, 'symbolicSpace_ref', None)
+        return ss
+
+    def _truth_layer_for_learning(self):
+        """Return the TruthSet accumulator (``wordSubSpace.truth_layer``)
+        or ``None`` when not reachable."""
+        ws = getattr(self, 'wordSubSpace', None)
+        if ws is None:
+            return None
+        return getattr(ws, 'truth_layer', None)
+
+    @staticmethod
+    def _as_idea_vec(x):
+        """Coerce an idea operand to a finite 1-D float tensor.
+
+        Fail loud on NaN/Inf -- a divergent idea vector feeding the
+        learn-score must surface, never be silently scored."""
+        if not torch.is_tensor(x):
+            x = torch.as_tensor(x, dtype=torch.float32)
+        v = x.detach().reshape(-1).float()
+        if not torch.isfinite(v).all():
+            raise RuntimeError(
+                "ConceptualSpace learn-score: idea vector contains "
+                "NaN/Inf. Numerical divergence must surface, not be "
+                "silently scored / nan_to_num'd away.")
+        return v
+
+    def _learn_score_children_in_codebook(self, idea1_vec, idea2_vec):
+        """Factor in [0, 1]: fraction of ``(idea1, idea2)`` whose nearest
+        SS-codebook-row distance is below
+        :attr:`_learn_children_dist_threshold` (both children are
+        already-known concepts).
+
+        Returns 0.0 when no terminal SS / no codebook is reachable
+        (nothing is "known", so the relation cannot be grounded in
+        existing concepts). Overridable test seam.
+        """
+        ss = self._terminal_ss_for_learning()
+        if ss is None or not hasattr(ss, "nearest_ss_row"):
+            return 0.0
+        thr = float(self._learn_children_dist_threshold)
+        hits = 0
+        for vec in (idea1_vec, idea2_vec):
+            v = self._as_idea_vec(vec)
+            _row, dist = ss.nearest_ss_row(v)
+            if dist <= thr:
+                hits += 1
+        return hits / 2.0
+
+    def _learn_score_is_truth_obvious(self, relation):
+        """Factor in [0, 1]: agreement-with-existing-TruthSet score, high
+        when the relation is consistent with existing belief.
+
+        Sourced from ``truth_layer.assess()["support"]`` (the net
+        affirmation of the accumulated TruthSet). Returns 0.0 when no
+        TruthSet is reachable (nothing to agree with -> not obvious).
+        ``relation`` is accepted for signature parity / test seams;
+        the first-cut formula reads the global support level. Overridable
+        test seam.
+        """
+        tl = self._truth_layer_for_learning()
+        if tl is None or not hasattr(tl, "assess"):
+            return 0.0
+        a = tl.assess()
+        return max(0.0, min(1.0, float(a.get("support", 0.0))))
+
+    def _learn_score_resolves_contradiction(self, relation):
+        """Factor in [0, 1]: overlap between this relation and an
+        unresolved contradiction in the TruthSet, high when adding it
+        mediates a contested region.
+
+        Sourced from ``truth_layer.assess()["conflict"]`` (the set both
+        affirms AND denies). Returns 0.0 when no TruthSet is reachable.
+        ``relation`` is accepted for signature parity / test seams.
+        Overridable test seam.
+        """
+        tl = self._truth_layer_for_learning()
+        if tl is None or not hasattr(tl, "assess"):
+            return 0.0
+        a = tl.assess()
+        return max(0.0, min(1.0, float(a.get("conflict", 0.0))))
+
+    def _compute_learn_score(self, predicate, idea1, idea2,
+                             truth_set=None):
+        """Content-aware learn-score in [0, 1] = PRODUCT of the three
+        factor methods (so each is independently monkeypatchable).
+
+        learn_score = children_in_codebook(idea1, idea2)
+                      * is_truth_obvious(relation)
+                      * resolves_contradiction(relation)
+
+        Lies / uncertain regions still get learned: a low
+        ``is_truth_obvious`` is NOT gated out on its own -- if the other
+        two factors are high the product can still clear the criterion.
+        ``predicate`` is passed as the ``relation`` operand to the two
+        TruthSet factors. ``truth_set`` is accepted for signature parity
+        (the factors reach the live TruthSet via ``wordSubSpace``).
+        """
+        children = float(
+            self._learn_score_children_in_codebook(idea1, idea2))
+        obvious = float(self._learn_score_is_truth_obvious(predicate))
+        resolves = float(
+            self._learn_score_resolves_contradiction(predicate))
+        score = children * obvious * resolves
+        if not math.isfinite(score):
+            raise RuntimeError(
+                f"ConceptualSpace._compute_learn_score produced a "
+                f"non-finite value ({score}) from factors "
+                f"children={children}, obvious={obvious}, "
+                f"resolves={resolves}. A divergent learn-score must "
+                f"surface, not be silently gated.")
+        return max(0.0, min(1.0, score))
+
+    def _tetralemma_trust(self, relation, truth_set=None):
+        """Tetralemma trust 4-tuple ``(t, f, b, n)`` summing to 1
+        (TRUE/FALSE/BOTH/NEITHER), computed from the relation's posture
+        against the TruthSet.
+
+        Maps ``truth_layer.assess()`` (paraconsistent read) onto the
+        catuskoti corners (TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
+        NEITHER=[0,0] per the codebook bivector convention):
+
+          * ``b`` (BOTH)    <- conflict (the set both affirms AND denies)
+          * ``n`` (NEITHER) <- ignorance (the set is silent)
+          * ``t`` (TRUE)    <- support, attenuated when the relation's own
+                               activation sign is negative (a denial)
+          * ``f`` (FALSE)   <- support that the relation's negative sign
+                               re-routes to denial, plus the residual
+
+        The relation's own activation sign splits the support mass
+        between ``t`` and ``f``: a predominantly positive relation reads
+        as affirming (-> ``t``), a negative one as denying (-> ``f``).
+        Normalised to sum 1 via :meth:`SymbolicSpace._normalize_trust_tuple`
+        (uniform when the raw tuple is all-zero -> maximal uncertainty).
+        """
+        tl = self._truth_layer_for_learning()
+        if tl is not None and hasattr(tl, "assess"):
+            a = tl.assess()
+            support = max(0.0, min(1.0, float(a.get("support", 0.0))))
+            conflict = max(0.0, min(1.0, float(a.get("conflict", 0.0))))
+            ignorance = max(0.0, min(1.0, float(a.get("ignorance", 0.0))))
+        else:
+            # No TruthSet reachable -> total ignorance.
+            support, conflict, ignorance = 0.0, 0.0, 1.0
+        # Relation activation sign in [-1, 1]: positive -> affirming.
+        sign = self._relation_sign(relation)
+        # Fraction of support routed to TRUE vs FALSE by the sign.
+        frac_true = 0.5 * (1.0 + sign)         # sign=+1 -> 1.0, -1 -> 0.0
+        frac_true = max(0.0, min(1.0, frac_true))
+        t = support * frac_true
+        f = support * (1.0 - frac_true)
+        b = conflict
+        n = ignorance
+        ss = self._terminal_ss_for_learning()
+        if ss is not None and hasattr(ss, "_normalize_trust_tuple"):
+            return ss._normalize_trust_tuple((t, f, b, n))
+        return SymbolicSpace._normalize_trust_tuple((t, f, b, n))
+
+    @staticmethod
+    def _relation_sign(relation):
+        """Signed scalar in [-1, 1] for a relation operand's activation
+        polarity. Bivector ``[..., 2]`` -> (pos_pole - neg_pole) energy;
+        otherwise the sign of the mean. Returns 0.0 for a None / empty
+        operand (neutral, splits support evenly)."""
+        if relation is None:
+            return 0.0
+        if not torch.is_tensor(relation):
+            try:
+                relation = torch.as_tensor(relation, dtype=torch.float32)
+            except (TypeError, ValueError, RuntimeError):
+                # Un-tensorable operand (not array-like) -> neutral sign;
+                # this is a type-shape degrade, NOT swallowing a numeric
+                # bug (NaN/Inf in a real tensor is caught below).
+                return 0.0
+        v = relation.detach().reshape(-1).float()
+        if v.numel() == 0 or not torch.isfinite(v).all():
+            return 0.0
+        m = float(v.mean().item())
+        if m > 0:
+            return 1.0
+        if m < 0:
+            return -1.0
+        return 0.0
+
+    def _resolve_idea_to_ss_position(self, vec):
+        """Resolve an idea/predicate vector to an SS-codebook POSITION:
+        the nearest existing row when within
+        :attr:`_learn_children_dist_threshold`, else a freshly allocated
+        row via ``insert_symbol``. Returns a positive int position.
+
+        Raises when no terminal SS is wired -- the caller
+        (:meth:`_maybe_learn_relation`) has already cleared the gate, so
+        a missing codebook is a real wiring bug, not a skip condition.
+        """
+        ss = self._terminal_ss_for_learning()
+        if ss is None:
+            raise RuntimeError(
+                "ConceptualSpace._resolve_idea_to_ss_position: no "
+                "terminal SymbolicSpace wired; cannot insert a learned "
+                "relation. Wire terminalSymbolicSpace_ref.")
+        v = self._as_idea_vec(vec)
+        row, dist = ss.nearest_ss_row(v)
+        thr = float(self._learn_children_dist_threshold)
+        if row is not None and dist <= thr:
+            return ss.ensure_ss_position(int(row), kind="ss")
+        # Not close to any existing concept -> allocate a fresh row when
+        # the SS-side ``.what`` is a growable Codebook. When it is a
+        # fixed-width plain Tensor codebook (``codebook_mode='none'`` --
+        # e.g. the relative-grammar MentalModel config), ``insert_symbol``
+        # is unavailable, so SNAP to the nearest existing row instead:
+        # the relation still binds into the taxonomy, it just cannot mint
+        # a brand-new concept row. ``row`` is always non-None here when a
+        # codebook exists, so this is a graceful degrade, not a silent
+        # skip.
+        cb = getattr(ss.subspace, "what", None)
+        if isinstance(cb, Codebook):
+            # Growable codebook (quantize mode) -> mint a fresh row for
+            # the new concept (the historical behaviour, incl. the
+            # empty-codebook first-row case).
+            return ss.insert_symbol(init_vec=v)
+        if row is not None:
+            # Fixed-width (plain Tensor) codebook -> bind nearest row.
+            return ss.ensure_ss_position(int(row), kind="ss")
+        raise RuntimeError(
+            "ConceptualSpace._resolve_idea_to_ss_position: no SS "
+            "codebook row available to bind a learned relation "
+            "(empty/unbuilt non-growable codebook).")
+
+    def _maybe_learn_relation(self, predicate, idea1, idea2,
+                              truth_set=None):
+        """Gate + insert a learned relative relation.
+
+        Computes the learn-score; if ``>= self.truth_criterion``,
+        resolves ``(predicate, idea1, idea2)`` vectors to SS positions,
+        inserts the predicate-parent / two-children META via
+        :meth:`SymbolicSpace.insert_relation` carrying the tetralemma
+        trust 4-tuple, and returns the predicate META position. Returns
+        ``None`` (a legitimate ACCEPT/REJECT decision, NOT an error) when
+        the score is below the criterion.
+
+        At ``truth_criterion == 1`` nothing is learned; at ``0``
+        everything is. This is the unit the Task 6c tests exercise
+        directly (they may monkeypatch the three factor methods and/or
+        hand-set the operand vectors).
+        """
+        score = self._compute_learn_score(
+            predicate, idea1, idea2, truth_set=truth_set)
+        tc = float(self.truth_criterion)
+        if score < tc:
+            return None
+        # Accept: resolve operands to positions and insert the relation.
+        ss = self._terminal_ss_for_learning()
+        if ss is None:
+            raise RuntimeError(
+                "ConceptualSpace._maybe_learn_relation: relation cleared "
+                "the learn-score gate but no terminal SymbolicSpace is "
+                "wired to insert it. Wire terminalSymbolicSpace_ref.")
+        pred_pos = self._resolve_idea_to_ss_position(predicate)
+        idea1_pos = self._resolve_idea_to_ss_position(idea1)
+        idea2_pos = self._resolve_idea_to_ss_position(idea2)
+        trust = self._tetralemma_trust(predicate, truth_set=truth_set)
+        ss.insert_relation(pred_pos, idea1_pos, idea2_pos, trust=trust)
+        return pred_pos
+
+    @torch.no_grad()
+    def learn_relations_from_stm(self, relative_mask):
+        """Sentence-boundary hook: for each RELATIVE row, read the
+        depth-3 relative end-state ``[predicate, idea1, idea2]`` from STM
+        slots 0/1/2 and run :meth:`_maybe_learn_relation`.
+
+        ``relative_mask`` is the ``[B]`` bool tensor from
+        ``BasicModel._sentence_relative_mask``; only its True rows are
+        learned (absolute rows collapse to a single S and carry no
+        binary predicate). Returns the list of accepted predicate
+        positions (``None`` entries elided) for verification / probing.
+
+        Pure host-side bookkeeping (codebook-row allocation + taxonomy
+        dict mutation); runs under ``no_grad`` and only when a terminal
+        SymbolicSpace is wired. A no-op (returns ``[]``) when nothing is
+        relative or no STM buffer / SS is reachable, so absolute-only
+        grammars are byte-identical.
+        """
+        if relative_mask is None:
+            return []
+        if self._terminal_ss_for_learning() is None:
+            return []
+        stm = getattr(self, "stm", None)
+        buf = getattr(stm, "_buffer", None) if stm is not None else None
+        if buf is None or buf.dim() != 3 or buf.shape[1] < 3:
+            return []
+        mask = relative_mask
+        if torch.is_tensor(mask):
+            mask = mask.reshape(-1).tolist()
+        accepted = []
+        B = int(buf.shape[0])
+        for b in range(min(B, len(mask))):
+            if not bool(mask[b]):
+                continue
+            predicate = buf[b, 0, :]
+            idea1 = buf[b, 1, :]
+            idea2 = buf[b, 2, :]
+            pred_pos = self._maybe_learn_relation(predicate, idea1, idea2)
+            if pred_pos is not None:
+                accepted.append(pred_pos)
+        return accepted
+
     def forward(self, subspace, word_subspace=None):
         """STM bookkeeping: shift the per-batch idea stack and push the
         new idea onto the Miller-cap top slot.
@@ -10438,15 +11061,18 @@ class ConceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         # Materialise the perceptual input event. Stage 3 router wiring:
-        # PS hands CS a muxed [B, N, nWhat+nWhere+nWhen] event; the
-        # concept-dim STM buffer holds only the ``what`` columns (see
+        # PS hands CS a muxed [B, N, nWhat+nWhere+nWhen] event; the STM
+        # buffer holds ``self.concept_dim`` columns (see
         # ``ShortTermMemory._stm_payload_dim = concept_dim``). Trim the
-        # positional / temporal columns at the PS→CS boundary so the
-        # signal-router-dispatched compose pass runs over a clean
-        # concept-dim slab. ``self.nWhat`` is the authoritative target
-        # width (matches the buffer allocation).
+        # incoming event to the STM/concept width so the write matches the
+        # buffer and the signal-router-dispatched compose pass runs over a
+        # clean concept-dim slab. ``self.concept_dim`` (== outputShape[1])
+        # is the authoritative target width and matches the buffer
+        # allocation; for the shipped what-only CS it equals ``nWhat``,
+        # but for a positional CS it is wider (keeping the where/when
+        # columns the reverse needs).
         primary = subspace.materialize()
-        _stm_dim = int(self.nWhat)
+        _stm_dim = int(self.concept_dim)
         if primary is not None and primary.shape[-1] != _stm_dim:
             primary = primary[..., :_stm_dim]
         # Task G auto-META on word learning: at stage 0 the incoming PS
@@ -10549,17 +11175,32 @@ class ConceptualSpace(Space):
         # identity in parallel mode, causing the reverse pipeline to
         # produce identical recon vectors per slot (and the
         # reconstruction report to show the same word in every slot).
+        # Task 3: explicit PREDICT-then-PERCEIVE. BEFORE writing the
+        # freshly-materialised event into the STM (the "perceive" step,
+        # which is the existing ``_stm_shift_and_push`` /
+        # ``_stm_set_all_slots`` call below, byte-for-byte unchanged), run
+        # the intra-sentence predictor from the RETAINED STM context and
+        # stash the held prediction. The prediction reads the PRE-perceive
+        # ``snapshot()`` so no separate physical shift is needed for
+        # correctness (see ``_stm_shift_for_predict`` docstring). The held
+        # prediction feeds ``L_intra = MSE(prediction, perceived)`` with
+        # the just-now event as the target.
         if folded.dim() == 3:
             if folded.shape[1] > 1:
+                # PARALLEL: predict the whole slab from prev STM, then
+                # perceive (write the slab as the slot stack).
+                self._stm_predict_then_perceive_parallel(folded)
                 self._stm_set_all_slots(folded)
             else:
                 # N == 1: serial per-word call.
                 idea = folded.squeeze(1)              # [B, D]
+                self._stm_predict_then_perceive_serial(idea)
                 self._stm_shift_and_push(idea)
             event_for_carrier = folded               # preserve [B, N, D]
         elif folded.dim() == 2:
             idea = folded                            # [B, D]
             event_for_carrier = folded.unsqueeze(1)   # [B, 1, D]
+            self._stm_predict_then_perceive_serial(idea)
             self._stm_shift_and_push(idea)
         else:
             # Defensive: degenerate shape — fall back to a no-op
@@ -10572,22 +11213,44 @@ class ConceptualSpace(Space):
         # downstream consumers see the conditioned vector.
         if self._c_prior is not None:
             prior = self._c_prior
-            if prior.dim() == 1:
-                prior = prior.unsqueeze(0)
-            if event_for_carrier.dim() == 3 and prior.dim() == 2:
-                if prior.shape[0] == 1:
-                    prior_b = prior.expand(
-                        event_for_carrier.shape[0], -1)
-                elif prior.shape[0] == event_for_carrier.shape[0]:
-                    prior_b = prior
-                else:
-                    K = max(1, event_for_carrier.shape[0]
-                            // max(1, prior.shape[0]))
-                    prior_b = prior.repeat_interleave(K, dim=0)
-                if prior_b.shape[-1] == event_for_carrier.shape[-1]:
-                    event_for_carrier = (
-                        event_for_carrier + prior_b.unsqueeze(1))
+            if (self._c_prior_slotwise and prior.dim() == 2
+                    and event_for_carrier.dim() == 3
+                    and prior.shape[-1] == event_for_carrier.shape[-1]):
+                # NEW (Task 8, plan §9): a predicted next-end-state SHAPE
+                # ``payload_hat[depth, D]`` -- one row per STM SLOT, NOT a
+                # batch-broadcast vector. Stage it across the FIRST ``depth``
+                # slots of ``event_for_carrier`` (clamped to the available N),
+                # broadcast over the batch axis. Slots beyond ``depth`` are
+                # left untouched.
+                B = event_for_carrier.shape[0]
+                N = event_for_carrier.shape[1]
+                depth = min(int(prior.shape[0]), int(N))
+                if depth > 0:
+                    add = torch.zeros_like(event_for_carrier)
+                    # [depth, D] -> [1, depth, D] -> broadcast over B.
+                    add[:, :depth, :] = (
+                        prior[:depth].unsqueeze(0).expand(B, -1, -1))
+                    event_for_carrier = event_for_carrier + add
+            elif prior.dim() == 1 or prior.dim() == 2:
+                # Legacy batch-broadcast path (byte-identical): a single
+                # sentence-prior vector added to ALL slots.
+                if prior.dim() == 1:
+                    prior = prior.unsqueeze(0)
+                if event_for_carrier.dim() == 3 and prior.dim() == 2:
+                    if prior.shape[0] == 1:
+                        prior_b = prior.expand(
+                            event_for_carrier.shape[0], -1)
+                    elif prior.shape[0] == event_for_carrier.shape[0]:
+                        prior_b = prior
+                    else:
+                        K = max(1, event_for_carrier.shape[0]
+                                // max(1, prior.shape[0]))
+                        prior_b = prior.repeat_interleave(K, dim=0)
+                    if prior_b.shape[-1] == event_for_carrier.shape[-1]:
+                        event_for_carrier = (
+                            event_for_carrier + prior_b.unsqueeze(1))
             self._c_prior = None
+            self._c_prior_slotwise = False
         # Write the pushed-idea event back to the carrier subspace so
         # downstream consumers (SymbolicSpace.forward via
         # ``_subspaceForSS``) see the bookkept event.
@@ -10874,6 +11537,13 @@ class SymbolicSpace(Space):
         self.taxonomy: dict = {}
         self.taxonomy_parent_map: dict = {}
         self.meta_pair_to_idx: dict = {}
+        # Tetralemma trust 4-tuple ``(t, f, b, n)`` (TRUE/FALSE/BOTH/
+        # NEITHER weights summing to 1) recorded on accepted learned-
+        # relation META nodes (Task 6c, doc/plans/2026-05-29-stm-serial-
+        # parallel-modes.md §7c). Keyed by META position; absent for META
+        # nodes that carry no trust posture (e.g. the percept<->symbol
+        # autobind METAs). Persisted via ``vocab_extras``.
+        self.meta_trust: dict = {}
         # LBG (Linde-Buzo-Gray) codebook-splitting state (2026-05-28).
         # When an SS row collects training pulls in opposite directions
         # (assignment-variance > threshold), split it into two perturbed
@@ -11014,16 +11684,6 @@ class SymbolicSpace(Space):
         self.impenetrable_overlap = _symbol_cfg("impenetrableOverlap", 0.0)
         self.impenetrable_variance = _symbol_cfg("impenetrableVariance", 0.0)
 
-        # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
-        # Default 0 (off). Server sets to 1 when processing the TruthSet,
-        # then resets to 0. The TruthLayer lives on ``WordSpace``; callers
-        # reach it via ``self.wordSubSpace.truth_layer`` (see forward() below
-        # and the truth-using paths in BasicModel).
-        try:
-            self.accumulateTruth = float(TheXMLConfig.space(section, "accumulateTruth"))
-        except (KeyError, TypeError, ValueError):
-            self.accumulateTruth = 0.0
-
         # Per-instance Gaussian region width used by ``area`` /
         # ``luminosity``. ``None`` when no calibrated extent is set;
         # the metrics migrated to the Mereology mixin (with a
@@ -11031,12 +11691,22 @@ class SymbolicSpace(Space):
         # on a global default.
         self.activeSigma = None
 
-        # Trust threshold for the per-cell record_batch path: activation
-        # norms ramp from 0 at norm=0 to 1 at norm=truthMinMagnitude. The
-        # legacy ``should_store`` two further gates (novelty/consistency)
-        # were dropped along with that function — under record_batch the
-        # codebook lookup at compact-time naturally dedupes near-zero and
-        # near-duplicate vectors against the existing prototype.
+        # ``truthMinMagnitude`` serves two roles now that ``accumulateTruth``
+        # is retired:
+        #   1. Gold-``<truth>`` recording gate. The recording block in
+        #      ``forward()`` fires only when this is set to its armed value
+        #      1.0. ``store_truths`` (and the server's TruthSet path) arms it
+        #      for a single forced epoch, records activations into the
+        #      ``WordSpace.truth_layer``, then resets it. The default (0.3,
+        #      below the armed value) means no recording during normal
+        #      training. The TruthLayer lives on ``WordSpace``; callers reach
+        #      it via ``self.wordSubSpace.truth_layer`` (see forward() below).
+        #   2. Per-cell magnitude weight for the record_batch path: activation
+        #      norms ramp from 0 at norm=0 to 1 at norm=truthMinMagnitude. The
+        #      legacy ``should_store`` two further gates (novelty/consistency)
+        #      were dropped along with that function — under record_batch the
+        #      codebook lookup at compact-time naturally dedupes near-zero and
+        #      near-duplicate vectors against the existing prototype.
         try:
             self._truth_min_magnitude = float(
                 TheXMLConfig.space(section, "truthMinMagnitude"))
@@ -11673,14 +12343,60 @@ class SymbolicSpace(Space):
         # overrides this tag to "meta" after the call returns.
         return self.ensure_ss_position(row, kind="ss")
 
+    @staticmethod
+    def _normalize_trust_tuple(trust):
+        """Validate + normalise a tetralemma trust 4-tuple.
+
+        Returns ``(t, f, b, n)`` as Python floats summing to 1 (the
+        catuskoti corner weights TRUE/FALSE/BOTH/NEITHER). Raises on a
+        wrong-arity, non-finite, or negative tuple -- a malformed trust
+        posture silently coerced to junk would corrupt every downstream
+        paraconsistent read, so this fails loud per the project policy.
+        A degenerate all-zero tuple normalises to uniform
+        ``(0.25, 0.25, 0.25, 0.25)`` (maximal uncertainty) rather than
+        dividing by zero.
+        """
+        vals = list(trust)
+        if len(vals) != 4:
+            raise ValueError(
+                f"SymbolicSpace trust tuple must have 4 components "
+                f"(t, f, b, n); got {len(vals)}: {trust!r}")
+        out = []
+        for v in vals:
+            fv = float(v)
+            if not math.isfinite(fv):
+                raise ValueError(
+                    f"SymbolicSpace trust tuple component is non-finite "
+                    f"(NaN/Inf): {trust!r}. A divergent trust posture "
+                    f"must surface, not be silently stored.")
+            if fv < 0.0:
+                raise ValueError(
+                    f"SymbolicSpace trust tuple component is negative: "
+                    f"{trust!r}. Catuskoti corner weights are "
+                    f"non-negative.")
+            out.append(fv)
+        total = sum(out)
+        if total <= 0.0:
+            return (0.25, 0.25, 0.25, 0.25)
+        return tuple(v / total for v in out)
+
     def insert_meta(self, ps_pos, ss_pos, fused_vec=None,
-                    *, ema=0.1):
+                    *, ema=0.1, trust=None):
         """Allocate (or update) a META node binding ``(ps_pos, ss_pos)``.
 
         Both ``ps_pos`` and ``ss_pos`` must be positive integer
         positions allocated through :meth:`allocate_position` (typically
         returned by :meth:`insert_percept` and :meth:`insert_symbol`).
         Returns the META node's position (positive int).
+
+        ``trust`` (optional) is a tetralemma 4-tuple ``(t, f, b, n)``
+        (TRUE/FALSE/BOTH/NEITHER weights; Task 6c) recorded on the
+        resulting META position in :attr:`meta_trust`. When ``None``
+        (the default, and the behaviour of every pre-Task-6c caller) no
+        trust is stored and the autobind / decode paths are byte-
+        identical. A supplied tuple is validated (4 finite non-negative
+        components) and stored; on an idempotent re-insert it overwrites
+        the prior trust so the most recent posture wins.
 
         Behaviour:
           * First call for the pair: allocates a fresh SS row via
@@ -11761,6 +12477,8 @@ class SymbolicSpace(Space):
                             "write a non-finite vector into the "
                             "codebook row.")
                     W.data[meta_row, :].copy_(blended)
+            if trust is not None:
+                self.meta_trust[existing] = self._normalize_trust_tuple(trust)
             return existing
         # Fresh META: compute the seed vector, then allocate the SS row.
         cb = self.subspace.what
@@ -11812,6 +12530,10 @@ class SymbolicSpace(Space):
                     f"SymbolicSpace.insert_meta: fused_vec must be shape "
                     f"[nDim={self.nDim}]; got {tuple(fused_vec.shape)}")
             seed = fused_vec.detach().to(W.device, W.dtype)
+        # Validate the trust tuple BEFORE allocating the row so a
+        # malformed posture raises without leaving a half-built META.
+        trust_norm = (self._normalize_trust_tuple(trust)
+                      if trust is not None else None)
         # Allocate a fresh SS row + position for the META; insert_symbol
         # tags as "ss", which we override to "meta" immediately.
         meta_pos = self.insert_symbol(init_vec=seed)
@@ -11821,7 +12543,67 @@ class SymbolicSpace(Space):
         self.taxonomy_parent_map[ps_pos_i] = meta_pos
         self.taxonomy_parent_map[ss_pos_i] = meta_pos
         self.meta_pair_to_idx[key] = meta_pos
+        if trust_norm is not None:
+            self.meta_trust[meta_pos] = trust_norm
         return meta_pos
+
+    def insert_relation(self, predicate_pos, idea1_pos, idea2_pos,
+                        *, trust=None):
+        """Bind a learned ternary relation ``predicate(idea1, idea2)``
+        into the META taxonomy with the PREDICATE as the parent node.
+
+        Task 6c (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7c).
+        Unlike :meth:`insert_meta` -- which binds a ``(ps, ss)`` PAIR
+        under a freshly-allocated META parent -- a relative sentence is a
+        ternary ``(predicate, idea1, idea2)`` whose natural shape is
+        "predicate is the relation node; the two ideas are its
+        children". So this makes ``predicate_pos`` itself the META node
+        and attaches ``idea1_pos`` / ``idea2_pos`` as its taxonomy
+        children, so ``taxonomy_children(predicate_pos)`` returns
+        ``[idea1_pos, idea2_pos]``.
+
+        All three arguments are positive integer positions (resolve
+        vectors to positions via :meth:`insert_symbol` / a
+        nearest-codebook lookup before calling). Returns
+        ``predicate_pos`` (the relation/META node).
+
+        ``trust`` (optional) is the tetralemma 4-tuple ``(t, f, b, n)``
+        stored on ``predicate_pos`` in :attr:`meta_trust`.
+
+        Idempotent on the ordered ``(predicate, idea1, idea2)`` triple:
+        a second call re-tags + (when supplied) overwrites the trust but
+        does not duplicate children. Tags ``predicate_pos`` as ``"meta"``
+        in :attr:`_pos_kind` so :meth:`is_meta` reports True and the LBG
+        / reverse-decode paths treat it as a relation node.
+        """
+        pred_i = int(predicate_pos)
+        a_i = int(idea1_pos)
+        b_i = int(idea2_pos)
+        for nm, v in (("predicate_pos", pred_i), ("idea1_pos", a_i),
+                      ("idea2_pos", b_i)):
+            if v <= 0:
+                raise ValueError(
+                    f"SymbolicSpace.insert_relation: {nm} must be a "
+                    f"positive position; got {v}.")
+        # Validate trust up front (fail loud before any taxonomy write).
+        trust_norm = (self._normalize_trust_tuple(trust)
+                      if trust is not None else None)
+        # Predicate becomes the relation (META) node; ideas are its
+        # children. Idempotent: dedupe children on re-insert.
+        existing_children = list(self.taxonomy.get(pred_i, []))
+        for child in (a_i, b_i):
+            if child not in existing_children:
+                existing_children.append(child)
+            self.taxonomy_parent_map[child] = pred_i
+        self.taxonomy[pred_i] = existing_children
+        self._pos_kind[pred_i] = "meta"
+        # Cache the ordered triple for idempotency parity with
+        # ``meta_pair_to_idx`` (keyed (idea1, idea2) -> predicate so a
+        # re-derived relation resolves to the same predicate node).
+        self.meta_pair_to_idx[(a_i, b_i)] = pred_i
+        if trust_norm is not None:
+            self.meta_trust[pred_i] = trust_norm
+        return pred_i
 
     def taxonomy_children(self, pos):
         """Return the children list (positive ints) for ``pos`` or ``[]``."""
@@ -11834,6 +12616,38 @@ class SymbolicSpace(Space):
     def is_meta(self, pos):
         """True iff ``pos`` is tagged as a META node in ``_pos_kind``."""
         return self._pos_kind.get(int(pos)) == "meta"
+
+    @torch.no_grad()
+    def nearest_ss_row(self, vec):
+        """Return ``(row, distance)`` of the nearest SS-codebook row to
+        ``vec`` ``[nDim]`` (L2 distance, no gradient).
+
+        Used by the Task 6c ``children_in_codebook`` factor to ask "is
+        this idea already a known concept?" -- a small nearest-row
+        distance means yes. Returns ``(None, inf)`` when the codebook is
+        empty/unbuilt. NaN/Inf in ``vec`` raises (a divergent query must
+        surface, not silently snap to row 0 via argmin).
+        """
+        cb = getattr(self.subspace, "what", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is None or W.numel() == 0 or W.ndim != 2 or W.shape[0] == 0:
+            return None, float("inf")
+        if not torch.is_tensor(vec):
+            vec = torch.as_tensor(vec, dtype=torch.float32)
+        v = vec.detach().to(device=W.device, dtype=W.dtype).reshape(-1)
+        if v.shape[0] != W.shape[1]:
+            raise ValueError(
+                f"SymbolicSpace.nearest_ss_row: vec width {v.shape[0]} "
+                f"!= codebook width {W.shape[1]}.")
+        if not torch.isfinite(v).all():
+            raise RuntimeError(
+                "SymbolicSpace.nearest_ss_row: vec contains NaN/Inf. "
+                "Numerical divergence must surface, not silently snap "
+                "to a codebook row.")
+        dists = (W - v.unsqueeze(0)).pow(2).sum(dim=-1)        # [V]
+        row = int(dists.argmin().item())
+        dist = float(dists[row].sqrt().item())
+        return row, dist
 
     # ------------------------------------------------------------------
     # LBG (Linde-Buzo-Gray) codebook splitting (2026-05-28)
@@ -11989,6 +12803,13 @@ class SymbolicSpace(Space):
                 f"{int(ps_i)},{int(ss_i)}": int(meta_i)
                 for (ps_i, ss_i), meta_i in self.meta_pair_to_idx.items()
             },
+            # Tetralemma trust 4-tuples on accepted learned-relation META
+            # nodes (Task 6c). Keyed by META position; values are 4-float
+            # lists summing to 1. Absent for pre-Task-6c checkpoints.
+            "meta_trust": {
+                int(k): [float(x) for x in v]
+                for k, v in getattr(self, "meta_trust", {}).items()
+            },
             # ``.where``-keyed taxonomy position counter + lookup tables
             # (doc/plans/2026-05-28-where-keyed-taxonomy.md). The counter
             # records the NEXT unused position so it resumes exactly
@@ -12098,6 +12919,14 @@ class SymbolicSpace(Space):
                 self._ss_row_to_pos = {
                     v: k for k, v in self._ss_pos_to_row.items()
                 }
+        # Tetralemma trust map (Task 6c). Loaded on BOTH the modern and
+        # legacy taxonomy paths -- it is orthogonal to the signed-int
+        # migration. Missing key (pre-Task-6c blob) leaves it empty.
+        mt = extras.get("meta_trust")
+        if isinstance(mt, dict):
+            self.meta_trust = {
+                int(k): tuple(float(x) for x in v) for k, v in mt.items()
+            }
 
     def _migrate_signed_int_taxonomy(self, tax, tp_blob, mp_blob):
         """Rekey a legacy signed-int taxonomy blob to positive-int
@@ -13312,23 +14141,29 @@ class SymbolicSpace(Space):
                 act,
                 torch.zeros_like(act))
 
-        if self.accumulateTruth > 0 and wordSubSpace is not None:
+        # Gold-truth recording gate: armed when ``truthMinMagnitude`` is set
+        # to its armed value 1.0 (store_truths does this for the forced
+        # recording epoch, then resets it). Off (< 1.0) during normal
+        # training, so no activations leak into the truth layer.
+        if self._truth_min_magnitude >= 1.0 and wordSubSpace is not None:
             truth_layer = getattr(wordSubSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
                 BK, N, D = act.shape
                 norms = act.norm(dim=-1)
+                # With the armed value 1.0, mag_score = clamp(norms, max=1.0)
+                # -- a per-cell magnitude weight in [0, 1].
                 mag_score = norms.clamp(max=self._truth_min_magnitude) \
                             / max(self._truth_min_magnitude, 1e-8)
                 vmask = self.subspace.valid_mask
                 if vmask is not None:
                     mag_score = mag_score \
                                 * vmask.flatten().unsqueeze(-1).to(mag_score.dtype)
-                trust = mag_score * float(self.accumulateTruth)
+                trust = mag_score
                 truth_layer.record_batch(
                     act.reshape(BK * N, D),
                     trust.reshape(BK * N),
-                    degree=float(self.accumulateTruth),
+                    degree=1.0,
                     basis=basis)
 
         if self._symbol_where is not None:

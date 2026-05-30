@@ -63,6 +63,17 @@
            XML enables a non-substrate rule, else parallel. Explicit
            values override the default. -->
       <xs:element name="conceptualMode" type="conceptualModeEnum" minOccurs="0"/>
+      <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
+           per-word router-fire gating for serial mode.
+             per-word  = fire wordSubSpace.compose once per word in the
+                         serial per-word loop (intra-predictor routing
+                         context); boundary fire OFF.
+             boundary  = fire only at the sentence boundary
+                         (_chart_compose_at_C / _chart_generate_from_stm);
+                         the inter-sentence predictor's routing snapshot.
+             both      = (DEFAULT) per-word AND boundary both fire.
+             off       = neither fires. -->
+      <xs:element name="routerWireSerial" type="routerWireSerialEnum" minOccurs="0"/>
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
@@ -109,6 +120,11 @@
            uniform = equal-width slices. -->
       <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
       <xs:element name="maxActivePerLayer" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Acceptance bar in [0, 1] for content-aware learned-relation
+           codebook insertion (read onto ConceptualSpace; overridable
+           per-space). Distinct from truthMinMagnitude (the gold-<truth>
+           recording gate); replaces the retired accumulateTruth knob. -->
+      <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
       <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
       <xs:element name="symbolLearning" type="symbolLearningType" minOccurs="0"/>
       <!-- Per-stage chart re-parse retired 2026-05-12 alongside chart-
@@ -168,6 +184,17 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="serial"/>
       <xs:enumeration value="parallel"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Task 4 per-word router-fire gating (doc/plans/2026-05-29-stm-
+       serial-parallel-modes.md §4). -->
+  <xs:simpleType name="routerWireSerialEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="per-word"/>
+      <xs:enumeration value="boundary"/>
+      <xs:enumeration value="both"/>
+      <xs:enumeration value="off"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -326,6 +353,17 @@
       <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
       <xs:element name="armaScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- In-STM autoregressive prediction (IntraSentenceLayer). Loss
+           weight on the per-word L_intra = MSE(predicted idea, observed
+           idea), added to the IR-loss path. The PI-then-Sigma predictor
+           is owned by ConceptualSpace. -->
+      <xs:element name="intraLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Inter-sentence end-state prediction (InterSentenceLayer's
+           inter-level IntraSentenceLayer instance). Loss weight on the
+           per-sentence L_inter = MSE(predicted next-end-state root,
+           observed root), summed over the discourse window. Mirrors
+           intraLossWeight. -->
+      <xs:element name="interLossWeight" type="nonNegativeFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -492,6 +530,8 @@
            unrolls the loop when K is shape-bucketed (BPE power-of-
            two quantisation). -->
       <xs:element name="perWordStemSerial" type="xs:boolean" minOccurs="0"/>
+      <!-- Per-space override of architecture.truthCriterion. -->
+      <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -510,7 +550,6 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
-      <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
@@ -606,6 +645,12 @@
       <xs:element name="armaP" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="armaQ" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="armaHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- Long-term-memory (LTM) chain capacity: the InterSentenceLayer
+           bounds its per-row chain of STM end-states (the AR sequence
+           used for inter-sentence prediction) at this many entries.
+           Separate from <truthMaxEntries> (TruthLayer's SS-codebook
+           capacity). Default 1024. -->
+      <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,
            chartTau, wMax, chartTopK, chartNoiseEps retired alongside
            the chart. The signal router (LanguageLayer) is the

@@ -91,7 +91,6 @@
     <nDim>12</nDim>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
-    <accumulateTruth>0</accumulateTruth>
     <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE
          path is active; the four regularizer knobs below operate on
          the codebook tensor. -->

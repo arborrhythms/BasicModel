@@ -153,7 +153,17 @@ argument/return order.
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<conceptualOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
 | `<parserBackend>` | `<WordSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
-| `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Activation-norm cap driving per-cell trust score in `TruthLayer.record_batch`. Codebook NN lookup at compact time dedupes near-zero/near-duplicate vectors. |
+| `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Gold-`<truth>` recording **gate** (repurposed). Armed at `1` by `store_truths`; the default `0.3` leaves recording off during training. Took over the gating role of the retired `<accumulateTruth>` knob. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `truthCriterion` | `<architecture>` / `<SymbolicSpace>` | 0.3 | Learn-score acceptance gate for learned relative-sentence relations (accept iff learn-score $\ge$ `truthCriterion`). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
+| `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
+| `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
+| `ltmCapacity` | `<WordSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+
+The relative-vs-absolute end-state machinery, the content-aware
+learn-score gate, and the tetralemma trust 4-tuple carried on accepted
+relative META edges are documented in
+[STM.md Section 9](STM.md#9-relative-vs-absolute-end-states).
 
 ## Contemplative Awareness Methods
 

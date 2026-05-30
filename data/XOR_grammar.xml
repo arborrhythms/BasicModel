@@ -82,7 +82,6 @@
     <nOutput>6</nOutput>
     <nDim>4</nDim>
     <nVectors>6</nVectors>
-    <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 

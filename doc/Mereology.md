@@ -166,6 +166,16 @@ $$
 
 When VQ is absent, trust falls back to $\|cb[i]\| / \max_j \|cb[j]\|$.
 
+> **Relative relations and tetralemma trust.** A relative sentence in
+> the `part` / `isEqual` predicate family is preserved at depth 3 as
+> `[predicate, idea1, idea2]` and may be learned into the codebook as a
+> ternary META edge (predicate as parent, the two ideas as children) via
+> `SymbolicSpace.insert_relation`. An accepted relation carries a
+> **tetralemma trust 4-tuple** $(t, f, b, n)$ (TRUE / FALSE / BOTH /
+> NEITHER, summing to $1$) from the TruthSet posture, gated by the
+> content-aware learn-score against `<truthCriterion>`. See
+> [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states).
+
 ### Diagnostics
 
 After `forward()`: `last_overlap_loss`, `last_variance`,

@@ -22,10 +22,12 @@ def reset_grammar():
     import util
     saved_configured = Language.TheGrammar._configured
     saved_start = Language.TheGrammar.start_symbol
+    saved_patterns = getattr(Language.TheGrammar, "start_patterns", (("S",),))
     saved_xml_root = getattr(util.TheXMLConfig, "_root", None)
     yield
     Language.TheGrammar._configured = False
     Language.TheGrammar.start_symbol = saved_start
+    Language.TheGrammar.start_patterns = saved_patterns
     if saved_xml_root is not None:
         util.TheXMLConfig._root = saved_xml_root
 
@@ -102,6 +104,35 @@ def test_start_symbol_alternate_root(reset_grammar):
     """)
     grammar = _load_inline_xml(xml)
     assert grammar.start_symbol == "ROOT"
+
+
+def test_multiple_start_patterns_with_compact_order_set(reset_grammar):
+    """Repeated ``<start>`` tags can define accepted unreduced forms."""
+    xml = textwrap.dedent("""\
+        <?xml version="1.0" ?>
+        <model>
+          <WordSpace>
+            <language>
+              <start>S45</start>
+              <start>S45 REL S45</start>
+              <grammar>
+                <S4>not(S4)</S4>
+                <S5>not(S5)</S5>
+              </grammar>
+            </language>
+          </WordSpace>
+        </model>
+    """)
+    grammar = _load_inline_xml(xml)
+    assert grammar.start_symbol == "S4"
+    assert grammar.start_patterns == (
+        ("S4",),
+        ("S5",),
+        ("S4", "REL", "S4"),
+        ("S5", "REL", "S5"),
+    )
+    assert grammar.is_start_pattern(("S4", "REL", "S4"))
+    assert grammar.is_start_pattern(("S5", "REL", "S5"))
 
 
 def test_start_symbol_persists_across_ensure_configured(reset_grammar):

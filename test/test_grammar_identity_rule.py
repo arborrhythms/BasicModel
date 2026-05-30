@@ -1,5 +1,5 @@
-"""Grammar identity rule (S -> S) — the no-op grammatical transition
-fired at padding columns of the static per-word loop.
+"""Grammar identity no-op (S -> S) used only as the runtime grammatical
+transition fired at padding columns of the static per-word loop.
 
 Doc: doc/plans/2026-05-20-static-per-word-loop-impl.md §0.
 """
@@ -19,7 +19,7 @@ import pytest
 
 def _load_mm_grammar():
     """Load MM_grammar.xml and force a fresh Grammar configuration so
-    ``TheGrammar.id_SS`` reflects the ``<rule>S = S</rule>`` entry."""
+    ``TheGrammar.id_SS`` reflects the configured runtime no-op."""
     from util import init_config
     init_config(path=str(_root / "data" / "MM_grammar.xml"),
                 defaults_path=str(_root / "data" / "model.xml"))
@@ -32,8 +32,8 @@ def _load_mm_grammar():
 def test_id_SS_resolves_to_identity_rule():
     g = _load_mm_grammar()
     assert g.id_SS is not None, (
-        "TheGrammar.id_SS must resolve after configure() when the "
-        "grammar XML contains <rule>S = S</rule>")
+        "TheGrammar.id_SS must resolve after configure() so the static "
+        "per-word loop has a padding no-op")
     rd = g.rules[g.id_SS]
     assert rd.lhs == g.start_symbol
     assert rd.rhs_symbols == (g.start_symbol,)
@@ -63,5 +63,5 @@ def test_reverse_rule_derived_for_identity():
                if r and r[1] == 'projectReverse'
                and g.start_symbol in r[0]]
     assert matched, (
-        "Identity forward rule S -> S must auto-derive a projectReverse "
+        "The runtime identity no-op must auto-derive a projectReverse "
         "entry in TheGrammar.reverse_rules.")

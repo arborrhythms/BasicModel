@@ -74,7 +74,6 @@
 	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
   </SymbolicSpace>

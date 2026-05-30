@@ -86,7 +86,6 @@
     <nDim>10</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>10</nOutputDim>
-    <accumulateTruth>0</accumulateTruth>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 

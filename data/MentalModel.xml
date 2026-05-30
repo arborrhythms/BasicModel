@@ -87,7 +87,6 @@
     <nVectors>128</nVectors>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <accumulateTruth>0</accumulateTruth>
     <tetralemmaOverride enabled="false" />
   </SymbolicSpace>
 

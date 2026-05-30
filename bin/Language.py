@@ -1,6 +1,6 @@
 
 
-import math, os, warnings
+import itertools, math, os, re, warnings
 from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 import numpy as np
@@ -79,12 +79,128 @@ def load_grammar(filename):
     body. Tier, invertibility, and any other class-level metadata come
     from the rule's ``GrammarLayer`` subclass via ``GRAMMAR_LAYER_CLASSES``
     (set later in ``Grammar.load_from_grammar_file``).
+
+    Compact ordered-category sugar is expanded later in
+    ``load_from_grammar_file``: e.g. ``S45`` in a rule body means
+    concrete alternatives ``S4`` and ``S5`` in the loaded rule table.
     """
     path = _GRAMMAR_DIR / filename
     if not path.exists():
         raise FileNotFoundError(f"Grammar file not found: {path}")
     root = _ET.parse(path).getroot()
     return _grammar_xml_to_dict(root)
+
+
+_COMPACT_ORDER_SET_RE = re.compile(r'\b([A-Z][A-Z_]*)([0-9]{2,})\b')
+
+
+def _expand_compact_order_sets_in_rule(rule):
+    """Expand compact ordered-category sugar in one rule string.
+
+    In ``.grammar`` files, a multi-digit order suffix denotes a small
+    set of concrete orders: ``S45`` expands to ``S4`` and ``S5``. The
+    expansion is source-level sugar only; runtime rule signatures still
+    carry exact single orders. Repeated uses of the same suffix in one
+    rule are correlated, so ``S45 = not(NOT_S45)`` expands pairwise
+    rather than as a Cartesian product.
+    """
+    if not isinstance(rule, str):
+        return [rule]
+    matches = list(_COMPACT_ORDER_SET_RE.finditer(rule))
+    if not matches:
+        return [rule]
+
+    order_sets = []
+    seen = set()
+    for match in matches:
+        digits = match.group(2)
+        if digits not in seen:
+            seen.add(digits)
+            order_sets.append(digits)
+
+    choices = [tuple(dict.fromkeys(digits)) for digits in order_sets]
+    expanded = []
+    for combo in itertools.product(*choices):
+        selected = dict(zip(order_sets, combo))
+
+        def repl(match):
+            prefix, digits = match.groups()
+            return f"{prefix}{selected[digits]}"
+
+        expanded.append(_COMPACT_ORDER_SET_RE.sub(repl, rule))
+    return expanded
+
+
+def _expand_compact_order_sets(cfg):
+    """Expand compact order-set sugar under every ``rule`` list."""
+    if isinstance(cfg, list):
+        out = []
+        for item in cfg:
+            out.extend(_expand_compact_order_sets(item))
+        return out
+    if not isinstance(cfg, dict):
+        return cfg
+    out = {}
+    for key, value in cfg.items():
+        if key == 'rule':
+            rules = value if isinstance(value, list) else [value]
+            expanded_rules = []
+            for rule in rules:
+                if isinstance(rule, dict) and '_' in rule:
+                    for expanded in _expand_compact_order_sets_in_rule(
+                            rule.get('_')):
+                        expanded_rule = dict(rule)
+                        expanded_rule['_'] = expanded
+                        expanded_rules.append(expanded_rule)
+                else:
+                    expanded_rules.extend(
+                        _expand_compact_order_sets_in_rule(rule))
+            out[key] = expanded_rules
+        else:
+            out[key] = _expand_compact_order_sets(value)
+    return out
+
+
+def _start_patterns_from_raw(start_raw, default='S'):
+    """Parse one or more ``<start>`` entries into concrete patterns.
+
+    Each pattern is a tuple of category tokens. Compact order-set sugar
+    is allowed here too: ``S45`` becomes ``("S4",)`` and ``("S5",)``,
+    while ``S45 REL S45`` becomes the two correlated patterns
+    ``("S4", "REL", "S4")`` and ``("S5", "REL", "S5")``.
+    """
+    if start_raw is None:
+        raw_items = [default]
+    elif isinstance(start_raw, list):
+        raw_items = start_raw
+    else:
+        raw_items = [start_raw]
+
+    patterns = []
+    seen = set()
+    for raw in raw_items:
+        text = str(raw).strip()
+        if not text:
+            continue
+        for expanded in _expand_compact_order_sets_in_rule(text):
+            pattern = tuple(part.strip() for part in expanded.split()
+                            if part.strip())
+            if pattern and pattern not in seen:
+                seen.add(pattern)
+                patterns.append(pattern)
+    if not patterns:
+        patterns = [(str(default).strip() or 'S',)]
+    return tuple(patterns)
+
+
+def _primary_start_symbol(patterns, default='S'):
+    """Pick the primary atomic start symbol from parsed start patterns."""
+    for pattern in patterns:
+        if len(pattern) == 1:
+            return pattern[0]
+    if patterns and patterns[0]:
+        return patterns[0][0]
+    return default
 
 
 def _grammar_xml_to_dict(node):
@@ -94,7 +210,8 @@ def _grammar_xml_to_dict(node):
     Element nodes with children become dicts; leaf element nodes contribute
     their stripped text. Repeated tags (most importantly ``<rule>``) merge
     into a list under that tag, matching the shape ``TheXMLConfig`` emits
-    for the legacy inline ``<grammar>...</grammar>`` block.
+    for the legacy inline ``<grammar>...</grammar>`` block. Attributes on
+    ``<rule>`` leaves are preserved as ``{"_": text, **attrs}``.
     """
     result = {}
     for child in node:
@@ -103,7 +220,8 @@ def _grammar_xml_to_dict(node):
             value = _grammar_xml_to_dict(child)
         else:
             text = (child.text or '').strip()
-            value = text
+            value = {'_': text, **child.attrib} if (
+                tag == 'rule' and child.attrib) else text
         if tag in result:
             if not isinstance(result[tag], list):
                 result[tag] = [result[tag]]
@@ -244,9 +362,9 @@ class Grammar:
     RuleDef = _namedtuple(
         'RuleDef',
         ['tier', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
-         'width_min', 'width_max'],
+         'width_min', 'width_max', 'query'],
     )
-    RuleDef.__new__.__defaults__ = (0, 0)  # width_min=0, width_max=0 default
+    RuleDef.__new__.__defaults__ = (0, 0, False)
 
     # Order-typing primitives (plan:
     # doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
@@ -293,13 +411,20 @@ class Grammar:
         # starts at 1 (treating V_sym=0). Used only by where_id_for_rule.
         # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
         self.symbol_vocab_size = 0
-        # Start symbol -- name of the nonterminal that marks a complete
-        # derivation. SyntacticLayer.compose tests row b's top-of-stack
-        # category against this name; matches signal a soft sentence
-        # boundary and trigger soft_reset(b) in the outer loop. Configurable
-        # via <start>S</start> in the language XML; falls back to "S"
-        # (the historical default) when unset.
+        # Start patterns -- accepted completed derivation shapes.
+        # ``start_symbol`` remains the primary single-category start for
+        # legacy identity-rule and reset code; ``start_patterns`` can also
+        # carry unreduced accepted forms such as ("S4", "REL", "S4").
+        # Configurable via one or more <start>...</start> entries; falls
+        # back to "S" (the historical default) when unset.
         self.start_symbol = "S"
+        self.start_patterns = (("S",),)
+        # Task 6a (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7):
+        # cache of rule_ids that produce a RELATIVE truth (the
+        # ``part`` / ``isEqual`` predicate family). Lazily computed by
+        # ``_relative_rule_id_set`` and invalidated on every rule-table
+        # bump. ``None`` == not yet computed.
+        self._relative_rule_ids_cache = None
 
     # -- Rule catalog --------------------------------------------------
 
@@ -495,6 +620,12 @@ class Grammar:
                 return idx
         return None
 
+    def is_start_pattern(self, categories):
+        """Return True iff ``categories`` is an accepted start pattern."""
+        self._ensure_configured()
+        pattern = tuple(str(c).strip() for c in categories if str(c).strip())
+        return pattern in set(self.start_patterns)
+
     def _fill_section(self, target, section_dict):
         """Read a parse / generate section, dispatching to per-tier
         rule lists when `<symbols>` / `<concepts>` / `<percepts>`
@@ -546,9 +677,11 @@ class Grammar:
                 if isinstance(entry, dict):
                     text = str(entry.get('_', '')).strip()
                     width_raw = entry.get('width', None)
+                    query_raw = entry.get('query', None)
                 else:
                     text = str(entry)
                     width_raw = None
+                    query_raw = None
                 if '=' not in text:
                     raise ValueError(
                         f"<rule> requires 'head = body' syntax, got: {text!r}")
@@ -560,6 +693,9 @@ class Grammar:
                     w_min, w_max = self._parse_width_attr(str(width_raw))
                     rule = rule._replace(
                         width_min=int(w_min), width_max=int(w_max))
+                if query_raw is not None:
+                    rule = rule._replace(
+                        query=self._parse_bool_attr(query_raw))
                 target.append(rule)
 
         # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
@@ -617,6 +753,14 @@ class Grammar:
             except ValueError:
                 return 0
         return (_one(lo_s), _one(hi_s))
+
+    @staticmethod
+    def _parse_bool_attr(value):
+        """Parse loose XML boolean attribute values."""
+        if isinstance(value, bool):
+            return value
+        text = str(value).strip().lower()
+        return text in ('1', 'true', 'yes', 'y', 'on')
 
     @staticmethod
     def _parse_category(token):
@@ -1020,22 +1164,33 @@ class Grammar:
         arity, function name, and return-value count come from the body
         and tier / invertibility come from the layer class.
 
-        An implicit identity rule (``S = S``, method_name=None) is added
-        when one isn't already present -- it's the no-op grammatical
-        transition the static per-word loop's cursor bookkeeping relies
-        on (see ``_find_identity_rule_id``).
+        If the grammar file contains ``<start>...</start>``, it sets the
+        accepted start patterns and primary start nonterminal for this
+        grammar. An implicit identity rule for the current start symbol
+        is added when one isn't already present; it's the no-op
+        grammatical transition the static per-word loop's cursor
+        bookkeeping relies on (see ``_find_identity_rule_id``).
         """
         cfg = load_grammar(filename)
+        if isinstance(cfg, dict):
+            start_raw = cfg.pop('start', None)
+            if start_raw is not None:
+                self.start_patterns = _start_patterns_from_raw(
+                    start_raw, default=self.start_symbol)
+                self.start_symbol = _primary_start_symbol(
+                    self.start_patterns, default=self.start_symbol)
+            else:
+                self.start_patterns = ((self.start_symbol,),)
+        cfg = _expand_compact_order_sets(cfg)
         cfg = self._ensure_identity_rule(cfg)
         self.configure(cfg)
         self._reassign_tiers_from_layer_classes()
 
-    @staticmethod
-    def _ensure_identity_rule(cfg):
-        """Return ``cfg`` augmented with an ``S = S`` rule in <compose> if
+    def _ensure_identity_rule(self, cfg):
+        """Return ``cfg`` with a start-symbol identity in <compose> if
         none is present (handles bare-dict, ``{'rule': [...]}``, and
         named-section ``{'compose': {...}}`` shapes)."""
-        identity_body = "S = S"
+        identity_body = f"{self.start_symbol} = {self.start_symbol}"
 
         def has_identity(section):
             if not isinstance(section, dict):
@@ -1095,7 +1250,7 @@ class Grammar:
         def fixup(rules):
             out = []
             for rule in rules:
-                cls = registry.get(rule.method_name)
+                cls = registry.get(_dispatch_method_name_for_rule(rule))
                 if cls is not None:
                     new_tier = getattr(cls, 'tier', rule.tier) or rule.tier
                     if new_tier != rule.tier:
@@ -1126,17 +1281,18 @@ class Grammar:
         """
         if self._configured:
             return
-        # <start>S</start> in WordSpace.language: the canonical name of
-        # the start nonterminal. Used by SyntacticLayer.compose to detect
-        # sentence completion (top-of-stack category == start_symbol)
-        # and signal soft_reset to the outer doc-streaming loop. Falls
-        # back to "S" (historical default) when unset.
+        # <start>...</start> in WordSpace.language: accepted completed
+        # derivation shapes. The primary single-category start is kept
+        # in ``start_symbol`` for legacy identity/reset code.
         try:
             start_raw = TheXMLConfig.get("WordSpace.language.start")
-            if start_raw is not None:
-                self.start_symbol = str(start_raw).strip() or "S"
+            self.start_patterns = _start_patterns_from_raw(
+                start_raw, default="S")
+            self.start_symbol = _primary_start_symbol(
+                self.start_patterns, default="S")
         except (KeyError, AttributeError):
-            pass
+            self.start_symbol = "S"
+            self.start_patterns = (("S",),)
 
         # Defensive: warn loudly if a deprecated <useGrammar> tag still
         # sits in the XML (the knob was retired 2026-05-13 but configs
@@ -1264,6 +1420,86 @@ class Grammar:
             if r.tier == 'S' and r.method_name is not None:
                 result[r.method_name] = i
         return result
+
+    # -- Relative-truth rule marker (Task 6a) --------------------------
+    #
+    # doc/plans/2026-05-29-stm-serial-parallel-modes.md §7. A RELATIVE
+    # truth is a binary predicate over two ideas (the ``part`` /
+    # ``isEqual`` family, ``REL_T`` in ``data/complete.grammar``); its
+    # serial sentence-boundary reduce must STOP at the depth-3 end-state
+    # ``[predicate, idea1, idea2]`` rather than collapsing to a single
+    # idea (which is the correct end-state for an ABSOLUTE truth). The
+    # marker below lets the reduce site ask "is this rule_id relative?".
+
+    # Op-name FALLBACK set. Primary detection is grammar-driven
+    # (``lhs`` == a relative start category, below); these op names are
+    # the secondary signal for grammars that don't expose a named
+    # relative start. Kept in sync with the predicate family in
+    # ``data/complete.grammar`` (``isEqual`` / ``queryPart`` /
+    # ``assertPart``); ``part`` is included for the plan's nominal
+    # ``part``-family naming even though the current grammar spells it
+    # ``queryPart`` / ``assertPart``.
+    _RELATIVE_OP_NAMES = frozenset(
+        {'isEqual', 'queryPart', 'assertPart', 'part'})
+
+    def _relative_start_categories(self):
+        """Return the set of category symbols that head a RELATIVE start.
+
+        Grammar-driven primary signal for ``is_relative_rule``. The
+        ``<start name="relative_truth">REL_T</start>`` *name* is NOT
+        retained through parse (``_grammar_xml_to_dict`` drops non-rule
+        attributes), so -- per the plan's documented, accepted fallback
+        -- a single-symbol start pattern is treated as the relative
+        start iff its symbol is ``"REL_T"``. When the grammar exposes no
+        ``REL_T`` start (e.g. the absolute-only MM_xor / MM_5M
+        grammars), this returns the empty set and NO rule is relative by
+        lhs (op-name fallback still applies, but those absolute grammars
+        carry none of the relative ops either -> nothing relative, which
+        is the conservative correct answer).
+        """
+        cats = set()
+        for pattern in (self.start_patterns or ()):
+            if len(pattern) == 1 and pattern[0] == "REL_T":
+                cats.add(pattern[0])
+        return cats
+
+    def _relative_rule_id_set(self):
+        """Cached set of rule_ids that produce a RELATIVE truth.
+
+        A rule is relative iff EITHER
+          * its ``lhs`` is a relative start category (primary,
+            grammar-driven -- see ``_relative_start_categories``), OR
+          * its ``method_name`` is in :data:`_RELATIVE_OP_NAMES`
+            (fallback op-name set).
+        Computed once per rule-table version; invalidated by
+        ``_bump_rule_table_version``.
+        """
+        self._ensure_configured()
+        cache = self._relative_rule_ids_cache
+        if cache is not None:
+            return cache
+        rel_starts = self._relative_start_categories()
+        ids = set()
+        for i, r in enumerate(self.rules):
+            lhs = getattr(r, 'lhs', None)
+            mn = getattr(r, 'method_name', None)
+            if (lhs in rel_starts) or (mn in self._RELATIVE_OP_NAMES):
+                ids.add(i)
+        self._relative_rule_ids_cache = ids
+        return ids
+
+    def is_relative_rule(self, rule_id):
+        """Return True iff ``rule_id`` produces a RELATIVE truth.
+
+        See :meth:`_relative_rule_id_set`. Out-of-range ids and ids that
+        cannot be coerced to int return False (conservative: an unknown
+        rule is not relative).
+        """
+        try:
+            rid = int(rule_id)
+        except (TypeError, ValueError):
+            return False
+        return rid in self._relative_rule_id_set()
 
     # All compositional rules live on the unified SyntacticLayer class
     # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
@@ -1394,6 +1630,10 @@ class Grammar:
         self._rule_table_version_counter = self.rule_table_version + 1
         # Drop the packed cache so the next read rebuilds.
         self._rule_table_packed_cache = None
+        # Task 6a: the relative-rule set is derived from ``self.rules``
+        # + ``start_patterns``; both can change on a rule-table bump
+        # (configure / tier-reassign / legacy load), so invalidate.
+        self._relative_rule_ids_cache = None
 
 TheGrammar = Grammar()
 
@@ -2814,6 +3054,7 @@ class IsEqualLayer(GrammarLayer):
         """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
+
 class PartLayer(GrammarLayer):
     """``S -> part(S, S)`` -- mereological part-of on the bivector
     codebook.
@@ -2874,6 +3115,28 @@ class PartLayer(GrammarLayer):
         """Drive the reverse / generation pass."""
         return self.reverse(parent)
 
+
+class AssertPartLayer(PartLayer):
+    """Assertive parthood relation; grammar-level alias for ``part``."""
+    rule_name = "assertPart"
+
+
+def _truth_bivector_like(score, template):
+    """Broadcast a scalar truth score into the bivector shape of template."""
+    pos = score.to(device=template.device, dtype=template.dtype)
+    neg = torch.zeros_like(pos)
+    truth = torch.stack([pos, neg], dim=-1)        # [B, 2]
+    if template.dim() < 3:
+        return truth
+    V = template.shape[1]
+    rest_dim = template.shape[-1] - 2
+    if rest_dim > 0:
+        tail = torch.zeros(truth.shape[0], rest_dim,
+                           dtype=template.dtype, device=template.device)
+        truth = torch.cat([truth, tail], dim=-1)
+    return truth.unsqueeze(1).expand(-1, V, -1)
+
+
 class QueryLayer(GrammarLayer):
     """``S -> query(S, S)`` -- mereological-truth query "is A part
     of B?" answered geometrically against the bivector codebook.
@@ -2916,20 +3179,7 @@ class QueryLayer(GrammarLayer):
         carrying ``[pos=parthood, neg=0]``.
         """
         parthood = _parthood_geometric(left, right)    # [B] in [0, 1]
-        pos = parthood.to(dtype=right.dtype)
-        neg = torch.zeros_like(pos)
-        truth = torch.stack([pos, neg], dim=-1)        # [B, 2]
-        if right.dim() < 3:
-            return truth
-        V = right.shape[1]
-        rest_dim = right.shape[-1] - 2
-        if rest_dim > 0:
-            # Match right's nWhere/nWhen tail by zero-padding so the
-            # caller can still do bivector slicing on [..., :2].
-            tail = torch.zeros(truth.shape[0], rest_dim,
-                               dtype=right.dtype, device=right.device)
-            truth = torch.cat([truth, tail], dim=-1)
-        return truth.unsqueeze(1).expand(-1, V, -1)
+        return _truth_bivector_like(parthood, right)
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
@@ -2944,6 +3194,59 @@ class QueryLayer(GrammarLayer):
 
     def generate(self, parent):
         """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
+class QueryPartLayer(QueryLayer):
+    """Interrogative parthood relation; grammar-level alias for ``query``."""
+    rule_name = "queryPart"
+
+
+class QueryEqualLayer(QueryLayer):
+    """Interrogative equality relation answered as mutual parthood."""
+    rule_name = "queryEqual"
+
+    def forward(self, left, right):
+        equal = (
+            _parthood_geometric(left, right)
+            * _parthood_geometric(right, left))
+        return _truth_bivector_like(equal, right)
+
+
+def _dispatch_method_name_for_rule(rule):
+    """Return the runtime GrammarLayer op for a parsed rule.
+
+    The grammar can keep one relation name while using ``query="true"``
+    to request answer-producing semantics.
+    """
+    method = getattr(rule, 'method_name', None)
+    if getattr(rule, 'query', False) and method == 'isEqual':
+        return 'queryEqual'
+    return method
+
+
+class ExistLayer(GrammarLayer):
+    """Existential truth wrapper for absolute-truth start forms."""
+    rule_name        = "exist"
+    arity            = 1
+    invertible       = False
+    lossy            = False
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return x
+
+    def reverse(self, parent):
+        return parent
+
+    def compose(self, x):
+        return self.forward(x)
+
+    def generate(self, parent):
         return self.reverse(parent)
 
 
@@ -3041,11 +3344,15 @@ GRAMMAR_LAYER_CLASSES = {
     'isEqual':      IsEqualLayer,
     'equal':        EqualLayer,
     'part':         PartLayer,
+    'assertPart':   AssertPartLayer,
     'true':         TrueLayer,
     'false':        FalseLayer,
     'swap':         SwapLayer,
     'copy':         CopyLayer,
     'query':        QueryLayer,
+    'queryEqual':   QueryEqualLayer,
+    'queryPart':    QueryPartLayer,
+    'exist':        ExistLayer,
     'area':         AreaLayer,
     'luminosity':   LuminosityLayer,
     'isaPart':      IsaPartLayer,
@@ -4725,6 +5032,10 @@ class BinaryStructuredReductionLayer(nn.Module):
         return torch.stack(
             [x, r_padded, x_shift, pad_slab.expand_as(x)], dim=2)
 
+    # CS-side execution stage: this applies the chosen reductions to the
+    # concept tensors (``op(left, right)`` over self.ops in
+    # _stacked_reduced), the counterpart to WordSubSpace.compose's
+    # SS-side analysis. See WordSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None,
                 position_tier=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
@@ -6487,6 +6798,11 @@ class WordSubSpace(SubSpace):
                     "WordSpace", "armaQ", default=2) or 2)
                 arma_hidden = TheXMLConfig.space(
                     "WordSpace", "armaHiddenDim", default=None)
+                # LTM chain capacity (Task 7, plan §8) — same read
+                # pattern as armaP/armaQ; bounds the per-row STM
+                # end-state chain on the InterSentenceLayer.
+                ltm_capacity = int(TheXMLConfig.space(
+                    "WordSpace", "ltmCapacity", default=1024) or 1024)
                 # Pre-existing minor: WordSubSpace IS a SubSpace (no
                 # nested ``self.subspace``); use object.__getattribute__
                 # to avoid nn.Module.__getattr__ raising on the missing
@@ -6502,8 +6818,21 @@ class WordSubSpace(SubSpace):
                     hidden_dim=(int(arma_hidden)
                                 if arma_hidden is not None else None),
                     concept_dim=int(concept_dim),
+                    ltm_capacity=ltm_capacity,
                 )
+                # L_inter weight (Task 8, plan §9): read the new
+                # <architecture><training><interLossWeight> knob (default
+                # 0.1, mirroring <intraLossWeight>) and gate the inter-level
+                # predictor's loss accumulation with it. The model also reads
+                # this weight (see BasicModel) to scale the consumed term.
+                _inter_w = float(
+                    TheXMLConfig.training("interLossWeight", 0.1) or 0.1)
+                self.discourse.set_inter_loss_weight(_inter_w)
                 self.layers.append(self.discourse)
+                # ``self.discourse.parameters()`` now also enumerates the
+                # inter-level ``_inter_predictor`` (registered as a submodule
+                # via attribute assignment) and ``cast``, so this single loop
+                # exposes every InterSentenceLayer param to the optimizer.
                 for p in self.discourse.parameters():
                     if all(p is not q for q in self.params):
                         self.params.append(p)
@@ -6552,9 +6881,9 @@ class WordSubSpace(SubSpace):
 
         # Per-source-row sentence-completed signal driven by
         # SyntacticLayer.compose: True for row b when this tick's parse
-        # derivation reduced to Grammar.start_symbol. Outer doc-streaming
-        # loop drains via drain_sentence_completed() after each runBatch
-        # and dispatches soft_reset(batch=b) for True rows. Host-side
+        # derivation matches a configured Grammar start pattern. Outer
+        # doc-streaming loop drains via drain_sentence_completed() after
+        # each runBatch and dispatches soft_reset(batch=b). Host-side
         # list (no GPU sync); resized to B by ensure_microbatch.
         self._sentence_completed = [False] * self.batch
 
@@ -7378,6 +7707,39 @@ class WordSubSpace(SubSpace):
         signal router (``self.languageLayer``) is the canonical parser.
         The ``<parserBackend>`` and ``<routerKind>`` knobs that gated
         the legacy paths raise loudly at config load.
+
+        SS-analysis / CS-execution split
+        --------------------------------
+        Conceptually this is the SS-side analysis stage: a soft
+        superposition over the taxonymic codebook that selects, per
+        tier, a hard rule list (the returned ``current_rules`` dict,
+        ``{tier: [rule_id, ...]}``). The CS-side execution stage --
+        actually applying the chosen reductions (lift / lower / union /
+        intersection / swap / quantize / not) to the concept tensors --
+        runs in ``ConceptualSpace.forward`` (and the SymbolicSpace
+        stack-route path) and the per-tier ``SyntacticLayer`` cursors
+        during reverse. Only lift / lower / union / intersection consult
+        the codebook (inverse-recommended via ``Ops.disjunctionReverse``
+        / ``Ops.conjunctionReverse``); swap / quantize / not are
+        tensor-only.
+
+        Implementation caveat (read before trusting the split as a code
+        boundary): on the DEFAULT-ONLY fast path the split holds
+        cleanly -- ``compose`` emits ``current_rules`` from the grammar
+        XML and runs NO tensor reduction, and the per-tier
+        ``SyntacticLayer.forward`` cursors execute the unary pi / sigma
+        fold (CS-side). On the FULL-ROUTER path, however,
+        ``LanguageLayer.compose`` currently does BOTH: it selects the
+        rules AND folds the slab tensorially through the op modules
+        (``BinaryStructuredReductionLayer.forward`` -> ``op(left,
+        right)``), caching the [B, 1, D] root in ``_last_root_state``.
+        The per-tier ``SyntacticLayer.forward`` / ``reverse`` then
+        deliberately SKIP re-execution on that path (guarded by
+        ``not _grammar_is_default_only``) precisely because re-running
+        the ops would double-apply them. So in the full-router case the
+        SS-analysis and CS-execution stages are co-located inside
+        ``LanguageLayer.compose`` rather than separated across the
+        modules named above. See plan task 5 follow-up.
         """
         # Per-compose cursor reset. The OLD semantics zeroed each
         # per-tier SyntacticLayer cursor lazily on every compose() call
@@ -7455,6 +7817,16 @@ class WordSubSpace(SubSpace):
         the signal router (``self.languageLayer``) is the canonical
         parser. The retired chart and STM shift-reduce dispatch paths
         are gone.
+
+        Reverse mirror of the SS-analysis / CS-execution split (see
+        ``compose``): this populates ``self.generate_rules`` (the hard
+        reverse rule list per tier). On the default-only path the
+        CS-side execution stage is the per-tier ``SyntacticLayer.reverse``
+        cursors, which pop ``generate_rules`` last-applied-first and run
+        each rule's inverse fold. On the full-router path
+        ``LanguageLayer.generate`` handles the inverse routing
+        tensorially and ``SyntacticLayer.reverse`` is a cursor-advance
+        no-op (same co-location caveat as ``compose``).
         """
         self._generate_generation += 1
         if self._grammar_is_default_only:
@@ -7683,7 +8055,8 @@ class WordSubSpace(SubSpace):
             rule_name = rule.method_name
             if not rule_name:
                 continue
-            layer = self._resolve_rule_layer(tier, rule_name)
+            layer = self._resolve_rule_layer(
+                tier, _dispatch_method_name_for_rule(rule))
             if layer is None:
                 continue
             by_tier_arity.setdefault((tier, arity), []).append(
@@ -8322,8 +8695,8 @@ class WordSubSpace(SubSpace):
 
         ``_sentence_completed`` is a host-side ``list[bool]`` of length B
         that ``SyntacticLayer.compose`` appends into when a row's
-        derivation reduces to ``Grammar.start_symbol``. The outer
-        doc-streaming loop drains it after each ``runBatch``.
+        derivation matches a configured ``Grammar.start_patterns`` entry.
+        The outer doc-streaming loop drains it after each ``runBatch``.
         """
         # Lazy-init so callers (and Reset) work before the first compose
         # has populated the list.

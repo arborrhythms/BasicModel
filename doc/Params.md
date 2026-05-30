@@ -35,7 +35,8 @@ sub-elements `<training>` and `<data>` (see below).
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: every Layer uses `W_eff = bias * W + temp * noise`. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
-| `conceptualMode` | string | `"parallel"` | `parallel` (whole-slab `[B, N, D]` forward; required for the butterfly cascade), `serial` (per-word `[B, 1, D]`). The class-level default on `BaseModel` is `parallel` (2026-05-29). |
+| `conceptualMode` | string | `"parallel"` | `parallel` (whole-slab `[B, N, D]` forward; required for the butterfly cascade), `serial` (per-word `[B, 1, D]`). The class-level default on `BaseModel` is `parallel` (2026-05-29). See [STM.md](STM.md#2-serial-sequencing). |
+| `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `wordSubSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -117,6 +118,8 @@ Training loop and I/O.
 | `sentencePrediction` | bool | `false` | Enables `InterSentenceLayer`, an ARMA(p, q) predictor over sentence representations. |
 | `armaScale` | float | `0.1` | Loss weight for the ARMA sentence-prediction MSE. |
 | `sentencePrimingScale` | float | `0.05` | AR prediction cast into `concept_dim` and added as a bias to `concept_input` before the sigma-pi loop. Scaled by `confidence * sentencePrimingScale`. |
+| `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](STM.md#6-intrasentencelayer). |
+| `interLossWeight` | float | `0.1` | Loss weight on the inter-sentence next-end-state term $\mathcal{L}_\text{inter} = \mathrm{MSE}(\hat{p}, p)$ from `InterSentenceLayer`'s inter-level predictor (roots over the LTM chain). Mirrors `intraLossWeight`. `0` disables. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 
 #### `<trainEmbedding>` --- Embedding Update Modes
 
@@ -172,7 +175,7 @@ binary rule:
 
 Transitive SVO is produced compositionally via typed grammar rules such
 as `S -> S VO` / `VO -> V O`, or via STM `ParseState` extraction for
-`S = lift(NP, VP)` over `VP = intersection(V, O)`. Grammar mode is
+a subject lift over a transitive verb-phrase derivation. Grammar mode is
 derived from the loaded grammar.
 
 ---
@@ -242,7 +245,7 @@ Transforms perceptual features into abstract concepts via Sigma layers
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PerceptualSpace). Required by `MM_xor.xml`. |
-| `stmCapacity` | int | `7` | STM ring depth (Miller, 7±2). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
+| `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band; also the `wMax` fallback). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
 `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`.
@@ -277,7 +280,8 @@ perception and output. See [Language.md](Language.md) for the design.
 | `commitmentBeta` | float | `0.25` | VQ-VAE commitment-loss $\beta$. Active whenever `<codebook>quantize</codebook>` is set (2026-05-29: the prior `<useVQVAE>` toggle was retired; codebook training is implicit). |
 | `decorrelationWeight` | decimal | `0.0` | `ImpenetrableLayer` decorrelation regularizer on codebook rows. |
 | `spectralFlatnessWeight` | decimal | `0.0` | `ImpenetrableLayer` spectral-flatness regularizer. |
-| `truthMinMagnitude` | decimal | `0.3` | Minimum magnitude before a SymbolicSpace activation contributes to TruthLayer commit. |
+| `truthMinMagnitude` | decimal | `0.3` | Gold-`<truth>` **recording gate** (repurposed; no longer a per-activation magnitude floor). Recording is armed when this is set to `1`; `store_truths` (and the server's TruthSet path) arms it. The default `0.3` leaves gold-`<truth>` recording **off** during training. Took over the gating role of the now-retired `<accumulateTruth>` knob. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `truthCriterion` | unitInterval | `0.3` | Learn-score **acceptance gate** for learned relative-sentence relations. A relation `predicate(idea1, idea2)` is inserted into the SS codebook iff its learn-score $\ge$ `truthCriterion` (learn-score $= \text{children\_in\_codebook} \times \text{is\_truth\_obvious} \times \text{resolves\_contradiction}$). At `1` nothing is learned; at `0` everything is. Per-space override of the `<architecture>` value. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 
 SymbolicSpace owns one
 `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=monotonic)`
@@ -311,7 +315,8 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
-| `truthMaxEntries` | int | `1024` | TruthLayer LTM capacity. |
+| `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
+| `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 | `parserBackend` | string | `"chart"` | Parser backend: `chart`, `stm`, or `parallel`. STM requires an attached knowledge artifact. |
 | `routerKind` | string | `"chart"` | Chart-backend router: `chart` or `signal`. |
 | `chartCollapse` | string | `"root"` | Soft-superposition chart output: `root` (single root sentence node, other positions zero) or `broadcast` (replicate root across all positions). |

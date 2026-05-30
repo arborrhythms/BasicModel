@@ -49,6 +49,22 @@
          the mode is documented at the config level. -->
     <!-- <conceptualMode>serial|parallel</conceptualMode> -->
 
+    <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
+         per-word router-fire gating for serial mode.
+           per-word  = fire wordSubSpace.compose once per word in the
+                       serial per-word loop (the intra-predictor's
+                       routing context); boundary fire OFF.
+           boundary  = fire only at the sentence boundary
+                       (_chart_compose_at_C / _chart_generate_from_stm);
+                       the inter-sentence predictor's routing snapshot.
+           both      = (DEFAULT) per-word during training so the
+                       intra-predictor sees routing context, AND boundary
+                       still fires for the inter-sentence predictor.
+           off       = neither fires.
+         Default ``both`` preserves the pre-existing boundary-fire
+         behaviour. -->
+    <routerWireSerial>both</routerWireSerial>
+
 
     <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
@@ -118,6 +134,15 @@
     <conceptualWidth>tapered</conceptualWidth>
     <maxActivePerLayer>8</maxActivePerLayer>
     <codebookRetire>false</codebookRetire>
+
+    <!-- Acceptance bar in [0, 1] for content-aware learned-relation
+         insertion into the relative-sentence codebook (read onto
+         ConceptualSpace; overridable per-space). 1 = nothing learned
+         (highest bar); 0 = everything learned (no bar). The learn_score
+         gating that consumes this is wired by a later task. Distinct from
+         truthMinMagnitude (the gold-<truth> recording gate); replaces the
+         retired per-sentence truth accumulator (accumulateTruth). -->
+    <truthCriterion>0.3</truthCriterion>
 
     <!-- Runtime symbol-learning hooks. Disabled by default. -->
     <symbolLearning>
@@ -203,6 +228,23 @@
            a bias to concept_input before the sigma-pi loop.  Scaled
            by confidence * sentencePrimingScale.  Default small. -->
       <sentencePrimingScale>0.05</sentencePrimingScale>
+
+      <!-- In-STM autoregressive prediction (IntraSentenceLayer, STM
+           serial/parallel modes plan).  Loss weight on the per-word
+           L_intra = MSE(predicted idea, observed idea) added to the
+           IR-loss path.  The PI-then-Sigma predictor itself is owned by
+           ConceptualSpace; this scales its contribution to the total
+           loss. -->
+      <intraLossWeight>0.1</intraLossWeight>
+
+      <!-- Inter-sentence end-state prediction (InterSentenceLayer's
+           inter-level IntraSentenceLayer instance, STM serial/parallel
+           modes plan §9).  Loss weight on the per-sentence L_inter =
+           MSE(predicted next-end-state root, observed root) summed over
+           the discourse window and added to the loss path.  Mirrors
+           <intraLossWeight>; the predictor reads the LTM end-state chain
+           on the InterSentenceLayer. -->
+      <interLossWeight>0.1</interLossWeight>
     </training>
 
     <server>
@@ -222,6 +264,12 @@
 
     <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
+
+    <!-- Long-term-memory (LTM) chain capacity (InterSentenceLayer):
+         bounds the per-row chain of STM end-states (the AR sequence
+         used for inter-sentence prediction).  Separate from
+         <truthMaxEntries>.  Default 1024. -->
+    <ltmCapacity>1024</ltmCapacity>
 
     <!-- Stage 3 cleanup (2026-05-27): the chart and STM shift-reduce
          parsers retired in favour of the signal router (LanguageLayer).

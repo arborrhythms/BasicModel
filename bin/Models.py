@@ -331,6 +331,10 @@ class BaseModel(Mereology, nn.Module):
     # + predictive cosine pair.
     arma_scale = 0.1
     sentence_priming_scale = 0.05
+    # Inter-sentence end-state prediction loss weight (Task 8, plan §9).
+    # ``InterSentenceLayer.consume_inter_loss`` returns a per-sentence-mean
+    # MSE which ``runBatch`` weights by this before adding to ``TheError``.
+    inter_loss_weight = 0.1
 
     @staticmethod
     def load_config(config_path=None):
@@ -661,21 +665,43 @@ class BaseModel(Mereology, nn.Module):
             self.inputSpace._per_word_enabled = bool(
                 self.conceptualMode == "serial")
 
-        # Attention on ConceptualSpace violates position locality required
-        # by serial_mode; downgrade conceptualSpace only. PerceptualSpace
-        # is unaffected.
-        if (self.serial_mode
-                and getattr(self, 'conceptualSpace', None) is not None
-                and getattr(self.conceptualSpace, 'hasAttention', False)):
-            import warnings
-            warnings.warn(
-                "ConceptualSpace.hasAttention=True violates the position-"
-                "locality constraint required by serial_mode; forcing "
-                "conceptualSpace.serial_mode=False. PerceptualSpace "
-                "serial_mode is unaffected.",
-                RuntimeWarning,
-            )
-            self.conceptualSpace.serial_mode = False
+        # DOCTRINE (Task 4, doc/plans/2026-05-29-stm-serial-parallel-modes.md
+        # §"Serial mode = attentional filtering"): serial mode **is** the
+        # attentional-filtering regime. The former guard here forced
+        # ``conceptualSpace.serial_mode = False`` whenever
+        # ``serial_mode and conceptualSpace.hasAttention`` on the theory
+        # that attention violates the position-locality serial streaming
+        # required. That theory is retired: MentalModel.xml runs serial
+        # **with** attention by design (attention narrows the per-word
+        # pipeline — a focused beam rather than a position-locality
+        # violation). The guard is lifted; serial + attention is now the
+        # supported, documented, trained regime. (No downgrade is applied.)
+
+        # Per-word router-fire gating knob ``<architecture><routerWireSerial>``
+        # (Task 4 / plan §4). Values:
+        #   * ``per-word`` — fire ``wordSubSpace.compose`` once per word in
+        #     the serial per-word loop (the intra-predictor's routing
+        #     context); boundary fire OFF.
+        #   * ``boundary`` — fire only at the sentence boundary
+        #     (``_chart_compose_at_C`` / ``_chart_generate_from_stm``); the
+        #     inter-sentence predictor's routing snapshot.
+        #   * ``both`` (DEFAULT) — per-word during training so the
+        #     intra-predictor sees routing context, AND boundary still
+        #     fires for the inter-sentence predictor. Default ``both``
+        #     preserves the pre-existing boundary-fire behaviour.
+        #   * ``off`` — neither fires.
+        # Read with the same accessor idiom as the sibling
+        # ``architecture.conceptualMode`` knob two reads above (the
+        # ``<routerWireSerial>`` element is a direct child of
+        # ``<architecture>``, not under ``<training>``).
+        _rws_raw = TheXMLConfig.get(
+            "architecture.routerWireSerial", default=None)
+        _rws = (str(_rws_raw).strip() if _rws_raw is not None else "both")
+        if _rws not in ("per-word", "boundary", "both", "off"):
+            raise ValueError(
+                f"<architecture><routerWireSerial> must be one of "
+                f"'per-word', 'boundary', 'both', 'off' (got {_rws_raw!r}).")
+        self.router_wire_serial = _rws
 
         # InterSentenceLayer ARMA(p, q) loss weight. ``InterSentenceLayer.observe``
         # returns a per-batch MSE which ``runBatch`` weights by
@@ -685,6 +711,12 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training("armaScale", 0.1) or 0.1)
         self.sentence_priming_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
+        # Inter-sentence end-state prediction loss weight (Task 8, plan §9).
+        # Mirrors ``arma_scale`` / ``intra_loss_weight``: ``runBatch`` scales
+        # the consumed ``L_inter`` by this. Active only when the discourse
+        # layer is present (``<training><sentencePrediction>`` true).
+        self.inter_loss_weight = float(
+            TheXMLConfig.training("interLossWeight", 0.1) or 0.1)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -1976,10 +2008,13 @@ class BasicModel(BaseModel):
         """Encode truth entries via runEpoch and store in WordSpace.truth_layer.
 
         Truths are processed through the full pipeline by running a
-        standard inference epoch.  SymbolicSpace.forward() records raw
-        activations into the TruthLayer via ``self.wordSubSpace.truth_layer``.
-        After the epoch completes, each stored activation is scaled by
-        its DegreeOfTruth.
+        standard inference epoch.  Recording is armed by setting
+        ``symbolicSpace.truthMinMagnitude`` to its armed value 1; while
+        armed, SymbolicSpace.forward() records raw activations into the
+        TruthLayer via ``self.wordSubSpace.truth_layer``. The knob is
+        reset afterward so normal training does not record. After the
+        epoch completes, each stored activation is scaled by its
+        DegreeOfTruth.
 
         Args:
             entries: list of dicts with 'content' and 'trust' keys.
@@ -2002,17 +2037,18 @@ class BasicModel(BaseModel):
         if not texts:
             return
 
-        # 2. Reset truth store, enable accumulation, run full pipeline
+        # 2. Reset truth store, arm recording (truthMinMagnitude = 1),
+        #    run full pipeline, then restore the knob.
         truth_layer.clear()
-        prev_accum = self.symbolicSpace.accumulateTruth
-        self.symbolicSpace.accumulateTruth = 1.0
+        prev_min_mag = self.symbolicSpace._truth_min_magnitude
+        self.symbolicSpace._truth_min_magnitude = 1.0
         self.eval()
         self.set_sigma(0)
         try:
             with torch.no_grad(), TheData.runtime_batch(texts):
                 self.runEpoch(batchSize=len(texts), split="runtime")
         finally:
-            self.symbolicSpace.accumulateTruth = prev_accum
+            self.symbolicSpace._truth_min_magnitude = prev_min_mag
 
         # 3. Apply DoT to each stored activation
         n = min(truth_layer.count.item(), len(trusts))
@@ -2129,13 +2165,15 @@ class BasicModel(BaseModel):
     def generate_sentence(self, seed_text="", max_chars=128):
         """Chat-loop sentence generation via InterSentenceLayer ARMA.
 
-        Steps (per plan §4):
-          1. Ask ``self.wordSubSpace.discourse.predict_next()`` for the
-             ARMA-predicted next sentence rep ``s_hat_{t+1}``.
-          2. Lift it through ``InterSentenceLayer.cast`` into
-             ``concept_dim`` and stage on ``ConceptualSpace._c_prior``
-             so the body's forward picks it up as a sentence-level
-             prior before the codebook lookup.
+        Steps (per plan §4, updated for §9):
+          1. Ask ``discourse.predict_next_end_state()`` for the predicted
+             next-STM-end-state SHAPE ``(depth_hat, payload_hat[depth, D])``
+             from the LTM end-state chain (the inter-level
+             ``IntraSentenceLayer``). (Was: the single ARMA ``predict_next``
+             sentence rep + ``cast`` lift.)
+          2. Stage ``payload_hat`` per-slot on ``ConceptualSpace._c_prior``
+             (slot-wise) so the body's forward adds it across the first
+             ``depth`` STM slots before the codebook lookup.
           3. Run the IR forward over the seed text; sample tokens at
              masked positions by nearest-neighbor lookup in the
              perceptual codebook.
@@ -2152,16 +2190,26 @@ class BasicModel(BaseModel):
         del max_chars  # reserved for the iterative variant
         discourse = (self.wordSubSpace.discourse
                      if self.wordSubSpace is not None else None)
-        # Stage the C-prior when the discourse layer has primed
-        # history (cold-start: no prior, the seed text is the only
-        # signal).
-        if discourse is not None and discourse.predictor is not None:
-            s_hat = discourse.predict_next()
-            if s_hat is not None and discourse.cast is not None:
-                prior = discourse.cast(
-                    s_hat if s_hat.dim() == 2 else s_hat.unsqueeze(0))
-                self.conceptualSpace._c_prior = (
-                    prior * float(self.sentence_priming_scale))
+        # Stage the C-prior from the predicted next-end-state SHAPE (Task 8,
+        # plan §9): ``predict_next_end_state`` runs the inter-level
+        # ``IntraSentenceLayer`` over the LTM end-state chain and returns
+        # ``(depth_hat, payload_hat[depth_hat, D])`` already in C-tier
+        # (concept_dim) -- no ``cast`` needed (that lifted the OLD flat ARMA
+        # rep; the inter-predictor already emits concept-width slots). Stage
+        # ``payload_hat`` per-slot on ``_c_prior`` (slot-wise flag set) so the
+        # body's forward adds it across the first ``depth`` STM slots.
+        # Cold-start (empty chain -> depth 1 / zeros root): skip staging so
+        # the seed text is the only signal (the degenerate zeros prior would
+        # be a no-op add anyway).
+        if discourse is not None and discourse._inter_predictor is not None:
+            shape = discourse.predict_next_end_state()
+            if shape is not None and discourse.get_stm_chain(n=1):
+                depth_hat, payload_hat = shape
+                if (payload_hat is not None
+                        and torch.isfinite(payload_hat).all()):
+                    self.conceptualSpace._c_prior = (
+                        payload_hat * float(self.sentence_priming_scale))
+                    self.conceptualSpace._c_prior_slotwise = True
         # Run the IR forward over the seed text.
         out = self._infer_ir(seed_text)
         # Commit the produced sentence to the ARMA ring.
@@ -2858,6 +2906,24 @@ class BasicModel(BaseModel):
             return None
         return disc.observe(self._current_discourse_s)
 
+    def _discourse_inter_loss(self):
+        """Inter-sentence end-state prediction loss term (Task 8, plan §9),
+        or ``None``.
+
+        The sentence-boundary hook ran ``predict_next_end_state`` (staging a
+        predicted root) and ``observe_stm_end_state`` (scoring it against the
+        arriving end-state, accumulating ``L_inter`` live on the discourse
+        layer). Consume the per-sentence mean here, post-body / pre-backward
+        (mirroring the ARMA + intra terms), so the term trains the
+        inter-level predictor. Returns ``None`` when the discourse layer is
+        absent (absolute-only configs no-op) or nothing was accumulated
+        (eval, weight off, or no scored sentence this batch)."""
+        disc = (self.wordSubSpace.discourse
+                if self.wordSubSpace is not None else None)
+        if disc is None:
+            return None
+        return disc.consume_inter_loss()
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
@@ -3269,6 +3335,29 @@ class BasicModel(BaseModel):
             # post-body / pre-backward, so the term trains the predictor.
             arma_loss = self._discourse_arma_loss() if train else None
 
+            # Intra-sentence prediction loss term (Task 3, STM serial/
+            # parallel modes) -- ``ConceptualSpace.forward`` ran the
+            # in-STM predictor predict-then-perceive over the per-word
+            # steps and accumulated ``L_intra = MSE(prediction, perceived)``
+            # live (grad-bearing) on the conceptual space. Consume the
+            # per-batch mean here, post-body / pre-backward (mirroring the
+            # ARMA term), so the term trains the intra-sentence predictor.
+            # ``consume_intra_loss`` resets the accumulator; it returns
+            # ``None`` when nothing was accumulated (eval, weight off, or
+            # an all-degenerate sentence).
+            intra_loss = (self.conceptualSpace.consume_intra_loss()
+                          if train else None)
+
+            # Inter-sentence end-state prediction loss term (Task 8, plan
+            # §9) -- the sentence-boundary hook ran the inter-level
+            # predictor + scored it against the arriving end-state,
+            # accumulating ``L_inter`` live on the discourse layer. Consume
+            # the per-sentence mean here, post-body / pre-backward (mirroring
+            # the ARMA + intra terms). ``None`` when the discourse layer is
+            # absent (absolute-only no-op), eval-time, weight off, or no
+            # scored sentence this batch.
+            inter_loss = self._discourse_inter_loss() if train else None
+
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
             if lossRev is not None:
                 totalLoss = totalLoss + (
@@ -3280,6 +3369,23 @@ class BasicModel(BaseModel):
                     "arma", arma_loss,
                     weight=self.arma_scale,
                     space="DiscourseSpace", category="discourse",
+                )
+            if intra_loss is not None:
+                totalLoss = (totalLoss
+                             + self.conceptualSpace.intra_loss_weight
+                             * intra_loss)
+                TheError.add(
+                    "intra", intra_loss,
+                    weight=self.conceptualSpace.intra_loss_weight,
+                    space="ConceptualSpace", category="intra",
+                )
+            if inter_loss is not None:
+                totalLoss = (totalLoss
+                             + self.inter_loss_weight * inter_loss)
+                TheError.add(
+                    "inter", inter_loss,
+                    weight=self.inter_loss_weight,
+                    space="DiscourseSpace", category="inter",
                 )
             # Phase 3: every stage's SymbolicSpace.forward wrote its
             # auxiliary terms to ``vspace.errors``; ``copy_context`` shares
@@ -5163,7 +5269,7 @@ class BasicModel(BaseModel):
         self._stm_reducer_cached = layer
         return layer
 
-    def _stm_bounded_reduce_step(self):
+    def _stm_bounded_reduce_step(self, protect_depth=None):
         """ONE statically-unrolled, masked REDUCE micro-step (forced).
 
         Operates on the live STM ``[B, cap, D]`` buffer + the tensor
@@ -5194,6 +5300,20 @@ class BasicModel(BaseModel):
         2b-2 refinement; 2b-2-i's bound is the forced fold. Rows with
         depth < 2 are no-ops (masked to gate 0). Returns nothing;
         mutates the STM buffer/depth via out-of-place masked ops.
+
+        ``protect_depth`` (Task 6a, §7): an optional per-row ``[B]``
+        long tensor giving each row's MINIMUM retained depth -- a row
+        folds only while ``depth > protect_depth``. ``None`` (the
+        default) means the historical floor of 1 (collapse-to-single-S);
+        when supplied, RELATIVE rows pass ``protect_depth == 3`` so they
+        stop at the depth-3 end-state ``[predicate, idea1, idea2]`` while
+        ABSOLUTE rows keep ``protect_depth == 1``. The gate stays a pure
+        per-row tensor mask (no data-dependent Python branch on a tensor
+        value), so the static-unroll / CUDA-graph capture contract is
+        preserved. With ``protect_depth == 1`` the added ``depth > 1``
+        term is implied by the pre-existing ``depth >= 2`` term (integer
+        depths), so the gate -- and the whole step -- is BYTE-IDENTICAL
+        to the no-arg call: the absolute-only path is unchanged.
         """
         stm = self.conceptualSpace.stm
         reducer = self._stm_reducer()
@@ -5203,6 +5323,13 @@ class BasicModel(BaseModel):
         device = buf.device
         # Rows that CAN reduce: at least 2 constituents on the stack.
         can = (depth >= 2)                                 # [B] bool
+        # Task 6a per-row depth floor. ``protect_depth`` (a [B] long, or
+        # None == floor 1) keeps RELATIVE rows from folding below their
+        # depth-3 end-state. The extra ``depth > protect_depth`` term is
+        # a pure tensor mask; for the floor-1 default it is implied by
+        # ``depth >= 2`` so ``can`` is bit-for-bit unchanged.
+        if protect_depth is not None:
+            can = can & (depth > protect_depth)            # [B] bool
         # Gather the top-2 (left = older = slot d-2, right = top =
         # slot d-1). Clamp indices for the depth<2 rows (masked out
         # by ``can`` below so the bogus gather never takes effect).
@@ -5257,6 +5384,89 @@ class BasicModel(BaseModel):
         dec = can.to(depth.dtype)                          # [B] {0,1}
         stm._depth = depth - dec
 
+    def _sentence_relative_mask(self, B, device=None):
+        """Per-row ``[B]`` bool: True where the current sentence is a
+        RELATIVE truth (the ``part`` / ``isEqual`` predicate family).
+
+        Task 6a (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7).
+        Conservative by construction -- the reduce site uses this to
+        PRESERVE a depth-3 relative end-state, and a FALSE POSITIVE
+        (absolute sentence wrongly flagged relative) would stop its
+        collapse and break the dominant absolute path + the IR loss that
+        consumes the single ``S``. So this returns False on ANY
+        uncertainty.
+
+        SIGNAL (host-side, grammar-driven -- does NOT depend on the
+        unreliable post-reduce STM category metadata): scan
+        ``wordSubSpace.current_rules``' S-tier rule_id list(s) for any
+        rule_id that ``TheGrammar.is_relative_rule`` flags (lhs == the
+        relative start ``REL_T``, or an ``isEqual`` / ``queryPart`` /
+        ``assertPart`` / ``part`` op). The read is a host dict lookup
+        BEFORE the captured sweep, so it never enters the CUDA-graph.
+
+        SHAPE HANDLING (``current_rules[tier]`` is ``list[list[int]]``):
+          * full-router path (``LanguageLayer.compose``) -> one inner
+            list PER BATCH ROW (``len == B``): per-row detection.
+          * default-only path -> a single batch-SHARED inner list
+            (``len == 1``): scalar result broadcast to ``[B]``.
+          * any other length, or missing / empty rules, or a grammar
+            with no relative rule at all -> all-False (collapse as
+            today). The absolute path is byte-identical in every
+            fall-through case.
+        """
+        false_mask = torch.zeros(B, dtype=torch.bool, device=device)
+        ws = getattr(self, 'wordSubSpace', None)
+        if ws is None:
+            return false_mask
+        current_rules = getattr(ws, 'current_rules', None)
+        if not current_rules:
+            return false_mask
+        from Language import TheGrammar
+        # Fast out: a grammar with NO relative rule can never be
+        # relative -> stay all-False (keeps absolute-only grammars,
+        # e.g. MM_xor / MM_5M, byte-identical with zero per-row work).
+        if not TheGrammar._relative_rule_id_set():
+            return false_mask
+
+        def _row_is_relative(rule_ids):
+            for rid in (rule_ids or ()):
+                if TheGrammar.is_relative_rule(rid):
+                    return True
+            return False
+
+        # The S-tier is where the relative predicate (REL_T) is
+        # selected. Be tolerant of the tier key spelling.
+        s_rules = None
+        for key in ('S', 's'):
+            if key in current_rules:
+                s_rules = current_rules[key]
+                break
+        if not s_rules:
+            return false_mask
+        # ``s_rules`` is list[list[int]] (per-step inner lists). Decide
+        # per-row vs batch-shared from the OUTER length.
+        try:
+            n_outer = len(s_rules)
+        except TypeError:
+            return false_mask
+        # Legacy flat ``list[int]`` shape (no nested lists): treat the
+        # whole list as one shared step-sequence -> scalar broadcast.
+        if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
+            shared = _row_is_relative(s_rules)
+            return torch.full((B,), bool(shared),
+                              dtype=torch.bool, device=device)
+        if n_outer == B:
+            # Per-row: one inner list per batch row.
+            flags = [_row_is_relative(row) for row in s_rules]
+            return torch.tensor(flags, dtype=torch.bool, device=device)
+        if n_outer == 1:
+            # Batch-shared single inner list -> broadcast scalar.
+            shared = _row_is_relative(s_rules[0])
+            return torch.full((B,), bool(shared),
+                              dtype=torch.bool, device=device)
+        # Ambiguous outer length (neither B nor 1): be conservative.
+        return false_mask
+
     def _stm_reduce_to_single_S(self):
         """NULL-seal finalize: bounded reduce sweep over STM -> single S.
 
@@ -5272,18 +5482,50 @@ class BasicModel(BaseModel):
         Returns the single root idea ``S`` ``[B, D]`` (slot 0 of every
         row after the sweep -- the start-symbol root constituent) plus
         the post-sweep depth tensor for verification.
+
+        Task 6a (§7) RELATIVE preservation: ABSOLUTE rows collapse to
+        depth 1 as before; RELATIVE rows (detected host-side via
+        ``_sentence_relative_mask``) stop at the depth-3 end-state
+        ``[predicate, idea1, idea2]``. This is implemented by a per-row
+        ``protect_depth`` floor threaded into each masked micro-step
+        (floor 3 for relative rows, floor 1 -- the historical default --
+        for absolute rows). When no relative sentence is detected the
+        floor is 1 everywhere and every step is byte-identical to the
+        pre-Task-6a sweep. For a relative row, slot 0 of the returned
+        ``S`` is the predicate and the returned depth is 3.
         """
         stm = self.conceptualSpace.stm
         cap = int(stm.capacity)
+        buf = stm._buffer
+        B = buf.shape[0]
+        device = buf.device
+        # Host-side relative detection BEFORE the captured sweep (reads
+        # the host ``current_rules`` dict; never enters the graph).
+        rel = self._sentence_relative_mask(B, device=device)    # [B] bool
+        depth_dtype = stm._depth.dtype
+        if bool(rel.any()):
+            # Per-row depth floor: 3 for relative rows, 1 otherwise.
+            protect_depth = torch.where(
+                rel,
+                torch.full((B,), 3, dtype=depth_dtype, device=device),
+                torch.full((B,), 1, dtype=depth_dtype, device=device),
+            )                                                    # [B] long
+        else:
+            # No relative sentence -> default floor (1) everywhere;
+            # passing None keeps the step bit-for-bit identical to the
+            # pre-Task-6a absolute path.
+            protect_depth = None
         for _ in range(max(0, cap - 1)):
-            self._stm_bounded_reduce_step()
-        # After cap-1 forced folds every row's stack is collapsed to
-        # its bottom slot: that single slot is the sentence idea S
-        # (the start-symbol root -- this producer reduces toward
+            self._stm_bounded_reduce_step(protect_depth=protect_depth)
+        # After cap-1 forced folds every ABSOLUTE row's stack is
+        # collapsed to its bottom slot: that single slot is the sentence
+        # idea S (the start-symbol root -- this producer reduces toward
         # ``Grammar.start_symbol`` by construction; the only S-tier
         # reduce ops the grammar exposes all have lhs == start_symbol
         # for MM_xor/MM_5M, so the folded root's category tracks
-        # start_symbol).
+        # start_symbol). RELATIVE rows stop at depth 3 with slot 0 = the
+        # predicate; slot-0 readers still get the predicate idea and
+        # depth-readers see 3.
         S = stm._buffer[:, 0, :]                            # [B, D]
         return S, stm._depth
 
@@ -5773,6 +6015,50 @@ class BasicModel(BaseModel):
                 gate_b_1 = torch.ones(
                     w.shape[0], 1, dtype=torch.bool, device=w.device)
             active_host = p < K_host
+            # Per-word router fire (Task 4 / plan §4). Fire
+            # ``wordSubSpace.compose`` over the CURRENT STM snapshot
+            # (the slots filled by words 0..p-1, i.e. STM[1:end]
+            # relative to the slot word ``p`` is about to write) BEFORE
+            # ``_per_word_body_step`` runs ``cs.forward`` for word ``p``.
+            # This populates ``wordSubSpace.current_rules`` so:
+            #   (1) the SS dispatch path sees per-word routing context
+            #       (the real, working deliverable of this task), and
+            #   (2) Task 3's predict-then-perceive ``cs.forward`` reads
+            #       the freshest routing distribution as its conditioning
+            #       context.
+            #
+            # CAPTURE-GATE SAFETY: this fire lives in the host-side loop
+            # of ``_forward_body_per_word``, OUTSIDE the per-iteration
+            # captured graph (``_per_word_body_step`` is "the ONLY
+            # callable that runs inside the middle captured graph" per
+            # its docstring; the loop, the ``int(K_host)`` read above,
+            # and this fire are all eager host Python). So even though
+            # ``wordSubSpace.compose`` may take a full ``languageLayer``
+            # path that introduces a DtoH sync, it cannot break the
+            # per-word capture gate — it is never traced into that graph.
+            #
+            # ROUTING-IS-A-DICT (scope note, Task 4 constraint #2):
+            # ``current_rules`` is a host-side rule dict
+            # ``{'S': [rule_id, ...]}``, NOT a ``[B, concept_dim]``
+            # tensor. Task 3's ``_intra_routing_for_predict`` only
+            # forwards routing into ``IntraSentenceLayer`` when it is a
+            # CS-width tensor; given a dict it returns ``None`` (handled
+            # gracefully). So this fire wires the SS dispatch context but
+            # does NOT (yet) flow a routing tensor into the intra
+            # predictor — rule-aware predictor conditioning is DEFERRED
+            # to a future task that adds the rule-dict -> CS-width
+            # projection (deliberately not built here: rule-distribution
+            # width != concept_dim, and a bridge risks capture-gate
+            # breakage). The predictor is left untouched.
+            if (active_host
+                    and getattr(self, 'router_wire_serial', 'both')
+                    in ("per-word", "both")
+                    and self.wordSubSpace is not None
+                    and self.conceptualSpace is not None
+                    and self.conceptualSpace.stm is not None):
+                _snap = self.conceptualSpace.stm.snapshot()
+                if _snap is not None:
+                    self.wordSubSpace.compose(_snap)
             CS_sub, idea_bd = self._per_word_body_step(
                 w, p, gate_b_1, out_slot, active_host=active_host)
             if active_host and CS_sub is not None:
@@ -5853,6 +6139,65 @@ class BasicModel(BaseModel):
             # and the post-sweep STM depth (must be 1 across rows).
             self._stm_single_S = S
             self._stm_post_depth = post_depth
+            # Task 6c (§7c): content-aware learned-relation insertion.
+            # For RELATIVE rows the reduce stopped at the depth-3
+            # end-state [predicate, idea1, idea2] (slots 0/1/2 of the
+            # STM buffer); offer each to the learn-score gate, which
+            # inserts the predicate-parent / two-children META + the
+            # tetralemma trust tuple iff learn_score >= truth_criterion.
+            # Host-side bookkeeping under no_grad; the hook itself
+            # no-ops (returns []) when nothing is relative or the SS /
+            # STM refs are absent, so absolute-only grammars stay byte-
+            # identical without any error-swallowing here. The relative
+            # mask is the SAME cheap host dict lookup
+            # _stm_reduce_to_single_S used, so this never enters the
+            # captured forward region. Real numerical bugs in the gate
+            # (NaN ideas, non-finite learn-score) propagate per the
+            # fail-loud policy.
+            cs_buf = self.conceptualSpace.stm._buffer
+            rel_mask = self._sentence_relative_mask(
+                int(cs_buf.shape[0]), device=cs_buf.device)
+            self._stm_learned_relations = (
+                self.conceptualSpace.learn_relations_from_stm(rel_mask))
+
+            # Task 7 (§8): LTM — record EVERY sentence's STM end-state on
+            # the InterSentenceLayer's per-row chain (the AR sequence for
+            # inter-sentence prediction). This is ADDITIVE to the ARMA /
+            # reduce / IR-loss path: it reads the already-computed STM
+            # end-state buffer (``cs_buf``) and the same host-side
+            # ``rel_mask`` the reduce used, then hands them to the
+            # boundary-only ``observe_stm_end_state`` (which is
+            # ``@torch.compiler.disable``'d — host-side, outside the
+            # captured per-word graph). It NO-OPS gracefully when there
+            # is no discourse layer (``sentencePrediction`` off /
+            # absolute-only configs), so MM_xor stays byte-identical.
+            # Note: LTM is NOT gated by ``truthCriterion`` — every
+            # end-state lands here; ``truthCriterion`` only gates the
+            # separate SS-codebook insertion above.
+            discourse = (self.wordSubSpace.discourse
+                         if getattr(self, 'wordSubSpace', None) is not None
+                         else None)
+            if discourse is not None and hasattr(
+                    discourse, 'observe_stm_end_state'):
+                B = int(cs_buf.shape[0])
+                cap = int(cs_buf.shape[1])
+                # Per-row end-state depth: 3 for a relative row (the
+                # depth-3 ``[predicate, idea1, idea2]`` preserve), else 1
+                # (the collapsed absolute root). Single host hop on the
+                # boundary mask — outside any captured region. Clamp to
+                # the buffer capacity so the recorded depth always equals
+                # the stored payload's row count (the reduce site only
+                # preserves depth 3 when cap >= 3, so this is defensive).
+                rel_rows = rel_mask.reshape(-1).tolist()
+                depths = [min(3 if bool(rel_rows[b]) else 1, cap)
+                          for b in range(B)]
+                # Ragged per-row payloads: the ``depth`` leading slots of
+                # this row's STM buffer (slot 0 = root/predicate).
+                payloads = [cs_buf[b, :depths[b], :] for b in range(B)]
+                # Tetralemma left None for now (field reserved for Task 8;
+                # this task does not compute per-sentence tetralemmas).
+                discourse.observe_stm_end_state(depths, payloads,
+                                                tetralemmas=None)
 
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the
@@ -5878,7 +6223,16 @@ class BasicModel(BaseModel):
 
         Method name preserved across the Stage 3 chart retirement; it
         now drives ``WordSubSpace.compose`` -> ``languageLayer.compose``.
+
+        Gated by ``<routerWireSerial>`` (Task 4 / plan §4): the boundary
+        fire runs iff ``self.router_wire_serial in ('boundary', 'both')``.
+        Default ``both`` keeps this firing — pre-existing behaviour is
+        preserved. This is the final routing snapshot the inter-sentence
+        predictor consumes (retained per plan §4).
         """
+        if getattr(self, 'router_wire_serial', 'both') not in (
+                'boundary', 'both'):
+            return
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
             return
@@ -5893,7 +6247,24 @@ class BasicModel(BaseModel):
 
         Method name preserved across the Stage 3 chart retirement; it
         now drives ``WordSubSpace.generate`` -> ``languageLayer.generate``.
+
+        Gated by ``<routerWireSerial>`` (Task 4 / plan §4): the boundary
+        reverse fire runs iff
+        ``self.router_wire_serial in ('boundary', 'both')``. Default
+        ``both`` keeps this firing — pre-existing behaviour is preserved.
+
+        REVERSE-LEG NOTE (Task 4): there is no per-word reverse loop
+        analogous to ``_forward_body_per_word`` — the reverse path
+        (``_run_pipeline_rev`` / ``_run_pipeline_rev_from_concepts`` /
+        ``_reverse_from_S``) fires ``generate`` only here, at the
+        boundary, over the whole STM snapshot. So per-word reverse has
+        no natural site; the boundary reverse fire is the reverse-leg
+        deliverable and is retained (gated identically to the forward
+        boundary fire).
         """
+        if getattr(self, 'router_wire_serial', 'both') not in (
+                'boundary', 'both'):
+            return
         ws = self.wordSubSpace
         if ws is None:
             return

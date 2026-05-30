@@ -28,7 +28,7 @@ PDFOPTS := --pdf-engine=xelatex \
           -V header-includes="\usepackage{amsmath} \usepackage{amssymb} \usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
 
 # Ordered list of doc chapters for PDF generation
-PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/BasicModel.md doc/Spaces.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
+PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/BasicModel.md doc/Spaces.md doc/STM.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
 MODEL ?= data/MM_5M.xml

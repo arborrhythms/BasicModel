@@ -45,11 +45,11 @@ class TestShortTermMemoryUnit(unittest.TestCase):
         from Spaces import ShortTermMemory
         self.STM = ShortTermMemory
 
-    def test_default_capacity_is_9(self):
+    def test_default_capacity_is_8(self):
         stm = self.STM(batch=1, capacity=None, concept_dim=4)
-        self.assertEqual(stm.capacity, 9,
-                         "Default STM capacity matches the upper "
-                         "bound of the 7±2 linguistic limit.")
+        self.assertEqual(stm.capacity, 8,
+                         "Default STM capacity sits within the 7±2 "
+                         "linguistic limit and matches wMax fallback.")
 
     def test_custom_capacity(self):
         stm = self.STM(batch=1, capacity=64, concept_dim=4)

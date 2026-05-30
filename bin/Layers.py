@@ -9,6 +9,7 @@ from __future__ import annotations  # allow X | Y union syntax on Python 3.9
 
 import os
 import warnings
+import collections
 import numpy as np
 import torch
 import math
@@ -2922,9 +2923,22 @@ class PiLayer(GrammarLayer):
     # -- Symmetric domain transforms ----------------------------------
 
     def _to_mult(self, x):
-        """Map [-1, 1] -> (0, inf), identity at 0 -> 1."""
-        if self.nonlinear:
-            x = x.clamp(-1 + self._eps, 1 - self._eps)
+        """Map [-1, 1] -> (0, inf), identity at 0 -> 1.
+
+        The clamp into the open ``(-1, 1)`` interval is UNCONDITIONAL:
+        ``(1 + x)/(1 - x)`` is positive only there, and its result
+        always feeds a ``log`` (the forward fold for both ``nonlinear``
+        settings, and the ``nonlinear=True`` reverse). An input at or
+        outside ``+-1`` -- e.g. an un-normalized percept on an untrained
+        model, since percept normalization runs AFTER ``pi.forward`` --
+        would otherwise make the ratio ``<= 0`` and inject
+        ``log(<=0) = NaN``. Enforcing the documented ``[-1, 1]`` domain
+        keeps the fold finite; strictly in-domain values
+        (``|x| < 1 - eps``) are unchanged. The clamp does NOT swallow
+        non-finite input (``clamp(nan/inf)`` stays nan/inf), so a genuine
+        upstream divergence still propagates and fails loud.
+        """
+        x = x.clamp(-1 + self._eps, 1 - self._eps)
         return (1 + x) / (1 - x)
 
     def _from_mult(self, y):
@@ -3027,12 +3041,22 @@ class PiLayer(GrammarLayer):
                 m = self._to_mult(y)
                 l = torch.log(m)
             else:
-                l = torch.log(y)
+                # ``nonlinear=False`` forward emits a positive mult-domain
+                # value (``exp(wl) in (0, inf)``); the reverse ``log`` needs
+                # that domain. A reconstruction seed driven from an arbitrary
+                # (signed) idea can land <= 0 here -- clamp to the log domain
+                # so the leg stays finite instead of injecting
+                # ``log(<=0) = NaN``. NaN/Inf inputs (a genuine upstream
+                # divergence) still propagate through the clamp and fail loud
+                # downstream -- the clamp rescues only finite out-of-domain
+                # values, it does not swallow non-finite ones.
+                l = torch.log(y.clamp(min=self._eps))
             lx = self._butterfly_reverse(l)
-            if self.nonlinear:
-                out = torch.tanh(lx / 2)
-            else:
-                out = self._from_mult(torch.exp(lx))
+            # ``tanh(lx/2)`` equals ``_from_mult(exp(lx))`` for finite ``lx``
+            # but is saturation-safe (no ``inf/inf = NaN`` on overflow), so it
+            # serves both the nonlinear and the former ``_from_mult(exp)``
+            # branch.
+            out = torch.tanh(lx / 2)
             return out
         # Inline inner-reverse: log-domain multiplicative AND fold inverse.
         self.layer._current_gate = gate
@@ -3043,13 +3067,16 @@ class PiLayer(GrammarLayer):
                 m = self._to_mult(y)
                 l = torch.log(m)
             else:
-                l = torch.log(y)
+                # See the butterfly branch above: ``nonlinear=False`` reverse
+                # expects ``y`` in the positive mult-domain the forward emits.
+                # Clamp to the log domain so a signed reconstruction seed
+                # stays finite, while NaN/Inf still propagate (fail-loud
+                # preserved -- the clamp does not swallow non-finite input).
+                l = torch.log(y.clamp(min=self._eps))
             b = self.layer._effective_bias()
             lx = (l - b) @ W_inv
-            if self.nonlinear:
-                out = torch.tanh(lx / 2)
-            else:
-                out = self._from_mult(torch.exp(lx))
+            # ``tanh(lx/2)`` == ``_from_mult(exp(lx))`` but saturation-safe.
+            out = torch.tanh(lx / 2)
             if self.layer.ergodic:
                 self.resample_noise()
         finally:
@@ -4455,7 +4482,7 @@ class TruthLayer(Layer):
             activations: ``[N, nDim]`` activations to stage.
             trust: ``[N]`` per-entry trust scores in ``[0, 1]``. The caller
                 computes these (typically magnitude-based, masked by
-                ``valid_mask`` and scaled by ``accumulateTruth``).
+                ``valid_mask``).
             degree: scalar in ``[-1, 1]`` -- the DegreeOfTruth applied to
                 every staged activation. Sign flips (negative degree)
                 use the same bivector-aware path as ``record()``.
@@ -5787,7 +5814,7 @@ class InterSentenceLayer(Layer):
 
     def __init__(self, n_symbols, max_depth, n_dim,
                  p=5, q=2, hidden_dim=None,
-                 concept_dim=None, batch=1,
+                 concept_dim=None, batch=1, ltm_capacity=1024,
                  # Legacy-named kwargs accepted for back-compat; ignored.
                  context_window=None, centroid_history=None, lam=None):
         """Initialize the ARMA(p, q) predictor.
@@ -5804,6 +5831,12 @@ class InterSentenceLayer(Layer):
         ``concept_dim`` is the target dim for the optional priming
         cast that lifts ``s_hat_{t+1}`` into C-tier for the chat-
         loop's ``_c_prior`` injection.
+
+        ``ltm_capacity`` bounds the long-term-memory (LTM) chain of
+        per-sentence STM end-states (the AR sequence used for
+        inter-sentence prediction; see ``observe_stm_end_state`` /
+        ``get_stm_chain``).  Default 1024 — separate from TruthLayer's
+        ``truthMaxEntries`` and from the ARMA orders ``p`` / ``q``.
 
         ``context_window`` / ``centroid_history`` / ``lam`` are
         accepted for signature back-compat with the retired
@@ -5869,6 +5902,25 @@ class InterSentenceLayer(Layer):
             torch.zeros(self._batch, dtype=torch.long),
             persistent=False)
 
+        # -- LTM: chain of per-sentence STM end-states (Task 7, plan §8).
+        # The AR sequence used for INTER-sentence prediction. Unlike the
+        # ARMA ``_s_history`` ring (fixed-shape ``[B, p, D]`` tensor), an
+        # end-state is VARIABLE depth (1 for an absolute sentence, 3 for
+        # a relative ``[predicate, idea1, idea2]`` end-state), so a fixed
+        # ``register_buffer`` tensor does not fit. Use one bounded
+        # ``collections.deque(maxlen=ltm_capacity)`` PER ROW (parallel
+        # document streams — mirror how ``_s_history`` is per-row), each
+        # holding time-ordered ``(depth:int, payload:[depth,D] tensor,
+        # tetralemma:tuple|None)`` tuples. This is TRANSIENT host-side
+        # state (NOT checkpoint material — mirror the ARMA rings'
+        # ``persistent=False``); it is NOT a registered buffer / not in
+        # ``state_dict`` and the boundary-only ``observe_stm_end_state``
+        # writer is ``@torch.compiler.disable``'d like ``observe``.
+        self.ltm_capacity = int(ltm_capacity)
+        self._stm_end_states = [
+            collections.deque(maxlen=self.ltm_capacity)
+            for _ in range(self._batch)]
+
         # ``self.layers`` (parent Layer's ergodic-walk list) only holds
         # objects that implement ``set_sigma`` / ``observe_sigma`` etc.
         # The ARMA MLP predictor is an ``nn.Sequential`` (no ergodic
@@ -5896,6 +5948,50 @@ class InterSentenceLayer(Layer):
             self.cast = LinearLayer(self.sentence_dim, self.concept_dim)
             self.layers.append(self.cast)
 
+        # -- Inter-level next-end-state predictor (Task 8, plan §9). -----
+        # The SAME predictor class as the intra-sentence in-STM predictor
+        # (``IntraSentenceLayer``), instantiated HERE at the inter-sentence
+        # level. It reads the last ``K`` STM end-states (the LTM chain) and
+        # predicts the ROOT of the next end-state. ``predict_next_end_state``
+        # wraps it into a ``(depth_hat, payload_hat[depth_hat, D])`` shape.
+        #
+        # ``stm_capacity`` here is the CHAIN WINDOW ``K`` (the number of
+        # most-recent end-states fed to the predictor), NOT the intra-level
+        # STM slot count. The plan suggests ``truthMaxEntries``; that knob
+        # (default 1024) is the TruthLayer SS-codebook cap and is NOT
+        # plumbed to this constructor, and a 1024-wide predictor input would
+        # be wasteful for a short AR context. So we use a small bounded
+        # window ``K = min(ltm_capacity, 8)`` (documented deviation): the AR
+        # signal that predicts the next end-state lives in the last handful
+        # of sentences, and the IntraSentenceLayer's ``stm_capacity`` only
+        # feeds its serial-``reverse`` fan-out default (unused on our
+        # forward-only path), so ``K`` is the meaningful quantity.
+        self._inter_chain_window = max(1, min(int(self.ltm_capacity), 8))
+        self._inter_predictor = None
+        if self.concept_dim is not None and self.concept_dim > 0:
+            self._inter_predictor = IntraSentenceLayer(
+                concept_dim=self.concept_dim,
+                stm_capacity=self._inter_chain_window,
+                routing_dim=self.concept_dim)
+            self.layers.append(self._inter_predictor)
+
+        # L_inter accumulation (live grad tensor) + the per-row last
+        # predicted root, mirroring ConceptualSpace's intra-loss accumulator
+        # (Spaces.py ``_accumulate_intra_loss`` / ``consume_intra_loss``).
+        # ``_inter_loss_accum`` is a live (grad-carrying) running SUM of
+        # per-sentence ``MSE(payload_hat_root, actual_root)``; ``None`` until
+        # the first scored sentence. ``_inter_loss_count`` is the mean
+        # denominator. ``_inter_last_pred_root`` holds the most-recent
+        # predicted root PER ROW (``[D]`` tensor or ``None``) so the next
+        # ``observe_stm_end_state`` can score the prediction it made against
+        # the end-state that actually arrived. ``_inter_loss_weight`` gates
+        # accumulation off when the knob is non-positive (set by the host at
+        # construction; defaults to 0.1 so the layer is self-contained).
+        self._inter_loss_accum = None
+        self._inter_loss_count = 0
+        self._inter_last_pred_root = [None] * self._batch
+        self._inter_loss_weight = 0.1
+
     # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
         """Resize per-row substrate to a new batch size.  Cascaded
@@ -5918,6 +6014,19 @@ class InterSentenceLayer(Layer):
             dtype=dtype, device=device)
         self._e_count = torch.zeros(
             batch, dtype=torch.long, device=device)
+        # Resize the per-row LTM chains to match. Reallocate fresh
+        # deques: the ARMA rings above zero on resize, so the LTM chain
+        # follows the same "new batch -> clean per-row state" semantic
+        # (cascaded from ``WordSpace.ensure_batch`` at the start of a
+        # microbatch; the old document's chain does not survive a batch
+        # reshape any more than ``_s_history`` does).
+        self._stm_end_states = [
+            collections.deque(maxlen=self.ltm_capacity)
+            for _ in range(batch)]
+        # Per-row last-predicted-root parks reset on a batch reshape too
+        # (the prior document's pending prediction does not survive, same
+        # as the LTM chain / ARMA rings above).
+        self._inter_last_pred_root = [None] * batch
 
     # -- sentence-rep pooling -----------------------------------------
     def _pool_sentence_rep(self, s_tensor):
@@ -6074,6 +6183,312 @@ class InterSentenceLayer(Layer):
                 self._e_history, self._e_count, self.q, residual)
         return loss
 
+    # -- LTM: long-term memory chain of STM end-states (Task 7) --------
+    @torch.compiler.disable
+    def observe_stm_end_state(self, depths, payloads, tetralemmas=None):
+        """Append one STM end-state PER ROW to the LTM chain.
+
+        Called from the sentence-boundary hook AFTER the reduce /
+        relative-preserve step has decided each row's end-state. EVERY
+        sentence's end-state lands in LTM regardless of
+        ``truthCriterion`` — LTM is the AR sequence the inter-sentence
+        predictor consumes; ``truthCriterion`` only gates the separate
+        SS-codebook insertion of *learned relations* (Task 6c), not
+        this chain.
+
+        Args:
+          depths: ``[B]`` ints/long tensor (or python sequence) — the
+            end-state depth for each row (1 for an absolute sentence, 3
+            for a relative ``[predicate, idea1, idea2]`` end-state).
+          payloads: ragged list of length ``B``; ``payloads[b]`` is the
+            ``[depth_b, D]`` tensor of the end-state slots for row ``b``
+            (since depths differ per row a ragged list is natural, not a
+            single padded tensor).
+          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The
+            per-row tetralemma trust tuple; ``None`` (the default) parks
+            ``None`` in every row's tuple — the field exists for Task 8 /
+            future consumers and this task does NOT couple itself to
+            computing a tetralemma for every sentence.
+
+        Stored per row as a time-ordered tuple
+        ``(depth:int, payload:[depth,D] tensor, tetralemma:tuple|None)``.
+        Bounded at ``ltm_capacity`` (deque ``maxlen``): the oldest
+        end-state is evicted once the chain is full.
+
+        Fail-loud: a non-finite (NaN/Inf) payload RAISES — a corrupt
+        end-state must never be silently stored (user memory:
+        "fail loud on numerical divergence").
+        """
+        if depths is None or payloads is None:
+            return
+        # Normalise ``depths`` to a python list of ints without forcing
+        # a per-row host sync inside any captured region (this method is
+        # ``@torch.compiler.disable``'d and boundary-only, so a single
+        # ``.tolist()`` host hop here is fine).
+        if isinstance(depths, torch.Tensor):
+            depth_list = [int(d) for d in depths.detach().reshape(-1).tolist()]
+        else:
+            depth_list = [int(d) for d in depths]
+        B = len(payloads)
+        if len(self._stm_end_states) != B:
+            # The chain list lags an un-cascaded batch reshape; grow /
+            # shrink to match this boundary's row count. (ensure_batch
+            # normally keeps these in lockstep; this is defensive.)
+            self.ensure_batch(B)
+        for b in range(B):
+            payload = payloads[b]
+            depth = depth_list[b] if b < len(depth_list) else (
+                int(payload.shape[0]) if payload is not None else 0)
+            if payload is not None:
+                if not torch.isfinite(payload).all():
+                    raise FloatingPointError(
+                        "InterSentenceLayer.observe_stm_end_state: row "
+                        f"{b} STM end-state payload contains NaN/Inf "
+                        "(depth={}, shape={}). Refusing to store a "
+                        "corrupt end-state in the LTM chain."
+                        .format(depth, tuple(payload.shape)))
+                # L_inter (Task 8, plan §9): if a prediction was made for
+                # THIS row's end-state (``predict_next_end_state`` stashed a
+                # live predicted root on ``_inter_last_pred_root[b]``), score
+                # it against the end-state that actually arrived. Compare the
+                # predicted ROOT against the actual end-state's ROOT (slot 0,
+                # reduced to the predictor width) — this is robust to a
+                # depth mismatch between prediction and reality (the plan's
+                # "when depths differ, compare roots"; when they match the
+                # root is still slot 0 of both). The actual root is DETACHED
+                # so the loss trains ``_inter_predictor``, not the perception
+                # path. Score BEFORE the detach/clone below so the live
+                # payload's slot-0 is available; the target is detached
+                # regardless.
+                if (self._inter_predictor is not None
+                        and b < len(self._inter_last_pred_root)
+                        and self._inter_last_pred_root[b] is not None):
+                    actual_root = self._reduce_end_state_to_root(
+                        payload.detach())
+                    pred_root = self._inter_last_pred_root[b]
+                    if actual_root is not None:
+                        actual_root = actual_root.to(
+                            device=pred_root.device, dtype=pred_root.dtype)
+                        self._accumulate_inter_loss(pred_root, actual_root)
+                # Detach + clone so the stored end-state is a stable
+                # snapshot decoupled from the live STM buffer (which the
+                # next sentence overwrites in place) and carries no
+                # autograd history into the host-side ring.
+                payload = payload.detach().clone()
+            # The pending prediction for this row has now been scored (or
+            # there was none); clear it so a row that observes WITHOUT a
+            # fresh predict_next_end_state isn't double-counted next time.
+            if b < len(self._inter_last_pred_root):
+                self._inter_last_pred_root[b] = None
+            tet = None
+            if tetralemmas is not None and b < len(tetralemmas):
+                tet = tetralemmas[b]
+            self._stm_end_states[b].append((int(depth), payload, tet))
+
+    def get_stm_chain(self, n=None, b=0):
+        """Return the last ``n`` LTM end-states for row ``b``.
+
+        Args:
+          n: number of most-recent end-states to return; ``None`` (the
+            default) returns the entire chain for the row.
+          b: batch row index (default 0 — the test uses B=1 / row 0).
+
+        Returns a python ``list`` of time-ordered tuples (oldest first,
+        most-recent last), each ``(depth:int, payload:[depth,D] tensor,
+        tetralemma:tuple|None)``. Returns ``[]`` for an out-of-range row
+        or an empty chain.
+        """
+        bi = int(b)
+        if bi < 0 or bi >= len(self._stm_end_states):
+            return []
+        chain = self._stm_end_states[bi]
+        if n is None:
+            return list(chain)
+        n = int(n)
+        if n <= 0:
+            return []
+        if n >= len(chain):
+            return list(chain)
+        # Last ``n``, preserving time order.
+        return list(chain)[-n:]
+
+    # -- inter-sentence next-end-state prediction (Task 8, plan §9) -----
+    def _reduce_end_state_to_root(self, payload):
+        """Reduce one (ragged-depth) end-state payload ``[depth, D]`` to a
+        single representative ``[D]`` vector: its slot-0 ROOT.
+
+        The chain's payloads are ragged (depth 1 for an absolute end-state,
+        depth 3 for a relative ``[predicate, idea1, idea2]`` end-state). To
+        feed a FIXED-width ``[1, K, D]`` context into the predictor we
+        collapse each end-state to ONE vector. We take SLOT 0 (the root) —
+        for an absolute end-state that IS the collapsed idea, and for a
+        relative end-state slot 0 is the predicate, the head that the
+        relative structure hangs off (the most natural single
+        representative). (Documented reduction; mean-over-depth is the
+        obvious alternative but the root carries the sentence-level signal,
+        mirroring ``_pool_sentence_rep`` which also takes row 0.)
+
+        Right-pads / left-truncates to ``concept_dim`` so a chain payload
+        whose D differs from the predictor's width stays well-defined.
+        """
+        if payload is None:
+            return None
+        x = payload
+        if x.dim() == 1:
+            root = x
+        elif x.dim() == 2 and x.shape[0] >= 1:
+            root = x[0]
+        else:
+            return None
+        D = int(self._inter_predictor.concept_dim)
+        cur = int(root.shape[-1])
+        if cur == D:
+            return root
+        if cur > D:
+            return root[:D]
+        return F.pad(root, (0, D - cur))
+
+    @torch.compiler.disable
+    def predict_next_end_state(self, b=0):
+        """Predict the SHAPE of the next STM end-state from the LTM chain.
+
+        Returns ``(depth_hat:int, payload_hat:[depth_hat, D] tensor)`` where
+        ``depth_hat`` is the predicted depth of the next end-state and
+        ``payload_hat`` is the predicted end-state slots. Runs the
+        inter-level ``IntraSentenceLayer`` (``self._inter_predictor``) over
+        the chain's last-``K`` end-state ROOTS (``K`` = ``_inter_chain_window``)
+        to produce the predicted ROOT, then broadcasts that root across
+        ``depth_hat`` slots.
+
+        Mechanism:
+          * **Chain reduction** (ragged -> fixed): reduce each of the last
+            ``K`` end-states to its slot-0 root (``_reduce_end_state_to_root``)
+            to form a ``[1, K, D]`` context, LEFT-padding with zeros when the
+            chain is shorter than ``K`` (so the most-recent end-state is
+            always at the tail, mirroring the ARMA ring's newest-at-``-1``).
+          * **Root prediction**: ``self._inter_predictor.forward(context,
+            routing=None, parallel=False)`` -> ``[1, D]``, the predicted root
+            of the next end-state.
+          * **depth_hat**: a simple AR prior — the depth of the MOST RECENT
+            end-state in the chain (a relative sentence tends to be followed
+            by structure of the same shape; an absolute by an absolute). The
+            test only requires ``depth in {1, 3}`` + finite payload; this AR
+            prior delivers exactly that without a separate learned head.
+            (Documented: a tiny ``concept_dim -> 2`` argmax head is the
+            richer alternative; the AR prior is the agreed scaffold.)
+          * **payload_hat**: the predicted root broadcast across
+            ``depth_hat`` slots -> ``[depth_hat, D]``.
+
+        Cold start (empty chain): returns ``(1, zeros[1, D])`` — a
+        well-defined degenerate shape the caller can stage or ignore.
+
+        Records the predicted root on ``_inter_last_pred_root[b]`` so the
+        next ``observe_stm_end_state`` can score it (``L_inter``).
+
+        Fail-loud: a non-finite predicted root RAISES (user memory: fail
+        loud on numerical divergence).
+        """
+        if self._inter_predictor is None:
+            return None
+        bi = int(b)
+        D = int(self._inter_predictor.concept_dim)
+        device = next(self._inter_predictor.parameters()).device
+        dtype = next(self._inter_predictor.parameters()).dtype
+        K = int(self._inter_chain_window)
+        chain = self.get_stm_chain(n=K, b=bi)
+        if not chain:
+            # Cold start: no AR signal yet. Degenerate (1, zeros[1, D]).
+            self._inter_last_pred_root[bi] = None
+            zero_root = torch.zeros(D, device=device, dtype=dtype)
+            return 1, zero_root.unsqueeze(0)
+        # Reduce each end-state to its root and LEFT-pad to K so the
+        # most-recent sits at the tail (newest-at--1, like the ARMA ring).
+        roots = []
+        for (_depth, payload, _tet) in chain:
+            r = self._reduce_end_state_to_root(payload)
+            if r is None:
+                r = torch.zeros(D, device=device, dtype=dtype)
+            roots.append(r.to(device=device, dtype=dtype))
+        if len(roots) < K:
+            pad = [torch.zeros(D, device=device, dtype=dtype)
+                   for _ in range(K - len(roots))]
+            roots = pad + roots
+        context = torch.stack(roots, dim=0).unsqueeze(0)   # [1, K, D]
+        payload_root_hat = self._inter_predictor.forward(
+            context, routing=None, parallel=False)         # [1, D]
+        if not torch.isfinite(payload_root_hat).all():
+            raise FloatingPointError(
+                "InterSentenceLayer.predict_next_end_state: predicted "
+                "end-state root contains NaN/Inf. Refusing to emit a "
+                "corrupt prediction.")
+        root_vec = payload_root_hat.reshape(-1)[:D]         # [D]
+        # depth_hat: AR prior = depth of the most-recent end-state.
+        depth_hat = int(chain[-1][0])
+        if depth_hat <= 0:
+            depth_hat = 1
+        # Record the predicted root so the NEXT ``observe_stm_end_state``
+        # can score it (``L_inter``). When grad is enabled we keep the LIVE
+        # (grad-carrying) root tensor so the deferred MSE backprops into
+        # ``_inter_predictor``'s params; under no-grad (eval / generation)
+        # ``forward`` already produced a detached value, so this is just the
+        # prediction's value with no graph attached.
+        self._inter_last_pred_root[bi] = root_vec
+        payload_hat = root_vec.unsqueeze(0).expand(depth_hat, -1)
+        return depth_hat, payload_hat
+
+    def _accumulate_inter_loss(self, pred_root, actual_root):
+        """Accumulate one sentence of ``L_inter = MSE(pred_root,
+        actual_root)`` into the live running sum, gated on grad-enabled +
+        positive weight (mirrors ``ConceptualSpace._accumulate_intra_loss``).
+
+        ``pred_root`` / ``actual_root``: ``[D]`` (or broadcastable) live
+        tensors. No-op when grad is disabled (eval) or the inter-loss weight
+        is non-positive — avoids eval-time graph growth and a wasted MSE
+        when the term is off.
+
+        Fail-loud: a non-finite step loss RAISES.
+        """
+        if not torch.is_grad_enabled():
+            return
+        if float(self._inter_loss_weight) <= 0.0:
+            return
+        if pred_root is None or actual_root is None:
+            return
+        step_loss = F.mse_loss(pred_root, actual_root)
+        if not torch.isfinite(step_loss).all():
+            raise FloatingPointError(
+                "InterSentenceLayer._accumulate_inter_loss: L_inter step "
+                "is NaN/Inf. Refusing to accumulate a corrupt loss term.")
+        if self._inter_loss_accum is None:
+            self._inter_loss_accum = step_loss
+        else:
+            self._inter_loss_accum = self._inter_loss_accum + step_loss
+        self._inter_loss_count += 1
+
+    def consume_inter_loss(self):
+        """Return the per-sentence MEAN of the accumulated inter-sentence
+        prediction loss and RESET the accumulator.
+
+        Returns a live scalar tensor (mean over the scored sentences)
+        carrying grad to ``_inter_predictor``'s params, or ``None`` when
+        nothing was accumulated this batch (eval-time, weight off, or no
+        sentence was both predicted-for and observed). Mirrors
+        ``ConceptualSpace.consume_intra_loss`` — ``runBatch`` consumes it
+        once, post-body / pre-backward, next to the ARMA + intra terms.
+        """
+        if self._inter_loss_accum is None:
+            self._inter_loss_count = 0
+            return None
+        mean_loss = self._inter_loss_accum / max(1, self._inter_loss_count)
+        self._inter_loss_accum = None
+        self._inter_loss_count = 0
+        return mean_loss
+
+    def set_inter_loss_weight(self, weight):
+        """Set the inter-loss accumulation gate (read from the
+        ``interLossWeight`` knob by the host at construction)."""
+        self._inter_loss_weight = float(weight)
+
     # -- lifecycle ----------------------------------------------------
     def Reset(self, batch=None, hard=False):
         """Clear AR/MA rings on hard discourse boundary.
@@ -6089,12 +6504,29 @@ class InterSentenceLayer(Layer):
             self._s_count.zero_()
             self._e_history.zero_()
             self._e_count.zero_()
+            # Clear the LTM chain on a hard discourse boundary. The plan
+            # (§8) defines LTM as the AR sequence for INTER-sentence
+            # prediction, so a document-boundary reset clears it the same
+            # way ``_s_history`` zeros — the next document starts cold.
+            for dq in self._stm_end_states:
+                dq.clear()
+            # Drop any pending inter-sentence prediction + the live loss
+            # accumulator (Task 8): the next document predicts cold, and a
+            # boundary must not leak a half-formed grad term across the
+            # reset (mirrors the chain/ring clear above).
+            self._inter_last_pred_root = [None] * self._batch
+            self._inter_loss_accum = None
+            self._inter_loss_count = 0
         else:
             bi = int(batch)
             self._s_history[bi].zero_()
             self._s_count[bi] = 0
             self._e_history[bi].zero_()
             self._e_count[bi] = 0
+            if 0 <= bi < len(self._stm_end_states):
+                self._stm_end_states[bi].clear()
+            if 0 <= bi < len(self._inter_last_pred_root):
+                self._inter_last_pred_root[bi] = None
     reset = Reset
 
     def __len__(self):
@@ -6221,6 +6653,247 @@ class InterSentenceLayer(Layer):
             cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
             return cast_out * float(scale)
         return self.cast(predicted) * float(scale)
+
+
+class IntraSentenceLayer(Layer):
+    """In-STM autoregressive predictor: STM[1:end] -> predicted STM[0]
+    (serial) / STM_prev[0:end] -> predicted STM_new[0:end] (parallel).
+    Combined PI-then-Sigma, no intermediate tanh; the routing
+    distribution from WordSubSpace.current_rules conditions the
+    Sigma collapse (rule-aware predictor).
+
+    Architecture (PI first, per the design note):
+
+        pi:    PiLayer(concept_dim -> working_dim), invertible, nonlinear
+               (log-domain multiplicative boundary fold). The PI body
+               lifts low-rank STM slots into the working width.
+        sigma: SigmaLayer(working_dim -> concept_dim), invertible,
+               **nonlinear=False** (raw linear W @ x + b). Sigma
+               collapses the lifted slots into the predicted idea.
+
+    The defining requirement of this layer is that there is NO
+    intermediate activation between the PI body and the Sigma body:
+    ``sigma`` is built ``nonlinear=False`` so the two linear cores fuse
+    cleanly (PI's log-domain exp/tanh boundary still bounds PI's own
+    output, but no extra tanh is interposed before Sigma's matmul).
+
+    ``working_dim`` defaults to ``concept_dim`` so both sublayers are
+    square isomorphisms and the per-slot (parallel) round trip
+    ``reverse(forward(x, parallel=True)) ~= x`` is exact up to the LDU
+    inverse tolerance. The serial path's cross-slot Sigma collapse is
+    many-to-one and therefore only **approximately** invertible (see
+    ``reverse``).
+
+    Routing conditioning: when ``routing`` is not None it is projected
+    ``[B, routing_dim] -> [B, concept_dim]`` by ``self.routing_proj`` and
+    added as a bias to the Sigma output. This makes the predictor
+    rule-aware without a separate attention block. ``routing=None``
+    skips the bias entirely so the layer is usable before the per-word
+    router is wired (Task 4 of the STM serial/parallel plan).
+
+    Subclasses ``Layer`` (not ``Space``): no SubSpace, no tensor-map
+    contract. ``self.pi`` / ``self.sigma`` are appended to
+    ``self.layers`` (an ``nn.ModuleList``) so the Layer ergodic /
+    paramUpdate cascade and the Space's Start/Reset walk reach their
+    parameters. ``self.routing_proj`` is a plain ``nn.Linear`` (no
+    ergodic interface) and registers via attribute assignment.
+    """
+
+    name = "IntraSentence"
+
+    def __init__(self, concept_dim, stm_capacity, routing_dim,
+                 working_dim=None, naive=True, ergodic=False,
+                 stable=True, monotonic=False, batch=1):
+        """Build the combined PI-then-Sigma in-STM predictor.
+
+        ``concept_dim``: per-slot C-tier feature width D (the input and
+        output width of the predictor).
+        ``stm_capacity``: STM slot count; the default fan-out ``k`` for
+        the serial ``reverse`` (``k = stm_capacity - 1``: the predictor
+        consumes STM[1:end], i.e. all but the freshly-predicted slot 0).
+        ``routing_dim``: width of the soft routing distribution injected
+        as the Sigma bias. Not yet populated (Task 4); the
+        ``routing_proj`` is built so the conditioning path exists, but
+        ``forward``/``reverse`` accept ``routing=None`` and skip it.
+        ``working_dim``: PI lift width (Sigma input width). Defaults to
+        ``concept_dim`` to keep both sublayers square (exact per-slot
+        inverse).
+
+        ``naive`` / ``ergodic`` / ``stable`` / ``monotonic`` follow the
+        C-tier substrate pi/sigma construction convention (see
+        ``ConceptualSpace.sigma_in`` / ``sigma_cs``).
+        """
+        concept_dim = int(concept_dim)
+        working_dim = int(working_dim) if working_dim is not None else concept_dim
+        super().__init__(concept_dim, concept_dim)
+
+        self.concept_dim = concept_dim
+        self.working_dim = working_dim
+        self.stm_capacity = int(stm_capacity)
+        self.routing_dim = int(routing_dim)
+        self._batch = int(batch)
+
+        # PI first: lift each STM slot from concept_dim into the working
+        # width. Log-domain multiplicative boundary fold (nonlinear=True,
+        # the PiLayer default) bounds the lifted slots to [-1, 1] so the
+        # downstream raw-linear Sigma sees a well-scaled operand.
+        self.pi = PiLayer(
+            concept_dim, working_dim,
+            naive=naive, ergodic=ergodic, invertible=True,
+            hasBias=True, stable=stable, monotonic=monotonic,
+            nonlinear=True)
+        # Sigma SECOND with nonlinear=False: raw linear W @ x + b, NO
+        # intermediate tanh between the PI body and the Sigma body. This
+        # is the section's defining requirement -- the two linear cores
+        # fuse with no nonlinearity interposed.
+        self.sigma = SigmaLayer(
+            working_dim, concept_dim,
+            naive=naive, ergodic=ergodic, invertible=True,
+            nonlinear=False, stable=stable, monotonic=monotonic)
+
+        # Expose the sublayers' params to the Layer ergodic / paramUpdate
+        # cascade AND the Space Start/Reset walk via the ModuleList.
+        self.layers = nn.ModuleList([self.pi, self.sigma])
+
+        # Routing conditioning: project the soft rule distribution into
+        # concept_dim and add to the Sigma output. Built unconditionally
+        # so the conditioning path exists; only applied when a non-None
+        # routing tensor is supplied (Task 4 wires the producer).
+        self.routing_proj = nn.Linear(self.routing_dim, concept_dim)
+
+    # -- core PI->Sigma transform ------------------------------------
+    def _pi_sigma(self, x):
+        """Apply ``sigma(pi(x))`` on a ``[..., concept_dim]`` operand
+        (no routing bias, no cross-slot collapse). Returns
+        ``[..., concept_dim]``. Used per-slot by both the serial and
+        parallel forward paths.
+        """
+        return self.sigma.forward(self.pi.forward(x))
+
+    def _apply_routing_bias(self, y, routing, sign=1):
+        """Add (``sign=+1``, forward) or subtract (``sign=-1``, reverse)
+        the projected routing bias on a Sigma output ``y``.
+
+        ``y``: ``[B, D]`` (serial) or ``[B, N, D]`` (parallel).
+        ``routing``: ``[B, routing_dim]`` or None. When None this is a
+        no-op (keeps the layer usable before the router is wired). When
+        present the bias is projected to ``[B, D]`` and broadcast over
+        the slot axis in the parallel case. The reverse path passes
+        ``sign=-1`` to exactly undo the additive forward bias before
+        inverting the Sigma body.
+        """
+        if routing is None:
+            return y
+        bias = self.routing_proj(routing)            # [B, D]
+        if y.dim() == 3:
+            bias = bias.unsqueeze(1)                 # [B, 1, D] -> broadcast over N
+        return y + sign * bias
+
+    def forward(self, prior_slots, routing=None, parallel=False):
+        """Predict the next idea(s) from prior STM slots.
+
+        ``prior_slots``: ``[B, K, D]`` (K prior slots).
+        ``routing``: ``[B, routing_dim]`` soft rule distribution, or
+            None to skip the rule-aware bias.
+
+        Serial (``parallel=False``, the primary regime): PI-lift each of
+        the K slots, then Sigma-**collapse across the K slots** (sum-fold
+        over the slot axis) into ONE predicted idea ``[B, D]``. This is
+        the "Sigma collapses the lifted slots into the predicted idea".
+
+        Parallel (``parallel=True``): apply PI->Sigma **per slot** (no
+        cross-slot collapse), returning ``[B, N, D]`` with the same N as
+        the input.
+
+        The routing bias (if any) is added to the Sigma output in both
+        regimes (broadcast over the slot axis when parallel).
+        """
+        if prior_slots.dim() != 3:
+            raise ValueError(
+                f"IntraSentenceLayer.forward expects [B, K, D]; got "
+                f"shape {tuple(prior_slots.shape)}")
+
+        if parallel:
+            # Per-slot PI->Sigma; no cross-slot mixing. [B, N, D].
+            y = self._pi_sigma(prior_slots)
+            return self._apply_routing_bias(y, routing)
+
+        # Serial: PI-lift every slot, then fold (sum) the lifted slots
+        # over the slot axis BEFORE the Sigma collapse -> one idea.
+        lifted = self.pi.forward(prior_slots)        # [B, K, W]
+        folded = lifted.sum(dim=1)                    # [B, W]  (raw slot-axis sum)
+        y = self.sigma.forward(folded)                # [B, D]
+        return self._apply_routing_bias(y, routing)
+
+    def reverse(self, predicted, routing=None, parallel=False, k=None):
+        """Approximate inverse of ``forward`` (recon roundtrip helper).
+
+        Both paths first subtract the routing bias (exactly, since the
+        bias was an additive term), then invert the Sigma and PI bodies.
+
+        Parallel / per-slot path (``parallel=True``): the sublayers are
+        invertible and width-preserving, so
+        ``reverse(forward(x, parallel=True), parallel=True) ~= x`` up to
+        the LDU inverse tolerance (tight).
+
+        Serial / collapse path (``parallel=False``): the Sigma collapse
+        sums over the K lifted slots, which is **many-to-one**, so the
+        inverse is necessarily approximate. We reconstruct by
+        ``sigma.reverse`` to the working width, dividing the recovered
+        fold equally across the ``k`` slots, then ``pi.reverse`` each
+        slot back to concept width. ``k`` defaults to
+        ``stm_capacity - 1`` (the STM[1:end] fan-out the predictor
+        consumes). Returns ``[B, k, D]``.
+        """
+        if parallel:
+            if predicted.dim() != 3:
+                raise ValueError(
+                    f"IntraSentenceLayer.reverse(parallel=True) expects "
+                    f"[B, N, D]; got {tuple(predicted.shape)}")
+            y = self._apply_routing_bias(predicted, routing, sign=-1)
+            return self.pi.reverse(self.sigma.reverse(y))
+
+        # Serial collapse inverse (approximate).
+        if predicted.dim() != 2:
+            raise ValueError(
+                f"IntraSentenceLayer.reverse(parallel=False) expects "
+                f"[B, D]; got {tuple(predicted.shape)}")
+        if k is None:
+            k = max(1, self.stm_capacity - 1)
+        k = int(k)
+        y = self._apply_routing_bias(predicted, routing, sign=-1)
+        folded = self.sigma.reverse(y)               # [B, W]  (recovered slot-sum)
+        per_slot = (folded / float(k)).unsqueeze(1)  # [B, 1, W]
+        per_slot = per_slot.expand(-1, k, -1)        # [B, k, W]
+        return self.pi.reverse(per_slot)             # [B, k, D]
+
+    # -- loss helper (wired into training by a later task) -----------
+    def intra_loss(self, pred, target):
+        """L_intra = MSE(pred, target).
+
+        ``pred`` / ``target``: matching shapes (``[B, D]`` serial or
+        ``[B, N, D]`` parallel). Returns the scalar mean-squared error.
+        The actual accumulation into the training backward path is wired
+        by a later task (Task 3); this helper exists so that wiring is a
+        one-liner and the loss math lives next to the layer that defines
+        it.
+        """
+        return F.mse_loss(pred, target)
+
+    def Reset(self, batch=None, hard=True):
+        """Per-sentence / per-document state reset.
+
+        ``IntraSentenceLayer`` holds no per-call recurrent buffers (the
+        STM substrate it reads lives on ``ConceptualSpace``), so Reset
+        is a structural no-op beyond honoring an optional batch resize
+        hint. The PI / Sigma sublayers carry no per-call state to clear.
+        Present so the Space's Start/Reset cascade reaches the layer
+        without error (mirrors ``InterSentenceLayer.Reset``).
+        """
+        if batch is not None:
+            self._batch = int(batch)
+
+
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 
@@ -8363,7 +9036,7 @@ class ShortTermMemory(Layer):
 
     Lifecycle:
         * Built by ``ConceptualSpace.__init__`` at construction time
-          (capacity from XML; default 9).
+          (capacity from XML; default 8).
         * Cleared on hard ``Reset`` (sentence boundary): all rows set
           to zero, depth pointers reset to 0.
 
@@ -8372,7 +9045,7 @@ class ShortTermMemory(Layer):
     not learned weights.
     """
 
-    DEFAULT_CAPACITY = 9
+    DEFAULT_CAPACITY = 8
 
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__(nInput=0, nOutput=0)

@@ -89,7 +89,7 @@ internal Sigma / Pi (no longer substrate-borrowing).
 | Space | Owns | Forward signature |
 |---|---|---|
 | **PerceptualSpace** | one `self.pi` (PiLayer), one `self.sigma` (SigmaLayer), MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument**. `x` is IS at bootstrap (SERIAL) or PARALLEL bootstrap, then CS in PARALLEL refinement. Body: `result = self.pi(x.materialize()) + self.sigma(x.materialize())` (no outer tanh). |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~7) | `CS.forward(new_idea_subspace)` — STM bookkeeping (shift slots, push to slot 7). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
 | **SymbolicSpace** | unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | No atomic forward fold. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
@@ -646,7 +646,7 @@ bookkeeping (shift + push), with no atomic fold layer.
 
 | Property | Default | Configurable via |
 |---|---|---|
-| Capacity | 7 (Miller, ±2) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
+| Capacity | 8 (within Miller's $7 \pm 2$ band; matches `wMax` fallback) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
 | Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
 | Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
 
@@ -656,14 +656,22 @@ API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
 
 **STM transition by mode:**
 
-- **SERIAL / GRAMMATICAL**: `_stm_shift_and_push(idea)` — shift slots 0..6
-  to take values from slots 1..7, write new idea to slot 7. Per-word
-  cadence: one push per `PS.forward(IS_t)` call.
+- **SERIAL / GRAMMATICAL**: `_stm_shift_and_push(idea)` — shift slots 0..(cap-2)
+  to take values from slots 1..(cap-1), write new idea to the top slot
+  (default cap = 8, so slots 0..6 take from 1..7 and the new idea lands in
+  slot 7). Per-word cadence: one push per `PS.forward(IS_t)` call.
 - **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
   simultaneously; no shift. T = `<conceptualOrder>`.
 
 The signal router (`WordSubSpace.languageLayer`) consumes
 `stm.snapshot()` as its slab input for grammar op dispatch.
+
+Both transitions follow a **predict-then-perceive** discipline (the
+in-STM `IntraSentenceLayer` predicts the free slot / slab from the
+retained context before the new event is written). The full STM
+treatment — predict-then-perceive, attentional filtering (serial runs
+WITH attention by design), relative-vs-absolute end-states, and the LTM
+chain of end-states — is in the dedicated [STM.md](STM.md) chapter.
 
 ### Lift / Lower as binary GrammarLayer subclasses
 
