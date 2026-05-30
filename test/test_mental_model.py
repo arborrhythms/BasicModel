@@ -57,14 +57,15 @@ class TestBasicModelForwardReverse(unittest.TestCase):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")
-        # Methods present in TheGrammar.s_methods reflect the XML's
-        # <symbols> bucketing; not every grammar op is S-tier in the
-        # post-2026-05-14 architecture (intersection / union / not /
-        # part are now C-tier, but still appear in <symbols>).
+        # Post-2026-05-29 grammar-file refactor: tier comes from the
+        # layer class (per ``_reassign_tiers_from_layer_classes``), so
+        # ``s_methods`` returns only methods whose layer declares
+        # ``tier='S'``. ``isEqual`` / ``conjunction`` / ``disjunction``
+        # are S-tier; ``part`` / ``not`` / ``union`` / ``intersection``
+        # moved to C-tier per their GrammarLayer subclasses.
         self.assertIn('isEqual', Language.TheGrammar.s_methods)
-        self.assertIn('part', Language.TheGrammar.s_methods)
-        self.assertIn('union', Language.TheGrammar.s_methods)
-        self.assertIn('not', Language.TheGrammar.s_methods)
+        self.assertIn('conjunction', Language.TheGrammar.s_methods)
+        self.assertIn('disjunction', Language.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all tiers."""
@@ -122,7 +123,12 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         # for diagnostics and gating.
         self.assertIs(model.wordSubSpace.languageLayer.grammar,
                       Language.TheGrammar)
-        self.assertIsNone(Language.TheGrammar.symbolic_transition())
+        # Post-2026-05-29 grammar-file refactor: ``load_from_grammar_file``
+        # injects an ``S = S`` identity rule (method_name=None, arity=1,
+        # tier='S') so the per-word cursor has a no-op transition to
+        # pad against. ``symbolic_transition()`` now returns that
+        # rule's id rather than None.
+        self.assertIsNotNone(Language.TheGrammar.symbolic_transition())
 
 
 if __name__ == '__main__':

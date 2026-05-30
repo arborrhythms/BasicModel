@@ -1095,16 +1095,19 @@ class XMLConfig:
 
     def tetralemma_policy(self, space_name):
         """Return (allow_excluded_middle, allow_contradiction, neither_threshold)
-        for ``space_name``, applying inheritance from the global
-        ``<TetralemmaPolicy>`` block when ``<tetralemmaOverride enabled="false">``.
+        for ``space_name``, applying inheritance from the shared
+        ``<architecture><TetralemmaPolicy>`` block when
+        ``<tetralemmaOverride enabled="false">``.
 
         Per spec O4 of the lift/lower/bivector design, the conceptual
         and symbolic layers share a default tetralemma policy unless a
         per-space override is enabled. ``space_name`` is the XML section
         tag ("ConceptualSpace", "SymbolicSpace", ...).
 
-        Returns a 3-tuple. Defaults match the global block in
-        ``data/BasicModel.xml`` (Kleene: permit NEITHER, forbid BOTH).
+        Returns a 3-tuple. Defaults: permit NEITHER, forbid BOTH
+        (Kleene). The shared block lives under ``<architecture>``;
+        the legacy top-level ``<TetralemmaPolicy>`` is still read as a
+        fallback for any config not yet migrated.
         """
         override_node = self.get(
             f"{space_name}.tetralemmaOverride", default=None)
@@ -1112,8 +1115,12 @@ class XMLConfig:
         if isinstance(override_node, dict):
             override_enabled = (str(override_node.get("enabled", "false"))
                                 .strip().lower() == "true")
-        section = f"{space_name}.TetralemmaPolicy" if override_enabled \
-            else "TetralemmaPolicy"
+        if override_enabled:
+            section = f"{space_name}.TetralemmaPolicy"
+        else:
+            section = "architecture.TetralemmaPolicy"
+            if self.get(section, default=None) is None:
+                section = "TetralemmaPolicy"
         return (
             int(self.get(f"{section}.allowExcludedMiddle", default=1)),
             int(self.get(f"{section}.allowContradiction", default=0)),

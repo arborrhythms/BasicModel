@@ -34,177 +34,20 @@
       <port>8002</port>
     </server>
 
+    <!-- Shared 4-valued (catuskoti) balance policy inherited by
+         ConceptualSpace and SymbolicSpace unless their
+         <tetralemmaOverride enabled="true"> opts out. -->
+    <TetralemmaPolicy>
+      <allowExcludedMiddle>1</allowExcludedMiddle>
+      <allowContradiction>0</allowContradiction>
+      <neitherThreshold>0.1</neitherThreshold>
+    </TetralemmaPolicy>
+
   </architecture>
 
   <WordSpace>
-    <!-- LearnedSVO: SVO rides the grammar's S -> S VO / VO -> V O rules
-         instead of the positional heuristic. Generation stays off by
-         default; flip to true to populate ``_predicted_head`` via the
-         downward S -> C head emission. -->
-
     <language>
-      <!-- English grammar (2026-05-05 rewrite). Inline XML form;
-           closed-class words (and / or / is / has / is-a / not)
-           act as op markers for conjunction / disjunction / equals
-           / part / not. -->
-      <start>S</start>
-      <grammar>
-        <compose>
-          <!-- Per the 2026-05-07 rollback: explicit per-tier natural
-               folds (sigma at P / S, pi at C). Previously these were
-               supplied by the SyntacticLayer's default_rule
-               code-level fallback. -->
-          <percepts>
-            <rule>P = sigma(P)</rule>
-          </percepts>
-          <concepts>
-            <rule>C = pi(C)</rule>
-          </concepts>
-          <symbols>
-            <rule>S = sigma(S)</rule>
-            <!-- Sentence -->
-            <rule>S = NP</rule>
-            <rule>S = lift(NP, VP)</rule>
-            <rule>S = isEqual(NP, NP)</rule>      <!-- marker: "is" -->
-            <rule>S = isEqual(NP, AP)</rule>      <!-- marker: "is" -->
-            <rule>S = part(NP, NP)</rule>        <!-- markers: "has", "is-a" -->
-            <rule>S = not(S)</rule>              <!-- marker: "not" -->
-            <rule>S = conjunction(S, S)</rule>   <!-- marker: "and" -->
-            <rule>S = disjunction(S, S)</rule>   <!-- marker: "or" -->
-            <rule>S = query(NP, AP)</rule>
-            <rule>S = query(NP, NP)</rule>
-
-            <!-- Noun Phrase -->
-            <rule>NP = N</rule>
-            <rule>NP = AP</rule>
-            <rule>NP = conjunction(NP, NP)</rule>  <!-- marker: "and" -->
-            <rule>NP = disjunction(NP, NP)</rule>  <!-- marker: "or" -->
-
-            <!-- Verb Phrase -->
-            <rule>VP = V</rule>
-            <rule>VP = lower(ADV, VP)</rule>
-            <rule>VP = lift(MP, VP)</rule>
-            <rule>VP = lower(ADJ, VP)</rule>
-            <rule>VP = intersection(V, O)</rule>
-
-            <!-- Object -->
-            <rule>O = NP</rule>
-
-            <!-- Adjective Phrase -->
-            <rule>AP = lower(ADJ, NP)</rule>
-            <rule>AP = lower(ADJ, AP)</rule>
-            <rule>AP = lower(DET, NP)</rule>
-
-            <!-- Modal Phrase -->
-            <rule>MP = ADV</rule>
-            <rule>MP = ADV MP</rule>
-
-            <!-- Prepositional Phrase.
-                 PP = lift(P, NP): the preposition transforms its NP
-                 complement from a thing into a relation/location.
-                 (Lift adds the relational axis the preposition
-                 introduces.) Attached via lower onto NP/VP heads,
-                 mirroring the ADJ/ADV modifier patterns. PP trails its
-                 head in English ("cat on the mat", not "on-mat cat"). -->
-            <rule>PP = lift(P, NP)</rule>
-            <rule>NP = lower(NP, PP)</rule>
-            <rule>VP = lower(VP, PP)</rule>
-
-            <!-- Post-hoc S-ops (rule-id targets for the runtime
-                 rule predictor; ops already used in derivational
-                 rules above are not re-listed here). -->
-            <rule>S = true(S)</rule>
-            <rule>S = false(S)</rule>
-            <rule>S = non(S)</rule>
-            <rule>S = intersection(S, S)</rule>
-            <rule>S = union(S, S)</rule>
-            <rule>S = swap(S, S)</rule>
-          </symbols>
-        </compose>
-        <generate>
-          <symbols>
-            <!-- Marker categories are *op-bound*, not surface-form-bound:
-                 EQUALS_MARK / PART_MARK / CONJ_MARK / DISJ_MARK /
-                 NOT_MARK / NON_MARK / QUERY_MARK. Each names the op
-                 whose syntactic-sugar slot it fills; the surface form
-                 ("is" / "has" / "and" / "or" / "not" / "non" / "?")
-                 is bound by a separate language-specific lexicon, so
-                 the same grammar productions work for English /
-                 Spanish / etc. without edits. -->
-
-            <!-- PROJECT-reverse: codebook lookup; reverse of S = NP. -->
-            <rule>NP = S</rule>
-
-            <!-- ===== Sentence-level reverses ===== -->
-
-            <!-- S = lift(NP, VP)          (no marker) -->
-            <rule>NP, VP = lift.reverse(S)</rule>
-
-            <!-- S = isEqual(NP, NP) -->
-            <rule>NP, EQUALS_MARK, NP = isEqual.reverse(S)</rule>
-
-            <!-- S = isEqual(NP, AP) -->
-            <rule>NP, EQUALS_MARK, AP = isEqual.reverse(S)</rule>
-
-            <!-- S = part(NP, NP) -->
-            <rule>NP, PART_MARK, NP = part.reverse(S)</rule>
-
-            <!-- S = not(S)                (unary, self-inverse) -->
-            <rule>NOT_MARK, S = not.reverse(S)</rule>
-
-            <!-- S = non(S)                (unary, self-inverse) -->
-            <rule>NON_MARK, S = non.reverse(S)</rule>
-
-            <!-- S = conjunction(S, S) -->
-            <rule>S, CONJ_MARK, S = conjunction.reverse(S)</rule>
-
-            <!-- S = disjunction(S, S) -->
-            <rule>S, DISJ_MARK, S = disjunction.reverse(S)</rule>
-
-            <!-- Query: QUERY_MARK is sentence-final ("?" in English;
-                 the lexicon may bind it to a different surface form
-                 in other languages). -->
-            <!-- S = query(NP, AP) -->
-            <rule>EQUALS_MARK, NP, AP, QUERY_MARK = query.reverse(S)</rule>
-
-            <!-- S = query(NP, NP) -->
-            <rule>EQUALS_MARK, NP, NP, QUERY_MARK = query.reverse(S)</rule>
-
-            <!-- ===== Noun-Phrase reverses ===== -->
-
-            <!-- NP = conjunction(NP, NP) -->
-            <rule>NP, CONJ_MARK, NP = conjunction.reverse(NP)</rule>
-
-            <!-- NP = disjunction(NP, NP) -->
-            <rule>NP, DISJ_MARK, NP = disjunction.reverse(NP)</rule>
-
-            <!-- ===== Verb-Phrase reverses ===== -->
-
-            <!-- VP = lower(ADV, VP)       (no marker) -->
-            <rule>ADV, VP = lower.reverse(VP)</rule>
-
-            <!-- VP = lift(MP, VP)         (no marker) -->
-            <rule>MP, VP = lift.reverse(VP)</rule>
-
-            <!-- VP = lower(ADJ, VP)       (no marker) -->
-            <rule>ADJ, VP = lower.reverse(VP)</rule>
-
-            <!-- VP = intersection(V, O)   (no marker; positional) -->
-            <rule>V, O = intersection.reverse(VP)</rule>
-
-            <!-- ===== Adjective-Phrase reverses ===== -->
-
-            <!-- AP = lower(ADJ, NP)       (no marker) -->
-            <rule>ADJ, NP = lower.reverse(AP)</rule>
-
-            <!-- AP = lower(ADJ, AP)       (no marker) -->
-            <rule>ADJ, AP = lower.reverse(AP)</rule>
-
-            <!-- AP = lower(DET, NP)       (no marker; determiner-headed) -->
-            <rule>DET, NP = lower.reverse(AP)</rule>
-          </symbols>
-        </generate>
-      </grammar>
+      <grammar>complete.grammar</grammar>
     </language>
   </WordSpace>
 
@@ -225,23 +68,14 @@
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- TetralemmaPolicy: shared default for the 4-valued (catuskoti)
-       balance of conceptual / symbolic activations.  Per-space override
-       blocks below toggle ``enabled`` to opt out of the inherited
-       policy and define their own; default inheritance keeps the two
-       layers in sync (per spec O4 of the lift/lower/bivector design). -->
-  <TetralemmaPolicy>
-    <allowExcludedMiddle>1</allowExcludedMiddle>
-    <allowContradiction>0</allowContradiction>
-    <neitherThreshold>0.1</neitherThreshold>
-  </TetralemmaPolicy>
-
   <!-- ConceptualSpace: matches percept/symbol row count; state mixing
        happens via iterative Sigma-Pi (not concatenation). -->
   <ConceptualSpace>
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
     <tetralemmaOverride enabled="false" />
@@ -251,6 +85,8 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <accumulateTruth>0</accumulateTruth>
     <tetralemmaOverride enabled="false" />
   </SymbolicSpace>

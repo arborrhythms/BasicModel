@@ -55,7 +55,7 @@ def test_arir_requires_reconstruct_not_none():
 import pytest
 
 
-@pytest.mark.skip(reason="Skip reason updated 2026-05-29 (serial-mode refactor done; new failure is unrelated): SymbolicSpace.forwardEnd reshape fails with 'shape [1, -1, 100] invalid for input of size 104' at bin/Spaces.py:6459. Looks like a MentalModel.xml fixture / dim-count mismatch (104 vs nOutputDim=100), not the original serial-mode block. Needs deeper investigation.")
+@pytest.mark.skip(reason="Skip reason updated 2026-05-29 (Stage 3 router wiring landed): forward() now runs cleanly with MentalModel.xml, but AR mode still emits a 3D predictions tensor (1, 1, 100) where the test expects 4D [B, K, N, predDim]. The 4D contract requires the outer pos loop to stack one prediction per revealed token (K>0); that staging is a separate AR-mode gap.")
 def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
     """AR: forward() returns (input_state, symbols, predictions_list, None).
 

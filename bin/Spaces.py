@@ -10437,10 +10437,18 @@ class ConceptualSpace(Space):
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
-        # Materialise the perceptual input event. Stage 1.C contract
-        # leaves the dim as-is (no percept→concept lift); downstream
-        # consumers see the pushed idea verbatim.
+        # Materialise the perceptual input event. Stage 3 router wiring:
+        # PS hands CS a muxed [B, N, nWhat+nWhere+nWhen] event; the
+        # concept-dim STM buffer holds only the ``what`` columns (see
+        # ``ShortTermMemory._stm_payload_dim = concept_dim``). Trim the
+        # positional / temporal columns at the PS→CS boundary so the
+        # signal-router-dispatched compose pass runs over a clean
+        # concept-dim slab. ``self.nWhat`` is the authoritative target
+        # width (matches the buffer allocation).
         primary = subspace.materialize()
+        _stm_dim = int(self.nWhat)
+        if primary is not None and primary.shape[-1] != _stm_dim:
+            primary = primary[..., :_stm_dim]
         # Task G auto-META on word learning: at stage 0 the incoming PS
         # contribution carries the freshly-seen percept ids on
         # ``perceptualSpace_ref._forward_input['indices']`` (stashed by
@@ -10495,6 +10503,8 @@ class ConceptualSpace(Space):
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
+            if sym is not None and sym.shape[-1] != _stm_dim:
+                sym = sym[..., :_stm_dim]
         # 2026-05-29 EXPERIMENT (per user direction): clean-stack STM.
         # Replace the Stage-10 ``sigma_in(combined) + sigma_cs(prev)``
         # additive composition with per-stage tier attribution:
@@ -13246,6 +13256,16 @@ class SymbolicSpace(Space):
         vspace = CS_subspaceForSS
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
+        # Stage 3 router wiring: when the CS<->SS carrier is aliased to
+        # a wider (muxed) PS subspace, the materialised event still
+        # carries the nWhere/nWhen columns PS added. SS operates on a
+        # concept-dim ``what`` slab; trim the extra columns here so the
+        # signal-router-dispatched compose pass and the downstream
+        # forwardEnd reshape see ``nOutputDim``-wide tensors.
+        if (act_pre is not None
+                and self.nOutputDim != -1
+                and act_pre.shape[-1] != self.nOutputDim):
+            act_pre = act_pre[..., :self.nOutputDim]
         # SyntacticLayer is unconditional: per the grammar XML, the
         # chart populates ``current_rules`` with one or more rules per
         # tier (e.g. ``S = sigma(S)`` from model.xml's default
