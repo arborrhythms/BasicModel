@@ -16,7 +16,6 @@
     <rule>S = disjunction.forward(S, S)</rule>
     <rule>S = part.forward(S, S)</rule>
     <rule>S = isEqual.forward(S, S)</rule>
-    <rule>S = query.forward(S)</rule>
   </compose>
 
   <generate>
@@ -34,7 +33,6 @@
     <rule>S, S = disjunction.reverse(S)</rule>
     <rule>S, S = part.reverse(S)</rule>
     <rule>S, S = isEqual.reverse(S)</rule>
-    <rule>S = query.reverse(S)</rule>
   </generate>
 
 </grammar>

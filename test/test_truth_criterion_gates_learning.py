@@ -92,6 +92,19 @@ class TestTruthCriterionGate(unittest.TestCase):
         self.assertIsNone(
             out, "tc=1 must reject a sub-1 learn-score (nothing learned)")
 
+    def test_tc_one_rejects_even_a_perfect_score(self):
+        """tc == 1 means LEARN NOTHING -- a perfect learn_score of 1.0 must
+        NOT slip through (the maximal-bar endpoint is exclusive)."""
+        m = _make_radix_model()
+        cs = m.conceptualSpace
+        cs.truth_criterion = 1.0
+        # learn_score = 1.0 * 1.0 * 1.0 = 1.0; must STILL be rejected at tc=1.
+        _mock_factors(cs, 1.0, 1.0, 1.0)
+        pred, a, b = _ideas(cs)
+        out = cs._maybe_learn_relation(pred, a, b)
+        self.assertIsNone(
+            out, "tc=1 must reject even a perfect 1.0 learn-score")
+
     def test_tc_zero_always_learns(self):
         """tc == 0: even a near-zero score is accepted."""
         m = _make_radix_model()

@@ -135,14 +135,16 @@
     <maxActivePerLayer>8</maxActivePerLayer>
     <codebookRetire>false</codebookRetire>
 
-    <!-- Acceptance bar in [0, 1] for content-aware learned-relation
-         insertion into the relative-sentence codebook (read onto
-         ConceptualSpace; overridable per-space). 1 = nothing learned
-         (highest bar); 0 = everything learned (no bar). The learn_score
-         gating that consumes this is wired by a later task. Distinct from
-         truthMinMagnitude (the gold-<truth> recording gate); replaces the
-         retired per-sentence truth accumulator (accumulateTruth). -->
-    <truthCriterion>0.3</truthCriterion>
+    <!-- Single continuous truth bar in [0, 1] (read onto BOTH
+         ConceptualSpace and SymbolicSpace; overridable per-space).
+         1 = nothing learned/recorded (highest bar); 0 = everything
+         learned/recorded (no bar). Governs BOTH content-aware
+         learned-relation insertion into the relative-sentence codebook
+         AND SymbolicSpace truth recording (gold ingestion + training).
+         Replaces the retired binary accumulateTruth / truthMinMagnitude
+         switches. Default 1.0: truth-learning is OFF by default (opt-in by
+         lowering toward 0). -->
+    <truthCriterion>1.0</truthCriterion>
 
     <!-- Runtime symbol-learning hooks. Disabled by default. -->
     <symbolLearning>
@@ -450,9 +452,10 @@
          flatness on codebook rows).  0 disables. -->
     <decorrelationWeight>0.0</decorrelationWeight>
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
-    <!-- Minimum magnitude before a SymbolicSpace activation contributes
-         to TruthLayer commit. -->
-    <truthMinMagnitude>0.3</truthMinMagnitude>
+    <!-- Truth recording + learned-relation acceptance are both governed by
+         the single continuous <truthCriterion> bar (declared under
+         <architecture>; 0 = record/accept all, 1 = none). The binary
+         truthMinMagnitude / accumulateTruth switches are retired. -->
   </SymbolicSpace>
 
   <OutputSpace>

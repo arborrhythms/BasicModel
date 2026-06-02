@@ -262,6 +262,151 @@ class TestInterLoss(_Base):
                             for r in self.layer._inter_last_pred_root))
 
 
+class TestTrainingBoundaryStagesPrediction(_Base):
+    """Regression for the silent-correctness bug: the TRAINING
+    sentence-boundary hook must STAGE a next-end-state prediction before
+    scoring it, so ``L_inter`` actually accumulates during training.
+
+    The training boundary (bin/Models.py) historically called bare
+    ``observe_stm_end_state`` — which only scores an ALREADY-staged
+    prediction. Since nothing staged one on that path,
+    ``consume_inter_loss`` always returned ``None`` and the inter-predictor
+    never learned. The fix routes the training boundary through the single
+    ``predict_and_observe_stm_end_state`` call (predict-from-history THEN
+    observe). This test drives THAT method directly (it does NOT call
+    ``predict_next_end_state`` itself — that would mask the bug) and asserts
+    the loss is cold-None on the 1st boundary but live/finite/grad-bearing
+    on the 2nd+.
+    """
+
+    def setUp(self):
+        self.D = 4
+        self.layer = _make_layer(D=self.D)
+        self.layer.set_inter_loss_weight(0.1)
+
+    def test_combined_call_accumulates_live_loss_after_first_boundary(self):
+        with torch.enable_grad():
+            # Boundary 1: cold chain -> the staged prediction is the
+            # degenerate zeros root (no grad), so observing it must NOT
+            # accumulate a term. (1st sentence has no prior to predict from.)
+            self.layer.predict_and_observe_stm_end_state(
+                [3], [torch.randn(3, self.D)])
+        self.assertIsNone(
+            self.layer.consume_inter_loss(),
+            "the 1st (cold) training boundary must not accumulate L_inter")
+
+        with torch.enable_grad():
+            # Boundary 2: the chain now holds the boundary-1 end-state, so the
+            # staged prediction is a REAL grad-bearing root and observing the
+            # arriving end-state scores it -> L_inter accumulates.
+            self.layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+        loss = self.layer.consume_inter_loss()
+        self.assertIsNotNone(
+            loss,
+            "the 2nd training boundary MUST accumulate L_inter (the "
+            "regression: bare observe never staged a prediction)")
+        self.assertTrue(torch.isfinite(loss).all(),
+                        "L_inter must be finite (fail-loud otherwise)")
+        self.assertTrue(
+            loss.requires_grad,
+            "L_inter must carry grad so the inter-predictor trains")
+
+    def test_combined_call_loss_backprops_into_predictor(self):
+        # Prime with one boundary, then a second whose staged prediction is
+        # grad-bearing; the consumed loss must populate predictor grads.
+        with torch.enable_grad():
+            self.layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+            self.layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+            loss = self.layer.consume_inter_loss()
+        self.assertIsNotNone(loss)
+        loss.backward()
+        grads = [p.grad for p in self.layer._inter_predictor.parameters()
+                 if p.grad is not None]
+        self.assertTrue(len(grads) > 0,
+                        "backward must populate inter-predictor grads")
+        self.assertTrue(any(torch.any(g != 0.0) for g in grads),
+                        "at least one predictor grad must be non-zero")
+
+    def test_combined_call_accumulates_across_several_boundaries(self):
+        # A run of consecutive training boundaries: each post-cold boundary
+        # contributes a scored term, and the chain grows by exactly one per
+        # call (no double-append).
+        with torch.enable_grad():
+            for i in range(5):
+                d = 3 if (i % 2 == 0) else 1
+                self.layer.predict_and_observe_stm_end_state(
+                    [d], [torch.randn(d, self.D)])
+        # 5 boundaries -> chain length 5 (one append each, no double-append).
+        self.assertEqual(len(self.layer.get_stm_chain(b=0)), 5)
+        loss = self.layer.consume_inter_loss()
+        self.assertIsNotNone(loss)
+        self.assertTrue(loss.requires_grad)
+        self.assertTrue(torch.isfinite(loss).all())
+
+    def test_combined_call_no_grad_does_not_accumulate(self):
+        with torch.no_grad():
+            self.layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+            self.layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+        self.assertIsNone(
+            self.layer.consume_inter_loss(),
+            "eval-time combined calls must not grow the loss graph")
+
+    def test_combined_call_no_predictor_is_bare_observe(self):
+        # No inter-predictor (concept_dim unset) -> the combined call must
+        # degenerate to a bare observe: the chain still grows, no loss, no
+        # error (absolute-only / no-discourse no-op safety).
+        layer = Layers.InterSentenceLayer(
+            n_symbols=4, max_depth=8, n_dim=self.D,
+            p=5, q=2, batch=1, ltm_capacity=1024, concept_dim=None)
+        self.layer = layer
+        self.assertIsNone(layer._inter_predictor)
+        with torch.enable_grad():
+            layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+            layer.predict_and_observe_stm_end_state(
+                [1], [torch.randn(1, self.D)])
+        self.assertEqual(len(layer.get_stm_chain(b=0)), 2,
+                         "chain must still grow when there is no predictor")
+        self.assertIsNone(layer.consume_inter_loss(),
+                          "no predictor -> no L_inter")
+
+    def test_combined_call_matches_manual_two_call_order(self):
+        # The combined call must produce the SAME staging/scoring as the
+        # manual predict-then-observe order generate_sentence uses. Build two
+        # layers with identical weights, drive one via the combined call and
+        # the other via the explicit two-call order over the same inputs, and
+        # assert their consumed losses match.
+        torch.manual_seed(1234)
+        a = _make_layer(D=self.D)
+        a.set_inter_loss_weight(0.1)
+        b = _make_layer(D=self.D)
+        b.set_inter_loss_weight(0.1)
+        b.load_state_dict(a.state_dict())
+        es1 = torch.randn(3, self.D)
+        es2 = torch.randn(1, self.D)
+        with torch.enable_grad():
+            # Combined path.
+            a.predict_and_observe_stm_end_state([3], [es1.clone()])
+            a.predict_and_observe_stm_end_state([1], [es2.clone()])
+            la = a.consume_inter_loss()
+            # Manual two-call path (the generate_sentence order).
+            b.predict_next_end_state(0)
+            b.observe_stm_end_state([3], [es1.clone()])
+            b.predict_next_end_state(0)
+            b.observe_stm_end_state([1], [es2.clone()])
+            lb = b.consume_inter_loss()
+        self.assertIsNotNone(la)
+        self.assertIsNotNone(lb)
+        self.assertTrue(torch.allclose(la, lb, atol=1e-6),
+                        "combined call must match the manual two-call order")
+        self.layer = a  # tearDown release
+
+
 class TestCPriorSlotStack(_Base):
     """``ConceptualSpace._c_prior`` accepts a ``[depth, D]`` slot-stack and
     keeps the legacy ``[D]`` / ``[1, D]`` broadcast byte-identical.

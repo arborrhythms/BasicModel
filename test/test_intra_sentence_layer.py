@@ -246,6 +246,116 @@ class TestConceptualSpaceOwnership(unittest.TestCase):
         self.assertEqual(layer.stm_capacity, cs.stm_capacity,
                          "layer stm_capacity must reuse the space's STM source.")
 
+    def test_routing_dim_is_n_rules(self):
+        # The routing width must now be the grammar's rule-vocabulary
+        # size (n_rules), NOT the old concept_dim placeholder. This is
+        # the dim WordSubSpace.routing_state.rule_probs is emitted at and
+        # the dim routing_proj projects from.
+        import Language
+        cs = self.model.conceptualSpaces[0]
+        n_rules = len(Language.TheGrammar.rule_table)
+        self.assertGreater(n_rules, 0, "grammar rule_table must be populated.")
+        self.assertEqual(
+            cs._intra_routing_dim, n_rules,
+            "ConceptualSpace._intra_routing_dim must be len(rule_table).")
+        self.assertEqual(
+            cs.intraSentenceLayer.routing_proj.in_features, n_rules,
+            "routing_proj must project from the n_rules rule distribution.")
+
+
+class TestRuleConditionedPredictor(unittest.TestCase):
+    """End-to-end: after a serial forward the per-word router populates a
+    dense ``rule_probs`` and the intra-sentence predictor is genuinely
+    rule-conditioned (the bias fires by exactly ``routing_proj(rule_probs)``).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        import Models
+        import Language
+        from util import init_config, init_device
+        init_device("cpu")
+        init_config(path=_CONFIG_PATH, defaults_path=_DEFAULTS_PATH)
+        Language.TheGrammar._configured = False
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            cls.model, _ = Models.BasicModel.from_config(_CONFIG_PATH)
+        Models.TheData.load("xor")
+        cls.model.eval()
+
+    def _run_one_forward(self):
+        model = self.model
+        loader = model.inputSpace.data.data_loader(
+            split="train", num_streams=1)
+        inp_items, _ = next(iter(loader))
+        x = model.inputSpace.prepInput(inp_items)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            with torch.no_grad():
+                model.forward(x)
+
+    def test_routing_state_built_with_rule_probs(self):
+        import Language
+        self._run_one_forward()
+        ws = self.model.wordSubSpace
+        rs = getattr(ws, "routing_state", None)
+        self.assertIsNotNone(rs, "compose must build wordSubSpace.routing_state.")
+        # current_rules dict contract preserved (ADDITIVE, not replaced).
+        self.assertIsInstance(ws.current_rules, dict,
+                              "current_rules must stay a dict (SS dispatch).")
+        rp = rs.rule_probs
+        self.assertTrue(torch.is_tensor(rp),
+                        "routing_state.rule_probs must be a tensor after compose.")
+        n_rules = len(Language.TheGrammar.rule_table)
+        self.assertEqual(int(rp.shape[-1]), n_rules,
+                         "rule_probs last dim must be n_rules.")
+        # Distribution: each fired row sums to 1 (or is an all-zero row).
+        row_sums = rp.sum(dim=1)
+        for s in row_sums.tolist():
+            self.assertTrue(abs(s - 1.0) < 1e-5 or abs(s) < 1e-9,
+                            f"each rule_probs row must sum to 1 or 0; got {s}")
+        self.assertTrue(torch.isfinite(rp).all(), "rule_probs must be finite.")
+
+    def test_intra_routing_for_predict_returns_real_tensor(self):
+        import Language
+        self._run_one_forward()
+        cs = self.model.conceptualSpace
+        r = cs._intra_routing_for_predict()
+        self.assertIsNotNone(
+            r, "_intra_routing_for_predict must return a real tensor after a "
+               "serial forward (not None).")
+        self.assertTrue(torch.is_tensor(r))
+        n_rules = len(Language.TheGrammar.rule_table)
+        self.assertEqual(int(r.shape[-1]), n_rules,
+                         "returned routing must be [B, n_rules].")
+
+    def test_bias_fires_on_real_model(self):
+        # The defining acceptance check: with the real rule_probs from a
+        # serial forward, the predictor output MUST change vs routing=None
+        # by EXACTLY the projected routing bias.
+        self._run_one_forward()
+        cs = self.model.conceptualSpace
+        layer = cs.intraSentenceLayer
+        # Force a clearly non-zero projection so the delta is unambiguous.
+        with torch.no_grad():
+            layer.routing_proj.weight.normal_(0.0, 1.0)
+            layer.routing_proj.bias.normal_(0.0, 1.0)
+        routing = cs._intra_routing_for_predict()
+        self.assertIsNotNone(routing)
+        snap = cs.stm.snapshot()
+        self.assertIsNotNone(snap)
+        ctx = snap[:, :-1] if snap.shape[1] >= 2 else snap
+        with torch.no_grad():
+            out_none = layer.forward(ctx, routing=None, parallel=False)
+            out_routed = layer.forward(ctx, routing=routing, parallel=False)
+            expected_delta = layer.routing_proj(routing)
+        self.assertFalse(
+            torch.allclose(out_none, out_routed, atol=1e-6),
+            "rule_probs must change the predictor output (bias must fire).")
+        self.assertTrue(
+            torch.allclose(out_routed - out_none, expected_delta, atol=1e-5),
+            "predictor delta must equal exactly routing_proj(rule_probs).")
+
 
 if __name__ == "__main__":
     unittest.main()

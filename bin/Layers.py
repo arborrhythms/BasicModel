@@ -6251,11 +6251,12 @@ class InterSentenceLayer(Layer):
                 # THIS row's end-state (``predict_next_end_state`` stashed a
                 # live predicted root on ``_inter_last_pred_root[b]``), score
                 # it against the end-state that actually arrived. Compare the
-                # predicted ROOT against the actual end-state's ROOT (slot 0,
-                # reduced to the predictor width) — this is robust to a
-                # depth mismatch between prediction and reality (the plan's
-                # "when depths differ, compare roots"; when they match the
-                # root is still slot 0 of both). The actual root is DETACHED
+                # predicted ROOT against the actual end-state's ROOT (the
+                # OLDEST slot under newest-at-slot-0, via
+                # ``_reduce_end_state_to_root``; reduced to the predictor
+                # width) — this is robust to a depth mismatch between
+                # prediction and reality (the plan's "when depths differ,
+                # compare roots"). The actual root is DETACHED
                 # so the loss trains ``_inter_predictor``, not the perception
                 # path. Score BEFORE the detach/clone below so the live
                 # payload's slot-0 is available; the target is detached
@@ -6284,6 +6285,59 @@ class InterSentenceLayer(Layer):
             if tetralemmas is not None and b < len(tetralemmas):
                 tet = tetralemmas[b]
             self._stm_end_states[b].append((int(depth), payload, tet))
+
+    @torch.compiler.disable
+    def predict_and_observe_stm_end_state(self, depths, payloads,
+                                          tetralemmas=None):
+        """Stage the next-end-state prediction THEN observe the arriving
+        end-state, in one call — the foolproof AR ordering for the TRAINING
+        sentence-boundary hook.
+
+        The two-call staging protocol (``predict_next_end_state`` then
+        ``observe_stm_end_state``) is correct but easy to get wrong: the
+        training boundary hook historically called only ``observe`` and so
+        never staged a prediction, leaving ``L_inter`` permanently empty (the
+        inter-predictor never trained). This method makes the order
+        impossible to get wrong by composing the two existing pieces.
+
+        AR order (the WHOLE point): for EVERY batch row, run
+        ``predict_next_end_state(b)`` FIRST — predicting from the chain state
+        BEFORE this boundary's end-state is appended, so the prediction is
+        genuinely "the next end-state from history". THEN call
+        ``observe_stm_end_state`` once for the whole batch — which scores each
+        row's just-staged prediction against the end-state that actually
+        arrived (accumulating ``L_inter``) and only then appends it to the
+        chain. No double-append, no double-score: prediction reads the old
+        chain, observation supervises against the new end-state and grows the
+        chain by exactly one per row.
+
+        Args / semantics are identical to ``observe_stm_end_state`` (see its
+        docstring) — this is purely the correct ordering wrapper. Cold-start
+        safety is inherited unchanged: the first sentence predicts from an
+        empty chain (degenerate zeros root, ``_inter_last_pred_root[b]``
+        cleared to ``None``), so ``observe`` finds nothing pending to score
+        and just appends — exactly as the staged path degenerates today. When
+        there is no inter-predictor (``sentencePrediction`` off / absolute-
+        only configs) ``predict_next_end_state`` returns ``None`` and stages
+        nothing, so this degenerates to a bare ``observe`` — byte-identical
+        to the pre-change boundary behaviour.
+        """
+        if depths is None or payloads is None:
+            return
+        # Stage the next-end-state prediction for EVERY row from the chain
+        # state BEFORE the new end-states are appended (``observe`` below does
+        # the appends). ``predict_next_end_state`` records the live predicted
+        # root on ``_inter_last_pred_root[b]`` (or clears it on cold start /
+        # no predictor), which ``observe_stm_end_state`` then scores.
+        if self._inter_predictor is not None:
+            B = len(payloads)
+            for b in range(B):
+                self.predict_next_end_state(b)
+        # Score each staged prediction against the arriving end-state
+        # (accumulating ``L_inter``) and append to the chain. Reusing the
+        # existing method keeps the fail-loud / detach / ragged-payload /
+        # tetralemma handling identical and avoids any duplication.
+        self.observe_stm_end_state(depths, payloads, tetralemmas=tetralemmas)
 
     def get_stm_chain(self, n=None, b=0):
         """Return the last ``n`` LTM end-states for row ``b``.
@@ -6315,18 +6369,22 @@ class InterSentenceLayer(Layer):
     # -- inter-sentence next-end-state prediction (Task 8, plan §9) -----
     def _reduce_end_state_to_root(self, payload):
         """Reduce one (ragged-depth) end-state payload ``[depth, D]`` to a
-        single representative ``[D]`` vector: its slot-0 ROOT.
+        single representative ``[D]`` vector: its ROOT.
 
         The chain's payloads are ragged (depth 1 for an absolute end-state,
         depth 3 for a relative ``[predicate, idea1, idea2]`` end-state). To
         feed a FIXED-width ``[1, K, D]`` context into the predictor we
-        collapse each end-state to ONE vector. We take SLOT 0 (the root) —
-        for an absolute end-state that IS the collapsed idea, and for a
-        relative end-state slot 0 is the predicate, the head that the
-        relative structure hangs off (the most natural single
-        representative). (Documented reduction; mean-over-depth is the
-        obvious alternative but the root carries the sentence-level signal,
-        mirroring ``_pool_sentence_rep`` which also takes row 0.)
+        collapse each end-state to ONE vector.
+
+        Newest-at-slot-0 convention: the STM end-state is stored
+        newest-first, so the root/predicate lives at the OLDEST slot
+        (index ``depth-1``), NOT slot 0. We take that last slot — for an
+        absolute end-state (depth 1) it is slot 0 (the collapsed idea), and
+        for a relative end-state (depth 3) it is slot 2, the predicate (the
+        head the relative structure hangs off). This recovers the SAME root
+        vector the old oldest-first ``x[0]`` read returned. (Documented
+        reduction; mean-over-depth is the obvious alternative but the root
+        carries the sentence-level signal.)
 
         Right-pads / left-truncates to ``concept_dim`` so a chain payload
         whose D differs from the predictor's width stays well-defined.
@@ -6337,7 +6395,7 @@ class InterSentenceLayer(Layer):
         if x.dim() == 1:
             root = x
         elif x.dim() == 2 and x.shape[0] >= 1:
-            root = x[0]
+            root = x[x.shape[0] - 1]                 # oldest slot = root
         else:
             return None
         D = int(self._inter_predictor.concept_dim)
@@ -6362,7 +6420,8 @@ class InterSentenceLayer(Layer):
 
         Mechanism:
           * **Chain reduction** (ragged -> fixed): reduce each of the last
-            ``K`` end-states to its slot-0 root (``_reduce_end_state_to_root``)
+            ``K`` end-states to its root (``_reduce_end_state_to_root`` —
+            the OLDEST slot under newest-at-slot-0)
             to form a ``[1, K, D]`` context, LEFT-padding with zeros when the
             chain is shorter than ``K`` (so the most-recent end-state is
             always at the tail, mirroring the ARMA ring's newest-at-``-1``).
@@ -6742,10 +6801,13 @@ class IntraSentenceLayer(Layer):
             naive=naive, ergodic=ergodic, invertible=True,
             hasBias=True, stable=stable, monotonic=monotonic,
             nonlinear=True)
-        # Sigma SECOND with nonlinear=False: raw linear W @ x + b, NO
-        # intermediate tanh between the PI body and the Sigma body. This
-        # is the section's defining requirement -- the two linear cores
-        # fuse with no nonlinearity interposed.
+        # Sigma SECOND with nonlinear=False: raw linear W @ x + b, so NO
+        # extra tanh is interposed between the PI body and the Sigma body.
+        # NOTE: this is NOT a linear fusion -- the PI body above is
+        # nonlinear=True (its symmetric log-domain (1+x)/(1-x) embedding is
+        # an intrinsic nonlinearity), so the composite is pi(nonlinear)
+        # followed by a raw-linear Sigma, not two fusable linear cores. The
+        # only guarantee is "no interposed activation between the two".
         self.sigma = SigmaLayer(
             working_dim, concept_dim,
             naive=naive, ergodic=ergodic, invertible=True,
@@ -9201,6 +9263,9 @@ class ShortTermMemory(Layer):
         ws.idea_ensure_capacity(capacity)
 
     def push(self, b, idea):
+        # Newest-at-slot-0: write the new idea at slot 0 and shift the
+        # existing occupants RIGHT. Overflow RAISES (strict-bound
+        # primitive; the rolling-window drop is _stm_shift_and_push).
         ws = self._word_subspace
         if ws is None:
             depth = int(self._fallback_depth[b].item())
@@ -9209,7 +9274,10 @@ class ShortTermMemory(Layer):
                     f"ShortTermMemory.push: row {b} is at capacity "
                     f"({self._fallback_capacity}); reduce before pushing "
                     f"further.")
-            self._fallback_buffer[b, depth] = idea
+            if depth > 0:
+                self._fallback_buffer[b, 1:depth + 1] = \
+                    self._fallback_buffer[b, 0:depth].clone()
+            self._fallback_buffer[b, 0] = idea
             self._fallback_depth[b] = depth + 1
             if depth + 1 > self._fallback_max_depth_host:
                 self._fallback_max_depth_host = depth + 1
@@ -9217,73 +9285,82 @@ class ShortTermMemory(Layer):
         ws.idea_push(b, idea)
 
     def push_step(self, ideas):
+        # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
         ws = self._word_subspace
         if ws is None:
             B, D = ideas.shape
-            device = self._fallback_buffer.device
-            row_idx = torch.arange(B, device=device)
-            depths = self._fallback_depth
-            self._fallback_buffer[row_idx, depths] = ideas
-            self._fallback_depth = depths + 1
+            buf = self._fallback_buffer
+            cap = int(buf.shape[1])
+            if cap > 1:
+                buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+            buf[:, 0] = ideas
+            self._fallback_depth = self._fallback_depth + 1
             self._fallback_max_depth_host = self._fallback_max_depth_host + 1
             return
         ws.idea_push_step(ideas)
 
     def push_step_masked(self, ideas, gate_b_1):
+        # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
+        # slot 0; un-gated rows are unchanged.
         ws = self._word_subspace
         if ws is None:
             B, D = ideas.shape
-            device = self._fallback_buffer.device
-            row_idx = torch.arange(B, device=device)
-            depths = self._fallback_depth
+            buf = self._fallback_buffer
+            cap = int(buf.shape[1])
             gate_b = gate_b_1.view(B)
-            new_slot = torch.where(
-                gate_b.unsqueeze(-1),
-                ideas,
-                self._fallback_buffer[row_idx, depths])
-            self._fallback_buffer[row_idx, depths] = new_slot
-            self._fallback_depth = depths + gate_b.long()
+            gate_bool = gate_b.bool()
+            gate_col = gate_bool.view(B, 1, 1)
+            shifted = buf.clone()
+            if cap > 1:
+                shifted[:, 1:cap] = buf[:, 0:cap - 1]
+            shifted[:, 0] = ideas
+            self._fallback_buffer = torch.where(gate_col, shifted, buf)
+            self._fallback_depth = self._fallback_depth + gate_bool.long()
             return
         ws.idea_push_step_masked(ideas, gate_b_1)
 
     def push_window_batch(self, ideas):
+        # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
+        # into slots [0, W) so the window's newest position lands at 0.
         ws = self._word_subspace
         if ws is None:
             B, W, D = ideas.shape
             if W == 0:
                 return
-            device = self._fallback_buffer.device
-            starts = self._fallback_depth
-            offsets = torch.arange(W, device=device).unsqueeze(0)
-            positions = starts.unsqueeze(1) + offsets
-            row_idx = torch.arange(B, device=device).unsqueeze(1) \
-                .expand(-1, W)
-            self._fallback_buffer[row_idx, positions] = ideas
-            self._fallback_depth = starts + W
+            buf = self._fallback_buffer
+            cap = int(buf.shape[1])
+            if cap > W:
+                buf[:, W:cap] = buf[:, 0:cap - W].clone()
+            buf[:, 0:W] = torch.flip(ideas, dims=[1])
+            self._fallback_depth = self._fallback_depth + W
             self._fallback_max_depth_host = self._fallback_max_depth_host + int(W)
             return
         ws.idea_push_window_batch(ideas)
 
     def pop(self, b):
+        # Newest-at-slot-0: pop slot 0, shift the rest LEFT.
         ws = self._word_subspace
         if ws is None:
             depth = int(self._fallback_depth[b].item())
             if depth == 0:
                 return None
-            depth -= 1
-            idea = self._fallback_buffer[b, depth].clone()
-            self._fallback_buffer[b, depth].zero_()
-            self._fallback_depth[b] = depth
+            idea = self._fallback_buffer[b, 0].clone()
+            if depth > 1:
+                self._fallback_buffer[b, 0:depth - 1] = \
+                    self._fallback_buffer[b, 1:depth].clone()
+            self._fallback_buffer[b, depth - 1].zero_()
+            self._fallback_depth[b] = depth - 1
             return idea
         return ws.idea_pop(b)
 
     def peek(self, b, n=0):
+        # Newest-at-slot-0: the n-th-from-newest item is at slot n.
         ws = self._word_subspace
         if ws is None:
             depth = int(self._fallback_depth[b].item())
             if depth <= n:
                 return None
-            return self._fallback_buffer[b, depth - 1 - n]
+            return self._fallback_buffer[b, n]
         return ws.idea_peek(b, n)
 
     def snapshot(self, detach=False):

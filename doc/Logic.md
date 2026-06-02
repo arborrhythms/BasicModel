@@ -142,12 +142,16 @@ $$
 ### TruthLayer (WordSpace.truth_layer)
 
 `TruthLayer` is instantiated by `WordSpace.__init__`. `SymbolicSpace.forward`
-records gold-`<truth>` activations when the recording gate is armed — i.e.
-when `truthMinMagnitude` is set to its armed value `1`. The
-`<accumulateTruth>` knob that previously gated this is **retired**:
-`store_truths` now arms recording by setting `truthMinMagnitude = 1`, and
-the default `0.3` leaves recording off during training. See
-[STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
+records activations into the TruthLayer governed by the single continuous
+`<truthCriterion>` bar (0 $=$ record every activation, 1 $=$ record none): a
+per-cell activation is recorded when its clamped magnitude clears
+`truthCriterion`. The same knob also gates learned-relation acceptance in
+`ConceptualSpace`, so one continuous knob governs all truth learning. The
+binary `<accumulateTruth>` / `<truthMinMagnitude>` switches are **retired**.
+Recording now fires wherever `SymbolicSpace.forward` runs — both normal
+training and the `store_truths` gold-ingestion epoch (which drops
+`truthCriterion` to `0` to capture every provided gold truth, then restores
+it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
 [Params.md](Params.md):
 
 - **`record(activation, degree)`** --- store `activation * degree`.

@@ -99,40 +99,51 @@ bookkeeping. The whole pass is **predict-then-perceive per word**,
 implemented in `ConceptualSpace.forward`
 ([Spaces.py:11011](../bin/Spaces.py)):
 
-1. **Snapshot + predict the free (top) slot.** Before writing the new
+1. **Snapshot + predict the free (newest) slot.** Before writing the new
    event, `_stm_predict_then_perceive_serial(idea)`
-   ([Spaces.py:10472](../bin/Spaces.py)) takes `stm.snapshot()` and runs
+   ([Spaces.py:10482](../bin/Spaces.py)) takes `stm.snapshot()` and runs
    the in-STM predictor from the **retained context** — the snapshot with
-   the oldest slot dropped (`snap[:, 1:]` when depth $\ge 2$; the whole
+   the oldest slot dropped (`snap[:, :-1]` when depth $\ge 2$; the whole
    snapshot when depth $= 1$). The prediction is stashed on
    `self._stm_predicted_idea`. On the first word (empty STM) the
    prediction degenerates to zeros and **no** loss accumulates (there is
-   no prior context to predict from).
+   no prior context to predict from). The serial predictor folds the
+   context with an order-invariant **sum** over the slot axis, so dropping
+   the oldest (regardless of which physical slot holds it) yields the same
+   prediction.
 2. **Perceive (overwrite via `_stm_shift_and_push`).**
-   `_stm_shift_and_push(idea)` ([Spaces.py:10293](../bin/Spaces.py)) is
-   the perceive step. At capacity, slots $1\ldots(\text{cap}-1)$ shift
-   into $0\ldots(\text{cap}-2)$ and the new idea lands in the top slot
-   $\text{cap}-1$; the oldest idea (slot $0$) falls off. Below capacity
-   it is a plain push at `depth[b]`.
+   `_stm_shift_and_push(idea)` ([Spaces.py:10303](../bin/Spaces.py)) is
+   the perceive step. At capacity, slots $0\ldots(\text{cap}-2)$ shift
+   into $1\ldots(\text{cap}-1)$ and the new idea lands in slot $0$ (the
+   newest slot); the oldest idea (the last slot $\text{cap}-1$) falls off.
+   Below capacity it is a plain push: shift the occupants right and write
+   slot $0$.
 3. **Accumulate the intra-loss.** The held prediction is scored against
    the just-perceived `idea` as $\mathcal{L}_\text{intra} =
    \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](#6-intrasentencelayer)).
 4. **Language dispatch.** The signal router dispatches grammar ops over
    the STM contents (read-only via CS, write-required via SS).
 
-> **Convention pin — newest-at-top, shift-LEFT.** The plan's "slot[0]"
-> language is *schematic*. In this codebase the **free / newest** slot is
-> the **top** (`cap - 1`) and the rolling window shifts **left**,
-> dropping slot $0$ (oldest). The "predict the free slot" step therefore
-> predicts the top slot, and the retained context that conditions it is
-> `snap[:, 1:]` (everything but the soon-to-be-evicted oldest slot). A
-> named primitive `_stm_shift_for_predict`
-> ([Spaces.py:10345](../bin/Spaces.py)) exists for the literal
-> "rotate so the free slot is free" step, but the hot serial path
-> deliberately does **not** call it — `_stm_shift_and_push` already does
-> shift-left-then-write in one pass, and a separate physical shift would
-> double-shift the buffer. The helper is kept off the forward path and
-> exists for independent unit-testing of the named step.
+> **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
+> slot is **slot $0$** and the rolling window shifts **right**, dropping
+> the oldest (the last occupied slot, $\text{cap}-1$ at capacity).
+> `peek(n)` counts $n$ back from the newest, so it reads slot $n$
+> directly; `snapshot()` returns the live slab **newest-first**. The
+> "predict the free slot" step predicts slot $0$, and the retained
+> context that conditions it is `snap[:, :-1]` (everything but the
+> soon-to-be-evicted oldest slot). A named primitive
+> `_stm_shift_for_predict` ([Spaces.py:10355](../bin/Spaces.py)) exists
+> for the literal "rotate so the free slot is free" step, but the hot
+> serial path deliberately does **not** call it — `_stm_shift_and_push`
+> already does shift-right-then-write in one pass, and a separate physical
+> shift would double-shift the buffer. The helper is kept off the forward
+> path and exists for independent unit-testing of the named step.
+>
+> *(History: this convention was flipped from the original newest-at-top /
+> shift-LEFT layout; the flip preserves every semantic — `peek` still
+> returns the most-recent idea, the reduce still collapses to the same
+> root, and the relative end-state still yields the same
+> predicate/idea1/idea2 — only the physical slot order changed.)*
 
 ---
 
@@ -150,12 +161,19 @@ branch:
    runs the predictor **per slot** (no cross-slot collapse), producing a
    `[B, prev_N, D]` slab stashed on `self._stm_predicted_slab`.
 2. **Perceive via `_stm_set_all_slots`.**
-   `_stm_set_all_slots(slab)` ([Spaces.py:10248](../bin/Spaces.py))
+   `_stm_set_all_slots(slab)` ([Spaces.py:10258](../bin/Spaces.py))
    writes all $N$ positions directly as the slot stack (no shift, no
-   mean-reduction). Capacity-clip: if $N >$ cap it keeps the last `cap`
-   positions (drop oldest, mirroring the serial rolling window); if
-   $N <$ cap it zeroes the unfilled tail so a prior pass's state cannot
-   leak through.
+   mean-reduction). The slab is position-ordered (position $0$ oldest,
+   $N-1$ newest); under the newest-at-slot-0 convention it is **flipped**
+   along the position axis so the slab's newest lands at slot $0$.
+   Capacity-clip: if $N >$ cap it keeps the last `cap` positions (drop
+   oldest, mirroring the serial rolling window) then flips; if $N <$ cap
+   it zeroes the unfilled (older) tail so a prior pass's state cannot leak
+   through. The matching `_stm_predict_then_perceive_parallel` flips the
+   `folded` target the same way before scoring $\mathcal{L}_\text{intra}$,
+   so the per-slot prediction (computed over the newest-first previous
+   STM) and its target stay slot-aligned — byte-identical to the old
+   oldest-first alignment.
 3. **Loss only when shapes align.** $\mathcal{L}_\text{intra}$
    accumulates only when the predicted slab shape matches `folded`
    exactly. On the first pass (empty previous STM) the prediction is
@@ -289,10 +307,13 @@ predict-then-perceive. It is owned by ConceptualSpace (`self.intraSentenceLayer`
   `invertible=True`, **`nonlinear=False`** — a raw linear $W x + b$ that
   collapses the lifted slots into the predicted idea.
 
-The defining requirement is that there is **no intermediate activation**
-between the PI body and the Sigma body: `sigma` is built
-`nonlinear=False` so the two linear cores fuse with no extra $\tanh$
-interposed (PI's own exp/$\tanh$ boundary still bounds PI's output).
+The defining requirement is that there is **no extra activation
+interposed** between the PI body and the Sigma body: `sigma` is built
+`nonlinear=False` (a raw $W x + b$), so no additional $\tanh$ sits
+between PI's output and Sigma's input. This is **not** a linear fusion —
+`pi` is `nonlinear=True` (its symmetric log-domain $(1+x)/(1-x)$
+embedding is an intrinsic nonlinearity), so the composite is a nonlinear
+PI followed by a raw-linear Sigma, not two fusable linear cores.
 `working_dim` defaults to `concept_dim`, keeping both sublayers square
 isomorphisms so the parallel per-slot round-trip
 $\text{reverse}(\text{forward}(x)) \approx x$ is exact up to the LDU
@@ -415,7 +436,13 @@ or a **relative** truth.
   one the IR loss consumes.
 - **Relative** sentences (the `part` / `isEqual` predicate family, which
   produce the `REL_T` relative start symbol) are **preserved at depth 3**
-  as `[predicate, idea1, idea2]`.
+  as the `[predicate, idea1, idea2]` end-state. Under the newest-at-slot-0
+  convention these are stored newest-first, so the predicate (oldest
+  constituent) sits at the **last** slot ($\text{depth}-1$), idea1 at
+  $\text{depth}-2$, and idea2 (the folded-newest-rest) at slot $0$.
+  `learn_relations_from_stm` reads them from those slots so
+  `_maybe_learn_relation` receives the identical predicate / idea1 / idea2
+  it did under the old oldest-first (`slots 0/1/2`) layout.
 
 The mechanism is a per-row `protect_depth` gate threaded into
 `_stm_reduce_to_single_S` ([Models.py:5470](../bin/Models.py)). Each
@@ -445,11 +472,13 @@ $$
 $$
 
 each factor in $[0, 1]$. A relation is accepted **iff**
-$\text{learn\_score} \ge$ `<truthCriterion>` (default `0.3`). Because the
-factors multiply, a **low `is_truth_obvious` does not on its own block**:
-lies and uncertain relations can still be learned if the other two
-factors are high. At `truthCriterion = 1` nothing is learned; at `0`
-everything is.
+$\text{learn\_score} \ge$ `<truthCriterion>` **and** $\text{truthCriterion} < 1$.
+The **default is `1.0`** — truth-learning is OFF by default (nothing
+learned or recorded); opt in by lowering `truthCriterion` toward $0$.
+Because the factors multiply, a **low `is_truth_obvious` does not on its
+own block**: lies and uncertain relations can still be learned if the
+other two factors are high. At `truthCriterion = 1` nothing is learned;
+at `0` everything is.
 
 Accepted insertions carry a **tetralemma trust 4-tuple** $(t, f, b, n)$
 (TRUE / FALSE / BOTH / NEITHER, summing to $1$) computed by
@@ -468,11 +497,22 @@ predicate as the parent and the two ideas as its taxonomy children.
 > seam). A **per-relation projection** is the documented refinement; the
 > global read is a first cut, not the final formula.
 
-The user-provided `<truth>` gold set remains a **separate surface**,
-recorded via `store_truths`, which arms recording by setting
-`truthMinMagnitude = 1` (the recording gate). The retired
-`accumulateTruth` knob's role moved to `truthMinMagnitude`; see
-[Section 4 in Params.md](Params.md) and [Logic.md](Logic.md).
+Truth **recording** into the TruthLayer is governed by the *same*
+continuous `<truthCriterion>` bar (a per-cell activation is recorded when
+its clamped magnitude clears `truthCriterion`), so a single knob governs
+both recording and learned-relation acceptance — there is no separate gold
+path and no binary switch. The user-provided `<truth>` gold set is ingested
+by `store_truths`, which drops `truthCriterion` to `0` for the ingestion
+epoch (capturing every provided gold truth), then restores it; the same
+recording block fires during normal training per the configured
+`truthCriterion`. The binary `accumulateTruth` / `truthMinMagnitude`
+switches are **retired**. See [Params.md](Params.md) and
+[Logic.md](Logic.md).
+
+> **Behavioural note.** Unlike the retired binary gate (which kept
+> recording off during training), truths are now accumulated continuously
+> during training per `truthCriterion`; raise it toward `1` to suppress
+> recording.
 
 ---
 
@@ -525,12 +565,15 @@ so a small bounded window is used rather than the full `ltmCapacity`.
 produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
 
 - **Chain reduction (ragged $\to$ fixed).** Each chain entry is reduced to
-  its **slot-0 root** by `_reduce_end_state_to_root`
-  ([Layers.py:6290](../bin/Layers.py)) — for an absolute end-state slot 0
-  *is* the collapsed idea; for a relative end-state slot 0 is the
-  predicate (the head the relative structure hangs off). The last $K$
-  roots form a `[1, K, D]` context, left-padded with zeros so the most
-  recent sits at the tail (newest-at-$-1$, like the ARMA ring).
+  its **root** by `_reduce_end_state_to_root`
+  ([Layers.py:6316](../bin/Layers.py)). Under the newest-at-slot-0
+  convention the end-state is stored newest-first, so the root lives at the
+  **last** slot ($\text{depth}-1$): for an absolute end-state (depth 1)
+  that is slot $0$ (the collapsed idea); for a relative end-state (depth 3)
+  it is slot $2$, the predicate (the head the relative structure hangs
+  off). The last $K$ roots form a `[1, K, D]` context, left-padded with
+  zeros so the most recent sits at the tail (newest-at-$-1$, like the ARMA
+  ring).
 - **Root prediction.** `_inter_predictor.forward(context, routing=None,
   parallel=False)` $\to$ `[1, D]`, the predicted root.
 - **Loss.** $\mathcal{L}_\text{inter} = \mathrm{MSE}(\hat{p}, p)$ on the
@@ -612,4 +655,4 @@ objective a system like nanochat trains.
   and tetralemma trust.
 - [Params.md](Params.md) — `<stmCapacity>`, `<intraLossWeight>`,
   `<interLossWeight>`, `<routerWireSerial>`, `<ltmCapacity>`,
-  `<truthCriterion>`, `<truthMinMagnitude>`.
+  `<truthCriterion>` (the single continuous truth bar).

@@ -80,10 +80,11 @@ class HoCShape:
               tree. List length is 1 for default-only / unary-only
               paths; doubles for each binary op along the path.
     mask   -- ``[B, V]`` bool. True where the input symbolic vector
-              had a nonzero per-position norm (Mereology no longer
-              applies the ``truthMinMagnitude`` magnitude threshold;
-              the knob now serves as the gold-``<truth>`` recording
-              gate elsewhere).
+              had a nonzero per-position norm (Mereology applies no
+              magnitude threshold; truth recording/acceptance is
+              governed by the continuous ``truthCriterion`` bar
+              elsewhere, and the old ``truthMinMagnitude`` knob is
+              retired).
     per_step -- list of StepInfo, DFS pre-order, one entry per
               layer-level reverse executed.
     """
@@ -303,10 +304,11 @@ class Mereology:
                 ``1`` for default-only / no-binary-op runs;
                 ``2^k_binary`` for k_binary binary ops along the path.
               * ``mask``: ``[B, V]`` bool -- True where the input
-                position had nonzero norm (Mereology no longer applies
-                the ``truthMinMagnitude`` magnitude threshold; the knob
-                now serves as the gold-``<truth>`` recording gate
-                elsewhere). Leaves carry full ``[B, V, ...]`` shape
+                position had nonzero norm (Mereology applies no
+                magnitude threshold; the old ``truthMinMagnitude`` knob
+                is retired -- truth recording/acceptance is governed by
+                the continuous ``truthCriterion`` bar elsewhere). Leaves
+                carry full ``[B, V, ...]`` shape
                 regardless; consumers AND-fold via the mask.
               * ``per_step``: list of ``StepInfo``, one per layer-
                 level reverse executed during the walk, in
@@ -324,11 +326,11 @@ class Mereology:
                                      dtype=torch.bool, device=symbolic_vector.device)
             return HoCShape(leaves=[], mask=empty_mask, per_step=[])
 
-        # Step 1: per-position activity mask. Mereology no longer applies
-        # the ``truthMinMagnitude`` magnitude threshold (the magnitude
-        # threshold is not how truths are accepted -- see the content-aware
-        # ``truthCriterion`` path; the knob itself now serves as the
-        # gold-``<truth>`` recording gate elsewhere). The threshold
+        # Step 1: per-position activity mask. Mereology applies no
+        # magnitude threshold (a magnitude threshold is not how truths are
+        # accepted -- see the content-aware ``truthCriterion`` path that
+        # governs both truth recording and learned-relation acceptance; the
+        # old ``truthMinMagnitude`` knob is retired). The threshold
         # collapses to 0.0 here, so any position with nonzero norm counts
         # as active and the all-zero / NULL-padded inputs still fold to an
         # empty shape. ``threshold`` is

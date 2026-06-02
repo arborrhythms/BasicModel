@@ -8,11 +8,13 @@ Post-Stage-1.C contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
     the C tier no longer holds a parameterised fold operator.
 
   * ``ConceptualSpace.forward(PS_subspace, SS_subspace=None)`` performs
-    **STM bookkeeping only**: shift the per-batch idea stack one slot
-    (``STM[0..6] = STM[1..7]``) and push the incoming idea (the
-    materialised PS / SS combination) onto ``STM[7]`` (Miller cap).
-    No atomic fold layer is invoked; the signal-router-based grammar
-    dispatch that consumes STM is Stage 3, out of scope here.
+    **STM bookkeeping only**: under the newest-at-slot-0 convention it
+    shifts the per-batch idea stack one slot RIGHT
+    (``STM[1..7] = STM[0..6]``) and writes the incoming idea (the
+    materialised PS / SS combination) to ``STM[0]`` (the newest slot),
+    dropping the oldest (``STM[7]`` at Miller cap). No atomic fold layer
+    is invoked; the signal-router-based grammar dispatch that consumes STM
+    is Stage 3, out of scope here.
 
   * The existing ``ConceptualSpace.stm`` (a ``ShortTermMemory``
     instance) is preserved — its ``push`` / ``peek`` / ``snapshot`` /
@@ -151,10 +153,13 @@ class TestCSForwardMutatesSTM(unittest.TestCase):
 
 
 class TestSTMShiftAtCapacity(unittest.TestCase):
-    """Pushing beyond Miller cap shifts the oldest idea out (STM[0..6]
-    := STM[1..7]; new idea goes to STM[7]). After 8 pushes (capacity=8),
-    slot 0 should hold the SECOND-pushed idea (the first having shifted
-    out)."""
+    """Pushing beyond Miller cap shifts the oldest idea out. Under the
+    newest-at-slot-0 convention the new idea goes to slot 0 and the window
+    rolls RIGHT (STM[1..7] := STM[0..6]); the oldest (the last occupied
+    slot) drops. After cap+1 pushes the OLDEST live idea (peek(n=cap-1))
+    is the SECOND-pushed one (the first having rolled off), and the newest
+    (peek(n=0)) is the just-pushed idea. The assertions below use peek
+    (convention-agnostic by semantics), not raw slot indices."""
 
     def test_shift_drops_oldest(self):
         model = _make_plain_model()
@@ -209,23 +214,24 @@ class TestSTMShiftAtCapacity(unittest.TestCase):
                 synth = marker.view(1, 1, D).expand(B, 1, D).clone()
                 ps_sub.set_event(synth)
                 cs.forward(ps_sub)
-                # After the shift: slot 0 should contain the
-                # second-pushed idea (marker == 2.0). The most recent
-                # (peek(b, 0)) should be the just-pushed idea
-                # (marker == cap+1).
-                slot0 = cs.stm.peek(0, n=cap - 1)
+                # After the shift: the OLDEST live idea (peek at
+                # n=cap-1) should be the second-pushed one (marker == 2.0;
+                # the first rolled off). The most recent (peek(b, 0))
+                # should be the just-pushed idea (marker == cap+1). These
+                # peek-based checks are convention-agnostic by semantics.
+                oldest = cs.stm.peek(0, n=cap - 1)
                 top = cs.stm.peek(0, n=0)
-        self.assertIsNotNone(slot0, "STM slot 0 must be populated.")
+        self.assertIsNotNone(oldest, "STM oldest live slot must be populated.")
         self.assertIsNotNone(top, "STM top slot must be populated.")
         # The actual stored idea is the materialised PS event (which
         # cs.forward shapes / wraps but does not magnify); the
-        # all-equal-value marker should survive intact at slot 0 with
-        # value 2.0 and at top with value cap+1.
+        # all-equal-value marker should survive intact: oldest live == 2.0
+        # and newest == cap+1.
         self.assertAlmostEqual(
-            float(slot0[0].item()), 2.0, places=3,
-            msg=f"STM slot 0 must hold the SECOND-pushed idea after "
-            f"cap+1 pushes (oldest shifted out); got marker "
-            f"{float(slot0[0].item())}.")
+            float(oldest[0].item()), 2.0, places=3,
+            msg=f"STM oldest live idea must be the SECOND-pushed one after "
+            f"cap+1 pushes (first shifted out); got marker "
+            f"{float(oldest[0].item())}.")
         self.assertAlmostEqual(
             float(top[0].item()), float(cap + 1), places=3,
             msg=f"STM top slot must hold the most recently pushed "

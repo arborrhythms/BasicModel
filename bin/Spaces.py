@@ -10118,13 +10118,26 @@ class ConceptualSpace(Space):
         # unpopulated (Task 4 wires the per-word router). ``intra_loss``
         # is exposed on the layer for the later training-path wiring.
         #
-        # ``routing_dim`` is a best-effort placeholder until Task 4
-        # supplies the rule-distribution width: ``concept_dim`` is a
-        # safe non-zero default (the ``routing_proj`` is built but only
-        # applied when a non-None routing tensor is passed). ``naive`` /
-        # ``ergodic`` / ``stable``/``monotonic`` follow the sigma_in /
-        # sigma_cs construction convention above.
-        self._intra_routing_dim = int(concept_dim)
+        # ``routing_dim`` is the grammar's rule-vocabulary width: the
+        # per-word router emits a dense ``[B, n_rules]`` ``rule_probs``
+        # (``WordSubSpace.routing_state``) and ``routing_proj`` projects
+        # it ``[B, n_rules] -> [B, concept_dim]`` to bias the predicted
+        # idea. ``n_rules == len(TheGrammar.rule_table)`` (== num_rules();
+        # == len(TheGrammar.rules) -- verified equal). The grammar is
+        # configured by the time ConceptualSpace is built (the SubSpace /
+        # WordSpace boot ran first); we still guard with
+        # ``_ensure_configured`` and fall back to ``concept_dim`` if the
+        # rule table is somehow empty so ``routing_proj`` is never a
+        # degenerate ``nn.Linear(0, ...)``. ``naive`` / ``ergodic`` /
+        # ``stable`` / ``monotonic`` follow the sigma_in / sigma_cs
+        # construction convention above.
+        from Language import TheGrammar as _TheGrammar
+        try:
+            _TheGrammar._ensure_configured()
+            _n_rules = int(len(_TheGrammar.rule_table))
+        except Exception:
+            _n_rules = 0
+        self._intra_routing_dim = _n_rules if _n_rules > 0 else int(concept_dim)
         self.intraSentenceLayer = IntraSentenceLayer(
             concept_dim=concept_dim,
             stm_capacity=self.stm_capacity,
@@ -10146,13 +10159,15 @@ class ConceptualSpace(Space):
         # ConceptualSpace section before the architecture fallback). The
         # ``learn_score >= truth_criterion`` gating that consumes this is
         # wired by a later task; read here so the hook has it on the
-        # ConceptualSpace. This is the content-aware acceptance bar for
-        # learned-relation codebook insertion; it is distinct from
-        # ``truthMinMagnitude`` (now the gold-``<truth>`` recording gate)
-        # and from the retired per-sentence truth accumulator
-        # (accumulateTruth). Defaults to 0.3 when absent.
+        # ConceptualSpace. This is the single continuous truth bar: it
+        # governs BOTH learned-relation codebook insertion (here) and the
+        # SymbolicSpace truth recording (gold + training). The binary
+        # truthMinMagnitude / accumulateTruth switches are retired.
+        # Defaults to 1.0 when absent -- the maximal bar: truth-learning is
+        # OFF by default (no relations learned, no recording), opt-in by
+        # lowering truthCriterion toward 0.
         self.truth_criterion = float(
-            TheXMLConfig.space("ConceptualSpace", "truthCriterion", 0.3))
+            TheXMLConfig.space("ConceptualSpace", "truthCriterion", 1.0))
 
         # Task 3 (STM serial/parallel modes): explicit predict-then-
         # perceive state. ``forward`` now runs the intra-sentence
@@ -10265,11 +10280,19 @@ class ConceptualSpace(Space):
         reduce-then-shift-push pattern is for serial per-word ingestion
         where the STM accumulates over time.
 
-        Capacity-clip semantics: if N > cap, take the LAST cap
-        positions (drop the oldest, mirroring the rolling-window
-        contract of ``_stm_shift_and_push``). If N < cap, unfilled
-        slots reset to zero so stale state from a prior pass doesn't
-        leak through.
+        Slab position ordering: position 0 is the OLDEST event of the
+        window and position ``N-1`` the NEWEST (left-to-right reading
+        order, matching serial ingestion). Under the newest-at-slot-0
+        convention the STM slot axis is REVERSED relative to the slab:
+        slot 0 must hold the slab's NEWEST position. The mapping is
+        therefore ``slot[i] = slab_window[last - i]`` -- i.e. flip the
+        (capacity-clipped) slab along its position axis before writing.
+
+        Capacity-clip semantics: if N > cap, take the LAST cap positions
+        (drop the oldest, mirroring the rolling-window contract of
+        ``_stm_shift_and_push``) THEN reverse so slot 0 = newest. If
+        N < cap, unfilled (older) slots reset to zero so stale state from
+        a prior pass doesn't leak through.
         """
         stm = self.stm
         B = int(slab.shape[0])
@@ -10282,11 +10305,14 @@ class ConceptualSpace(Space):
         depth_dtype = stm._depth.dtype
         depth_device = stm._depth.device
         if N >= cap:
-            # Take the last cap positions; older ones drop.
-            buf[:, :cap] = slab[:, N - cap:N]
+            # Take the last cap positions (newest window); older ones
+            # drop. Reverse so the window's newest lands at slot 0.
+            buf[:, :cap] = torch.flip(slab[:, N - cap:N], dims=[1])
             filled = cap
         else:
-            buf[:, :N] = slab
+            # Reverse the N positions into the leading slots so slot 0 =
+            # newest (position N-1) and slot N-1 = oldest (position 0).
+            buf[:, :N] = torch.flip(slab, dims=[1])
             if cap > N:
                 # Defensive: clear stale tail so the next snapshot()
                 # returns only the freshly-set slots.
@@ -10301,9 +10327,10 @@ class ConceptualSpace(Space):
                 stm._max_depth_host = cur_max
 
     def _stm_shift_and_push(self, idea):
-        """STM bookkeeping primitive: shift slots left by 1 on rows at
-        capacity, then write the new idea to the top slot. For rows
-        below capacity, this degenerates to an ordinary push.
+        """STM bookkeeping primitive: shift slots RIGHT by 1 on rows at
+        capacity, then write the new idea to slot 0 (the newest slot).
+        For rows below capacity, this degenerates to an ordinary push
+        (insert at slot 0, shift the rest right).
 
         ``idea`` is the per-batch payload tensor of shape ``[B, D]`` —
         the materialised PS+SS combination ConceptualSpace.forward
@@ -10311,12 +10338,15 @@ class ConceptualSpace(Space):
         primitives on ``self.stm`` (which proxies to WordSubSpace when
         attached, or its own fallback buffer otherwise).
 
-        Per the Miller cap (default 8, within the 7±2 band, via
-        ``<stmCapacity>`` / ``<wMax>``), the oldest idea drops out when
-        overflowing — the STM is a rolling window. This is the substrate-level analogue
-        of the chart's reduce-then-push when the chart was the
-        consumer; here the consumer is the signal-router-based grammar
-        dispatch (Stage 3, not wired yet).
+        Newest-at-slot-0 convention: the newest idea always lands at slot
+        0 and the occupied window grows / rolls toward the high slots. Per
+        the Miller cap (default 8, within the 7±2 band, via
+        ``<stmCapacity>`` / ``<wMax>``), the OLDEST idea (the last
+        occupied slot, ``cap - 1`` at capacity) drops out when
+        overflowing — the STM is a rolling window. This is the
+        substrate-level analogue of the chart's reduce-then-push when the
+        chart was the consumer; here the consumer is the signal-router-
+        based grammar dispatch (Stage 3, not wired yet).
         """
         stm = self.stm
         stm.ensure_batch(int(idea.shape[0]))
@@ -10328,20 +10358,23 @@ class ConceptualSpace(Space):
         # both the WordSubSpace-attached and fallback paths uniformly).
         buf = stm._buffer
         depth = stm._depth
-        # Row-by-row: rows at capacity get a left-shift of the slots
-        # [1..cap) -> [0..cap-1), then the new idea is written to slot
-        # ``cap - 1``. Rows below capacity get a plain push at
-        # ``depth[b]``. The depth pointer saturates at ``cap``.
+        # Row-by-row: rows at capacity get a right-shift of the slots
+        # [0..cap-1) -> [1..cap), dropping the OLDEST (the slot that
+        # rolls off the high end), then the new idea is written to slot
+        # 0. Rows below capacity get a plain push: shift [0..d) -> [1..d+1)
+        # and write slot 0. The depth pointer saturates at ``cap``.
         new_depth = depth.clone()
         for b in range(B):
             d = int(depth[b].item())
             if d >= cap:
-                # Shift left by one slot, drop oldest, write new at top.
-                buf[b, : cap - 1] = buf[b, 1 : cap].clone()
-                buf[b, cap - 1] = idea[b]
-                # depth saturates at cap (no further growth).
+                # Shift right by one slot, drop oldest (high end), write
+                # new at slot 0. depth saturates at cap.
+                buf[b, 1 : cap] = buf[b, : cap - 1].clone()
+                buf[b, 0] = idea[b]
             else:
-                buf[b, d] = idea[b]
+                if d > 0:
+                    buf[b, 1 : d + 1] = buf[b, 0 : d].clone()
+                buf[b, 0] = idea[b]
                 new_depth[b] = d + 1
         stm._depth = new_depth
         # Track the host-side maximum depth high-watermark (used by
@@ -10353,27 +10386,29 @@ class ConceptualSpace(Space):
 
     # -- Task 3: explicit predict-then-perceive helpers ----------------
     def _stm_shift_for_predict(self):
-        """STM primitive: rotate slots so the free (top) slot is free,
+        """STM primitive: rotate slots so the free (newest) slot is free,
         WITHOUT writing a new idea.
 
         The plan asks for this extracted helper as the "rotate slots so
         the free slot is free" step of predict-then-perceive. In THIS
-        codebase the free/newest slot is the TOP (``cap - 1``) and the
-        rolling window shifts LEFT, dropping slot 0 (oldest). At capacity
-        this performs that left-shift and decrements the depth pointer by
-        one so the top slot is logically free; below capacity it is a
-        no-op (there is already room, nothing falls off).
+        codebase (newest-at-slot-0 convention) the free/newest slot is
+        slot 0 and the rolling window shifts RIGHT, dropping the OLDEST
+        (the last occupied slot, ``cap - 1`` at capacity). At capacity
+        this performs that right-shift and decrements the depth pointer by
+        one so slot 0 is logically free; below capacity it is a no-op
+        (there is already room, nothing falls off).
 
         NOTE: the serial ``forward`` path does NOT call this in the hot
         path. Correctness of the prediction only needs the PRE-perceive
-        ``snapshot()`` (the retained context ``snap[:, 1:]``), and the
-        actual perceive is the existing ``_stm_shift_and_push(idea)``
-        (which already does shift-left + write-to-top in one pass). A
-        separate physical shift here would double-shift the buffer and
-        corrupt STM contents. This helper exists so the named primitive
-        from the plan is present and independently unit-testable; it is
-        deliberately kept off the forward path. It is a structural
-        analogue of ``_stm_shift_and_push`` with the write elided.
+        ``snapshot()`` (the retained context ``snap[:, :-1]`` -- drop the
+        oldest, last slot), and the actual perceive is the existing
+        ``_stm_shift_and_push(idea)`` (which already does shift-right +
+        write-to-slot-0 in one pass). A separate physical shift here would
+        double-shift the buffer and corrupt STM contents. This helper
+        exists so the named primitive from the plan is present and
+        independently unit-testable; it is deliberately kept off the
+        forward path. It is a structural analogue of
+        ``_stm_shift_and_push`` with the write elided.
         """
         stm = self.stm
         B = int(stm._buffer.shape[0])
@@ -10386,36 +10421,76 @@ class ConceptualSpace(Space):
         for b in range(B):
             d = int(depth[b].item())
             if d >= cap:
-                # Shift left by one slot, drop oldest; top slot freed.
-                buf[b, : cap - 1] = buf[b, 1 : cap].clone()
-                buf[b, cap - 1].zero_()
+                # Shift right by one slot, drop oldest (high end); slot 0
+                # freed.
+                buf[b, 1 : cap] = buf[b, : cap - 1].clone()
+                buf[b, 0].zero_()
                 new_depth[b] = cap - 1
-            # else: below capacity -- there is already a free top slot,
+            # else: below capacity -- there is already a free slot 0,
             # nothing falls off, depth unchanged.
         stm._depth = new_depth
 
     def _intra_routing_for_predict(self):
-        """Resolve the soft routing distribution for the intra-sentence
+        """Resolve the dense rule distribution for the intra-sentence
         predictor, or ``None``.
 
-        Reads ``current_rules`` off the owning ``wordSubSpace`` (the
-        per-word router writes it in Task 4) and returns it ONLY if it is
-        a tensor whose last dim matches ``self._intra_routing_dim`` (the
-        width ``IntraSentenceLayer.routing_proj`` expects). Until Task 4
-        wires the producer, ``current_rules`` is absent / None and this
-        returns ``None`` -- the layer then skips the routing bias and the
-        predictor still runs. Keeping the gate here makes Task 3
-        independent of Task 4's routing representation.
+        Reads the first-class ``routing_state.rule_probs`` off the owning
+        ``wordSubSpace`` (built in ``WordSubSpace.compose``, ADDITIVE to
+        the unchanged ``current_rules`` dict). Returns it ONLY when it is
+        a tensor whose last dim matches ``self._intra_routing_dim``
+        (``n_rules`` -- the width ``IntraSentenceLayer.routing_proj``
+        expects), after aligning its batch dim to the predictor's
+        context B. Otherwise returns ``None`` and the predictor still
+        runs un-biased (the documented None-safe fallback). This keeps
+        the predict-then-perceive path independent of how routing is
+        produced.
+
+        Batch alignment (care item)
+        ----------------------------
+        ``rule_probs`` is ``[B_rp, n_rules]``; the predictor's context is
+        ``[B_ctx, K, D]`` (from the STM snapshot). The two B's CAN differ
+        when the per-word ``compose`` fired over a snapshot taken at a
+        slightly different time than the predict step's snapshot:
+          * ``B_rp == B_ctx``: pass through.
+          * ``B_rp == 1`` and ``B_ctx > 1``: broadcast (expand) the one
+            shared distribution across the context rows (matches the
+            "row 0 is the canonical sequence" convention).
+          * ``B_ctx == 1`` and ``B_rp > 1``: take row 0 (the canonical
+            row) so the single context row gets a defined distribution.
+          * any other mismatch: return ``None`` (do not fabricate an
+            alignment; the predictor runs un-biased -- documented).
+
+        FAIL LOUD: a non-finite ``rule_probs`` raises (no silent gating
+        beyond the documented None-fallback).
         """
         ws = getattr(self, 'wordSubSpace', None)
         if ws is None:
             return None
-        routing = getattr(ws, 'current_rules', None)
+        rstate = getattr(ws, 'routing_state', None)
+        routing = getattr(rstate, 'rule_probs', None) if rstate is not None else None
         if routing is None or not torch.is_tensor(routing):
             return None
         if int(routing.shape[-1]) != int(self._intra_routing_dim):
             return None
-        return routing
+        if not torch.isfinite(routing).all():
+            raise ValueError(
+                "ConceptualSpace._intra_routing_for_predict: rule_probs is "
+                "non-finite (fail-loud per numerical policy).")
+        if routing.dim() != 2:
+            return None
+        # Resolve the predictor's context batch from the STM snapshot
+        # (the same source both predict-then-perceive callers consume).
+        snap = self.stm.snapshot()
+        b_ctx = int(snap.shape[0]) if (snap is not None and snap.dim() == 3) else None
+        b_rp = int(routing.shape[0])
+        if b_ctx is None or b_rp == b_ctx:
+            return routing
+        if b_rp == 1 and b_ctx > 1:
+            return routing.expand(b_ctx, -1)
+        if b_ctx == 1 and b_rp > 1:
+            return routing[0:1]
+        # Incompatible batch mismatch: skip the bias (documented).
+        return None
 
     def _stm_run_intra_predict(self, context, routing, parallel=False):
         """Invoke the intra-sentence predictor on ``context`` and stash
@@ -10489,10 +10564,11 @@ class ConceptualSpace(Space):
 
         ``idea``: ``[B, D]`` the materialised event about to be pushed.
 
-        Retained-context rule (per the codebook's newest-at-TOP /
-        shift-LEFT convention -- the oldest slot 0 is the one that falls
-        off at capacity):
-          * snapshot depth >= 2: context = ``snap[:, 1:]`` (drop oldest).
+        Retained-context rule (per the newest-at-slot-0 / shift-RIGHT
+        convention -- the oldest is the LAST occupied slot, which is the
+        one that falls off at capacity):
+          * snapshot depth >= 2: context = ``snap[:, :-1]`` (drop oldest,
+            the last slot).
           * snapshot depth == 1: context = ``snap`` (nothing falls off
             yet; STM is below capacity).
           * snapshot empty (first word): the prediction degenerates --
@@ -10505,7 +10581,7 @@ class ConceptualSpace(Space):
             self._stm_predicted_idea = torch.zeros_like(idea)
             return
         if int(snap.shape[1]) >= 2:
-            context = snap[:, 1:]                     # drop oldest [B, K-1, D]
+            context = snap[:, :-1]                    # drop oldest [B, K-1, D]
         else:
             context = snap                            # single slot [B, 1, D]
         routing = self._intra_routing_for_predict()
@@ -10542,9 +10618,18 @@ class ConceptualSpace(Space):
         routing = self._intra_routing_for_predict()
         prediction = self._stm_run_intra_predict(
             prev, routing, parallel=True)             # [B, prev_N, D]
+        # Newest-at-slot-0 alignment: ``prev`` (the STM snapshot) is stored
+        # NEWEST-FIRST, while ``folded`` is the raw slab in reading order
+        # (position 0 = OLDEST). The per-slot L_intra needs both operands in
+        # the SAME slot order (slot i of the prediction <-> slot i of the
+        # target), exactly as the old oldest-first code compared the
+        # oldest-first snapshot against the oldest-first slab. So reverse
+        # the slab to newest-first before scoring. (The prediction is
+        # already newest-first since it is computed over ``prev``.)
+        target = torch.flip(folded, dims=[1])
         # Only accumulate loss when shapes align (pinned: skip otherwise).
-        if prediction.shape == folded.shape:
-            self._accumulate_intra_loss(prediction, folded)
+        if prediction.shape == target.shape:
+            self._accumulate_intra_loss(prediction, target)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -10960,7 +11045,13 @@ class ConceptualSpace(Space):
         score = self._compute_learn_score(
             predicate, idea1, idea2, truth_set=truth_set)
         tc = float(self.truth_criterion)
-        if score < tc:
+        # Accept iff ``score >= tc`` AND ``tc < 1`` -- the bar is inclusive
+        # for tc in [0, 1) (so tc=0 accepts everything, including a 0 score)
+        # but the MAXIMAL bar tc=1 learns NOTHING: a perfect score of 1.0
+        # must NOT slip through at tc=1.0 (which a bare ``score < tc`` would
+        # have allowed, since 1.0 < 1.0 is False). The ``tc >= 1.0`` clause
+        # closes that endpoint without breaking the tc=0 "learn everything".
+        if score < tc or tc >= 1.0:
             return None
         # Accept: resolve operands to positions and insert the relation.
         ss = self._terminal_ss_for_learning()
@@ -10980,7 +11071,17 @@ class ConceptualSpace(Space):
     def learn_relations_from_stm(self, relative_mask):
         """Sentence-boundary hook: for each RELATIVE row, read the
         depth-3 relative end-state ``[predicate, idea1, idea2]`` from STM
-        slots 0/1/2 and run :meth:`_maybe_learn_relation`.
+        and run :meth:`_maybe_learn_relation`.
+
+        Slot mapping (newest-at-slot-0 convention): the depth-3 end-state
+        is stored NEWEST-FIRST. The reduce folds the two newest each step
+        and stops at depth 3, so the two OLDEST raw constituents are the
+        predicate (oldest, slot ``depth-1``) and idea1 (2nd-oldest, slot
+        ``depth-2``), while idea2 is the folded-newest-rest accumulator at
+        slot 0. Reading ``predicate = buf[depth-1]``, ``idea1 =
+        buf[depth-2]``, ``idea2 = buf[0]`` therefore feeds
+        ``_maybe_learn_relation`` the IDENTICAL predicate/idea1/idea2 it
+        received under the old oldest-first (slots 0/1/2) convention.
 
         ``relative_mask`` is the ``[B]`` bool tensor from
         ``BasicModel._sentence_relative_mask``; only its True rows are
@@ -11007,12 +11108,21 @@ class ConceptualSpace(Space):
             mask = mask.reshape(-1).tolist()
         accepted = []
         B = int(buf.shape[0])
+        depth_t = getattr(stm, "_depth", None)
         for b in range(min(B, len(mask))):
             if not bool(mask[b]):
                 continue
-            predicate = buf[b, 0, :]
-            idea1 = buf[b, 1, :]
-            idea2 = buf[b, 2, :]
+            # Per-row end-state depth (relative rows are depth 3); read
+            # newest-first so the OLDEST raw constituents map back to the
+            # predicate / idea1 of the old convention.
+            if depth_t is not None:
+                d = int(depth_t[b].item())
+            else:
+                d = int(buf.shape[1])
+            d = max(1, min(d, int(buf.shape[1])))
+            predicate = buf[b, d - 1, :]              # oldest -> predicate
+            idea1 = buf[b, d - 2, :] if d >= 2 else buf[b, 0, :]
+            idea2 = buf[b, 0, :]                      # newest folded rest
             pred_pos = self._maybe_learn_relation(predicate, idea1, idea2)
             if pred_pos is not None:
                 accepted.append(pred_pos)
@@ -11691,27 +11801,24 @@ class SymbolicSpace(Space):
         # on a global default.
         self.activeSigma = None
 
-        # ``truthMinMagnitude`` serves two roles now that ``accumulateTruth``
-        # is retired:
-        #   1. Gold-``<truth>`` recording gate. The recording block in
-        #      ``forward()`` fires only when this is set to its armed value
-        #      1.0. ``store_truths`` (and the server's TruthSet path) arms it
-        #      for a single forced epoch, records activations into the
-        #      ``WordSpace.truth_layer``, then resets it. The default (0.3,
-        #      below the armed value) means no recording during normal
-        #      training. The TruthLayer lives on ``WordSpace``; callers reach
-        #      it via ``self.wordSubSpace.truth_layer`` (see forward() below).
-        #   2. Per-cell magnitude weight for the record_batch path: activation
-        #      norms ramp from 0 at norm=0 to 1 at norm=truthMinMagnitude. The
-        #      legacy ``should_store`` two further gates (novelty/consistency)
-        #      were dropped along with that function — under record_batch the
-        #      codebook lookup at compact-time naturally dedupes near-zero and
-        #      near-duplicate vectors against the existing prototype.
+        # Truth recording is governed by the single continuous
+        # ``truthCriterion`` bar (0 = record every truth, 1 = learn none) --
+        # the binary ``accumulateTruth`` / ``truthMinMagnitude`` mode switch
+        # is fully retired. The recording block in ``forward()`` records an
+        # activation when its (clamped) magnitude clears ``truthCriterion``;
+        # the SAME knob governs the learned-relation acceptance in
+        # ConceptualSpace (``_maybe_learn_relation``), so there is one
+        # continuous truth knob and no separate gold path. ``store_truths``
+        # (and the server's TruthSet path) clears the layer and runs a forced
+        # epoch -- recording happens per ``truthCriterion`` during it, exactly
+        # as it does during training. The TruthLayer lives on ``WordSpace``;
+        # callers reach it via ``self.wordSubSpace.truth_layer`` (see
+        # forward() below).
         try:
-            self._truth_min_magnitude = float(
-                TheXMLConfig.space(section, "truthMinMagnitude"))
+            self.truth_criterion = float(
+                TheXMLConfig.space(section, "truthCriterion", 1.0))
         except (KeyError, TypeError, ValueError):
-            self._truth_min_magnitude = 0.3
+            self.truth_criterion = 1.0
 
         # Odd-even sorting network: learns a canonical ordering of symbols.
         try:
@@ -14141,25 +14248,36 @@ class SymbolicSpace(Space):
                 act,
                 torch.zeros_like(act))
 
-        # Gold-truth recording gate: armed when ``truthMinMagnitude`` is set
-        # to its armed value 1.0 (store_truths does this for the forced
-        # recording epoch, then resets it). Off (< 1.0) during normal
-        # training, so no activations leak into the truth layer.
-        if self._truth_min_magnitude >= 1.0 and wordSubSpace is not None:
+        # Truth recording governed by the continuous ``truthCriterion`` bar
+        # (0 = record every activation, 1 = record none) -- replaces the
+        # retired binary truthMinMagnitude/accumulateTruth arm. A per-cell
+        # activation is recorded when its clamped magnitude clears the bar
+        # (``mag >= truthCriterion``): at tc=0 every valid cell is recorded,
+        # at tc->1 only the strongest, at tc=1 none. This fires wherever
+        # SymbolicSpace.forward runs -- both normal training and the
+        # ``store_truths`` gold-ingestion epoch -- so a single continuous
+        # knob governs all truth recording (no separate gold path, no binary
+        # switch). BEHAVIOURAL NOTE: unlike the retired binary gate (off
+        # during training), truths are now accumulated continuously during
+        # training per ``truthCriterion``; raise truthCriterion toward 1 to
+        # suppress it.
+        tc = float(self.truth_criterion)
+        if tc < 1.0 and wordSubSpace is not None:
             truth_layer = getattr(wordSubSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
                 BK, N, D = act.shape
                 norms = act.norm(dim=-1)
-                # With the armed value 1.0, mag_score = clamp(norms, max=1.0)
-                # -- a per-cell magnitude weight in [0, 1].
-                mag_score = norms.clamp(max=self._truth_min_magnitude) \
-                            / max(self._truth_min_magnitude, 1e-8)
+                # Per-cell magnitude in [0, 1] (activations are tanh-bounded
+                # so norms are O(1); clamp guards the rare overshoot).
+                mag = norms.clamp(max=1.0)
+                # Acceptance against the bar: keep cells clearing tc.
+                accept = (mag >= tc).to(mag.dtype)
                 vmask = self.subspace.valid_mask
                 if vmask is not None:
-                    mag_score = mag_score \
-                                * vmask.flatten().unsqueeze(-1).to(mag_score.dtype)
-                trust = mag_score
+                    accept = accept \
+                        * vmask.flatten().unsqueeze(-1).to(accept.dtype)
+                trust = mag * accept
                 truth_layer.record_batch(
                     act.reshape(BK * N, D),
                     trust.reshape(BK * N),

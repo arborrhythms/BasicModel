@@ -165,6 +165,49 @@ This is the main architectural point. The PS analyzer should be built by
 running the existing parser machinery in the opposite direction, with PS
 meronymic operations attached instead of SS taxonymic operations.
 
+## Forward / Reverse Ownership
+
+The `forward()` and `reverse()` methods on each space are the lifecycle
+and tensor-contract boundaries. They should orchestrate the analyzer,
+binding, router, and reconstruction components, but should not inline all
+of their implementation details.
+
+The intended ownership split is:
+
+```text
+PerceptualSpace.forward
+  orchestrates surface input -> PS analyzer -> ObjectSubSpace leaves
+  -> PS terminal stream
+
+PerceptualSpace.reverse
+  orchestrates SS/PS terminals -> exact or generative meronymic replay
+  -> reconstructed surface bytes/chars
+
+ObjectSubSpace
+  owns durable meronymic analysis state: spans, parent/child links,
+  route ids, route scores, depths, and replay metadata
+
+RadixLayer / percept store
+  owns percept identity: trie lookup, byte fallback, codebook rows,
+  canonical bytes, and reversible lookup
+
+LanguageLayer-like router
+  owns trainable route scoring, shared reduce/unreduce primitives,
+  Viterbi/soft-DP execution, and transient route caches
+
+ConceptualSpace / SymbolicSpace binding
+  owns PS-to-SS resolution, NULL_SEM handling, exposure counting, and
+  promotion into stable symbolic rows
+
+STM / stack-mode SubSpace
+  owns the terminal stream mechanics consumed by shift/reduce/unreduce
+```
+
+This keeps `Spaces.py` from becoming a large control module. Space
+methods should compose the components and preserve the public
+forward/reverse contracts; specialist layers should own the actual
+routing, storage, and binding policies.
+
 ## Carrier State
 
 The mirror-image design is not a field-for-field copy. `WordSubSpace`
@@ -374,6 +417,19 @@ routes, the implementation should first factor out a shared inverse
 routing primitive from `LanguageLayer.unreduce` / `reverse_stack` rather
 than creating a separate PS-only router.
 
+Do not assume that route replay is sufficient for PS analysis. The PS
+forward path must be able to choose a decomposition for a newly observed
+surface root even when no prior symbolic `compose()` trace exists. The
+shared primitive should therefore expose:
+
+```text
+candidate route scoring
+one hard Viterbi-style route
+soft marginals for training
+per-row route/provenance metadata
+logical lengths and masks
+```
+
 The important ownership boundary is:
 
 ```text
@@ -402,8 +458,13 @@ terminal_mask:    [B, Kmax]
 terminal_len:     [B]
 ```
 
-This output should be a view over `ObjectSubSpace` leaves whose
+This output should be a terminal-stream adapter view over
+`ObjectSubSpace` leaves whose
 `_part_id` is known or whose fallback byte/atom terminal is guaranteed.
+It is not a new durable term object. It is a source-agnostic view that
+lets the current word/radix path, byte fallback, future PS analyzer, and
+future multimodal analyzers all present the same contract.
+
 It is not yet the symbolic parser's stack input. The PS-to-SS binding
 layer converts these perceptual terminals into the existing stack-mode
 `SubSpace` contract that `LanguageLayer` already consumes.
@@ -647,13 +708,42 @@ cover, the depth penalty rewards stopping there.
 
 ## Implementation Phases
 
-### Phase 1: Terminal-Stream Naming
+### Phase 0: Close STM Prerequisites
 
-After the STM Serial/Parallel plan, audit code paths that say "word" when
-they mean "terminal". Rename comments, docstrings, and internal helper
-names where safe.
+Finish the STM Serial/Parallel work before replacing the terminal source.
+This means STM should already have a stable predict-then-perceive path,
+serial boundary behavior, rule/context-aware prediction, trained
+intermediate supervision where required, reverse-from-STM behavior, and
+clear absolute vs relative end-state handling.
 
-Do not rename externally visible word-lexer APIs in this phase.
+The analyzer should not compensate for incomplete STM sequencing. It
+should only replace how terminals are produced.
+
+### Phase 1: Terminal-Stream Adapter
+
+Add a terminal-stream adapter around the existing word/radix path with no
+behavior change.
+
+The adapter should expose:
+
+```python
+terminal_what:  [B, Kmax, D]
+terminal_ids:   [B, Kmax]
+terminal_mask:  [B, Kmax]
+terminal_len:   [B]
+```
+
+It should also be able to materialize the existing stack-mode `SubSpace`
+after PS-to-SS binding:
+
+```python
+subspace.what
+subspace.where
+subspace.activation
+```
+
+Keep externally visible word-lexer APIs stable. Rename only comments,
+docstrings, and internal helper names where doing so reduces ambiguity.
 
 ### Phase 2: Shared Router Direction Audit
 
@@ -675,7 +765,35 @@ compact_soft
 Identify the smallest shared primitive needed so PS forward analysis can
 call the same route machinery in the inverse direction.
 
-### Phase 3: ObjectSubSpace Carrier
+This phase must decide whether the current `generate()` path is enough or
+whether route scoring must be factored out of `compose()`,
+`unreduce()`, and `reverse_stack()` first. The required result is an
+independent route selector that can analyze a new perceptual surface
+without relying on a cached symbolic compose trace.
+
+### Phase 3: Minimal Meronymic Operation Registry
+
+Register PS meronymic operations with the same shape as grammar ops:
+
+```text
+compose(left_surface, right_surface) -> parent_surface
+generate(parent_surface) -> left_surface, right_surface
+```
+
+Start with deterministic or simple learned versions of:
+
+```text
+stop
+boundary on whitespace
+uniform fallback
+byte/character fallback
+```
+
+Use the existing radix/percept store for `stop`, known span lookup,
+canonical bytes, and byte fallback. Do not duplicate percept identity
+inside `ObjectSubSpace`.
+
+### Phase 4: ObjectSubSpace Carrier
 
 Add an `ObjectSubSpace` carrier analogous to `WordSubSpace`, but for PS
 meronymic state. It should be a durable state holder, not a parser
@@ -700,7 +818,7 @@ It should expose push/pop or insert/update helpers with the same
 discipline as `WordSubSpace`: all parallel buffers stay in sync, and
 logical depth/masks determine which slots are live.
 
-### Phase 4: Temporary Stack View
+### Phase 5: Temporary Stack View
 
 Build a stack-mode `SubSpace` adapter view over active `ObjectSubSpace`
 items when invoking the shared routing machinery:
@@ -713,24 +831,6 @@ subspace.activation:  [B, K]
 
 This mirrors how the symbolic stack route uses a temporary stack-mode
 `SubSpace` while durable symbolic state remains on `WordSubSpace`.
-
-### Phase 5: Meronymic Operation Registry
-
-Register PS meronymic operations with the same shape as grammar ops:
-
-```text
-compose(left_surface, right_surface) -> parent_surface
-generate(parent_surface) -> left_surface, right_surface
-```
-
-Start with deterministic or simple learned versions of:
-
-```text
-stop
-boundary on whitespace
-uniform fallback
-byte/character fallback
-```
 
 ### Phase 6: Routing PS Analyzer
 
@@ -751,6 +851,10 @@ no beam
 The analyzer writes selected part ids, route ids, span links, and route
 scores back to `ObjectSubSpace`.
 
+The first analyzer mode should be a compatibility mode: with only
+`stop`, whitespace `boundary`, `uniform`, and byte/character fallback
+enabled, it should match the current lexer/radix terminal sequence.
+
 ### Phase 7: SS Binding Hook
 
 When a PS terminal enters SymbolicSpace:
@@ -765,8 +869,10 @@ When a PS terminal enters SymbolicSpace:
 Use the same meronymic operations in compose direction to reconstruct
 surface forms from SS terminals.
 
-Start with exact replay from `ObjectSubSpace` route metadata. Then allow
-generative replay from learned route scores.
+Start with exact replay from `ObjectSubSpace` route metadata and radix
+canonical bytes. Then allow generative replay from learned route scores.
+This keeps reconstruction testable before the model learns good
+surface-realization policies.
 
 ### Phase 9: Operator-Superposition Composition
 
@@ -775,6 +881,10 @@ part-of-speech categories in the grammar file.
 
 This should preserve compatibility with the existing typed grammar while
 allowing an operator-only grammar variant.
+
+This is a later symbolic-composition experiment, not a prerequisite for
+the first PS analyzer. Existing grammar categories may remain in place
+while terminal emission is migrated.
 
 ## Tests
 

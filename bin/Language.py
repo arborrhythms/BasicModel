@@ -54,6 +54,52 @@ from pathlib import Path as _Path
 _GRAMMAR_DIR = _Path(__file__).parent.parent / "data"
 
 
+from dataclasses import dataclass, field as _dc_field
+
+
+@dataclass
+class RoutingState:
+    """First-class per-sentence routing decision produced by
+    ``WordSubSpace.compose``.
+
+    This is the ADDITIVE companion to the long-standing ``current_rules``
+    dict: many consumers depend on ``current_rules`` staying exactly
+    ``dict[tier, list[list[int]]]`` (the per-row, per-step rule ids read
+    by ``SyntacticLayer._next_rule_name``, the S-tier dispatch in
+    ``Models``, and ``Spaces``' stack-route path), so ``RoutingState`` is
+    stored ALONGSIDE it (on ``WordSubSpace.routing_state``) and never
+    replaces it. It carries the same information in two extra forms the
+    intra-sentence predictor needs:
+
+    Fields
+    ------
+    rules_by_tier : dict[tier, list[list[int]]]
+        The exact ``current_rules`` dict (same object), kept here so a
+        single ``RoutingState`` is a self-contained snapshot.
+    selected_rules : list[int]
+        Flat list of the selected rule-ids for the canonical row (row 0
+        of every tier, concatenated in sorted-tier order). Row 0 is the
+        canonical sequence convention already used by
+        ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
+        follow-on). Used to build ``rule_probs`` and for diagnostics.
+    rule_probs : torch.Tensor | None
+        Dense ``[B, n_rules]`` float distribution over the grammar's
+        rule vocabulary (``n_rules == len(TheGrammar.rule_table)``). This
+        is the rule-conditioning signal the intra-sentence predictor
+        consumes (``ConceptualSpace._intra_routing_for_predict`` ->
+        ``IntraSentenceLayer.routing``). FIRST CUT (see
+        ``WordSubSpace._synthesize_rule_probs``): mass is scattered onto
+        the SELECTED rule-ids and L1-normalized per row, so this encodes
+        WHICH rules fired (not yet the gradient-bearing soft marginals
+        fragmented in ``LanguageLayer._last_tier_routings`` -- that is a
+        documented future upgrade at the ``_synthesize_rule_probs``
+        seam). ``None`` when no grammar/router has fired.
+    """
+    rules_by_tier: dict = _dc_field(default_factory=dict)
+    selected_rules: list = _dc_field(default_factory=list)
+    rule_probs: object = None
+
+
 def load_grammar(filename):
     """Load a ``.grammar`` XML file from ``data/`` and return a
     ``Grammar.configure()``-compatible dict.
@@ -4424,6 +4470,33 @@ class LanguageLayer(Layer):
         )
 
 
+def _masked_softmax_lastdim(scores: torch.Tensor) -> torch.Tensor:
+    """Softmax over the last dim that is NaN-safe for fully-masked rows.
+
+    Standard ``F.softmax`` returns NaN for a row that is entirely
+    ``-inf`` (every entry masked out). Here such a row is a
+    structurally-impossible action whose action-level marginal is
+    already 0, so the per-op posterior is multiplied by 0 downstream --
+    any finite value is correct. This returns a 0 posterior on
+    fully-dead rows and the ordinary softmax elsewhere, keeping the op
+    posterior finite without altering the live (non-dead) rows or
+    silencing a genuine divergence. Gradient-safe: dead rows carry no
+    gradient (they are constant 0), live rows get the usual softmax
+    gradient.
+    """
+    if scores.numel() == 0:
+        return scores
+    # A row is "dead" when its max over ops is non-finite (all -inf).
+    row_max = scores.amax(dim=-1, keepdim=True)            # [..., 1]
+    dead = ~torch.isfinite(row_max)                        # [..., 1] bool
+    # Replace dead rows with zeros so softmax is finite (uniform) there;
+    # zero out that uniform afterwards so the posterior is exactly 0.
+    safe_scores = torch.where(dead, torch.zeros_like(scores), scores)
+    post = F.softmax(safe_scores, dim=-1)
+    post = torch.where(dead, torch.zeros_like(post), post)
+    return post
+
+
 def binary_tiling_soft_dp(
     copy_score: torch.Tensor,
     reduce_score: torch.Tensor,
@@ -4506,10 +4579,20 @@ def binary_tiling_soft_dp(
         reduce_marginal = copy_score.new_zeros(B, 0)
 
     # Per-(action, op) marginals: P(action fires at t) * softmax(op | action).
-    op_post_copy = F.softmax(c, dim=-1)                   # [B, N, R_copy]
+    # A row can be ENTIRELY masked out (all -inf) when tier-gating forbids
+    # every op for that position/pair (see BinaryStructuredReductionLayer's
+    # tier mask). For such a row softmax(-inf, ...) is NaN, but the row's
+    # ACTION marginal is exactly 0 (structurally impossible), so the
+    # per-op product MUST be 0 -- not NaN. Use a masked softmax that
+    # yields a 0 posterior on fully-dead rows (any finite value works
+    # since it is multiplied by a 0 marginal; 0 keeps it tidy). This is
+    # the correct value for a 0 x undefined structural cell, NOT silent
+    # gating of a genuine numerical divergence (the action marginals are
+    # the live, fail-loud-checked quantities).
+    op_post_copy = _masked_softmax_lastdim(c)             # [B, N, R_copy]
     copy_marginal_op = copy_marginal.unsqueeze(-1) * op_post_copy
     if N > 1 and R_reduce > 0:
-        op_post_reduce = F.softmax(r, dim=-1)             # [B, N-1, R_reduce]
+        op_post_reduce = _masked_softmax_lastdim(r)       # [B, N-1, R_reduce]
         reduce_marginal_op = reduce_marginal.unsqueeze(-1) * op_post_reduce
     else:
         reduce_marginal_op = copy_score.new_zeros(B, max(N - 1, 0), R_reduce)
@@ -5124,9 +5207,14 @@ class BinaryStructuredReductionLayer(nn.Module):
         # Hardened op-selection: forward uses one-hot argmax (sparse
         # commitment to a single op per pair); backward uses the soft
         # softmax over reduce_score so the scorer still receives gradient
-        # via straight-through.
+        # via straight-through. A fully tier-masked pair (all -inf) gets a
+        # 0 soft posterior (NaN-safe; see _masked_softmax_lastdim) -- its
+        # reduce marginal is 0 downstream so the chosen reduction is
+        # dropped from the slab, but the slab must stay FINITE (a NaN here
+        # would propagate into the next round's folded slab and poison the
+        # whole DP).
         if reduce_score.numel() > 0:
-            op_soft = F.softmax(reduce_score, dim=-1)            # [B, N-1, R]
+            op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
             op_hard = F.one_hot(
                 op_soft.argmax(-1), num_classes=op_soft.shape[-1]
             ).to(op_soft.dtype)
@@ -6550,6 +6638,16 @@ class WordSubSpace(SubSpace):
         # ``compose`` / ``generate`` overwrite these on call.
         self.current_rules = self._default_compose_rules()
         self.generate_rules = self._default_generate_rules()
+        # First-class routing decision (ADDITIVE companion to
+        # ``current_rules``; never replaces it -- see ``RoutingState``).
+        # Built in ``compose`` (both the default-only fast path and the
+        # full-router path) right after ``current_rules`` is set. Carries
+        # the dense ``[B, n_rules]`` ``rule_probs`` the intra-sentence
+        # predictor consumes. Initialized here from the default fold so
+        # ``routing_state`` is always a valid object (its ``rule_probs``
+        # is None until the first ``compose`` with a known batch size).
+        self.routing_state = self._build_routing_state(
+            self.current_rules, batch_size=None)
         # Bumped on each compose / generate. Per-space SyntacticLayers
         # compare against this to know when to reset their per-tier
         # cursor (Q10.1).
@@ -7146,78 +7244,117 @@ class WordSubSpace(SubSpace):
     def idea_push(self, b, idea):
         """Untyped push onto row ``b`` of the idea stack. Mirrors the
         retired ``ShortTermMemory.push(b, idea)``.
+
+        Newest-at-slot-0 convention: the new idea lands at slot 0 and the
+        existing occupants shift RIGHT (slots ``[0, depth)`` -> ``[1,
+        depth+1)``). Overflow RAISES (capacity is managed by the caller /
+        the rolling-window ``_stm_shift_and_push``; ``push`` itself is the
+        strict-bound primitive).
         """
         depth = int(self._idea_depth[b].item())
         if depth >= self._idea_capacity:
             raise RuntimeError(
                 f"WordSubSpace.idea_push: row {b} is at capacity "
                 f"({self._idea_capacity}); reduce before pushing further.")
-        self._idea_buffer[b, depth] = idea
+        if depth > 0:
+            self._idea_buffer[b, 1:depth + 1] = self._idea_buffer[
+                b, 0:depth].clone()
+        self._idea_buffer[b, 0] = idea
         self._idea_depth[b] = depth + 1
         if depth + 1 > self._idea_max_depth_host:
             self._idea_max_depth_host = depth + 1
 
     def idea_push_step(self, ideas):
-        """Vectorised single-step push: shape ``[B, D]``."""
+        """Vectorised single-step push: shape ``[B, D]``.
+
+        Newest-at-slot-0: shift every row's stack RIGHT by one slot, then
+        write the new idea to slot 0.
+        """
         B, D = ideas.shape
-        device = self._idea_buffer.device
-        row_idx = torch.arange(B, device=device)
-        depths = self._idea_depth
-        self._idea_buffer[row_idx, depths] = ideas
-        self._idea_depth = depths + 1
+        buf = self._idea_buffer
+        cap = int(buf.shape[1])
+        if cap > 1:
+            buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+        buf[:, 0] = ideas
+        self._idea_depth = self._idea_depth + 1
         self._idea_max_depth_host = self._idea_max_depth_host + 1
 
     def idea_push_step_masked(self, ideas, gate_b_1):
-        """Masked variant of ``idea_push_step``."""
+        """Masked variant of ``idea_push_step`` (newest-at-slot-0).
+
+        For gated rows, shift RIGHT and write the new idea at slot 0; for
+        un-gated rows the buffer + depth are left unchanged.
+        """
         B, D = ideas.shape
-        device = self._idea_buffer.device
-        row_idx = torch.arange(B, device=device)
-        depths = self._idea_depth
+        buf = self._idea_buffer
+        cap = int(buf.shape[1])
         gate_b = gate_b_1.view(B)
-        new_slot = torch.where(
-            gate_b.unsqueeze(-1),
-            ideas,
-            self._idea_buffer[row_idx, depths])
-        self._idea_buffer[row_idx, depths] = new_slot
-        self._idea_depth = depths + gate_b.long()
+        gate_bool = gate_b.bool()
+        gate_col = gate_bool.view(B, 1, 1)
+        shifted = buf.clone()
+        if cap > 1:
+            shifted[:, 1:cap] = buf[:, 0:cap - 1]
+        shifted[:, 0] = ideas
+        self._idea_buffer = torch.where(gate_col, shifted, buf)
+        self._idea_depth = self._idea_depth + gate_bool.long()
 
     def idea_push_window_batch(self, ideas):
         """Push ``W`` consecutive ideas onto every batch row in one shot.
-        ``ideas`` shape ``[B, W, D]``.
+        ``ideas`` shape ``[B, W, D]`` (position 0 is the OLDEST of the
+        window, position ``W-1`` the newest).
+
+        Newest-at-slot-0: shift the existing stack RIGHT by ``W`` and write
+        the window REVERSED into slots ``[0, W)`` so the window's newest
+        (position ``W-1``) lands at slot 0.
         """
         B, W, D = ideas.shape
         if W == 0:
             return
-        device = self._idea_buffer.device
-        starts = self._idea_depth
-        offsets = torch.arange(W, device=device).unsqueeze(0)
-        positions = starts.unsqueeze(1) + offsets
-        row_idx = torch.arange(B, device=device).unsqueeze(1) \
-            .expand(-1, W)
-        self._idea_buffer[row_idx, positions] = ideas
-        self._idea_depth = starts + W
+        buf = self._idea_buffer
+        cap = int(buf.shape[1])
+        if cap > W:
+            buf[:, W:cap] = buf[:, 0:cap - W].clone()
+        # Reverse the window along its position axis so the newest window
+        # position (W-1) maps to slot 0.
+        buf[:, 0:W] = torch.flip(ideas, dims=[1])
+        self._idea_depth = self._idea_depth + W
         self._idea_max_depth_host = self._idea_max_depth_host + int(W)
 
     def idea_pop(self, b):
-        """Pop and return the top idea for row ``b``, or ``None`` when empty."""
+        """Pop and return the top idea for row ``b``, or ``None`` when empty.
+
+        Newest-at-slot-0: the top (newest) is slot 0; pop it and shift the
+        remaining occupants LEFT (slots ``[1, depth)`` -> ``[0, depth-1)``).
+        """
         depth = int(self._idea_depth[b].item())
         if depth == 0:
             return None
-        depth -= 1
-        idea = self._idea_buffer[b, depth].clone()
-        self._idea_buffer[b, depth].zero_()
-        self._idea_depth[b] = depth
+        idea = self._idea_buffer[b, 0].clone()
+        if depth > 1:
+            self._idea_buffer[b, 0:depth - 1] = self._idea_buffer[
+                b, 1:depth].clone()
+        self._idea_buffer[b, depth - 1].zero_()
+        self._idea_depth[b] = depth - 1
         return idea
 
     def idea_peek(self, b, n=0):
-        """Return the ``n``-th item from top of row ``b``, or ``None``."""
+        """Return the ``n``-th item from top of row ``b``, or ``None``.
+
+        Newest-at-slot-0: ``n`` counts back from the newest, so the n-th
+        item lives directly at slot ``n``.
+        """
         depth = int(self._idea_depth[b].item())
         if depth <= n:
             return None
-        return self._idea_buffer[b, depth - 1 - n]
+        return self._idea_buffer[b, n]
 
     def idea_snapshot(self, detach=False):
-        """Return ``[B, max_depth, D]`` slice of the live idea buffer."""
+        """Return ``[B, max_depth, D]`` slice of the live idea buffer.
+
+        Newest-at-slot-0 convention: the returned slab is NEWEST-FIRST
+        along the slot axis (slot 0 = most-recent idea; the oldest live
+        slot is at index ``depth-1``). The slice bounds are unchanged.
+        """
         B = int(self._idea_buffer.shape[0])
         if B == 0:
             return None
@@ -7771,13 +7908,30 @@ class WordSubSpace(SubSpace):
         #
         # The retired ``<WordSpace><useGrammar>`` XML knob used to
         # also gate this; the grammar XML is now the sole driver.
+        # Batch size for the dense ``rule_probs``: the per-word /
+        # boundary fire passes the STM snapshot ``[B, N, D]`` as
+        # ``input_vectors``, so its leading dim is the predictor's B.
+        # ``None`` when the operand is not a [B, ...] tensor (the
+        # ``RoutingState`` then falls back to inferring B from the rule
+        # rows / leaves ``rule_probs=None`` -- see ``_build_routing_state``).
+        b_hint = (int(input_vectors.shape[0])
+                  if torch.is_tensor(input_vectors) and input_vectors.dim() >= 1
+                  else None)
         if self._grammar_is_default_only:
             self.current_rules = self._default_compose_rules()
             self._pad_S_cursor_to_target(self.current_rules)
+            # ADDITIVE: build the first-class RoutingState alongside the
+            # (unchanged) ``current_rules`` dict so the intra-sentence
+            # predictor can read a dense ``[B, n_rules]`` ``rule_probs``.
+            self.routing_state = self._build_routing_state(
+                self.current_rules, batch_size=b_hint)
             return self.current_rules
         self.current_rules = self.languageLayer.compose(
             input_vectors, self, subspace=subspace) or {}
         self._pad_S_cursor_to_target(self.current_rules)
+        # ADDITIVE: same RoutingState build on the full-router path.
+        self.routing_state = self._build_routing_state(
+            self.current_rules, batch_size=b_hint)
         return self.current_rules
 
     def _pad_S_cursor_to_target(self, rules_dict):
@@ -7854,6 +8008,353 @@ class WordSubSpace(SubSpace):
     # authoritative. Restrict to the three Space tiers; non-tier
     # nonterminals (NP, VP, ...) get filtered out by the caller.
     _LHS_TIER_MAP = {'P': 'P', 'C': 'C', 'S': 'S'}
+
+    # -- RoutingState construction (Task: rule-conditioned predictor) --
+
+    @staticmethod
+    def _flatten_selected_rules(rules_by_tier):
+        """Flat row-0 rule-id list across tiers (sorted-tier order).
+
+        Row 0 is the canonical sequence convention already used by
+        ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
+        follow-on). Tolerates both the multi-row ``list[list[int]]`` and
+        the legacy flat ``list[int]`` per-tier shapes via
+        ``SyntacticLayer._row_zero_rules``.
+        """
+        if not rules_by_tier:
+            return []
+        flat = []
+        for tier in sorted(rules_by_tier.keys()):
+            per_tier = rules_by_tier.get(tier)
+            row0 = SyntacticLayer._row_zero_rules(per_tier)
+            for rid in row0:
+                try:
+                    flat.append(int(rid))
+                except (TypeError, ValueError):
+                    continue
+        return flat
+
+    def _synthesize_rule_probs(self, rules_by_tier, batch_size):
+        """Build the dense ``[B, n_rules]`` rule distribution.
+
+        Dispatches between two builders:
+
+        * SOFT path (``_synthesize_rule_probs_soft``): when the signal
+          router (``self.languageLayer``) ran ``compose`` and cached its
+          per-tier SOFT marginals in ``_last_tier_routings``, aggregate
+          those differentiable marginals into a global ``[B, n_rules]``
+          tensor. This keeps a graph back to the router's anchor
+          scorers, so the intra-sentence predictor's ``routing_proj``
+          bias backprops predictor-loss -> ``rule_probs`` -> router
+          marginals -> router scorer params (``copy_anchor`` /
+          ``apply_anchor`` / ``reduce_anchor``).
+        * HARD path (``_synthesize_rule_probs_hard``): the default-only /
+          ``useGrammar='none'`` fast path never calls
+          ``LanguageLayer.compose`` (so ``_last_tier_routings`` is
+          empty); there is no router to train. Fall back to the
+          (detached) hard scatter -- unit mass onto the SELECTED rule-ids,
+          L1-normalized per row.
+
+        Branch on whether ``self.languageLayer._last_tier_routings`` is
+        populated.
+        """
+        ll = getattr(self, 'languageLayer', None)
+        tier_routings = getattr(ll, '_last_tier_routings', None) if ll is not None else None
+        if tier_routings:
+            soft = self._synthesize_rule_probs_soft(tier_routings, batch_size)
+            if soft is not None:
+                return soft
+            # Soft aggregation declined (no usable marginals / shapes did
+            # not line up): fall through to the hard scatter so the
+            # predictor still gets a (detached) conditioning signal.
+        return self._synthesize_rule_probs_hard(rules_by_tier, batch_size)
+
+    def _synthesize_rule_probs_soft(self, tier_routings, batch_size):
+        """Aggregate the router's SOFT per-tier marginals into a dense,
+        GRADIENT-BEARING ``[B, n_rules]`` rule distribution.
+
+        ``tier_routings`` is ``self.languageLayer._last_tier_routings``:
+        ``{tier: {"unary": u_routing, "binary": last_round_routing,
+        "binary_rounds": [...]}}`` cached by ``LanguageLayer.compose``.
+
+        Differentiable aggregation (per tier)
+        -------------------------------------
+        * unary: ``apply_counts = action_probs[:, :, R_copy:].sum(dim=1)``
+          -> ``[B, R_apply]`` expected count per APPLY op. Column ``a``
+          maps to ``_unary_rule_ids[tier][a]``. (``action_probs`` is the
+          straight-through softmax -- gradient-bearing; the COPY columns
+          ``[:, :, :R_copy]`` are dropped: copy ops carry no distinct
+          rule_ids.)
+        * binary: ``reduce_counts = reduce_marginal_op.sum(dim=1)`` ->
+          ``[B, R_reduce]`` expected count per REDUCE op, SUMMED over ALL
+          reduction rounds (``binary_rounds``) to match the hard
+          scatter's accumulate-across-rounds semantics. Column ``r`` maps
+          to ``_binary_rule_ids[tier][r]``.
+
+        The per-op count COLUMNS are scattered to their global rule_id
+        via ``index_add`` (differentiable w.r.t. the source counts -- NO
+        in-place index assignment, NO ``.detach()`` / ``.item()`` on the
+        counts). Rows with any mass are L1-normalized; zero-mass rows stay
+        zero (the additive bias is then just ``routing_proj``'s bias).
+
+        Returns the live differentiable ``[B, n_rules]`` tensor, or
+        ``None`` when no usable marginals exist (caller then falls back to
+        the hard scatter). FAIL LOUD: a non-finite marginal or assembled
+        ``rule_probs`` raises (no silent NaN gating).
+        """
+        ll = self.languageLayer
+        n_rules = int(len(TheGrammar.rule_table))
+        if n_rules <= 0:
+            return None
+
+        device = TheDevice.get()
+        # Collect (rule_id_index_tensor, count_columns) contributions per
+        # tier, then index_add them onto a single zeros base so the graph
+        # back to action_probs / reduce_marginal_op is preserved.
+        contributions = []          # list of (idx [K] long, src [B, K] float)
+        B_resolved = batch_size
+
+        def _check_finite(name, t):
+            if not torch.isfinite(t).all():
+                raise ValueError(
+                    f"WordSubSpace._synthesize_rule_probs_soft: non-finite "
+                    f"{name} marginal (fail-loud per numerical policy).")
+
+        for tier, tier_routing in tier_routings.items():
+            if not isinstance(tier_routing, dict):
+                continue
+
+            # --- Unary apply ops ---------------------------------------
+            u_routing = tier_routing.get("unary")
+            if isinstance(u_routing, dict):
+                action_probs = u_routing.get("action_probs")
+                if torch.is_tensor(action_probs) and action_probs.dim() == 3:
+                    unary_layer = ll._unary_layers.get(tier) \
+                        if hasattr(ll._unary_layers, 'get') \
+                        else (ll._unary_layers[tier]
+                              if tier in ll._unary_layers else None)
+                    r_copy = int(getattr(unary_layer, 'r_copy', 0)) \
+                        if unary_layer is not None else 0
+                    apply_slice = action_probs[:, :, r_copy:]   # [B, N, R_apply]
+                    if apply_slice.shape[-1] > 0:
+                        _check_finite("unary action_probs", apply_slice)
+                        apply_counts = apply_slice.sum(dim=1)    # [B, R_apply]
+                        rid_table = ll._unary_rule_ids.get(tier, []) \
+                            if hasattr(ll._unary_rule_ids, 'get') \
+                            else ll._unary_rule_ids[tier]
+                        idx, cols = self._map_op_columns(
+                            apply_counts, rid_table, n_rules)
+                        if idx is not None:
+                            contributions.append((idx, cols))
+                            B_resolved = B_resolved or cols.shape[0]
+
+            # --- Binary reduce ops (summed over all rounds) ------------
+            rounds = tier_routing.get("binary_rounds")
+            if not rounds:
+                one = tier_routing.get("binary")
+                rounds = [one] if isinstance(one, dict) else []
+            reduce_total = None     # [B, R_reduce]
+            for r_routing in rounds:
+                if not isinstance(r_routing, dict):
+                    continue
+                rmo = r_routing.get("reduce_marginal_op")
+                if not (torch.is_tensor(rmo) and rmo.dim() == 3):
+                    continue
+                if rmo.shape[1] == 0 or rmo.shape[2] == 0:
+                    continue
+                _check_finite("binary reduce_marginal_op", rmo)
+                round_counts = rmo.sum(dim=1)                    # [B, R_reduce]
+                reduce_total = (round_counts if reduce_total is None
+                                else reduce_total + round_counts)
+            if reduce_total is not None:
+                rid_table = ll._binary_rule_ids.get(tier, []) \
+                    if hasattr(ll._binary_rule_ids, 'get') \
+                    else ll._binary_rule_ids[tier]
+                idx, cols = self._map_op_columns(
+                    reduce_total, rid_table, n_rules)
+                if idx is not None:
+                    contributions.append((idx, cols))
+                    B_resolved = B_resolved or cols.shape[0]
+
+        if not contributions:
+            return None
+
+        # Resolve B from the contributions if the caller's hint was None.
+        B = int(B_resolved) if B_resolved else int(contributions[0][1].shape[0])
+        if B <= 0:
+            return None
+
+        # Differentiable scatter: zeros base + index_add of each per-op
+        # count column at its global rule_id. index_add is autograd-safe
+        # w.r.t. the source (the count columns carry the router graph).
+        probs = torch.zeros(B, n_rules, device=device)
+        for idx, cols in contributions:
+            if int(cols.shape[0]) != B:
+                # Batch mismatch between tiers' marginals: skip the soft
+                # path entirely rather than fabricate an alignment.
+                return None
+            probs = probs.index_add(1, idx.to(device), cols.to(device))
+
+        # L1-normalize rows with mass; zero rows stay zero. Build the
+        # normalized tensor functionally (no in-place row assignment) so
+        # the graph to the count columns is preserved.
+        row_sums = probs.sum(dim=1, keepdim=True)               # [B, 1]
+        denom = torch.where(row_sums > 0, row_sums,
+                            torch.ones_like(row_sums))
+        probs = probs / denom
+
+        if not torch.isfinite(probs).all():
+            raise ValueError(
+                "WordSubSpace._synthesize_rule_probs_soft produced a "
+                "non-finite rule_probs tensor (fail-loud per numerical "
+                "policy).")
+        return probs
+
+    def _map_op_columns(self, counts, rid_table, n_rules):
+        """Map per-op count columns ``counts`` ``[B, R]`` to their global
+        rule_id indices for a differentiable ``index_add``.
+
+        ``rid_table`` is the per-tier ``op_id -> rule_id`` list
+        (``_unary_rule_ids`` / ``_binary_rule_ids``). Returns
+        ``(idx [K] long, cols [B, K] float)`` selecting only the op
+        columns whose rule_id is in ``[0, n_rules)``; ``(None, None)``
+        when no column maps. ``cols`` is a (differentiable) column
+        gather of ``counts`` -- it keeps the graph to the marginals.
+        """
+        if not torch.is_tensor(counts) or counts.dim() != 2:
+            return None, None
+        R = int(counts.shape[1])
+        keep_cols = []
+        keep_rids = []
+        for op_id in range(min(R, len(rid_table))):
+            try:
+                rid = int(rid_table[op_id])
+            except (TypeError, ValueError):
+                continue
+            if 0 <= rid < n_rules:
+                keep_cols.append(op_id)
+                keep_rids.append(rid)
+        if not keep_cols:
+            return None, None
+        col_idx = torch.tensor(keep_cols, dtype=torch.long,
+                               device=counts.device)
+        cols = counts.index_select(1, col_idx)                  # [B, K]
+        idx = torch.tensor(keep_rids, dtype=torch.long)
+        return idx, cols
+
+    def _synthesize_rule_probs_hard(self, rules_by_tier, batch_size):
+        """Build the dense ``[B, n_rules]`` rule distribution (HARD scatter).
+
+        DETACHED fallback for the default-only / ``useGrammar='none'``
+        fast path (no router to train): scatter unit mass onto the
+        SELECTED rule-ids and L1-normalize per row, so each
+        ``rule_probs[b]`` is a distribution over the rules that FIRED on
+        row ``b``. This conditions the intra-sentence predictor on WHICH
+        rules fired. The gradient-bearing soft-marginal aggregation lives
+        in ``_synthesize_rule_probs_soft`` (used whenever the router ran).
+
+        Per-row handling
+        ----------------
+        * Full-router path: ``rules_by_tier[tier]`` is ``B`` rows (one
+          per batch element, see ``LanguageLayer.compose``); each row's
+          own selected ids are scattered onto that row.
+        * Default-only / single-canonical-row path: a single row 0 is the
+          canonical sequence; it is BROADCAST across all ``B`` rows (the
+          predictor then sees one shared distribution -- matching the
+          "row 0 is canonical" convention).
+
+        Zero-fire rows (no selected ids) are left as an all-zero row (the
+        additive bias then contributes only ``routing_proj``'s bias term;
+        documented). Returns ``None`` when ``n_rules <= 0`` or no usable
+        batch size can be resolved.
+
+        FAIL LOUD: a non-finite value in the assembled tensor raises
+        (never silently sanitized) per the project's numerical policy.
+        """
+        n_rules = int(len(TheGrammar.rule_table))
+        if n_rules <= 0:
+            return None
+
+        # Resolve B: prefer the caller's hint (the compose operand's
+        # leading dim). Fall back to the rule-row count when the operand
+        # batch dim was unavailable but the rows are per-row.
+        per_tier_rows = None
+        max_rows = 0
+        if rules_by_tier:
+            for tier in rules_by_tier:
+                rows = rules_by_tier[tier]
+                if isinstance(rows, list) and rows and isinstance(rows[0], list):
+                    max_rows = max(max_rows, len(rows))
+                    per_tier_rows = per_tier_rows or {}
+        B = batch_size if batch_size is not None else (max_rows or None)
+        if B is None or int(B) <= 0:
+            return None
+        B = int(B)
+
+        device = TheDevice.get()
+        probs = torch.zeros(B, n_rules, device=device)
+
+        # Per-row scatter. For each batch row, accumulate the row's own
+        # rule-ids if the per-tier container is per-row (len == B or the
+        # row index exists), else fall back to row 0 (broadcast canonical).
+        canonical_flat = self._flatten_selected_rules(rules_by_tier)
+        for b in range(B):
+            row_ids = []
+            for tier in sorted(rules_by_tier.keys()) if rules_by_tier else []:
+                per_tier = rules_by_tier.get(tier)
+                if (isinstance(per_tier, list) and per_tier
+                        and isinstance(per_tier[0], list)):
+                    # Per-row container: use this row when present, else
+                    # the canonical row 0 (broadcast).
+                    row = per_tier[b] if b < len(per_tier) else per_tier[0]
+                    for rid in row:
+                        try:
+                            row_ids.append(int(rid))
+                        except (TypeError, ValueError):
+                            continue
+                else:
+                    # Legacy flat list: shared across rows.
+                    for rid in (per_tier or []):
+                        try:
+                            row_ids.append(int(rid))
+                        except (TypeError, ValueError):
+                            continue
+            if not row_ids:
+                # Per-row container existed but this row fired nothing AND
+                # there is no per-row fallback -> use the canonical flat.
+                row_ids = canonical_flat
+            for rid in row_ids:
+                if 0 <= rid < n_rules:
+                    probs[b, rid] += 1.0
+
+        # L1-normalize each row that has any mass; zero rows stay zero
+        # (documented: the additive bias is then just routing_proj's bias).
+        row_sums = probs.sum(dim=1, keepdim=True)
+        nz = row_sums.squeeze(1) > 0
+        if nz.any():
+            probs[nz] = probs[nz] / row_sums[nz]
+
+        if not torch.isfinite(probs).all():
+            raise ValueError(
+                "WordSubSpace._synthesize_rule_probs produced a non-finite "
+                "rule_probs tensor (fail-loud per numerical policy).")
+        return probs
+
+    def _build_routing_state(self, rules_by_tier, batch_size):
+        """Assemble the ``RoutingState`` companion for ``current_rules``.
+
+        ``rules_by_tier`` is the (unchanged) ``current_rules`` dict;
+        ``batch_size`` is the predictor's B (the compose operand's
+        leading dim) or ``None``. Builds ``selected_rules`` (flat row-0
+        ids) and the dense ``rule_probs`` ``[B, n_rules]`` (or ``None``).
+        """
+        rules_by_tier = rules_by_tier or {}
+        selected = self._flatten_selected_rules(rules_by_tier)
+        rule_probs = self._synthesize_rule_probs(rules_by_tier, batch_size)
+        return RoutingState(
+            rules_by_tier=rules_by_tier,
+            selected_rules=selected,
+            rule_probs=rule_probs)
 
     def _default_compose_rules(self):
         """Per-tier rule IDs for the default-only / useGrammar='none'
@@ -8337,6 +8838,11 @@ class WordSubSpace(SubSpace):
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
                 if r.tier == 'S' and r.method_name is not None}
+            # Lift / Lower stay explicit: they are parametrized ops that
+            # need host wiring (``symbolicSpace=space``), so the generic
+            # ``cls()`` below would mis-build them. They are wired first
+            # and the loop's ``if name in builtin_layers`` guard skips
+            # them.
             if 'lift' in grammar_S_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
@@ -8345,26 +8851,43 @@ class WordSubSpace(SubSpace):
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
                     symbolicSpace=space)
-            # Mereological grammar layers: ``part`` / ``equals`` /
-            # ``query`` are now pure-geometric operations on the
-            # SymbolicSpace bivector codebook (clipped cosine
-            # projection on the non-negative paired-index cone, per
-            # Architecture.md §"Monotonicity of the bivector chain").
-            # The standalone ``MereologicalTree`` sidecar that
-            # previously stored explicit parent/equality links has
-            # been retired -- the codebook IS the meronymic structure.
-            # The ``<architecture><mereologicalTreeSize>`` XML knob
-            # is correspondingly retired (any value is silently
-            # ignored).
-            if 'part' in grammar_S_methods:
-                from Layers import PartLayer
-                builtin_layers['part'] = PartLayer()
-            if 'isEqual' in grammar_S_methods:
-                from Layers import IsEqualLayer
-                builtin_layers['isEqual'] = IsEqualLayer()
-            if 'query' in grammar_S_methods:
-                from Layers import QueryLayer
-                builtin_layers['query'] = QueryLayer()
+            # All other S-tier ops: instantiate the parameter-free ops
+            # generically from the module-local GRAMMAR_LAYER_CLASSES
+            # registry rather than a hardcoded per-op special-case chain.
+            # The registry maps every op name to its canonical class
+            # (defined in THIS file), so this both (a) preserves the ops
+            # the old chain wired (``isEqual`` / ``part`` / ``query``)
+            # and (b) picks up any other parameter-free op a grammar
+            # declares at the symbolic tier (``queryPart`` / ``assertPart``
+            # / ``not`` / ``swap`` / ``copy`` / ...) that the old chain
+            # silently missed.
+            #
+            # Mereological grammar layers (``part`` / ``isEqual`` /
+            # ``query`` / ...) are pure-geometric operations on the
+            # SymbolicSpace codebook (clipped cosine projection on the
+            # non-negative paired-index cone, per Architecture.md
+            # §"Monotonicity of the bivector chain"); the standalone
+            # ``MereologicalTree`` sidecar was retired -- the codebook IS
+            # the meronymic structure.
+            for name in grammar_S_methods:
+                if name in builtin_layers:
+                    # Already wired (lift / lower above; sigma / not from
+                    # the substrate). Don't clobber the parametrized
+                    # instance with a fresh parameter-free one.
+                    continue
+                cls = GRAMMAR_LAYER_CLASSES.get(name)
+                if cls is None:
+                    # 'merge' / unknown -- not a registry op.
+                    continue
+                try:
+                    builtin_layers[name] = cls()
+                except TypeError:
+                    # Op needs constructor params (host-wired elsewhere,
+                    # e.g. via _resolve_rule_layer / the C-tier branch).
+                    # Skip rather than force; only the narrow
+                    # constructor-arity TypeError is swallowed -- any
+                    # other exception propagates (fail loud).
+                    continue
         layer = build_space_syntactic_layer(
             space, self, tier=tier,
             builtin_layers=builtin_layers)

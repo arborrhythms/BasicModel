@@ -217,9 +217,12 @@ def test_relative_sentence_reduces_to_depth_three():
         for slot in range(3):
             assert buf[b, slot].abs().sum() > 0, (
                 f"relative row {b} slot {slot} "
-                f"(of [predicate, idea1, idea2]) is unexpectedly zero")
-    # ``S`` is slot 0 (the predicate) for every row.
-    assert torch.equal(S, buf[:, 0, :])
+                f"(of the depth-3 relative end-state) is unexpectedly zero")
+    # Newest-at-slot-0 convention: the end-state is stored newest-first, so
+    # the predicate (oldest constituent) is at the LAST slot ``depth-1``
+    # (== slot 2 here). ``S`` is read per-row at slot ``depth-1`` and so
+    # carries the predicate for every relative row.
+    assert torch.equal(S, buf[:, 2, :])
     assert S.shape == (B, dim)
 
 

@@ -2008,12 +2008,14 @@ class BasicModel(BaseModel):
         """Encode truth entries via runEpoch and store in WordSpace.truth_layer.
 
         Truths are processed through the full pipeline by running a
-        standard inference epoch.  Recording is armed by setting
-        ``symbolicSpace.truthMinMagnitude`` to its armed value 1; while
-        armed, SymbolicSpace.forward() records raw activations into the
-        TruthLayer via ``self.wordSubSpace.truth_layer``. The knob is
-        reset afterward so normal training does not record. After the
-        epoch completes, each stored activation is scaled by its
+        standard inference epoch. Truth recording is governed by the
+        continuous ``truthCriterion`` bar (no binary switch); to capture
+        every provided gold truth this method drops
+        ``symbolicSpace.truth_criterion`` to 0 for the ingestion epoch,
+        during which SymbolicSpace.forward() records the gold activations
+        into the TruthLayer (``self.wordSubSpace.truth_layer``), then
+        restores it. After the epoch completes, each stored activation is
+        scaled by its
         DegreeOfTruth.
 
         Args:
@@ -2037,18 +2039,23 @@ class BasicModel(BaseModel):
         if not texts:
             return
 
-        # 2. Reset truth store, arm recording (truthMinMagnitude = 1),
-        #    run full pipeline, then restore the knob.
+        # 2. Reset the truth store and run a forced epoch over the gold
+        #    texts. Recording is governed by the continuous ``truthCriterion``
+        #    bar (no binary arm): the SymbolicSpace.forward recording block
+        #    captures the gold activations during this epoch exactly as it
+        #    does during training. To capture ALL provided gold truths
+        #    regardless of the configured bar, drop truthCriterion to 0 for
+        #    the ingestion epoch, then restore it.
         truth_layer.clear()
-        prev_min_mag = self.symbolicSpace._truth_min_magnitude
-        self.symbolicSpace._truth_min_magnitude = 1.0
+        prev_tc = self.symbolicSpace.truth_criterion
+        self.symbolicSpace.truth_criterion = 0.0
         self.eval()
         self.set_sigma(0)
         try:
             with torch.no_grad(), TheData.runtime_batch(texts):
                 self.runEpoch(batchSize=len(texts), split="runtime")
         finally:
-            self.symbolicSpace._truth_min_magnitude = prev_min_mag
+            self.symbolicSpace.truth_criterion = prev_tc
 
         # 3. Apply DoT to each stored activation
         n = min(truth_layer.count.item(), len(trusts))
@@ -5279,8 +5286,12 @@ class BasicModel(BaseModel):
         STM-7: "Pop/push are masked roll/scatter/where over [B,7,D]
         + a tensor depth -- never pop().item()").
 
-        Mechanism (spec STM-7 controller):
-          * Take the top-2 STM constituents (slots ``d-2`` and ``d-1``).
+        Mechanism (spec STM-7 controller, newest-at-slot-0 convention):
+          * Take the top-2 STM constituents -- the two NEWEST, at slots
+            ``0`` (newest) and ``1`` (2nd-newest). Keep ``left`` = the
+            OLDER of the pair (slot 1) and ``right`` = the NEWER (slot 0)
+            so the (asymmetric) reduce op sees the SAME operand order it
+            saw under the old oldest-first convention.
           * ``parent = Σ_op weight_op · op(left,right)`` via the cached
             ``BinaryStructuredReductionLayer`` (its ``soft`` slab over a
             length-2 window IS the single weighted reduce over the
@@ -5288,8 +5299,13 @@ class BasicModel(BaseModel):
           * Snap the parent C<->S via ``_stm_symbolic_roundtrip`` (the
             existing idempotent primitive; passthrough for non-
             ProjectionBasis ``.what`` -- MM_5M/MM_xor ``quantize``).
-          * Replace slot ``d-2`` with ``parent``, clear slot ``d-1``,
-            ``d <- d - 1``.
+          * The folded ``parent`` becomes the new NEWEST: write it to
+            slot 0, shift the surviving older constituents (old slots
+            ``2..d-1``) DOWN into slots ``1..d-2``, clear the vacated last
+            slot, ``d <- d - 1``. This keeps the occupied window anchored
+            at ``[0, depth)`` with slot 0 = newest, and preserves the EXACT
+            fold associativity of the old scheme (so the collapsed root is
+            byte-identical).
 
         Both call sites (back-pressure at capacity AND the NULL-seal
         sweep) want an unconditional fold whenever a row has >=2
@@ -5330,14 +5346,16 @@ class BasicModel(BaseModel):
         # ``depth >= 2`` so ``can`` is bit-for-bit unchanged.
         if protect_depth is not None:
             can = can & (depth > protect_depth)            # [B] bool
-        # Gather the top-2 (left = older = slot d-2, right = top =
-        # slot d-1). Clamp indices for the depth<2 rows (masked out
-        # by ``can`` below so the bogus gather never takes effect).
-        idx_r = (depth - 1).clamp(min=0)                   # [B]
-        idx_l = (depth - 2).clamp(min=0)                   # [B]
+        # Gather the top-2 (the two NEWEST): right = newest = slot 0,
+        # left = 2nd-newest = slot 1. The (older, newer) = (left, right)
+        # operand assignment is preserved from the old convention so the
+        # asymmetric reduce op output is byte-identical. Slot 1 is bogus
+        # for the depth<2 rows but they are masked out by ``can`` below.
         rows = torch.arange(B, device=device)
-        left = buf[rows, idx_l]                            # [B, D]
-        right = buf[rows, idx_r]                            # [B, D]
+        idx_newer = torch.zeros(B, dtype=depth.dtype, device=device)   # 0
+        idx_older = torch.ones(B, dtype=depth.dtype, device=device)    # 1
+        right = buf[rows, idx_newer]                        # [B, D] newest
+        left = buf[rows, idx_older]                         # [B, D] 2nd-newest
         if reducer is not None:
             window = torch.stack([left, right], dim=1)      # [B, 2, D]
             _hard, soft, _routing = reducer(window)
@@ -5358,22 +5376,33 @@ class BasicModel(BaseModel):
             parent.unsqueeze(1))                            # [B, 1, D]
         if snapped is not None and snapped.dim() == 3:
             parent = snapped[:, 0, :]
-        # Forced fold gate: 1.0 where the row can reduce (>=2
-        # constituents), 0.0 otherwise. The ``can`` mask is what makes
-        # the static unroll safe -- a short row is a pure no-op for
-        # this step. (A scored soft gate g in (0,1) is the 2b-2
-        # opportunistic-reduce refinement; 2b-2-i forces the fold.)
-        g_col = can.to(buf.dtype).view(B, 1)               # [B, 1]
-        # STM[d-2] <- g·parent + (1-g)·STM[d-2]  (masked: only the
-        # can-rows' slot d-2 changes).
-        new_left = g_col * parent + (1.0 - g_col) * left   # [B, D]
-        buf_new = buf.clone()
-        buf_new[rows, idx_l] = torch.where(
-            can.view(B, 1), new_left, left)
-        # Clear the consumed top slot (d-1) for the can-rows.
-        cleared = torch.where(
-            can.view(B, 1), torch.zeros_like(right), right)
-        buf_new[rows, idx_r] = cleared
+        # Forced fold (the ``can`` mask is what makes the static unroll
+        # safe -- a short / protected row is a pure no-op for this step; a
+        # scored soft gate g in (0,1) is the 2b-2 opportunistic-reduce
+        # refinement, 2b-2-i forces the fold).
+        # Build the post-fold layout for the can-rows: the folded
+        # ``parent`` becomes the new newest at slot 0, the surviving older
+        # constituents (old slots ``2..cap-1``) shift DOWN into slots
+        # ``1..cap-2``, and the now-vacated last slot is zeroed. This is a
+        # pure gather/scatter over the fixed [B, cap, D] slab (no
+        # ``.item()``, no data-dependent trip count) so the static-unroll /
+        # CUDA-graph capture contract is preserved.
+        zero_tail = torch.zeros(B, 1, D, dtype=buf.dtype, device=device)
+        if cap >= 3:
+            tail = buf[:, 2:cap, :]                         # [B, cap-2, D]
+            shifted = torch.cat(
+                [parent.unsqueeze(1), tail, zero_tail], dim=1)  # [B, cap, D]
+        else:
+            # cap < 3: nothing above slot 1 to keep; the folded parent is
+            # the sole survivor (slot 0), slot 1 (if present) clears.
+            if cap == 2:
+                shifted = torch.cat(
+                    [parent.unsqueeze(1), zero_tail], dim=1)    # [B, 2, D]
+            else:  # cap == 1 (degenerate): can is never True (needs d>=2)
+                shifted = parent.unsqueeze(1)                   # [B, 1, D]
+        # Masked commit: only the can-rows adopt the shifted layout; the
+        # rest keep their buffer unchanged.
+        buf_new = torch.where(can.view(B, 1, 1), shifted, buf)
         stm._buffer = buf_new
         # d <- d - 1 for rows that reduced (g==1 there); tensor op,
         # no sync. ``_max_depth_host`` is the host mirror snapshot()
@@ -5479,9 +5508,14 @@ class BasicModel(BaseModel):
         -- CUDA-graph-capturable), masked when a row already has
         depth < 2.
 
-        Returns the single root idea ``S`` ``[B, D]`` (slot 0 of every
-        row after the sweep -- the start-symbol root constituent) plus
-        the post-sweep depth tensor for verification.
+        Returns the single root idea ``S`` ``[B, D]`` plus the post-sweep
+        depth tensor for verification. Newest-at-slot-0 convention: after
+        a full ABSOLUTE collapse the root is the sole survivor at slot 0;
+        a RELATIVE row stops at depth 3 with the predicate at the OLDEST
+        slot (``depth-1``). ``S`` is read per-row at slot ``depth-1`` so it
+        is the collapsed root for absolute rows AND the predicate for
+        relative rows -- IDENTICAL semantics to the old oldest-first
+        ``buf[:, 0, :]`` read (where slot 0 was the oldest survivor).
 
         Task 6a (§7) RELATIVE preservation: ABSOLUTE rows collapse to
         depth 1 as before; RELATIVE rows (detected host-side via
@@ -5518,16 +5552,22 @@ class BasicModel(BaseModel):
         for _ in range(max(0, cap - 1)):
             self._stm_bounded_reduce_step(protect_depth=protect_depth)
         # After cap-1 forced folds every ABSOLUTE row's stack is
-        # collapsed to its bottom slot: that single slot is the sentence
-        # idea S (the start-symbol root -- this producer reduces toward
-        # ``Grammar.start_symbol`` by construction; the only S-tier
-        # reduce ops the grammar exposes all have lhs == start_symbol
-        # for MM_xor/MM_5M, so the folded root's category tracks
-        # start_symbol). RELATIVE rows stop at depth 3 with slot 0 = the
-        # predicate; slot-0 readers still get the predicate idea and
-        # depth-readers see 3.
-        S = stm._buffer[:, 0, :]                            # [B, D]
-        return S, stm._depth
+        # collapsed to a single slot (slot 0, the newest accumulator):
+        # that slot is the sentence idea S (the start-symbol root -- this
+        # producer reduces toward ``Grammar.start_symbol`` by
+        # construction; the only S-tier reduce ops the grammar exposes all
+        # have lhs == start_symbol for MM_xor/MM_5M, so the folded root's
+        # category tracks start_symbol). RELATIVE rows stop at depth 3 with
+        # the predicate at the OLDEST slot (``depth-1``). Reading per-row
+        # at slot ``depth-1`` returns the collapsed root for absolute rows
+        # (depth 1 -> slot 0) AND the predicate for relative rows (depth 3
+        # -> slot 2), matching the old oldest-first ``buf[:, 0, :]``.
+        post_depth = stm._depth
+        B = int(stm._buffer.shape[0])
+        rows = torch.arange(B, device=stm._buffer.device)
+        root_idx = (post_depth - 1).clamp(min=0)            # [B]
+        S = stm._buffer[rows, root_idx]                     # [B, D]
+        return S, post_depth
 
     def _mphf_route_word(self, word_slice, cursor_pos):
         """Rework A: route the per-word percept -> concept through
@@ -6192,12 +6232,28 @@ class BasicModel(BaseModel):
                 depths = [min(3 if bool(rel_rows[b]) else 1, cap)
                           for b in range(B)]
                 # Ragged per-row payloads: the ``depth`` leading slots of
-                # this row's STM buffer (slot 0 = root/predicate).
+                # this row's STM buffer. Newest-at-slot-0 convention: slot
+                # 0 is the newest (absolute: the collapsed root; relative:
+                # the folded-rest idea2), and the OLDEST slot (``depth-1``)
+                # is the root/predicate. ``_reduce_end_state_to_root``
+                # reads that last slot to recover the root.
                 payloads = [cs_buf[b, :depths[b], :] for b in range(B)]
                 # Tetralemma left None for now (field reserved for Task 8;
                 # this task does not compute per-sentence tetralemmas).
-                discourse.observe_stm_end_state(depths, payloads,
-                                                tetralemmas=None)
+                # Use the combined predict+observe so the inter-predictor
+                # STAGES a next-end-state prediction (from the chain BEFORE
+                # this boundary's end-state is appended) and then SCORES it
+                # against the arriving end-state — accumulating ``L_inter``
+                # during training. Calling bare ``observe_stm_end_state``
+                # here (as this hook historically did) never staged a
+                # prediction, so ``consume_inter_loss`` always returned None
+                # and the inter-predictor never learned. ``predict_and_
+                # observe_stm_end_state`` degenerates to a bare observe when
+                # there is no inter-predictor (absolute-only no-op) or on the
+                # cold first sentence (nothing to predict from yet), so the
+                # no-discourse / first-boundary behaviour is preserved.
+                discourse.predict_and_observe_stm_end_state(
+                    depths, payloads, tetralemmas=None)
 
         # Existing loss_head plumbing (dormant: ``loss_head`` is always
         # None today) -- kept identical to the whole-slab tail so the
