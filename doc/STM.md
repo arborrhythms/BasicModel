@@ -1,5 +1,13 @@
 # Short-Term Memory
 
+> **2026-06-02 update (subsymbolic analyzer).** Operators no longer enter
+> the STM idea space. They are kept in the SS **codebook**
+> (`SymbolicSpace.insert_operations`, wired into `WordSubSpace.__init__`)
+> and resolved as a soft superposition over the operator-prefixed parse
+> tree; the STM idea slots hold only **combined meanings** -- an operator
+> defines *how* meanings combine, contributing none of its own. See
+> [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+
 > **Status (2026-05-30):** new chapter for the STM serial / parallel
 > modes work
 > ([doc/plans/2026-05-29-stm-serial-parallel-modes.md](plans/2026-05-29-stm-serial-parallel-modes.md)).

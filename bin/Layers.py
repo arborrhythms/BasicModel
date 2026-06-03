@@ -1530,6 +1530,84 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     # InvertibleLinearLayer -- no constraint needed with symmetric
     # log domain (-inf, +inf).
 
+# =====================================================================
+# SurfaceSchema -- universal surface-realization templates (UG = shared
+# templates). doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter
+# .md ("Absorb / Emit / Swap codification"). Each operator declares one
+# of five templates describing how its surface marker and operand order
+# behave in analysis (absorb / PS forward) and synthesis (emit / PS
+# reverse). Only the marker SLOTS are declared here; the marker CONTENT
+# is learned at runtime and bound per-operator (GrammarLayer.bind_marker
+# / emit). Two operators "share one template" when they reference the
+# same singleton -- conjunction / disjunction / isEqual are surface-
+# indiscriminable and all use T2, discriminated by the slot-0 operator
+# vector rather than by distinct schemas.
+# =====================================================================
+class SurfaceSchema:
+    """One universal surface-realization template (T1-T5).
+
+    Fields:
+      template_id      'T1'..'T5'.
+      name             human-readable template name.
+      arity            operand count the template realizes (1 or 2).
+      has_marker       True iff the template carries a learned marker slot.
+      marker_position  where the marker sits: 'PRE' / 'INFIX' / 'SUF' /
+                       'CIRCUM' / 'LEARNED' (position itself learned) /
+                       'NONE'.
+      order_mode       how operand order is realized: 'TRIVIAL' (unary),
+                       'FREE' ({id,swap} either, unrecorded), 'MARKED'
+                       ({id,swap} recorded), 'ELISION' (one survives, the
+                       other absorbed).
+      selects_op       True iff the marker may select which operator fires
+                       (e.g. and / or / copula share one INFIX schema).
+
+    Equality is by ``template_id`` so equal templates compare equal even
+    if not the same object; the canonical templates below are singletons,
+    so ``is`` also holds for operators that share a template.
+    """
+
+    __slots__ = ('template_id', 'name', 'arity', 'has_marker',
+                 'marker_position', 'order_mode', 'selects_op')
+
+    def __init__(self, template_id, name, arity, has_marker,
+                 marker_position, order_mode, selects_op=False):
+        """Store the template fields; see class docstring."""
+        self.template_id = template_id
+        self.name = name
+        self.arity = int(arity)
+        self.has_marker = bool(has_marker)
+        self.marker_position = marker_position
+        self.order_mode = order_mode
+        self.selects_op = bool(selects_op)
+
+    def __eq__(self, other):
+        return (isinstance(other, SurfaceSchema)
+                and other.template_id == self.template_id)
+
+    def __hash__(self):
+        return hash(self.template_id)
+
+    def __repr__(self):
+        return (f"SurfaceSchema({self.template_id} {self.name} "
+                f"arity={self.arity} marker={self.has_marker} "
+                f"order={self.order_mode})")
+
+
+# The five universal templates. T4 (bare juxtapose) is the default base
+# schema (GrammarLayer.surface_schema) so any operator round-trips by bare
+# concatenation even before a marker is learned.
+T1_UNARY_AFFIX = SurfaceSchema(
+    'T1', 'UNARY_AFFIX', 1, True, 'LEARNED', 'TRIVIAL')
+T2_BINARY_INFIX = SurfaceSchema(
+    'T2', 'BINARY_INFIX', 2, True, 'INFIX', 'FREE', selects_op=True)
+T3_BINARY_DIRECTIONAL = SurfaceSchema(
+    'T3', 'BINARY_DIRECTIONAL', 2, True, 'LEARNED', 'MARKED')
+T4_BINARY_JUXTAPOSE = SurfaceSchema(
+    'T4', 'BINARY_JUXTAPOSE', 2, False, 'NONE', 'MARKED')
+T5_BINARY_ELISION = SurfaceSchema(
+    'T5', 'BINARY_ELISION', 2, False, 'NONE', 'ELISION')
+
+
 class GrammarLayer(Layer):
     """Base class for layers that implement grammar rule operators.
 
@@ -1578,6 +1656,13 @@ class GrammarLayer(Layer):
     lossy            = False
     tier             = 'S'
     reads_activation = False
+
+    # Surface-realization template (SurfaceSchema, above). T4 BINARY_
+    # JUXTAPOSE is the default base schema -- bare concatenation, no
+    # marker -- so any operator round-trips even before it learns a
+    # marker. Concrete operators override this with their template
+    # (see GRAMMAR_LAYER_CLASSES schema assignment in Language.py).
+    surface_schema   = T4_BINARY_JUXTAPOSE
 
     # Chart authority registration -- Surface-3 wiring (see
     # doc/research/three-surfaces.md). When a SyntacticLayer registers
@@ -1923,15 +2008,82 @@ class GrammarLayer(Layer):
     # boundary or sugar token was here, and it has been consumed".
     # No standalone AbsorbLayer subclass -- the marker semantics live
     # on the base so any GrammarLayer instance can fire it.
-    def absorb(self, left, right):
-        """Sentence / sugar absorption marker. Returns ``left``.
+    def absorb(self, left, right, *, marker_id=None, weight=1.0):
+        """Absorb a sub-span as the operator's surface marker (analysis /
+        PS forward). Returns ``left`` -- the content operand survives; the
+        marker ``right`` is consumed (not a content child).
 
-        Available on every GrammarLayer. Subclasses can override to
-        record richer sentence-boundary side-effects (e.g. write
-        to a buffer, increment a counter); the default is a pure
-        binary left-pass.
+        doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
+        ("Absorb / Emit / Swap codification"): the surface marker is
+        learned and owned by the operator. When the analyzer knows the
+        absorbed sub-span's PS codebook identity it passes ``marker_id``;
+        absorb then binds it to this operator (many-to-one: many surface
+        markers -> one operator) with co-occurrence ``weight`` so the
+        heaviest becomes the canonical default for ``emit``. Called with
+        only ``(left, right)`` (the legacy sugar path) it is a pure
+        left-pass and records nothing.
+
+        Subclasses may override to record richer side-effects; the base
+        is the left-pass + optional marker binding.
         """
+        if marker_id is not None:
+            self.bind_marker(marker_id, weight=weight)
         return left
+
+    # -- Learned surface markers (owned by the operator) ----------------
+    #
+    # The marker SLOT is declared by ``surface_schema`` (SurfaceSchema);
+    # the marker CONTENT is learned here from co-occurrence. Binding is
+    # many-to-one (markers -> operator) with a canonical operator ->
+    # default-marker for emit. Stored as ``{marker_id: weight}`` on the
+    # instance; ``marker_id`` is a hashable PS codebook identity.
+    def _markers(self):
+        """Return the per-instance marker-binding dict, creating it lazily
+        (robust to subclasses that don't call ``super().__init__``)."""
+        markers = getattr(self, '_marker_bindings', None)
+        if markers is None:
+            markers = {}
+            self._marker_bindings = markers
+        return markers
+
+    def bind_marker(self, marker_id, *, weight=1.0):
+        """Bind a surface marker (PS codebook id) to this operator from
+        co-occurrence (many-to-one). Repeated / multiple markers
+        accumulate weight; the heaviest is the canonical default."""
+        markers = self._markers()
+        markers[marker_id] = markers.get(marker_id, 0.0) + float(weight)
+
+    def bound_markers(self):
+        """Return ``{marker_id: weight}`` of all markers bound to this
+        operator (a copy; many-to-one marker -> operator map)."""
+        return dict(self._markers())
+
+    def canonical_marker(self):
+        """Operator -> default marker (PS codebook id) for emit: the
+        most co-occurring bound marker, or ``None`` if none bound."""
+        markers = self._markers()
+        if not markers:
+            return None
+        return max(markers.items(), key=lambda kv: kv[1])[0]
+
+    def emit(self, *, marker_id=None):
+        """Realize the operator's surface marker (synthesis / PS reverse)
+        -- the inverse of :meth:`absorb`.
+
+        Uses recorded route metadata, NEVER the lossy
+        ``generate()``=(parent, parent) inverse (vector ``generate`` is a
+        lossy ``(parent, parent)`` split, so a faithful round-trip MUST
+        replay the recorded marker). Returns the marker PS codebook id:
+        the route-recorded ``marker_id`` when supplied (exact replay),
+        else the operator's canonical (most-bound) default. Returns
+        ``None`` for a marker-free schema (T4 / T5) -- those round-trip by
+        bare juxtaposition / elision with no marker to place.
+        """
+        if not self.surface_schema.has_marker:
+            return None
+        if marker_id is not None:
+            return marker_id
+        return self.canonical_marker()
 
     def gated_run(self, x, fn, *fn_args, **fn_kwargs):
         """Soft-gate the layer's forward through the chart authority.

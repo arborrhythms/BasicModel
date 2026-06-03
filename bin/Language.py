@@ -43,6 +43,10 @@ from Layers import (
     EqualLayer, TrueLayer, FalseLayer, SwapLayer, CopyLayer,
     AreaLayer, LuminosityLayer, IsaPartLayer,
 )
+from Layers import (
+    SurfaceSchema, T1_UNARY_AFFIX, T2_BINARY_INFIX,
+    T3_BINARY_DIRECTIONAL, T4_BINARY_JUXTAPOSE, T5_BINARY_ELISION,
+)
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
@@ -329,10 +333,9 @@ def grammar_uses(rule_name):
     the ``layer`` kwarg on ConceptualSpace. This helper remains available
     for runtime grammar inspection.
 
-    Reads the parsed XML grammar at WordSpace.language.grammar and the
-    optional grammarCfg path; scans rule bodies (string leaves) for the
-    substring ``rule_name(``. Returns False on any read error or when
-    no grammar is configured.
+    Reads the parsed XML grammar at WordSpace.language.grammar; scans
+    rule bodies (string leaves) for the substring ``rule_name(``.
+    Returns False on any read error or when no grammar is configured.
     """
     needle = f"{rule_name}("
     try:
@@ -351,20 +354,6 @@ def grammar_uses(rule_name):
 
     if cfg is not None and _scan(cfg):
         return True
-
-    try:
-        cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
-    except (KeyError, AttributeError):
-        cfg_path = None
-    if cfg_path:
-        resolved = (cfg_path if os.path.isabs(cfg_path)
-                    else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
-        try:
-            with open(resolved, "r") as fh:
-                if needle in fh.read():
-                    return True
-        except (FileNotFoundError, OSError):
-            pass
     return False
 
 
@@ -443,6 +432,16 @@ class Grammar:
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
+        # PerceptualSpace meronymic rule tables. Populated only when a
+        # grammar file carries a ``<PerceptualSpace>`` section (Phase 8b,
+        # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+        # These are kept SEPARATE from the symbolic tables above: the
+        # existing symbolic parser reads ``self.rules`` (== the SS table),
+        # so adding a PS section never perturbs symbolic rule ids. PS rules
+        # carry tier 'P' and are consumed by the PS analyzer phases.
+        self.ps_rules_upward = []
+        self.ps_rules_downward = []
+        self.ps_rules = []
         # Step 6: Layer-2.5 reverse productions, derived mechanically
         # from rules_upward at load time.  Each entry is
         # ``(args_tuple, reverse_op_name, (lhs,))``.
@@ -499,6 +498,29 @@ class Grammar:
     def binary_rules(self):
         """Return the list of rule_ids that have arity 2."""
         return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
+
+    # -- SymbolicSpace / PerceptualSpace rule views --------------------
+    #
+    # The symbolic parser reads ``self.rules`` (and rules_upward /
+    # rules_downward). These read-only aliases name that table the
+    # SymbolicSpace table, mirroring ``ps_rules`` for the PerceptualSpace
+    # meronymic table. See
+    # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md.
+
+    @property
+    def ss_rules(self):
+        """SymbolicSpace rule table (alias of the canonical ``rules``)."""
+        return self.rules
+
+    @property
+    def ss_rules_upward(self):
+        """SymbolicSpace compose (synthesis) rules."""
+        return self.rules_upward
+
+    @property
+    def ss_rules_downward(self):
+        """SymbolicSpace generate (analysis) rules."""
+        return self.rules_downward
 
     # -- Phase 1 GrammarRegistry surface --------------------------------
     #
@@ -629,22 +651,49 @@ class Grammar:
         """
         self.rules_upward = []
         self.rules_downward = []
+        self.ps_rules_upward = []
+        self.ps_rules_downward = []
         self._configured = True
 
-        has_named = any(k in grammar_dict
-                        for k in ('compose', 'generate'))
-        if has_named:
-            up = grammar_dict.get('compose') or {}
-            dn = grammar_dict.get('generate') or {}
-            self._fill_section(self.rules_upward, up)
-            self._fill_section(self.rules_downward, dn)
+        # New PS/SS-sectioned form (Phase 8b,
+        # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md):
+        # a grammar may nest its <compose>/<generate> under
+        # <PerceptualSpace> and/or <SymbolicSpace>. PerceptualSpace rules
+        # go to the separate ps_* tables tagged tier 'P'; SymbolicSpace
+        # rules go to the canonical symbolic tables (so symbolic rule ids
+        # are unperturbed by the presence of a PS section). A file with
+        # neither wrapper is the legacy form and loads as SymbolicSpace.
+        ps_block = grammar_dict.get('PerceptualSpace')
+        ss_block = grammar_dict.get('SymbolicSpace')
+        if ps_block is not None or ss_block is not None:
+            if isinstance(ps_block, dict):
+                self._fill_section(self.ps_rules_upward,
+                                   ps_block.get('compose') or {},
+                                   default_tier='P')
+                self._fill_section(self.ps_rules_downward,
+                                   ps_block.get('generate') or {},
+                                   default_tier='P')
+            if isinstance(ss_block, dict):
+                self._fill_section(self.rules_upward,
+                                   ss_block.get('compose') or {})
+                self._fill_section(self.rules_downward,
+                                   ss_block.get('generate') or {})
         else:
-            # Legacy flat form — treat as parse.
-            self._fill_section(self.rules_upward, grammar_dict)
+            has_named = any(k in grammar_dict
+                            for k in ('compose', 'generate'))
+            if has_named:
+                up = grammar_dict.get('compose') or {}
+                dn = grammar_dict.get('generate') or {}
+                self._fill_section(self.rules_upward, up)
+                self._fill_section(self.rules_downward, dn)
+            else:
+                # Legacy flat form — treat as parse.
+                self._fill_section(self.rules_upward, grammar_dict)
 
         # Canonical union so callers reading `g.rules` see upward first,
         # then downward. Upward rule IDs stay stable for existing code.
         self.rules = list(self.rules_upward) + list(self.rules_downward)
+        self.ps_rules = list(self.ps_rules_upward) + list(self.ps_rules_downward)
         self.rule_table = {idx: rule.canonical
                            for idx, rule in enumerate(self.rules)}
         # Step 6 parity: derive Layer-2.5 reverse rules from upward
@@ -672,14 +721,15 @@ class Grammar:
         pattern = tuple(str(c).strip() for c in categories if str(c).strip())
         return pattern in set(self.start_patterns)
 
-    def _fill_section(self, target, section_dict):
+    def _fill_section(self, target, section_dict, default_tier='S'):
         """Read a parse / generate section, dispatching to per-tier
         rule lists when `<symbols>` / `<concepts>` / `<percepts>`
         sub-sections are present, or to the cross-tier reader otherwise.
 
         Tier-bucket detection is non-destructive: a section with both a
-        `<rule>` directly and tier sub-sections will read both, with
-        the direct rules tagged tier='S' (the default).
+        `<rule>` directly and tier sub-sections will read both, with the
+        direct rules tagged ``default_tier`` ('S' for a SymbolicSpace /
+        legacy section, 'P' for a PerceptualSpace section).
         """
         if not isinstance(section_dict, dict):
             return
@@ -688,12 +738,12 @@ class Grammar:
             tier_block = section_dict.get(tier_key)
             if tier_block:
                 self._fill_rule_list(target, tier_block, tier=tier_letter)
-        # Direct rules (no tier wrapper) -> default tier 'S'.
+        # Direct rules (no tier wrapper) -> the section's default tier.
         direct_keys = [k for k in section_dict.keys()
                        if k not in self._TIER_SECTIONS]
         if direct_keys:
             direct = {k: section_dict[k] for k in direct_keys}
-            self._fill_rule_list(target, direct, tier='S')
+            self._fill_rule_list(target, direct, tier=default_tier)
 
     def _fill_rule_list(self, target, rules_dict, tier='S'):
         """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
@@ -992,111 +1042,6 @@ class Grammar:
                                 lhs, tuple(parts))
         raise ValueError(f"Cannot parse grammar rule: {lhs} -> {rhs}")
 
-    # -- grammar.cfg loader (Step 6) -----------------------------------
-    #
-    # Step 6 of the lift / lower / bivector refactor introduces a
-    # text-based rule table at ``data/grammar.cfg`` in explicit-op form.
-    # Each production's RHS literally names the Ops method to dispatch
-    # on at rule-application time.  See parent plan §Step 6 lines
-    # 405–620 and ``data/grammar.cfg`` for the format spec.
-    #
-    # Sections are bracketed (``[upward]`` / ``[downward]``) and default
-    # to ``[upward]`` when no header has been seen.  The parser is
-    # line-oriented, comment-prefixed (``#``), with no third-party
-    # dependency.  Reverse productions (Layer 2.5) are derived
-    # mechanically from the upward rules at load time and exposed via
-    # ``self.reverse_rules`` as
-    # ``[(args_tuple, op_name + 'Reverse', (lhs,)), ...]``.
-
-    # Canonical section names: compose / generate, aligning with
-    # `SyntacticLayer.compose` / `generate` method names. The
-    # ``parse`` / ``upward`` / ``downward`` aliases were removed
-    # 2026-05-01.
-    _CFG_SECTION_UPWARD   = 'compose'
-    _CFG_SECTION_DOWNWARD = 'generate'
-    _CFG_SECTION_ALIASES  = {}
-
-    def load_from_cfg(self, path):
-        """Configure rules from a ``data/grammar.cfg``-style file.
-
-        File format (line-oriented):
-            ``# ...``               line comment
-            ``[section]``           section header (upward / downward)
-            ``LHS = body``          rule; body is ``op(args)`` or a single
-                                    category for PROJECT, or ``epsilon``
-            blank lines             ignored
-
-        After loading:
-            ``self.rules_upward``   forward productions and post-hoc S-ops
-            ``self.rules_downward`` downward / generative productions
-            ``self.reverse_rules``  Layer 2.5 reverse productions, derived
-                                    mechanically from rules_upward
-            ``self.rules``          upward + downward
-        """
-        with open(path, 'r') as fh:
-            lines = fh.read().splitlines()
-        sections = self._parse_cfg_lines(lines)
-        self._apply_cfg_sections(sections)
-
-    def _parse_cfg_lines(self, lines):
-        """Group raw cfg lines by section.  Returns a dict
-        ``{section_name: [(lhs, rhs), ...]}``.  Default section is
-        ``parse``; rules appearing before any header land there.
-        Legacy section names ``upward`` / ``downward`` are accepted
-        as aliases for ``parse`` / ``generate``.
-        """
-        sections = {
-            self._CFG_SECTION_UPWARD:   [],
-            self._CFG_SECTION_DOWNWARD: [],
-        }
-        current = self._CFG_SECTION_UPWARD
-        for raw in lines:
-            # Strip line comments and surrounding whitespace.  Inline
-            # comments (``#`` mid-line) are also stripped — the rule body
-            # never legitimately contains a ``#``.
-            line = raw.split('#', 1)[0].strip()
-            if not line:
-                continue
-            if line.startswith('[') and line.endswith(']'):
-                name = line[1:-1].strip().lower()
-                # Translate legacy section aliases.
-                name = self._CFG_SECTION_ALIASES.get(name, name)
-                if name not in sections:
-                    raise ValueError(
-                        f"grammar.cfg: unknown section [{name}]; "
-                        f"expected one of {sorted(sections)}"
-                    )
-                current = name
-                continue
-            if '=' not in line:
-                raise ValueError(
-                    f"grammar.cfg: rule requires 'LHS = body' syntax; "
-                    f"got {line!r}"
-                )
-            lhs_raw, body = line.split('=', 1)
-            lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
-            sections[current].append((lhs, body.strip()))
-        return sections
-
-    def _apply_cfg_sections(self, sections):
-        """Populate ``self.rules_*`` from parsed cfg sections and
-        derive the reverse rule table.
-        """
-        self.rules_upward = [
-            self._parse_rule(lhs, body)
-            for lhs, body in sections[self._CFG_SECTION_UPWARD]
-        ]
-        self.rules_downward = [
-            self._parse_rule(lhs, body)
-            for lhs, body in sections[self._CFG_SECTION_DOWNWARD]
-        ]
-        self.rules = list(self.rules_upward) + list(self.rules_downward)
-        self.rule_table = {idx: rule.canonical
-                           for idx, rule in enumerate(self.rules)}
-        self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
-        self._configured = True
-        self._bump_rule_table_version()
-
     @staticmethod
     def _derive_reverse_rules(forward_rules):
         """Mechanically derive Layer-2.5 reverse productions from
@@ -1269,6 +1214,18 @@ class Grammar:
         if not isinstance(cfg, dict):
             cfg = {'compose': {'rule': [identity_body]}}
             return cfg
+        # PS/SS-sectioned form: the identity rule is a symbolic no-op
+        # transition, so it belongs in SymbolicSpace's compose section.
+        if 'PerceptualSpace' in cfg or 'SymbolicSpace' in cfg:
+            ss = cfg.get('SymbolicSpace')
+            ss = dict(ss) if isinstance(ss, dict) else {}
+            cfg['SymbolicSpace'] = ss
+            compose = ss.get('compose')
+            if compose is None:
+                ss['compose'] = {'rule': [identity_body]}
+            elif isinstance(compose, dict) and not has_identity(compose):
+                ss['compose'] = add_identity(dict(compose))
+            return cfg
         if 'compose' in cfg or 'generate' in cfg:
             compose = cfg.get('compose')
             if compose is None:
@@ -1314,14 +1271,11 @@ class Grammar:
     def _ensure_configured(self):
         """Lazily configure the grammar from XML on first use.
 
-        Resolves the start symbol, then dispatches to one of three
-        loaders by precedence:
+        Resolves the start symbol, then dispatches by precedence:
           1. ``<grammar>name.grammar</grammar>`` -- string body whose
              text matches ``*.grammar``: loaded via
              :py:meth:`load_from_grammar_file`.
-          2. ``<grammarCfg>path</grammarCfg>`` -- text-format
-             ``data/grammar.cfg``-style file (legacy ``.cfg``).
-          3. ``<grammar>...</grammar>`` -- inline XML grammar dict
+          2. ``<grammar>...</grammar>`` -- inline XML grammar dict
              (legacy explicit form).
         Subsequent calls are no-ops via the ``_configured`` guard.
         """
@@ -1383,26 +1337,6 @@ class Grammar:
                 return
 
         cfg = candidate if isinstance(candidate, dict) else None
-        # Legacy path: ``WordSpace.language.grammarCfg`` -- a string
-        # path to a ``data/grammar.cfg`` file in explicit-op form.
-        # Resolved relative to ``ProjectPaths.PROJECT_DIR`` if not
-        # absolute. Falls through to the XML grammar when absent.
-        cfg_path = None
-        try:
-            cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
-        except (KeyError, AttributeError):
-            pass
-        if cfg_path:
-            resolved = (cfg_path if os.path.isabs(cfg_path)
-                        else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
-            if os.path.exists(resolved):
-                self.load_from_cfg(resolved)
-                try:
-                    interp = TheXMLConfig.get("WordSpace.language.interpretation")
-                    self.interpretation = float(interp)
-                except (KeyError, AttributeError, TypeError, ValueError):
-                    pass
-                return
         if cfg is None:
             cfg = self._NOOP_GRAMMAR
         self.configure(cfg)
@@ -1563,7 +1497,7 @@ class Grammar:
     # `marker_mask` flags on the productive rules they license.
     #
     # `_rule_table_version` is bumped whenever the catalog changes
-    # (configure / load_from_cfg / future add/remove). Consumers (e.g.
+    # (configure / future add/remove). Consumers (e.g.
     # SyntacticLayer.rule_embed / rule_bias / marker_bias parameters)
     # cache by version and rebuild on mismatch.
 
@@ -3403,6 +3337,50 @@ GRAMMAR_LAYER_CLASSES = {
     'luminosity':   LuminosityLayer,
     'isaPart':      IsaPartLayer,
 }
+
+
+# Per-operator SurfaceSchema assignment (doc/plans/2026-05-30-subsymbolic
+# -analyzer-terminal-emitter.md, "Per-operator schema" table). Operators
+# not listed keep the GrammarLayer default (T4 BINARY_JUXTAPOSE). The
+# template is a class attribute so it is shared by every instance of an
+# operator -- conjunction / disjunction / isEqual all reference the one
+# T2 singleton (they are surface-indiscriminable, discriminated by the
+# slot-0 operator vector). Assigning here (rather than per-class) keeps
+# the table in one place next to the layer registry.
+_OPERATOR_SURFACE_SCHEMAS = {
+    # Unary affixes (T1): the operator owns a learned marker.
+    'not':          T1_UNARY_AFFIX,
+    'non':          T1_UNARY_AFFIX,
+    'query':        T1_UNARY_AFFIX,
+    'queryEqual':   T1_UNARY_AFFIX,
+    'exist':        T1_UNARY_AFFIX,
+    # Binary infix (T2): one INFIX/CIRCUM marker slot that may select
+    # which op fires; order free.
+    'conjunction':  T2_BINARY_INFIX,
+    'disjunction':  T2_BINARY_INFIX,
+    'isEqual':      T2_BINARY_INFIX,
+    'equal':        T2_BINARY_INFIX,
+    'union':        T2_BINARY_INFIX,
+    'intersection': T2_BINARY_INFIX,
+    # Binary directional (T3): (position, marker) co-varies with a
+    # recorded order bit -- the part / possessive family.
+    'part':         T3_BINARY_DIRECTIONAL,
+    'queryPart':    T3_BINARY_DIRECTIONAL,
+    'assertPart':   T3_BINARY_DIRECTIONAL,
+    # lift / lower: T3/T4 -- DET/MP/ADV/PP modifier marker or bare; the
+    # bare (T4) default is kept so they round-trip without a marker.
+    'lift':         T4_BINARY_JUXTAPOSE,
+    'lower':        T4_BINARY_JUXTAPOSE,
+    # Surface elision policies (T5): copy keeps the survivor (order id),
+    # swap keeps the survivor with order swapped. Retired from the
+    # symbolic grammar; kept as the absorb/emit elision primitives.
+    'copy':         T5_BINARY_ELISION,
+    'swap':         T5_BINARY_ELISION,
+}
+for _op_name, _op_schema in _OPERATOR_SURFACE_SCHEMAS.items():
+    _op_cls = GRAMMAR_LAYER_CLASSES.get(_op_name)
+    if _op_cls is not None:
+        _op_cls.surface_schema = _op_schema
 
 
 def _bind_moved_ops_singletons():
@@ -6490,6 +6468,251 @@ class Taxonomy:
         return (self._priming_select_count,
                 self._priming_boosted_select_count)
 
+class ObjectSubSpace(nn.Module):
+    """Durable PerceptualSpace meronymic-analysis carrier -- the PS
+    analogue of :class:`WordSubSpace`.
+
+    doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
+    ("Carrier State"): WordSubSpace stores taxonomic state for symbolic
+    parsing; ObjectSubSpace stores meronymic state for perceptual
+    analysis -- spans, part ids, parent / child links, route ids /
+    scores, depth, and the replay metadata ``reverse()`` needs to
+    re-realize the surface. It is a durable state HOLDER, not a parser:
+    trainable routing modules live on the LanguageLayer-like router, and
+    the transient stack-mode SubSpace view (``.what`` / ``.where`` /
+    ``.activation``) used while invoking the shared router is a separate
+    adapter (Phase 5), not this carrier.
+
+    All tensors keep fixed physical capacity; the live count is
+    ``_depth`` and :meth:`live_mask` derives which slots are active --
+    exactly as WordSubSpace's typed STM does. ``push`` / ``pop`` /
+    ``update`` keep every parallel buffer in sync.
+
+    Durable buffers (row ``b``, slot ``d`` in ``[0, _depth[b])``)::
+
+        _buffer       [B, cap, percept_dim]  PS span / part vector
+        _part_id      [B, cap]   PS codebook row id, or -1 (byte fallback)
+        _span_start   [B, cap]   inclusive byte/atom start, or -1
+        _span_end     [B, cap]   exclusive byte/atom end, or -1
+        _span_where   [B, cap, 2] endpoint-sum spatial key phase(s)+phase(e)
+        _parent_id    [B, cap]   derivation parent slot, or -1
+        _left_id      [B, cap]   left child slot, or -1
+        _right_id     [B, cap]   right child slot, or -1
+        _route_id     [B, cap]   selected meronymic operation id, or -1
+        _route_score  [B, cap]   local route confidence / score
+        _depth        [B]        logical live depth
+
+    ``_route_id`` is PS-only: it is the meronymic route used for surface
+    replay. The SS operator identity lives in ``.what`` slot 0 (see the
+    Phase-2 contract), not here.
+
+    Marker-route metadata (absorb/emit replay -- "route-metadata on
+    ObjectSubSpace" in the codification)::
+
+        _marker_ps_id    [B, cap]    bound marker PS row id, or -1
+        _marker_span     [B, cap, 2] marker sub-span endpoint-sum key
+        _order_bit       [B, cap]    recorded order (0=id, 1=swap) for T3
+        _marker_position [B, cap]    PRE/INFIX/SUF/CIRCUM code, or -1
+    """
+
+    # Marker-position codes for _marker_position; -1 == unset/marker-free.
+    MARKER_POS = {'PRE': 0, 'INFIX': 1, 'SUF': 2, 'CIRCUM': 3}
+
+    # field name -> (buffer attr, kind) for the generic update/clear paths.
+    # kind: 'vec' (the payload), 'long', 'float', 'pair' (a 2-vector).
+    _LONG_FIELDS = (
+        'part_id', 'span_start', 'span_end', 'parent_id', 'left_id',
+        'right_id', 'route_id', 'marker_ps_id', 'order_bit',
+        'marker_position')
+    _FLOAT_FIELDS = ('route_score',)
+    _PAIR_FIELDS = ('span_where', 'marker_span')
+    _LONG_DEFAULTS = {
+        'part_id': -1, 'span_start': -1, 'span_end': -1, 'parent_id': -1,
+        'left_id': -1, 'right_id': -1, 'route_id': -1, 'marker_ps_id': -1,
+        'order_bit': 0, 'marker_position': -1}
+
+    def __init__(self, percept_dim, capacity=8, batch=1):
+        """Allocate the fixed-capacity parallel buffers; see class docstring."""
+        super().__init__()
+        self.percept_dim = int(percept_dim)
+        self.capacity = int(capacity)
+        self.max_depth = int(capacity)
+        cap, dim_p, B = self.capacity, self.percept_dim, int(batch)
+
+        def reg_long(name, fill):
+            self.register_buffer(
+                name, torch.full((B, cap), fill, dtype=torch.long),
+                persistent=False)
+
+        self.register_buffer(
+            '_buffer', torch.zeros(B, cap, dim_p), persistent=False)
+        for fld in self._LONG_FIELDS:
+            reg_long('_' + fld, self._LONG_DEFAULTS[fld])
+        self.register_buffer('_route_score', torch.zeros(B, cap),
+                             persistent=False)
+        self.register_buffer('_span_where', torch.zeros(B, cap, 2),
+                             persistent=False)
+        self.register_buffer('_marker_span', torch.zeros(B, cap, 2),
+                             persistent=False)
+        self.register_buffer('_depth', torch.zeros(B, dtype=torch.long),
+                             persistent=False)
+
+    @property
+    def batch(self):
+        """Physical row count (grown by :meth:`ensure_batch`)."""
+        return self._buffer.shape[0]
+
+    def depth(self, b):
+        """Live span count on row ``b``."""
+        return int(self._depth[b].item())
+
+    def live_mask(self):
+        """``[B, cap]`` bool mask: True for live slots (slot < _depth[b])."""
+        idx = torch.arange(self.capacity, device=self._depth.device)
+        return idx.unsqueeze(0) < self._depth.unsqueeze(1)
+
+    def push(self, b, vec, *, part_id=-1, span_start=-1, span_end=-1,
+             span_where=None, parent_id=-1, left_id=-1, right_id=-1,
+             route_id=-1, route_score=0.0, marker_ps_id=-1,
+             marker_span=None, order_bit=0, marker_position=-1):
+        """Append one meronymic span to row ``b``; keep every parallel
+        buffer in sync; increment ``_depth``. Returns the slot written.
+        Raises ``AssertionError`` on overflow past ``max_depth``.
+        """
+        d = int(self._depth[b].item())
+        if d >= self.max_depth:
+            raise AssertionError(
+                f"ObjectSubSpace overflow at row {b}: "
+                f"max_depth={self.max_depth}")
+        self._buffer[b, d] = vec.to(
+            device=self._buffer.device, dtype=self._buffer.dtype)
+        self._part_id[b, d] = int(part_id)
+        self._span_start[b, d] = int(span_start)
+        self._span_end[b, d] = int(span_end)
+        self._parent_id[b, d] = int(parent_id)
+        self._left_id[b, d] = int(left_id)
+        self._right_id[b, d] = int(right_id)
+        self._route_id[b, d] = int(route_id)
+        self._route_score[b, d] = float(route_score)
+        self._marker_ps_id[b, d] = int(marker_ps_id)
+        self._order_bit[b, d] = int(order_bit)
+        self._marker_position[b, d] = int(marker_position)
+        if span_where is not None:
+            self._span_where[b, d] = torch.as_tensor(
+                span_where, device=self._span_where.device,
+                dtype=self._span_where.dtype)
+        if marker_span is not None:
+            self._marker_span[b, d] = torch.as_tensor(
+                marker_span, device=self._marker_span.device,
+                dtype=self._marker_span.dtype)
+        self._depth[b] = d + 1
+        return d
+
+    def update(self, b, slot, **fields):
+        """Update fields of an existing live slot WITHOUT changing depth.
+
+        Used by the analyzer to write the chosen route id / child links /
+        route metadata back after a route is selected. ``vec`` updates the
+        payload; any of the long / float / pair field names is accepted.
+        Unknown field names raise ``KeyError``; a non-live slot raises
+        ``IndexError``.
+        """
+        d = int(self._depth[b].item())
+        if not (0 <= slot < d):
+            raise IndexError(
+                f"ObjectSubSpace.update: slot {slot} not live "
+                f"(depth {d}) at row {b}")
+        for name, value in fields.items():
+            if name == 'vec':
+                self._buffer[b, slot] = value.to(
+                    device=self._buffer.device, dtype=self._buffer.dtype)
+            elif name in self._LONG_FIELDS:
+                getattr(self, '_' + name)[b, slot] = int(value)
+            elif name in self._FLOAT_FIELDS:
+                getattr(self, '_' + name)[b, slot] = float(value)
+            elif name in self._PAIR_FIELDS:
+                buf = getattr(self, '_' + name)
+                buf[b, slot] = torch.as_tensor(
+                    value, device=buf.device, dtype=buf.dtype)
+            else:
+                raise KeyError(
+                    f"ObjectSubSpace.update: unknown field {name!r}")
+
+    def get(self, b, slot):
+        """Return a dict snapshot of slot ``(b, slot)``'s parallel state."""
+        out = {'vec': self._buffer[b, slot].clone()}
+        for fld in self._LONG_FIELDS:
+            out[fld] = int(getattr(self, '_' + fld)[b, slot].item())
+        out['route_score'] = float(self._route_score[b, slot].item())
+        out['span_where'] = self._span_where[b, slot].clone()
+        out['marker_span'] = self._marker_span[b, slot].clone()
+        return out
+
+    def top(self, b, k=1):
+        """Peek the k-th span from the top (k=1 is the most recent)."""
+        d = int(self._depth[b].item())
+        if d < k:
+            raise AssertionError(
+                f"ObjectSubSpace.top: row {b} has {d} spans, asked k={k}")
+        return self.get(b, d - k)
+
+    def pop(self, b):
+        """Pop the top span from row ``b``, clear its slot, decrement
+        ``_depth``, and return its snapshot dict."""
+        d = int(self._depth[b].item())
+        if d <= 0:
+            raise AssertionError(
+                f"ObjectSubSpace underflow at row {b}: stack is empty")
+        slot = d - 1
+        out = self.get(b, slot)
+        self._clear_slot(b, slot)
+        self._depth[b] = slot
+        return out
+
+    def _clear_slot(self, b, slot):
+        """Reset one slot's parallel buffers to their defaults."""
+        self._buffer[b, slot] = 0
+        for fld in self._LONG_FIELDS:
+            getattr(self, '_' + fld)[b, slot] = self._LONG_DEFAULTS[fld]
+        self._route_score[b, slot] = 0
+        self._span_where[b, slot] = 0
+        self._marker_span[b, slot] = 0
+
+    def clear(self, b=None):
+        """Reset row ``b`` (or all rows when ``None``) to empty."""
+        rows = range(self.batch) if b is None else [b]
+        for r in rows:
+            for slot in range(self.capacity):
+                self._clear_slot(r, slot)
+            self._depth[r] = 0
+
+    def ensure_batch(self, batch):
+        """Grow the row dimension to ``batch``, preserving live state in
+        existing rows (fresh rows start empty). Mirrors
+        ``WordSubSpace._ensure_stm_batch``."""
+        batch = int(batch)
+        prev = self._buffer.shape[0]
+        if batch <= prev:
+            return
+        dev = self._buffer.device
+
+        def grow(buf, fill):
+            new = torch.full(
+                (batch,) + tuple(buf.shape[1:]), fill,
+                dtype=buf.dtype, device=dev)
+            new[:prev] = buf
+            return new
+
+        self._buffer = grow(self._buffer, 0)
+        for fld in self._LONG_FIELDS:
+            setattr(self, '_' + fld,
+                    grow(getattr(self, '_' + fld), self._LONG_DEFAULTS[fld]))
+        self._route_score = grow(self._route_score, 0)
+        self._span_where = grow(self._span_where, 0)
+        self._marker_span = grow(self._marker_span, 0)
+        self._depth = grow(self._depth, 0)
+
+
 class WordSubSpace(SubSpace):
     """Per-sentence grammar / serial-processing carrier — the third
     argument that travels alongside the data SubSpaces through the
@@ -6593,6 +6816,18 @@ class WordSubSpace(SubSpace):
         TheGrammar._configured = False
         TheGrammar._ensure_configured()
         grammar = TheGrammar
+
+        # 3-op. Insert the grammar's operations into the SymbolicSpace
+        # codebook so the operator-prefixed parse tree's operation nodes
+        # are codebook-resolvable (doc/plans/2026-05-30-subsymbolic-
+        # analyzer-terminal-emitter.md, Phase 2 amended 2026-06-02): every
+        # node of the prefixed syntactic tree (operations + terminal
+        # symbols) exists in the codebook, while the computed ideas live in
+        # STM. Operators are tagged "op" (distinct from meaning-bearing
+        # symbols) and never written into the STM idea space. No-op when
+        # the SS .what is not a Codebook.
+        if symbolicSpace is not None:
+            symbolicSpace.insert_operations(grammar)
 
         # 3a. Detect the default-only case (every operational rule is
         # a unary substrate fold registered as the per-tier default).

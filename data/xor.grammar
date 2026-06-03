@@ -1,19 +1,38 @@
 <?xml version="1.0"?>
 <grammar name="xor">
 
-  <compose>
-    <!-- Minimal grammar for XOR test model. Tier / arity / invertibility
-         derive from each rule's GrammarLayer subclass. -->
-    <rule>S = not.forward(S)</rule>
-    <rule>S = intersection.forward(S, S)</rule>
-    <rule>S = union.forward(S, S)</rule>
-  </compose>
+  <PerceptualSpace>
+    <!-- Meronymic operation registry (Phase 3). See default.grammar for
+         the full description; SURF is a generic surface span and the
+         stop / boundary / uniform cover is the compatibility analyzer
+         mode. PS rules (tier 'P') are read only by the PS analyzer. -->
+    <compose>
+      <rule>SURF = stop.forward(SURF)</rule>
+      <rule>SURF = boundary.forward(SURF, SURF)</rule>
+      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+    </compose>
+    <generate>
+      <rule>SURF = stop.reverse(SURF)</rule>
+      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
+      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+    </generate>
+  </PerceptualSpace>
 
-  <generate>
-    <!-- Mirror of <compose> with head and arguments swapped. -->
-    <rule>S = not.reverse(S)</rule>
-    <rule>S, S = intersection.reverse(S)</rule>
-    <rule>S, S = union.reverse(S)</rule>
-  </generate>
+  <SymbolicSpace>
+    <compose>
+      <!-- Minimal grammar for XOR test model. Tier / arity / invertibility
+           derive from each rule's GrammarLayer subclass. -->
+      <rule>S = not.forward(S)</rule>
+      <rule>S = intersection.forward(S, S)</rule>
+      <rule>S = union.forward(S, S)</rule>
+    </compose>
+
+    <generate>
+      <!-- Mirror of <compose> with head and arguments swapped. -->
+      <rule>S = not.reverse(S)</rule>
+      <rule>S, S = intersection.reverse(S)</rule>
+      <rule>S, S = union.reverse(S)</rule>
+    </generate>
+  </SymbolicSpace>
 
 </grammar>

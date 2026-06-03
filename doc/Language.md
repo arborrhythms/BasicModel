@@ -1,10 +1,61 @@
 # Language
 
-This document is synchronized to the code as of 2026-05-29. The source
-of truth is `bin/Language.py` and `bin/embed.py`. (The earlier
+This document is synchronized to the code as of 2026-06-02. The source
+of truth is `bin/Language.py`, `bin/embed.py`, and (for the perceptual
+analyzer) `bin/perceptual_analyzer.py`. (The earlier
 `bin/typed_stack.py`, `bin/stm_driver.py`, and `bin/parse_state.py`
 modules were retired in the 2026-05-21 / 2026-05-29 refactors; their
 functionality folded into `bin/Layers.py` and `bin/Language.py`.)
+
+> **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).** Plan:
+> [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+>
+> - **PS/SS grammar sections.** A `.grammar` file may nest its
+>   `<compose>`/`<generate>` under `<PerceptualSpace>` and
+>   `<SymbolicSpace>`. `Grammar.configure` parses them into separate rule
+>   tables: `ps_rules` (tier `P`, read by the PS analyzer) and the
+>   canonical symbolic `rules` (`ss_rules`). A bare `<compose>`/`<generate>`
+>   file loads as `<SymbolicSpace>` (backward-compat). The legacy `.cfg`
+>   loader is gone.
+> - **Grammar rewrite.** `*_MARK` categories and the copy/swap MARKER
+>   helper rules are deleted; surface markers are learned and owned by the
+>   operator. Each operator-argument position is its own category
+>   (`CONJ_L45`/`CONJ_R45`, ...). copy/swap are retired from the symbolic
+>   grammar (kept only as the T5 elision surface policies).
+> - **SurfaceSchema + absorb/emit** (`bin/Layers.py`). Five universal
+>   templates T1-T5 declare each operator's marker slot + order; T4
+>   `BINARY_JUXTAPOSE` is the default. `GrammarLayer.absorb` binds a
+>   co-occurring marker to the operator (many-to-one); `emit` replays it
+>   from recorded route metadata, never the lossy `generate()`.
+> - **Operators in the SS codebook, not the STM idea space** (amends plan
+>   decision #2). `SymbolicSpace.insert_operations(grammar)` registers each
+>   operation in a dedicated operator codebook on SymbolicSpace
+>   (`_operation_vectors` / `_operation_positions`), separate from the
+>   `subspace.what` symbol codebook so the symbol / idea / `.where` position
+>   namespace is untouched; it is wired into `WordSubSpace.__init__` so every
+>   built model's operator-prefixed parse-tree nodes are codebook-resolvable. The STM idea space holds only combined meanings --
+>   the operator says *how* meanings combine, contributing none of its own.
+>   The rule-id stays in `.where` (its presence marks a slot as a *computed*
+>   idea, which is by definition not a codebook vector).
+> - **ObjectSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
+>   analogue of `WordSubSpace`: span buffers + parent/child links + route
+>   ids/scores + the marker-route replay fields
+>   (`_marker_ps_id`/`_marker_span`/`_order_bit`/`_marker_position`).
+> - **Perceptual analyzer** (`bin/perceptual_analyzer.py`). `EndpointSumWhere`
+>   is the invertible span key $where = phase(start) + phase(end)$: the
+>   angle decodes the span center, the magnitude the span length.
+>   `MeronymicAnalyzer` analyzes a surface into terminals (compatibility
+>   mode reuses the word/byte tokenizer as the `boundary` op, so it matches
+>   the current lexer), writes durable spans to an `ObjectSubSpace`, exposes
+>   a fixed-capacity terminal-stream view, and reverse-synthesizes surface
+>   (`synthesize` exact replay; `synthesize_tree` from an operator-prefixed
+>   tree with `emit`). `soft_operator_compose` + `SymbolicSpace
+>   .operator_superposition` apply a soft operator distribution over the SS
+>   operation codebook (one-hot $\to$ the typed grammar; spread $\to$ the
+>   superposition that discriminates `A AND B` from `A OR B`).
+> - **PS-to-SS binding.** `SymbolicSpace.resolve_ps_terminal(ps_id)` emits
+>   `null_sem()` before a binding exists, counts exposures, and promotes a
+>   repeated terminal into a fresh SS row.
 
 > **2026-05-29 deltas:**
 >

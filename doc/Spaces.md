@@ -1,5 +1,16 @@
 # Spaces
 
+> **2026-06-02 update (subsymbolic analyzer).** New `ObjectSubSpace`
+> (`bin/Language.py`) -- the PS-meronymic carrier analogue of
+> `WordSubSpace` (spans, parent/child links, route ids, marker-route
+> replay fields). `SymbolicSpace` gains `insert_operations` (grammar
+> operations in a dedicated operator codebook -- `_operation_vectors` /
+> `_operation_positions` -- separate from the symbol codebook so the
+> symbol/idea/`.where` namespace is untouched), `resolve_ps_terminal` /
+> `null_sem` (PS-to-SS binding), and `operator_superposition`. The PS
+> meronymic analyzer lives in `bin/perceptual_analyzer.py`. See
+> [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+
 > **Status (2026-05-27):** updated for the substrate refactor. PS is a
 > single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
 > container + grammatical CPU; no atomic forward fold. SS owns the

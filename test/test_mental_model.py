@@ -83,8 +83,8 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     """BasicModel should expose the grammar configured by MentalModel.xml.
 
     The 2026-05-05 grammar rewrite moved the grammar from an external
-    ``data/grammar.cfg`` into an inline ``<grammar>`` block in
-    ``MentalModel.xml``.  This test asserts structural shape (every
+    ``data/grammar.cfg`` into ``data/complete.grammar`` (referenced by
+    ``MentalModel.xml``).  This test asserts structural shape (every
     dispatchable op the rule predictor relies on has a rule_id slot),
     not the exact canonical list — the rules themselves are
     versioned in MentalModel.xml.
@@ -95,6 +95,11 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     # absorb, Contiguous, Fusion. The relation rewrite split old
     # query/part into explicit queryPart/assertPart forms, while
     # equality stays ``isEqual`` with rule.query metadata.
+    # Retired 2026-05-30 (subsymbolic-analyzer-terminal-emitter, decision
+    # #4): copy / swap are removed from the symbolic grammar. The MARKER
+    # idiom they implemented is replaced by markers that are learned and
+    # owned by each operator (absorb/emit on the T1-T5 SurfaceSchema), so
+    # the symbolic rule predictor no longer dispatches copy/swap.
     REQUIRED_OPS = {
         'non', 'not',
         'conjunction', 'disjunction',
@@ -102,7 +107,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         'lift', 'lower',
         'isEqual', 'assertPart',
         'queryPart',
-        'exist', 'copy', 'swap',
+        'exist',
     }
 
     def setUp(self):
@@ -112,7 +117,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         _reload_config()
         model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
-        # Step 6: grammar comes from data/grammar.cfg; structural
+        # grammar comes from MentalModel.xml (complete.grammar); structural
         # invariants (the rule predictor sees every dispatchable op)
         # matter, not the exact rule list.
         method_names = {rule.method_name

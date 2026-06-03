@@ -4,167 +4,193 @@
   <start name="absolute_truth">ABS_T</start>
   <start name="relative_truth">REL_T</start>
 
-  <compose>
-    <!-- Relative Truth. -->
-    <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_AP)</rule>
-    <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_NP3)</rule>
-    <rule>REL_T = queryPart.forward(QLEFT_PART34, QRIGHT_S34)</rule>
-    <rule>REL_T = isEqual.forward(NP_EQ345, NP345)</rule>
-    <rule>REL_T = isEqual.forward(NP_EQ4, AP4)</rule>
-    <rule>REL_T = assertPart.forward(S_PART34, S34)</rule>
+  <PerceptualSpace>
+    <!-- Meronymic operation registry (Phase 3,
+         doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+         PS operations relate a surface whole to its parts: <compose> =
+         parts -> whole (synthesis / PS reverse); <generate> = whole ->
+         parts (analysis / PS forward). SURF is a generic surface span
+         (bytes / chars / morphemes / words / phrases). stop / boundary /
+         uniform are the marker-free structural cover used by the
+         compatibility analyzer mode; the learned-chunk ops
+         (prefix / suffix / compound / coordination / quote_or_bracket)
+         are added with the routing PS analyzer. These rules carry tier
+         'P' and are read by the PS analyzer, never by the symbolic
+         parser (which reads the <SymbolicSpace> table only). -->
+    <compose>
+      <rule>SURF = stop.forward(SURF)</rule>
+      <rule>SURF = boundary.forward(SURF, SURF)</rule>
+      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+    </compose>
+    <generate>
+      <rule>SURF = stop.reverse(SURF)</rule>
+      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
+      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+    </generate>
+  </PerceptualSpace>
 
-    <!-- Absolute Truth. -->
-    <rule>ABS_T = exist.forward(S345)</rule>
-    <rule>ABS_T = S345</rule>
+  <SymbolicSpace>
+    <compose>
+      <!-- Relative Truth. -->
+      <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_AP)</rule>
+      <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_NP3)</rule>
+      <rule>REL_T = queryPart.forward(QLEFT_PART34, QRIGHT_S34)</rule>
+      <rule>REL_T = isEqual.forward(NP_EQ345, NP345)</rule>
+      <rule>REL_T = isEqual.forward(NP_EQ4, AP4)</rule>
+      <rule>REL_T = assertPart.forward(S_PART34, S34)</rule>
 
-    <!-- Sentence boundary. -->
-    <rule>S345 = copy.forward(S345, EOS_MARK)</rule>
+      <!-- Absolute Truth. -->
+      <rule>ABS_T = exist.forward(S345)</rule>
+      <rule>ABS_T = S345</rule>
 
-    <!-- Binaryized marker helpers. Suffix markers use copy(left, mark);
-         prefix markers use swap(mark, right). The helper categories
-         carry the semantic operand while preserving the surface MARK
-         in the grammar. -->
-    <rule>NP_EQ3 = copy.forward(NP3, EQUALS_MARK)</rule>
-    <rule>S_PART34 = copy.forward(NP34, PART_MARK)</rule>
-    <rule>QLEFT_PART34 = swap.forward(DO_MARK, S_PART34)</rule>
-    <rule>NOT_S45 = swap.forward(NOT_MARK, S45)</rule>
-    <rule>NON_S45 = swap.forward(NON_MARK, S45)</rule>
-    <rule>S_CONJ45 = copy.forward(S45, CONJ_MARK)</rule>
-    <rule>S_DISJ45 = copy.forward(S45, DISJ_MARK)</rule>
-    <rule>NP_CONJ3 = copy.forward(NP3, CONJ_MARK)</rule>
-    <rule>NP_DISJ3 = copy.forward(NP3, DISJ_MARK)</rule>
-    <rule>QLEFT_NP3 = swap.forward(EQUALS_MARK, NP3)</rule>
-    <rule>QRIGHT_AP = copy.forward(AP, QUERY_MARK)</rule>
-    <rule>QRIGHT_NP3 = copy.forward(NP3, QUERY_MARK)</rule>
-    <rule>QRIGHT_S34 = copy.forward(S34, QUERY_MARK)</rule>
+      <!-- Per-operator-position role categories. Each operator-argument
+           position is its own category in the operator's namespace
+           (role explicit, no MARKER helper needed). The surface marker
+           that used to derive these (the deleted *_MARK categories + the
+           copy/swap MARKER helper rules) is now learned and owned by the
+           operator (absorb/emit, T1-T5 SurfaceSchema). These rules are
+           marker-free role assignments: the operand is the base category
+           in the operator's left / right slot. -->
+      <rule>CONJ_L45 = S45</rule>
+      <rule>CONJ_R45 = S45</rule>
+      <rule>DISJ_L45 = S45</rule>
+      <rule>DISJ_R45 = S45</rule>
+      <rule>CONJ_L3 = NP3</rule>
+      <rule>CONJ_R3 = NP3</rule>
+      <rule>DISJ_L3 = NP3</rule>
+      <rule>DISJ_R3 = NP3</rule>
+      <rule>QLEFT_NP3 = NP3</rule>
+      <rule>QRIGHT_AP = AP</rule>
+      <rule>QRIGHT_NP3 = NP3</rule>
+      <rule>QRIGHT_S34 = S34</rule>
+      <rule>NP_EQ3 = NP3</rule>
+      <rule>S_PART34 = NP34</rule>
+      <rule>QLEFT_PART34 = S_PART34</rule>
 
-    <!-- Rewrite rules. -->
-    <rule>S345 = swap.forward(S345, S345)</rule>
+      <!-- Sentence. -->
+      <rule>S3 = NP3</rule>
+      <rule>S4 = lift.forward(NP3, VP1)</rule>
+      <rule>S5 = lift.forward(MP1, S4)</rule>
 
-    <!-- Sentence. -->
-    <rule>S3 = NP3</rule>
-    <rule>S4 = lift.forward(NP3, VP1)</rule>
-    <rule>S5 = lift.forward(MP1, S4)</rule>
+      <!-- Noun phrase. Normal noun phrases are NP3. Nouns are N3;
+           count nouns enter as NP4; DET lowers/specifies NP4 into NP3.
+           NP4 (count noun) relates to NP3 (individual) by a learned
+           number marker owned by the operator, not a grammar category. -->
+      <rule>NP3 = N3</rule>
+      <rule>NP4 = NP3</rule>
+      <rule>NP3 = AP</rule>
+      <rule>NP3 = lower.forward(DET, NP4)</rule>
+      <rule>NP3 = conjunction.forward(CONJ_L3, CONJ_R3)</rule>
+      <rule>NP3 = disjunction.forward(DISJ_L3, DISJ_R3)</rule>
 
-    <!-- Noun phrase. Normal noun phrases are NP3. Nouns are N3;
-         count nouns enter as NP4; DET lowers/specifies NP4 into NP3. -->
-    <rule>NP3 = N3</rule>
-    <rule>NP4 = copy.forward(NP3, PLURAL_MARK)</rule>
-    <rule>NP3 = AP</rule>
-    <rule>NP3 = lower.forward(DET, NP4)</rule>
-    <rule>NP3 = conjunction.forward(NP_CONJ3, NP3)</rule>
-    <rule>NP3 = disjunction.forward(NP_DISJ3, NP3)</rule>
+      <!-- Verb phrase. -->
+      <rule>VP1 = V1</rule>
+      <rule>VP1 = lower.forward(ADV, VP1)</rule>
+      <rule>VP1 = lower.forward(ADJ, VP1)</rule>
+      <!-- Transitive verb phrase. The object role is grammatical
+           provenance: it is the NP3 in this derivation, not a separate
+           semantic category. -->
+      <rule>VP1 = intersection.forward(V1, NP3)</rule>
 
-    <!-- Verb phrase. -->
-    <rule>VP1 = V1</rule>
-    <rule>VP1 = lower.forward(ADV, VP1)</rule>
-    <rule>VP1 = lower.forward(ADJ, VP1)</rule>
-    <!-- Transitive verb phrase. The object role is grammatical
-         provenance: it is the NP3 in this derivation, not a separate
-         semantic category. -->
-    <rule>VP1 = intersection.forward(V1, NP3)</rule>
+      <!-- Modal phrase. MP1 is a modal phrase such as possibly or necessarily. -->
+      <rule>MP1 = ADV</rule>
+      <rule>MP1 = ADV MP1</rule>
 
-    <!-- Modal phrase. MP1 is a modal phrase such as possibly or necessarily. -->
-    <rule>MP1 = ADV</rule>
-    <rule>MP1 = ADV MP1</rule>
+      <!-- Adjective / prepositional phrases. -->
+      <rule>AP = lower.forward(ADJ, NP3)</rule>
+      <rule>AP = intersection.forward(ADJ, AP)</rule>
+      <rule>PP = lift.forward(P, NP3)</rule>
+      <rule>NP3 = lower.forward(NP3, PP)</rule>
+      <rule>VP1 = lower.forward(VP1, PP)</rule>
 
-    <!-- Adjective / prepositional phrases. -->
-    <rule>AP = lower.forward(ADJ, NP3)</rule>
-    <rule>AP = intersection.forward(ADJ, AP)</rule>
-    <rule>PP = lift.forward(P, NP3)</rule>
-    <rule>NP3 = lower.forward(NP3, PP)</rule>
-    <rule>VP1 = lower.forward(VP1, PP)</rule>
+      <!-- Truth / logical operators. not / non own their negator marker
+           (T1 UNARY_AFFIX), so their operand is the bare sentence; the
+           conjunction / disjunction operands are the per-position role
+           categories declared above. -->
+      <rule>S45 = not.forward(S45)</rule>
+      <rule>S45 = non.forward(S45)</rule>
+      <rule>S45 = conjunction.forward(CONJ_L45, CONJ_R45)</rule>
+      <rule>S45 = disjunction.forward(DISJ_L45, DISJ_R45)</rule>
+      <rule>S45 = intersection.forward(S45, S45)</rule>
+      <rule>S45 = union.forward(S45, S45)</rule>
+    </compose>
 
-    <!-- Truth / logical operators. -->
-    <rule>S45 = not.forward(NOT_S45)</rule>
-    <rule>S45 = non.forward(NON_S45)</rule>
-    <rule>S45 = conjunction.forward(S_CONJ45, S45)</rule>
-    <rule>S45 = disjunction.forward(S_DISJ45, S45)</rule>
-    <rule>S45 = intersection.forward(S45, S45)</rule>
-    <rule>S45 = union.forward(S45, S45)</rule>
-  </compose>
+    <queries>
+      <query>exist(X)</query>
+      <query>quantize(X)</query>
+      <query>wholes(X)</query>
+      <query>parts(X)</query>
+      <query>isomorphs(X)</query>
+    </queries>
 
-  <queries>
-    <query>exist(X)</query>
-    <query>quantize(X)</query>
-    <query>wholes(X)</query>
-    <query>parts(X)</query>
-    <query>isomorphs(X)</query>
-  </queries>
+    <generate>
+      <!-- Relative Truth. -->
+      <rule query="true">QLEFT_NP3, QRIGHT_AP = isEqual.reverse(REL_T)</rule>
+      <rule query="true">QLEFT_NP3, QRIGHT_NP3 = isEqual.reverse(REL_T)</rule>
+      <rule>QLEFT_PART34, QRIGHT_S34 = queryPart.reverse(REL_T)</rule>
+      <rule>NP_EQ345, NP345 = isEqual.reverse(REL_T)</rule>
+      <rule>NP_EQ4, AP4 = isEqual.reverse(REL_T)</rule>
+      <rule>S_PART34, S34 = assertPart.reverse(REL_T)</rule>
 
-  <generate>
-    <!-- Relative Truth. -->
-    <rule query="true">QLEFT_NP3, QRIGHT_AP = isEqual.reverse(REL_T)</rule>
-    <rule query="true">QLEFT_NP3, QRIGHT_NP3 = isEqual.reverse(REL_T)</rule>
-    <rule>QLEFT_PART34, QRIGHT_S34 = queryPart.reverse(REL_T)</rule>
-    <rule>NP_EQ345, NP345 = isEqual.reverse(REL_T)</rule>
-    <rule>NP_EQ4, AP4 = isEqual.reverse(REL_T)</rule>
-    <rule>S_PART34, S34 = assertPart.reverse(REL_T)</rule>
+      <!-- Absolute Truth. -->
+      <rule>S345 = exist.reverse(ABS_T)</rule>
+      <rule>S345 = ABS_T</rule>
 
-    <!-- Absolute Truth. -->
-    <rule>S345 = exist.reverse(ABS_T)</rule>
-    <rule>S345 = ABS_T</rule>
+      <!-- Per-operator-position role categories (reverse mirrors of the
+           marker-free role assignments above). -->
+      <rule>S45 = CONJ_L45</rule>
+      <rule>S45 = CONJ_R45</rule>
+      <rule>S45 = DISJ_L45</rule>
+      <rule>S45 = DISJ_R45</rule>
+      <rule>NP3 = CONJ_L3</rule>
+      <rule>NP3 = CONJ_R3</rule>
+      <rule>NP3 = DISJ_L3</rule>
+      <rule>NP3 = DISJ_R3</rule>
+      <rule>NP3 = QLEFT_NP3</rule>
+      <rule>AP = QRIGHT_AP</rule>
+      <rule>NP3 = QRIGHT_NP3</rule>
+      <rule>S34 = QRIGHT_S34</rule>
+      <rule>NP3 = NP_EQ3</rule>
+      <rule>NP34 = S_PART34</rule>
+      <rule>S_PART34 = QLEFT_PART34</rule>
 
-    <!-- Sentence boundary. -->
-    <rule>S345, EOS_MARK = copy.reverse(S345)</rule>
+      <!-- Sentence. -->
+      <rule>NP3 = S3</rule>
+      <rule>NP3, VP1 = lift.reverse(S4)</rule>
+      <rule>MP1, S4 = lift.reverse(S5)</rule>
 
-    <!-- Marker helper mirrors. -->
-    <rule>NP3, EQUALS_MARK = copy.reverse(NP_EQ3)</rule>
-    <rule>NP34, PART_MARK = copy.reverse(S_PART34)</rule>
-    <rule>DO_MARK, S_PART34 = swap.reverse(QLEFT_PART34)</rule>
-    <rule>NOT_MARK, S45 = swap.reverse(NOT_S45)</rule>
-    <rule>NON_MARK, S45 = swap.reverse(NON_S45)</rule>
-    <rule>S45, CONJ_MARK = copy.reverse(S_CONJ45)</rule>
-    <rule>S45, DISJ_MARK = copy.reverse(S_DISJ45)</rule>
-    <rule>NP3, CONJ_MARK = copy.reverse(NP_CONJ3)</rule>
-    <rule>NP3, DISJ_MARK = copy.reverse(NP_DISJ3)</rule>
-    <rule>EQUALS_MARK, NP3 = swap.reverse(QLEFT_NP3)</rule>
-    <rule>AP, QUERY_MARK = copy.reverse(QRIGHT_AP)</rule>
-    <rule>NP3, QUERY_MARK = copy.reverse(QRIGHT_NP3)</rule>
-    <rule>S34, QUERY_MARK = copy.reverse(QRIGHT_S34)</rule>
+      <!-- Noun phrase. -->
+      <rule>N3 = NP3</rule>
+      <rule>NP3 = NP4</rule>
+      <rule>AP = NP3</rule>
+      <rule>DET, NP4 = lower.reverse(NP3)</rule>
+      <rule>CONJ_L3, CONJ_R3 = conjunction.reverse(NP3)</rule>
+      <rule>DISJ_L3, DISJ_R3 = disjunction.reverse(NP3)</rule>
 
-    <!-- Rewrite rules. swap is self-inverse (reverse == forward); the
-         reverse mirror must span the same S345 width as the forward
-         rewrite ``S345 = swap.forward(S345, S345)`` so every width (incl.
-         S3) is mirrored. -->
-    <rule>S345, S345 = swap.reverse(S345)</rule>
+      <!-- Verb phrase. -->
+      <rule>V1 = VP1</rule>
+      <rule>ADV, VP1 = lower.reverse(VP1)</rule>
+      <rule>ADJ, VP1 = lower.reverse(VP1)</rule>
+      <rule>V1, NP3 = intersection.reverse(VP1)</rule>
 
-    <!-- Sentence. -->
-    <rule>NP3 = S3</rule>
-    <rule>NP3, VP1 = lift.reverse(S4)</rule>
-    <rule>MP1, S4 = lift.reverse(S5)</rule>
+      <!-- Modal phrase. -->
+      <rule>ADV = MP1</rule>
+      <rule>ADV, MP1 = MP1</rule>
 
-    <!-- Noun phrase. -->
-    <rule>N3 = NP3</rule>
-    <rule>NP3, PLURAL_MARK = copy.reverse(NP4)</rule>
-    <rule>AP = NP3</rule>
-    <rule>DET, NP4 = lower.reverse(NP3)</rule>
-    <rule>NP_CONJ3, NP3 = conjunction.reverse(NP3)</rule>
-    <rule>NP_DISJ3, NP3 = disjunction.reverse(NP3)</rule>
+      <!-- Adjective / prepositional phrases. -->
+      <rule>ADJ, NP3 = lower.reverse(AP)</rule>
+      <rule>ADJ, AP = intersection.reverse(AP)</rule>
+      <rule>P, NP3 = lift.reverse(PP)</rule>
+      <rule>NP3, PP = lower.reverse(NP3)</rule>
+      <rule>VP1, PP = lower.reverse(VP1)</rule>
 
-    <!-- Verb phrase. -->
-    <rule>V1 = VP1</rule>
-    <rule>ADV, VP1 = lower.reverse(VP1)</rule>
-    <rule>ADJ, VP1 = lower.reverse(VP1)</rule>
-    <rule>V1, NP3 = intersection.reverse(VP1)</rule>
-
-    <!-- Modal phrase. -->
-    <rule>ADV = MP1</rule>
-    <rule>ADV, MP1 = MP1</rule>
-
-    <!-- Adjective / prepositional phrases. -->
-    <rule>ADJ, NP3 = lower.reverse(AP)</rule>
-    <rule>ADJ, AP = intersection.reverse(AP)</rule>
-    <rule>P, NP3 = lift.reverse(PP)</rule>
-    <rule>NP3, PP = lower.reverse(NP3)</rule>
-    <rule>VP1, PP = lower.reverse(VP1)</rule>
-
-    <!-- Truth / logical operators. -->
-    <rule>NOT_S45 = not.reverse(S45)</rule>
-    <rule>NON_S45 = non.reverse(S45)</rule>
-    <rule>S_CONJ45, S45 = conjunction.reverse(S45)</rule>
-    <rule>S_DISJ45, S45 = disjunction.reverse(S45)</rule>
-    <rule>S45, S45 = intersection.reverse(S45)</rule>
-    <rule>S45, S45 = union.reverse(S45)</rule>
-  </generate>
+      <!-- Truth / logical operators. -->
+      <rule>S45 = not.reverse(S45)</rule>
+      <rule>S45 = non.reverse(S45)</rule>
+      <rule>CONJ_L45, CONJ_R45 = conjunction.reverse(S45)</rule>
+      <rule>DISJ_L45, DISJ_R45 = disjunction.reverse(S45)</rule>
+      <rule>S45, S45 = intersection.reverse(S45)</rule>
+      <rule>S45, S45 = union.reverse(S45)</rule>
+    </generate>
+  </SymbolicSpace>
 </grammar>

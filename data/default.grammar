@@ -1,38 +1,65 @@
 <?xml version="1.0"?>
 <grammar name="default">
 
-  <compose>
-    <!-- Subsymbolic tier (C): operate on continuous activations.
-         Tier, arity, invertibility derive from each rule's
-         GrammarLayer subclass (e.g. LiftLayer.tier == 'C'). -->
-    <rule>S = union.forward(S, S)</rule>
-    <rule>S = intersection.forward(S, S)</rule>
-    <rule>S = lift.forward(S, S)</rule>
-    <rule>S = lower.forward(S, S)</rule>
+  <PerceptualSpace>
+    <!-- Meronymic operation registry (Phase 3,
+         doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+         PS operations relate a surface whole to its parts: <compose> =
+         parts -> whole (synthesis / PS reverse); <generate> = whole ->
+         parts (analysis / PS forward). SURF is a generic surface span
+         (bytes / chars / morphemes / words / phrases). stop / boundary /
+         uniform are the marker-free structural cover used by the
+         compatibility analyzer mode; the learned-chunk ops
+         (prefix / suffix / compound / coordination / quote_or_bracket)
+         are added with the routing PS analyzer. These rules carry tier
+         'P' and are read by the PS analyzer, never by the symbolic
+         parser (which reads the <SymbolicSpace> table only). -->
+    <compose>
+      <rule>SURF = stop.forward(SURF)</rule>
+      <rule>SURF = boundary.forward(SURF, SURF)</rule>
+      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+    </compose>
+    <generate>
+      <rule>SURF = stop.reverse(SURF)</rule>
+      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
+      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+    </generate>
+  </PerceptualSpace>
 
-    <!-- Symbolic tier (S): operate on resolved codebook activations. -->
-    <rule>S = not.forward(S)</rule>
-    <rule>S = conjunction.forward(S, S)</rule>
-    <rule>S = disjunction.forward(S, S)</rule>
-    <rule>S = part.forward(S, S)</rule>
-    <rule>S = isEqual.forward(S, S)</rule>
-  </compose>
+  <SymbolicSpace>
+    <compose>
+      <!-- Subsymbolic tier (C): operate on continuous activations.
+           Tier, arity, invertibility derive from each rule's
+           GrammarLayer subclass (e.g. LiftLayer.tier == 'C'). -->
+      <rule>S = union.forward(S, S)</rule>
+      <rule>S = intersection.forward(S, S)</rule>
+      <rule>S = lift.forward(S, S)</rule>
+      <rule>S = lower.forward(S, S)</rule>
 
-  <generate>
-    <!-- Mirror of <compose> with head and arguments swapped. A binary
-         forward rule ``head = f.forward(a, b)`` becomes a reverse rule
-         ``a, b = f.reverse(head)``; unary forward rules ``head = f.forward(x)``
-         keep the same shape ``x = f.reverse(head)``. -->
-    <rule>S, S = union.reverse(S)</rule>
-    <rule>S, S = intersection.reverse(S)</rule>
-    <rule>S, S = lift.reverse(S)</rule>
-    <rule>S, S = lower.reverse(S)</rule>
+      <!-- Symbolic tier (S): operate on resolved codebook activations. -->
+      <rule>S = not.forward(S)</rule>
+      <rule>S = conjunction.forward(S, S)</rule>
+      <rule>S = disjunction.forward(S, S)</rule>
+      <rule>S = part.forward(S, S)</rule>
+      <rule>S = isEqual.forward(S, S)</rule>
+    </compose>
 
-    <rule>S = not.reverse(S)</rule>
-    <rule>S, S = conjunction.reverse(S)</rule>
-    <rule>S, S = disjunction.reverse(S)</rule>
-    <rule>S, S = part.reverse(S)</rule>
-    <rule>S, S = isEqual.reverse(S)</rule>
-  </generate>
+    <generate>
+      <!-- Mirror of <compose> with head and arguments swapped. A binary
+           forward rule ``head = f.forward(a, b)`` becomes a reverse rule
+           ``a, b = f.reverse(head)``; unary forward rules ``head = f.forward(x)``
+           keep the same shape ``x = f.reverse(head)``. -->
+      <rule>S, S = union.reverse(S)</rule>
+      <rule>S, S = intersection.reverse(S)</rule>
+      <rule>S, S = lift.reverse(S)</rule>
+      <rule>S, S = lower.reverse(S)</rule>
+
+      <rule>S = not.reverse(S)</rule>
+      <rule>S, S = conjunction.reverse(S)</rule>
+      <rule>S, S = disjunction.reverse(S)</rule>
+      <rule>S, S = part.reverse(S)</rule>
+      <rule>S, S = isEqual.reverse(S)</rule>
+    </generate>
+  </SymbolicSpace>
 
 </grammar>

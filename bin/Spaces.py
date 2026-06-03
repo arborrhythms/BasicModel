@@ -12450,6 +12450,162 @@ class SymbolicSpace(Space):
         # overrides this tag to "meta" after the call returns.
         return self.ensure_ss_position(row, kind="ss")
 
+    def insert_operations(self, grammar):
+        """Register each grammar OPERATION in the dedicated operator
+        codebook and return ``{op_name: op_position}``.
+
+        doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
+        (Phase 2, amended 2026-06-02): the operator's identity lives in a
+        codebook so the soft-superposition over the operator-prefixed parse
+        tree (held deterministically in WordSubSpace / ObjectSubSpace) can
+        resolve it by lookup. An operator defines HOW meanings combine and
+        contributes no meaning of its own, so it is NOT a meaning-bearing
+        symbol and is NEVER written into the STM idea space.
+
+        Operators occupy their OWN codebook here (``_operation_vectors`` /
+        ``_operation_positions``), separate from the symbol codebook
+        (``subspace.what``). Keeping them out of the symbol codebook is
+        what lets every model build call this unconditionally without
+        perturbing the symbol / idea / ``.where`` position namespace
+        (``allocate_position``, ``symbol_vocab_size``, the relation
+        taxonomy) -- those stay pristine.
+
+        Each operator gets a stable deterministic identity vector (a
+        learnable upgrade, shaped by corpus-scale connective supervision,
+        is a documented follow-up) and a distinct op-space position
+        (positive ints, 1-based). One entry per distinct ``method_name``
+        across the grammar's symbolic rules. Idempotent.
+        """
+        if grammar is None:
+            return {}
+        ensure = getattr(grammar, "_ensure_configured", None)
+        if callable(ensure):
+            ensure()
+        if not hasattr(self, "_operation_positions"):
+            self._operation_positions = {}
+            self._operation_vectors = {}
+        for rule in getattr(grammar, "rules", ()):
+            name = getattr(rule, "method_name", None)
+            if name and name not in self._operation_positions:
+                self._operation_positions[name] = len(self._operation_positions) + 1
+                self._operation_vectors[name] = self._seed_operator_vector(name)
+        return dict(self._operation_positions)
+
+    def _seed_operator_vector(self, name):
+        """Deterministic per-operator identity vector ``[nDim]``.
+
+        Stable across processes (a fixed string hash seeds a local RNG) so
+        the operator codebook regenerates identically on every build -- no
+        persistence needed. Distinct per operator so the superposition's
+        self-similarity peaks on the queried operator.
+        """
+        seed = 0
+        for i, ch in enumerate(str(name)):
+            seed = (seed * 131 + ord(ch) + i) & 0x7FFFFFFF
+        gen = torch.Generator()
+        gen.manual_seed(int(seed) or 1)
+        return torch.randn(int(self.nDim), generator=gen, dtype=torch.float32)
+
+    def operation_position(self, op_name):
+        """Return the op-codebook position of operation ``op_name`` (a
+        positive int), or ``None`` if it was not inserted via
+        :meth:`insert_operations`."""
+        return getattr(self, "_operation_positions", {}).get(op_name)
+
+    def operation_vector(self, op_name):
+        """Return the operator codebook identity vector ``[nDim]`` for
+        ``op_name`` (the vector the soft-superposition dispatches against),
+        or ``None`` if not inserted."""
+        return getattr(self, "_operation_vectors", {}).get(op_name)
+
+    # -- PS-to-SS binding (Phase 7) ------------------------------------
+    #
+    # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
+    # ("PS to SS Binding"): a perceptual terminal is resolved to a
+    # symbolic row when a stable binding exists; before one does, it
+    # emits NULL_SEM and an exposure is recorded; repeated stable
+    # exposure promotes it into a fresh SS codebook row.
+
+    def null_sem(self):
+        """NULL_SEM -- the ungrounded perceptual terminal's SS placeholder
+        (a zero vector of width ``nDim``) emitted before a PS-to-SS binding
+        exists."""
+        cb = getattr(self.subspace, "what", None)
+        W = cb.getW() if isinstance(cb, Codebook) else None
+        if W is not None:
+            return torch.zeros(int(self.nDim), device=W.device, dtype=W.dtype)
+        return torch.zeros(int(self.nDim))
+
+    def ss_vector(self, ss_pos):
+        """Return the SS codebook vector ``[nDim]`` bound to ``ss_pos``
+        (NULL_SEM when the position has no SS row)."""
+        row = getattr(self, "_ss_pos_to_row", {}).get(int(ss_pos))
+        cb = getattr(self.subspace, "what", None)
+        W = cb.getW() if isinstance(cb, Codebook) else None
+        if row is None or W is None:
+            return self.null_sem()
+        return W[int(row), :int(self.nDim)].detach().clone()
+
+    def resolve_ps_terminal(self, ps_id, *, promote_threshold=2):
+        """Resolve a PS terminal to its SS row, returning
+        ``(ss_vec, ss_pos, grounded)``.
+
+        * Bound: the SS codebook vector + position, ``grounded=True``.
+        * Unbound but identified: count an exposure; on the
+          ``promote_threshold``-th exposure promote into a fresh SS row
+          (``grounded=True``); otherwise emit ``null_sem()`` with
+          ``ss_pos=-1`` and ``grounded=False``.
+        * Unidentified (``ps_id < 0``, e.g. a byte-fallback terminal):
+          always ``null_sem()`` ungrounded -- nothing stable to bind.
+
+        ``ps_id`` is the perceptual terminal identity (PS codebook row /
+        part id). Repeated stable exposure of the same ``ps_id`` is what
+        promotes it into a durable symbol.
+        """
+        if not hasattr(self, "_ps_to_ss_binding"):
+            self._ps_to_ss_binding = {}
+            self._ps_exposure = {}
+        key = int(ps_id)
+        if key < 0:
+            return self.null_sem(), -1, False
+        if key in self._ps_to_ss_binding:
+            pos = self._ps_to_ss_binding[key]
+            return self.ss_vector(pos), pos, True
+        self._ps_exposure[key] = self._ps_exposure.get(key, 0) + 1
+        if self._ps_exposure[key] >= int(promote_threshold):
+            pos = self.insert_symbol()
+            self._ps_to_ss_binding[key] = pos
+            return self.ss_vector(pos), pos, True
+        return self.null_sem(), -1, False
+
+    def operator_superposition(self, query_vec, *, temperature=1.0):
+        """Soft distribution over the inserted operations (Phase 9).
+
+        Returns ``{op_name: weight}`` -- a softmax over the cosine
+        similarity between ``query_vec`` and each operation's SS codebook
+        vector (the operators inserted by :meth:`insert_operations`). The
+        operator-prefixed tree node is resolved against the operation
+        codebook as a SUPERPOSITION rather than a hard pick; pass the
+        result to ``perceptual_analyzer.soft_operator_compose`` to combine
+        operands under the soft operator mix. Empty when no operations are
+        inserted.
+        """
+        vecs = getattr(self, "_operation_vectors", {})
+        if not vecs:
+            return {}
+        q = torch.as_tensor(query_vec, dtype=torch.float32).flatten()
+        names, sims = [], []
+        for name, v in vecs.items():
+            v = v.flatten().to(q.dtype)
+            d = min(int(q.numel()), int(v.numel()))
+            sim = torch.nn.functional.cosine_similarity(
+                q[:d].unsqueeze(0), v[:d].unsqueeze(0), dim=1).squeeze(0)
+            names.append(name)
+            sims.append(sim)
+        logits = torch.stack(sims) / max(float(temperature), 1e-6)
+        weights = torch.softmax(logits, dim=0)
+        return {n: float(w) for n, w in zip(names, weights)}
+
     @staticmethod
     def _normalize_trust_tuple(trust):
         """Validate + normalise a tetralemma trust 4-tuple.

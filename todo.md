@@ -1,4 +1,39 @@
 
+## Full-English grammar operations (penultimate task, before training)
+
+Bet: syntax = composition of enumerated semantic operators + learned markers/roles.
+Real work is the NEW operators (Group A); the rest are grammar rules + learned
+role participation over existing ops.
+(See doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md.)
+
+### Group A -- need NEW semantic operators
+- [ ] relativize / bind_gap : relative clauses ("the book that I read"); binds an
+      embedded-clause gap to the head NP. Shared with wh-movement. Marker: that/which/who.
+- [ ] embed / complementize : clausal complements ("thinks that S", "wants to run");
+      turns a clause into an argument slot. Marker: that/to/whether.
+- [ ] tense : past/present/future on VP/S. Marker: will / -ed / did.
+- [ ] aspect : progressive/perfect ("is running", "has run"). Marker: be/have + -ing/-en.
+- [ ] compare : comparatives/superlatives ("bigger than", "the biggest").
+      Marker: -er/-est/than/more/most. (DEG = plain degree, not comparison-to-standard.)
+- [ ] subordinate : conditional/causal/temporal ("if/because/when S"). Currently
+      mis-lumped into AND; the subordinator marker selects the relation.
+
+### Group B -- compositions of existing operators (grammar rules + learned roles)
+- [ ] ditransitive + dative alternation : nested intersection; to-dative = swap + "to".
+- [ ] passive : swap (arg demotion/promotion) + tense/aspect + "by".
+- [ ] VP / AP coordination : extend conjunction/disjunction to VP1 / AP.
+- [ ] wh-questions (long-distance) : QUERY + relativize/bind_gap (Group A).
+- [ ] quantifier scope : exist + DET/quantifier markers; scope via composition order.
+- [ ] appositive / non-restrictive modifier : isEqual / intersection over NP.
+
+### Infrastructure
+- [ ] symbol dimensionality determination : category names no longer carry the dim
+      suffix (NP345 -> per-position categories). Determine a symbol's dim (3d/4d/5d)
+      from its distribution of participation across operator positions (e.g. LHS/RHS
+      of lift/lower constrain dim). Provide dim(symbol) from op-participation stats.
+
+---
+
 queryPart and assertPart should both resolve to the method isPart
 
 fix FAILED test/test_grammar_order_typing.py
