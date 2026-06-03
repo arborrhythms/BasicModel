@@ -104,6 +104,123 @@ def byte_fallback_vector(text, dim):
     return acc / math.sqrt(len(raw))
 
 
+class MeronymicRouter:
+    """Learned meronymic router: ONE hard route + soft marginals over a
+    surface's atom sequence, reusing the SHARED inverse-routing primitive.
+
+    ``binary_tiling_viterbi`` / ``binary_tiling_soft_dp`` (bin/Language.py)
+    are the direction-neutral routing core the symbolic
+    ``BinaryStructuredReductionLayer`` already uses for SS reduce / unreduce;
+    the meronymic analyzer reuses the very same DP in the analysis
+    direction, so PS analysis and SS unreduce share one primitive (Phase R3,
+    "Factor the shared inverse routing primitive out of unreduce /
+    reverse_stack").
+
+    Boundary evidence is SIGNED-NEIGHBORHOOD: the merge (reduce) score
+    between adjacent atoms ``t, t+1`` is their cosine similarity -- bound
+    neighbours (bytes inside a word) score high, a boundary scores low --
+    minus a ``depth_penalty`` that thresholds merging and so controls
+    terminal granularity. Because a merge fires iff the signed evidence
+    beats the keep cost, the route is the exact Viterbi optimum, not a
+    greedy / beam pick. The soft marginals from the same scores are returned
+    alongside the one hard route.
+    """
+
+    def __init__(self, depth_penalty=0.0, keep_bias=0.0, max_rounds=64):
+        self.depth_penalty = float(depth_penalty)
+        self.keep_bias = float(keep_bias)
+        self.max_rounds = int(max_rounds)
+
+    def scores(self, atoms, bonus=None):
+        """Signed-neighborhood ``(copy_score [1,N,1], reduce_score [1,N-1,1])``.
+
+        ``bonus`` (optional ``[N-1]``) adds known-percept evidence so a
+        recognized chunk's atoms cohere more strongly than its raw cosine.
+        """
+        atoms = torch.as_tensor(atoms, dtype=torch.float32)
+        N = int(atoms.shape[0])
+        copy = torch.full((1, max(N, 0), 1), self.keep_bias, dtype=torch.float32)
+        if N < 2:
+            return copy, torch.zeros(1, 0, 1, dtype=torch.float32)
+        x = atoms / (atoms.norm(dim=-1, keepdim=True) + 1e-8)
+        cos = (x[:-1] * x[1:]).sum(-1)                       # [N-1]
+        reduce = cos - self.depth_penalty
+        if bonus is not None:
+            reduce = reduce + torch.as_tensor(bonus, dtype=torch.float32).view(-1)
+        return copy, reduce.view(1, N - 1, 1)
+
+    def route_once(self, copy_score, reduce_score):
+        """One DP level: exact Viterbi hard route + soft marginals.
+
+        Returns ``dict(merges, reduce_mask, reduce_marginal, score)`` where
+        ``merges`` is the sorted list of positions ``t`` at which the pair
+        ``(t, t+1)`` is merged (non-overlapping by construction).
+        """
+        from Language import binary_tiling_viterbi, binary_tiling_soft_dp
+        copy_score = torch.as_tensor(copy_score, dtype=torch.float32)
+        reduce_score = torch.as_tensor(reduce_score, dtype=torch.float32)
+        M = int(reduce_score.shape[1]) if reduce_score.dim() == 3 else 0
+        if M == 0:
+            return {"merges": [], "reduce_mask": [], "reduce_marginal": [],
+                    "score": float(copy_score.sum())}
+        hard = binary_tiling_viterbi(copy_score, reduce_score)
+        soft = binary_tiling_soft_dp(copy_score, reduce_score)
+        mask = hard["reduce_mask"].squeeze(0).sum(-1)        # [M] 0/1
+        merges = [t for t in range(M) if float(mask[t]) > 0.5]
+        return {"merges": merges,
+                "reduce_mask": [int(float(mask[t]) > 0.5) for t in range(M)],
+                "reduce_marginal": soft["reduce_marginal"].squeeze(0).tolist(),
+                "score": float(hard["score"])}
+
+    def route(self, atoms, bonus=None, bonus_fn=None):
+        """Iterated agglomerative meronymic route over ``atoms`` ``[N, D]``.
+
+        Each round scores the current sequence by signed-neighborhood
+        evidence, runs the exact DP, and merges the chosen non-overlapping
+        adjacent pairs (sum-combining their vectors and unioning their
+        ORIGINAL-index spans). Converges when no pair clears the penalty --
+        the byte/atom cover is total, so a valid route always exists.
+
+        ``bonus`` is a static leaf-level per-pair bonus (applied on the
+        first round only). ``bonus_fn(segments) -> [len(segments)-1]`` is
+        re-evaluated every round against the CURRENT segment list, so
+        cross-level evidence (e.g. "this merged span is still inside a known
+        word") keeps cohering a chunk that one non-overlapping DP level
+        cannot fully merge. Returns ``dict(segments=[(start, end), ...],
+        n_merges, rounds)`` (``rounds`` = per-round reduce marginals).
+        """
+        atoms = torch.as_tensor(atoms, dtype=torch.float32)
+        N = int(atoms.shape[0])
+        if N == 0:
+            return {"segments": [], "n_merges": 0, "rounds": []}
+        segs = [(i, i + 1) for i in range(N)]
+        vecs = atoms.clone()
+        n_merges, rounds = 0, []
+        for _ in range(self.max_rounds):
+            b = bonus_fn(segs) if bonus_fn is not None else bonus
+            copy_score, reduce_score = self.scores(vecs, bonus=b)
+            out = self.route_once(copy_score, reduce_score)
+            rounds.append(out["reduce_marginal"])
+            merges = set(out["merges"])
+            if not merges:
+                break
+            n_merges += len(merges)
+            new_segs, new_vecs, i, M = [], [], 0, len(segs)
+            while i < M:
+                if i in merges:                              # merge seg i, i+1
+                    new_segs.append((segs[i][0], segs[i + 1][1]))
+                    new_vecs.append(vecs[i] + vecs[i + 1])
+                    i += 2
+                else:
+                    new_segs.append(segs[i])
+                    new_vecs.append(vecs[i])
+                    i += 1
+            segs, vecs = new_segs, torch.stack(new_vecs)
+            if bonus_fn is None:
+                bonus = None    # static bonus applies to the leaf level only
+        return {"segments": segs, "n_merges": n_merges, "rounds": rounds}
+
+
 class MeronymicAnalyzer:
     """Analyze a surface whole into perceptual parts (terminals).
 
@@ -141,14 +258,21 @@ class MeronymicAnalyzer:
                 return vec, int(pid)
         return byte_fallback_vector(text, oss.percept_dim), -1
 
-    def _emit(self, oss, b, text, start, end, vec, part_id, route_id, record):
+    def _emit(self, oss, b, text, start, end, vec, part_id, route_id, record,
+              raw=None):
         """Push one terminal span to the ObjectSubSpace with endpoint-sum
-        ``.where`` and append its host-side replay record."""
+        ``.where`` and append its host-side replay record. When ``raw`` (the
+        terminal's exact source bytes) is given it is stored so reverse
+        synthesis can reconstruct the surface byte-exactly (no mojibake for a
+        multi-byte glyph split across byte terminals)."""
         oss.push(b, vec, part_id=int(part_id), span_start=int(start),
                  span_end=int(end), span_where=self.where.encode(start, end),
                  route_id=int(route_id))
-        record.append({"text": text, "start": int(start), "end": int(end),
-                       "part_id": int(part_id), "route": int(route_id)})
+        entry = {"text": text, "start": int(start), "end": int(end),
+                 "part_id": int(part_id), "route": int(route_id)}
+        if raw is not None:
+            entry["raw"] = bytes(raw)
+        record.append(entry)
 
     def analyze(self, surface, oss, b=0, granularity="auto"):
         """Analyze ``surface`` into terminals on row ``b`` of ``oss``.
@@ -190,6 +314,77 @@ class MeronymicAnalyzer:
                            self.BOUNDARY, record)
         return record
 
+    def analyze_routed(self, surface, oss, b=0, router=None, known_bonus=10.0):
+        """Learned-route PS analysis (Phase R3): segment ``surface`` with the
+        meronymic Viterbi router (:class:`MeronymicRouter`) instead of the
+        ``util.parse`` heuristic, then resolve each routed segment to a
+        terminal (known percept -> ``stop``; unknown -> byte fallback) and
+        write it to ``oss``.
+
+        The router's signed-neighborhood evidence is boosted inside spans
+        the percept store recognizes (``known_bonus`` on every byte-pair
+        whose merged span stays inside a known word), so a known word's
+        bytes cohere into one ``stop`` terminal while unknown surface stays
+        byte terminals -- the same known-vs-byte cover the compatibility
+        analyzer produces, now selected by the SHARED DP primitive
+        (``binary_tiling_viterbi``) rather than a tokenizer. Returns the
+        host-side replay record (so :meth:`synthesize` round-trips).
+        """
+        raw = (surface.encode("utf-8")
+               if isinstance(surface, str) else bytes(surface))
+        record = []
+        if not raw:
+            return record
+        if router is None:
+            # Penalty above the raw byte-cosine ceiling so ONLY known-word
+            # evidence (the bonus) drives merges; unknown surface stays byte.
+            router = MeronymicRouter(depth_penalty=2.0)
+        dim = oss.percept_dim
+        atoms = torch.stack(
+            [byte_fallback_vector(bytes([byte_]), dim) for byte_ in raw])
+        # Known-word byte spans (the standalone stand-in for the percept
+        # store's "where do recognized percepts live" evidence).
+        known_spans = []
+        if self.percept_lookup is not None:
+            from util import parse
+            for tok, start in parse(surface, lex="words"):
+                if self.percept_lookup(tok) is not None:
+                    known_spans.append((start, start + len(tok.encode("utf-8"))))
+
+        def bonus_fn(segs):
+            out = torch.zeros(max(len(segs) - 1, 0))
+            for i in range(len(segs) - 1):
+                s0, e1 = segs[i][0], segs[i + 1][1]
+                if any(ws <= s0 and e1 <= we for (ws, we) in known_spans):
+                    out[i] = known_bonus
+            return out
+
+        segments = router.route(atoms, bonus_fn=bonus_fn)["segments"]
+        for (s, e) in segments:
+            seg = bytes(raw[s:e])                 # the terminal's EXACT bytes
+            # Percept lookup only on a cleanly-decodable span; a partial
+            # UTF-8 byte terminal is never a known percept -> byte fallback.
+            hit = None
+            if self.percept_lookup is not None:
+                try:
+                    token = seg.decode("utf-8")
+                except UnicodeDecodeError:
+                    token = None
+                if token is not None:
+                    hit = self.percept_lookup(token)
+            if hit is not None:
+                vec, pid = hit
+                self._emit(oss, b, token, s, e, vec, int(pid),
+                           self.STOP, record, raw=seg)
+            else:
+                # Byte fallback: vector from the RAW bytes (never the lossy
+                # decode), exact bytes stored for byte-exact reverse synthesis.
+                vec = byte_fallback_vector(seg, oss.percept_dim)
+                text = seg.decode("utf-8", errors="surrogateescape")
+                route = self.BYTE if (e - s) == 1 else self.BOUNDARY
+                self._emit(oss, b, text, s, e, vec, -1, route, record, raw=seg)
+        return record
+
     def terminal_view(self, oss, b=0):
         """Fixed-capacity terminal-stream view over ``oss`` row ``b`` leaves.
 
@@ -213,14 +408,23 @@ class MeronymicAnalyzer:
     def synthesize(self, record):
         """Exact-replay reverse synthesis: reconstruct the surface from an
         analysis ``record`` (route metadata + canonical span text) by
-        concatenating the terminal surfaces in span order. This is the
+        concatenating the terminals in span order. This is the
         ``boundary``/``stop`` synthesis direction -- spaces and affixes are
         replayed as the terminals they were analyzed into, not from any
-        tokenizer state."""
-        return "".join(r["text"]
-                       for r in sorted(record, key=lambda r: r["start"]))
+        tokenizer state.
 
-    def synthesize_tree(self, node):
+        When the terminals carry their exact source bytes (``"raw"`` -- the
+        routed analyzer), reconstruction joins the BYTES and decodes once, so
+        a multi-byte glyph split across byte terminals is reassembled exactly
+        rather than interpolated as ``U+FFFD`` mojibake. Records without
+        ``"raw"`` (the compatibility analyzer) fall back to the text join."""
+        rec = sorted(record, key=lambda r: r["start"])
+        if rec and all("raw" in r for r in rec):
+            return b"".join(r["raw"] for r in rec).decode(
+                "utf-8", errors="surrogateescape")
+        return "".join(r["text"] for r in rec)
+
+    def synthesize_tree(self, node, marker_resolver=None):
         """Generative reverse synthesis from an operator-prefixed tree.
 
         ``node`` is either ``("leaf", surface_text)`` or
@@ -229,19 +433,44 @@ class MeronymicAnalyzer:
         :class:`SurfaceSchema`: T1 affix = ``"marker arg"``; T2/T3 with a
         bound marker = ``"left marker right"`` (the marker is LEARNED, not a
         grammar token); T4 / no-marker = bare juxtaposition ``"left right"``.
+
+        ``emit`` returns a marker PS codebook id, so replay resolves it to
+        canonical surface via ``marker_resolver(marker_id) -> str`` (the PS
+        store / marker codebook) and NEVER interpolates an opaque id as
+        literal output (spec §9 carry-forward concern). A marker that is
+        already surface text is placed directly.
         """
         if not isinstance(node, tuple) or node[0] == "leaf":
             return node[1] if isinstance(node, tuple) else str(node)
         _, op, *children = node
-        parts = [self.synthesize_tree(c) for c in children]
+        parts = [self.synthesize_tree(c, marker_resolver=marker_resolver)
+                 for c in children]
         schema = op.surface_schema
-        marker = op.emit()
+        marker = self._resolve_marker(op.emit(), marker_resolver)
         if schema.template_id == "T1":
-            return (f"{marker} {parts[0]}".strip()
-                    if marker is not None else parts[0])
-        if schema.has_marker and marker is not None and len(parts) == 2:
+            return f"{marker} {parts[0]}".strip() if marker else parts[0]
+        if schema.has_marker and marker and len(parts) == 2:
             return f"{parts[0]} {marker} {parts[1]}"
         return " ".join(parts)
+
+    @staticmethod
+    def _resolve_marker(marker, marker_resolver):
+        """Resolve an ``emit()``ed marker to canonical surface text.
+
+        A string marker is already surface and is used directly. An opaque
+        PS codebook id is mapped through ``marker_resolver`` (the PS store /
+        marker codebook). Absent a resolver, an opaque id degrades to no
+        marker (bare juxtaposition) rather than leaking the id into the
+        surface -- replay never interpolates an opaque marker id (spec §9).
+        """
+        if marker is None:
+            return None
+        if isinstance(marker, str):
+            return marker
+        if marker_resolver is not None:
+            resolved = marker_resolver(marker)
+            return resolved if isinstance(resolved, str) else None
+        return None
 
 
 def soft_operator_compose(dist, left, right=None, *, classes=None):

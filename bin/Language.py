@@ -211,6 +211,41 @@ def _expand_compact_order_sets(cfg):
     return out
 
 
+def _start_item_text(item):
+    """Surface text of one ``<start>`` entry.
+
+    Tolerates the attribute-bearing ``{'_': text, 'name': ...}`` dict that
+    ``_grammar_xml_to_dict`` now emits for ``<start name=...>`` (so the
+    ``relative_truth`` / ``absolute_truth`` / ``everything`` roles survive
+    parse), as well as the bare-string legacy shape.
+    """
+    if isinstance(item, dict):
+        return str(item.get('_', '')).strip()
+    return str(item).strip()
+
+
+def _starts_by_name(start_raw):
+    """Map each start *symbol* (after compact-order expansion) to the
+    ``name`` attribute of the ``<start>`` it came from (or ``None``).
+
+    Lets the loader partition SymbolicSpace starts into ``relative_truth``
+    / ``absolute_truth`` role sets for relative-rule detection (R1.3).
+    """
+    if start_raw is None:
+        return {}
+    items = start_raw if isinstance(start_raw, list) else [start_raw]
+    out = {}
+    for item in items:
+        text = _start_item_text(item)
+        if not text:
+            continue
+        name = item.get('name') if isinstance(item, dict) else None
+        for expanded in _expand_compact_order_sets_in_rule(text):
+            for sym in (p.strip() for p in expanded.split() if p.strip()):
+                out.setdefault(sym, name)
+    return out
+
+
 def _start_patterns_from_raw(start_raw, default='S'):
     """Parse one or more ``<start>`` entries into concrete patterns.
 
@@ -229,7 +264,7 @@ def _start_patterns_from_raw(start_raw, default='S'):
     patterns = []
     seen = set()
     for raw in raw_items:
-        text = str(raw).strip()
+        text = _start_item_text(raw)
         if not text:
             continue
         for expanded in _expand_compact_order_sets_in_rule(text):
@@ -271,7 +306,7 @@ def _grammar_xml_to_dict(node):
         else:
             text = (child.text or '').strip()
             value = {'_': text, **child.attrib} if (
-                tag == 'rule' and child.attrib) else text
+                tag in ('rule', 'start') and child.attrib) else text
         if tag in result:
             if not isinstance(result[tag], list):
                 result[tag] = [result[tag]]
@@ -464,6 +499,25 @@ class Grammar:
         # back to "S" (the historical default) when unset.
         self.start_symbol = "S"
         self.start_patterns = (("S",),)
+        # Space-scoped starts (Phase R1.1,
+        # doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+        # decision 7 / §4.4). ``SymbolicSpace.start`` configures the
+        # symbolic parse starts; ``start_symbol`` / ``start_patterns``
+        # above are the back-compat *alias* of them (id_SS,
+        # is_start_pattern, reset and relative-rule code key off the
+        # symbolic start). ``PerceptualSpace.start`` configures the
+        # analyzer root (``U``) -- a separate namespace the symbolic
+        # parser never reads.
+        self.ss_start_symbol = "S"
+        self.ss_start_patterns = (("S",),)
+        self.ps_start_symbol = None
+        self.ps_start_patterns = ()
+        # SS starts partitioned by ``<start name=...>``: a relative truth
+        # is a binary-predicate end-state (the isEqual / isPart family),
+        # an absolute truth collapses to a single idea. Consumed by
+        # ``_relative_start_categories`` (R1.3).
+        self.ss_relative_starts = frozenset()
+        self.ss_absolute_starts = frozenset()
         # Task 6a (doc/plans/2026-05-29-stm-serial-parallel-modes.md §7):
         # cache of rule_ids that produce a RELATIVE truth (the
         # ``part`` / ``isEqual`` predicate family). Lazily computed by
@@ -1164,18 +1218,61 @@ class Grammar:
         """
         cfg = load_grammar(filename)
         if isinstance(cfg, dict):
-            start_raw = cfg.pop('start', None)
-            if start_raw is not None:
-                self.start_patterns = _start_patterns_from_raw(
-                    start_raw, default=self.start_symbol)
-                self.start_symbol = _primary_start_symbol(
-                    self.start_patterns, default=self.start_symbol)
-            else:
-                self.start_patterns = ((self.start_symbol,),)
+            # Space-scoped starts: <start> nested under <PerceptualSpace>
+            # configures the analyzer root; nested under <SymbolicSpace>
+            # configures the symbolic parse. A top-level <start> (legacy /
+            # unsectioned form) configures the symbolic start unless the
+            # SymbolicSpace section declares its own.
+            ps_block = cfg.get('PerceptualSpace')
+            ss_block = cfg.get('SymbolicSpace')
+            ps_start_raw = (ps_block.get('start')
+                            if isinstance(ps_block, dict) else None)
+            ss_start_raw = (ss_block.get('start')
+                            if isinstance(ss_block, dict) else None)
+            top_start_raw = cfg.pop('start', None)
+            if ss_start_raw is None:
+                ss_start_raw = top_start_raw
+            self._configure_starts(ps_start_raw, ss_start_raw)
+            # Strip the nested start keys so they can't be mistaken for
+            # rules downstream (configure() reads compose/generate only).
+            if isinstance(ps_block, dict):
+                ps_block.pop('start', None)
+            if isinstance(ss_block, dict):
+                ss_block.pop('start', None)
         cfg = _expand_compact_order_sets(cfg)
         cfg = self._ensure_identity_rule(cfg)
         self.configure(cfg)
         self._reassign_tiers_from_layer_classes()
+
+    def _configure_starts(self, ps_start_raw, ss_start_raw):
+        """Set space-scoped starts from the raw ``<start>`` blocks.
+
+        ``ss_start_raw`` configures the SymbolicSpace starts and the
+        back-compat global alias (``start_symbol`` / ``start_patterns``);
+        the symbolic start is what ``id_SS`` / ``is_start_pattern`` /
+        reset and relative-rule detection key off. ``ps_start_raw``
+        configures the analyzer root (``U``) -- a separate namespace.
+        """
+        if ss_start_raw is not None:
+            self.ss_start_patterns = _start_patterns_from_raw(
+                ss_start_raw, default=self.ss_start_symbol)
+            self.ss_start_symbol = _primary_start_symbol(
+                self.ss_start_patterns, default=self.ss_start_symbol)
+            names = _starts_by_name(ss_start_raw)
+            self.ss_relative_starts = frozenset(
+                s for s, n in names.items() if n == 'relative_truth')
+            self.ss_absolute_starts = frozenset(
+                s for s, n in names.items() if n == 'absolute_truth')
+        else:
+            self.ss_start_patterns = ((self.ss_start_symbol,),)
+        # The symbolic start IS the global start (back-compat alias).
+        self.start_patterns = self.ss_start_patterns
+        self.start_symbol = self.ss_start_symbol
+        if ps_start_raw is not None:
+            self.ps_start_patterns = _start_patterns_from_raw(
+                ps_start_raw, default='U')
+            self.ps_start_symbol = _primary_start_symbol(
+                self.ps_start_patterns, default='U')
 
     def _ensure_identity_rule(self, cfg):
         """Return ``cfg`` with a start-symbol identity in <compose> if
@@ -1290,9 +1387,22 @@ class Grammar:
                 start_raw, default="S")
             self.start_symbol = _primary_start_symbol(
                 self.start_patterns, default="S")
+            # The inline-XML grammar has no PS/SS sections; its start is
+            # the symbolic start (mirror into the ss_* alias). A later
+            # load_from_grammar_file (the <grammar>NAME.grammar</grammar>
+            # dispatch) overrides this with the file's space-scoped starts.
+            self.ss_start_patterns = self.start_patterns
+            self.ss_start_symbol = self.start_symbol
+            names = _starts_by_name(start_raw)
+            self.ss_relative_starts = frozenset(
+                s for s, n in names.items() if n == 'relative_truth')
+            self.ss_absolute_starts = frozenset(
+                s for s, n in names.items() if n == 'absolute_truth')
         except (KeyError, AttributeError):
             self.start_symbol = "S"
             self.start_patterns = (("S",),)
+            self.ss_start_symbol = "S"
+            self.ss_start_patterns = (("S",),)
 
         # Defensive: warn loudly if a deprecated <useGrammar> tag still
         # sits in the XML (the knob was retired 2026-05-13 but configs
@@ -1411,32 +1521,32 @@ class Grammar:
     # idea (which is the correct end-state for an ABSOLUTE truth). The
     # marker below lets the reduce site ask "is this rule_id relative?".
 
-    # Op-name FALLBACK set. Primary detection is grammar-driven
-    # (``lhs`` == a relative start category, below); these op names are
-    # the secondary signal for grammars that don't expose a named
-    # relative start. Kept in sync with the predicate family in
-    # ``data/complete.grammar`` (``isEqual`` / ``queryPart`` /
-    # ``assertPart``); ``part`` is included for the plan's nominal
-    # ``part``-family naming even though the current grammar spells it
-    # ``queryPart`` / ``assertPart``.
-    _RELATIVE_OP_NAMES = frozenset(
-        {'isEqual', 'queryPart', 'assertPart', 'part'})
+    # Op-name signal (Phase R1.3,
+    # doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+    # §6). The role-collapsed grammar names the relative-truth family
+    # ``isEqual`` / ``isPart`` (each query-dispatched). The retired
+    # ``queryPart`` / ``assertPart`` / ``part`` op names are folded into
+    # ``isPart`` and no longer appear here; the transitional grammar's
+    # ``queryPart`` / ``assertPart`` forward rules stay relative via the
+    # ``lhs == REL_T`` start signal below.
+    _RELATIVE_OP_NAMES = frozenset({'isEqual', 'isPart'})
 
     def _relative_start_categories(self):
         """Return the set of category symbols that head a RELATIVE start.
 
-        Grammar-driven primary signal for ``is_relative_rule``. The
-        ``<start name="relative_truth">REL_T</start>`` *name* is NOT
-        retained through parse (``_grammar_xml_to_dict`` drops non-rule
-        attributes), so -- per the plan's documented, accepted fallback
-        -- a single-symbol start pattern is treated as the relative
-        start iff its symbol is ``"REL_T"``. When the grammar exposes no
-        ``REL_T`` start (e.g. the absolute-only MM_xor / MM_5M
-        grammars), this returns the empty set and NO rule is relative by
-        lhs (op-name fallback still applies, but those absolute grammars
-        carry none of the relative ops either -> nothing relative, which
-        is the conservative correct answer).
+        Grammar-driven primary signal for ``is_relative_rule``: the
+        SymbolicSpace starts tagged ``<start name="relative_truth">`` (the
+        role-collapsed ``isEqual_O1`` / ``isPart_O1`` outputs), retained
+        through parse on ``ss_relative_starts``. For grammars that do not
+        name their starts (the inline-XML path, or a bare
+        ``<start>REL_T</start>``), a single-symbol ``"REL_T"`` start
+        pattern is treated as the relative start (back-compat fallback).
+        Absolute-only grammars (MM_xor / MM_5M) expose no relative start
+        and carry none of the relative ops -> nothing relative, the
+        conservative correct answer.
         """
+        if self.ss_relative_starts:
+            return set(self.ss_relative_starts)
         cats = set()
         for pattern in (self.start_patterns or ()):
             if len(pattern) == 1 and pattern[0] == "REL_T":
@@ -3035,6 +3145,53 @@ class IsEqualLayer(GrammarLayer):
         return self.reverse(parent)
 
 
+class IsPartLayer(GrammarLayer):
+    """``S -> isPart(S, S)`` -- symbolic parthood assertion.
+
+    The mereological analogue of :class:`IsEqualLayer`: an S-tier
+    *assertive* relation that states "A is part of B" as a single parent
+    symbol, a higher-epistemic-level assertion than the C-tier geometric
+    ``part`` test. Per decision 6 of the role-collapsed grammar spec,
+    ``isPart`` is one relation dispatched by ``query``: assertive here,
+    answer-producing (``queryPart``) when ``query="true"`` -- folding in
+    the retired ``assertPart`` / ``queryPart`` operator names.
+
+    Forward returns ``right`` -- the encompassing parent -- so the CKY
+    consumer sees a single parent vector; the parthood relationship
+    between ``left`` and ``right`` is carried by codebook geometry (the
+    codebook IS the meronymic tree, see :class:`PartLayer`). Lossy with
+    the ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "isPart"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self, tree=None):
+        """``tree`` accepted but ignored (MereologicalTree retired)."""
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        """Pass the encompassing parent ``right`` through to the CKY
+        consumer (the parthood geometry is learned in the codebook)."""
+        return right
+
+    def reverse(self, parent):
+        """Lossy ``(parent, parent)`` pseudo-inverse -- ``isPart(A, B)``
+        does not preserve A's identity in the parent vector."""
+        return parent, parent
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        """Drive the reverse / generation pass."""
+        return self.reverse(parent)
+
+
 class PartLayer(GrammarLayer):
     """``S -> part(S, S)`` -- mereological part-of on the bivector
     codebook.
@@ -3202,6 +3359,8 @@ def _dispatch_method_name_for_rule(rule):
     method = getattr(rule, 'method_name', None)
     if getattr(rule, 'query', False) and method == 'isEqual':
         return 'queryEqual'
+    if getattr(rule, 'query', False) and method == 'isPart':
+        return 'queryPart'
     return method
 
 
@@ -3322,6 +3481,7 @@ GRAMMAR_LAYER_CLASSES = {
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
     'isEqual':      IsEqualLayer,
+    'isPart':       IsPartLayer,
     'equal':        EqualLayer,
     'part':         PartLayer,
     'assertPart':   AssertPartLayer,
@@ -3363,7 +3523,10 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'union':        T2_BINARY_INFIX,
     'intersection': T2_BINARY_INFIX,
     # Binary directional (T3): (position, marker) co-varies with a
-    # recorded order bit -- the part / possessive family.
+    # recorded order bit -- the part / possessive family. ``isPart`` is
+    # the role-collapsed relation name (query-dispatched) that supersedes
+    # ``assertPart`` / ``queryPart``.
+    'isPart':       T3_BINARY_DIRECTIONAL,
     'part':         T3_BINARY_DIRECTIONAL,
     'queryPart':    T3_BINARY_DIRECTIONAL,
     'assertPart':   T3_BINARY_DIRECTIONAL,
@@ -8564,12 +8727,21 @@ class WordSubSpace(SubSpace):
 
         # L1-normalize each row that has any mass; zero rows stay zero
         # (documented: the additive bias is then just routing_proj's bias).
+        # Branchless so the compiled forward carries no data-dependent guard:
+        # a zero row has ``probs == 0`` and ``row_sum == 0``, and
+        # ``0 / clamp_min(tiny) == 0``; non-zero rows have integer mass
+        # ``>= 1`` that ``clamp_min(tiny)`` leaves untouched. Equivalent to
+        # the old ``if nz.any(): probs[nz] /= row_sums[nz]``.
         row_sums = probs.sum(dim=1, keepdim=True)
-        nz = row_sums.squeeze(1) > 0
-        if nz.any():
-            probs[nz] = probs[nz] / row_sums[nz]
+        probs = probs / row_sums.clamp_min(torch.finfo(probs.dtype).tiny)
 
-        if not torch.isfinite(probs).all():
+        # FAIL LOUD on a non-finite rule-prob tensor -- but gate behind
+        # MODEL_DEBUG: ``isfinite().all()`` is a data-dependent host sync
+        # (graph break) under torch.compile, and ``util.MODEL_DEBUG`` is a
+        # constant the tracer folds away when off, so the check leaves the
+        # compiled forward entirely. Divergence still surfaces under
+        # MODEL_DEBUG runs and via the eager finite-loss guard.
+        if util.MODEL_DEBUG and not torch.isfinite(probs).all():
             raise ValueError(
                 "WordSubSpace._synthesize_rule_probs produced a non-finite "
                 "rule_probs tensor (fail-loud per numerical policy).")

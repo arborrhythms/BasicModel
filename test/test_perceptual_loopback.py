@@ -367,16 +367,17 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         self.assertIs(ps_space.vocabulary, ps_space.percept_store)
 
     def test_legacy_lexicon_mode_keeps_chunklayer_path(self):
-        """The MM_xor_loopback config doesn't set chunking; the default
-        path remains ``lexicon`` for backward compatibility, with
-        ``percept_store`` set to ``None``."""
+        """The MM_xor_loopback config doesn't set chunking; the default is
+        ``analyse`` (R3-live), whose space-lexer resolves word runs through
+        the same ChunkLayer / Embedding path as lexicon (it delegates to
+        ``_embed``), so ``percept_store`` stays ``None``."""
         m = _fresh_model()
         ps_space = m.perceptualSpace
-        # MM_xor_loopback doesn't set chunking, so the default lexicon
-        # path stays active and percept_store should be None.
-        self.assertEqual(ps_space.chunking_mode, "lexicon")
+        # The default analyse mode reuses the chunklayer / Embedding path
+        # (no PerceptStore), reproducing the legacy lexicon behavior.
+        self.assertEqual(ps_space.chunking_mode, "analyse")
         self.assertIsNone(ps_space.percept_store,
-                          "lexicon mode must leave percept_store unset "
+                          "analyse (default) must leave percept_store unset "
                           "so the legacy ChunkLayer / Embedding path "
                           "stays authoritative")
         # vocabulary property falls back to subspace.vocabulary in

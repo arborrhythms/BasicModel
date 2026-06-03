@@ -243,8 +243,8 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
 class TestBoundaryHookForwardWiring(unittest.TestCase):
     """The sentence-boundary hook ``learn_relations_from_stm`` reads the
     depth-3 relative end-state from STM slots 0/1/2 and routes each
-    relative row through the gate. Exercised on the REAL relative
-    ``complete.grammar`` (via MentalModel.xml), mirroring the Task 6a
+    relative row through the gate. Exercised on the REAL relative grammar
+    (``role_collapsed.grammar`` via MentalModel.xml), mirroring the Task 6a
     relative-end-state test's STM + current_rules seeding.
     """
 
@@ -307,10 +307,12 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         import Language
         g = Language.TheGrammar
         g._ensure_configured()
-        # A forward REL_T rule id from the real grammar.
+        # A forward relative rule id, found grammar-agnostically via the
+        # relative detection set (REL_T in complete.grammar; an isEqual/isPart
+        # output-role rule in the role-collapsed default).
         rel_id = next(
             rid for rid in sorted(g._relative_rule_id_set())
-            if g.rules[rid].lhs == "REL_T"
+            if g.rules[rid].method_name in g._RELATIVE_OP_NAMES
             and ".reverse" not in (g.rules[rid].canonical or ""))
 
         cs = m.conceptualSpace

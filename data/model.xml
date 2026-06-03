@@ -364,7 +364,11 @@
     <!-- Discrete (codebook) input values. -->
     <codebook>none</codebook>
     <!-- Tokenization for text inputs: word | sentence | byte. -->
-    <lexer>word</lexer>
+    <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
+         meronymic analyzer (chunking=analyse, the default) owns all
+         tokenization. Non-analyse models (radix/bpe/lexicon) pin their own
+         lexer (byte/word) so they keep the pre-lexed buffer. -->
+    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -382,8 +386,10 @@
     <nonlinear>true</nonlinear>
     <!-- Discrete (codebook) percepts; false = passthrough Tensor. -->
     <codebook>none</codebook>
-    <!-- Multi-token chunking strategy: lexicon | bpe | mphf | none. -->
-    <chunking>lexicon</chunking>
+    <!-- Multi-token chunking strategy: analyse | lexicon | bpe | mphf | none | radix.
+         R3-live default: the meronymic analyzer (space-lexer front end);
+         with a word codebook it reproduces lexicon word lexing. -->
+    <chunking>analyse</chunking>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
   </PerceptualSpace>

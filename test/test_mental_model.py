@@ -100,13 +100,18 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     # idiom they implemented is replaced by markers that are learned and
     # owned by each operator (absorb/emit on the T1-T5 SurfaceSchema), so
     # the symbolic rule predictor no longer dispatches copy/swap.
+    # Role-collapse (default since 2026-06-03, D1 gate met) unifies the part
+    # operator: the grammar declares the single relative op ``isPart`` and the
+    # query/assert split is recovered by dispatch (``_dispatch_method_name_
+    # for_rule`` maps ``isPart`` -> ``queryPart`` in a query context), so the
+    # rule method_names carry ``isPart`` where the transitional
+    # ``complete.grammar`` carried ``assertPart`` + ``queryPart``.
     REQUIRED_OPS = {
         'non', 'not',
         'conjunction', 'disjunction',
         'intersection', 'union',
         'lift', 'lower',
-        'isEqual', 'assertPart',
-        'queryPart',
+        'isEqual', 'isPart',
         'exist',
     }
 
@@ -117,9 +122,9 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         _reload_config()
         model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
-        # grammar comes from MentalModel.xml (complete.grammar); structural
-        # invariants (the rule predictor sees every dispatchable op)
-        # matter, not the exact rule list.
+        # grammar comes from MentalModel.xml (role_collapsed.grammar, the
+        # default since 2026-06-03); structural invariants (the rule predictor
+        # sees every dispatchable op) matter, not the exact rule list.
         method_names = {rule.method_name
                         for rule in Language.TheGrammar.rules
                         if rule.method_name}

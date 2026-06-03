@@ -219,3 +219,44 @@ XML knobs (under SymbolicSpace):
   contradiction `[1, 1]` distinct from ignorance `[0, 0]` under positive
   matmul. See
   [Spaces.md "Monotonicity of the lift / lower chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).
+
+---
+
+## Meronymic Analyzer (PerceptualSpace)
+
+Parthood is not only the symbolic relation of the previous sections; it
+is also how `PerceptualSpace` *analyzes* a surface into structure. The
+default perceptual chunking mode is `analyse`
+(`<PerceptualSpace><chunking>analyse</chunking>`), which routes the input
+through the meronymic analyzer rather than a fixed lexicon or BPE table.
+
+`InputSpace` hands the analyzer the unanalyzed surface --- with
+`<lexer>raw</lexer>` it passes the whole `[B, 1, N]` byte buffer and lets
+`PerceptualSpace` own tokenization. The analyzer's default (and only
+enabled-by-default) operation is a *space-lexer*: a boundary detector
+that recognizes whitespace breaks, reproducing the current word-level
+behavior for verbal input. `raw` keeps the word-level codebook (unlike
+`byte`); it changes only the analyze surface, so the model is not
+switched to a byte embedding.
+
+`MeronymicRouter` (`bin/perceptual_analyzer.py`) scores candidate merges
+by signed-neighborhood cosine against the perceptual codebook and routes
+with the shared `binary_tiling_viterbi` / `binary_tiling_soft_dp`
+primitives (see [Language.md](Language.md), *Shared Weighted-Deduction
+Framework*). In the cold state the codebook holds only the whole-input
+vector and the byte vectors, so the router decomposes the surface to byte
+terminals --- the deliberately-failing initial state. As words are
+learned bottom-up (merge promotion), the same router reproduces
+word-level runs. `analyze_routed` reconstructs a byte-exact surface for
+replay (UTF-8 multi-byte characters are stored as raw bytes, not decoded
+per segment).
+
+### `isPart` as a Grammar Layer
+
+`IsPartLayer` lifts parthood into the role-collapsed grammar as a binary
+operator (arity 2). Under a query model it dispatches to `queryPart`
+(`_dispatch_method_name_for_rule`), so `isPart` and `isEqual` are the
+relative operators recognized by `_relative_start_categories`
+(`_RELATIVE_OP_NAMES`). Its identity vector lives in the `SymbolicSpace`
+operator codebook and participates in the same soft superposition as the
+other operators.

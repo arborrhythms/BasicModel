@@ -648,6 +648,41 @@ space-wide output mode.
 | Aligns with `out.shape[-1]` (feature axis) | Element-wise multiply on output |
 | Aligns with `out.shape[-2]` (position axis) | Zero masked rows of `_active`; `materialize()` gates downstream |
 
+### Word auto-bind deferred to `Reset` (fullgraph forward)
+
+The compiled per-batch forward (`BaseModel.enable_compiled_step`,
+`torch.compile(fullgraph=True)`) must carry **zero graph breaks**. The
+word auto-bind --- `ConceptualSpace._maybe_autobind_meta`, which grows the
+SymbolicSpace codebook and META taxonomy when a freshly-seen percept first
+lands --- is irreducibly host-side: `.item()` loops, `if pid < 0` branches,
+Python dict/set taxonomy mutation, and (pre-allocation aside) codebook
+growth. Dynamo cannot trace any of those, so the auto-bind no longer runs
+on the `forward` path.
+
+Instead (2026-06-03 refactor) it is **deferred to the sentence/document
+boundary**. `PerceptualSpace._embed_radix` stashes the encountered percept
+ids (`_forward_input['indices']`) and the pre-pi seed (`_embedded_input`)
+during the forward --- a side-effect dynamo simply replays. On the next
+hard `ConceptualSpace.Reset` (fired on `hard_eos`, between sentences),
+`_commit_autobind_from_stash` reads that stash and performs the *same*
+allocation in eager Python. Same words, same SS rows --- only moved from
+mid-stage to the between-sentence reset, so a downstream tensor op in the
+same forward no longer sees a mid-forward codebook growth (verified
+behaviour-preserving across the radix / meta-taxonomy / `mm_xor`
+convergence suites). Whole-slab configs run one forward per sentence, so
+the stash is the whole sentence; a per-word/serial config commits the last
+forward's stash per reset.
+
+Two smaller forward-purity fixes accompany it: `WordSubSpace._synthesize_
+rule_probs` normalizes branchlessly (`probs / row_sums.clamp_min(tiny)`
+instead of `if nz.any()`), and the fail-loud `isfinite` guards (here and in
+`insert_meta` / `record_lbg_pull`) are gated behind `util.MODEL_DEBUG` --- a
+constant the tracer folds away when off, so the data-dependent `.all()`
+host sync leaves the compiled graph while divergence still raises under
+`MODEL_DEBUG` runs and the eager finite-loss guard. (`BASIC_FULLGRAPH=0`
+relaxes the strict gate to enumerate any remaining breaks;
+`MODEL_COMPILE=eager` traces without the Inductor C++ backend.)
+
 ### ShortTermMemory
 
 ConceptualSpace owns `self.stm` — a `ShortTermMemory` instance, a

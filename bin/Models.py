@@ -91,6 +91,13 @@ from util import parse
 _PIPELINE_EXC_SEEN: dict = {}
 _DEDUPE_FLUSH_EVERY = 1000
 
+# fullgraph=True is the strict no-graph-break gate (see
+# ``enable_compiled_step``). ``BASIC_FULLGRAPH=0`` relaxes it so dynamo
+# segments the graph at each break and logs them all -- used to enumerate
+# remaining breaks while migrating host-side symbol creation onto
+# pre-allocated codebooks (insert-not-grow). Defaults to the strict gate.
+ENUM_FULLGRAPH = os.environ.get("BASIC_FULLGRAPH", "1") != "0"
+
 
 def _log_advisory_exception(stage: str, exc: BaseException) -> None:
     """Log a caught pipeline-stage exception once with traceback,
@@ -2458,7 +2465,7 @@ class BasicModel(BaseModel):
                 # back-pressure. Not a compile blocker.
                 self._stm_reducer_cached = False
         self._compiled_step = _compile(
-            self.forward, verbose=True, fullgraph=True)
+            self.forward, verbose=True, fullgraph=ENUM_FULLGRAPH)
 
     def _start_spaces_for_forward(self):
         for space in self.spaces:
@@ -5428,9 +5435,9 @@ class BasicModel(BaseModel):
         SIGNAL (host-side, grammar-driven -- does NOT depend on the
         unreliable post-reduce STM category metadata): scan
         ``wordSubSpace.current_rules``' S-tier rule_id list(s) for any
-        rule_id that ``TheGrammar.is_relative_rule`` flags (lhs == the
-        relative start ``REL_T``, or an ``isEqual`` / ``queryPart`` /
-        ``assertPart`` / ``part`` op). The read is a host dict lookup
+        rule_id that ``TheGrammar.is_relative_rule`` flags (lhs == a
+        relative start role state, or an ``isEqual`` / ``isPart`` op).
+        The read is a host dict lookup
         BEFORE the captured sweep, so it never enters the CUDA-graph.
 
         SHAPE HANDLING (``current_rules[tier]`` is ``list[list[int]]``):

@@ -8,13 +8,101 @@
 >   (the PS analyzer / terminal emitter; **largely implemented** -- see
 >   *Implementation status*).
 > - `doc/plans/2026-06-02-complete-grammar-role-collapse.md`
->   (the role-collapse grammar rewrite; **not yet implemented**).
+>   (the role-collapse grammar rewrite; implemented as
+>   `data/role_collapsed.grammar` and **promoted to the default** mental-model
+>   grammar on 2026-06-03 once the D1 gate was met).
 >
 > It is written to be handed to a fresh conversation: it states the full
 > target, what is already built, and the remaining phased work. Where this
 > document and a source spec disagree, this document wins (notably the I/O
 > role-naming convention below, which corrects the source role-collapse
 > spec).
+
+> **Implementation update (2026-06-02): Phases R1--R5 landed.** All five
+> phases are implemented and tested.
+> - **R1** (loader/runtime): space-scoped starts, `isPart` + `query`
+>   dispatch, relative-rule detection over `{isEqual, isPart}`,
+>   SymbolicSpace-scoped identity rule (`bin/Language.py`; tests
+>   `test_grammar_space_scoped_starts.py`, `test_ispart_query_dispatch.py`,
+>   `test_relative_rule_detection_collapsed.py`).
+> - **R2** (role-collapse grammar): `data/role_collapsed.grammar` (operator
+>   roles only) is now the **default** mental-model grammar
+>   (`MentalModel.xml`, 2026-06-03, D1 gate met); `data/complete.grammar` is
+>   retained as the compatibility baseline (test
+>   `test_role_collapsed_grammar.py`).
+> - **R3** (learned PS router): `MeronymicRouter` reusing the shared
+>   `binary_tiling_viterbi` / `binary_tiling_soft_dp` primitive
+>   (signed-neighborhood evidence, one hard route + soft marginals, depth
+>   penalty), wired into `MeronymicAnalyzer.analyze_routed`
+>   (`bin/perceptual_analyzer.py`; tests `test_ps_meronymic_router.py`,
+>   `test_ps_analyze_routed.py`).
+> - **R3-live (2026-06-03)**: the analyzer is now the DEFAULT
+>   PerceptualSpace front end (`<chunking>analyse</chunking>`, the default in
+>   `data/model.xml` + code). The default available op is a space-lexer:
+>   InputSpace passes an unanalyzed host surface for `analyse`, PS splits it
+>   into word runs, and those runs resolve through the word codebook. This
+>   preserves the default word-lexer model behavior while deliberately making
+>   byte-lexer `analyse` differ from byte-level `lexicon`: PS owns the live
+>   segmentation. Bottom-up word learning is `PerceptualSpace.learn_merges`
+>   (BPE-style, whitespace-bounded) + `chunk_static` mode='analyse'; cold
+>   standalone analysis is byte-level and learns words from characters by
+>   merge, converging to word lexing.
+>   `bin/Spaces.py` (`_embed_analyse`, `chunk_static`, `learn_merges`); tests
+>   `test_chunk_static_analyse.py`, `test_analyse_word_learning.py`,
+>   `test_analyse_chunking_forward.py`. **C done (2026-06-03):** InputSpace
+>   hands PS the unanalyzed, UNTRUNCATED surface (`_analyse_surfaces`, NUL
+>   padding stripped) for `analyse`, so the analyzer's space-lexer is not
+>   limited by the legacy `nWhat` `.where` byte width -- byte-lexer `analyse`
+>   yields full word runs (`hello`) where the legacy lexicon path clips to the
+>   byte-buffer width (`hel`); the lexicon path is unchanged. Tests
+>   `test_forward_analyse_is_not_limited_by_token_byte_width`,
+>   `test_forward_analyse_space_lexer_owns_full_surface_lexing`.
+> - **R4** (dimensionality-from-participation): `bin/participation.py`
+>   recovers the role-collapsed op-roles from the transitional grammar's
+>   role participation, and `participation.learned_collapse` drives the
+>   parser-recovering collapse the corrected D1 gate requires (see the D1
+>   block below). With D1 met, role-collapse is now the default -- tests
+>   `test_participation_pos_recovery.py`, `test_d1_pos_recovery_gate.py`.
+> - **R4-sem (2026-06-03)**: grammatical categories distinguished by the
+>   SEMANTIC EFFECT of their operators (= the operator-codebook vector). The
+>   live codebook is shaped from truth/consequence through the soft
+>   superposition (`SymbolicSpace.shape_operators`, generalizing R5 to the
+>   live `_operation_vectors`); a symbol's category is then recovered by
+>   clustering on the aggregate of its operators' vectors
+>   (`bin/semantic_categories.py`). The payoff over structural participation:
+>   symbols whose DIFFERENT operators share a semantic effect unify. Tests
+>   `test_operator_codebook_shaping.py`, `test_semantic_categories.py`,
+>   `test_semantic_categories_pipeline.py`.
+> - **R5** (connective supervision): `bin/connective_supervision.py` -- a
+>   truth/consequence signal makes the slot-0 operator superposition
+>   load-bearing, discriminating `A AND B` from `A OR B` from consequence
+>   alone (surface-identical operands) -- test
+>   `test_connective_supervision.py`.
+> - **D1 gate (2026-06-03, criterion corrected): MET.** The first evaluation
+>   used the wrong criterion -- single-label nearest-neighbor POS agreement
+>   (~0.19) -- which penalizes exactly the multi-category participation
+>   overlaps role-collapse is built on. Role-collapse does not recover a
+>   single-label POS system; it replaces declared shared categories with
+>   operator-local participation categories a word may fill several of. The
+>   correct D1 question is whether those patterns are structured enough to
+>   drive a LEARNED COLLAPSE into the smaller mutually-exclusive category set
+>   the live parser needs. They are: `participation.learned_collapse` merges
+>   symbols by participation similarity, accepting only merges that keep every
+>   rule distinguishable (`collapse_conflicts == 0`). On `complete.grammar`
+>   the exact substitutability congruence is trivial (all 43 symbols are
+>   context-unique), yet the participation-guided conflict-free collapse still
+>   compacts them into **14 mutually-exclusive categories with zero parser
+>   conflicts** -- the parser recovers, so the gate is met. "Recovers"
+>   therefore means the parser's rule decisions survive the collapse, not
+>   exact rule regeneration. With the gate met, `role_collapsed.grammar` is
+>   now the **default** mental-model grammar (`MentalModel.xml`, 2026-06-03);
+>   `complete.grammar` is retained as the compatibility baseline. The part
+>   operator is unified there (single `isPart`; `queryPart` via dispatch), so
+>   the mental-model op contract (`test_mental_model.py` `REQUIRED_OPS`) and
+>   the relative-rule test helpers were made grammar-agnostic (find relative
+>   rules via `_relative_rule_id_set` / `_RELATIVE_OP_NAMES`, not a hardcoded
+>   `REL_T` lhs). Tests: `test_d1_pos_recovery_gate.py`
+>   (`test_participation_drives_recovering_collapse`).
 
 ---
 
@@ -282,6 +370,36 @@ operation's compose. A one-hot distribution reduces to the typed grammar; a
 spread distribution superposes operators -- the mechanism that discriminates
 `A AND B` from `A OR B`.
 
+### 5.6 Shared weighted-deduction framework
+
+The shared formal frame for PS analysis and SS parsing is semiring-weighted
+dynamic programming / weighted deduction. The same item graph can be read in
+different semirings: sum-product for soft inside/forward-backward marginals
+and max-plus for the single Viterbi route. This is the standard parsing
+pattern described by [Goodman 1999, "Semiring
+Parsing"](https://aclanthology.org/J99-4004/), the SCFG
+inside-outside line of [Lari and Young
+1990](https://doi.org/10.1016/0885-2308(90)90022-X), and weighted logic
+programming / parsing transformations such as [Eisner and Blatz
+2006](https://www.cs.jhu.edu/~jason/papers/eisner%2Bblatz.fg06.pdf). The
+neural grammar-induction analogue is to parameterize rule scores but still
+marginalize latent trees with dynamic programming, as in [Kim, Dyer, and
+Rush 2019](https://aclanthology.org/P19-1228/).
+
+Implementation mapping:
+
+- SS parser/reducer: `BinaryStructuredReductionLayer` scores copy/reduce
+  items over rule columns, returns `reduce_marginal_op` from
+  `binary_tiling_soft_dp`, and uses `binary_tiling_viterbi` for the hard
+  route.
+- PS analyzer: `MeronymicRouter` uses the same `binary_tiling_soft_dp` /
+  `binary_tiling_viterbi` pair over perceptual atoms and signed-neighborhood
+  merge evidence.
+- Soft-over-rules guarantee: `test_signal_router_layer
+  ::test_layer_keeps_soft_superposition_over_reduce_rules` asserts that two
+  tied viable reduce rules both retain positive marginal mass and both
+  receive gradient through `logZ`, even though the forward route is hardened.
+
 ---
 
 ## 6. Loader / runtime requirements
@@ -291,10 +409,10 @@ spread distribution superposes operators -- the mechanism that discriminates
 | Parse `<PerceptualSpace>` / `<SymbolicSpace>` sections into separate PS/SS rule tables; bare `<compose>`/`<generate>` loads as SymbolicSpace | DONE |
 | Remove the legacy `.cfg` loader path | DONE |
 | `SymbolicSpace.insert_operations`, wired into the model build | DONE |
-| **Space-scoped starts** -- `PerceptualSpace.start` configures PS starts, `SymbolicSpace.start` configures SS starts (today `<start>` is global metadata) | TODO |
-| **`isPart` grammar layer + `query` dispatch** -- register `GRAMMAR_LAYER_CLASSES["isPart"]`; `isPart + query=true` $\to$ query-answer semantics, `query=false` $\to$ assertive (mirrors `isEqual`/`queryEqual`) | TODO |
-| **Relative-rule detection** -- replace the `{isEqual, queryPart, assertPart, part, REL_T}` set with `{isEqual, isPart, SS relative-start role states}` | TODO |
-| **Identity-rule injection** -- scope it to SymbolicSpace once starts are space-scoped (currently injects for the global primary start) | TODO |
+| **Space-scoped starts** -- `PerceptualSpace.start` configures PS starts, `SymbolicSpace.start` configures SS starts (today `<start>` is global metadata) | DONE (R1.1) |
+| **`isPart` grammar layer + `query` dispatch** -- register `GRAMMAR_LAYER_CLASSES["isPart"]`; `isPart + query=true` $\to$ query-answer semantics, `query=false` $\to$ assertive (mirrors `isEqual`/`queryEqual`) | DONE (R1.2) |
+| **Relative-rule detection** -- replace the `{isEqual, queryPart, assertPart, part, REL_T}` set with `{isEqual, isPart, SS relative-start role states}` | DONE (R1.3) |
+| **Identity-rule injection** -- scope it to SymbolicSpace once starts are space-scoped (currently injects for the global primary start) | DONE (R1.4) |
 
 ---
 
@@ -329,51 +447,61 @@ spread distribution superposes operators -- the mechanism that discriminates
   (`test/test_operator_superposition.py`).
 - **Docs** -- `doc/Language.md`, `doc/STM.md`, `doc/Spaces.md`.
 
-### 7.2 REMAINING
+### 7.2 LANDED SINCE 7.1 / REMAINING GATES
 
-- **Role-collapse grammar rewrite** (Section 4) -- rewrite
-  `data/complete.grammar` to operator-roles-only; collapse equality;
-  `isPart`; delete POS/rename rules; space-scoped starts.
-- **Loader / runtime** for the rewrite (Section 6 TODOs).
-- **Learned PS router** -- the meronymic analyzer beyond compatibility
-  mode: Viterbi / soft-DP routing over the shared
-  `BinaryStructuredReductionLayer` with signed-neighborhood evidence; one
-  hard route + soft marginals; auto-wire into `PerceptualSpace.forward`.
-- **Dimensionality-from-participation** -- recover a symbol's POS / order
-  from its distribution of participation across operator roles. This is the
-  learner that *justifies* role-collapse (see D1).
-- **Corpus-scale connective supervision** -- truth/consequence signal that
-  makes the slot-0 operator superposition load-bearing for connectives.
-- **Test updates** -- invert `test_grammar_rewrite` (no POS/projection
-  rules); `REQUIRED_OPS` drops `queryPart`/`assertPart`, adds `isPart`;
-  relative-op set $\to$ `{isEqual, isPart}`.
+- **Role-collapse grammar rewrite** -- landed as
+  `data/role_collapsed.grammar` and **promoted to the default** mental-model
+  grammar (`MentalModel.xml`, 2026-06-03, D1 gate met); `data/complete.grammar`
+  is retained as the compatibility baseline.
+- **Loader / runtime** -- space-scoped starts, `isPart`, query dispatch,
+  relative-rule detection, and SymbolicSpace-scoped identity injection are
+  implemented (Section 6).
+- **Learned PS router** -- `MeronymicRouter` and `analyze_routed` use the
+  shared Viterbi / soft-DP primitive; live `PerceptualSpace.forward` supports
+  `<chunking>analyse</chunking>`.
+- **Dimensionality-from-participation** -- implemented as
+  `bin/participation.py`; `learned_collapse` drives the parser-recovering
+  collapse that satisfied the (corrected) D1 gate, so role-collapse is now the
+  default.
+- **Corpus-scale connective supervision** -- implemented as
+  `bin/connective_supervision.py`; truth/consequence supervision makes the
+  slot-0 operator superposition load-bearing for connectives.
+- **Gates -- both met (2026-06-03).** `role_collapsed.grammar` is promoted to
+  default (D1 met), and the host-token reconstructed analyze surface is
+  replaced by a raw unanalyzed `[B,1,N]` byte buffer (`<lexer>raw</lexer>`,
+  which keeps the word-level codebook and only changes the analyze surface).
+  The one remaining item is D2's *cross-language* empirical validation (the
+  lift/lower collapse is implemented and the POS-recovery half is validated by
+  D1; the cross-language generalization claim is not yet benchmarked).
 
 ---
 
-## 8. Phased plan (remaining work)
+## 8. Phased plan (implemented checkpoints)
 
 Ordered so the grammar role-collapse lands *with/after* the learner that
 makes it safe (decision D1), not before.
 
-- **Phase R1 -- Loader/runtime prerequisites.** Space-scoped starts;
+- **Phase R1 -- Loader/runtime prerequisites (DONE).** Space-scoped starts;
   `isPart` layer + `query` dispatch; relative-rule detection update;
-  identity-rule scoping. Land these first so the rewrite can load. Tests:
+  identity-rule scoping. Landed first so the rewrite can load. Tests:
   space-scoped-starts, `isPart` dispatch by `query`.
-- **Phase R2 -- Role-collapsed grammar as a validated variant.** Produce
-  the operator-roles-only `complete.grammar` (Section 4). Per D1/D2, land it
-  as a variant validated against the transitional grammar rather than
-  silently replacing it; promote to default once R4 shows role-participation
-  recovers POS. Invert/extend the grammar tests.
-- **Phase R3 -- Learned PS router.** Factor the shared inverse routing
+- **Phase R2 -- Role-collapsed grammar (DONE; now the DEFAULT).** Produced the
+  operator-roles-only `data/role_collapsed.grammar` (Section 4). Landed first
+  as a variant validated against the transitional grammar, then promoted to
+  the default (`MentalModel.xml`, 2026-06-03) once R4's `learned_collapse`
+  satisfied the D1 gate. Grammar tests inverted/extended
+  (`test_role_collapsed_grammar.py`).
+- **Phase R3 -- Learned PS router (DONE).** Factor the shared inverse routing
   primitive out of `unreduce`/`reverse_stack`; meronymic Viterbi/soft-DP
   with signed-neighborhood evidence; auto-wire into `PerceptualSpace
   .forward`. Tests: byte-fallback vs known-word, Viterbi-not-beam,
   depth penalty.
-- **Phase R4 -- Dimensionality-from-participation.** Recover POS/order from
-  operator-role participation -- the learner that justifies dropping POS
-  categories. **D1 gate:** role-collapse becomes default only once this
-  demonstrably recovers the POS structure the transitional grammar declared.
-- **Phase R5 -- Corpus-scale connective supervision.** Truth/consequence
+- **Phase R4 -- Dimensionality-from-participation (DONE).** Recover POS/order
+  from operator-role participation -- the learner that justifies dropping POS
+  categories. **D1 gate (met):** `learned_collapse` drives a parser-recovering
+  collapse of the participation patterns, so role-collapse was promoted to the
+  default (see §9 D1).
+- **Phase R5 -- Corpus-scale connective supervision (DONE).** Truth/consequence
   signal so the operator superposition discriminates connectives; this is
   where operator-superposition becomes load-bearing.
 
@@ -381,22 +509,55 @@ makes it safe (decision D1), not before.
 
 ## 9. Design risks / open questions
 
-- **D1 (sequencing, decided).** Role-collapse moves POS from *declared* to
-  *learned from role participation*. The learner that recovers POS is
-  Phases R3/R4. Therefore role-collapse must not become the default grammar
-  before R4 demonstrates recovery; the transitional grammar (Section 7.1) is
-  the documented compatibility baseline until then.
-- **D2 (lift/lower collapse, empirical).** Collapsing every `lift`/`lower`
-  construction (`lift(NP,VP)`, `lift(P,NP)`, `lower(VP,PP)`,
-  `lower(ADJ,NP)`, ...) into a single `lift_O1 = lift.forward(lift_I1,
-  lift_I2)` / `lower` pair removes the distinct-construction and operand-
-  order constraints from the grammar, moving them entirely into learned
-  role-participation. This is **more flexible** -- if role-participation
-  recovers the POS/construction structure, it is expected to generalize
-  better across languages. The plan therefore adopts full collapse as the
-  target and **validates it empirically** (does it recover POS? is it better
-  cross-language?) against the transitional grammar baseline, rather than
-  asserting it a priori.
+- **D1 (sequencing, decided -- and now satisfied).** Role-collapse moves POS
+  from *declared* to *learned from role participation*. The learner that
+  recovers POS is Phases R3/R4, so role-collapse was not made the default
+  before R4. As of 2026-06-03 R4's `learned_collapse` demonstrates a
+  parser-recovering collapse (the corrected D1 criterion -- not single-label
+  POS recovery; see the D1 status block at the top), so role-collapse is now
+  the default and the transitional grammar (Section 7.1) is the retained
+  compatibility baseline.
+- **D2 (lift/lower collapse, empirical -- collapse landed; cross-language
+  validation open).** Collapsing every `lift`/`lower` construction
+  (`lift(NP,VP)`, `lift(P,NP)`, `lower(VP,PP)`, `lower(ADJ,NP)`, ...) into a
+  single `lift_O1 = lift.forward(lift_I1, lift_I2)` / `lower` pair removes the
+  distinct-construction and operand-order constraints from the grammar, moving
+  them entirely into learned role-participation. This is **more flexible** --
+  if role-participation recovers the POS/construction structure, it is expected
+  to generalize better across languages. **Status:** the full collapse is
+  implemented in `data/role_collapsed.grammar` (the single `lift`/`lower`
+  pair), and the *"does it recover POS?"* half is validated -- that is exactly
+  the D1 gate (`learned_collapse` / `test_d1_pos_recovery_gate.py`). The
+  *"is it better cross-language?"* half is the **one open empirical item**: no
+  multi-language corpus / benchmark exists for it yet. It remains an empirical
+  validation rather than an a-priori assertion.
+- **Carry-forward concerns (addressed 2026-06-03; resolutions inline).**
+  - The current analyzer is still compatibility-mode tokenization plus
+    fallback. It proves the carrier, terminal stream, and surface replay
+    path, but it is not yet learning segmentation or meronymic routes.
+    *Resolved (R3): the learned `MeronymicRouter` + `analyze_routed` now do
+    learn segmentation / meronymic routes via the shared Viterbi/soft-DP;
+    compatibility mode remains the documented fallback.*
+  - `merge` should probably remain a structural action completed directly
+    by the modified trie / role matcher. It should not be inserted as a
+    learned operator in the operator trie or operator-superposition table
+    unless a concrete semantic layer is added for it. *Resolved:
+    `SymbolicSpace.insert_operations` now registers only method names with a
+    concrete `GrammarLayer`, so structural `merge` is excluded from the
+    operator codebook / superposition (`test_merge_structural_not_operator`).*
+  - Markers are surface text, but by the time SS learns them they should
+    have PS identities. Replay should therefore resolve marker PS ids back
+    to canonical surface bytes/text, not interpolate opaque marker ids as
+    literal output. *Resolved: `synthesize_tree` takes a `marker_resolver`
+    and never interpolates an opaque PS id; a surface-string marker is placed
+    directly (`test_marker_replay_canonical`).*
+  - Byte fallback must be UTF-8 exact: byte terminals should preserve the
+    original byte offsets and reconstruct the original surface, including
+    non-ASCII text, without mojibake or overlapping spans. *Resolved:
+    `analyze_routed` carries each terminal's exact bytes and reconstructs
+    from bytes, so a multi-byte glyph split across byte terminals round-trips
+    without mojibake (`test_ps_byte_fallback_utf8`). (The word lexer still
+    splits non-ASCII words for percept lookup -- a separate tokenizer item.)*
 - **Open:** the exact SS start set (which operator outputs count as
   completed expressions); whether `U` (the PS root) needs sub-starts for
   partial surfaces; the canonical operator $\to$ default-marker policy per
@@ -417,7 +578,7 @@ reverse$\to$emit$\to$surface E2E (marker learned, not a grammar token),
 `test_ps_to_ss_null_before_binding`, `test_ps_to_ss_binding_after_repetition`,
 `test_operator_superposition_*`, `test_operations_inserted_into_ss_codebook`.
 
-To add (remaining): `complete.grammar` has no `queryPart`/`assertPart`; no
+Added in R1-R5: `role_collapsed.grammar` has no `queryPart`/`assertPart`; no
 bare POS/category rename rules; every relation rule carries explicit
 `query`; `isEqual` uses `isEqual_O1`/`isEqual_I1`/`isEqual_I2`; `isPart`
 uses `isPart_O1`/`isPart_I1`/`isPart_I2`; no top-level `<start>`;
@@ -425,7 +586,9 @@ uses `isPart_O1`/`isPart_I1`/`isPart_I2`; no top-level `<start>`;
 owns its starts; `isPart + query` dispatch; relative-rule detection over
 `{isEqual, isPart}`; the learned router selects one Viterbi route + soft
 marginals; the participation-learner recovers the transitional grammar's
-POS assignments on a fixture.
+role assignments on a fixture, and `learned_collapse` drives a
+parser-recovering collapse on the real grammar (D1 met), so
+`role_collapsed.grammar` is the default.
 
 ---
 

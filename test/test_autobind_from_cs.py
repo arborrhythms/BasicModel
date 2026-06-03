@@ -117,7 +117,10 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         ps_store = ps.percept_store
         ss = m.symbolicSpace
         # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
-        # production autobind fires from cs.forward.
+        # production autobind fires. NB: since the 2026-06-03 fullgraph
+        # refactor it fires from cs.Reset (sentence boundary), not mid-
+        # forward; this test calls _maybe_autobind_meta directly, so it is
+        # unaffected by that relocation.
         cs = m.conceptualSpaces[0]
         # Insert a fresh percept on the PS store and grab its vector.
         D = int(ps_store.dim)

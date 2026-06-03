@@ -260,6 +260,9 @@
       <xs:enumeration value="word"/>
       <xs:enumeration value="sentence"/>
       <xs:enumeration value="byte"/>
+      <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
+           meronymic analyzer (chunking="analyse") owns all tokenization. -->
+      <xs:enumeration value="raw"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -463,6 +466,13 @@
                  form authoritative store.  The legacy values stay
                  valid for revival but radix is the new default. -->
             <xs:enumeration value="radix"/>
+            <!-- R3-live: ``analyse`` makes the meronymic analyzer the
+                 perceptual front end. The default available op is a
+                 space-lexer (whitespace = a hard boundary); word runs
+                 resolve through the word codebook (reproducing word
+                 lexing), and from-scratch / sub-word analysis is the
+                 bottom-up merge mechanism (``learn_merges``). -->
+            <xs:enumeration value="analyse"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:element>

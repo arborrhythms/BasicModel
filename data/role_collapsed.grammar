@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<!--
+  Role-collapsed grammar (Phase R2,
+  doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
+  Section 4). This grammar declares ONLY operator roles: for each operator,
+  which role each operand occupies (op_I[n] inputs, op_O1 output). It does
+  NOT declare parts of speech, surface markers, or category-rename
+  projections. POS / construction membership is LEARNED from a symbol's
+  participation across operator roles (Phases R3/R4), not declared here.
+
+  This is now the DEFAULT grammar (MentalModel.xml, 2026-06-03): the D1 gate
+  is met. participation.learned_collapse compacts the transitional grammar's
+  context-unique symbols into a strictly smaller mutually-exclusive category
+  set with zero parser conflicts, so the participation patterns recover the
+  grammar the live parser needs (see test/test_d1_pos_recovery_gate.py).
+  data/complete.grammar (the transitional, POS-categoried grammar) is retained
+  as the compatibility baseline and is still what the D1 collapse is measured
+  on.
+
+  Role naming (Section 4.1):
+    op_I[n]  input role  = an operand fed INTO the operator (position n)
+    op_O1    output role = the result produced BY the operator
+  Forward maps inputs to output (O1 = op.forward(I1, I2)); reverse maps
+  output back to inputs (I1, I2 = op.reverse(O1)), matching the existing
+  forward/reverse layer contract exactly.
+-->
+<grammar name="role_collapsed">
+
+  <PerceptualSpace>
+    <!-- The analyzer root: U is "everything currently visible to the
+         analyzer", recursively decomposable into sub-surfaces that are
+         themselves U-typed spans. The marker-free structural cover
+         (stop / boundary / uniform) is the compatibility analyzer mode;
+         the learned-chunk ops (prefix / suffix / compound / coordination
+         / quote_or_bracket) are added with the routing PS analyzer (R3).
+         compose = parts to whole (PS reverse / synthesis);
+         generate = whole to parts (PS forward / analysis). -->
+    <start name="everything">U</start>
+    <compose>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
+    </compose>
+    <generate>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
+    </generate>
+  </PerceptualSpace>
+
+  <SymbolicSpace>
+    <!-- Completed symbolic expressions (the operator OUTPUTS that count
+         as start states). Relative truths are binary-predicate end-states
+         (isEqual / isPart); absolute truths collapse to a single idea
+         (exist). The connective outputs (not / conjunction / ...) are
+         intermediate ideas, not start states. -->
+    <start name="relative_truth">isEqual_O1</start>
+    <start name="relative_truth">isPart_O1</start>
+    <start name="absolute_truth">exist_O1</start>
+
+    <compose>
+      <!-- Relative truth: one relation per family, dispatched by query
+           (decision 6). query="true" = answer-producing ("is A equal/part
+           of B?"); query="false" = assertive ("A is equal to / part of
+           B"). The surface marker is learned and owned by the operator
+           (absorb/emit), not a grammar category. -->
+      <rule query="false">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <rule query="true">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <rule query="false">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
+      <rule query="true">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
+
+      <!-- Absolute truth. -->
+      <rule>exist_O1 = exist.forward(exist_I1)</rule>
+
+      <!-- Negation (unary affix marker owned by the operator). -->
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>non_O1 = non.forward(non_I1)</rule>
+
+      <!-- Truth-functional / set connectives. A AND B and A OR B are
+           surface-indiscriminable; they are discriminated by the slot-0
+           operator superposition over deep structure (decision 8), not by
+           distinct grammar categories. -->
+      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
+      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+
+      <!-- Composition / projection operators. Full collapse (D2): every
+           lift / lower construction (lift(NP,VP), lift(P,NP), lower(VP,PP),
+           lower(ADJ,NP), ...) becomes the single role-only pair below; the
+           distinct-construction and operand-order constraints move into
+           learned role-participation. -->
+      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
+      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+    </compose>
+
+    <queries>
+      <query>exist(X)</query>
+      <query>quantize(X)</query>
+      <query>wholes(X)</query>
+      <query>parts(X)</query>
+      <query>isomorphs(X)</query>
+    </queries>
+
+    <generate>
+      <!-- Reverse rules: output to inputs. Lossy / non-invertible
+           operators use the operator's documented (parent, parent)
+           pseudo-inverse, never a stale category mirror. -->
+      <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="false">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
+      <rule query="true">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
+
+      <rule>exist_I1 = exist.reverse(exist_O1)</rule>
+
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>non_I1 = non.reverse(non_O1)</rule>
+
+      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
+      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+
+      <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
+      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+    </generate>
+  </SymbolicSpace>
+</grammar>

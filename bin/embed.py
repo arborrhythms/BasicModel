@@ -1116,7 +1116,17 @@ class WordVectors(nn.Module):
         codebook ``W`` Parameter (single trainable storage). Untied path:
         returns the locally-owned ``_local_vectors`` Parameter.
         """
-        getter = object.__getattribute__(self, "_tied_param_getter")
+        # ``_tied_param_getter`` is always present (set via
+        # ``object.__setattr__`` in ``__init__``), so a plain attribute
+        # read resolves it straight from ``__dict__`` without triggering
+        # ``nn.Module.__getattr__``. We deliberately avoid
+        # ``object.__getattribute__`` here: ``torch.compile``/Dynamo cannot
+        # trace it (gb0156 -- "cannot trace ``__getattribute__`` of class
+        # ``type``"), which graph-broke any ``fullgraph=True`` forward that
+        # read ``wv._vectors`` (e.g. IR-mode ``create_ir_mask`` via
+        # ``codebook.getW()``). Plain attribute access is traceable and
+        # behaves identically in eager.
+        getter = self._tied_param_getter
         if getter is not None:
             tied = getter()
             if tied is not None:

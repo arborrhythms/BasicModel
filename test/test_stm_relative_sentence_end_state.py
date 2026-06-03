@@ -7,8 +7,9 @@ collapses an ABSOLUTE sentence's STM down to a single idea ``S`` (depth
 must instead STOP at the depth-3 end-state ``[predicate, idea1, idea2]``
 so the binary predicate survives the boundary.
 
-These tests pin three layers of the feature on the REAL
-``complete.grammar`` (no grammar stubbing): the grammar
+These tests pin three layers of the feature on the REAL default grammar
+(``role_collapsed.grammar`` via MentalModel.xml since 2026-06-03;
+``complete.grammar`` before that; no grammar stubbing): the grammar
 ``is_relative_rule`` marker (Part A), the conservative
 ``_sentence_relative_mask`` detection helper (Part B), and the reduce-
 site depth-3 preservation (Part C). Only the STM *contents* and the
@@ -39,7 +40,7 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 
 def _reload_config():
-    """Reload defaults + MentalModel.xml (loads complete.grammar)."""
+    """Reload defaults + MentalModel.xml (loads role_collapsed.grammar)."""
     init_config(
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
@@ -55,28 +56,32 @@ def _build_model():
 
 
 def _forward_relative_rule_id():
-    """A forward ``REL_T = ...`` rule_id from complete.grammar."""
+    """A forward relative rule_id, found grammar-agnostically via the relative
+    detection set (``REL_T = ...`` in complete.grammar; an ``isEqual``/
+    ``isPart`` output-role rule in the role-collapsed default)."""
     g = Language.TheGrammar
     g._ensure_configured()
     rel = g._relative_rule_id_set()
     for rid in sorted(rel):
         r = g.rules[rid]
-        if r.lhs == 'REL_T' and '.reverse' not in (r.canonical or ''):
+        if (r.method_name in g._RELATIVE_OP_NAMES
+                and '.reverse' not in (r.canonical or '')):
             return rid
-    raise AssertionError("no forward REL_T rule found in complete.grammar")
+    raise AssertionError("no forward relative rule found in the grammar")
 
 
 def _forward_absolute_rule_id():
-    """A forward ABSOLUTE operational rule_id (e.g. ABS_T = exist(...))."""
+    """A forward ABSOLUTE operational rule_id: a forward operator rule NOT in
+    the relative set (e.g. ``exist`` / ``conjunction``). Grammar-agnostic."""
     g = Language.TheGrammar
     g._ensure_configured()
     rel = g._relative_rule_id_set()
     for rid, r in enumerate(g.rules):
         if (rid not in rel and r.method_name is not None
-                and '.reverse' not in (r.canonical or '')
-                and r.lhs in ('ABS_T', 'S345', 'S3', 'S4', 'S5')):
+                and r.method_name not in g._RELATIVE_OP_NAMES
+                and '.reverse' not in (r.canonical or '')):
             return rid
-    raise AssertionError("no forward absolute rule found in complete.grammar")
+    raise AssertionError("no forward absolute rule found in the grammar")
 
 
 def _seed_stm(model, depths):
@@ -135,15 +140,20 @@ def test_grammar_marks_relative_rules():
         f"absolute rule {abs_id} ({g.rules[abs_id].canonical!r}) "
         f"wrongly flagged relative")
 
-    # Grammar-driven primary signal: the relative start category exists
-    # and every flagged-by-lhs rule heads REL_T.
-    assert g._relative_start_categories() == {'REL_T'}
+    # Grammar-driven primary signal: a relative start category exists. In
+    # complete.grammar that is {'REL_T'}; the role-collapsed default heads its
+    # relative rules with operator output roles (isEqual_O1 / isPart_O1).
+    rel_starts = g._relative_start_categories()
+    assert rel_starts, "expected a non-empty relative start-category set"
     rel_set = g._relative_rule_id_set()
-    assert rel_set, "expected a non-empty relative rule set for complete.grammar"
-    # No absolute/structural lhs is ever in the relative set.
+    assert rel_set, "expected a non-empty relative rule set"
+    # Every relative-set rule carries a relative signal: it either heads a
+    # relative start category (REL_T in complete.grammar; isEqual_O1 / isPart_O1
+    # in the role-collapsed default, including the bare output projections) or
+    # is itself a relative operator.
     for rid in rel_set:
         r = g.rules[rid]
-        assert (r.lhs == 'REL_T'
+        assert (r.lhs in rel_starts
                 or r.method_name in g._RELATIVE_OP_NAMES), (
             f"rule {rid} in relative set without a relative signal: "
             f"{r.canonical!r}")

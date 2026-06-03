@@ -6745,7 +6745,11 @@ class InputSpace(Space):
             self.demuxed = TheXMLConfig.space(section, "demuxed")
         except KeyError:
             self.demuxed = False
-        self.lexer = lexer  # "word", "sentence", or "byte"
+        self.lexer = lexer  # "word", "sentence", "byte", or "raw"
+        # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
+        # changes the ANALYZE surface to the unanalyzed [B,1,N] byte buffer
+        # (see InputSpace._lex_batch), so PerceptualSpace's space-lexer owns
+        # tokenization without swapping the model to a byte embedding.
         self.byte_mode = (lexer == "byte")
         self.ergodic = ergodic
         self.min_frequency = float(min_frequency)
@@ -7021,9 +7025,33 @@ class InputSpace(Space):
             tokens_per_batch, batch, nObj, nWhat, dev)
         # Host-side decode-equivalent carried forward so
         # PerceptualSpace._embed skips the decode_tokens GPU->host sync
-        # (residual B). Bit-identical to decode_tokens(what_buf).
+        # (residual B). Bit-identical to decode_tokens(what_buf) -- the
+        # legacy lexicon path keeps this nWhat-clipped form. The analyse
+        # front end instead reconstructs the UNTRUNCATED surface (see
+        # _lex_and_embed) so its space-lexer is not limited by the .where
+        # character-space byte width.
         host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
             tokens_per_batch, batch, nObj, nWhat)
+        # The surface the analyzer (chunking="analyse") lexes. With
+        # ``lexer == "raw"`` it is decoded STRAIGHT from the raw [B,1,N] input
+        # byte buffer -- PS owns all tokenization, no host-token
+        # reconstruction. Otherwise it is the untruncated join of the lexer's
+        # host tokens. NUL is the byte pad / EOS sentinel, never real surface,
+        # so it is stripped first.
+        if self.lexer == "raw":
+            self.subspace._raw_surface = input          # [B, N] raw byte buffer
+            self._analyse_surfaces = []
+            for b in range(batch):
+                raw = bytes((int(x) & 0xFF) for x in input[b].tolist())
+                self._analyse_surfaces.append(
+                    raw.replace(b"\x00", b"").decode(
+                        "utf-8", errors="surrogateescape"))
+        else:
+            self._analyse_surfaces = [
+                "".join(t for t in (tokens_per_batch[b]
+                                    if b < len(tokens_per_batch) else [])
+                        ).replace("\x00", "")
+                for b in range(batch)]
 
         return what_buf, where_idx, when_idx, host_tokens
 
@@ -7133,6 +7161,10 @@ class InputSpace(Space):
                     # subspace's host tokens and writes the percept-
                     # space event tensor.
                     peer._embed_radix(self.subspace)
+                elif peer_mode == "analyse":
+                    # R3-live: meronymic-analyzer front end (space-lexer +
+                    # bottom-up merge) owns tokenization in PerceptualSpace.
+                    peer._embed_analyse(self.subspace)
                 else:
                     peer._embed(self.subspace)
                 embedded = peer._embedded_input
@@ -7375,6 +7407,22 @@ class InputSpace(Space):
             self.subspace.what.setW(what_buf)
             self.subspace.where.setW(where_idx)
             self.subspace.when.setW(when_idx)
+            # R3-live (C): in analyse mode InputSpace is NOT the lexer -- it
+            # hands PerceptualSpace the UNANALYZED, UNTRUNCATED surface (one
+            # whole-line token per row), and the meronymic analyzer (the
+            # space-lexer + learned merges) owns all tokenization. The full
+            # surface (``_analyse_surfaces``) is used so the analyzer is not
+            # limited by the legacy nWhat ``.where`` byte width. Other
+            # chunking modes keep the pre-lexed (nWhat-clipped) word tokens.
+            peer = getattr(self, '_peer_perceptual', None)
+            if peer is not None and getattr(
+                    peer, 'chunking_mode', None) == "analyse":
+                surfaces = getattr(self, '_analyse_surfaces', None)
+                if surfaces is not None:
+                    host_tokens = [[s] for s in surfaces]
+                else:
+                    host_tokens = [["".join(t for t in row if t)]
+                                   for row in host_tokens]
             self.subspace._host_tokens = host_tokens
             self._forward_input = None
             return self.subspace
@@ -7544,6 +7592,10 @@ class PerceptualSpace(Space):
         self.model_type = model_type or TheXMLConfig.get("architecture.modelType")
         self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
         self.lexer = TheXMLConfig.space("InputSpace", "lexer")
+        # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
+        # swaps the ANALYZE surface to the unanalyzed [B,1,N] byte buffer in
+        # ``_lex_batch`` so PerceptualSpace's space-lexer owns tokenization
+        # without forcing a byte embedding (which breaks word-level training).
         self.byte_mode = (self.lexer == "byte")
         self.min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
         self.neg_samples = int(TheXMLConfig.training("negSamples", 64))
@@ -7604,15 +7656,15 @@ class PerceptualSpace(Space):
             self.doc_sources = []
         try:
             self.chunking_mode = str(
-                TheXMLConfig.space(section, "chunking") or "lexicon"
+                TheXMLConfig.space(section, "chunking") or "analyse"
             )
         except KeyError:
-            self.chunking_mode = "lexicon"
+            self.chunking_mode = "analyse"
         if self.chunking_mode not in (
-                "bpe", "lexicon", "none", "mphf", "radix"):
+                "bpe", "lexicon", "none", "mphf", "radix", "analyse"):
             raise ValueError(
                 f"PerceptualSpace.chunking must be "
-                f"bpe|lexicon|none|mphf|radix, "
+                f"bpe|lexicon|none|mphf|radix|analyse, "
                 f"got {self.chunking_mode!r}")
         # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
         # reentrancy.md): radix-mode promotion knobs. Defaults match the
@@ -8034,19 +8086,122 @@ class PerceptualSpace(Space):
         """
         pass
     @staticmethod
-    def chunk_static(stream: bytes, mode: str) -> list:
-        """Two-way chunking switch: bpe | lexicon.
+    def chunk_static(stream: bytes, mode: str, merges=None) -> list:
+        """Chunking switch: bpe | lexicon | analyse.
 
         - lexicon: split on whitespace (word-level).
         - bpe: cold-start BPE (byte-level fallback when no trained merges).
+        - analyse: the meronymic analyzer as the front end. The default
+          perceptual op is a space-lexer (whitespace = a hard boundary);
+          within each word run, bottom-up merge combines the byte pairs the
+          analyzer has LEARNED (``merges``, a set of ``(left_bytes,
+          right_bytes)`` tuples, empty when nothing is learned yet). Cold,
+          the analyzer codebook holds only the whole-input vector + every
+          byte, so it emits byte terminals -- it 'initially fails' to
+          reproduce word lexing; once every adjacent within-word pair is a
+          learned merge, the run collapses to a word and the result equals
+          lexicon (space) lexing.
         """
         if mode == "lexicon":
             return stream.split()
         if mode == "bpe":
             return [bytes([b]) for b in stream]
+        if mode == "analyse":
+            return PerceptualSpace._analyse_chunk(stream, merges)
         raise ValueError(
-            f"chunking mode must be bpe|lexicon, got {mode!r}"
+            f"chunking mode must be bpe|lexicon|analyse, got {mode!r}"
         )
+
+    @staticmethod
+    def _analyse_chunk(stream: bytes, merges=None) -> list:
+        """Space-lexer + bottom-up merge segmentation (see ``chunk_static``).
+
+        Whitespace is split first (the space-lexer boundary), so merge never
+        crosses a space. Within each run, learned ``merges`` grow words from
+        characters: an ORDERED list (from :meth:`learn_merges`) is applied in
+        BPE rank order (lowest-rank applicable pair first); a SET is applied
+        greedily and order-independently (hand-given merges). With no learned
+        merges every run stays byte-level.
+        """
+        if not merges:
+            return [bytes([b]) for run in stream.split() for b in run]
+        ranks = (None if isinstance(merges, (set, frozenset))
+                 else {tuple(p): i for i, p in enumerate(merges)})
+        units = []
+        for run in stream.split():
+            segs = [bytes([b]) for b in run]
+            if ranks is not None:                       # BPE rank order
+                while len(segs) > 1:
+                    best_i, best_r = None, None
+                    for i in range(len(segs) - 1):
+                        r = ranks.get((segs[i], segs[i + 1]))
+                        if r is not None and (best_r is None or r < best_r):
+                            best_i, best_r = i, r
+                    if best_i is None:
+                        break
+                    segs = (segs[:best_i]
+                            + [segs[best_i] + segs[best_i + 1]]
+                            + segs[best_i + 2:])
+            else:                                       # greedy set
+                changed = True
+                while changed and len(segs) > 1:
+                    changed = False
+                    merged = []
+                    i = 0
+                    while i < len(segs):
+                        if (i + 1 < len(segs)
+                                and (segs[i], segs[i + 1]) in merges):
+                            merged.append(segs[i] + segs[i + 1])
+                            i += 2
+                            changed = True
+                        else:
+                            merged.append(segs[i])
+                            i += 1
+                    segs = merged
+            units.extend(segs)
+        return units
+
+    @staticmethod
+    def learn_merges(corpus, num_merges):
+        """Bottom-up merge learning (BPE, whitespace-bounded).
+
+        Iteratively promote the most frequent adjacent WITHIN-word pair to a
+        learned merge, up to ``num_merges`` times. The space-lexer bounds the
+        statistics -- pairs are counted only inside whitespace-delimited runs,
+        so a merge never crosses a space. Returns the ordered list of learned
+        ``(left, right)`` byte-pairs (BPE rank order) for
+        ``chunk_static(..., 'analyse', merges)``; once the within-word pairs
+        of a word are learned, that word collapses to a single terminal and
+        the analyzer reproduces word (lexicon) lexing.
+        """
+        from collections import Counter
+        words = []
+        for line in corpus:
+            raw = line if isinstance(line, bytes) else str(line).encode("utf-8")
+            for run in raw.split():
+                words.append([bytes([b]) for b in run])
+        merges = []
+        for _ in range(int(num_merges)):
+            pairs = Counter()
+            for w in words:
+                for i in range(len(w) - 1):
+                    pairs[(w[i], w[i + 1])] += 1
+            if not pairs:
+                break
+            best = max(pairs.items(), key=lambda kv: (kv[1], kv[0]))[0]
+            merges.append(best)
+            a, b = best
+            for wi, w in enumerate(words):
+                merged, i = [], 0
+                while i < len(w):
+                    if i + 1 < len(w) and w[i] == a and w[i + 1] == b:
+                        merged.append(a + b)
+                        i += 2
+                    else:
+                        merged.append(w[i])
+                        i += 1
+                words[wi] = merged
+        return merges
 
     def _embed(self, upstream_vspace):
         """Decode the upstream null-terminated UTF-8 byte buffer into tokens,
@@ -9074,6 +9229,57 @@ class PerceptualSpace(Space):
             dtype=torch.float32, device=byte_indices.device)
         return upstream_vspace
 
+    def _embed_analyse(self, upstream_vspace):
+        """R3-live: meronymic-analyzer chunking (``<chunking>analyse</...>``).
+
+        The meronymic analyzer is the perceptual front end. The default
+        available op is a SPACE-LEXER (whitespace = a hard boundary): it
+        reconstructs the unanalyzed host surface and splits it into word
+        runs, which resolve through the word codebook.
+
+        Sub-word and from-scratch word learning is the bottom-up MERGE
+        mechanism (:meth:`learn_merges` -> ``self._analyse_merges``,
+        :meth:`chunk_static` mode='analyse'): an empty-codebook analyzer
+        holds only the whole-input vector + every byte, analyzes into BYTE
+        terminals ('initially fails'), and learns words from characters by
+        merge. ``self._analyse_merges`` (when present) re-segments each word
+        run into learned sub-word units before resolution. The standalone
+        ``chunk_static(..., 'analyse')`` path remains the cold byte-terminal
+        model used by the learner tests.
+        """
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_analyse: upstream subspace.what is "
+                "empty. InputSpace.forward must lex into subspace.what.W "
+                "before PerceptualSpace.forward runs.")
+        # PS owns the lexing in analyse mode: reconstruct the host surface
+        # from whatever InputSpace handed over, then apply the space-lexer.
+        # Learned bottom-up merges re-segment only non-delimiter word runs.
+        from util import parse as _parse
+        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
+        if host_tokens is None:
+            host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        learned = getattr(self, '_analyse_merges', None)
+        rows = []
+        for row in host_tokens:
+            surface = "".join(t for t in row if t)
+            toks = [t for (t, _off) in _parse(surface, lex="words")]
+            if not learned:
+                rows.append(toks)
+                continue
+            reseg = []
+            for t in toks:
+                if not t or not t.strip():
+                    reseg.append(t)            # keep delimiter / pad slots
+                    continue
+                for u in PerceptualSpace.chunk_static(
+                        t.encode("utf-8"), "analyse", merges=learned):
+                    reseg.append(u.decode("utf-8", errors="surrogateescape"))
+            rows.append(reseg)
+        upstream_vspace._host_tokens = rows
+        return self._embed(upstream_vspace)
+
     def _embed_mphf(self, upstream_vspace):
         """MPHF word recognition (``chunking_mode='mphf'``): per-word,
         ``idx = MPHF(percept_bytes) in [0, V_percept)`` -> gather from
@@ -9399,10 +9605,15 @@ class PerceptualSpace(Space):
                 # chunking. The percept store IS the authoritative
                 # surface-form codebook in this mode.
                 vspace = self._embed_radix(vspace)
+            elif mode == "analyse":
+                # R3-live: the meronymic analyzer is the perceptual front
+                # end. The space-lexer op + bottom-up merge segment the
+                # surface; chunk_static covers cold byte-terminal learning.
+                vspace = self._embed_analyse(vspace)
             else:
                 raise ValueError(
                     f"PerceptualSpace chunking must be "
-                    f"bpe|lexicon|none|mphf|radix, got {mode!r}")
+                    f"bpe|lexicon|none|mphf|radix|analyse, got {mode!r}")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
         # Stage 1.A substrate refactor (initial): compose
@@ -10659,6 +10870,15 @@ class ConceptualSpace(Space):
 
         See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
         """
+        # Fullgraph refactor (2026-06-03): the word auto-bind (host-side SS
+        # symbol creation, untraceable under torch.compile) is deferred off
+        # the compiled forward to here -- the sentence/document boundary.
+        # Commit the words seen during the just-finished sentence (stashed
+        # on the PS peer during the forward) into the SS codebook + META
+        # taxonomy, in eager Python, before the reset wipes per-sentence
+        # state. Hard reset only (a soft reset is not a sentence boundary).
+        if hard:
+            self._commit_autobind_from_stash()
         super().Reset(batch=batch, hard=hard)
         # Task 3: clear the predict-then-perceive held predictions and the
         # intra-loss accumulator on EVERY reset (hard or soft) so neither a
@@ -10686,6 +10906,51 @@ class ConceptualSpace(Space):
         # start of the next pass; this is just defence-in-depth so the
         # invariant holds across hard-reset boundaries.
         self._prev_cs_event_cache = None
+
+    def _commit_autobind_from_stash(self):
+        """Eager word auto-bind, run from :meth:`Reset` at the sentence
+        boundary (2026-06-03 fullgraph refactor).
+
+        Replaces the prior in-``forward`` stage-0 auto-bind, which could
+        not survive ``torch.compile(fullgraph=True)`` because
+        :meth:`_maybe_autobind_meta` does host-side SS symbol creation
+        (``.item()`` loops, dict/set taxonomy mutation, codebook growth).
+        The percept ids encountered during the just-finished sentence are
+        stashed on the PerceptualSpace peer
+        (``_forward_input['indices']`` and the pre-pi ``_embedded_input``
+        seed) by ``PerceptualSpace._embed_radix``; this reads that stash
+        and performs the same allocation in eager Python.
+
+        Gate mirrors the prior in-forward one exactly: stage-0 only, the
+        terminal SS ``subspace.what`` must be a ``Codebook``, and the
+        stashed pid grid / seed must be shape-aligned tensors. Any
+        mismatch (e.g. SS ``<codebook>none</codebook>`` or a non-radix PS)
+        silently no-ops, as before.
+        """
+        if int(getattr(self, 'stage_idx', 0)) != 0:
+            return
+        ss_peer = (getattr(self, 'terminalSymbolicSpace_ref', None)
+                   or getattr(self, 'symbolicSpace_ref', None))
+        ss_what = (getattr(getattr(ss_peer, 'subspace', None), 'what', None)
+                   if ss_peer is not None else None)
+        if not isinstance(ss_what, Codebook):
+            return
+        ps_peer = getattr(self, 'perceptualSpace_ref', None)
+        ps_fwd = getattr(ps_peer, '_forward_input', None)
+        if not isinstance(ps_fwd, dict):
+            return
+        pid_2d = ps_fwd.get('indices')
+        # Pre-pi embedded input is the seed (aligns the SS row with the
+        # PerceptStore chunk vector); no ``primary`` fallback here since
+        # the forward's local is gone -- skip if the stash is absent.
+        seed_event = getattr(ps_peer, '_embedded_input', None)
+        if (pid_2d is not None
+                and torch.is_tensor(pid_2d)
+                and pid_2d.dim() == 2
+                and torch.is_tensor(seed_event)
+                and seed_event.dim() == 3
+                and seed_event.shape[:2] == pid_2d.shape):
+            self._maybe_autobind_meta(pid_2d, seed_event)
 
     def _maybe_autobind_meta(self, pid_2d, vec_tensor):
         """Auto-bind PS percepts to fresh SS symbols + META edges.
@@ -11185,57 +11450,18 @@ class ConceptualSpace(Space):
         _stm_dim = int(self.concept_dim)
         if primary is not None and primary.shape[-1] != _stm_dim:
             primary = primary[..., :_stm_dim]
-        # Task G auto-META on word learning: at stage 0 the incoming PS
-        # contribution carries the freshly-seen percept ids on
-        # ``perceptualSpace_ref._forward_input['indices']`` (stashed by
-        # ``PerceptualSpace._embed_radix``). Fire the auto-bind here so
-        # the cross-space PS<->SS allocation happens from the layer that
-        # sees BOTH contributions; PS no longer holds a back-ref to SS.
-        # Higher stages skip: the pid grid does not align with the
-        # prior-stage CS output that lands in ``subspace`` at k > 0.
-        if int(self.stage_idx) == 0:
-            # Autobind gate (2026-05-29): require only that the
-            # terminal SS subspace.what is a Codebook -- that's the
-            # structural prerequisite for ``insert_symbol`` /
-            # ``insert_meta``. Configs with SS ``<codebook>none</codebook>``
-            # (the symbolic-codebook-off mode) silently no-op here.
-            # Configs with SS Codebook + lexicon-mode PS would treat
-            # Embedding row indices as if they were PerceptStore pids
-            # at META-creation time; the resulting taxonomy is only
-            # meaningful at reverse-decode time when the bound pid is
-            # resolvable to bytes, which the radix path provides via
-            # ``PerceptStore.bytes_for``. Other modes will never round-
-            # trip those META entries (the legacy lexicon decode path
-            # ignores the taxonomy entirely), so the stale rows are
-            # inert dead weight rather than incorrect output.
-            ss_peer = (getattr(self, 'terminalSymbolicSpace_ref', None)
-                       or getattr(self, 'symbolicSpace_ref', None))
-            ss_what = (getattr(getattr(ss_peer, 'subspace', None),
-                               'what', None)
-                       if ss_peer is not None else None)
-            ps_peer = getattr(self, 'perceptualSpace_ref', None)
-            ps_fwd = (getattr(ps_peer, '_forward_input', None)
-                      if isinstance(ss_what, Codebook) else None)
-            if isinstance(ps_fwd, dict):
-                pid_2d = ps_fwd.get('indices')
-                # 2026-05-28 fix: use the PRE-pi embedded input as the
-                # autobind seed, not ``primary`` (which is post-pi).
-                # The SS codebook needs to align with the PerceptStore
-                # codebook row (the raw chunk vector) so that
-                # ``record_lbg_pull`` accumulates deterministic
-                # direction per chunk -- otherwise PS.pi's training
-                # shifts the seed direction across forwards and LBG
-                # variance spuriously exceeds the split threshold.
-                seed_event = getattr(ps_peer, '_embedded_input', None)
-                if seed_event is None:
-                    seed_event = primary
-                if (pid_2d is not None
-                        and torch.is_tensor(pid_2d)
-                        and pid_2d.dim() == 2
-                        and torch.is_tensor(seed_event)
-                        and seed_event.dim() == 3
-                        and seed_event.shape[:2] == pid_2d.shape):
-                    self._maybe_autobind_meta(pid_2d, seed_event)
+        # Task G auto-META on word learning (2026-06-03 fullgraph refactor):
+        # the auto-bind is HOST-SIDE SS symbol creation (``.item()`` loops,
+        # dict/set taxonomy mutation, codebook growth) that
+        # ``torch.compile(fullgraph=True)`` cannot trace, so it no longer
+        # runs on this compiled ``forward`` path. The freshly-seen percept
+        # ids are stashed on ``perceptualSpace_ref._forward_input`` /
+        # ``_embedded_input`` by ``PerceptualSpace._embed_radix`` during the
+        # forward; ``_commit_autobind_from_stash`` (driven by ``Reset`` at
+        # the sentence/document boundary, in eager Python) reads that stash
+        # and grows the SS codebook + META taxonomy from the words just
+        # seen. Same words, same allocation -- only deferred from mid-stage
+        # to the between-sentence reset.
         sym = None
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
@@ -12484,9 +12710,18 @@ class SymbolicSpace(Space):
         if not hasattr(self, "_operation_positions"):
             self._operation_positions = {}
             self._operation_vectors = {}
+        # Only SEMANTIC operators (those with a concrete GrammarLayer) get an
+        # operator-codebook identity and superposition candidacy. Structural
+        # parse actions such as ``merge`` (bare-sequence concatenation) are
+        # completed by the trie / role matcher and are NOT learned operators;
+        # they must not enter the operator trie / operator-superposition table
+        # unless a concrete semantic layer is added for them (spec
+        # doc/plans/2026-06-02-unified-...-grammar.md §9 carry-forward concern).
+        from Language import GRAMMAR_LAYER_CLASSES
         for rule in getattr(grammar, "rules", ()):
             name = getattr(rule, "method_name", None)
-            if name and name not in self._operation_positions:
+            if (name and name in GRAMMAR_LAYER_CLASSES
+                    and name not in self._operation_positions):
                 self._operation_positions[name] = len(self._operation_positions) + 1
                 self._operation_vectors[name] = self._seed_operator_vector(name)
         return dict(self._operation_positions)
@@ -12504,7 +12739,8 @@ class SymbolicSpace(Space):
             seed = (seed * 131 + ord(ch) + i) & 0x7FFFFFFF
         gen = torch.Generator()
         gen.manual_seed(int(seed) or 1)
-        return torch.randn(int(self.nDim), generator=gen, dtype=torch.float32)
+        return torch.randn(
+            int(self.nDim), generator=gen, dtype=torch.float32, device='cpu')
 
     def operation_position(self, op_name):
         """Return the op-codebook position of operation ``op_name`` (a
@@ -12593,10 +12829,14 @@ class SymbolicSpace(Space):
         vecs = getattr(self, "_operation_vectors", {})
         if not vecs:
             return {}
-        q = torch.as_tensor(query_vec, dtype=torch.float32).flatten()
+        # Host-side, non-differentiable lookup that returns Python floats;
+        # keep it CPU-explicit so ambient default-device contexts (MPS/CUDA)
+        # do not mix with the stable CPU operation identity vectors.
+        q = torch.as_tensor(
+            query_vec, dtype=torch.float32, device='cpu').flatten()
         names, sims = [], []
         for name, v in vecs.items():
-            v = v.flatten().to(q.dtype)
+            v = v.flatten().to(dtype=q.dtype, device=q.device)
             d = min(int(q.numel()), int(v.numel()))
             sim = torch.nn.functional.cosine_similarity(
                 q[:d].unsqueeze(0), v[:d].unsqueeze(0), dim=1).squeeze(0)
@@ -12605,6 +12845,69 @@ class SymbolicSpace(Space):
         logits = torch.stack(sims) / max(float(temperature), 1e-6)
         weights = torch.softmax(logits, dim=0)
         return {n: float(w) for n, w in zip(names, weights)}
+
+    def shape_operators(self, examples, op_names=None, *, steps=400, lr=0.1,
+                        seed=0):
+        """Shape the operator codebook from truth/consequence supervision via
+        the soft operator-superposition (Phase R4-sem, generalizing R5).
+
+        ``examples`` is a list of ``(query, left, right, target)``: a slot's
+        context query, its operands, and the observed consequence. For each,
+        the soft superposition over ``op_names`` -- a softmax over the cosine
+        similarity between the query and each operator's codebook vector --
+        weights the operators' ``compose``s, and the MSE between that blended
+        prediction and ``target`` backprops into the operator vectors. The
+        shaped vectors are written back to ``_operation_vectors`` so the live
+        :meth:`operator_superposition` reflects the learned semantic effect.
+        Because the superposition is soft, even sparse correct-answer signal
+        biases the choice toward the matching operator.
+
+        Returns the shaped ``{op_name: vector}``.
+        """
+        from Language import GRAMMAR_LAYER_CLASSES
+        if op_names is None:
+            op_names = list(getattr(self, "_operation_positions", {}).keys())
+        op_names = [n for n in op_names
+                    if n in GRAMMAR_LAYER_CLASSES
+                    and n in getattr(self, "_operation_vectors", {})
+                    and getattr(GRAMMAR_LAYER_CLASSES[n], "arity", None)
+                    in (1, 2)]
+        if not op_names or not examples:
+            return {n: self._operation_vectors.get(n) for n in op_names}
+        torch.manual_seed(int(seed))
+        vecs = [self._operation_vectors[n].detach().clone().float()
+                .requires_grad_(True) for n in op_names]
+        layers = [GRAMMAR_LAYER_CLASSES[n]() for n in op_names]
+        prepared = [(torch.as_tensor(q, dtype=torch.float32).flatten(),
+                     torch.as_tensor(a, dtype=torch.float32),
+                     torch.as_tensor(b, dtype=torch.float32),
+                     torch.as_tensor(y, dtype=torch.float32))
+                    for (q, a, b, y) in examples]
+        opt = torch.optim.Adam(vecs, lr=lr)
+        for _ in range(int(steps)):
+            opt.zero_grad()
+            loss = torch.zeros(())
+            for (q, a, b, y) in prepared:
+                d = min(int(q.numel()), int(vecs[0].numel()))
+                sims = torch.stack([
+                    torch.nn.functional.cosine_similarity(
+                        q[:d].unsqueeze(0), v.flatten()[:d].unsqueeze(0), dim=1
+                    ).squeeze(0) for v in vecs])
+                dist = torch.softmax(sims, dim=0)
+                pred = None
+                for k, layer in enumerate(layers):
+                    if getattr(layer, "arity", 2) == 1:
+                        y_hat = layer.compose(a)
+                    else:
+                        y_hat = layer.compose(a, b)
+                    contrib = dist[k] * y_hat
+                    pred = contrib if pred is None else pred + contrib
+                loss = loss + ((pred - y) ** 2).mean()
+            loss.backward()
+            opt.step()
+        for n, v in zip(op_names, vecs):
+            self._operation_vectors[n] = v.detach()
+        return {n: self._operation_vectors[n] for n in op_names}
 
     @staticmethod
     def _normalize_trust_tuple(trust):
