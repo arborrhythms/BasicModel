@@ -2171,6 +2171,69 @@ class UnionLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 
+# --- Event modality helpers (modality re-architecture, Phase 3) ----------
+# C-tier grammar ops operate on the muxed event [what | where | when]
+# (architecture.canonical_shape("ConceptualSpace") == (2, 2)). These split /
+# reassemble the event and extend/retract the .when span. Content-only
+# operands (width == the op's .what content width) bypass these and take the
+# legacy content fold, so the SS-tier route stays content-only.
+_EVENT_WHEN_WIDTH = 2
+
+
+def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
+    """Split a muxed event into (what, where, when) given the .what width."""
+    what = x[..., :content_width]
+    rest = x[..., content_width:]
+    when = rest[..., -when_width:]
+    where = rest[..., :-when_width]
+    return what, where, when
+
+
+def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
+    from Spaces import WhenRangeEncoding
+    return WhenRangeEncoding(64, when_width)
+
+
+def _when_center(when, when_width=_EVENT_WHEN_WIDTH):
+    enc = _event_when_encoding(when_width)
+    s, e = enc.decode(when.detach())
+    fs, fe = s.reshape(-1), e.reshape(-1)
+    return (float(fs[0]) + float(fe[0])) / 2.0 if fe.numel() else 0.0
+
+
+def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
+    """Extend .when to a span-2 interval, center advanced forward by 1 (the
+    verb-advances-future rule of spec Section 5)."""
+    enc = _event_when_encoding(when_width)
+    c = _when_center(when, when_width) + 1.0
+    key = enc.encode_range(c - 1.0, c + 1.0).to(when.device)        # span 2
+    return key.expand(*when.shape[:-1], -1)
+
+
+def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
+    """Inverse of _lift_when: collapse to a unit point, center retreated by 1."""
+    enc = _event_when_encoding(when_width)
+    c = _when_center(when, when_width) - 1.0
+    key = enc.encode_range(c - 0.5, c + 0.5).to(when.device)        # unit point
+    return key.expand(*when.shape[:-1], -1)
+
+
+def _rotate_where(where, theta=0.6):
+    """Rotate the 2-dim .where block by a fixed angle -- the prepositional
+    relation's deterministic, invertible effect on the phrase's spatial/
+    relational extent (placeholder until per-marker gating is learned; spec
+    Section 5 'PREPOSITION modifies .where')."""
+    if where.shape[-1] < 2:
+        return where
+    import math as _math
+    c, s = _math.cos(theta), _math.sin(theta)
+    x, y = where[..., 0:1], where[..., 1:2]
+    rot = torch.cat([c * x - s * y, s * x + c * y], dim=-1)
+    if where.shape[-1] > 2:
+        rot = torch.cat([rot, where[..., 2:]], dim=-1)
+    return rot
+
+
 class LiftLayer(GrammarLayer):
     """``lift(idea_a, idea_b)`` -- binary C-tier grammar op (sigma-style
     synthesis over a STM pair).
@@ -2212,6 +2275,7 @@ class LiftLayer(GrammarLayer):
     arity      = 2
     invertible = True
     tier       = 'C'
+    event_aware = True          # operates on the muxed event (extends .when)
 
     def __init__(self, nInput=None, nOutput=None, *,
                  symbolicSpace=None, perceptualSpace=None,
@@ -2250,6 +2314,9 @@ class LiftLayer(GrammarLayer):
             nOutput = nInput
         super().__init__(int(nInput), int(nOutput),
                          butterfly=butterfly, N=N)
+        # .what content width -- splits a muxed C-tier event operand
+        # ([what | where | when]) from a content-only operand.
+        object.__setattr__(self, '_content_width', int(nInput))
         # Back-references kept for back-compat with the
         # ``LiftLayer(symbolicSpace=...)`` legacy construction path.
         # They are NOT consulted by ``forward`` / ``reverse`` -- the
@@ -2327,6 +2394,15 @@ class LiftLayer(GrammarLayer):
                 "information; cannot run forward. Pass nInput / "
                 "nOutput, or supply a symbolicSpace whose subspace "
                 "carries a non-empty codebook.")
+        cw = self._content_width
+        if cw and left.shape[-1] > cw:
+            # Muxed event: fold the .what content via the inner sigma; pass
+            # the left (subject) operand's .where through; extend the
+            # result's .when span > 1 with the center advanced.
+            l_what, l_where, _l_when = _split_event(left, cw)
+            r_what, _r_where, r_when = _split_event(right, cw)
+            content = self._sigma.compose(l_what, r_what)
+            return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
         return self._sigma.compose(left, right)
 
     def reverse(self, parent):
@@ -2345,6 +2421,13 @@ class LiftLayer(GrammarLayer):
             raise RuntimeError(
                 "LiftLayer was constructed without operand-width "
                 "information; cannot run reverse.")
+        cw = self._content_width
+        if cw and parent.shape[-1] > cw:
+            p_what, p_where, p_when = _split_event(parent, cw)
+            lc, rc = self._sigma.generate(p_what)
+            back = _lower_when(p_when)
+            return (torch.cat([lc, p_where, back], dim=-1),
+                    torch.cat([rc, p_where, back], dim=-1))
         return self._sigma.generate(parent)
 
     def compose(self, left, right):
@@ -2389,6 +2472,7 @@ class LowerLayer(GrammarLayer):
     arity      = 2
     invertible = True
     tier       = 'C'
+    event_aware = True          # operates on the muxed event (retracts .when)
 
     def __init__(self, nInput=None, nOutput=None, *,
                  symbolicSpace=None, perceptualSpace=None,
@@ -2412,6 +2496,7 @@ class LowerLayer(GrammarLayer):
             nOutput = nInput
         super().__init__(int(nInput), int(nOutput),
                          butterfly=butterfly, N=N)
+        object.__setattr__(self, '_content_width', int(nInput))
         object.__setattr__(self, 'symbolicSpace', symbolicSpace)
         object.__setattr__(self, 'perceptualSpace', perceptualSpace)
         object.__setattr__(self, 'conceptualSpace', conceptualSpace)
@@ -2468,6 +2553,15 @@ class LowerLayer(GrammarLayer):
                 "information; cannot run forward. Pass nInput / "
                 "nOutput, or supply a symbolicSpace whose subspace "
                 "carries a non-empty codebook.")
+        cw = self._content_width
+        if cw and left.shape[-1] > cw:
+            # Muxed event: fold the .what content via the inner pi; pass the
+            # left operand's .where through; RETRACT the result's .when span
+            # back toward a unit point (the inverse of LIFT).
+            l_what, l_where, _l_when = _split_event(left, cw)
+            r_what, _r_where, r_when = _split_event(right, cw)
+            content = self._pi.compose(l_what, r_what)
+            return torch.cat([content, l_where, _lower_when(r_when)], dim=-1)
         return self._pi.compose(left, right)
 
     def reverse(self, parent):
@@ -2478,6 +2572,13 @@ class LowerLayer(GrammarLayer):
             raise RuntimeError(
                 "LowerLayer was constructed without operand-width "
                 "information; cannot run reverse.")
+        cw = self._content_width
+        if cw and parent.shape[-1] > cw:
+            p_what, p_where, p_when = _split_event(parent, cw)
+            lc, rc = self._pi.generate(p_what)
+            back = _lift_when(p_when)
+            return (torch.cat([lc, p_where, back], dim=-1),
+                    torch.cat([rc, p_where, back], dim=-1))
         return self._pi.generate(parent)
 
     def compose(self, left, right):
@@ -2487,6 +2588,243 @@ class LowerLayer(GrammarLayer):
     def generate(self, parent):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
         return self.reverse(parent)
+
+class PrepositionLayer(GrammarLayer):
+    """preposition(P, X) -- marker-headed phrase packaging (binary, C-tier).
+
+    Packages a learned surface marker P (that / to / in / because / when)
+    with a phrase X (NP / VP / S). Transparent to X's content: forward(P, X)
+    returns X unchanged so a downstream lift / intersection reads the
+    phrase. The marker is recorded through the base-class absorb / emit
+    machinery, NOT folded into content -- PREPOSITION does not decide the
+    final relation; that is learned from how the marker-headed phrase
+    participates downstream (spec "Operation 1: PREPOSITION").
+
+    Starts PERMISSIVE: any [B, N, D] content is accepted as X. Per-marker
+    argument gating (NP-only `in` vs S-only `that`) is a learned hook for
+    later (bound_markers participation), not built here. reverse is the
+    structural (X, X) split: the content side recovers the phrase exactly;
+    the marker side is realized by emit from the bound marker.
+    """
+    rule_name = "preposition"; arity = 2
+    invertible = True; lossy = False; tier = 'C'; reads_activation = False
+    event_aware = True          # operates on the muxed event (modifies .where)
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_content_width', int(nInput))
+    def forward(self, left, right):
+        # P (left) is the marker (absorbed); X (right) is the phrase. On a
+        # muxed C-tier event, PREPOSITION modifies X's .where (the spatial /
+        # relational extent the marker imposes), leaving .what / .when. With
+        # no content-width info it stays a pass-through (legacy contract).
+        cw = self._content_width
+        if cw and right.shape[-1] > cw:
+            x_what, x_where, x_when = _split_event(right, cw)
+            return torch.cat([x_what, _rotate_where(x_where), x_when], dim=-1)
+        return right                       # P is the marker (absorbed), X passes through
+    def reverse(self, parent):
+        cw = self._content_width
+        if cw and parent.shape[-1] > cw:
+            p_what, p_where, p_when = _split_event(parent, cw)
+            x = torch.cat([p_what, _rotate_where(p_where, theta=-0.6), p_when], dim=-1)
+            return x, x
+        return parent, parent              # (marker_placeholder, phrase); emit realizes the marker
+    def compose(self, left, right):
+        return self.forward(left, right)
+    def generate(self, parent):
+        return self.reverse(parent)
+
+class ContextualBindLayer(GrammarLayer):
+    """bind(BIND, VP) -- contextual missing-NP marker (binary, C-tier).
+
+    Surface LIFT(BIND, VP) is reinterpreted at parse time as
+    LIFT(resolved_ref, VP) (spec "Operation 2"). compose(BIND_marker, VP)
+    resolves an accessible participant already constructed in the current
+    parse and returns its vector, so the enclosing lift sees a real NP in
+    the left slot. Two context modes (stashed via set_bind_context before
+    dispatch; a plain attribute, not an nn.Module child):
+
+      * slab=[B, N, D]  -- the live constituent slab from the fold
+        (Task 2.4). Resolution is vectorized NEAREST-LEFT: for each adjacent
+        pair p the missing NP is constituent p-1 (the most recently built
+        phrase before the BIND operand). Position 0 has no left context ->
+        the marker passes through. This is the locality branch of
+        bind_resolver, expressed as a tensor roll so it runs inside the
+        parallel fold.
+      * participants=[Participant] + licensing -- the ranked path
+        (bind_resolver.resolve_bind): want=>subject-control,
+        persuade=>object-control + locality + learned participation. Used by
+        fixtures / unit tests and as the licensing refinement over locality.
+
+    No context, or no candidate => the marker passes through unchanged --
+    BIND never invents a binding.
+    """
+    rule_name = "bind"; arity = 2
+    invertible = False; lossy = True; tier = 'C'; reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_bind_context', None)
+    def set_bind_context(self, *, slab=None, participants=None, licensing=None):
+        object.__setattr__(self, '_bind_context',
+                           {'slab': slab, 'participants': participants, 'licensing': licensing})
+    def clear_bind_context(self):
+        object.__setattr__(self, '_bind_context', None)
+    def forward(self, left, right):
+        ctx = self._bind_context
+        if ctx and ctx.get('slab') is not None:
+            slab = ctx['slab']                              # [B, N, D] live constituents
+            # nearest-left participant for each pair p: constituent p-1;
+            # position 0 keeps itself (no left context -> passthrough).
+            prior = torch.cat([slab[:, :1, :], slab[:, :-1, :]], dim=1)  # [B, N, D]
+            return prior[:, :-1, :]                          # [B, N-1, D], aligned to pairs
+        if ctx and ctx.get('participants'):
+            from bind_resolver import resolve_bind
+            vec, _chosen = resolve_bind(ctx['participants'], licensing=ctx.get('licensing'))
+            if vec is not None:
+                return vec.expand_as(left) if vec.shape != left.shape else vec
+        return left
+    def reverse(self, parent):
+        return parent, parent              # lossy: contextual binding is not recoverable
+    def compose(self, left, right):
+        return self.forward(left, right)
+    def generate(self, parent):
+        return self.reverse(parent)
+
+class _WhenOpMixin:
+    """Shared helpers for unary ops that rewrite the .when tail of a
+    materialized muxed event [B, V, nWhat + nWhere + nWhen]. Modifies ONLY
+    the trailing nWhen (=2) columns; .what / .where pass through. Builds a
+    matching WhenRangeEncoding to interpret / rewrite the key. Tense/aspect
+    operate on the VP/event .when BEFORE the subject LIFT (spec note:
+    equivalent post-LIFT)."""
+    _WHEN_WIDTH = 2
+    def _when_encoding(self):
+        from Spaces import WhenRangeEncoding
+        return WhenRangeEncoding(64, self._WHEN_WIDTH)
+    def _split_when(self, x):
+        w = self._WHEN_WIDTH
+        if x.shape[-1] < w:
+            raise ValueError(f"{type(self).__name__}: event width {x.shape[-1]} < "
+                             f".when width {w}; is nWhen enabled?")
+        return x[..., :-w], x[..., -w:]
+
+class TenseLayer(_WhenOpMixin, GrammarLayer):
+    """tense(X) -- shift the event .when reference time (unary, C-tier).
+    PRESENT keeps reference at 0 (identity); PAST rotates the key backward
+    (delta=-1); FUTURE forward (delta=+1). Tense is a phase rotation
+    q(t+delta)=R(delta)q(t). Selected per-instance via set_op before dispatch."""
+    rule_name = "tense"; arity = 1
+    invertible = True; lossy = False; tier = 'C'; reads_activation = False
+    _DELTA = {"PRESENT": 0.0, "PAST": -1.0, "FUTURE": 1.0}
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_op', "PRESENT")
+    def set_op(self, tense):
+        if tense not in self._DELTA: raise ValueError(f"unknown tense {tense!r}")
+        object.__setattr__(self, '_op', tense)
+    def forward(self, x):
+        head, when = self._split_when(x); delta = self._DELTA[self._op]
+        if delta == 0.0: return x
+        return torch.cat([head, self._when_encoding().rotate(when, delta)], dim=-1)
+    def reverse(self, y):
+        head, when = self._split_when(y); delta = self._DELTA[self._op]
+        if delta == 0.0: return y
+        return torch.cat([head, self._when_encoding().rotate(when, -delta)], dim=-1)
+    def compose(self, x):     return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
+class AspectLayer(_WhenOpMixin, GrammarLayer):
+    """aspect(X) -- shape the event .when interval (unary, C-tier). Relative
+    to reference r (decoded from the range's CENTER): SIMPLE->[r-0.5, r+0.5];
+    PERFECT->[r-1, r]; PROGRESSIVE->[r-1, r+1], re-encoded as the key. Perfect
+    is ASPECT, not future tense. Selected per-instance via set_op before dispatch."""
+    rule_name = "aspect"; arity = 1
+    invertible = False; lossy = True; tier = 'C'; reads_activation = False
+    _KINDS = ("SIMPLE", "PERFECT", "PROGRESSIVE")
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_op', "SIMPLE"); object.__setattr__(self, '_eps', 0.25)
+    def set_op(self, kind, eps=0.25):
+        if kind not in self._KINDS: raise ValueError(f"unknown aspect kind {kind!r}")
+        object.__setattr__(self, '_op', kind); object.__setattr__(self, '_eps', float(eps))
+    def forward(self, x):
+        head, when = self._split_when(x); enc = self._when_encoding()
+        start_t, end_t = enc.decode(when)
+        flat_s = start_t.reshape(-1); flat_e = end_t.reshape(-1)
+        r = (float(flat_s[0]) + float(flat_e[0])) / 2.0 if flat_e.numel() else 0.0
+        s, e = enc.aspect_interval(r, self._op, eps=self._eps)
+        key = enc.encode_range(s, e).to(x.device).expand(*when.shape[:-1], -1)
+        return torch.cat([head, key], dim=-1)
+    def reverse(self, parent): return parent      # lossy
+    def compose(self, x):      return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
+class MorphologyLayer(GrammarLayer):
+    """morphology(X) -- decompose a surface word form into a base lemma +
+    role-neutral morphological features, routing tense/aspect onto the event
+    .when (unary, C-tier).
+
+    Delegates ANALYSIS to ``surface_morphology.analyze`` and the tense/aspect
+    .when math to ``TenseLayer`` / ``AspectLayer`` (NOT re-derived here -- the
+    Phase-4 ops are reused). The surface token is supplied out-of-band via
+    ``set_token`` (mirroring ``TenseLayer.set_op``); with no token set, forward
+    is a pass-through.
+
+    Setting ``.what`` to the lemma's concept needs the lexicon (a model-level
+    resource) and is the documented growth path; this layer routes the
+    tense/aspect features the ``.when`` ops consume. No global POS inventory --
+    ``features`` are morphological annotations, not parts of speech.
+    """
+    rule_name = "morphology"; arity = 1
+    invertible = True; lossy = True; tier = 'C'; reads_activation = False
+    event_aware = True          # routes the analyzed tense/aspect onto .when
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+        object.__setattr__(self, '_token', None)
+        object.__setattr__(self, '_tense', TenseLayer())
+        object.__setattr__(self, '_aspect', AspectLayer())
+
+    def set_token(self, token):
+        """Stash the surface token ``analyze()`` decomposes (out-of-band,
+        like ``TenseLayer.set_op``)."""
+        object.__setattr__(self, '_token', token)
+
+    def _analyze(self):
+        import surface_morphology
+        if not self._token:
+            return None, {}
+        return surface_morphology.analyze(self._token)
+
+    def forward(self, x):
+        _lemma, feats = self._analyze()
+        if not feats:
+            return x                        # plain / unknown token: pass through
+        out = x
+        self._tense.set_op(feats.get("tense", "PRESENT"))
+        out = self._tense.compose(out)      # delegate the .when rotation
+        for asp in feats.get("aspect", []):
+            self._aspect.set_op(asp)
+            out = self._aspect.compose(out)  # delegate the .when reshape
+        return out
+
+    def reverse(self, y):
+        _lemma, feats = self._analyze()
+        if not feats:
+            return y
+        out = y
+        for asp in reversed(feats.get("aspect", [])):
+            self._aspect.set_op(asp)
+            out = self._aspect.generate(out)
+        self._tense.set_op(feats.get("tense", "PRESENT"))
+        out = self._tense.generate(out)
+        return out
+
+    def compose(self, x):     return self.forward(x)
+    def generate(self, parent): return self.reverse(parent)
+
 
 class SymbolizeLayer(GrammarLayer):
     """``symbolize(percept, symbol)`` -- binary C-tier grammar op that
@@ -3478,6 +3816,11 @@ GRAMMAR_LAYER_CLASSES = {
     'union':        UnionLayer,
     'lift':         LiftLayer,
     'lower':        LowerLayer,
+    'preposition':  PrepositionLayer,
+    'bind':         ContextualBindLayer,
+    'tense':        TenseLayer,
+    'aspect':       AspectLayer,
+    'morphology':   MorphologyLayer,
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
     'isEqual':      IsEqualLayer,
@@ -3534,6 +3877,22 @@ _OPERATOR_SURFACE_SCHEMAS = {
     # bare (T4) default is kept so they round-trip without a marker.
     'lift':         T4_BINARY_JUXTAPOSE,
     'lower':        T4_BINARY_JUXTAPOSE,
+    # PREPOSITION (T3): a learned PRE marker (that / to / in / because /
+    # when) heads the phrase; the marker does NOT select the op (it is
+    # recorded, not folded into content). Directional: the marker side and
+    # the content side are distinguishable by recorded order.
+    'preposition':  T3_BINARY_DIRECTIONAL,
+    # BIND (T5): contextual missing-NP marker. The surface BIND token is
+    # elided -- it carries no content of its own; at parse time the left
+    # slot is resolved to an accessible participant (nearest-left / control
+    # licensing), so the realized phrase has no overt marker (spec
+    # "Operation 2").
+    'bind':         T5_BINARY_ELISION,
+    # tense / aspect (T1): unary .when ops; each owns a learned affix
+    # marker (the inflectional ending / auxiliary) realized over the head.
+    'tense':        T1_UNARY_AFFIX,
+    'aspect':       T1_UNARY_AFFIX,
+    'morphology':   T1_UNARY_AFFIX,
     # Surface elision policies (T5): copy keeps the survivor (order id),
     # swap keeps the survivor with order swapped. Retired from the
     # symbolic grammar; kept as the absorb/emit elision primitives.
@@ -4205,17 +4564,48 @@ class LanguageLayer(Layer):
         i_slot = n_live - 2                                    # [B] survives
         j_slot = n_live - 1                                    # [B] consumed
 
-        left  = what[arange_B, i_slot, :]                      # [B, D]
-        right = what[arange_B, j_slot, :]                      # [B, D]
-        parent = syntactic_layer.execute(int(rule_id), left, right)  # [B, D]
+        # C-tier ops operate on the muxed event [what | where | when] so
+        # LIFT/LOWER can alter the .when span and PREPOSITION can modify the
+        # .where (spec Section 5 / 6.4). The SS-tier stack route stays
+        # content-only (SS carries no where/when). Tier comes off the
+        # per-tier syntactic layer.
+        # Only event-aware ops (LIFT / LOWER / PREPOSITION) receive the muxed
+        # event; content-only C-tier ops (intersection / union / ...) keep the
+        # .what operand so their content-sized folds are unaffected.
+        is_c_tier = str(getattr(syntactic_layer, 'tier', '')) == 'C'
+        _op = None
+        if is_c_tier:
+            _mname = TheGrammar.method_name(int(rule_id))
+            _op = syntactic_layer._by_name.get(_mname) if _mname else None
+        _event_op = bool(getattr(_op, 'event_aware', False))
+        when = subspace.materialize(mode="when") if _event_op else None
+        use_event = (_event_op and when is not None
+                     and when.ndim == 3 and when.shape[-1] > 0)
+        if use_event:
+            def _ev(slot):
+                return torch.cat([what[arange_B, slot, :],
+                                  where[arange_B, slot, :],
+                                  when[arange_B, slot, :]], dim=-1)
+            parent = syntactic_layer.execute(int(rule_id), _ev(i_slot), _ev(j_slot))
+            p_what, p_where, p_when = _split_event(
+                parent, what.shape[-1], when_width=when.shape[-1])
+        else:
+            left  = what[arange_B, i_slot, :]                  # [B, D]
+            right = what[arange_B, j_slot, :]                  # [B, D]
+            parent = syntactic_layer.execute(int(rule_id), left, right)  # [B, D]
+            p_what, p_where, p_when = parent, None, None
 
         what_new = what.clone()
-        what_new[arange_B, i_slot, :] = parent
+        what_new[arange_B, i_slot, :] = p_what
         what_new[arange_B, j_slot, :] = 0.0
 
         where_new = where.clone()
-        where_vec = self._encode_where(where, where_id)        # [W]
-        where_new[arange_B, i_slot, :] = where_vec
+        if p_where is not None:
+            # Op-modified .where (e.g. PREPOSITION) wins over the rule stamp.
+            where_new[arange_B, i_slot, :] = p_where
+        else:
+            where_vec = self._encode_where(where, where_id)    # [W]
+            where_new[arange_B, i_slot, :] = where_vec
         where_new[arange_B, j_slot, :] = 0.0
 
         occ = subspace.materialize(mode="activation")
@@ -4225,6 +4615,11 @@ class LanguageLayer(Layer):
 
         subspace.set_what(what_new)
         subspace.set_where(where_new)
+        if p_when is not None and when is not None:
+            when_new = when.clone()
+            when_new[arange_B, i_slot, :] = p_when             # op-altered .when
+            when_new[arange_B, j_slot, :] = 0.0
+            subspace.set_when(when_new)
         subspace.set_activation(occ_new)
         return subspace
 
@@ -4923,7 +5318,14 @@ class ComparatorMixer(nn.Module):
     def forward(self, *, h: torch.Tensor, branches: torch.Tensor):
         """h: [B, N, D]; branches: [B, N, 4, D] in branch order
         (keep, reduce, shift, pad). Returns (y: [B, N, D], gates: [B, N, 4])."""
-        gate_logits = self.gate_mlp(h) / self.temperature      # [B, N, 4]
+        # The gate MLP is sized to d_model (content .what width). A muxed
+        # C-tier event h is [B, N, muxedSize] with where/when columns beyond
+        # d_model; the routing decision reads content, so slice h to the gate's
+        # input width. The branches (and the mixed output y) stay full-width,
+        # so where/when ride through the mix untouched.
+        d_in = self.gate_mlp[0].in_features
+        h_gate = h[..., :d_in] if h.shape[-1] > d_in else h
+        gate_logits = self.gate_mlp(h_gate) / self.temperature  # [B, N, 4]
         gates = F.softmax(gate_logits, dim=-1)
         y = (gates.unsqueeze(-1) * branches).sum(dim=2)        # [B, N, D]
         return y, gates
@@ -5297,6 +5699,14 @@ class BinaryStructuredReductionLayer(nn.Module):
             return x, x, routing
 
         h = self.context_net(x)
+        # Wire contextual BIND to live parse state: stash the current
+        # constituent slab on any op that resolves a missing NP against the
+        # constructed left-context. Applied before _stacked_reduced so the
+        # op's compose(left, right) over all pairs sees the live slab.
+        for _op in self.ops:
+            _gl = getattr(_op, 'gl', _op)          # unwrap _BinaryGrammarOpAdapter
+            if hasattr(_gl, 'set_bind_context'):
+                _gl.set_bind_context(slab=x)
         stacked_reduced = self._stacked_reduced(x)             # [B, N-1, R, D]
 
         # Anchor-based scoring (replaces the old scorer MLP):
@@ -5305,10 +5715,17 @@ class BinaryStructuredReductionLayer(nn.Module):
         # Each rule's anchor is part of its own parameter set, so the
         # placement score is a derived quantity of the rule's own
         # computation -- one optimizer, one graph, no separate scorer.
-        copy_score = torch.einsum('bnd,cd->bnc', x, self.copy_anchor)
+        # Anchors are sized to d_model (content .what width); a muxed C-tier
+        # event carries where/when columns beyond d_model, so score on the
+        # content slice (the reduce ops above still transform the full event).
+        x_score = x[..., :self.d_model] if x.shape[-1] > self.d_model else x
+        sr_score = (stacked_reduced[..., :self.d_model]
+                    if stacked_reduced.shape[-1] > self.d_model
+                    else stacked_reduced)
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, self.copy_anchor)
         if stacked_reduced.shape[1] > 0 and self.r_reduce > 0:
             reduce_score = torch.einsum(
-                'bnrd,rd->bnr', stacked_reduced, self.reduce_anchor)
+                'bnrd,rd->bnr', sr_score, self.reduce_anchor)
         else:
             reduce_score = x.new_zeros(B, max(N - 1, 0), self.r_reduce)
 
@@ -5509,10 +5926,18 @@ class UnaryStructuredLayer(nn.Module):
         # Anchor-based scoring (replaces the old scorer MLP):
         #   copy_score[b, n, c]  = <x[b, n, :],            copy_anchor[c, :]>
         #   apply_score[b, n, a] = <applied[b, n, a, :], apply_anchor[a, :]>
-        copy_score = torch.einsum('bnd,cd->bnc', x, self.copy_anchor)
+        # The routing anchors are sized to d_model (= content .what width). A
+        # muxed C-tier event is [B, N, muxedSize] with where/when columns beyond
+        # d_model that the anchors don't score, so take the content slice for
+        # the inner products. The ops above still see (and transform) the full
+        # event; only the scalar routing scores read content.
+        x_score = x[..., :self.d_model] if D > self.d_model else x
+        applied_score = (applied[..., :self.d_model]
+                         if applied.shape[-1] > self.d_model else applied)
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, self.copy_anchor)
         if self.r_apply > 0:
             apply_score = torch.einsum(
-                'bnad,ad->bna', applied, self.apply_anchor)
+                'bnad,ad->bna', applied_score, self.apply_anchor)
         else:
             apply_score = x.new_zeros(B, N, 0)
         action_logits = torch.cat([copy_score, apply_score], dim=-1) / self.temperature

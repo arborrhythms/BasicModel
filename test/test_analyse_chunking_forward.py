@@ -45,7 +45,10 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     </training>
   </architecture>
   <InputSpace>
-    <nDim>4</nDim>
+    <!-- "6+2+2": IS/PS/CS are (2,2) muxed tiers, so nDim is the EVENT
+         width = content(4) + .where/.when band(4) = 8. SS/OS are (0,0)
+         content tiers and keep the bare content width (4 / 1). -->
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>
     <lexer>byte</lexer>
@@ -53,14 +56,14 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
   <PerceptualSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
     <codebook>true</codebook>
     <chunking>analyse</chunking>
   </PerceptualSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>

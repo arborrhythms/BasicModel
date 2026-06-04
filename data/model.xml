@@ -84,8 +84,6 @@
     <!-- Positional / temporal encoding dimensions appended to each
          vector.  > 0 enables PositionalEncoding / TemporalEncoding
          across the whole model. -->
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
 
     <!-- gensim KeyedVectors path; empty disables embedding load. -->
     <embeddingPath></embeddingPath>
@@ -354,8 +352,10 @@
          nOutput=0 -> data-derived; nInput=0 -> data-derived. -->
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- Per-vector content dimensionality. -->
-    <nDim>1</nDim>
+    <!-- Per-vector EVENT width (it embraces the .where/.when band: content
+         nWhat = nDim - nWhere - nWhen). Muxed tier default 5 = 1 content + 2
+         .where + 2 .when. -->
+    <nDim>5</nDim>
     <!-- Raw data dims; 0 = use the loader's native dim. -->
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
@@ -374,18 +374,21 @@
   <PerceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <nDim>1</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
+    <nDim>5</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
     <!-- Attention reweighting of percepts before the Pi fold. -->
-    <hasAttention>true</hasAttention>
+    <hasAttention>false</hasAttention>
     <!-- Shared invertible PiLayer (vs separate pi1 / pi2). -->
     <invertible>false</invertible>
     <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
-    <!-- Discrete (codebook) percepts; false = passthrough Tensor. -->
-    <codebook>none</codebook>
+    <!-- Discrete (codebook) percepts. Mandatory in the converged modality
+         architecture (PerceptualSpace is a MANDATORY_CODEBOOK_TIER); a config
+         that resolves this to none raises at build. -->
+    <codebook>quantize</codebook>
     <!-- Multi-token chunking strategy: analyse | lexicon | bpe | mphf | none | radix.
          R3-live default: the meronymic analyzer (space-lexer front end);
          with a word codebook it reproduces lexicon word lexing. -->
@@ -397,12 +400,13 @@
   <ModalSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <nDim>1</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
+    <nDim>5</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
     <!-- Modal-channel attention. -->
-    <hasAttention>true</hasAttention>
+    <hasAttention>false</hasAttention>
     <!-- Shared invertible layer for the modal mux / demux. -->
     <invertible>false</invertible>
     <!-- Codebook quantization on the modal output. -->
@@ -412,7 +416,8 @@
   <ConceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <nDim>1</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
+    <nDim>5</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -441,8 +446,9 @@
     <!-- Tanh-bound the symbolic activation. -->
     <nonlinear>true</nonlinear>
     <!-- Discrete symbol prototypes (required for the full symbolic
-         pipeline). -->
-    <codebook>none</codebook>
+         pipeline). Mandatory in the converged modality architecture
+         (SymbolicSpace is a MANDATORY_CODEBOOK_TIER). -->
+    <codebook>quantize</codebook>
     <!-- Bitonic-sort regularizer on the codebook ordering. -->
     <sortNetwork>false</sortNetwork>
     <!-- Sort-network depth; 0 disables. -->

@@ -5,8 +5,6 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
@@ -69,20 +67,17 @@
        SS.nVectors=65536 (lexicon capacity); CS.stmCapacity=7. -->
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
-    <nWhere>2</nWhere>
     <lexer>byte</lexer>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
-    <nDim>8</nDim>
-    <nWhere>2</nWhere>
+    <nDim>12</nDim>
     <nOutput>1024</nOutput>
-    <hasAttention>false</hasAttention>
     <codebook>quantize</codebook>
     <chunking>bpe</chunking>
     <!-- wordLearning=0 at training time: the model uses a frozen
@@ -97,7 +92,7 @@
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>1024</nDim>
+    <nDim>1028</nDim>
     <nVectors>8</nVectors> <!-- 512 -->
     <codebook>none</codebook> <!-- true -->
     <!-- H2: STM capacity = the classical 7±2 working-memory bound. The
@@ -120,7 +115,6 @@
          the paired rows. PS uses Embedding._LEXICON_DEFAULT_CAPACITY=65536,
          doubled to 131072 for the orth+semantic pair. -->
     <nVectors>131072</nVectors>
-    <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>
@@ -129,8 +123,6 @@
     <nOutput>1</nOutput>
     <nDim>4</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
 

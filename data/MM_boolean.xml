@@ -60,23 +60,22 @@
        IS->PS->CS pipeline. IS.nVectors stays at 16 (vocabulary size
        headroom for the boolean atoms; nOutput is the active span). -->
   <InputSpace>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>16</nVectors>
     <nOutput>8</nOutput>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

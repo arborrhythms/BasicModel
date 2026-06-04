@@ -5,8 +5,6 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
@@ -50,28 +48,23 @@
   </WordSpace>
 
   <InputSpace>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
     <nOutput>128</nOutput>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <lexer>sentence</lexer>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
     <invertible>true</invertible>
   </ConceptualSpace>
 
@@ -79,8 +72,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </SymbolicSpace>
 
   <OutputSpace>

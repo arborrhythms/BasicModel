@@ -4,8 +4,6 @@
        Exercises SentenceStreamDataset + _runEpoch_streaming end-to-end
        without the cost of a full BasicModel training run. -->
   <architecture>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
@@ -30,24 +28,22 @@
 
   <InputSpace>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <lexer>sentence</lexer>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>128</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
@@ -64,8 +60,6 @@
     <nOutput>1</nOutput>
     <nDim>104</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
 </model>

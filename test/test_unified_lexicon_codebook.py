@@ -835,7 +835,21 @@ class TestFlatSlabInvariant(unittest.TestCase):
 
     def _build_config_dict(self, is_out, is_dim, ps_out, ps_dim,
                            cs_out, cs_dim):
-        """Build a minimal cfg dict the validator can chew on."""
+        """Build a minimal cfg dict the validator can chew on.
+
+        ``is_dim`` / ``ps_dim`` / ``cs_dim`` are the per-tier CONTENT
+        widths. Under "6+2+2" the (2,2) muxed tiers (IS/PS/CS) carry an
+        EVENT ``nDim`` = content + .where/.when band, while the (0,0)
+        content tiers (SS/OS) carry the bare content width. Both the
+        flat-slab invariant and the SS==CS pass-through compare CONTENT,
+        so adding the band uniformly to the muxed tiers preserves the
+        slab-match / mismatch semantics these tests exercise while keeping
+        the call sites expressed in content widths.
+        """
+        from architecture import canonical_shape
+        is_event = is_dim + sum(canonical_shape("InputSpace"))
+        ps_event = ps_dim + sum(canonical_shape("PerceptualSpace"))
+        cs_event = cs_dim + sum(canonical_shape("ConceptualSpace"))
         return {
             "architecture": {
                 "modelType": "embedding",
@@ -843,23 +857,23 @@ class TestFlatSlabInvariant(unittest.TestCase):
                 "naive": False,
             },
             "InputSpace": {
-                "nOutput": is_out, "nDim": is_dim,
+                "nOutput": is_out, "nDim": is_event,
                 "nInputDim": 0, "flatten": False, "hasAttention": False,
             },
             "PerceptualSpace": {
-                "nInput": is_out, "nInputDim": is_dim,
-                "nOutput": ps_out, "nDim": ps_dim,
+                "nInput": is_out, "nInputDim": is_event,
+                "nOutput": ps_out, "nDim": ps_event,
                 "invertible": True, "hasAttention": False,
                 "codebook": "quantize",
             },
             "ConceptualSpace": {
-                "nInput": ps_out, "nInputDim": ps_dim,
-                "nOutput": cs_out, "nDim": cs_dim,
+                "nInput": ps_out, "nInputDim": ps_event,
+                "nOutput": cs_out, "nDim": cs_event,
                 "invertible": True, "hasAttention": False,
                 "codebook": "quantize",
             },
             "SymbolicSpace": {
-                "nInput": cs_out, "nInputDim": cs_dim,
+                "nInput": cs_out, "nInputDim": cs_event,
                 "nOutput": cs_out, "nDim": cs_dim,
                 "codebook": "quantize",
             },

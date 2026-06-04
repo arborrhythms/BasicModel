@@ -80,29 +80,23 @@
        10*100 to keep the slab consistent. -->
   <InputSpace>
     <nOutput>10</nOutput>
-    <nDim>100</nDim>
-    <nOutputDim>100</nOutputDim>
+    <nDim>104</nDim>
     <nVectors>40</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>10</nInput>
-    <nInputDim>100</nInputDim>
     <nVectors>10</nVectors>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nOutput>10</nOutput>
-    <nOutputDim>100</nOutputDim>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nInput>10</nInput>
-    <nInputDim>100</nInputDim>
     <nVectors>10</nVectors>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nOutput>10</nOutput>
-    <nOutputDim>100</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
@@ -116,11 +110,9 @@
 
   <SymbolicSpace>
     <nInput>10</nInput>
-    <nInputDim>100</nInputDim>
     <nVectors>200</nVectors>
     <nDim>100</nDim>
     <nOutput>10</nOutput>
-    <nOutputDim>100</nOutputDim>
     <!-- idempotent: zero out the symbol regularizers so the snap is the
          only operation training touches. -->
     <l1Lambda>0.0</l1Lambda>

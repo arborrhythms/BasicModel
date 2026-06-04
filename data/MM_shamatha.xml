@@ -12,8 +12,6 @@
          P/C/S cycles. Parser dispatch is derived from the grammar block. -->
     <conceptualOrder>0</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
@@ -60,21 +58,16 @@
        16*12=192 (nOutput=16, nDim=12). SS keeps nDim=12 (concept_dim
        == symbol_dim invariant). -->
   <InputSpace>
-    <nDim>12</nDim>
+    <nDim>16</nDim>
     <nVectors>16</nVectors>
     <nOutput>16</nOutput>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>16</nOutput>
-    <nDim>12</nDim>
+    <nDim>16</nDim>
     <nVectors>16</nVectors>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
@@ -82,7 +75,7 @@
        XML nDim/nVectors describe the final level for non-hierarchical compat. -->
   <ConceptualSpace>
     <nOutput>16</nOutput>
-    <nDim>12</nDim>
+    <nDim>16</nDim>
     <nVectors>16</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -103,8 +96,6 @@
   <OutputSpace>
     <nOutput>1</nOutput>
     <nVectors>1</nVectors>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
   </OutputSpace>
 
 </model>

@@ -11202,30 +11202,14 @@ class ModelLoss(Loss):
         self.where_scale = float(where_scale or 0.2)
         self.when_scale = float(when_scale or 0.1)
         self.embedding_scale = float(embedding_scale or 0.1)
-        # Resolve nWhere: prefer explicit arg, then architecture-level,
-        # then fall back to InputSpace-level (per-space nWhere overrides arch).
-        if nWhere is not None and nWhere > 0:
-            self.nWhere = nWhere
-        else:
-            arch_nw = TheXMLConfig.get("architecture.nWhere")
-            if arch_nw and arch_nw > 0:
-                self.nWhere = arch_nw
-            else:
-                try:
-                    self.nWhere = TheXMLConfig.space("InputSpace", "nWhere")
-                except KeyError:
-                    self.nWhere = 0
-        if nWhen is not None and nWhen > 0:
-            self.nWhen = nWhen
-        else:
-            arch_nn = TheXMLConfig.get("architecture.nWhen")
-            if arch_nn and arch_nn > 0:
-                self.nWhen = arch_nn
-            else:
-                try:
-                    self.nWhen = TheXMLConfig.space("InputSpace", "nWhen")
-                except KeyError:
-                    self.nWhen = 0
+        # Loss operates on the OUTPUT tier, which carries no where/when in the
+        # converged modality architecture; source the what/where/when split
+        # widths from canonical_shape("OutputSpace"). An explicit positive arg
+        # still wins (e.g. for unit tests that drive the where/when loss terms).
+        from architecture import canonical_shape
+        _os_where, _os_when = canonical_shape("OutputSpace")
+        self.nWhere = nWhere if (nWhere is not None and nWhere > 0) else _os_where
+        self.nWhen = nWhen if (nWhen is not None and nWhen > 0) else _os_when
 
         if certainty:
             self.output_criterion = CertaintyWeightedCrossEntropy()

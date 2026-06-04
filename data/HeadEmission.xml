@@ -10,7 +10,8 @@
          forward dispatch via _forward_body_per_word. -->
     <conceptualMode>serial</conceptualMode>
     <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).
-         model.xml's default nWhere=nWhen=0 already keeps D=nDim, so the
+         The converged modality architecture keeps the SymbolicSpace carrier
+         at D=nDim (SS carries no .where/.when; see canonical_shape), so the
          SyntacticLayer's pair_scorer linear is shape-compatible with the
          live tensor during chart compose. -->
 
@@ -38,21 +39,20 @@
          raised to 32 when §8g of the brick-vectorization handoff
          replaced the truncation with an assert. -->
     <nOutput>32</nOutput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

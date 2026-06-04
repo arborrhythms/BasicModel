@@ -31,6 +31,7 @@ from functools import partial
 from datetime import datetime
 import util
 from util import TheDevice, TheMessage
+from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import (
@@ -131,7 +132,14 @@ class QuadratureEncoding(Encoding):
     nDim = 2
 
     def __init__(self, index, maxVal):
-        """Set up the per-call frequency ``div_term = 2 * pi / maxVal``."""
+        """Set up the per-call frequency ``div_term = 2 * pi / maxVal``.
+
+        ``maxVal`` is clamped to >= 1: a degenerate range (e.g.
+        ``architecture.nObjects == 0`` for a codebook-free model) would
+        otherwise divide by zero now that the canonical ``.where`` is always
+        width 2 (modality re-architecture).
+        """
+        maxVal = max(1, int(maxVal))
         super().__init__(index, maxVal)
         self.div_term = 2 * math.pi / maxVal
 
@@ -232,61 +240,22 @@ class WhereEncoding(QuadratureEncoding):
     Codebook offset registry (post-rollback bivector-activation work)
     -----------------------------------------------------------------------
     ``.where`` doubles as a globally-unique key into the per-Space
-    codebook tables. Each codebook reserves a contiguous slice of the
-    where-space at construction; the slice is identified by an integer
-    offset and a fixed size (the codebook's ``nVectors``). All
-    codebooks share the same sinusoidal frequency
-    (``div_term = 2*pi / total_allocated``) so ``(sin, cos)`` decoding
-    is unambiguous across the union of slices.
-
-    The class-level registry is allocator-only -- it tracks how much
-    of the where-space has been claimed and by whom. The frequency
-    actually used at encode time is read from
-    :func:`global_max_val` so newly-registered codebooks can grow the
-    range without breaking existing offsets (the offset is a fixed
-    *count*; only the angular scaling shifts when the total grows).
+    codebook tables. ``.where`` carries spatial / positional EXTENT -- a
+    sin/cos position with period ``maxP`` (e.g. architecture.nObjects) -- NOT
+    a codebook row key. Codebook identity is the row index (the ``_active``
+    selection). The cross-codebook ``.where`` slice registry was RETIRED
+    (modality re-architecture, 2026-06-04 reconciliation with the
+    where-keyed-taxonomy plan): the taxonomy is row/position-keyed via
+    SymbolicSpace's explicit dicts, and reverse decode is content-match.
     """
     p = 0
 
-    # Class-level codebook registry. List of (codebook_id, offset, n_vectors).
-    # Sequential allocation: each new codebook lands at the end of the
-    # current registry. Offsets stay stable across re-registrations of
-    # the same codebook id (idempotent for re-init).
-    _codebook_registry = []
-
-    @classmethod
-    def allocate_codebook_slice(cls, n_vectors):
-        """Reserve ``n_vectors`` contiguous where-space positions for
-        a new codebook. Returns the starting offset.
-
-        Sequential allocation: the new slice's offset is the sum of
-        ``n_vectors`` across all previously registered codebooks. Each
-        call appends a fresh entry; codebooks that go out of scope
-        leave their slice in the registry (the offset stays a stable
-        scalar, just unused). Tests that need a clean slate should
-        call :func:`reset_codebook_registry`.
-        """
-        offset = sum(n for _, n in cls._codebook_registry)
-        cls._codebook_registry.append((offset, int(n_vectors)))
-        return offset
-
-    @classmethod
-    def global_max_val(cls):
-        """Sum of ``n_vectors`` across all registered codebooks. The
-        sinusoidal ``div_term`` reads from this so the frequency
-        always covers the live where-space.
-        """
-        return max(1, sum(n for _, n in cls._codebook_registry))
-
-    @classmethod
-    def reset_codebook_registry(cls):
-        """Clear the registry (test/teardown helper).
-
-        Drops every recorded ``(offset, n_vectors)`` entry so the next
-        ``allocate_codebook_slice`` starts at 0. Intended for test
-        isolation only.
-        """
-        cls._codebook_registry = []
+    # Cross-codebook .where slice registry RETIRED (2026-06-04, modality
+    # re-architecture Phase 4): codebook identity is the row index (the
+    # _active selection), not a global .where offset, so there is no shared
+    # where-space to allocate slices in. .where keeps its positional /
+    # spatial-extent role only. ``allocate_codebook_slice`` / ``global_max_val``
+    # / ``reset_codebook_registry`` were removed with this change.
 
     def __init__(self, maxP=0, nWhere=2, nWhen=0):
         """Place the where-encoding's slots dynamically before the when slots.
@@ -325,62 +294,10 @@ class WhereEncoding(QuadratureEncoding):
         assert self.p < self.maxVal, "Overflow in object embedding"
         return y
 
-    def recover(self, vec):
-        """Recover an integer position from a sinusoidal-encoded vector.
-
-        The atan2-based inverse of :meth:`encode`: delegates to
-        :meth:`QuadratureEncoding.decode` for the continuous angle
-        recovery, snaps to the nearest integer, and validates the
-        result lies in ``[0, maxP)``.
-
-        Used by the ``.where``-keyed taxonomy
-        (`doc/plans/2026-05-28-where-keyed-taxonomy.md`) as the inverse
-        view onto a position stored in a row's ``.where`` slot. With
-        the current ``nWhere=0`` default the encoding is a no-op; this
-        method then raises rather than silently returning 0.
-
-        Args:
-            vec: torch.Tensor ``[..., 2]`` or scalar ``(sin, cos)`` pair.
-
-        Returns:
-            int — the recovered position in ``[0, maxP)``.
-
-        Raises:
-            ValueError: if the encoding is disabled (``nDim == 0``), the
-                input encodes more than one position, or the recovered
-                position falls outside ``[0, maxP)``.
-        """
-        if self.nDim == 0:
-            raise ValueError(
-                "WhereEncoding.recover: encoding is disabled (nWhere=0); "
-                "no integer position can be recovered from a zero-width "
-                "slot. Configure <nWhere> > 0 to enable positional "
-                "materialization.")
-        decoded = self.decode(vec)
-        # ``decode`` returns either a tensor (preserving leading dims) or
-        # a Python float (scalar fallback path). Normalize to a single
-        # float; refuse multi-position inputs — ``recover`` is scalar.
-        if isinstance(decoded, torch.Tensor):
-            if decoded.numel() != 1:
-                raise ValueError(
-                    "WhereEncoding.recover: expected a single (sin, cos) "
-                    f"pair; got tensor with {decoded.numel()} positions.")
-            pos_float = float(decoded.item())
-        else:
-            pos_float = float(decoded)
-        # Snap to nearest integer. ``decode`` already takes ``% 2π`` so
-        # the result is in ``[0, maxP)`` modulo float drift; a final
-        # ``maxP``→``0`` wrap covers the round-up edge case at the seam.
-        pos_int = int(round(pos_float))
-        maxP = int(self.maxVal)
-        if pos_int == maxP:
-            pos_int = 0
-        if pos_int < 0 or pos_int >= maxP:
-            raise ValueError(
-                f"WhereEncoding.recover: recovered position {pos_int} "
-                f"is outside [0, {maxP}); the encoded vector is not a "
-                f"valid sinusoidal position.")
-        return pos_int
+    # WhereEncoding.recover (the .where -> int identity inverse) RETIRED
+    # (2026-06-04, Phase 4): .where no longer keys the codebook, so there is no
+    # integer position to recover from a row's .where slot; codebook identity
+    # is the row index and CS->SS reverse decode is content-match (nearest row).
 
     @staticmethod
     def test():
@@ -391,66 +308,136 @@ class WhereEncoding(QuadratureEncoding):
         y = pe.forward(x)
         cleaned, offsets = pe.reverse(y)
         print(f"Positions decoded: {offsets}")
-class WhenEncoding(QuadratureEncoding):
-    """Encode temporal order (nWhen) as sin/cos values in reserved embedding slots.
+class WhenRangeEncoding(QuadratureEncoding):
+    """Zero-centered, SIGNED, two-endpoint temporal RANGE in 2 dims --
+    mirrors .where (EndpointSumWhere, bin/perceptual_analyzer.py). The .when
+    key is the endpoint SUM q(start)+q(end) with q(t) = [sin(t*dt),
+    cos(t*dt)]. By sum-to-product the key is
+    2*cos((end-start)*dt/2) * [sin(center*dt), cos(center*dt)] with
+    center=(start+end)/2: the ANGLE carries the center time, the MAGNITUDE
+    carries the duration -- so a range fits in nDim=2, exactly like .where.
 
-    Uses the same quadrature encoding as PositionalEncoding: a (sin, cos) pair
-    at a single frequency ``div_term = 2pi/maxVal``.  This is exactly invertible
-    via ``atan2(sin, cos) / div_term``.
+    Difference from .where: .when is ZERO-CENTERED (t=0 = present reference)
+    and SIGNED (past<0<future), so decode uses atan2's native (-pi, pi]
+    range WITHOUT the % 2*pi fold and does NOT snap to the integer grid
+    (aspect uses fractional windows). Default present/simple is the unit
+    bracket encode_range(-0.5, 0.5) (center 0, duration 1).
 
-    A global time counter ``self.t`` is incremented explicitly via
-    ``increment(batch)`` at the end of each forward pass through the full model.
+    Tense is a phase rotation R(delta): shifting both endpoints by delta
+    rotates the summed 2-vector by delta*dt (center+delta, duration
+    unchanged). Aspect reshapes the interval (aspect_interval) -> the key's
+    magnitude. Do NOT normalise the key: the magnitude carries the duration.
+    nDim=2 (== nWhere); disabled (nDim=0) when n_when=0.
 
-    Used by SubSpace to stamp each object with a "when" tag.
+    Encoding conventions (unit-bracket points): a POINT event time t is the
+    unit window [t-0.5, t+0.5], stamped via encode(t) = encode_range(t-0.5,
+    t+0.5) (|key| = 2*cos(0.5*dt) ~ 1.998). So encode is the mutual inverse of
+    the range decode -- decode recovers both endpoints (center = t, duration =
+    1) -- and every .when carries a recoverable duration. Tense / aspect stamp
+    a true interval via encode_range(start, end) (|key| = 2*cos(dur*dt/2) <= 2);
+    decode recovers both endpoints. encode and encode_range now agree.
     """
-    index = [-2, -1]
-    t = 0
+    index = []
 
-    def __init__(self, maxT=10000, nWhen=2):
-        """Allocate the two when slots at the tail; disable when ``nWhen=0``."""
-        if nWhen > 0:
-            super().__init__([-2, -1], maxT)
+    def __init__(self, maxT=64, n_when=0):
+        if n_when > 0:
+            super().__init__([-2, -1], maxT)        # div_term = 2*pi/maxT; slots [-2, -1]
+            self.nDim = 2
         else:
-            Encoding.__init__(self, [], 1)  # skip QuadratureEncoding div_term
+            Encoding.__init__(self, [], 1)
+            self.div_term = 2 * math.pi / max(1, maxT)
             self.nDim = 0
-        self.t = 0
+
+    def q(self, t):
+        """One endpoint phasor [sin(t*dt), cos(t*dt)] (QuadratureEncoding order)."""
+        if not isinstance(t, torch.Tensor):
+            t = torch.tensor(float(t), device=TheDevice.get())
+        ang = t * self.div_term
+        return torch.stack((torch.sin(ang), torch.cos(ang)), dim=-1)
+
+    def encode_range(self, start_t, end_t):
+        """Endpoint-sum key q(start)+q(end) -> [..., 2]; magnitude carries duration."""
+        return self.q(start_t) + self.q(end_t)
+
+    def encode(self, offsets):
+        """Point time(s) -> unit-width bracket key encode_range(t-0.5, t+0.5).
+        A single stamped time is the unit window [t-0.5, t+0.5] (magnitude
+        ~1.998), so encode is the mutual inverse of the range decode and every
+        .when carries a recoverable duration. Used by the event-muxing sites
+        (whenEncoding.encode) and anywhere a scalar/tensor time is stamped."""
+        return self.encode_range(offsets - 0.5, offsets + 0.5)
+
+    def decode(self, encoded):
+        """(start_t, end_t) signed floats. center = atan2(sin, cos)/dt (signed,
+        no % 2*pi); half-duration from |key| = 2*cos(half*dt)."""
+        w0, w1 = encoded[..., 0], encoded[..., 1]
+        dt = self.div_term
+        center = torch.atan2(w0, w1) / dt
+        radius = torch.sqrt(w0 * w0 + w1 * w1).clamp(max=2.0)
+        half = torch.arccos((radius / 2.0).clamp(-1.0, 1.0)) / dt
+        return center - half, center + half
+
+    def rotate(self, key, delta):
+        """Tense: shifting both endpoints by delta rotates the key by
+        a = delta*dt (single 2x2 rotation; magnitude/duration preserved)."""
+        if not isinstance(delta, torch.Tensor):
+            delta = torch.tensor(float(delta), device=key.device)
+        a = delta * self.div_term
+        ca, sa = torch.cos(a), torch.sin(a)
+        s, c = key[..., 0], key[..., 1]              # (sin-part, cos-part)
+        out = key.clone()
+        out[..., 0] = s * ca + c * sa                # sin(theta + a)
+        out[..., 1] = c * ca - s * sa                # cos(theta + a)
+        return out
+
+    rotate_range = rotate                            # the key already aggregates both endpoints
+
+    @staticmethod
+    def aspect_interval(r, kind, eps=0.25):
+        """(start, end) for reference r (the interval CENTER) and aspect kind.
+        Unit-bracket convention: SIMPLE is a unit window at r; PERFECT a unit
+        window ending at r (completed, relevant at r); PROGRESSIVE a 2-wide
+        window spanning r (extended/ongoing). eps retained for API compat."""
+        r = float(r)
+        if kind == "SIMPLE":      return (r - 0.5, r + 0.5)
+        if kind == "PERFECT":     return (r - 1.0, r)
+        if kind == "PROGRESSIVE": return (r - 1.0, r + 1.0)
+        raise ValueError(f"unknown aspect kind {kind!r}")
+
+    def is_recoverable(self, start, end):
+        """True iff [start, end] round-trips: |center| and duration below the
+        half-period pi/dt (mirrors EndpointSumWhere, but signed center)."""
+        center = (float(start) + float(end)) / 2.0
+        dur = float(end) - float(start)
+        hp = math.pi / self.div_term
+        return abs(center) < hp and 0.0 <= dur < hp
 
     def forward(self, x):
-        """Stamp sin/cos temporal values into reserved embedding slots.
-
-        Reads the per-call ``self.t`` counter and writes the encoded
-        (sin, cos) pair for ``[t, t+batch)`` into the when slots.
-        Caller must invoke ``increment(batch)`` to advance ``t``.
-        """
+        """Stamp the present default unit-bracket key encode_range(-0.5, 0.5)
+        (center 0, duration 1) into the when slots."""
         if self.nDim == 0:
             return x
-        batch = x.shape[0]
-        n = x.shape[1] if len(x.shape) > 1 else 1
-        embeddingSize = x.shape[-1]
-        index = np.add([embeddingSize, embeddingSize], self.index)
-        time_vals = torch.arange(self.t, self.t + batch, dtype=torch.float32, device=TheDevice.get())
-        time = self.encode(time_vals)  # [batch, 2]
+        index = np.add([x.shape[-1]] * len(self.index), self.index)
+        key = self.encode_range(-0.5, 0.5)
         y = x.clone()
-        y[:, :, index] = time.unsqueeze(1).expand(-1, n, -1)
+        y[:, :, index] = key.to(y.device).expand(x.shape[0], x.shape[1], -1)
         return y
 
     def increment(self, batch):
-        """Advance the global time counter by `batch` steps (called per forward pass).
-
-        Mutates ``self.t`` in place. Should be called exactly once
-        per forward pass; redundant calls drift the temporal index.
-        """
-        self.t += batch
+        """No-op: .when is zero-centered on the reference moment, not a counter."""
+        return
 
     @staticmethod
     def test():
-        """Self-test: encode then decode times; print round-trip values."""
-        te = WhenEncoding(10000)
-        te.t = 0
-        x = torch.zeros([2, 4, 10], device=TheDevice.get())
-        y = te.forward(x)
-        cleaned, times = te.reverse(y)
-        print(f"Times decoded: {times}")
+        """Self-test: encode a present-perfect range and decode it."""
+        te = WhenRangeEncoding(64, n_when=2)
+        print(f"present-perfect decoded: {te.decode(te.encode_range(-1.0, 0.0))}")
+
+
+# Back-compat alias: existing import (bin/Models.py) / construction
+# (bin/Spaces.py:6245) resolve to the range encoding. The single-(sin,cos)
+# monotonic-counter WhenEncoding is superseded (spec ".when Encoding").
+WhenEncoding = WhenRangeEncoding
 class WordEncoding(Encoding):
     """Word encoding: each word is a (batch, vector, rule, order) 4-tuple.
 
@@ -689,11 +676,50 @@ class EventEncoding(Encoding):
 
     nDim = 0  # EventEncoding does not occupy fixed index slots
 
-    def __init__(self, inputShape=None, outputShape=None):
-        """Record the optional input / output shapes used by split_aux helpers."""
+    def __init__(self, inputShape=None, outputShape=None, section=None):
+        """Record the shapes and derive the event-vector modality split.
+
+        This is the SINGLE source of the ``[ .what | .where | .when ]``
+        decomposition. The event vector's total width is the configured dim
+        (``outputShape[1]``); the ``.where``/``.when`` band is an architectural
+        constant per tier (``canonical_shape(section)``); ``nWhat`` is the
+        remaining content. ``SubSpace`` and ``Space`` both READ
+        ``nWhat``/``nWhere``/``nWhen``/``muxedSize`` from here rather than
+        re-deriving the split, so widening ``.where`` (e.g. 3D) only changes
+        ``canonical_shape``. ``section=None`` (standalone / test SubSpaces with
+        no tier) means a zero band: ``nWhat == total``.
+        """
         super().__init__([], 0)
         self.inputShape = inputShape
         self.outputShape = outputShape
+        self.section = section
+        if section is not None:
+            try:
+                self.nWhere, self.nWhen = canonical_shape(section)
+            except Exception:
+                self.nWhere, self.nWhen = 0, 0
+        else:
+            self.nWhere, self.nWhen = 0, 0
+        total = int(outputShape[1]) if (outputShape is not None
+                                        and len(outputShape) > 1) else 0
+        self._total = total
+        self.nWhat = max(0, total - self.nWhere - self.nWhen)
+        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
+
+    def set_band(self, nWhere, nWhen, total=None):
+        """Re-derive the split from the actual resolved .where/.when encoders.
+
+        The owning SubSpace calls this once its where/when encoders are
+        resolved, so the band reflects the real slot layout (which the Space
+        builds from ``canonical_shape``). Keeps the EventEncoding the single
+        source of nWhat/muxedSize while honouring the encoders' widths.
+        """
+        self.nWhere = int(nWhere)
+        self.nWhen = int(nWhen)
+        if total is not None:
+            self._total = int(total)
+        self.nWhat = max(0, int(self._total) - self.nWhere - self.nWhen)
+        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
 
     def forward(self, objects, **kwargs):
         """Identity content pass-through.
@@ -1866,17 +1892,11 @@ class Codebook(Basis):
         # forward semantics. Default False preserves the legacy
         # detached-snap gradient behavior.
         self.STE = bool(STE)
-        # Where-space offset: this codebook owns the where-space slice
-        # ``[where_offset, where_offset + nVectors)``. The slice is
-        # allocated sequentially via ``WhereEncoding.allocate_codebook_slice``
-        # so a global ``.where`` value uniquely identifies both the
-        # owning codebook and the prototype within it. Allocation is
-        # keyed on ``id(self)`` and is idempotent for re-init.
-        if self.nVectors > 0:
-            self.where_offset = WhereEncoding.allocate_codebook_slice(
-                self.nVectors)
-        else:
-            self.where_offset = 0
+        # .where-as-codebook-key RETIRED (2026-06-04, Phase 4): codebook
+        # identity is the row index (the _active selection), not a global
+        # .where offset, so no where-space slice is allocated. Kept as a 0
+        # stub for the few callers that still read where_offset.
+        self.where_offset = 0
         if category and self.nVectors > 0:
             self.category_ids = torch.zeros(
                 (self.nVectors,), dtype=torch.long)
@@ -1966,11 +1986,9 @@ class Codebook(Basis):
         * The new rows are zero-initialized; callers must overwrite them
           (via ``set_event`` / ``replace_W`` / direct ``.data`` writes)
           before they are looked up.
-        * Where-space registry: the last entry corresponding to this
-          codebook is extended in place so ``global_max_val`` keeps the
-          encoding range correct. If this codebook isn't the LAST entry
-          in the registry, the call refuses (growing a middle slice would
-          shift downstream offsets).
+        * Growth is local: codebook identity is the row index (the
+          .where-as-codebook-key registry was retired, Phase 4), so there is
+          no downstream where-space slice to overrun.
         """
         new_n = int(new_nVectors)
         if new_n <= int(self.nVectors):
@@ -1981,23 +1999,8 @@ class Codebook(Basis):
             # size next time it runs. Just bump nVectors.
             self.nVectors = new_n
             return
-        # Refuse if this codebook is not the last in the where-space
-        # registry (growth would overrun the next slice).
-        try:
-            _reg = WhereEncoding._codebook_registry
-            offset = int(getattr(self, "where_offset", 0))
-            last_offset, last_n = _reg[-1] if _reg else (-1, -1)
-            if int(last_offset) != offset:
-                raise RuntimeError(
-                    f"Codebook.grow_to: this codebook is not the last in "
-                    f"the where-space registry (offset={offset}, "
-                    f"last_in_registry={last_offset}); growing would "
-                    f"overrun a downstream codebook's slice.")
-            # Extend the last registry entry's count in place.
-            _reg[-1] = (last_offset, new_n)
-        except Exception:
-            # If the registry shape is unexpected, fail fast.
-            raise
+        # Codebook growth is local (2026-06-04, Phase 4): identity is the row
+        # index, so there is no global where-space registry slice to overrun.
 
         old_n = int(W.shape[0])
         D = int(W.shape[1])
@@ -3210,13 +3213,10 @@ class Embedding(Basis):
                        vector_size)
         # W is managed by wv._vectors; getW() returns live data
 
-        # Reserve a unique slice of the global where-axis for this lexicon.
-        # Every prototype across InputSpace + Perceptual/Conceptual/Symbolic
-        # codebooks is a distinct ``location'' in the subjective experience
-        # graph: the slice gives each lexicon entry a globally-unique
-        # ``where_offset + row`` key, on the same axis as the per-Space
-        # Codebooks (see ``Codebook.create`` and
-        # ``WhereEncoding._codebook_registry``).
+        # Reserve the lexicon's row capacity. (The global ``.where`` slice
+        # registry was retired -- modality re-architecture Phase 4,
+        # 2026-06-04; lexicon entries are identified by their row index, not a
+        # ``where_offset + row`` key.)
         #
         # Embedding's ``nVectors`` is the *slot count* of the owning
         # InputSpace, NOT the lexicon's row capacity -- the lexicon grows
@@ -3232,7 +3232,9 @@ class Embedding(Basis):
                       vocab_size,
                       Embedding._LEXICON_DEFAULT_CAPACITY)
         self.lexicon_capacity = reserve
-        self.where_offset = WhereEncoding.allocate_codebook_slice(reserve)
+        # .where-as-codebook-key retired (2026-06-04, Phase 4): row identity
+        # is local; no global .where slice allocated.
+        self.where_offset = 0
 
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
         self.wv = wv  # register as submodule for .to(device) and state_dict
@@ -4399,11 +4401,24 @@ class SubSpace(nn.Module):
         # Resolved nInputDim/nOutputDim (0 -> constructor dim, -1 -> skip, >0 -> explicit)
         self._nInputDim = inputShape[1] if nInputDim == 0 else nInputDim
         self._nOutputDim = outputShape[1] if nOutputDim == 0 else nOutputDim
-        self.nWhere = self.whereEncoding.nDim
-        self.nWhen = self.whenEncoding.nDim
-        # nWhat: content width from outputShape (full dim minus where/when)
-        self.nWhat = outputShape[1] - self.nWhere - self.nWhen
-        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
+        # The event-vector split (nWhat / nWhere / nWhen / muxedSize) is owned
+        # by the EventEncoding (single source). Align its band to the resolved
+        # where/when encoders -- the real slot layout -- and read the derived
+        # widths back, so the split is never re-computed here. (Fallback to the
+        # encoder-driven carve-out for any non-EventEncoding objectEncoding.)
+        _oe = self.objectEncoding
+        if hasattr(_oe, "set_band") and hasattr(_oe, "muxedSize"):
+            _oe.set_band(self.whereEncoding.nDim, self.whenEncoding.nDim,
+                         total=outputShape[1])
+            self.nWhere = _oe.nWhere
+            self.nWhen = _oe.nWhen
+            self.nWhat = _oe.nWhat
+            self.muxedSize = _oe.muxedSize
+        else:
+            self.nWhere = self.whereEncoding.nDim
+            self.nWhen = self.whenEncoding.nDim
+            self.nWhat = max(0, outputShape[1] - self.nWhere - self.nWhen)
+            self.muxedSize = self.nWhat + self.nWhere + self.nWhen
 
         self.activation = self._coerce_basis(activation, role="activation")
         self.event = self._coerce_basis(object, role="event")
@@ -4485,7 +4500,7 @@ class SubSpace(nn.Module):
         # Mereology measure family (Contiguous / Continuous / Peaceful /
         # Area / Luminosity) writes per-analysis-pass records here on
         # the conceptualSpace's subspace; other subspaces leave it None.
-        # Format: list[dict] with keys 'step', 'area', 'luminosity',_active_payload
+        # Format: list[dict] with keys 'step', 'area', 'luminosity',
         # 'intersection', 'union'.
         self.knowing = None
         self.batch = 0
@@ -6231,18 +6246,41 @@ class Space(nn.Module):
         self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self._codebook    = TheXMLConfig.space(section, "codebook")
-        _nWhere = TheXMLConfig.space(section, "nWhere")
-        _nWhen = TheXMLConfig.space(section, "nWhen")
+        # Mandatory PS/SS codebooks (modality re-architecture): a percept and
+        # a symbol qua symbol must quantize onto a codebook. The model.xml
+        # defaults for these tiers are <codebook>quantize</codebook>; a config
+        # that explicitly resolves them to "none" is a loud build error, not a
+        # silent passthrough.
+        if section in MANDATORY_CODEBOOK_TIERS:
+            if Space.normalize_codebook_mode(self._codebook) == "none":
+                raise ValueError(
+                    f"{section}: codebook is mandatory in the converged "
+                    f"modality architecture; <codebook>none</codebook> is not "
+                    f"allowed (use quantize or project).")
+        # .where/.when widths are architectural constants (modality re-
+        # architecture), not per-config <nWhere>/<nWhen> tags: source them from
+        # canonical_shape so each tier's muxed event width is fixed by section.
+        _nWhere, _nWhen = canonical_shape(section)
         self.nWhere = _nWhere
         self.nWhen = _nWhen
-        self.nWhat = self.nDim
-        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
         self.customVQ  = customVQ
-        # inputShape/outputShape already include muxed width in dim (set by factory).
-        objectEncoding = EventEncoding(inputShape, outputShape)
+        # The event-vector modality split (nWhat / nWhere / nWhen / muxedSize)
+        # is owned by the EventEncoding (single source): it carves nWhat out of
+        # the total dim (outputShape[1]) using this tier's canonical .where/.when
+        # band. Space and SubSpace READ the split from it (Space.nWhat /
+        # .muxedSize are set from the subspace below) rather than re-deriving it,
+        # so widening .where (e.g. 3D) only changes canonical_shape.
+        objectEncoding = EventEncoding(inputShape, outputShape, section)
+        # Publish the split to the Space NOW (before the subspace + its basis
+        # builders, several of which read self.muxedSize). The subspace re-reads
+        # the same single source after set_band alignment (identical value here,
+        # since the Space builds its where/when encoders from the same
+        # canonical_shape band the EventEncoding used).
+        self.nWhat = objectEncoding.nWhat
+        self.muxedSize = objectEncoding.muxedSize
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
-        whenEncoding   = WhenEncoding(10000, _nWhen)
+        whenEncoding   = WhenRangeEncoding(64, _nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
             nOutputDim=self.nOutputDim,
@@ -6258,7 +6296,9 @@ class Space(nn.Module):
             when=self._build_when_basis(),
             activation=self._build_activation_basis(),
         )
-        self.muxedSize = self.subspace.getEncodingSize(self.nDim)
+        # Read the event split from the single source (subspace's EventEncoding).
+        self.nWhat = self.subspace.nWhat
+        self.muxedSize = self.subspace.muxedSize
 
         # Tag each owned VQ with "SectionName.role" so VectorQuantize.forward's
         # OOM message can name the offending codebook ("PerceptualSpace.what"
@@ -6432,6 +6472,9 @@ class Space(nn.Module):
         x = vspace.materialize()
         self.subspace.batch = x.shape[0]
         if self.nInputDim != -1:
+            # "6+2+2": nInputDim == muxedSize == the event width, so this reshape
+            # is the identity for a muxed event ([B,N,event] -> [B,-1,event]); it
+            # still normalizes flattened / odd-width inputs to [B, N, nInputDim].
             self._pre_reshape_input = (x.shape[1], x.shape[2])
             x = x.reshape(x.shape[0], -1, self.nInputDim)
         else:
@@ -6464,6 +6507,8 @@ class Space(nn.Module):
                 self._pre_reshape_output = None
             return x
         if self.nOutputDim != -1:
+            # "6+2+2": nOutputDim == muxedSize == event width, so this is the
+            # identity for a muxed event; it still normalizes odd-width outputs.
             self._pre_reshape_output = (x.shape[1], x.shape[2])
             x = x.reshape(x.shape[0], -1, self.nOutputDim)
         else:
@@ -6489,10 +6534,16 @@ class Space(nn.Module):
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]
         pre = getattr(self, '_pre_reshape_output', None)
-        if pre is not None:
+        # Use the stored forward reshape only when its element count matches the
+        # tensor being reversed. A standalone reverse (no matching forward, e.g.
+        # seeding the CS directly then reversing) can carry a STALE
+        # _pre_reshape_output from an unrelated forward; applying it would raise
+        # a reshape error, so fall back to the layer-out reshape instead.
+        _y_per_b = int(y.numel() // y.shape[0]) if int(y.shape[0]) else 0
+        if pre is not None and int(pre[0]) * int(pre[1]) == _y_per_b:
             y = y.reshape(y.shape[0], pre[0], pre[1])
         elif self.nOutputDim != -1:
-            # Fallback when reverse is called without a prior forward:
+            # Fallback when reverse is called without a (matching) prior forward:
             # reshape from [B, ?, nOutputDim] to [B, -1, layer_out_dim]
             layer_out = self.subspace.getEncodedOutputSize()
             if y.shape[-1] != layer_out:
@@ -7767,6 +7818,9 @@ class PerceptualSpace(Space):
         # together remap the per-slot output dim and grow/shrink slot
         # count by the same factor). ``pi`` is square at
         # ``nInputDim → nInputDim``.
+        # "6+2+2": getEncodedInputSize() == nInputDim == the event (muxed) width,
+        # so pi is square at the event width and processes the whole muxed event
+        # (the event-wide codebook snaps it); no separate muxedSize sizing needed.
         percept_dim = int(self.subspace.getEncodedInputSize())
         # Subsymbolic-loop folds honour the ``architecture.monotonic``
         # knob (same source as BasicModel.monotonic). Monotone (W>=0)
@@ -7952,21 +8006,21 @@ class PerceptualSpace(Space):
         # size N" at runtime.
         up = "InputSpace"
         up_nDim = TheXMLConfig.space(up, "nDim")
-        up_nWhere = TheXMLConfig.space(up, "nWhere")
-        up_nWhen = TheXMLConfig.space(up, "nWhen")
         up_nOutput = TheXMLConfig.space(up, "nOutput")
-        up_muxed = up_nDim + up_nWhere + up_nWhen
+        # "6+2+2": config <nDim> IS the event (muxed) width -- it already
+        # embraces .where/.when -- so the InputSpace event width is up_nDim
+        # directly (no band re-added). The forwardBegin reshape targets
+        # PS.nInputDim (== PS event width), so require up.nOutput * IS-event to
+        # be a multiple of it.
+        up_muxed = up_nDim
         self_nInputDim = self.nInputDim
         TheXMLConfig.require(
             lambda cfg, _u=up_nOutput, _m=up_muxed, _d=self_nInputDim:
                 _d == -1 or (_u * _m) % _d == 0,
-            f"PerceptualSpace: InputSpace muxed vector width "
-            f"(nDim={up_nDim}+nWhere={up_nWhere}+nWhen={up_nWhen}={up_muxed}) "
-            f"times nOutput ({up_nOutput}) = {up_nOutput * up_muxed} must "
-            f"be a multiple of PerceptualSpace.nInputDim "
-            f"(nDim+nWhere+nWhen={self_nInputDim}). "
-            f"Fix: set InputSpace's nDim/nWhere/nWhen so its muxed width "
-            f"divides PerceptualSpace.nInputDim."
+            f"PerceptualSpace: InputSpace event width (nDim={up_nDim}) times "
+            f"nOutput ({up_nOutput}) = {up_nOutput * up_muxed} must be a "
+            f"multiple of PerceptualSpace.nInputDim ({self_nInputDim}). "
+            f"Fix: set InputSpace/PerceptualSpace nDim so they divide cleanly."
         )
 
     def _build_what_basis(self):
@@ -11449,7 +11503,15 @@ class ConceptualSpace(Space):
         primary = subspace.materialize()
         _stm_dim = int(self.concept_dim)
         if primary is not None and primary.shape[-1] != _stm_dim:
-            primary = primary[..., :_stm_dim]
+            # Fit the materialised event to the STM payload width. A wider
+            # event is trimmed; a content-only event (the muxed where/when
+            # tail unpopulated this step, e.g. a .what-codebook CS) is
+            # zero-padded so the STM consistently holds muxedSize-wide
+            # events (where/when == 0 when absent).
+            if primary.shape[-1] > _stm_dim:
+                primary = primary[..., :_stm_dim]
+            else:
+                primary = F.pad(primary, (0, _stm_dim - primary.shape[-1]))
         # Task G auto-META on word learning (2026-06-03 fullgraph refactor):
         # the auto-bind is HOST-SIDE SS symbol creation (``.item()`` loops,
         # dict/set taxonomy mutation, codebook growth) that
@@ -11466,7 +11528,10 @@ class ConceptualSpace(Space):
         if word_subspace is not None and not word_subspace.is_empty():
             sym = word_subspace.materialize()
             if sym is not None and sym.shape[-1] != _stm_dim:
-                sym = sym[..., :_stm_dim]
+                if sym.shape[-1] > _stm_dim:
+                    sym = sym[..., :_stm_dim]
+                else:
+                    sym = F.pad(sym, (0, _stm_dim - sym.shape[-1]))
         # 2026-05-29 EXPERIMENT (per user direction): clean-stack STM.
         # Replace the Stage-10 ``sigma_in(combined) + sigma_cs(prev)``
         # additive composition with per-stage tier attribution:
@@ -11734,24 +11799,32 @@ class SymbolicSpace(Space):
     The top-level `true()` evaluates the full stack activation -> scalar.
 
     -----------------------------------------------------------------------
-    Bivector / codebook / activation lifecycle
+    Codebook / activation lifecycle (post-2026-05 convergence)
     -----------------------------------------------------------------------
-    SymbolicSpace overrides ``self.subspace.nWhat = 2`` so ``.what`` carries
-    the 4-valued (catuskoti / tetralemma) bivector ``[pos_pole, neg_pole]``
-    per slot.  See doc/BuddhistParallels.md for the semantics.
+    SymbolicSpace inherits ``.what`` at the content width ``nWhat == nDim``.
+    The retired scheme overrode ``self.subspace.nWhat = 2`` to carry a
+    4-valued (catuskoti / tetralemma) bivector in ``.what``; that override AND
+    the ``_active_payload`` codebook shadow were retired (see
+    doc/plans/2026-05-21-active-payload-retirement.md). The signed
+    Degree-of-Truth ``aP - aN in [-1, +1]`` now lives as a single scalar on
+    ``subspace.activation`` ([B, N]); see doc/BuddhistParallels.md for the
+    4-valued semantics.
 
-    With ``<codebook>true``, ``.what`` is a Codebook whose ``.W`` parameter
-    holds ``[V_sym, 2]`` learned symbol-prototype bivectors.  The per-batch
-    bivector content (shape ``[B, N, 2]``) is what the codebook quantizes
-    against; it is stored in the codebook's ``_active_payload`` slot, NOT
-    in ``.W`` itself.
+    With ``<codebook>quantize|project``, ``.what`` is a Codebook whose ``.W``
+    parameter holds ``[V_sym, nDim]`` learned symbol prototypes. The per-batch
+    selection lives in ``subspace._active`` (codebook row indices) and is read
+    by ``materialize()`` -- the codebook ``.W`` is read-only on that path.
+    Per the modality re-architecture (doc/plans/2026-06-03-modality-
+    architecture-design.md) SymbolicSpace carries NO ``.where`` / ``.when``
+    (canonical_shape SymbolicSpace == (0, 0)); the muxed where/when event tail
+    is demuxed away at the CS -> SS boundary.
 
     Forward-pass lifecycle (clients should NOT need to walk this manually
     -- subspace.materialize / subspace.resolve hide it):
 
       1. ConceptualSpace's PiLayer produces ``act`` shape ``[B, N, sym_D]``.
       2. ``self.subspace.set_event(act)`` populates ``.event`` (muxed view)
-         and demuxes the first ``nWhat=2`` columns into ``.what``; activation
+         and demuxes the first ``nWhat`` columns into ``.what``; activation
          is reset to default all-ones presence.
       3. ``self.resolve(self.subspace)`` reads the bivector from ``.event``
          (preferred) or ``.what`` (fallback), computes ``pos - neg`` (signed
@@ -12664,6 +12737,10 @@ class SymbolicSpace(Space):
                 init_vec = torch.as_tensor(init_vec, dtype=torch.float32)
             if init_vec.dim() == 2 and init_vec.shape[0] == 1:
                 init_vec = init_vec.squeeze(0)
+            # CS->SS demux: a muxed event ([what | where | when]) is wider than
+            # the content-width SS codebook row; take the leading .what slice.
+            if init_vec.dim() == 1 and init_vec.shape[0] > int(self.nDim):
+                init_vec = init_vec[:int(self.nDim)]
             if init_vec.dim() != 1 or init_vec.shape[0] != int(self.nDim):
                 raise RuntimeError(
                     f"SymbolicSpace.insert_symbol: init_vec must be shape "
@@ -13090,6 +13167,10 @@ class SymbolicSpace(Space):
                     "into the codebook.")
             if fused_vec.dim() == 2 and fused_vec.shape[0] == 1:
                 fused_vec = fused_vec.squeeze(0)
+            # CS->SS demux: a muxed event ([what | where | when]) is wider than
+            # the content-width SS codebook row; take the leading .what slice.
+            if fused_vec.dim() == 1 and fused_vec.shape[0] > int(self.nDim):
+                fused_vec = fused_vec[:int(self.nDim)]
             if (fused_vec.dim() != 1
                     or fused_vec.shape[0] != int(self.nDim)):
                 raise RuntimeError(
@@ -13202,9 +13283,15 @@ class SymbolicSpace(Space):
             vec = torch.as_tensor(vec, dtype=torch.float32)
         v = vec.detach().to(device=W.device, dtype=W.dtype).reshape(-1)
         if v.shape[0] != W.shape[1]:
-            raise ValueError(
-                f"SymbolicSpace.nearest_ss_row: vec width {v.shape[0]} "
-                f"!= codebook width {W.shape[1]}.")
+            if v.shape[0] > W.shape[1]:
+                # CS->SS demux: the query is a muxed event ([what|where|when])
+                # off the CS STM; the SS codebook is content-only, so compare
+                # on the leading .what content slice.
+                v = v[:W.shape[1]]
+            else:
+                raise ValueError(
+                    f"SymbolicSpace.nearest_ss_row: vec width {v.shape[0]} "
+                    f"!= codebook width {W.shape[1]}.")
         if not torch.isfinite(v).all():
             raise RuntimeError(
                 "SymbolicSpace.nearest_ss_row: vec contains NaN/Inf. "
@@ -14446,6 +14533,21 @@ class SymbolicSpace(Space):
             return self.subspace
         B, N, D = act_pre.shape
 
+        # "6+2+2": SymbolicSpace is a (0,0) content tier, so the CS->SS
+        # handoff demuxes the muxed CS event (content + .where/.when band)
+        # down to the bare .what content width the terminal codebook is
+        # dimensioned on. ``materialize`` returns the event width (e.g. 14);
+        # without this slice the whole stack subspace + STE snap below would
+        # be built at 14 and collide with the content-width codebook (e.g.
+        # 10) inside ``_snap_to_terminal_ste``. The stack's .where carrier is
+        # rebuilt from the grammar (where_id_for_symbol), not from this band,
+        # so dropping the band tail loses nothing the stack route consumes.
+        _cb_W = self.subspace.what.getW()
+        if (_cb_W is not None and getattr(_cb_W, "ndim", 0) == 2
+                and _cb_W.shape[-1] > 0 and D > _cb_W.shape[-1]):
+            D = int(_cb_W.shape[-1])
+            act_pre = act_pre[..., :D].contiguous()
+
         # Build the temporary stack subspace; capacity = N (room for
         # one terminal per input position, then N-1 reductions collapse
         # to a single root slot).
@@ -14694,6 +14796,14 @@ class SymbolicSpace(Space):
             for _ in range(n_steps):
                 vspace = self.syntacticLayer.forward(vspace)
             act = vspace.materialize()
+        # SS operates on content only (canonical SS=(0,0)); the syntactic
+        # layer ran on the CS-shaped carrier and may have re-muxed the
+        # where/when tail back on. Re-apply the CS->SS demux so the
+        # downstream SS consumers (codebook snap, sortNetwork, forwardEnd
+        # reshape) see an nOutputDim-wide content slab.
+        if (act is not None and self.nOutputDim != -1
+                and act.ndim == 3 and act.shape[-1] != self.nOutputDim):
+            act = act[..., :self.nOutputDim]
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 

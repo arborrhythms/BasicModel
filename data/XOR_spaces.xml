@@ -27,7 +27,7 @@
   <!-- InputSpace: nOutput=6 (5 real tokens + 1 EOS/padding slot). -->
   <InputSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
   </InputSpace>
@@ -35,17 +35,16 @@
   <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>

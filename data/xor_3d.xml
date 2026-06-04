@@ -21,21 +21,20 @@
          when §8g of the brick-vectorization handoff replaced the
          truncation with an assert. -->
     <nOutput>4</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>4</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>4</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>16</nVectors>
     <codebook>quantize</codebook>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>4</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>16</nVectors>
     <codebook>quantize</codebook>
   </ConceptualSpace>

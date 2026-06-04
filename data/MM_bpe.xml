@@ -27,7 +27,7 @@
        span 4x relative to PS; the BPE chunker on PS still emits per
        its own merging logic from the lexed byte input. -->
   <InputSpace>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
     <lexer>byte</lexer>
@@ -35,9 +35,8 @@
 
   <PerceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>512</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
     <chunking>bpe</chunking>
@@ -45,7 +44,7 @@
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

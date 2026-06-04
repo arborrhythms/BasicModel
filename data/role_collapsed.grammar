@@ -92,6 +92,33 @@
            learned role-participation. -->
       <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
       <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+
+      <!-- PREPOSITION: a learned surface marker P (that / to / in /
+           because / when) heads a phrase X (NP / VP / S). Role-only
+           (no POS): forward is content-transparent (X passes through);
+           the marker is recorded via absorb/emit, not folded in. The
+           final relation is learned from downstream participation. -->
+      <rule>preposition_O1 = preposition.forward(preposition_I1, preposition_I2)</rule>
+
+      <!-- BIND: contextual missing-NP marker. Surface LIFT(BIND, VP) is
+           reinterpreted at parse time as LIFT(resolved_ref, VP): the left
+           slot is resolved to an accessible participant from the current
+           parse (nearest-left / control licensing). Role-only (no POS);
+           BIND never invents a binding. -->
+      <rule>bind_O1 = bind.forward(bind_I1, bind_I2)</rule>
+
+      <!-- TENSE / ASPECT: unary .when ops over a materialized event. TENSE
+           rotates the .when reference time (PAST/PRESENT/FUTURE = phase
+           rotation of the range key); ASPECT reshapes the .when interval
+           (SIMPLE/PERFECT/PROGRESSIVE). Both touch only the .when tail;
+           .what / .where pass through. Role-only (no POS); the surface
+           inflection / auxiliary is the learned T1 affix marker. -->
+      <rule>tense_O1 = tense.forward(tense_I1)</rule>
+      <rule>aspect_O1 = aspect.forward(aspect_I1)</rule>
+      <!-- MORPHOLOGY: decompose a surface word form into lemma + features,
+           routing tense/aspect onto .when (delegates to tense/aspect; no
+           POS). Unary T1 affix; the surface token is supplied out-of-band. -->
+      <rule>morphology_O1 = morphology.forward(morphology_I1)</rule>
     </compose>
 
     <queries>
@@ -123,6 +150,24 @@
 
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+
+      <!-- PREPOSITION reverse: structural (X, X) split. The content side
+           recovers the phrase exactly; the marker side is realized by
+           emit from the bound marker. -->
+      <rule>preposition_I1, preposition_I2 = preposition.reverse(preposition_O1)</rule>
+
+      <!-- BIND reverse: lossy (parent, parent) pseudo-inverse. The
+           contextual binding is not recoverable from the lifted phrase. -->
+      <rule>bind_I1, bind_I2 = bind.reverse(bind_O1)</rule>
+
+      <!-- TENSE reverse: phase rotation is invertible (rotate by -delta).
+           ASPECT reverse: lossy (parent, parent) pseudo-inverse; the
+           reference interval is not recoverable from a reshaped one. -->
+      <rule>tense_I1 = tense.reverse(tense_O1)</rule>
+      <rule>aspect_I1 = aspect.reverse(aspect_O1)</rule>
+      <!-- MORPHOLOGY reverse: re-synthesize the surface form (aspect reverse
+           is lossy, tense reverse rotates back). -->
+      <rule>morphology_I1 = morphology.reverse(morphology_O1)</rule>
     </generate>
   </SymbolicSpace>
 </grammar>

@@ -16,8 +16,6 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
@@ -62,11 +60,9 @@
        uniform 8*1024=8192 slab; mirrors MM_5M_IR / MM_5M. -->
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
-    <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
     <lexer>word</lexer>
     <codebook>none</codebook>
   </InputSpace>
@@ -74,11 +70,8 @@
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
-    <nDim>8</nDim>
-    <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
+    <nDim>12</nDim>
     <nOutput>1024</nOutput>
-    <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>quantize</codebook>
     <chunking>lexicon</chunking>
@@ -90,11 +83,8 @@
        based on conceptualOrder and the conceptualWidth mode. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>1024</nDim>
+    <nDim>1028</nDim>
     <nVectors>512</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>quantize</codebook>
   </ConceptualSpace>
@@ -105,8 +95,6 @@
     <nInputDim>8</nInputDim>
     <!-- Stage 1.B paired-row contract: doubled for orth + semantic. -->
     <nVectors>2000000</nVectors>
-    <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>
@@ -115,8 +103,6 @@
     <nOutput>1</nOutput>
     <nDim>4</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 
   <WordSpace>

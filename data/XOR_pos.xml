@@ -5,8 +5,6 @@
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <conceptualMode>parallel</conceptualMode>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
 
     <training>
       <numEpochs>200</numEpochs>
@@ -20,7 +18,7 @@
   <!-- InputSpace: nOutput=6; objectSize=4, embSize=nDim+objectSize=10+4=14. -->
   <InputSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
   </InputSpace>
@@ -28,17 +26,16 @@
   <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
@@ -55,7 +52,5 @@
   <OutputSpace>
     <nOutput>1</nOutput>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </OutputSpace>
 </model>

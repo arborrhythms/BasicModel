@@ -208,7 +208,14 @@ def _topk_decode(W, recon, k=TOPK):
     if W is None or recon is None or not torch.is_tensor(recon):
         return None
     if recon.shape[-1] != W.shape[-1]:
-        return None
+        # "6+2+2": the reversed surface carries the full event width
+        # (.what + .where + .when), while the MPHF word codebook is the bare
+        # content (.what) width. Word decode matches on the .what slice, so
+        # demux a wider recon down to the codebook width.
+        if recon.shape[-1] > W.shape[-1]:
+            recon = recon[..., :W.shape[-1]]
+        else:
+            return None
     flat = recon.reshape(-1, recon.shape[-1])
     d = torch.cdist(flat, W)                          # [N, V]
     kk = min(k, W.shape[0])

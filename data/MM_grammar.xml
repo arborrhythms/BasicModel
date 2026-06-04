@@ -23,22 +23,21 @@
   </architecture>
 
   <InputSpace>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

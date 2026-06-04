@@ -19,27 +19,24 @@
 
   <InputSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS
        (slab 6*10=60). nOutput halved from 12 to 6 to match. -->
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>

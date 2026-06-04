@@ -272,15 +272,25 @@ class TestCheckpointBundle(unittest.TestCase):
                                weights_only=False)
             state = saved["state_dict"] if isinstance(saved, dict) \
                                            and "state_dict" in saved else saved
-            # The Parameter underlying ``wv._vectors`` is stored as
-            # ``wv._local_vectors`` (the property is a back-compat
-            # alias; the registered Parameter has the local-prefixed
-            # name).
+            # The embedding vectors are stored as ``wv._local_vectors`` when
+            # WordVectors owns its own Parameter. In the converged modality
+            # architecture the SymbolicSpace codebook is mandatory and
+            # WordVectors ties to it (single trainable storage), so the local
+            # Parameter is dropped and the vectors live in the SS codebook's
+            # ``W`` -- which the state_dict still carries (under the codebook's
+            # key). Accept either, so the ckpt is self-sufficient for reload.
             present = [k for k in state.keys() if "wv._local_vectors" in k]
+            if not present:
+                vec = m._get_embedding().wv._vectors.detach().cpu().float()
+                present = [
+                    k for k, v in state.items()
+                    if torch.is_tensor(v) and tuple(v.shape) == tuple(vec.shape)
+                    and torch.allclose(v.detach().cpu().float(), vec)
+                ]
             self.assertGreater(
                 len(present), 0,
-                ".ckpt must include embedding vectors after the integrated-"
-                "weights refactor; got no wv._local_vectors keys."
+                ".ckpt must include the embedding vectors -- via "
+                "wv._local_vectors (untied) or the tied SS-codebook W (tied)."
             )
 
     def test_ckpt_includes_vocab_and_bpe_extras(self):

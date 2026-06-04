@@ -296,8 +296,11 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
             for s in range(3):
                 row = (3 * b + s) % int(W.shape[0])
                 # Seed near codebook row `row` (jitter << inter-row gap)
-                # so nearest_ss_row snaps each idea to its own row.
-                buf[b, s, :] = W[row].detach().to(buf.dtype) + 1e-4
+                # so nearest_ss_row snaps each idea to its own row. "6+2+2": the
+                # STM buffer is event-width (concept_dim), but the SS .what
+                # codebook W is the bare content width; place the content in the
+                # leading .what slots and leave the .where/.when tail zero.
+                buf[b, s, :W.shape[1]] = W[row].detach().to(buf.dtype) + 1e-4
         stm._buffer = buf
         stm._depth = torch.full((B,), 3, dtype=torch.long)
         return dim

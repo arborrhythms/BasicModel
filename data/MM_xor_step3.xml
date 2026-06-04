@@ -7,7 +7,6 @@
          forward dispatch via _forward_body_per_word. -->
     <conceptualMode>serial</conceptualMode>
     <ergodic>true</ergodic>
-    <nWhere>2</nWhere>
 
     <training>
       <numEpochs>200</numEpochs>
@@ -38,26 +37,23 @@
 
   <InputSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
-    <nWhere>2</nWhere>
-    <nWhen>0</nWhen>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS. -->
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>

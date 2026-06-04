@@ -56,61 +56,13 @@ def _make_radix_model():
 
 
 # ---------------------------------------------------------------------------
-# ``WhereEncoding.recover`` — atan2-based scalar inverse.
+# ``WhereEncoding.recover`` RETIRED (2026-06-04, modality re-architecture
+# Phase 4): .where no longer keys the codebook (identity is the row index),
+# so the .where -> int identity inverse was removed and its
+# TestWhereEncodingRecover suite is dropped with it. The position counter
+# below (SymbolicSpace.allocate_position) is row/position-keyed, not
+# .where-quadrature-based, and is kept.
 # ---------------------------------------------------------------------------
-
-
-class TestWhereEncodingRecover(unittest.TestCase):
-    """Recover an integer position from a sinusoidal-encoded vector."""
-
-    def test_recover_roundtrip_within_range(self):
-        """``recover(encode(pos)) == pos`` for representative positions in
-        ``[0, maxP)``."""
-        from Spaces import WhereEncoding
-        maxP = 1024
-        we = WhereEncoding(maxP=maxP, nWhere=2, nWhen=0)
-        for pos in (0, 1, 5, 17, 100, 512, 1023):
-            encoded = we.encode(pos)
-            recovered = we.recover(encoded)
-            self.assertIsInstance(recovered, int,
-                                  f"recover must return an int; got "
-                                  f"{type(recovered).__name__} for pos={pos}")
-            self.assertEqual(recovered, pos,
-                             f"recover roundtrip failed for pos={pos}: "
-                             f"got {recovered}")
-
-    def test_recover_zero_anchor(self):
-        """Position 0 (the frozen-zeros anchor) roundtrips exactly."""
-        from Spaces import WhereEncoding
-        we = WhereEncoding(maxP=256, nWhere=2, nWhen=0)
-        encoded = we.encode(0)
-        self.assertEqual(we.recover(encoded), 0)
-
-    def test_recover_just_below_maxP(self):
-        """``maxP - 1`` is the largest legal position."""
-        from Spaces import WhereEncoding
-        maxP = 4096
-        we = WhereEncoding(maxP=maxP, nWhere=2, nWhen=0)
-        encoded = we.encode(maxP - 1)
-        self.assertEqual(we.recover(encoded), maxP - 1)
-
-    def test_recover_disabled_encoding_raises(self):
-        """``nWhere=0`` means the encoding is a no-op; recovery is
-        undefined and must fail loudly."""
-        from Spaces import WhereEncoding
-        we = WhereEncoding(maxP=100, nWhere=0, nWhen=0)
-        # Any vector at all — the encoding has zero width, so there is
-        # no legal input.
-        with self.assertRaises((ValueError, RuntimeError)):
-            we.recover(torch.tensor([0.0, 1.0]))
-
-    def test_recover_from_tensor_input(self):
-        """``recover`` accepts a torch.Tensor of shape ``[..., 2]``."""
-        from Spaces import WhereEncoding
-        we = WhereEncoding(maxP=512, nWhere=2, nWhen=0)
-        encoded = we.encode(42)
-        # encode() returns a tensor; recover() must accept that.
-        self.assertEqual(we.recover(encoded), 42)
 
 
 # ---------------------------------------------------------------------------

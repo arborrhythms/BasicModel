@@ -24,9 +24,8 @@
   <!-- InputSpace: text-mode lexer, full content width. -->
   <InputSpace>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
   </InputSpace>
 
   <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
@@ -35,14 +34,13 @@
        full vocabulary space. -->
   <PerceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>1000</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>none</codebook>
+    <!-- PerceptualSpace codebook is mandatory (modality re-architecture); was
+         none for the project-style exact-XOR reconstruction (now superseded). -->
+    <codebook>quantize</codebook>
     <!-- Butterfly cascade on pi (and historically sigma) gives pi
          cross-element reach across the flattened [B, N*D] view.
          Without it, pi is per-slot and cannot compute XOR (or any
@@ -55,12 +53,9 @@
   <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>none</codebook>
   </ConceptualSpace>
@@ -69,20 +64,18 @@
   <SymbolicSpace>
     <nInput>8</nInput>
     <nDim>10</nDim>
-    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
     <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace
          l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <codebook>none</codebook>
+    <!-- SymbolicSpace codebook is mandatory (modality re-architecture); was none. -->
+    <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

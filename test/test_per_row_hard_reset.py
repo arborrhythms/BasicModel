@@ -153,9 +153,13 @@ def test_runEpoch_dispatches_per_row_reset_per_batch():
         "dispatch_per_row_reset must fire at least once per epoch "
         "under the rolling-cursor handoff outer loop"
     )
-    # Legacy (non-cursor) path uses hard_eos=[True]*B every tick.
+    # Rolling-cursor handoff: each dispatch passes a PER-ROW hard_eos list (one
+    # flag per batch row). A row is True only on the tick its document hits a
+    # boundary, so the list is NOT [True]*B every tick (that was the pre-cursor
+    # behavior). Assert the per-row shape; the True-only-on-boundary semantics
+    # are locked in by test_dispatch_per_row_reset_skips_rows_without_hard_eos.
     for hard_eos in calls:
-        assert all(hard_eos), (
-            f"non-cursor path uses hard_eos=[True]*B every tick; "
-            f"got {hard_eos}"
+        assert len(hard_eos) == 2, (
+            f"per-row dispatch must pass one hard_eos flag per batch row "
+            f"(batchSize=2); got {hard_eos}"
         )

@@ -34,19 +34,15 @@
          not inherit the raw default (which targets analyse). -->
     <lexer>word</lexer>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
     <chunking>radix</chunking>
@@ -55,27 +51,22 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
     <nDim>10</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>10</nOutputDim>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>10</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

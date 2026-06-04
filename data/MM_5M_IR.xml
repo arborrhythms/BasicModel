@@ -8,8 +8,6 @@
   <architecture>
     <conceptualOrder>3</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
@@ -46,19 +44,16 @@
        at nDim=8 each; mirrors MM_5M.xml's re-architecture. -->
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>8</nDim>
+    <nDim>12</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
-    <nWhere>2</nWhere>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
-    <nDim>8</nDim>
-    <nWhere>2</nWhere>
+    <nDim>12</nDim>
     <nOutput>1024</nOutput>
-    <hasAttention>false</hasAttention>
     <codebook>quantize</codebook>
     <wordLearning>1</wordLearning>
   </PerceptualSpace>
@@ -67,7 +62,7 @@
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>1024</nDim>
+    <nDim>1028</nDim>
     <nVectors>512</nVectors>
     <codebook>quantize</codebook>
   </ConceptualSpace>
@@ -80,7 +75,6 @@
          PS lexicon capacity (1000000) to hold orth + semantic paired
          rows. Doubled to 2000000 for the paired pair. -->
     <nVectors>2000000</nVectors>
-    <nWhere>2</nWhere>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>

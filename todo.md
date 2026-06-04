@@ -1,8 +1,10 @@
 
 
+
 queryPart and assertPart should both resolve to the method isPart
 
 fix FAILED test/test_grammar_order_typing.py
+
 
 * Implement 2026-05-30-subsymbolic-analyzer-terminal-emitter.md
 
@@ -39,6 +41,8 @@ Memory of previous sentences requires prediction relating one to the next
 
 * Currently nWhere on percepts is unnecessary, because percepts are dense on input space (the network wiring densely covers the input).
   If perception is guided by attention, it can roam on input space, in which case the .where is particularly useful.
+
+* .where dimensionality must scale with abstraction level: 1D suffices for a word token's input span, but accurate object (NP) representations need a 3D spatial extent (location / body / extent), and a VP needs a low-dim path/control manifold. Current .where is 2-dim; widening it for objects/VPs while keeping word-level uses smaller is a future change. (From the modality re-architecture: doc/plans/2026-06-03-modality-architecture-design.md.)
 
 ================================== April 24 ==================================
 

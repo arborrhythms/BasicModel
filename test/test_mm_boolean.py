@@ -30,6 +30,10 @@ import pytest
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
+# Slow end-to-end training runs are gated behind RUN_SLOW=1, matching the
+# convention in test_basicmodel / test_testpoint / test_stream_smoke.
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _BIN not in sys.path:
@@ -62,6 +66,7 @@ class TestMMBoolean(unittest.TestCase):
         """Retired 2026-05-14: old training-loop smoke test pre-dating K-axis retirement; autograd graph not detached between IR-only forward calls."""
         return  # AR-specific behaviour; covered elsewhere or no longer applicable
 
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     @unittest.expectedFailure  # convergence under bare-PiLayer C-tier pending; revisit after explicit wrapper lands
     def test_explicit_test_sentences(self):
         """After training, the three held-out sentences classify per formula.

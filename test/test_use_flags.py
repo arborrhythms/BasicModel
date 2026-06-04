@@ -41,8 +41,10 @@ def _load(cfg_name):
 # The configs below all carry such operators at S-tier (XOR's
 # not/intersection/union, MentalModel's full Boolean grammar, etc.),
 # so the derived value is ``"all"`` for every entry.
+# (MM_xor.xml dropped 2026-06-04: it deliberately sets PerceptualSpace
+#  <codebook>none</codebook>, which the converged modality architecture
+#  rejects -- PS/SS codebooks are mandatory -- so it no longer instantiates.)
 EXPECTED = {
-    "MM_xor.xml":            "all",
     "RamsifiedModel.xml":    "all",
     "MM_bpe.xml":            "all",
     "MentalModel.xml":       "all",

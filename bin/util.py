@@ -989,9 +989,12 @@ class XMLConfig:
     def objectSize(self):
         """nWhere + nWhen encoding overhead per vector.
 
-        Pulled from InputSpace's nWhere / nWhen scalars.
+        From canonical_shape("InputSpace") -- where/when are architectural
+        constants (modality re-architecture), not per-config scalars.
         """
-        return self.space("InputSpace", "nWhere") + self.space("InputSpace", "nWhen")
+        from architecture import canonical_shape
+        nw, nn = canonical_shape("InputSpace")
+        return nw + nn
 
     @property
     def nObjects(self):

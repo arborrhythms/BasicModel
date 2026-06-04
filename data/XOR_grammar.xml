@@ -56,7 +56,7 @@
   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS.nOutput aligned
        to PS/CS (6). nVectors stays at 8 for vocab headroom. -->
   <InputSpace>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nOutput>6</nOutput>
     <codebook>quantize</codebook>
@@ -64,16 +64,15 @@
 
   <PerceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>200</nVectors>
-    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>6</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

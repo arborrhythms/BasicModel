@@ -99,21 +99,20 @@
 
   <InputSpace>
     <nOutput>8</nOutput>
-    <nDim>16</nDim>
+    <nDim>20</nDim>
     <nVectors>128</nVectors>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>16</nDim>
+    <nDim>20</nDim>
     <nVectors>128</nVectors>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>16</nDim>
+    <nDim>20</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

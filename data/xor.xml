@@ -26,7 +26,6 @@
     <nOutput>4</nOutput>
     <nVectors>16</nVectors>
     <codebook>quantize</codebook>
-    <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->

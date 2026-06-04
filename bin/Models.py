@@ -59,6 +59,7 @@ TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
 from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp
+from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
 from data import Data, TheData
@@ -372,22 +373,13 @@ class BaseModel(Mereology, nn.Module):
 
     @staticmethod
     def _obj_size(section):
-        """Per-section objectSize: ``nWhere + nWhen``, defaulting to 0.
+        """Per-section objectSize: ``nWhere + nWhen`` from canonical_shape.
 
-        Each Space carries its own positional / temporal encoding
-        widths; the muxed event tensor's last-axis size is
-        ``nDim + nWhere + nWhen``. Missing keys default to 0 so
-        sections that don't declare them inherit the architecture
-        default (also 0).
+        Each Space carries its own positional / temporal encoding widths
+        (architectural constants, not config options); the muxed event
+        tensor's last-axis size is ``nDim + nWhere + nWhen``.
         """
-        try:
-            nw = TheXMLConfig.space(section, "nWhere")
-        except KeyError:
-            nw = 0
-        try:
-            nn = TheXMLConfig.space(section, "nWhen")
-        except KeyError:
-            nn = 0
+        nw, nn = canonical_shape(section)
         return nw + nn
 
     @staticmethod
@@ -564,8 +556,9 @@ class BaseModel(Mereology, nn.Module):
 
         # <embeddingPath> retired (2026-05-12): embeddings now ride
         # inside the single .ckpt bundle, not a separate .kv artifact.
-        _nWhere = TheXMLConfig.get("architecture.nWhere")
-        _nWhen = TheXMLConfig.get("architecture.nWhen")
+        # Global objectSize is the InputSpace's where/when overhead (the muxed
+        # event enters at IS); source from canonical_shape, not architecture.* .
+        _nWhere, _nWhen = canonical_shape("InputSpace")
         _objectSize = _nWhere + _nWhen
         TheXMLConfig._data.setdefault("architecture", {})["objectSize"] = _objectSize
 
@@ -1466,11 +1459,35 @@ class BaseModel(Mereology, nn.Module):
         dim = wv._vectors.shape[1]
         vocab_size = len(keys)
         if wv._vectors.shape[0] != vocab_size:
-            wv._vectors = nn.Parameter(
-                torch.zeros(vocab_size, dim,
-                            device=wv._vectors.device,
-                            dtype=wv._vectors.dtype),
-                requires_grad=True)
+            new_W = torch.zeros(vocab_size, dim,
+                                device=wv._vectors.device,
+                                dtype=wv._vectors.dtype)
+            getter = object.__getattribute__(wv, "_tied_param_getter")
+            is_tied = getter is not None and getter() is not None
+            if is_tied:
+                # wv._vectors IS the SS codebook's W (single-storage
+                # invariant) whenever the SymbolicSpace owns a codebook --
+                # which the modality re-architecture made mandatory. Reassigning
+                # wv._vectors is forbidden in that state, so resize the shared
+                # codebook storage instead; the tied view (cb.getW()) follows
+                # automatically. Vector DATA is populated by the subsequent
+                # load_state_dict (this just allocates the right shape).
+                cb = None
+                ss = getattr(self, "symbolicSpace", None)
+                ss_sub = getattr(ss, "subspace", None) if ss is not None else None
+                if ss_sub is not None and hasattr(ss_sub, "get_vectors"):
+                    cb = ss_sub.get_vectors()
+                if cb is not None and hasattr(cb, "replace_W"):
+                    cb.replace_W(nn.Parameter(new_W, requires_grad=True))
+                    if hasattr(cb, "nVectors"):
+                        cb.nVectors = vocab_size
+                else:
+                    # SS codebook unreachable: untie and reassign locally so
+                    # restore still proceeds rather than hard-crashing.
+                    object.__setattr__(wv, "_tied_param_getter", None)
+                    wv._vectors = nn.Parameter(new_W, requires_grad=True)
+            else:
+                wv._vectors = nn.Parameter(new_W, requires_grad=True)
         wv.index_to_key = keys
         wv.key_to_index = {k: i for i, k in enumerate(keys)}
         wv.counts = (np.asarray(counts, dtype=np.int64) if counts
@@ -4410,8 +4427,9 @@ class BasicModel(BaseModel):
             when_scale=when_scale,
             nOutput=nOutput,
             conceptualOrder=conceptualOrder,
-            nWhere=TheXMLConfig.get("architecture.nWhere"),
-            nWhen=TheXMLConfig.get("architecture.nWhen"),
+            # Loss operates on the output tier, which carries no where/when.
+            nWhere=canonical_shape("OutputSpace")[0],
+            nWhen=canonical_shape("OutputSpace")[1],
         )
         # Optional swappable loss head fed STM snapshots during the
         # body forward (Phase 3, 2026-05-12). Installed by
@@ -4420,19 +4438,33 @@ class BasicModel(BaseModel):
         # for the loss.
         self.loss_head = None
 
-        # Resolve dims, chaining through the pipeline (nDim=0 -> same as input dim)
+        # "6+2+2": config <nDim> is the EVENT width (it EMBRACES the
+        # .where/.when band), not the bare content width. Carve the bare CONTENT
+        # width ``*_dim = event - band``; downstream shapes restore the event via
+        # ``*_dim + obj_*`` (I/O + per-stage shapes), while a bare ``*_dim`` is the
+        # content (codebook / C->P feedback / symbol snap). So nWhat == content
+        # == nDim - band and the event width == nDim.
         # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel.
-        input_dim   = self._resolve_dim("InputSpace",      1)
-        percept_dim = self._resolve_dim("PerceptualSpace", input_dim)
-        concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
-        symbol_dim  = self._resolve_dim("SymbolicSpace",   concept_dim)
-        output_dim  = self._resolve_dim("OutputSpace",     symbol_dim)
-
         obj_input   = self._obj_size("InputSpace")
         obj_percept = self._obj_size("PerceptualSpace")
         obj_concept = self._obj_size("ConceptualSpace")
         obj_symbol  = self._obj_size("SymbolicSpace")
         obj_output  = self._obj_size("OutputSpace")
+
+        # Muxed tiers (IS/PS/CS) chain on the EVENT width; CONTENT tiers (SS/OS)
+        # inherit the upstream CONTENT (event - band) because the CS->SS / SS->OS
+        # handoff is demuxed (SS/OS carry no .where/.when band).
+        input_event   = self._resolve_dim("InputSpace",      1)
+        percept_event = self._resolve_dim("PerceptualSpace", input_event)
+        concept_event = self._resolve_dim("ConceptualSpace", percept_event)
+        symbol_event  = self._resolve_dim("SymbolicSpace",   concept_event - obj_concept)
+        output_event  = self._resolve_dim("OutputSpace",     symbol_event  - obj_symbol)
+
+        input_dim   = input_event   - obj_input
+        percept_dim = percept_event - obj_percept
+        concept_dim = concept_event - obj_concept
+        symbol_dim  = symbol_event  - obj_symbol
+        output_dim  = output_event  - obj_output
 
         nvec_input   = self._nvec("InputSpace",      nInput)
         nvec_percept = self._nvec("PerceptualSpace", nPercepts)
@@ -4542,13 +4574,15 @@ class BasicModel(BaseModel):
                 # per-stage shapes still describe input/output widths
                 # for the CS recurrent cell but the lift itself is now
                 # the signal-router's responsibility (Stage 3).
-                # ``concept_dim`` is the BARE
-                # ``<ConceptualSpace><nDim>`` -- where/when ride muxed
-                # *inside* it (``SubSpace`` derives
-                # ``nWhat = concept_dim - nWhere - nWhen``), exactly as
-                # the passing grammar reference MM_xor does
-                # (``cs_out[1] == concept_dim``; obj_concept is NOT
-                # added on this path).  This is what the C->P feedback
+                # ``concept_dim`` is the BARE ``<ConceptualSpace><nDim>``
+                # content width.  Per the modality re-architecture, CS
+                # CARRIES the event where/when (mux at PS->CS): the CS output
+                # muxed width is ``concept_dim + obj_concept`` so ``SubSpace``
+                # derives ``nWhat == concept_dim`` (= nDim) with where/when as
+                # the added tail (``muxedSize == concept_dim + nWhere +
+                # nWhen``); SS is demuxed back to the bare ``concept_dim`` (the
+                # CS->SS materialize trim, Spaces.py ~14730).  Preserving the
+                # bare content width is what the C->P feedback
                 # gate (``PerceptualSpace.pi_concept.nInput ==
                 # <ConceptualSpace><nDim>``), the Phase-2A.5 symbol
                 # snap (``SymbolicSpace.subspace.what.W`` width ==
@@ -4563,11 +4597,18 @@ class BasicModel(BaseModel):
                 # snap (1024 vs the old 10).
                 n_t = nPercepts >> t
                 d_in = percept_dim + obj_percept
-                d_out = concept_dim
+                # CS output muxed width = concept_dim + obj_concept, so the CS
+                # SubSpace derives nWhat == concept_dim (= nDim) and the event
+                # carries where/when. The per-stage codebook content
+                # (stage_space_concept) stays bare nDim -- where/when ride as
+                # muxed traces, not codebook rows.
+                d_out = concept_dim + obj_concept
                 cs_in = [n_t, d_in]
                 cs_out = [n_t, d_out] if is_last else [n_t >> 1, d_out]
-                ss_in = cs_out[:]
-                ss_out = cs_out[:]
+                # SS is BARE concept_dim (the demux target; canonical SS=(0,0)).
+                # Keep the CS-output count so the per-stage N-halving aligns.
+                ss_in = [cs_out[0], concept_dim]
+                ss_out = [cs_out[0], concept_dim]
             else:
                 # Plain path: all stages share the legacy conceptInputShape /
                 # conceptOutputShape. No N-halving.
@@ -6105,6 +6146,16 @@ class BasicModel(BaseModel):
                     and self.conceptualSpace.stm is not None):
                 _snap = self.conceptualSpace.stm.snapshot()
                 if _snap is not None:
+                    # CS->SS demux: the symbol-level grammar (languageLayer
+                    # feature_dim == symbol_dim) operates on content only --
+                    # SS carries no where/when -- so trim the muxed CS event's
+                    # where/when tail (mirrors the SS forward trim near
+                    # Spaces.py:14730) before the chart compose.
+                    _nwhat = getattr(
+                        getattr(self.conceptualSpace, 'subspace', None),
+                        'nWhat', None)
+                    if _nwhat is not None and _snap.shape[-1] > _nwhat:
+                        _snap = _snap[..., :_nwhat]
                     self.wordSubSpace.compose(_snap)
             CS_sub, idea_bd = self._per_word_body_step(
                 w, p, gate_b_1, out_slot, active_host=active_host)
@@ -7398,10 +7449,15 @@ class ModelFactory:
                 return prev_count
             return prev_count if raw == 0 else raw
 
+        from architecture import canonical_shape as _cshape
+        _cs_band_v = sum(_cshape("ConceptualSpace"))
         input_dim = _resolve_dim("InputSpace", 1)
         percept_dim = _resolve_dim("PerceptualSpace", input_dim)
         concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
-        symbol_dim = _resolve_dim("SymbolicSpace", concept_dim)
+        # "6+2+2": SymbolicSpace (a (0,0) content tier) inherits the CS CONTENT
+        # width (event - band), not the CS event width, since the CS->SS handoff
+        # is demuxed.
+        symbol_dim = _resolve_dim("SymbolicSpace", concept_dim - _cs_band_v)
 
         # Bivector / projection configs let ConceptualSpace output a
         # narrower activation via ``<nOutputDim>``. The width that
@@ -7411,21 +7467,40 @@ class ModelFactory:
             cs_out_dim = int(gsp(cfg, "ConceptualSpace", "nOutputDim"))
         except KeyError:
             cs_out_dim = 0
-        effective_concept_dim = cs_out_dim if cs_out_dim > 0 else concept_dim
+        # "6+2+2": ConceptualSpace nDim/nOutputDim is the EVENT width; the CS->SS
+        # demux hands SymbolicSpace (a (0,0) content tier) the bare CONTENT width
+        # (event - band), so compare symbol_dim against the CS content, not the
+        # CS event width.
+        from architecture import canonical_shape as _cshape
+        _cs_band = sum(_cshape("ConceptualSpace"))
+        _cs_event = cs_out_dim if cs_out_dim > 0 else concept_dim
+        effective_concept_dim = _cs_event - _cs_band
 
         # SymbolicSpace owns no SigmaLayer/PiLayer; the C->S transform
         # was previously a learned ``SigmaLayer(concept_dim, symbol_dim)``
         # inside SS. With SS.sigma retired, the path is dimensionally a
         # pass-through and the configured dims must match.
-        TheXMLConfig.require(
-            lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
-            f"SymbolicSpace requires symbol_dim == "
-            f"ConceptualSpace effective output dim "
-            f"(got concept_out_dim={effective_concept_dim}, "
-            f"symbol_dim={symbol_dim}). Fix: set <SymbolicSpace><nDim> "
-            f"to match <ConceptualSpace><nOutputDim> if present, else "
-            f"<ConceptualSpace><nDim>."
-        )
+        #
+        # Skip only the explicit ``passthrough`` bypass mode. The CS->SS
+        # dimensional pass-through (SS owns no Sigma) is real for both the
+        # simple and embedding pipelines -- ``test_symbol_dim_must_match_
+        # concept_dim`` exercises it in default/simple mode -- so this is
+        # NOT gated as narrowly as the embedding-only flat-slab invariant
+        # below. ``passthrough`` carries arbitrary placeholder per-space
+        # <nDim> (e.g. the config-scoping nOutput-reading fixture, all
+        # nDim=1) and intentionally bypasses dimensional validation; the
+        # "6+2+2" band subtraction would otherwise drive its CS content
+        # negative and trip this check spuriously.
+        if str(arch.get("modelType", "simple")).strip().lower() != "passthrough":
+            TheXMLConfig.require(
+                lambda cfg, _c=effective_concept_dim, _s=symbol_dim: _c == _s,
+                f"SymbolicSpace requires symbol_dim == "
+                f"ConceptualSpace effective output dim "
+                f"(got concept_out_dim={effective_concept_dim}, "
+                f"symbol_dim={symbol_dim}). Fix: set <SymbolicSpace><nDim> "
+                f"to match <ConceptualSpace><nOutputDim> if present, else "
+                f"<ConceptualSpace><nDim>."
+            )
 
         # ---- Flat-slab invariant ------------------------------------
         # Stage 1.D refactor (doc/plans/2026-05-26-two-loop-pi-sigma-
@@ -7475,12 +7550,20 @@ class ModelFactory:
                 pass
             return int(fallback_count)
 
-        is_dim = _effective_out_dim("InputSpace", input_dim)
+        # "6+2+2": nDim/nOutputDim are EVENT widths; chain on the event width
+        # but the flat-slab reshape invariant holds on the CONTENT slab
+        # (nDim - band) -- the .where/.when band is per-position overhead, not
+        # part of the reshaped content. Subtract each tier's band for the slab.
+        from architecture import canonical_shape as _cshape
+        is_dim_e = _effective_out_dim("InputSpace", input_dim)
         is_n = _effective_out_count("InputSpace", 1)
-        ps_dim = _effective_out_dim("PerceptualSpace", is_dim)
+        ps_dim_e = _effective_out_dim("PerceptualSpace", is_dim_e)
         ps_n = _effective_out_count("PerceptualSpace", is_n)
-        cs_dim = _effective_out_dim("ConceptualSpace", ps_dim)
+        cs_dim_e = _effective_out_dim("ConceptualSpace", ps_dim_e)
         cs_n = _effective_out_count("ConceptualSpace", ps_n)
+        is_dim = is_dim_e - sum(_cshape("InputSpace"))
+        ps_dim = ps_dim_e - sum(_cshape("PerceptualSpace"))
+        cs_dim = cs_dim_e - sum(_cshape("ConceptualSpace"))
 
         is_slab = is_n * is_dim
         ps_slab = ps_n * ps_dim

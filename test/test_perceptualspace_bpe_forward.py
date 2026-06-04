@@ -41,7 +41,10 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     </training>
   </architecture>
   <InputSpace>
-    <nDim>4</nDim>
+    <!-- "6+2+2": IS/PS/CS are (2,2) muxed tiers, so nDim is the EVENT
+         width = content(4) + .where/.when band(4) = 8. SS/OS are (0,0)
+         content tiers and keep the bare content width (4 / 1). -->
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <!-- nOutput sized to fit the test's "hello world foo" input
          (15 chars under the BPE pre-chunking byte stream + 1 EOS
@@ -54,7 +57,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
   <PerceptualSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
     <codebook>true</codebook>
     <chunking>bpe</chunking>
@@ -62,7 +65,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
   </PerceptualSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
@@ -156,7 +159,11 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             ps_event = ps.subspace.materialize()
             self.assertIsNotNone(ps_event, "PerceptualSpace.subspace.event must be populated")
             self.assertEqual(ps_event.shape[0], 1)
-            self.assertEqual(ps_event.shape[-1], 4)
+            # "6+2+2": PerceptualSpace is a (2,2) muxed tier, so the
+            # materialized event is the full EVENT width = content(4) +
+            # .where(2) + .when(2) = 8, matching <PerceptualSpace><nDim>8
+            # in the fixture above (was 4 before the muxed-tier migration).
+            self.assertEqual(ps_event.shape[-1], 8)
             non_zero_rows = (ps_event[0].abs().sum(dim=-1) > 0).sum().item()
             self.assertGreaterEqual(non_zero_rows, 1,
                 "At least one position must have a non-zero vector")

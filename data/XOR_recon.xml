@@ -23,30 +23,29 @@
        IS/PS to 8*2=16 to preserve the bottleneck shape end-to-end. -->
   <InputSpace>
     <nVectors>3</nVectors>
-    <nDim>2</nDim>
+    <nDim>6</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>6</nOutputDim>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>6</nInputDim>
     <nVectors>1000</nVectors>
-    <nDim>2</nDim>
+    <nDim>6</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
-    <hasAttention>false</hasAttention>
+    <nOutputDim>6</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <nInputDim>6</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>2</nDim>
+    <nDim>6</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>6</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </ConceptualSpace>
