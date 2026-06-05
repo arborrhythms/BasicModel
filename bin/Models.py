@@ -4499,17 +4499,22 @@ class BasicModel(BaseModel):
         # configs route to ModalSpace).
         self.perceptualSpace = self._make_perceptual_space(
             inputShape, spaceShape_percept, perceptShape)
-        # Wire ``_peer_perceptual`` whenever there is an Embedding-
-        # backed surface form -- the lexer needs a peer reference for
-        # tokenizer dispatch. Stage 7 (doc/plans/2026-05-27-perceptstore
-        # -meta-taxonomy-reentrancy.md): radix mode exposes a
-        # PerceptStore via ``vocabulary``, but the underlying Embedding
-        # still lives on ``subspace.what`` (constructed by
-        # ``_build_what_basis``). Check the structural attribute so
-        # text mode in any chunking variant gets the peer wired.
+        # Wire ``_peer_perceptual`` whenever the PerceptualSpace is a
+        # text/lexer-owning surface form -- the lexer needs a peer
+        # reference for tokenizer dispatch. Stage 7 (doc/plans/2026-05-27
+        # -perceptstore-meta-taxonomy-reentrancy.md): radix mode exposes a
+        # ``PerceptStore`` via ``vocabulary`` backed by a Codebook on
+        # ``subspace.what`` (built by ``_build_what_basis`` -- as of
+        # 2026-06-04 a Codebook Basis, no longer an Embedding), so in radix
+        # mode neither ``vocabulary`` nor ``what`` is an Embedding. Detect
+        # that case via the ``percept_store`` structural attribute so text
+        # mode in any chunking variant gets the peer wired.
         _vocab = self.perceptualSpace.vocabulary
         _what = getattr(self.perceptualSpace.subspace, "what", None)
-        if isinstance(_vocab, Embedding) or isinstance(_what, Embedding):
+        _has_percept_store = getattr(
+            self.perceptualSpace, "percept_store", None) is not None
+        if (isinstance(_vocab, Embedding) or isinstance(_what, Embedding)
+                or _has_percept_store):
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
 
@@ -5142,16 +5147,11 @@ class BasicModel(BaseModel):
         # ``cs.forward``. Stage 0 -> PS output; stage k > 0 -> prior
         # stage's post-merge CS output.
         contribution = PS_sub_stage0
-        # Stage 10 PARALLEL reverse-roundtrip cache: clear each stage's
-        # ``_prev_cs_event_cache`` at the start of this forward pass so
-        # stale data from a prior call doesn't leak into the upcoming
-        # reverse path. The cache is per-stage (lives on the CS
-        # instance); we populate it below when (and only when) the
-        # residual lift actually fires at that stage.
-        for stage in self.body_stages:
-            stage["cs"]._prev_cs_event_cache = None
-        # Track the prior stage's CS_sub for the sigma_cs residual lift.
-        prev_cs_for_residual = None
+        # 2026-06-04 parallel-symbolic-substrate refactor: the Stage-10
+        # ``sigma_cs`` residual-lift + ``_prev_cs_event_cache`` machinery
+        # is retired (ConceptualSpace no longer owns a fold). Each stage
+        # instead advances the conceptual carrier through
+        # ``SymbolicSpace.sigma`` (the per-stage symbolic step below).
         for t, stage in enumerate(self.body_stages):
             cs = stage["cs"]
             ss = stage["ss"]
@@ -5164,50 +5164,20 @@ class BasicModel(BaseModel):
                 self.perceptualSpace._recurrent_pass_idx = t
             SS_sub = ss.forward(prevCS_forSS)
             CS_sub = cs.forward(contribution, SS_sub)
-            # Stage 10 PARALLEL residual lift: add ``sigma_cs[t]`` of
-            # the prior stage's CS output to the just-bookkept event so
-            # the per-stage equation holds. At t == 0 there is no prior
-            # CS state, so the residual term is zero (skipped). The
-            # residual lift acts on the CS subspace's materialised event
-            # *after* sigma_in has folded the incoming contribution
-            # inside cs.forward.
-            #
-            # Reverse-roundtrip note: when the lift fires we ALSO cache
-            # the exact ``prev_ev`` we lifted onto the stage's CS
-            # instance (``cs._prev_cs_event_cache``). ``CS.reverse``
-            # reads that cache to recompute the SAME ``sigma_cs[t](prev)``
-            # tensor and subtract it before applying ``sigma_in.reverse``,
-            # closing the per-stage equation
-            #
-            #   contribution = sigma_in[t].reverse(
-            #       CS_t1[t] - sigma_cs[t](CS_t0[t]))
-            #
-            # If the lift did not fire (shape mismatch, t == 0), the
-            # cache stays None and reverse degenerates to the simple
-            # ``sigma_in.reverse(CS_t1)`` path.
-            if t > 0 and prev_cs_for_residual is not None:
-                prev_ev = prev_cs_for_residual.materialize()
-                cur_ev = CS_sub.materialize()
-                if (prev_ev is not None and cur_ev is not None
-                        and prev_ev.shape == cur_ev.shape
-                        and int(prev_ev.shape[-1])
-                            == int(cs.concept_dim)):
-                    residual = cs.sigma_cs.forward(prev_ev)
-                    CS_sub.set_event(cur_ev + residual)
-                    # Cache the prior CS event for the matching
-                    # reverse subtraction. Detached so the reverse
-                    # path doesn't hold autograd refs unnecessarily;
-                    # the actual lift is recomputed by
-                    # ``cs.sigma_cs.forward(...)`` in reverse so
-                    # parameter gradients still flow through that
-                    # call when reverse is run in a grad context.
-                    cs._prev_cs_event_cache = prev_ev.detach()
-                # else: shape mismatch — degenerate config (e.g.
-                # conceptualOrder=1 or pass-0 seed). Skip the residual
-                # lift; the per-stage equation degenerates to
-                # ``CS_t1[k] = sigma_in[k](contrib)`` (matches the
-                # single-stage substrate). Cache stays None so reverse
-                # follows the same degenerate path.
+            # 2026-06-04 parallel-symbolic-substrate: symbolic
+            # generalization step. ``cs.forward`` above produced this
+            # stage's perception event CS_0 (STM bookkeeping, no fold).
+            # When conceptualOrder >= 1, advance the conceptual carrier
+            # through ``SymbolicSpace.sigma`` (CS_k -> CS_{k+1}) on the
+            # demux'd content width; the muxed .where/.when tail rides
+            # along unchanged. Gated to the plain (non-grammar) parallel
+            # path -- the useGrammar="all" cascade keeps its own N-halving
+            # ``merge`` semantics and does not apply sigma here. The
+            # reverse path inverts this exactly via ``sigma.reverse`` in
+            # ``_reverse_body`` (round-trip stays exact because
+            # ``SymbolicSpace.sigma`` is invertible).
+            if self.conceptualOrder >= 1 and "merge" not in stage:
+                CS_sub = self._symbolic_sigma_step(ss, CS_sub)
             # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
             # terminal C-tier idea lives on ``conceptualSpace.stm``
             # (the bookkeeping push happens inside cs.forward); the
@@ -5235,10 +5205,9 @@ class BasicModel(BaseModel):
             # ``self.symbolicSpace.subspace`` (written by
             # ``ss.forward(...)``); ``symbol_cache`` resolves there.
             last_cs = CS_sub
-            # Stage 10 cascade: this stage's output becomes next
-            # stage's contribution (residual-CS pipeline).
+            # Cascade: this stage's (symbolically generalized) output
+            # becomes the next stage's contribution.
             contribution = CS_sub
-            prev_cs_for_residual = CS_sub
         # Reset so standalone PerceptualSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
         if self.wordSubSpace is not None:
@@ -5585,18 +5554,20 @@ class BasicModel(BaseModel):
         # the host ``current_rules`` dict; never enters the graph).
         rel = self._sentence_relative_mask(B, device=device)    # [B] bool
         depth_dtype = stm._depth.dtype
-        if bool(rel.any()):
-            # Per-row depth floor: 3 for relative rows, 1 otherwise.
-            protect_depth = torch.where(
-                rel,
-                torch.full((B,), 3, dtype=depth_dtype, device=device),
-                torch.full((B,), 1, dtype=depth_dtype, device=device),
-            )                                                    # [B] long
-        else:
-            # No relative sentence -> default floor (1) everywhere;
-            # passing None keeps the step bit-for-bit identical to the
-            # pre-Task-6a absolute path.
-            protect_depth = None
+        # Per-row depth floor: 3 for relative rows, 1 otherwise. Computed
+        # UNCONDITIONALLY as a pure tensor -- the old ``if bool(rel.any())``
+        # host branch forced a tensor->Python sync and failed Dynamo with
+        # ``Could not guard on data-dependent expression Eq(u0, 1)``. When
+        # no row is relative this is all-ones, and
+        # ``_stm_bounded_reduce_step``'s ``depth > protect_depth`` term is
+        # then implied by its ``depth >= 2`` gate (integer depths) -- so the
+        # sweep stays BYTE-IDENTICAL to the former ``protect_depth=None``
+        # fast path while tracing under fullgraph=True.
+        protect_depth = torch.where(
+            rel,
+            torch.full((B,), 3, dtype=depth_dtype, device=device),
+            torch.full((B,), 1, dtype=depth_dtype, device=device),
+        )                                                        # [B] long
         for _ in range(max(0, cap - 1)):
             self._stm_bounded_reduce_step(protect_depth=protect_depth)
         # After cap-1 forced folds every ABSOLUTE row's stack is
@@ -6468,6 +6439,38 @@ class BasicModel(BaseModel):
         """Reverse the head: ``outputSpace.reverse`` (OS → C tier)."""
         return self.outputSpace.reverse(sub)
 
+    def _symbolic_sigma_step(self, ss, cs_sub, reverse=False):
+        """Advance (or invert) the conceptual carrier through SS.sigma.
+
+        The symbolic generalization operator ``SymbolicSpace.sigma`` is
+        square on the demux'd CONTENT width (``ss.nOutputDim``); the muxed
+        ``.where``/``.when`` tail (if any) rides along unchanged.
+
+        ``reverse=False`` applies ``sigma.forward`` (CS_k -> CS_{k+1}, the
+        parallel-mode generalization step); ``reverse=True`` applies the
+        exact inverse ``sigma.reverse`` on the reconstruction path so the
+        round-trip stays exact. No-op when ``ss`` has no sigma or the
+        carrier is empty / not 3-D.
+        """
+        sig = getattr(ss, 'sigma', None)
+        if sig is None or cs_sub is None or cs_sub.is_empty():
+            return cs_sub
+        ev = cs_sub.materialize()
+        if ev is None or ev.dim() != 3:
+            return cs_sub
+        cdim = int(getattr(ss, 'nOutputDim', ev.shape[-1]))
+        if cdim <= 0 or cdim > ev.shape[-1]:
+            cdim = ev.shape[-1]
+        content = ev[..., :cdim]
+        aux = ev[..., cdim:]
+        content = sig.reverse(content) if reverse else sig.forward(content)
+        if aux.shape[-1] > 0:
+            new_ev = torch.cat([content, aux], dim=-1)
+        else:
+            new_ev = content
+        cs_sub.set_event(new_ev)
+        return cs_sub
+
     def _reverse_body(self, sub):
         """Per-stage body reverse, mirroring ``_forward_body`` order.
 
@@ -6490,6 +6493,17 @@ class BasicModel(BaseModel):
         """
         for t in reversed(range(len(self.body_stages))):
             stage = self.body_stages[t]
+            # 2026-06-04 parallel-symbolic-substrate: invert the per-stage
+            # symbolic generalization (``SymbolicSpace.sigma``) before the
+            # CS bookkeeping reverse -- exact mirror of the forward order
+            # ``cs.forward -> sigma``. Gated to the plain (non-grammar)
+            # parallel path, matching the forward gate.
+            if self.conceptualOrder >= 1 and "merge" not in stage:
+                try:
+                    sub = self._symbolic_sigma_step(
+                        stage["ss"], sub, reverse=True)
+                except (RuntimeError, AssertionError, ValueError):
+                    pass
             if "merge" in stage:
                 try:
                     sub = stage["merge"].reverse(sub)

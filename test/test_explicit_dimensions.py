@@ -105,9 +105,9 @@ def _parse_correctly_predicted(stdout):
 def _parse_input_match_counts(stdout):
     """Count OK vs MISMATCH on the per-input reconstruction report lines.
 
-    Each line looks like::
+    Each line (from ``BasicModel._reconstructionReport``) looks like::
 
-        Input: hello world  -> Reconstructed: hello world  Predicted: 0.07 OK
+        row[0] input='hello world' -> reconstructed='hello world' label=0.0000 predicted=-0.0056 OK
 
     Returns ``(ok_count, total_count)``. This is the right reconstruction
     metric for configs with ``nWhere=0`` -- the Piecewise metric
@@ -115,7 +115,7 @@ def _parse_input_match_counts(stdout):
     are tracked.
     """
     lines = re.findall(
-        r"^\s*Input:\s+.*?\s+Predicted:\s+\S+\s+(OK|MISMATCH)\s*$",
+        r"^\s*row\[\d+\]\s+input=.*?\s+predicted=\S+\s+(OK|MISMATCH)\s*$",
         stdout, flags=re.MULTILINE)
     return sum(1 for s in lines if s == "OK"), len(lines)
 
@@ -177,25 +177,28 @@ class TestXorReconCliReconstruction(unittest.TestCase):
 class TestXorExactCliReconstruction(unittest.TestCase):
     """``data/XOR_exact.xml`` should reconstruct its inputs end-to-end.
 
-    With XOR_exact's bivector regime (ConceptualSpace.bivectorOutput=true,
-    PiLayer kept square as an isomorphism inside conceptual content space,
-    Codebook.project doing the dim adaptation to the bivector handoff),
-    all four XOR inputs should round-trip exactly. ``nWhere=0`` so the
-    Piecewise per-token-offset metric is structurally 0% (no offsets to
-    track) -- the test asserts the OK/MISMATCH word-level match instead.
+    XOR_exact is a fully INVERTIBLE, non-quantized chain: embedding ->
+    PerceptualSpace.pi (butterfly, codebook=none) -> ConceptualSpace
+    bookkeeping (codebook=none) -> SymbolicSpace.sigma (butterfly,
+    codebook=none) -> OutputSpace. The butterfly on BOTH pi and sigma
+    gives cross-slot reach (a per-slot fold cannot combine the two word
+    slots for XOR); codebook=none keeps the forward<->reverse round-trip
+    exact. All four XOR inputs round-trip exactly AND the XOR prediction
+    converges; the test asserts the OK/MISMATCH word-level match.
+
+    Regression history: this was xfail'd 2026-05-13..2026-06-04 after the
+    modality re-architecture forced a mandatory lossy PS codebook (VQ
+    snap) that destroyed exact reconstruction and blocked gradient. The
+    fix restored the invertible chain (PS/SS codebook=none) plus a
+    butterfly ``SymbolicSpace.sigma``; the xfail is removed so this gate
+    now catches future regressions.
     """
 
-    @pytest.mark.xfail(reason=(
-        "Convergence regression after the 2026-05-13 ProjectionBasis "
-        "refactor (same root cause as TestXorReconCliReconstruction): "
-        "shapes round-trip, training runs, but XOR reconstruction "
-        "doesn't hit the >=25% threshold within configured epochs.  "
-        "Needs LR / epoch tuning follow-up."))
     def test_at_least_50_pct_inputs_reconstruct(self):
-        # XOR-via-linear-grammar is seed-fragile (no nonlinearities to
-        # universally learn XOR). Threshold loosened from >=50% to >=25%
-        # so the test holds across arbitrary seeds; a 0% reconstruction
-        # would still flag the regression.
+        # The invertible-butterfly XOR converges to exact reconstruction
+        # (4/4). The >=25% threshold stays loose so the gate is robust to
+        # seed/LR jitter while still flagging a real regression: a broken
+        # chain reconstructs 0% (as it did during the xfail window).
         rc, stdout, stderr = _run_cli("data/XOR_exact.xml", timeout=240)
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         ok, total = _parse_input_match_counts(stdout)

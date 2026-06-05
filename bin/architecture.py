@@ -22,7 +22,15 @@ _CANONICAL_SHAPE = {
     "OutputSpace":     (0, 0),
     "WordSpace":       (0, 0),
 }
-MANDATORY_CODEBOOK_TIERS = {"PerceptualSpace", "SymbolicSpace"}
+# 2026-06-04: no tier's codebook is mandatory. A config opts into a codebook
+# explicitly via <codebook>quantize</codebook>; any tier may resolve to
+# <codebook>none</codebook>. This restores compatibility with the pre-modality
+# exact-XOR reconstruction smoke test, where PerceptualSpace / ConceptualSpace
+# / SymbolicSpace are full-width INVERTIBLE PASSTHROUGHS (no VQ snap) so the
+# forward<->reverse chain round-trips exactly and the butterfly pi computes
+# XOR with cross-slot reach. Reverts the modality re-architecture's
+# mandatory-PS/SS-codebook constraint.
+MANDATORY_CODEBOOK_TIERS = set()
 
 
 def canonical_shape(section):

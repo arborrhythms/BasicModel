@@ -49,3 +49,38 @@ def test_idempotent_forward_compiles_fullgraph_eager():
     assert "torch._dynamo.exc" not in combined, tail
     assert "Graph break" not in combined, tail
     assert rc == 0, f"rc={rc}\n{tail}"
+
+
+@pytest.mark.xfail(strict=False, reason=(
+    "Serial per-word fullgraph compile is PARTIALLY landed. The STM "
+    "data-dependent guards are resolved: ``_stm_shift_and_push`` "
+    "(``if d >= cap`` -> ``u0 >= 8``) and ``_stm_reduce_to_single_S`` "
+    "(``if bool(rel.any())`` -> ``Eq(u0, 1)``) are now tensorized. The "
+    "REMAINING break is host-side learning called from inside the captured "
+    "forward: ``ConceptualSpace.learn_relations_from_stm`` (Spaces.py:11433) "
+    "does ``mask.tolist()`` + per-row taxonomy/codebook mutation, which is "
+    "not tensorizable -- it must be HOISTED out of the captured ``forward`` "
+    "into host-side post-step orchestration (the discourse ``observe_stm_"
+    "end_state`` block at Models.py:6291 is the same pattern, gated off for "
+    "MM_grammar). XPASS here once that hoist lands."))
+def test_serial_per_word_forward_compiles_fullgraph_eager():
+    """The serial ``conceptualMode`` path (per-word forward dispatch) must
+    trace fullgraph too. ``MM_grammar.xml`` drives ``_forward_body_per_word``
+    -> ``ConceptualSpace.forward`` -> ``_stm_shift_and_push`` -> the STM
+    reduce sweep -> host-side relation learning. The two STM data-dependent
+    guards are fixed (see the tensorized shift/reduce); the relation-learning
+    hoist is tracked by the xfail above. Capped at one epoch -- we only need
+    the first batch to TRACE."""
+    rc, out, err = _run_cli("data/MM_grammar.xml",
+                            env_extra={"MODEL_COMPILE": "eager",
+                                       "BASIC_NUM_EPOCHS": "1"})
+    combined = out + err
+    tail = combined[-3000:]
+    # The STM tensorizations are landed: these specific guards must stay gone.
+    assert "u0 >= 8" not in combined, tail
+    assert "Eq(u0, 1)" not in combined, tail
+    # Full-path gate (currently xfail until learn_relations_from_stm hoist):
+    assert "Unsupported" not in combined, tail
+    assert "torch._dynamo.exc" not in combined, tail
+    assert "Graph break" not in combined, tail
+    assert rc == 0, f"rc={rc}\n{tail}"

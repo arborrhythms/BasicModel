@@ -1,13 +1,5 @@
 
 
-
-queryPart and assertPart should both resolve to the method isPart
-
-fix FAILED test/test_grammar_order_typing.py
-
-
-* Implement 2026-05-30-subsymbolic-analyzer-terminal-emitter.md
-
 * Grammar Definition
   * NP and VP need masks on conceptual space that restrict their operation
   * Verbs are temporal things, nouns are spatial things, the full expression within conceptual space is possible only after lifting. 

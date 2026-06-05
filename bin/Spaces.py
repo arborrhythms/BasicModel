@@ -6359,6 +6359,15 @@ class Space(nn.Module):
             self.nVectors,
             self.muxedSize,  # Codebook processes full event vectors
             customVQ=self.customVQ,
+            # 2026-06-04: straight-through estimator on the snap so the
+            # encoder (PerceptualSpace.pi + the joint embedding) receives
+            # gradient THROUGH the codebook quantization. With the prior
+            # STE=False default the snap was effectively ``q.detach()`` and
+            # every upstream parameter on a codebook-bearing path was
+            # frozen -- the XOR_exact non-convergence (PS.pi never learned
+            # the cross-slot XOR mix). Forward output is UNCHANGED (still
+            # the hard snap); only the backward gradient is routed through.
+            STE=True,
         )
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
@@ -6967,6 +6976,27 @@ class InputSpace(Space):
         """
         return self.prepInput(list(sentences))
 
+    def _radix_token_stream(self, text):
+        """Orthographic base-token stream for radix mode.
+
+        Radix mode (2026-06-04) stores percept vectors in a Codebook on
+        ``perceptualSpace.subspace.what`` and exposes a ``PerceptStore``
+        (RadixLayer) as the vocabulary, so the Embedding that used to
+        carry ``_token_stream`` is gone. The base tokenizer is a property
+        of this InputSpace's lexer config, not of the vector store: a
+        ``byte`` lexer emits one token per byte; a ``word`` lexer emits
+        whitespace/word tokens with a trailing ``\\x00`` end-of-sequence
+        sentinel (mirrors ``Embedding._token_stream``). The radix trie
+        chunks/promotes these base tokens downstream in ``_embed_radix``.
+        """
+        if getattr(self, "byte_mode", False):
+            return parse(text, lex="bytes")
+        as_text = Embedding._to_text(text)
+        toks = list(parse(as_text, lex="words"))
+        if not toks or toks[-1][0] != "\x00":
+            toks.append(("\x00", len(as_text)))
+        return toks
+
     def _lex_batch(self, input):
         """Tokenize a raw byte tensor into null-terminated UTF-8 byte slots.
 
@@ -6986,17 +7016,24 @@ class InputSpace(Space):
         """
         assert self._peer_perceptual is not None, \
             "InputSpace._lex_batch requires _peer_perceptual (lexer owner)"
-        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): in radix mode ``peer.vocabulary`` is the
-        # PerceptStore (no _token_stream). The orthographic tokenizer
-        # still lives on the Embedding at ``peer.subspace.what``;
-        # resolve there first so the lexer reaches the right object
-        # regardless of chunking mode.
+        # Resolve the orthographic tokenizer. Non-radix text modes
+        # (lexicon|bpe|mphf|none) keep an Embedding on
+        # ``peer.subspace.what`` (or expose one via ``peer.vocabulary``);
+        # use its ``_token_stream``. Stage 7 radix mode (2026-06-04)
+        # replaced that Embedding with a Codebook Basis for percept-vector
+        # storage and exposes a PerceptStore (RadixLayer) as
+        # ``peer.vocabulary`` -- neither carries ``_token_stream`` and
+        # there is no Embedding left to borrow, so lex the base tokens
+        # from this InputSpace's own lexer config; the radix trie
+        # chunks/promotes them downstream in ``_embed_radix``.
         _what = getattr(self._peer_perceptual.subspace, "what", None)
+        _vocab = self._peer_perceptual.vocabulary
         if hasattr(_what, "_token_stream"):
-            vocab = _what
+            tokenize = _what._token_stream
+        elif hasattr(_vocab, "_token_stream"):
+            tokenize = _vocab._token_stream
         else:
-            vocab = self._peer_perceptual.vocabulary
+            tokenize = self._radix_token_stream
         dev = TheDevice.get()
 
         # Lex the *host* byte slab when the byte cursor staged one
@@ -7044,7 +7081,7 @@ class InputSpace(Space):
         when_idx = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1).contiguous()
 
         for b in range(batch):
-            stream = vocab._token_stream(input[b])
+            stream = tokenize(input[b])
             # Word-mode lexing under the post-2026-04 single-char regex
             # produces more tokens per byte than the legacy grouped form
             # (each digit / punct / whitespace is its own token), so a
@@ -7899,11 +7936,17 @@ class PerceptualSpace(Space):
         # Embedding-resident codebook.
         if self.chunking_mode == "radix":
             from Layers import RadixLayer as _PerceptStore
+            # 2026-06-04: the RadixLayer uses the Codebook Basis on
+            # ``subspace.what`` (built by _build_what_basis in radix mode)
+            # for vector storage -- one shared percept codebook, no
+            # duplicate Parameter table, and the SubSpace owns the
+            # prototypes (enabling lazy .active materialization).
             self.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 1),
                 promotion_threshold=self.chunk_promotion_threshold,
                 promotion_min_length=self.chunk_promotion_min_length,
+                basis=self.subspace.what,
             )
         else:
             self.percept_store = None
@@ -8023,6 +8066,27 @@ class PerceptualSpace(Space):
             f"Fix: set InputSpace/PerceptualSpace nDim so they divide cleanly."
         )
 
+    def _build_object_basis(self):
+        """PerceptualSpace ``.event`` is ALWAYS a passthrough ``Tensor``.
+
+        2026-06-04: the PerceptualSpace ``<codebook>`` option is retired --
+        it had no useful purpose and bred duplication. The percept
+        prototypes live on ``.what`` (the Embedding / lexicon); ``.event``
+        is only the per-batch muxed / materialized event carrier,
+        reconstructed lazily from ``.what`` via the ``.active`` selection
+        (no vector copy). A ``Codebook`` on ``.event`` (a) duplicated the
+        Embedding's percept-vector role and (b) inserted a lossy VQ snap on
+        the percept path -- the XOR_exact convergence breaker (see the
+        2026-06-04 ablation: PS codebook=quantize collapsed both
+        reconstruction and XOR prediction). PS therefore never builds a
+        Codebook on ``.event`` regardless of the (now-ignored) ``<codebook>``
+        flag; ``.event`` is a ``muxedSize``-wide passthrough ``Tensor``
+        whose forward / reverse are the identity.
+        """
+        basis = Tensor(nVectors=self.nVectors, nDim=self.muxedSize)
+        basis.ergodic = getattr(self, "ergodic", False)
+        return basis
+
     def _build_what_basis(self):
         """Lexicon home: build the Embedding when running in text mode.
 
@@ -8044,6 +8108,40 @@ class PerceptualSpace(Space):
         """
         if self.model_type != "embedding":
             return None
+        # 2026-06-04: in radix mode the percept vectors live on a Codebook
+        # ``.what`` Basis shared with the PerceptStore (RadixLayer), instead
+        # of the lexicon Embedding -- ONE percept codebook, owned by the
+        # SubSpace on ``.what``, that the RadixLayer references. chunking is
+        # read from XML directly here (this runs inside super().__init__,
+        # before ``self.chunking_mode`` is stashed).
+        try:
+            _chunking = TheXMLConfig.space(self.config_section, "chunking")
+        except (KeyError, TypeError, ValueError):
+            _chunking = None
+        if _chunking == "radix":
+            cb = Codebook()
+            cb.use_dot_product = bool(getattr(self, "use_dot_product", False))
+            cb.create(1, self.nVectors, self.nDim, customVQ=False)
+            cb.ergodic = self.ergodic
+            # 2026-06-04: the radix percept codebook is a *learnable*
+            # store -- the RadixLayer seeds / reads / grows its rows and
+            # gradients train the percept prototypes. ``create(customVQ=
+            # False)`` leaves ``W`` a plain tensor, which
+            # ``_clear_runtime_basis`` (``setW(None)``) treats as a
+            # transient per-batch payload and wipes mid-forward, so the
+            # permanent codebook vanishes and ``RadixLayer.insert`` /
+            # ``lookup`` hit ``getW() is None``. Register ``W`` as an
+            # nn.Parameter: a Parameter is permanent (``setW(None)``
+            # preserves it), learnable, and counted exactly once -- the
+            # ``.what`` Codebook owns it; the RadixLayer adopts it via
+            # ``object.__setattr__`` (no double-registration).
+            _w = cb.getW()
+            if _w is None:
+                cb.setW(nn.Parameter(
+                    torch.zeros(int(self.nVectors), int(self.nDim))))
+            elif not isinstance(_w, nn.Parameter):
+                cb.setW(nn.Parameter(_w.detach().clone()))
+            return cb
         basis = Embedding()
         basis.ergodic = self.ergodic
         # Embedding.create's second arg is *nVectors* = codebook
@@ -8426,78 +8524,63 @@ class PerceptualSpace(Space):
         # tensor. Unpromoted (byte-fallback / partial-match) slots
         # surface as pid=-1.
         D = int(self.nDim)
-        # Fallback row for padded slots: a zero vector. Use a single
-        # buffer and view it per-batch to avoid per-slot allocation.
-        zero_row = torch.zeros(D, device=dev, dtype=ps.codebook.dtype)
-        rows: list = []
-        pid_2d: list = []
-        for b, row in enumerate(batch_tokens):
-            row_vecs: list = []
-            row_pids: list = []
-            for n in range(min(len(row), nObj)):
-                text = row[n]
-                # 2026-05-28: whitespace-only chunks (the space between
-                # words, trailing nulls) are not symbolic tokens -- they
-                # are delimiters. The lex produces them as parse output
-                # (``parse('hello world', lex='words')`` yields three
-                # tokens: 'hello', ' ', 'world'); without this guard the
-                # space character takes its own PerceptStore slot via
-                # byte_fallback and the recon shows N+1 word slots for
-                # an N-word input. Treating them as null (zero vec,
-                # pid=-1) keeps slot alignment intact while suppressing
-                # the bogus "word" output.
-                if not text or (isinstance(text, str) and not text.strip()):
-                    row_vecs.append(zero_row)
-                    row_pids.append(-1)
-                    continue
-                if isinstance(text, str):
-                    chunk = text.encode("utf-8")
-                else:
-                    chunk = bytes(text)
-                if len(chunk) == 0:
-                    row_vecs.append(zero_row)
-                    row_pids.append(-1)
-                    continue
-                # Spec'd Forward path: hash-map fast path / radix
-                # longest-match + residual byte fallback / promotion
-                # gate. The PerceptStore decides whether the chunk
-                # warrants a permanent percept ID; first-sight chunks
-                # below the promotion threshold stay transient.
-                vec, pid = ps.lookup_with_id(chunk)
-                row_vecs.append(vec.to(dev))
-                row_pids.append(-1 if pid is None else int(pid))
-                # Task G: auto-META binding moved to
-                # ``ConceptualSpace._maybe_autobind_meta`` (fired from
-                # ``cs.forward`` at stage 0 using the pid grid stashed
-                # below). PerceptualSpace no longer reaches across to
-                # SymbolicSpace -- the autobind layer is the one that
-                # sees BOTH PS and SS contributions during cs.forward.
-            # Pad the row to nObj with zero vectors / pid=-1.
-            while len(row_vecs) < nObj:
-                row_vecs.append(zero_row)
-                row_pids.append(-1)
-            rows.append(torch.stack(row_vecs[:nObj], dim=0))
-            pid_2d.append(row_pids[:nObj])
-        what_event = torch.stack(rows, dim=0)  # [B, N, D]
-        # where / when are pass-through indices when configured. The
-        # event-direct write below produces a what-only tensor; if the
-        # SubSpace expects a muxed layout, append zero-pads for where
-        # and when sections so downstream materialize() sees a
-        # consistent muxed width.
         nWhat = int(self.subspace.nWhat)
         nWhere = int(self.subspace.nWhere)
         nWhen = int(self.subspace.nWhen)
         muxed_width = nWhat + nWhere + nWhen
+        # Reserve a null/pad percept (byte 0) for empty trailing slots.
+        null_pid = ps.get_id(b"\x00")
+        if null_pid is None:
+            null_pid = ps.insert(b"\x00")
+        # Spell-out emission (2026-06-04 radix model): at each surface
+        # position emit the LONGEST known percept (down to single-byte
+        # percepts), so an unfamiliar word is spelled out as a run of
+        # byte / prefix percepts, and a recurring word -- once
+        # ``observe_chunk`` has promoted it -- comes back as ONE percept.
+        # Whitespace is spelled out too (each a byte-percept), so the slot
+        # run reconstructs to the surface by plain byte-concatenation with
+        # no separate word-boundary tracking. EVERY slot is a single
+        # ``.what`` row, so the per-slot event is GATHERED from the shared
+        # ``.what`` codebook (the no-copy ``set_forward_content`` path is a
+        # follow-on -- see the muxed-width note in
+        # doc/plans/2026-06-04-radix-spell-out-percept-codebook.md).
+        pid_2d: list = []
+        for b, row in enumerate(batch_tokens):
+            row_pids: list = []
+            for n in range(len(row)):
+                text = row[n]
+                if text is None:
+                    continue
+                chunk = (text.encode("utf-8") if isinstance(text, str)
+                         else bytes(text))
+                if len(chunk) == 0:
+                    continue
+                # Frequency-driven concatenation (no-op for short /
+                # already-known chunks).
+                ps.observe_chunk(chunk)
+                for pid in ps.spell_out(chunk):
+                    if len(row_pids) >= nObj:
+                        break
+                    row_pids.append(int(pid))
+                if len(row_pids) >= nObj:
+                    break
+            while len(row_pids) < nObj:
+                row_pids.append(int(null_pid))
+            pid_2d.append(row_pids[:nObj])
+        pid_grid = torch.tensor(pid_2d, dtype=torch.long, device=dev)
+        # Gather per-slot vectors from the shared ``.what`` codebook (the
+        # same Codebook the RadixLayer writes its percepts into), so the
+        # event reflects the learned percept prototypes and gradient flows
+        # back to ``.what``.
+        W = self.subspace.what.getW()
+        what_event = W[pid_grid]  # [B, N, D]
         if what_event.shape[-1] != muxed_width:
-            # Pad along the last dim with zeros for the where/when
-            # sections so the muxed shape matches.
             pad_width = muxed_width - what_event.shape[-1]
             if pad_width < 0:
                 raise RuntimeError(
-                    f"PerceptualSpace._embed_radix: percept_store dim "
+                    f"PerceptualSpace._embed_radix: percept dim "
                     f"({what_event.shape[-1]}) exceeds subspace muxed "
-                    f"width ({muxed_width}); shrink PS.nDim or grow "
-                    f"the SubSpace's nWhat.")
+                    f"width ({muxed_width}).")
             pad = torch.zeros(
                 what_event.shape[0], what_event.shape[1], pad_width,
                 device=dev, dtype=what_event.dtype)
@@ -8506,15 +8589,8 @@ class PerceptualSpace(Space):
         self.subspace.set_event(what_event)
         self._embedded_input = what_event
         self._last_tokens = batch_tokens
-        # Stash percept_ids on _forward_input so downstream callers
-        # that want the indices can find them (mirrors the lexicon
-        # path's 'indices' key). Unpromoted slots carry pid=-1 --
-        # downstream consumers that need a permanent ID per slot
-        # must handle the sentinel; the canonical recipe is to skip
-        # the slot or fall back to byte-direct on pid<0.
-        what_indices = torch.tensor(pid_2d, dtype=torch.long, device=dev)
         self._forward_input = {
-            'tokens': batch_tokens, 'indices': what_indices,
+            'tokens': batch_tokens, 'indices': pid_grid,
             'percept_store': ps,
         }
         return self.subspace
@@ -10325,52 +10401,17 @@ class ConceptualSpace(Space):
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
 
-        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): construct the per-stage owned SigmaLayers
-        # AFTER ``concept_dim`` is bound (it is the per-slot feature
-        # width these layers act on). Each ``ConceptualSpace`` instance
-        # in the per-stage ModuleList gets its own pair (Ramsified
-        # automatically — ``nn.ModuleList`` registration). The
-        # ``invertible=True, monotonic=False, nonlinear=self.nonlinear``
-        # combo matches the rest of the C-tier substrate machinery so
-        # the LDU reverse is well-defined. ``naive`` / ``ergodic`` /
-        # ``stable=True`` follow the PS pi/sigma pattern (line 7666+).
-        #
-        # ``sigma_in`` uses butterfly=True so the FFT-style element-
-        # pair cascade applies per stage; ``N`` is the per-stage
-        # flattened slot count (``inputShape[0] * concept_dim``),
-        # mirroring the PS auto-computation. ``sigma_cs`` is per-
-        # position (no butterfly flattening) — it consumes a [B, N, D]
-        # CS state slot-wise (the legacy unary SigmaLayer path).
-        _butterfly_total_in = int(inputShape[0]) * int(concept_dim)
-        # Guard against degenerate shapes (N*D < 2 fails LDU butterfly
-        # construction; fall back to non-butterfly for those configs).
-        _use_butterfly_in = _butterfly_total_in >= 2
-        if _use_butterfly_in:
-            self.sigma_in = SigmaLayer(
-                concept_dim, concept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=True, nonlinear=nonlinear,
-                stable=True, monotonic=monotonic,
-                butterfly=True, N=_butterfly_total_in,
-            )
-        else:
-            self.sigma_in = SigmaLayer(
-                concept_dim, concept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=True, nonlinear=nonlinear,
-                stable=True, monotonic=monotonic,
-            )
-        self.sigma_cs = SigmaLayer(
-            concept_dim, concept_dim,
-            naive=naive, ergodic=ergodic,
-            invertible=True, nonlinear=nonlinear,
-            stable=True, monotonic=monotonic,
-        )
-        self.params += self.sigma_in.getParameters()
-        self.params += self.sigma_cs.getParameters()
-        self.layers.append(self.sigma_in)
-        self.layers.append(self.sigma_cs)
+        # 2026-06-04 parallel-symbolic-substrate refactor: the per-stage
+        # ConceptualSpace ``sigma_in`` / ``sigma_cs`` SigmaLayers are
+        # RETIRED. They never fired on the forward path (``CS.forward`` is
+        # STM bookkeeping only) yet ``CS.reverse`` applied
+        # ``sigma_in.reverse`` unconditionally -- an UNMATCHED inverse
+        # fold that corrupted the reconstruction round-trip (the source of
+        # the garbage XOR_exact recon tokens). The symbolic generalization
+        # operator now lives on SymbolicSpace (``SymbolicSpace.sigma``);
+        # ConceptualSpace is a pure bookkeeping carrier (forward push /
+        # reverse read-back), so its forward and reverse are symmetric by
+        # construction with no parameterised fold to invert.
 
         # In-STM autoregressive predictor (Task 2, STM serial/parallel
         # modes plan). Combined PI-then-Sigma with NO intermediate tanh:
@@ -10628,26 +10669,32 @@ class ConceptualSpace(Space):
         # rolls off the high end), then the new idea is written to slot
         # 0. Rows below capacity get a plain push: shift [0..d) -> [1..d+1)
         # and write slot 0. The depth pointer saturates at ``cap``.
-        new_depth = depth.clone()
-        for b in range(B):
-            d = int(depth[b].item())
-            if d >= cap:
-                # Shift right by one slot, drop oldest (high end), write
-                # new at slot 0. depth saturates at cap.
-                buf[b, 1 : cap] = buf[b, : cap - 1].clone()
-                buf[b, 0] = idea[b]
-            else:
-                if d > 0:
-                    buf[b, 1 : d + 1] = buf[b, 0 : d].clone()
-                buf[b, 0] = idea[b]
-                new_depth[b] = d + 1
-        stm._depth = new_depth
-        # Track the host-side maximum depth high-watermark (used by
-        # snapshot()). Bumped to current saturating depth across rows.
-        if B > 0:
-            cur_max = int(new_depth.max().item())
-            if cur_max > int(stm._max_depth_host):
-                stm._max_depth_host = cur_max
+        # Tensorized, branch-free, ``.item()``-free shift so the per-word
+        # STM push traces under ``fullgraph=True``. The original per-row
+        # walk ``for b: d = int(depth[b].item()); if d >= cap: ...``
+        # emitted a host sync (cudaMemcpyDtoH) per row and failed Dynamo
+        # with ``Could not guard on data-dependent expression u0 >= 8``
+        # (cap == nVectors). Both the at-capacity and below-capacity
+        # branches reduce to the SAME uniform right-shift: every row rolls
+        # slots [0..cap-2] -> [1..cap-1] (the OLDEST slot, ``cap - 1``,
+        # falls off) and writes the new idea to slot 0. For below-capacity
+        # rows the shuffled tail lies beyond ``depth`` (the occupied
+        # window) so it is don't-care; ``_depth`` saturates at cap. Mirrors
+        # the tensorized backtrace in ``Language.binary_tiling_viterbi``.
+        if cap > 1:
+            buf[:, 1:cap] = buf[:, 0 : cap - 1].clone()
+        buf[:, 0] = idea
+        # depth_b -> min(depth_b + 1, cap): clamp reproduces the old
+        # per-row ``new_depth[b] = d + 1`` (below cap) / ``d`` (at cap).
+        stm._depth = torch.clamp(depth + 1, max=cap)
+        # Host-side depth high-watermark (used by snapshot() sizing).
+        # Pure host-int arithmetic -- no tensor read -- mirroring the
+        # per-word-step bookkeeping in ``_per_word_body_step``: each push
+        # advances the watermark by one, saturating at cap. Equals the old
+        # ``new_depth.max()`` watermark in the monotonic-growth regime,
+        # without the host sync.
+        if B > 0 and int(stm._max_depth_host) < cap:
+            stm._max_depth_host = int(stm._max_depth_host) + 1
 
     # -- Task 3: explicit predict-then-perceive helpers ----------------
     def _stm_shift_for_predict(self):
@@ -11736,36 +11783,15 @@ class ConceptualSpace(Space):
             # contract intact for downstream PS.reverse consumers.
             V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
-        # Stage 10 PARALLEL residual subtraction: when the matching
-        # forward at this stage actually added ``sigma_cs[k](CS_t0[k])``,
-        # subtract the exact same tensor so the inverse equation closes.
-        # The forward path stashes ``CS_t0[k]`` on
-        # ``self._prev_cs_event_cache`` when the lift fires; we
-        # recompute ``sigma_cs.forward(prev_ev)`` here (gradient still
-        # flows through ``sigma_cs`` params if reverse is run in a grad
-        # context) and subtract.
-        prev_ev_cached = getattr(self, '_prev_cs_event_cache', None)
-        if (prev_ev_cached is not None and y is not None and y.dim() == 3
-                and int(y.shape[-1]) == int(self.concept_dim)
-                and prev_ev_cached.shape == y.shape):
-            lifted = self.sigma_cs.forward(prev_ev_cached)
-            y = y - lifted
-        # else: shape mismatch / degenerate config (no cached prior CS
-        # event, or its shape no longer matches y) — skip the
-        # subtraction. ``sigma_in.reverse`` will still run below,
-        # giving the smoke-quality reverse that the pre-Stage-10-fix
-        # code path produced.
-        # Stage 10: undo the per-stage sigma_in fold on the
-        # materialised CS event. ``sigma_in`` was applied to the
-        # combined contribution in forward; here we apply its inverse
-        # to (CS_t1 - residual) recovering the contribution.
-        if (y is not None and y.dim() == 3
-                and int(y.shape[-1]) == int(self.concept_dim)):
-            y = self.sigma_in.reverse(y)
-        # else: shape mismatch (degenerate config — e.g. concept_dim 0
-        # or the reverse upstream produced a 2-D tensor). Skip the
-        # inverse rather than crash. Mirrors the forward path's
-        # explicit shape guard.
+        # 2026-06-04 parallel-symbolic-substrate refactor: the
+        # ``sigma_cs`` residual subtraction and the ``sigma_in.reverse``
+        # fold are RETIRED along with the CS sigmas. ConceptualSpace is a
+        # pure bookkeeping carrier now -- ``forward`` applied no
+        # parameterised fold, so ``reverse`` must apply none either. The
+        # symbolic generalization (``SymbolicSpace.sigma``) is inverted
+        # upstream of ``CS.reverse`` on the reconstruction path
+        # (BasicModel._reverse_body), keeping the round-trip exact.
+        # ``_prev_cs_event_cache`` is likewise gone.
         # Optional right-half slice (kept for any config that widens
         # the input; with the bookkeeping body this is generally a
         # no-op since ``_right_half_dim`` is 0).
@@ -12025,14 +12051,70 @@ class SymbolicSpace(Space):
         # the intrinsic snap. See doc/Spaces.md for the post-rollback
         # geometry and doc/BuddhistParallels.md for the tetralemma.
         nSymbols = spaceShape[0]
-        # SymbolicSpace owns no SigmaLayer / PiLayer: the architectural
-        # rule restricts those to PerceptualSpace and ConceptualSpace.
-        # With concept_dim == symbol_dim enforced above, the C->S path
-        # is dimensionally a pass-through; learned C->S transforms live
-        # in ConceptualSpace.pi (which is constructed to output
-        # symbol-shaped activations directly).
+        # SymbolicSpace owns a SINGLE square invertible SigmaLayer --
+        # ``self.sigma`` -- the symbolic-loop generalization operator
+        # (2026-06-04 parallel-symbolic-substrate refactor). It is the
+        # ONLY parameterised fold SS owns; PiLayer stays restricted to
+        # Perceptual / Conceptual. ``self.sigma`` is used:
+        #   * in PARALLEL mode as the per-conceptualOrder generalization
+        #     step -- perception establishes CS_0 via the PS->CS Pi path;
+        #     each order applies ``sigma`` to advance CS_k -> CS_{k+1}
+        #     (Models._symbolic_sigma_step);
+        #   * in SERIAL/grammar mode as the binding target for the default
+        #     ``S = sigma(S)`` rule -- ``_attach_per_space_syntactic_layer``
+        #     reads ``getattr(space, 'sigma')`` (Language.py) and registers
+        #     it under the 'sigma' rule name. Before this refactor SS owned
+        #     no sigma, so that hook silently bound nothing and the rule
+        #     was a no-op -- the root cause of the XOR_exact non-convergence.
+        # It is SQUARE on the demux'd CONTENT width (``nOutputDim``), NOT
+        # the muxed event width: sigma generalizes symbolic content and
+        # must not double as a CS<->SS impedance adapter. The
+        # CS-effective-content == SS-content invariant guarantees the
+        # widths already agree. ``invertible=True`` so the reconstruction
+        # reverse path can apply ``sigma.reverse`` exactly.
         self.params = []
         self.layers = nn.ModuleList()
+        _sigma_naive = TheXMLConfig.get("architecture.naive")
+        _sigma_ergodic = TheXMLConfig.get("architecture.ergodic")
+        _sigma_monotonic = bool(
+            TheXMLConfig.get("architecture.monotonic", default=False))
+        _sigma_dim = int(self.nOutputDim)
+        if _sigma_dim <= 0:
+            _sigma_dim = int(self.nDim)
+        # Butterfly cascade on the symbolic sigma -- driven by the
+        # SymbolicSpace ``<butterfly>`` XML knob, mirroring the
+        # PerceptualSpace.pi wiring (Spaces.py ~7853). When set, sigma gets
+        # cross-slot FFT-style reach over the flattened ``[B, N*D]`` content
+        # view (D == ``_sigma_dim``, N == ``inputShape[0]``) instead of a
+        # per-slot square fold. XOR (and any function that must COMBINE
+        # information across slot positions) needs this at the symbolic
+        # tier exactly as PS.pi needs it at the percept tier -- a square
+        # per-slot sigma cannot mix the two word slots. ``N`` is the total
+        # flattened element count; the cascade pads to the next power of
+        # two internally and the per-pair LDU keeps it exactly invertible
+        # (so ``sigma.reverse`` still round-trips the reconstruction path).
+        _sigma_butterfly = bool(
+            TheXMLConfig.space(section, "butterfly", default=False))
+        _sigma_butterfly_total = int(inputShape[0]) * int(_sigma_dim)
+        if _sigma_butterfly and _sigma_butterfly_total >= 2:
+            self.sigma = SigmaLayer(
+                _sigma_dim, _sigma_dim,
+                naive=_sigma_naive, ergodic=_sigma_ergodic,
+                invertible=True, nonlinear=nonlinear,
+                stable=True, monotonic=_sigma_monotonic,
+                butterfly=True, N=_sigma_butterfly_total,
+            )
+        else:
+            self.sigma = SigmaLayer(
+                _sigma_dim, _sigma_dim,
+                naive=_sigma_naive, ergodic=_sigma_ergodic,
+                invertible=True, nonlinear=nonlinear,
+                stable=True, monotonic=_sigma_monotonic,
+            )
+        self.butterfly_enabled = _sigma_butterfly
+        self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
+        self.layers.append(self.sigma)
+        self.params += self.sigma.getParameters()
 
         # Propositional negation slot: NEG sits at the SymbolicSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``

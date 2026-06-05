@@ -8,16 +8,14 @@ Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
                               ``self.sigma`` from PS — PS is pi-only.
                               The sigma half migrates to
                               ``ConceptualSpace.sigma_in`` per stage.
-    ConceptualSpace        -- NO ``sigma_percept`` attribute (Stage 1.C
-                              retired the atomic forward C-tier fold).
-                              Stage 10: each per-stage ConceptualSpace
-                              instance owns ``sigma_in`` and
-                              ``sigma_cs`` SigmaLayers (Ramsified).
-    SymbolicSpace          -- NO sigma / pi attribute. With
-                              ``concept_dim == symbol_dim`` the C->S
-                              transform is a dimensional pass-through;
-                              the codebook snap (and SyntacticLayer
-                              dispatch, if configured) still runs.
+    ConceptualSpace        -- NO ``sigma_percept`` and (2026-06-04) NO
+                              ``sigma_in`` / ``sigma_cs``: CS is a pure
+                              bookkeeping carrier (forward pushes to STM;
+                              forward and reverse are symmetric).
+    SymbolicSpace          -- OWNS ``self.sigma`` (invertible SigmaLayer;
+                              butterfly when configured) -- the symbolic-
+                              loop generalization operator and the
+                              ``S = sigma(S)`` binding target. No ``pi``.
     OutputSpace            -- NO `_piLayer`. The ``nonlinear_output``
                               path uses an ``InvertibleLinearLayer``
                               wrapped with ``atanh -> linear -> tanh``.
@@ -87,14 +85,15 @@ class TestOwnership(unittest.TestCase):
         self.assertIsInstance(ps.pi, PiLayer)
         self.assertFalse(
             hasattr(ps, 'sigma'),
-            "Stage 10: PerceptualSpace.sigma is retired; PS is "
-            "pi-only.")
-        # CS stages each own their own sigma_in (the migrated PS
-        # sigma's new home). At least one stage must expose it.
+            "PerceptualSpace.sigma is retired; PS is pi-only.")
+        # 2026-06-04: ConceptualSpace is a pure bookkeeping carrier now --
+        # the per-stage sigma_in / sigma_cs were retired; the symbolic-loop
+        # sigma lives on SymbolicSpace (see test_symbolic_owns_sigma).
         cs = model.conceptualSpaces[0]
-        self.assertIsInstance(cs.sigma_in, SigmaLayer,
-                              "Stage 10: ConceptualSpace[0].sigma_in "
-                              "must be a SigmaLayer.")
+        self.assertFalse(
+            hasattr(cs, 'sigma_in'),
+            "ConceptualSpace.sigma_in is retired; CS is a bookkeeping "
+            "carrier.")
 
     def test_conceptual_no_sigma_percept(self):
         # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
@@ -106,11 +105,15 @@ class TestOwnership(unittest.TestCase):
             "ConceptualSpace.sigma_percept must be retired by "
             "Stage 1.C.")
 
-    def test_symbolic_has_no_sigma(self):
+    def test_symbolic_owns_sigma(self):
+        # 2026-06-04 parallel-symbolic-substrate: SymbolicSpace OWNS the
+        # sigma (the symbolic-loop generalization operator + the binding
+        # target for the default ``S = sigma(S)`` rule).
         model = _make_plain_model()
-        self.assertFalse(hasattr(model.symbolicSpace, 'sigma'),
-                         "SymbolicSpace.sigma is removed; only PS / CS "
-                         "may own SigmaLayer / PiLayer.")
+        self.assertIsInstance(
+            getattr(model.symbolicSpace, 'sigma', None), SigmaLayer,
+            "SymbolicSpace must own a sigma (SigmaLayer) under the "
+            "parallel-symbolic-substrate ownership rule.")
 
     def test_symbolic_has_no_pi(self):
         model = _make_plain_model()

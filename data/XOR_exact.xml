@@ -14,7 +14,7 @@
 
     <training>
       <numEpochs>600</numEpochs>
-      <learningRate>0.01</learningRate>
+      <learningRate>0.005</learningRate>
       <autoload>false</autoload>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
@@ -26,6 +26,7 @@
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
+    <lexer>word</lexer>
   </InputSpace>
 
   <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
@@ -40,7 +41,7 @@
     <invertible>true</invertible>
     <!-- PerceptualSpace codebook is mandatory (modality re-architecture); was
          none for the project-style exact-XOR reconstruction (now superseded). -->
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
     <!-- Butterfly cascade on pi (and historically sigma) gives pi
          cross-element reach across the flattened [B, N*D] view.
          Without it, pi is per-slot and cannot compute XOR (or any
@@ -48,6 +49,7 @@
          positions). XOR_exact relies on this for the exact-XOR
          convergence property. -->
     <butterfly>true</butterfly>
+    <chunking>lexicon</chunking>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
@@ -58,6 +60,7 @@
     <nOutput>8</nOutput>
     <invertible>true</invertible>
     <codebook>none</codebook>
+    <butterfly>true</butterfly>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
@@ -71,7 +74,8 @@
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
     <!-- SymbolicSpace codebook is mandatory (modality re-architecture); was none. -->
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
+    <butterfly>true</butterfly>
   </SymbolicSpace>
 
   <OutputSpace>

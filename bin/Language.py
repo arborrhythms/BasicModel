@@ -4242,16 +4242,22 @@ class LanguageLayer(Layer):
                     else:
                         b_hard, b_soft, b_routing = binary_layer(x)
                     round_routings.append(b_routing)
-                    kind = b_routing["action_kind"]
-                    op = b_routing["action_op"]
-                    lengths = b_routing["lengths"]
-                    B_now = kind.shape[0]
-                    for b in range(B_now):
-                        L = int(lengths[b].item())
-                        for j in range(L):
-                            if int(kind[b, j].item()) == 1:
-                                tier_rules_per_row[b].append(
-                                    rid_table[int(op[b, j].item())])
+                    # Pure-soft training path: the binary layer omits the hard
+                    # action kinds (no Viterbi backtrace), so the host-side
+                    # rule list simply isn't accumulated this round. The
+                    # differentiable slab (b_soft) still flows forward.
+                    kind = b_routing.get("action_kind")
+                    op = b_routing.get("action_op")
+                    lengths = b_routing.get("lengths")
+                    if (kind is not None and op is not None
+                            and lengths is not None):
+                        B_now = kind.shape[0]
+                        for b in range(B_now):
+                            L = int(lengths[b].item())
+                            for j in range(L):
+                                if int(kind[b, j].item()) == 1:
+                                    tier_rules_per_row[b].append(
+                                        rid_table[int(op[b, j].item())])
                     x = b_soft
                 if round_routings:
                     # Last round's routing is the canonical "binary"
@@ -4320,7 +4326,8 @@ class LanguageLayer(Layer):
                         if int(kind[b, j].item()) == 2:
                             tier_rules_per_row[b].append(
                                 rid_table[int(op[b, j].item())])
-            if "binary" in tier_routing:
+            if ("binary" in tier_routing
+                    and tier_routing["binary"].get("action_kind") is not None):
                 rid_table = self._binary_rule_ids[tier]
                 r = tier_routing["binary"]
                 kind = r["action_kind"]
@@ -5754,9 +5761,23 @@ class BinaryStructuredReductionLayer(nn.Module):
                 disallowed, float('-inf'))
 
         soft = binary_tiling_soft_dp(copy_score, reduce_score)
-        hard = binary_tiling_viterbi(copy_score, reduce_score)
+        # Pure-soft training path: skip the Viterbi backtrace + compact_hard
+        # (~half of compose) during training and propagate the differentiable
+        # SOFT marginal slab with no hard straight-through commitment. The
+        # discrete route is kept for eval / generation (a committed parse) and
+        # for tier-tracked grammars (whose per-round tier mask consumes the
+        # hard action kinds). The host-side rule list is then absent for this
+        # call -- compose tolerates it; per-word hard routing was measured to
+        # stall reconstruction, so dropping it in training is aligned.
+        want_hard = (
+            (not self.training)
+            or getattr(self, "_force_hard_decode", False)
+            or position_tier is not None
+        )
+        hard = (binary_tiling_viterbi(copy_score, reduce_score)
+                if want_hard else None)
 
-        if hard["reduce_mask"].numel() > 0:
+        if hard is not None and hard["reduce_mask"].numel() > 0:
             reduce_op_per_pair = hard["reduce_mask"].argmax(-1)  # [B, N-1]
         else:
             reduce_op_per_pair = torch.zeros(
@@ -5782,31 +5803,34 @@ class BinaryStructuredReductionLayer(nn.Module):
             chosen_reduced = self._selected_reduced(
                 stacked_reduced, reduce_op_per_pair)            # [B, N-1, D]
 
-        hard_slab, hard_meta = compact_hard(
-            x=x, reduced=chosen_reduced,
-            copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
-            span_start=span_start, span_end=span_end,
-        )
-
-        # Hardened DP marginals: forward uses the Viterbi route's hard
-        # masks (one-hot copy at chosen positions, one-hot reduce at
-        # chosen pairs) so the slab becomes structurally sparse — most
-        # positions are either kept-as-is or reduced cleanly, with pad
-        # at consumed slots. Backward uses the soft DP marginals as the
-        # gradient surrogate. This is the "hardening" the user asked
-        # for: forward decisions commit, gradient still flows back.
-        copy_hard_action = hard["copy_mask"].sum(-1)             # [B, N], 0 or 1
-        if hard["reduce_mask"].numel() > 0:
-            reduce_hard_action = hard["reduce_mask"].sum(-1)     # [B, N-1]
+        if want_hard:
+            hard_slab, hard_meta = compact_hard(
+                x=x, reduced=chosen_reduced,
+                copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
+                span_start=span_start, span_end=span_end,
+            )
+            # Hardened DP marginals: forward commits to the Viterbi route's
+            # one-hot copy/reduce actions so the slab becomes structurally
+            # sparse; backward uses the soft DP marginals as the gradient
+            # surrogate (straight-through). Forward decisions commit,
+            # gradient still flows back.
+            copy_hard_action = hard["copy_mask"].sum(-1)         # [B, N], 0/1
+            if hard["reduce_mask"].numel() > 0:
+                reduce_hard_action = hard["reduce_mask"].sum(-1)  # [B, N-1]
+            else:
+                reduce_hard_action = soft["reduce_marginal"]
+            copy_marginal_st = (
+                copy_hard_action + soft["copy_marginal"]
+                - soft["copy_marginal"].detach())
+            reduce_marginal_st = (
+                reduce_hard_action + soft["reduce_marginal"]
+                - soft["reduce_marginal"].detach())
         else:
-            reduce_hard_action = soft["reduce_marginal"]
-        copy_marginal_st = (
-            copy_hard_action + soft["copy_marginal"] - soft["copy_marginal"].detach()
-        )
-        reduce_marginal_st = (
-            reduce_hard_action + soft["reduce_marginal"]
-            - soft["reduce_marginal"].detach()
-        )
+            # Pure soft: propagate the raw DP tiling marginals -- no Viterbi,
+            # no compact_hard, no hard commitment. Fully differentiable.
+            hard_slab, hard_meta = None, None
+            copy_marginal_st = soft["copy_marginal"]
+            reduce_marginal_st = soft["reduce_marginal"]
         marginal_slab = compact_soft(
             x=x, reduced=chosen_reduced,
             copy_marginal=copy_marginal_st,
@@ -5821,13 +5845,6 @@ class BinaryStructuredReductionLayer(nn.Module):
         soft_slab = marginal_slab
 
         routing = {
-            "copy_mask": hard["copy_mask"],
-            "reduce_mask": hard["reduce_mask"],
-            "lengths": hard_meta["lengths"],
-            "src_left": hard_meta["src_left"],
-            "src_right": hard_meta["src_right"],
-            "action_kind": hard_meta["action_kind"],
-            "action_op": hard_meta["action_op"],
             "copy_score": copy_score,
             "reduce_score": reduce_score,
             "copy_marginal": soft["copy_marginal"],
@@ -5838,9 +5855,22 @@ class BinaryStructuredReductionLayer(nn.Module):
             "gates": gates,
             "marginal_slab": marginal_slab,
         }
-        if span_start is not None and span_end is not None:
-            routing["span_start"] = hard_meta["span_start"]
-            routing["span_end"] = hard_meta["span_end"]
+        if want_hard:
+            # Discrete-route diagnostics, the host-side rule list, and tier
+            # propagation all consume these; they are absent on the pure-soft
+            # training path (compose / tier-prop are guarded accordingly).
+            routing.update({
+                "copy_mask": hard["copy_mask"],
+                "reduce_mask": hard["reduce_mask"],
+                "lengths": hard_meta["lengths"],
+                "src_left": hard_meta["src_left"],
+                "src_right": hard_meta["src_right"],
+                "action_kind": hard_meta["action_kind"],
+                "action_op": hard_meta["action_op"],
+            })
+            if span_start is not None and span_end is not None:
+                routing["span_start"] = hard_meta["span_start"]
+                routing["span_end"] = hard_meta["span_end"]
 
         # Tier propagation through compaction (plan \xa76). For each output
         # slot j the new tier is:
@@ -5867,7 +5897,11 @@ class BinaryStructuredReductionLayer(nn.Module):
             )
             routing["next_position_tier"] = next_position_tier
 
-        return hard_slab, soft_slab, routing
+        # On the pure-soft path hard_slab is None and unused by compose (only
+        # soft_slab propagates); return soft_slab in the hard slot so the
+        # (hard, soft, routing) contract always yields a tensor.
+        return (hard_slab if hard_slab is not None else soft_slab,
+                soft_slab, routing)
 
 
 # _UnaryPlacementScorer was removed -- see UnaryStructuredLayer's

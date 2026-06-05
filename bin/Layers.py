@@ -8006,6 +8006,7 @@ class RadixLayer(Layer):
         initial_cap: Optional[int] = None,
         promotion_threshold: int = 4,
         promotion_min_length: int = 2,
+        basis=None,
     ) -> None:
         super().__init__(nInput=int(dim), nOutput=int(dim))
         if dim <= 0:
@@ -8021,10 +8022,27 @@ class RadixLayer(Layer):
                 f"RadixLayer: initial_cap must be positive, got {cap}")
         self._capacity: int = cap
         self._size: int = 0
-        # Codebook starts as a tanh-bounded small-init parameter; grows by
-        # doubling, mirroring the Codebook.grow_to pattern in Spaces.py.
-        self.codebook = nn.Parameter(
-            torch.randn(self._capacity, self.dim) * 0.02)
+        # 2026-06-04: vector storage is a Codebook *Basis*, not a raw
+        # nn.Parameter. When ``basis`` is supplied (PerceptualSpace passes
+        # ``subspace.what`` in radix mode) the percept vectors live on that
+        # shared Basis -- ONE percept codebook, on ``.what``, so the SubSpace
+        # can store ``.active`` selections and materialize lazily (no vector
+        # copy). The shared basis is stashed WITHOUT module registration
+        # (object.__setattr__) so it is not double-counted in this layer's
+        # parameters / state_dict (``.what`` owns it). When ``basis`` is None
+        # (standalone / unit tests) we own a private Codebook. The
+        # ``codebook`` property exposes the ``[V, D]`` prototype tensor so the
+        # existing read / seed call sites are unchanged.
+        if basis is not None:
+            object.__setattr__(self, "_basis", basis)
+            _w = basis.getW()
+            if _w is not None:
+                self._capacity = int(_w.shape[0])
+        else:
+            from Spaces import Codebook
+            _own = Codebook()
+            _own.create(1, self._capacity, self.dim, customVQ=False)
+            self._basis = _own
         # Authoritative trie + cache + inverse table.
         self.radix_trie: RadixTrie = RadixTrie()
         self.hash_map: Dict[bytes, int] = {}
@@ -8032,6 +8050,18 @@ class RadixLayer(Layer):
         # Byte-fallback encoder. Owns its own [256, D] Parameter.
         self.byte_fallback: BytesFallbackEncoder = BytesFallbackEncoder(
             self.dim)
+        # Frequency-driven concatenation (2026-06-04): per-chunk sighting
+        # counts. A spelled-out chunk is promoted to a single percept once
+        # it recurs ``promotion_threshold`` times (see ``observe_chunk``).
+        self._chunk_hits: Dict[bytes, int] = {}
+
+    @property
+    def codebook(self):
+        """The ``[V, D]`` percept prototype tensor (an ``nn.Parameter`` when
+        owned), backed by the Codebook Basis. Read / seed call sites use
+        ``self.codebook`` / ``self.codebook.data`` transparently; growth
+        goes through ``_grow_to`` -> ``Basis.grow_to``."""
+        return self._basis.getW()
 
     # ------------------------------------------------------------------
     # Basic queries
@@ -8213,6 +8243,76 @@ class RadixLayer(Layer):
         return combined, None
 
     # ------------------------------------------------------------------
+    # Spell-out emission (2026-06-04)
+    # ------------------------------------------------------------------
+
+    def spell_out(self, chunk: bytes) -> List[int]:
+        """Emit ``chunk`` as a sequence of percept IDs -- the model's
+        "send the next-largest percept, up to the size of the word"
+        contract.
+
+        At each position take the LONGEST known prefix-percept; when no
+        multi-byte prefix is known, fall to a SINGLE-BYTE percept (seeded
+        on demand so every byte is always a valid one-row percept). So an
+        unfamiliar word is "spelled out" as a run of byte/prefix percepts,
+        and a word the trie has already concatenated (via promotion) comes
+        back as one percept. EVERY returned id indexes a single
+        ``codebook`` (``.what``) row -- which is what lets the SubSpace
+        store a ``.active`` selection and materialize without copying.
+
+        Returns the list of percept-store row ids (length >= 1 for a
+        non-empty chunk).
+        """
+        chunk_b = bytes(chunk)
+        if len(chunk_b) == 0:
+            return []
+        pids: List[int] = []
+        i = 0
+        n = len(chunk_b)
+        while i < n:
+            remaining = chunk_b[i:]
+            match_id, match_len = self.radix_trie.longest_match(remaining)
+            if match_id is not None and match_len > 0:
+                pids.append(int(match_id))
+                i += int(match_len)
+                continue
+            # No known prefix at this position: emit a single byte-percept,
+            # seeding it on first sight so the spell-out always bottoms out.
+            one = chunk_b[i:i + 1]
+            pid = self.hash_map.get(one)
+            if pid is None:
+                pid = self.insert(one)
+            pids.append(int(pid))
+            i += 1
+        return pids
+
+    def observe_chunk(self, chunk: bytes) -> Optional[int]:
+        """Frequency-driven concatenation: count a full chunk's sightings
+        and promote it to a SINGLE percept once it recurs
+        ``promotion_threshold`` times (and is at least
+        ``promotion_min_length`` bytes). The promoted row is seeded from
+        the mean of the chunk's current spell-out percepts so the new
+        concatenated percept starts meaningful (a continuation of what was
+        being spelled out). Returns the new percept id on promotion, else
+        ``None`` (already a percept, too short, or below threshold).
+        """
+        chunk_b = bytes(chunk)
+        if len(chunk_b) < self.promotion_min_length:
+            return None
+        if chunk_b in self.hash_map:
+            return None
+        self._chunk_hits[chunk_b] = self._chunk_hits.get(chunk_b, 0) + 1
+        if self._chunk_hits[chunk_b] < self.promotion_threshold:
+            return None
+        pids = self.spell_out(chunk_b)
+        with torch.no_grad():
+            init = (self.codebook[pids].mean(dim=0).detach()
+                    if pids else None)
+        new_id = self.insert(chunk_b, init_vector=init)
+        self._chunk_hits.pop(chunk_b, None)
+        return int(new_id)
+
+    # ------------------------------------------------------------------
     # Layer-API forward / reverse
     # ------------------------------------------------------------------
 
@@ -8374,15 +8474,10 @@ class RadixLayer(Layer):
         new_cap = int(new_cap)
         if new_cap <= self._capacity:
             return
-        old = self.codebook.data
-        device = old.device
-        dtype = old.dtype
-        fresh = torch.randn(new_cap, self.dim,
-                            device=device, dtype=dtype) * 0.02
-        with torch.no_grad():
-            fresh[:self._size, :].copy_(old[:self._size, :])
-        # Re-register the parameter at the new capacity.
-        self.codebook = nn.Parameter(fresh)
+        # Delegate growth to the Codebook Basis: it preserves the existing
+        # rows and zero-inits the new ones (``insert`` seeds the new row
+        # immediately after). Replaces the old raw-Parameter rebuild.
+        self._basis.grow_to(new_cap)
         self._capacity = new_cap
 
     # ------------------------------------------------------------------

@@ -151,14 +151,18 @@ class TestBackwardCompat(unittest.TestCase):
 
 class TestPerLevelLayers(unittest.TestCase):
 
-    def test_symbolic_spaces_have_no_sigma(self):
-        """Post-2026-05 ownership rule: SymbolicSpace owns no SigmaLayer
-        or PiLayer."""
+    def test_symbolic_spaces_own_sigma_not_pi(self):
+        """2026-06-04 parallel-symbolic-substrate ownership: each
+        SymbolicSpace OWNS the sigma (the symbolic-loop generalization
+        operator + the ``S = sigma(S)`` binding target) but NO pi -- the
+        Pi path stays at PerceptualSpace / ConceptualSpace."""
+        from Layers import SigmaLayer
         model = _make_model('RamsifiedModel.xml')
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
         for s in model.symbolicSpaces:
-            self.assertFalse(hasattr(s, 'sigma'),
-                             "SymbolicSpace must not own a sigma layer.")
+            self.assertIsInstance(
+                getattr(s, 'sigma', None), SigmaLayer,
+                "SymbolicSpace must own a sigma (SigmaLayer).")
             self.assertFalse(hasattr(s, 'pi'),
                              "SymbolicSpace must not own a pi layer.")
 

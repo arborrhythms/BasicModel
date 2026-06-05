@@ -1,10 +1,11 @@
-"""Mandatory PerceptualSpace / SymbolicSpace codebooks (Phase 2, Task 2.3 of
-doc/plans/2026-06-03-modality-architecture-plan.md).
+"""PerceptualSpace / SymbolicSpace codebook defaults + opt-out.
 
-In the converged modality architecture a percept and a symbol qua symbol must
-quantize onto a codebook (architecture.MANDATORY_CODEBOOK_TIERS). The model.xml
-defaults for these tiers are <codebook>quantize</codebook>; a config that
-explicitly resolves either to "none" is a loud build error.
+The model.xml defaults for the PS/SS tiers are <codebook>quantize</codebook>,
+so configs that don't override inherit a codebook. 2026-06-04 the *mandatory*
+constraint (architecture.MANDATORY_CODEBOOK_TIERS) was REVERTED: a config may
+now explicitly resolve PS/SS to <codebook>none</codebook> to build a full-width
+INVERTIBLE PASSTHROUGH (no VQ snap) -- required by the exact-XOR reconstruction
+fixture, where an exactly invertible forward<->reverse chain is the point.
 """
 
 import os, sys, tempfile, unittest, warnings
@@ -44,26 +45,18 @@ class TestMandatoryCodebooks(unittest.TestCase):
         self.assertNotEqual(model.symbolicSpace.codebook_mode, "none",
                             "SymbolicSpace codebook is mandatory")
 
-    def test_symbolicspace_codebook_none_raises(self):
-        """An explicit <codebook>none</codebook> on SymbolicSpace is a loud
-        build error, not a silent passthrough."""
-        tree = ET.parse(os.path.join(_DATA, "MentalModel.xml"))
-        root = tree.getroot()
-        ss = root.find("SymbolicSpace")
-        cb = ss.find("codebook")
-        if cb is None:
-            cb = ET.SubElement(ss, "codebook")
-        cb.text = "none"
-        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
-        tree.write(tmp, xml_declaration=True)
-        tmp.close()
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore")
-                with self.assertRaises(ValueError):
-                    _build(tmp.name)
-        finally:
-            os.unlink(tmp.name)
+    def test_codebook_none_allowed(self):
+        """2026-06-04: an explicit <codebook>none</codebook> on PerceptualSpace
+        / SymbolicSpace is now ALLOWED (the mandatory-codebook constraint was
+        reverted). data/XOR_exact.xml resolves BOTH to "none" -- a full-width
+        invertible passthrough -- and must build without raising."""
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            model = _build(os.path.join(_DATA, "XOR_exact.xml"))
+        self.assertEqual(model.perceptualSpace.codebook_mode, "none",
+                         "PerceptualSpace codebook=none should be honored")
+        self.assertEqual(model.symbolicSpace.codebook_mode, "none",
+                         "SymbolicSpace codebook=none should be honored")
 
 
 if __name__ == "__main__":
