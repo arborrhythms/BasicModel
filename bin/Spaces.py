@@ -10980,6 +10980,23 @@ class ConceptualSpace(Space):
         # state. Hard reset only (a soft reset is not a sentence boundary).
         if hard:
             self._commit_autobind_from_stash()
+            # Sentence-boundary relation learning, HOISTED off the compiled
+            # forward (fullgraph): ``learn_relations_from_stm`` does
+            # ``mask.tolist()`` + host-side taxonomy / codebook mutation,
+            # untraceable under torch.compile. Read the just-finished
+            # sentence's STM end-state and learn relative-truth relations in
+            # eager Python BEFORE ``stm.clear()`` below wipes it. No-op for
+            # absolute-only grammars (empty relative mask). Mirrors the
+            # autobind-commit hoist above.
+            _stm = getattr(self, 'stm', None)
+            _ws = getattr(self, '_model_wordSubSpace', None)
+            if (_stm is not None and _ws is not None
+                    and getattr(_stm, '_buffer', None) is not None):
+                from Language import sentence_relative_mask
+                _buf = _stm._buffer
+                _rel = sentence_relative_mask(
+                    _ws, int(_buf.shape[0]), device=_buf.device)
+                self.learn_relations_from_stm(_rel)
         super().Reset(batch=batch, hard=hard)
         # Task 3: clear the predict-then-perceive held predictions and the
         # intra-loss accumulator on EVERY reset (hard or soft) so neither a

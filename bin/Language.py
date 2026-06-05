@@ -4036,6 +4036,54 @@ class _BinaryGrammarOpAdapter(nn.Module):
         return self.gl.compose(left, right)
 
 
+def sentence_relative_mask(word_subspace, B, device=None):
+    """Per-row ``[B]`` bool: True where the current sentence is a RELATIVE
+    truth (the ``part`` / ``isEqual`` predicate family), read from
+    ``word_subspace.current_rules`` + ``TheGrammar``.
+
+    Host-side (a cheap dict lookup); conservative -- returns all-False on
+    ANY uncertainty. Shared by ``BasicModel._sentence_relative_mask`` (the
+    reduce site) and the hoisted ``ConceptualSpace.Reset`` relation-learning
+    hook (both need the same signal off the compiled forward).
+    """
+    false_mask = torch.zeros(B, dtype=torch.bool, device=device)
+    if word_subspace is None:
+        return false_mask
+    current_rules = getattr(word_subspace, 'current_rules', None)
+    if not current_rules:
+        return false_mask
+    if not TheGrammar._relative_rule_id_set():
+        return false_mask
+
+    def _row_is_relative(rule_ids):
+        for rid in (rule_ids or ()):
+            if TheGrammar.is_relative_rule(rid):
+                return True
+        return False
+
+    s_rules = None
+    for key in ('S', 's'):
+        if key in current_rules:
+            s_rules = current_rules[key]
+            break
+    if not s_rules:
+        return false_mask
+    try:
+        n_outer = len(s_rules)
+    except TypeError:
+        return false_mask
+    if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
+        shared = _row_is_relative(s_rules)
+        return torch.full((B,), bool(shared), dtype=torch.bool, device=device)
+    if n_outer == B:
+        flags = [_row_is_relative(row) for row in s_rules]
+        return torch.tensor(flags, dtype=torch.bool, device=device)
+    if n_outer == 1:
+        shared = _row_is_relative(s_rules[0])
+        return torch.full((B,), bool(shared), dtype=torch.bool, device=device)
+    return false_mask
+
+
 class LanguageLayer(Layer):
     """Top-level signal-routing parser. The canonical parser as of
     Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md,
@@ -4089,6 +4137,14 @@ class LanguageLayer(Layer):
         self.feature_dim = int(feature_dim)
         self.max_depth = int(max_depth)
         self.temperature = float(temperature)
+        # Conceptual reduction order (T = conceptualOrder). Used as the
+        # recursive-reduction round floor in ``compose`` (plan \xa76: the
+        # per-tier compose loop is collapsed into a single reduction tier,
+        # so the bound is ``max(conceptual_order, N-1)`` rather than the
+        # number of declared tiers). Defaults to 1; the host space sets it
+        # when it can reach the model's conceptualOrder. ``max(1, N-1) ==
+        # N-1`` so the default reproduces the pre-collapse round count.
+        self.conceptual_order = 1
         self._unary_layers = nn.ModuleDict()
         self._binary_layers = nn.ModuleDict()
         # Parallel arrays of global rule_ids per attached layer; keyed by
@@ -4216,48 +4272,26 @@ class LanguageLayer(Layer):
                 # the canonical [B, 1, D] root state is x[:, 0:1, :]
                 # after the final round.
                 #
-                # Per-position tier state (plan \xa76): initialized to all C
-                # at the start of this tier's binary reductions; passed to
-                # each round and threaded forward via the
-                # ``next_position_tier`` field in the routing dict, so
-                # ``lift`` / ``lower`` rules can promote / demote operands
-                # as the slab folds.
                 rid_table = self._binary_rule_ids[tier]
-                max_rounds = max(0, x.shape[1] - 1)
+                # plan \xa76: with C and S collapsed into one reduction tier,
+                # fold for ``max(conceptualOrder, N-1)`` rounds. Extra rounds
+                # on an already-folded slab are safe no-ops (the layer
+                # returns the degenerate path for N<=1).
+                max_rounds = max(self.conceptual_order, x.shape[1] - 1)
                 round_routings = []
-                use_tier_track = (
-                    getattr(binary_layer, 'op_tier_idx', None) is not None)
-                if use_tier_track:
-                    position_tier = torch.zeros(
-                        x.shape[0], x.shape[1],
-                        dtype=torch.long, device=x.device)
-                else:
-                    position_tier = None
                 for _ in range(max_rounds):
-                    if use_tier_track:
-                        b_hard, b_soft, b_routing = binary_layer(
-                            x, position_tier=position_tier)
-                        position_tier = b_routing.get(
-                            "next_position_tier", position_tier)
-                    else:
-                        b_hard, b_soft, b_routing = binary_layer(x)
+                    b_hard, b_soft, b_routing = binary_layer(x)
                     round_routings.append(b_routing)
-                    # Pure-soft training path: the binary layer omits the hard
-                    # action kinds (no Viterbi backtrace), so the host-side
-                    # rule list simply isn't accumulated this round. The
-                    # differentiable slab (b_soft) still flows forward.
-                    kind = b_routing.get("action_kind")
-                    op = b_routing.get("action_op")
-                    lengths = b_routing.get("lengths")
-                    if (kind is not None and op is not None
-                            and lengths is not None):
-                        B_now = kind.shape[0]
-                        for b in range(B_now):
-                            L = int(lengths[b].item())
-                            for j in range(L):
-                                if int(kind[b, j].item()) == 1:
-                                    tier_rules_per_row[b].append(
-                                        rid_table[int(op[b, j].item())])
+                    kind = b_routing["action_kind"]
+                    op = b_routing["action_op"]
+                    lengths = b_routing["lengths"]
+                    B_now = kind.shape[0]
+                    for b in range(B_now):
+                        L = int(lengths[b].item())
+                        for j in range(L):
+                            if int(kind[b, j].item()) == 1:
+                                tier_rules_per_row[b].append(
+                                    rid_table[int(op[b, j].item())])
                     x = b_soft
                 if round_routings:
                     # Last round's routing is the canonical "binary"
@@ -4326,8 +4360,7 @@ class LanguageLayer(Layer):
                         if int(kind[b, j].item()) == 2:
                             tier_rules_per_row[b].append(
                                 rid_table[int(op[b, j].item())])
-            if ("binary" in tier_routing
-                    and tier_routing["binary"].get("action_kind") is not None):
+            if "binary" in tier_routing:
                 rid_table = self._binary_rule_ids[tier]
                 r = tier_routing["binary"]
                 kind = r["action_kind"]
@@ -5566,17 +5599,7 @@ class BinaryStructuredReductionLayer(nn.Module):
         context_net: optional contextualizer for h. Defaults to identity.
         temperature: comparator-mixer softmax temperature.
 
-    Per-position tier state:
-        Each call to ``forward`` takes an optional ``position_tier``
-        Long tensor ``[B, N]`` (0 = C, 1 = S; default all 0). The forward
-        masks ``reduce_score`` at any (b, p, r) where ``op_tiers[r]`` does
-        not match ``position_tier[b, p]`` and ``position_tier[b, p+1]``,
-        then returns ``next_position_tier`` ``[B, N']`` in the routing
-        dict so the caller can thread the state through subsequent
-        rounds.
     """
-
-    _TIER_TO_INT = {'C': 0, 'S': 1, 'P': 2, 'L': 3}
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
                  temperature=1.0, op_tiers=None, op_names=None):
@@ -5602,30 +5625,14 @@ class BinaryStructuredReductionLayer(nn.Module):
         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * 0.02)
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
-        # Per-rule tier / name metadata (plan \xa76). Stored as buffers so
-        # ``forward`` can build masks without re-encoding strings each
-        # call. Both default to None when the caller doesn't pass them,
-        # in which case ``forward`` skips the tier gate (backward-compat).
+        # Per-rule name / tier metadata retained for op identification
+        # (e.g. lift / lower). Tier-gated masking has been removed.
         if op_tiers is not None and op_names is not None:
-            tier_idx = torch.tensor(
-                [self._TIER_TO_INT.get(t, 0) for t in op_tiers],
-                dtype=torch.long)
-            self.register_buffer('op_tier_idx', tier_idx, persistent=False)
             self.op_names = list(op_names)
             self.op_tiers = list(op_tiers)
-            # Per-rule tier delta: +1 for lift (C->S), -1 for lower
-            # (S->C), 0 otherwise. The chosen op's delta picks the new
-            # tier for the carried operand of each pair.
-            delta = torch.tensor(
-                [(+1 if n == 'lift' else (-1 if n == 'lower' else 0))
-                 for n in op_names],
-                dtype=torch.long)
-            self.register_buffer('op_tier_delta', delta, persistent=False)
         else:
-            self.op_tier_idx = None
             self.op_names = None
             self.op_tiers = None
-            self.op_tier_delta = None
 
     def _stacked_reduced(self, x):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
@@ -5669,25 +5676,14 @@ class BinaryStructuredReductionLayer(nn.Module):
     # concept tensors (``op(left, right)`` over self.ops in
     # _stacked_reduced), the counterpart to WordSubSpace.compose's
     # SS-side analysis. See WordSubSpace.compose docstring for the split.
-    def forward(self, x, *, span_start=None, span_end=None,
-                position_tier=None):
+    def forward(self, x, *, span_start=None, span_end=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
-
-        ``position_tier`` is an optional ``[B, N]`` Long tensor encoding
-        each position's current tier (0=C, 1=S, ...). When provided
-        together with the layer's ``op_tier_idx`` / ``op_tier_delta``
-        buffers, the reduce score is masked at pair / rule combinations
-        whose tiers disagree, and the returned routing dict carries the
-        post-reduction ``next_position_tier`` ``[B, N']`` so callers can
-        thread the state through subsequent rounds. Default behaviour
-        (``position_tier`` None or layer constructed without tier
-        metadata) is unchanged from the pre-2026-05-29 layer.
 
         Returns:
             hard_slab: [B, N, D] argmax-selected per-position action.
             soft_slab: [B, N, D] DP-marginal-weighted blend (gradient surrogate).
             routing:   dict with masks, scores, marginals, lengths, gates,
-                       optionally ``next_position_tier``.
+                       optionally ``span_start`` / ``span_end``.
         Degenerate N<=1 returns the input twice with a stub routing.
         """
         B, N, D = x.shape
@@ -5701,8 +5697,6 @@ class BinaryStructuredReductionLayer(nn.Module):
                 "logZ": x.new_zeros(B),
                 "degenerate": True,
             }
-            if position_tier is not None:
-                routing["next_position_tier"] = position_tier
             return x, x, routing
 
         h = self.context_net(x)
@@ -5736,48 +5730,10 @@ class BinaryStructuredReductionLayer(nn.Module):
         else:
             reduce_score = x.new_zeros(B, max(N - 1, 0), self.r_reduce)
 
-        # Tier-gated scoring (plan \xa76): mask out (pair, rule)
-        # combinations whose rule tier doesn't match BOTH operand tiers.
-        # The mask is additive (-inf at disallowed cells) so log-domain
-        # DP / Viterbi treat them as structurally impossible.
-        tier_mask_used = (
-            position_tier is not None
-            and self.op_tier_idx is not None
-            and reduce_score.numel() > 0
-        )
-        if tier_mask_used:
-            op_tier_idx = self.op_tier_idx.to(x.device)         # [R]
-            left_tier  = position_tier[:, :-1]                  # [B, N-1]
-            right_tier = position_tier[:, 1:]                   # [B, N-1]
-            # match[b, p, r] = (op_tier_idx[r] == left_tier[b, p]
-            #                  and op_tier_idx[r] == right_tier[b, p])
-            match_left  = (left_tier.unsqueeze(-1)
-                           == op_tier_idx.view(1, 1, -1))       # [B, N-1, R]
-            match_right = (right_tier.unsqueeze(-1)
-                           == op_tier_idx.view(1, 1, -1))       # [B, N-1, R]
-            tier_match = match_left & match_right               # [B, N-1, R]
-            disallowed = ~tier_match
-            reduce_score = reduce_score.masked_fill(
-                disallowed, float('-inf'))
-
         soft = binary_tiling_soft_dp(copy_score, reduce_score)
-        # Pure-soft training path: skip the Viterbi backtrace + compact_hard
-        # (~half of compose) during training and propagate the differentiable
-        # SOFT marginal slab with no hard straight-through commitment. The
-        # discrete route is kept for eval / generation (a committed parse) and
-        # for tier-tracked grammars (whose per-round tier mask consumes the
-        # hard action kinds). The host-side rule list is then absent for this
-        # call -- compose tolerates it; per-word hard routing was measured to
-        # stall reconstruction, so dropping it in training is aligned.
-        want_hard = (
-            (not self.training)
-            or getattr(self, "_force_hard_decode", False)
-            or position_tier is not None
-        )
-        hard = (binary_tiling_viterbi(copy_score, reduce_score)
-                if want_hard else None)
+        hard = binary_tiling_viterbi(copy_score, reduce_score)
 
-        if hard is not None and hard["reduce_mask"].numel() > 0:
+        if hard["reduce_mask"].numel() > 0:
             reduce_op_per_pair = hard["reduce_mask"].argmax(-1)  # [B, N-1]
         else:
             reduce_op_per_pair = torch.zeros(
@@ -5803,34 +5759,31 @@ class BinaryStructuredReductionLayer(nn.Module):
             chosen_reduced = self._selected_reduced(
                 stacked_reduced, reduce_op_per_pair)            # [B, N-1, D]
 
-        if want_hard:
-            hard_slab, hard_meta = compact_hard(
-                x=x, reduced=chosen_reduced,
-                copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
-                span_start=span_start, span_end=span_end,
-            )
-            # Hardened DP marginals: forward commits to the Viterbi route's
-            # one-hot copy/reduce actions so the slab becomes structurally
-            # sparse; backward uses the soft DP marginals as the gradient
-            # surrogate (straight-through). Forward decisions commit,
-            # gradient still flows back.
-            copy_hard_action = hard["copy_mask"].sum(-1)         # [B, N], 0/1
-            if hard["reduce_mask"].numel() > 0:
-                reduce_hard_action = hard["reduce_mask"].sum(-1)  # [B, N-1]
-            else:
-                reduce_hard_action = soft["reduce_marginal"]
-            copy_marginal_st = (
-                copy_hard_action + soft["copy_marginal"]
-                - soft["copy_marginal"].detach())
-            reduce_marginal_st = (
-                reduce_hard_action + soft["reduce_marginal"]
-                - soft["reduce_marginal"].detach())
+        hard_slab, hard_meta = compact_hard(
+            x=x, reduced=chosen_reduced,
+            copy_mask=hard["copy_mask"], reduce_mask=hard["reduce_mask"],
+            span_start=span_start, span_end=span_end,
+        )
+
+        # Hardened DP marginals: forward uses the Viterbi route's hard
+        # masks (one-hot copy at chosen positions, one-hot reduce at
+        # chosen pairs) so the slab becomes structurally sparse — most
+        # positions are either kept-as-is or reduced cleanly, with pad
+        # at consumed slots. Backward uses the soft DP marginals as the
+        # gradient surrogate. This is the "hardening" the user asked
+        # for: forward decisions commit, gradient still flows back.
+        copy_hard_action = hard["copy_mask"].sum(-1)             # [B, N], 0 or 1
+        if hard["reduce_mask"].numel() > 0:
+            reduce_hard_action = hard["reduce_mask"].sum(-1)     # [B, N-1]
         else:
-            # Pure soft: propagate the raw DP tiling marginals -- no Viterbi,
-            # no compact_hard, no hard commitment. Fully differentiable.
-            hard_slab, hard_meta = None, None
-            copy_marginal_st = soft["copy_marginal"]
-            reduce_marginal_st = soft["reduce_marginal"]
+            reduce_hard_action = soft["reduce_marginal"]
+        copy_marginal_st = (
+            copy_hard_action + soft["copy_marginal"] - soft["copy_marginal"].detach()
+        )
+        reduce_marginal_st = (
+            reduce_hard_action + soft["reduce_marginal"]
+            - soft["reduce_marginal"].detach()
+        )
         marginal_slab = compact_soft(
             x=x, reduced=chosen_reduced,
             copy_marginal=copy_marginal_st,
@@ -5845,6 +5798,13 @@ class BinaryStructuredReductionLayer(nn.Module):
         soft_slab = marginal_slab
 
         routing = {
+            "copy_mask": hard["copy_mask"],
+            "reduce_mask": hard["reduce_mask"],
+            "lengths": hard_meta["lengths"],
+            "src_left": hard_meta["src_left"],
+            "src_right": hard_meta["src_right"],
+            "action_kind": hard_meta["action_kind"],
+            "action_op": hard_meta["action_op"],
             "copy_score": copy_score,
             "reduce_score": reduce_score,
             "copy_marginal": soft["copy_marginal"],
@@ -5855,53 +5815,11 @@ class BinaryStructuredReductionLayer(nn.Module):
             "gates": gates,
             "marginal_slab": marginal_slab,
         }
-        if want_hard:
-            # Discrete-route diagnostics, the host-side rule list, and tier
-            # propagation all consume these; they are absent on the pure-soft
-            # training path (compose / tier-prop are guarded accordingly).
-            routing.update({
-                "copy_mask": hard["copy_mask"],
-                "reduce_mask": hard["reduce_mask"],
-                "lengths": hard_meta["lengths"],
-                "src_left": hard_meta["src_left"],
-                "src_right": hard_meta["src_right"],
-                "action_kind": hard_meta["action_kind"],
-                "action_op": hard_meta["action_op"],
-            })
-            if span_start is not None and span_end is not None:
-                routing["span_start"] = hard_meta["span_start"]
-                routing["span_end"] = hard_meta["span_end"]
+        if span_start is not None and span_end is not None:
+            routing["span_start"] = hard_meta["span_start"]
+            routing["span_end"] = hard_meta["span_end"]
 
-        # Tier propagation through compaction (plan \xa76). For each output
-        # slot j the new tier is:
-        #   action_kind==0 (copy):   position_tier[b, src_left[b, j]]
-        #   action_kind==1 (reduce): position_tier[b, src_left[b, j]]
-        #                            + op_tier_delta[action_op[b, j]]
-        # Padded slots (action_kind == -1) keep tier=0 (C). Trailing pad
-        # is meaningless to downstream tier mask anyway since the slab's
-        # ``lengths`` already gate those positions out.
-        if position_tier is not None and self.op_tier_delta is not None:
-            src_left  = hard_meta["src_left"].clamp(min=0)        # [B, N]
-            action_kind = hard_meta["action_kind"]                # [B, N]
-            action_op = hard_meta["action_op"].clamp(min=0)       # [B, N]
-            op_delta = self.op_tier_delta.to(x.device)            # [R]
-            src_tier = torch.gather(position_tier, 1, src_left)   # [B, N]
-            reduce_delta_at = op_delta[action_op]                 # [B, N]
-            new_tier_if_reduce = (src_tier + reduce_delta_at).clamp(min=0)
-            # action_kind == 1 -> reduce path; action_kind in (0, -1) ->
-            # copy / pad path (keep source tier).
-            next_position_tier = torch.where(
-                action_kind == 1,
-                new_tier_if_reduce,
-                src_tier,
-            )
-            routing["next_position_tier"] = next_position_tier
-
-        # On the pure-soft path hard_slab is None and unused by compose (only
-        # soft_slab propagates); return soft_slab in the hard slot so the
-        # (hard, soft, routing) contract always yields a tensor.
-        return (hard_slab if hard_slab is not None else soft_slab,
-                soft_slab, routing)
+        return hard_slab, soft_slab, routing
 
 
 # _UnaryPlacementScorer was removed -- see UnaryStructuredLayer's
@@ -9429,32 +9347,55 @@ class WordSubSpace(SubSpace):
             by_tier_arity.setdefault((tier, arity), []).append(
                 (rule_id, layer, rule_name))
 
-        # Attach per (tier, arity). ``op_tiers`` / ``op_names`` carry the
-        # .grammar-declared metadata for the binary tier-gating path
-        # (BinaryStructuredReductionLayer; see plan \xa76).
+        # plan \xa76: collapse C and S into a single reduction tier in C.
+        # Instead of attaching one layer per (tier, arity), aggregate every
+        # entry of a given arity ACROSS tiers into a single attach call under
+        # the conceptual reduction tier 'C'. ``op_tiers`` / ``op_names`` still
+        # carry the .grammar-declared metadata, so the merged binary layer
+        # (BinaryStructuredReductionLayer) keeps each op's original tier
+        # letter for lift/lower (C<->S) role identification; ops, rule_ids,
+        # op_names and op_tiers are concatenated in lockstep so op order
+        # stays aligned with rule_id order. Group by arity only, with a
+        # stable (tier, original-order) ordering for determinism.
+        REDUCE_TIER = 'C'
+        by_arity = {}
         for (tier, arity), entries in sorted(by_tier_arity.items()):
-            ops = []
-            rule_ids = []
-            op_names = []
-            op_tiers = []
             for rule_id, layer, name in entries:
                 if arity == 2:
-                    ops.append(_BinaryGrammarOpAdapter(layer))
+                    op = _BinaryGrammarOpAdapter(layer)
                 else:
-                    ops.append(layer)
-                rule_ids.append(rule_id)
-                op_names.append(name)
-                op_tiers.append(tier)
+                    op = layer
+                by_arity.setdefault(arity, {
+                    "ops": [], "rule_ids": [], "op_names": [],
+                    "op_tiers": [],
+                })
+                bucket = by_arity[arity]
+                bucket["ops"].append(op)
+                bucket["rule_ids"].append(rule_id)
+                bucket["op_names"].append(name)
+                # preserve the op's *original* tier letter as the role label
+                bucket["op_tiers"].append(tier)
+        for arity, bucket in sorted(by_arity.items()):
             if arity == 1:
                 router.attach_unary_ops(
-                    ops=ops, rule_ids=rule_ids,
-                    op_names=op_names, op_tiers=op_tiers,
-                    tier=tier)
+                    ops=bucket["ops"], rule_ids=bucket["rule_ids"],
+                    op_names=bucket["op_names"], op_tiers=bucket["op_tiers"],
+                    tier=REDUCE_TIER)
             else:
                 router.attach_layer_ops(
-                    ops=ops, rule_ids=rule_ids,
-                    op_names=op_names, op_tiers=op_tiers,
-                    tier=tier)
+                    ops=bucket["ops"], rule_ids=bucket["rule_ids"],
+                    op_names=bucket["op_names"], op_tiers=bucket["op_tiers"],
+                    tier=REDUCE_TIER)
+
+        # plan \xa76: plumb the conceptual-reduction round floor onto the
+        # router. conceptualOrder lives on the model (Models.py), not on
+        # WordSubSpace, and is not cleanly reachable here within ~2 attribute
+        # hops -- so leave the LanguageLayer default of 1. ``max(1, N-1) ==
+        # N-1`` reproduces the pre-collapse round count, making the floor a
+        # harmless no-op until/unless a host wires conceptualOrder through.
+        _co = getattr(self, 'conceptualOrder', None)
+        if _co is not None:
+            router.conceptual_order = int(_co)
 
     def _resolve_rule_layer(self, tier, rule_name):
         """Return a Layer instance for ``(tier, rule_name)`` from the host

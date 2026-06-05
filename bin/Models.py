@@ -5460,58 +5460,9 @@ class BasicModel(BaseModel):
             today). The absolute path is byte-identical in every
             fall-through case.
         """
-        false_mask = torch.zeros(B, dtype=torch.bool, device=device)
-        ws = getattr(self, 'wordSubSpace', None)
-        if ws is None:
-            return false_mask
-        current_rules = getattr(ws, 'current_rules', None)
-        if not current_rules:
-            return false_mask
-        from Language import TheGrammar
-        # Fast out: a grammar with NO relative rule can never be
-        # relative -> stay all-False (keeps absolute-only grammars,
-        # e.g. MM_xor / MM_5M, byte-identical with zero per-row work).
-        if not TheGrammar._relative_rule_id_set():
-            return false_mask
-
-        def _row_is_relative(rule_ids):
-            for rid in (rule_ids or ()):
-                if TheGrammar.is_relative_rule(rid):
-                    return True
-            return False
-
-        # The S-tier is where the relative predicate (REL_T) is
-        # selected. Be tolerant of the tier key spelling.
-        s_rules = None
-        for key in ('S', 's'):
-            if key in current_rules:
-                s_rules = current_rules[key]
-                break
-        if not s_rules:
-            return false_mask
-        # ``s_rules`` is list[list[int]] (per-step inner lists). Decide
-        # per-row vs batch-shared from the OUTER length.
-        try:
-            n_outer = len(s_rules)
-        except TypeError:
-            return false_mask
-        # Legacy flat ``list[int]`` shape (no nested lists): treat the
-        # whole list as one shared step-sequence -> scalar broadcast.
-        if n_outer > 0 and not isinstance(s_rules[0], (list, tuple)):
-            shared = _row_is_relative(s_rules)
-            return torch.full((B,), bool(shared),
-                              dtype=torch.bool, device=device)
-        if n_outer == B:
-            # Per-row: one inner list per batch row.
-            flags = [_row_is_relative(row) for row in s_rules]
-            return torch.tensor(flags, dtype=torch.bool, device=device)
-        if n_outer == 1:
-            # Batch-shared single inner list -> broadcast scalar.
-            shared = _row_is_relative(s_rules[0])
-            return torch.full((B,), bool(shared),
-                              dtype=torch.bool, device=device)
-        # Ambiguous outer length (neither B nor 1): be conservative.
-        return false_mask
+        from Language import sentence_relative_mask
+        return sentence_relative_mask(
+            getattr(self, 'wordSubSpace', None), B, device=device)
 
     def _stm_reduce_to_single_S(self):
         """NULL-seal finalize: bounded reduce sweep over STM -> single S.
@@ -6074,60 +6025,6 @@ class BasicModel(BaseModel):
                 gate_b_1 = torch.ones(
                     w.shape[0], 1, dtype=torch.bool, device=w.device)
             active_host = p < K_host
-            # Per-word router fire (Task 4 / plan §4). Fire
-            # ``wordSubSpace.compose`` over the CURRENT STM snapshot
-            # (the slots filled by words 0..p-1, i.e. STM[1:end]
-            # relative to the slot word ``p`` is about to write) BEFORE
-            # ``_per_word_body_step`` runs ``cs.forward`` for word ``p``.
-            # This populates ``wordSubSpace.current_rules`` so:
-            #   (1) the SS dispatch path sees per-word routing context
-            #       (the real, working deliverable of this task), and
-            #   (2) Task 3's predict-then-perceive ``cs.forward`` reads
-            #       the freshest routing distribution as its conditioning
-            #       context.
-            #
-            # CAPTURE-GATE SAFETY: this fire lives in the host-side loop
-            # of ``_forward_body_per_word``, OUTSIDE the per-iteration
-            # captured graph (``_per_word_body_step`` is "the ONLY
-            # callable that runs inside the middle captured graph" per
-            # its docstring; the loop, the ``int(K_host)`` read above,
-            # and this fire are all eager host Python). So even though
-            # ``wordSubSpace.compose`` may take a full ``languageLayer``
-            # path that introduces a DtoH sync, it cannot break the
-            # per-word capture gate — it is never traced into that graph.
-            #
-            # ROUTING-IS-A-DICT (scope note, Task 4 constraint #2):
-            # ``current_rules`` is a host-side rule dict
-            # ``{'S': [rule_id, ...]}``, NOT a ``[B, concept_dim]``
-            # tensor. Task 3's ``_intra_routing_for_predict`` only
-            # forwards routing into ``IntraSentenceLayer`` when it is a
-            # CS-width tensor; given a dict it returns ``None`` (handled
-            # gracefully). So this fire wires the SS dispatch context but
-            # does NOT (yet) flow a routing tensor into the intra
-            # predictor — rule-aware predictor conditioning is DEFERRED
-            # to a future task that adds the rule-dict -> CS-width
-            # projection (deliberately not built here: rule-distribution
-            # width != concept_dim, and a bridge risks capture-gate
-            # breakage). The predictor is left untouched.
-            if (active_host
-                    and getattr(self, 'router_wire_serial', 'both')
-                    in ("per-word", "both")
-                    and self.wordSubSpace is not None
-                    and self.conceptualSpace is not None
-                    and self.conceptualSpace.stm is not None):
-                _snap = self.conceptualSpace.stm.snapshot()
-                if _snap is not None:
-                    # CS->SS demux: the symbol-level grammar (languageLayer
-                    # feature_dim == symbol_dim) operates on content only --
-                    # SS carries no where/when -- so trim the muxed CS event's
-                    # where/when tail (mirrors the SS forward trim near
-                    # Spaces.py:14730) before the chart compose.
-                    _nwhat = getattr(
-                        getattr(self.conceptualSpace, 'subspace', None),
-                        'nWhat', None)
-                    if _nwhat is not None and _snap.shape[-1] > _nwhat:
-                        _snap = _snap[..., :_nwhat]
-                    self.wordSubSpace.compose(_snap)
             CS_sub, idea_bd = self._per_word_body_step(
                 w, p, gate_b_1, out_slot, active_host=active_host)
             if active_host and CS_sub is not None:
@@ -6208,26 +6105,15 @@ class BasicModel(BaseModel):
             # and the post-sweep STM depth (must be 1 across rows).
             self._stm_single_S = S
             self._stm_post_depth = post_depth
-            # Task 6c (§7c): content-aware learned-relation insertion.
-            # For RELATIVE rows the reduce stopped at the depth-3
-            # end-state [predicate, idea1, idea2] (slots 0/1/2 of the
-            # STM buffer); offer each to the learn-score gate, which
-            # inserts the predicate-parent / two-children META + the
-            # tetralemma trust tuple iff learn_score >= truth_criterion.
-            # Host-side bookkeeping under no_grad; the hook itself
-            # no-ops (returns []) when nothing is relative or the SS /
-            # STM refs are absent, so absolute-only grammars stay byte-
-            # identical without any error-swallowing here. The relative
-            # mask is the SAME cheap host dict lookup
-            # _stm_reduce_to_single_S used, so this never enters the
-            # captured forward region. Real numerical bugs in the gate
-            # (NaN ideas, non-finite learn-score) propagate per the
-            # fail-loud policy.
+            # ``cs_buf`` / ``rel_mask`` feed the boundary discourse hook
+            # (``observe_stm_end_state``) below. Relative-relation LEARNING
+            # (``learn_relations_from_stm``) is HOISTED out of this captured
+            # forward into ``ConceptualSpace.Reset`` (host-side sentence
+            # boundary): it does ``mask.tolist()`` + taxonomy/codebook
+            # mutation, untraceable under ``fullgraph``. See that Reset.
             cs_buf = self.conceptualSpace.stm._buffer
             rel_mask = self._sentence_relative_mask(
                 int(cs_buf.shape[0]), device=cs_buf.device)
-            self._stm_learned_relations = (
-                self.conceptualSpace.learn_relations_from_stm(rel_mask))
 
             # Task 7 (§8): LTM — record EVERY sentence's STM end-state on
             # the InterSentenceLayer's per-row chain (the AR sequence for
