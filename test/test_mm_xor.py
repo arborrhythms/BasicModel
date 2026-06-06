@@ -247,7 +247,7 @@ class TestMMXorConvergence(unittest.TestCase):
         self._grammar_xor_convergence(cfg_path)
 
     # test_mm_grammar_without_vqvae_learns_xor_signal retired
-    # 2026-05-29: the ``<useVQVAE>false</useVQVAE>`` mode it tested no
+    # 2026-05-29: the ```` mode it tested no
     # longer exists. The prior hard_quantize branch in
     # SymbolicSpace.forward was a footgun (codebook frozen at random
     # init, no learning signal) and was removed; ``<codebook>quantize</codebook>``

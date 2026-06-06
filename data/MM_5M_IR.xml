@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_5M_IR: bidirectional masked Input Reconstruction sibling of
        MM_5M. Same brick-body architecture (8 hierarchical levels,
        N*D=4096); differs in tokenization (word/lexicon vs byte+BPE)

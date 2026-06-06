@@ -22,9 +22,12 @@ def _build_text_model(train_embeddings=False):
     xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
     tree = ET.parse(xml_path)
     root = tree.getroot()
-    auto = root.find("architecture/autoload")
+    training = root.find("architecture/training")
+    if training is None:
+        training = ET.SubElement(root.find("architecture"), "training")
+    auto = training.find("autoload")
     if auto is None:
-        auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto = ET.SubElement(training, "autoload")
     auto.text = "false"
     te = root.find("architecture/trainEmbeddings")
     if te is None:

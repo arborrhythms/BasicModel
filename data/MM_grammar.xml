@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_grammar: MentalModel on XOR via non-default grammar-directed
        composition (derived from the grammar block). Codebook training
        is implicit when <codebook>quantize</codebook> is set

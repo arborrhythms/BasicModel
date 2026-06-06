@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- LM_5M_IR: chart/grammar-driven sibling of MM_5M_IR.  Mirrors
        MM_5M_IR's space parameters exactly (word lexer, lexicon
        chunking, 1M-entry perceptual codebook, hierarchical 8-level

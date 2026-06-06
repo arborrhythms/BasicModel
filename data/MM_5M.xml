@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_5M: MentalModel ~5M params with byte input and hierarchical
        progressive bottleneck. 8 levels from 1024x4 to 4x1024 (N*D=4096). -->
   <architecture>
@@ -76,7 +77,7 @@
   <PerceptualSpace>
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
-    <nDim>12</nDim>
+    <nDim>8</nDim>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
     <chunking>bpe</chunking>
@@ -92,7 +93,7 @@
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>1028</nDim>
+    <nDim>1024</nDim>
     <nVectors>8</nVectors> <!-- 512 -->
     <codebook>none</codebook> <!-- true -->
     <!-- H2: STM capacity = the classical 7±2 working-memory bound. The
@@ -102,19 +103,19 @@
          read/write. Was previously the wMax-or-8 fallback (=8 here:
 	         no <stmCapacity>, no <WordSpace><wMax>). Phase-1-D STM-7
 	         decision; <wMax> remains the parser span-width fallback. -->
-    <stmCapacity>7</stmCapacity>
+    <stmCapacity>8</stmCapacity>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nInput>1024</nInput>
-    <nDim>1024</nDim>
-    <nInputDim>8</nInputDim>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
     <!-- Stage 1.B paired-row contract (2026-05-27): SS.codebook gains
          paired orth + semantic rows per word in PS's lexicon, so
          SS.nVectors must be at least 2*PS_lexicon_capacity to hold
          the paired rows. PS uses Embedding._LEXICON_DEFAULT_CAPACITY=65536,
          doubled to 131072 for the orth+semantic pair. -->
-    <nVectors>131072</nVectors>
+    <nDim>1025</nDim>
+    <nVectors>65536</nVectors>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>

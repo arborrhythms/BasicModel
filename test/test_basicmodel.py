@@ -1121,20 +1121,9 @@ class TestBaseModelFactory(unittest.TestCase):
     def test_factory_creates_simple_model(self):
         xml = """<model>
   <architecture>
-    <nInput>16</nInput>
-    <nPercepts>16</nPercepts>
-    <nConcepts>8</nConcepts>
-    <nSymbols>8</nSymbols>
-    <nOutput>4</nOutput>
-    <inputDim>1</inputDim>
-    <perceptDim>1</perceptDim>
-    <conceptDim>1</conceptDim>
-    <symbolDim>1</symbolDim>
-    <outputDim>1</outputDim>
-    <perceptPassThrough>true</perceptPassThrough>
-    <symbolPassThrough>true</symbolPassThrough>
     <training><autoload>false</autoload></training>
   </architecture>
+  <InputSpace><nInput>16</nInput><nOutput>4</nOutput></InputSpace>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
             f.write(xml)
@@ -1153,8 +1142,6 @@ class TestBaseModelFactory(unittest.TestCase):
         # SigmaLayer/PiLayer post 2026-05 ownership rule).
         xml = """<model>
   <architecture>
-    <type>basic</type>
-    <nWords>16</nWords>
     <conceptualOrder>2</conceptualOrder>
     <reconstruct>none</reconstruct>
     <training><autoload>false</autoload></training>
@@ -1177,7 +1164,6 @@ class TestBaseModelFactory(unittest.TestCase):
     def test_factory_creates_mental_model(self):
         xml = """<model>
   <architecture>
-    <type>mental</type>
     <reconstruct>none</reconstruct>
     <training><autoload>false</autoload></training>
   </architecture>
@@ -1982,9 +1968,12 @@ class TestReconstructionSymbols(unittest.TestCase):
         root = tree.getroot()
 
         # Patch autoload off
-        auto = root.find("architecture/autoload")
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
         if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
+            auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
         # PS/SS codebooks are mandatory in the converged modality architecture;
@@ -2076,9 +2065,12 @@ class TestReconstructionSymbols(unittest.TestCase):
         root = tree.getroot()
 
         # Ensure autoload is off
-        auto = root.find("architecture/autoload")
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
         if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
+            auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
@@ -2147,9 +2139,12 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
-        auto = root.find("architecture/autoload")
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
         if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
+            auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
         te = root.find("architecture/trainEmbeddings")
@@ -2390,9 +2385,12 @@ class TestRuntimeDataLoader(unittest.TestCase):
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        auto = root.find("architecture/autoload")
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
         if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
+            auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
@@ -2451,9 +2449,12 @@ class TestXorExactErgodic(unittest.TestCase):
             erg = ET.SubElement(root.find("architecture"), "ergodic")
         erg.text = "true"
 
-        auto = root.find("architecture/autoload")
+        _tr = root.find("architecture/training")
+        if _tr is None:
+            _tr = ET.SubElement(root.find("architecture"), "training")
+        auto = _tr.find("autoload")
         if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
+            auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)

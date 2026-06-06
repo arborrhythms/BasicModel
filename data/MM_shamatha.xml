@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_shamatha: Dakpo Tashi Namgyel one-pointedness via convex-hull
        fusion. Mirrors MM_boolean's DNF stack (NegationLayer + Sigma AND-fold
        + Pi OR-fold) and adds the `Contiguous(S)` rule that fires

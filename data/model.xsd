@@ -5,7 +5,11 @@
   <xs:element name="model">
     <xs:complexType>
       <xs:all>
-        <xs:element name="architecture" type="architectureType"/>
+        <!-- architecture is optional: a config may omit it and inherit the
+             whole block from the data/model.xml defaults overlay (and
+             minimal fixtures, e.g. grammar-only configs, carry no
+             architecture at all). -->
+        <xs:element name="architecture" type="architectureType" minOccurs="0"/>
         <xs:element name="mentalModel" type="mentalModelType" minOccurs="0"/>
         <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
         <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
@@ -81,6 +85,12 @@
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
+      <!-- Architecture-level embedding-training override. Models.py reads
+           ``trainEmbeddings`` (and singular ``trainEmbedding``) from the
+           architecture block ahead of ``<training><trainEmbedding>``; the
+           boolean plural form maps true -> BOTH, false -> NONE. -->
+      <xs:element name="trainEmbeddings" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="server" type="serverType" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -200,11 +210,18 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- Tri-state codebook mode. Canonical values: none | quantize |
+       project. Legacy booleans true/false are accepted as deprecated
+       aliases (true -> quantize, false -> none) to match
+       Space.normalize_codebook_mode's backward-compat parsing; prefer the
+       canonical names in new configs. -->
   <xs:simpleType name="codebookModeEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="none"/>
       <xs:enumeration value="quantize"/>
       <xs:enumeration value="project"/>
+      <xs:enumeration value="true"/>
+      <xs:enumeration value="false"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -219,10 +236,14 @@
        routerKindEnum retired alongside the chart. The signal router
        (LanguageLayer) is the canonical parser. -->
 
+  <!-- ``<symbolLearning enabled="true"/>``: the code reads the ``enabled``
+       attribute (architecture.symbolLearning.enabled). A nested
+       ``<enabled>`` child is also accepted for back-compat. -->
   <xs:complexType name="symbolLearningType">
     <xs:all>
       <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
     </xs:all>
+    <xs:attribute name="enabled" type="xs:boolean" use="optional"/>
   </xs:complexType>
 
   <xs:simpleType name="reconstructEnum">
@@ -337,6 +358,10 @@
            Legacy name reverseScale still parsed (with deprecation
            warning) by util.TheXMLConfig. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <!-- Deprecated legacy alias for reconstructionScale; util.TheXMLConfig
+           remaps it (with a deprecation warning). Accepted here so
+           unmigrated configs still validate. -->
+      <xs:element name="reverseScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -419,18 +444,16 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-           butterfly cascade mode on PerceptualSpace.pi. When
-           ``butterfly=true``, ``self.pi`` is constructed as
-           ``PiLayer(D, D, invertible=True, butterfly=True,
-           N=<butterflyN>)`` enabling cross-position mixing via an
-           O(N log N) cascade. ``butterflyN`` MUST be a power of two;
-           for non-power-of-two slot counts, pad to the next power of
-           two with identity-init on the extra slot and mask it from
-           the loss (the cascade itself only supports N = 2^k). Default
-           off; configs that don't opt in see the legacy PiLayer
-           construction unchanged. -->
+           optional butterfly cascade on PerceptualSpace.pi for
+           cross-element FFT-style mixing over the flattened [B, N*D]
+           view. When ``butterfly=true`` the PiLayer is built with the
+           cascade enabled. The cascade length N is AUTO-COMPUTED from
+           the space shape (nInput * nInputDim) and internally padded to
+           the next power of two; there is no explicit length knob (the
+           former ``<butterflyN>`` element was retired 2026-06-05; the
+           cascade derives N from the shape). Default off; configs that
+           don't opt in see the legacy PiLayer construction unchanged. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="butterflyN" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
@@ -522,6 +545,10 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Optional butterfly cascade on the ConceptualSpace sigma fold
+           (cross-element mixing; the cascade length is auto-computed from
+           the space shape; see perceptualSpaceType/butterfly). -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
@@ -561,9 +588,18 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Optional butterfly cascade on the SymbolicSpace sigma operator
+           (cross-slot mixing, needed for tasks like XOR that combine
+           positions; the cascade length is auto-computed from the space
+           shape; see perceptualSpaceType/butterfly). -->
+      <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Gate SymbolicSpace's stack-rewrite LanguageLayer dispatch
+           (``self.use_stack_router``). Default false keeps the legacy
+           forward path. -->
+      <xs:element name="useStackRouter" type="xs:boolean" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
@@ -700,12 +736,16 @@
   <!-- ═══════════════════════════════════════════════════════════════════
        Language section (inside <WordSpace>)
        ═══════════════════════════════════════════════════════════════════ -->
+  <!-- ``start`` may repeat: multiple ``<start>`` tags define accepted
+       unreduced forms / start patterns (see test_grammar_start_rule), so
+       this uses xs:sequence (start* then grammar? then interpretation?)
+       rather than xs:all (which caps each child at one). -->
   <xs:complexType name="languageType">
-    <xs:all>
-      <xs:element name="start" type="xs:string" minOccurs="0"/>
+    <xs:sequence>
+      <xs:element name="start" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="grammar" type="grammarType" minOccurs="0"/>
       <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
-    </xs:all>
+    </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="grammarType" mixed="true">

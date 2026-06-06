@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Step 2: Step 1 + the .where modality (now an architectural constant
        via canonical_shape; the per-config width tag was retired). -->
   <architecture>

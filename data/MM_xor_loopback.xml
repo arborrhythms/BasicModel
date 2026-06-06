@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_xor_loopback: PerceptualSpace + ConceptualSpace + SymbolicSpace
        scalar-codebook loopback on the XOR dataset. This is the surviving
        scalar replacement for the retired bivector smoke config. -->

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Streaming-path micro smoke: 200 docs, 1 epoch, batchSize=4.
        Exercises SentenceStreamDataset + _runEpoch_streaming end-to-end
        without the cost of a full BasicModel training run. -->

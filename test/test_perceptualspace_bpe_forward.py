@@ -26,10 +26,8 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>NONE</maskedPrediction>
     <data><dataset>xor</dataset></data>
     <training>
       <numTrials>1</numTrials>
@@ -80,7 +78,6 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
-  <WordSpace><useGrammar>none</useGrammar></WordSpace>
 </model>
 """
     path = os.path.join(tmpdir, "mm_bpe_test.xml")

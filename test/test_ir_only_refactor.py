@@ -4,7 +4,7 @@ Covers the new-test items from
 ``doc/plans/2026-05-14-retire-maskedPrediction-IR-only-within-sentence.md``
 §"Add tests":
 
-  * XSD validation rejects ``<maskedPrediction>...</maskedPrediction>``.
+  * XSD validation rejects ````.
   * XSD validation rejects ``<reconstruct>output</reconstruct>``.
   * ``<reconstructionScale>`` parses; legacy ``<reverseScale>`` triggers
     a deprecation warning and maps to the same field.
@@ -135,7 +135,7 @@ class TestXsdRejectsRetiredElements(unittest.TestCase):
     def test_rejects_maskedPrediction(self):
         self._require_lxml()
         caught = self._parse_with_validation(
-            training_extra="      <maskedPrediction>AR</maskedPrediction>")
+            training_extra="      ")
         msgs = " ".join(str(w.message) for w in caught)
         self.assertIn("maskedPrediction", msgs,
                       "XSD did not flag <maskedPrediction>")

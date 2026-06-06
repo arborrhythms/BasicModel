@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
        Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
        but scaled to XOR-sized dims. -->

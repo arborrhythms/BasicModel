@@ -264,9 +264,24 @@ class TestConceptualSpaceOwnership(unittest.TestCase):
 
 
 class TestRuleConditionedPredictor(unittest.TestCase):
-    """End-to-end: after a serial forward the per-word router populates a
-    dense ``rule_probs`` and the intra-sentence predictor is genuinely
-    rule-conditioned (the bias fires by exactly ``routing_proj(rule_probs)``).
+    """End-to-end: a sentence-level router fire over the accumulated STM
+    populates a dense ``rule_probs`` and the intra-sentence predictor is
+    genuinely rule-conditioned (the bias fires by exactly
+    ``routing_proj(rule_probs)``).
+
+    Cadence note (tier-free bounded-STM fold, doc/plans/2026-06-05-tier-
+    free-bounded-stm-fold.md): the old per-word ``wordSubSpace.compose``
+    auto-fire was deleted, and the boundary ``_chart_compose_at_C`` fire
+    only runs on the whole-slab/parallel forward path -- the serial
+    (grammatical) forward this config uses now reduces the STM via
+    ``_stm_reduce_to_single_S`` instead. The rule-conditioning MECHANISM
+    is unchanged: a single sentence-level ``compose`` over the STM
+    snapshot builds ``routing_state.rule_probs`` as a ``[B, n_rules]``
+    distribution (verified below). ``_run_one_forward`` fires that
+    sentence-level compose explicitly -- byte-identically to how the
+    whole-slab path's ``_chart_compose_at_C`` does
+    ``wordSubSpace.compose(stm.snapshot())`` -- so these assertions test
+    the new single-tier, sentence-level cadence.
     """
 
     @classmethod
@@ -284,6 +299,17 @@ class TestRuleConditionedPredictor(unittest.TestCase):
         cls.model.eval()
 
     def _run_one_forward(self):
+        """Run one serial forward, then fire the sentence-level router
+        over the accumulated STM so ``routing_state.rule_probs`` is built.
+
+        The forward accumulates the per-word concepts onto
+        ``conceptualSpace.stm``; the tier-free fold's sentence-level
+        router fire is the single ``compose`` over that STM snapshot
+        (the same call ``_chart_compose_at_C`` makes on the whole-slab
+        path). The serial forward path no longer auto-fires it (the
+        per-word compose was deleted; the boundary fire is whole-slab
+        only), so the test triggers the one sentence-level compose here.
+        """
         model = self.model
         loader = model.inputSpace.data.data_loader(
             split="train", num_streams=1)
@@ -293,6 +319,14 @@ class TestRuleConditionedPredictor(unittest.TestCase):
             warnings.filterwarnings("ignore")
             with torch.no_grad():
                 model.forward(x)
+                # Sentence-level router fire over the accumulated STM:
+                # builds ``wordSubSpace.routing_state.rule_probs`` at the
+                # new single-tier cadence (mirrors the whole-slab path's
+                # ``_chart_compose_at_C`` -> ``wordSubSpace.compose``).
+                snap = model.conceptualSpace.stm.snapshot()
+                self.assertIsNotNone(
+                    snap, "forward must accumulate an STM snapshot.")
+                model.wordSubSpace.compose(snap)
 
     def test_routing_state_built_with_rule_probs(self):
         import Language
@@ -323,7 +357,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
         r = cs._intra_routing_for_predict()
         self.assertIsNotNone(
             r, "_intra_routing_for_predict must return a real tensor after a "
-               "serial forward (not None).")
+               "serial forward + sentence-level compose (not None).")
         self.assertTrue(torch.is_tensor(r))
         n_rules = len(Language.TheGrammar.rule_table)
         self.assertEqual(int(r.shape[-1]), n_rules,

@@ -8546,6 +8546,24 @@ class PerceptualSpace(Space):
         # doc/plans/2026-06-04-radix-spell-out-percept-codebook.md).
         pid_2d: list = []
         for b, row in enumerate(batch_tokens):
+            # Pass 1 -- frequency observation for EVERY chunk in the row,
+            # independent of the nObj emission budget below. ``observe_chunk``
+            # (promotion counting) must see every word: a word truncated
+            # from this row's emission must still accrue sightings so it can
+            # promote and come back as a single percept next time. Coupling
+            # this to the slot-limited emission loop silently starved any
+            # word past the budget of promotion (the earlier words' spell-out
+            # fills nObj slots and the loop breaks before reaching them).
+            for text in row:
+                if text is None:
+                    continue
+                chunk = (text.encode("utf-8") if isinstance(text, str)
+                         else bytes(text))
+                if chunk:
+                    ps.observe_chunk(chunk)
+            # Pass 2 -- spell-out emission, bounded by the nObj slot budget.
+            # Promotions from Pass 1 already took effect, so a just-promoted
+            # recurring word now spells out as ONE percept here.
             row_pids: list = []
             for n in range(len(row)):
                 text = row[n]
@@ -8555,9 +8573,6 @@ class PerceptualSpace(Space):
                          else bytes(text))
                 if len(chunk) == 0:
                     continue
-                # Frequency-driven concatenation (no-op for short /
-                # already-known chunks).
-                ps.observe_chunk(chunk)
                 for pid in ps.spell_out(chunk):
                     if len(row_pids) >= nObj:
                         break

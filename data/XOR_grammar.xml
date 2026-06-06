@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- XOR_grammar: XOR-via-grammar test config. The signal router
        is the candidate grammar discoverer;
        the parse-side grammar names exactly the three Boolean

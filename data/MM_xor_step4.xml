@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Step 4 (legacy name): conceptualOrder=3, nVectors=8. Butterfly path retired
        2026-05-12; this config now matches Step 3 modulo the original flag. -->
   <architecture>

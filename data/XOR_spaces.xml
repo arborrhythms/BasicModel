@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
        Architecture is perfectly invertible (invertible=true everywhere). -->
   <architecture>

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Step 1: XOR_exact + type=mental (only change) -->
   <architecture>
     <modelType>embedding</modelType>

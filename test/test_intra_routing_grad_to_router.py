@@ -120,7 +120,20 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         model = _build_model(_ROUTER_CONFIG)
         ws = model.wordSubSpace
         ll = ws.languageLayer
-        ul = ll._unary_layers["S"]
+        # Tier-free fold: the grammar collapses to a SINGLE reduction tier
+        # (no hardcoded S/C/P). Resolve whichever key the unary layer was
+        # registered under -- there is exactly one -- and assert the
+        # router exposes the APPLY/COPY anchor scorers on it.
+        unary_keys = list(ll._unary_layers.keys())
+        self.assertEqual(
+            len(unary_keys), 1,
+            f"tier-free fold expects one unary reduction tier; "
+            f"got {unary_keys}.")
+        ul = ll._unary_layers[unary_keys[0]]
+        self.assertTrue(
+            hasattr(ul, "apply_anchor") and hasattr(ul, "copy_anchor"),
+            "unary reduction layer must expose the router's APPLY/COPY "
+            "anchor scorers.")
         # De-saturate the straight-through action softmax so the gradient
         # path magnitude is not masked by an incidental one-hot posterior.
         with torch.no_grad():

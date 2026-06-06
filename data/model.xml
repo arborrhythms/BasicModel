@@ -12,7 +12,8 @@
     nOutput=0  Same as nInput for this space (passthrough count).
     nVectors=0 Same as nOutput (used for non-codebook spaces).
 -->
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
     <!-- Model archetype: simple (feedforward), embedding (LM/chat),
          passthrough (identity bench), vq (VQ-only). -->

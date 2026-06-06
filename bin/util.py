@@ -1245,34 +1245,109 @@ class XMLConfig:
             cfg[section.tag] = _parse_element(section)
         return cfg
 
+    # Cache of abspath -> mtime for configs that already validated cleanly,
+    # so the defaults file and repeated loads don't re-run the validator.
+    # A file re-validates automatically when its mtime changes.
+    _SCHEMA_VALIDATION_CACHE = {}
+    # One-time guard so the "no validator backend" notice prints once.
+    _SCHEMA_VALIDATOR_WARNED = False
+
     @staticmethod
     def _validate_against_schema(xml_path):
-        """Soft-validate xml_path against data/model.xsd (warn on mismatch).
+        """Validate ``xml_path`` against the ``model.xsd`` schema.
 
-        No-op when ``model.xsd`` is absent or lxml is missing. Schema
-        failures are reported to stderr but do not block parsing -- the
-        config still loads.
+        This is the precursor gate for model creation:
+        ``create_from_config`` -> ``init_config`` -> ``load``/``overlay``
+        parse every config through here, so an invalid config raises
+        BEFORE any Space is constructed.
+
+        Schema resolution prefers a ``model.xsd`` sibling of the XML, then
+        falls back to the canonical ``<project>/data/model.xsd`` -- so temp
+        / variant configs written outside ``data/`` still validate against
+        the real schema.
+
+        Hard-fails (raises ``ValueError``) on a schema violation. The check
+        is skipped only when no validator backend is available (neither the
+        ``lxml`` package nor the ``xmllint`` CLI); that case emits a
+        one-time warning rather than silently passing, and does not block
+        loading on missing tooling.
         """
-        xsd_path = os.path.join(os.path.dirname(os.path.abspath(xml_path)),
-                                "model.xsd")
-        if not os.path.exists(xsd_path):
+        if not xml_path or not os.path.exists(xml_path):
             return
+        sibling = os.path.join(
+            os.path.dirname(os.path.abspath(xml_path)), "model.xsd")
+        canonical = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "model.xsd")
+        xsd_path = sibling if os.path.exists(sibling) else (
+            canonical if os.path.exists(canonical) else None)
+        if xsd_path is None:
+            return
+        abspath = os.path.abspath(xml_path)
+        try:
+            mtime = os.path.getmtime(abspath)
+        except OSError:
+            mtime = None
+        if (mtime is not None
+                and XMLConfig._SCHEMA_VALIDATION_CACHE.get(abspath) == mtime):
+            return
+        errors = XMLConfig._run_schema_validation(xsd_path, abspath)
+        if errors is None:
+            return  # no validator backend; already warned once
+        if errors:
+            raise ValueError(
+                f"XML schema validation failed for {xml_path}\n"
+                f"  (schema: {xsd_path})\n{errors}\n"
+                f"Fix the config, or update data/model.xsd if this is a "
+                f"new config element.")
+        if mtime is not None:
+            XMLConfig._SCHEMA_VALIDATION_CACHE[abspath] = mtime
+
+    @staticmethod
+    def _run_schema_validation(xsd_path, xml_path):
+        """Run the schema validator. Returns ``""`` when valid, an
+        error-detail string when invalid, or ``None`` when no validator
+        backend (the ``lxml`` package or the ``xmllint`` CLI) is available.
+        """
+        # Prefer lxml (in-process, fast) when installed.
         try:
             from lxml import etree as _lxml_etree
         except ImportError:
-            return
-        try:
-            schema = _lxml_etree.XMLSchema(_lxml_etree.parse(xsd_path))
-            doc = _lxml_etree.parse(xml_path)
-            if not schema.validate(doc):
+            _lxml_etree = None
+        if _lxml_etree is not None:
+            try:
+                schema = _lxml_etree.XMLSchema(_lxml_etree.parse(xsd_path))
+                doc = _lxml_etree.parse(xml_path)
+            except Exception as exc:
+                return f"could not parse schema/document: {exc}"
+            if schema.validate(doc):
+                return ""
+            return "\n".join(
+                f"  line {e.line}: {e.message}" for e in schema.error_log)
+        # Fall back to the xmllint CLI (ships with libxml2; no Python dep).
+        import shutil
+        import subprocess
+        xmllint = shutil.which("xmllint")
+        if xmllint is None:
+            if not XMLConfig._SCHEMA_VALIDATOR_WARNED:
                 import warnings
-                details = "; ".join(
-                    f"line {e.line}: {e.message}" for e in schema.error_log)
                 warnings.warn(
-                    f"XML schema validation failed for {xml_path}: {details}",
-                    RuntimeWarning, stacklevel=3)
+                    "XML schema validation skipped: neither the 'lxml' "
+                    "package nor the 'xmllint' CLI is available. Install "
+                    "either to enable config validation against "
+                    "data/model.xsd.",
+                    RuntimeWarning, stacklevel=4)
+                XMLConfig._SCHEMA_VALIDATOR_WARNED = True
+            return None
+        try:
+            proc = subprocess.run(
+                [xmllint, "--noout", "--schema", xsd_path, xml_path],
+                capture_output=True, text=True)
         except Exception:
-            pass
+            return None  # tooling failure -> skip, don't block on infra
+        if proc.returncode == 0:
+            return ""
+        return (proc.stderr or "").strip()
 
     @staticmethod
     def _deep_merge(base, overlay, path=()):

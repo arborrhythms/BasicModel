@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- POS_smoke: small inline corpus of basic English sentences for
        smoke-testing parser POS tagging and grammar-rule
        selection.  Built on the HeadEmission.xml shape (inline

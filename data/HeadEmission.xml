@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- HeadEmission: inline sentences corpus for the downward S -> C
        generation MVP. Each sentence's head word is predicted from the
        final deep symbolic state via WordSpace.reconstruct(). This is the

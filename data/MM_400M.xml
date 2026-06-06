@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_1B: Enhanced MM_5M scaled to ~1B params.
        True MM_5M architecture: low-dim percepts/symbols (4), high-dim
        conceptual lifting (16 verbs x 7296^2 = ~852M params).

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_5M_AR: autoregressive sibling of MM_5M_IR. Same word/lexicon
        tokenization and lexicon size as MM_5M_IR so AR vs IR can be
        compared directly without confounding tokenization differences.

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MentalModel: iterative [Percept,Symbol]→Concept→Symbol loop.
        ConceptualSpace receives [percepts, symbols] (symbols=0 at T=1).
        SyntacticSpace runs composeSyntax over symbol activations each iteration.

@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_xor_fixture: dedicated test fixture for the META taxonomy /
        SymbolizeLayer / RadixLayer regression suite. Decoupled from
        MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling

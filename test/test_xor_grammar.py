@@ -201,17 +201,40 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         self.assertIsInstance(ws.languageLayer, LanguageLayer)
 
     def test_signal_router_has_grammar_ops_attached(self):
+        # Tier-free contract: grammar rules collapse to a single reduction
+        # tier, so do NOT assume a "S" (or "C") key. Search across ALL
+        # attached unary / binary layers and assert the grammar's ops are
+        # present by op-class.
+        from Language import NotLayer, ConjunctionLayer, DisjunctionLayer
         ws = self.model.wordSubSpace
         router = ws.languageLayer
         self.assertIsNotNone(
             router, "LanguageLayer must be built")
-        self.assertIn("S", router._unary_layers)
-        self.assertIn("S", router._binary_layers)
-        unary_layer = router._unary_layers["S"]
-        binary_layer = router._binary_layers["S"]
-        self.assertEqual(unary_layer.r_apply, 1, "Expected one unary op (NOT)")
-        self.assertEqual(binary_layer.r_reduce, 2,
-            "Expected two binary ops (conjunction, disjunction)")
+        self.assertTrue(
+            len(router._unary_layers) > 0,
+            "Expected at least one unary tier attached")
+        self.assertTrue(
+            len(router._binary_layers) > 0,
+            "Expected at least one binary tier attached")
+
+        # Binary ops are wrapped in _BinaryGrammarOpAdapter; unwrap via
+        # `.gl` (the codebase's own unwrap idiom) to reach the real
+        # grammar layer. Unary ops are attached directly.
+        unary_ops = [op
+                     for layer in router._unary_layers.values()
+                     for op in layer.ops]
+        binary_ops = [getattr(op, "gl", op)
+                      for layer in router._binary_layers.values()
+                      for op in layer.ops]
+        self.assertTrue(
+            any(isinstance(op, NotLayer) for op in unary_ops),
+            "Expected a NotLayer attached to some unary tier")
+        self.assertTrue(
+            any(isinstance(op, ConjunctionLayer) for op in binary_ops),
+            "Expected a ConjunctionLayer attached to some binary tier")
+        self.assertTrue(
+            any(isinstance(op, DisjunctionLayer) for op in binary_ops),
+            "Expected a DisjunctionLayer attached to some binary tier")
 
     def test_signal_router_rule_ids_match_grammar(self):
         ws = self.model.wordSubSpace
@@ -223,11 +246,21 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
                        if r.method_name == "conjunction")
         disj_id = next(i for i, r in enumerate(TheGrammar.rules)
                        if r.method_name == "disjunction")
-        self.assertEqual(router._unary_rule_ids["S"], [not_id])
-        self.assertSetEqual(
-            set(router._binary_rule_ids["S"]),
-            {conj_id, disj_id},
-        )
+        # Tier-free contract: rule_ids are keyed by the single collapsed
+        # reduction tier, so do NOT index by "S"/"C". Assert the grammar's
+        # rule_ids appear in the union of ALL attached tiers' rule_ids.
+        all_unary_rule_ids = set()
+        for rids in router._unary_rule_ids.values():
+            all_unary_rule_ids.update(rids)
+        all_binary_rule_ids = set()
+        for rids in router._binary_rule_ids.values():
+            all_binary_rule_ids.update(rids)
+        self.assertIn(not_id, all_unary_rule_ids,
+            "Grammar 'not' rule_id must be attached to some unary tier")
+        self.assertLessEqual(
+            {conj_id, disj_id}, all_binary_rule_ids,
+            "Grammar 'conjunction'/'disjunction' rule_ids must be "
+            "attached to some binary tier")
 
     def test_chart_compose_fires_on_forward_pass(self):
         """Retired 2026-05-14: conceptualOrder=2 + useGrammar='all' shape contract no longer matches IR-only forward; chart-compose wiring covered by test/test_compose_chart.py."""

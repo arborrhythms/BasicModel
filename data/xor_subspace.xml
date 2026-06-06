@@ -6,7 +6,8 @@
   Used to verify that the subspace activation pipeline produces
   outputs consistent with the legacy forward() path.
 -->
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward

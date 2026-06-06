@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_boolean: end-to-end test of AND, OR, NOT, NON via a fixed DNF
        stack at the C-tier. The grammar block lists not/non/intersection/
        union so ConceptualSpace infers the wiring at construction time

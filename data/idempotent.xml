@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- idempotent: minimal MentalModel for discussing the C-S intrinsic
        snap "idempotent loop". Sized to the same regime as
        test/test_idempotent_loop.py (D_C = V_S = 4) so the round trip is

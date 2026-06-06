@@ -1,5 +1,6 @@
 <?xml version="1.0" ?>
-<model>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- XOR_recon: XOR with reconstruction symbols (last 5 SymbolicSpace
        slots reserved for reconstruction targets). Scalar codebook regime:
        PiLayer stays a square isomorphism inside conceptual content space. -->
