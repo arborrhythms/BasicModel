@@ -101,11 +101,14 @@ SPNN : $(VENV_STAMP)
 compare : $(VENV_STAMP)
 	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) BasicModel.py --compare $(XML1) $(XML2)
 
+# `make test` runs the default (fast) suite; tests tagged slow (>30s wall) are
+# skipped via the RUN_SLOW gate (see test/*.py `_RUN_SLOW`). `make test_all`
+# sets RUN_SLOW=1 to also run them.
 test : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
 test_all : $(VENV_STAMP)
-	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
+	RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
 bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="

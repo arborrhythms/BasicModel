@@ -172,34 +172,54 @@ def _run_torch_export(m, staged):
 # ---------------------------------------------------------------------------
 
 def _get_partitioner():
-    """Return a partitioner instance, trying MLX then Apple MPS.
+    """Return an ExecuTorch Apple-Silicon partitioner, preferring the MLX delegate.
 
-    Returns (partitioner_instance, name_str) or raises ImportError with a
-    helpful message if neither is available.
+    Finalised against executorch 1.3.1 (installed here; it BUNDLES the MLX
+    backend + ``mlx.metallib`` runtime):
+      * MLX is the purpose-built Apple-Silicon-GPU delegate
+        (``executorch.backends.mlx.partitioner.MLXPartitioner``), built for this
+        executorch / torch 2.12 stack -- the right default. Requires Apple
+        Silicon + the Metal compiler (ships with Xcode).
+      * CoreML (``CoreMLPartitioner``) is a fallback, but its coremltools 9.0
+        crashes converting torch-2.12 graphs (optimize_linear MIL pass).
+      * MPS is DEPRECATED (removed in executorch 1.4); last resort only.
+
+    ``EXPORT_MLX_BACKEND=mlx|coreml|mps`` forces one backend; default tries
+    MLX -> CoreML -> MPS. Returns (partitioner_instance, name_str).
     """
-    # --- Try 1: MLX delegate (hypothetical; finalise against installed pkg) ---
-    try:
-        # Best-guess import path.  May be named differently in the actual
-        # release; adjust to match ``pip show executorch`` output.
-        from executorch.backends.apple.mlx.partition import MLXPartitioner  # type: ignore[import]
-        return MLXPartitioner(), "MLXPartitioner"
-    except (ImportError, ModuleNotFoundError):
-        pass
+    forced = os.environ.get("EXPORT_MLX_BACKEND", "").strip().lower()
 
-    # --- Try 2: Apple MPS delegate (ships with executorch) ---
-    try:
+    def _mlx():
+        from executorch.backends.mlx.partitioner import MLXPartitioner  # type: ignore[import]
+        return MLXPartitioner(), "MLXPartitioner"
+
+    def _coreml():
+        from executorch.backends.apple.coreml.partition import CoreMLPartitioner  # type: ignore[import]
+        return CoreMLPartitioner(), "CoreMLPartitioner"
+
+    def _mps():
         from executorch.backends.apple.mps.partition.mps_partitioner import (  # type: ignore[import]
             MPSPartitioner,
         )
-        return MPSPartitioner(), "MPSPartitioner (MPS fallback)"
-    except (ImportError, ModuleNotFoundError):
-        pass
+        from executorch.exir.backend.compile_spec_schema import CompileSpec  # type: ignore[import]
+        # MPS (deprecated) requires compile_specs and ships no helper; pass a
+        # minimal fp16=off spec to match the fp32 export.
+        specs = [CompileSpec("use_fp16", bytes([0]))]
+        return MPSPartitioner(compile_specs=specs), "MPSPartitioner (deprecated MPS fallback)"
+
+    order = {"mlx": [_mlx], "coreml": [_coreml], "mps": [_mps]}.get(
+        forced, [_mlx, _coreml, _mps])
+    last_exc = None
+    for _fn in order:
+        try:
+            return _fn()
+        except (ImportError, ModuleNotFoundError) as exc:
+            last_exc = exc
 
     raise ImportError(
-        "Neither MLXPartitioner nor MPSPartitioner could be imported from "
-        "executorch.backends.apple.*. "
-        "Install executorch with the MLX or MPS delegate and update the "
-        "import paths in this script (export_mlx.py) to match."
+        "No ExecuTorch Apple partitioner importable (tried "
+        "executorch.backends.mlx / apple.coreml / apple.mps)."
+        + (f" Last error: {last_exc}" if last_exc else "")
     )
 
 

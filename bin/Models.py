@@ -2467,25 +2467,14 @@ class BasicModel(BaseModel):
         the same recon loop.
         """
         from util import compile as _compile
-        # torch.compile's fake-tensor tracing has incomplete MPS device
-        # propagation (raises "Unhandled FakeTensor Device Propagation"
-        # on ops like mul across mps/implicit-cpu tensors) -- the same
-        # class of gap as MPS `_cdist_backward`. Compile on CUDA (the
-        # capture target) and CPU (CI/correctness); fall back to eager
-        # on MPS so the local dev path stays usable.
-        # MPS compile escape hatch (2026-06-06): set BASICMODEL_MPS_COMPILE=1
-        # to opt into torch.compile on MPS (default still falls back to eager,
-        # since torch's MPS fake-tensor device propagation has historically
-        # been incomplete). We want MPS compile working; the override lets us
-        # surface the actual failure and fix the root cause (implicit-CPU
-        # tensor creation during tracing) instead of permanently gating it off.
-        if (TheDevice.get().type == "mps"
-                and os.environ.get("BASICMODEL_MPS_COMPILE") != "1"):
-            TheMessage("[compiled-step] MPS: torch.compile fake-tensor "
-                       "device propagation is incomplete -- running "
-                       "eager (set BASICMODEL_MPS_COMPILE=1 to force compile).")
-            self._compiled_step = None
-            return
+        # MPS compiles by default (2026-06-07): torch 2.12's inductor MPS
+        # backend traces the per-batch forward fullgraph just like CPU/CUDA
+        # (verified ``Model compiled (inductor, ..., fullgraph=True)`` on
+        # ``data/MM_20M.xml``). The old ``BASICMODEL_MPS_COMPILE`` opt-in gate
+        # (eager fallback on MPS, from when torch's MPS fake-tensor device
+        # propagation was incomplete) is retired -- use ``MODEL_COMPILE=none``
+        # (skip) or ``=eager`` (no inductor) to disable/relax compilation on
+        # any device.
         # D8 capture-gate (2026-05-19): pre-warm any LAZY-built caches
         # that the captured forward depends on, so Dynamo never traces
         # their build path. ``_stm_reducer`` constructs a

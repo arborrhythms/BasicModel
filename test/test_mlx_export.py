@@ -40,6 +40,19 @@ import pytest
 # model keeps a single forward path; the export concern stays out of it.
 from export_mlx import stage_for_core, forward_core, _run_torch_export
 
+import platform
+
+# D2/D3 (MLX .pte lowering + runtime parity) WORK as of 2026-06-07 via the MLX
+# delegate (``executorch.backends.mlx``). The MLX delegate needs Apple Silicon +
+# the Metal compiler, so these run only on arm64 macOS and skip elsewhere (e.g.
+# non-Apple CI). ``uname -m`` is ``arm64`` only on macOS Apple Silicon (Linux
+# arm64 reports ``aarch64``). The in-test ``find_spec("executorch")`` checks
+# still skip cleanly if executorch itself is absent.
+_APPLE_SILICON = platform.machine() == "arm64"
+_MLX_ONLY = pytest.mark.skipif(
+    not _APPLE_SILICON,
+    reason="MLX delegate needs Apple Silicon + Metal (uname -m != arm64)")
+
 
 def _build(name):
     import Models, Language
@@ -121,6 +134,7 @@ def test_forward_core_exports():
 # D2 — .pte lowering (requires executorch + MLX/Apple delegate)
 # ---------------------------------------------------------------------------
 
+@_MLX_ONLY
 def test_mlx_lower_writes_pte(tmp_path):
     """Task D2: ``export_mlx.py`` lowers the tensor core to a .pte file.
 
@@ -162,6 +176,7 @@ def test_mlx_lower_writes_pte(tmp_path):
 # D3 — runtime parity (requires executorch runtime + .pte from D2)
 # ---------------------------------------------------------------------------
 
+@_MLX_ONLY
 def test_pte_runtime_parity(tmp_path):
     """Task D3: load the .pte via the ExecuTorch runtime and compare its
     output to ``forward_core`` (max abs diff < 1e-2).
@@ -241,7 +256,7 @@ def test_pte_runtime_parity(tmp_path):
     m, staged = _staged_input()
 
     with torch.no_grad():
-        ref_out = m.forward_core(staged)
+        ref_out = forward_core(m, staged)
 
     # Run the .pte module.
     # portable_lib: module.forward([tensor]) -> list[tensor]

@@ -2072,7 +2072,10 @@ class GrammarLayer(Layer):
     @staticmethod
     def _butterfly_inverse_perm(perm):
         """Return the inverse permutation: ``inv[perm[i]] = i``."""
-        inv = torch.empty_like(perm)
+        # ``empty`` (contiguous), not ``empty_like``: ``perm`` is a non-contiguous
+        # view, so ``empty_like`` lowers to ``aten.empty_permuted`` (no portable
+        # ExecuTorch kernel). ``inv`` is fully overwritten below -> identical.
+        inv = torch.empty(perm.shape, dtype=perm.dtype, device=perm.device)
         inv[perm] = torch.arange(perm.numel(), device=perm.device)
         return inv
 

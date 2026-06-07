@@ -112,6 +112,9 @@ def _assert_tier_shapes(tc, model, name):
         tc.assertIn(nWhen, (0, 2), f"{name}:{n} nWhen not in (0,2)")
 
 
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
+
 class TestModalityConfigsBuildAndForward(unittest.TestCase):
     """Substrate safety net: every live config BUILDS with the canonical
     per-tier shapes. Forward-finiteness is best-effort here (the generic
@@ -119,6 +122,7 @@ class TestModalityConfigsBuildAndForward(unittest.TestCase):
     pipeline); per-config forward validation lives in the Phase 6 regression
     gate, which drives each config with its own proper input."""
 
+    @unittest.skipIf(not _RUN_SLOW, "slow (~48s build-all every live config) -- set RUN_SLOW=1")
     def test_all_live_configs_build_with_canonical_shapes(self):
         not_driven = []
         nonfinite = []

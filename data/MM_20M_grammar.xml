@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_5M_grammar: the SERIAL sibling of MM_20M (doc/specs/2026-06-05-
+  <!-- MM_20M_grammar: the SERIAL sibling of MM_20M (doc/specs/2026-06-05-
        dimensional-governance.md sec.6). Same flat-slab shapes as MM_20M
        (IS/PS wide [B,1024,8], CS deep [B,8,1024], slab 8192), but
        conceptualMode=serial: the bounded-STM fold (the 2026-06-05 tier-free

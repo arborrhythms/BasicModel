@@ -166,6 +166,7 @@ class TestMMBoolean(unittest.TestCase):
         "legacy V-sum, so the codebook geometry doesn't tighten as "
         "much within the configured training budget.  Needs LR / "
         "epoch retune as a follow-up."))
+    @unittest.skipIf(not _RUN_SLOW, "slow (~37s end-to-end MM_boolean train) -- set RUN_SLOW=1")
     def test_encode_decode_by_best_fit(self):
         """Encode a sentence, throw away the surface form, decode by
         best-fit at the symbolic level — no SS.reverse() / CS.reverse().

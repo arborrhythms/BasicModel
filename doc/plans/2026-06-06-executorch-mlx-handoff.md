@@ -9,6 +9,95 @@ Note: this doc uses ASCII arrows (`->`) and operators (`<`, `>=`) deliberately -
 no Unicode glyphs, so `make doc` / xelatex does not choke (see the LaTeX-not-Unicode
 project convention).
 
+## 0. SOLVED (2026-06-07): D2/D3 work end-to-end via the MLX delegate
+
+All 5 `test/test_mlx_export.py` tests PASS (D1 export + D2 `.pte` lowering + D3
+runtime parity < 1e-2), ~38s, NO workarounds. The fix = the MLX delegate + two
+small model changes (see 0.2). The diagnosis history below (0 + 0.1) is kept to
+explain why CoreML/MPS fail and MLX does not.
+
+executorch 1.3.1 is installed (bare `executorch` in `requirements.txt`; it pulls
+torch 2.11 -> 2.12 and coremltools 9.0). The original blocker analysis (now
+superseded by 0.2) follows:
+
+- Partitioner FINALIZED: there is no `executorch.backends.apple.mlx` (the "MLX"
+  delegate was aspirational). `bin/export_mlx.py::_get_partitioner()` now prefers
+  `CoreMLPartitioner` (`executorch.backends.apple.coreml.partition`) and falls
+  back to the deprecated `MPSPartitioner`. The lowering call
+  `to_edge_transform_and_lower(ep, partitioner=[p]).to_executorch().buffer` is
+  correct for 1.3.1.
+- D1 STILL PASSES: `test_forward_core_exports` is green (~2046 nodes). Fixed a
+  latent test bug: the parity reference call `m.forward_core(...)` ->
+  `forward_core(m, ...)` (it moved off the model into `export_mlx.py`).
+- D2/D3 BLOCKER (the real finding): `to_edge_transform_and_lower` ->
+  `run_decompositions()` raises `RuntimeError: Constant lifted_tensor_42 is
+  mutated in the forward method. Pls register it as buffer`. The exported core
+  does 18 in-place mutations of export-LIFTED CONSTANTS that torch.export
+  tolerates but executorch edge-lowering forbids:
+    * `ws.clear_last_svo()` -> `aten.zero_` on a `bool[B]` mask
+      (`bin/Spaces.py:12051`), once per tier (x3);
+    * ~12 scalar `copy_(select, add_)` accumulators (host bookkeeping baked into
+      the traced forward); plus a staging `copy_`.
+  These are host-side side effects that leaked into the traced region (cf. the
+  autobind/taxonomy POST-step already excluded as non-traceable host Python).
+- Version caveat: coremltools 9.0 warns `torch 2.12.0 has not been tested`
+  (max tested 2.7), while executorch 1.3.1 REQUIRES torch >= 2.12 -- so even a
+  mutation-free core may hit coremltools/torch-2.12 issues at CoreML convert.
+
+WHAT IT NEEDS (a real refactor, not a finalize): make the exported tensor core
+free of constant mutations -- guard `clear_last_svo()` + the scalar accumulators
+out of `forward_core` when exporting (like the host POST-step), or register the
+mutated tensors as buffers -- then re-run
+`python bin/export_mlx.py data/MM_20M.xml /tmp/mm20m.pte` and iterate on the next
+executorch/coremltools error. D2/D3 are `@pytest.mark.xfail(run=False)` in
+`test/test_mlx_export.py` with this reason so `make test` stays green.
+
+### 0.1 Spike result (2026-06-07): model-side FIXED; both Apple backends wall downstream
+
+A time-boxed spike (refactor + lowering attempt) split the problem cleanly:
+
+- MODEL-SIDE FIX (landed): guarding `WordSubSpace.clear_last_svo()` with
+  `torch.compiler.is_exporting()` (`bin/Language.py`) removes the ONLY
+  export-lifted-CONSTANT mutation (`_svo_valid.zero_()`). Phase-1 `torch.export`
+  + executorch `to_edge_transform_and_lower` decomposition/partitioning now PASS.
+  (The ~12 scalar `copy_` accumulators were buffer mutations -- tolerated.)
+  Export-path only via `is_exporting()`, so normal/compiled runs and `make test`
+  are unchanged.
+- CoreML backend STILL WALLS, now INSIDE coremltools (not our code):
+  `coremltools/.../passes/defs/optimize_linear.py:74: if bias.shape[-1] != Dout`
+  -> `IndexError: tuple index out of range` (a 0-d bias the linear-bias-fusion
+  MIL pass can't handle). This is the coremltools-9.0-on-torch-2.12 gap.
+- MPS backend (deprecated; `EXPORT_MLX_BACKEND=mps` added to force it) walls
+  differently: edge verification rejects `aten.empty_permuted.default` (not in
+  Core ATen opset). Fixable via
+  `EdgeCompileConfig(_core_aten_ops_exception_list=[...])` and/or a
+  `torch.no_grad()` inference export -- but MPS is removed in executorch 1.4.
+
+(Those CoreML/MPS walls are why MLX -- not CoreML/MPS -- is the right backend; see 0.2.)
+
+### 0.2 SOLUTION (2026-06-07): MLX delegate + two model fixes -> all 5 tests pass
+
+1. USE THE MLX DELEGATE: `executorch.backends.mlx.partitioner.MLXPartitioner`
+   (bundled in 1.3.1; the earlier "no MLX delegate" was a WRONG import path --
+   it is NOT under `backends.apple.mlx`). Purpose-built for Apple-Silicon + Metal
+   on torch 2.12, so it sidesteps both the coremltools crash AND the MPS opset
+   issue. `_get_partitioner()` prefers MLX -> CoreML -> MPS; `EXPORT_MLX_BACKEND`
+   forces one.
+2. DROP THE CONSTANT MUTATION: `clear_last_svo()`'s `_svo_valid.zero_()` is
+   guarded by `torch.compiler.is_exporting()` (`bin/Language.py`) -- export-path
+   only, so normal/compiled runs and `make test` are unchanged.
+3. AVOID `empty_permuted`: `_butterfly_inverse_perm` now uses a contiguous
+   `torch.empty(perm.shape, ...)` instead of `empty_like` (`bin/Layers.py`);
+   `inv` is fully overwritten so it is numerically identical, and it no longer
+   lowers to `aten.empty_permuted` (which has no portable-runtime kernel). This
+   removed any need for an `_core_aten_ops_exception_list` edge-config.
+
+REQUIREMENTS: Apple Silicon (M1+) + Metal compiler (Xcode) + executorch 1.3.1
+(torch 2.12). D2/D3 are ARCH-gated -- `@pytest.mark.skipif(platform.machine() !=
+"arm64")` -- so they RUN by default on arm64 macOS (~15s each) and skip on
+non-Apple platforms (e.g. Linux CI). The in-test `find_spec("executorch")` checks
+still skip if executorch is absent.
+
 ## 1. What is DONE and verified (D1)
 
 The BasicModel tensor core is exportable with `torch.export`. `bin/Models.py` exposes:

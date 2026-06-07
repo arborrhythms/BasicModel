@@ -1,9 +1,12 @@
 import os, sys, warnings
+import pytest
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 os.environ.setdefault("MODEL_COMPILE", "eager")
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path: sys.path.insert(0, _BIN)
+
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 def _build(name):
     import Models, Language
@@ -296,6 +299,7 @@ def _write_mm5m_3ep_cfg():
     return cfg
 
 
+@pytest.mark.skipif(not _RUN_SLOW, reason="slow (~33s no-recompile fullgraph gate) -- set RUN_SLOW=1")
 def test_no_recompile_fullgraph():
     """A5 gate: the compiled step must compile ONCE across batches.
 
@@ -574,7 +578,7 @@ def test_mm5m_grammar_builds_and_forwards():
     # accumulation (the per-word fold threads through begin_forward's live
     # buffer), so no serial-fold reconciliation was needed -- this gate pins it.
     import torch, Models
-    m = _build("MM_5M_grammar.xml"); Models.TheData.load("xor")
+    m = _build("MM_20M_grammar.xml"); Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
     out = m.forward(x)[2]

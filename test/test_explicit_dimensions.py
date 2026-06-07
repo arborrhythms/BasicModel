@@ -44,6 +44,8 @@ import unittest
 
 import pytest
 
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _VENV_PYTHON = os.path.join(_PROJECT, ".venv", "bin", "python")
 _MODELS_PY = os.path.join(_PROJECT, "bin", "Models.py")
@@ -236,6 +238,7 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
     and we know to re-pick a seed deliberately.
     """
 
+    @unittest.skipIf(not _RUN_SLOW, "slow (~60s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
     @pytest.mark.xfail(reason=(
         "XOR_GRAMMAR_SEED was pinned for the legacy butterfly + "
         "Codebook bivector path; after 2026-05-12 butterfly removal "
@@ -278,6 +281,7 @@ class TestXorGrammarReconstruction(unittest.TestCase):
     the root.
     """
 
+    @unittest.skipIf(not _RUN_SLOW, "slow (~65s end-to-end XOR_grammar train) -- set RUN_SLOW=1")
     @unittest.expectedFailure
     def test_piecewise_overall_at_least_50_pct_with_pinned_seed(self):
         model = _run_xor_grammar_in_process(XOR_GRAMMAR_SEED)

@@ -8348,6 +8348,15 @@ class WordSubSpace(SubSpace):
         Does not zero the underlying tensor -- subsequent ``get_last_svo``
         will return stale data unless re-stamped by ``set_last_svo``.
         """
+        if torch.compiler.is_exporting():
+            # Host bookkeeping -- skip under torch.export. ``_svo_valid`` is not
+            # a registered buffer, so it lifts as a CONSTANT and this in-place
+            # ``zero_()`` trips executorch edge-lowering ("Constant ... is
+            # mutated in the forward method. Pls register it as buffer"). The
+            # mask only gates the NEXT cycle's get_last_svo; it never feeds the
+            # exported head prediction, so skipping it during export is a no-op
+            # on the traced output (normal/compiled runs are unaffected).
+            return
         if b is None:
             self._svo_valid.zero_()
         else:

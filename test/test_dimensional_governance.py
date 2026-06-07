@@ -78,10 +78,10 @@ def test_serial_relaxes_symbol_dim_passthrough():
     # SERIAL mode the bounded-STM grammar fold bridges CS<->SS, so SS content
     # may differ from CS content (the small symbol code). validate_config
     # must NOT impose symbol_dim == concept_dim for a serial config.
-    # MM_5M_grammar.xml has SS content 8 != CS content 1024, so from_config
+    # MM_20M_grammar.xml has SS content 8 != CS content 1024, so from_config
     # must not raise the symbol_dim==concept pass-through ValueError.
     try:
-        _build("MM_5M_grammar.xml")
+        _build("MM_20M_grammar.xml")
     except ValueError as e:
         assert "symbol_dim" not in str(e), str(e)
 
@@ -116,6 +116,8 @@ def test_converted_grammars_load_role_collapsed():
 # ---------------------------------------------------------------------------
 import re
 import pytest
+
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 
 def _build_from_text(xml_text, stem):
@@ -196,7 +198,7 @@ def test_reference_configs_still_build_no_false_positive():
 # Task: the reconstruction REVERSE must round-trip a DEEP-CS config.
 # (doc/specs/2026-06-05-dimensional-governance.md sec.2/sec.5)
 #
-# MM_5M_grammar is a SERIAL deep-CS config: PerceptualSpace event width = 12
+# MM_20M_grammar is a SERIAL deep-CS config: PerceptualSpace event width = 12
 # (content 8 + band 4), ConceptualSpace event width = 1028 (content 1024 +
 # band 4). The FORWARD PS->CS handoff is the wide->deep flat-slab reshape
 # (ConceptualSpace.forward: content [B,1024,8] -> [B,8,1024], band re-padded;
@@ -213,9 +215,10 @@ def test_reference_configs_still_build_no_false_positive():
 # width is the PS/IS width 12, NOT the CS width 1028); no reconstruction VALUE
 # accuracy is asserted.
 # ---------------------------------------------------------------------------
+@pytest.mark.skipif(not _RUN_SLOW, reason="slow (~55s serial deep-CS reverse round-trip) -- set RUN_SLOW=1")
 def test_deep_cs_reverse_round_trips_to_ps_width():
     import torch, Models
-    m = _build("MM_5M_grammar.xml"); Models.TheData.load("xor")
+    m = _build("MM_20M_grammar.xml"); Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
     inp_items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(inp_items)
