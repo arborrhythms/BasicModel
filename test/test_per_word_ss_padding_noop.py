@@ -26,7 +26,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_5M.xml")
+    cfg = str(_root / "data" / "MM_20M.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -35,7 +35,7 @@ def _build_gate_model():
 
 
 @pytest.mark.xfail(
-    reason="MM_5M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+    reason="MM_20M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
            "nWhen=1028 since Stage 1.C retired sigma_percept; the signal "
            "router replacement (Stage 3) is not yet wired.",
     strict=False,
@@ -66,7 +66,7 @@ def test_stm_depth_tracks_valid_len_not_N():
 
 
 @pytest.mark.xfail(
-    reason="MM_5M.xml percept_dim / concept_dim mismatch.",
+    reason="MM_20M.xml percept_dim / concept_dim mismatch.",
     strict=False,
 )
 def test_concept_buf_zero_past_active_prefix():

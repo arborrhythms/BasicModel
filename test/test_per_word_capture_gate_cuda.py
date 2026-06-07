@@ -48,7 +48,7 @@ N_ITERATIONS = 3  # bounded; metalbaby runs are single/bounded
 
 
 def _build_gate_model_cuda():
-    """Build the grammar-enabled MM_5M model on CUDA -- the canonical
+    """Build the grammar-enabled MM_20M model on CUDA -- the canonical
     per-word target. Mirrors the CPU helper, but places everything on
     the CUDA device."""
     from data import TheData
@@ -56,7 +56,7 @@ def _build_gate_model_cuda():
     from util import init_config, init_device
 
     init_device("cuda")
-    cfg = str(_root / "data" / "MM_5M.xml")
+    cfg = str(_root / "data" / "MM_20M.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -72,7 +72,7 @@ def _stage_for_per_word(m):
     per-sentence state / loop-carry SubSpaces are all populated."""
     isp = m.inputSpace
     assert isp._per_word_enabled is True, (
-        "gate target: MM_5M (grammar-enabled) must wire "
+        "gate target: MM_20M (grammar-enabled) must wire "
         "_per_word_enabled=True")
     inp, _ = isp.getTrainData()
     inp_items = list(inp[:2])

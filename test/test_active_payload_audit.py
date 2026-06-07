@@ -104,7 +104,7 @@ def _codebook_bearing_subspace():
     """A SubSpace whose ``.event`` slot is a Codebook with a registered
     Parameter — the configuration where ``_active_payload`` shadows.
 
-    Mirrors the PerceptualSpace MM_xor / MM_5M layout: muxed event
+    Mirrors the PerceptualSpace MM_xor / MM_20M layout: muxed event
     holds the codebook prototype.
     """
     cb = Codebook()

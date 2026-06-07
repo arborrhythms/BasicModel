@@ -19,7 +19,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      lives on ``self.subspace.what`` and is built by ``_build_what_basis``
      (line 10389).  Modes: ``"none"`` -> Tensor passthrough,
      ``"project"`` -> ``ProjectionBasis`` (LDU-factored), ``"quantize"``
-     -> ``Codebook`` (the default in MM_xor, MM_xor_loopback, MM_5M,
+     -> ``Codebook`` (the default in MM_xor, MM_xor_loopback, MM_20M,
      MM_grammar -- every config we touch).
    - What it stores: symbol prototypes -- one ``[symbol_dim]`` row per
      symbol slot.  Width = ``self.nDim`` (post-2026-05-07 rollback; the
@@ -367,7 +367,7 @@ E.  ``data/*.xml``
           MM_grammar.xml: missing nInputDim / nOutputDim everywhere;
                           defaults fill in.  Audit needed: verify the
                           defaults yield the invariant.
-          MM_5M.xml: IS.nOutput=1024 * nDim=6 = 6144;
+          MM_20M.xml: IS.nOutput=1024 * nDim=6 = 6144;
                      PS.nInput=1024 * nDim=6 = 6144;
                      CS.nOutput=8 * nDim=1024 = 8192.  FAILS (6144 vs
                      8192).  This config is the progressive-bottleneck
@@ -379,7 +379,7 @@ E.  ``data/*.xml``
                      in PS terminology (line 7385 -- ``percept_dim =
                      int(self.subspace.getEncodedInputSize())``); if
                      the spec means "per-slot dims align" rather than
-                     "total flat slab equal", then the MM_5M case
+                     "total flat slab equal", then the MM_20M case
                      reduces to:
                        IS.outputSize (per-slot) = 6 (IS.nOutputDim);
                        PS.inputSize  (per-slot) = 6 (PS.nInputDim);
@@ -555,7 +555,7 @@ XML files to update:
   MM_xor.xml             -- audit only (no edit expected -- already
                             satisfies the invariant).
   MM_xor_loopback.xml    -- audit only.
-  MM_5M.xml              -- OPEN: needs controller decision on invariant
+  MM_20M.xml              -- OPEN: needs controller decision on invariant
                             interpretation (per-slot vs flat slab) before
                             edit.
   MM_grammar.xml         -- audit; potentially add explicit
@@ -574,7 +574,7 @@ Lines changed (rough estimate):
                       rewire, PS attribute swap across 4 embed methods).
   bin/Models.py    -- ~80 lines (wiring + validate_config rule).
   data/*.xml       -- 0 lines if per-slot invariant; up to ~30 if
-                      flat-slab invariant forces MM_5M-style configs to
+                      flat-slab invariant forces MM_20M-style configs to
                       be redesigned (open question, see E3).
   test/test_unified_lexicon_codebook.py -- ~500 lines (~23 tests + the
                       cheap-model harness following the
@@ -600,8 +600,8 @@ R2. INVARIANT INTERPRETATION.  ``IS.outputSize ==
     CS.outputSize == PS.inputSize`` -- per-slot dim equality
     (``nOutputDim`` / ``nInputDim``), or flat slab equality
     (``nOutput * nOutputDim``)?  The per-slot interpretation lets
-    MM_5M's progressive-bottleneck stand; the flat-slab forces
-    MM_5M to be redesigned.  Recommendation: PER-SLOT (the IS->PS
+    MM_20M's progressive-bottleneck stand; the flat-slab forces
+    MM_20M to be redesigned.  Recommendation: PER-SLOT (the IS->PS
     handoff and C->P feedback already operate per-slot in
     ``PerceptualSpace`` line 7385; the slab equality is enforced
     SEPARATELY by ``_register_requirements`` line 7523 for muxed
@@ -624,9 +624,9 @@ R3. INSERT-TIME META-SYMBOL CONSTRUCTION.  When PS encounters an
     initially -- preserves existing training behavior and the
     semantic row drifts via gradient over time.  PLEASE CONFIRM.
 
-R4. ConfigA (MM_5M) WILL CHANGE STATE_DICT KEYS.  The dispatch
+R4. ConfigA (MM_20M) WILL CHANGE STATE_DICT KEYS.  The dispatch
     explicitly grants the clean break ("existing trained checkpoints
-    are not preserved").  Confirming: MM_5M.ckpt becomes unusable
+    are not preserved").  Confirming: MM_20M.ckpt becomes unusable
     after this migration.  PLEASE CONFIRM you're willing to retrain
     -- if not, a one-time conversion script becomes in scope.
 
@@ -910,7 +910,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
 
 
 class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
-    """The configs in scope (MM_xor, MM_xor_loopback, MM_grammar, MM_5M)
+    """The configs in scope (MM_xor, MM_xor_loopback, MM_grammar, MM_20M)
     must satisfy the flat-slab invariant after the Stage 1.D
     re-architecture. They build through ``BasicModel.from_config``
     without validate_config raising.
@@ -935,7 +935,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_xor_loopback.xml"))
 
     def test_mm_5m_satisfies_flat_slab(self):
-        self._load_and_validate(os.path.join(_DATA_DIR, "MM_5M.xml"))
+        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M.xml"))
 
     def test_mm_grammar_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_grammar.xml"))

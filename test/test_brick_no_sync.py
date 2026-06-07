@@ -8,7 +8,7 @@ end is zero.
 
 Parametrized over representative configs so the contract is tracked on
 the toy XOR path (``MM_xor``), the grammar path (``MM_grammar``), and
-the production embedding path (``MM_5M`` on FineWeb shards). MM_5M is
+the production embedding path (``MM_20M`` on FineWeb shards). MM_20M is
 skipped when the shard corpus is not present on the host.
 
 CUDA-only -- ``torch.profiler`` records device events that don't exist
@@ -38,13 +38,13 @@ pytestmark = pytest.mark.skipif(
 # (config, dataset, TheData.load kwargs). ``dataset`` mirrors the
 # train.py ``--data`` override (the merged config's <data><dataset>
 # defaults to "xor" for every config; the real corpus is selected at
-# run time): MM_xor / MM_grammar run on the toy XOR set, MM_5M on the
+# run time): MM_xor / MM_grammar run on the toy XOR set, MM_20M on the
 # FineWeb-EDU shard corpus (kept small here -- this is a host-sync
 # profile, not a convergence run).
 _CONFIGS = [
     ("MM_xor.xml", "xor", {}),
     ("MM_grammar.xml", "xor", {}),
-    ("MM_5M.xml", "text", {
+    ("MM_20M.xml", "text", {
         "shard_dir": str(_project / "data" / "fineweb"),
         "num_shards": 1,
         "max_docs": 64,
@@ -74,7 +74,7 @@ def test_brick_runBatch_zero_dtoh_events(cfg_name, dataset, load_kw):
     init_config(path=config,
                 defaults_path=str(_project / "data" / "model.xml"))
 
-    # MM_5M needs the FineWeb shard corpus; skip cleanly if it's not on
+    # MM_20M needs the FineWeb shard corpus; skip cleanly if it's not on
     # this host rather than failing on a missing-data load.
     shard_dir = load_kw.get("shard_dir")
     if dataset == "text" and (

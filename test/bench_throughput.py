@@ -15,7 +15,7 @@ run. Keep batch counts tiny on metalbaby (prior OOM/reboot).
 Usage:
   .venv/bin/python test/bench_throughput.py CONFIG.xml DATASET \
       "8,16,32,64,128" [warmup] [timed] [max_docs]
-e.g. MM_5M.xml text "8,16,32,64,128,256"
+e.g. MM_20M.xml text "8,16,32,64,128,256"
      MM_grammar.xml xor "8,16,32,64,128,256"
 """
 import os
@@ -42,7 +42,7 @@ def _sync():
 
 
 def main():
-    cfg_name = sys.argv[1] if len(sys.argv) > 1 else "MM_5M.xml"
+    cfg_name = sys.argv[1] if len(sys.argv) > 1 else "MM_20M.xml"
     dataset = sys.argv[2] if len(sys.argv) > 2 else "text"
     sizes = [int(x) for x in (sys.argv[3] if len(sys.argv) > 3
                               else "8,16,32,64,128,256").split(",")]

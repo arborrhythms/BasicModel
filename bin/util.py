@@ -409,7 +409,7 @@ def auto_compile_mode():
       (empty / unset)  -> "max-autotune".
 
     Default is ``max-autotune`` -- empirical winner on the GB10
-    training bench (basicmodel/bin/bench_compile.py, MM_5M.xml,
+    training bench (basicmodel/bin/bench_compile.py, MM_20M.xml,
     bf16 + trie BPE, training pass, --batches 8 each):
 
         eager                       mean=39.5s   min=22.5s  max=71.0s

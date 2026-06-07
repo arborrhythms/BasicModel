@@ -19,18 +19,6 @@
          passthrough (identity bench), vq (VQ-only). -->
     <modelType>simple</modelType>
 
-    <!-- Reconstruction-loss target: none | symbols | concepts | both.
-         'symbols' / 'concepts' compare the body's tier event at masked
-         positions to a derived target (lifted through sigma_percept
-         on the fly); 'both' fires both losses.  Forward-only — there
-         is no reverse pipeline. 2026-05-28: 'concepts' is the only
-         supported reconstructor today (it routes reverse through
-         ``_run_pipeline_rev_from_concepts``); other values fall
-         through to the legacy OutputSpace reverse path. Default is
-         'concepts'; per-config overrides should not be needed and
-         have been stripped from non-default XMLs. -->
-    <reconstruct>concepts</reconstruct>
-
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
          the symbolic codebook geometrically (see Reasoning.md). -->
     <conceptualOrder>1</conceptualOrder>

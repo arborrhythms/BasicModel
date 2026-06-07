@@ -1,0 +1,109 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_5M_grammar: the SERIAL sibling of MM_20M (doc/specs/2026-06-05-
+       dimensional-governance.md sec.6). Same flat-slab shapes as MM_20M
+       (IS/PS wide [B,1024,8], CS deep [B,8,1024], slab 8192), but
+       conceptualMode=serial: the bounded-STM fold (the 2026-06-05 tier-free
+       refactor) walks the word sequence one word at a time, and grammatical
+       analysis / synthesis (role_collapsed.grammar) drives composition
+       instead of the parallel per-stage butterfly bridges.
+
+       PHASE-1 NOTE: spec sec.6 gives the serial symbol content as
+       [activation(4) + where(2) + when(2)] = 8, but validate_config still
+       requires SS.nDim == CS effective content (1024) in Phase 1 (the
+       CS->SS handoff is a dimensional pass-through). So SS carries
+       concept-width entries here; the 8-dim serial symbol code needs the
+       Phase-3 relaxation. The SS codebook is smaller than MM_20M's (serial
+       grammar-op budget: small ops). -->
+  <architecture>
+    <modelType>embedding</modelType>
+    <!-- serial: per-word forward dispatch via _forward_body_per_word. -->
+    <conceptualMode>serial</conceptualMode>
+    <conceptualOrder>3</conceptualOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
+         butterfly cascade (moved from per-space to architecture-level). -->
+    <sigmaPi>butterfly</sigmaPi>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: wide, 1024 word positions x content 8 (+ band 4 = 12);
+       content slab 1024*8 = 8192. -->
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>12</nDim>
+    <nVectors>256</nVectors>
+    <nOutput>1024</nOutput>
+    <lexer>byte</lexer>
+  </InputSpace>
+
+  <!-- PerceptualSpace [B, 1024, 8] (wide); grammatical analysis is the
+       serial Pi. content 8 (+ band 4 = nDim 12); slab 1024*8 = 8192. -->
+  <PerceptualSpace>
+    <nInput>1024</nInput>
+    <nVectors>8</nVectors>
+    <nDim>12</nDim>
+    <nOutput>1024</nOutput>
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace [B, 8, 1024]: the DEEP hub; N=8 = STM depth. Ingests
+       the wide PS content slab as a pure reshape to deep [B,8,1024]. -->
+  <ConceptualSpace>
+    <nInput>1024</nInput>
+    <nOutput>8</nOutput>
+    <nDim>1028</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+    <stmCapacity>8</stmCapacity>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: the bounded-STM grammar fold is the serial Sigma. The
+       serial symbol content is the small code [activation(4) + where(2) +
+       when(2)] = 8 (spec sec.6), DECOUPLED from CS content (1024): the fold
+       bridges CS<->SS, so SS.nDim != CS content is allowed in serial mode
+       (the symbol_dim==concept pass-through requirement is relaxed). The
+       codebook is small (serial grammar-op budget). -->
+  <SymbolicSpace>
+    <nInput>8</nInput>
+    <nInputDim>1028</nInputDim>
+    <nDim>8</nDim>
+    <!-- nOutputDim=8: emit the small serial symbol. Without this the
+         grammar-branch construction (Models.py) forces the SS activation
+         width to CS content (1024); the symbol codebook is already 8-wide.
+         The wide CS idea (1024) narrows to the 8-dim symbol at the SS
+         demux. Asymmetric I/O (nInputDim 1028 in, nOutputDim 8 out). -->
+    <nOutputDim>8</nOutputDim>
+    <nVectors>1000</nVectors>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <WordSpace>
+    <language>
+      <grammar>role_collapsed.grammar</grammar>
+    </language>
+  </WordSpace>
+
+</model>

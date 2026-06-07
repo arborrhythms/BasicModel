@@ -2,7 +2,7 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_5M_IR: bidirectional masked Input Reconstruction sibling of
-       MM_5M. Same brick-body architecture (8 hierarchical levels,
+       MM_20M. Same brick-body architecture (8 hierarchical levels,
        N*D=4096); differs in tokenization (word/lexicon vs byte+BPE)
        and lexicon size
        (200K vs 4096). See doc/specs/2026-04-29-ir-mode-design.md. -->
@@ -42,7 +42,7 @@
        IS slab=4096*6=24576, PS slab=1024*6=6144, CS slab=8*1024=8192;
        all three differed. Re-architected to a uniform 8*1024=8192
        (matching the CS terminal width), IS/PS share 1024 wide slots
-       at nDim=8 each; mirrors MM_5M.xml's re-architecture. -->
+       at nDim=8 each; mirrors MM_20M.xml's re-architecture. -->
   <InputSpace>
     <nInput>1024</nInput>
     <nDim>12</nDim>
@@ -70,8 +70,8 @@
 
   <SymbolicSpace>
     <nInput>1024</nInput>
-    <nDim>1024</nDim>
-    <nInputDim>8</nInputDim>
+    <nDim>1028</nDim>
+    <nInputDim>1028</nInputDim>
     <!-- Stage 1.B paired-row contract: SS.nVectors must be at least 2x
          PS lexicon capacity (1000000) to hold orth + semantic paired
          rows. Doubled to 2000000 for the paired pair. -->

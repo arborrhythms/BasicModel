@@ -9,15 +9,20 @@ from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
 
 
 def test_canonical_shape_table():
-    # Modality re-architecture (doc/plans/2026-06-03-modality-architecture-*):
-    # CS now CARRIES the event where/when (mux at PS->CS); SS/OS carry
-    # NEITHER (demux at CS->SS). No SS promotion.
+    # 2026-06-06 dim-convention unification (see bin/architecture.py docstring):
+    # every INTERIOR tier carries the SAME (nWhere=2, nWhen=2) band so the
+    # formula nDim = nWhat + nWhere + nWhen is uniform. SS/WordSpace band slots
+    # ride along as inert padding -- this SUPERSEDES the earlier convention that
+    # gave SS/WordSpace (0,0) and demuxed at the CS->SS boundary. The ONLY
+    # principled (0,0) exception is OutputSpace: the terminal answer has no
+    # .where/.when to mux.
     assert canonical_shape("InputSpace")      == (2, 2)
     assert canonical_shape("PerceptualSpace") == (2, 2)
+    assert canonical_shape("ModalSpace")      == (2, 2)
     assert canonical_shape("ConceptualSpace") == (2, 2)
-    assert canonical_shape("SymbolicSpace")   == (0, 0)
+    assert canonical_shape("SymbolicSpace")   == (2, 2)
     assert canonical_shape("OutputSpace")     == (0, 0)
-    assert canonical_shape("WordSpace")       == (0, 0)
+    assert canonical_shape("WordSpace")       == (2, 2)
 
 
 def test_mandatory_codebook_tiers():

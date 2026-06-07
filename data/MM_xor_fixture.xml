@@ -61,7 +61,7 @@
   <SymbolicSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nOutput>8</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>

@@ -69,11 +69,14 @@
 
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nInputDim>4</nInputDim>
+    <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>4</nDim>
+    <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
+         (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
+         tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->
+    <nDim>8</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>4</nOutputDim>
+    <nOutputDim>8</nOutputDim>
 	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
@@ -83,7 +86,10 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>4</nInputDim>
+    <!-- C2 (handoff migration): OS.nInputDim 4->8 to match the uniform-band
+         widened SS event (SS slab nOutput*nOutputDim = 8*8 = 64); the band
+         slots ride along as inert padding into the (0,0)-band OutputSpace. -->
+    <nInputDim>8</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

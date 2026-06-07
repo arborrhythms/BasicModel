@@ -112,7 +112,7 @@
   <SymbolicSpace>
     <nInput>10</nInput>
     <nVectors>200</nVectors>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nOutput>10</nOutput>
     <!-- idempotent: zero out the symbol regularizers so the snap is the
          only operation training touches. -->

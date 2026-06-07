@@ -16,7 +16,7 @@ CPU/MPS as a harness self-check.
 
 Usage:
     .venv/bin/python test/brick_attr_probe.py [CONFIG.xml] [batchSize]
-Defaults: MM_xor.xml, batchSize=2. MM_5M.xml uses the FineWeb shard
+Defaults: MM_xor.xml, batchSize=2. MM_20M.xml uses the FineWeb shard
 corpus (skips cleanly if absent), mirroring test_brick_no_sync.py.
 
 NOT a pytest test (no ``test_`` prefix -> not collected): it needs an
@@ -55,7 +55,7 @@ _counts = Counter()       # (method, file, line, func) -> count
 _enabled = [False]
 
 # Bound every probed runEpoch: a few steady batches expose the same
-# sync callsites as a full epoch (sites fire per batch), and MM_5M's
+# sync callsites as a full epoch (sites fire per batch), and MM_20M's
 # epoch is 358k sentences. Overridable via env.
 _PF = int(os.environ.get("BRICK_PROBE_MAX_BATCHES", "6"))
 
@@ -171,7 +171,7 @@ def main():
     init_config(path=config,
                 defaults_path=str(_project / "data" / "model.xml"))
 
-    if cfg_name == "MM_5M.xml":
+    if cfg_name == "MM_20M.xml":
         shard_dir = str(_project / "data" / "fineweb")
         if not (os.path.isdir(shard_dir) and os.listdir(shard_dir)):
             print(f"SKIP {cfg_name}: shard corpus {shard_dir!r} absent")

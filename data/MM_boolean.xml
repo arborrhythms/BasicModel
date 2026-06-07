@@ -83,7 +83,7 @@
 
   <SymbolicSpace>
     <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <codebook>quantize</codebook>
   </SymbolicSpace>

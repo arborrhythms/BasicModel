@@ -2,13 +2,20 @@
 shape. .where/.when are no longer config options: every space's spatial/
 temporal widths come from canonical_shape(section).
 
-Per the modality re-architecture (doc/plans/2026-06-03-modality-architecture
--design.md), .where/.when are properties of occurrences/events, not of
-symbols. They mux into the muxed event at IS->PS->CS (each carries
-where=2/when=2) and demux at CS->SS, so a symbol qua symbol (SymbolicSpace)
-and the output tier (OutputSpace) carry NEITHER; WordSpace likewise carries
-neither. This SUPERSEDES the earlier SS-promotion convergence: SS is *not* a
-where/when carrier; CS is."""
+Per the 2026-06-06 dim-convention unification: the INTERIOR tiers all carry
+the SAME (nWhere=2, nWhen=2) band so the dimensional formula is uniform:
+``nDim = nWhat + nWhere + nWhen``. The only difference between interior tiers
+is whether the band slots are actively muxed (carry per-event where/when
+values) or ride along as inert padding — the bookkeeping is identical. This
+SUPERSEDES the earlier convention that gave SS/WordSpace ``(0, 0)`` and
+demuxed at the CS->SS boundary (now a no-op identity reshape), which
+simplifies the constructor chain and makes ``space[i].nOutputDim ==
+space[i+1].nInputDim`` directly comparable for handoff validation.
+
+The TWO principled exceptions stay ``(0, 0)``: there is no positional
+encoding BEFORE the input or AFTER the output. OutputSpace (the terminal
+prediction / answer) is one — a scalar/answer has no .where/.when to mux,
+and the loss would otherwise slice empty where/when segments and NaN."""
 
 _CANONICAL_SHAPE = {
     "InputSpace":      (2, 2),
@@ -18,9 +25,11 @@ _CANONICAL_SHAPE = {
     # perceptual shape. No live config currently enables demuxed mode.
     "ModalSpace":      (2, 2),
     "ConceptualSpace": (2, 2),
-    "SymbolicSpace":   (0, 0),
+    "SymbolicSpace":   (2, 2),
+    # Exception: the terminal output carries no positional encoding -- the
+    # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "WordSpace":       (0, 0),
+    "WordSpace":       (2, 2),
 }
 # 2026-06-04: no tier's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any tier may resolve to

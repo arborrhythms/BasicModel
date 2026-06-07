@@ -54,17 +54,24 @@
   <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nDim>2</nDim>
-    <nInputDim>2</nInputDim>
+    <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
+         (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
+         tier, so nDim/nInputDim/nOutputDim were bumped 2 -> 6 to preserve
+         nWhat=2 (the binary truth state). -->
+    <nDim>6</nDim>
+    <nInputDim>6</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nOutputDim>2</nOutputDim>
+    <nOutputDim>6</nOutputDim>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>2</nInputDim>
+    <!-- C2 (handoff migration): OS.nInputDim 2->6 to match the uniform-band
+         widened SS event (SS slab nOutput*nOutputDim = 8*6 = 48); the band
+         slots ride along as inert padding into the (0,0)-band OutputSpace. -->
+    <nInputDim>6</nInputDim>
     <nOutput>1</nOutput>
     <nVectors>1</nVectors>
   </OutputSpace>

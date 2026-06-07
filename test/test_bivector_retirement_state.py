@@ -53,12 +53,15 @@ def test_symbolic_codebook_no_longer_pinned_bivector():
 
 
 def test_symbolic_nwhat_equals_ndim():
-    """``subspace.nWhat`` is decoupled from the bivector width and
-    follows ``self.nDim`` (the symbol-space dimensionality). The plan's
-    text "nWhat = 2 stays" predates the rollback that decoupled them."""
-    ws = _make_word_space(symbolDim=4)
+    """``subspace.nWhat`` is decoupled from the bivector width and follows
+    ``self.nDim`` minus the uniform (2,2) where/when band (the symbol-space
+    content dimensionality). The plan's text "nWhat = 2 stays" predates the
+    rollback that decoupled them; the SS=(0,0) special case (where nWhat ==
+    nDim exactly) was retired by the uniform-(2,2) convention."""
+    from architecture import canonical_shape
+    ws = _make_word_space(symbolDim=4 + sum(canonical_shape("SymbolicSpace")))
     sym = ws.symbolicSpace
-    assert sym.nWhat == sym.nDim
+    assert sym.nWhat == sym.nDim - sum(canonical_shape("SymbolicSpace"))
 
 
 def test_symbolic_references_parameter_attached_via_knowledge():

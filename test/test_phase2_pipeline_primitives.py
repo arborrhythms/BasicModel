@@ -232,10 +232,11 @@ def test_build_pipelines_creates_body_stages():
         assert "cs" in stage and "ss" in stage
     # Pipeline boundaries are methods, not attributes. ``_forward_stem``
     # stays retired (the IR forward inlines InputSpace+PerceptualSpace
-    # directly into ``_forward_per_stage``), but ``_run_pipeline_rev``
-    # is RESTORED post-2026-05 reconciliation (reverse() reconstructs
-    # input again -- §5 of the recurrent-cell plan).
+    # directly into ``_forward_per_stage``); ``reverse()`` reconstructs input
+    # from the terminal ConceptualSpace state (§5 of the recurrent-cell plan).
+    # The head-seeded ``_run_pipeline_rev`` primitive was removed 2026-06-07.
     assert callable(getattr(model, '_forward_body', None))
     assert callable(getattr(model, '_forward_head', None))
     assert not hasattr(model, '_forward_stem')
-    assert callable(getattr(model, '_run_pipeline_rev', None))
+    assert callable(getattr(model, 'reverse', None))
+    assert not hasattr(model, '_run_pipeline_rev')

@@ -58,7 +58,7 @@
        codebooks are share-compatible. -->
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): re-architected to a
-       uniform 8*1024=8192 slab; mirrors MM_5M_IR / MM_5M. -->
+       uniform 8*1024=8192 slab; mirrors MM_5M_IR / MM_20M. -->
   <InputSpace>
     <nInput>1024</nInput>
     <nDim>12</nDim>
@@ -92,8 +92,8 @@
 
   <SymbolicSpace>
     <nInput>1024</nInput>
-    <nDim>1024</nDim>
-    <nInputDim>8</nInputDim>
+    <nDim>1028</nDim>
+    <nInputDim>1028</nInputDim>
     <!-- Stage 1.B paired-row contract: doubled for orth + semantic. -->
     <nVectors>2000000</nVectors>
     <nOutput>1024</nOutput>

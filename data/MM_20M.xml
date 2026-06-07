@@ -1,0 +1,122 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_20M: PARALLEL MentalModel, dimensional-governance reference config
+       (doc/specs/2026-06-05-dimensional-governance.md).
+
+       SHAPE (2026-06-05 decision): in PARALLEL mode every analyzed space
+       carries the DEEP shape [B, N=8, D=1024] (8 = STM depth, 1024 =
+       content). IS/PS/CS/SS are all 8 x 1024, so every space-to-space
+       handoff is the IDENTITY reshape over the constant content slab
+       nOutput * (nDim - where - when) = 8 * 1024 = 8192. No wide<->deep
+       position collapse (that is the SERIAL sibling MM_5M_grammar, which
+       walks the [B, 1024, 1024] word sequence one word at a time).
+
+       Bridges: PS.Pi and SS.Sigma are <sigmaPi>butterfly</sigmaPi>: a
+       cross-position O(N log N) cascade over the 8192 flat slab, still
+       structurally invertible. (Spec sec.7 names <sigmaPi>full</sigmaPi>,
+       but a dense square LDU over slab 8192 is ~134M params/bridge
+       (2*8192^2); two of them dwarf the ~5M target, so butterfly is used.
+       The full span is exercised by the Task 3 invertibility gate on
+       small slabs.)
+
+       Param budget (~5-6M, dominated by the SS symbol codebook):
+         PS  : <codebook>none</codebook> (choose-1 CONTINUOUS, spec sec.4)
+               + butterfly Pi bridge (~0.2M)
+         CS  : <codebook>none</codebook> (deep hub; no D-vector table)
+         SS  : symbol codebook nVectors * content (the dominant term)
+               + butterfly Sigma bridge (~0.2M)
+       PHASE-1 NOTE: validate_config requires SS.nDim == CS effective
+       content (1024): the CS->SS handoff is a dimensional pass-through
+       (the square butterfly Sigma does not change width). So each codebook
+       entry is concept-width (1024) and the ~5M comes from codebook
+       CARDINALITY (~5000 entries), not 1e6 small 5-dim codes. The spec's
+       wide small-code SS needs the Phase-3 relaxation of that rule. -->
+  <architecture>
+    <modelType>embedding</modelType>
+    <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
+         the serial sibling is MM_5M_grammar.xml). -->
+    <conceptualMode>parallel</conceptualMode>
+    <conceptualOrder>3</conceptualOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
+         butterfly cascade (moved from per-space to architecture-level). -->
+    <sigmaPi>butterfly</sigmaPi>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1</nInputDim>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8192</nOutput>
+    <nOutputDim>1024</nOutputDim> <!-- 1024 is a bit of an embedded waste, since these are ascii characters -->
+
+    <lexer>raw</lexer>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
+    <nInputDim>1024</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>         <!-- 8 in parallel mode, looping over 1 in symbolic mode -->
+    <nOutputDim>1024</nOutputDim> 
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+    <!-- Chunking strategy: analyse | radix | lexicon | bpe | mphf | none.
+         analyse = meronymic analyzer with a space-lexer front end
+         (whitespace boundary; word runs resolve through the word codebook):
+         this is what reduces an 8192-char input to a small number of
+         words in parallel mode without needing attention. radix = the
+         PerceptStore (radix trie + promotion); flip here to experiment. -->
+    <chunking>analyse</chunking>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
+    <nInputDim>1024</nInputDim>  <!--    8 FROM SYMBOLIC -->
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

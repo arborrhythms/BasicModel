@@ -54,7 +54,7 @@
   <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <SymbolicSpace>
     <nOutput>6</nOutput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
   </SymbolicSpace>

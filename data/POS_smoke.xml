@@ -120,7 +120,7 @@
 
   <SymbolicSpace>
     <nOutput>8</nOutput>
-    <nDim>16</nDim>
+    <nDim>20</nDim>
     <nVectors>128</nVectors>
     <codebook>quantize</codebook>
   </SymbolicSpace>

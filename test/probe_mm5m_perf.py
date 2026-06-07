@@ -1,4 +1,4 @@
-"""Perf probe: how many sentences/sec does MM_5M achieve on a small
+"""Perf probe: how many sentences/sec does MM_20M achieve on a small
 slice of fineweb? Compares the perf-critical paths against the user's
 historical baseline (30-40 sent/sec in serial AR mode).
 
@@ -22,7 +22,7 @@ os.environ["BASIC_NUM_EPOCHS"] = "1"
 # Disable autoload so we don't pick up an old checkpoint.
 os.environ["BASIC_NO_COMPILE"] = "1"
 
-CONFIG_PATH = str(PROJECT / "data" / "MM_5M.xml")
+CONFIG_PATH = str(PROJECT / "data" / "MM_20M.xml")
 
 from util import init_config, ProjectPaths, TheXMLConfig
 from data import TheData
@@ -39,7 +39,7 @@ sentences = (
 ) * int(os.environ["BASIC_NUM_EPOCHS"])
 rate = sentences / elapsed if elapsed > 0 and sentences > 0 else 0.0
 
-print(f"\n===== MM_5M perf probe =====")
+print(f"\n===== MM_20M perf probe =====")
 print(f"Elapsed: {elapsed:.2f}s")
 print(f"Sentences processed: ~{sentences}")
 print(f"Sentences/sec: ~{rate:.1f}")

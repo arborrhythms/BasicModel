@@ -1029,7 +1029,7 @@ class Grammar:
 
         # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-tier element
         # form where the element NAME is the LHS and the CONTENT is the
-        # RHS.  Some configs (MM_5M, LM_5M etc.) redundantly prefix the
+        # RHS.  Some configs (MM_20M, LM_5M etc.) redundantly prefix the
         # content with ``LHS = `` -- strip it so the function-call parser
         # below sees just ``pi(C)`` and ``method_name`` ends up as
         # ``pi`` (the natural-fold key) rather than ``C = pi`` (which
@@ -1541,7 +1541,7 @@ class Grammar:
         name their starts (the inline-XML path, or a bare
         ``<start>REL_T</start>``), a single-symbol ``"REL_T"`` start
         pattern is treated as the relative start (back-compat fallback).
-        Absolute-only grammars (MM_xor / MM_5M) expose no relative start
+        Absolute-only grammars (MM_xor / MM_20M) expose no relative start
         and carry none of the relative ops -> nothing relative, the
         conservative correct answer.
         """
@@ -7324,15 +7324,21 @@ class WordSubSpace(SubSpace):
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
         # — WordSubSpace is a data carrier (typed STM stack), not a
         # pipeline space that produces tensors via ``.what`` / ``.event``.
+        # Pass encodings sized to mirror SymbolicSpace's band so encoding
+        # nDim == self.nWhen / self.nWhere downstream readers expect (the
+        # 2026-06-06 uniform-band convention gives SS (2, 2) so the
+        # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
+        from Spaces import WhereEncoding as _WhereEncoding
+        from Spaces import WhenEncoding as _WhenEncoding
         SubSpace.__init__(
             self,
             inputShape=[0, muxed], outputShape=[0, muxed],
-            nInputDim=muxed, nOutputDim=muxed)
-        # SubSpace.__init__ derives nWhat / nWhere / nWhen from the
-        # default WhereEncoding(0, 0) / WhenEncoding(0, 0); restamp them
-        # so they mirror SymbolicSpace's column layout (downstream
-        # callers read these to size projections that target the muxed
-        # symbol layout, not the empty default).
+            nInputDim=muxed, nOutputDim=muxed,
+            whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
+            whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
+        )
+        # Restamp nWhat / nWhere / nWhen to mirror SymbolicSpace's column
+        # layout (downstream callers read these to size projections).
         self.nWhat = nWhat
         self.nWhere = nWhere
         self.nWhen = nWhen
@@ -8692,6 +8698,11 @@ class WordSubSpace(SubSpace):
         b_hint = (int(input_vectors.shape[0])
                   if torch.is_tensor(input_vectors) and input_vectors.dim() >= 1
                   else None)
+        # A5 fullgraph fix: thread the compose operand's device into the
+        # RoutingState build so the dense ``rule_probs`` allocation avoids
+        # the non-proxyable ``TheDevice.get()`` inside the traced forward.
+        dev_hint = (input_vectors.device
+                    if torch.is_tensor(input_vectors) else None)
         if self._grammar_is_default_only:
             self.current_rules = self._default_compose_rules()
             self._pad_S_cursor_to_target(self.current_rules)
@@ -8699,14 +8710,14 @@ class WordSubSpace(SubSpace):
             # (unchanged) ``current_rules`` dict so the intra-sentence
             # predictor can read a dense ``[B, n_rules]`` ``rule_probs``.
             self.routing_state = self._build_routing_state(
-                self.current_rules, batch_size=b_hint)
+                self.current_rules, batch_size=b_hint, device=dev_hint)
             return self.current_rules
         self.current_rules = self.languageLayer.compose(
             input_vectors, self, subspace=subspace) or {}
         self._pad_S_cursor_to_target(self.current_rules)
         # ADDITIVE: same RoutingState build on the full-router path.
         self.routing_state = self._build_routing_state(
-            self.current_rules, batch_size=b_hint)
+            self.current_rules, batch_size=b_hint, device=dev_hint)
         return self.current_rules
 
     def _pad_S_cursor_to_target(self, rules_dict):
@@ -8809,8 +8820,13 @@ class WordSubSpace(SubSpace):
                     continue
         return flat
 
-    def _synthesize_rule_probs(self, rules_by_tier, batch_size):
+    def _synthesize_rule_probs(self, rules_by_tier, batch_size, device=None):
         """Build the dense ``[B, n_rules]`` rule distribution.
+
+        ``device`` (A5 fullgraph fix): the compose operand's device,
+        threaded down to the ``torch.zeros`` allocations so neither builder
+        calls ``TheDevice.get()`` inside the traced forward (DeviceHandle is
+        not Dynamo-proxyable). ``None`` falls back to ``TheDevice.get()``.
 
         Dispatches between two builders:
 
@@ -8836,15 +8852,18 @@ class WordSubSpace(SubSpace):
         ll = getattr(self, 'languageLayer', None)
         tier_routings = getattr(ll, '_last_tier_routings', None) if ll is not None else None
         if tier_routings:
-            soft = self._synthesize_rule_probs_soft(tier_routings, batch_size)
+            soft = self._synthesize_rule_probs_soft(
+                tier_routings, batch_size, device=device)
             if soft is not None:
                 return soft
             # Soft aggregation declined (no usable marginals / shapes did
             # not line up): fall through to the hard scatter so the
             # predictor still gets a (detached) conditioning signal.
-        return self._synthesize_rule_probs_hard(rules_by_tier, batch_size)
+        return self._synthesize_rule_probs_hard(
+            rules_by_tier, batch_size, device=device)
 
-    def _synthesize_rule_probs_soft(self, tier_routings, batch_size):
+    def _synthesize_rule_probs_soft(self, tier_routings, batch_size,
+                                    device=None):
         """Aggregate the router's SOFT per-tier marginals into a dense,
         GRADIENT-BEARING ``[B, n_rules]`` rule distribution.
 
@@ -8882,7 +8901,10 @@ class WordSubSpace(SubSpace):
         if n_rules <= 0:
             return None
 
-        device = TheDevice.get()
+        # A5: device threaded from the compose operand (avoids the
+        # non-proxyable ``TheDevice.get()`` inside the traced forward).
+        if device is None:
+            device = TheDevice.get()
         # Collect (rule_id_index_tensor, count_columns) contributions per
         # tier, then index_add them onto a single zeros base so the graph
         # back to action_probs / reduce_marginal_op is preserved.
@@ -9017,7 +9039,8 @@ class WordSubSpace(SubSpace):
         idx = torch.tensor(keep_rids, dtype=torch.long)
         return idx, cols
 
-    def _synthesize_rule_probs_hard(self, rules_by_tier, batch_size):
+    def _synthesize_rule_probs_hard(self, rules_by_tier, batch_size,
+                                    device=None):
         """Build the dense ``[B, n_rules]`` rule distribution (HARD scatter).
 
         DETACHED fallback for the default-only / ``useGrammar='none'``
@@ -9066,7 +9089,10 @@ class WordSubSpace(SubSpace):
             return None
         B = int(B)
 
-        device = TheDevice.get()
+        # A5: device threaded from the compose operand (avoids the
+        # non-proxyable ``TheDevice.get()`` inside the traced forward).
+        if device is None:
+            device = TheDevice.get()
         probs = torch.zeros(B, n_rules, device=device)
 
         # Per-row scatter. For each batch row, accumulate the row's own
@@ -9124,17 +9150,25 @@ class WordSubSpace(SubSpace):
                 "rule_probs tensor (fail-loud per numerical policy).")
         return probs
 
-    def _build_routing_state(self, rules_by_tier, batch_size):
+    def _build_routing_state(self, rules_by_tier, batch_size, device=None):
         """Assemble the ``RoutingState`` companion for ``current_rules``.
 
         ``rules_by_tier`` is the (unchanged) ``current_rules`` dict;
         ``batch_size`` is the predictor's B (the compose operand's
         leading dim) or ``None``. Builds ``selected_rules`` (flat row-0
         ids) and the dense ``rule_probs`` ``[B, n_rules]`` (or ``None``).
+
+        ``device`` (A5 fullgraph fix): the compose operand's device,
+        threaded so the dense ``rule_probs`` is allocated WITHOUT calling
+        ``TheDevice.get()`` inside the traced forward (that returns a
+        ``DeviceHandle`` Dynamo cannot proxy -> a fullgraph graph break).
+        ``None`` (the eager ``__init__`` seed call) falls back to
+        ``TheDevice.get()``.
         """
         rules_by_tier = rules_by_tier or {}
         selected = self._flatten_selected_rules(rules_by_tier)
-        rule_probs = self._synthesize_rule_probs(rules_by_tier, batch_size)
+        rule_probs = self._synthesize_rule_probs(
+            rules_by_tier, batch_size, device=device)
         return RoutingState(
             rules_by_tier=rules_by_tier,
             selected_rules=selected,

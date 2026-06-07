@@ -1,37 +1,55 @@
 <?xml version="1.0"?>
+<!--
+  XOR grammar, role-collapsed format (doc/plans/2026-06-02-unified-
+  subsymbolic-analyzer-and-role-collapsed-grammar.md Section 4; see
+  data/role_collapsed.grammar for the full description). Declares ONLY
+  operator roles: each operand's input role (op_I[n]) and the operator's
+  output role (op_O1). Forward maps inputs to output
+  (O1 = op.forward(I1, I2)); reverse maps output back to inputs
+  (I1, I2 = op.reverse(O1)).
+-->
 <grammar name="xor">
 
   <PerceptualSpace>
-    <!-- Meronymic operation registry (Phase 3). See default.grammar for
-         the full description; SURF is a generic surface span and the
-         stop / boundary / uniform cover is the compatibility analyzer
-         mode. PS rules (tier 'P') are read only by the PS analyzer. -->
+    <!-- The analyzer root: U is "everything currently visible to the
+         analyzer", recursively decomposable into U-typed sub-surfaces.
+         The marker-free structural cover (stop / boundary / uniform) is
+         the compatibility analyzer mode. compose = parts to whole
+         (PS reverse / synthesis); generate = whole to parts (PS forward
+         / analysis). -->
+    <start name="everything">U</start>
     <compose>
-      <rule>SURF = stop.forward(SURF)</rule>
-      <rule>SURF = boundary.forward(SURF, SURF)</rule>
-      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
     </compose>
     <generate>
-      <rule>SURF = stop.reverse(SURF)</rule>
-      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
-      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
     </generate>
   </PerceptualSpace>
 
   <SymbolicSpace>
+    <!-- Minimal XOR symbolic grammar: each connective declares its input
+         roles (op_I[n]) and output role (op_O1); the operator outputs are
+         the start states. Tier / arity / invertibility derive from each
+         operator's GrammarLayer subclass. -->
+    <start name="connective">not_O1</start>
+    <start name="connective">intersection_O1</start>
+    <start name="connective">union_O1</start>
+
     <compose>
-      <!-- Minimal grammar for XOR test model. Tier / arity / invertibility
-           derive from each rule's GrammarLayer subclass. -->
-      <rule>S = not.forward(S)</rule>
-      <rule>S = intersection.forward(S, S)</rule>
-      <rule>S = union.forward(S, S)</rule>
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
     </compose>
 
     <generate>
-      <!-- Mirror of <compose> with head and arguments swapped. -->
-      <rule>S = not.reverse(S)</rule>
-      <rule>S, S = intersection.reverse(S)</rule>
-      <rule>S, S = union.reverse(S)</rule>
+      <!-- Mirror of compose: output role back to input roles. -->
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
     </generate>
   </SymbolicSpace>
 

@@ -9,8 +9,10 @@ Covers the new-test items from
   * ``<reconstructionScale>`` parses; legacy ``<reverseScale>`` triggers
     a deprecation warning and maps to the same field.
   * IR forward produces ``[B, N, predDim]`` predictions (no K axis).
-  * ``<reconstruct>concepts</reconstruct>`` adds a C-tier
-    ``reconstruction_c`` term to ``TheError``.
+  * C3 (spec sec 7): reconstruction is unconditionally concepts-seeded
+    -- ``runBatch`` adds a ``reconstruction_reverse`` term (concepts
+    path) when ``reconstruction_scale > 0``, with no ``<reconstruct>``
+    enum (retired in A1).
   * ``InterSentenceLayer.predict_next()`` returns the right shape
     after ``armaP`` observations.
   * ``InterSentenceLayer.observe(s_t)`` accumulates a non-zero ARMA
@@ -217,31 +219,60 @@ class TestIrForwardShape(unittest.TestCase):
                          f"IR predictions should be [B, N, predDim], got {tuple(pred.shape)}")
 
 
-# -- C-tier reconstruction loss fires ------------------------------------
+# -- Reconstruction is unconditionally from concepts ---------------------
 
 class TestReconstructConceptsLoss(unittest.TestCase):
-    """``<reconstruct>concepts</reconstruct>`` should add a
-    ``reconstruction_c`` term to ``TheError`` after one ``runBatch``.
+    """C3 (spec sec 7): reconstruction is UNCONDITIONALLY concepts-seeded.
+
+    The ``<reconstruct>`` enum (``none``/``symbols``/``concepts``/
+    ``both``) was retired in A1, so no config can request a mode and there
+    is no ``self.reconstruct`` attribute. ``runBatch`` now always seeds
+    the reverse pass from the terminal ConceptualSpace STM snapshot via
+    ``reverse`` and reports the concepts
+    reconstruction in the ``reconstruction_reverse`` ``TheError`` term
+    (weighted by ``reconstruction_scale``). This test asserts that term
+    fires -- WITHOUT touching any enum -- and that the concepts reverse
+    path (``reverse``) is the one taken (the head-seeded
+    ``_run_pipeline_rev`` was removed 2026-06-07).
     """
 
-    def test_concepts_adds_reconstruction_c_term(self):
-        """When ``<reconstruct>concepts</...>`` is set AND the body
-        actually produces an IR mask (text-mode input via the lexicon
-        codebook), ``runBatch`` should add a ``reconstruction_c``
-        entry to ``TheError``.
-        """
+    def test_reconstruction_is_unconditionally_from_concepts(self):
         init_config(path=os.path.join(_DATA, "MM_xor.xml"),
                     defaults_path=os.path.join(_DATA, "model.xml"))
         Language.TheGrammar._configured = False
-        TheXMLConfig.set("architecture.reconstruct", "concepts")
         from data import TheData
         TheData.load("xor")
         m, _ = Models.BaseModel.from_config(
             os.path.join(_DATA, "MM_xor.xml"), data=TheData)
-        m.reconstruct = "concepts"
+        # The retired enum leaves NO attribute behind.
+        self.assertFalse(
+            hasattr(m, "reconstruct"),
+            "the <reconstruct> enum was retired (A1); BaseModel must not "
+            "carry a self.reconstruct attribute")
+        # The reconstruction term is gated by reconstruction_scale > 0
+        # (MM_xor.xml configures 0.1); without that gate there is nothing
+        # to assert.
+        self.assertGreater(
+            float(getattr(m.loss, "reconstruction_scale", 0.0) or 0.0), 0.0,
+            "MM_xor.xml is expected to set reconstructionScale > 0 so the "
+            "reconstruction_reverse term fires")
+        # The head-seeded reverse primitive (``_run_pipeline_rev``) was
+        # REMOVED 2026-06-07, so the concepts-seeded ``reverse`` is the ONLY
+        # reverse path. Assert it's gone, then spy ``reverse`` to prove it
+        # fires.
+        self.assertFalse(
+            hasattr(m, "_run_pipeline_rev"),
+            "the head-seeded _run_pipeline_rev primitive was removed; "
+            "reconstruction is unconditionally concepts-seeded")
+        calls = {"concepts": 0}
+        _orig_concepts = m.reverse
+
+        def _spy_concepts(x):
+            calls["concepts"] += 1
+            return _orig_concepts(x)
+
+        m.reverse = _spy_concepts
         m.eval()
-        # Use the data loader's text input path so create_ir_mask's
-        # Embedding null_percept_idx gate is satisfied.
         loader = m.inputSpace.data.data_loader(
             split="train", num_streams=2)
         inp_items, out_items = next(iter(loader))
@@ -249,18 +280,23 @@ class TestReconstructConceptsLoss(unittest.TestCase):
         outputTensor = m.outputSpace.prepOutput(out_items)
         m.runBatch(train=False, batchSize=2, split="train",
                    batch_override=(inputTensor, outputTensor))
-        # ``create_ir_mask`` may still be a no-op when the
-        # codebook lacks ``null_percept_idx`` or the mask is empty
-        # on this batch.  Skip the assertion in that case -- the
-        # reconstruction_c path is plumbed but didn't fire here.
-        if m._ir_mask_positions is None or not bool(
-                m._ir_mask_positions.any()):
-            self.skipTest("IR mask did not fire for this input "
-                          "(numeric codebook or empty mask)")
-        names = {term[0] for term in Layers.TheError.terms()}
-        self.assertIn("reconstruction_c", names,
-                      f"<reconstruct>concepts</...> did not add "
-                      f"reconstruction_c to TheError; got {names}")
+        # Concepts-seeded reverse fired; head-seeded reverse did NOT --
+        # reconstruction no longer dispatches on the (gone) enum.
+        self.assertGreater(
+            calls["concepts"], 0,
+            "reconstruction must seed the reverse pass from concepts "
+            "(reverse), unconditionally")
+        # The concepts reconstruction term is present and finite.
+        terms = {t[0]: t[1] for t in Layers.TheError.terms()}
+        self.assertIn(
+            "reconstruction_reverse", terms,
+            f"concepts reconstruction must add a reconstruction_reverse "
+            f"term to TheError; got {set(terms)}")
+        val = terms["reconstruction_reverse"]
+        if torch.is_tensor(val):
+            self.assertTrue(
+                bool(torch.isfinite(val).all()),
+                f"reconstruction_reverse must be finite, got {val!r}")
 
 
 # -- ARMA layer shape + loss --------------------------------------------

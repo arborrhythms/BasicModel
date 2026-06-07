@@ -81,7 +81,9 @@
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
+      <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
+      <xs:element name="perfectReconstruction" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="prediction" type="predictionEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
@@ -232,6 +234,19 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- Span of the Pi/Sigma operator (replaces the boolean butterfly knob):
+       last = per-slot (last dim only); butterfly = O(N log N) cross-dim
+       cascade; full = dense flattened square matrix (full interconnect, the
+       square invertible bridge). Default last. See doc/specs/2026-06-05-
+       dimensional-governance.md. -->
+  <xs:simpleType name="sigmaPiEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="last"/>
+      <xs:enumeration value="butterfly"/>
+      <xs:enumeration value="full"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <!-- Stage 3 cleanup (2026-05-27): parserBackendEnum and
        routerKindEnum retired alongside the chart. The signal router
        (LanguageLayer) is the canonical parser. -->
@@ -246,12 +261,10 @@
     <xs:attribute name="enabled" type="xs:boolean" use="optional"/>
   </xs:complexType>
 
-  <xs:simpleType name="reconstructEnum">
+  <xs:simpleType name="predictionEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="none"/>
-      <xs:enumeration value="symbols"/>
-      <xs:enumeration value="concepts"/>
-      <xs:enumeration value="both"/>
+      <xs:enumeration value="interSentence"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -453,6 +466,8 @@
            former ``<butterflyN>`` element was retired 2026-06-05; the
            cascade derives N from the shape). Default off; configs that
            don't opt in see the legacy PiLayer construction unchanged. -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
@@ -485,9 +500,11 @@
                  taxonomy-reentrancy.md): ``radix`` routes chunking
                  through a ``PerceptStore`` (radix trie + hash map +
                  inverse table + learned codebook + byte fallback +
-                 promotion). Replaces Lexicon/MPHF/BPE for the surface-
-                 form authoritative store.  The legacy values stay
-                 valid for revival but radix is the new default. -->
+                 promotion). An alternative to Lexicon/MPHF/BPE for
+                 the surface-form authoritative store; opt in with
+                 ``<chunking>radix</chunking>``. (The current default
+                 is ``analyse`` — see ``data/model.xml`` and
+                 ``Spaces.PerceptualSpace`` chunking_mode fallback.) -->
             <xs:enumeration value="radix"/>
             <!-- R3-live: ``analyse`` makes the meronymic analyzer the
                  perceptual front end. The default available op is a
@@ -548,6 +565,8 @@
       <!-- Optional butterfly cascade on the ConceptualSpace sigma fold
            (cross-element mixing; the cascade length is auto-computed from
            the space shape; see perceptualSpaceType/butterfly). -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
@@ -592,6 +611,8 @@
            (cross-slot mixing, needed for tasks like XOR that combine
            positions; the cascade length is auto-computed from the space
            shape; see perceptualSpaceType/butterfly). -->
+      <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
+           -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>

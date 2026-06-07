@@ -152,8 +152,8 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
             "STM snapshot must have at least one push along its "
             "depth axis (the terminal idea the reverse path reads).")
 
-    def test_run_pipeline_rev_from_concepts_via_terminal_stm(self):
-        """``_run_pipeline_rev_from_concepts`` accepts the terminal CS
+    def testreverse_via_terminal_stm(self):
+        """``reverse`` accepts the terminal CS
         subspace stamped with the most-recent STM idea and completes
         without raising. The exact reconstruction value is allowed to
         be degenerate (single-input reverse through averaged loops
@@ -181,7 +181,7 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
                 # ``_reverse_body`` walk so a shape mismatch in one
                 # stage degrades to a passthrough; the call site
                 # we're protecting is the dispatch + STM read.
-                rev_sub = model._run_pipeline_rev_from_concepts(
+                rev_sub = model.reverse(
                     cs.subspace)
         # rev_sub may be None on degraded paths — what matters is
         # that no exception escaped the call.

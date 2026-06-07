@@ -43,9 +43,9 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     </training>
   </architecture>
   <InputSpace>
-    <!-- "6+2+2": IS/PS/CS are (2,2) muxed tiers, so nDim is the EVENT
-         width = content(4) + .where/.when band(4) = 8. SS/OS are (0,0)
-         content tiers and keep the bare content width (4 / 1). -->
+    <!-- Uniform (2,2): IS/PS/CS/SS are muxed tiers, so nDim is the EVENT
+         width = content(4) + .where/.when band(4) = 8. OS is the only
+         (0,0) tier and keeps the bare content width (1). -->
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>
@@ -67,7 +67,9 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
   </ConceptualSpace>
   <SymbolicSpace>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <!-- Uniform (2,2): SS.nWhat must equal CS.nWhat (handoff invariant);
+         nDim = content(4) + band(4) = 8 (was 4 under the retired SS=(0,0)). -->
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </SymbolicSpace>
@@ -119,13 +121,17 @@ class TestAnalyseChunkingForward(unittest.TestCase):
         self.assertEqual(analyse, ["hello", " ", "world", " ", "foo"])
 
     def test_forward_analyse_is_not_limited_by_token_byte_width(self):
-        """The live analyzer reconstructs the host surface before PS lexing,
-        so word runs are not truncated to the compatibility byte-buffer
-        token width used by the legacy lexicon path in this tiny fixture."""
+        """PS owns the surface lexing (2026-06-07 IS-always-RAW): the whole-
+        line surface is reconstructed before PS tokenizes, so word runs are
+        NOT truncated to the compatibility byte-buffer token width -- for the
+        analyse front-end AND the lexicon path, which now self-lexes the
+        surface via ``_embed_lexicon`` rather than consuming IS's byte-
+        truncated tokens. (Pre-D, lexicon truncated ``hello`` -> ``hel`` at
+        the nWhat-1 byte width; that legacy limitation is gone.)"""
         analyse = [t for t in self._tokens("analyse", lexer="byte")[0] if t]
         lexicon = [t for t in self._tokens("lexicon", lexer="word")[0] if t]
         self.assertEqual(analyse, ["hello", " ", "world", " ", "foo"])
-        self.assertEqual(lexicon, ["hel", " ", "wor", " ", "foo"])
+        self.assertEqual(lexicon, ["hello", " ", "world", " ", "foo"])
 
 
 if __name__ == "__main__":

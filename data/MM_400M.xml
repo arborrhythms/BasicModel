@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_1B: Enhanced MM_5M scaled to ~1B params.
-       True MM_5M architecture: low-dim percepts/symbols (4), high-dim
+  <!-- MM_1B: Enhanced MM_20M scaled to ~1B params.
+       True MM_20M architecture: low-dim percepts/symbols (4), high-dim
        conceptual lifting (16 verbs x 7296^2 = ~852M params).
        BPE chunk merging: 1024 bytes -> 512 percepts.
        Volume: 512 percepts x 4 = 512 symbols x 4. -->
@@ -74,11 +74,11 @@
 
   <SymbolicSpace>
     <nInput>1</nInput>
-    <nDim>2048</nDim>
+    <nDim>2052</nDim>
     <nInputDim>-1</nInputDim>
     <nVectors>8192</nVectors>
     <nOutput>2048</nOutput>
-    <nOutputDim>6</nOutputDim>
+    <nOutputDim>10</nOutputDim>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 

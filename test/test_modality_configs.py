@@ -26,7 +26,7 @@ _DATA = str(Path(__file__).resolve().parent.parent / "data")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 # Pre-existing breakage (per test_use_flags.py), not modality regressions.
-_BROKEN = {"model.xml", "MM_5M.xml", "MM_400M.xml", "MM_shamatha.xml",
+_BROKEN = {"model.xml", "MM_20M.xml", "MM_400M.xml", "MM_shamatha.xml",
            "MM_xor_step4.xml",
            # MM_xor deliberately disables the PS codebook (2x2 LDU exact-XOR;
            # "SS owns the VQ"); forcing the now-mandatory PS codebook would
@@ -80,12 +80,19 @@ def _tiny_forward(model):
 
 
 def _assert_tier_shapes(tc, model, name):
+    # Per the 2026-06-06 dim-convention unification (canonical_shape returns
+    # (2, 2) for every tier), this asserts each tier reports the canonical
+    # band instead of duplicating the table. Was: SS/OS hardcoded to (0, 0).
+    from architecture import canonical_shape as _cs
+    def cs(section):
+        try: return _cs(section)
+        except Exception: return (0, 0)
     checks = [
-        ("inputSpace", getattr(model, "inputSpace", None), 2, 2),
-        ("perceptualSpace", getattr(model, "perceptualSpace", None), 2, 2),
-        ("conceptualSpace", getattr(model, "conceptualSpace", None), 2, 2),
-        ("symbolicSpace", getattr(model, "symbolicSpace", None), 0, 0),
-        ("outputSpace", getattr(model, "outputSpace", None), 0, 0),
+        ("inputSpace", getattr(model, "inputSpace", None), *cs("InputSpace")),
+        ("perceptualSpace", getattr(model, "perceptualSpace", None), *cs("PerceptualSpace")),
+        ("conceptualSpace", getattr(model, "conceptualSpace", None), *cs("ConceptualSpace")),
+        ("symbolicSpace", getattr(model, "symbolicSpace", None), *cs("SymbolicSpace")),
+        ("outputSpace", getattr(model, "outputSpace", None), *cs("OutputSpace")),
     ]
     for tier, space, ew, en in checks:
         sub = getattr(space, "subspace", None) if space is not None else None

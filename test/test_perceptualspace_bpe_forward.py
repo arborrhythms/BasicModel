@@ -39,9 +39,10 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     </training>
   </architecture>
   <InputSpace>
-    <!-- "6+2+2": IS/PS/CS are (2,2) muxed tiers, so nDim is the EVENT
-         width = content(4) + .where/.when band(4) = 8. SS/OS are (0,0)
-         content tiers and keep the bare content width (4 / 1). -->
+    <!-- 2026-06-06 uniform-band convention: EVERY tier is (2,2), so
+         nDim = nWhat + .where(2) + .when(2). nWhat=4 everywhere => nDim=8
+         on IS/PS/CS AND SS (was SS nDim=4 under the old (0,0) convention).
+         OS nWhat=1 => nDim=5. -->
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <!-- nOutput sized to fit the test's "hello world foo" input
@@ -69,7 +70,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
   </ConceptualSpace>
   <SymbolicSpace>
     <nOutput>32</nOutput>
-    <nDim>4</nDim>
+    <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </SymbolicSpace>
@@ -145,16 +146,32 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
 
             input_text = ["hello world foo"]
             inp_tensor = model.inputSpace.prepInput(input_text)
-            with torch.no_grad():
-                _ = model.forward(inp_tensor)
+            # ``ps.subspace`` is a working buffer the body CONSUMES after the
+            # PerceptualSpace stage (the per-stage cs.forward loop + head
+            # mutate it), so reading it after the full forward is fragile.
+            # Capture PerceptualSpace.forward's OUTPUT (the percept) at the
+            # source instead.
+            captured = {}
+            _orig_ps_fwd = ps.forward
 
-            # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:
-            # default ``materialize()`` (mode='active') applies the
-            # activation-presence gate (word_active mask), so non-word
-            # positions zero out. ``mode='event'`` returns the raw
-            # reconstruction without the gate.
-            ps_event = ps.subspace.materialize()
-            self.assertIsNotNone(ps_event, "PerceptualSpace.subspace.event must be populated")
+            def _cap(x, *a, **k):
+                out = _orig_ps_fwd(x, *a, **k)
+                # Spec doc/specs/2026-05-21-subspace-slot-architecture.md:
+                # default ``materialize()`` (mode='active') applies the
+                # activation-presence gate (word_active mask), so non-word
+                # positions zero out. ``mode='event'`` is the raw event.
+                captured["active"] = out.materialize().detach().clone()
+                return out
+
+            ps.forward = _cap
+            try:
+                with torch.no_grad():
+                    _ = model.forward(inp_tensor)
+            finally:
+                ps.forward = _orig_ps_fwd
+
+            ps_event = captured.get("active")
+            self.assertIsNotNone(ps_event, "PerceptualSpace.forward must emit a percept")
             self.assertEqual(ps_event.shape[0], 1)
             # "6+2+2": PerceptualSpace is a (2,2) muxed tier, so the
             # materialized event is the full EVENT width = content(4) +
@@ -221,13 +238,13 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_mm_5m_xml_loads_and_forwards(self):
-        """Task 11: MM_5M.xml can be loaded and runs one forward pass.
+        """Task 11: MM_20M.xml can be loaded and runs one forward pass.
 
         Forces ``autoload=false`` so a stale on-disk checkpoint
-        (``data/MM_5M.ckpt``) doesn't block this smoke test -- we're
+        (``data/MM_20M.ckpt``) doesn't block this smoke test -- we're
         verifying the XML loads and forward runs, not weight loading.
 
-        Currently expected-failure (MM_5M.xml architectural mismatch):
+        Currently expected-failure (MM_20M.xml architectural mismatch):
         PS percept_dim+nWhere+nWhen=12 vs CS concept_dim+nWhere+nWhen
         =1028. Stage 1.C retired the ``sigma_percept`` lift; the signal
         router replacement (Stage 3) is not yet wired.
@@ -236,7 +253,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         import xml.etree.ElementTree as ET
         from Models import BaseModel
 
-        cfg_path = os.path.join(_PROJECT, "data", "MM_5M.xml")
+        cfg_path = os.path.join(_PROJECT, "data", "MM_20M.xml")
         tree = ET.parse(cfg_path)
         root = tree.getroot()
         arch = root.find("architecture")

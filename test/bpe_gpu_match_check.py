@@ -2,7 +2,7 @@
 
 Before the (intricate) _embed_bpe rewire, verify the foundational
 piece: ``bpe_gpu.gpu_chunk_ids`` reproduces ``ChunkLayer.forward``'s
-exact per-row chunk-id sequence on real frozen-MM_5M byte buffers.
+exact per-row chunk-id sequence on real frozen-MM_20M byte buffers.
 ``ChunkLayer.forward`` (the trie walk) is the ground truth; any
 divergence here is a tokenization bug -> stop, do not proceed to the
 rewire.
@@ -35,7 +35,7 @@ from Layers import BPEGpuLayer
 
 def main():
     init_device("cpu")
-    cfg = str(_p / "data" / "MM_5M.xml")
+    cfg = str(_p / "data" / "MM_20M.xml")
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_p / "data" / "fineweb"),
                  num_shards=1, max_docs=64)

@@ -316,7 +316,7 @@ def test_router_wire_serial_boundary_no_serial_forward_compose():
     forward fires ``compose`` ZERO times: there is no per-word leg, and the
     boundary leg has no serial-forward call site. (The boundary ``compose``
     / ``generate`` fires live on the parallel forward and the reverse path,
-    e.g. ``_chart_generate_from_stm`` from ``_run_pipeline_rev``.)
+    e.g. ``_chart_generate_from_stm`` from ``reverse``.)
     """
     model = _make_serial_model(router_wire_serial="boundary")
     n_calls, _ = _count_compose_calls(model)

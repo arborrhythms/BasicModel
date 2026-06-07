@@ -2,7 +2,7 @@
 """Benchmark codebook lookup as a function of vocabulary size.
 
 The IR-mode parallel forward path is dominated by PerceptualSpace
-codebook quantization (nearest-neighbor over the lexicon). MM_5M
+codebook quantization (nearest-neighbor over the lexicon). MM_20M
 uses a 4096-entry byte codebook; MM_5M_IR uses a 1,000,000-entry
 word lexicon. The ratio shows up directly in `(B*N, V, D)` distance
 computation cost.

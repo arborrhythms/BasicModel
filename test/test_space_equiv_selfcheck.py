@@ -22,7 +22,7 @@ def _bpe_snapshot(ps, out):
 
 
 @pytest.mark.xfail(
-    reason="MM_5M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+    reason="MM_20M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
            "nWhen=1028 since Stage 1.C retired sigma_percept (the percept-"
            "to-concept lift); signal router replacement (Stage 3) not "
            "yet wired.",
@@ -36,7 +36,7 @@ def test_identity_candidate_passes():
 
 
 @pytest.mark.xfail(
-    reason="MM_5M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+    reason="MM_20M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
            "nWhen=1028 since Stage 1.C retired sigma_percept (the percept-"
            "to-concept lift); signal router replacement (Stage 3) not "
            "yet wired. Same pre-existing shape mismatch as "

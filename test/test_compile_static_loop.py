@@ -25,7 +25,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_5M.xml")
+    cfg = str(_root / "data" / "MM_20M.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -35,7 +35,7 @@ def _build_gate_model():
 
 
 @pytest.mark.xfail(
-    reason="MM_5M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+    reason="MM_20M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
            "nWhen=1028 since Stage 1.C retired sigma_percept (the "
            "percept-to-concept lift); the signal router replacement "
            "(Stage 3) is not yet wired.",
@@ -73,8 +73,14 @@ def test_word_at_returns_padded_shape_past_valid_len():
     inp, _ = isp.getTrainData()
     isp.Start()
     inputTensor = isp.prepInput(list(inp[:1]))
-    isp.forward(inputTensor)
-    N = int(isp.outputShape[0])
+    # IS is a pure lexer post-2026-06-07; the model orchestrates lex -> PS
+    # embed -> IS.finalize_stem (which populates ``_ar_embedded_N``).
+    m._lex_embed_stem(inputTensor)
+    # ``word_at`` / ``_word_active_mask`` index the PS-reduced per-word slab
+    # (``_ar_embedded_N``), whose width is PerceptualSpace.nOutput -- NOT the
+    # InputSpace char width (text models reduce chars -> words). Read N off the
+    # padded slab so word_at(N-1) is the last real per-word slot.
+    N = int(isp._ar_embedded_N.shape[1])
     w0 = isp.word_at(0)
     w_last = isp.word_at(N - 1)
     assert w0 is not None and w0.dim() == 3 and w0.shape[1] == 1

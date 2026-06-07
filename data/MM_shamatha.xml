@@ -82,7 +82,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nDim>12</nDim>
+    <nDim>16</nDim>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
     <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE

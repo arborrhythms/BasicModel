@@ -49,10 +49,9 @@ def test_sequential_non_ar_forward_shape():
 
 def test_sequential_builds_body_stages_and_invertible_path():
     """Construction produces ``body_stages`` (an nn.ModuleList of
-    ModuleDicts driven by ``_forward_body``).  The reverse pipeline is
-    restored (post-2026-05 reconciliation: ``reverse()`` reconstructs
-    input), so ``_run_pipeline_rev`` exists again; ``midpoint_cache``
-    survives as a no-op attribute.
+    ModuleDicts driven by ``_forward_body``).  The reverse pipeline
+    ``reverse()`` reconstructs input from the terminal ConceptualSpace
+    state; ``midpoint_cache`` survives as a no-op attribute.
     """
     import torch.nn as nn_
     model = _model()
@@ -61,9 +60,9 @@ def test_sequential_builds_body_stages_and_invertible_path():
         "MM_xor.xml has invertible spaces; expected any_invertible=True")
     assert model.midpoint_cache is None
     assert callable(getattr(model, '_forward_body', None))
-    assert callable(getattr(model, '_run_pipeline_rev', None)), (
-        "_run_pipeline_rev is restored with the reverse pipeline "
-        "(reverse() reconstructs input)")
+    assert callable(getattr(model, 'reverse', None)), (
+        "reverse() is the reconstruction reverse pipeline "
+        "(reconstructs input from the terminal ConceptualSpace state)")
 
 
 def test_sequential_unrolls_conceptual_order():

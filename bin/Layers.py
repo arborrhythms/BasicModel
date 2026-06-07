@@ -1447,6 +1447,278 @@ class InvertibleLinearLayer(ErgodicLayer):
         print(f"InvertibleLinearLayer ergodic roundtrip: err={err3:.2e} OK")
 
         print("All InvertibleLinearLayer tests passed!")
+
+
+class ConceptualCombine(Layer):
+    r"""Square, augment-threaded, exactly-invertible 3-stream conceptual combine.
+
+    Wraps an :class:`InvertibleLinearLayer` (the dense LDU, ``full`` / ``last``)
+    or the base :class:`GrammarLayer` butterfly cascade (``butterfly``) as a
+    SQUARE ``R^{3D} -> R^{3D}`` map over the per-position content streams
+    ``PS_t``, ``SS_t``, ``CS_t in R^D`` (doc/specs/2026-06-06 conceptual-
+    recurrence, sec. 3)::
+
+        [ next_CS_t || aug_t ] = ILL_t( [ PS_t || SS_t || CS_t ] )
+
+    with ``next_CS_t in R^D`` the conceptual carrier and ``aug_t`` the
+    augment. The alpha-mixing of the three streams is ABSORBED into the
+    learned LDU weights -- there are no separate alpha knobs. The augment
+    WIDTH is mode-dependent: ``2D`` for the dense (``full`` / ``last``) path
+    where the square map is ``R^{3D} -> R^{3D}``; ``M - D`` for the
+    ``butterfly`` path, where ``M`` is the next power of two ``>= 3D`` and the
+    cascade is an exact bijection on the full ``R^M`` (see :meth:`__init__`).
+    The caller (the conceptual-recurrence forward) threads ``aug`` opaquely,
+    so this width difference is internal. The same square layer serves both
+    reconstruction regimes; the ``<perfectReconstruction>`` boolean only gates
+    whether the augment is threaded back (exact, :meth:`reverse`) or zeroed at
+    reverse (approximate, :meth:`reverse_dropped`):
+
+      * **perfect** -- thread ``aug_t`` forward into reverse;
+        ``[PS||SS||CS] = ILL_t^{-1}([next_CS || aug_t])`` is a closed-form
+        round-trip exact to the LDU solve / cascade tolerance.
+      * **dropped** -- reverse with ``aug`` treated as the structured zero-pad.
+        EXACT on the rank-``D`` subspace that survived the forward; which
+        ``D``-subspace survives is learned through ``L``.
+
+    The span is selected by the global ``<sigmaPi>`` knob via
+    :meth:`Spaces.Space.sigma_pi_mode` (``last`` | ``butterfly`` | ``full``),
+    matching the PS.Pi / SS.Sigma construction in Spaces.py so behaviour is
+    consistent across the codebase:
+
+      * ``full``      -- ONE dense LDU over the whole ``[..., 3D]`` slab
+                         (the wide<->deep invertible bridge).
+      * ``last``      -- per-slot square fold over the last dim; for this
+                         per-position combine the slot IS the ``3D`` content
+                         vector, so it is the same single dense LDU as
+                         ``full`` (no cross-position flatten).
+      * ``butterfly`` -- the O(M log M) cross-element 2x2-LDU cascade over a
+                         POWER-OF-TWO width ``M = next_pow2(3D)``. The base
+                         GrammarLayer cascade is PURELY LINEAR: each node is a
+                         bare 2x2 LDU pair op (:meth:`GrammarLayer.
+                         _butterfly_pair_forward` /
+                         :meth:`GrammarLayer._butterfly_pair_reverse`), whose
+                         closed-form per-node inverse (sign-flip on the
+                         off-diagonals + reciprocals on the diagonals) makes
+                         the cascade an exact bijection on ``R^M`` -- there is
+                         no pi (atanh/tanh) fold. (PiLayer / SigmaLayer inject
+                         that nonlinearity via their ``forward`` / ``reverse``
+                         overrides, which the BARE GrammarLayer here never
+                         calls; ``_butterfly_pair_op`` in SigmaLayer is dead
+                         code on this path.) Sizing the layer at ``M`` (so the
+                         layer's ``N == M_total == M``) is what makes the
+                         round-trip exact: nothing is zero-padded or stripped,
+                         so the per-node bijection covers every coordinate the
+                         cascade writes into.
+
+    Unlike PiLayer/SigmaLayer this combine is a PLAIN invertible linear map
+    (no multiplicative log-domain fold): the conceptual carrier is a linear
+    mixture, so the dense path uses ``InvertibleLinearLayer`` directly and the
+    butterfly path uses the bare linear cascade.
+
+    Shape conventions (both paths): arbitrary leading batch dims ``[..., D]``
+    per stream. ``ConceptualCombine`` itself flattens all leading dims to a
+    single batch dim before calling the wrapped layer and restores them on the
+    outputs, so the butterfly path no longer relies on GrammarLayer's own
+    multi-dim flatten (which would mix the wrong axes for ``[B, T, D]``).
+
+    This is a self-contained layer; wiring into the Models forward path is a
+    later task.
+    """
+
+    def __init__(self, content_dim, naive=False, sigma_pi_mode="full",
+                 hasBias=True, ergodic=False):
+        """Build the per-stage square combine.
+
+        Args:
+            content_dim: ``D`` -- the per-stream slab width. The wrapped
+                layer is square ``3D -> 3D``. Pass the FULL muxed event
+                width (``cs.muxedSize`` = what + where + when) so the
+                .where/.when band PARTICIPATES in the combine rather than
+                riding along untouched (option B, doc/specs/2026-06-06-
+                muxed-events-and-positional-bands.md). The name ``content_dim``
+                is historical -- it is the whole muxed-event width now.
+            naive: forwarded to ``InvertibleLinearLayer`` (dense path only);
+                ``naive=False`` routes reverse through the exact structured
+                ``_solve_ldu`` (the design's required path -- do NOT use
+                ``naive=True`` / pinv).
+            sigma_pi_mode: the global ``<sigmaPi>`` span; one of
+                ``last`` | ``butterfly`` | ``full`` (legacy ``<butterfly>``
+                boolean accepted). Normalised via ``Space.sigma_pi_mode``.
+            hasBias: forwarded to the dense ``InvertibleLinearLayer``. The
+                butterfly cascade is bias-free by construction.
+            ergodic: forwarded to the dense ``InvertibleLinearLayer`` (noise
+                injection preserving the exact LDU inverse). Ignored by the
+                butterfly path (the base cascade has no ergodic mode).
+        """
+        D = int(content_dim)
+        if D < 1:
+            raise ValueError(
+                f"ConceptualCombine: content_dim must be >= 1; got {D}")
+        N = 3 * D
+        super().__init__(N, N)
+        self.content_dim = D
+        self.combine_dim = N  # the 3D content slab width [ps||ss||cs]
+
+        # Normalise the <sigmaPi> span the same way the spaces do; a lazy
+        # import keeps Layers.py free of a Spaces import cycle (Spaces
+        # imports Layers). Fall back to the documented enum if Spaces is
+        # unavailable at construction time.
+        try:
+            from Spaces import Space
+            mode = Space.sigma_pi_mode(sigma_pi_mode)
+        except Exception:
+            if isinstance(sigma_pi_mode, bool):
+                mode = "butterfly" if sigma_pi_mode else "last"
+            elif sigma_pi_mode is None:
+                mode = "last"
+            else:
+                v = str(sigma_pi_mode).strip().lower()
+                if v in ("last", "butterfly", "full"):
+                    mode = v
+                elif v in ("true", "1"):
+                    mode = "butterfly"
+                elif v in ("false", "0", ""):
+                    mode = "last"
+                else:
+                    raise ValueError(
+                        "ConceptualCombine: sigma_pi_mode must be "
+                        f"last|butterfly|full; got {sigma_pi_mode!r}")
+        self.sigma_pi_mode = mode
+
+        if mode == "butterfly":
+            # Cross-element linear 2x2-LDU cascade. The base GrammarLayer
+            # cascade is plain-linear and exactly invertible (closed-form
+            # per-node inverse), which is exactly the augment-threaded
+            # invertible combine we need -- no pi (atanh/tanh) fold.
+            #
+            # CRITICAL: size the cascade at M = next power of two >= 3D,
+            # NOT at 3D. The GrammarLayer butterfly cascade structurally
+            # runs over next_pow2(N) and, if N is not itself a power of
+            # two, _butterfly_flatten zero-pads up to that width while
+            # _butterfly_unflatten strips back down to N -- discarding the
+            # coords the cascade wrote into the padded tail, which the
+            # zero-re-padding reverse cannot recover (round-trip error at
+            # non-identity weights). By constructing the layer with
+            # N == M (a power of two) the layer's N == M_total == M, so
+            # NOTHING is padded or stripped and the cascade is an exact
+            # bijection on the full R^M. ConceptualCombine owns the 3D->M
+            # zero-pad (forward) and the M->3D read-back (reverse) itself.
+            M = 1 << ((N - 1).bit_length())  # next pow2 >= 3D (== 3D if pow2)
+            self.combine_padded = M          # cascade operating width
+            self.aug_dim = M - D             # augment width (butterfly)
+            self.layer = GrammarLayer(M, M, butterfly=True, N=M)
+        else:
+            # "full" and "last": a single dense LDU over the whole 3D
+            # slab. For this per-position combine the "last" per-slot fold
+            # and the "full" flattened bridge coincide (the slot is the 3D
+            # content vector), so both map to one InvertibleLinearLayer.
+            # Square 3D->3D, no padding: the operating width IS 3D and the
+            # augment is the 2D tail below the D-wide carrier.
+            self.combine_padded = N
+            self.aug_dim = 2 * D
+            self.layer = InvertibleLinearLayer(
+                N, N, naive=naive, ergodic=ergodic,
+                hasBias=hasBias, stable=True)
+        self.layers.append(self.layer)
+
+    def _combine(self, ps, ss, cs):
+        """Concatenate the three ``[..., D]`` streams into ``[..., 3D]``."""
+        return torch.cat([ps, ss, cs], dim=-1)
+
+    def _split_streams(self, x):
+        """Split ``[..., 3D]`` back into ``(ps, ss, cs)`` each ``[..., D]``."""
+        D = self.content_dim
+        return x[..., :D], x[..., D:2 * D], x[..., 2 * D:]
+
+    @staticmethod
+    def _flatten_leading(x):
+        """Flatten all leading dims to a single batch dim.
+
+        ``[..., W] -> ([B', W], leading_shape)`` where ``B'`` is the
+        product of the leading dims. The combine owns this flatten (rather
+        than delegating to GrammarLayer's multi-dim flatten, which would
+        mix the wrong axes for ``[B, T, D]`` inputs) so the wrapped layer
+        always sees a clean ``[B', W]`` matrix.
+        """
+        leading = tuple(x.shape[:-1])
+        return x.reshape(-1, x.shape[-1]), leading
+
+    @staticmethod
+    def _restore_leading(x, leading):
+        """Inverse of :meth:`_flatten_leading`: ``[B', W] -> [*leading, W]``."""
+        return x.reshape(*leading, x.shape[-1])
+
+    def forward(self, ps, ss, cs):
+        """Square combine: ``[next_cs || aug] = layer([ps || ss || cs])``.
+
+        Concats the three ``[..., D]`` streams into ``[..., 3D]``, flattens
+        all leading dims to a single batch dim, zero-pads ``3D -> M`` (the
+        operating width; ``M == 3D`` for the dense path so the pad is empty),
+        applies the wrapped invertible layer, splits the ``M``-wide output
+        into the ``D``-wide conceptual carrier and the ``M - D`` augment, and
+        restores the original leading dims on both.
+
+        Returns ``(next_cs, aug)`` with ``next_cs`` width ``D`` and ``aug``
+        width ``self.aug_dim`` (``2D`` dense, ``M - D`` butterfly).
+        """
+        D = self.content_dim
+        x = self._combine(ps, ss, cs)            # [..., 3D]
+        flat, leading = self._flatten_leading(x)  # [B', 3D]
+        if self.combine_padded > self.combine_dim:
+            # Zero-pad 3D -> M (butterfly only; dense has M == 3D).
+            pad = flat.new_zeros(
+                flat.shape[0], self.combine_padded - self.combine_dim)
+            flat = torch.cat([flat, pad], dim=-1)  # [B', M]
+        out = self.layer.forward(flat)            # [B', M]
+        # A5 fullgraph fix: ``out[..., :D]`` / ``out[..., D:]`` are SLICE
+        # views of the padded ``[B', M]`` layer output; the subsequent
+        # ``reshape`` to the leading dims can keep them as views aliasing the
+        # M-wide base. When such a view escapes as a forward OUTPUT, AOT
+        # autograd records the view-meta against the M-wide base and tries to
+        # regenerate it from the (narrower) runtime base in its output-alias
+        # epilogue -- which crashes ``gen_alias_from_base`` with a shape
+        # mismatch (recorded [B*T, M] vs runtime [B, T, D]). ``.contiguous()``
+        # forces a materialised (non-aliasing) result so the combine outputs
+        # are clean tensors, not views of the padded intermediate.
+        next_cs = self._restore_leading(out[..., :D].contiguous(), leading)
+        aug = self._restore_leading(out[..., D:].contiguous(), leading)
+        return next_cs, aug
+
+    def reverse(self, next_cs, aug):
+        """Perfect (augment-threaded) reverse.
+
+        Concatenates ``[next_cs || aug]`` into the full ``M``-wide vector,
+        flattens leading dims, applies the layer's exact structured inverse
+        (dense ``naive=False`` -> ``_solve_ldu``; butterfly -> the per-node
+        closed-form pair reverse), and reads back the FIRST ``3D`` coords as
+        ``[ps||ss||cs]`` (coords ``3D..M`` are the recovered zero-pad, ~0).
+        Splits into ``(ps, ss, cs)`` and restores the leading dims. Exact to
+        the solve / cascade tolerance.
+        """
+        y = torch.cat([next_cs, aug], dim=-1)     # [..., M]
+        flat, leading = self._flatten_leading(y)   # [B', M]
+        x = self.layer.reverse(flat)               # [B', M]
+        # Read back the full operating width, then keep only the 3D content
+        # slab (the M - 3D tail is the recovered zero-pad, ~0 for butterfly;
+        # empty for dense).
+        content = x[..., :self.combine_dim]        # [B', 3D]
+        content = self._restore_leading(content, leading)
+        return self._split_streams(content)
+
+    def reverse_dropped(self, next_cs):
+        """Dropped-augment (approximate) reverse.
+
+        Build the structured zero-pad ``aug = 0`` over the FULL augment width
+        (``self.aug_dim``; ``2D`` dense, ``M - D`` butterfly) and apply the
+        same exact inverse; split into ``(ps, ss, cs)``. Recovers the rank-
+        ``D`` subspace that survived the forward -- it does NOT equal the
+        original inputs (the augment was discarded), but it is finite and
+        bounded.
+        """
+        aug = next_cs.new_zeros(*next_cs.shape[:-1], self.aug_dim)
+        return self.reverse(next_cs, aug)
+
+
 class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     """InvertibleLinearLayer whose W = L @ D @ U is entry-wise non-negative.
 
@@ -9377,12 +9649,29 @@ class ShortTermMemory(Layer):
         # later switches the proxy onto the WordSubSpace's buffers and
         # drops the local allocation.
         self._word_subspace = None
-        self._fallback_buffer = torch.zeros(
-            self._init_batch, self._init_capacity, self._init_concept_dim)
-        self._fallback_depth = torch.zeros(
-            self._init_batch, dtype=torch.long)
-        self._fallback_capacity = self._init_capacity
-        self._fallback_max_depth_host = 0
+        # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
+        # recurrence.md sec 2 & 4): the per-forward STM working buffer is a
+        # PLAIN attribute (stashed via ``object.__setattr__`` so it never
+        # lands in ``nn.Module._buffers`` / ``_parameters`` and is never
+        # captured as a torch.compile graph INPUT). ``begin_forward``
+        # re-creates it fresh INSIDE the traced forward each pass, so it is a
+        # graph INTERMEDIATE -- not a persisted, mutated, output-aliased
+        # input. The retired ``_fallback_buffer`` was a persistent tensor
+        # whose ``requires_grad`` oscillated across forwards (flipping a
+        # Dynamo guard -> recompile) and whose in-place mutation crashed AOT
+        # autograd's ``gen_alias_from_base`` once it was resized between
+        # calls. The standalone surface keeps working because the constructor
+        # seeds the live buffer eagerly (bare push/peek tests never call a
+        # compiled forward, so a plain in-Python tensor there is fine).
+        object.__setattr__(
+            self, '_live_buffer',
+            torch.zeros(self._init_batch, self._init_capacity,
+                        self._init_concept_dim))
+        object.__setattr__(
+            self, '_live_depth',
+            torch.zeros(self._init_batch, dtype=torch.long))
+        self._live_capacity = self._init_capacity
+        self._live_max_depth_host = 0
         # STM shift/reduce driver state. Initialised lazily on first
         # ``shift`` / ``train_scorer_step`` call (or eagerly via
         # ``init_scorer``); ``rule_signatures`` is a plain Python list
@@ -9409,58 +9698,49 @@ class ShortTermMemory(Layer):
         if hasattr(word_subspace, 'idea_ensure_capacity'):
             word_subspace.idea_ensure_capacity(self._init_capacity)
 
-    # -- properties that proxy to the WordSubSpace (data-free) -----------
+    # -- per-forward live working buffer (A5 fullgraph fix) ---------------
+    #
+    # The STM data lives on the PLAIN ``_live_*`` attributes (stashed via
+    # ``object.__setattr__`` so they stay out of ``nn.Module._buffers`` and
+    # are never captured as a torch.compile graph input). ``begin_forward``
+    # re-creates ``_live_buffer`` fresh inside the traced forward each pass,
+    # making it a graph intermediate -- so the in-place STM writes mutate the
+    # intermediate (legal) instead of a persisted, output-aliased input.
+    # When a WordSubSpace is attached the buffer is still data-free in the
+    # nn.Module sense (the live data is not a registered buffer); the
+    # ``capacity`` proxy honours ``ws._idea_capacity`` so a caller that grows
+    # the attached idea-stack capacity (e.g. test_bounded_stm_fold) still
+    # sizes the next forward's fresh buffer correctly.
 
     @property
     def _buffer(self):
-        ws = self._word_subspace
-        if ws is None:
-            return self._fallback_buffer
-        return ws._idea_buffer
+        return self._live_buffer
 
     @_buffer.setter
     def _buffer(self, value):
-        ws = self._word_subspace
-        if ws is None:
-            self._fallback_buffer = value
-        else:
-            ws._idea_buffer = value
+        object.__setattr__(self, '_live_buffer', value)
 
     @property
     def _depth(self):
-        ws = self._word_subspace
-        if ws is None:
-            return self._fallback_depth
-        return ws._idea_depth
+        return self._live_depth
 
     @_depth.setter
     def _depth(self, value):
-        ws = self._word_subspace
-        if ws is None:
-            self._fallback_depth = value
-        else:
-            ws._idea_depth = value
+        object.__setattr__(self, '_live_depth', value)
 
     @property
     def _max_depth_host(self):
-        ws = self._word_subspace
-        if ws is None:
-            return self._fallback_max_depth_host
-        return ws._idea_max_depth_host
+        return self._live_max_depth_host
 
     @_max_depth_host.setter
     def _max_depth_host(self, value):
-        ws = self._word_subspace
-        if ws is None:
-            self._fallback_max_depth_host = int(value)
-        else:
-            ws._idea_max_depth_host = int(value)
+        self._live_max_depth_host = int(value)
 
     @property
     def capacity(self):
         ws = self._word_subspace
         if ws is None:
-            return self._fallback_capacity
+            return self._live_capacity
         return ws._idea_capacity
 
     @property
@@ -9470,170 +9750,198 @@ class ShortTermMemory(Layer):
             return self._init_concept_dim
         return ws._stm_payload_dim
 
-    # -- legacy idea-stack API (chart compose consumer surface) -----------
+    def begin_forward(self, batch, device=None, dtype=None):
+        """Seed a FRESH per-forward working buffer (A5 fullgraph fix).
+
+        doc/plans/2026-06-06-parallel-conceptual-recurrence.md sec 2 & 4
+        (the load-bearing principle): per-batch DATA threads THROUGH the
+        forward as tensors and is NEVER persisted as accumulated state on a
+        space/Layer across forwards. The idea buffer used to be a persistent
+        registered buffer (``ws._idea_buffer`` when attached, the standalone
+        ``_fallback_buffer`` otherwise) that the compiled forward mutated
+        IN PLACE. That made it a graph INPUT that was mutated and
+        output-aliased, so torch.compile/AOT autograd had to regenerate it
+        as an alias of its base every call -- which (a) flipped a Dynamo
+        ``requires_grad`` guard each batch (the buffer's grad status
+        oscillated False->True), forcing a recompile, and (b) crashed AOT's
+        ``gen_alias_from_base`` once the buffer was resized between calls.
+
+        Calling this at the TOP of the forward body REPLACES the buffer
+        attribute with a freshly-allocated ``torch.zeros`` created INSIDE the
+        traced region. A fresh in-trace allocation is a graph INTERMEDIATE,
+        not an input, so the subsequent in-place STM writes mutate the
+        intermediate (legal, no input-mutation alias) and the persisted
+        attribute is never read-as-input nor output-aliased. The STM starts
+        every forward empty -- which is exactly the existing sentence-
+        boundary semantics (parallel: a fresh sentence; serial: the prelude
+        ``clear()``), so this changes no behaviour, only the storage's graph
+        identity.
+
+        Routed through the ``_buffer`` / ``_depth`` setters so it works for
+        both the WordSubSpace-attached proxy and the standalone fallback.
+        """
+        batch = int(batch)
+        cap = int(self.capacity)
+        dim = int(self.concept_dim)
+        # IMPORTANT: do NOT read ``self._buffer`` here -- reading the
+        # persisted buffer inside the traced forward would re-introduce it as
+        # a graph INPUT (the very thing we are trying to avoid). Resolve
+        # device/dtype from the explicit args only; default to float32 on the
+        # caller-supplied device.
+        if dtype is None:
+            dtype = torch.float32
+        self._buffer = torch.zeros(
+            batch, cap, dim, device=device, dtype=dtype)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._max_depth_host = 0
+
+    # -- idea-stack API (chart compose consumer surface) ------------------
+    #
+    # A5: all operations act on the single live store (the ``_buffer`` /
+    # ``_depth`` / ``_max_depth_host`` properties -> the ``_live_*`` plain
+    # attributes). The former ``ws is None`` branch (WordSubSpace-attached
+    # vs standalone ``_fallback_*``) is gone -- the live data is no longer a
+    # registered buffer on either, so the compiled forward never sees it as a
+    # graph input. ``capacity`` still proxies to ``ws._idea_capacity`` when
+    # attached so an externally-grown idea-stack capacity sizes the next
+    # ``begin_forward`` correctly.
 
     def ensure_batch(self, batch):
         """Resize the idea-stack to ``batch`` rows. Idempotent."""
         batch = int(batch)
-        ws = self._word_subspace
-        if ws is None:
-            if int(self._fallback_buffer.shape[0]) == batch:
-                return
-            device = self._fallback_buffer.device
-            self._fallback_buffer = torch.zeros(
-                batch, self._fallback_capacity, self._init_concept_dim,
-                device=device)
-            self._fallback_depth = torch.zeros(
-                batch, dtype=torch.long, device=device)
-            self._fallback_max_depth_host = 0
+        buf = self._buffer
+        if buf is not None and int(buf.shape[0]) == batch:
             return
-        ws.idea_ensure_batch(batch)
+        device = buf.device if buf is not None else None
+        dtype = buf.dtype if buf is not None else torch.float32
+        self._buffer = torch.zeros(
+            batch, int(self.capacity), int(self.concept_dim),
+            device=device, dtype=dtype)
+        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
+        self._max_depth_host = 0
 
     def ensure_capacity(self, capacity):
         """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
         capacity = int(capacity)
-        ws = self._word_subspace
-        if ws is None:
-            if capacity <= self._fallback_capacity:
-                return
-            device = self._fallback_buffer.device
-            B = int(self._fallback_buffer.shape[0])
-            new_buf = torch.zeros(
-                B, capacity, self._init_concept_dim,
-                device=device, dtype=self._fallback_buffer.dtype)
-            old_cap = int(self._fallback_buffer.shape[1])
-            if old_cap > 0:
-                new_buf[:, :old_cap, :] = self._fallback_buffer
-            self._fallback_buffer = new_buf
-            self._fallback_capacity = capacity
+        buf = self._buffer
+        old_cap = int(buf.shape[1]) if buf is not None else 0
+        if capacity <= old_cap:
+            # Keep the standalone capacity record in sync (grow-only) so
+            # ``self.capacity`` reflects the request when not attached.
+            if self._word_subspace is None and capacity > self._live_capacity:
+                self._live_capacity = capacity
             return
-        ws.idea_ensure_capacity(capacity)
+        device = buf.device
+        B = int(buf.shape[0])
+        new_buf = torch.zeros(
+            B, capacity, int(self.concept_dim),
+            device=device, dtype=buf.dtype)
+        if old_cap > 0:
+            new_buf[:, :old_cap, :] = buf
+        self._buffer = new_buf
+        if self._word_subspace is None:
+            self._live_capacity = capacity
 
     def push(self, b, idea):
         # Newest-at-slot-0: write the new idea at slot 0 and shift the
         # existing occupants RIGHT. Overflow RAISES (strict-bound
         # primitive; the rolling-window drop is _stm_shift_and_push).
-        ws = self._word_subspace
-        if ws is None:
-            depth = int(self._fallback_depth[b].item())
-            if depth >= self._fallback_capacity:
-                raise RuntimeError(
-                    f"ShortTermMemory.push: row {b} is at capacity "
-                    f"({self._fallback_capacity}); reduce before pushing "
-                    f"further.")
-            if depth > 0:
-                self._fallback_buffer[b, 1:depth + 1] = \
-                    self._fallback_buffer[b, 0:depth].clone()
-            self._fallback_buffer[b, 0] = idea
-            self._fallback_depth[b] = depth + 1
-            if depth + 1 > self._fallback_max_depth_host:
-                self._fallback_max_depth_host = depth + 1
-            return
-        ws.idea_push(b, idea)
+        cap = int(self.capacity)
+        depth = int(self._depth[b].item())
+        if depth >= cap:
+            raise RuntimeError(
+                f"ShortTermMemory.push: row {b} is at capacity "
+                f"({cap}); reduce before pushing further.")
+        buf = self._buffer
+        if depth > 0:
+            buf[b, 1:depth + 1] = buf[b, 0:depth].clone()
+        buf[b, 0] = idea
+        self._depth[b] = depth + 1
+        if depth + 1 > self._max_depth_host:
+            self._max_depth_host = depth + 1
 
     def push_step(self, ideas):
         # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
-        ws = self._word_subspace
-        if ws is None:
-            B, D = ideas.shape
-            buf = self._fallback_buffer
-            cap = int(buf.shape[1])
-            if cap > 1:
-                buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
-            buf[:, 0] = ideas
-            self._fallback_depth = self._fallback_depth + 1
-            self._fallback_max_depth_host = self._fallback_max_depth_host + 1
-            return
-        ws.idea_push_step(ideas)
+        buf = self._buffer
+        cap = int(buf.shape[1])
+        if cap > 1:
+            buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
+        buf[:, 0] = ideas
+        self._depth = self._depth + 1
+        self._max_depth_host = self._max_depth_host + 1
 
     def push_step_masked(self, ideas, gate_b_1):
         # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
         # slot 0; un-gated rows are unchanged.
-        ws = self._word_subspace
-        if ws is None:
-            B, D = ideas.shape
-            buf = self._fallback_buffer
-            cap = int(buf.shape[1])
-            gate_b = gate_b_1.view(B)
-            gate_bool = gate_b.bool()
-            gate_col = gate_bool.view(B, 1, 1)
-            shifted = buf.clone()
-            if cap > 1:
-                shifted[:, 1:cap] = buf[:, 0:cap - 1]
-            shifted[:, 0] = ideas
-            self._fallback_buffer = torch.where(gate_col, shifted, buf)
-            self._fallback_depth = self._fallback_depth + gate_bool.long()
-            return
-        ws.idea_push_step_masked(ideas, gate_b_1)
+        B, D = ideas.shape
+        buf = self._buffer
+        cap = int(buf.shape[1])
+        gate_b = gate_b_1.view(B)
+        gate_bool = gate_b.bool()
+        gate_col = gate_bool.view(B, 1, 1)
+        shifted = buf.clone()
+        if cap > 1:
+            shifted[:, 1:cap] = buf[:, 0:cap - 1]
+        shifted[:, 0] = ideas
+        self._buffer = torch.where(gate_col, shifted, buf)
+        self._depth = self._depth + gate_bool.long()
 
     def push_window_batch(self, ideas):
         # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
         # into slots [0, W) so the window's newest position lands at 0.
-        ws = self._word_subspace
-        if ws is None:
-            B, W, D = ideas.shape
-            if W == 0:
-                return
-            buf = self._fallback_buffer
-            cap = int(buf.shape[1])
-            if cap > W:
-                buf[:, W:cap] = buf[:, 0:cap - W].clone()
-            buf[:, 0:W] = torch.flip(ideas, dims=[1])
-            self._fallback_depth = self._fallback_depth + W
-            self._fallback_max_depth_host = self._fallback_max_depth_host + int(W)
+        B, W, D = ideas.shape
+        if W == 0:
             return
-        ws.idea_push_window_batch(ideas)
+        buf = self._buffer
+        cap = int(buf.shape[1])
+        if cap > W:
+            buf[:, W:cap] = buf[:, 0:cap - W].clone()
+        buf[:, 0:W] = torch.flip(ideas, dims=[1])
+        self._depth = self._depth + W
+        self._max_depth_host = self._max_depth_host + int(W)
 
     def pop(self, b):
         # Newest-at-slot-0: pop slot 0, shift the rest LEFT.
-        ws = self._word_subspace
-        if ws is None:
-            depth = int(self._fallback_depth[b].item())
-            if depth == 0:
-                return None
-            idea = self._fallback_buffer[b, 0].clone()
-            if depth > 1:
-                self._fallback_buffer[b, 0:depth - 1] = \
-                    self._fallback_buffer[b, 1:depth].clone()
-            self._fallback_buffer[b, depth - 1].zero_()
-            self._fallback_depth[b] = depth - 1
-            return idea
-        return ws.idea_pop(b)
+        depth = int(self._depth[b].item())
+        if depth == 0:
+            return None
+        buf = self._buffer
+        idea = buf[b, 0].clone()
+        if depth > 1:
+            buf[b, 0:depth - 1] = buf[b, 1:depth].clone()
+        buf[b, depth - 1].zero_()
+        self._depth[b] = depth - 1
+        return idea
 
     def peek(self, b, n=0):
         # Newest-at-slot-0: the n-th-from-newest item is at slot n.
-        ws = self._word_subspace
-        if ws is None:
-            depth = int(self._fallback_depth[b].item())
-            if depth <= n:
-                return None
-            return self._fallback_buffer[b, n]
-        return ws.idea_peek(b, n)
+        depth = int(self._depth[b].item())
+        if depth <= n:
+            return None
+        return self._buffer[b, n]
 
     def snapshot(self, detach=False):
-        ws = self._word_subspace
-        if ws is None:
-            B = int(self._fallback_buffer.shape[0])
-            if B == 0:
-                return None
-            max_depth = int(self._fallback_max_depth_host)
-            if max_depth == 0:
-                return None
-            if max_depth > self._fallback_capacity:
-                max_depth = self._fallback_capacity
-            snap = self._fallback_buffer[:, :max_depth, :]
-            if detach:
-                snap = snap.detach().clone()
-            else:
-                snap = snap.clone()
-            return snap
-        return ws.idea_snapshot(detach=detach)
+        buf = self._buffer
+        if buf is None:
+            return None
+        B = int(buf.shape[0])
+        if B == 0:
+            return None
+        max_depth = int(self._max_depth_host)
+        if max_depth == 0:
+            return None
+        cap = int(self.capacity)
+        if max_depth > cap:
+            max_depth = cap
+        snap = buf[:, :max_depth, :]
+        if detach:
+            snap = snap.detach().clone()
+        else:
+            snap = snap.clone()
+        return snap
 
     def size(self, b):
-        ws = self._word_subspace
-        if ws is None:
-            return int(self._fallback_depth[b].item())
-        return ws.idea_size(b)
+        return int(self._depth[b].item())
 
     def is_full(self, b):
         return self.size(b) >= self.capacity
@@ -9642,21 +9950,20 @@ class ShortTermMemory(Layer):
         return self.size(b) == 0
 
     def clear(self, b=None):
-        ws = self._word_subspace
-        if ws is None:
-            if b is None:
-                self._fallback_buffer.zero_()
-                self._fallback_depth.zero_()
-                self._fallback_max_depth_host = 0
-                return
-            b = int(b)
-            if b < 0 or b >= int(self._fallback_buffer.shape[0]):
-                return
-            self._fallback_buffer[b].zero_()
-            self._fallback_depth[b] = 0
-            self._fallback_max_depth_host = int(self._fallback_depth.max().item())
+        buf = self._buffer
+        if buf is None:
             return
-        ws.idea_clear(b=b)
+        if b is None:
+            buf.zero_()
+            self._depth.zero_()
+            self._max_depth_host = 0
+            return
+        b = int(b)
+        if b < 0 or b >= int(buf.shape[0]):
+            return
+        buf[b].zero_()
+        self._depth[b] = 0
+        self._max_depth_host = int(self._depth.max().item())
 
     # -- STM shift/reduce driver (formerly stm_driver.STMDriver) -----------
 

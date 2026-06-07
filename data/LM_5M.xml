@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- LM_5M: grammar-driven sibling of MM_5M.
+  <!-- LM_5M: grammar-driven sibling of MM_20M.
 
-       Same data / dim budget as MM_5M, but:
+       Same data / dim budget as MM_20M, but:
          * non-default grammar    (parser dispatch is derived from the
                                    grammar block; per-space SyntacticLayers
                                    dispatch on parser rule selections)
@@ -15,7 +15,7 @@
          (Stage 3 cleanup: parserBackend, chartTau, chartTopK,
           chartNoiseEps, and wMax retired when the chart was retired
           in favour of the signal router.)
-       Distinct ckpt/kv paths so LM_5M and MM_5M training can coexist.
+       Distinct ckpt/kv paths so LM_5M and MM_20M training can coexist.
        Server port also distinct so both can serve in parallel.
   -->
   <architecture>
@@ -99,9 +99,9 @@
 
   <SymbolicSpace>
     <nInput>1024</nInput>
-    <nInputDim>6</nInputDim>
+    <nInputDim>10</nInputDim>
     <nVectors>1024</nVectors>
-    <nDim>6</nDim>
+    <nDim>10</nDim>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
   </SymbolicSpace>

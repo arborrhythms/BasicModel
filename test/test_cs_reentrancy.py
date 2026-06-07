@@ -149,27 +149,30 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
     the exact reconstruction round-trip."""
 
     def test_sigma_step_forward_then_reverse_recovers_carrier(self):
-        from Spaces import SubSpace
+        # Action C (2026-06-06) removed the ``_symbolic_sigma_step`` wrapper
+        # (the parallel carrier advance moved into the ConceptualCombine on
+        # the full muxed event). The invariant it guarded -- ``ss.sigma`` is
+        # exactly invertible, the basis of the reconstruction round-trip --
+        # is now asserted directly on ``ss.sigma``.
         m = _make_model()
         ss = m.symbolicSpace
+        sig = getattr(ss, "sigma", None)
+        self.assertIsNotNone(
+            sig, "SymbolicSpace must own a sigma to round-trip the carrier.")
         N = int(ss.inputShape[0])
         D = int(ss.nOutputDim)            # content width the sigma acts on
         torch.manual_seed(0)
         # Keep values inside the atanh domain so the nonlinear sigma
         # round-trips to LDU precision.
         ev = torch.randn(1, N, D).clamp(-0.5, 0.5)
-        sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
-                       nInputDim=1, nOutputDim=1)
-        sub.set_event(ev.clone())
         with torch.no_grad():
-            fwd = m._symbolic_sigma_step(ss, sub, reverse=False)
-            rev = m._symbolic_sigma_step(ss, fwd, reverse=True)
-            rec = rev.materialize()
+            fwd = sig.forward(ev.clone())
+            rec = sig.reverse(fwd)
         err = (ev - rec).abs().max().item()
         self.assertLess(
             err, 1e-3,
-            f"_symbolic_sigma_step forward->reverse must round-trip the "
-            f"carrier to LDU precision; got max abs error {err:g}.")
+            f"ss.sigma forward->reverse must round-trip the carrier to LDU "
+            f"precision; got max abs error {err:g}.")
 
 
 if __name__ == "__main__":

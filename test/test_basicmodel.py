@@ -180,7 +180,12 @@ def _populate_test_config(*,
     # carves content back out (content = nDim - band). So derive each muxed
     # tier's config nDim = content + band, sourcing the band from canonical_shape
     # (not a literal +4) so this stays correct if .where widens (3D) later.
-    # Content-only tiers (SS/OS) have a zero band.
+    # The *Dim args express CONTENT (.what) width; the config <nDim> is the
+    # EVENT width (content + band), and the factory carves content back out.
+    # ``symbolDim`` is special: callers pass the SS *event* nDim directly
+    # (most use the default 0 -> the factory derives content via canonical_
+    # shape), so it is NOT band-adjusted here. Small-symbolDim callers that
+    # need a positive SS content must pass ``symbolDim >= band`` themselves.
     from architecture import canonical_shape as _cshape
     inputDim = inputDim + sum(_cshape("InputSpace"))
     perceptDim = perceptDim + sum(_cshape("PerceptualSpace"))
@@ -1142,9 +1147,7 @@ class TestBaseModelFactory(unittest.TestCase):
         # SigmaLayer/PiLayer post 2026-05 ownership rule).
         xml = """<model>
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
-    <reconstruct>none</reconstruct>
-    <training><autoload>false</autoload></training>
+    <conceptualOrder>2</conceptualOrder>    <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>32</nOutput><nDim>8</nDim></InputSpace>
   <PerceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors></PerceptualSpace>
@@ -1163,9 +1166,7 @@ class TestBaseModelFactory(unittest.TestCase):
 
     def test_factory_creates_mental_model(self):
         xml = """<model>
-  <architecture>
-    <reconstruct>none</reconstruct>
-    <training><autoload>false</autoload></training>
+  <architecture>    <training><autoload>false</autoload></training>
   </architecture>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
@@ -1222,9 +1223,10 @@ class TestSymbolDimZero(unittest.TestCase):
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
                               outputDim=1)
         self.assertEqual(Models.TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
-        # SymbolicSpace carries no where/when (canonical_shape), so a
-        # symbolDim=0 SS is genuinely zero-width on its own tier.
-        self.assertEqual(canonical_shape("SymbolicSpace"), (0, 0))
+        # Uniform (2,2) convention (2026-06): SymbolicSpace carries the same
+        # (nWhere=2, nWhen=2) band as every interior tier -- the retired
+        # SS=(0,0) special case is gone.
+        self.assertEqual(canonical_shape("SymbolicSpace"), (2, 2))
 
     def test_objectencoding_adds_canonical_overhead(self):
         """ObjectEncoding adds the canonical .where/.when overhead (objectSize)
@@ -1904,7 +1906,12 @@ class TestModelTypeVariants(unittest.TestCase):
         per-stage path is the only construction path and
         ``conceptualOrder`` literally drives the per-stage iteration.
         """
-        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1,
+        # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
+        # under the uniform (2,2) band SS content = symbolDim - 4, which must
+        # be >= 0 AND match CS.nWhat (conceptDim=1 -> CS content 1). So
+        # symbolDim=5 -> SS content 1 == CS.nWhat. (Was 1, which made content
+        # -3 under the retired SS=(0,0) assumption.)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=5,
                               wordDim=1, outputDim=1,
                               nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                               perceptPassThrough=True, symbolPassThrough=False,

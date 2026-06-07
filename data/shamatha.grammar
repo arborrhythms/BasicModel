@@ -1,52 +1,63 @@
 <?xml version="1.0"?>
+<!--
+  shamatha grammar, role-collapsed format (doc/plans/2026-06-02-unified-
+  subsymbolic-analyzer-and-role-collapsed-grammar.md Section 4; see
+  data/role_collapsed.grammar). Same C / S operator set as default.grammar
+  plus the unary ``query`` operator. Declares ONLY operator roles
+  (op_I[n] inputs, op_O1 output).
+-->
 <grammar name="shamatha">
 
   <PerceptualSpace>
-    <!-- Meronymic operation registry (Phase 3). See default.grammar for
-         the full description. Contiguity-aware meronymic ops will be
-         added when doc/plans/2026-04-28-shamatha-speech-contiguity-handoff.md
-         is implemented. PS rules (tier 'P') are read only by the PS
-         analyzer, never by the symbolic parser. -->
+    <!-- Analyzer root U; marker-free structural cover. Contiguity-aware
+         meronymic ops are added when doc/plans/2026-04-28-shamatha-speech-
+         contiguity-handoff.md is implemented. -->
+    <start name="everything">U</start>
     <compose>
-      <rule>SURF = stop.forward(SURF)</rule>
-      <rule>SURF = boundary.forward(SURF, SURF)</rule>
-      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
     </compose>
     <generate>
-      <rule>SURF = stop.reverse(SURF)</rule>
-      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
-      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
     </generate>
   </PerceptualSpace>
 
   <SymbolicSpace>
+    <start name="relative_truth">isEqual_O1</start>
+    <start name="relative_truth">part_O1</start>
+
     <compose>
-      <!-- Same C / S split as default.grammar. Tier / arity /
-           invertibility derive from each rule's GrammarLayer subclass. -->
-      <rule>S = union.forward(S, S)</rule>
-      <rule>S = intersection.forward(S, S)</rule>
-      <rule>S = lift.forward(S, S)</rule>
-      <rule>S = lower.forward(S, S)</rule>
-      <rule>S = not.forward(S)</rule>
-      <rule>S = conjunction.forward(S, S)</rule>
-      <rule>S = disjunction.forward(S, S)</rule>
-      <rule>S = part.forward(S, S)</rule>
-      <rule>S = isEqual.forward(S, S)</rule>
-      <rule>S = query.forward(S)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
+      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
+      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
+      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="true">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="false">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <rule query="true">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <!-- Unary query operator (shamatha-specific). -->
+      <rule>query_O1 = query.forward(query_I1)</rule>
     </compose>
 
     <generate>
-      <!-- Mirror of <compose> with head and arguments swapped. -->
-      <rule>S, S = union.reverse(S)</rule>
-      <rule>S, S = intersection.reverse(S)</rule>
-      <rule>S, S = lift.reverse(S)</rule>
-      <rule>S, S = lower.reverse(S)</rule>
-      <rule>S = not.reverse(S)</rule>
-      <rule>S, S = conjunction.reverse(S)</rule>
-      <rule>S, S = disjunction.reverse(S)</rule>
-      <rule>S, S = part.reverse(S)</rule>
-      <rule>S, S = isEqual.reverse(S)</rule>
-      <rule>S = query.reverse(S)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
+      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
+      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
+      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="true">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule>query_I1 = query.reverse(query_O1)</rule>
     </generate>
   </SymbolicSpace>
 

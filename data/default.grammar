@@ -1,64 +1,71 @@
 <?xml version="1.0"?>
+<!--
+  default grammar, role-collapsed format (doc/plans/2026-06-02-unified-
+  subsymbolic-analyzer-and-role-collapsed-grammar.md Section 4; see
+  data/role_collapsed.grammar). Declares ONLY operator roles: each operand's
+  input role (op_I[n]) and the operator's output role (op_O1). POS /
+  construction membership is LEARNED from participation, not declared here.
+-->
 <grammar name="default">
 
   <PerceptualSpace>
-    <!-- Meronymic operation registry (Phase 3,
-         doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
-         PS operations relate a surface whole to its parts: <compose> =
-         parts -> whole (synthesis / PS reverse); <generate> = whole ->
-         parts (analysis / PS forward). SURF is a generic surface span
-         (bytes / chars / morphemes / words / phrases). stop / boundary /
-         uniform are the marker-free structural cover used by the
-         compatibility analyzer mode; the learned-chunk ops
-         (prefix / suffix / compound / coordination / quote_or_bracket)
-         are added with the routing PS analyzer. These rules carry tier
-         'P' and are read by the PS analyzer, never by the symbolic
-         parser (which reads the <SymbolicSpace> table only). -->
+    <!-- Analyzer root U; marker-free structural cover (stop / boundary /
+         uniform). compose = parts to whole (PS reverse); generate = whole
+         to parts (PS forward). -->
+    <start name="everything">U</start>
     <compose>
-      <rule>SURF = stop.forward(SURF)</rule>
-      <rule>SURF = boundary.forward(SURF, SURF)</rule>
-      <rule>SURF = uniform.forward(SURF, SURF)</rule>
+      <rule>U = stop.forward(U)</rule>
+      <rule>U = boundary.forward(U, U)</rule>
+      <rule>U = uniform.forward(U, U)</rule>
     </compose>
     <generate>
-      <rule>SURF = stop.reverse(SURF)</rule>
-      <rule>SURF, SURF = boundary.reverse(SURF)</rule>
-      <rule>SURF, SURF = uniform.reverse(SURF)</rule>
+      <rule>U = stop.reverse(U)</rule>
+      <rule>U, U = boundary.reverse(U)</rule>
+      <rule>U, U = uniform.reverse(U)</rule>
     </generate>
   </PerceptualSpace>
 
   <SymbolicSpace>
-    <compose>
-      <!-- Subsymbolic tier (C): operate on continuous activations.
-           Tier, arity, invertibility derive from each rule's
-           GrammarLayer subclass (e.g. LiftLayer.tier == 'C'). -->
-      <rule>S = union.forward(S, S)</rule>
-      <rule>S = intersection.forward(S, S)</rule>
-      <rule>S = lift.forward(S, S)</rule>
-      <rule>S = lower.forward(S, S)</rule>
+    <!-- The truth-producing relations are the start states; the connective
+         / composition outputs are intermediate ideas. -->
+    <start name="relative_truth">isEqual_O1</start>
+    <start name="relative_truth">part_O1</start>
 
-      <!-- Symbolic tier (S): operate on resolved codebook activations. -->
-      <rule>S = not.forward(S)</rule>
-      <rule>S = conjunction.forward(S, S)</rule>
-      <rule>S = disjunction.forward(S, S)</rule>
-      <rule>S = part.forward(S, S)</rule>
-      <rule>S = isEqual.forward(S, S)</rule>
+    <compose>
+      <!-- Subsymbolic tier (C): continuous activations. -->
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
+      <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
+      <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
+
+      <!-- Symbolic tier (S): resolved codebook activations. -->
+      <rule>not_O1 = not.forward(not_I1)</rule>
+      <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
+      <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
+
+      <!-- Relational truths: query="false" assertive, query="true"
+           answer-producing (decision 6). -->
+      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="true">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="false">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
+      <rule query="true">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
     </compose>
 
     <generate>
-      <!-- Mirror of <compose> with head and arguments swapped. A binary
-           forward rule ``head = f.forward(a, b)`` becomes a reverse rule
-           ``a, b = f.reverse(head)``; unary forward rules ``head = f.forward(x)``
-           keep the same shape ``x = f.reverse(head)``. -->
-      <rule>S, S = union.reverse(S)</rule>
-      <rule>S, S = intersection.reverse(S)</rule>
-      <rule>S, S = lift.reverse(S)</rule>
-      <rule>S, S = lower.reverse(S)</rule>
+      <!-- Mirror of compose: output role back to input roles. -->
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
+      <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
+      <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
 
-      <rule>S = not.reverse(S)</rule>
-      <rule>S, S = conjunction.reverse(S)</rule>
-      <rule>S, S = disjunction.reverse(S)</rule>
-      <rule>S, S = part.reverse(S)</rule>
-      <rule>S, S = isEqual.reverse(S)</rule>
+      <rule>not_I1 = not.reverse(not_O1)</rule>
+      <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
+      <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
+
+      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="true">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
     </generate>
   </SymbolicSpace>
 

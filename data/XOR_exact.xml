@@ -67,7 +67,7 @@
   <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
   <SymbolicSpace>
     <nInput>8</nInput>
-    <nDim>10</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
     <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace

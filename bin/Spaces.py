@@ -2558,7 +2558,7 @@ class Codebook(Basis):
         # input vector instead of a codebook row. After this migration,
         # materialize reconstructs every token by codebook lookup, so
         # unclaimed tokens see their codebook-row-nearest snapped form
-        # rather than the original input. For MM_xor / MM_5M this is a
+        # rather than the original input. For MM_xor / MM_20M this is a
         # near-no-op (n_tokens << nVectors so the duplicate-claim case
         # is rare); the change is documented inline so future debugging
         # can find it.
@@ -4430,7 +4430,7 @@ class SubSpace(nn.Module):
         # doc/specs/2026-05-21-subspace-slot-architecture.md §Slots,
         # "Codebook placement (the muxed / unmuxed split)"):
         #   * ``'event'``  — codebook prototype on ``.event.W`` (muxed
-        #     configs like PerceptualSpace MM_xor / MM_5M); ``self.muxed``
+        #     configs like PerceptualSpace MM_xor / MM_20M); ``self.muxed``
         #     is True. ``materialize(mode='event')`` reconstructs as
         #     ``event.W[selection]``.
         #   * ``'what'``   — codebook prototype on ``.what.W`` (unmuxed
@@ -6442,6 +6442,39 @@ class Space(nn.Module):
             f"<codebook> must be one of none|quantize|project "
             f"(legacy true/false accepted); got {raw!r}")
 
+    @staticmethod
+    def sigma_pi_mode(raw):
+        """Resolve the ``<sigmaPi>`` span (doc/specs/2026-06-05-dimensional-
+        governance.md). Accepts the new enum (``last`` | ``butterfly`` |
+        ``full``) and the legacy ``<butterfly>`` boolean
+        (``true -> butterfly``, ``false`` / ``None -> last``):
+
+          * ``last``      -- per-slot square (last dim only); the default,
+                            back-compatible with the pre-butterfly PiLayer.
+          * ``butterfly`` -- O(N log N) cross-dim cascade (= the old
+                            ``<butterfly>true</butterfly>``).
+          * ``full``      -- dense flattened square matrix (the wide<->deep
+                            invertible bridge of the flat-slab invariant).
+
+        Shared by the PS.Pi and SS.Sigma construction in Spaces.py; living
+        on ``Space`` mirrors :meth:`normalize_codebook_mode` so the parsing
+        logic stays namespaced and in one place.
+        """
+        if isinstance(raw, bool):
+            return "butterfly" if raw else "last"
+        if raw is None:
+            return "last"
+        v = str(raw).strip().lower()
+        if v in ("last", "butterfly", "full"):
+            return v
+        if v in ("true", "1"):
+            return "butterfly"
+        if v in ("false", "0", ""):
+            return "last"
+        raise ValueError(
+            f"<sigmaPi> must be last|butterfly|full (legacy true/false "
+            f"accepted); got {raw!r}")
+
     @property
     def codebook_mode(self):
         """Tri-state codebook mode: ``'none'`` | ``'quantize'`` |
@@ -6552,11 +6585,48 @@ class Space(nn.Module):
         if pre is not None and int(pre[0]) * int(pre[1]) == _y_per_b:
             y = y.reshape(y.shape[0], pre[0], pre[1])
         elif self.nOutputDim != -1:
-            # Fallback when reverse is called without a (matching) prior forward:
-            # reshape from [B, ?, nOutputDim] to [B, -1, layer_out_dim]
+            # Fallback when reverse is called without a (matching) prior forward
+            # -- e.g. the reconstruction reverse, which seeds the DEEP CS state
+            # directly then walks ``PerceptualSpace.reverse`` (so the forward's
+            # ``_pre_reshape_output`` does not match this CS-shaped tensor).
             layer_out = self.subspace.getEncodedOutputSize()
             if y.shape[-1] != layer_out:
-                y = y.reshape(y.shape[0], -1, layer_out)
+                # INVERSE wide<->deep slab-reshape (the top-down/reconstruction
+                # leg of the invertible Pi bridge,
+                # doc/specs/2026-06-05-dimensional-governance.md sec.2/sec.5):
+                # the EXACT mirror of the forward wide->deep regroup in
+                # ``ConceptualSpace.forward`` (the [B,N_in,content_in] wide PS
+                # slab -> deep [B,N_out,_stm_dim] reshape of the CONSTANT content
+                # slab, band re-padded). Here we invert it: regroup the incoming
+                # DEEP content slab [N_in, content_in] back to this space's WIDE
+                # content width (content_out = layer_out - band), recovering the
+                # constant content-element count, with the band zero-padded per
+                # recovered wide position (the band is positional overhead the
+                # reverse re-derives -- it is NOT carried, matching the forward
+                # which ALSO zero-pads the band after the regroup). The wide
+                # position count is slab-DERIVED (slab // content_out), the exact
+                # inverse of the forward's ``_slab // _content_out`` -- NOT a flat
+                # ``reshape(-1, layer_out)`` (which assumes content_in==content_out
+                # and so fails whenever the deep CS content width != this space's
+                # content width). For an EQUAL-WIDTH config (CS width == this
+                # space's width) ``y.shape[-1] == layer_out`` so this whole branch
+                # is skipped -- the regroup is a strict NO-OP there.
+                _band = int(self.nWhere + self.nWhen)
+                _content_out = int(layer_out) - _band         # e.g. 12-4 = 8
+                _content_in = int(y.shape[-1]) - _band         # e.g. 1028-4 = 1024
+                _slab = int(y.shape[1]) * _content_in          # e.g. 8*1024 = 8192
+                if (_content_out > 0 and _content_in > 0
+                        and _slab % _content_out == 0
+                        and _slab // _content_out >= 1):
+                    _wide = y[..., :_content_in].reshape(
+                        int(y.shape[0]), _slab // _content_out, _content_out)
+                    y = F.pad(_wide, (0, int(layer_out) - _content_out))
+                else:
+                    # Content-only / non-bridge mismatch (no band, or the slab
+                    # does not regroup): the legacy flat reshape. Raises loud if
+                    # the element count is genuinely incompatible (a real config
+                    # error, not silently absorbed) -- preserving fail-loud.
+                    y = y.reshape(y.shape[0], -1, layer_out)
         return y
 
     def reverseEnd(self, y, returnVectors=False):
@@ -6825,10 +6895,10 @@ class InputSpace(Space):
         self.subspace._nOutputDim = -1
         self.doc_spans = []
         self.doc_sources = []
-        # Text mode: Reference to PerceptualSpace so InputSpace.forward()
-        # can invoke _embed to produce the muxed target embedding
-        # (InputSpace no longer owns the codebook).
-        self._peer_perceptual = None
+        # 2026-06-07: the ``_peer_perceptual`` back-ref to PerceptualSpace is
+        # RETIRED. InputSpace is a pure RAW lexer; PerceptualSpace owns all
+        # tokenization + codebook work and is driven by the forward pipeline,
+        # not by a back-reference from IS.
 
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
@@ -6888,11 +6958,14 @@ class InputSpace(Space):
         # per-word DtoH budget collapses to zero (well within the "one
         # byte termination read" allowance).
         self._valid_len_host = 0
-        # Byte lexer inputs are discrete indices (0-255) looked up via
-        # Embedding -- a global linear lift over the flattened buffer is
-        # unnecessary and prohibitively expensive for large nOutput.
-        # Only create the MappingLayer for non-byte (continuous) inputs.
-        if self.byte_mode:
+        # Byte/raw lexer inputs are DISCRETE character indices looked up via
+        # Embedding (in PerceptualSpace) -- a global linear lift over the
+        # flattened buffer is unnecessary and prohibitively expensive for
+        # large nOutput (e.g. an 8192-char input would build a 40960x40960
+        # LDU = ~3.4B params). Only create the MappingLayer for genuinely
+        # CONTINUOUS inputs (e.g. MNIST pixels); ``raw`` is byte-like
+        # (decoded straight from the [B,1,N] buffer) so it skips the lift.
+        if self.byte_mode or self.lexer == "raw":
             self.lift = None
             self.params = []
             self.layers = nn.ModuleList()
@@ -7010,30 +7083,18 @@ class InputSpace(Space):
           where_idx: [B, nObj] long tensor of byte offsets into the source.
           when_idx:  [B, nObj] long tensor of sequential positions.
 
-        Requires self._peer_perceptual to be wired (BasicModel/BasicModel do
-        this) because the tokenizer (_token_stream) currently lives on the
-        peer's vocabulary.
+        Self-contained: IS owns its RAW byte lexer; no peer reference.
         """
-        assert self._peer_perceptual is not None, \
-            "InputSpace._lex_batch requires _peer_perceptual (lexer owner)"
-        # Resolve the orthographic tokenizer. Non-radix text modes
-        # (lexicon|bpe|mphf|none) keep an Embedding on
-        # ``peer.subspace.what`` (or expose one via ``peer.vocabulary``);
-        # use its ``_token_stream``. Stage 7 radix mode (2026-06-04)
-        # replaced that Embedding with a Codebook Basis for percept-vector
-        # storage and exposes a PerceptStore (RadixLayer) as
-        # ``peer.vocabulary`` -- neither carries ``_token_stream`` and
-        # there is no Embedding left to borrow, so lex the base tokens
-        # from this InputSpace's own lexer config; the radix trie
-        # chunks/promotes them downstream in ``_embed_radix``.
-        _what = getattr(self._peer_perceptual.subspace, "what", None)
-        _vocab = self._peer_perceptual.vocabulary
-        if hasattr(_what, "_token_stream"):
-            tokenize = _what._token_stream
-        elif hasattr(_vocab, "_token_stream"):
-            tokenize = _vocab._token_stream
-        else:
-            tokenize = self._radix_token_stream
+        # IS owns its lexer (2026-06-07): use this InputSpace's OWN
+        # ``_radix_token_stream`` (bytes when ``byte_mode``, else word base
+        # tokens) -- NO peer-tokenizer borrow, ``_peer_perceptual`` is gone.
+        # The ``what`` buffer is just a carrier here; PerceptualSpace owns ALL
+        # word/sub-word tokenization (it re-lexes the whole-line surface handed
+        # over via ``_host_tokens``): analyse/bpe/radix self-lex, lexicon via
+        # ``_embed_lexicon``. (Byte-forcing every config exploded the token
+        # count and slowed the full-corpus build, so the base granularity
+        # stays config-driven; PS re-lexing makes it RAW for PS regardless.)
+        tokenize = self._radix_token_stream
         dev = TheDevice.get()
 
         # Lex the *host* byte slab when the byte cursor staged one
@@ -7224,43 +7285,43 @@ class InputSpace(Space):
 
         # Lex/embed once -- produces ``[B, T, D]`` on ``self.subspace``.
         self._lex_and_embed(inputData)
-        embedded = self.subspace.materialize()
-        if embedded is None and self.model_type == "embedding":
-            peer = self._peer_perceptual
-            if peer is not None:
-                # Route to the peer's chunking mode rather than always
-                # calling the lexicon path.  With ``<chunking>bpe</...>``
-                # the lexicon-style ``_embed`` would tokenize on
-                # whitespace and OOV-insert per word (codebook drift);
-                # ``_embed_bpe`` does the right thing: BPE chunk +
-                # MAX-fuse against the frozen codebook keyed by latin-1
-                # byte-tuples.
-                peer_mode = getattr(peer, 'chunking_mode', None)
-                if peer_mode == "bpe":
-                    peer._embed_bpe(self.subspace)
-                elif peer_mode == "none":
-                    peer._embed_byte(self.subspace)
-                elif peer_mode == "mphf":
-                    peer._embed_mphf(self.subspace)
-                elif peer_mode == "radix":
-                    # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-
-                    # taxonomy-reentrancy.md): radix-mode embedding via
-                    # the PerceptStore. The peer reads the InputSpace
-                    # subspace's host tokens and writes the percept-
-                    # space event tensor.
-                    peer._embed_radix(self.subspace)
-                elif peer_mode == "analyse":
-                    # R3-live: meronymic-analyzer front end (space-lexer +
-                    # bottom-up merge) owns tokenization in PerceptualSpace.
-                    peer._embed_analyse(self.subspace)
+        # Action D (2026-06-06): in text/embedding mode InputSpace is a PURE
+        # LEXER. ``_lex_and_embed`` populated ``subspace.what/where/when`` with
+        # the null-terminated UTF-8 byte buffer; PerceptualSpace.forward owns
+        # ALL embedding -- it dispatches on its OWN ``chunking_mode`` to
+        # ``_embed_*`` whenever ``not stem_embedded``. Hand the lexed subspace
+        # off directly: NO ``_peer_perceptual`` back-ref, no pre-embed here;
+        # leave ``stem_embedded`` False so PS runs its own ``_embed_*``.
+        # ``is_empty`` is False (``.what`` is populated), so PS.forward proceeds
+        # past its short-circuit and embeds the byte event.
+        if self.model_type == "embedding":
+            sub = self.subspace
+            sub.stem_embedded = False
+            # The embedded whole-sentence sequence now lives on PS; IS's
+            # ``next_word`` AR cursor is inert (no config sets
+            # ``_per_word_enabled``), so the IS-side handles are cleared.
+            self._ar_embedded = None
+            self._ar_embedded_N = None
+            # Valid length / mask come from the LEXED buffer (real == non-null
+            # first byte), so IS-side consumers (the static per-word loop's
+            # ``_valid_len_host``) need no embedded output. Eager host int at
+            # the (non-captured) IS boundary, matching the retired peer path.
+            with torch.no_grad():
+                _wbuf = sub.materialize(mode="what")
+                if _wbuf is not None:
+                    _first = _wbuf[..., 0] if _wbuf.dim() == 3 else _wbuf
+                    _valid_pos = (_first.long() != 0)
+                    _any = _valid_pos.any(dim=0)
+                    self._valid_len_host = (
+                        int(_any.nonzero().max().item()) + 1
+                        if bool(_any.any().item()) else 0)
+                    sub.valid_mask = _valid_pos.any(dim=1).reshape(-1, 1)
                 else:
-                    peer._embed(self.subspace)
-                embedded = peer._embedded_input
-        # ``_ar_embedded`` kept as the canonical un-windowed [B, T, D]
-        # handle so downstream consumers (chat-loop, diagnostic dumps)
-        # have a single name for the source embedded tensor.  The
-        # ``_ar_`` prefix is historical; remove once those callers
-        # rename.
+                    self._valid_len_host = 0
+            return sub
+        embedded = self.subspace.materialize()
+        # ``_ar_embedded`` is the canonical un-windowed [B, T, D] handle for
+        # the numeric path's downstream consumers (chat-loop, diagnostics).
         self._ar_embedded = embedded
 
         if embedded is None:
@@ -7280,13 +7341,10 @@ class InputSpace(Space):
         # rooted in ``embedded`` untouched (no new ``.abs().sum()``
         # fanout), matching the no_grad guard the lazy variant used.
         with torch.no_grad():
-            _peer_valid = self._peer_perceptual
-            _bpe_mask_valid = (
-                getattr(_peer_valid, "_bpe_word_mask", None)
-                if _peer_valid is not None
-                and getattr(_peer_valid, "chunking_mode", None)
-                in ("bpe", "none", "mphf")
-                else None)
+            # Numeric path only (text/embedding returns early above). IS has
+            # no peer PerceptualSpace here, so validity falls back to the
+            # nonzero-content test.
+            _bpe_mask_valid = None
             _Te = embedded.shape[1]
             if _bpe_mask_valid is not None:
                 _valid_pos = _bpe_mask_valid[:, :_Te] > 0
@@ -7300,6 +7358,19 @@ class InputSpace(Space):
                 self._valid_len_host = 0
 
         B, T, D = embedded.shape
+        # 2026-06-06: when a peer PerceptualSpace owns the word-as-percept
+        # reduction (text/embedding models -- the lexicon-ownership move,
+        # commit ea79ef3), the peer's ``_embed`` has ALREADY produced the
+        # correct output width (its nOutput word-slots). IS is a thin
+        # pass-through here and must hand off the PEER's width, NOT re-expand
+        # back to its own raw char-buffer width ``self.outputShape[0]`` --
+        # doing so clobbered the peer's reduction (MM_20M: peer reduces 8192
+        # chars -> 8 words, then IS re-padded to 8192 and stamped
+        # stem_embedded=True, so PS.forward passed 8192 straight through and
+        # the SS sigma butterfly (sized 8*1024) saw an 8192-wide carrier).
+        # For uniform configs (IS.nOutput == peer.nOutput) this is a no-op.
+        # Numeric path only (text/embedding returns early above) -- no peer.
+        peer = None
         N = int(self.outputShape[0])
 
         # When peer is in BPE chunking mode, ``peer._bpe_word_mask``
@@ -7313,8 +7384,7 @@ class InputSpace(Space):
         # ``chunking=none`` (byte-direct) installs the same
         # ``_bpe_word_mask`` attribute via ``(byte_indices != 0)``; the
         # windowed view is identical so we accept it here under the
-        # same name.
-        peer = self._peer_perceptual
+        # same name. (``peer`` resolved above for the output-width handoff.)
         bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                     if peer is not None
                     and getattr(peer, "chunking_mode", None) in ("bpe", "none", "mphf")
@@ -7377,6 +7447,88 @@ class InputSpace(Space):
             peer._bpe_word_mask_flat = bpe_mask_N
         elif peer is not None:
             peer._bpe_word_mask_flat = None
+        if len(self._end_of_stream) != B:
+            self._end_of_stream = [False] * B
+        ws = self._model_wordSubSpace
+        if ws is not None:
+            ws.ensure_microbatch(B, 1)
+        return sub
+
+    def finalize_stem(self, sub, ps):
+        """Model-orchestrated stem bookkeeping for TEXT mode (2026-06-07).
+
+        Called AFTER ``PerceptualSpace.embed_stem`` has embedded the lexed
+        bytes (PS owns the embed). ``ps`` is passed TRANSIENTLY by the model
+        (``_lex_embed_stem``) so InputSpace holds NO PerceptualSpace reference
+        -- the retired ``_peer_perceptual`` coupling is gone. Mirrors the
+        bookkeeping the old peer-driven ``forward`` did: stash ``_ar_embedded``,
+        the eager ``_valid_len_host``, pad/truncate the embedded event to N,
+        set the muxed event + ``valid_mask`` + ``stem_embedded`` on ``sub``,
+        populate the static per-word feeders (``_ar_embedded_N`` /
+        ``_word_active_mask``), and ``ensure_microbatch``.
+        """
+        embedded = ps._embedded_input
+        self._ar_embedded = embedded
+        if embedded is None:
+            self._valid_len_host = 0
+            return sub
+        _mode = getattr(ps, "chunking_mode", None)
+        with torch.no_grad():
+            _bpe_mask_valid = (
+                getattr(ps, "_bpe_word_mask", None)
+                if _mode in ("bpe", "none", "mphf") else None)
+            _Te = embedded.shape[1]
+            if _bpe_mask_valid is not None:
+                _valid_pos = _bpe_mask_valid[:, :_Te] > 0
+            else:
+                _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
+            _any_pos = _valid_pos.any(dim=0)
+            if torch.is_tensor(_any_pos) and bool(_any_pos.any().item()):
+                self._valid_len_host = int(
+                    _any_pos.nonzero().max().item()) + 1
+            else:
+                self._valid_len_host = 0
+        B, T, D = embedded.shape
+        # Hand off the PEER's word-reduced output width (e.g. MM_20M reduces
+        # 8192 chars -> 8 words); fall back to IS's own width.
+        N = (int(ps.outputShape[0])
+             if getattr(ps, "outputShape", None) else int(self.outputShape[0]))
+        bpe_mask = (getattr(ps, "_bpe_word_mask", None)
+                    if _mode in ("bpe", "none", "mphf") else None)
+        if T < N:
+            pad = torch.zeros(B, N - T, D,
+                              device=embedded.device, dtype=embedded.dtype)
+            embedded_N = torch.cat([embedded, pad], dim=1)
+        elif T > N:
+            embedded_N = embedded[:, :N, :]
+        else:
+            embedded_N = embedded
+        if bpe_mask is not None:
+            valid_mask = bpe_mask[:, :N].any(dim=1).reshape(B, 1)
+            bpe_mask_N = bpe_mask[:, :N] if bpe_mask.shape[1] >= N else bpe_mask
+        else:
+            valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
+                dim=1).reshape(B, 1)
+            bpe_mask_N = None
+        was_demuxed = sub._demuxed
+        sub.set_event(embedded_N)
+        if was_demuxed:
+            sub._demuxed = True
+        sub.valid_mask = valid_mask
+        sub.stem_embedded = True
+        self._ar_embedded_N = embedded_N
+        if bpe_mask_N is not None:
+            if bpe_mask_N.shape[1] >= N:
+                _wam = (bpe_mask_N[:, :N] > 0)
+            else:
+                _wpad = torch.zeros(
+                    B, N - bpe_mask_N.shape[1],
+                    dtype=torch.bool, device=bpe_mask_N.device)
+                _wam = torch.cat([bpe_mask_N > 0, _wpad], dim=1)
+        else:
+            _wam = embedded_N.detach().abs().sum(dim=-1) > 0
+        self._word_active_mask = _wam
+        ps._bpe_word_mask_flat = bpe_mask_N
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
         ws = self._model_wordSubSpace
@@ -7502,15 +7654,16 @@ class InputSpace(Space):
             # surface (``_analyse_surfaces``) is used so the analyzer is not
             # limited by the legacy nWhat ``.where`` byte width. Other
             # chunking modes keep the pre-lexed (nWhat-clipped) word tokens.
-            peer = getattr(self, '_peer_perceptual', None)
-            if peer is not None and getattr(
-                    peer, 'chunking_mode', None) == "analyse":
-                surfaces = getattr(self, '_analyse_surfaces', None)
-                if surfaces is not None:
-                    host_tokens = [[s] for s in surfaces]
-                else:
-                    host_tokens = [["".join(t for t in row if t)]
-                                   for row in host_tokens]
+            # IS always emits RAW: hand PS the unanalyzed whole-line surface
+            # (one token per row). PerceptualSpace owns ALL tokenization per
+            # its <chunking> mode. (Was gated to chunking=='analyse' via the
+            # peer; now universal and peer-free.)
+            surfaces = getattr(self, '_analyse_surfaces', None)
+            if surfaces is not None:
+                host_tokens = [[s] for s in surfaces]
+            else:
+                host_tokens = [["".join(t for t in row if t)]
+                               for row in host_tokens]
             self.subspace._host_tokens = host_tokens
             self._forward_input = None
             return self.subspace
@@ -7867,36 +8020,54 @@ class PerceptualSpace(Space):
         _mono = bool(TheXMLConfig.get("architecture.monotonic",
                                       default=False))
         # Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
-        # 2026-05-27 revision): optional butterfly cascade on
-        # ``self.pi`` for cross-element FFT-style mixing on the
-        # flattened ``[B, N*D]`` view. Driven by the per-space
-        # ``<butterfly>`` XML knob. ``N`` is **auto-computed** from
-        # ``nInput * nInputDim`` (total flattened element count) — no
-        # explicit ``<butterflyN>`` knob needed. The cascade internally
-        # pads to the next power of two; the 2x2 LDU per node makes the
-        # cascade element-pair (one op per pair of adjacent flattened
-        # elements). Stage 10: butterfly applies on PS.pi only (sigma
-        # half retired here; the per-stage CS sigma_in inherits its own
-        # butterfly cascade).
-        _butterfly = bool(TheXMLConfig.space(section, "butterfly",
-                                             default=False))
+        # 2026-05-27 revision) + dimensional-governance (doc/specs/2026-06-05
+        # -dimensional-governance.md): the SPAN of ``self.pi`` is selected by
+        # the per-space ``<sigmaPi>`` knob (last | butterfly | full); the
+        # legacy boolean ``<butterfly>`` is accepted as an alias
+        # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
+        #   last      = per-slot square fold (default; pre-butterfly behavior).
+        #   butterfly = O(N log N) cross-element cascade on the flattened
+        #               ``[B, N*D]`` view; ``N`` auto-computed from
+        #               ``nInput * nInputDim``, padded to the next power of
+        #               two, per-pair 2x2 LDU (the cross-slot mixer XOR needs).
+        #   full      = dense flattened square Pi bridge of the flat-slab
+        #               invariant (Task 3 of the dimensional-governance plan).
+        # Stage 10: this applies on PS.pi only (the sigma half migrated to
+        # ConceptualSpace.sigma_in per stage).
+        # A4 (2026-06-06 parallel-conceptual-recurrence): the span is driven
+        # by the ARCHITECTURE-level global ``<sigmaPi>`` (default butterfly),
+        # NOT a per-space knob. A1 removed the per-space ``<sigmaPi>`` from the
+        # configs; one global now drives PS.Pi, SS.Sigma, and the per-stage
+        # ConceptualCombine identically. (Legacy per-space ``<butterfly>`` is
+        # accepted only as a back-compat override when explicitly present.)
+        _pi_mode = Space.sigma_pi_mode(
+            TheXMLConfig.space(section, "butterfly", default=None)
+            if TheXMLConfig.space(section, "butterfly", default=None) is not None
+            else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
+        _butterfly = (_pi_mode == "butterfly")
+        self.sigma_pi_slab = None  # set only for the "full" dense bridge
         # Auto-compute total element count from the Space's shape.
-        # ``inputShape[0]`` is the per-position count (N); per-position
-        # dim (D) comes from ``getEncodedInputSize`` (= percept_dim).
-        # Flattened total = N * D.
-        _butterfly_total = int(inputShape[0]) * int(percept_dim)
-        # Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): drop ``self.sigma`` from PerceptualSpace —
-        # PS is pi-only. The sigma half migrates to ``ConceptualSpace``
-        # per stage (Ramsified via the ``self.conceptualSpaces``
-        # ModuleList). The cascade machinery still inherits onto
-        # ``self.pi`` (butterfly knob preserved); only the sigma branch
-        # is excised.
-        if _butterfly:
-            if _butterfly_total < 2:
-                raise ValueError(
-                    "PerceptualSpace.butterfly=True requires "
-                    f"nInput * nInputDim >= 2; got {_butterfly_total}")
+        # The pi runs AFTER the chunker reduces the input to ``nOutput``
+        # word-slots, so the per-position count it actually mixes is
+        # ``outputShape[0]`` (= nOutput), NOT the pre-chunk ``inputShape[0]``
+        # (= nInput). Per-position dim (D) comes from ``getEncodedInputSize``
+        # (= percept_dim). Flattened total = nOutput * D.
+        # 2026-06-06 sizing fix: MM_20M has nInput=8192 (raw char buffer) but
+        # nOutput=8 (words); using inputShape[0] oversized the cascade to
+        # 8192*1024 = 8.4M -- a 23-stage cross-element mix over a 1024x
+        # zero-pad (~193M params, the whole forward+backward bottleneck) when
+        # the pi only ever processes 8*1024 = 8192. For non-reducing PS
+        # (nInput == nOutput) this is unchanged.
+        _butterfly_total = int(outputShape[0]) * int(percept_dim)
+        # Butterfly needs >= 2 elements to form a 2x2-LDU cascade (a 0/1-element
+        # cascade is trivially identity). A degenerate / dataless PS
+        # (nOutput*percept_dim < 2) gracefully falls back to the per-slot "last"
+        # Pi -- mirroring SymbolicSpace.sigma's handling below. The global
+        # <sigmaPi> default is butterfly (A4), so unconfigured small/degenerate
+        # configs (e.g. model.xml built without data) reach this fallback
+        # instead of erroring as they did before the graceful path.
+        _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
+        if _butterfly_built:
             self.pi = PiLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
@@ -7904,15 +8075,40 @@ class PerceptualSpace(Space):
                 stable=True, monotonic=_mono,
                 butterfly=True, N=_butterfly_total,
             )
-        else:
+        elif _pi_mode == "full":
+            # full: the dense flattened square Pi bridge of the flat-slab
+            # invariant (doc/specs/2026-06-05-dimensional-governance.md
+            # §2-3) -- ONE LDU over the whole [B, N*content] slab. The
+            # wide<->deep regrouping (PS [B, D, N] <-> CS [B, N, D]) is a
+            # pure reshape; this operator is the invertible map carried by
+            # the bridge matrix (the deep idea lives in the matrix, not in
+            # any single percept). ``content`` excludes the per-position
+            # .where/.when band (canonical_shape), which passes through.
+            # The [B,N,D] <-> [B, N*content] reshape routing around
+            # forward/reverse lives in the forward path (Task 5).
+            _band = int(sum(canonical_shape(section)))
+            _content = int(percept_dim) - _band
+            if _content < 1:
+                raise ValueError(
+                    "PerceptualSpace <sigmaPi>full</> requires percept_dim "
+                    f"({percept_dim}) > band ({_band})")
+            self.sigma_pi_slab = int(inputShape[0]) * _content
+            self.pi = PiLayer(
+                self.sigma_pi_slab, self.sigma_pi_slab,
+                naive=naive, ergodic=ergodic,
+                invertible=bool(invertible), nonlinear=nonlinear,
+                stable=True, monotonic=_mono,
+            )
+        else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
             self.pi = PiLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
                 invertible=bool(invertible), nonlinear=nonlinear,
                 stable=True, monotonic=_mono,
             )
-        self.butterfly_enabled = _butterfly
-        self.butterflyN = _butterfly_total if _butterfly else None
+        self.sigma_pi_mode = _pi_mode
+        self.butterfly_enabled = _butterfly_built
+        self.butterflyN = _butterfly_total if _butterfly_built else None
 
         input = percept_dim
         self.attention = AttentionLayer(input, input, type="transformer")
@@ -8696,7 +8892,7 @@ class PerceptualSpace(Space):
         ``torch.tensor`` and ``torch.stack(torch.stack(...))``. The
         per-word ``_max_fuse_subtokens`` allocated and stacked a fresh
         list of vectors for every word (~960 stacks per batch on
-        MM_5M). This form does:
+        MM_20M). This form does:
 
             * ONE Python sweep over all chunks in the batch, collecting
               per-sub-token codebook indices + a global word-segment id,
@@ -8949,7 +9145,7 @@ class PerceptualSpace(Space):
         # KNOWN OUTLIER under spec
         # doc/specs/2026-05-21-subspace-slot-architecture.md: this is
         # neither a codebook lookup nor a pure-event store. For configs
-        # where ``.event`` is codebook-bearing (MM_xor / MM_5M muxed),
+        # where ``.event`` is codebook-bearing (MM_xor / MM_20M muxed),
         # this write currently rides the ``_active_payload`` band-aid.
         # Stage 3 of the retirement plan
         # (doc/plans/2026-05-21-active-payload-retirement.md) addresses
@@ -8964,7 +9160,7 @@ class PerceptualSpace(Space):
         muxed_event = (torch.cat(event_parts, dim=-1)
                        if len(event_parts) > 1 else word_vectors)
         # Spec-aligned write: route through ``SubSpace.set_muxed`` so
-        # the codebook-bearing case (MM_xor / MM_5M with codebook on
+        # the codebook-bearing case (MM_xor / MM_20M with codebook on
         # ``.event``) snaps the MAX-pooled fused vector through the
         # codebook (writing the selection on ``_active``), and the
         # plain-Tensor case (MM_grammar, byte-mode) stores per-batch on
@@ -9088,7 +9284,7 @@ class PerceptualSpace(Space):
         per-dimension maximum. Avoids the previous Python ``vecs = []``
         + ``torch.stack(vecs)`` + ``stacked.max(dim=0)`` pattern, which
         allocated one Python list and one stack-temporary per word
-        (~960 words/batch on MM_5M). The single ``vectors[idx_tensor]``
+        (~960 words/batch on MM_20M). The single ``vectors[idx_tensor]``
         gather + ``amax(dim=0)`` keeps the hot path tensor-native and
         runs on whatever device the codebook lives on (no device
         coupling to the caller).
@@ -9374,6 +9570,31 @@ class PerceptualSpace(Space):
             dtype=torch.float32, device=byte_indices.device)
         return upstream_vspace
 
+    def _embed_lexicon(self, upstream_vspace):
+        """Lexicon chunking from a RAW surface: PS owns the word tokenization.
+
+        IS now hands the unanalyzed whole-line surface (2026-06-07 IS-always-
+        RAW); reconstruct it, split on words (no learned merges -- that is the
+        ``analyse`` path), then resolve through the lexicon codebook via
+        ``_embed``. This is the parse-words front-end that ``_embed`` used to
+        rely on InputSpace to provide.
+        """
+        what_buf = upstream_vspace.materialize(mode="what")
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_lexicon: upstream subspace.what is "
+                "empty.")
+        from util import parse as _parse
+        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
+        if host_tokens is None:
+            host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        rows = []
+        for row in host_tokens:
+            surface = "".join(t for t in row if t)
+            rows.append([t for (t, _off) in _parse(surface, lex="words")])
+        upstream_vspace._host_tokens = rows
+        return self._embed(upstream_vspace)
+
     def _embed_analyse(self, upstream_vspace):
         """R3-live: meronymic-analyzer chunking (``<chunking>analyse</...>``).
 
@@ -9656,6 +9877,45 @@ class PerceptualSpace(Space):
             flat_subtoken_idx, flat_word_seg, per_word_first,
             per_word_b_out, per_word_slot_out, word_id)
 
+    def embed_stem(self, upstream_vspace):
+        """Eager, model-orchestrated stem embed (2026-06-07 eager-embed-stage).
+
+        Runs the chunking dispatch on the LEXED bytes BEFORE the compiled body
+        so PS's host-side tokenization (regex / BPE trie / radix promote) stays
+        OUT of the fullgraph trace, and the embedded event is ready for
+        ``InputSpace.finalize_stem``. Same gate + dispatch as ``forward``'s
+        inline embed (analyse/bpe/radix self-lex the surface; lexicon via
+        ``_embed_lexicon``); writes the embedded event + ``_embedded_input`` +
+        ``_bpe_word_mask`` on THIS PerceptualSpace. Returns the embedded
+        subspace (``self.subspace``) or ``None`` when there is nothing to embed
+        (already embedded / empty / non-text codebook).
+        """
+        if upstream_vspace is None:
+            return None
+        if hasattr(upstream_vspace, "is_empty") and upstream_vspace.is_empty():
+            return None
+        if getattr(upstream_vspace, "stem_embedded", False):
+            return None
+        if not (isinstance(self.subspace.what, Embedding)
+                or getattr(self, "percept_store", None) is not None):
+            return None
+        mode = self.chunking_mode
+        if mode == "lexicon":
+            return self._embed_lexicon(upstream_vspace)
+        elif mode == "bpe":
+            return self._embed_bpe(upstream_vspace)
+        elif mode == "none":
+            return self._embed_byte(upstream_vspace)
+        elif mode == "mphf":
+            return self._embed_mphf(upstream_vspace)
+        elif mode == "radix":
+            return self._embed_radix(upstream_vspace)
+        elif mode == "analyse":
+            return self._embed_analyse(upstream_vspace)
+        raise ValueError(
+            f"PerceptualSpace chunking must be "
+            f"bpe|lexicon|none|mphf|radix|analyse, got {mode!r}")
+
     def forward(self, x_subspace):
         """Perception: map input to percepts via ``pi(x)``.
 
@@ -9734,10 +9994,18 @@ class PerceptualSpace(Space):
         # cleared by FlattenKWrapper, but stem_embedded=True remains).
         # Skip the lexicon _embed which would clobber that event with a
         # fresh [B, N, D] re-embed of the original byte buffer.
-        if isinstance(self.subspace.what, Embedding) and not vspace.stem_embedded:
+        # Embed the lexed surface here (PS owns ALL embedding post-2026-06-07;
+        # InputSpace is a pure raw lexer and no longer pre-embeds via a peer).
+        # The gate fires for any text/lexing config: an Embedding-backed
+        # codebook (lexicon/bpe/analyse) OR a PerceptStore (radix, whose
+        # ``what`` is a Codebook Basis, not an Embedding). ``stem_embedded``
+        # (numeric / already-embedded AR microbatch) skips it.
+        if not vspace.stem_embedded and (
+                isinstance(self.subspace.what, Embedding)
+                or getattr(self, 'percept_store', None) is not None):
             mode = self.chunking_mode
             if mode == "lexicon":
-                vspace = self._embed(vspace)
+                vspace = self._embed_lexicon(vspace)
             elif mode == "bpe":
                 vspace = self._embed_bpe(vspace)
             elif mode == "none":
@@ -10622,6 +10890,20 @@ class ConceptualSpace(Space):
         cap = int(stm.capacity)
         if cap <= 0:
             return
+        # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
+        # recurrence.md sec 2 & 4): the STM idea buffer is DETACHED working
+        # state, never an accumulated grad-bearing tensor persisted on the
+        # space across forwards. Writing a grad-bearing slab in place made
+        # ``_idea_buffer``/``_fallback_buffer`` a graph node whose
+        # ``requires_grad`` oscillated False->True across forwards, flipping
+        # a Dynamo guard (recompile every batch) and crashing AOT autograd's
+        # output-alias regeneration. The LIVE grad threads through the
+        # ``folded``/``idea`` LOCALS the caller already holds (the intra-loss
+        # target, the head's stacked contributions); the buffer only feeds
+        # the eager-boundary readers (snapshot -> chart compose / relation
+        # learning) + the bare-STM tests, none of which need grad. Detach at
+        # the write so the persisted buffer carries no autograd history.
+        slab = slab.detach()
         buf = stm._buffer
         depth_dtype = stm._depth.dtype
         depth_device = stm._depth.device
@@ -11135,9 +11417,14 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_autobound_percept_ids', bound)
         B = int(pid_2d.shape[0])
         N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
+        # 2026-06-06 host-sync reduction: pull ALL percept ids to host in a
+        # SINGLE DtoH copy. Was ``int(pid_2d[b, n].item())`` per slot -- B*N
+        # blocking GPU->host syncs per forward, profiled as the top host-side
+        # cost on MPS (and applies to CUDA). One ``.tolist()`` replaces them.
+        pid_host = pid_2d.detach().reshape(B, N).tolist() if N > 0 else []
         for b in range(B):
             for n in range(N):
-                pid = int(pid_2d[b, n].item())
+                pid = int(pid_host[b][n])
                 if pid < 0:
                     continue
                 # Detach so the SS row seed and META fused_vec don't
@@ -11582,12 +11869,32 @@ class ConceptualSpace(Space):
         primary = subspace.materialize()
         _stm_dim = int(self.concept_dim)
         if primary is not None and primary.shape[-1] != _stm_dim:
-            # Fit the materialised event to the STM payload width. A wider
-            # event is trimmed; a content-only event (the muxed where/when
-            # tail unpopulated this step, e.g. a .what-codebook CS) is
-            # zero-padded so the STM consistently holds muxedSize-wide
-            # events (where/when == 0 when absent).
-            if primary.shape[-1] > _stm_dim:
+            # dimensional-governance flat-slab reshape (doc/specs/2026-06-05
+            # -dimensional-governance.md): the WIDE perceptual slab
+            # [B, N_in, content_in] regroups into the DEEP concept hub
+            # [B, N_out, _stm_dim] as a PURE RESHAPE of the constant content
+            # slab -- NOT a per-slot pad (which would re-dimension, inflating
+            # the carrier e.g. wide [B,1024,8] -> [B,1024,1024]). Gated to the
+            # wide->deep handoff (nInput != nOutput) where the incoming band-
+            # stripped content slab divides the deep concept width; the
+            # legacy trim/pad still runs for same-N tiers and content-only
+            # events. where/when ride along: the deep rows carry _stm_dim of
+            # the regrouped content, the band is re-applied per deep position.
+            _wide_deep = (int(self.inputShape[0]) != int(self.outputShape[0]))
+            _in_band = sum(canonical_shape("PerceptualSpace"))
+            _my_band = sum(canonical_shape("ConceptualSpace"))
+            _content_in = int(primary.shape[-1]) - _in_band   # e.g. 12-4=8
+            _content_out = _stm_dim - _my_band                # e.g. 1028-4=1024
+            _slab = int(primary.shape[1]) * _content_in       # e.g. 1024*8=8192
+            if (_wide_deep and _content_in > 0 and _content_out > 0
+                    and _slab % _content_out == 0 and _slab // _content_out >= 1):
+                # Regroup the wide CONTENT slab into deep concept rows, then
+                # re-apply the where/when band tail (rides along as the muxed
+                # [content | band] event the STM/reverse expect).
+                _deep = primary[..., :_content_in].reshape(
+                    int(primary.shape[0]), _slab // _content_out, _content_out)
+                primary = F.pad(_deep, (0, _stm_dim - _content_out))
+            elif primary.shape[-1] > _stm_dim:
                 primary = primary[..., :_stm_dim]
             else:
                 primary = F.pad(primary, (0, _stm_dim - primary.shape[-1]))
@@ -11980,8 +12287,8 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         # Sibling reference: PerceptualSpace owns the physical Embedding
-        # (the input pipeline's InputSpace._peer_perceptual.vocabulary
-        # wiring requires it there), but ``SymbolicSpace`` is the
+        # (the input pipeline lexes raw bytes in IS and embeds in PS, so the
+        # Embedding lives on PS), but ``SymbolicSpace`` is the
         # logical owner after the lexicon migration -- ``S.vocabulary``
         # and the orthographic-API methods live here and delegate
         # through this back-reference. Wired post-construction in
@@ -12088,10 +12395,14 @@ class SymbolicSpace(Space):
         # (2026-06-04 parallel-symbolic-substrate refactor). It is the
         # ONLY parameterised fold SS owns; PiLayer stays restricted to
         # Perceptual / Conceptual. ``self.sigma`` is used:
-        #   * in PARALLEL mode as the per-conceptualOrder generalization
-        #     step -- perception establishes CS_0 via the PS->CS Pi path;
-        #     each order applies ``sigma`` to advance CS_k -> CS_{k+1}
-        #     (Models._symbolic_sigma_step);
+        #   * in PARALLEL mode the per-conceptualOrder generalization now
+        #     lives IN the per-stage ``ConceptualCombine`` (held by the cs,
+        #     operating on the full muxed event); the SS event feeds that
+        #     combine as one of its three streams. (Before A4 this was a
+        #     separate content-only SS.sigma advance,
+        #     ``Models._symbolic_sigma_step``, removed in Action C.) The
+        #     standalone ``self.sigma`` round-trip is still exercised
+        #     directly (test_cs_reentrancy);
         #   * in SERIAL/grammar mode as the binding target for the default
         #     ``S = sigma(S)`` rule -- ``_attach_per_space_syntactic_layer``
         #     reads ``getattr(space, 'sigma')`` (Language.py) and registers
@@ -12110,7 +12421,17 @@ class SymbolicSpace(Space):
         _sigma_ergodic = TheXMLConfig.get("architecture.ergodic")
         _sigma_monotonic = bool(
             TheXMLConfig.get("architecture.monotonic", default=False))
-        _sigma_dim = int(self.nOutputDim)
+        # 2026-06-06: sigma operates on the INCOMING CS idea carrier, so it
+        # must be sized at the SS INPUT width (nInputDim), not the OUTPUT
+        # width. For symmetric SS (passthrough: nInputDim == nOutputDim) the
+        # two are equal and behavior is unchanged; for asymmetric SS (e.g.
+        # MM_20M: nInputDim=1024 incoming deep idea, nOutputDim=8 wide-symbol
+        # output) the sigma is correctly square at the carrier width and the
+        # reshape to the output happens at forwardEnd. Falls back to the
+        # output width and then nDim when the input width is unset.
+        _sigma_dim = int(getattr(self, "nInputDim", 0) or 0)
+        if _sigma_dim <= 0:
+            _sigma_dim = int(self.nOutputDim)
         if _sigma_dim <= 0:
             _sigma_dim = int(self.nDim)
         # Butterfly cascade on the symbolic sigma -- driven by the
@@ -12125,8 +12446,27 @@ class SymbolicSpace(Space):
         # flattened element count; the cascade pads to the next power of
         # two internally and the per-pair LDU keeps it exactly invertible
         # (so ``sigma.reverse`` still round-trips the reconstruction path).
-        _sigma_butterfly = bool(
-            TheXMLConfig.space(section, "butterfly", default=False))
+        # dimensional-governance (doc/specs/2026-06-05-dimensional-
+        # governance.md): the SPAN of ``self.sigma`` is selected by the
+        # SymbolicSpace ``<sigmaPi>`` knob (last | butterfly | full); the
+        # legacy boolean ``<butterfly>`` is accepted as an alias
+        # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
+        # last = per-slot square fold; butterfly = the cross-slot cascade
+        # (D == ``_sigma_dim``, N == ``inputShape[0]``; pads to the next
+        # power of two, per-pair LDU stays exactly invertible so
+        # ``sigma.reverse`` round-trips reconstruction); full = the dense
+        # flattened square Sigma bridge of the flat-slab invariant (Task 3).
+        # A4 (2026-06-06 parallel-conceptual-recurrence): driven by the
+        # ARCHITECTURE-level global ``<sigmaPi>`` (default butterfly), NOT a
+        # per-space knob (A1 retired the per-space ``<sigmaPi>``). One global
+        # drives PS.Pi, SS.Sigma, and the per-stage ConceptualCombine. Legacy
+        # per-space ``<butterfly>`` is accepted only as an explicit override.
+        _sigma_mode = Space.sigma_pi_mode(
+            TheXMLConfig.space(section, "butterfly", default=None)
+            if TheXMLConfig.space(section, "butterfly", default=None) is not None
+            else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
+        _sigma_butterfly = (_sigma_mode == "butterfly")
+        self.sigma_pi_slab = None  # set only for the "full" dense bridge
         _sigma_butterfly_total = int(inputShape[0]) * int(_sigma_dim)
         if _sigma_butterfly and _sigma_butterfly_total >= 2:
             self.sigma = SigmaLayer(
@@ -12136,13 +12476,41 @@ class SymbolicSpace(Space):
                 stable=True, monotonic=_sigma_monotonic,
                 butterfly=True, N=_sigma_butterfly_total,
             )
-        else:
+        elif _sigma_mode == "full":
+            # full: the dense flattened square Sigma bridge of the flat-
+            # slab invariant -- ONE invertible LDU over the whole
+            # [B, N*content] symbolic slab (the wide SS <-> deep CS
+            # regrouping is a pure reshape; this matrix is the invertible
+            # map). Like PS.pi's full mode, ``content`` EXCLUDES the per-
+            # position .where/.when band (canonical_shape("SymbolicSpace")
+            # == (2, 2)), which passes through the dense bridge unchanged --
+            # a per-position band cannot be folded across a wide<->deep
+            # position-count change. (Option B keeps the band MUXED on the
+            # per-position butterfly/last paths and inside the
+            # ConceptualCombine, NOT in this flattened wide<->deep bridge.)
+            # The [B,N,D] <-> [B, N*content] reshape routing lives in the
+            # forward path.
+            _band = int(sum(canonical_shape(section)))
+            _content = int(_sigma_dim) - _band
+            if _content < 1:
+                raise ValueError(
+                    "SymbolicSpace <sigmaPi>full</> requires sigma_dim "
+                    f"({_sigma_dim}) > band ({_band})")
+            self.sigma_pi_slab = int(inputShape[0]) * _content
+            self.sigma = SigmaLayer(
+                self.sigma_pi_slab, self.sigma_pi_slab,
+                naive=_sigma_naive, ergodic=_sigma_ergodic,
+                invertible=True, nonlinear=nonlinear,
+                stable=True, monotonic=_sigma_monotonic,
+            )
+        else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
             self.sigma = SigmaLayer(
                 _sigma_dim, _sigma_dim,
                 naive=_sigma_naive, ergodic=_sigma_ergodic,
                 invertible=True, nonlinear=nonlinear,
                 stable=True, monotonic=_sigma_monotonic,
             )
+        self.sigma_pi_mode = _sigma_mode
         self.butterfly_enabled = _sigma_butterfly
         self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
         self.layers.append(self.sigma)
@@ -12485,7 +12853,7 @@ class SymbolicSpace(Space):
     # reverse pipeline (S → C → P → I → bytes) is the only path from
     # an active symbol back to its surface form. PerceptualSpace
     # retains the physical Embedding instance for input-pipeline
-    # reasons (InputSpace._peer_perceptual.vocabulary wiring), but
+    # reasons (PS embeds the raw bytes IS lexes), but
     # SymbolicSpace is the logical owner: the ``vocabulary`` property
     # and the orthographic-API methods live here and delegate to
     # the Embedding via ``perceptualSpace_ref``.
@@ -12543,7 +12911,7 @@ class SymbolicSpace(Space):
 
         Raises ``RuntimeError`` if the codebook lacks room for a pair
         (``nVectors`` exhausted) -- caller must size SS.nVectors at
-        least 2x the expected lexicon capacity (see MM_5M.xml where
+        least 2x the expected lexicon capacity (see MM_20M.xml where
         SS.nVectors=131072 = 2 * PS lexicon cap).
         """
         cb = getattr(self.subspace, 'what', None)

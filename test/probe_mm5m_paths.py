@@ -1,4 +1,4 @@
-"""Verify the perf-critical paths in MM_5M's forward are bypassed:
+"""Verify the perf-critical paths in MM_20M's forward are bypassed:
   1. WordSpace.compose returns immediately on useGrammar='none'.
   2. Chart._chart_inside is never invoked.
   3. No MereologicalTree is constructed.
@@ -15,7 +15,7 @@ os.environ["BASICMODEL_DEVICE"] = "cpu"
 os.environ["BASIC_MAX_DOCS"] = "10"
 os.environ["BASIC_NUM_SHARDS"] = "1"
 
-CONFIG_PATH = str(PROJECT / "data" / "MM_5M.xml")
+CONFIG_PATH = str(PROJECT / "data" / "MM_20M.xml")
 
 from util import init_config, ProjectPaths, TheXMLConfig
 from data import TheData
@@ -76,7 +76,7 @@ print(f"\nCounts after one forward:")
 for k, v in counts.items():
     print(f"  {k}: {v}")
 print()
-print("Expected for MM_5M (useGrammar='none'):")
+print("Expected for MM_20M (useGrammar='none'):")
 print("  compose: > 0  (called by ChartCompose pipeline stage)")
 print("  chart_inside: 0  (short-circuited by useGrammar guard)")
 print("  seed: 0  (only fires inside _chart_inside)")

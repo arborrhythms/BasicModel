@@ -12,7 +12,7 @@ Increment 2a WIRED the enable predicate: ``create_from_config`` sets
 retired serial-boolean push, extended to InputSpace). ``useGrammar`` is
 *derived* from the grammar XML by ``_derive_use_grammar`` -- it is
 ``'all'`` (so the flag is True) for any config carrying a real
-non-substrate rule (e.g. MM_5M's ``intersection``/``union``, or the
+non-substrate rule (e.g. MM_20M's ``intersection``/``union``, or the
 default-only ``not(S)`` NOOP-grammar fallback that every empty-grammar
 config inherits), and ``'none'`` (flag False) ONLY for the default-only
 unary ``sigma``/``pi`` grammar -- which is exactly ``data/model.xml``'s
@@ -24,7 +24,7 @@ production contract asserted below).
 The model-free tests below force the flag True/False *locally* on a
 hand-seeded ``_ar_embedded`` buffer and prove the cursor logic in
 isolation. The two model-level tests pin the WIRED design end to end:
-the grammar-enabled gate model (MM_5M) has the flag True and a working
+the grammar-enabled gate model (MM_20M) has the flag True and a working
 cursor, the non-grammar model (default-only sigma/pi -> ``model.xml``)
 has it False and a dormant cursor -- with the whole-slab ``forward``
 byte-identical regardless.
@@ -247,9 +247,9 @@ def test_live_forward_whole_slab_byte_identical_and_cursor_wired():
     -- never perturbs the live whole-slab ``forward``. Plus the POST-2a
     WIRED-design invariants on the grammar-enabled gate model.
 
-    Build the canonical (grammar-enabled) MM_5M gate model, run a real
+    Build the canonical (grammar-enabled) MM_20M gate model, run a real
     forward, and confirm:
-      * the 2a wiring set ``_per_word_enabled is True`` (MM_5M is
+      * the 2a wiring set ``_per_word_enabled is True`` (MM_20M is
         grammar-enabled: ``useGrammar='all'``), cursor at position 0;
       * ``forward`` still returns the whole-slab ``[B,N,D]`` subspace
         with the ``stem_embedded`` / ``valid_mask`` contract intact;
@@ -269,10 +269,10 @@ def test_live_forward_whole_slab_byte_identical_and_cursor_wired():
     # 2a wiring: grammar-enabled config => the flag is True (was
     # hard-coded False in the pre-wiring inert increment).
     assert hasattr(isp, "_per_word_enabled")
-    assert m.useGrammar != "none", "MM_5M gate model must be grammar-enabled"
+    assert m.useGrammar != "none", "MM_20M gate model must be grammar-enabled"
     assert isp._per_word_enabled is True, (
         "2a wiring: _per_word_enabled = (useGrammar != 'none') => True "
-        "for the grammar-enabled MM_5M gate model")
+        "for the grammar-enabled MM_20M gate model")
     assert isp._per_word_cursor == 0
 
     inp, _ = isp.getTrainData()
@@ -381,18 +381,22 @@ def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
     return ug_repr.strip("'\""), flag.strip() == "True"
 
 
+@pytest.mark.skipif(
+    os.getenv("RUN_SLOW") != "1",
+    reason="slow: builds MM_20M over the full text corpus in a subprocess "
+           "(can exceed the 180s subprocess timeout); set RUN_SLOW=1")
 def test_per_word_enabled_predicate_tracks_use_grammar():
     """Gate-2 predicate correctness (skipped by the prior increment):
     the 2a wiring ``_per_word_enabled = (model.useGrammar != 'none')``
-    is True for a grammar-enabled config (MM_5M: ``useGrammar='all'``)
+    is True for a grammar-enabled config (MM_20M: ``useGrammar='all'``)
     and False for a non-grammar config (``model.xml``: default-only
     unary sigma/pi -> ``useGrammar='none'``). Pins the predicate on
     BOTH sides of the only branch that distinguishes them (each model
     built in its own process; the grammar singleton forbids building
     two different configs in one interpreter)."""
     ug_g, flag_g = _probe_flag_in_subprocess(
-        "MM_5M.xml", dataset="'text'")
-    assert ug_g != "none", f"MM_5M must be grammar-enabled, got {ug_g!r}"
+        "MM_20M.xml", dataset="'text'")
+    assert ug_g != "none", f"MM_20M must be grammar-enabled, got {ug_g!r}"
     assert flag_g is True, (
         "grammar-enabled config => _per_word_enabled True")
 

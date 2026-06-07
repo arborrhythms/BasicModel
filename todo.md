@@ -1,4 +1,5 @@
 
+* All Grammars need to be role-collapsed
 
 * Grammar Definition
   * NP and VP need masks on conceptual space that restrict their operation

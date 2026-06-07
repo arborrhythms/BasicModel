@@ -39,7 +39,7 @@ from test_basicmodel import _populate_test_config
 # Builder
 # ---------------------------------------------------------------------------
 
-def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
+def _make_symbolic_space(nSymbols=3, symbolDim=6, conceptDim=6):
     """Construct a minimal SymbolicSpace via TheXMLConfig + direct constructor.
 
     Uses the same _populate_test_config / TheXMLConfig approach used by the
@@ -76,10 +76,13 @@ def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
     outputShape = [nSymbols, symbolDim]    # SymbolicSpace output
 
     sym = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
-    # Post-2026-05-07 rollback invariant: subspace.nWhat == sym.nDim
-    # (the natural width contract; no forced 2 + obj override).
-    assert sym.subspace.nWhat == sym.nDim, (
-        f"Expected subspace.nWhat==sym.nDim ({sym.nDim}) after "
+    # Width contract under the uniform (2,2) band (2026-06): content nWhat ==
+    # nDim minus the where/when band (the SS=(0,0) special case where
+    # nWhat == nDim exactly was retired).
+    from architecture import canonical_shape
+    _band = sum(canonical_shape("SymbolicSpace"))
+    assert sym.subspace.nWhat == sym.nDim - _band, (
+        f"Expected subspace.nWhat==sym.nDim-band ({sym.nDim - _band}) after "
         f"SymbolicSpace init, got {sym.subspace.nWhat}"
     )
     return sym
@@ -198,9 +201,12 @@ def test_symbol_codebook_quantizes_activation_not_what():
     sym = _make_symbolic_space(nSymbols=2)
 
     # Feed identical concept vectors (zeros) for both symbol slots so the
-    # PiLayer produces identical symbol-dim outputs.  The event is
-    # concept_dim=4 wide so the PiLayer matmul succeeds.
-    concept_input = torch.zeros(1, 2, 4)   # [B=1, N=2, concept_dim=4]
+    # PiLayer produces identical symbol-dim outputs.  The event is the full
+    # muxed EVENT width (conceptDim=6 = content 2 + (2,2) band) so the
+    # PiLayer matmul / event reshape succeeds under the uniform-(2,2) tier.
+    from architecture import canonical_shape as _cs
+    _cdim = 2 + sum(_cs("ConceptualSpace"))   # content(2) + band(4) = 6
+    concept_input = torch.zeros(1, 2, _cdim)   # [B=1, N=2, concept_event]
     sym.subspace.set_event(concept_input)
 
     sym.quantize = True

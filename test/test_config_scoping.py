@@ -80,7 +80,9 @@ class TestDefaultsXml(unittest.TestCase):
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
-        for key in ["reconstruct", "conceptualOrder",
+        # ``reconstruct`` was retired (A1); reconstruction is now
+        # unconditionally concepts-seeded.
+        for key in ["conceptualOrder",
                     "ergodic", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})
@@ -116,23 +118,22 @@ class TestCreateFromConfig(unittest.TestCase):
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <modelType>passthrough</modelType>
     <data><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
-  <InputSpace><nOutput>2</nOutput><nDim>1</nDim></InputSpace>
+  <InputSpace><nOutput>2</nOutput><nDim>5</nDim></InputSpace>
   <PerceptualSpace>
-    <nOutput>4</nOutput><nDim>1</nDim>
+    <nOutput>4</nOutput><nDim>5</nDim>
 
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
   <ConceptualSpace>
-    <nOutput>3</nOutput><nDim>1</nDim>
+    <nOutput>3</nOutput><nDim>5</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <SymbolicSpace>
-    <nOutput>3</nOutput><nDim>1</nDim><nVectors>3</nVectors>
+    <nOutput>3</nOutput><nDim>5</nDim><nVectors>3</nVectors>
 
   </SymbolicSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
@@ -201,7 +202,10 @@ class TestValidateConfig(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as ctx:
             Models.BasicModelFactory.validate_config(cfg)
-        self.assertIn("symbol_dim", str(ctx.exception))
+        # C1 handoff invariant (2026-06): the SS<->CS dim-match check now
+        # raises on ``SS.nWhat == CS.nWhat`` (was the older ``symbol_dim``
+        # message).
+        self.assertIn("SS.nWhat == CS.nWhat", str(ctx.exception))
 
 
 class TestInferValidation(unittest.TestCase):
