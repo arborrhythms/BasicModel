@@ -48,7 +48,6 @@
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </ConceptualSpace>

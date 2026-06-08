@@ -1,122 +1,95 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_1B: Enhanced MM_20M scaled to ~1B params.
-       True MM_20M architecture: low-dim percepts/symbols (4), high-dim
-       conceptual lifting (16 verbs x 7296^2 = ~852M params).
-       BPE chunk merging: 1024 bytes -> 512 percepts.
-       Volume: 512 percepts x 4 = 512 symbols x 4. -->
+  <!-- MM_400M: same architecture/training parameters as MM_20M, but
+       trained over the FineWeb shard dataset. -->
   <architecture>
-    <conceptualOrder>4</conceptualOrder>
-    <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
-    <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
-         forward dispatch via _forward_body_per_word. -->
+    <!-- serial: PerceptualSpace reduces the raw byte slab, then the body
+         processes the staged percept slots one at a time. -->
     <conceptualMode>serial</conceptualMode>
-    <weightsPath>MM_400M.ckpt</weightsPath>
+    <conceptualOrder>3</conceptualOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
+         butterfly cascade (moved from per-space to architecture-level). -->
+    <sigmaPi>butterfly</sigmaPi>
+
     <data>
+      <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
     </data>
 
     <training>
-      <numEpochs>2</numEpochs>
-      <learningRate>0.0003</learningRate>
+      <numEpochs>400</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
-      <trainEmbedding>BACKPROP</trainEmbedding>
-      <autoload>false</autoload>
-      <autosave>true</autosave>
-      <sentencePrediction>true</sentencePrediction>
     </training>
-
-    <server>
-      <port>8003</port>
-      <!-- Long-running batched generation. -->
-      <timeout>600</timeout>
-    </server>
-
   </architecture>
 
-  <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS must
-       carry the same flat slab. CS terminal is 6*2048=12288; raise
-       IS/PS slot dim from 4 to 6 so 2048*6=12288 matches. -->
   <InputSpace>
-    <nDim>10</nDim>
-    <nVectors>65535</nVectors>
-    <nOutput>2048</nOutput>
-    <lexer>byte</lexer>
-    <codebook>quantize</codebook>
+    <nInput>8192</nInput>
+    <nInputDim>1</nInputDim>
+    <nVectors>256</nVectors>
+    <nDim>5</nDim>
+    <nOutput>8192</nOutput>
+    <nOutputDim>5</nOutputDim> <!-- 1 byte + 2 where + 2 when -->
+
+    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
-    <nVectors>2048</nVectors>
-    <nDim>10</nDim>
-    <nOutput>2048</nOutput>
+    <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
+    <nInputDim>1024</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>         <!-- staged percept slots processed serially -->
+    <nOutputDim>1024</nOutputDim> 
+
     <invertible>true</invertible>
+    <codebook>none</codebook>
+    <!-- Chunking strategy: analyse | radix | lexicon | bpe | mphf | none.
+         analyse = meronymic analyzer with a space-lexer front end
+         (whitespace boundary; word runs resolve through the word codebook):
+         this is what reduces an 8192-char input to a small number of
+         words in parallel mode without needing attention. radix = the
+         PerceptStore (radix trie + promotion); flip here to experiment. -->
+    <chunking>analyse</chunking>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: high-dim for conceptual lifting.
-       nOutput/nVectors=0 auto-resolve to nPercepts (512).
-       LiftingLayer: 16 verb matrices of ~6148x6148 = ~604M params. -->
-  <!-- ConceptualSpace: flatten percepts → one 12288-dim vector,
-       sigma 12288→12288, then reshape to [6, 2048].
-       nVectors=0 auto-resolves to nConcepts (6) for non-codebook. -->
   <ConceptualSpace>
-    <nInput>1</nInput>
-    <nInputDim>-1</nInputDim>
-    <nVectors>6</nVectors>
-    <nDim>2052</nDim>
-    <nOutput>6</nOutput>
-    <nOutputDim>2052</nOutputDim>
+    <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
+    <nInputDim>1024</nInputDim>  <!--    8 FROM SYMBOLIC -->
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nInput>1</nInput>
-    <nDim>2052</nDim>
-    <nInputDim>-1</nInputDim>
-    <nVectors>8192</nVectors>
-    <nOutput>2048</nOutput>
-    <nOutputDim>10</nOutputDim>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
     <codebook>quantize</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nOutput>1</nOutput>
-    <nDim>4</nDim>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
     <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
   </OutputSpace>
-
-  <WordSpace>
-
-    <language>
-      <grammar>
-        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
-             folds (sigma at P / S, pi at C). -->
-        <P>sigma(P)</P>
-        <C>pi(C)</C>
-        <S>sigma(S)</S>
-        <S>true(S)</S>
-        <S>false(S)</S>
-        <S>non(S)</S>
-        <S>conjunction(S, S)</S>
-        <S>disjunction(S, S)</S>
-        <S>what(S)</S>
-        <S>where(S)</S>
-        <S>when(S)</S>
-        <S>query(S, S)</S>
-        <S>swap(S, S)</S>
-        <S>isEqual(S, S)</S>
-        <S>part(S, S)</S>
-        <S>not(S)</S>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
-        <S>lower(S, S)</S>
-        <S>lift(S, S)</S>
-        <S>lift(S, S, S)</S>
-      </grammar>
-    </language>
-  </WordSpace>
 
 </model>

@@ -8,7 +8,7 @@ features onto the event .when by DELEGATING to TenseLayer / AspectLayer (the
 role_collapsed.grammar in both directions.
 """
 
-import os, sys
+import math, os, sys
 from pathlib import Path
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -17,16 +17,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 from Language import (MorphologyLayer, TenseLayer, AspectLayer, Grammar,
                       GRAMMAR_LAYER_CLASSES)
-from Spaces import WhenRangeEncoding
+from Spaces import WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_PERIOD
 
 _NWHAT, _NWHERE, _NWHEN = 4, 2, 2
-_ENC = WhenRangeEncoding(64, _NWHEN)
+_ENC = WhenRangeEncoding(_WHEN_PERIOD, _NWHEN)
 
 
-def _event(t=0.0):
+def _event(t=0):
+    # Present .when phasor at absolute time t (tense magnitude 0.5).
+    _ENC.t = t
     what = torch.randn(_NWHAT).tanh()
     where = torch.tensor([0.3, -0.4])
-    when = _ENC.encode_range(t - 0.5, t + 0.5)
+    when = _ENC.encode(t, D=_WHEN_TENSE_DEFAULT)
     return torch.cat([what, where, when]).reshape(1, 1, -1)
 
 
@@ -55,23 +57,26 @@ def test_routes_past_tense_via_tenselayer():
 
 
 def test_routes_progressive_aspect_via_aspectlayer():
-    ev = _event(0.0)
+    ev = _event(0)
     m = MorphologyLayer(); m.set_token("running")  # -> ("run", {PRESENT, [PROGRESSIVE]})
     got = m.compose(ev)
-    # PRESENT tense is identity; the result is AspectLayer(PROGRESSIVE) applied.
+    # PRESENT tense is identity; AspectLayer is RETIRED to a no-op (2026-06-07
+    # .when redesign -- duration/aspect gone). Delegation still holds: the
+    # result equals AspectLayer(PROGRESSIVE).compose(ev), which is now identity.
     ref = AspectLayer(); ref.set_op("PROGRESSIVE")
     assert torch.allclose(got, ref.compose(ev), atol=1e-6), \
-        "morphology must delegate the PROGRESSIVE .when reshape to AspectLayer"
-    # And the .when span genuinely widened (> 1).
-    s, e = _ENC.decode(got[..., -_NWHEN:].detach())
-    assert float(e.reshape(-1)[0]) - float(s.reshape(-1)[0]) > 1.0
+        "morphology must delegate the (now no-op) PROGRESSIVE aspect to AspectLayer"
+    # PRESENT + no-op aspect leaves the present .when unchanged (D stays 0.5).
+    assert torch.allclose(got[..., -_NWHEN:], ev[..., -_NWHEN:], atol=1e-6)
+    _t, D = _ENC.decode(got[..., -_NWHEN:].detach())
+    assert math.isclose(float(D.reshape(-1)[0]), _WHEN_TENSE_DEFAULT, abs_tol=1e-5)
 
 
 def test_reverse_runs_and_recovers_tense():
-    ev = _event(0.0)
+    ev = _event(0)
     m = MorphologyLayer(); m.set_token("ran")
     back = m.generate(m.compose(ev))
-    # Tense reverse is an exact phase rotation back; .when round-trips.
+    # Tense reverse is an exact magnitude rescale back; .when round-trips.
     assert torch.isfinite(back).all()
     assert torch.allclose(back[..., -_NWHEN:], ev[..., -_NWHEN:], atol=1e-4)
 

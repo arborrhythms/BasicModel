@@ -1069,8 +1069,19 @@ class XMLConfig:
                         f"in the model XML."
                     )
                 return v
-        # Fall back to architecture-level default
-        arch = self.section("architecture")
+        # Fall back to architecture-level default. The architecture section
+        # itself may be absent in a partial/stale global config; that must
+        # NOT shadow a supplied ``default`` (the docstring contract is "raises
+        # only when the key is absent from both sections AND no default is
+        # given"). Guard the section lookup so a missing <architecture> degrades
+        # to the default rather than raising KeyError up into callers that
+        # passed one (e.g. the heat-retrieval knob reads in
+        # LanguageLayer.unreduce, where a raise would silently disable the
+        # heat path).
+        try:
+            arch = self.section("architecture")
+        except KeyError:
+            arch = {}
         if key in arch:
             v = arch[key]
             if isinstance(v, list):

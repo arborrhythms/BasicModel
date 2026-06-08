@@ -1953,7 +1953,9 @@ class IntersectionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def reverse(self, parent, basis=None):
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
         """Reverse pass; inverse of ``forward``.
 
         Non-butterfly mode:
@@ -1973,6 +1975,16 @@ class IntersectionLayer(GrammarLayer):
         to pass the relevant Basis (typically ``SymbolicSpace.
         subspace.what``) at the call site -- no back-ref is stored on
         the layer. See class docstring for the inversion contract.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            typed/heat candidate restriction for x1 / x2 selection;
+            forwarded to :py:meth:`Ops.conjunctionReverse`.
+            Default ``None`` = current behavior (all rows eligible).
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity priming for the inverse recommender;
+            forwarded to :py:meth:`Ops.conjunctionReverse`.
+            Default ``None`` = identity (byte-identical to prior behavior).
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -1982,7 +1994,9 @@ class IntersectionLayer(GrammarLayer):
             W = basis.getW() if hasattr(basis, 'getW') else None
             if W is not None:
                 return Ops.conjunctionReverse(
-                    parent, parent, W, monotonic=self.monotonic)
+                    parent, parent, W, monotonic=self.monotonic,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
         return parent, parent
 
     def compose(self, left, right):
@@ -1998,14 +2012,23 @@ class IntersectionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def generate(self, parent, basis=None):
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
         """Drive the reverse / generation pass.
 
         ``basis`` (optional Codebook/Basis) forwarded to ``reverse``;
         see its docstring for the recommender vs lossy-fallback
         semantics.
+
+        ``left_rows`` / ``right_rows`` / ``left_priming`` /
+        ``right_priming``: forwarded verbatim to ``reverse``; see that
+        method's docstring for semantics. Default ``None`` = no
+        restriction / identity priming (byte-identical to prior behavior).
         """
-        return self.reverse(parent, basis=basis)
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming, right_priming=right_priming)
 
 class UnionLayer(GrammarLayer):
     """``L -> union(L, L)`` -- per-pole "max toward zero" (max
@@ -2090,7 +2113,9 @@ class UnionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.union(left, right, monotonic=self.monotonic)
 
-    def reverse(self, parent, basis=None):
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
         """Reverse pass; inverse of ``forward``.
 
         Non-butterfly mode:
@@ -2107,6 +2132,16 @@ class UnionLayer(GrammarLayer):
         Callers pass the relevant Basis (typically ``SymbolicSpace.
         subspace.what``) at the call site -- no back-ref is stored on
         the layer. See class docstring for the inversion contract.
+
+        ``left_rows`` / ``right_rows`` (optional ``LongTensor``):
+            typed/heat candidate restriction for x1 / x2 selection;
+            forwarded to :py:meth:`Ops.disjunctionReverse`.
+            Default ``None`` = current behavior (all rows eligible).
+
+        ``left_priming`` / ``right_priming`` (optional ``FloatTensor``):
+            soft boost-above-unity priming for the inverse recommender;
+            forwarded to :py:meth:`Ops.disjunctionReverse`.
+            Default ``None`` = identity (byte-identical to prior behavior).
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -2114,7 +2149,9 @@ class UnionLayer(GrammarLayer):
             W = basis.getW() if hasattr(basis, 'getW') else None
             if W is not None:
                 return Ops.disjunctionReverse(
-                    parent, parent, W, monotonic=self.monotonic)
+                    parent, parent, W, monotonic=self.monotonic,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
         return parent, parent
 
     def compose(self, left, right):
@@ -2124,12 +2161,21 @@ class UnionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.union(left, right, monotonic=self.monotonic)
 
-    def generate(self, parent, basis=None):
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
         """Drive the reverse / generation pass.
 
         ``basis`` (optional Codebook/Basis) forwarded to ``reverse``.
+
+        ``left_rows`` / ``right_rows`` / ``left_priming`` /
+        ``right_priming``: forwarded verbatim to ``reverse``; see that
+        method's docstring for semantics. Default ``None`` = no
+        restriction / identity priming (byte-identical to prior behavior).
         """
-        return self.reverse(parent, basis=basis)
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming, right_priming=right_priming)
 
 
 # ===========================================================================
@@ -2191,31 +2237,33 @@ def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
 
 def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
     from Spaces import WhenRangeEncoding
-    return WhenRangeEncoding(64, when_width)
+    return WhenRangeEncoding(n_when=when_width)      # default period (_WHEN_PERIOD)
 
 
-def _when_center(when, when_width=_EVENT_WHEN_WIDTH):
+def _when_tense(when, when_width=_EVENT_WHEN_WIDTH):
+    """The tense magnitude D in [0, 1] decoded from a .when tail (0.5=present)."""
     enc = _event_when_encoding(when_width)
-    s, e = enc.decode(when.detach())
-    fs, fe = s.reshape(-1), e.reshape(-1)
-    return (float(fs[0]) + float(fe[0])) / 2.0 if fe.numel() else 0.0
+    _t, D = enc.decode(when.detach())
+    fD = D.reshape(-1)
+    return float(fD[0]) if fD.numel() else 0.0
 
 
 def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Extend .when to a span-2 interval, center advanced forward by 1 (the
-    verb-advances-future rule of spec Section 5)."""
+    """Advance the event tense one step toward the future (the
+    verb-advances-future rule of spec Section 5), preserving the time-angle.
+    Under the 2026-06-07 .when redesign the magnitude is TENSE (not duration),
+    so LIFT is a +_WHEN_TENSE_STEP tense shift rather than a span extension."""
+    from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
-    c = _when_center(when, when_width) + 1.0
-    key = enc.encode_range(c - 1.0, c + 1.0).to(when.device)        # span 2
-    return key.expand(*when.shape[:-1], -1)
+    return enc.shift_tense(when, +_WHEN_TENSE_STEP)
 
 
 def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Inverse of _lift_when: collapse to a unit point, center retreated by 1."""
+    """Inverse of _lift_when: retreat the event tense one step toward the past
+    (-_WHEN_TENSE_STEP), preserving the time-angle."""
+    from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
-    c = _when_center(when, when_width) - 1.0
-    key = enc.encode_range(c - 0.5, c + 0.5).to(when.device)        # unit point
-    return key.expand(*when.shape[:-1], -1)
+    return enc.shift_tense(when, -_WHEN_TENSE_STEP)
 
 
 def _rotate_where(where, theta=0.6):
@@ -2696,13 +2744,13 @@ class _WhenOpMixin:
     """Shared helpers for unary ops that rewrite the .when tail of a
     materialized muxed event [B, V, nWhat + nWhere + nWhen]. Modifies ONLY
     the trailing nWhen (=2) columns; .what / .where pass through. Builds a
-    matching WhenRangeEncoding to interpret / rewrite the key. Tense/aspect
-    operate on the VP/event .when BEFORE the subject LIFT (spec note:
+    matching WhenRangeEncoding to interpret / rewrite the phasor. Tense
+    operates on the VP/event .when BEFORE the subject LIFT (spec note:
     equivalent post-LIFT)."""
     _WHEN_WIDTH = 2
     def _when_encoding(self):
         from Spaces import WhenRangeEncoding
-        return WhenRangeEncoding(64, self._WHEN_WIDTH)
+        return WhenRangeEncoding(n_when=self._WHEN_WIDTH)   # default period (_WHEN_PERIOD)
     def _split_when(self, x):
         w = self._WHEN_WIDTH
         if x.shape[-1] < w:
@@ -2711,13 +2759,24 @@ class _WhenOpMixin:
         return x[..., :-w], x[..., -w:]
 
 class TenseLayer(_WhenOpMixin, GrammarLayer):
-    """tense(X) -- shift the event .when reference time (unary, C-tier).
-    PRESENT keeps reference at 0 (identity); PAST rotates the key backward
-    (delta=-1); FUTURE forward (delta=+1). Tense is a phase rotation
-    q(t+delta)=R(delta)q(t). Selected per-instance via set_op before dispatch."""
+    """tense(X) -- move the event .when TENSE position (the phasor magnitude D)
+    (unary, C-tier; 2026-06-07 .when redesign). The magnitude is the tense axis
+    now (0=past, 0.5=PRESENT default, 1=future), NOT event duration. PRESENT is
+    identity (D=0.5 is the default); PAST applies ``previous`` (D - step);
+    FUTURE applies ``next`` (D + step). The shift rescales the phasor, PRESERVING
+    the time-angle (WhenRangeEncoding.shift_tense), so the absolute time the
+    angle encodes is untouched. ``reverse`` applies the inverse step (invertible
+    round-trip WITHIN [0, 1] -- clamping at the ends is lossy, hence the
+    round-trip tests stay in the unclamped range). Selected per-instance via
+    set_op before dispatch."""
     rule_name = "tense"; arity = 1
     invertible = True; lossy = False; tier = 'C'; reads_activation = False
-    _DELTA = {"PRESENT": 0.0, "PAST": -1.0, "FUTURE": 1.0}
+    # _DELTA is the TENSE step applied to the phasor magnitude D: PRESENT keeps
+    # the present default (no shift), PAST = -step (toward past), FUTURE = +step
+    # (toward future). step == _WHEN_TENSE_STEP (0.1).
+    from Spaces import _WHEN_TENSE_STEP as _STEP
+    _DELTA = {"PRESENT": 0.0, "PAST": -_STEP, "FUTURE": +_STEP}
+    del _STEP
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         object.__setattr__(self, '_op', "PRESENT")
@@ -2727,21 +2786,28 @@ class TenseLayer(_WhenOpMixin, GrammarLayer):
     def forward(self, x):
         head, when = self._split_when(x); delta = self._DELTA[self._op]
         if delta == 0.0: return x
-        return torch.cat([head, self._when_encoding().rotate(when, delta)], dim=-1)
+        return torch.cat([head, self._when_encoding().shift_tense(when, delta)], dim=-1)
     def reverse(self, y):
         head, when = self._split_when(y); delta = self._DELTA[self._op]
         if delta == 0.0: return y
-        return torch.cat([head, self._when_encoding().rotate(when, -delta)], dim=-1)
+        return torch.cat([head, self._when_encoding().shift_tense(when, -delta)], dim=-1)
     def compose(self, x):     return self.forward(x)
     def generate(self, parent): return self.reverse(parent)
 
 class AspectLayer(_WhenOpMixin, GrammarLayer):
-    """aspect(X) -- shape the event .when interval (unary, C-tier). Relative
-    to reference r (decoded from the range's CENTER): SIMPLE->[r-0.5, r+0.5];
-    PERFECT->[r-1, r]; PROGRESSIVE->[r-1, r+1], re-encoded as the key. Perfect
-    is ASPECT, not future tense. Selected per-instance via set_op before dispatch."""
+    """aspect(X) -- RETIRED to a no-op (2026-06-07 .when redesign).
+
+    Event-extent duration is gone: the .when phasor MAGNITUDE is the tense
+    position now (owned by TenseLayer), not an interval width, so there is no
+    longer a duration channel for aspect to reshape. ``forward`` / ``compose`` /
+    ``reverse`` / ``generate`` are all identity (return the input unchanged).
+    The class is KEPT (not deleted) so the grammar's ``aspect`` rule dispatch
+    stays intact; ``set_op`` still validates the kind for back-compat callers
+    (e.g. MorphologyLayer) but has no numerical effect. The former
+    ``aspect_interval`` interval helper is removed."""
     rule_name = "aspect"; arity = 1
-    invertible = False; lossy = True; tier = 'C'; reads_activation = False
+    # No-op: nothing is lost (identity), so it is trivially invertible.
+    invertible = True; lossy = False; tier = 'C'; reads_activation = False
     _KINDS = ("SIMPLE", "PERFECT", "PROGRESSIVE")
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
@@ -2749,15 +2815,8 @@ class AspectLayer(_WhenOpMixin, GrammarLayer):
     def set_op(self, kind, eps=0.25):
         if kind not in self._KINDS: raise ValueError(f"unknown aspect kind {kind!r}")
         object.__setattr__(self, '_op', kind); object.__setattr__(self, '_eps', float(eps))
-    def forward(self, x):
-        head, when = self._split_when(x); enc = self._when_encoding()
-        start_t, end_t = enc.decode(when)
-        flat_s = start_t.reshape(-1); flat_e = end_t.reshape(-1)
-        r = (float(flat_s[0]) + float(flat_e[0])) / 2.0 if flat_e.numel() else 0.0
-        s, e = enc.aspect_interval(r, self._op, eps=self._eps)
-        key = enc.encode_range(s, e).to(x.device).expand(*when.shape[:-1], -1)
-        return torch.cat([head, key], dim=-1)
-    def reverse(self, parent): return parent      # lossy
+    def forward(self, x):      return x           # no-op (duration/aspect retired)
+    def reverse(self, parent): return parent      # no-op
     def compose(self, x):      return self.forward(x)
     def generate(self, parent): return self.reverse(parent)
 
@@ -4661,7 +4720,62 @@ class LanguageLayer(Layer):
             when_new[arange_B, j_slot, :] = 0.0
             subspace.set_when(when_new)
         subspace.set_activation(occ_new)
+        # Symbolic-priming forward-commit at the C-tier reduction
+        # (plan doc/plans/2026-06-06-symbolic-heat-retrieval.md §Grammar
+        # reduction) is DEFERRED here: the stack-mode ``subspace`` carries
+        # only content (.what/.where/.when) at slots i_slot/j_slot — it has
+        # no ref-id channel, and ``forward_stack``'s ('reduce', rule_id)
+        # action supplies no operand ref_ids. The reduced children are not
+        # snapped to codebook ref ids at this site, so there is nothing to
+        # prime without inventing a content->ref nearest-row lookup (which
+        # would add a host sync + dense scan on the training path). The
+        # plan explicitly permits deferring row priming for unsnapped
+        # parents (update only the semantic carrier z from the idea vector).
+        # When a caller does have committed child ref_ids at a reduction,
+        # ``WordSubSpace._commit_priming(b, ref_id)`` is the gated API to
+        # prime them (see test_symbolic_heat_retrieval.py
+        # ::TestReduceCommitPrimesChildRefs).
         return subspace
+
+    @staticmethod
+    def _recover_selected_row(vec, W, cand_rows=None, *, tol=1e-4):
+        """Best-effort recover the W-row id the recommender selected.
+
+        The mereology recommender (``Ops._binary_op_recommend``) returns
+        selected operand VECTORS drawn verbatim from the augmented codebook
+        ``[⊥, W..., ⊤]``; this maps such a vector back to its row id in ``W``.
+        Used by ``unreduce``'s reverse self-priming (Phase 3b CAPSTONE; plan
+        doc/plans/2026-06-06-symbolic-heat-retrieval.md §Reverse-path
+        responsibilities). Search is restricted to ``cand_rows`` (the small
+        per-slot candidate subset) when supplied, else the full ``W``.
+
+        Returns the integer row id of the nearest W row within ``tol`` (L2),
+        or ``None`` when ``vec`` matched no candidate within tolerance — which
+        includes the ⊥ / ⊤ sentinel picks (zeros / ones), since those are not
+        real codebook rows and (by construction) sit far from learned rows.
+        Pure host-side; only invoked under the priming_enabled gate.
+        """
+        try:
+            if W is None or not hasattr(W, 'shape') or W.shape[0] == 0:
+                return None
+            v = vec.reshape(-1)[:W.shape[1]].to(W.device, W.dtype)
+            if cand_rows is not None:
+                rows = torch.as_tensor(
+                    cand_rows, dtype=torch.long, device=W.device).reshape(-1)
+                rows = rows[(rows >= 0) & (rows < W.shape[0])]
+                if rows.numel() == 0:
+                    rows = torch.arange(W.shape[0], device=W.device)
+            else:
+                rows = torch.arange(W.shape[0], device=W.device)
+            sub = W[rows]                                  # [|rows|, D]
+            d = torch.linalg.vector_norm(
+                sub - v.unsqueeze(0), dim=-1)              # [|rows|]
+            j = int(torch.argmin(d).item())
+            if float(d[j].item()) <= tol:
+                return int(rows[j].item())
+            return None
+        except Exception:
+            return None
 
     def unreduce(self, subspace, syntactic_layer, *,
                  grammar=None, rule_codebook=None):
@@ -4788,8 +4902,156 @@ class LanguageLayer(Layer):
         # open for richer codebook methods on reverse without changing
         # the call site.
         tier_basis = getattr(subspace, 'what', None)
+
+        # Phase 3b CAPSTONE (plan doc/plans/2026-06-06-symbolic-heat-retrieval
+        # .md §Reverse-path responsibilities, §Phase 3): heat-biased candidate
+        # restriction for the binary recommender (Intersection / Union only).
+        #
+        # GATED + DEFAULT-OFF BYTE-IDENTITY: ``reverse_kwargs`` stays EMPTY
+        # unless ALL of (a) ``subspace.wordSubSpace`` exists, (b) the host
+        # layer is Intersection/Union (arity-2 recommender ops), AND (c) the
+        # owning space's ``attention_mode != 'off'``. Every current config is
+        # attention=off, so this whole block is dormant and the call below is
+        # exactly ``layer.reverse(parent, basis=tier_basis)`` as before — no
+        # observable change on the live generation path. The broad ``except``
+        # collapses any heat-path failure back to a plain reverse so a bug
+        # here can NEVER break generation. Decoding is row-0-canonical
+        # (``where[0, ...]`` above), so the query / order are taken at batch
+        # row 0 to match. Lift/Lower use the algebraic inverse, not the
+        # recommender, so they are intentionally NOT wired here.
+        reverse_kwargs = {}
+        ws = getattr(subspace, 'wordSubSpace', None)
+        if (ws is not None and arity == 2
+                and isinstance(layer, (IntersectionLayer, UnionLayer))):
+            tier = str(getattr(syntactic_layer, 'tier', ''))
+            space = (getattr(ws, 'symbolicSpace', None) if tier == 'S'
+                     else getattr(ws, 'conceptualSpace', None) if tier == 'C'
+                     else None)
+            mode = (str(getattr(space, 'attention_mode', 'off'))
+                    if space is not None else 'off')
+            if mode != 'off':
+                try:
+                    # NOTE: ``grammar.rule(rule_id)`` returns the ``RuleDef``
+                    # that ``_rule_order_signature`` consumes (it reads
+                    # ``.lhs`` / ``.rhs_symbols``). ``grammar.rule_by_id``
+                    # returns the canonical PRODUCTION STRING in this codebase,
+                    # which would AttributeError here — the broad ``except``
+                    # below would swallow it into a plain reverse, silently
+                    # disabling the heat path. Use the RuleDef accessor.
+                    rule_def = (grammar.rule(rule_id)
+                                if hasattr(grammar, 'rule')
+                                else grammar.rules[rule_id])
+                    sig = grammar._rule_order_signature(rule_def)
+                    cats = getattr(sig, 'rhs_categories', None)
+                    if (cats is not None and len(cats) >= 2
+                            and cats[0] is not None and cats[1] is not None):
+                        # Intersection/Union are order-preserving, so the
+                        # operands share the parent's order. Read the parent's
+                        # per-slot order from the WordSubSpace order buffer at
+                        # the row-0 canonical top slot. Guard the second-axis
+                        # index: ``_order``'s width (the WordSubSpace STM depth)
+                        # need not equal the language-layer stack width, so an
+                        # out-of-range (or zeroed) slot yields order 0.
+                        # A zeroed order can make ``refs_by_category ∩
+                        # refs_by_order`` empty, which triggers the plan-
+                        # sanctioned untyped content+heat fallback inside
+                        # ``retrieval_candidates_for_slot`` (plan §Candidate
+                        # generation fallback) -- the category filter is dropped
+                        # for that slot, never the heat bias. When the typed
+                        # set IS non-empty, hot-type-invalid-row exclusion still
+                        # holds. The path never crashes.
+
+                        # Phase 5: read retrieval scalar knobs from config
+                        # (plan §Configuration).  All keys are optional; fall
+                        # back to the sensible defaults below when absent.
+                        # The space section name is "SymbolicSpace" for tier
+                        # 'S' and "ConceptualSpace" for tier 'C'.
+                        #
+                        # ROBUSTNESS (critical): a knob read must NEVER disable
+                        # the heat path. ``TheXMLConfig`` is a process-wide
+                        # singleton whose ``_data`` is mutated by other code /
+                        # tests; under some orderings it can be left WITHOUT an
+                        # ``architecture`` section (or with a duplicated scalar
+                        # key), in which case a bare ``TheXMLConfig.space(...,
+                        # default)`` would still raise -- and that raise, caught
+                        # by the broad ``except`` below, would silently bypass
+                        # the heat path (ON==OFF). ``_cfg_knob`` localizes any
+                        # such config-read failure and degrades it to the
+                        # supplied default, so a config-state issue yields
+                        # DEFAULT KNOBS, not a bypassed capstone. (The space()
+                        # lookup is itself hardened against a missing
+                        # <architecture> section; this is belt-and-suspenders
+                        # for genuinely unexpected config-read errors.)
+                        def _cfg_knob(_sec, _key, _default):
+                            try:
+                                return TheXMLConfig.space(_sec, _key, _default)
+                            except Exception:
+                                return _default
+                        _cfg_sec = ('SymbolicSpace' if tier == 'S'
+                                    else 'ConceptualSpace')
+                        _r_alpha = float(_cfg_knob(
+                            _cfg_sec, 'retrievalAlpha', 1.0))
+                        _r_beta = float(_cfg_knob(
+                            _cfg_sec, 'retrievalBeta', 0.5))
+                        # gamma / delta default to 0.0 for primer mode so
+                        # behavior is byte-identical to pre-Phase-5 when
+                        # mode=='primer'.  For second-order / low-rank modes
+                        # the caller must set non-zero values in the XML;
+                        # code defaults remain 0.0 (no carrier contribution).
+                        _r_gamma = float(_cfg_knob(
+                            _cfg_sec, 'retrievalGamma', 0.0))
+                        _r_delta = float(_cfg_knob(
+                            _cfg_sec, 'retrievalDelta', 0.0))
+                        _r_topk_content = int(_cfg_knob(
+                            _cfg_sec, 'retrievalTopKContent', 64))
+                        _r_topk_heat = int(_cfg_knob(
+                            _cfg_sec, 'retrievalTopKHeat', 64))
+                        _r_outer_topk = int(_cfg_knob(
+                            _cfg_sec, 'retrievalOuterTopK', 32))
+                        # CRITICAL: when mode=='primer', gamma and delta must
+                        # be 0 to preserve byte-identity with pre-Phase-5.
+                        if mode == 'primer':
+                            _r_gamma = 0.0
+                            _r_delta = 0.0
+
+                        slot0 = int(top_slot[0].item())
+                        order_buf = ws._order
+                        if 0 <= slot0 < int(order_buf.shape[1]):
+                            parent_order = int(order_buf[0, slot0].item())
+                        else:
+                            parent_order = 0
+                        q = parent[0]  # row-0 canonical query
+                        left = ws.retrieval_candidates_for_slot(
+                            q, tier_basis, cats[0], parent_order, batch=0,
+                            topk_content=_r_topk_content,
+                            topk_heat=_r_topk_heat,
+                            alpha=_r_alpha, beta=_r_beta,
+                            mode=mode, gamma=_r_gamma, delta=_r_delta,
+                            outer_topk=_r_outer_topk)
+                        right = ws.retrieval_candidates_for_slot(
+                            q, tier_basis, cats[1], parent_order, batch=0,
+                            topk_content=_r_topk_content,
+                            topk_heat=_r_topk_heat,
+                            alpha=_r_alpha, beta=_r_beta,
+                            mode=mode, gamma=_r_gamma, delta=_r_delta,
+                            outer_topk=_r_outer_topk)
+                        if left:
+                            if left.get('rows') is not None:
+                                reverse_kwargs['left_rows'] = left['rows']
+                            if left.get('priming') is not None:
+                                reverse_kwargs['left_priming'] = left['priming']
+                        if right:
+                            if right.get('rows') is not None:
+                                reverse_kwargs['right_rows'] = right['rows']
+                            if right.get('priming') is not None:
+                                reverse_kwargs['right_priming'] = (
+                                    right['priming'])
+                except Exception:
+                    # Any failure -> plain reverse (never break generation).
+                    reverse_kwargs = {}
+
         try:
-            child = layer.reverse(parent, basis=tier_basis)
+            child = layer.reverse(parent, basis=tier_basis, **reverse_kwargs)
         except TypeError:
             # Backward-compat for layer reverses that don't accept the
             # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
@@ -4841,6 +5103,38 @@ class LanguageLayer(Layer):
             new_slot = top_slot + 1                            # [B]
             what_new[arange_B, top_slot, :] = left
             what_new[arange_B, new_slot, :] = right
+
+            # Phase 3b CAPSTONE — reverse self-priming (plan
+            # doc/plans/2026-06-06-symbolic-heat-retrieval.md §Reverse-path
+            # responsibilities steps 7-8; plan-test 10). After a HEAT-STEERED
+            # binary pick (reverse_kwargs was used), prime the selected
+            # operand rows so subsequent reverse steps in the same sentence
+            # see them as hot. BEST-EFFORT: gated on priming_enabled and fully
+            # guarded — any difficulty is silently skipped (it must never
+            # break generation). The recommender returns operand VECTORS, not
+            # ids, so each selected row id is recovered by matching the
+            # returned vector against the candidate ``rows`` subset of
+            # ``W = tier_basis.getW()`` (a small set), row-0 canonical.
+            if reverse_kwargs:
+                try:
+                    tax = getattr(ws, 'taxonomy', None)
+                    if (tax is not None
+                            and getattr(tax, 'priming_enabled', False)
+                            and tier_basis is not None
+                            and hasattr(tier_basis, 'getW')):
+                        W_rec = tier_basis.getW()
+                        if W_rec is not None:
+                            for vec, side in ((left[0], 'left_rows'),
+                                              (right[0], 'right_rows')):
+                                cand = reverse_kwargs.get(side, None)
+                                rid = self._recover_selected_row(
+                                    vec, W_rec, cand)
+                                if rid is not None and rid >= 0:
+                                    tax.note_selection(rid, batch=0)
+                                    ws._commit_priming(0, rid)
+                except Exception:
+                    # Never let a priming-lifecycle bug break generation.
+                    pass
             # Children's .where is unknown without history -- clear it
             # to the empty sentinel (the plan permits identity-stub
             # behavior for reverse). Phase 8+ can carry an in-band
@@ -4890,6 +5184,14 @@ class LanguageLayer(Layer):
                 break
             self.unreduce(subspace, syntactic_layer,
                           grammar=grammar, rule_codebook=rule_codebook)
+            # Dissipate priming between reverse calls (Phase 3b).
+            # No-op today: the priming buffer is unallocated or all-1.0
+            # until forward heat updates land in Phase 4.  Guard ensures
+            # a missing wordSubSpace / taxonomy is silently skipped.
+            ws = getattr(subspace, 'wordSubSpace', None)
+            tax = getattr(ws, 'taxonomy', None) if ws is not None else None
+            if tax is not None:
+                tax.decay(temporal_decay=getattr(tax, 'temporal_decay', 0.9))
         return subspace
 
     def forward_stack(self, subspace, syntactic_layer, *,
@@ -6716,6 +7018,14 @@ class Taxonomy:
     DEFAULT_HOP_DECAY = 0.5
     DEFAULT_TEMPORAL_DECAY = 0.9
     DEFAULT_BOOST_INITIAL = 1.0
+    # Class default True preserves the historical retrieval-helper gate for
+    # bare Taxonomy() instances (priming_kwargs_for_slots /
+    # retrieval_candidates_for_slot).  PRODUCTION WordSubSpace taxonomies are
+    # set off-by-default by WordSubSpace.attach_knowledge, which calls
+    # configure_priming(priming_enabled=<symbolicPriming>) (default False)
+    # right where it allocates the priming buffer — so forward heat production
+    # is off (zero training-path cost) unless <symbolicPriming> is set.
+    # Plan doc/plans/2026-06-06-symbolic-heat-retrieval.md.
     DEFAULT_PRIMING_ENABLED = True
 
     def __init__(self):
@@ -7007,6 +7317,181 @@ class Taxonomy:
         """Return ``(total, boosted)`` selection counts."""
         return (self._priming_select_count,
                 self._priming_boosted_select_count)
+
+    # -- derived heat: content+heat retrieval (plan 2026-06-06-symbolic-heat-retrieval) --
+
+    def heat_mask(self, batch=0):
+        """Return r = max(_priming - 1, 0) over the LIVE rows.
+
+        Mirrors ``priming_mask`` slicing:
+          * ``batch=None`` -> ``[B, V_live]``
+          * an integer    -> ``[V_live]``
+        Returns ``None`` when ``_priming`` is ``None`` AND when an integer
+        ``batch`` is out of range (same as ``priming_mask``; the two cases
+        are indistinguishable to callers).
+        Default ``batch=0`` per plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §API additions.
+        """
+        if self._priming is None:
+            return None
+        live = self._priming_live or self._priming_capacity
+        if batch is None:
+            return (self._priming[:, :live] - 1.0).clamp(min=0.0)
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return None
+        return (self._priming[b, :live] - 1.0).clamp(min=0.0)
+
+    def topk_heat(self, k, batch=0, rows=None):
+        """Return ref-ids (LongTensor) of the up-to-k hottest LIVE rows.
+
+        Only rows with r > 0 are eligible.  Result is sorted by heat
+        descending.  ``rows`` (optional LongTensor of ref-ids) restricts
+        the candidate set to those ids (still intersected with live +
+        r > 0).  Returns an empty LongTensor when ``_priming`` is None,
+        ``k <= 0``, or nothing is hot.
+
+        See plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §API additions.
+        """
+        import torch
+        if self._priming is None or int(k) <= 0:
+            return torch.zeros(0, dtype=torch.long)
+        empty = torch.zeros(0, dtype=torch.long, device=self._priming.device)
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return empty
+        live = self._priming_live or self._priming_capacity
+        r = (self._priming[b, :live] - 1.0).clamp(min=0.0)
+        # Candidate ids: arange(live) filtered to r > 0.
+        cand_ids = torch.where(r > 0)[0]           # LongTensor of live indices
+        if rows is not None:
+            # Restrict to the caller-supplied ids that are also live.
+            rows_t = torch.as_tensor(rows, dtype=torch.long, device=self._priming.device)
+            valid_rows = rows_t[(rows_t >= 0) & (rows_t < live)]
+            # Intersect: keep only cand_ids that appear in valid_rows.
+            mask = torch.isin(cand_ids, valid_rows)
+            cand_ids = cand_ids[mask]
+        if cand_ids.numel() == 0:
+            return empty
+        cand_r = r[cand_ids]
+        actual_k = min(int(k), cand_ids.numel())
+        topk_vals, topk_local = torch.topk(cand_r, actual_k, largest=True, sorted=True)
+        return cand_ids[topk_local]
+
+    def _active_heat_set(self, batch, rows, topk):
+        """Private helper: compute (ids, r_vals) for the active hot set.
+
+        ``ids``   — LongTensor of ref-ids in the active set S.
+        ``r_vals``— FloatTensor of heat values at those ids.
+        Returns ``(ids, r_vals)``; both tensors are on the priming
+        buffer's device.
+
+        Used internally by ``build_semantic_heat`` and ``build_outer_heat``
+        to avoid logic duplication.
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Core
+        representation.
+        """
+        import torch
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            empty_ids = torch.zeros(0, dtype=torch.long, device=self._priming.device)
+            empty_r   = torch.zeros(0, dtype=self._priming.dtype, device=self._priming.device)
+            return empty_ids, empty_r
+        device = self._priming.device
+        live = self._priming_live or self._priming_capacity
+        r = (self._priming[b, :live] - 1.0).clamp(min=0.0)
+        # Start with all hot live ids.
+        hot_ids = torch.where(r > 0)[0]
+        if rows is not None:
+            rows_t = torch.as_tensor(rows, dtype=torch.long, device=device)
+            valid_rows = rows_t[(rows_t >= 0) & (rows_t < live)]
+            mask = torch.isin(hot_ids, valid_rows)
+            hot_ids = hot_ids[mask]
+        if topk is not None and int(topk) > 0 and hot_ids.numel() > 0:
+            actual_k = min(int(topk), hot_ids.numel())
+            cand_r = r[hot_ids]
+            _, local_top = torch.topk(cand_r, actual_k, largest=True, sorted=True)
+            hot_ids = hot_ids[local_top]
+        r_vals = r[hot_ids]
+        return hot_ids, r_vals
+
+    def build_semantic_heat(self, codebook_rows, batch=0, rows=None, topk=None):
+        """Return z = A_S^T r_S, shape [D].
+
+        S = live rows with r > 0 for ``batch``, optionally restricted to
+        ``rows`` and/or limited to the top-``topk`` hottest (via
+        ``topk_heat`` logic, delegated to ``_active_heat_set``).
+        A_S = ``codebook_rows[S]``; r_S = heat at S.
+        z = r_S @ A_S.
+
+        Returns ``zeros([D])`` when S is empty or ``_priming`` is None.
+        Preserves ``codebook_rows.device`` and ``codebook_rows.dtype``.
+
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md``
+        §Core representation, §API additions.
+        """
+        import torch
+        D = codebook_rows.shape[1]
+        zero = torch.zeros(D, device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        if self._priming is None:
+            return zero
+        b = int(batch)
+        if b < 0 or b >= self._priming_B:
+            return zero
+        ids, r_vals = self._active_heat_set(batch, rows, topk)
+        if ids.numel() == 0:
+            return zero
+        # Move ids/r_vals to codebook device; cast r_vals to codebook dtype.
+        ids = ids.to(device=codebook_rows.device)
+        r_vals = r_vals.to(device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        A_S = codebook_rows[ids]       # [|S|, D]
+        return r_vals @ A_S            # [D]
+
+    def build_outer_heat(self, codebook_rows, batch=0, rows=None, topk=None,
+                         low_rank=True):
+        """Return the active outer-product factor(s) for S.
+
+        U = diag(sqrt(r_S)) @ A_S = sqrt(r_S)[:, None] * A_S, shape [|S|, D].
+
+        ``low_rank=True``  -> return U  (shape [|S|, D]).
+        ``low_rank=False`` -> return dense C = U^T @ U  (shape [D, D]).
+
+        Empty S:
+          ``low_rank=True``  -> [0, D]
+          ``low_rank=False`` -> zeros([D, D])
+
+        Preserves ``codebook_rows.device`` and ``codebook_rows.dtype``.
+
+        Plan ``doc/plans/2026-06-06-symbolic-heat-retrieval.md``
+        §Core representation (``low-rank`` mode), §API additions.
+        """
+        import torch
+        D = codebook_rows.shape[1]
+        if self._priming is None or int(batch) < 0 or int(batch) >= self._priming_B:
+            if low_rank:
+                return torch.zeros(0, D, device=codebook_rows.device,
+                                   dtype=codebook_rows.dtype)
+            return torch.zeros(D, D, device=codebook_rows.device,
+                               dtype=codebook_rows.dtype)
+        ids, r_vals = self._active_heat_set(batch, rows, topk)
+        if ids.numel() == 0:
+            if low_rank:
+                return torch.zeros(0, D, device=codebook_rows.device,
+                                   dtype=codebook_rows.dtype)
+            return torch.zeros(D, D, device=codebook_rows.device,
+                               dtype=codebook_rows.dtype)
+        ids = ids.to(device=codebook_rows.device)
+        r_vals = r_vals.to(device=codebook_rows.device,
+                           dtype=codebook_rows.dtype)
+        A_S = codebook_rows[ids]                          # [|S|, D]
+        sqrt_r = r_vals.sqrt()[:, None]                   # [|S|, 1]
+        U = sqrt_r * A_S                                   # [|S|, D]
+        if low_rank:
+            return U
+        return U.t() @ U                                   # [D, D]
 
 class ObjectSubSpace(nn.Module):
     """Durable PerceptualSpace meronymic-analysis carrier -- the PS
@@ -7863,6 +8348,35 @@ class WordSubSpace(SubSpace):
     # ``ConceptualSpace`` invokes these via
     # ``ws.push(...)`` / ``ws.pop(b)`` / ``ws.top(b)`` etc.
 
+    def _commit_priming(self, b, ref_id):
+        """Gated forward-commit heat update for a single committed ref.
+
+        Primes ``ref_id`` and propagates the boost along the taxonomy
+        adjacency for the freshly-committed word/percept/idea. Plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Forward-path
+        responsibilities (word/percept commit; C-tier grammar reduction).
+
+        TRAINING-PATH ZERO-COST GUARANTEE: the ``priming_enabled`` check
+        (False by default — set from ``<symbolicPriming>`` via
+        ``configure_priming``) short-circuits FIRST, before any
+        ``prime``/``propagate``. ``propagate`` is the expensive host-side
+        graph walk (``.item()`` per node); it must never run when the
+        feature is off. With ``<symbolicPriming>`` absent/false this method
+        is a guaranteed no-op (a single ``getattr`` + boolean test, no
+        host sync, no tensor mutation).
+        """
+        tax = getattr(self, 'taxonomy', None)
+        # Sentinel False: a missing/absent taxonomy attribute must default to
+        # production-off (no forward heat).  Contrast with Taxonomy's class
+        # constant DEFAULT_PRIMING_ENABLED=True, which is the historical gate
+        # for bare Taxonomy() retrieval helpers — not for missing attributes.
+        if (tax is not None and getattr(tax, 'priming_enabled', False)
+                and tax._priming is not None and int(ref_id) >= 0):
+            rid = int(ref_id)
+            tax.prime([rid], batch=b, boost=tax.boost_initial)
+            tax.propagate([rid], batch=b, depth=tax.priming_depth,
+                          hop_decay=tax.hop_decay)
+
     def push(self, b, vec, *, category_id=None, category_id_str=None,
              order=0, ref_id=-1):
         """Push one frame onto row ``b``'s typed STM stack.
@@ -7888,6 +8402,11 @@ class WordSubSpace(SubSpace):
         self._ref_id[b, d] = int(ref_id)
         self._category_names[b][d] = category_id_str
         self._depth[b] = d + 1
+        # Forward-commit symbolic-priming heat (gated; no-op unless
+        # <symbolicPriming> is enabled — guard is priming_enabled-FIRST).
+        # Plan doc/plans/2026-06-06-symbolic-heat-retrieval.md §Word/percept
+        # commit.
+        self._commit_priming(b, ref_id)
 
     def pop(self, b):
         """Pop the top frame from row ``b`` and return its metadata.
@@ -8241,6 +8760,17 @@ class WordSubSpace(SubSpace):
                 capacity=capacity,
                 live=int(view.n_refs_live),
             )
+            # Master switch for symbolic-priming heat (forward working
+            # memory). Default false => taxonomy.priming_enabled False =>
+            # the gated forward-commit path (push / reduce) is a no-op with
+            # zero training-path cost. Coerced to bool the same way
+            # ``hasAttention`` is (the XML parser already yields a Python
+            # bool for ``xs:boolean`` leaves). Plan
+            # doc/plans/2026-06-06-symbolic-heat-retrieval.md §A.
+            symbolic_priming = bool(
+                TheXMLConfig.get("architecture.symbolicPriming",
+                                 default=False))
+            tax.configure_priming(priming_enabled=symbolic_priming)
 
     @property
     def knowledge(self):
@@ -8312,6 +8842,283 @@ class WordSubSpace(SubSpace):
                 if right_category is not None:
                     out['right_priming'] = pm
         return out
+
+    def retrieval_candidates_for_slot(self, query, basis, category, order,
+                                      batch=0, topk_content=64, topk_heat=64,
+                                      *, alpha=1.0, beta=0.5,
+                                      mode='primer', gamma=0.0, delta=0.0,
+                                      outer_topk=32):
+        """Heat+content candidate union and boosted row-weights for ONE
+        inverse-recommender slot.  Returns a dict the caller maps onto
+        ``left_*`` or ``right_*`` recommender kwargs.  Plan
+        ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Candidate
+        generation / §Recommender changes / §Phase 5.
+
+        Parameters
+        ----------
+        query : Tensor
+            Query vector.  Any shape ending in ``D`` (the codebook column
+            dimension).  Extra leading dims are collapsed with
+            ``.reshape(-1)[:D]``, so passing a ``[1, D]`` or ``[B, D]``
+            slice is safe.
+        basis : object
+            Object with a ``getW()`` method returning the ``[K, D]``
+            symbolic codebook.  ``K ≈ V_live`` (live ref rows).
+        category : str
+            Grammar/POS category name passed to
+            ``KnowledgeView.refs_by_category``.
+        order : int
+            Conceptual order passed to ``KnowledgeView.refs_by_order``.
+        batch : int
+            Which priming batch row to use.  Default 0.
+        topk_content : int
+            How many content-nearest rows to include in the union candidate
+            set.  Default 64.
+        topk_heat : int
+            How many hottest priming rows to include.  Default 64.
+        alpha : float
+            Weight on cosine similarity in the boosted priming exponent.
+            Default 1.0.  See §Retrieval score.
+        beta : float
+            Weight on ``log1p(r_i)`` (taxonomic heat) in the exponent.
+            Default 0.5.  Logarithmic scale prevents a hot ancestor from
+            swamping content proximity.
+        mode : str
+            Retrieval mode (one of ``'off'``, ``'primer'``, ``'second-order'``,
+            ``'low-rank'``).  Default ``'primer'``.  When ``mode`` is
+            ``'off'`` or ``'primer'`` (or ``gamma == delta == 0``), NO carrier
+            terms are added — weight is exactly
+            ``exp(alpha*sim + beta*log1p(r))``, preserving byte-identical
+            output with pre-Phase-5 behavior.  When ``mode`` is
+            ``'second-order'`` or ``'low-rank'``, first- and second-order
+            carrier contributions are added for candidate rows.
+        gamma : float
+            Weight on the first-order carrier term ``dot(a_i, z)`` where
+            ``z = A_S^T r_S`` (plan §Retrieval score).  Default 0.0.
+            Only active when mode is ``'second-order'`` or ``'low-rank'``.
+        delta : float
+            Weight on the second-order carrier term ``dot(a_i, Cq)`` where
+            ``Cq`` is computed without materializing a ``[V,V]`` tensor
+            (plan §Retrieval score).  Default 0.0.  For ``'low-rank'``
+            mode: ``Cq = U^T(Uq)``; for ``'second-order'``: ``Cq = C_dense @ q``
+            (only when D is small).  Only active when mode is
+            ``'second-order'`` or ``'low-rank'``.
+        outer_topk : int
+            Top-k active rows for ``build_semantic_heat`` /
+            ``build_outer_heat`` carrier builders.  Default 32.
+
+        Returns
+        -------
+        dict
+            ``{'rows': LongTensor, 'priming': FloatTensor[K],
+               'diagnostics': {...}}`` — or ``{}`` on graceful fallback.
+
+            * ``rows``     — candidate union (up to topk_content + topk_heat),
+              further intersected with the typed admissible set when non-empty.
+            * ``priming``  — ``[K]`` float weight tensor; 1.0 = identity for
+              non-candidate rows; ``exp(alpha*sim + beta*log1p(r))`` for
+              candidate rows (+ optional carrier terms when active).
+              Drop-in for ``left_priming`` / ``right_priming``.
+            * ``diagnostics`` — counts and fallback label for debugging.
+
+        Notes
+        -----
+        Graceful fallback:  returns ``{}`` when ``self.knowledge`` is ``None``,
+        ``basis`` is ``None`` or has no ``getW()``, or ``getW()`` returns
+        ``None``.  This mirrors ``priming_kwargs_for_slots``'s ``{}`` fallback.
+
+        Device consistency:  ``q`` is moved to ``A.device`` before any
+        computation.  The returned ``rows`` and ``priming`` live on the same
+        device as ``A``.
+
+        No [V,V] allocation:  ``z`` and ``Cq`` are ``[D]`` vectors; carrier
+        gathers are over the small candidate set ``C``.  A ``[V,V]`` dense
+        matrix is NEVER formed, even in second-order mode (where ``C_mat`` is
+        ``[D,D]``, not ``[V,V]``).
+
+        Size of ``priming``:  sized to ``A.shape[0]`` (K), which equals
+        ``V_live`` for a fully-allocated codebook.  If the taxonomy priming
+        buffer has a different live count, the returned vector still has K
+        elements (heat gathered from positions within-range, zeros elsewhere).
+        The recommender truncates / pads ``priming`` to ``W.shape[0]`` at
+        use time, consistent with ``priming_kwargs_for_slots``.
+        """
+        import torch
+        import torch.nn.functional as F
+
+        # --- Graceful fallback guards (mirror priming_kwargs_for_slots) ------
+        view = self.knowledge
+        if view is None:
+            return {}
+        if basis is None:
+            return {}
+        getW_fn = getattr(basis, 'getW', None)
+        if getW_fn is None:
+            return {}
+        A = getW_fn()
+        if A is None:
+            return {}
+
+        K, D = A.shape  # [K, D] codebook
+
+        # --- Reduce query to a single [D] vector on A's device ---------------
+        q = query
+        if not isinstance(q, torch.Tensor):
+            q = torch.as_tensor(q, dtype=A.dtype)
+        q = q.reshape(-1)[:D].to(A.device, A.dtype)
+
+        # --- Step 1: Content scores — cosine similarity [K] ------------------
+        # Single matrix-vector proximity; NOT [V,V].
+        sim = F.cosine_similarity(q.reshape(1, -1), A, dim=1)  # [K]
+        k_c = min(topk_content, K)
+        if k_c > 0:
+            _, topk_idx = torch.topk(sim, k=k_c)
+            C_content = topk_idx  # LongTensor [k_c]
+        else:
+            C_content = torch.empty(0, dtype=torch.long, device=A.device)
+
+        # --- Step 2: Heat candidates -----------------------------------------
+        tax = getattr(self, 'taxonomy', None)
+        enabled = (tax is not None and getattr(tax, 'priming_enabled', True))
+        if enabled and tax is not None:
+            C_heat = tax.topk_heat(topk_heat, batch=batch)
+            C_heat = C_heat.to(A.device)
+        else:
+            C_heat = torch.empty(0, dtype=torch.long, device=A.device)
+
+        # --- Step 3: Typed admissible set ------------------------------------
+        cat_rows = view.refs_by_category(category)
+        ord_rows = view.refs_by_order(int(order))
+        C_typed = _intersect_long_rows(cat_rows, ord_rows)
+        if C_typed.numel() > 0:
+            C_typed = C_typed.to(A.device)
+
+        # --- Step 4: Union + typed mask + fallback ---------------------------
+        # union = unique(C_content ∪ C_heat)
+        if C_content.numel() > 0 and C_heat.numel() > 0:
+            union = torch.unique(torch.cat([C_content, C_heat]))
+        elif C_content.numel() > 0:
+            union = C_content
+        elif C_heat.numel() > 0:
+            union = C_heat
+        else:
+            union = torch.empty(0, dtype=torch.long, device=A.device)
+
+        fallback = 'none'
+        if C_typed.numel() > 0:
+            C = _intersect_long_rows(union, C_typed)
+        else:
+            C = union
+
+        if C.numel() == 0:
+            # Three-level fallback (plan §Candidate generation)
+            if C_typed.numel() > 0:
+                C = C_typed
+                fallback = 'typed_only'
+            elif C_content.numel() > 0:
+                C = C_content
+                fallback = 'content_only'
+            else:
+                C = torch.empty(0, dtype=torch.long, device=A.device)
+                fallback = 'sentinel'
+
+        # --- Step 5: Boosted row-weight vector [K] ---------------------------
+        # Initialize to 1.0 (multiplicative identity; non-candidates unchanged)
+        priming = torch.ones(K, dtype=torch.float32, device=A.device)
+
+        if C.numel() > 0:
+            # Gather heat mask (r = max(p - 1, 0)) for indexed rows in C
+            if enabled and tax is not None:
+                heat_vec = tax.heat_mask(batch=batch)  # [V_live] or None
+            else:
+                heat_vec = None
+
+            # Gather cosine scores at candidate ids
+            # C may contain ids >= K if taxonomy live > codebook rows; clip.
+            valid_mask = C < K
+            C_valid = C[valid_mask]
+            if C_valid.numel() > 0:
+                sim_C = sim[C_valid]   # [|C_valid|] content scores
+
+                # Heat at each candidate: r_i = heat_vec[i] if available
+                if heat_vec is not None and C_valid.numel() > 0:
+                    in_range = C_valid < heat_vec.numel()
+                    r_C = torch.zeros(C_valid.numel(),
+                                      dtype=torch.float32, device=A.device)
+                    if in_range.any():
+                        r_C[in_range] = heat_vec[C_valid[in_range]].to(
+                            dtype=torch.float32, device=A.device)
+                else:
+                    r_C = torch.zeros(C_valid.numel(),
+                                      dtype=torch.float32, device=A.device)
+
+                # Base exponent: exp(alpha * sim_i + beta * log1p(r_i))
+                exponent = (alpha * sim_C.to(torch.float32)
+                            + beta * torch.log1p(r_C))
+
+                # --- Phase 5: optional carrier terms (plan §Phase 5) ---------
+                # Only active when mode is 'second-order' or 'low-rank' AND
+                # at least one of gamma/delta is non-zero.  When mode is
+                # 'off' or 'primer', this block is entirely skipped and
+                # the output is byte-identical to pre-Phase-5 behavior.
+                # No [V,V] tensor is ever formed: z and Cq are [D] vectors;
+                # all gathers are over C_valid (the small candidate set).
+                use_carriers = (mode in ('second-order', 'low-rank')
+                                and (gamma != 0.0 or delta != 0.0))
+                if use_carriers:
+                    k_outer = outer_topk if outer_topk > 0 else None
+
+                    # gamma term: z = A_S^T r_S  (plan §Core representation)
+                    if gamma != 0.0 and tax is not None:
+                        z = tax.build_semantic_heat(
+                            A, batch=batch, topk=k_outer)  # [D]
+                        z = z.to(dtype=torch.float32, device=A.device)
+                        carrier_z = (A[C_valid].to(dtype=torch.float32,
+                                                    device=A.device)
+                                     @ z)   # [|C_valid|]
+                        exponent = exponent + gamma * carrier_z
+
+                    # delta term: Cq via low-rank or dense path
+                    if delta != 0.0 and tax is not None:
+                        if mode == 'low-rank':
+                            # Cq = U^T (U q)  — no [D,D] or [V,V] materialized
+                            U = tax.build_outer_heat(
+                                A, batch=batch, topk=k_outer,
+                                low_rank=True)          # [k, D]
+                            U = U.to(dtype=torch.float32, device=A.device)
+                            q_f32 = q.to(dtype=torch.float32, device=A.device)
+                            Cq = U.t() @ (U @ q_f32)   # [D]
+                        else:
+                            # 'second-order': dense C_mat [D, D] — only safe
+                            # when D is small (plan: dense C only for small D)
+                            C_mat = tax.build_outer_heat(
+                                A, batch=batch, topk=k_outer,
+                                low_rank=False)         # [D, D]
+                            C_mat = C_mat.to(dtype=torch.float32,
+                                             device=A.device)
+                            q_f32 = q.to(dtype=torch.float32, device=A.device)
+                            Cq = C_mat @ q_f32          # [D]
+                        carrier_C = (A[C_valid].to(dtype=torch.float32,
+                                                    device=A.device)
+                                     @ Cq)              # [|C_valid|]
+                        exponent = exponent + delta * carrier_C
+
+                boost = torch.exp(exponent)
+                priming[C_valid] = boost
+
+        # --- Step 6: Return dict ---------------------------------------------
+        diagnostics = {
+            'n_content':    int(C_content.numel()),
+            'n_heat':       int(C_heat.numel()),
+            'n_typed':      int(C_typed.numel()),
+            'n_candidates': int(C.numel()),
+            'fallback':     fallback,
+        }
+        return {
+            'rows':        C,
+            'priming':     priming,
+            'diagnostics': diagnostics,
+        }
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):

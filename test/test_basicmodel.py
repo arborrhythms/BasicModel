@@ -195,7 +195,11 @@ def _populate_test_config(*,
     _symbol_dim = symbolDim
     # Deep-merge test overrides onto model.xml defaults so that keys like
     # 'syntax', etc. are always present.
-    _nInputDim = -1 if flatten else 0
+    # 2026-06-07: the -1 flatten sentinel was removed -- the OutputSpace is the
+    # sole flattener; analysed/synthesised spaces stay per-vector ([B,N,D]).
+    # ``flatten`` is retained for call-site compatibility but no longer flattens
+    # the middle spaces (they resolve nInputDim=0 -> per-vector inherit).
+    _nInputDim = 0
     _overrides = {
         "architecture": {
             "reconstruct": reconstruct,
@@ -253,7 +257,7 @@ def _populate_test_config(*,
             "nVectors": nOutput,
             "nWhere": 0,
             "nWhen": 0,
-            "nInputDim": -1,  # OutputSpace always flattens
+            "nInputDim": 0,  # OutputSpace force-flattens regardless (sole flattener)
             "codebook": False,
             "invertible": False,
         },
@@ -570,35 +574,40 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 
 
 class TestWhenEncodingRoundTrip(unittest.TestCase):
-    """WhenRangeEncoding: the 2-dim signed endpoint-sum .when round-trips.
-
-    The monotonic-counter WhenEncoding these tests originally exercised is
-    superseded by the zero-centered, signed range encoding (full contract in
-    test/test_when_range_encoding.py). Constructed here with n_when=2
-    (enabled); the bare Models.WhenEncoding(maxT) default is now disabled
-    (nDim=0), so .when forward/reverse are no-ops until a space turns it on.
+    """WhenRangeEncoding: the single scaled quadrature phasor .when round-trips
+    (2026-06-07 redesign). ``.when = D * [sin(2*pi*t/period), cos(...)]``: the
+    ANGLE encodes the absolute time t, the MAGNITUDE D in [0, 1] is the tense
+    position (0.5 = present default). Full contract in
+    test/test_when_range_encoding.py. Constructed here with n_when=2 (enabled);
+    the bare Models.WhenEncoding(maxT) default is disabled (nDim=0), so .when
+    forward/reverse are no-ops until a space turns it on.
     """
 
     def test_forward_stamps_present_and_reverse_recovers_it(self):
-        te = Models.WhenEncoding(64, 2)               # enabled 2-dim range
+        from Spaces import _WHEN_TENSE_DEFAULT
+        te = Models.WhenEncoding(64, 2)               # enabled 2-dim phasor
+        te.t = 0
         x = torch.zeros(5, 2, 10, device=Models.TheDevice.get())
-        y = te.forward(x)                             # stamps the present unit bracket (-0.5, 0.5)
-        _, decoded = te.reverse(y)                    # decoded == (start, end), each [B, V]
-        start, end = decoded
+        y = te.forward(x)                             # stamps the present default [0, 0.5]
+        _, decoded = te.reverse(y)                    # decoded == (t, D), each [B, V]
+        t_dec, D_dec = decoded
         for b in range(5):
             for v in range(2):
-                self.assertAlmostEqual(float(start[b, v]), -0.5, places=3,
-                    msg=f"present start not recovered at batch={b}, vec={v}")
-                self.assertAlmostEqual(float(end[b, v]), 0.5, places=3,
-                    msg=f"present end not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(t_dec[b, v]), 0.0, places=3,
+                    msg=f"present time not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(D_dec[b, v]), _WHEN_TENSE_DEFAULT, places=3,
+                    msg=f"present tense magnitude not recovered at batch={b}, vec={v}")
 
-    def test_signed_range_round_trip(self):
-        """Signed ranges within the period round-trip through encode/decode."""
-        te = Models.WhenEncoding(64, 2)
-        for (s, e) in [(-2.0, -1.0), (-1.0, 0.0), (0.0, 0.0), (1.0, 2.0)]:
-            ds, de = te.decode(te.encode_range(s, e))
-            self.assertAlmostEqual(float(ds), s, places=3, msg=f"start of ({s},{e})")
-            self.assertAlmostEqual(float(de), e, places=3, msg=f"end of ({s},{e})")
+    def test_time_and_tense_round_trip(self):
+        """Absolute time (angle) and tense magnitude round-trip through
+        encode/decode for times inside the non-aliasing window."""
+        from Spaces import _WHEN_PERIOD
+        te = Models.WhenEncoding(_WHEN_PERIOD, 2)
+        for t in (0.0, 1.0, float(_WHEN_PERIOD // 8), -float(_WHEN_PERIOD // 8)):
+            for D in (0.2, 0.5, 1.0):
+                dt, dD = te.decode(te.encode(t, D=D))
+                self.assertAlmostEqual(float(dt), t, delta=0.05, msg=f"time {t} (D={D})")
+                self.assertAlmostEqual(float(dD), D, places=4, msg=f"tense {D} (t={t})")
 
     def test_content_preserved(self):
         """Content dimensions (non-encoding slots) survive the round-trip."""

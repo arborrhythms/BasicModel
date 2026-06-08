@@ -81,6 +81,27 @@
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
+      <!-- Master switch for symbolic-priming heat (forward working memory);
+           default false = off, zero training-path cost. Plan
+           2026-06-06-symbolic-heat-retrieval. -->
+      <xs:element name="symbolicPriming" type="xs:boolean" minOccurs="0"/>
+      <!-- Retrieval scalar knobs for heat-biased candidate scoring
+           (plan §Configuration, doc/plans/2026-06-06-symbolic-heat-retrieval.md).
+           All optional; defaults preserved in code (off by default when
+           attention=off).  retrievalTopKContent / retrievalTopKHeat: candidate
+           union sizes.  retrievalOuterTopK: active rows for outer-heat builders.
+           retrievalAlpha / retrievalBeta: content-sim / heat-log weights.
+           retrievalGamma / retrievalDelta: first- / second-order carrier weights
+           (zero = off = byte-identical to primer mode).
+           retrievalUseOuterProduct: reserved for future dense-C gating. -->
+      <xs:element name="retrievalTopKContent" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalTopKHeat" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalOuterTopK" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="retrievalAlpha" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalBeta" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalGamma" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalDelta" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
       <xs:element name="perfectReconstruction" type="xs:boolean" minOccurs="0"/>
       <xs:element name="prediction" type="predictionEnum" minOccurs="0"/>
@@ -244,6 +265,31 @@
       <xs:enumeration value="last"/>
       <xs:enumeration value="butterfly"/>
       <xs:enumeration value="full"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Per-space symbolic-RETRIEVAL mode (doc/plans/2026-06-06-symbolic-
+       heat-retrieval.md, Handoff addendum). This is NOT transformer/QKV
+       self-attention: the attention element selects how the reverse path
+       biases codebook-row retrieval (content proximity + taxonomy heat).
+         off          : no heat-biased retrieval; current reverse behavior
+                        (DEFAULT; configs with no attention resolve here).
+         primer       : row heat only (Taxonomy._priming / priming_mask).
+         second-order : dense feature-space carrier C = A_S^T diag(r_S) A_S.
+         low-rank     : active factors U = diag(sqrt(r_S)) A_S; Cq = U^T(Uq)
+                        without materializing C.
+       The legacy boolean hasAttention (which formerly requested a QKV
+       AttentionLayer in PerceptualSpace/ConceptualSpace) is DEPRECATED and
+       inert; it is kept only as a backward-compat alias (data/model.xml still
+       sets it). New configs should use the attention element instead. The
+       mode is stored on the owning space and consumed by the reverse-
+       retrieval path (later tasks); off preserves current behavior. -->
+  <xs:simpleType name="attentionModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="off"/>
+      <xs:enumeration value="primer"/>
+      <xs:enumeration value="second-order"/>
+      <xs:enumeration value="low-rank"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -453,7 +499,12 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
+           default off. Supersedes <hasAttention>. See attentionModeEnum
+           and doc/plans/2026-06-06-symbolic-heat-retrieval.md. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
@@ -539,7 +590,10 @@
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode; default off. See attentionModeEnum. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
@@ -559,7 +613,11 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode; default off. Supersedes <hasAttention>.
+           See attentionModeEnum. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Optional butterfly cascade on the ConceptualSpace sigma fold
@@ -605,6 +663,11 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
+           default off. SymbolicSpace has no hasAttention legacy alias:
+           it never constructed a QKV AttentionLayer. See attentionModeEnum
+           and doc/plans/2026-06-06-symbolic-heat-retrieval.md. -->
+      <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Optional butterfly cascade on the SymbolicSpace sigma operator

@@ -46,43 +46,37 @@
     <data>
       <dataset>xor</dataset>
     </data>
-
     <training>
       <numEpochs>400</numEpochs>
-      <batchSize>64</batchSize>
+      <batchSize>12</batchSize>
       <learningRate>0.0005</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
     </training>
   </architecture>
 
   <InputSpace>
-    <nInput>8192</nInput>
-    <nInputDim>1</nInputDim>
-    <nVectors>256</nVectors>
-    <nDim>1024</nDim>
     <nOutput>8192</nOutput>
-    <nOutputDim>1024</nOutputDim> <!-- 1024 is a bit of an embedded waste, since these are ascii characters -->
-
-    <lexer>raw</lexer>
+    <nDim>5</nDim> <!-- 1 byte + 2 where + 2 when -->
+    <!-- lexer>word</lexer -->
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
-    <nInputDim>1024</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
+    <nInputDim>5</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
     <nVectors>65536</nVectors>
     <nDim>1024</nDim>
     <nOutput>8</nOutput>         <!-- 8 in parallel mode, looping over 1 in symbolic mode -->
     <nOutputDim>1024</nOutputDim> 
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
     <!-- Chunking strategy: analyse | radix | lexicon | bpe | mphf | none.
          analyse = meronymic analyzer with a space-lexer front end
          (whitespace boundary; word runs resolve through the word codebook):
          this is what reduces an 8192-char input to a small number of
          words in parallel mode without needing attention. radix = the
          PerceptStore (radix trie + promotion); flip here to experiment. -->
-    <chunking>analyse</chunking>
+    <chunking>bpe</chunking>
+    <!-- codebook>quantize</codebook -->
   </PerceptualSpace>
 
   <ConceptualSpace>

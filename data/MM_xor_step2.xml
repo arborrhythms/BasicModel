@@ -23,14 +23,12 @@
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </PerceptualSpace>
 
@@ -39,7 +37,6 @@
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
@@ -47,7 +44,6 @@
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
   </SymbolicSpace>
 
   <OutputSpace>

@@ -154,19 +154,29 @@ class TestCreateFromConfig(unittest.TestCase):
 class TestValidateConfig(unittest.TestCase):
     """validate_config reads space-scoped keys."""
 
-    def test_attention_reshape_incompatible(self):
+    def test_attention_reshape_guard_retired(self):
+        """RETIRED (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff
+        addendum): the old ``hasAttention``-vs-reshape guard was removed
+        with the QKV ``AttentionLayer`` enlistment. ``<attention>`` is now a
+        symbolic-retrieval mode (not tensor self-attention), so
+        ``hasAttention=True`` together with a ``flatten``/``nInputDim`` reshape
+        is now ACCEPTED (must NOT raise).
+        """
         cfg = {
             "architecture": {},
             "PerceptualSpace": {"hasAttention": True, "invertible": False,
                                 "nActive": 4, "nDim": 1, "flatten": True},
             "SymbolicSpace": {},
-            "ConceptualSpace": {"hasAttention": False, "flatten": False},
+            "ConceptualSpace": {"hasAttention": True, "flatten": True},
         }
-        with self.assertRaises(ValueError) as ctx:
-            Models.BasicModelFactory.validate_config(cfg)
-        self.assertIn("hasAttention", str(ctx.exception))
+        # Should not raise: the reshape-vs-QKV incompatibility no longer exists.
+        Models.BasicModelFactory.validate_config(cfg)
 
     def test_attention_reshape_ok_when_false(self):
+        """Post-guard-retirement smoke check: validate_config runs clean on
+        the minimal config with hasAttention=False.  Kept (not a duplicate of
+        test_attention_reshape_guard_retired) to confirm the validator itself
+        remains functional after the reshape-vs-QKV guard was removed."""
         cfg = {
             "architecture": {},
             "PerceptualSpace": {"hasAttention": False, "invertible": False,

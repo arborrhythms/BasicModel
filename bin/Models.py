@@ -2132,7 +2132,7 @@ class BasicModel(BaseModel):
         except Exception:
             self._last_truth_assessment = None
 
-    def infer(self, text, max_length=None, mode=None):
+    def infer(self, text, max_length=None, mode='IR'):
         """IR-mode infill inference.
 
         Lexes the input, embeds it, applies ``mask_rate`` random
@@ -2144,12 +2144,13 @@ class BasicModel(BaseModel):
 
         Sentence-level generation (the legacy AR / ARIR chat loop) is
         now provided by ``generate_sentence`` via ``InterSentenceLayer``
-        (ARMA(p, q) over sentence reps).  ``mode`` is accepted for
-        back-compat with callers that still pass ``mode='IR'``; any
-        other value raises.
+        (ARMA(p, q) over sentence reps).  ``mode`` defaults to ``'IR'``
+        and is accepted for back-compat with callers that still pass
+        ``mode='IR'``; any other value raises.
         """
         del max_length  # retained for signature back-compat only
-        if mode is not None and str(mode).upper() != 'IR':
+        mode = 'IR' if mode is None else mode
+        if str(mode).upper() != 'IR':
             raise NotImplementedError(
                 f"infer(mode={mode!r}) retired 2026-05-14. Within-sentence "
                 "training/inference is IR-only; for sentence-level "
@@ -2723,42 +2724,55 @@ class BasicModel(BaseModel):
         return sbow
 
     def perceptual_sbow_loss(self):
-        """SBOW loss on percept vectors: leave-one-out centroid prediction.
+        """SBOW loss over the percepts USED in the forward, WITH negative
+        sampling (the pode/antipode repulsion).
 
-        For byte lexer mode, percepts replace word embeddings as the
-        unit of distributional similarity.  Each percept in a sentence
-        should be predictable from the centroid of the others.
+        Each used percept is trained toward the leave-one-out centroid of the
+        OTHER used percepts in its row, while K random codebook rows are
+        repelled -- ``PretrainModel.sbow_loss_indices`` -> the canonical
+        ``_neg_sampling_loss`` in embed.py. Two things make this NOT collapse,
+        where the prior centroid-only cosine did (every row decoded to the
+        null percept): (1) the positives are exactly the gathered percept ids,
+        excluding the null/padding slots AND the untrained reserve -- we train
+        ONLY the vectors used in the computation; (2) the negative samples
+        supply the antipode repulsion that balances the centroid attractor.
 
-        Returns a scalar loss tensor, or None if < 2 percepts.
+        Returns a scalar loss tensor, or None when the percept-index path is
+        unavailable or every row holds < 2 used percepts.
         """
-        # Phase 1.5: the ``self.percepts`` alias was subsumed -- read the
-        # PerceptualSpace terminal subspace directly. The old
-        # ``hasattr(self,'percepts')`` guard meant "no forward has stamped
-        # the alias yet"; the faithful equivalent is "the subspace has no
-        # materializable event yet" (``materialize()`` -> None), so guard
-        # on ``vecs is None`` below.
-        ps_sub = self.perceptualSpace.subspace
-        if ps_sub is None:
+        ps_space = getattr(self, "perceptualSpace", None)
+        sub = getattr(ps_space, "subspace", None) if ps_space is not None else None
+        cb = getattr(sub, "what", None) if sub is not None else None
+        pretrain = getattr(cb, "pretrain", None) if cb is not None else None
+        fwd = getattr(ps_space, "_forward_input", None) if ps_space is not None else None
+        if (pretrain is None
+                or not hasattr(pretrain, "sbow_loss_indices")
+                or fwd is None or "indices" not in fwd):
             return None
-        vecs = ps_sub.materialize()                 # [B, nPercepts, dim]
-        if vecs is None:
+        pid_grid = fwd["indices"]
+        if not torch.is_tensor(pid_grid) or pid_grid.dim() != 2:
             return None
-        B, N, D = vecs.shape
-        if N < 2:
+        # Resolve the null/padding percept id so its slots are excluded.
+        null_pid = None
+        ps_store = fwd.get("percept_store", None)
+        if ps_store is not None:
+            try:
+                null_pid = ps_store.get_id(b"\x00")
+            except Exception:
+                null_pid = None
+        null_pid = int(null_pid) if null_pid is not None else None
+        terms = []
+        for row in pid_grid.detach().cpu().tolist():
+            used = [int(p) for p in row
+                    if null_pid is None or int(p) != null_pid]
+            if len(used) < 2:
+                continue
+            t = pretrain.sbow_loss_indices(used)
+            if t is not None:
+                terms.append(t)
+        if not terms:
             return None
-
-        # Leave-one-out centroids per sentence: [B, N, D]
-        total = vecs.sum(dim=1, keepdim=True)       # [B, 1, D]
-        centroids = (total - vecs) / (N - 1)        # [B, N, D]
-
-        # Cosine similarity loss: each percept should match its centroid
-        c_norm = F.normalize(centroids, dim=-1)
-        v_norm = F.normalize(vecs, dim=-1)
-        cos_sim = (c_norm * v_norm).sum(dim=-1)     # [B, N]
-
-        # Non-negative cosine loss: 0 means each percept matches the
-        # leave-one-out centroid exactly.
-        return (1 - cos_sim).mean()
+        return torch.stack(terms).mean()
 
     def accumulate_output_symbol_residual(self, outputTensor, outputDataPred):
         """Use supervised output targets to form a symbol-space residual.
@@ -3107,6 +3121,34 @@ class BasicModel(BaseModel):
             return None
         return disc.consume_inter_loss()
 
+    def present(self) -> int:
+        """The absolute model time (the serialized ``when_time`` clock).
+
+        0-initialized; ``runBatch`` advances it by 1 per processed batch on
+        BOTH train and inference. It is the authoritative absolute-time
+        record (the .when sinusoid only carries local angular resolution)."""
+        return int(self.when_time)
+
+    def _advance_when_time(self):
+        """Tick the model clock once and propagate ``present()`` to the live
+        ``WhenRangeEncoding`` instances so their ``.t`` reference equals the
+        absolute time at stamping. Called exactly once per processed batch in
+        ``runBatch`` (train AND inference), in eager Python (outside the
+        compiled forward), so the encoders the forward stamps with already see
+        the advanced time. The clock is a long buffer; the in-place add keeps
+        it on-device and serializable. The encoders' ``.t`` is a plain Python
+        int (no grad, no device tensor) read by ``encode``/``forward``."""
+        # In-place so the registered buffer (and its device) is preserved.
+        self.when_time += 1
+        t_now = int(self.when_time)
+        for sp in getattr(self, "spaces", []) or []:
+            sub = getattr(sp, "subspace", None)
+            enc = getattr(sub, "whenEncoding", None) if sub is not None else None
+            # Only the enabled (nDim > 0) range encoders carry a stampable .t;
+            # the disabled (nWhen == 0) carrier is a no-op either way.
+            if enc is not None and getattr(enc, "nDim", 0) > 0:
+                enc.t = t_now
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
@@ -3147,6 +3189,14 @@ class BasicModel(BaseModel):
         batch = batch_override
         inputTensor, outputTensor = batch
         inference_only = not train and split == "runtime"
+
+        # Advance the serialized model clock once per PROCESSED batch (this
+        # point is past the no-batch early raise, so it ticks exactly once on
+        # BOTH the train and inference paths regardless of which return fires
+        # below). Done here, in eager Python before the forward, so the live
+        # WhenRangeEncoding(s) the forward stamps already carry the advanced
+        # absolute time (``.t == present()``). See ``_advance_when_time``.
+        self._advance_when_time()
 
         # Pre-allocate per-batch state OUTSIDE the compiled forward.
         # ``WordSpace.ensure_microbatch`` allocates ``_stm_fired`` /
@@ -4470,6 +4520,16 @@ class BasicModel(BaseModel):
         ``self.wordSubSpace``, ``self.reversible``, etc.).
         """
         self.spaces = []
+        # Serialized model clock (doc/plans/2026-06-07-model-time-when-
+        # encoding.md): a 0-initialized ``long`` that increments once per
+        # processed batch (train AND inference) in ``runBatch`` and rides
+        # ``state_dict()`` through save/load. It is the AUTHORITATIVE absolute
+        # time; ``runBatch`` propagates it to each live ``WhenRangeEncoding``'s
+        # ``.t`` so a default-stamped .when carries the absolute model time.
+        # Guarded so a re-entrant build does not re-register the buffer.
+        if "when_time" not in self._buffers:
+            self.register_buffer(
+                "when_time", torch.zeros((), dtype=torch.long))
         self.wordSubSpace = None  # wired below once the home spaces exist
         self.reversible = True
         self.nInput = nInput
@@ -6415,15 +6475,15 @@ class BasicModel(BaseModel):
         word_active = self.inputSpace._word_active_mask
         out_slot = self._per_word_contributions
         # ``K_host`` is the active prefix length (host int from the
-        # eager-computed ``_valid_len_host``). The static-N loop runs
-        # ``N_static`` iterations regardless, but cache writes and the
-        # ``last_cs`` tracker gate on ``p < K_host`` so padding
-        # iterations don't overwrite last-real-iter state that
-        # downstream reconstruction reads.
+        # eager-computed ``_valid_len_host``). Run only the real sentence
+        # prefix; the stack/pad tail below restores ``N_target`` width for
+        # downstream reconstruction. Row-specific padding inside that prefix
+        # is still gated by ``word_active``.
         K_host = int(self.inputSpace._valid_len_host)
+        N_loop = min(N_static, K_host)
 
         last_cs = None
-        for p in range(N_static):
+        for p in range(N_loop):
             w = self.inputSpace.word_at(p)
             if w is None:
                 break
@@ -6432,12 +6492,11 @@ class BasicModel(BaseModel):
             else:
                 gate_b_1 = torch.ones(
                     w.shape[0], 1, dtype=torch.bool, device=w.device)
-            active_host = p < K_host
             CS_sub, idea_bd = self._per_word_body_step(
-                w, p, gate_b_1, out_slot, active_host=active_host)
-            if active_host and CS_sub is not None:
+                w, p, gate_b_1, out_slot, active_host=True)
+            if CS_sub is not None:
                 last_cs = CS_sub
-        word_count = K_host
+        word_count = N_loop
         # STM host mirror is advanced inside the body's ``active_host``
         # branch per real push; no post-loop fixup needed.
 
@@ -7832,38 +7891,20 @@ class ModelFactory:
         # closures from one test leak into the next.
         TheXMLConfig._requirements.clear()
 
-        # Attention is incompatible with reshape that changes vector count
-        # (attention expects multi-vector 3D, reshape to 1 vector collapses it).
-        def _has_reshape(space_name):
-            """True if ``space_name`` reshapes its input (nInputDim != 0 or flatten).
-
-            Used to detect the attention-vs-reshape incompatibility:
-            attention expects 3D multi-vector input, reshape collapses
-            to a single vector.
-            """
-            try:
-                nid = gsp(cfg, space_name, "nInputDim")
-            except KeyError:
-                nid = 0
-            try:
-                fl = gsp(cfg, space_name, "flatten")
-            except KeyError:
-                fl = False
-            return nid != 0 or fl
-        if _has_reshape("PerceptualSpace") and gsp(cfg, "PerceptualSpace", "hasAttention"):
-            errors.append(
-                "PerceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
-                "Set <hasAttention>false</hasAttention> in <PerceptualSpace>.")
+        # The old ``hasAttention``-vs-``nInputDim``/``flatten`` reshape guard
+        # (and its ``_has_reshape`` helper) was retired together with the QKV
+        # ``AttentionLayer`` enlistment in PerceptualSpace/ConceptualSpace
+        # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It
+        # only protected the constraint that transformer self-attention needs
+        # 3D multi-vector input; ``<attention>`` is now a symbolic-retrieval
+        # mode (not tensor self-attention), so ``hasAttention=True`` together
+        # with a reshape/flatten is no longer an error.
 
         # ``<maskedPrediction>`` retired 2026-05-14: within-sentence
         # training is IR-only and there's no ARIR mode to validate.
         # ``<reconstruct>`` enum retired (A1: schema + ``reconstructEnum``
         # removed). C3 (spec sec 7): reconstruction is unconditionally
         # concepts-seeded in ``runBatch`` -- there is no mode to validate.
-        if _has_reshape("ConceptualSpace") and gsp(cfg, "ConceptualSpace", "hasAttention"):
-            errors.append(
-                "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
-                "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
         def _resolve_dim(space_name, prev_dim):
             try:

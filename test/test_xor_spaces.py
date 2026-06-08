@@ -401,7 +401,13 @@ class TestNullEOS(unittest.TestCase):
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = self.psp.muxedSize
-        nWhat = self.psp.nWhat
+        # The reconstruction content-match (``_reverse_text_vectors``) splits the
+        # query at ``emb.content_dim`` (the embedding's full width, which for a
+        # muxed embedding includes the where/when band baked into each codebook
+        # row), so copy that full width -- copying only ``psp.nWhat`` leaves the
+        # where/when dims zero and the nearest-row match can drift. (2026-06-07
+        # .when redesign shrank the .when magnitude, exposing this slicing gap.)
+        nWhat = emb.content_dim
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 
@@ -411,7 +417,7 @@ class TestNullEOS(unittest.TestCase):
         )
         word_text = words_list[word_idx]
 
-        # Build 3-slot sequence: [word, \x00, word] -- only content dims; no positional
+        # Build 3-slot sequence: [word, \x00, word] over the full content width.
         batch, nVec = 1, 3
         vectors = torch.zeros([batch, nVec, embSize])
         vectors[0, 0, :nWhat] = codebook[word_idx][:nWhat]   # slot 0: real word
@@ -441,7 +447,10 @@ class TestNullEOS(unittest.TestCase):
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = self.psp.muxedSize
-        nWhat = self.psp.nWhat
+        # Copy the full content width the reconstruction content-match consumes
+        # (``emb.content_dim``); see the note in
+        # test_reconstruct_buffer_stops_at_null_token.
+        nWhat = emb.content_dim
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 

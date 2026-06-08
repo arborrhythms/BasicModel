@@ -45,14 +45,12 @@
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>16</nVectors>
-    <nInputDim>-1</nInputDim>
   </InputSpace>
 
   <PerceptualSpace>
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>16</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </PerceptualSpace>
 
@@ -60,7 +58,6 @@
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>16</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
@@ -68,7 +65,6 @@
     <nDim>16</nDim>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
   </SymbolicSpace>
 
   <OutputSpace>

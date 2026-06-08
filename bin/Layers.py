@@ -2099,6 +2099,28 @@ class GrammarLayer(Layer):
     #   U_inv @ ...: [a - U*b, b]
     # No torch.linalg.solve; no matrix inverse. Pure scalar ops.
 
+    # Lower bound for the 2x2-LDU diagonal magnitude. Larger than the
+    # full-LDU ``epsilon`` (1e-7) because the butterfly is a CASCADE: the
+    # reverse divides by ``|d|`` at EVERY level, so ``(1/eps)^n_levels`` must
+    # stay finite. 1e-3 bounds the worst-case reverse amplification while
+    # leaving ``d`` essentially free near its unit (identity) init.
+    _BUTTERFLY_D_EPS = 1e-3
+
+    @staticmethod
+    def _stable_pair_d(d_node):
+        """Clamp the 2x2-LDU diagonal away from zero: ``|d|`` in
+        ``[_BUTTERFLY_D_EPS, 1]``, sign preserved, and ``d == 0 -> +eps``
+        (a plain ``sign(0)=0`` would otherwise leave it at zero).
+
+        The reverse pair op divides by ``d``; an unclamped learnable diagonal
+        that drifts to ~0 makes ``1/d`` blow up -- the radix reverse
+        divergence (a ``d`` reaching 0 / a flushed denormal on MPS). Applied
+        IDENTICALLY in the forward and reverse pair ops so ``x*d`` then
+        ``/d`` cancel exactly: the cascade stays structurally invertible.
+        """
+        sign = torch.sign(d_node) + (d_node == 0).to(d_node.dtype)
+        return sign * d_node.abs().clamp(GrammarLayer._BUTTERFLY_D_EPS, 1.0)
+
     def _butterfly_pair_forward(self, x_pair, L_node, d_node, U_node):
         """Apply 2x2 LDU pair op forward: y = L @ D @ U @ x_pair.
 
@@ -2111,6 +2133,7 @@ class GrammarLayer(Layer):
         Returns:
             ``[B, M, 2]`` paired output.
         """
+        d_node = self._stable_pair_d(d_node)
         x0 = x_pair[..., 0]
         x1 = x_pair[..., 1]
         # U: [[1, U], [0, 1]]
@@ -2131,6 +2154,7 @@ class GrammarLayer(Layer):
         off-diagonals + reciprocals on the diagonals). No matrix
         solve required.
         """
+        d_node = self._stable_pair_d(d_node)
         y0 = y_pair[..., 0]
         y1 = y_pair[..., 1]
         # L^-1 = [[1, 0], [-L, 1]]
@@ -8661,6 +8685,13 @@ class RadixLayer(Layer):
         if symbolic_space is not None:
             cb = getattr(symbolic_space.subspace, "what", None)
             W = cb.getW() if cb is not None else None
+            if W is None:
+                # SS codebook absent (e.g. <codebook>none</codebook>): there
+                # is no SS taxonomy to walk, so fall back to the standalone
+                # PS-table decode (nearest ACTIVE percept -> inverse_table)
+                # rather than emitting an empty slot for every word.
+                symbolic_space = None
+                W = self.codebook
         else:
             W = self.codebook
         if W is None:
@@ -8669,11 +8700,25 @@ class RadixLayer(Layer):
         # divergence -- bail before argmin sees a [0, D] tensor.
         if W.shape[0] == 0:
             return b""
+        # Bound the nearest-row search to ACTIVE percept rows [0, _size).
+        # The codebook is preallocated to capacity (nVectors); the unused
+        # reserve rows are untrained noise that must not win the argmin (and
+        # for the PS-table decode an out-of-active match has no inverse_table
+        # entry -> IndexError -> empty slot). Restricting to active rows keeps
+        # the decode on real percepts.
+        if symbolic_space is None and 0 < self._size < W.shape[0]:
+            W = W[:self._size]
         # Move both to the same device + dtype; collapse to [D].
         target = vec.detach().to(W.device, W.dtype).reshape(-1)
         if target.shape[0] != W.shape[1]:
-            # Width mismatch -- caller passed a non-matching vec. Bail.
-            return b""
+            # CS->PS demux: the recon vector is the muxed [what|where|when]
+            # event, wider than the content-width codebook row -- take the
+            # leading .what slice (mirrors insert_symbol's demux). A narrower
+            # vec is a genuine mismatch; bail.
+            if target.shape[0] > W.shape[1]:
+                target = target[:W.shape[1]]
+            else:
+                return b""
         # Null-slot guard (2026-05-28). Padding / inter-word-space slots
         # produce near-zero recon vectors. Matching them against any
         # codebook via argmin would land on whichever row is closest to

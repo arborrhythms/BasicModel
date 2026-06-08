@@ -50,7 +50,8 @@ from Language import (PrepositionLayer, ContextualBindLayer,
                       TenseLayer, AspectLayer)
 from bind_resolver import Participant
 from surface_tense import normalize_surface
-from Spaces import WhenRangeEncoding
+from Spaces import (WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_TENSE_STEP,
+                    _WHEN_PERIOD)
 
 # --- shared preamble -------------------------------------------------------
 D = 8                                  # constituent width, consistent per slab
@@ -85,22 +86,27 @@ def _intersect_np(a, b):
     return (a + b) / 2.0
 
 
-# --- event-tensor helpers (tense / aspect fixtures) ------------------------
-_ENC = WhenRangeEncoding(64, 2)
+# --- event-tensor helpers (tense fixtures; 2026-06-07 .when redesign) -------
+# .when = D * [sin(2*pi*t/period), cos(...)] -- ANGLE = absolute time t,
+# MAGNITUDE D in [0, 1] = TENSE (0=past, 0.5=present default, 1=future). Aspect
+# is retired to a no-op. The default present stamp at t=0 is [0, 0.5].
+_ENC = WhenRangeEncoding(_WHEN_PERIOD, 2)
+_T = _WHEN_PERIOD // 8                              # a non-aliasing absolute time
 
 
-def present_event(B=1, V=1, nhead=6):
-    """A materialized event [B, V, nhead+2] with a present (-0.5, 0.5)
-    unit-bracket .when tail (center 0, duration 1)."""
+def present_event(B=1, V=1, nhead=6, t=_T):
+    """A materialized event [B, V, nhead+2] with a present .when tail
+    (tense magnitude 0.5) at absolute time ``t``."""
+    _ENC.t = t
     head = torch.randn(B, V, nhead)
-    when = _ENC.encode_range(-0.5, 0.5).expand(B, V, -1)
+    when = _ENC.encode(t, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)
     return torch.cat([head, when], dim=-1)
 
 
 def when_of(event):
-    """Decode the trailing 2 .when columns to (start, end) signed floats."""
-    s, e = _ENC.decode(event[..., -2:])
-    return float(s.reshape(-1)[0]), float(e.reshape(-1)[0])
+    """Decode the trailing 2 .when columns to (t, D): absolute time, tense."""
+    t, D = _ENC.decode(event[..., -2:])
+    return float(t.reshape(-1)[0]), float(D.reshape(-1)[0])
 
 
 # ===========================================================================
@@ -205,11 +211,11 @@ def test_fixture_5_alice_ran():
     assert normalize_surface(["ran"]) == ("PAST", [], "run")
     t = TenseLayer(); t.set_op("PAST")
     result = t.forward(present_event())
-    # present (-0.5, 0.5); SIMPLE(center 0)=(-0.5, 0.5) is identity-equivalent;
-    # PAST rotate -1 -> (-1.5, -0.5)
-    s, e = when_of(result)
-    assert math.isclose(s, -1.5, abs_tol=0.05)
-    assert math.isclose(e, -0.5, abs_tol=0.05)
+    # present D=0.5; SIMPLE is a no-op (aspect retired); PAST -> D 0.5 - 0.1 =
+    # 0.4 (toward past), absolute time-angle preserved.
+    tt, D = when_of(result)
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP, abs_tol=1e-4)
+    assert math.isclose(tt, float(_T), abs_tol=0.05)
 
 
 # ===========================================================================
@@ -217,12 +223,12 @@ def test_fixture_5_alice_ran():
 # ===========================================================================
 def test_fixture_6_alice_is_running():
     assert normalize_surface(["is", "running"]) == ("PRESENT", ["PROGRESSIVE"], "run")
-    a = AspectLayer(); a.set_op("PROGRESSIVE")
+    a = AspectLayer(); a.set_op("PROGRESSIVE")         # no-op (aspect retired)
     t = TenseLayer(); t.set_op("PRESENT")              # identity
     result = t.forward(a.forward(present_event()))
-    s, e = when_of(result)                             # PROGRESSIVE(center 0) -> (-1, 1)
-    assert math.isclose(s, -1.0, abs_tol=0.05)
-    assert math.isclose(e,  1.0, abs_tol=0.05)
+    tt, D = when_of(result)                            # present is unchanged
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT, abs_tol=1e-4)
+    assert math.isclose(tt, float(_T), abs_tol=0.05)
 
 
 # ===========================================================================
@@ -230,12 +236,12 @@ def test_fixture_6_alice_is_running():
 # ===========================================================================
 def test_fixture_7_alice_has_run():
     assert normalize_surface(["has", "run"]) == ("PRESENT", ["PERFECT"], "run")
-    a = AspectLayer(); a.set_op("PERFECT")
+    a = AspectLayer(); a.set_op("PERFECT")             # no-op (aspect retired)
     t = TenseLayer(); t.set_op("PRESENT")              # identity
     result = t.forward(a.forward(present_event()))
-    s, e = when_of(result)                             # [r-1, r] around r=0
-    assert math.isclose(s, -1.0, abs_tol=0.05)
-    assert math.isclose(e,  0.0, abs_tol=0.05)
+    tt, D = when_of(result)
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT, abs_tol=1e-4)
+    assert math.isclose(tt, float(_T), abs_tol=0.05)
 
 
 # ===========================================================================
@@ -245,29 +251,29 @@ def test_fixture_8_alice_had_been_running():
     tense, aspect_chain, base = normalize_surface(["had", "been", "running"])
     assert (tense, aspect_chain, base) == ("PAST", ["PERFECT", "PROGRESSIVE"], "run")
 
-    # aspect_chain is OUTERMOST-first; apply INNERMOST-first (PROGRESSIVE,
-    # then PERFECT), then tense. Trace (abs_tol=0.05):
-    #   present (-0.5, 0.5), center 0
-    #   PROGRESSIVE (center 0) -> (-1.0, 1.0)
-    #   PERFECT (reads center = 0) -> (-1.0, 0.0)
-    #   PAST (rotate -1) -> (-2.0, -1.0)
+    # 2026-06-07 .when redesign: aspect is a no-op (PROGRESSIVE/PERFECT leave
+    # .when unchanged); only PAST tense moves the magnitude. Trace:
+    #   present D=0.5 at time _T
+    #   PROGRESSIVE (no-op) -> D 0.5
+    #   PERFECT     (no-op) -> D 0.5
+    #   PAST -> D 0.4 (toward past), time-angle preserved
     event = present_event()
 
     prog = AspectLayer(); prog.set_op("PROGRESSIVE")
     event = prog.forward(event)
-    s, e = when_of(event)
-    assert math.isclose(s, -1.0, abs_tol=0.05) and math.isclose(e, 1.0, abs_tol=0.05)
+    _t, D = when_of(event)
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT, abs_tol=1e-4)
 
     perf = AspectLayer(); perf.set_op("PERFECT")       # PERFECT wraps PROGRESSIVE
     event = perf.forward(event)
-    s, e = when_of(event)
-    assert math.isclose(s, -1.0, abs_tol=0.05) and math.isclose(e, 0.0, abs_tol=0.05)
+    _t, D = when_of(event)
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT, abs_tol=1e-4)
 
-    t = TenseLayer(); t.set_op("PAST")                 # shifts both endpoints back ~1
+    t = TenseLayer(); t.set_op("PAST")                 # moves tense magnitude down
     event = t.forward(event)
-    s, e = when_of(event)
-    assert math.isclose(s, -2.0, abs_tol=0.05)
-    assert math.isclose(e, -1.0, abs_tol=0.05)
+    tt, D = when_of(event)
+    assert math.isclose(D, _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP, abs_tol=1e-4)
+    assert math.isclose(tt, float(_T), abs_tol=0.05)
 
 
 if __name__ == "__main__":

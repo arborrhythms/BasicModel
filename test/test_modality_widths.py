@@ -27,7 +27,8 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Spaces import SubSpace, WhereEncoding, WhenRangeEncoding, Codebook
+from Spaces import (SubSpace, WhereEncoding, WhenRangeEncoding, Codebook,
+                    _WHEN_TENSE_DEFAULT, _WHEN_PERIOD)
 
 
 def _fresh_codebook(nInput, nVectors, nDim, customVQ=True):
@@ -76,26 +77,29 @@ class TestCSWidthGuard(unittest.TestCase):
         self.assertIsNotNone(proto)
         self.assertEqual(tuple(proto.shape), (nVectors, nWhat + 4))
 
-    def test_cs_demux_round_trips_where_span_and_when_bracket(self):
+    def test_cs_demux_round_trips_where_span_and_when_phasor(self):
         cs, whenEnc, whereEnc, dim, _nWhat, _nVectors = self._build_cs()
         B, V = 2, 3
         # Build a muxed event from real codebook rows, then stamp a fresh
-        # .where position (p=3) and a present-perfect .when bracket (-1, 0).
+        # .where position (p=3) and a present .when phasor (D=0.5) at time t=0.
+        # (2026-06-07 .when redesign: angle=absolute time, magnitude=tense.)
+        whenEnc.t = 0
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
         event = cs.lookup(sel).clone()
         when_idx = whenEnc.resolve(dim)
-        event[..., when_idx] = whenEnc.encode_range(-1.0, 0.0).expand(B, V, -1)
+        event[..., when_idx] = whenEnc.encode(0, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)
         where_idx = whereEnc.resolve(dim)
         event[..., where_idx] = whereEnc.encode(torch.tensor(3.0)).expand(B, V, -1)
 
         cleaned, space, time = cs.decode(event.clone())
 
-        # (a) .when round-trips to (start, end) = (-1, 0).
-        start, end = time
-        self.assertTrue(torch.allclose(start, torch.full_like(start, -1.0), atol=1e-3),
-                        f"when start did not round-trip: {start}")
-        self.assertTrue(torch.allclose(end, torch.zeros_like(end), atol=1e-3),
-                        f"when end did not round-trip: {end}")
+        # (a) .when round-trips to (t, D) = (0, 0.5).
+        t_dec, D_dec = time
+        self.assertTrue(torch.allclose(t_dec, torch.zeros_like(t_dec), atol=1e-2),
+                        f"when time did not round-trip: {t_dec}")
+        self.assertTrue(torch.allclose(D_dec, torch.full_like(D_dec, _WHEN_TENSE_DEFAULT),
+                                       atol=1e-3),
+                        f"when tense magnitude did not round-trip: {D_dec}")
         # (b) .where round-trips to the stamped position (3).
         self.assertTrue(torch.allclose(space, torch.full_like(space, 3.0), atol=1e-3),
                         f"where did not round-trip: {space}")
@@ -106,16 +110,17 @@ class TestCSWidthGuard(unittest.TestCase):
                                        torch.zeros_like(cleaned[..., where_idx]), atol=1e-6))
         # Fail-loud: no NaN/Inf escaped the demux.
         self.assertTrue(torch.isfinite(cleaned).all())
-        self.assertTrue(torch.isfinite(start).all() and torch.isfinite(end).all())
+        self.assertTrue(torch.isfinite(t_dec).all() and torch.isfinite(D_dec).all())
         self.assertTrue(torch.isfinite(space).all())
 
     def test_cs_event_muxing_coexists_and_reconstructs(self):
         cs, whenEnc, _whereEnc, dim, _nWhat, _nVectors = self._build_cs()
         B, V = 2, 3
+        whenEnc.t = 0
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
         event = cs.lookup(sel).clone()
         when_idx = whenEnc.resolve(dim)
-        event[..., when_idx] = whenEnc.encode_range(-1.0, 0.0).expand(B, V, -1)
+        event[..., when_idx] = whenEnc.encode(0, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)
 
         # Store the muxed event (snaps through the codebook), reconstruct from
         # the selection. The muxed .event view must come back at the full width

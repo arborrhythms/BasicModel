@@ -63,7 +63,7 @@ def _load_model_in_process(config_path, max_length=64):
     (forwarding only the shard / maxDocs / shardDir keys actually
     present), constructs the model via ``BaseModel.from_config``, runs
     it through ``util.compile`` and returns a closure that invokes
-    ``model.infer`` in autoregressive mode.
+    ``model.infer`` in its default IR mode.
     """
     # Ensure bin/ is importable when run as a script
     bin_dir = os.path.dirname(os.path.abspath(__file__))
@@ -100,9 +100,19 @@ def _load_model_in_process(config_path, max_length=64):
     model = compile(model)
 
     def chat_inproc(text):
-        """In-process chat closure: tokenize, run AR inference, join."""
-        tokens = model.infer(text, mode="AR", max_length=max_length)
-        return " ".join(tokens) if tokens else ""
+        """In-process chat closure: tokenize, run IR inference, join."""
+        items = model.infer(text, max_length=max_length)
+        if not items:
+            return ""
+        tokens = []
+        for item in items:
+            if isinstance(item, (list, tuple)) and len(item) >= 3:
+                token = item[2]
+            else:
+                token = item
+            if token:
+                tokens.append(str(token))
+        return " ".join(tokens)
 
     return chat_inproc
 

@@ -165,6 +165,21 @@ _DEFAULT_GEN_BUDGET = 64
 _MAX_GEN_BUDGET = 128
 
 
+def _response_text_from_infer(items):
+    """Decode IR ``infer`` results into the endpoint's assistant text."""
+    if not items:
+        return ""
+    words = []
+    for item in items:
+        if isinstance(item, (list, tuple)) and len(item) >= 3:
+            token = item[2]
+        else:
+            token = item
+        if token:
+            words.append(str(token))
+    return " ".join(words)
+
+
 @app.route("/chat/completions", methods=["POST"])
 def chat_completions():
     """OpenAI-compatible chat completions endpoint.
@@ -233,12 +248,9 @@ def chat_completions():
         if thought_free:
             TheGrammar.thought_free = True
 
-        # Autoregressive inference: extend input text word by word,
-        # bounded by the server's generation budget so slow AR runs
-        # cannot sit longer than the HTTP client's read timeout.
-        predicted_words = _model.infer(
-            user_msg, mode='AR', max_length=gen_budget)
-        response_text = " ".join(predicted_words)
+        # IR inference returns (slot, original, predicted) triples.
+        predictions = _model.infer(user_msg, max_length=gen_budget)
+        response_text = _response_text_from_infer(predictions)
 
         response = {
             "choices": [{
@@ -328,7 +340,7 @@ def main():
     # 30s read timeout.
     logger.info("Warming up inference path...")
     try:
-        _model.infer("warmup", mode='AR', max_length=4)
+        _model.infer("warmup", max_length=4)
         logger.info("Warmup complete.")
     except Exception as exc:
         logger.warning("Warmup failed (continuing anyway): %s", exc)

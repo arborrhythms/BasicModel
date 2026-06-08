@@ -1662,6 +1662,27 @@ class PretrainModel:
 
         return self._neg_sampling_loss(centroids, idx)
 
+    def sbow_loss_indices(self, idx_list):
+        """SBOW loss (differentiable) over explicit codebook row indices.
+
+        Same objective as :meth:`sbow_loss` -- leave-one-out centroid with
+        NEGATIVE SAMPLING (the antipode repulsion that keeps the codebook
+        from collapsing toward a single point / the null percept) -- but the
+        caller passes already-resolved row indices (e.g. the radix percept
+        ids gathered in the forward) rather than word keys, so the positives
+        are exactly the percepts used in the computation. Returns a scalar
+        loss tensor, or None if fewer than 2 indices.
+        """
+        if idx_list is None or len(idx_list) < 2:
+            return None
+        device = self.wv._vectors.device
+        idx = torch.tensor(idx_list, dtype=torch.long, device=device)
+        N = len(idx_list)
+        vecs = self.wv._vectors[idx]                      # [N, dim]
+        total = vecs.sum(dim=0)                            # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1)  # [N, dim]
+        return self._neg_sampling_loss(centroids, idx)
+
     # -- export ----------------------------------------------------------------
 
 

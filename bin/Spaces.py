@@ -47,13 +47,22 @@ from Layers import GrammarLayer
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
 # of use below to avoid the Layers <-> Language circular dependency during
 # Language.py's own module load.
-from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
+# AttentionLayer import removed: the QKV enlistment in PS/CS was retired
+# (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum); the
+# class still lives in Layers.py.
+from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 
 from util import parse
 from collections import namedtuple as _namedtuple
+
+# Valid values for the <attention> symbolic-retrieval mode knob on each space
+# (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum).  XSD
+# validation can silently degrade to a warning when lxml/xmllint are absent,
+# so a typo in the XML must be caught here at space-construction time.
+_VALID_ATTENTION_MODES = frozenset(("off", "primer", "second-order", "low-rank"))
 
 
 class Encoding(nn.Module):
@@ -308,38 +317,65 @@ class WhereEncoding(QuadratureEncoding):
         y = pe.forward(x)
         cleaned, offsets = pe.reverse(y)
         print(f"Positions decoded: {offsets}")
+
+
+# .when single-scaled-quadrature-phasor scheme (2026-06-07 redesign, FINAL).
+#
+# ``.when = D * [sin(2*pi*t/_WHEN_PERIOD), cos(2*pi*t/_WHEN_PERIOD)]`` -- a
+# single 2-vector whose ANGLE encodes the absolute model time ``t`` and whose
+# MAGNITUDE ``D in [0, 1]`` is the TENSE position (0=past, 0.5=PRESENT default,
+# 1=future). Event-extent DURATION is retired: the magnitude is tense now, not
+# duration. The serialized ``BasicModel.when_time`` long counter owns the EXACT
+# absolute time; ``.when``'s angle is the coarse (folded/aliasing) feature.
+#
+# Float resolution: the per-time-tick angular step is
+# ``2*pi/_WHEN_PERIOD ~ 9.6e-5`` rad; scaled by the present magnitude
+# ``D ~ 0.5`` it is ``~4.8e-5`` -- still >~400x float32 epsilon (~1.2e-7), so
+# adjacent ticks stay distinguishable in the float32 ``.when`` dtype. Tense
+# steps are ``_WHEN_TENSE_STEP = 0.1`` apart in magnitude (a huge margin). The
+# magnitude lives in ``[0, 1]`` (no magnitude-near-2 precision problem) and
+# every component stays in ``[-1, 1]`` (network-friendly).
+#
+# ``_WHEN_MAXT`` is retained as a back-compat alias for ``_WHEN_PERIOD`` so the
+# existing construction sites that import / pass it keep working.
+_WHEN_PERIOD = 65536
+_WHEN_MAXT = _WHEN_PERIOD
+# Tense magnitude defaults / step: 0.5 = PRESENT, +/- 0.1 per next()/previous().
+_WHEN_TENSE_DEFAULT = 0.5
+_WHEN_TENSE_STEP = 0.1
+
+
 class WhenRangeEncoding(QuadratureEncoding):
-    """Zero-centered, SIGNED, two-endpoint temporal RANGE in 2 dims --
-    mirrors .where (EndpointSumWhere, bin/perceptual_analyzer.py). The .when
-    key is the endpoint SUM q(start)+q(end) with q(t) = [sin(t*dt),
-    cos(t*dt)]. By sum-to-product the key is
-    2*cos((end-start)*dt/2) * [sin(center*dt), cos(center*dt)] with
-    center=(start+end)/2: the ANGLE carries the center time, the MAGNITUDE
-    carries the duration -- so a range fits in nDim=2, exactly like .where.
+    """Single scaled quadrature phasor temporal feature in 2 dims (2026-06-07
+    redesign, FINAL). ``.when = D * [sin(2*pi*t/period), cos(2*pi*t/period)]``:
 
-    Difference from .where: .when is ZERO-CENTERED (t=0 = present reference)
-    and SIGNED (past<0<future), so decode uses atan2's native (-pi, pi]
-    range WITHOUT the % 2*pi fold and does NOT snap to the integer grid
-    (aspect uses fractional windows). Default present/simple is the unit
-    bracket encode_range(-0.5, 0.5) (center 0, duration 1).
+      * the ANGLE encodes the ABSOLUTE model time ``t`` (``self.t``, synced
+        from the serialized ``BasicModel.when_time`` clock, default 0). The
+        long-int clock owns the EXACT time; ``.when``'s angle is the coarse
+        (folded / aliasing) feature.
+      * the MAGNITUDE ``D in [0, 1]`` is the TENSE position: ``0`` = past,
+        ``0.5`` = PRESENT (default), ``1.0`` = future. ``D`` is tense, NOT
+        event duration (event-extent duration is retired in this redesign).
 
-    Tense is a phase rotation R(delta): shifting both endpoints by delta
-    rotates the summed 2-vector by delta*dt (center+delta, duration
-    unchanged). Aspect reshapes the interval (aspect_interval) -> the key's
-    magnitude. Do NOT normalise the key: the magnitude carries the duration.
-    nDim=2 (== nWhere); disabled (nDim=0) when n_when=0.
+    Every component lies in ``[-1, 1]`` (network-friendly); the magnitude lives
+    in ``[0, 1]`` (no magnitude-near-2 precision problem). At ``t == 0`` the
+    present default is ``0.5 * [0, 1] = [0, 0.5]``.
 
-    Encoding conventions (unit-bracket points): a POINT event time t is the
-    unit window [t-0.5, t+0.5], stamped via encode(t) = encode_range(t-0.5,
-    t+0.5) (|key| = 2*cos(0.5*dt) ~ 1.998). So encode is the mutual inverse of
-    the range decode -- decode recovers both endpoints (center = t, duration =
-    1) -- and every .when carries a recoverable duration. Tense / aspect stamp
-    a true interval via encode_range(start, end) (|key| = 2*cos(dur*dt/2) <= 2);
-    decode recovers both endpoints. encode and encode_range now agree.
+    Tense moves the magnitude by ``+/-_WHEN_TENSE_STEP`` (next/previous),
+    preserving the time-angle. nDim=2 (== nWhere); disabled (nDim=0) when
+    n_when=0.
+
+    Float resolution (per the constant block): the per-time-tick angular step
+    ``2*pi/period ~ 9.6e-5`` rad, scaled by ``D ~ 0.5`` (~4.8e-5), is still
+    >~400x float32 eps; tense steps are 0.1 apart in magnitude (huge margin).
+
+    Edge: ``D == 0`` (extreme past after 5 previous() from 0.5) gives
+    ``.when == [0, 0]`` (no angle); accepted -- the long int owns the time. The
+    rescale (``shift_tense``) and decode guard the divide-by-zero.
     """
     index = []
 
-    def __init__(self, maxT=64, n_when=0):
+    def __init__(self, maxT=_WHEN_PERIOD, n_when=0):
         if n_when > 0:
             super().__init__([-2, -1], maxT)        # div_term = 2*pi/maxT; slots [-2, -1]
             self.nDim = 2
@@ -347,96 +383,103 @@ class WhenRangeEncoding(QuadratureEncoding):
             Encoding.__init__(self, [], 1)
             self.div_term = 2 * math.pi / max(1, maxT)
             self.nDim = 0
+        # Absolute model time the angle encodes. The live BasicModel clock
+        # (``when_time``) propagates here once per batch so a default-stamped
+        # .when carries the ABSOLUTE model time. next/previous are NOT t-shifts
+        # in this scheme -- they move the tense MAGNITUDE, leaving t fixed.
+        self.t = 0
+        # Tense magnitude D in [0, 1]; 0.5 = present default. Set by
+        # next()/previous() (scalar form) and by the construction default.
+        self.D = _WHEN_TENSE_DEFAULT
 
-    def q(self, t):
-        """One endpoint phasor [sin(t*dt), cos(t*dt)] (QuadratureEncoding order)."""
-        if not isinstance(t, torch.Tensor):
-            t = torch.tensor(float(t), device=TheDevice.get())
-        ang = t * self.div_term
-        return torch.stack((torch.sin(ang), torch.cos(ang)), dim=-1)
-
-    def encode_range(self, start_t, end_t):
-        """Endpoint-sum key q(start)+q(end) -> [..., 2]; magnitude carries duration."""
-        return self.q(start_t) + self.q(end_t)
-
-    def encode(self, offsets):
-        """Point time(s) -> unit-width bracket key encode_range(t-0.5, t+0.5).
-        A single stamped time is the unit window [t-0.5, t+0.5] (magnitude
-        ~1.998), so encode is the mutual inverse of the range decode and every
-        .when carries a recoverable duration. Used by the event-muxing sites
-        (whenEncoding.encode) and anywhere a scalar/tensor time is stamped."""
-        return self.encode_range(offsets - 0.5, offsets + 0.5)
+    def encode(self, offsets, D=_WHEN_TENSE_DEFAULT):
+        """Time(s) ``t`` -> scaled phasor ``D * [sin(2*pi*t/period),
+        cos(2*pi*t/period)]`` of shape ``[..., 2]``. ``D`` is the tense
+        magnitude (default 0.5 = present). At ``t == 0, D == 0.5`` this is
+        ``[0, 0.5]``. Used by the event-muxing sites and anywhere a scalar /
+        tensor time is stamped."""
+        if not isinstance(offsets, torch.Tensor):
+            offsets = torch.tensor(float(offsets), device=TheDevice.get())
+        ang = offsets * self.div_term
+        phasor = torch.stack((torch.sin(ang), torch.cos(ang)), dim=-1)
+        return float(D) * phasor
 
     def decode(self, encoded):
-        """(start_t, end_t) signed floats. center = atan2(sin, cos)/dt (signed,
-        no % 2*pi); half-duration from |key| = 2*cos(half*dt)."""
+        """Recover ``(t, D)``. ``t = atan2(sin, cos) * period / (2*pi)`` (the
+        folded / approximate angle -- the long-int clock owns the exact time);
+        ``D = sqrt(sin**2 + cos**2)`` is the tense magnitude. Both are returned
+        as float tensors broadcasting over ``encoded[..., :2]``."""
         w0, w1 = encoded[..., 0], encoded[..., 1]
-        dt = self.div_term
-        center = torch.atan2(w0, w1) / dt
-        radius = torch.sqrt(w0 * w0 + w1 * w1).clamp(max=2.0)
-        half = torch.arccos((radius / 2.0).clamp(-1.0, 1.0)) / dt
-        return center - half, center + half
+        t = torch.atan2(w0, w1) / self.div_term
+        D = torch.sqrt(w0 * w0 + w1 * w1)
+        return t, D
 
-    def rotate(self, key, delta):
-        """Tense: shifting both endpoints by delta rotates the key by
-        a = delta*dt (single 2x2 rotation; magnitude/duration preserved)."""
-        if not isinstance(delta, torch.Tensor):
-            delta = torch.tensor(float(delta), device=key.device)
-        a = delta * self.div_term
-        ca, sa = torch.cos(a), torch.sin(a)
-        s, c = key[..., 0], key[..., 1]              # (sin-part, cos-part)
-        out = key.clone()
-        out[..., 0] = s * ca + c * sa                # sin(theta + a)
-        out[..., 1] = c * ca - s * sa                # cos(theta + a)
-        return out
+    def next(self, k=1):
+        """Scalar FUTURE handle: move the tense magnitude toward future,
+        ``D -> clamp(D + step*k, 0, 1)`` (time-angle preserved), update
+        ``self.D``, and return the re-encoded present phasor at the new D."""
+        self.D = float(min(1.0, max(0.0, self.D + _WHEN_TENSE_STEP * k)))
+        return self.encode(self.t, D=self.D)
 
-    rotate_range = rotate                            # the key already aggregates both endpoints
+    def previous(self, k=1):
+        """Scalar PAST handle: move the tense magnitude toward past,
+        ``D -> clamp(D - step*k, 0, 1)`` (time-angle preserved), update
+        ``self.D``, and return the re-encoded present phasor at the new D."""
+        self.D = float(min(1.0, max(0.0, self.D - _WHEN_TENSE_STEP * k)))
+        return self.encode(self.t, D=self.D)
 
-    @staticmethod
-    def aspect_interval(r, kind, eps=0.25):
-        """(start, end) for reference r (the interval CENTER) and aspect kind.
-        Unit-bracket convention: SIMPLE is a unit window at r; PERFECT a unit
-        window ending at r (completed, relevant at r); PROGRESSIVE a 2-wide
-        window spanning r (extended/ongoing). eps retained for API compat."""
-        r = float(r)
-        if kind == "SIMPLE":      return (r - 0.5, r + 0.5)
-        if kind == "PERFECT":     return (r - 1.0, r)
-        if kind == "PROGRESSIVE": return (r - 1.0, r + 1.0)
-        raise ValueError(f"unknown aspect kind {kind!r}")
-
-    def is_recoverable(self, start, end):
-        """True iff [start, end] round-trips: |center| and duration below the
-        half-period pi/dt (mirrors EndpointSumWhere, but signed center)."""
-        center = (float(start) + float(end)) / 2.0
-        dur = float(end) - float(start)
-        hp = math.pi / self.div_term
-        return abs(center) < hp and 0.0 <= dur < hp
+    def shift_tense(self, when, dD):
+        """Move a ``.when`` tensor's tense magnitude by ``dD`` (clamped to
+        ``[0, 1]``), preserving the time-angle. Rescales the phasor by
+        ``D_new / D`` where ``D > 0``; where the old magnitude is ~0 (a zero
+        phasor has no angle) re-encodes from ``(self.t, D_new)``. Guards the
+        divide-by-zero. Returns a new tensor (.when math used by TenseLayer)."""
+        if not isinstance(dD, torch.Tensor):
+            dD = torch.tensor(float(dD), device=when.device, dtype=when.dtype)
+        _t, D = self.decode(when)
+        D_new = (D + dD).clamp(0.0, 1.0)
+        eps = 1e-8
+        # Safe scale where D>0; fallback re-encode where the old magnitude is
+        # ~0 (no angle to preserve -- use the present-time angle at self.t).
+        scale = torch.where(D > eps, D_new / D.clamp_min(eps),
+                            torch.zeros_like(D))
+        rescaled = when * scale.unsqueeze(-1)
+        unit = self.encode(self.t, D=1.0).to(when.device, when.dtype)
+        unit = unit.expand_as(when)
+        fallback = unit * D_new.unsqueeze(-1)
+        return torch.where((D > eps).unsqueeze(-1), rescaled, fallback)
 
     def forward(self, x):
-        """Stamp the present default unit-bracket key encode_range(-0.5, 0.5)
-        (center 0, duration 1) into the when slots."""
+        """Stamp the PRESENT default ``.when = encode(self.t, D=0.5)`` into the
+        when slots for every input event. At ``self.t == 0`` that is
+        ``0.5 * [0, 1] = [0, 0.5]``; the angle tracks the absolute model clock
+        as it advances."""
         if self.nDim == 0:
             return x
         index = np.add([x.shape[-1]] * len(self.index), self.index)
-        key = self.encode_range(-0.5, 0.5)
+        key = self.encode(self.t, D=_WHEN_TENSE_DEFAULT)
         y = x.clone()
         y[:, :, index] = key.to(y.device).expand(x.shape[0], x.shape[1], -1)
         return y
 
     def increment(self, batch):
-        """No-op: .when is zero-centered on the reference moment, not a counter."""
+        """No-op: the absolute clock lives on ``BasicModel.when_time`` and is
+        propagated to ``self.t`` once per batch (see BasicModel._advance_when_time);
+        this encoding does not self-count."""
         return
 
     @staticmethod
     def test():
-        """Self-test: encode a present-perfect range and decode it."""
-        te = WhenRangeEncoding(64, n_when=2)
-        print(f"present-perfect decoded: {te.decode(te.encode_range(-1.0, 0.0))}")
+        """Self-test: stamp the present phasor and decode it back to (t, D)."""
+        te = WhenRangeEncoding(n_when=2)              # default period (_WHEN_PERIOD)
+        t, D = te.decode(te.encode(0))
+        print(f"present .when decodes to (t={float(t):.3f}, D={float(D):.3f})")
 
 
-# Back-compat alias: existing import (bin/Models.py) / construction
-# (bin/Spaces.py:6245) resolve to the range encoding. The single-(sin,cos)
-# monotonic-counter WhenEncoding is superseded (spec ".when Encoding").
+# Back-compat alias: existing imports (bin/Models.py) / construction sites
+# resolve ``WhenEncoding`` to this single-scaled-quadrature-phasor encoding
+# (2026-06-07 redesign). The historical monotonic-counter WhenEncoding and the
+# intermediate endpoint-sum range encoding are both superseded.
 WhenEncoding = WhenRangeEncoding
 class WordEncoding(Encoding):
     """Word encoding: each word is a (batch, vector, rule, order) 4-tuple.
@@ -6223,25 +6266,27 @@ class Space(nn.Module):
         self.nVectors     = spaceShape[0]  # codebook size
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
         # Resolve nInputDim/nOutputDim:
-        #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1])
-        #  -1  -> flatten: nInput * dim (reshape [N, D] -> [1, N*D])
-        #  >0  -> explicit value
-        try:
-            raw = TheXMLConfig.space(section, "nInputDim")
-        except KeyError:
-            raw = 0
-        if raw == -1:
-            self.nInputDim = inputShape[0] * inputShape[1]
-        else:
-            self.nInputDim = inputShape[1] if raw == 0 else raw
-        try:
-            raw = TheXMLConfig.space(section, "nOutputDim")
-        except KeyError:
-            raw = 0
-        if raw == -1:
-            self.nOutputDim = outputShape[1]
-        else:
-            self.nOutputDim = outputShape[1] if raw == 0 else raw
+        #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1]),
+        #         i.e. per-vector [B, N, D] (the "3D in between" contract).
+        #  >0  -> explicit per-vector width.
+        # The -1 "flatten" sentinel was REMOVED (2026-06-07): the OutputSpace
+        # is the SOLE flattener (it owns the 3D->2D boundary in its __init__);
+        # no analysed/synthesised space collapses [N, D] -> [1, N*D] anymore.
+        # A negative dim is now a loud config error, not a flatten request.
+        def _resolve_io_dim(field, inherit):
+            try:
+                raw = TheXMLConfig.space(section, field)
+            except KeyError:
+                return inherit
+            if raw < 0:
+                raise ValueError(
+                    f"{section}: {field}={raw} is not supported. The -1 "
+                    f"flatten sentinel was removed (2026-06-07); the "
+                    f"OutputSpace is the sole flattener. Use 0 (inherit, "
+                    f"per-vector) or an explicit positive width.")
+            return inherit if raw == 0 else raw
+        self.nInputDim = _resolve_io_dim("nInputDim", inputShape[1])
+        self.nOutputDim = _resolve_io_dim("nOutputDim", outputShape[1])
 
         self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
@@ -6280,7 +6325,7 @@ class Space(nn.Module):
         self.muxedSize = objectEncoding.muxedSize
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
-        whenEncoding   = WhenRangeEncoding(64, _nWhen)
+        whenEncoding   = WhenRangeEncoding(_WHEN_PERIOD, _nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
             nOutputDim=self.nOutputDim,
@@ -6950,6 +6995,11 @@ class InputSpace(Space):
         # Start() (per-run) and hard Reset() (per-document), exactly as
         # ``_ar_embedded``/``_ar_total`` are reset to None/0.
         self._per_word_cursor = 0
+        # Raw InputSpace WHERE / WHEN index carriers are invariant for a
+        # given (batch, N, device). Cache them so the hot text stem does not
+        # refill the same [B, N] tensors every batch.
+        self._where_idx_cache = {}
+        self._when_idx_cache = {}
         # Host-side valid lexed length, computed ONCE per forward and
         # cached here so ``next_word()`` is a pure host-int compare
         # (``p >= self._valid_len_host``) with zero DtoH per call. The
@@ -7129,58 +7179,86 @@ class InputSpace(Space):
         if self.byte_mode and input.shape[-1] > nObj:
             input = input[..., :nObj]
 
+        def _cache_key(batch_size, n_obj, device):
+            return (int(batch_size), int(n_obj), str(device))
+
+        def _cached_arange(cache, batch_size, n_obj, device):
+            key = _cache_key(batch_size, n_obj, device)
+            value = cache.get(key)
+            if value is None:
+                row = torch.arange(n_obj, dtype=torch.long,
+                                   device=device).unsqueeze(0)
+                value = row.expand(batch_size, -1).contiguous()
+                cache[key] = value
+            return value
+
         tokens_per_batch = []
-        # Build where_idx on the HOST: it is filled element-by-element
-        # from the lexer's Python int offsets below; per-element writes
-        # into a *device* tensor are each a synchronizing H2D (and break
-        # CUDA-graph capture). `device='cpu'` is explicit so a
-        # default-device mode can't place it on the GPU (same trap as
-        # stringTensor). Staged to the device once, async, after the
-        # loop. when_idx is a pure device arange (no host writes).
-        where_idx = torch.zeros(batch, nObj, dtype=torch.long,
-                                device='cpu')
-        when_idx = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1).contiguous()
+        # Raw lexing has fixed byte positions: .where and .when are both the
+        # same [B, N] coordinate carrier for a given input slab shape. Non-raw
+        # lexing still builds .where on the host from lexer offsets, then stages
+        # it to the device once; per-element writes into a device tensor would
+        # synchronize and are not graph-capturable.
+        if self.lexer == "raw":
+            where_idx = _cached_arange(
+                self._where_idx_cache, batch, nObj, dev)
+        else:
+            where_idx = torch.zeros(batch, nObj, dtype=torch.long,
+                                    device='cpu')
+        when_idx = _cached_arange(self._when_idx_cache, batch, nObj, dev)
 
-        for b in range(batch):
-            stream = tokenize(input[b])
-            # Word-mode lexing under the post-2026-04 single-char regex
-            # produces more tokens per byte than the legacy grouped form
-            # (each digit / punct / whitespace is its own token), so a
-            # 4096-byte text slab can yield > nObj=1024 tokens. Truncate
-            # to nObj here -- losing tail content is preferable to
-            # asserting mid-epoch on long documents. Cursor mode still
-            # sizes the slab to nObj exactly, so this is a no-op there.
-            n_tokens = min(len(stream), nObj)
-            row = []
-            for i in range(n_tokens):
-                token_text, start = stream[i]
-                row.append(token_text)
-                where_idx[b, i] = start
-            tokens_per_batch.append(row)
-            if n_tokens > 0:
-                last_text, last_start = stream[n_tokens - 1]
-                final_offset = last_start + len(last_text.encode('utf-8'))
-            else:
-                final_offset = 0
-            for i in range(n_tokens, nObj):
-                where_idx[b, i] = final_offset + (i - n_tokens)
+        if self.lexer == "raw":
+            # Raw/analyse consumers use the unanalyzed surface below and do
+            # not read token bytes from the WHAT carrier. Keep one empty row
+            # per batch element so host-token fallbacks preserve shape.
+            tokens_per_batch = [[] for _ in range(batch)]
+        else:
+            for b in range(batch):
+                stream = tokenize(input[b])
+                # Word-mode lexing under the post-2026-04 single-char regex
+                # produces more tokens per byte than the legacy grouped form
+                # (each digit / punct / whitespace is its own token), so a
+                # 4096-byte text slab can yield > nObj=1024 tokens. Truncate
+                # to nObj here -- losing tail content is preferable to
+                # asserting mid-epoch on long documents. Cursor mode still
+                # sizes the slab to nObj exactly, so this is a no-op there.
+                n_tokens = min(len(stream), nObj)
+                row = []
+                for i in range(n_tokens):
+                    token_text, start = stream[i]
+                    row.append(token_text)
+                    where_idx[b, i] = start
+                tokens_per_batch.append(row)
+                if n_tokens > 0:
+                    last_text, last_start = stream[n_tokens - 1]
+                    final_offset = last_start + len(last_text.encode('utf-8'))
+                else:
+                    final_offset = 0
+                for i in range(n_tokens, nObj):
+                    where_idx[b, i] = final_offset + (i - n_tokens)
 
-        # Single SYNCHRONOUS host->device stage for the host-built
-        # where_idx (correct + race-free; non_blocking on an ephemeral
-        # pinned buffer corrupts data when freed pre-transfer).
-        where_idx = where_idx.to(dev)
+        if self.lexer != "raw":
+            # Single SYNCHRONOUS host->device stage for the host-built
+            # where_idx (correct + race-free; non_blocking on an ephemeral
+            # pinned buffer corrupts data when freed pre-transfer).
+            where_idx = where_idx.to(dev)
 
-        what_buf = self.subspace.whatEncoding.encode_tokens(
-            tokens_per_batch, batch, nObj, nWhat, dev)
-        # Host-side decode-equivalent carried forward so
-        # PerceptualSpace._embed skips the decode_tokens GPU->host sync
-        # (residual B). Bit-identical to decode_tokens(what_buf) -- the
-        # legacy lexicon path keeps this nWhat-clipped form. The analyse
-        # front end instead reconstructs the UNTRUNCATED surface (see
-        # _lex_and_embed) so its space-lexer is not limited by the .where
-        # character-space byte width.
-        host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
-            tokens_per_batch, batch, nObj, nWhat)
+        if self.lexer == "raw":
+            what_buf = torch.zeros(
+                batch, nObj, nWhat, dtype=torch.long, device=dev)
+            host_tokens = [[] for _ in range(batch)]
+        else:
+            what_buf = self.subspace.whatEncoding.encode_tokens(
+                tokens_per_batch, batch, nObj, nWhat, dev)
+            # Host-side decode-equivalent carried forward so
+            # PerceptualSpace._embed skips the decode_tokens GPU->host sync
+            # (residual B). Bit-identical to decode_tokens(what_buf) -- the
+            # legacy lexicon path keeps this nWhat-clipped form. The analyse
+            # front end instead reconstructs the UNTRUNCATED surface (see
+            # _lex_and_embed) so its space-lexer is not limited by the .where
+            # character-space byte width.
+            host_tokens = self.subspace.whatEncoding.tokens_to_decoded(
+                tokens_per_batch, batch, nObj, nWhat)
+
         # The surface the analyzer (chunking="analyse") lexes. With
         # ``lexer == "raw"`` it is decoded STRAIGHT from the raw [B,1,N] input
         # byte buffer -- PS owns all tokenization, no host-token
@@ -7191,7 +7269,10 @@ class InputSpace(Space):
             self.subspace._raw_surface = input          # [B, N] raw byte buffer
             self._analyse_surfaces = []
             for b in range(batch):
-                raw = bytes((int(x) & 0xFF) for x in input[b].tolist())
+                row = input[b]
+                if row.device.type != "cpu":
+                    row = row.detach().cpu()
+                raw = row.to(torch.uint8).numpy().tobytes()
                 self._analyse_surfaces.append(
                     raw.replace(b"\x00", b"").decode(
                         "utf-8", errors="surrogateescape"))
@@ -7473,13 +7554,21 @@ class InputSpace(Space):
             self._valid_len_host = 0
             return sub
         _mode = getattr(ps, "chunking_mode", None)
+        source_valid_pos = None
+        if getattr(self, "lexer", None) != "raw":
+            with torch.no_grad():
+                _wbuf = sub.materialize(mode="what")
+                if _wbuf is not None:
+                    _first = _wbuf[..., 0] if _wbuf.dim() == 3 else _wbuf
+                    source_valid_pos = (_first.long() != 0)
+        bpe_mask = (getattr(ps, "_bpe_word_mask", None)
+                    if _mode in ("bpe", "none", "mphf") else None)
         with torch.no_grad():
-            _bpe_mask_valid = (
-                getattr(ps, "_bpe_word_mask", None)
-                if _mode in ("bpe", "none", "mphf") else None)
             _Te = embedded.shape[1]
-            if _bpe_mask_valid is not None:
-                _valid_pos = _bpe_mask_valid[:, :_Te] > 0
+            if bpe_mask is not None:
+                _valid_pos = bpe_mask[:, :_Te] > 0
+            elif source_valid_pos is not None:
+                _valid_pos = source_valid_pos[:, :_Te]
             else:
                 _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
             _any_pos = _valid_pos.any(dim=0)
@@ -7493,8 +7582,7 @@ class InputSpace(Space):
         # 8192 chars -> 8 words); fall back to IS's own width.
         N = (int(ps.outputShape[0])
              if getattr(ps, "outputShape", None) else int(self.outputShape[0]))
-        bpe_mask = (getattr(ps, "_bpe_word_mask", None)
-                    if _mode in ("bpe", "none", "mphf") else None)
+        self._valid_len_host = min(self._valid_len_host, N)
         if T < N:
             pad = torch.zeros(B, N - T, D,
                               device=embedded.device, dtype=embedded.dtype)
@@ -7506,6 +7594,10 @@ class InputSpace(Space):
         if bpe_mask is not None:
             valid_mask = bpe_mask[:, :N].any(dim=1).reshape(B, 1)
             bpe_mask_N = bpe_mask[:, :N] if bpe_mask.shape[1] >= N else bpe_mask
+        elif source_valid_pos is not None:
+            src_valid = source_valid_pos.to(device=embedded_N.device)
+            valid_mask = src_valid[:, :N].any(dim=1).reshape(B, 1)
+            bpe_mask_N = None
         else:
             valid_mask = (embedded_N.abs().sum(dim=-1) > 0).any(
                 dim=1).reshape(B, 1)
@@ -7526,7 +7618,17 @@ class InputSpace(Space):
                     dtype=torch.bool, device=bpe_mask_N.device)
                 _wam = torch.cat([bpe_mask_N > 0, _wpad], dim=1)
         else:
-            _wam = embedded_N.detach().abs().sum(dim=-1) > 0
+            if source_valid_pos is not None:
+                src_valid = source_valid_pos.to(device=embedded_N.device)
+                if src_valid.shape[1] >= N:
+                    _wam = src_valid[:, :N]
+                else:
+                    _wpad = torch.zeros(
+                        B, N - src_valid.shape[1],
+                        dtype=torch.bool, device=embedded_N.device)
+                    _wam = torch.cat([src_valid, _wpad], dim=1)
+            else:
+                _wam = embedded_N.detach().abs().sum(dim=-1) > 0
         self._word_active_mask = _wam
         ps._bpe_word_mask_flat = bpe_mask_N
         if len(self._end_of_stream) != B:
@@ -7547,6 +7649,8 @@ class InputSpace(Space):
         # is the per-iteration mask.
         slab = self._ar_embedded_N
         if slab is None:
+            return None
+        if p >= slab.shape[1]:
             return None
         return slab[:, p:p + 1, :]
 
@@ -7822,7 +7926,22 @@ class PerceptualSpace(Space):
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
         self.ergodic = ergodic
+        # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
+        # QKV ``AttentionLayer`` (that enlistment was removed; see plan
+        # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It is kept
+        # only for backward-compat config/state parsing and is superseded by the
+        # ``<attention>`` symbolic-retrieval mode (``self.attention_mode``).
         self.hasAttention = hasAttention
+        # Symbolic-retrieval mode (plan 2026-06-06-symbolic-heat-retrieval
+        # §Handoff addendum). off|primer|second-order|low-rank. Default off
+        # preserves current reverse behavior. Consumed by the reverse-retrieval
+        # path, not here.
+        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        if _attn not in _VALID_ATTENTION_MODES:
+            raise ValueError(
+                f"{section} <attention> got {_attn!r}; expected one of "
+                f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
+        self.attention_mode = _attn
         self.invertible = invertible
         self.nonlinear = nonlinear
 
@@ -8110,8 +8229,11 @@ class PerceptualSpace(Space):
         self.butterfly_enabled = _butterfly_built
         self.butterflyN = _butterfly_total if _butterfly_built else None
 
-        input = percept_dim
-        self.attention = AttentionLayer(input, input, type="transformer")
+        # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
+        # heat-retrieval.md §Handoff addendum): PerceptualSpace no longer
+        # constructs a pre-PiLayer transformer self-attention pass. ``<attention>``
+        # is now a symbolic-retrieval mode (``self.attention_mode``), not tensor
+        # self-attention; the legacy ``<hasAttention>`` flag is inert.
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.params += self.pi.getParameters()
@@ -10041,12 +10163,12 @@ class PerceptualSpace(Space):
         # also retired (no C-feedback path entering PS at this level).
         primary = self.forwardBegin(vspace, returnVectors=True)
         x = self.pi.forward(primary)
-        # Attention is currently unused in PerceptualSpace; leaving the
-        # AttentionLayer attribute intact for backward compat but skipping
-        # the call so the codebook lookup can slide (see below) without
-        # worrying about cross-position mixing.
-        # if self.hasAttention:
-        #     x = self.attention.forward(x)
+        # The legacy QKV ``AttentionLayer`` pass was removed here (plan
+        # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum): the layer
+        # was never enlisted in the live forward path, and ``<attention>`` now
+        # selects a symbolic-retrieval mode (consumed on the reverse path), not
+        # transformer self-attention. The codebook lookup below slides without
+        # any cross-position tensor mixing.
         if self.codebook and quantize:
             cb = self.subspace.get_vectors()
             # Per-cell mask: zero out NULL-padded AR cells before the
@@ -10558,7 +10680,22 @@ class ConceptualSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape)
         self.nonlinear = nonlinear
         self.ergodic = ergodic
+        # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
+        # QKV ``AttentionLayer`` (that enlistment was removed; see plan
+        # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It is kept
+        # only for backward-compat config/state parsing and is superseded by the
+        # ``<attention>`` symbolic-retrieval mode (``self.attention_mode``).
         self.hasAttention = hasAttention
+        # Symbolic-retrieval mode (plan 2026-06-06-symbolic-heat-retrieval
+        # §Handoff addendum). off|primer|second-order|low-rank. Default off
+        # preserves current reverse behavior. Consumed by the reverse-retrieval
+        # path, not here.
+        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        if _attn not in _VALID_ATTENTION_MODES:
+            raise ValueError(
+                f"{section} <attention> got {_attn!r}; expected one of "
+                f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
+        self.attention_mode = _attn
         # Right-half loopback widening retired: ConceptualSpace.forward
         # takes its two inputs as explicit args (``PS_subspace``,
         # ``SS_subspace``) from the recurrent cell and shape-matched
@@ -10590,19 +10727,14 @@ class ConceptualSpace(Space):
         # batch-broadcast-over-all-slots path. ``False`` keeps the existing
         # ``[D]`` / ``[1, D]`` / ``[B, D]`` behavior byte-identical.
         self._c_prior_slotwise = False
-        input = self.subspace.getEncodedInputSize()
-        if self.codebook_mode == "project":
-            # project codebook: PiLayer stays a square isomorphism
-            # inside conceptual content space. Dim adaptation to the
-            # prototype width happens INSIDE ProjectionBasis
-            # (``[B, V, D] -> [B, N]``), not inside Pi. This preserves
-            # XOR's discriminative info instead of squeezing it through
-            # a non-square Pi bottleneck.
-            output = input
-        else:
-            output = self.subspace.getEncodedOutputSize()
-        if hasAttention:
-            self.attention = AttentionLayer(output, output, type="transformer")
+        # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
+        # heat-retrieval.md §Handoff addendum): ConceptualSpace no longer
+        # constructs a tensor self-attention pass when ``hasAttention`` is set.
+        # ``<attention>`` now selects a symbolic-retrieval mode
+        # (``self.attention_mode``), consumed on the reverse path; the legacy
+        # ``<hasAttention>`` flag is inert.  The ``input`` / ``output``
+        # locals that fed the removed AttentionLayer call were dead after
+        # that removal and have been deleted here.
 
         # Stage 1.C of the two-loop pi/sigma substrate refactor
         # (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
@@ -12381,6 +12513,17 @@ class SymbolicSpace(Space):
         except (KeyError, TypeError, ValueError):
             self._lbg_epsilon = 0.1
         self.nonlinear = nonlinear
+        # Symbolic-retrieval mode (plan 2026-06-06-symbolic-heat-retrieval
+        # §Handoff addendum). off|primer|second-order|low-rank. Default off
+        # preserves current reverse behavior. Consumed by the reverse-retrieval
+        # path, not here. SymbolicSpace has no ``<hasAttention>`` legacy alias
+        # (it never constructed a QKV AttentionLayer).
+        _attn = str(TheXMLConfig.space(section, "attention", default="off"))
+        if _attn not in _VALID_ATTENTION_MODES:
+            raise ValueError(
+                f"{section} <attention> got {_attn!r}; expected one of "
+                f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
+        self.attention_mode = _attn
         # Post-2026-05-07 rollback: SymbolicSpace inherits the natural
         # ``nWhat == self.nDim`` and ``muxedSize`` from
         # ``Space.__init__`` -- no leading [pos, neg] bivector pinned
@@ -15619,6 +15762,10 @@ class OutputSpace(Space):
         self._vocabulary = getattr(self, '_vocabulary', None)
         self.text_mode = isinstance(self._vocabulary, Embedding)
 
+        # OutputSpace is the SOLE flattener (2026-06-07 dim-explicitness pass):
+        # the analysed/synthesised spaces (IS/PS/CS/SS) stay per-vector
+        # [B, N, D] ("3D in between"); only here, the 3D->2D after-output
+        # boundary, do we collapse the symbol slab.
         # OutputSpace aggregates the full symbol stream into the task output:
         # the LinearLayer must span all nSymbols*symbol_dim inputs (not act
         # per-slot). Force nInputDim to the flattened input width so

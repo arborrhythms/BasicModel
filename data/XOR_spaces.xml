@@ -25,20 +25,21 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: nOutput=6 (5 real tokens + 1 EOS/padding slot). -->
+  <!-- InputSpace: nOutput=6 (5 real tokens + 1 EOS/padding slot).
+       nInputDim omitted: InputSpace skips the per-vector reshape (boundary). -->
   <InputSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible, flattened input. -->
+  <!-- PerceptualSpace: invertible, per-vector [B,N,D] (no flatten; the
+       OutputSpace head is the sole flattener). nInputDim=0 -> inherit
+       inputShape[1] (the event width). -->
   <PerceptualSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </PerceptualSpace>
 
@@ -47,7 +48,6 @@
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
@@ -56,7 +56,6 @@
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-    <nInputDim>-1</nInputDim>
   </SymbolicSpace>
 
   <OutputSpace>

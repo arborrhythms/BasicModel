@@ -133,6 +133,10 @@ def test_kwargs_priming_present_when_buffer_allocated():
     ws = _bare_word_space()
     view = _tiny_view()
     ws.attach_knowledge(view)
+    # The <symbolicPriming> master switch (plan 2026-06-06-symbolic-heat-
+    # retrieval) now defaults OFF, so attach_knowledge sets priming_enabled
+    # False; opt in to exercise the priming-kwarg emission path.
+    ws.taxonomy.configure_priming(priming_enabled=True)
     kw = ws.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
@@ -150,6 +154,7 @@ def test_kwargs_priming_reflects_primed_state():
     ws = _bare_word_space()
     view = _tiny_view()
     ws.attach_knowledge(view)
+    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
     np3 = view._ordered_taxonomy_names['NP3']
     ws.taxonomy.prime([np3], batch=0)
     kw = ws.priming_kwargs_for_slots(
@@ -179,6 +184,7 @@ def test_kwargs_unary_omits_right():
     ws = _bare_word_space()
     view = _tiny_view()
     ws.attach_knowledge(view)
+    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
     kw = ws.priming_kwargs_for_slots(
         left_category='NP', left_order=3)
     assert 'left_rows' in kw
@@ -192,6 +198,7 @@ def test_kwargs_per_batch_priming():
     ws = _bare_word_space(batch=2)
     view = _tiny_view()
     ws.attach_knowledge(view)
+    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
     np3 = view._ordered_taxonomy_names['NP3']
     ws.taxonomy.prime([np3], batch=0)
     kw_b0 = ws.priming_kwargs_for_slots(
