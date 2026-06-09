@@ -40,6 +40,7 @@ from typing import Any, Dict, Iterable, List, Tuple, Optional
 
 from util import atomic_torch_save, parse
 import util
+from Optimizer import Adam
 from Layers import Lexicon
 
 
@@ -1488,7 +1489,7 @@ class PretrainModel:
         self.key_to_index = wv.key_to_index
         self.neg_samples = neg_samples
 
-        self.optimizer = optim.Adam(
+        self.optimizer = Adam(
             [wv._vectors],
             lr=learning_rate,
         )
@@ -2877,7 +2878,7 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
     cfg_window = int(window)
     model.loss_head = CBOWLossHead(window=cfg_window)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = Adam(model.parameters(), lr=learning_rate)
 
     def _iter_docs(paths):
         """Yield one document per line for ``.txt`` files; delegate to

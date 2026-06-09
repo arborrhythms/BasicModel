@@ -36,7 +36,7 @@ def _truth_table():
 def test_soft_compose_one_hot_matches_hard():
     """A one-hot slot-0 distribution reduces to that operator's hard compose
     (the typed grammar is the one-hot limit)."""
-    from connective_supervision import soft_connective_compose
+    from Language import soft_connective_compose
     from Language import GRAMMAR_LAYER_CLASSES
     a, b, _, _ = _truth_table()
     hard = GRAMMAR_LAYER_CLASSES["conjunction"]().compose(a, b)
@@ -47,7 +47,7 @@ def test_soft_compose_one_hot_matches_hard():
 
 def test_loss_is_differentiable():
     """The truth/consequence loss carries gradient to the slot-0 logits."""
-    from connective_supervision import connective_truth_loss
+    from Language import connective_truth_loss
     a, b, y_and, _ = _truth_table()
     logits = torch.zeros(2, requires_grad=True)
     loss = connective_truth_loss(logits, a, b, y_and, ("conjunction", "disjunction"))
@@ -59,7 +59,7 @@ def test_loss_is_differentiable():
 def test_and_corpus_recovers_conjunction():
     """Supervising on AND consequences drives the slot-0 superposition to
     conjunction."""
-    from connective_supervision import learn_connective_distribution
+    from Language import learn_connective_distribution
     a, b, y_and, _ = _truth_table()
     dist = learn_connective_distribution(a, b, y_and)
     assert dist["conjunction"] > 0.9, dist
@@ -67,7 +67,7 @@ def test_and_corpus_recovers_conjunction():
 
 def test_or_corpus_recovers_disjunction():
     """Supervising on OR consequences drives it to disjunction."""
-    from connective_supervision import learn_connective_distribution
+    from Language import learn_connective_distribution
     a, b, _, y_or = _truth_table()
     dist = learn_connective_distribution(a, b, y_or)
     assert dist["disjunction"] > 0.9, dist
@@ -77,7 +77,7 @@ def test_identical_surface_different_consequence_discriminates():
     """The load-bearing claim: with the SAME operands (surface), only the
     consequence differs -- yet the learned slot-0 superposition lands on the
     opposite connective for AND vs OR corpora."""
-    from connective_supervision import learn_connective_distribution
+    from Language import learn_connective_distribution
     a, b, y_and, y_or = _truth_table()
     d_and = learn_connective_distribution(a, b, y_and)
     d_or = learn_connective_distribution(a, b, y_or)

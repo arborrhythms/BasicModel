@@ -31,6 +31,7 @@ from functools import partial
 from datetime import datetime
 import util
 from util import TheDevice, TheMessage
+from Optimizer import Adam
 from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
@@ -3345,7 +3346,11 @@ class Embedding(Basis):
             self.insert(null_key, vector=None, initial_count=0)
 
     def _rebuild_optimizer(self):
-        self.pretrain.optimizer = torch.optim.Adam(
+        # All Adam construction in the project routes through
+        # ``bin/Optimizer.py`` so the MPS scalar-step workaround
+        # (pytorch#149184 + the radix step-zero divergence) lives in
+        # exactly one place; see that module's docstring.
+        self.pretrain.optimizer = Adam(
             [self.wv._vectors],
             lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
@@ -13585,7 +13590,7 @@ class SymbolicSpace(Space):
                      torch.as_tensor(b, dtype=torch.float32),
                      torch.as_tensor(y, dtype=torch.float32))
                     for (q, a, b, y) in examples]
-        opt = torch.optim.Adam(vecs, lr=lr)
+        opt = Adam(vecs, lr=lr)
         for _ in range(int(steps)):
             opt.zero_grad()
             loss = torch.zeros(())

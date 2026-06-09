@@ -58,10 +58,11 @@ TheDevice = util.TheDevice
 TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
-from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp
+from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp, init_device
 from architecture import canonical_shape
 import util as _util
 from embed import WordVectors, PretrainModel, _random_unit_ball
+from Optimizer import Adam, SparseAdam, MultiOptimizer
 from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
@@ -225,59 +226,6 @@ class GrammarMergeGlue(nn.Module):
 # each stem/body/head boundary in the pipeline methods.
 
 # -- End inlined-from-Pipeline section -------------------------------
-
-
-class _MultiOptimizer:
-    """Composite optimizer: forwards step / zero_grad / state_dict to a
-    list of underlying torch.optim.Optimizer instances.
-
-    Used to combine SparseAdam (for the perceptual embedding's sparse-
-    grad parameter) with Adam (for the dense parameters) without
-    requiring callers to know about the split.  Mirrors the subset of
-    torch.optim.Optimizer's API that BaseModel.runBatch and the
-    autosave path actually use.
-    """
-
-    def __init__(self, optimizers):
-        """Wrap the optimizer list and expose a flattened param_groups view.
-
-        The flat ``param_groups`` lets callers that read or set
-        ``param_groups[i]['lr']`` (rebuild_optimizer, LR scheduling)
-        see every group across the underlying optimizers.
-        """
-        self.optimizers = list(optimizers)
-        # Synthesize a flat param_groups view so callers reading
-        # `optimizer.param_groups[0]['lr']` (e.g. rebuild_optimizer)
-        # see all groups across the underlying optimizers.
-        pg = []
-        for o in self.optimizers:
-            pg.extend(o.param_groups)
-        self.param_groups = pg
-
-    def step(self, closure=None):
-        """Call ``step`` on every underlying optimizer; return their results.
-
-        Forwards ``closure`` only when not None so opts without closure
-        support don't choke on the extra keyword.
-        """
-        results = []
-        for o in self.optimizers:
-            results.append(o.step(closure=closure) if closure is not None else o.step())
-        return results
-
-    def zero_grad(self, set_to_none=True):
-        """Forward ``zero_grad`` to every underlying optimizer."""
-        for o in self.optimizers:
-            o.zero_grad(set_to_none=set_to_none)
-
-    def state_dict(self):
-        """Return a dict with one entry per underlying optimizer."""
-        return {'optimizers': [o.state_dict() for o in self.optimizers]}
-
-    def load_state_dict(self, state):
-        """Restore each underlying optimizer from the matching slot in ``state``."""
-        for o, s in zip(self.optimizers, state.get('optimizers', [])):
-            o.load_state_dict(s)
 
 
 class Normalizer:
@@ -839,10 +787,10 @@ class BaseModel(Mereology, nn.Module):
         if sparse_ptrs:
             sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
             dense_params = [p for p in params if p.data_ptr() not in sparse_ptrs]
-            opt_sparse = optim.SparseAdam(sparse_params, lr=lr)
-            opt_dense = optim.Adam(dense_params, lr=lr, capturable=_cap)
-            return _MultiOptimizer([opt_dense, opt_sparse])
-        return optim.Adam(params, lr=lr, capturable=_cap)
+            opt_sparse = SparseAdam(sparse_params, lr=lr)
+            opt_dense = Adam(dense_params, lr=lr, capturable=_cap)
+            return MultiOptimizer([opt_dense, opt_sparse])
+        return Adam(params, lr=lr, capturable=_cap)
 
     def rebuild_optimizer(self):
         """Rebuild the main optimizer after codebook expansion.
@@ -8349,7 +8297,23 @@ class ModelFactory:
                      shard_dir=dat.get("shardDir"),
                      dat=dat)
 
-        m, _ = BaseModel.from_config(config_path, data=TheData)
+        target_device = TheDevice.get()
+        if target_device.type == "mps":
+            # MPS construction can corrupt setup-time parameter tensors in
+            # large radix/byte configs (finite CPU construction of the same
+            # config is clean, and a subsequent module move to MPS is clean).
+            # Build the module tree on CPU, then move registered parameters
+            # and buffers to the requested MPS device before training. Runtime
+            # forward/backward still executes on MPS because TheDevice is
+            # restored immediately after construction.
+            init_device("cpu")
+            try:
+                m, _ = BaseModel.from_config(config_path, data=TheData)
+            finally:
+                init_device(target_device)
+            m.to(target_device)
+        else:
+            m, _ = BaseModel.from_config(config_path, data=TheData)
         TheMessage(f"Device: {TheDevice}")
 
         # O1: `compile(m)` on the module is a no-op here -- `m.run()`

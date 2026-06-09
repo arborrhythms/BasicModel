@@ -2765,7 +2765,11 @@ class SigmaLayer(GrammarLayer):
         layer.set_sigma(0.999)
 
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(layer.getParameters(), lr=0.01)
+        # Local import: Layers.py is imported by Optimizer's eventual
+        # callers; keep the dep local to this smoke-test path to avoid
+        # any import-order surprise during module load.
+        from Optimizer import Adam
+        optimizer = Adam(layer.getParameters(), lr=0.01)
         optimizer.zero_grad()
         y = layer(x)
         loss = criterion(y, y)
@@ -8673,12 +8677,13 @@ class RadixLayer(Layer):
         # Fail loud on NaN/Inf: with NaN, all (diffs*diffs) comparisons
         # are False and argmin silently returns row 0, masking a real
         # numerical divergence upstream.
-        if not torch.isfinite(vec).all():
+        finite = torch.isfinite(vec.detach().cpu())
+        if not bool(finite.all()):
             raise RuntimeError(
                 "RadixLayer.reverse: input vector contains NaN/Inf. "
                 "Numerical divergence must surface, not be silently "
                 "masked. "
-                f"vec[finite]={int(torch.isfinite(vec).sum().item())}/"
+                f"vec[finite]={int(finite.sum().item())}/"
                 f"{int(vec.numel())}.")
         # Pick the comparison codebook. SS-driven walk if a SS peer is
         # supplied (preferred); else nearest-PS-codebook fallback.
@@ -11814,12 +11819,14 @@ class ModelLoss(Loss):
             #
             # MPS exception: ``torch._assert_async`` is not implemented
             # for the MPS backend as of 2026-05-27 (PyTorch issue #141287).
-            # Fall back to the sync ``bool(isfinite.all())`` path on MPS
-            # -- it costs a per-step host sync, but preserves the
-            # fail-loud contract on Apple Silicon. The compiled / CUDA
-            # paths remain sync-free.
+            # Reduce on CPU, not MPS: radix byte-mode can corrupt MPS
+            # scalar reductions, causing finite fp32 losses to report
+            # non-finite. This remains syncful on Apple Silicon, but
+            # preserves the fail-loud contract without trusting the
+            # affected backend reduction. The compiled / CUDA paths remain
+            # sync-free.
             if lossIn.device.type == "mps":
-                if not bool(torch.isfinite(lossIn).all()):
+                if not bool(torch.isfinite(lossIn.detach().cpu()).all()):
                     raise RuntimeError(
                         "ModelLoss.forward: non-finite reconstruction "
                         "loss (Inf/NaN) -- divergence. Fail-loud per "

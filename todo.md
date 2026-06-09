@@ -1,3 +1,4 @@
+
 * 2026-06-08-analysis-synthesis-dual-input.md
 
 * All Grammars need to be role-collapsed
