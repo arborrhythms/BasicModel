@@ -56,7 +56,6 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <codebook>true</codebook>
     <chunking>analyse</chunking>
   </PerceptualSpace>
   <ConceptualSpace>

@@ -82,7 +82,6 @@
     <nVectors>4096</nVectors>
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
-    <codebook>quantize</codebook>
     <chunking>bpe</chunking>
     <wordLearning>0</wordLearning>
   </PerceptualSpace>

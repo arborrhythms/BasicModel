@@ -35,6 +35,20 @@ _recon = os.environ.get("SWEEP_RECON")
 if _recon is not None:
     base = re.sub(r"<reconstructionScale>[\d.]+</reconstructionScale>",
                   f"<reconstructionScale>{_recon}</reconstructionScale>", base)
+_is_out = os.environ.get("SWEEP_IS_OUT")
+if _is_out:
+    # Override only the FIRST <nOutput> -- the InputSpace block's slot.
+    base = re.sub(r"<nOutput>8192</nOutput>", f"<nOutput>{_is_out}</nOutput>",
+                  base, count=1)
+_cs_bfly = os.environ.get("SWEEP_CS_BUTTERFLY")
+if _cs_bfly is not None:
+    # Insert <butterfly>true</butterfly> into the ConceptualSpace block if
+    # not already present.
+    if "<ConceptualSpace>" in base and "<butterfly>" not in base.split(
+            "<ConceptualSpace>")[1].split("</ConceptualSpace>")[0]:
+        base = base.replace(
+            "</ConceptualSpace>",
+            f"    <butterfly>{_cs_bfly}</butterfly>\n  </ConceptualSpace>", 1)
 base = re.sub(r"<numEpochs>\d+</numEpochs>", f"<numEpochs>{EPOCHS}</numEpochs>", base)
 _lr = os.environ.get("SWEEP_LR")
 if _lr:

@@ -71,7 +71,6 @@
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>

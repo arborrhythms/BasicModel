@@ -44,7 +44,6 @@
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
     <chunking>radix</chunking>
     <butterfly>true</butterfly>
   </PerceptualSpace>

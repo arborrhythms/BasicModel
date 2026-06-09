@@ -55,7 +55,6 @@
     <nVectors>1000000</nVectors>
     <nDim>12</nDim>
     <nOutput>1024</nOutput>
-    <codebook>quantize</codebook>
     <wordLearning>1</wordLearning>
   </PerceptualSpace>
 

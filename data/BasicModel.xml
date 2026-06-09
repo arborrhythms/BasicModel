@@ -37,9 +37,9 @@
     <nDim>104</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
-    <!-- PerceptualSpace codebook is mandatory in the converged modality
-         architecture; quantize (was none). -->
-    <codebook>quantize</codebook>
+    <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
+         "none". -->
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 128

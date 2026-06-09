@@ -30,7 +30,6 @@
     <nOutput>4</nOutput>
     <nDim>14</nDim>
     <nVectors>16</nVectors>
-    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>

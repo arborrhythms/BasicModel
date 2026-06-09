@@ -1674,14 +1674,22 @@ class PretrainModel:
         are exactly the percepts used in the computation. Returns a scalar
         loss tensor, or None if fewer than 2 indices.
         """
-        if idx_list is None or len(idx_list) < 2:
+        if idx_list is None or len(idx_list) < 1:
             return None
         device = self.wv._vectors.device
         idx = torch.tensor(idx_list, dtype=torch.long, device=device)
         N = len(idx_list)
         vecs = self.wv._vectors[idx]                      # [N, dim]
-        total = vecs.sum(dim=0)                            # [dim]
-        centroids = (total.unsqueeze(0) - vecs) / (N - 1)  # [N, dim]
+        if N >= 2:
+            total = vecs.sum(dim=0)                         # [dim]
+            centroids = (total.unsqueeze(0) - vecs) / (N - 1)  # leave-one-out
+        else:
+            # 1 vector: it is its own centroid. Leave-one-out is undefined, but
+            # the negative-sampling ANTIPODE repulsion still applies -- random
+            # codebook rows are realigned away from it, which is the anti-
+            # collapse work SBOW exists to do (a centroid of one still has an
+            # antipode).
+            centroids = vecs
         return self._neg_sampling_loss(centroids, idx)
 
     # -- export ----------------------------------------------------------------

@@ -313,6 +313,14 @@ class BaseModel(Mereology, nn.Module):
         InputSpace -> PerceptualSpace -> ConceptualSpace ->
         SymbolicSpace -> OutputSpace, and an unset / zero-sentinel
         nDim means "inherit the upstream Space's content dim".
+
+        Respect-explicit (Task #11, decision (3)): an EXPLICITLY-set
+        (non-zero) <nDim> is ALWAYS returned verbatim -- for the endpoint
+        tiers (InputSpace / OutputSpace) this is the contract that the head /
+        input width the config author sized is honoured, never overridden by
+        the chained ``prev_dim`` or a canonical band-derived width. Only the
+        ``0`` sentinel triggers inheritance (and a KeyError -- a section that
+        omits <nDim> entirely -- is treated as the inherit sentinel).
         """
         try:
             raw = TheXMLConfig.space(section, "nDim")
@@ -2713,7 +2721,7 @@ class BasicModel(BaseModel):
         for row in pid_grid.detach().cpu().tolist():
             used = [int(p) for p in row
                     if null_pid is None or int(p) != null_pid]
-            if len(used) < 2:
+            if len(used) < 1:
                 continue
             t = pretrain.sbow_loss_indices(used)
             if t is not None:
@@ -4496,7 +4504,12 @@ class BasicModel(BaseModel):
         # BasicModel.create.
         self.codebook = Space.normalize_codebook_mode(
             TheXMLConfig.space("InputSpace", "codebook", default=False)) != "none"
-        self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
+        # PerceptualSpace is subsymbolic (2026-06-09 asymmetric-VQ plan §7
+        # task 7): its <codebook> element was retired from the schema and PS is
+        # hardwired to "none" in Space.__init__. The former
+        # ``self.perceptCodebook = TheXMLConfig.space("PerceptualSpace",
+        # "codebook")`` read is gone -- it was dead (assigned, never consumed)
+        # and would now KeyError on the removed element.
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
 
@@ -4561,12 +4574,14 @@ class BasicModel(BaseModel):
         self._syntax_truncated = False
 
         # --- Dimensional-governance knobs (A1/A2, 2026-06-06) ---
-        # ``<architecture><perfectReconstruction>`` (xs:boolean, default False).
-        # The XML parser coerces "true"/"false" to Python bool, so bool() is
-        # safe whether the element is present or the default False is returned.
-        self.perfect_reconstruction = bool(
-            TheXMLConfig.get("architecture.perfectReconstruction", default=False)
-            or False)
+        # ``<reconstruct>`` enum RETIRED (A1, 2026-06-09): the schema element
+        # + ``reconstructEnum`` were removed. The retired ``perfect`` mode
+        # SKIPPED the per-stage ConceptualCombine (carrier carried unchanged
+        # for an exact round-trip); the surviving ``mixed`` behaviour -- the
+        # combine runs, mixing the PS/SS/CS streams -- is now UNCONDITIONAL.
+        # No ``self.reconstruct`` / ``self.perfect_reconstruction`` attribute
+        # is parsed; every forward/reverse gate that branched on
+        # ``perfect_reconstruction`` takes the combine-runs branch.
         # ``<architecture><prediction>`` (predictionEnum: none|interSentence,
         # default "none"). Stored as the canonical XSD enum string (NOT
         # lowercased) so downstream dispatch matches "interSentence" exactly.
@@ -4761,9 +4776,22 @@ class BasicModel(BaseModel):
                 cs_in = [n_t, d_in]
                 cs_out = [n_t, d_out] if is_last else [n_t >> 1, d_out]
                 # SS is BARE concept_dim (the demux target; canonical SS=(0,0)).
-                # Keep the CS-output count so the per-stage N-halving aligns.
-                ss_in = [cs_out[0], concept_dim]
-                ss_out = [cs_out[0], concept_dim]
+                # SS slot count is the PRE-merge stage input ``n_t`` -- NOT the
+                # post-merge ``cs_out[0]`` (= ``n_t >> 1`` for non-last stages).
+                # The merge runs at the END of a stage and halves the CS that
+                # becomes the NEXT stage's input; so the SS at stage ``t``
+                # consumes the prior stage's post-merge output, whose slot count
+                # is ``nPercepts >> t == n_t`` (this stage's ``cs_in[0]``), and
+                # the stage-``t`` merge then takes that same ``n_t`` down to
+                # ``n_t >> 1`` for stage ``t+1``.  Sizing the SS (and its square
+                # ``sigma`` butterfly, N == ss_in[0] * sigma_dim) at the halved
+                # ``cs_out[0]`` made it one power-of-two too small on every
+                # non-last stage: a runtime ``n_t``-slot event overflowed the
+                # ``n_t>>1``-slot cascade (``butterfly_flatten`` M_total
+                # mismatch) the moment the SS sigma fold was live. Last stage:
+                # ``cs_out[0] == n_t`` already, so this is unchanged there.
+                ss_in = [n_t, concept_dim]
+                ss_out = [n_t, concept_dim]
             else:
                 # Plain path: all stages share the legacy conceptInputShape /
                 # conceptOutputShape. No N-halving.
@@ -5471,8 +5499,10 @@ class BasicModel(BaseModel):
             # (zeros at t=0). The advanced carrier ``next_cs`` (the full muxed
             # event) is written straight back into CS_sub -- the band is INSIDE
             # the transformed event now, not a tail riding along. The reverse
-            # consumes the threaded ``aug_t`` (perfect) or the structured
-            # zero-pad (dropped) to invert the same square map.
+            # consumes the structured zero-pad (dropped) to invert the same
+            # square map. (The retired ``reconstruct=perfect`` mode skipped the
+            # combine -- only one stream live per stage, carrier carried
+            # unchanged for an exact round-trip; the combine now ALWAYS runs.)
             combine = (getattr(cs, "combine", None)
                        if self.conceptualOrder >= 1
                        and "merge" not in stage else None)
@@ -5481,16 +5511,17 @@ class BasicModel(BaseModel):
                 cs_content, cs_band, cs_event = self._combine_demux(
                     CS_sub, D)
                 if cs_event is not None:
-                    # PS_t: content of the stage-0 contribution; ZERO after
-                    # t=0 (the carrier flows on through ``contribution`` for
-                    # cs.forward bookkeeping, but the combine's PS stream is
-                    # off post stage 0).
-                    if t == 0:
-                        ps_content, _, _ = self._combine_demux(
-                            contribution, D)
-                        PS_t = self._combine_fit(ps_content, D, cs_content)
-                    else:
-                        PS_t = self._combine_fit(None, D, cs_content)
+                    # PS_t: the PERCEPT, re-fed at EVERY stage (``PS_sub_stage0``
+                    # -- the masked stage-0 percept -- NOT zeros and NOT the
+                    # carrier-bearing ``contribution``). The combine SELECTS /
+                    # mixes among PS/CS/SS; the routing decision lives in ONE
+                    # place, the CS combine, not in this caller. Zeroing PS
+                    # post-t=0 orphaned the carrier: the combine reads ``next_cs``
+                    # from the ps-aligned output coords, so a zero PS at t>0
+                    # collapsed next_cs to 0 even though the live carrier sat in
+                    # the cs slot. Keeping PS live keeps the rows distinct.
+                    ps_content, _, _ = self._combine_demux(PS_sub_stage0, D)
+                    PS_t = self._combine_fit(ps_content, D, cs_content)
                     # SS_t: the FULL muxed SS event (option B -- where/when
                     # participate). Demux AT D clamps to the SS event width
                     # (the compressed symbol code is narrower than D), then
@@ -6840,7 +6871,7 @@ class BasicModel(BaseModel):
             # near-term (the STM is the only state the production reverse path
             # can source); because the round-trip's exactness comes from the
             # stashing rather than a true chained walk,
-            # ``test_mm5m_perfect_reconstruction`` asserts the chained
+            # ``test_mm5m_combine_carrier_roundtrip`` asserts the chained
             # consistency (``cs_rec[t] == carriers[t-1]``) so a future break of
             # the forward ``prev_cs`` threading is still caught.
             # ``combine.reverse`` recovers the three input
@@ -6855,13 +6886,17 @@ class BasicModel(BaseModel):
             #     (pi.reverse) decode back to the input. Surfacing PS_0 here
             #     closes the input-reconstruction round-trip (e.g. XOR_exact).
             #
-            # ``<perfectReconstruction>`` threads the forward augment back
-            # (exact square inverse); otherwise the structured zero-pad is
-            # used (exact only on the rank-D subspace that survived). Gated
-            # to the plain (non-grammar) parallel path, matching the forward
-            # gate. Falls back to ``sub``'s own content when the forward
-            # carrier is unavailable (e.g. a reverse not preceded by a body
-            # forward in this object).
+            # The combine ALWAYS ran on the forward (the ``reconstruct=perfect``
+            # skip-combine mode was retired with the enum, A1), so the reverse
+            # is UNCONDITIONALLY the dropped reverse: the structured zero-pad
+            # inverts the same square map (exact only on the rank-D subspace
+            # that survived). Gated to the plain (non-grammar) parallel path,
+            # matching the forward gate. Falls back to ``sub``'s own content
+            # when the forward carrier is unavailable (e.g. a reverse not
+            # preceded by a body forward in this object).
+            # The combine-reverse demuxes ``sub``, recovers the content, and
+            # writes it back via ``set_event`` so the downstream ``cs.reverse``
+            # reads the canonical event.
             if self.conceptualOrder >= 1 and "merge" not in stage:
                 try:
                     combine = getattr(stage["cs"], "combine", None)
@@ -6877,17 +6912,12 @@ class BasicModel(BaseModel):
                             ncs = self._combine_fit(carrier_t, D, content)
                         else:
                             ncs = self._combine_fit(content, D, content)
-                        aug_t = None
-                        if (self.perfect_reconstruction
-                                and augments is not None
-                                and t < len(augments)):
-                            aug_t = augments[t]
-                        if aug_t is not None:
-                            # Perfect: thread the forward augment back for the
-                            # exact square inverse.
-                            ps_rec, _, cs_rec = combine.reverse(ncs, aug_t)
-                        else:
-                            ps_rec, _, cs_rec = combine.reverse_dropped(ncs)
+                        # Dropped reverse: recover the rank-D subspace that
+                        # survived the forward combine. (The forward augment-
+                        # threaded EXACT inverse was retired with the boolean
+                        # <perfectReconstruction>; this reachable path is
+                        # always the dropped reverse.)
+                        ps_rec, _, cs_rec = combine.reverse_dropped(ncs)
                         # FINAL stage -> PS-stream (the pi-encoded input);
                         # earlier stages -> CS-stream (the prior carrier).
                         recovered = ps_rec if t == 0 else cs_rec
@@ -8125,6 +8155,32 @@ class ModelFactory:
                 "ramsified symbolic match (Ops.part) depends on. Set "
                 "<ConceptualSpace><codebook>none</codebook> or "
                 "<architecture><monotonic>false</monotonic>.")
+
+        # ---- Respect-explicit endpoint dims (fail-loud) -------------------
+        # Task #11 (architecture-backlog §1, decision (3)). The endpoint tiers
+        # (InputSpace, OutputSpace) carry author-facing task widths: the input
+        # cardinality and the OUTPUT TARGET cardinality the head must
+        # represent. An EXPLICITLY-set <nDim> on these must be honoured
+        # verbatim by ``_resolve_dim`` -- never silently replaced by the
+        # chained upstream width or a canonical band-derived value. Assert the
+        # resolver returns the explicit value (it does today; this pins the
+        # contract so a future canonical-override regression fails loud here
+        # instead of silently collapsing the head's target cardinality).
+        for _endpoint, _prev in (("InputSpace", 1),
+                                 ("OutputSpace", symbol_dim)):
+            try:
+                _raw = gsp(cfg, _endpoint, "nDim")
+            except KeyError:
+                continue  # omitted -> inherit sentinel, nothing to honour
+            if _raw and int(_raw) > 0:
+                _resolved = _resolve_dim(_endpoint, _prev)
+                if int(_resolved) != int(_raw):
+                    errors.append(
+                        f"{_endpoint} explicit <nDim>={int(_raw)} was "
+                        f"overridden to {int(_resolved)}: endpoint widths are "
+                        f"honoured verbatim (respect-explicit, Task #11). The "
+                        f"config-author-sized {_endpoint} width must not be "
+                        f"silently canonical/chained-overridden.")
 
         # Invertible PerceptualSpace shape constraints are registered inside
         # PerceptualSpace._register_requirements() (not here) to keep them self-contained.

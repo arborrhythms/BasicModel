@@ -40,9 +40,10 @@
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <!-- PerceptualSpace codebook is mandatory (modality re-architecture); was
-         none for the project-style exact-XOR reconstruction (now superseded). -->
-    <codebook>none</codebook>
+    <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
+         "none". The 1000 word prototypes live on the .what Embedding, not a
+         VQ snap on .event. -->
     <!-- Butterfly cascade on pi (and historically sigma) gives pi
          cross-element reach across the flattened [B, N*D] view.
          Without it, pi is per-slot and cannot compute XOR (or any

@@ -19,10 +19,18 @@ def _build(name):
         m, _ = Models.BasicModel.from_config(p)
     return m
 
-def test_perfect_reconstruction_flag_parsed():
+def test_reconstruct_enum_retired():
+    # A1 (2026-06-09): the ``<reconstruct>`` enum was retired (schema element +
+    # reconstructEnum removed). The combine now UNCONDITIONALLY mixes all three
+    # streams (reconstruction is unconditionally from concepts), so the model
+    # carries NEITHER the ``reconstruct`` enum string NOR the derived
+    # ``perfect_reconstruction`` bool.
     m = _build("MM_20M.xml")
-    assert hasattr(m, "perfect_reconstruction")
-    assert isinstance(m.perfect_reconstruction, bool)
+    assert not hasattr(m, "reconstruct"), (
+        "the <reconstruct> enum was retired (A1); the model must not carry a "
+        "self.reconstruct attribute")
+    assert not hasattr(m, "perfect_reconstruction"), (
+        "the derived perfect_reconstruction bool was retired with the enum")
 
 
 def test_combine_square_roundtrip_exact():
@@ -173,37 +181,27 @@ def test_mm5m_forward_finite_after_combine():
     assert torch.isfinite(m._combine_carriers[-1]).all()
 
 
-def test_mm5m_perfect_reconstruction():
-    # Step-5 round-trip (A4): with <perfectReconstruction>true the per-stage
-    # ConceptualCombine threads its augment from forward into reverse, so the
-    # concept-carrier reverse reproduces the forward CS_0 to the LDU/cascade
-    # solve tolerance. MM_20M.xml ships without the flag, so inject it into a
-    # /tmp copy under <architecture> and build from there.
-    import os, tempfile, warnings, torch
+def test_mm5m_combine_carrier_roundtrip():
+    # Step-5 round-trip (A4): the per-stage ConceptualCombine threads its
+    # augment from forward into reverse, so the augment-threaded combine reverse
+    # reproduces the forward CS_0 to the LDU/cascade solve tolerance. The
+    # ``<reconstruct>`` enum was retired (A1, 2026-06-09) -- the combine now
+    # ALWAYS runs (the former ``perfect`` skip-combine mode is gone), so this
+    # builds from the STOCK MM_20M.xml with no injected knob.
+    import os, warnings, torch
     import Models, Language
     from util import init_config
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    src = os.path.join(data_dir, "MM_20M.xml")
-    with open(src) as fh:
-        xml = fh.read()
-    assert "<perfectReconstruction>" not in xml, (
-        "MM_20M.xml unexpectedly already sets perfectReconstruction")
-    # Insert the element immediately after the <architecture> open tag.
-    xml2 = xml.replace(
-        "<architecture>",
-        "<architecture>\n    <perfectReconstruction>true</perfectReconstruction>",
-        1)
-    assert "<perfectReconstruction>true</perfectReconstruction>" in xml2
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".xml", delete=False, dir="/tmp")
-    tmp.write(xml2); tmp.close()
-    p = tmp.name
+    p = os.path.join(data_dir, "MM_20M.xml")
     init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore")
         m, _ = Models.BasicModel.from_config(p)
-    assert m.perfect_reconstruction is True
+    # The retired enum leaves NO attribute behind.
+    assert not hasattr(m, "perfect_reconstruction"), (
+        "the <reconstruct> enum (and its derived perfect_reconstruction bool) "
+        "was retired (A1)")
     Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
@@ -341,6 +339,12 @@ def test_no_recompile_fullgraph():
         f"a requires_grad guard flipped (recompile):\n{combined[-3000:]}")
 
 
+# ``test_reconstruct_expectation_carrier_accumulates`` REMOVED (A1,
+# 2026-06-09): it exercised ``<reconstruct>expectation</reconstruct>``, a mode
+# of the now-retired ``reconstruct`` enum. The enum (schema element +
+# reconstructEnum) is gone; reconstruction is unconditionally from concepts.
+
+
 def test_combine_dropped_aug_exact_on_rank():
     # Dropped-augment reverse: aug is treated as the structured zero-pad.
     # It does NOT recover the inputs exactly (the 2D augment is discarded),
@@ -386,9 +390,9 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
     ``<sentencePrediction>...</sentencePrediction>`` under ``<training>``.
 
     MM_20M.xml ships with neither knob (so the discourse layer is absent and
-    ``prediction_mode`` defaults to "none"). We inject under the SAME anchors
-    ``test_mm5m_perfect_reconstruction`` uses for the perfectReconstruction
-    flag, so the build path is identical to the rest of this module.
+    ``prediction_mode`` defaults to "none"). We inject under the SAME
+    ``<architecture>`` anchor the rest of this module uses, so the build path
+    is identical.
     """
     import os, tempfile, warnings
     import Models, Language

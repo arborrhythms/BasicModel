@@ -1129,6 +1129,91 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
 
+class TestOutputSpaceRegressionHead(unittest.TestCase):
+    """Task #11 (architecture-backlog §1, decision (2)+(3)): the OutputSpace
+    head is an unquantised regression map when nVectors==1 / codebook absent,
+    with a config-honoured sigmoid/identity readout."""
+
+    def _make_output_space(self, *, nVectors, codebook, readout, nOut=3,
+                           nIn=4, outDim=1):
+        _populate_test_config(symbolDim=1, outputDim=outDim, nOutput=nOut,
+                              nWhere=0, nWhen=0, flatten=True)
+        # Drive the OutputSpace knobs directly (the helper hard-codes
+        # nVectors=nOutput / codebook=False).
+        os_cfg = Models.TheXMLConfig._data["OutputSpace"]
+        os_cfg["nVectors"] = nVectors
+        os_cfg["codebook"] = codebook
+        os_cfg["readout"] = readout
+        return Models.OutputSpace([nIn, outDim], [nVectors, outDim],
+                                  [nOut, outDim])
+
+    def test_one_vector_is_regression_head(self):
+        """nVectors==1 selects the unquantised regression head."""
+        os_ = self._make_output_space(nVectors=1, codebook="none",
+                                      readout="identity")
+        self.assertTrue(os_._regression_head)
+
+    def test_quantize_one_vector_never_snaps(self):
+        """Even with <codebook>quantize</codebook>, a 1-vector head takes the
+        regression path (no degenerate single-prototype snap)."""
+        os_ = self._make_output_space(nVectors=1, codebook="quantize",
+                                      readout="identity")
+        self.assertTrue(os_._regression_head)
+
+    def test_multivector_codebook_keeps_quantized_head(self):
+        """A genuinely symbolic head (nVectors>1 + codebook) is NOT the
+        regression path -- the quantized head stays available."""
+        os_ = self._make_output_space(nVectors=4, codebook="quantize",
+                                      readout="identity", nOut=4)
+        self.assertFalse(os_._regression_head)
+
+    def test_identity_readout_matches_bare_linear(self):
+        """identity readout is byte-identical to the historical bare-linear
+        head (no new params, no value change)."""
+        os_ = self._make_output_space(nVectors=1, codebook="none",
+                                      readout="identity")
+        self.assertIsNone(os_._readout_bias)
+        x = torch.randn(2, 4, 1).to(Models.TheDevice.get())
+        y = _unwrap(os_(_wrap_tensor(os_, x.clone())))
+        with torch.no_grad():
+            expected = os_.forwardLinear(
+                x.reshape(2, 1, 4)).reshape(2, 3, 1)
+        self.assertLess(float((y - expected).abs().max()), 1e-6)
+
+    def test_sigmoid_readout_in_unit_interval_and_separable(self):
+        """sigmoid readout squashes to (0,1) and distinct inputs map to
+        distinct outputs -- the head is NOT capped to one representable
+        value (the XOR-collapse acceptance)."""
+        # nOut=1 so the head emits one scalar per row ([B, 1, 1]).
+        os_ = self._make_output_space(nVectors=1, codebook="none",
+                                      readout="sigmoid", nOut=1, nIn=1)
+        self.assertTrue(os_._regression_head)
+        self.assertIsNotNone(os_._readout_bias)
+        # Give the linear a non-degenerate slope so the squash spans the
+        # range across distinct inputs (W is the LinearLayer's [in, out]).
+        with torch.no_grad():
+            os_.forwardLinear.__self__.W.fill_(1.0)
+        x = (torch.tensor([-6.0, -2.0, 2.0, 6.0])
+             .reshape(4, 1, 1).to(Models.TheDevice.get()))
+        y = _unwrap(os_(_wrap_tensor(os_, x))).reshape(4)
+        self.assertTrue(bool(((y > 0) & (y < 1)).all()))
+        self.assertEqual(int(torch.unique(y.round(decimals=4)).numel()), 4)
+
+    def test_sigmoid_readout_reverse_inverts(self):
+        """The reverse path inverts the readout (logit . sigmoid == id)."""
+        os_ = self._make_output_space(nVectors=1, codebook="none",
+                                      readout="sigmoid")
+        z = torch.randn(2, 3, 1).to(Models.TheDevice.get())
+        fwd = os_._apply_readout(z)
+        back = os_._invert_readout(fwd)
+        self.assertLess(float((back - z).abs().max()), 1e-5)
+
+    def test_bad_readout_raises(self):
+        with self.assertRaises(ValueError):
+            self._make_output_space(nVectors=1, codebook="none",
+                                    readout="tanh")
+
+
 class TestBaseModelFactory(unittest.TestCase):
     """BaseModel.from_config factory creates the correct model type."""
 
@@ -1992,9 +2077,14 @@ class TestReconstructionSymbols(unittest.TestCase):
             auto = ET.SubElement(_tr, "autoload")
         auto.text = "false"
 
-        # PS/SS codebooks are mandatory in the converged modality architecture;
-        # XOR_exact ships them as none, so force quantize for the fixture build.
-        for _sect in ("PerceptualSpace", "SymbolicSpace"):
+        # SS codebook is mandatory (symbolic). PS is subsymbolic -- its
+        # <codebook> element was retired (#13 / asymmetric-vq), so DROP any PS
+        # codebook and do not emit one. XOR_exact ships SS as none, so force
+        # quantize for the fixture build.
+        _ps_cb = root.find("PerceptualSpace/codebook")
+        if _ps_cb is not None:
+            root.find("PerceptualSpace").remove(_ps_cb)
+        for _sect in ("SymbolicSpace",):
             _cb = root.find(f"{_sect}/codebook")
             if _cb is None:
                 _cb = ET.SubElement(root.find(_sect), "codebook")

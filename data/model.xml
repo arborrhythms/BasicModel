@@ -374,10 +374,10 @@
     <invertible>false</invertible>
     <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
-    <!-- Discrete (codebook) percepts. Mandatory in the converged modality
-         architecture (PerceptualSpace is a MANDATORY_CODEBOOK_TIER); a config
-         that resolves this to none raises at build. -->
-    <codebook>quantize</codebook>
+    <!-- PerceptualSpace is subsymbolic: the <codebook> element was retired
+         (2026-06-09, asymmetric-VQ plan §7 task 7). PS is hardwired to "none"
+         (continuous .event passthrough; percept prototypes live on the .what
+         Embedding). Only SymbolicSpace carries a <codebook>. -->
     <!-- Multi-token chunking strategy: analyse | lexicon | bpe | mphf | none | radix.
          R3-live default: the meronymic analyzer (space-lexer front end);
          with a word codebook it reproduces lexicon word lexing. -->
@@ -472,6 +472,11 @@
     <codebook>none</codebook>
     <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
     <nonlinear>false</nonlinear>
+    <!-- Regression-head readout (identity | sigmoid). identity = bare
+         linear (historical default); sigmoid squashes to (0,1) for
+         binary/scalar targets. Only used on the unquantised regression
+         head (nVectors==1 or codebook=none). -->
+    <readout>identity</readout>
   </OutputSpace>
 
 </model>

@@ -2270,6 +2270,9 @@ class Codebook(Basis):
         
         See class docstring for the operation contract.
         """
+        if os.environ.get("XVQ_PROBE"):
+            print(f"=XQZ= name={getattr(self, 'name', None)} "
+                  f"customVQ={self.customVQ}", flush=True)
         if self.customVQ:
             quantized, indices, commit_loss = self.vq(
                 x,
@@ -2289,6 +2292,10 @@ class Codebook(Basis):
         quantized = weight[indices]
         quantized = quantized.reshape(*x.shape[:-1], weight.shape[-1])
         indices = indices.reshape(x.shape[:-1])
+        if os.environ.get("XVQ_PROBE"):
+            print(f"=XQZ-fb= name={getattr(self, 'name', None)} "
+                  f"unique={int(indices.unique().numel())}/"
+                  f"{int(indices.numel())}", flush=True)
         loss = self.commit_loss(x, quantized)
         self.last_commit_loss = loss
         return quantized, indices, loss
@@ -6295,12 +6302,30 @@ class Space(nn.Module):
 
         self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
-        self._codebook    = TheXMLConfig.space(section, "codebook")
-        # Mandatory PS/SS codebooks (modality re-architecture): a percept and
-        # a symbol qua symbol must quantize onto a codebook. The model.xml
-        # defaults for these tiers are <codebook>quantize</codebook>; a config
-        # that explicitly resolves them to "none" is a loud build error, not a
-        # silent passthrough.
+        # Asymmetric VQ (2026-06-09 plan §7 task 7): the <codebook> knob is
+        # now per-tier, not uniform.
+        #   * PerceptualSpace is SUBSYMBOLIC: its <codebook> element was retired
+        #     from the schema. PS is hardwired to "none" (continuous .event
+        #     passthrough; percept prototypes live on the .what Embedding, see
+        #     _build_object_basis). No config read -- the element no longer
+        #     exists, so reading it would KeyError.
+        #   * SymbolicSpace is SYMBOLIC: a symbol qua symbol quantizes onto a
+        #     codebook, so its <codebook> DEFAULTS to "quantize" when a config
+        #     omits it.
+        #   * Other tiers keep the strict read (model.xml supplies the value).
+        if section == "PerceptualSpace":
+            self._codebook = "none"
+        elif section == "SymbolicSpace":
+            self._codebook = TheXMLConfig.space(section, "codebook",
+                                                default="quantize")
+        else:
+            self._codebook = TheXMLConfig.space(section, "codebook")
+        # Mandatory codebook tiers (modality re-architecture): a symbol qua
+        # symbol must quantize onto a codebook. The model.xml default for the
+        # symbolic tier is <codebook>quantize</codebook>; a config that
+        # explicitly resolves a mandatory tier to "none" is a loud build error,
+        # not a silent passthrough. (PerceptualSpace is no longer mandatory --
+        # it is subsymbolic and hardwired to "none" above.)
         if section in MANDATORY_CODEBOOK_TIERS:
             if Space.normalize_codebook_mode(self._codebook) == "none":
                 raise ValueError(
@@ -8352,15 +8377,15 @@ class PerceptualSpace(Space):
         nA_dim = self.outputShape[1]
 
         invertible = TheXMLConfig.space(self.config_section, "invertible")
-        if not invertible:
-            # Codebook sampling is with replacement, so nVectors is
-            # independent of nOutput.  Non-codebook still needs a
-            # direct one-to-one mapping.
-            if not self.codebook:
-                TheXMLConfig.require(
-                    lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
-                    f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
-                )
+        # The former ``non-codebook requires nVectors == nOutput`` guard was
+        # retired with the asymmetric-VQ change (2026-06-09 plan §7 task 7).
+        # PerceptualSpace is now unconditionally subsymbolic (codebook fixed to
+        # "none"): its percept prototypes live on the ``nVectors``-wide ``.what``
+        # Embedding while ``.event`` is a passthrough ``Tensor`` (see
+        # _build_object_basis), so ``nVectors`` is decoupled from ``nOutput``
+        # exactly as the old codebook branch was. Requiring nVectors == nOutput
+        # would reject every lexicon-sized PS (e.g. nVectors=1_000_000,
+        # nOutput=1024) now that PS never carries a codebook to opt out.
 
         # Upstream/downstream muxed-width compatibility.  The reshape in
         # forwardBegin ([B, N, D] -> [B, -1, nInputDim]) requires that
@@ -8842,6 +8867,12 @@ class PerceptualSpace(Space):
         else:
             batch_tokens = upstream_vspace.whatEncoding.decode_tokens(
                 what_buf)
+        # No whitespace pre-parse: the radix store learns its own chunking
+        # (promote recurring spans; spell out the rest). With SBOW now firing
+        # on a single percept (its centroid still has an antipode for random
+        # codebook rows to be repelled toward), a whole-line 1-chunk row no
+        # longer disables the anti-collapse term, so forcing a word-split is
+        # unnecessary.
         # Lookup each chunk via the spec'd Forward path; build a flat
         # list of percept_ids per row alongside a [B, N, D] vector
         # tensor. Unpromoted (byte-fallback / partial-match) slots
@@ -8905,6 +8936,10 @@ class PerceptualSpace(Space):
             while len(row_pids) < nObj:
                 row_pids.append(int(null_pid))
             pid_2d.append(row_pids[:nObj])
+        if os.environ.get("XCHUNK_PROBE"):
+            _nn = [sum(1 for p in r if p != null_pid) for r in pid_2d[:4]]
+            print(f"=XCHUNK2= non-null-pids/row={_nn} pid_2d[0]={pid_2d[0]} "
+                  f"lexer-tokens[0]={batch_tokens[0]!r}", flush=True)
         pid_grid = torch.tensor(pid_2d, dtype=torch.long, device=dev)
         # Gather per-slot vectors from the shared ``.what`` codebook (the
         # same Codebook the RadixLayer writes its percepts into), so the
@@ -10168,6 +10203,15 @@ class PerceptualSpace(Space):
         # also retired (no C-feedback path entering PS at this level).
         primary = self.forwardBegin(vspace, returnVectors=True)
         x = self.pi.forward(primary)
+        if os.environ.get("XHEAD_PROBE"):
+            with torch.no_grad():
+                for _nm, _v in (("raw-pre-pi", primary), ("post-pi", x)):
+                    if (torch.is_tensor(_v) and _v.dim() >= 2
+                            and _v.shape[0] >= 2):
+                        _f = _v.reshape(_v.shape[0], -1)[:4]
+                        print(f"=XPI= {_nm} "
+                              f"maxpairdist={torch.cdist(_f, _f).max().item():.4f}",
+                              flush=True)
         # The legacy QKV ``AttentionLayer`` pass was removed here (plan
         # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum): the layer
         # was never enlisted in the live forward path, and ``<attention>`` now
@@ -15401,11 +15445,58 @@ class SymbolicSpace(Space):
         # ``default_rule`` code-level fallback — grammar XML is the
         # sole source of truth).
         if getattr(self, 'syntacticLayer', None) is None:
-            # SymbolicSpace no longer owns a sigma; with symbol_dim ==
-            # concept_dim enforced in __init__, the default path is
-            # dimensionally a pass-through. Learned C->S transforms live
-            # in ConceptualSpace.pi.
-            act = act_pre
+            # Parallel-mode SS sigma fold (restored 2026-06-08). ``self.sigma``
+            # is the cross-slot symbolic mix that XOR -- and any function that
+            # must combine information across slot positions -- requires at the
+            # S tier, exactly as PS.pi provides it at the P tier (a square
+            # per-slot fold cannot mix the word slots; see __init__). The
+            # 2026-05-29 clean-stack read-back turned this into a pass-through
+            # (``act = act_pre``), removing the only per-stage nonlinearity in
+            # parallel mode and leaving the recurrence linear (-> can't compute
+            # XOR). The serial/grammar path uses the SyntacticLayer (the
+            # ``else`` below); this sigma IS the parallel substitute for that
+            # syntax. ``_sigma_dim == nInputDim == concept_dim`` so the fold
+            # applies on the concept-width activation here.
+            #
+            # Sigma is constructed for the concept-content width ``_sigma_dim``
+            # (== ``sigma.nInput``).  When ``nWhen > 0`` the muxed event is
+            # wider (nOutputDim > _sigma_dim) -- the trim above gave
+            # ``act_pre[..., nOutputDim]`` which may carry extra .when dims.
+            # Apply sigma on the first ``sigma.nInput`` columns only and
+            # pass the extra band through unchanged so the shapes stay
+            # consistent without resizing the sigma layer.
+            sigma = getattr(self, 'sigma', None)
+            if sigma is None:
+                act = act_pre
+            else:
+                # sigma was sized at construction for ``sigma.N = inputShape[0]
+                # * _sigma_dim`` elements total (flattened across all positions).
+                # At runtime, two things can differ:
+                #   (a) nWhen adds extra per-slot dims  → act_pre.shape[-1] > _sigma_dim
+                #   (b) sequence length changes at test  → N_slots != inputShape[0]
+                # Check the flattened total; only apply sigma when it matches.
+                _sd = int(sigma.nInput)          # per-slot concept dim
+                _sigma_total = int(sigma.N)       # construction-time flat total
+                # Compute what the butterfly would see after flatten [B, N, D] -> [B, N*D]
+                _actual_total = int(act_pre.shape[-1])
+                if act_pre.dim() >= 3:
+                    _actual_total *= int(act_pre.shape[-2])
+                if _actual_total == _sigma_total:
+                    # Exact match: apply normally.
+                    act = sigma.forward(act_pre)
+                elif act_pre.dim() >= 3 and act_pre.shape[-1] > _sd:
+                    # Same N_slots but extra per-slot dims (nWhen band).
+                    # Apply sigma on the concept-content columns only, pass
+                    # the extra band through unchanged.
+                    act_c = sigma.forward(act_pre[..., :_sd])
+                    act = torch.cat([act_c, act_pre[..., _sd:]], dim=-1)
+                else:
+                    # Total elements don't match and no simple band trim
+                    # resolves it (e.g. variable-length sequence at test time).
+                    # Fall back to identity -- sigma remains a no-op for this
+                    # batch.  XOR training always uses the construction-time
+                    # sequence length, so XOR accuracy is unaffected.
+                    act = act_pre
         else:
             # ---- Eager cursor path: SymbolicSpace is the single site
             # that drives S-tier op application. The per-tier rule list
@@ -15762,6 +15853,18 @@ class OutputSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         object.__setattr__(self, "_initial_vectors", vectors)
         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
+        # Regression-head readout (Task #11, architecture-backlog §1).
+        # identity | sigmoid; only consulted on the unquantised regression
+        # path (see ``self._regression_head`` below). Read BEFORE
+        # super().__init__() to mirror the other pre-super config reads.
+        _readout = str(
+            TheXMLConfig.space(section, "readout", default="identity")
+        ).strip().lower()
+        if _readout not in ("identity", "sigmoid"):
+            raise ValueError(
+                f"{section} <readout> got {_readout!r}; expected "
+                f"'identity' or 'sigmoid'.")
+        self._readout = _readout
         super().__init__(inputShape, spaceShape, outputShape)
         self.data = TheData
         self._vocabulary = getattr(self, '_vocabulary', None)
@@ -15810,8 +15913,67 @@ class OutputSpace(Space):
             else:
                 self.forwardLinear = LinearLayer(input, output)
                 self.layers = nn.ModuleList([self.forwardLinear])
+
+        # --- Unquantised regression head (Task #11, architecture-backlog §1,
+        # decision (2)+(3)) -------------------------------------------------
+        # A head with nVectors==1 can only ever name a SINGLE codebook
+        # prototype, so a quantised snap collapses every row to one
+        # representable value (the MSE optimum is then the constant
+        # row-mean). When the head is low-cardinality (nVectors==1) OR has no
+        # codebook at all, treat it as an unquantised linear REGRESSION map
+        # (nInputDim -> nOutputDim) and NEVER snap -- even if a config set
+        # <codebook>quantize</codebook> on a 1-vector head (that snap is
+        # degenerate). The quantised head stays available for genuinely
+        # symbolic, multi-vector outputs (nVectors>1 with a codebook).
+        # ``nVectors`` here is ``spaceShape[0]`` (resolved by Space.__init__).
+        self._regression_head = (
+            (not self.nonlinear_output)
+            and (self.nVectors <= 1 or self.codebook_mode == "none")
+        )
+        # Sigmoid/identity readout for the regression head. identity keeps the
+        # bare-linear behaviour (back-compat default); sigmoid squashes to
+        # (0,1) so a binary/scalar target (XOR, the ``predicted`` column) is
+        # representable without a codebook. The readout carries its OWN
+        # learned bias so the bias-free LinearLayer (x @ W, no intercept) can
+        # still shift its decision boundary off the origin pre-squash; it is a
+        # no-op for identity (bias stays None so the linear path is byte
+        # identical to the historical head).
+        if self._regression_head and self._readout == "sigmoid":
+            self._readout_bias = nn.Parameter(
+                torch.zeros(1, 1, self.nOutputDim))
+        else:
+            self._readout_bias = None
         self.params = list(self.parameters())
         self._batch_results = []
+
+    def _apply_readout(self, output):
+        """Regression-head readout: add the learned bias and squash.
+
+        ``output`` is the post-linear event tensor ([B, N, nOutputDim]).
+        identity returns it unchanged (no bias allocated); sigmoid adds the
+        learned intercept then applies the logistic squash. No-op unless this
+        is the unquantised regression head."""
+        if not getattr(self, "_regression_head", False):
+            return output
+        if self._readout == "sigmoid":
+            if self._readout_bias is not None:
+                output = output + self._readout_bias
+            output = torch.sigmoid(output)
+        return output
+
+    def _invert_readout(self, y):
+        """Inverse of :meth:`_apply_readout` for the reverse path.
+
+        sigmoid -> logit then subtract the learned bias; identity -> y. The
+        logit input is clamped off {0,1} so the reverse stays finite."""
+        if not getattr(self, "_regression_head", False):
+            return y
+        if self._readout == "sigmoid":
+            y = y.clamp(epsilon, 1 - epsilon)
+            y = torch.log(y) - torch.log1p(-y)  # logit(y)
+            if self._readout_bias is not None:
+                y = y - self._readout_bias
+        return y
     def getTestOutput(self):
         """Get test output.
         
@@ -15857,7 +16019,11 @@ class OutputSpace(Space):
 
         x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
-        if self.codebook:
+        if self._regression_head:
+            # Unquantised regression head: NEVER snap (a 1-vector snap is
+            # degenerate); apply the sigmoid/identity readout instead.
+            output = self._apply_readout(output)
+        elif self.codebook:
             output = self.subspace.get_vectors().forward(output)
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
@@ -15886,6 +16052,10 @@ class OutputSpace(Space):
         self.subspace.set_event(y)
         self.subspace.denormalize("output", target="what")
         y = self.subspace.materialize()
+        if self._regression_head:
+            # Undo the sigmoid/identity readout before the inverse linear so
+            # the symbol-space reconstruction sees the pre-squash activation.
+            y = self._invert_readout(y)
         y = self.reverseLinear(y)
         vspace = self.reverseEnd(y, returnVectors=True)
         return vspace

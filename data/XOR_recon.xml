@@ -37,7 +37,6 @@
     <nOutput>8</nOutput>
     <nOutputDim>6</nOutputDim>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>

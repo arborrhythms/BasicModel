@@ -39,7 +39,6 @@
     <nDim>14</nDim>
     <nVectors>512</nVectors>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
     <chunking>bpe</chunking>
   </PerceptualSpace>
 

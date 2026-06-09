@@ -1,11 +1,18 @@
-"""PerceptualSpace / SymbolicSpace codebook defaults + opt-out.
+"""PerceptualSpace / SymbolicSpace codebook tiering (asymmetric VQ).
 
-The model.xml defaults for the PS/SS tiers are <codebook>quantize</codebook>,
-so configs that don't override inherit a codebook. 2026-06-04 the *mandatory*
-constraint (architecture.MANDATORY_CODEBOOK_TIERS) was REVERTED: a config may
-now explicitly resolve PS/SS to <codebook>none</codebook> to build a full-width
-INVERTIBLE PASSTHROUGH (no VQ snap) -- required by the exact-XOR reconstruction
-fixture, where an exactly invertible forward<->reverse chain is the point.
+2026-06-09 (asymmetric-VQ plan §7 task 7) made the ``<codebook>`` knob
+asymmetric per tier:
+
+  * PerceptualSpace is SUBSYMBOLIC: its ``<codebook>`` element was retired
+    from the schema entirely. PS is hardwired to ``"none"`` -- a continuous
+    ``.event`` passthrough; the percept prototypes live on the ``.what``
+    Embedding, never on a VQ snap. There is no config knob and no way to turn
+    a codebook on for PS.
+  * SymbolicSpace is SYMBOLIC: a symbol qua symbol quantizes onto a codebook,
+    so its ``<codebook>`` DEFAULTS to ``"quantize"`` when a config omits it. An
+    explicit ``<codebook>none</codebook>`` on SS is still honored (e.g.
+    data/XOR_exact.xml builds a full-width invertible passthrough for the
+    exact-XOR reconstruction fixture).
 """
 
 import os, sys, tempfile, unittest, warnings
@@ -32,31 +39,33 @@ def _build(cfg):
     return model
 
 
-class TestMandatoryCodebooks(unittest.TestCase):
+class TestCodebookTiering(unittest.TestCase):
 
-    def test_ps_ss_codebooks_present(self):
-        """MentalModel's PerceptualSpace and SymbolicSpace resolve to a
-        non-"none" codebook mode (inheriting the quantize default)."""
+    def test_ps_subsymbolic_ss_quantized_by_default(self):
+        """MentalModel sets no <codebook> on PS/SS. PerceptualSpace is
+        subsymbolic (always resolves to "none"); SymbolicSpace inherits the
+        "quantize" default (non-"none")."""
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             model = _build(os.path.join(_DATA, "MentalModel.xml"))
-        self.assertNotEqual(model.perceptualSpace.codebook_mode, "none",
-                            "PerceptualSpace codebook is mandatory")
+        self.assertEqual(model.perceptualSpace.codebook_mode, "none",
+                         "PerceptualSpace is subsymbolic: codebook is hardwired "
+                         "to none")
         self.assertNotEqual(model.symbolicSpace.codebook_mode, "none",
-                            "SymbolicSpace codebook is mandatory")
+                            "SymbolicSpace codebook defaults to quantize")
 
-    def test_codebook_none_allowed(self):
-        """2026-06-04: an explicit <codebook>none</codebook> on PerceptualSpace
-        / SymbolicSpace is now ALLOWED (the mandatory-codebook constraint was
-        reverted). data/XOR_exact.xml resolves BOTH to "none" -- a full-width
-        invertible passthrough -- and must build without raising."""
+    def test_ss_codebook_none_opt_out_honored(self):
+        """data/XOR_exact.xml explicitly resolves SymbolicSpace to
+        <codebook>none</codebook> (a full-width invertible passthrough) and
+        must build without raising. PerceptualSpace is subsymbolic regardless,
+        so it is always "none"."""
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             model = _build(os.path.join(_DATA, "XOR_exact.xml"))
         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
-                         "PerceptualSpace codebook=none should be honored")
+                         "PerceptualSpace is subsymbolic: always none")
         self.assertEqual(model.symbolicSpace.codebook_mode, "none",
-                         "SymbolicSpace codebook=none should be honored")
+                         "explicit SymbolicSpace codebook=none should be honored")
 
 
 if __name__ == "__main__":

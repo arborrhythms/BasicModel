@@ -56,7 +56,6 @@
     <nDim>12</nDim>
     <nOutput>1024</nOutput>
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </PerceptualSpace>
 
   <!-- ConceptualSpace [B, 8, 1024]: the DEEP hub; N=8 = STM depth. Ingests

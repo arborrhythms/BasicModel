@@ -22,11 +22,12 @@
     <nVectors>2</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->
+  <!-- PerceptualSpace is subsymbolic (codebook retired 2026-06-09); the 16
+       percept prototypes live on the .what Embedding, so nVectors (16) may
+       exceed nOutput (4) without a VQ snap on .event. -->
   <PerceptualSpace>
     <nOutput>4</nOutput>
     <nVectors>16</nVectors>
-    <codebook>quantize</codebook>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->

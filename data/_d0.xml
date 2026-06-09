@@ -37,7 +37,7 @@
     <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
          the serial sibling is MM_5M_grammar.xml). -->
     <conceptualMode>parallel</conceptualMode>
-    <conceptualOrder>1</conceptualOrder>
+    <conceptualOrder>3</conceptualOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
          butterfly cascade (moved from per-space to architecture-level). -->
@@ -47,22 +47,23 @@
       <dataset>xor</dataset>
     </data>
     <training>
-      <numEpochs>400</numEpochs>
+      <numEpochs>300</numEpochs>
       <batchSize>12</batchSize>
-      <learningRate>0.0005</learningRate>
+      <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
     </training>
   </architecture>
 
   <InputSpace>
     <nOutput>8192</nOutput>
-    <nDim>5</nDim> <!-- 1 byte + 2 where + 2 when -->
-    <!-- lexer>word</lexer -->
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
-    <nInputDim>5</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
+    <nInputDim>1024</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
     <nVectors>65536</nVectors>
     <nDim>1024</nDim>
     <nOutput>8</nOutput>         <!-- 8 in parallel mode, looping over 1 in symbolic mode -->
@@ -75,7 +76,7 @@
          this is what reduces an 8192-char input to a small number of
          words in parallel mode without needing attention. radix = the
          PerceptStore (radix trie + promotion); flip here to experiment. -->
-    <chunking>bpe</chunking>
+    <chunking>radix</chunking>
     <!-- codebook>quantize</codebook -->
   </PerceptualSpace>
 
@@ -101,7 +102,7 @@
     <nOutputDim>8</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
@@ -111,11 +112,6 @@
     <nDim>1</nDim>
     <nOutput>1</nOutput>
     <nOutputDim>1</nOutputDim>
-    <!-- nVectors==1 => unquantised REGRESSION head (Task #11): a 1-vector
-         codebook can only name one prototype (collapses every XOR row to the
-         row-mean), so the head is a bare linear nInputDim->nOutputDim with a
-         sigmoid readout so the binary {0,1} XOR label is representable. -->
-    <readout>sigmoid</readout>
   </OutputSpace>
 
 </model>

@@ -103,7 +103,6 @@
       <xs:element name="retrievalDelta" type="xs:decimal" minOccurs="0"/>
       <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
-      <xs:element name="perfectReconstruction" type="xs:boolean" minOccurs="0"/>
       <xs:element name="prediction" type="predictionEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
@@ -248,6 +247,21 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <!-- OutputSpace readout: the final nonlinearity applied to the
+       unquantised regression head (Task #11, architecture-backlog §1).
+       identity = bare linear (the historical default; output rescaled by
+       Data.denormalize). sigmoid = logistic squash for binary/scalar
+       supervised targets (e.g. XOR), so a {0,1} label is representable
+       without a codebook. Only consulted on the regression-head path
+       (nVectors==1 or codebook absent); ignored by the quantized /
+       activation-mode (<nonlinear>) paths. Default identity. -->
+  <xs:simpleType name="readoutEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="identity"/>
+      <xs:enumeration value="sigmoid"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="chartCollapseEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="root"/>
@@ -267,6 +281,11 @@
       <xs:enumeration value="full"/>
     </xs:restriction>
   </xs:simpleType>
+
+  <!-- ``reconstructEnum`` / the ``<reconstruct>`` element were RETIRED
+       (A1, 2026-06-09). The ConceptualCombine now UNCONDITIONALLY integrates
+       all three streams (PS + SS + CS); the former ``perfect`` skip-combine
+       mode is gone, so reconstruction is unconditionally from concepts. -->
 
   <!-- Per-space symbolic-RETRIEVAL mode (doc/plans/2026-06-06-symbolic-
        heat-retrieval.md, Handoff addendum). This is NOT transformer/QKV
@@ -520,7 +539,10 @@
       <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
            -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
+      <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+           (2026-06-09, asymmetric-VQ plan §7 task 7). PS behaviour is fixed
+           to "none" (continuous .event passthrough; percept prototypes live
+           on the .what Embedding). Only SymbolicSpace carries a <codebook>. -->
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
            symbolicSpaceType; see comments there). -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
@@ -747,6 +769,10 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <!-- Regression-head readout (identity | sigmoid); default identity.
+           See readoutEnum. Only consulted when the head is the unquantised
+           regression path (nVectors==1 or <codebook>none</codebook>). -->
+      <xs:element name="readout" type="readoutEnum" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

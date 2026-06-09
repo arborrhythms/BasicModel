@@ -1622,7 +1622,12 @@ class ConceptualCombine(Layer):
         self.layers.append(self.layer)
 
     def _combine(self, ps, ss, cs):
-        """Concatenate the three ``[..., D]`` streams into ``[..., 3D]``."""
+        """Concatenate the three ``[..., D]`` streams into ``[..., 3D]``.
+
+        Internal order: ``[ps || ss || cs]``.  The wrapped layer's identity
+        init therefore maps ``out[..., :D] = ps_in``, giving the percept as
+        the initial carrier.
+        """
         return torch.cat([ps, ss, cs], dim=-1)
 
     def _split_streams(self, x):

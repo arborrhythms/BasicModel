@@ -95,7 +95,7 @@ def test_symbolic_space_reads_discontinuity_lambda_from_config():
     <language><grammar><S>C</S><C>P</C><P>I</P></grammar></language>
   </WordSpace>
   <InputSpace><nDim>8</nDim><nVectors>4</nVectors><nOutput>4</nOutput><nWhere>2</nWhere><nWhen>2</nWhen><lexer>sentence</lexer><codebook>true</codebook></InputSpace>
-  <PerceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors><hasAttention>false</hasAttention><invertible>false</invertible><codebook>false</codebook></PerceptualSpace>
+  <PerceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors><hasAttention>false</hasAttention><invertible>false</invertible></PerceptualSpace>
   <ConceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors><hasAttention>false</hasAttention><invertible>true</invertible><codebook>false</codebook></ConceptualSpace>
   <SymbolicSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors></SymbolicSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>4</nDim><nVectors>1</nVectors><nWhere>0</nWhere><nWhen>0</nWhen><nonlinear>false</nonlinear></OutputSpace>

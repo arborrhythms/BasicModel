@@ -58,7 +58,6 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <codebook>true</codebook>
     <chunking>bpe</chunking>
     <wordLearning>2</wordLearning>
   </PerceptualSpace>
