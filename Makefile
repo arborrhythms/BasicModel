@@ -14,7 +14,7 @@ VENV_BIN_DIR := bin
 VENV_PYTHON  := .venv/$(VENV_BIN_DIR)/python
 VENV_PIP     := .venv/$(VENV_BIN_DIR)/pip
 VENV_ARGS    :=
-PYTHON_BOOTSTRAP ?= python3
+PYTHON_BOOTSTRAP ?= python3.12
 endif
 
 VENV_PYTHON_FROM_BIN := ../$(VENV_PYTHON)

@@ -61,7 +61,7 @@ def _build_nongrammar_model():
     the non-grammar config + its native ``xor`` dataset, so the 2a
     wiring is exercised on a genuinely grammar-disabled model.
     """
-    from test.space_equiv import _p
+    from space_equiv import _p
     from util import init_config, init_device
     from data import TheData
     from Models import BaseModel
@@ -349,11 +349,13 @@ def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
     import subprocess
     import sys
 
-    from test.space_equiv import _p
+    from space_equiv import _p
 
     code = (
         "import os; os.environ['BASICMODEL_DEVICE']='cpu'\n"
-        "from test.space_equiv import _p\n"
+        "import sys\n"
+        "sys.path.insert(0, 'test')\n"
+        "from space_equiv import _p\n"
         "from util import init_config, init_device\n"
         "from data import TheData\n"
         "from Models import BaseModel\n"

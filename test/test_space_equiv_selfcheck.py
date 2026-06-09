@@ -7,7 +7,7 @@ os.environ["BASICMODEL_DEVICE"] = "cpu"
 import pytest
 import torch
 import Spaces
-from test.space_equiv import run_space_gate, _clone
+from space_equiv import run_space_gate, _clone
 
 
 def _bpe_snapshot(ps, out):
