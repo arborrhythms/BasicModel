@@ -64,7 +64,6 @@
     <nDim>12</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
-    <lexer>word</lexer>
     <codebook>none</codebook>
   </InputSpace>
 
@@ -90,6 +89,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>word</lexer>
     <nInput>1024</nInput>
     <nDim>1028</nDim>
     <nInputDim>1028</nInputDim>

@@ -357,7 +357,6 @@
          meronymic analyzer (chunking=analyse, the default) owns all
          tokenization. Non-analyse models (radix/bpe/lexicon) pin their own
          lexer (byte/word) so they keep the pre-lexed buffer. -->
-    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -378,10 +377,12 @@
          (2026-06-09, asymmetric-VQ plan §7 task 7). PS is hardwired to "none"
          (continuous .event passthrough; percept prototypes live on the .what
          Embedding). Only SymbolicSpace carries a <codebook>. -->
-    <!-- Multi-token chunking strategy: analyse | lexicon | bpe | mphf | none | radix.
-         R3-live default: the meronymic analyzer (space-lexer front end);
-         with a word codebook it reproduces lexicon word lexing. -->
-    <synthesis>analyse</synthesis>
+    <!-- Synthesis (bottom-up union) strategy: lexicon | bpe | mphf | byte/none | radix.
+         Phase 4b default: lexicon (word resolution through the word
+         codebook - the closest surviving mode to the retired PS analyse;
+         the meronymic analyzer is ANALYSIS and lives on SymbolicSpace as
+         <analysis>analyse). -->
+    <synthesis>lexicon</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
   </PerceptualSpace>
@@ -422,6 +423,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>raw</lexer>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- symbol_dim must equal concept_dim under the ownership rule

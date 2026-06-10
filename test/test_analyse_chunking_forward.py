@@ -1,11 +1,16 @@
-"""Live 'analyse' chunking through the model forward (Phase R3-live, model
-path).
+"""analyse migration contracts (Phase 4b, analysis/synthesis dual-input
+plan rev. 2026-06-09).
 
-The meronymic analyzer is wired as a real PerceptualSpace chunking mode. The
-live front end owns tokenization: InputSpace passes the unanalyzed host
-surface, then PS applies the space-lexer and optional learned merges. The
-standalone ``chunk_static(..., "analyse")`` path covers the cold byte-terminal
-learning model.
+The meronymic analyzer is top-down ANALYSIS and lives on SymbolicSpace
+(``<analysis>analyse``, consuming the unity view): PS-side
+``<synthesis>analyse`` is REJECTED loudly (schema + reader), the lexicon
+synthesis path keeps the surface word resolution PS analyse used to
+provide, and the SS analysis cut shapes the stage-0 evidence
+(boundaries-define-parts; per-part coarse means).
+
+The standalone ``chunk_static(..., "analyse")`` byte-terminal learning
+machinery is covered by test_chunk_static_analyse.py /
+test_analyse_word_learning.py (knob-free analyzer plumbing).
 """
 
 import os
@@ -22,7 +27,10 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
-def _write_analyse_xml(tmpdir, n_vectors=512):
+def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
+               n_vectors=512):
+    analysis_elem = (f"\n    <analysis>{analysis}</analysis>"
+                     if analysis else "")
     xml = f"""<?xml version='1.0'?>
 <model>
   <architecture>
@@ -49,14 +57,13 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>
-    <lexer>byte</lexer>
   </InputSpace>
   <PerceptualSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <synthesis>analyse</synthesis>
+    <synthesis>{synthesis}</synthesis>
   </PerceptualSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
@@ -71,6 +78,7 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
+    <lexer>{lexer}</lexer>{analysis_elem}
   </SymbolicSpace>
   <OutputSpace>
     <nOutput>1</nOutput>
@@ -85,51 +93,58 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     return path
 
 
-class TestAnalyseChunkingForward(unittest.TestCase):
+class TestAnalyseMigration(unittest.TestCase):
 
-    def test_init_reads_analyse_mode(self):
+    def test_ps_synthesis_analyse_rejected_loudly(self):
+        # Hard cut: analyse is no longer a synthesis value. The schema
+        # rejects it at validation (or, were validation bypassed, the
+        # reader raises) -- either way, building must fail LOUDLY.
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
-            path = _write_analyse_xml(tmp)
-            model, _cfg = BaseModel.from_config(config_path=path)
-            self.assertEqual(model.perceptualSpace.synthesis_mode, "analyse")
+            path = _write_xml(tmp, synthesis="analyse")
+            with self.assertRaises((ValueError, KeyError)):
+                BaseModel.from_config(config_path=path)
 
-    def _tokens(self, chunk, lexer="byte"):
+    def test_is_side_lexer_rejected_loudly(self):
+        # <lexer> moved to SymbolicSpace; an InputSpace-side <lexer> fails
+        # validation (schema) and the runtime reader (resolve_lexer).
+        from Models import BaseModel
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write_xml(tmp)
+            with open(path) as f:
+                xml = f.read()
+            xml = xml.replace("<nOutput>32</nOutput>\n  </InputSpace>",
+                              "<nOutput>32</nOutput>\n"
+                              "    <lexer>byte</lexer>\n  </InputSpace>")
+            with open(path, "w") as f:
+                f.write(xml)
+            with self.assertRaises((ValueError, KeyError)):
+                BaseModel.from_config(config_path=path)
+
+    def test_ss_analysis_knob_accepted(self):
+        # <analysis>analyse on SymbolicSpace builds; mode is stashed.
+        from Models import BaseModel
+        with tempfile.TemporaryDirectory() as tmp:
+            path = _write_xml(tmp, analysis="analyse")
+            model, _cfg = BaseModel.from_config(config_path=path)
+            self.assertEqual(model.symbolicSpace.analysis_mode, "analyse")
+
+    def _tokens(self, synthesis, lexer="byte"):
         import torch
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
-            path = _write_analyse_xml(tmp)
-            with open(path) as f:
-                xml = f.read()
-            xml = xml.replace("<lexer>byte</lexer>", f"<lexer>{lexer}</lexer>")
-            with open(path, "w") as f:
-                f.write(xml.replace(
-                    "<synthesis>analyse</synthesis>",
-                    f"<synthesis>{chunk}</synthesis>"))
+            path = _write_xml(tmp, synthesis=synthesis, lexer=lexer)
             model, _cfg = BaseModel.from_config(config_path=path)
             inp = model.inputSpace.prepInput(["hello world foo"])
             with torch.no_grad():
                 model.forward(inp)
             return model.perceptualSpace._forward_input["tokens"]
 
-    def test_forward_analyse_space_lexer_owns_full_surface_lexing(self):
-        """C: InputSpace hands PS the UNANALYZED whole-line surface and the
-        analyzer's space-lexer owns tokenization, even when the upstream
-        compatibility lexer is byte-level."""
-        analyse = [t for t in self._tokens("analyse")[0] if t]
-        self.assertEqual(analyse, ["hello", " ", "world", " ", "foo"])
-
-    def test_forward_analyse_is_not_limited_by_token_byte_width(self):
-        """PS owns the surface lexing (2026-06-07 IS-always-RAW): the whole-
-        line surface is reconstructed before PS tokenizes, so word runs are
-        NOT truncated to the compatibility byte-buffer token width -- for the
-        analyse front-end AND the lexicon path, which now self-lexes the
-        surface via ``_embed_lexicon`` rather than consuming IS's byte-
-        truncated tokens. (Pre-D, lexicon truncated ``hello`` -> ``hel`` at
-        the nWhat-1 byte width; that legacy limitation is gone.)"""
-        analyse = [t for t in self._tokens("analyse", lexer="byte")[0] if t]
+    def test_lexicon_synthesis_owns_full_surface_lexing(self):
+        """The lexicon synthesis path self-lexes the whole-line surface
+        (the word resolution PS analyse used to provide): word runs are
+        NOT truncated to the compatibility byte-buffer token width."""
         lexicon = [t for t in self._tokens("lexicon", lexer="word")[0] if t]
-        self.assertEqual(analyse, ["hello", " ", "world", " ", "foo"])
         self.assertEqual(lexicon, ["hello", " ", "world", " ", "foo"])
 
 

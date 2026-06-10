@@ -167,6 +167,50 @@ def test_full_forward_green_with_dual_view():
         "(Phase 1: staged, unused; Phase 2 consumes it at SS stage 0)")
 
 
+def test_word_analysis_boundaries_shape_evidence():
+    # Phase 4b contract: BOUNDARIES SHAPE THE EVIDENCE. With
+    # <analysis>word, the whitespace-cut parts define the regions whose
+    # coarse means become the stage-0 symbolic evidence -- replacing the
+    # uniform-region pooling that remains the byte-mode default.
+    m = _build("MM_20M.xml")
+    ss = m.symbolicSpace
+    # "hi ox" as byte codes, padded with the null sentinel.
+    text = b"hi ox"
+    u = torch.zeros(2, 1, 32, dtype=torch.int64)
+    u[:, 0, :len(text)] = torch.tensor(list(text), dtype=torch.int64)
+    u_snapshot = u.clone()
+    # byte mode (default): uniform pooling.
+    ss.analysis_mode = "byte"
+    assert ss.stage_analysis_spans(u) is None
+    ss._staged_analysis_spans = None
+    ev_byte = ss.forward(m._empty_seed_ss, IS_concepts=u).materialize().clone()
+    # word mode: parts are the whitespace-cut spans.
+    ss.analysis_mode = "word"
+    spans = ss.stage_analysis_spans(u)
+    assert spans is not None and spans.shape == (2, 2, 2), (
+        f"'hi ox' must cut into TWO parts per row, got "
+        f"{None if spans is None else tuple(spans.shape)}")
+    assert spans[0].tolist() == [[0, 2], [3, 5]]
+    assert torch.equal(u, u_snapshot), "analysis must not alter the unity"
+    ss._staged_analysis_spans = spans
+    try:
+        ev_word = ss.forward(
+            m._empty_seed_ss, IS_concepts=u).materialize().clone()
+    finally:
+        ss._staged_analysis_spans = None
+        ss.analysis_mode = "byte"
+    assert not torch.equal(ev_byte, ev_word), (
+        "word-cut evidence must differ from uniform-region evidence")
+    # Cell 0 carries part 0's coarse mean: tanh(mean(b'hi') / 128).
+    import math
+    expected = math.tanh((ord("h") + ord("i")) / 2.0 / 128.0)
+    got = float(ev_word[0, 0, 0])
+    assert abs(got - expected) < 1e-5, (
+        f"part-0 mean evidence: expected {expected:.6f}, got {got:.6f}")
+    # Cells beyond the part count stay neutral (0), like null padding.
+    assert float(ev_word[0, 1:, :].abs().max()) == 0.0
+
+
 @pytest.mark.xfail(
     reason="Phase 7 (reconstruction recombination) not landed", strict=False)
 def test_inputspace_reverse_two_branch():

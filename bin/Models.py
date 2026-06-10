@@ -2874,6 +2874,22 @@ class BasicModel(BaseModel):
         """
         in_sub, concepts_in = self.inputSpace.forward(x)
         self._staged_concepts_in = concepts_in
+        # Phase 4b: host-eager analysis cut. The configured SS analysis
+        # (word / analyse) divides the unity into parts HERE -- in the
+        # eager stem, exactly like the PS host tokenization -- and parks
+        # the spans on each SymbolicSpace for the stage-0 evidence
+        # (pure tensor reads inside the compiled body). byte mode parks
+        # None (uniform-region pooling needs no spans).
+        _ss_list = (list(getattr(self, "symbolicSpaces", None) or [])
+                    or ([self.symbolicSpace]
+                        if getattr(self, "symbolicSpace", None) is not None
+                        else []))
+        if _ss_list:
+            _spans = (_ss_list[0].stage_analysis_spans(concepts_in)
+                      if hasattr(_ss_list[0], "stage_analysis_spans")
+                      else None)
+            for _ss in _ss_list:
+                _ss._staged_analysis_spans = _spans
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -2952,6 +2968,8 @@ class BasicModel(BaseModel):
         (consume-once; eager, post-forward)."""
         self._staged_in_sub = None
         self._staged_concepts_in = None
+        for _ss in (getattr(self, "symbolicSpaces", None) or []):
+            _ss._staged_analysis_spans = None
         self._staged_intersentence_seed = None
         self._intersentence_seed_staged = False
         disc = (self.wordSubSpace.discourse
@@ -4506,7 +4524,10 @@ class BasicModel(BaseModel):
         self.nWords = nWords
         self.data = data
         self.model_type = model_type
-        self.lexer = TheXMLConfig.space("InputSpace", "lexer")
+        # Phase 4b (rev. 2026-06-09): <lexer> lives on SymbolicSpace
+        # (lexing is analytic cutting); IS-side <lexer> rejected loudly.
+        from Spaces import resolve_lexer as _resolve_lexer
+        self.lexer = _resolve_lexer()
         self.ergodic = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.certainty = TheXMLConfig.get("architecture.training.certainty")

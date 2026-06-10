@@ -175,12 +175,21 @@ def read_xml_config(xml_path):
         ep = arch.findtext("embeddingPath")
         if ep:
             result["embeddingPath"] = ep
-    # Check InputSpace lexer
-    inp = root.find(".//InputSpace")
-    if inp is not None:
-        lexer = inp.findtext("lexer")
-        if lexer:
-            result["lexer"] = lexer
+    # Check the lexer knob. Phase 4b (rev. 2026-06-09): <lexer> lives on
+    # SymbolicSpace (lexing is analytic cutting); fall back to the legacy
+    # InputSpace placement with a deprecation note (this is an offline
+    # tool reading raw XML, not the validated config path).
+    ss = root.find(".//SymbolicSpace")
+    lexer = ss.findtext("lexer") if ss is not None else None
+    if not lexer:
+        inp = root.find(".//InputSpace")
+        legacy = inp.findtext("lexer") if inp is not None else None
+        if legacy:
+            print("[train] DEPRECATED: <lexer> belongs in <SymbolicSpace> "
+                  "(Phase 4b); found it under <InputSpace>.")
+            lexer = legacy
+    if lexer:
+        result["lexer"] = lexer
     # PerceptualSpace.nDim is the lexicon vector size; SBOW must train at
     # this dim or downstream codebook lookups blow up at load time.
     perc = root.find(".//PerceptualSpace")

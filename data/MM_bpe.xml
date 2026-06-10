@@ -31,7 +31,6 @@
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <lexer>byte</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -50,6 +49,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>byte</lexer>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>

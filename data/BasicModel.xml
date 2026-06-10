@@ -28,7 +28,6 @@
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-    <lexer>sentence</lexer>
     <codebook>quantize</codebook>
   </InputSpace>
 
@@ -54,6 +53,7 @@
 
   <!-- SymbolicSpace: — nActive = nVectors = ConceptualSpace.nActive = 256 -->
   <SymbolicSpace>
+    <lexer>sentence</lexer>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>

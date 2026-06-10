@@ -58,7 +58,6 @@
     <nOutput>8192</nOutput>
     <nVectors>256</nVectors>
     <nDim>1024</nDim>
-    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -94,6 +93,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>raw</lexer>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>

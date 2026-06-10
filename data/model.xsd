@@ -502,7 +502,10 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
-      <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+      <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
+           the <lexer> element moved to SymbolicSpace - lexing is analytic
+           cutting, owned by the analysis side. An InputSpace-side <lexer>
+           now fails schema validation AND the runtime reader. -->
     </xs:all>
   </xs:complexType>
 
@@ -587,12 +590,11 @@
                  the surface-form authoritative store; opt in with
                  ``<synthesis>radix</synthesis>``. -->
             <xs:enumeration value="radix"/>
-            <!-- ``analyse``: TRANSITIONAL (Phase 4a only). The
-                 meronymic analyzer is top-down ANALYSIS and belongs
-                 to SymbolicSpace; Phase 4b removes this value and
-                 migrates configs to PS <synthesis>byte +
-                 SS <analysis>analyse. -->
-            <xs:enumeration value="analyse"/>
+            <!-- ``analyse`` was REMOVED (Phase 4b, rev. 2026-06-09):
+                 the meronymic analyzer is top-down ANALYSIS and lives
+                 on SymbolicSpace as <analysis>analyse. Configs that
+                 ran PS analyse migrate to <synthesis>lexicon (the
+                 closest surviving word-resolution mode). -->
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
@@ -691,6 +693,27 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
+           SymbolicSpace owns the top-down ANALYSIS knobs.
+           <lexer> (moved here from InputSpace): the intake granularity
+           InputSpace executes - lexing is analytic cutting.
+           <analysis>: the division strategy over the unity view.
+             byte    = uniform contiguous regions (default; the stage-0
+                       region-mean pooling).
+             word    = whitespace-cut parts; per-part coarse means.
+             analyse = the meronymic analyzer front end (space-lexer cut
+                       today; the bottom-up merge integration follows with
+                       the deeper SS analyzer work, Phases 5-6). -->
+      <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+      <xs:element name="analysis" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="byte"/>
+            <xs:enumeration value="word"/>
+            <xs:enumeration value="analyse"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
            default off. SymbolicSpace has no hasAttention legacy alias:

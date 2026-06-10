@@ -51,7 +51,6 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
          raised to 32 when §8g of the brick-vectorization handoff
          replaced the truncation with an assert. -->
     <nOutput>32</nOutput>
-    <lexer>byte</lexer>
   </InputSpace>
   <PerceptualSpace>
     <nInput>32</nInput>
@@ -72,6 +71,8 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
+    <!-- Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting). -->
+    <lexer>byte</lexer>
   </SymbolicSpace>
   <OutputSpace>
     <nOutput>1</nOutput>

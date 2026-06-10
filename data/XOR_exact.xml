@@ -27,7 +27,6 @@
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <lexer>word</lexer>
   </InputSpace>
 
   <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
@@ -67,6 +66,7 @@
 
   <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
   <SymbolicSpace>
+    <lexer>word</lexer>
     <nInput>8</nInput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>

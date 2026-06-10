@@ -224,7 +224,6 @@ def _populate_test_config(*,
             "nInputDim": 0,  # InputSpace never flattens
             "codebook": codebook,
             "demuxed": demuxed,
-            "lexer": lexer,
         },
         "PerceptualSpace": {
             "nActive": nPercepts,
@@ -250,6 +249,8 @@ def _populate_test_config(*,
             "nVectors": nSymbols,
             "nInputDim": _nInputDim,
             "codebook": True,
+            # Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting).
+            "lexer": lexer,
         },
         "OutputSpace": {
             "nActive": nOutput,

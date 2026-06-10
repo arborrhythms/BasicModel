@@ -54,7 +54,6 @@
     <nDim>104</nDim>
     <nVectors>128</nVectors>
     <nOutput>128</nOutput>
-    <lexer>sentence</lexer>
     <codebook>quantize</codebook>
   </InputSpace>
 
@@ -75,6 +74,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>sentence</lexer>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>

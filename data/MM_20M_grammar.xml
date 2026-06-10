@@ -45,7 +45,6 @@
     <nDim>12</nDim>
     <nVectors>256</nVectors>
     <nOutput>1024</nOutput>
-    <lexer>byte</lexer>
   </InputSpace>
 
   <!-- PerceptualSpace [B, 1024, 8] (wide); grammatical analysis is the
@@ -77,6 +76,7 @@
        (the symbol_dim==concept pass-through requirement is relaxed). The
        codebook is small (serial grammar-op budget). -->
   <SymbolicSpace>
+    <lexer>byte</lexer>
     <nInput>8</nInput>
     <nInputDim>1028</nInputDim>
     <nDim>8</nDim>

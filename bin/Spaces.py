@@ -6856,6 +6856,31 @@ class Space(nn.Module):
         sub = getattr(self, 'subspace', None)
         if sub is not None and hasattr(sub, 'End'):
             sub.End()
+
+
+def resolve_lexer():
+    """Resolve the ``<lexer>`` intake knob from its post-Phase-4b home,
+    the SymbolicSpace section (analysis/synthesis dual-input plan sec.4,
+    rev. 2026-06-09: lexing is analytic CUTTING, owned by the analysis
+    side; InputSpace executes the intake but no longer owns the knob).
+    An InputSpace-side ``<lexer>`` is rejected LOUDLY -- no silent
+    aliasing. Returns None when unset (model_type defaults apply)."""
+    try:
+        _legacy = TheXMLConfig.space("InputSpace", "lexer")
+    except (KeyError, TypeError, ValueError):
+        _legacy = None
+    if _legacy:
+        raise ValueError(
+            "<lexer> moved from InputSpace to SymbolicSpace (lexing is "
+            "analytic cutting -- analysis/synthesis dual-input plan Phase "
+            f"4b, rev. 2026-06-09). Move <lexer>{_legacy}</lexer> into the "
+            "<SymbolicSpace> section.")
+    try:
+        return TheXMLConfig.space("SymbolicSpace", "lexer")
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -6945,7 +6970,7 @@ class InputSpace(Space):
         """
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
-        lexer = TheXMLConfig.space(section, "lexer")
+        lexer = resolve_lexer()
         min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
         neg_samples = int(TheXMLConfig.training("negSamples", 64))
         embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
@@ -8029,7 +8054,7 @@ class PerceptualSpace(Space):
         # the XML config.
         self.model_type = model_type or TheXMLConfig.get("architecture.modelType")
         self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
-        self.lexer = TheXMLConfig.space("InputSpace", "lexer")
+        self.lexer = resolve_lexer()
         # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
         # swaps the ANALYZE surface to the unanalyzed [B,1,N] byte buffer in
         # ``_lex_batch`` so PerceptualSpace's space-lexer owns tokenization
@@ -8108,19 +8133,28 @@ class PerceptualSpace(Space):
                 f"with <synthesis>{_legacy_chunking}</synthesis>.")
         try:
             self.synthesis_mode = str(
-                TheXMLConfig.space(section, "synthesis") or "analyse"
+                TheXMLConfig.space(section, "synthesis") or "lexicon"
             )
         except KeyError:
-            self.synthesis_mode = "analyse"
+            self.synthesis_mode = "lexicon"
         if self.synthesis_mode == "byte":
             # canonical spelling; ``none`` is the legacy alias the
             # dispatch sites still use internally.
             self.synthesis_mode = "none"
+        if self.synthesis_mode == "analyse":
+            # Phase 4b hard cut (rev. 2026-06-09): the meronymic analyzer
+            # is top-down ANALYSIS and lives on SymbolicSpace.
+            raise ValueError(
+                "PerceptualSpace <synthesis>analyse</synthesis> was removed "
+                "(Phase 4b): the meronymic analyzer is ANALYSIS and lives "
+                "on SymbolicSpace as <analysis>analyse</analysis>. Pick a "
+                "synthesis mode for PS (lexicon is the closest surviving "
+                "word-resolution mode).")
         if self.synthesis_mode not in (
-                "bpe", "lexicon", "none", "mphf", "radix", "analyse"):
+                "bpe", "lexicon", "none", "mphf", "radix"):
             raise ValueError(
                 f"PerceptualSpace.synthesis must be "
-                f"bpe|lexicon|byte|none|mphf|radix|analyse, "
+                f"bpe|lexicon|byte|none|mphf|radix, "
                 f"got {self.synthesis_mode!r}")
         # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
         # reentrancy.md): radix-mode promotion knobs. Defaults match the
@@ -9841,56 +9875,13 @@ class PerceptualSpace(Space):
         upstream_vspace._host_tokens = rows
         return self._embed(upstream_vspace)
 
-    def _embed_analyse(self, upstream_vspace):
-        """R3-live: meronymic-analyzer chunking (``<synthesis>analyse</...>``).
-
-        The meronymic analyzer is the perceptual front end. The default
-        available op is a SPACE-LEXER (whitespace = a hard boundary): it
-        reconstructs the unanalyzed host surface and splits it into word
-        runs, which resolve through the word codebook.
-
-        Sub-word and from-scratch word learning is the bottom-up MERGE
-        mechanism (:meth:`learn_merges` -> ``self._analyse_merges``,
-        :meth:`chunk_static` mode='analyse'): an empty-codebook analyzer
-        holds only the whole-input vector + every byte, analyzes into BYTE
-        terminals ('initially fails'), and learns words from characters by
-        merge. ``self._analyse_merges`` (when present) re-segments each word
-        run into learned sub-word units before resolution. The standalone
-        ``chunk_static(..., 'analyse')`` path remains the cold byte-terminal
-        model used by the learner tests.
-        """
-        what_buf = upstream_vspace.materialize(mode="what")
-        if what_buf is None:
-            raise RuntimeError(
-                "PerceptualSpace._embed_analyse: upstream subspace.what is "
-                "empty. InputSpace.forward must lex into subspace.what.W "
-                "before PerceptualSpace.forward runs.")
-        # PS owns the lexing in analyse mode: reconstruct the host surface
-        # from whatever InputSpace handed over, then apply the space-lexer.
-        # Learned bottom-up merges re-segment only non-delimiter word runs.
-        from util import parse as _parse
-        host_tokens = getattr(upstream_vspace, '_host_tokens', None)
-        if host_tokens is None:
-            host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
-        learned = getattr(self, '_analyse_merges', None)
-        rows = []
-        for row in host_tokens:
-            surface = "".join(t for t in row if t)
-            toks = [t for (t, _off) in _parse(surface, lex="words")]
-            if not learned:
-                rows.append(toks)
-                continue
-            reseg = []
-            for t in toks:
-                if not t or not t.strip():
-                    reseg.append(t)            # keep delimiter / pad slots
-                    continue
-                for u in PerceptualSpace.chunk_static(
-                        t.encode("utf-8"), "analyse", merges=learned):
-                    reseg.append(u.decode("utf-8", errors="surrogateescape"))
-            rows.append(reseg)
-        upstream_vspace._host_tokens = rows
-        return self._embed(upstream_vspace)
+    # ``_embed_analyse`` REMOVED (Phase 4b, analysis/synthesis dual-input
+    # plan rev. 2026-06-09): the meronymic analyzer is top-down ANALYSIS
+    # and lives on SymbolicSpace (``<analysis>analyse``, consuming the
+    # unity view). The standalone machinery -- ``chunk_static`` /
+    # ``learn_merges`` / ``_analyse_chunk`` -- stays here as knob-free
+    # analyzer plumbing until the deeper SS analyzer integration
+    # (Phases 5-6) relocates it.
 
     def _embed_mphf(self, upstream_vspace):
         """MPHF word recognition (``synthesis_mode='mphf'``): per-word,
@@ -10156,11 +10147,10 @@ class PerceptualSpace(Space):
             return self._embed_mphf(upstream_vspace)
         elif mode == "radix":
             return self._embed_radix(upstream_vspace)
-        elif mode == "analyse":
-            return self._embed_analyse(upstream_vspace)
         raise ValueError(
-            f"PerceptualSpace chunking must be "
-            f"bpe|lexicon|none|mphf|radix|analyse, got {mode!r}")
+            f"PerceptualSpace synthesis must be "
+            f"bpe|lexicon|byte|none|mphf|radix, got {mode!r} "
+            f"(analyse moved to SymbolicSpace <analysis>, Phase 4b)")
 
     def forward(self, x_subspace):
         """Perception: map input to percepts via ``pi(x)``.
@@ -10265,15 +10255,12 @@ class PerceptualSpace(Space):
                 # chunking. The percept store IS the authoritative
                 # surface-form codebook in this mode.
                 vspace = self._embed_radix(vspace)
-            elif mode == "analyse":
-                # R3-live: the meronymic analyzer is the perceptual front
-                # end. The space-lexer op + bottom-up merge segment the
-                # surface; chunk_static covers cold byte-terminal learning.
-                vspace = self._embed_analyse(vspace)
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be "
-                    f"bpe|lexicon|none|mphf|radix|analyse, got {mode!r}")
+                    f"PerceptualSpace synthesis must be "
+                    f"bpe|lexicon|byte|none|mphf|radix, got {mode!r} "
+                    f"(analyse moved to SymbolicSpace <analysis>, "
+                    f"Phase 4b)")
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
         # Stage 1.A substrate refactor (initial): compose
@@ -12698,6 +12685,25 @@ class SymbolicSpace(Space):
         # reverse path can apply ``pi.reverse`` exactly. (The ``_sigma_*``
         # locals below keep their legacy names -- they size/select the
         # fold via the shared <sigmaPi> machinery, not the ownership.)
+        # Phase 4b (analysis/synthesis dual-input plan sec.4, rev.
+        # 2026-06-09): the top-down ANALYSIS knob. byte = uniform
+        # contiguous regions (the Phase-2 default; no spans staged);
+        # word = whitespace-cut parts; analyse = the meronymic analyzer
+        # front end (its space-lexer cut today -- the bottom-up merge
+        # integration follows with the deeper SS analyzer work, Phases
+        # 5-6). Divisions are computed host-side in the eager stem
+        # (``stage_analysis_spans``) and parked on
+        # ``_staged_analysis_spans`` for the stage-0 unity consumption.
+        try:
+            self.analysis_mode = str(
+                TheXMLConfig.space(section, "analysis") or "byte")
+        except KeyError:
+            self.analysis_mode = "byte"
+        if self.analysis_mode not in ("byte", "word", "analyse"):
+            raise ValueError(
+                f"SymbolicSpace.analysis must be byte|word|analyse, "
+                f"got {self.analysis_mode!r}")
+        self._staged_analysis_spans = None
         self.params = []
         self.layers = nn.ModuleList()
         _sigma_naive = TheXMLConfig.get("architecture.naive")
@@ -15463,6 +15469,62 @@ class SymbolicSpace(Space):
             torch.ones(B, N, device=out.device, dtype=out.dtype))
         return self.subspace
 
+    def stage_analysis_spans(self, IS_concepts):
+        """Host-eager division of the unity into PARTS (Phase 4b).
+
+        Runs in the eager stem (``Models._lex_embed_stem``) so the
+        host-side cutting never enters the compiled graph; the result is
+        parked on ``_staged_analysis_spans`` and consumed as a pure
+        tensor by ``_stage0_unity_forward``. Non-altering: reads a CPU
+        copy of the unity, writes nothing through it.
+
+        Returns ``LongTensor [B, K, 2]`` of (start, end) atom spans --
+        one row per part, zero-padded ``(0, 0)`` spans for rows with
+        fewer parts -- or None for the ``byte`` mode (uniform regions:
+        the pooling default needs no spans).
+
+        ``word``: whitespace-cut parts (space/tab/newline/CR and the
+        ``\\0`` pad sentinel are boundaries). ``analyse``: the meronymic
+        analyzer's front cut -- its default available op IS the
+        space-lexer (whitespace = hard boundary), so today this shares
+        the word cut; the learned bottom-up merge integration follows
+        with the deeper SS analyzer work (Phases 5-6)."""
+        mode = getattr(self, "analysis_mode", "byte")
+        if mode == "byte" or IS_concepts is None:
+            return None
+        u = IS_concepts
+        if u.dim() == 3:
+            u = u[:, 0, :]
+        vals = u.detach().to("cpu").long()
+        B, N = int(vals.shape[0]), int(vals.shape[1])
+        _ws = (0, 9, 10, 13, 32)
+        all_spans = []
+        K = 1
+        for b in range(B):
+            row = vals[b].tolist()
+            parts = []
+            start = None
+            for i, v in enumerate(row):
+                if v in _ws:
+                    if start is not None:
+                        parts.append((start, i))
+                        start = None
+                else:
+                    if start is None:
+                        start = i
+            if start is not None:
+                parts.append((start, N))
+            if not parts:
+                parts = [(0, 0)]
+            all_spans.append(parts)
+            K = max(K, len(parts))
+        t = torch.zeros(B, K, 2, dtype=torch.long)
+        for b, parts in enumerate(all_spans):
+            for k, (s, e) in enumerate(parts):
+                t[b, k, 0] = s
+                t[b, k, 1] = e
+        return t.to(IS_concepts.device)
+
     def _stage0_unity_forward(self, IS_concepts):
         """Stage-0 symbolic evidence from the UNITY view (analysis/synthesis
         dual-input plan sec.2, rev. 2026-06-09).
@@ -15500,8 +15562,34 @@ class SymbolicSpace(Space):
                 B, N, D, device=dev, dtype=torch.get_default_dtype()))
             return self.subspace
         u = IS_concepts.to(torch.get_default_dtype())  # copy, never in-place
-        pooled = F.adaptive_avg_pool1d(u, N * content)
-        evidence = torch.tanh(pooled.reshape(B, N, content) / 128.0)
+        spans = getattr(self, "_staged_analysis_spans", None)
+        if spans is not None and spans.numel() > 0:
+            # Phase 4b: BOUNDARIES SHAPE THE EVIDENCE. The configured
+            # analysis (word / analyse cuts, parked host-eagerly by
+            # ``stage_analysis_spans``) defines the PARTS; the evidence is
+            # the per-part coarse mean (prefix-sum gather -- pure tensor
+            # ops, compile-safe), tanh-squashed exactly like the uniform
+            # path. Part k fills evidence cell k; absent cells stay 0
+            # (neutral, like null padding). A ``(0, 0)`` pad span yields
+            # sum 0 / len 1 -> 0 (neutral) by construction.
+            flat = u[:, 0, :] if u.dim() == 3 else u
+            pref = F.pad(flat.cumsum(dim=1), (1, 0))
+            n_atoms = int(flat.shape[1])
+            starts = spans[..., 0].clamp(min=0, max=n_atoms)
+            ends = spans[..., 1].clamp(min=0, max=n_atoms)
+            sums = pref.gather(1, ends) - pref.gather(1, starts)
+            lens = (ends - starts).clamp(min=1).to(sums.dtype)
+            means = torch.tanh((sums / lens) / 128.0)       # [B, K]
+            L = N * content
+            ev_flat = means.new_zeros(B, L)
+            _K = min(int(means.shape[1]), L)
+            ev_flat[:, :_K] = means[:, :_K]
+            evidence = ev_flat.reshape(B, N, content)
+        else:
+            # byte mode (default): uniform contiguous regions -- the
+            # Phase-2 region-mean pooling, unchanged.
+            pooled = F.adaptive_avg_pool1d(u, N * content)
+            evidence = torch.tanh(pooled.reshape(B, N, content) / 128.0)
         event = F.pad(evidence, (0, D - content))
         self.subspace.set_event(event)
         return self.subspace

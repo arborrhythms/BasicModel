@@ -74,7 +74,6 @@
     <nDim>10</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
-    <lexer>byte</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -97,6 +96,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>byte</lexer>
     <nInput>1024</nInput>
     <nInputDim>10</nInputDim>
     <nVectors>1024</nVectors>

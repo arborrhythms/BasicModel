@@ -33,7 +33,6 @@
   <InputSpace>
     <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
          not inherit the raw default (which targets analyse). -->
-    <lexer>word</lexer>
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
@@ -58,6 +57,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>word</lexer>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
     <nDim>14</nDim>

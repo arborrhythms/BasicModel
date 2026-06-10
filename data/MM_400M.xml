@@ -36,7 +36,6 @@
     <nOutput>8192</nOutput>
     <nOutputDim>5</nOutputDim> <!-- 1 byte + 2 where + 2 when -->
 
-    <lexer>raw</lexer>
   </InputSpace>
 
   <PerceptualSpace>
@@ -54,7 +53,7 @@
          this is what reduces an 8192-char input to a small number of
          words in parallel mode without needing attention. radix = the
          PerceptStore (radix trie + promotion); flip here to experiment. -->
-    <synthesis>analyse</synthesis>
+    <synthesis>lexicon</synthesis>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -71,6 +70,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <lexer>raw</lexer>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>

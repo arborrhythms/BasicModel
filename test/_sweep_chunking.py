@@ -9,18 +9,23 @@ import os, re, subprocess, sys, time
 PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = sys.executable
 EPOCHS = int(os.environ.get("SWEEP_EPOCHS", "200"))
-CHUNKS = os.environ.get("SWEEP_CHUNKS", "analyse,none,radix,lexicon,bpe,mphf").split(",")
+CHUNKS = os.environ.get("SWEEP_CHUNKS", "none,radix,lexicon,bpe,mphf").split(",")
 
 with open(os.path.join(PROJECT, "data", "MM_20M.xml")) as f:
     base = f.read()
 
 # Restore a WORKING 1024-wide InputSpace + PS handoff (the 5-wide IS crashes).
+# Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting), so the
+# sweep injects it there, not into the rebuilt InputSpace block.
 _lexer = os.environ.get("SWEEP_LEXER", "raw")
 base = re.sub(r"  <InputSpace>.*?</InputSpace>",
               "  <InputSpace>\n    <nOutput>8192</nOutput>\n"
               "    <nVectors>256</nVectors>\n    <nDim>1024</nDim>\n"
-              f"    <lexer>{_lexer}</lexer>\n  </InputSpace>",
+              "  </InputSpace>",
               base, count=1, flags=re.DOTALL)
+base = re.sub(r"(<SymbolicSpace>\n)",
+              rf"\1    <lexer>{_lexer}</lexer>\n",
+              base, count=1)
 base = base.replace("<nInputDim>5</nInputDim>", "<nInputDim>1024</nInputDim>")
 _order = os.environ.get("SWEEP_ORDER")
 if _order:
