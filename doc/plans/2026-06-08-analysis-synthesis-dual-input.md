@@ -199,10 +199,11 @@ Implementation notes:
 - `ConceptualSpace.sigma_in` (the per-stage fold Stage 10 migrated out of
   PS): review its name/role during this phase — it was named for the OLD
   orientation. **Open decision; do not rename blindly.**
-- **Checkpoint risk**: `ps.pi.*` / `ss.sigma.*` parameter keys swap to
-  `ps.sigma.*` / `ss.pi.*`. Decide explicitly: provide a state_dict key
-  migration, or accept fresh-start (no production checkpoints yet). Record
-  the decision in the commit.
+- **Checkpoint policy — DECIDED (2026-06-09, Phase 3 commit): fresh-start.**
+  `ps.pi.*` / `ss.sigma.*` parameter keys swap to `ps.sigma.*` / `ss.pi.*`
+  with NO state_dict migration: no production checkpoints exist (tests build
+  fresh; local `output/` artifacts are regenerable). A checkpoint saved
+  before the swap will fail loudly on load, which is the desired behavior.
 
 ### 4. Top-Down Analysis on SS (analyse + the lexers)
 
@@ -477,7 +478,8 @@ Doc-only (§9). Acceptance: no broken links; README points to
 ## Open Decisions (tracked, not blocking)
 
 - `ConceptualSpace.sigma_in` naming/role after the swap (§3).
-- Checkpoint key migration vs fresh-start (§3).
+- ~~Checkpoint key migration vs fresh-start (§3)~~ — DECIDED: fresh-start
+  (Phase 3, 2026-06-09).
 - Exact vs approximate recombination ILL (§6).
 - Final home of `lexicon`/`mphf` (§5).
 - Legacy-knob policy: loud rejection vs one-release shim (§8).

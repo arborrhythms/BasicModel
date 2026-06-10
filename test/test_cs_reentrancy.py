@@ -66,13 +66,15 @@ def _make_model():
     return m
 
 
-class TestPerceptualPiOnly(unittest.TestCase):
-    def test_ps_has_pi_no_sigma(self):
+class TestPerceptualSigmaOnly(unittest.TestCase):
+    def test_ps_has_sigma_no_pi(self):
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09).
         m = _make_model()
         ps = m.perceptualSpace
-        self.assertIsInstance(ps.pi, PiLayer)
-        self.assertFalse(hasattr(ps, "sigma"),
-                         "PerceptualSpace is pi-only; it owns no sigma.")
+        self.assertIsInstance(ps.sigma, SigmaLayer)
+        self.assertFalse(hasattr(ps, "pi"),
+                         "PerceptualSpace is sigma-only (synthesis); "
+                         "pi moved to SymbolicSpace.")
 
 
 class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
@@ -110,37 +112,38 @@ class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
 class TestSymbolicOwnsSigma(unittest.TestCase):
     """SymbolicSpace owns the invertible (butterfly) sigma."""
 
-    def test_ss_owns_invertible_sigma(self):
+    def test_ss_owns_invertible_pi(self):
+        # Pi/Sigma swap (rev. 2026-06-09): SS owns the analysis fold.
         m = _make_model()
         for k, ss in enumerate(m.symbolicSpaces):
-            sig = getattr(ss, "sigma", None)
+            fold = getattr(ss, "pi", None)
             self.assertIsInstance(
-                sig, SigmaLayer,
-                f"SymbolicSpace[{k}] must own a sigma (SigmaLayer).")
+                fold, PiLayer,
+                f"SymbolicSpace[{k}] must own a pi (PiLayer).")
             self.assertTrue(
-                getattr(sig, "invertible", False),
-                f"SymbolicSpace[{k}].sigma must be invertible so the "
-                f"reconstruction reverse can apply sigma.reverse exactly.")
+                getattr(fold, "invertible", False),
+                f"SymbolicSpace[{k}].pi must be invertible so the "
+                f"reconstruction reverse can apply pi.reverse exactly.")
             self.assertFalse(
-                hasattr(ss, "pi"),
-                f"SymbolicSpace[{k}] must NOT own a pi (Pi stays at "
-                f"PS/CS).")
+                hasattr(ss, "sigma"),
+                f"SymbolicSpace[{k}] must NOT own a sigma (Sigma moved "
+                f"to PS -- synthesis).")
 
-    def test_ss_sigma_butterfly_wired_from_xml(self):
+    def test_ss_fold_butterfly_wired_from_xml(self):
         # XOR_exact sets <butterfly>true</butterfly> on SymbolicSpace; the
-        # flag must reach the SigmaLayer constructor (cross-slot reach --
-        # a per-slot square sigma cannot combine the two word slots for
+        # flag must reach the fold constructor (cross-slot reach -- a
+        # per-slot square fold cannot combine the two word slots for
         # XOR). N is the flattened content count inputShape[0]*nOutputDim.
         m = _make_model()
         ss = m.symbolicSpace
         self.assertTrue(
-            getattr(ss.sigma, "butterfly", False),
+            getattr(ss.pi, "butterfly", False),
             "SymbolicSpace.<butterfly>true</...> must wire a butterfly "
-            "cascade into SymbolicSpace.sigma.")
+            "cascade into SymbolicSpace.pi.")
         self.assertEqual(
             int(ss.butterflyN),
             int(ss.inputShape[0]) * int(ss.nOutputDim),
-            "SS sigma butterfly N must be inputShape[0] * nOutputDim "
+            "SS fold butterfly N must be inputShape[0] * nOutputDim "
             "(flattened content element count).")
 
 
@@ -148,30 +151,31 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
     """The per-order symbolic step is exactly invertible -- the basis of
     the exact reconstruction round-trip."""
 
-    def test_sigma_step_forward_then_reverse_recovers_carrier(self):
+    def test_fold_step_forward_then_reverse_recovers_carrier(self):
         # Action C (2026-06-06) removed the ``_symbolic_sigma_step`` wrapper
         # (the parallel carrier advance moved into the ConceptualCombine on
-        # the full muxed event). The invariant it guarded -- ``ss.sigma`` is
+        # the full muxed event). The invariant it guarded -- the SS fold is
         # exactly invertible, the basis of the reconstruction round-trip --
-        # is now asserted directly on ``ss.sigma``.
+        # is now asserted directly on ``ss.pi`` (the fold post Pi/Sigma
+        # swap, rev. 2026-06-09).
         m = _make_model()
         ss = m.symbolicSpace
-        sig = getattr(ss, "sigma", None)
+        fold = getattr(ss, "pi", None)
         self.assertIsNotNone(
-            sig, "SymbolicSpace must own a sigma to round-trip the carrier.")
+            fold, "SymbolicSpace must own a pi to round-trip the carrier.")
         N = int(ss.inputShape[0])
-        D = int(ss.nOutputDim)            # content width the sigma acts on
+        D = int(ss.nOutputDim)            # content width the fold acts on
         torch.manual_seed(0)
-        # Keep values inside the atanh domain so the nonlinear sigma
+        # Keep values inside the atanh domain so the nonlinear fold
         # round-trips to LDU precision.
         ev = torch.randn(1, N, D).clamp(-0.5, 0.5)
         with torch.no_grad():
-            fwd = sig.forward(ev.clone())
-            rec = sig.reverse(fwd)
+            fwd = fold.forward(ev.clone())
+            rec = fold.reverse(fwd)
         err = (ev - rec).abs().max().item()
         self.assertLess(
             err, 1e-3,
-            f"ss.sigma forward->reverse must round-trip the carrier to LDU "
+            f"ss.pi forward->reverse must round-trip the carrier to LDU "
             f"precision; got max abs error {err:g}.")
 
 

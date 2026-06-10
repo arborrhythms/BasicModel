@@ -10539,9 +10539,17 @@ class WordSubSpace(SubSpace):
                     symbolicSpace=symbolicSpace,
                     perceptualSpace=perceptualSpace)
         elif tier == 'S':
-            sigma = getattr(space, 'sigma', None)
-            if sigma is not None:
-                builtin_layers['sigma'] = sigma
+            # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
+            # 2026-06-09): the SS-owned fold is ``self.pi`` (top-down
+            # analysis). Register it under the new ``pi`` rule name AND the
+            # legacy ``sigma`` alias -- the same alias idiom the P/C tiers
+            # use above -- so existing grammars (``S = sigma(S)``,
+            # model.xml's default) keep dispatching the SS fold. The
+            # grammar-DSL token migration is Phase-4 (knob split) work.
+            fold = getattr(space, 'pi', None)
+            if fold is not None:
+                builtin_layers['pi'] = fold
+                builtin_layers['sigma'] = fold  # legacy alias
             negation = getattr(space, 'propositional_negation', None)
             if negation is not None:
                 builtin_layers['not'] = negation

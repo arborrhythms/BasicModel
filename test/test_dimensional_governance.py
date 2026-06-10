@@ -59,11 +59,12 @@ def test_mm_5m_reconstructs():
     # (reconstruction is a runBatch-time loss term; the config carries
     # <reconstruct>concepts</reconstruct>). The spec's invertible-bridge
     # claim (sec.5: "one invertible matrix serves both legs") is gated here
-    # directly: the SS.Sigma butterfly round-trips, so the deep CS hub is
-    # recoverable from the symbol distribution via sigma.reverse.
+    # directly: the SS fold (``pi`` post Pi/Sigma swap, rev. 2026-06-09)
+    # butterfly round-trips, so the deep CS hub is recoverable from the
+    # symbol distribution via pi.reverse.
     import torch, Models
     m = _build("MM_20M.xml"); m.eval()
-    sig = m.symbolicSpace.sigma
+    sig = m.symbolicSpace.pi
     n = int(m.symbolicSpace.inputShape[0])
     d = int(getattr(m.symbolicSpace, "nOutputDim", 0) or m.symbolicSpace.nDim)
     x = torch.randn(2, n, d).clamp(-0.5, 0.5)

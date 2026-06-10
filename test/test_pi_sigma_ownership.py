@@ -75,17 +75,18 @@ class TestOwnership(unittest.TestCase):
     attribute. The architectural rule is: only PS / CS may own
     SigmaLayer / PiLayer instances."""
 
-    def test_perceptual_pi_folds(self):
-        # Post-Stage-1.A: PS owns a single ``pi`` (PiLayer); the
-        # per-order Ramsified ``pi_input`` / ``pi_concept`` ModuleLists
-        # are retired. Stage 10: PS sigma also retired (migrated to
-        # ConceptualSpace.sigma_in per stage).
+    def test_perceptual_sigma_folds(self):
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+        # PS owns a single ``sigma`` (SigmaLayer) -- the bottom-up
+        # synthesis/union fold. The per-order Ramsified ``pi_input`` /
+        # ``pi_concept`` ModuleLists stay retired.
         model = _make_plain_model()
         ps = model.perceptualSpace
-        self.assertIsInstance(ps.pi, PiLayer)
+        self.assertIsInstance(ps.sigma, SigmaLayer)
         self.assertFalse(
-            hasattr(ps, 'sigma'),
-            "PerceptualSpace.sigma is retired; PS is pi-only.")
+            hasattr(ps, 'pi'),
+            "PerceptualSpace.pi moved to SymbolicSpace (Pi/Sigma swap); "
+            "PS is sigma-only (synthesis).")
         # 2026-06-04: ConceptualSpace is a pure bookkeeping carrier now --
         # the per-stage sigma_in / sigma_cs were retired; the symbolic-loop
         # sigma lives on SymbolicSpace (see test_symbolic_owns_sigma).
@@ -105,21 +106,22 @@ class TestOwnership(unittest.TestCase):
             "ConceptualSpace.sigma_percept must be retired by "
             "Stage 1.C.")
 
-    def test_symbolic_owns_sigma(self):
-        # 2026-06-04 parallel-symbolic-substrate: SymbolicSpace OWNS the
-        # sigma (the symbolic-loop generalization operator + the binding
-        # target for the default ``S = sigma(S)`` rule).
+    def test_symbolic_owns_pi(self):
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+        # SymbolicSpace OWNS the pi (the top-down analysis/intersection
+        # operator; the binding target for the S-tier fold rule -- bound
+        # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
         model = _make_plain_model()
         self.assertIsInstance(
-            getattr(model.symbolicSpace, 'sigma', None), SigmaLayer,
-            "SymbolicSpace must own a sigma (SigmaLayer) under the "
-            "parallel-symbolic-substrate ownership rule.")
+            getattr(model.symbolicSpace, 'pi', None), PiLayer,
+            "SymbolicSpace must own a pi (PiLayer) under the corrected "
+            "analysis/synthesis ownership rule.")
 
-    def test_symbolic_has_no_pi(self):
+    def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
-        self.assertFalse(hasattr(model.symbolicSpace, 'pi'),
-                         "SymbolicSpace.pi is gone; only CS owns the "
-                         "PiLayer in the P->C->S pipeline.")
+        self.assertFalse(hasattr(model.symbolicSpace, 'sigma'),
+                         "SymbolicSpace.sigma moved to PerceptualSpace "
+                         "(Pi/Sigma swap); SS is pi-only (analysis).")
 
     def test_conceptual_has_no_bare_sigma(self):
         # Post-Stage-1.C: the bare ``sigma`` attribute (and
@@ -134,17 +136,18 @@ class TestOwnership(unittest.TestCase):
                          "by Stage 1.C. Stage 10's sigma_in / sigma_cs "
                          "are differently named.")
 
-    def test_perceptual_has_pi(self):
-        # Post-Stage-1.A: PS owns a bare ``pi`` (single-layer instance,
-        # not ModuleList). Stage 10: PS sigma is retired (migrated to
-        # CS.sigma_in per stage). The legacy ``pi_input`` /
-        # ``pi_concept`` ModuleList interface stays retired.
+    def test_perceptual_has_sigma(self):
+        # Pi/Sigma swap (rev. 2026-06-09): PS owns a bare ``sigma``
+        # (single-layer instance, not ModuleList). The legacy
+        # ``pi_input`` / ``pi_concept`` ModuleList interface stays
+        # retired.
         model = _make_plain_model()
-        self.assertTrue(hasattr(model.perceptualSpace, 'pi'),
-                        "PerceptualSpace must own a bare ``pi`` "
-                        "(PiLayer) post-Stage-1.A.")
-        self.assertFalse(hasattr(model.perceptualSpace, 'sigma'),
-                         "Stage 10: PerceptualSpace.sigma is retired.")
+        self.assertTrue(hasattr(model.perceptualSpace, 'sigma'),
+                        "PerceptualSpace must own a bare ``sigma`` "
+                        "(SigmaLayer) post Pi/Sigma swap.")
+        self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
+                         "Pi/Sigma swap: PerceptualSpace.pi moved to "
+                         "SymbolicSpace.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()

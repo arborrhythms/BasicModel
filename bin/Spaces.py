@@ -6593,11 +6593,11 @@ class Space(nn.Module):
             # is the identity for a muxed event ([B,N,event] -> [B,-1,event]); it
             # still normalizes flattened / odd-width inputs to [B, N, nInputDim].
             # A widening PerceptualSpace (nOutputDim != nInputDim) exposes
-            # ``_pi_width`` -- the embedded percept width its pi consumes --
-            # because by this point the event is the EMBEDDED percept, not the
-            # raw nInputDim byte event (see the percept_dim sizing note in
-            # PerceptualSpace.__init__).
-            _w = int(getattr(self, "_pi_width", 0) or 0)
+            # ``_fold_width`` -- the embedded percept width its fold (sigma,
+            # post Pi/Sigma swap) consumes -- because by this point the event
+            # is the EMBEDDED percept, not the raw nInputDim byte event (see
+            # the percept_dim sizing note in PerceptualSpace.__init__).
+            _w = int(getattr(self, "_fold_width", 0) or 0)
             self._pre_reshape_input = (x.shape[1], x.shape[2])
             x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)
         else:
@@ -7941,17 +7941,17 @@ class InputSpace(Space):
         """
         return None, None
 class PerceptualSpace(Space):
-    """Transforms raw input vectors into percepts via parallel pi+sigma folds.
+    """Transforms raw input vectors into percepts via its synthesis fold.
 
     In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-    reentrancy.md): PS owns ONLY a ``PiLayer`` (``self.pi``); the
-    sigma half migrates to ``ConceptualSpace.sigma_in`` per stage
-    (Ramsified via the ``self.conceptualSpaces`` ModuleList). PS is
-    pi-only — subsymbolic is single-pass per the locked
-    architectural decision.
+    Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+    PS owns ONLY a ``SigmaLayer`` (``self.sigma``) -- Sigma is synthesis,
+    the additive/union fold of the bottom-up perceptual branch over
+    atoms. (Stage 10 had PS owning the PiLayer; the corrected
+    orientation puts Pi -- analysis/intersection -- on SymbolicSpace.)
+    PS remains single-pass per the locked architectural decision.
 
-        * ``self.pi``    -- log-space multiplicative AND fold;
+        * ``self.sigma`` -- additive union fold (synthesis);
                             ``percept_dim → percept_dim``.
 
     Forward body::
@@ -8177,13 +8177,14 @@ class PerceptualSpace(Space):
         self._recovered_input_thunk = None
         self._embedded_input = None
 
-        # Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
-        # sigma-substrate.md): PerceptualSpace owns a single PiLayer
-        # (``self.pi``) and a single SigmaLayer. Stage 10 (doc/plans/
-        # 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): drop
-        # the SigmaLayer here — PS is pi-only. The sigma half migrates
-        # to ``ConceptualSpace.sigma_in`` per stage (Ramsified across
-        # ``self.conceptualSpaces``). The legacy per-order Ramsified
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+        # PerceptualSpace owns a single SigmaLayer (``self.sigma``) -- the
+        # bottom-up synthesis/union fold. (Stage 1.A/Stage 10 history: PS
+        # owned the PiLayer; the corrected orientation assigns Pi --
+        # analysis/intersection -- to SymbolicSpace.) The per-stage
+        # ``ConceptualSpace.sigma_in`` fold keeps its name for now (open
+        # decision, plan sec.3 -- do not rename blindly). The legacy
+        # per-order Ramsified
         # ``pi_input`` / ``pi_concept`` ModuleLists are retired; the
         # ``conceptualOrder`` knob's new role is driving the PARALLEL-
         # mode forward iteration count over the per-stage CS pipeline,
@@ -8212,8 +8213,8 @@ class PerceptualSpace(Space):
         # bottom-up SYNTHESIS machinery, which STAYS on PS under the
         # corrected analysis/synthesis orientation (rev. 2026-06-09): PS =
         # bottom-up synthesis/Sigma over atoms; SS = top-down analysis/Pi
-        # over the unity. The fold this width sizes is slated to become
-        # PS.sigma in the Pi/Sigma swap. See doc/plans/2026-06-08-analysis-
+        # over the unity. The fold this width sizes IS ``self.sigma``
+        # (Pi/Sigma swap, Phase 3). See doc/plans/2026-06-08-analysis-
         # synthesis-dual-input.md (Orientation, sec.3).)
         percept_dim = int(self.subspace.getEncodedInputSize())
         _nin = int(self.subspace._nInputDim)
@@ -8221,9 +8222,9 @@ class PerceptualSpace(Space):
         if _nin != -1 and _nout != -1 and _nin != _nout:
             percept_dim = _nout
         # ``forwardBegin`` must reshape the embedded event to the SAME width
-        # pi consumes; expose it (absent on other Spaces, which keep the
-        # plain ``nInputDim`` reshape).
-        self._pi_width = percept_dim
+        # the fold consumes; expose it (absent on other Spaces, which keep
+        # the plain ``nInputDim`` reshape).
+        self._fold_width = percept_dim
         # Subsymbolic-loop folds honour the ``architecture.monotonic``
         # knob (same source as BasicModel.monotonic). Monotone (W>=0)
         # is order-preserving, which the parthood predicate
@@ -8233,7 +8234,7 @@ class PerceptualSpace(Space):
                                       default=False))
         # Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
         # 2026-05-27 revision) + dimensional-governance (doc/specs/2026-06-05
-        # -dimensional-governance.md): the SPAN of ``self.pi`` is selected by
+        # -dimensional-governance.md): the SPAN of ``self.sigma`` is selected by
         # the per-space ``<sigmaPi>`` knob (last | butterfly | full); the
         # legacy boolean ``<butterfly>`` is accepted as an alias
         # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
@@ -8274,13 +8275,13 @@ class PerceptualSpace(Space):
         # Butterfly needs >= 2 elements to form a 2x2-LDU cascade (a 0/1-element
         # cascade is trivially identity). A degenerate / dataless PS
         # (nOutput*percept_dim < 2) gracefully falls back to the per-slot "last"
-        # Pi -- mirroring SymbolicSpace.sigma's handling below. The global
+        # fold -- mirroring SymbolicSpace.pi's handling below. The global
         # <sigmaPi> default is butterfly (A4), so unconfigured small/degenerate
         # configs (e.g. model.xml built without data) reach this fallback
         # instead of erroring as they did before the graceful path.
         _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
         if _butterfly_built:
-            self.pi = PiLayer(
+            self.sigma = SigmaLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
                 invertible=bool(invertible), nonlinear=nonlinear,
@@ -8305,14 +8306,14 @@ class PerceptualSpace(Space):
                     "PerceptualSpace <sigmaPi>full</> requires percept_dim "
                     f"({percept_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-            self.pi = PiLayer(
+            self.sigma = SigmaLayer(
                 self.sigma_pi_slab, self.sigma_pi_slab,
                 naive=naive, ergodic=ergodic,
                 invertible=bool(invertible), nonlinear=nonlinear,
                 stable=True, monotonic=_mono,
             )
         else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
-            self.pi = PiLayer(
+            self.sigma = SigmaLayer(
                 percept_dim, percept_dim,
                 naive=naive, ergodic=ergodic,
                 invertible=bool(invertible), nonlinear=nonlinear,
@@ -8329,7 +8330,7 @@ class PerceptualSpace(Space):
         # self-attention; the legacy ``<hasAttention>`` flag is inert.
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
-        self.params += self.pi.getParameters()
+        self.params += self.sigma.getParameters()
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -10147,7 +10148,8 @@ class PerceptualSpace(Space):
         Stage 1.A substrate refactor (doc/plans/2026-05-26-two-loop-pi-
         sigma-substrate.md): single positional arg ``x_subspace``.
         Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        reentrancy.md): body becomes ``return self.pi(x.materialize())``
+        reentrancy.md, updated by the Pi/Sigma swap rev. 2026-06-09): body
+        becomes ``return self.sigma(x.materialize())``
         — PS is pi-only. The sigma half migrates to per-stage
         ``ConceptualSpace.sigma_in``.
 
@@ -10265,10 +10267,10 @@ class PerceptualSpace(Space):
         # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating is
         # also retired (no C-feedback path entering PS at this level).
         primary = self.forwardBegin(vspace, returnVectors=True)
-        x = self.pi.forward(primary)
+        x = self.sigma.forward(primary)
         if os.environ.get("XHEAD_PROBE"):
             with torch.no_grad():
-                for _nm, _v in (("raw-pre-pi", primary), ("post-pi", x)):
+                for _nm, _v in (("raw-pre-fold", primary), ("post-fold", x)):
                     if (torch.is_tensor(_v) and _v.dim() >= 2
                             and _v.shape[0] >= 2):
                         _f = _v.reshape(_v.shape[0], -1)[:4]
@@ -10410,9 +10412,9 @@ class PerceptualSpace(Space):
         # reconstruction needs a paired pi/sigma inverse (e.g. for
         # masked-LM IR loss tightness), define the inversion contract
         # explicitly. The current decision parks the asymmetry.
-        if self.invertible and hasattr(self, 'pi'):
-            if getattr(self.pi, 'invertible', False):
-                y = self.pi.reverse(y)
+        if self.invertible and hasattr(self, 'sigma'):
+            if getattr(self.sigma, 'invertible', False):
+                y = self.sigma.reverse(y)
         self.subspace.batch = y.shape[0]
         raw = (object_basis.reverse_raw(y)
                if hasattr(object_basis, 'reverse_raw') else y)
@@ -12645,31 +12647,37 @@ class SymbolicSpace(Space):
         # the intrinsic snap. See doc/Spaces.md for the post-rollback
         # geometry and doc/BuddhistParallels.md for the tetralemma.
         nSymbols = spaceShape[0]
-        # SymbolicSpace owns a SINGLE square invertible SigmaLayer --
-        # ``self.sigma`` -- the symbolic-loop generalization operator
-        # (2026-06-04 parallel-symbolic-substrate refactor). It is the
-        # ONLY parameterised fold SS owns; PiLayer stays restricted to
-        # Perceptual / Conceptual. ``self.sigma`` is used:
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+        # SymbolicSpace owns a SINGLE square invertible PiLayer --
+        # ``self.pi`` -- the top-down ANALYSIS (product/intersection)
+        # operator of the symbolic loop. (The 2026-06-04 refactor had SS
+        # owning the SigmaLayer; the corrected orientation puts Sigma --
+        # synthesis/union -- on PerceptualSpace.) It is the ONLY
+        # parameterised fold SS owns. ``self.pi`` is used:
         #   * in PARALLEL mode the per-conceptualOrder generalization now
         #     lives IN the per-stage ``ConceptualCombine`` (held by the cs,
         #     operating on the full muxed event); the SS event feeds that
         #     combine as one of its three streams. (Before A4 this was a
-        #     separate content-only SS.sigma advance,
+        #     separate content-only SS fold advance,
         #     ``Models._symbolic_sigma_step``, removed in Action C.) The
-        #     standalone ``self.sigma`` round-trip is still exercised
+        #     standalone ``self.pi`` round-trip is still exercised
         #     directly (test_cs_reentrancy);
         #   * in SERIAL/grammar mode as the binding target for the default
         #     ``S = sigma(S)`` rule -- ``_attach_per_space_syntactic_layer``
-        #     reads ``getattr(space, 'sigma')`` (Language.py) and registers
-        #     it under the 'sigma' rule name. Before this refactor SS owned
-        #     no sigma, so that hook silently bound nothing and the rule
-        #     was a no-op -- the root cause of the XOR_exact non-convergence.
+        #     (Language.py) reads ``getattr(space, 'pi')`` and registers it
+        #     under BOTH the 'pi' rule name and the legacy 'sigma' alias
+        #     (the P/C-tier alias idiom), so existing grammars keep
+        #     dispatching the SS fold. (History: when SS owned no fold this
+        #     hook silently bound nothing and the rule was a no-op -- the
+        #     root cause of the XOR_exact non-convergence.)
         # It is SQUARE on the demux'd CONTENT width (``nOutputDim``), NOT
-        # the muxed event width: sigma generalizes symbolic content and
+        # the muxed event width: the fold analyzes symbolic content and
         # must not double as a CS<->SS impedance adapter. The
         # CS-effective-content == SS-content invariant guarantees the
         # widths already agree. ``invertible=True`` so the reconstruction
-        # reverse path can apply ``sigma.reverse`` exactly.
+        # reverse path can apply ``pi.reverse`` exactly. (The ``_sigma_*``
+        # locals below keep their legacy names -- they size/select the
+        # fold via the shared <sigmaPi> machinery, not the ownership.)
         self.params = []
         self.layers = nn.ModuleList()
         _sigma_naive = TheXMLConfig.get("architecture.naive")
@@ -12702,7 +12710,7 @@ class SymbolicSpace(Space):
         # two internally and the per-pair LDU keeps it exactly invertible
         # (so ``sigma.reverse`` still round-trips the reconstruction path).
         # dimensional-governance (doc/specs/2026-06-05-dimensional-
-        # governance.md): the SPAN of ``self.sigma`` is selected by the
+        # governance.md): the SPAN of ``self.pi`` is selected by the
         # SymbolicSpace ``<sigmaPi>`` knob (last | butterfly | full); the
         # legacy boolean ``<butterfly>`` is accepted as an alias
         # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
@@ -12724,7 +12732,7 @@ class SymbolicSpace(Space):
         self.sigma_pi_slab = None  # set only for the "full" dense bridge
         _sigma_butterfly_total = int(inputShape[0]) * int(_sigma_dim)
         if _sigma_butterfly and _sigma_butterfly_total >= 2:
-            self.sigma = SigmaLayer(
+            self.pi = PiLayer(
                 _sigma_dim, _sigma_dim,
                 naive=_sigma_naive, ergodic=_sigma_ergodic,
                 invertible=True, nonlinear=nonlinear,
@@ -12752,14 +12760,14 @@ class SymbolicSpace(Space):
                     "SymbolicSpace <sigmaPi>full</> requires sigma_dim "
                     f"({_sigma_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-            self.sigma = SigmaLayer(
+            self.pi = PiLayer(
                 self.sigma_pi_slab, self.sigma_pi_slab,
                 naive=_sigma_naive, ergodic=_sigma_ergodic,
                 invertible=True, nonlinear=nonlinear,
                 stable=True, monotonic=_sigma_monotonic,
             )
         else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
-            self.sigma = SigmaLayer(
+            self.pi = PiLayer(
                 _sigma_dim, _sigma_dim,
                 naive=_sigma_naive, ergodic=_sigma_ergodic,
                 invertible=True, nonlinear=nonlinear,
@@ -12768,8 +12776,8 @@ class SymbolicSpace(Space):
         self.sigma_pi_mode = _sigma_mode
         self.butterfly_enabled = _sigma_butterfly
         self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
-        self.layers.append(self.sigma)
-        self.params += self.sigma.getParameters()
+        self.layers.append(self.pi)
+        self.params += self.pi.getParameters()
 
         # Propositional negation slot: NEG sits at the SymbolicSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
@@ -15566,57 +15574,59 @@ class SymbolicSpace(Space):
         # ``default_rule`` code-level fallback — grammar XML is the
         # sole source of truth).
         if getattr(self, 'syntacticLayer', None) is None:
-            # Parallel-mode SS sigma fold (restored 2026-06-08). ``self.sigma``
-            # is the cross-slot symbolic mix that XOR -- and any function that
-            # must combine information across slot positions -- requires at the
-            # S tier, exactly as PS.pi provides it at the P tier (a square
-            # per-slot fold cannot mix the word slots; see __init__). The
-            # 2026-05-29 clean-stack read-back turned this into a pass-through
-            # (``act = act_pre``), removing the only per-stage nonlinearity in
-            # parallel mode and leaving the recurrence linear (-> can't compute
-            # XOR). The serial/grammar path uses the SyntacticLayer (the
-            # ``else`` below); this sigma IS the parallel substitute for that
-            # syntax. ``_sigma_dim == nInputDim == concept_dim`` so the fold
-            # applies on the concept-width activation here.
+            # Parallel-mode SS fold. Post Pi/Sigma swap (Phase 3, rev.
+            # 2026-06-09) the fold is ``self.pi`` -- the top-down ANALYSIS
+            # (product/intersection) operator. It is the cross-slot symbolic
+            # mix that XOR -- and any function that must combine information
+            # across slot positions -- requires at the S tier, exactly as
+            # PS.sigma provides it at the P tier (a square per-slot fold
+            # cannot mix the word slots; see __init__). The 2026-05-29
+            # clean-stack read-back turned this into a pass-through
+            # (``act = act_pre``), removing the only per-stage nonlinearity
+            # in parallel mode and leaving the recurrence linear (-> can't
+            # compute XOR). The serial/grammar path uses the SyntacticLayer
+            # (the ``else`` below); this fold IS the parallel substitute for
+            # that syntax. ``_sigma_dim == nInputDim == concept_dim`` so the
+            # fold applies on the concept-width activation here.
             #
-            # Sigma is constructed for the concept-content width ``_sigma_dim``
-            # (== ``sigma.nInput``).  When ``nWhen > 0`` the muxed event is
-            # wider (nOutputDim > _sigma_dim) -- the trim above gave
-            # ``act_pre[..., nOutputDim]`` which may carry extra .when dims.
-            # Apply sigma on the first ``sigma.nInput`` columns only and
-            # pass the extra band through unchanged so the shapes stay
-            # consistent without resizing the sigma layer.
-            sigma = getattr(self, 'sigma', None)
-            if sigma is None:
+            # The fold is constructed for the concept-content width
+            # ``_sigma_dim`` (== ``fold.nInput``).  When ``nWhen > 0`` the
+            # muxed event is wider (nOutputDim > _sigma_dim) -- the trim
+            # above gave ``act_pre[..., nOutputDim]`` which may carry extra
+            # .when dims. Apply the fold on the first ``fold.nInput``
+            # columns only and pass the extra band through unchanged so the
+            # shapes stay consistent without resizing the layer.
+            fold = getattr(self, 'pi', None)
+            if fold is None:
                 act = act_pre
             else:
-                # sigma was sized at construction for ``sigma.N = inputShape[0]
-                # * _sigma_dim`` elements total (flattened across all positions).
-                # At runtime, two things can differ:
+                # The fold was sized at construction for ``fold.N =
+                # inputShape[0] * _sigma_dim`` elements total (flattened
+                # across all positions). At runtime, two things can differ:
                 #   (a) nWhen adds extra per-slot dims  → act_pre.shape[-1] > _sigma_dim
                 #   (b) sequence length changes at test  → N_slots != inputShape[0]
-                # Check the flattened total; only apply sigma when it matches.
-                _sd = int(sigma.nInput)          # per-slot concept dim
-                _sigma_total = int(sigma.N)       # construction-time flat total
+                # Check the flattened total; only apply the fold when it matches.
+                _sd = int(fold.nInput)           # per-slot concept dim
+                _fold_total = int(fold.N)        # construction-time flat total
                 # Compute what the butterfly would see after flatten [B, N, D] -> [B, N*D]
                 _actual_total = int(act_pre.shape[-1])
                 if act_pre.dim() >= 3:
                     _actual_total *= int(act_pre.shape[-2])
-                if _actual_total == _sigma_total:
+                if _actual_total == _fold_total:
                     # Exact match: apply normally.
-                    act = sigma.forward(act_pre)
+                    act = fold.forward(act_pre)
                 elif act_pre.dim() >= 3 and act_pre.shape[-1] > _sd:
                     # Same N_slots but extra per-slot dims (nWhen band).
-                    # Apply sigma on the concept-content columns only, pass
-                    # the extra band through unchanged.
-                    act_c = sigma.forward(act_pre[..., :_sd])
+                    # Apply the fold on the concept-content columns only,
+                    # pass the extra band through unchanged.
+                    act_c = fold.forward(act_pre[..., :_sd])
                     act = torch.cat([act_c, act_pre[..., _sd:]], dim=-1)
                 else:
                     # Total elements don't match and no simple band trim
                     # resolves it (e.g. variable-length sequence at test time).
-                    # Fall back to identity -- sigma remains a no-op for this
-                    # batch.  XOR training always uses the construction-time
-                    # sequence length, so XOR accuracy is unaffected.
+                    # Fall back to identity -- the fold remains a no-op for
+                    # this batch.  XOR training always uses the construction-
+                    # time sequence length, so XOR accuracy is unaffected.
                     act = act_pre
         else:
             # ---- Eager cursor path: SymbolicSpace is the single site

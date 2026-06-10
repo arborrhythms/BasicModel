@@ -44,7 +44,7 @@ if _BIN not in sys.path:
 
 import Models
 import Language
-from Layers import PiLayer
+from Layers import PiLayer, SigmaLayer
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -74,30 +74,31 @@ class TestPSOwnsSingleLayers(unittest.TestCase):
     """PerceptualSpace owns ``self.pi`` directly, not a ``ModuleList``
     container. Stage 10 retired ``self.sigma`` from PS."""
 
-    def test_ps_has_pi_attribute(self):
+    def test_ps_has_sigma_attribute(self):
+        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
+        # PS owns the synthesis fold ``sigma``.
         model = _make_plain_model()
         ps = model.perceptualSpace
-        self.assertTrue(hasattr(ps, 'pi'),
-                        "PerceptualSpace must own a ``pi`` attribute "
-                        "after Stage 1.A.")
-        self.assertIsInstance(ps.pi, PiLayer,
-                              "PerceptualSpace.pi must be a single "
-                              "PiLayer (not a ModuleList).")
-        self.assertNotIsInstance(ps.pi, torch.nn.ModuleList,
-                                 "PerceptualSpace.pi must NOT be a "
+        self.assertTrue(hasattr(ps, 'sigma'),
+                        "PerceptualSpace must own a ``sigma`` attribute "
+                        "post Pi/Sigma swap.")
+        self.assertIsInstance(ps.sigma, SigmaLayer,
+                              "PerceptualSpace.sigma must be a single "
+                              "SigmaLayer (not a ModuleList).")
+        self.assertNotIsInstance(ps.sigma, torch.nn.ModuleList,
+                                 "PerceptualSpace.sigma must NOT be a "
                                  "ModuleList (single-layer contract).")
 
-    def test_ps_sigma_attribute_retired(self):
-        """Stage 10: ``self.sigma`` on PerceptualSpace is retired.
-        The sigma half migrates to ``ConceptualSpace.sigma_in`` per
-        stage (Ramsified across ``self.conceptualSpaces``)."""
+    def test_ps_pi_attribute_retired(self):
+        """Pi/Sigma swap (rev. 2026-06-09): ``self.pi`` on
+        PerceptualSpace moved to SymbolicSpace (Pi is the top-down
+        analysis operator)."""
         model = _make_plain_model()
         ps = model.perceptualSpace
         self.assertFalse(
-            hasattr(ps, 'sigma'),
-            "Stage 10: PerceptualSpace.sigma must be retired (PS is "
-            "pi-only). The sigma half is on ConceptualSpace.sigma_in "
-            "per stage.")
+            hasattr(ps, 'pi'),
+            "Pi/Sigma swap: PerceptualSpace.pi must be gone (PS is "
+            "sigma-only -- synthesis). The pi lives on SymbolicSpace.")
 
 
 class TestPSForwardSingleArg(unittest.TestCase):
@@ -159,18 +160,18 @@ class TestPSForwardReturnsValidSubspace(unittest.TestCase):
                          f"got shape {tuple(ev.shape)}.")
 
 
-class TestPSPiShapes(unittest.TestCase):
-    """``pi`` is ``percept_dim -> percept_dim``. Stage 10: PS sigma
-    retired; only pi remains on PS."""
+class TestPSFoldShapes(unittest.TestCase):
+    """The PS fold (``sigma`` post Pi/Sigma swap) is
+    ``percept_dim -> percept_dim``."""
 
-    def test_pi_input_output_dims(self):
+    def test_fold_input_output_dims(self):
         model = _make_plain_model()
         ps = model.perceptualSpace
         percept_dim = int(ps.subspace.getEncodedInputSize())
-        self.assertEqual(int(ps.pi.nInput), percept_dim,
-                         "pi.nInput must equal PS encoded input size.")
-        self.assertEqual(int(ps.pi.nOutput), percept_dim,
-                         "pi.nOutput must equal PS encoded input size.")
+        self.assertEqual(int(ps.sigma.nInput), percept_dim,
+                         "sigma.nInput must equal PS encoded input size.")
+        self.assertEqual(int(ps.sigma.nOutput), percept_dim,
+                         "sigma.nOutput must equal PS encoded input size.")
 
 
 class TestPSLegacyAttributesGone(unittest.TestCase):
