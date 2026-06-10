@@ -87,18 +87,70 @@ def test_dual_views_share_values():
         "unity-view values must equal the atom-view content channel")
 
 
-def test_ss_accepts_unity_kwarg_loudly():
-    # Phase 0 contract: SymbolicSpace.forward ACCEPTS the optional
-    # IS_concepts kwarg; until Phase 2 wires the consumption, passing a real
-    # unity must FAIL LOUDLY (a silently dropped concept input is the
-    # failure mode this plan exists to prevent).
+def test_ss_stage0_consumes_unity():
+    # Phase 2 contract: with an EMPTY recurrent CS (stage 0), a provided
+    # unity drives the symbolic pass -- coarse region-mean evidence in the
+    # standard SS output geometry. Different unities produce different
+    # stage-0 symbols; the unity buffer itself is NEVER altered (analysis
+    # is non-altering).
     m = _build("MM_20M.xml")
     ss = m.symbolicSpace
     seed = m._empty_seed_ss
-    out = ss.forward(seed, IS_concepts=None)  # None == legacy path, no raise
-    assert out is not None
+    # None == legacy path: empty in, empty out (no evidence, no symbols).
+    out_none = ss.forward(seed, IS_concepts=None)
+    assert out_none is seed and out_none.is_empty()
+    u1 = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
+    u1_snapshot = u1.clone()
+    out1 = ss.forward(seed, IS_concepts=u1)
+    ev1 = out1.materialize()
+    assert ev1 is not None and torch.isfinite(ev1).all()
+    assert ev1.shape == (2, int(ss.inputShape[0]), int(ss.subspace.muxedSize)), (
+        f"stage-0 evidence must land in the CS-aligned event geometry "
+        f"(one narrow symbol event per concept slot), got {tuple(ev1.shape)}")
+    assert float(ev1.abs().max()) > 0, "evidence must be non-trivial symbols"
+    assert torch.equal(u1, u1_snapshot), (
+        "analysis is NON-ALTERING: the unity buffer must be untouched")
+    ev1 = ev1.detach().clone()
+    u2 = (u1 + 64) % 256
+    ev2 = ss.forward(seed, IS_concepts=u2).materialize()
+    assert not torch.equal(ev1, ev2), (
+        "stage-0 symbolic output must CHANGE when the unity changes")
+
+
+def test_ss_rejects_concepts_with_nonempty_cs():
+    # Phase 2 contract: input is read ONCE at stage 0. Supplying IS_concepts
+    # alongside a live recurrent CS is the later repeated-injection knob and
+    # must fail loudly (never a silent drop).
+    m = _build("MM_20M.xml")
+    ss = m.symbolicSpace
+    u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
+    ss.forward(m._empty_seed_ss, IS_concepts=u)   # populates ss.subspace
+    assert not ss.subspace.is_empty()
     with pytest.raises(NotImplementedError):
-        ss.forward(seed, IS_concepts=torch.zeros(2, 1, 16))
+        ss.forward(ss.subspace, IS_concepts=u)
+
+
+def test_model_forward_passes_unity_at_stage0():
+    # Phase 2 wiring: the body hands the PARKED unity to SS at stage 0 only.
+    m = _build("MM_20M.xml")
+    x = _staged_batch(m)
+    ss = m.symbolicSpace
+    real = ss.forward
+    calls = []
+    def _capture(sub, *a, **k):
+        calls.append(k.get("IS_concepts", None))
+        return real(sub, *a, **k)
+    ss.forward = _capture
+    try:
+        with torch.no_grad():
+            out = m.forward(x)[2]
+    finally:
+        ss.forward = real
+    assert out is not None and torch.isfinite(out).all()
+    assert len(calls) >= 1 and torch.is_tensor(calls[0]), (
+        "stage 0 must receive the parked unity view")
+    assert all(c is None for c in calls[1:]), (
+        "stages after 0 read only the recurrent CS (input once)")
 
 
 def test_full_forward_green_with_dual_view():

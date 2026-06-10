@@ -5492,7 +5492,15 @@ class BasicModel(BaseModel):
                 self.wordSubSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
-            SS_sub = ss.forward(prevCS_forSS)
+            # Dual-input plan sec.2 (rev. 2026-06-09): stage 0 reads the
+            # UNITY view (parked by _lex_embed_stem) as direct symbolic
+            # evidence -- the top-down analysis branch's input. Later
+            # stages read only the recurrent CS (input once, mirroring
+            # PS). Pure attr read, so the compiled/export paths trace it
+            # exactly like _staged_in_sub.
+            SS_sub = ss.forward(
+                prevCS_forSS,
+                IS_concepts=(self._staged_concepts_in if t == 0 else None))
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --

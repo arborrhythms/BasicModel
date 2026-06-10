@@ -15435,6 +15435,49 @@ class SymbolicSpace(Space):
             torch.ones(B, N, device=out.device, dtype=out.dtype))
         return self.subspace
 
+    def _stage0_unity_forward(self, IS_concepts):
+        """Stage-0 symbolic evidence from the UNITY view (analysis/synthesis
+        dual-input plan sec.2, rev. 2026-06-09).
+
+        The unity ``[B, 1, N_raw]`` is the whole presentation as ONE event;
+        stage 0's analysis divides it into this space's symbol slots by
+        COARSE large-scale characterization: contiguous-region means
+        (``adaptive_avg_pool1d`` over ``nOutput * content`` regions -- the
+        plan's "mean value over large areas" LF characterization), squashed
+        to the +-1 operating range with ``tanh(mean / 128)`` so a byte-0 /
+        null-padding region stays exactly 0 (contributes nothing, like the
+        legacy zero-symbol seed). The cast+pool allocate fresh tensors --
+        analysis is NON-ALTERING, the unity buffer is never written.
+
+        Emits the CS-ALIGNED event geometry ``[B, nInput_events,
+        muxedSize]`` (``inputShape[0]`` symbol events -- one per
+        concept/STM slot -- of narrow ``muxedSize`` width): the combine's
+        "compressed SS symbol code" contract, where ``_combine_fit``
+        zero-pads the narrow content up to the combine width at a MATCHING
+        event count. Content slice = evidence; where/when band zero
+        (positional overhead, re-derived downstream exactly as the
+        zero-symbol events are). The l1/intrinsic-snap gates are not
+        applied here while the parallel SS quantize is a no-op
+        (asymmetric-vq sec.7 task 8 makes it live; revisit then).
+        ``held_at_zero`` still wins: the phase-1 parallel gate zeroes this
+        space's contribution regardless of evidence."""
+        B = int(IS_concepts.shape[0])
+        N = int(self.inputShape[0])
+        D = int(self.subspace.muxedSize)
+        band = int(self.nWhere + self.nWhen)
+        content = max(1, D - band)
+        dev = IS_concepts.device
+        if self.held_at_zero:
+            self.subspace.set_event(torch.zeros(
+                B, N, D, device=dev, dtype=torch.get_default_dtype()))
+            return self.subspace
+        u = IS_concepts.to(torch.get_default_dtype())  # copy, never in-place
+        pooled = F.adaptive_avg_pool1d(u, N * content)
+        evidence = torch.tanh(pooled.reshape(B, N, content) / 128.0)
+        event = F.pad(evidence, (0, D - content))
+        self.subspace.set_event(event)
+        return self.subspace
+
     def forward(self, CS_subspaceForSS, IS_concepts=None):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
@@ -15456,17 +15499,21 @@ class SymbolicSpace(Space):
         concept space — and runs unconditionally regardless of grammar
         state.
         """
-        if IS_concepts is not None:
-            # Phase 2 (symbolic input branch) lands the consumption; until
-            # then a provided unity must fail LOUDLY -- a silently dropped
-            # concept input is the exact failure mode the dual-input plan's
-            # Phase-0 contract guards against.
+        if IS_concepts is not None and not CS_subspaceForSS.is_empty():
+            # The first implementation reads input ONCE at stage 0 (the
+            # recurrent CS is empty there), mirroring PS. Repeated symbolic
+            # input injection alongside a live recurrent carrier is a later
+            # knob (dual-input plan sec.2) -- fail loudly, never silently
+            # drop a provided concept input.
             raise NotImplementedError(
-                "SymbolicSpace.forward(IS_concepts=...) is the Phase-2 "
-                "symbolic input branch of the analysis/synthesis dual-input "
-                "plan; stage-0 unity consumption is not wired yet.")
+                "repeated symbolic input injection (IS_concepts alongside a "
+                "non-empty recurrent CS) is a later knob -- analysis/"
+                "synthesis dual-input plan sec.2; stage 0 reads the unity "
+                "once.")
         if CS_subspaceForSS.is_empty():
-            return CS_subspaceForSS
+            if IS_concepts is None:
+                return CS_subspaceForSS
+            return self._stage0_unity_forward(IS_concepts)
         self.subspace.copy_context(CS_subspaceForSS)
         # Phase-1 ``parallel`` mode gating: when held at zero the
         # resolve / lift / codebook / TruthLayer paths skip and the
