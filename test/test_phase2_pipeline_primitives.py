@@ -132,9 +132,13 @@ def test_space_forward_arities():
     into explicit ``forward`` arguments supplied by the recurrent cell:
       * PerceptualSpace.forward(x_subspace)        -- Stage 1.A single-arg
       * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
-      * SymbolicSpace.forward(CS_subspaceForSS)  -- single (no combine)
-      * InputSpace / ModalSpace / OutputSpace    -- single, unchanged
-    The optional second arg on CS defaults to ``None`` so standalone
+      * SymbolicSpace.forward(CS_subspaceForSS, IS_concepts=None)
+        -- the optional stage-0 UNITY input (analysis/synthesis
+        dual-input plan, rev. 2026-06-09)
+      * InputSpace / ModalSpace / OutputSpace    -- single arg
+        (InputSpace now RETURNS the dual view tuple; its argument
+        arity is unchanged)
+    The optional second args (CS, SS) default to ``None`` so standalone
     single-arg callers still work.
 
     Stage 1.A substrate refactor (doc/plans/
@@ -157,7 +161,7 @@ def test_space_forward_arities():
         PerceptualSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
         ModalSpace: (1, 1),
         ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
-        SymbolicSpace: (1, 1),     # CS_subspaceForSS
+        SymbolicSpace: (1, 2),     # CS_subspaceForSS req, IS_concepts opt
         OutputSpace: (1, 1),
     }
     for cls, (min_req, max_params) in expected.items():

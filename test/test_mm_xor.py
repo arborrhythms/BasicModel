@@ -124,7 +124,7 @@ class TestMMXorConvergence(unittest.TestCase):
             inp_items, _ = next(iter(loader))
             inputTensor = m.inputSpace.prepInput(inp_items)
             with torch.no_grad():
-                in_sub = m.inputSpace.forward(inputTensor)
+                in_sub, _ = m.inputSpace.forward(inputTensor)
                 ps_sub = m.perceptualSpace.forward(in_sub)
                 ss_sub = m.symbolicSpace.forward(ps_sub)
         symbols = ss_sub.materialize()

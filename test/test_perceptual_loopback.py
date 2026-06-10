@@ -101,14 +101,16 @@ class TestForwardArityContract(unittest.TestCase):
                          "ConceptualSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
 
-    def test_symbolic_forward_single_arg(self):
+    def test_symbolic_forward_arity(self):
+        # Dual-input plan (rev. 2026-06-09): SymbolicSpace.forward gains the
+        # optional stage-0 unity input -- (CS_subspaceForSS, IS_concepts=None).
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.SymbolicSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
-        self.assertEqual(len(params), 1,
+        self.assertEqual(params, ["CS_subspaceForSS", "IS_concepts"],
                          f"SymbolicSpace.forward must be "
-                         f"(CS_subspaceForSS); got {params}")
+                         f"(CS_subspaceForSS, IS_concepts=None); got {params}")
         self.assertNotIn("work", sig.parameters,
                          "SymbolicSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
@@ -234,7 +236,7 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = m.inputSpace.forward(self._one_input())
+                in_sub, _ = m.inputSpace.forward(self._one_input())
                 a = self.percep.forward(in_sub)
                 ev_a = a.materialize() if a is not None else None
                 b = self.percep.forward(in_sub)

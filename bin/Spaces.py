@@ -7384,21 +7384,63 @@ class InputSpace(Space):
             self._end_of_stream[batch] = False
 
     # The world presenting itself
-    def forward(self, inputData):
-        """Single-call stem source for the IR-only training pipeline.
+    def _unity_view(self, sub):
+        """Unity view of the lexed/embedded input: ONE width-N event
+        ``[B, 1, N]``.
 
-        Lexes/embeds the input once and emits ``[B, N, D]`` (left-
-        aligned, right-padded to N).  ``self.subspace`` carries
-        ``valid_mask`` (``[B, 1]`` bool) and ``stem_embedded=True``.
+        The analysis branch's input (doc/plans/2026-06-08-analysis-
+        synthesis-dual-input.md sec.1, rev. 2026-06-09): the same
+        presentation the atom view carries, re-expressed as a single
+        undivided event for top-down analysis (SS). Text mode: the
+        what-channel byte values ``[B, T, 1]`` transposed to ``[B, 1, T]``
+        -- a VIEW sharing storage with the atom buffer wherever the layout
+        allows (analysis is non-altering, so nothing downstream may write
+        through it). Numeric mode: the embedded event flattened to one row
+        ``[B, 1, T*D]``. The null mask is derivable (text: byte != 0) and
+        source ordering is positional, so no side metadata object rides
+        along. Returns None when nothing is staged (empty input)."""
+        if sub is None or (hasattr(sub, "is_empty") and sub.is_empty()):
+            return None
+        with torch.no_grad():
+            if self.model_type == "embedding":
+                buf = sub.materialize(mode="what")
+                if buf is None:
+                    return None
+                if buf.dim() == 2:          # [B, T] -> [B, 1, T]
+                    return buf.unsqueeze(1)
+                if buf.dim() == 3:          # [B, T, nWhat] -> [B, 1, T*nWhat]
+                    return buf.transpose(1, 2).reshape(buf.shape[0], 1, -1)
+                return None
+            ev = sub.materialize()
+            if ev is None or ev.dim() != 3:
+                return None
+            return ev.reshape(ev.shape[0], 1, -1)
+
+    def forward(self, inputData):
+        """Single-call stem source emitting the DUAL VIEW
+        ``(percepts_in, concepts_in)``.
+
+        Analysis/synthesis dual-input contract (doc/plans/2026-06-08-
+        analysis-synthesis-dual-input.md sec.1, rev. 2026-06-09):
+
+        * ``percepts_in`` -- the ATOM view: the lexed/embedded SubSpace
+          (content channel ``[B, N, 1]`` in byte mode), consumed by the
+          perceptual branch (bottom-up synthesis).
+        * ``concepts_in`` -- the UNITY view: the same values as ONE
+          width-N event ``[B, 1, N]`` (``_unity_view``), consumed by the
+          symbolic branch (top-down analysis). ``None`` for empty input.
+
+        Lexes/embeds the input once; ``self.subspace`` carries
+        ``valid_mask`` (``[B, 1]`` bool) and ``stem_embedded``.
 
         AR cursor unfold + ARIR runtime branch retired 2026-05-14
         alongside ``<maskedPrediction>``; within-sentence training is
         purely masked-LM at the P-tier (BERT-style IR).
         """
         if inputData is None:
-            return self._empty_like_subspace()
+            return self._empty_like_subspace(), None
         if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
-            return inputData
+            return inputData, None
 
         # Lex/embed once -- produces ``[B, T, D]`` on ``self.subspace``.
         self._lex_and_embed(inputData)
@@ -7435,7 +7477,7 @@ class InputSpace(Space):
                     sub.valid_mask = _valid_pos.any(dim=1).reshape(-1, 1)
                 else:
                     self._valid_len_host = 0
-            return sub
+            return sub, self._unity_view(sub)
         embedded = self.subspace.materialize()
         # ``_ar_embedded`` is the canonical un-windowed [B, T, D] handle for
         # the numeric path's downstream consumers (chat-loop, diagnostics).
@@ -7443,7 +7485,7 @@ class InputSpace(Space):
 
         if embedded is None:
             self._valid_len_host = 0
-            return self.subspace
+            return self.subspace, None
 
         # D8 piece 2 (2026-05-19, eager-revised after metalbaby): compute
         # the per-forward valid-len cache EAGERLY here at the IS
@@ -7569,7 +7611,7 @@ class InputSpace(Space):
         ws = self._model_wordSubSpace
         if ws is not None:
             ws.ensure_microbatch(B, 1)
-        return sub
+        return sub, self._unity_view(sub)
 
     def finalize_stem(self, sub, ps):
         """Model-orchestrated stem bookkeeping for TEXT mode (2026-06-07).
@@ -15393,13 +15435,15 @@ class SymbolicSpace(Space):
             torch.ones(B, N, device=out.device, dtype=out.dtype))
         return self.subspace
 
-    def forward(self, CS_subspaceForSS):
+    def forward(self, CS_subspaceForSS, IS_concepts=None):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
-        Single explicit input ``CS_subspaceForSS`` -- the prior pass's
-        ConceptualSpace output (``ConceptualSpace._subspaceForSS``).
-        SymbolicSpace never combined siblings (no ``_sourced_input``); it
-        consumes this one subspace directly.
+        Explicit inputs: ``CS_subspaceForSS`` -- the prior pass's
+        ConceptualSpace output (``ConceptualSpace._subspaceForSS``) -- and
+        the optional ``IS_concepts`` unity view ``[B, 1, N]``, the stage-0
+        symbolic input branch of the analysis/synthesis dual-input plan
+        (rev. 2026-06-09). SymbolicSpace never combined siblings (no
+        ``_sourced_input``); it consumes these directly.
 
         Dispatches to the rule-application path when the caller marks the
         incoming subspace with ``_rule_dispatch`` (see
@@ -15412,6 +15456,15 @@ class SymbolicSpace(Space):
         concept space — and runs unconditionally regardless of grammar
         state.
         """
+        if IS_concepts is not None:
+            # Phase 2 (symbolic input branch) lands the consumption; until
+            # then a provided unity must fail LOUDLY -- a silently dropped
+            # concept input is the exact failure mode the dual-input plan's
+            # Phase-0 contract guards against.
+            raise NotImplementedError(
+                "SymbolicSpace.forward(IS_concepts=...) is the Phase-2 "
+                "symbolic input branch of the analysis/synthesis dual-input "
+                "plan; stage-0 unity consumption is not wired yet.")
         if CS_subspaceForSS.is_empty():
             return CS_subspaceForSS
         self.subspace.copy_context(CS_subspaceForSS)

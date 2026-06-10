@@ -139,7 +139,7 @@ class TestCSForwardMutatesSTM(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = model.inputSpace.forward(x_input)
+                in_sub, _ = model.inputSpace.forward(x_input)
                 ps_sub = ps.forward(in_sub)
                 # Ensure STM batch row 0 is empty before the call.
                 cs.stm.ensure_batch(max(1, int(ps_sub.materialize().shape[0])))
@@ -189,7 +189,7 @@ class TestSTMShiftAtCapacity(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = model.inputSpace.forward(x_input)
+                in_sub, _ = model.inputSpace.forward(x_input)
                 ps_sub = ps.forward(in_sub)
                 ps_ev = ps_sub.materialize()
                 # Reduce to a per-batch row-0 vector we can rebuild as
@@ -282,7 +282,7 @@ class TestCSPredictThenPerceive(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             # Grad ENABLED (no torch.no_grad) so the loss path is live.
-            in_sub = model.inputSpace.forward(x_input)
+            in_sub, _ = model.inputSpace.forward(x_input)
             ps_sub = ps.forward(in_sub)
             ps_ev = ps_sub.materialize()
             B = int(ps_ev.shape[0])
@@ -330,7 +330,7 @@ class TestCSPredictThenPerceive(unittest.TestCase):
             "accumulate")
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            in_sub = model.inputSpace.forward(x_input)
+            in_sub, _ = model.inputSpace.forward(x_input)
             ps_sub = ps.forward(in_sub)
             ps_ev = ps_sub.materialize()
             B = int(ps_ev.shape[0])
@@ -373,7 +373,7 @@ class TestCSPredictThenPerceive(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = model.inputSpace.forward(x_input)
+                in_sub, _ = model.inputSpace.forward(x_input)
                 ps_sub = ps.forward(in_sub)
                 ps_ev = ps_sub.materialize()
                 B = int(ps_ev.shape[0])

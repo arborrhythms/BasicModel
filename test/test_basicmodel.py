@@ -90,7 +90,7 @@ def _build_text_pair(nInput):
 def _text_embed(inp, psp, raw_input):
     """Run raw text input through InputSpace then PerceptualSpace's lex+embed.
     Returns the post-embedding tensor [batch, nVectors, embSize]."""
-    inp_sub = inp.forward(raw_input)
+    inp_sub, _ = inp.forward(raw_input)
     psp_sub = psp._embed(inp_sub)
     return psp_sub.materialize()
 
@@ -1103,7 +1103,7 @@ class TestInputSpaceNoCodebook(unittest.TestCase):
         inEmb = nDim + sum(_cshape("InputSpace"))
         inp = Models.InputSpace([nIn, nDim], [nIn, nDim], [nIn, inEmb])
         x = torch.randn(2, nIn, nDim).to(Models.TheDevice.get())
-        y = _unwrap(inp(x))
+        y = _unwrap(inp(x)[0])
         self.assertEqual(list(y.shape), [2, nIn, inEmb])
 
 
@@ -1635,7 +1635,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inputTensor = inp.prepInput(inputBatch)
         expected_tokens = psp.vocabulary.tokenize(inputTensor)
         # Forward pass through input->perceptual
-        latent = psp._embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor)[0])
         # Reverse pass via PerceptualSpace
         psp.reverse(latent)
         recovered = psp.reconstruct_data()
@@ -1661,7 +1661,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inp, psp, data = self._make_text_input_space()
         all_inputs = data.train_input
         inputTensor = inp.prepInput(all_inputs)
-        latent = psp._embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor)[0])
         psp.reverse(latent)
         recovered = psp.reconstruct_data()
         expected = psp.vocabulary.tokenize(inputTensor)
@@ -1690,7 +1690,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        latent = psp._embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor)[0])
         psp.reverse(latent)
         joined = psp.reconstruct_data(text=True)
         self.assertEqual(len(joined), batch_size)
@@ -1704,7 +1704,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         nIn, nDim = 8, 1
         inp = Models.InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
         x = torch.randn(2, nIn, nDim).to(Models.TheDevice.get())
-        y = inp.forward(x)
+        y, _ = inp.forward(x)
         result = _unwrap(inp.reverse(y))
         # Numeric path returns tensor, not text
         self.assertIsInstance(result, (torch.Tensor, list))
@@ -3336,7 +3336,7 @@ class TestInputSpaceScaling(unittest.TestCase):
         inp = Models.InputSpace([nInput, _content], [_invec, _content],
                          [nInput, _idim], model_type="simple")
         x = torch.FloatTensor([[[-3, -1, 1, 3]] * nInput]).to(Models.TheDevice.get())
-        result = inp.forward(x)
+        result, _ = inp.forward(x)
         what = result.select("what")
         self.assertTrue(torch.all(what >= -1.01) and torch.all(what <= 1.01),
                         f"what should be in [-1,1], got [{what.min():.4f}, {what.max():.4f}]")
@@ -3417,7 +3417,7 @@ class TestInputSpaceDemuxed(unittest.TestCase):
         inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                          [nInput, _idim + _obj], model_type="simple")
         x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
-        result = inp.forward(x)
+        result, _ = inp.forward(x)
         self.assertTrue(result.is_demuxed)
         self.assertEqual(list(result.what.getW().shape), [2, nInput, _idim])
         self.assertEqual(list(result.where.getW().shape), [2, nInput, 2])
@@ -3434,7 +3434,7 @@ class TestInputSpaceDemuxed(unittest.TestCase):
         inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                          [nInput, _idim + _obj], model_type="simple")
         x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
-        result = inp.forward(x)
+        result, _ = inp.forward(x)
         muxed = result.materialize()
         self.assertEqual(list(muxed.shape), [2, nInput, _idim + _obj])
 
@@ -3457,8 +3457,8 @@ class TestInputSpaceDemuxed(unittest.TestCase):
                              [nInput, _idim + _obj], model_type="simple")
 
         x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
-        legacy_out = _unwrap(legacy.forward(x))
-        demuxed_out = _unwrap(demuxed.forward(x))
+        legacy_out = _unwrap(legacy.forward(x)[0])
+        demuxed_out = _unwrap(demuxed.forward(x)[0])
         self.assertTrue(torch.allclose(legacy_out, demuxed_out, atol=1e-5),
                         f"max diff: {(legacy_out - demuxed_out).abs().max():.6f}")
 

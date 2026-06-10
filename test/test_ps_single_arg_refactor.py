@@ -146,7 +146,7 @@ class TestPSForwardReturnsValidSubspace(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = inp_space.forward(x_input)
+                in_sub, _ = inp_space.forward(x_input)
                 out = ps.forward(in_sub)
         self.assertIsNotNone(out,
                              "PerceptualSpace.forward must return a "

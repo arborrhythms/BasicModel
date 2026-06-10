@@ -2863,8 +2863,17 @@ class BasicModel(BaseModel):
         ``stem_embedded=True`` and skips re-embedding (pi only). Numeric input
         (``InputSpace.forward`` already embeds via the vocab codebook) returns
         ``stem_embedded=True`` and is passed through untouched.
+
+        Dual view (analysis/synthesis plan, rev. 2026-06-09): InputSpace now
+        emits ``(percepts_in, concepts_in)``; the ATOM view feeds the
+        PS embed (synthesis), the UNITY view is parked on
+        ``_staged_concepts_in`` for the symbolic branch (Phase 1: staged,
+        UNUSED; Phase 2 consumes it at SS stage 0). This unpack is the
+        orchestration-side shim the plan allows -- downstream contracts are
+        unchanged.
         """
-        in_sub = self.inputSpace.forward(x)
+        in_sub, concepts_in = self.inputSpace.forward(x)
+        self._staged_concepts_in = concepts_in
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -2942,6 +2951,7 @@ class BasicModel(BaseModel):
         """Per-step teardown: drop the staging parked by ``_begin_step``
         (consume-once; eager, post-forward)."""
         self._staged_in_sub = None
+        self._staged_concepts_in = None
         self._staged_intersentence_seed = None
         self._intersentence_seed_staged = False
         disc = (self.wordSubSpace.discourse
@@ -5041,7 +5051,13 @@ class BasicModel(BaseModel):
         #                          if that is never called).
         #   _current_discourse_s -- S-tier sentence rep stashed by the
         #                          forward for the post-body ARMA term.
+        #   _staged_concepts_in -- the UNITY view [B, 1, N] parked by
+        #                          _lex_embed_stem for the symbolic
+        #                          branch (analysis/synthesis dual-input
+        #                          plan; Phase 2 consumes it at SS
+        #                          stage 0).
         self._staged_in_sub = None
+        self._staged_concepts_in = None
         self._compiled_step = None
         self._current_discourse_s = None
         # A6 stage-0 CS_{-1} interSentence seed staging (mirrors

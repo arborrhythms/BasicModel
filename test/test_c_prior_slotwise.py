@@ -86,7 +86,7 @@ class _CPriorBase(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = self.model.inputSpace.forward(x_input)
+                in_sub, _ = self.model.inputSpace.forward(x_input)
                 self.ps_sub = ps.forward(in_sub)
                 ps_ev = self.ps_sub.materialize()
         # The materialised PS event width is the carrier D the production

@@ -224,7 +224,7 @@ class TestConceptualSpaceSTMBookkeeping(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             with torch.no_grad():
-                in_sub = model.inputSpace.forward(x_input)
+                in_sub, _ = model.inputSpace.forward(x_input)
                 ps_sub = model.perceptualSpace.forward(in_sub)
                 # Ensure STM is correctly sized for the batch.
                 cs.stm.ensure_batch(
