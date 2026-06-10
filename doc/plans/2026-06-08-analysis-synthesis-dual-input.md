@@ -1,37 +1,95 @@
 # Analysis / Synthesis Dual-Input Plan
 
 Date: 2026-06-08
-Status: Draft plan
+Revised: **2026-06-09 — orientation corrected.** The original draft assigned
+analysis to the perceptual side and synthesis to the symbolic side; that was
+backwards. This revision supersedes the draft's side-assignments throughout.
+Status: Active execution plan
+
+## Orientation (the corrected through-line)
+
+```
+SymbolicSpace (SS)                  PerceptualSpace (PS)
+------------------                  --------------------
+TOP-DOWN                            BOTTOM-UP
+ANALYSIS                            SYNTHESIS
+Pi  -- product, intersection        Sigma -- sum, union
+starts from UNITY                   starts from ATOMS
+  concepts_in: [B, 1, N]              percepts_in: [B, N, 1]
+Universals: meaning/term            Particulars: specifically
+generalities (spyi-mtshan,          characterized entities
+don-spyi, sgra-spyi)                (rang-mtshan)
+front ends: analyse (meronymic)     front ends: the chunkers
+  + the lexers                        (radix, bpe, byte)
+codebook of generalities; the       content codebook with a snap
+divisions snap to it                distance (the percept store);
+                                    the eidetic ground
+```
+
+**Analysis (SS, top-down).** Analysis starts with the input as one undivided
+unity — `[B, 1, N]`, a single event of width N — and divides it: lexer cuts,
+meronymic part–whole divisions, aspects. Each analytic step is an
+**intersection**: adding a constraint narrows, the way universals compose
+(RED ∩ BALL). The divisions reference the shared `.where`/`.when` coordinate
+frame, exist as **boundaries in the data** (like an edge), and **do not alter
+the data**. They **snap to the SS codebook**. Analytic characterization is
+**large-scale and approximate** — mean value over a region, extent/support
+size, low-pass features: coarse descriptions of large perceptual pieces. A
+coarse one-over-many description is precisely a meaning-flavored generality;
+that is why analysis is the symbolic side.
+
+**Synthesis (PS, bottom-up).** Synthesis starts with the input as N atoms —
+`[B, N, 1]`, N events of width 1; bytes as particulars — and **unions** them
+into larger wholes: chunks, recurring surface forms, words. Synthesis also
+does not alter the data: it **represents chunk content in a codebook with a
+snap distance** (the radix/percept store), so a recurring particular is
+recognized as the *same* percept row, and byte-exact reconstruction continues
+to flow through the percept ids. An exact this-one surface form is a
+specifically characterized particular; that is why synthesis is the
+perceptual side.
+
+**Duality on reverse.** Each branch's reverse runs its dual operation:
+`PS.reverse` un-unions (aggregate → atoms); `SS.reverse` un-divides (parts →
+unity). Model-level reconstruction therefore combines a bottom-up content
+stream with a top-down scaffold stream (§6).
+
+**Why this is the correct orientation.** It restores coherence with two
+standing commitments the draft contradicted:
+
+1. the Buddhist mapping (§9) already grounded `rang-mtshan` (particulars) in
+   PS and the generalities (`spyi-mtshan`/`don-spyi`/`sgra-spyi`) in SS;
+2. the descriptor codebook (§7) already held the LF/coarse descriptor rows —
+   which are analysis outputs — in SS.
+
+It also leaves the working XOR recipe intact (`asymmetric-vq` §1: radix +
+1-vector SBOW on PS), since the chunkers stay put.
 
 ## Goal
 
-Reformulate the current subsymbolic and symbolic loops as an explicit
-analysis/synthesis pair:
+Reformulate the two loops as an explicit analysis/synthesis pair:
 
-- analysis: `InputSpace.forward()` splits one source input into a perceptual
-  branch and a conceptual/symbolic branch.
-- recurrent integration: `PerceptualSpace` and `SymbolicSpace` both receive
-  input-derived evidence, then the existing C-tier recurrence combines
-  percepts, symbols, and concepts.
-- synthesis: reverse reconstruction recombines the perceptual and conceptual
-  branches back into the input surface with an `InvertibleLinearLayer`.
-- configuration: the perceptual-side `<chunking>` knob becomes analytic-only
-  `<analysis>`; any operation that synthesizes a surface migrates to the
-  symbolic loop.
+- **dual view**: `InputSpace.forward()` emits the same source input under two
+  views — an atom view for the perceptual branch and a unity view for the
+  symbolic branch.
+- **recurrent integration**: `PerceptualSpace` and `SymbolicSpace` both
+  receive input-derived evidence, then the existing C-tier recurrence
+  combines percepts, symbols, and concepts.
+- **reconstruction**: reverse recombines the perceptual and symbolic branches
+  back into the input surface with an `InvertibleLinearLayer`.
+- **operators**: Pi (analysis/intersection) and Sigma (synthesis/union) sit
+  on the correct sides — **they swap** relative to today's code.
+- **configuration**: the perceptual `<chunking>` knob becomes `<synthesis>`
+  (union modes); a new SS-side `<analysis>` knob hosts `analyse` and the
+  lexer modes.
 
-The immediate shape contract is:
+The immediate shape contract:
 
 ```text
 InputSpace.forward(input) -> (percepts_in, concepts_in)
 
-percepts_in: [B, 1, N]
-concepts_in: [B, N, 1]
+percepts_in: [B, N, 1]   # atoms  -> PS (bottom-up synthesis)
+concepts_in: [B, 1, N]   # unity  -> SS (top-down analysis)
 ```
-
-The perceptual branch treats the input as a specifically presented field with
-an eidetic, continuous, discriminative codebook over InputSpace. The
-conceptual/symbolic branch treats the same input as a sequence of generalizable
-positions, meanings, objects, or terms.
 
 ## Current Context
 
@@ -39,9 +97,9 @@ The current forward path is:
 
 ```text
 _lex_embed_stem:
-  InputSpace.forward(x) -> in_sub
-  PerceptualSpace.embed_stem(in_sub)
-  InputSpace.finalize_stem(in_sub, perceptualSpace)
+  InputSpace.forward(x) -> in_sub          (single SubSpace)
+  PerceptualSpace.embed_stem(in_sub)       (chunk+embed, host-eager)
+  InputSpace.finalize_stem(in_sub, ps)
 
 _forward_body:
   PS_sub_stage0 = PerceptualSpace.forward(in_sub)
@@ -51,64 +109,65 @@ _forward_body:
     ConceptualCombine(PS_t, SS_t, CS_t)
 ```
 
-Important existing contracts:
+Standing contracts this plan changes or relies on:
 
-- `InputSpace` is currently a pure raw lexer and returns one `SubSpace`.
-- `PerceptualSpace` owns embedding/chunking/codebook work after the June 7
-  peer-removal refactor; this plan renames the perceptual breakdown contract
-  from `<chunking>` to `<analysis>` and reformulates the PS codebook as
-  discriminative/dichotomizing rather than representational.
-- `SymbolicSpace.forward()` currently receives only `CS_subspaceForSS`.
-- `ConceptualCombine` already mixes `PS_t`, `SS_t`, and `CS_t` using an
-  invertible 3-stream layer, so this plan should feed better PS/SS streams into
-  that layer rather than replacing it.
-- Reverse reconstruction currently seeds from concepts, walks body reverse,
-  then runs `PerceptualSpace.reverse()` and `InputSpace.reverse()`.
+- `InputSpace` is a pure raw lexer returning ONE SubSpace. It becomes the
+  dual-view source; **lexer ownership moves to SS** (lexing = analytic
+  cutting).
+- `PerceptualSpace` owns chunking/embedding after the 2026-06-07
+  peer-removal. **It keeps them** — the chunkers are synthesis. The percept
+  store remains the authoritative surface-content codebook (and the shared
+  decode surface for backlog §4's BPE/MPHF byte-codebook sharing).
+- **PS currently owns `self.pi` (PiLayer); SS currently owns `self.sigma`
+  (SigmaLayer). These swap** (§3): Pi is analysis (SS); Sigma is synthesis
+  (PS).
+- `SymbolicSpace.forward()` currently takes only `CS_subspaceForSS`; it gains
+  the stage-0 unity input (§2).
+- `ConceptualCombine` currently mixes three streams; the 2-stream
+  `CS = ILL([PS ‖ SS])` change is tracked separately
+  (`2026-06-09-asymmetric-vq-symbolic-ss.md` §5, task C-10) and composes with
+  this plan: feed better PS/SS streams into whichever combiner is live.
+- Reverse reconstruction currently seeds from concepts, walks the body
+  reverse, then `PerceptualSpace.reverse()` and `InputSpace.reverse()`.
 
 ## Design
 
-### 1. Split InputSpace Output
-
-Change the conceptual contract of `InputSpace.forward()` from one carrier to two
-carriers:
+### 1. Split InputSpace Output (dual view)
 
 ```python
 percepts_in, concepts_in = inputSpace.forward(inputData)
 ```
 
-Planned representation:
+- `percepts_in` is the **atom view** `[B, N, 1]`: the raw elements as N
+  separate width-1 events. The PS front ends (chunkers) consume atoms
+  directly — note the radix already learns its own chunking from a raw
+  stream (`asymmetric-vq` §1), so no lexer pre-cut is required on this side.
+- `concepts_in` is the **unity view** `[B, 1, N]`: the whole presentation as
+  one width-N event, the thing analysis divides.
+- Both views retain metadata to reconstruct source ordering, dtype, and
+  padding/null mask. They are VIEWS of one buffer, not copies, wherever
+  possible.
+- Tuple contract stays the public shape; a compatibility shim may live only
+  inside model orchestration during migration, never as a silent permanent
+  fallback.
 
-- `percepts_in` is the raw surface as `[B, 1, N]`.
-- `concepts_in` is the transposed/generalized view as `[B, N, 1]`.
-- Both retain enough metadata to reconstruct the original source ordering,
-  dtype, and padding/null mask.
-
-Implementation decision to make later:
-
-- Prefer a small `NamedTuple` or dataclass only if tuple plumbing becomes hard
-  to read. The public contract should still unpack as two outputs.
-- Keep a compatibility shim during migration only inside model orchestration,
-  not as a permanent silent fallback.
-
-### 2. Add Input to SymbolicSpace
-
-Update the symbolic loop to accept direct input-derived evidence:
+### 2. Add Input to SymbolicSpace (stage-0 unity)
 
 ```python
 SymbolicSpace.forward(CS_subspaceForSS, IS_concepts=None)
 ```
 
-Stage behavior:
+- Stage 0 reads `IS_concepts` (the unity view).
+- Later stages read the recurrent `CS_subspaceForSS`.
+- The contribution is composed INSIDE SymbolicSpace (additive/compositional);
+  `ConceptualCombine` continues to see exactly one `SS_t` stream.
+- Repeated symbolic input injection (stages > 0) is a later knob; the first
+  implementation reads input once, mirroring PS.
 
-- Stage 0 reads `IS_concepts`.
-- Later stages read recurrent `CS_subspaceForSS`.
-- If a config wants repeated symbolic input injection, make that a later knob;
-  the first implementation should mirror PS and read input once.
-
-This means `_forward_body` becomes:
+`_forward_body` becomes:
 
 ```text
-percepts_in, concepts_in = staged input from InputSpace
+percepts_in, concepts_in = staged dual view from InputSpace
 PS_sub_stage0 = perceptualSpace.forward(percepts_in)
 
 for t:
@@ -120,158 +179,68 @@ for t:
   ConceptualCombine(PS_t, SS_t, CS_t)
 ```
 
-The symbolic input contribution should be additive or compositional inside
-`SymbolicSpace`, not bolted onto `ConceptualCombine`. `ConceptualCombine` should
-continue to see one `SS_t` stream.
+### 3. Pi / Sigma Swap
 
-### 3. Discriminative Perceptual Analysis
+Today: `PerceptualSpace.pi = PiLayer(...)` (Spaces.py ~8241) and
+`SymbolicSpace.sigma = SigmaLayer(...)` (Spaces.py ~12685). Corrected:
 
-The current PS codebook often behaves like a nearest vector table. That is too
-symbolic for the role Tibetan philosophy assigns to specifically characterized
-entities. A specifically characterized percept should be subsymbolic: present as
-this region, this timing, this intensity/shape, not as a remembered generic row.
+- **PS owns Sigma** (`SigmaLayer`): synthesis, sum/union — the bottom-up
+  fold over atoms/percepts.
+- **SS owns Pi** (`PiLayer`): analysis, product/intersection — the top-down
+  fold over the unity/carrier.
 
-So the subsymbolic loop can use a codebook, but not a representational content
-codebook. Its PS codebook is **eidetic and continuous** because it discriminates
-the given InputSpace field directly. It chunks by applying analytic functions
-that return **dichotomies with no content**: boundaries, masks, partitions,
-supports, and region relations. These dichotomies say "this side / that side"
-or "this region / outside it"; they do not introduce a generic object or term
-value.
+Implementation notes:
 
-The current `<chunking>` parameter should be replaced by `<analysis>`. The new
-name is not cosmetic: perceptual analysis may segment, summarize, and index the
-input, but it must not synthesize new surface content. Existing levers such as
-`analyse`, `bpe`, and `radix` can remain implementation modes under the new
-knob, but their perceptual-side contract is breakdown only. Any technique whose
-main job is to spell out, complete, generate, or otherwise synthesize a surface
-belongs in the symbolic loop.
+- The span/sizing machinery transfers as-is: the global `<sigmaPi>` mode
+  (last | butterfly | full) drives both folds unchanged; the embedded-width
+  sizing rule (`_pi_width`, 2026-06-09 — a widening space sizes its fold at
+  the embedded `nOutputDim`, not the raw `nInputDim`) follows the fold to its
+  new owner (rename to `_fold_width`).
+- `ConceptualSpace.sigma_in` (the per-stage fold Stage 10 migrated out of
+  PS): review its name/role during this phase — it was named for the OLD
+  orientation. **Open decision; do not rename blindly.**
+- **Checkpoint risk**: `ps.pi.*` / `ss.sigma.*` parameter keys swap to
+  `ps.sigma.*` / `ss.pi.*`. Decide explicitly: provide a state_dict key
+  migration, or accept fresh-start (no production checkpoints yet). Record
+  the decision in the commit.
 
-Initial analysis contract:
+### 4. Top-Down Analysis on SS (analyse + the lexers)
 
-```text
-chunk bytes / span / region
-  -> AnalyticDichotomy
-       support / mask / boundary
-       span or region metadata
-       low-frequency measurements
-       discriminative codebook identity
-       no representational content identity
-```
+Move the analytic front ends to SymbolicSpace:
 
-Start with simple, stable summaries:
+- **Lexer ownership IS → SS**: lexing is analytic cutting (a boundary
+  decision over the unity). The `<lexer>` knob moves from the InputSpace
+  config section to SymbolicSpace; InputSpace emits the dual views only.
+- **`analyse` (the meronymic analyzer) moves PS → SS**: part–whole division
+  is top-down analysis.
+- Analytic outputs: boundaries/divisions in the shared `.where`/`.when`
+  frame + large-scale measurements over the resulting parts (mean, extent,
+  low-pass). Non-altering: the unity buffer is never rewritten.
+- The divisions snap to the SS codebook (§7): a division is identified as a
+  kind (a generality), and the coarse measurements ride with it.
+- Host-side tokenization stays OUT of the compiled graph: the SS-side lexing
+  gets the same eager-stem treatment `embed_stem` pioneered (an eager
+  pre-step staging the cut metadata before the compiled body). No per-token
+  host sync in the training path; report-only metadata stays lazy.
 
-- mean value over the region
-- length / support size
-- endpoint or boundary markers
-- optional low-pass features once the mean path is green
+### 5. Bottom-Up Synthesis on PS (the chunkers)
 
-For image-like inputs, analysis can return segmented regions. Those regions are
-eidetic, continuous, and parametric, but they are not symbolic content. They are
-extensional descriptions: the `.where` support plus analytic measurements over
-that support. They can reconstruct or address a region, but they do not claim
-to be a generic object.
+- **radix, bpe, byte stay on PS** — they union atoms into chunks/surface
+  forms. The percept store remains the authoritative surface-content
+  codebook, with its snap distance recognizing recurring particulars.
+- **lexicon and mphf are strictly codebooks** (they neither analyze nor
+  synthesize): they stay parked on PS short-term, flagged to move later —
+  likely toward SS as content-codebook front ends, since naming is
+  representational. Decide when they actually block something.
+- Byte-exact reconstruction continues to flow through the percept ids
+  (`asymmetric-vq` §2: PS carries lossless reconstruction); the SS-side
+  reverse decodes surface forms THROUGH this shared PS store (backlog §4).
+- The PS fold becomes `sigma` (§3); the chunk+embed pipeline itself is
+  unchanged by this plan beyond the knob rename (§8).
 
-For text, the initial version can reuse existing chunk metadata from the
-`analyse`, `bpe`, and `radix` paths, but the perceptual side should keep only
-the analytic segmentation and measurements. Any spelling, completion, or content
-lookup moves to the symbolic loop. For numeric or image-like data, the same
-interface can summarize spatial regions.
+### 6. Reconstruction: Recombining Both Branches
 
-The plan should avoid host-side per-token synchronization in the training path.
-Metadata used only for reports can stay lazy, following the existing deferred
-text-reconstruction pattern.
-
-### 4. Symbolic Content Codebook
-
-The generally characterized side has one representational content codebook in
-`SymbolicSpace`. It is heterogeneous: entries live in `.what` as descriptors,
-not as separate tables for different kinds of generality. They are not mapped
-through `.where`; instead, `.active`, `.where`, and `.when` are used together
-to materialize selected `.what` descriptors as a tensor.
-
-Descriptor rows can be high-frequency or low-frequency:
-
-- HF descriptor: a local content descriptor such as a pixel, byte, glyph,
-  edge, or similarly fine-grained value.
-- LF descriptor: a coarse descriptor such as a frequency, mean, low-pass
-  feature, region statistic, or functional summary.
-
-Every descriptor row remains a possible `.what` value. `.active` selects or
-weights rows from that codebook; `.where` places the selected content in an
-extension; `.when` places it temporally when the representation has time. A
-pixel descriptor and a frequency descriptor can therefore be materialized into
-the same region at different resolutions without either row being permanently
-bound to that region. `don-spyi` and `sgra-spyi` should be represented as
-descriptor roles or facets inside this one symbolic codebook, not as separate
-codebooks.
-
-This supports both directions:
-
-- analyze synthesized concepts: symbolic synthesis emits HF/LF descriptor
-  candidates with `.active` / `.where` / `.when` placements, then analysis
-  tests them against perceptual supports.
-- synthesize analyzed concepts: perceptual analysis yields supports, then the
-  symbolic loop chooses descriptor rows that can describe them.
-
-But the SS content codebook is still symbolic. Moving between HF and LF
-descriptor rows does not produce a specifically characterized entity. It only
-moves among flavors or resolutions of generally characterized representation.
-The PS codebook remains a different kind of codebook: discriminative/eidetic
-over the presented field, not representational.
-
-### 5. Extensional and Intensional SubSpaces
-
-Subspaces should explicitly allow both extensional and intensional
-descriptions:
-
-- Extensional: direct supports, masks, boundaries, `.where`, `.when`, and
-  measurements over a presented field. This is the subsymbolic,
-  specifically-characterized side; its codebook selects discriminative analytic
-  functions, not content.
-- Intensional: codebook content, meanings, terms, categories, and other generic
-  rows. This is the symbolic, generally-characterized side.
-
-The current generic `SubSpace.materialize()` assumes a codebook prototype can be
-read back directly from `.what` using `.active` when a codebook-bearing slot is
-present. That is correct for symbolic intensional spaces but too narrow for
-analytic percepts. Analytic percepts should materialize from extensional
-support and measurement, not from generic `.what` content.
-
-Target analytic materialization:
-
-```python
-self.analysis.materialize(self.active, self.where, self.when)
-```
-
-In words:
-
-- `.analysis` is a discriminative function codebook or dichotomy selector, not
-  a representational content codebook.
-- `.active` indexes or weights the selected dichotomy/function.
-- `.where` defines the region or support being reconstructed.
-- `.when` defines the temporal support when present.
-- `materialize()` returns the realized percept event or region descriptor for
-  that selected analytic function at that region/time.
-
-This may be too awkward to force into the current one-size `SubSpace` class.
-Plan for two concrete subspace classes:
-
-- `AnalyticSubSpace`: used by perceptual analysis; materialization is
-  dichotomy/support-plus-measurement realization through a discriminative
-  codebook whose rows select dichotomizing analytic functions rather than
-  content prototypes.
-- `SyntheticSubSpace`: used by symbolic/generative reconstruction;
-  materialization is term/meaning driven and may spell out or complete surface
-  structure.
-
-The migration rule is simple: perceptual space owns analytic decomposition;
-symbolic space owns synthetic completion.
-
-### 6. Input Reconstruction as Synthesis
-
-Reverse reconstruction should no longer treat `InputSpace.reverse()` as only a
-single-stream decode. It should synthesize the original input from both branches:
+Reverse reconstruction synthesizes the original input from both branches:
 
 ```python
 InputSpace.reverse(percepts_recon, concepts_recon)
@@ -280,23 +249,59 @@ InputSpace.reverse(percepts_recon, concepts_recon)
 Recombination layer:
 
 ```text
-flatten(percepts_recon): [B, N]
-flatten(concepts_recon): [B, N]
+flatten(percepts_recon): [B, N]    (bottom-up content stream)
+flatten(concepts_recon): [B, N]    (top-down scaffold stream)
 concat:                  [B, 2N]
-InvertibleLinearLayer:   [B, 2N] -> [B, N] or square [B, 2N] -> [B, 2N]
+InvertibleLinearLayer:   [B, 2N] -> [B, N]  (approximate)
+                      or [B, 2N] -> [B, 2N] (exact, augment-threaded)
 ```
 
-Open engineering choice:
+Open engineering choice (pick ONE explicitly and test it; do not hide
+exactness assumptions in comments):
 
-- For approximate reconstruction, a rectangular `InvertibleLinearLayer(2N, N)`
-  is enough and matches the desired output width.
-- For exact/perfect reconstruction, use a square `InvertibleLinearLayer(2N, 2N)`
-  and thread or zero an `N`-wide augment, mirroring `ConceptualCombine`.
+- rectangular `ILL(2N, N)` — approximate, matches the output width;
+- square `ILL(2N, 2N)` + threaded/zeroed N-wide augment — exact, mirroring
+  `ConceptualCombine`.
 
-The first implementation should pick one mode explicitly and test it. Do not
-hide exactness assumptions in comments.
+### 7. SS Descriptor Codebook (generalities)
 
-### 7. Philosophy Documentation
+One representational codebook in SymbolicSpace, holding GENERALITIES:
+
+- rows carry kind/role metadata: meaning-general (`don-spyi`), term-general
+  (`sgra-spyi`), and LF/coarse characterizations (frequency, mean, low-pass,
+  region statistic) — the natural outputs of top-down analysis;
+- `.active` selects/weights rows; `.where`/`.when` place the selected
+  generality over its extension; materialization is
+  `.what[active] @ (.where, .when)`.
+
+**Redistribution from the draft**: the draft held HF *and* LF rows in one SS
+codebook. Corrected: **HF surface contents (pixel/byte/glyph-grade rows) are
+PS percept-store rows** (particulars); SS keeps the generality rows.
+Cross-resolution placement (an HF content and an LF characterization
+materialized over the same `.where`/`.when`) is a PS × SS cooperation at the
+shared coordinate frame, not an intra-SS affair.
+
+This supports both directions:
+
+- **analyze synthesized concepts**: SS emits generality candidates with
+  placements; analysis tests them against the PS supports.
+- **synthesize analyzed concepts**: PS yields supports/chunks; SS chooses
+  generality rows that describe them.
+
+### 8. Configuration: `<synthesis>` and `<analysis>`
+
+- PS: `<chunking>` is renamed `<synthesis>` (it is the union knob). Values:
+  `radix | bpe | byte` (+ `lexicon | mphf` parked, §5). `none` aliases
+  `byte`.
+- SS: new `<analysis>` knob hosting `analyse` and the lexer modes; the
+  `<lexer>` element moves into the SymbolicSpace section.
+- Legacy `<chunking>` / IS-side `<lexer>`: rejected loudly OR accepted via a
+  documented one-release compatibility shim — pick one policy and state it
+  in model.xsd comments. No silent permanent aliasing.
+- Schema, every shipping config, and the sweep harness
+  (`test/_sweep_chunking.py` string-substitutions) update together.
+
+### 9. Philosophy Documentation
 
 Rename:
 
@@ -304,14 +309,10 @@ Rename:
 basicmodel/doc/BuddhistParallels.md -> basicmodel/doc/Philosophy.md
 ```
 
-Then update links in:
+Update links in `README.md`, `doc/Spaces.md`, `doc/Logic.md`, and any
+comments/tests pointing at the old filename.
 
-- `README.md`
-- `basicmodel/doc/Spaces.md`
-- `basicmodel/doc/Logic.md`
-- relevant comments/tests that point readers to the old filename
-
-Add sections at the top of `Philosophy.md` before the Buddhist material:
+Sections, before the Buddhist material:
 
 ```text
 # Philosophy
@@ -323,237 +324,180 @@ Add sections at the top of `Philosophy.md` before the Buddhist material:
 ## Buddhist Epistemology
 ```
 
-Content to add:
+Content:
 
-- Kant: analysis decomposes the given input into distinguishable conditions;
-  synthesis recombines perceptual and conceptual conditions into an object of
-  reconstruction or judgment.
-- Ramsey: add the project-specific epistemic-level mapping here, but verify the
-  exact Ramsey terminology before presenting it as scholarship.
-- Buddhist epistemology: map reconstruction to a combination of:
-  - `rang-mtshan`: specifically characterized particulars, grounded in
-    eidetic continuous PS supports discriminated from InputSpace.
-  - `spyi-mtshan`: generally characterized entities.
-  - `don-spyi`: meaning-generality.
-  - `sgra-spyi`: term/sound-generality.
-  - one symbolic content codebook whose HF and LF descriptor rows can carry
-    meaning-general and term-general roles; `.active`, `.where`, and `.when`
-    materialize those descriptors in relation to perceptual supports.
+- **Kant**: analysis decomposes a given unity into its conditions
+  (top-down); synthesis combines given elements into an object (bottom-up).
+  Map: SS analyzes the presented unity; PS synthesizes the manifold of
+  atoms; reconstruction is their joint employment.
+- **Ramsey**: the project-specific epistemic-level mapping; verify the exact
+  Ramsey terminology before presenting it as scholarship.
+- **Buddhist epistemology**, with the corrected orientation:
+  - `rang-mtshan` — specifically characterized particulars: PS, bottom-up,
+    grounded in the eidetic percept store over exact atoms.
+  - `spyi-mtshan` — generally characterized entities: SS, top-down.
+  - `don-spyi` / `sgra-spyi` — meaning-/term-generality: descriptor ROLES in
+    the one SS generality codebook, materialized via
+    `.active`/`.where`/`.when`.
 
-The key bridge text:
+Bridge text:
 
 ```text
-Input reconstruction combines specifically characterized perceptual supports
-with generally characterized symbolic entities. The symbolic branch uses one
-content codebook whose HF and LF descriptor rows can carry meaning-general and
-term-general roles; the perceptual branch uses an eidetic continuous
-discriminative codebook so it can ground determinate supports without turning
-them into generic symbols.
+Input reconstruction combines specifically characterized perceptual
+particulars with generally characterized symbolic divisions. The perceptual
+branch synthesizes bottom-up — union of atoms into recurring surface forms,
+content-represented in the percept store within a snap distance — so exact
+reconstruction stays grounded. The symbolic branch analyzes top-down —
+intersection/division of the presented unity into parts characterized at
+large scale — so meaning- and term-generalities never masquerade as
+particulars.
 ```
 
 ## Implementation Phases
 
 ### Phase 0: Contract Tests
 
-Add tests before changing behavior:
+Add tests BEFORE changing behavior:
 
-- `InputSpace.forward()` returns two outputs with exact shapes `[B,1,N]` and
-  `[B,N,1]` for a tiny byte/raw fixture.
-- `SymbolicSpace.forward()` accepts the optional direct input branch.
-- Existing single-stream assumptions fail loudly at the model boundary rather
-  than silently dropping the concept input.
-- `InputSpace.reverse(percepts, concepts)` produces `[B,N]` / source-compatible
-  reconstruction.
-- `<analysis>` is accepted as the replacement for `<chunking>` in a tiny config,
-  while legacy `<chunking>` is either rejected loudly or accepted only through a
-  documented compatibility shim.
-- perceptual analysis materializes from analytic dichotomies plus `.where` /
-  `.when`, using a discriminative codebook rather than a representational
-  content codebook.
-- the symbolic codebook can store HF and LF descriptor rows in `.what`, then
-  materialize them with `.active`, `.where`, and `.when` while preserving
-  descriptor-role metadata for meaning-general and term-general use.
+- `InputSpace.forward()` returns two outputs with exact shapes
+  `percepts_in [B, N, 1]` and `concepts_in [B, 1, N]` on a tiny byte/raw
+  fixture; both views address the SAME underlying values.
+- `SymbolicSpace.forward()` accepts the optional `IS_concepts` unity input.
+- Existing single-stream assumptions fail loudly at the model boundary
+  rather than silently dropping the unity input.
+- `InputSpace.reverse(percepts, concepts)` produces `[B, N]` /
+  source-compatible reconstruction.
+- Non-altering analysis: an SS analysis pass leaves the unity buffer
+  byte-identical (boundaries/measurements are overlay outputs).
+- Knob acceptance: `<synthesis>` accepted on PS, `<analysis>` (+ `<lexer>`)
+  on SS in a tiny config; legacy spellings follow the §8 policy.
 
-### Phase 1: InputSpace Split
+### Phase 1: InputSpace Dual-View Split
 
-Modify `InputSpace.forward()` and model staging only:
+- `InputSpace.forward()` emits `(percepts_in, concepts_in)`.
+- `_lex_embed_stem` passes the atom view into `PerceptualSpace.embed_stem`;
+  `finalize_stem` keeps PS bookkeeping until the split is stable.
+- The unity view is staged for SS but UNUSED this phase (no behavior change
+  downstream).
 
-- produce `percepts_in`
-- produce `concepts_in`
-- preserve current host token metadata for PS embedding
-- update `_lex_embed_stem` to pass only the percept branch into
-  `PerceptualSpace.embed_stem`
-- keep `finalize_stem` responsible for PS bookkeeping until the split is stable
-
-Acceptance:
-
-- tiny model forward still runs
-- raw/byte shape tests pass
-- no codebook behavior changes yet
+Acceptance: tiny model forward runs; shape tests pass; suite stays green
+(2138-passed baseline, commit e85bc1f); no codebook behavior change.
 
 ### Phase 2: Symbolic Input Branch
 
-Modify `SymbolicSpace.forward()`:
+- `SymbolicSpace.forward(CS_subspaceForSS, IS_concepts=None)`; stage 0
+  converts the unity view into symbolic evidence, composed additively inside
+  SS.
+- A test proves stage-0 SS output changes when `IS_concepts` changes; a test
+  proves stages > 0 run without direct input.
 
-- accept `IS_concepts=None`
-- on stage 0, convert `IS_concepts` into symbolic evidence
-- combine it with the existing recurrent `CS_subspaceForSS` path
-- keep `SymbolicSpace.perceptualSpace_ref` only for structural lexicon ownership
+### Phase 3: Pi / Sigma Swap
 
-Acceptance:
+- `PerceptualSpace.pi (PiLayer)` → `PerceptualSpace.sigma (SigmaLayer)`;
+  `SymbolicSpace.sigma (SigmaLayer)` → `SymbolicSpace.pi (PiLayer)`.
+- Sizing/spans transfer verbatim (`<sigmaPi>` global; `_fold_width`).
+- Decide + record the checkpoint key policy (§3); review
+  `ConceptualSpace.sigma_in` naming (open decision).
 
-- a test proves stage 0 symbolic output changes when `IS_concepts` changes
-- a test proves stages after 0 can run without direct input
-- current symbolic codebook / taxonomy tests remain green or are updated for the
-  intentional contract shift
+Acceptance: suite green; XOR still solves + reconstructs (the recipe is
+PS-side and untouched, but the SS fold type changed — regression-gate it).
 
-### Phase 3: Analysis Parameter and Discriminative Perceptual Chunking
+### Phase 4: Knob Split + Front-End Migration
 
-Replace perceptual chunking with analytic decomposition:
+- `<chunking>` → `<synthesis>` on PS (radix/bpe/byte; lexicon/mphf parked).
+- `<analysis>` + `<lexer>` land on SS; `analyse` dispatch and the lexers
+  move; SS-side eager-stem staging for host tokenization.
+- Schema + configs + sweep harness updated together (§8).
 
-- replace `<chunking>` with `<analysis>` in schema/config docs
-- keep existing `analyse`, `bpe`, `radix`, and related levers only as analysis
-  modes
-- remove or migrate perceptual-side spell-out/synthesis behavior into the
-  symbolic loop
-- implement dichotomy outputs first: mask, support, boundary, and region
-  relation
-- implement mean/length/support measurements over those regions
-- route `analyse`, `bpe`, and `radix` chunk outputs through the same
-  characterization API
-- keep exact byte recovery through existing inverse tables only as report or
-  compatibility metadata, not as the meaning of the analytic percept
-- add report-only metadata lazily
+Acceptance: smoke prompts reconstruct byte-perfect through the PS store on
+every synthesis mode; analysis modes produce non-altering
+boundaries+measurements; no compiled-path host sync regressions.
 
-Acceptance:
+### Phase 5: Materialization Split
 
-- variable-length chunks map to stable fixed-width summaries
-- image-like segmentation can return extensional region descriptors through the
-  discriminative PS codebook without creating symbolic content rows
-- analytic dichotomies can reconstruct/address a `.where` region when
-  materialized
-- perceptual analysis does not synthesize new surface content
-- perceptual analysis does not create SS content descriptor rows
-- no training-path per-token host sync regressions
+- `SyntheticSubSpace` (PS): content spell-out through the percept store.
+- `AnalyticSubSpace` (SS): division/generality realization via
+  `(.active, .where, .when)` against the generality codebook.
+- Shared base behavior only where genuinely identical; callers stop assuming
+  `.what[active]` is the whole event.
 
-### Phase 4: Extensional and Intensional SubSpaces
+Acceptance: tests distinguish bottom-up content materialization from
+top-down generality materialization.
 
-Split materialization behavior:
+### Phase 6: SS Generality Codebook
 
-- introduce `AnalyticSubSpace` for PS-side descriptor-plus-region realization
-- introduce `SyntheticSubSpace` or a symbolic equivalent for SS-side
-  term/meaning-driven generation
-- keep shared base behavior only where the semantics are genuinely identical
-- update materialization callers to avoid assuming `.what[active]` is the whole
-  event
+- Formalize descriptor roles (meaning-general / term-general / LF-coarse) as
+  row metadata in ONE SS codebook (§7); HF surface rows live in the PS
+  store.
+- An LF generality and an HF content row can be materialized over the same
+  `.where`/`.when` (PS × SS cooperation).
 
-Acceptance:
+Acceptance: role metadata round-trips; analyzed supports can be described by
+generality rows without becoming percept-store content; synthesized
+generalities can be checked against PS supports.
 
-- analytic materialization calls into an analysis/dichotomy function bank with
-  `(active, where, when)`, not into a representational content codebook
-- synthetic materialization remains responsible for spelling out or completing
-  surfaces
-- symbolic materialization can use the `.what` content codebook together with
-  `.active`, `.where`, and `.when`
-- tests distinguish analytic decomposition from symbolic synthesis
+### Phase 7: Reconstruction Recombination
 
-### Phase 5: Symbolic Descriptor Codebook
+- `PerceptualSpace.reverse()` produces the percept branch;
+  `SymbolicSpace`/`ConceptualSpace.reverse()` exposes the concept branch;
+  `InputSpace.reverse(percepts_recon, concepts_recon)` recombines via the
+  ILL (§6) — exact OR approximate, chosen explicitly.
 
-Formalize the single generally characterized symbolic content codebook:
+Acceptance: direct IS forward→reverse roundtrip; model-level reverse finite
+on `MM_xor` or smaller; exactness claim matches the implemented mode.
 
-- represent each symbolic row as a descriptor with kind/role metadata, such as
-  HF pixel/value descriptor, LF frequency/summary descriptor, `don-spyi`, or
-  `sgra-spyi`
-- define materialization so `.active` selects descriptor rows from `.what`,
-  while `.where` and `.when` place the selected descriptor values in the output
-  tensor
-- allow vectors/activations to pass between descriptor families inside the same
-  codebook
-- keep the representational SS content codebook out of the subsymbolic PS loop
-- use symbolic chunking here, where chunking can create a generic content row
+### Phase 8: Philosophy Rename and Link Cleanup
 
-Acceptance:
-
-- an HF descriptor row and an LF descriptor row can be materialized at the same
-  `.where` / `.when` placement
-- meaning-general and term-general roles are metadata or descriptor roles in
-  one SS codebook, not separate SS codebooks
-- analyzed supports can be described by symbolic rows without becoming PS
-  codebook content
-- synthesized symbolic rows can be checked against perceptual supports
-- tests prove the PS loop uses a discriminative/dichotomizing codebook, not a
-  representational content codebook, in the configured path
-
-### Phase 6: Synthesis Reverse
-
-Modify reverse path:
-
-- have `PerceptualSpace.reverse()` produce the percept reconstruction branch
-- have `SymbolicSpace` or `ConceptualSpace.reverse()` expose the conceptual
-  reconstruction branch
-- call `InputSpace.reverse(percepts_recon, concepts_recon)`
-- add the recombination `InvertibleLinearLayer`
-
-Acceptance:
-
-- direct `InputSpace.forward()` then `InputSpace.reverse()` roundtrip test
-- model-level reverse reconstruction finite on `MM_xor` or a smaller fixture
-- if perfect mode is claimed, assert the augment-threaded exact path; otherwise
-  document that reconstruction is approximate and loss-trained
-
-### Phase 7: Philosophy Rename and Link Cleanup
-
-Doc-only changes:
-
-- rename `BuddhistParallels.md` to `Philosophy.md`
-- add Kant / Ramsey / Buddhist reconstruction sections
-- update Markdown links and code comments that mention the old doc name
-
-Acceptance:
-
-- no broken Markdown links for the renamed doc
-- README points to `Philosophy.md`
-- the new philosophy section explicitly explains the
-  `rang-mtshan` / `spyi-mtshan` / `don-spyi` / `sgra-spyi` mapping
+Doc-only (§9). Acceptance: no broken links; README points to
+`Philosophy.md`; the orientation table of this plan is reflected in the
+`rang-mtshan`/`spyi-mtshan`/`don-spyi`/`sgra-spyi` mapping.
 
 ## Risks
 
-- Shape churn: many tests currently assert single-arg `InputSpace` and
-  `SymbolicSpace` contracts. Treat failures as expected migration work, not
-  regressions.
-- Exactness ambiguity: `2N -> N` recombination cannot be a full bijection over
-  arbitrary branch pairs. Perfect reconstruction needs a square layer plus an
-  augment or a constrained analysis split.
-- Codebook semantics: changing PS codebook from representational vector identity
-  to discriminative regional analysis may affect nearest-neighbor assumptions in
-  `radix`, `bpe`, and report rendering.
-- Subspace semantics: splitting analytic and synthetic materialization reduces
-  ambiguity but may touch many generic `SubSpace.materialize()` callers.
-- Config migration: `<chunking>` has many existing callers/tests; the plan needs
-  a deliberate compatibility policy rather than silent aliasing forever.
-- Generality drift: allowing one SS codebook to hold both HF and LF descriptors
-  can make symbolic descriptors feel "perceptual" unless the plan keeps PS
-  discriminative, eidetic, continuous, and extensional.
-- Philosophy rename blast radius: the old filename is referenced in docs,
-  comments, and tests.
+- **Pi/Sigma swap vs checkpoints**: parameter keys flip owners; without a
+  state_dict migration, existing checkpoints silently mismatch. Decide
+  policy in Phase 3, loudly.
+- **Lexer-ownership blast radius**: `<lexer>` is read from the InputSpace
+  section by many configs/tests; `MM_xor` pins `lexer=byte` for radix — but
+  the chunkers consume the raw atom view after Phase 1, so the pin becomes
+  inert; verify rather than assume.
+- **Host-sync on SS**: lexing is host-side tokenization; without the
+  eager-stem pattern it lands inside the compiled body and breaks fullgraph.
+- **Shape churn**: tests asserting single-arg `InputSpace`/`SymbolicSpace`
+  contracts fail as expected migration work, not regressions.
+- **Exactness ambiguity**: `2N → N` recombination cannot be a bijection over
+  arbitrary branch pairs; exact mode needs the square layer + augment.
+- **Generality drift**: the SS codebook must not absorb HF surface content
+  (that is the PS store's job), or analysis collapses back into chunking.
+- **XOR recipe**: `lexer=raw` + radix + 1-vector SBOW must survive every
+  phase (it is the standing regression guard; `asymmetric-vq` §8).
+- **Philosophy rename blast radius**: the old filename is referenced in
+  docs, comments, and tests.
+
+## Open Decisions (tracked, not blocking)
+
+- `ConceptualSpace.sigma_in` naming/role after the swap (§3).
+- Checkpoint key migration vs fresh-start (§3).
+- Exact vs approximate recombination ILL (§6).
+- Final home of `lexicon`/`mphf` (§5).
+- Legacy-knob policy: loud rejection vs one-release shim (§8).
 
 ## Done Criteria
 
-- Both PS and SS receive input-derived branches.
-- `<analysis>` replaces perceptual `<chunking>`, and perceptual analysis is
-  breakdown-only.
-- Synthesis behavior has moved to the symbolic loop.
-- The subsymbolic/perceptual loop uses an eidetic continuous codebook that is
-  discriminative/dichotomizing on InputSpace.
-- Perceptual chunking works through analytic dichotomies selected by a PS
-  codebook, without turning those selections into symbolic content prototypes.
-- A single SS content codebook stores HF and LF descriptor rows in `.what`,
-  including any `don-spyi` / `sgra-spyi` roles, and materializes them with
-  `.active`, `.where`, and `.when`.
-- Analytic and synthetic subspace materialization are separate enough that PS
-  cannot accidentally become symbolic through a representational content
-  codebook.
-- Reverse reconstruction uses both perceptual and conceptual branches.
-- The recombination layer is explicit and tested.
-- `Philosophy.md` replaces `BuddhistParallels.md` and documents Kant, Ramsey,
-  and the Buddhist specifically/general-characterized reconstruction mapping.
+- `InputSpace.forward()` emits the dual view: atoms `[B, N, 1]` to PS, unity
+  `[B, 1, N]` to SS; both branches receive input-derived evidence.
+- **Pi lives on SS (analysis, intersection); Sigma lives on PS (synthesis,
+  union).**
+- `analyse` + the lexers run on SS, breakdown-only and non-altering, with
+  large-scale approximate characterization snapping to the SS codebook.
+- The chunkers run on PS under `<synthesis>`, content-representing with a
+  snap distance, byte-exact reconstruction intact through the percept store.
+- A single SS codebook stores generality rows (meaning-/term-/LF-coarse
+  roles) materialized via `.active`/`.where`/`.when`; HF surface contents
+  stay in the PS store.
+- Analytic and synthetic materialization are separate enough that SS cannot
+  absorb surface content and PS cannot mint generalities.
+- Reverse reconstruction uses both branches through an explicit, tested
+  recombination layer.
+- `Philosophy.md` replaces `BuddhistParallels.md` and documents Kant,
+  Ramsey, and the corrected Buddhist mapping.

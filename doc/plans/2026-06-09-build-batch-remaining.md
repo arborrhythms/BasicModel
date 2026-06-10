@@ -83,11 +83,13 @@ Mechanism only -- the semantic payoff is validated under **D (deferred)**.
 - **D** -- corpus validation on the serial / grammar path. XOR cannot
   validate the symbolic side (`asymmetric-vq` $\S$8: parallel $=$ no VQ; parity
   $\neq$ semantics); needs a real corpus and present supervision.
-- **`[4,-1,5]` IS-shape bug** (the 9 standing failures) -- the literal
-  5-wide InputSpace reshape. **Deferred deliberately:** the GitHub plan
-  `2026-06-08-analysis-synthesis-dual-input.md` reshapes the IS feed (IS $\to$
-  PS as `[B,1,N]`, IS $\to$ SS as `[B,N,1]`), which subsumes the 6 IS-resize
-  issues -- fix them there, not here.
+- **`[4,-1,5]` IS-shape bug** -- RESOLVED 2026-06-09 (commit e85bc1f): a
+  widening PS now sizes its fold + forwardBegin reshape at the embedded
+  percept width (`_pi_width`); suite at 0 failed. The structural follow-on
+  lives in `2026-06-08-analysis-synthesis-dual-input.md` (rev. 2026-06-09,
+  orientation corrected): the IS feed becomes a dual view, IS $\to$ PS as
+  `[B,N,1]` (atoms, bottom-up synthesis), IS $\to$ SS as `[B,1,N]` (unity,
+  top-down analysis).
 
 ## Suggested sequencing
 0 (or fold into 1/3) $\to$ 1 $\to$ 2 $\to$ 3 $\to$ 4 $\to$ 5. Commit per task

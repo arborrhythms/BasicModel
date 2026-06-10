@@ -8166,13 +8166,13 @@ class PerceptualSpace(Space):
         # slab to width 5 (8192 % 5 != 0 -> the ``[4,-1,5]`` reshape crash)
         # and undersized the butterfly at 8*5 instead of the 8*1024 the
         # sizing note below documents. (The widening is done by the PS-side
-        # embedding front ends (_embed_bpe/_embed_radix/...) -- i.e. by
-        # content-REPRESENTING machinery, not by analysis proper, which is
-        # non-altering boundary discrimination over the field. Under the
-        # analysis/synthesis split (2026-06-09 decision) those front ends
-        # migrate to SS, so this sizing describes the current plumbing, not
-        # the target analysis semantics. See doc/plans/2026-06-08-analysis-
-        # synthesis-dual-input.md sec.3.)
+        # chunking/embedding front ends (_embed_bpe/_embed_radix/...) --
+        # bottom-up SYNTHESIS machinery, which STAYS on PS under the
+        # corrected analysis/synthesis orientation (rev. 2026-06-09): PS =
+        # bottom-up synthesis/Sigma over atoms; SS = top-down analysis/Pi
+        # over the unity. The fold this width sizes is slated to become
+        # PS.sigma in the Pi/Sigma swap. See doc/plans/2026-06-08-analysis-
+        # synthesis-dual-input.md (Orientation, sec.3).)
         percept_dim = int(self.subspace.getEncodedInputSize())
         _nin = int(self.subspace._nInputDim)
         _nout = int(self.subspace._nOutputDim)
