@@ -6592,8 +6592,14 @@ class Space(nn.Module):
             # "6+2+2": nInputDim == muxedSize == the event width, so this reshape
             # is the identity for a muxed event ([B,N,event] -> [B,-1,event]); it
             # still normalizes flattened / odd-width inputs to [B, N, nInputDim].
+            # A widening PerceptualSpace (nOutputDim != nInputDim) exposes
+            # ``_pi_width`` -- the embedded percept width its pi consumes --
+            # because by this point the event is the EMBEDDED percept, not the
+            # raw nInputDim byte event (see the percept_dim sizing note in
+            # PerceptualSpace.__init__).
+            _w = int(getattr(self, "_pi_width", 0) or 0)
             self._pre_reshape_input = (x.shape[1], x.shape[2])
-            x = x.reshape(x.shape[0], -1, self.nInputDim)
+            x = x.reshape(x.shape[0], -1, _w if _w > 0 else self.nInputDim)
         else:
             self._pre_reshape_input = None
         return x
@@ -8148,19 +8154,34 @@ class PerceptualSpace(Space):
         # Each layer applies its own internal nonlinearity and returns
         # a tanh-bounded contribution.
         #
-        # Dim choice: ``percept_dim`` is the per-slot dim
-        # PerceptualSpace operates on INTERNALLY — i.e. the post-
-        # forwardBegin shape ``[B, ?, nInputDim]``. We use
-        # ``getEncodedInputSize()`` for that. The legacy
-        # ``nInputDim != nOutputDim`` slot-redistribution at
-        # forwardEnd is preserved (the codebook + forwardEnd reshape
-        # together remap the per-slot output dim and grow/shrink slot
-        # count by the same factor). ``pi`` is square at
-        # ``nInputDim → nInputDim``.
-        # "6+2+2": getEncodedInputSize() == nInputDim == the event (muxed) width,
-        # so pi is square at the event width and processes the whole muxed event
-        # (the event-wide codebook snaps it); no separate muxedSize sizing needed.
+        # Dim choice: ``percept_dim`` is the per-slot dim PerceptualSpace's
+        # ``pi`` operates on INTERNALLY -- the EMBEDDED percept width (the
+        # event last-dim AFTER ``embed_stem`` / the ``_embed_*`` front end has
+        # mapped the raw ``nInputDim`` byte event onto the codebook/embedding
+        # output). That width is ``nOutputDim``. For every non-widening config
+        # ``nInputDim == nOutputDim``, so this equals the legacy
+        # ``getEncodedInputSize()`` sizing; only an explicitly-widening PS
+        # differs (today: MM_20M, 5-wide raw byte event -> 1024-wide percept).
+        # There the old ``nInputDim`` sizing reshaped the embedded [B,8,1024]
+        # slab to width 5 (8192 % 5 != 0 -> the ``[4,-1,5]`` reshape crash)
+        # and undersized the butterfly at 8*5 instead of the 8*1024 the
+        # sizing note below documents. (The widening is done by the PS-side
+        # embedding front ends (_embed_bpe/_embed_radix/...) -- i.e. by
+        # content-REPRESENTING machinery, not by analysis proper, which is
+        # non-altering boundary discrimination over the field. Under the
+        # analysis/synthesis split (2026-06-09 decision) those front ends
+        # migrate to SS, so this sizing describes the current plumbing, not
+        # the target analysis semantics. See doc/plans/2026-06-08-analysis-
+        # synthesis-dual-input.md sec.3.)
         percept_dim = int(self.subspace.getEncodedInputSize())
+        _nin = int(self.subspace._nInputDim)
+        _nout = int(self.subspace._nOutputDim)
+        if _nin != -1 and _nout != -1 and _nin != _nout:
+            percept_dim = _nout
+        # ``forwardBegin`` must reshape the embedded event to the SAME width
+        # pi consumes; expose it (absent on other Spaces, which keep the
+        # plain ``nInputDim`` reshape).
+        self._pi_width = percept_dim
         # Subsymbolic-loop folds honour the ``architecture.monotonic``
         # knob (same source as BasicModel.monotonic). Monotone (W>=0)
         # is order-preserving, which the parthood predicate

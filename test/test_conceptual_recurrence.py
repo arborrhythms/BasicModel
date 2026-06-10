@@ -575,6 +575,22 @@ def test_parallel_ps_called_once():
         % (N_in, nInput))
 
 
+def test_widening_ps_pi_sized_at_embedded_percept_width():
+    # A widening PerceptualSpace (nInputDim != nOutputDim: MM_20M's 5-wide
+    # raw byte event -> 1024-wide embedded percept) must size ``pi`` -- and
+    # the butterfly cascade -- at the EMBEDDED percept width, and
+    # ``forwardBegin`` must reshape the embedded event to that same width
+    # (``_pi_width``). The legacy nInputDim sizing reshaped the embedded
+    # [B, 8, 1024] slab to width 5 (8192 % 5 != 0): the ``[4, -1, 5]``
+    # reshape crash behind 7 suite failures. Non-widening configs have
+    # nInputDim == nOutputDim, so ``_pi_width == nInputDim`` there (the
+    # legacy sizing, unchanged).
+    m = _build("MM_20M.xml")
+    ps = m.perceptualSpace
+    assert int(ps._pi_width) == int(ps.nOutputDim) == 1024
+    assert int(ps.butterflyN) == int(ps.outputShape[0]) * 1024
+
+
 def test_mm5m_grammar_builds_and_forwards():
     # Phase B (B1): the SERIAL sibling (conceptualMode=serial, role-collapsed
     # grammar) must build + forward FINITE under the new dims and A5's threaded

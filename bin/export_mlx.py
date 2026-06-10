@@ -126,10 +126,24 @@ def stage_for_core(model, x):
 def forward_core(model, staged):
     """TENSOR-ONLY core: rebind ``staged`` into the parked stem shell and run
     the SAME ``_forward_per_stage`` the normal forward uses (via the
-    ``in_sub_override`` hook). Returns the head prediction tensor (index 2)."""
+    ``in_sub_override`` hook). Returns the head prediction tensor (index 2).
+
+    The random IR mask (``create_ir_mask``'s BERT-style ``torch.bernoulli``
+    hide-a-token) is DISABLED for the core: it is a training / ``infer()``
+    infill corruption, and the exported core is the DEPLOYMENT inference
+    graph -- a baked-in bernoulli would make every .pte call nondeterministic
+    and parity untestable. Zeroing ``mask_rate`` here also keeps the
+    ``bernoulli`` node out of the ``torch.export`` trace (``create_ir_mask``
+    early-returns on ``rate <= 0``). Save/restore so the live model's
+    training-path masking is untouched."""
     in_sub = model._staged_in_sub
     in_sub.set_event(staged)
-    out = model._forward_per_stage(None, in_sub_override=in_sub)
+    _saved_mask_rate = model.mask_rate
+    model.mask_rate = 0.0
+    try:
+        out = model._forward_per_stage(None, in_sub_override=in_sub)
+    finally:
+        model.mask_rate = _saved_mask_rate
     return out[2] if out is not None else None
 
 

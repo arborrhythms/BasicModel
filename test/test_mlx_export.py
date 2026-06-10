@@ -99,6 +99,13 @@ def test_forward_core_matches_normal_forward():
     """
     import torch
     m = _build("MM_20M.xml"); m.eval()
+    # Compare like with like: the NORMAL forward injects the random IR mask
+    # (create_ir_mask's bernoulli hide-a-token) on EVERY call -- a training /
+    # infer()-infill corruption that makes consecutive forwards differ by
+    # ~5e-4 at the head (a different word slot is hidden each draw).
+    # forward_core disables the mask (the export core is the deterministic
+    # deployment graph), so the reference forward must run unmasked too.
+    m.mask_rate = 0.0
     import Models; Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
