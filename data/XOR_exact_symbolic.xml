@@ -1,0 +1,97 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- XOR_exact_symbolic: end-to-end XOR with reconstruction, SS in
+       SYMBOLIC iteration mode (<codebook>quantize</codebook>).
+       Identical to XOR_exact otherwise.
+
+       This fixture intentionally keeps the reconstruction path
+       full-width. The scalar project codebook is useful for compact
+       truth activation, but it collapses per-slot content and cannot
+       support this exact word-level reconstruction smoke test. -->
+  <architecture>
+    <modelType>embedding</modelType>
+    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
+         dispatch via _forward_per_stage's body. -->
+    <conceptualMode>parallel</conceptualMode>
+
+    <training>
+      <numEpochs>600</numEpochs>
+      <learningRate>0.005</learningRate>
+      <autoload>false</autoload>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: text-mode lexer, full content width. -->
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
+       to sit pairwise-distinct. Stays content-wide on the output
+       (nOutputDim=nDim=10) so reconstruction lookups operate in the
+       full vocabulary space. -->
+  <PerceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>1000</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+         (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
+         "none". The 1000 word prototypes live on the .what Embedding, not a
+         VQ snap on .event. -->
+    <!-- Butterfly cascade on pi (and historically sigma) gives pi
+         cross-element reach across the flattened [B, N*D] view.
+         Without it, pi is per-slot and cannot compute XOR (or any
+         function that requires combining information across slot
+         positions). XOR_exact relies on this for the exact-XOR
+         convergence property. -->
+    <butterfly>true</butterfly>
+    <synthesis>lexicon</synthesis>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+    <butterfly>true</butterfly>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
+  <SymbolicSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+    <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace
+         l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
+    <l1Lambda>0.0</l1Lambda>
+    <commitmentBeta>0.0</commitmentBeta>
+    <!-- SYMBOLIC mode: the <codebook> knob is the iteration-mode switch
+         (2026-06-10): quantize = subsymbolic iterations through PS,
+         SYMBOLIC iterations through SS (the codebook applies to the
+         CS->SS leg). This fixture is the symbolic twin of XOR_exact
+         (which stays <codebook>none</codebook> = all-subsymbolic BY
+         DESIGN) and is the standing regression gate for the
+         symbolic-iteration rework: 4/4 predictions AND byte-exact
+         reconstruction must hold through every step. -->
+    <codebook>quantize</codebook>
+    <butterfly>true</butterfly>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+</model>

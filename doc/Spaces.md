@@ -1,5 +1,29 @@
 # Spaces
 
+> **2026-06-09 update (analysis/synthesis orientation — supersedes the
+> ownership notes below).** The corrected orientation
+> (doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev.
+> 2026-06-09; see [Philosophy.md](Philosophy.md)):
+>
+> * **InputSpace emits the DUAL VIEW**: `forward(x) -> (percepts_in,
+>   concepts_in)` — the atom view (content `[B, N, 1]`) for the
+>   perceptual branch and the unity view (`[B, 1, N]`) for the symbolic
+>   branch.
+> * **PS = bottom-up SYNTHESIS**: owns ONE `SigmaLayer` (`self.sigma`,
+>   additive/union; the Pi/Sigma swap) and the `<synthesis>` front ends
+>   (radix/bpe/byte/lexicon/mphf — was `<chunking>`).
+> * **SS = top-down ANALYSIS**: owns ONE `PiLayer` (`self.pi`,
+>   multiplicative/intersection), the `<analysis>` division knob
+>   (byte/word/analyse), and the `<lexer>` intake knob (moved from
+>   InputSpace). Stage 0 consumes the unity view as symbolic evidence
+>   (per-part coarse means, snapped through the live SS codebook with
+>   the asymmetric STE forward leg).
+> * The meronymic analyzer (`bin/perceptual_analyzer.py`) is SS-side
+>   analysis machinery now; PS `<synthesis>analyse` was removed.
+>
+> Sections below that predate this orientation are marked or should be
+> read against it.
+
 > **2026-06-02 update (subsymbolic analyzer).** New `ObjectSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
 > `WordSubSpace` (spans, parent/child links, route ids, marker-route
@@ -88,20 +112,23 @@ compute brick --- see [Architecture.md](Architecture.md)).
 
 ---
 
-## Sigma / Pi ownership (2026-05-27 substrate refactor)
+## Sigma / Pi ownership (Pi/Sigma swap, rev. 2026-06-09)
 
-The 2026-05-13 rebalance described "each space owns one operator." The
-2026-05-27 substrate refactor revised again: PS owns **both** pi and
-sigma (single-arg input processor); CS has **no atomic forward operator**
-(STM bookkeeper); SS owns the unified word lexicon codebook (paired
-rows); Lift / Lower become **binary `GrammarLayer` subclasses** with
-internal Sigma / Pi (no longer substrate-borrowing).
+History: the 2026-05-13 rebalance described "each space owns one
+operator"; the 2026-05-27 substrate refactor gave PS both folds; Stage 10
+made PS pi-only. The **corrected analysis/synthesis orientation
+(2026-06-09) swaps the folds to their proper sides**: Sigma (sum/union)
+is synthesis and belongs to the bottom-up PerceptualSpace; Pi
+(product/intersection) is analysis and belongs to the top-down
+SymbolicSpace. CS remains an STM bookkeeper with **no atomic forward
+operator**; Lift / Lower stay **binary `GrammarLayer` subclasses** with
+internal Sigma / Pi (no substrate-borrowing).
 
 | Space | Owns | Forward signature |
 |---|---|---|
-| **PerceptualSpace** | one `self.pi` (PiLayer), one `self.sigma` (SigmaLayer), MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument**. `x` is IS at bootstrap (SERIAL) or PARALLEL bootstrap, then CS in PARALLEL refinement. Body: `result = self.pi(x.materialize()) + self.sigma(x.materialize())` (no outer tanh). |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
-| **SymbolicSpace** | unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | No atomic forward fold. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
+| **PerceptualSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace, SS_subspace=None)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
+| **SymbolicSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
 
@@ -168,9 +195,10 @@ per-pair math:
 - `ConjunctionLayer` / `DisjunctionLayer`: hard-coded monotonic min / max.
 
 Parameter savings: `O(N · log N · D²)` cascade vs `O(N² · D²)` for a
-single big matrix. Wired into `PerceptualSpace.pi` when
-`<PerceptualSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`
-is set. Closes the XOR convergence target (`test_mm_xor.py`).
+single big matrix. Wired into the space folds (`PerceptualSpace.sigma` /
+`SymbolicSpace.pi` post the Pi/Sigma swap) by the global `<sigmaPi>`
+mode (default butterfly). Closes the XOR convergence target
+(`test_mm_xor.py`).
 
 ---
 
@@ -419,7 +447,7 @@ scaled to `[-1, 1]` via the global data min/max.
 |-----------|-------------|
 | `nActive` | Sequence length |
 | `nDim` | Output dim per vector |
-| `lexer` | Tokenization mode: `"word"` or `"sentence"` |
+| `lexer` | (Moved to `<SymbolicSpace>`, Phase 4b — lexing is analytic cutting. InputSpace executes the intake; the knob lives SS-side.) |
 | `codebook` | Whether input values are discrete |
 | `demuxed` | Store what/where/when independently |
 
@@ -508,19 +536,20 @@ for the ARMA(p, q) design.
 
 ## PerceptualSpace
 
-**Role.** Single-arg input processor. Applies `self.pi` and `self.sigma`
-additively to its argument (either an IS-typed subspace for surface
-input or a CS-typed subspace for PARALLEL-mode refinement). Owns the
-surface-keyed Lexicon (`self.vocabulary`) and the MPHF + index table for
-per-word surface → row lookup.
+**Role.** Single-arg input processor — the bottom-up SYNTHESIS branch
+(Pi/Sigma swap, rev. 2026-06-09). Applies `self.sigma` (the additive/
+union fold) to its argument (the atom-view stem after the synthesis
+front end embeds). Owns the surface-keyed Lexicon (`self.vocabulary`)
+and the MPHF + index table for per-word surface → row lookup.
 
-**Owned state (post-substrate-refactor 2026-05-27):**
+**Owned state:**
 
-- `self.pi`: a single `PiLayer` (`percept_dim → percept_dim`). Post-Stage-2,
-  `PiLayer` inherits from `GrammarLayer`; post-Stage-5, accepts
-  `butterfly=True, N=N` for cross-position cascade mode.
-- `self.sigma`: a single `SigmaLayer` (`percept_dim → percept_dim`). Same
-  GrammarLayer inheritance + butterfly capability.
+- `self.sigma`: a single `SigmaLayer` (`percept_dim → percept_dim`,
+  where `percept_dim` is the EMBEDDED percept width — `_fold_width`;
+  a widening PS sizes the fold at `nOutputDim`, not the raw
+  `nInputDim`). Inherits from `GrammarLayer`; accepts
+  `butterfly=True, N=N` for cross-position cascade mode. (The PiLayer
+  PS used to own moved to SymbolicSpace — Pi is analysis.)
 - `self.vocabulary`: the Lexicon (`Embedding`), keyed by MPHF over
   surface bytes. Per-word vectors are `nDim`-wide (CS-space-dim per the
   flat-slab invariant).
@@ -534,42 +563,36 @@ per-word surface → row lookup.
   `RadixLayer.reverse` for the structural decode (chunk-id → bytes →
   slot). Promotion knobs default to `threshold=4, min_length=2`.
 
-The legacy `pi_input` / `pi_concept` ModuleLists are retired. The
-sigma_percept-style additive fold on CS is also retired (lives on PS
-now as `self.sigma`).
+The legacy `pi_input` / `pi_concept` ModuleLists are retired, as is the
+sigma_percept-style additive fold on CS.
 
 **Forward (`PS.forward(x_subspace)`):**
 
 ```python
 def forward(self, x_subspace):
-    x = x_subspace.materialize()
-    return self.pi(x) + self.sigma(x)   # no outer tanh; pi/sigma have own internal tanh
+    # synthesis front end embeds (lexicon/bpe/byte/radix/mphf), then:
+    x = self.forwardBegin(x_subspace, returnVectors=True)
+    return self.sigma.forward(x)   # the union fold; internal tanh
 ```
 
-In SERIAL / GRAMMATICAL mode, `x_subspace` is the per-word IS subspace
-(surface bytes → Lexicon lookup → CS-space vector). In PARALLEL mode,
-the first call passes IS; subsequent T-1 calls pass CS for refinement
-iterations (T = `<conceptualOrder>`).
+`x_subspace` is the atom-view stem (PS runs ONCE at stage 0 — the
+single-pass subsymbolic decision; the per-stage recurrence advances
+through the ConceptualCombine, not repeated PS calls).
 
-**Math (pi component):**
-
-```
-s = log((1 + x) / (1 - x))                # atanh domain transform
-z = W_pi @ s + b_pi                       # linear in log-multiplicative space
-pi(x) = (exp(z) - 1) / (exp(z) + 1)        # tanh back to [-1, 1]
-```
-
-**Math (sigma component):**
+**Math (the sigma fold — PS's synthesis operator):**
 
 ```
-sigma(x) = tanh(W_sigma @ atanh(x) + b_sigma)   # additive log-domain
+sigma(x) = tanh(W_sigma @ atanh(x) + b_sigma)   # additive/union, log-domain
 ```
 
-**Reverse.** `PS.reverse` applies `self.pi.reverse` on the text path
-(LDU inverse via `InvertibleLinearLayer`). `self.sigma` is intentionally
-not inverted on the text path — the additive forward `pi + sigma`
-collapses through the codebook snap to a single prototype; recovery
-goes through `object_basis.reverse`. Documented at `bin/Spaces.py:8998`.
+(The multiplicative pi math — `pi(x) = tanh(W_pi @ atanh-domain + b)`
+in the `(1+x)/(1-x)` log embedding — now lives on **SymbolicSpace** as
+the analysis fold; see the orientation banner.)
+
+**Reverse.** `PS.reverse` applies `self.sigma.reverse` on the text path
+(LDU inverse via `InvertibleLinearLayer`); structural recovery goes
+through `object_basis.reverse` and (in radix mode) the
+`RadixLayer.reverse` chunk-id → bytes decode.
 
 **Butterfly mode (Stage 5):** when
 `<PerceptualSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`,

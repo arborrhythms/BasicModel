@@ -16,8 +16,8 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
-def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
-    """Write a tiny XML config that exercises the bpe chunking path."""
+def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
+    """Write a tiny XML config that exercises the bpe/mphf chunking path."""
     import os
     xml = f"""<?xml version='1.0'?>
 <model>
@@ -57,7 +57,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <synthesis>bpe</synthesis>
+    <synthesis>{synthesis}</synthesis>
     <wordLearning>2</wordLearning>
   </PerceptualSpace>
   <ConceptualSpace>
@@ -281,6 +281,97 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         self.assertIsNotNone(event)
         self.assertTrue(torch.isfinite(event).all(),
             "PerceptualSpace output must be finite")
+
+
+class TestSharedByteStore(unittest.TestCase):
+    """Task 4 (2026-06-09 build-batch plan): ONE shared byte/percept
+    codebook across the chunking front ends. bpe/mphf construct a
+    PerceptStore, mirror their vocabulary into it in chunk-id order
+    (``percept_id == chunk_id``), and resolve byte identity through the
+    SAME reverse surface (``bytes_for``) that radix uses;
+    ``chunk_layer.id_to_bytes`` is demoted to the segmentation-side
+    mirror."""
+
+    def _build_ps(self, synthesis="bpe", n_vectors=512):
+        import tempfile
+        from Models import BaseModel
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        path = _write_minimal_bpe_xml(
+            tmp.name, n_vectors=n_vectors, synthesis=synthesis)
+        model, _ = BaseModel.from_config(config_path=path)
+        return model.perceptualSpace
+
+    def test_bpe_constructs_shared_store_with_aligned_ids(self):
+        ps = self._build_ps("bpe")
+        store = ps.percept_store
+        self.assertIsNotNone(
+            store, "bpe mode must construct the shared byte store")
+        cl = ps.chunk_layer
+        self.assertIs(cl.percept_store, store,
+                      "ChunkLayer must be wired to the shared store")
+        self.assertEqual(len(store), len(cl.vocab))
+        for cid, bt in cl.id_to_bytes.items():
+            self.assertEqual(store.get_id(bytes(bt)), cid)
+            self.assertEqual(store.bytes_for(cid), bytes(bt))
+
+    def test_mphf_constructs_shared_store_with_aligned_ids(self):
+        ps = self._build_ps("mphf")
+        store = ps.percept_store
+        self.assertIsNotNone(
+            store, "mphf mode must construct the shared byte store")
+        cl = ps.chunk_layer
+        self.assertIs(cl.percept_store, store)
+        self.assertEqual(len(store), len(cl.vocab))
+        for cid, bt in cl.id_to_bytes.items():
+            self.assertEqual(store.bytes_for(cid), bytes(bt))
+
+    def test_store_codebook_is_permanent_parameter(self):
+        import torch.nn as nn
+        ps = self._build_ps("bpe")
+        W = ps.percept_store.codebook
+        self.assertIsInstance(
+            W, nn.Parameter,
+            "the shared store's W must be a Parameter (permanent + "
+            "persisted), mirroring the radix recipe")
+        # Permanence: the runtime-clear idiom must preserve it.
+        ps.percept_store._basis.setW(None)
+        self.assertIsNotNone(ps.percept_store._basis.getW())
+
+    def test_promotion_mirrors_into_store(self):
+        import torch
+        ps = self._build_ps("bpe")
+        cl = ps.chunk_layer
+        before = len(cl.vocab)
+        # Crafted stats: one dominant pair ('a','b') promotes on the
+        # first train_step (V=256 < cold_start_floor skips the lift
+        # gate; vocab not full).
+        seq = torch.tensor([[97, 98] * 64], dtype=torch.long)
+        added = cl.train_step(seq, k_merges=1)
+        self.assertGreaterEqual(added, 1, "crafted pair must promote")
+        self.assertGreater(len(cl.vocab), before)
+        self.assertEqual(len(ps.percept_store), len(cl.vocab),
+                         "promotions must mirror into the shared store")
+        for cid in (c for c in cl.id_to_bytes if c >= before):
+            self.assertEqual(ps.percept_store.bytes_for(cid),
+                             bytes(cl.id_to_bytes[cid]))
+
+    def test_bytes_for_round_trips_smoke_prompt_through_store(self):
+        ps = self._build_ps("bpe")
+        cl = ps.chunk_layer
+        prompt = b"hello world"
+        pids = [cl.vocab[(b,)] for b in prompt]
+        self.assertEqual(b"".join(cl.bytes_for(i) for i in pids), prompt)
+        # Identical through the store surface radix uses.
+        self.assertEqual(
+            b"".join(ps.percept_store.bytes_for(i) for i in pids), prompt)
+
+    def test_bytes_for_unwired_falls_back_to_private_table(self):
+        from Layers import ChunkLayer
+        cl = ChunkLayer(8, bpe=True, n_vectors=512)
+        self.assertIsNone(cl.percept_store)
+        self.assertEqual(cl.bytes_for(104), b"h")
+        self.assertIsNone(cl.bytes_for(99999))
 
 
 if __name__ == "__main__":

@@ -1681,6 +1681,14 @@ class Codebook(Basis):
         # lexical fill to seed pos_lex when an input position resolves
         # to a tagged codebook atom — see doc/Language.md "POS side-channel".
         self.category_ids = None
+        # Phase 6 (analysis/synthesis dual-input plan sec.7, rev.
+        # 2026-06-10): per-row DESCRIPTOR ROLE in the one SS generality
+        # codebook -- meaning-general / term-general / LF-coarse are
+        # ROLES (metadata) inside one codebook, not separate codebooks.
+        # 0 = unassigned; see ROLE_* constants. HF surface contents are
+        # PS percept-store rows, never SS roles. Allocated lazily by
+        # ``ensure_descriptor_roles``.
+        self.descriptor_roles = None
         # Per-row meronomy parent index. ``part_parents[i] = j`` means
         # atom ``i`` is a part of atom ``j``. ``-1`` is the sentinel for
         # "no parent" (atom is a root concept). Used by the codebook
@@ -1993,6 +2001,56 @@ class Codebook(Basis):
             return 0
         return int(self.category_ids[int(idx)].item())
 
+    # Phase 6 descriptor roles (analysis/synthesis dual-input plan sec.7,
+    # rev. 2026-06-10): meaning-general / term-general / LF-coarse are
+    # ROLES inside the ONE SS generality codebook. The Tibetan terms map:
+    # don-spyi = meaning-generality, sgra-spyi = term/sound-generality.
+    ROLE_UNASSIGNED = 0
+    ROLE_LF_COARSE = 1      # low-frequency / coarse characterization rows
+    ROLE_MEANING_GENERAL = 2   # don-spyi
+    ROLE_TERM_GENERAL = 3      # sgra-spyi
+
+    def ensure_descriptor_roles(self):
+        """Lazily allocate (or grow) the per-row descriptor-role buffer.
+
+        ``descriptor_roles[i]`` is one of the ``ROLE_*`` constants
+        (default ``ROLE_UNASSIGNED``). Grown alongside the codebook so a
+        row inserted after allocation still has a slot."""
+        V = max(int(self.nVectors), int(self.codebookSize))
+        if V <= 0:
+            return None
+        if self.descriptor_roles is None:
+            self.descriptor_roles = torch.zeros((V,), dtype=torch.long)
+        elif int(self.descriptor_roles.shape[0]) < V:
+            grown = torch.zeros((V,), dtype=torch.long)
+            grown[:self.descriptor_roles.shape[0]] = self.descriptor_roles
+            self.descriptor_roles = grown
+        return self.descriptor_roles
+
+    def set_descriptor_role(self, idx, role):
+        """Tag codebook row(s) ``idx`` with a ``ROLE_*`` descriptor role.
+
+        ``idx`` may be an int or a 1-D index tensor (the snap's selected
+        rows). Roles are metadata over the ONE generality codebook --
+        materialization (.active selects rows; .where/.when place them)
+        is unchanged by the role; consumers read the role to know which
+        FACE of generality a row carries."""
+        roles = self.ensure_descriptor_roles()
+        if roles is None:
+            raise RuntimeError(
+                "Codebook.set_descriptor_role: no rows allocated.")
+        if torch.is_tensor(idx):
+            roles[idx.detach().reshape(-1).long().cpu()] = int(role)
+        else:
+            roles[int(idx)] = int(role)
+
+    def get_descriptor_role(self, idx):
+        """Return the ``ROLE_*`` tag for row ``idx`` (UNASSIGNED when the
+        buffer was never allocated)."""
+        if self.descriptor_roles is None:
+            return Codebook.ROLE_UNASSIGNED
+        return int(self.descriptor_roles[int(idx)])
+
     def set_part_parent(self, idx, parent_idx):
         """Mark codebook row ``idx`` as a part of row ``parent_idx``.
 
@@ -2282,7 +2340,21 @@ class Codebook(Basis):
             # forward — must preserve Parameter identity so optimizer
             # state stays attached. ``replace_W`` does ``.data.copy_``
             # for the Parameter-registered case.
-            self.replace_W(self.vq.codebook)
+            #
+            # ASYMMETRIC mode (``vq.ema_update=False``, the SS hardwire):
+            # the refresh is GATED OFF. There the two matrices are
+            # DIFFERENT STORES (Phase 5 materialization split): ``W`` is
+            # the space-owned SYNTHETIC/materialization prototype (task-
+            # gradient-trained), ``vq.codebook`` the ANALYTIC/generality
+            # store (recon-gather-trained; quantize only NAMES against
+            # it). Without the gate, every quantize re-pointed ``W`` at
+            # the VQ matrix and severed the space's trained prototypes —
+            # empirically THE #13 mechanism: XOR_exact's output loss
+            # stayed at the constant-predictor floor for all 600 epochs
+            # with the refresh, and converged without it, holding all
+            # else fixed.
+            if getattr(self.vq, "ema_update", True):
+                self.replace_W(self.vq.codebook)
             self.last_commit_loss = commit_loss
             return quantized, indices, commit_loss
         weight = self._prototype_weight(context="quantize")
@@ -4170,34 +4242,47 @@ class Embedding(Basis):
         batch = vectors.shape[0]
         nVec = vectors.shape[1]
         codebook = self.getW()
-        words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
 
         recovered_words = [[] for _ in range(batch)]
         recovered_offsets = [[] for _ in range(batch)]
         recovered_tokens = [[] for _ in range(batch)]
-        # The codebook may have more rows than ``words_list`` has
-        # entries -- ``nVectors`` is the capacity (pre-allocated for
-        # vocabulary growth); ``index_to_key`` only contains the
-        # words actually inserted via OOV-insert. The nearest-
-        # neighbour lookup can return an idx into an unused-but-
-        # initialised codebook row. Guard with a bounds check; map
-        # out-of-vocabulary indices to the empty string (rendered
-        # later as a blank slot, then stripped by reconstruct_data).
-        n_known_words = len(words_list)
+        # ROW -> WORD via the inverse of ``key_to_index`` (the
+        # authoritative forward map), NOT the positional
+        # ``index_to_key`` list. Under the tied-storage layout
+        # (``insert_paired_word``: lexicon rows live in the SS
+        # codebook's W) a word's row is its ORTH index -- words sit at
+        # every other row, interleaved with their semantic partners --
+        # and ``key_to_index`` is remapped accordingly while
+        # ``index_to_key`` keeps plain insertion order. Decoding
+        # positionally returned the word at the LIST position equal to
+        # the row index ('\x01' -> '\x03', 'hello' -> junk): the
+        # recon-text half of #13. Untied lexicons have the two maps
+        # coincide, so this is behavior-preserving there. Rows with no
+        # word (semantic partners, virgin capacity) render as "" and
+        # are stripped downstream; the nearest-row search is RESTRICTED
+        # to mapped rows so a semantic/virgin row cannot shadow the
+        # word row a reconstructed vector is closest to.
+        row_to_word = {int(r): w for w, r in self.wv.key_to_index.items()}
+        mapped_rows = sorted(r for r in row_to_word
+                             if 0 <= r < codebook.shape[0])
+        restricted = (len(mapped_rows) > 0
+                      and len(mapped_rows) < int(codebook.shape[0]))
+        if restricted:
+            mapped_idx = torch.as_tensor(
+                mapped_rows, dtype=torch.long, device=codebook.device)
+            search_cb = codebook[mapped_idx]
+        else:
+            search_cb = codebook
         for b in range(batch):
             for v in range(nVec):
                 offset = self._decode_offset(positions, b, v, subspace=subspace) if positions is not None else None
                 vec = vectors[b, v, :nWhat]
                 # Content is already snapped; _nearest_idx confirms the word label
-                idx = self._nearest_idx(vec, codebook=codebook)
-                if 0 <= idx < n_known_words:
-                    word = words_list[idx]
-                else:
-                    # Reconstructed vector snapped to an unused
-                    # codebook row (vocabulary capacity > learned
-                    # words). Render as empty; downstream strips it.
-                    word = ""
+                idx = self._nearest_idx(vec, codebook=search_cb)
+                if restricted and 0 <= idx < len(mapped_rows):
+                    idx = mapped_rows[idx]
+                word = row_to_word.get(int(idx), "")
                 recovered_words[b].append(word)
                 recovered_offsets[b].append(offset)
                 recovered_tokens[b].append((word, offset))
@@ -6316,6 +6401,19 @@ class Space(nn.Module):
         if section == "PerceptualSpace":
             self._codebook = "none"
         elif section == "SymbolicSpace":
+            # #13 second half (SS <codebook> removal / quantize hardwire):
+            # ATTEMPTED and REVERTED 2026-06-10. The original deferral
+            # blamed the snap (pre-snap-z, backlog #16) -- but the attempt
+            # showed the REAL blocker is the WHAT-BASIS construction:
+            # hardwiring quantize flips XOR_exact's SS basis from the
+            # full-width invertible passthrough to a Codebook, and its
+            # exact reconstruction collapses 4/4 -> 0/4 even though the
+            # reversible dispatch branch keeps z continuous (no snap fires)
+            # and commitmentBeta is 0. The hardwire therefore lands with
+            # the Phase-5/6 materialization split, where the analytic vs
+            # synthetic basis semantics give the exact chain a
+            # Codebook-compatible decode. Until then the knob stays, with
+            # the quantize default.
             self._codebook = TheXMLConfig.space(section, "codebook",
                                                 default="quantize")
         else:
@@ -7895,10 +7993,49 @@ class InputSpace(Space):
         self.input = self.subspace.materialize()
         return self.subspace
 
+    def _paint_reconstruction(self, atomic, concepts_recon):
+        """Phase 7 (plan sec.6, rev. 2026-06-10): PAINTING recombination.
+
+        The UNIVERSAL view paints the background; the ATOMIC view is
+        AVERAGED in where it has support (a plain 50/50 blend -- the
+        stated starting point; paint-over is the later refinement).
+        ``concepts_recon`` is the conceptual reconstruction branch riding
+        the SubSpace (``_concepts_recon``: the stage-0 SS stream of the
+        bind's exact inverse, ``[B, K, W]``): each slot's coarse value
+        paints its contiguous region of the atom axis (nearest upsample --
+        the inverse of the stage-0 region-pooling geometry), broadcast
+        across the event width. Where the atomic branch has no support
+        (padding), the background remains alone -- painted, not halved.
+        Returns ``atomic`` untouched when no concepts branch rides (the
+        single-branch legacy reverse). Exactness is unaffected: the
+        byte-exact decode runs through the percept-id/store path, not
+        this continuous event."""
+        if concepts_recon is None or atomic is None or atomic.dim() != 3:
+            return atomic
+        B, T, Dv = atomic.shape
+        c = concepts_recon
+        if c.dim() == 2:
+            c = c.unsqueeze(-1)
+        if c.dim() != 3 or int(c.shape[0]) != B:
+            return atomic
+        # Per-slot coarse value (mean over the slot's channels) -> [B, K].
+        slot_vals = c.to(device=atomic.device, dtype=atomic.dtype).mean(dim=-1)
+        # Each slot paints its contiguous region of the atom axis.
+        bg = F.interpolate(slot_vals.unsqueeze(1), size=T, mode="nearest")
+        background = bg.squeeze(1).unsqueeze(-1).expand(B, T, Dv)
+        support = atomic.abs().sum(dim=-1, keepdim=True) > 0
+        return torch.where(
+            support, 0.5 * (atomic + background), background)
+
     def reverse(self, subspace):
         """Reverse pass; inverse of ``forward``.
 
-        See class docstring for the inversion contract.
+        Phase 7 (rev. 2026-06-10): when the conceptual reconstruction
+        branch rides the incoming SubSpace (``_concepts_recon``), the
+        reconstruction is the PAINTING recombination of both branches
+        (:meth:`_paint_reconstruction`); otherwise the legacy
+        single-branch reverse. See class docstring for the inversion
+        contract.
         """
         if hasattr(subspace, "is_empty") and subspace.is_empty():
             return subspace
@@ -7915,6 +8052,19 @@ class InputSpace(Space):
             y = vspace.materialize()
             if y is not None:
                 self.subspace.set_event(y)
+                # Phase 7 painting: the COMBINED surface (universal
+                # background + atoms averaged in) rides the SubSpace as
+                # ``_painted_event``. The event itself stays the ATOMIC
+                # reverse: the exact word/byte decode reads the continuous
+                # reversed tensor (XOR_exact's codebook-free chain), and
+                # painting it -- even only the padding -- decodes to junk
+                # words. Promoting the painted surface to a consumer
+                # (recon loss / report) is the recorded open hook.
+                painted = self._paint_reconstruction(
+                    y, getattr(vspace, "_concepts_recon", None))
+                if painted is not y:
+                    object.__setattr__(
+                        self.subspace, "_painted_event", painted)
             return self.subspace
         y = self.reverseBegin(vspace, returnVectors=True)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
@@ -7943,6 +8093,13 @@ class InputSpace(Space):
         content_basis.setW(self.input)
         object_basis.setW(self.input)
         self.subspace.set_event(self.input)
+        # Phase 7 painting (numeric path): the combined surface rides the
+        # SubSpace as ``_painted_event``; the decode chain below reads the
+        # UNPAINTED input (exactness lives in the atomic reverse).
+        _painted = self._paint_reconstruction(
+            self.input, getattr(vspace, "_concepts_recon", None))
+        if _painted is not self.input:
+            object.__setattr__(self.subspace, "_painted_event", _painted)
 
         # Word recovery -- content is already denormalized; Embedding.reverse()
         # snaps under the active lexicon geometry.
@@ -8412,6 +8569,39 @@ class PerceptualSpace(Space):
                 promotion_min_length=self.chunk_promotion_min_length,
                 basis=self.subspace.what,
             )
+        elif self.synthesis_mode in ("bpe", "mphf"):
+            from Layers import RadixLayer as _PerceptStore
+            # Task 4 (2026-06-09 build-batch plan): ONE shared
+            # byte/percept codebook across the chunking front ends.
+            # bpe/mphf keep the lexicon Embedding on ``subspace.what``
+            # (the word-synthesis surface), so the byte store owns a
+            # PRIVATE Codebook basis (the RadixLayer's standalone
+            # branch); its ``W`` is promoted to an nn.Parameter below --
+            # permanent and persisted via this Space's module tree --
+            # mirroring the radix branch's recipe in
+            # ``_build_what_basis``. The ChunkLayer's vocabulary MIRRORS
+            # into this store (``mirror_to_store``, wired after the BPE
+            # auto-load below): insertion in chunk-id order makes
+            # ``percept_id == chunk_id``, so a bpe/mphf chunk decodes
+            # through the SAME reverse surface (``bytes_for``) that
+            # radix uses; ``chunk_layer.id_to_bytes`` is demoted to the
+            # segmentation-side mirror. Capacity: the ChunkLayer caps
+            # its vocab at ``n_vectors`` (>= 256 asserted for bpe), so
+            # the store never grows past it -- id alignment is safe by
+            # construction.
+            self.percept_store = _PerceptStore(
+                self.nDim,
+                initial_cap=max(int(self.nVectors), 256),
+                promotion_threshold=self.chunk_promotion_threshold,
+                promotion_min_length=self.chunk_promotion_min_length,
+            )
+            _sb = self.percept_store._basis
+            _sw = _sb.getW()
+            if _sw is None:
+                _sb.setW(nn.Parameter(torch.zeros(
+                    max(int(self.nVectors), 256), int(self.nDim))))
+            elif not isinstance(_sw, nn.Parameter):
+                _sb.setW(nn.Parameter(_sw.detach().clone()))
         else:
             self.percept_store = None
         # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
@@ -8477,6 +8667,14 @@ class PerceptualSpace(Space):
                     TheMessage(
                         f"[PerceptualSpace] BPE auto-load skipped "
                         f"({type(e).__name__}: {e}); starting cold.")
+        # Task 4: wire the shared byte store AFTER the auto-load so the
+        # initial mirror covers a restored merge table in one pass
+        # (subsequent promotions / loads mirror incrementally inside
+        # ChunkLayer). Radix keeps its own store/trie wiring -- the
+        # ChunkLayer is not on the radix embed path.
+        if (self.percept_store is not None
+                and self.synthesis_mode in ("bpe", "mphf")):
+            self.chunk_layer.mirror_to_store(self.percept_store)
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements.
@@ -12066,6 +12264,148 @@ class ConceptualSpace(Space):
                 accepted.append(pred_pos)
         return accepted
 
+    # ------------------------------------------------------------------
+    # The 2-stream slot bind (C-10) -- calculation CONTAINED in the Space
+    # (processing contract, 2026-06-10: calculations live in Spaces; the
+    # Models body loop only orchestrates; data rides in SubSpaces). The
+    # bind carrier is stored ON the stage's SubSpace (``_bind_carrier``)
+    # so the reverse consumes data from the SubSpace it is handed, not
+    # model-level state -- clearing the way for pipeline parallelism
+    # over Spaces.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _bind_demux(sub, content_dim):
+        """Split a subspace's materialised event into (content, band, event).
+
+        ``content`` is ``event[..., :content_dim]`` (the leading what-content
+        slab, matching the muxed [what | where | when] layout where content is
+        the FIRST ``nWhat`` columns); ``band`` is the trailing remainder. The
+        full ``event`` is returned so a caller that did not produce it can
+        re-mux against the original band. Returns ``(None, None, None)`` when
+        ``sub`` is empty / not 3-D.
+        """
+        if sub is None or sub.is_empty():
+            return None, None, None
+        ev = sub.materialize()
+        if ev is None or ev.dim() != 3:
+            return None, None, None
+        cdim = int(content_dim)
+        if cdim <= 0 or cdim > ev.shape[-1]:
+            cdim = ev.shape[-1]
+        return ev[..., :cdim], ev[..., cdim:], ev
+
+    @staticmethod
+    def _bind_fit(content, D, like):
+        """Fit a content slab to the bind width ``D``.
+
+        ``content`` may be ``None`` (no live stream -> a zero slab shaped
+        ``[*like.shape[:-1], D]``), narrower than ``D`` (the compressed SS
+        symbol code -> zero-pad up to ``D``), or already width ``D``.
+        ``like`` supplies the leading shape / device / dtype for the zero
+        case.
+        """
+        D = int(D)
+        if content is None:
+            return like.new_zeros(*like.shape[:-1], D)
+        w = int(content.shape[-1])
+        if w == D:
+            return content
+        if w < D:
+            return F.pad(content, (0, D - w))
+        return content[..., :D]
+
+    @staticmethod
+    def _bind_seed_slab(payload_hat, like, D):
+        """Broadcast a predicted end-state ``payload_hat[depth, Dp]`` into a
+        ``[B, N, D]`` content slab (Task A6, re-homed by the 2-stream bind:
+        the seed primes the SYMBOLIC stream at stage 0).
+
+        ``payload_hat`` is one ROW PER STM SLOT (newest-at-slot-0). Stage the
+        first ``depth`` rows across the first ``depth`` slots of an otherwise-
+        zero ``[B, N, D]`` slab, broadcast over the batch. ``like`` supplies
+        the leading ``[B, N]`` shape / device / dtype; the predictor width is
+        fit to ``D`` by :meth:`_bind_fit`. Returns a ``[B, N, D]`` tensor.
+        """
+        D = int(D)
+        B = int(like.shape[0])
+        N = int(like.shape[1])
+        depth = min(int(payload_hat.shape[0]), N)
+        slab = like.new_zeros(B, N, payload_hat.shape[-1])
+        if depth > 0:
+            slab[:, :depth, :] = (
+                payload_hat[:depth].to(device=like.device, dtype=like.dtype)
+                .unsqueeze(0).expand(B, -1, -1))
+        return ConceptualSpace._bind_fit(slab, D, like)
+
+    def bind_streams(self, PS_sub, SS_sub, CS_sub, seed_payload=None):
+        """The stage's conceptual advance: bind, glue, store -- in-Space.
+
+        ``CS_t = ILL(stack[PS_t ; SS_t])`` (the 2-stream slot bind, C-10):
+        demux/fit both stream SubSpaces to the bind width, stack along the
+        vector axis, run the combine's cascade over the flattened ``2N*D``
+        slab, GLUE the two views through the corpus-callosum ``[2N, N]``
+        matrix into the N-vector operation event (written onto ``CS_sub``,
+        band re-attached), and store the FULL bind carrier ON ``CS_sub``
+        (``_bind_carrier``) for :meth:`unbind` / the reconstruction
+        reverse. ``seed_payload`` (stage 0, A6 interSentence) primes the
+        SYMBOLIC stream. Returns the carrier (``[..., M]``) or None when
+        the carrier subspace is degenerate / slot-mismatched.
+        """
+        combine = getattr(self, "combine", None)
+        if combine is None:
+            return None
+        D = int(combine.content_dim)
+        cs_content, cs_band, cs_event = self._bind_demux(CS_sub, D)
+        if cs_event is None:
+            return None
+        ps_content, _, _ = self._bind_demux(PS_sub, D)
+        PS_t = self._bind_fit(ps_content, D, cs_content)
+        ss_content, _, _ = self._bind_demux(SS_sub, D)
+        SS_t = self._bind_fit(ss_content, D, cs_content)
+        if seed_payload is not None:
+            SS_t = SS_t + self._bind_seed_slab(seed_payload, cs_content, D)
+        if (PS_t.shape[-2] != int(combine.n_vectors)
+                or SS_t.shape[-2] != int(combine.n_vectors)):
+            return None
+        full = combine.forward(PS_t, SS_t)
+        glued = combine.glue(full)
+        if cs_band is not None and cs_band.shape[-1] > 0:
+            advanced_ev = torch.cat([glued, cs_band], dim=-1)
+        else:
+            advanced_ev = glued
+        CS_sub.set_event(advanced_ev)
+        # The carrier rides ON the SubSpace(s): the handed-in CS_sub (the
+        # data that flows downstream) AND this stage's own subspace when
+        # they differ (CS.forward returns a per-batch sub distinct from
+        # ``self.subspace``), so the per-stage ``unbind`` can always find
+        # its stage's bind without model-level state.
+        object.__setattr__(CS_sub, "_bind_carrier", full)
+        _own = getattr(self, "subspace", None)
+        if _own is not None and _own is not CS_sub:
+            object.__setattr__(_own, "_bind_carrier", full)
+        return full
+
+    def unbind(self, sub=None):
+        """Exact inverse of this stage's bind, from SubSpace-carried state.
+
+        Reads the ``_bind_carrier`` riding on ``sub`` (defaulting to this
+        stage's own ``self.subspace``) and applies the combine's exact
+        reverse: ``(PS_t, SS_t) = ILL^{-1}(carrier)``, each ``[..., N, D]``.
+        Returns None when no combine / no carrier is available.
+        """
+        combine = getattr(self, "combine", None)
+        if combine is None:
+            return None
+        target = sub if sub is not None else getattr(self, "subspace", None)
+        carrier = getattr(target, "_bind_carrier", None)
+        if carrier is None and target is not getattr(self, "subspace", None):
+            carrier = getattr(
+                getattr(self, "subspace", None), "_bind_carrier", None)
+        if carrier is None:
+            return None
+        return combine.reverse(carrier)
+
     def forward(self, subspace, word_subspace=None):
         """STM bookkeeping: shift the per-batch idea stack and push the
         new idea onto the Miller-cap top slot.
@@ -12704,6 +13044,15 @@ class SymbolicSpace(Space):
                 f"SymbolicSpace.analysis must be byte|word|analyse, "
                 f"got {self.analysis_mode!r}")
         self._staged_analysis_spans = None
+        # Task 5 (C-13): the semantic-arrangement weight. Default 0 = the
+        # mechanism is OFF (it is validated under D, on a corpus via the
+        # serial path -- not by XOR).
+        try:
+            self.semantic_arrangement_weight = float(
+                TheXMLConfig.space(section, "semanticArrangement",
+                                   default=0.0) or 0.0)
+        except (KeyError, TypeError, ValueError):
+            self.semantic_arrangement_weight = 0.0
         self.params = []
         self.layers = nn.ModuleList()
         _sigma_naive = TheXMLConfig.get("architecture.naive")
@@ -15525,6 +15874,142 @@ class SymbolicSpace(Space):
                 t[b, k, 1] = e
         return t.to(IS_concepts.device)
 
+    def semantic_arrangement_loss(self, indices):
+        """C-13 (asymmetric-vq sec.6; build-batch Task 5): the post-sentence
+        semantic-arrangement MECHANISM over SS heat.
+
+        pode = the semantic centroid of the rows the sentence ACTIVATED
+        (attraction: active rows pull toward their own centroid);
+        antipode = the rest of the codebook's centroid (repulsion: active
+        rows push away from it -- the universal anti-collapse). Both poles
+        are DETACHED, so the gradient lands only on the active rows.
+        Mechanism only: the semantic payoff is validated under D (a real
+        corpus on the serial path -- XOR cannot validate it; parity is
+        anti-similarity, asymmetric-vq sec.8). The single-snap vs sparse
+        multi-symbol code question (sec.6) stays open; this operates on
+        whatever indices the snap produced. Gated by the
+        ``<semanticArrangement>`` weight (default 0 = off). Returns a
+        scalar loss or None.
+        """
+        w = float(getattr(self, "semantic_arrangement_weight", 0.0))
+        if w <= 0.0 or indices is None or not torch.is_tensor(indices):
+            return None
+        basis = self.subspace.what
+        vq = getattr(basis, "vq", None)
+        cb = getattr(vq, "codebook", None) if vq is not None else None
+        if not isinstance(cb, nn.Parameter) or int(cb.shape[0]) < 2:
+            return None
+        idx = indices.detach().reshape(-1).long().unique()
+        if int(idx.numel()) < 1:
+            return None
+        active = cb[idx]                               # grad -> active rows
+        pode = active.mean(dim=0).detach()             # semantic centroid
+        rest_mask = torch.ones(
+            cb.shape[0], dtype=torch.bool, device=cb.device)
+        rest_mask[idx] = False
+        if int(rest_mask.sum()) == 0:
+            return None
+        antipode = cb[rest_mask].mean(dim=0).detach()
+        a_n = F.normalize(active, dim=-1, eps=1e-8)
+        attract = 1.0 - (a_n * F.normalize(pode, dim=0, eps=1e-8)).sum(-1)
+        repel = (a_n * F.normalize(antipode, dim=0, eps=1e-8)).sum(-1)
+        return w * (attract.mean() + repel.mean())
+
+    def _stage0_carrier(self, IS_concepts, spans):
+        """Build the stage-0 evidence CARRIER ``[B, N, W]`` from the unity.
+
+        Shared by the compiled stage-0 forward (``_stage0_unity_forward``)
+        and the host-eager adopt-on-first-sight pass
+        (``adopt_stage0_evidence``). ``W`` is the carrier/codebook width.
+
+        Phase 4b: BOUNDARIES SHAPE THE EVIDENCE -- when spans are staged
+        (word / analyse cuts), part k's coarse mean fills SYMBOL SLOT k
+        (broadcast across the carrier width; absent slots stay 0, neutral
+        like null padding; a ``(0, 0)`` pad span yields 0 by
+        construction). Otherwise (byte mode): uniform contiguous regions,
+        the Phase-2 region-mean pooling at the carrier width. Both paths
+        tanh-squash to the +-1 operating range; pure tensor ops,
+        compile-safe."""
+        B = int(IS_concepts.shape[0])
+        N = int(self.inputShape[0])
+        D = int(self.subspace.muxedSize)
+        band = int(self.nWhere + self.nWhen)
+        content = max(1, D - band)
+        W = max(content, int(self.nDim))
+        u = IS_concepts.to(torch.get_default_dtype())  # copy, never in-place
+        if spans is not None and spans.numel() > 0:
+            flat = u[:, 0, :] if u.dim() == 3 else u
+            pref = F.pad(flat.cumsum(dim=1), (1, 0))
+            n_atoms = int(flat.shape[1])
+            starts = spans[..., 0].clamp(min=0, max=n_atoms)
+            ends = spans[..., 1].clamp(min=0, max=n_atoms)
+            sums = pref.gather(1, ends) - pref.gather(1, starts)
+            lens = (ends - starts).clamp(min=1).to(sums.dtype)
+            means = torch.tanh((sums / lens) / 128.0)       # [B, K]
+            carrier = means.new_zeros(B, N, W)
+            _K = min(int(means.shape[1]), N)
+            carrier[:, :_K, :] = means[:, :_K].unsqueeze(-1)
+        else:
+            pooled = F.adaptive_avg_pool1d(u, N * W)
+            carrier = torch.tanh(pooled.reshape(B, N, W) / 128.0)
+        return carrier, W
+
+    def adopt_stage0_evidence(self, IS_concepts, spans=None):
+        """HOST-EAGER adopt-on-first-sight (Phase 5, rev. 2026-06-10).
+
+        A VIRGIN codebook row (descriptor role still UNASSIGNED -- never
+        snapped to) ADOPTS the evidence vector that selects it, BEFORE
+        the compiled body's stage-0 snap runs. Without this, the STE
+        substitutes FROZEN RANDOM row VALUES (norm ~ sqrt(D), vs the
+        tanh-bounded evidence) into the bind's SS half every forward --
+        under the asymmetric VQ (no EMA; the codebook trains only by the
+        recon gather) that poisoned downstream training (XOR_exact
+        4/4 -> 0/4 under a quantize basis: the #13 blocker). Data-
+        dependent init makes the STE honest from step one -- z starts AT
+        its code (the +-1 operating-range contract, asymmetric-vq sec.3)
+        -- and the recon gradient refines the adopted prototypes
+        thereafter. The same insert-on-first-sight idiom as the
+        lexicon's wordLearning.
+
+        Runs in the EAGER STEM (called by ``Models._lex_embed_stem``,
+        beside the span staging): the data-dependent ``unique`` cannot
+        live in the compiled body. No-op outside training / without a
+        Codebook basis / when the carrier width differs from the
+        codebook width."""
+        if IS_concepts is None or not self.training:
+            return
+        basis = self.subspace.what
+        if not (self.codebook and isinstance(basis, Codebook)):
+            return
+        vq = getattr(basis, "vq", None)
+        cbp = getattr(vq, "codebook", None) if vq is not None else None
+        if cbp is None:
+            return
+        if spans is None:
+            spans = getattr(self, "_staged_analysis_spans", None)
+        carrier, W = self._stage0_carrier(IS_concepts, spans)
+        if W != int(self.nDim):
+            return
+        with torch.no_grad():
+            flat = carrier.detach().reshape(-1, W)
+            _, idx, _ = basis.quantize(flat)
+            roles = basis.ensure_descriptor_roles()
+            idx_flat = idx.reshape(-1)
+            uniq = idx_flat.unique()
+            virgin = uniq[(roles[uniq.cpu()]
+                           == Codebook.ROLE_UNASSIGNED).to(uniq.device)]
+            if int(virgin.numel()) == 0:
+                return
+            for r in virgin.tolist():
+                src = (idx_flat == r).nonzero(as_tuple=False)[0, 0]
+                cbp.data[r, :W] = flat[src, :W].to(cbp.dtype)
+            if hasattr(vq, "_b_norms_sq"):
+                vq._b_norms_sq.copy_(
+                    (vq.codebook.detach() ** 2).sum(dim=-1))
+            # NB: no ``replace_W`` here — under the asymmetric mode the
+            # vq codebook (analytic store) and the basis ``W`` (synthetic
+            # store) are deliberately separate; see Codebook.quantize.
+
     def _stage0_unity_forward(self, IS_concepts):
         """Stage-0 symbolic evidence from the UNITY view (analysis/synthesis
         dual-input plan sec.2, rev. 2026-06-09).
@@ -15539,6 +16024,15 @@ class SymbolicSpace(Space):
         legacy zero-symbol seed). The cast+pool allocate fresh tensors --
         analysis is NON-ALTERING, the unity buffer is never written.
 
+        The evidence is built at the CARRIER width ``W = nDim`` (the
+        codebook row width), SNAPPED through the SS codebook -- the
+        parallel SS quantize is LIVE (asymmetric-vq sec.7 task 8, rev.
+        2026-06-09) -- with the asymmetric FORWARD leg's STE (C-9: the
+        output objective's gradient flows to the evidence/upstream; the
+        code rows stay detached on this pass; the commitment return is
+        deliberately dropped, C-11, and EMA is off on the SS VQ), then
+        pooled per-slot down to the narrow ``muxedSize`` combine code.
+
         Emits the CS-ALIGNED event geometry ``[B, nInput_events,
         muxedSize]`` (``inputShape[0]`` symbol events -- one per
         concept/STM slot -- of narrow ``muxedSize`` width): the combine's
@@ -15546,11 +16040,14 @@ class SymbolicSpace(Space):
         zero-pads the narrow content up to the combine width at a MATCHING
         event count. Content slice = evidence; where/when band zero
         (positional overhead, re-derived downstream exactly as the
-        zero-symbol events are). The l1/intrinsic-snap gates are not
-        applied here while the parallel SS quantize is a no-op
-        (asymmetric-vq sec.7 task 8 makes it live; revisit then).
-        ``held_at_zero`` still wins: the phase-1 parallel gate zeroes this
-        space's contribution regardless of evidence."""
+        zero-symbol events are). The wide(W)<->narrow(content) symbol-code
+        definition is an open design point recorded in the plan (the
+        2-stream combiner, C-10, owns it). Pre-snap ``z`` and the selected
+        indices are threaded as forward-locals (``_stage0_z_pre_snap`` /
+        ``_stage0_indices``) for tests and the future recon gather (the
+        input->codebook leg). ``held_at_zero`` still wins: the phase-1
+        parallel gate zeroes this space's contribution regardless of
+        evidence."""
         B = int(IS_concepts.shape[0])
         N = int(self.inputShape[0])
         D = int(self.subspace.muxedSize)
@@ -15561,36 +16058,85 @@ class SymbolicSpace(Space):
             self.subspace.set_event(torch.zeros(
                 B, N, D, device=dev, dtype=torch.get_default_dtype()))
             return self.subspace
-        u = IS_concepts.to(torch.get_default_dtype())  # copy, never in-place
         spans = getattr(self, "_staged_analysis_spans", None)
-        if spans is not None and spans.numel() > 0:
-            # Phase 4b: BOUNDARIES SHAPE THE EVIDENCE. The configured
-            # analysis (word / analyse cuts, parked host-eagerly by
-            # ``stage_analysis_spans``) defines the PARTS; the evidence is
-            # the per-part coarse mean (prefix-sum gather -- pure tensor
-            # ops, compile-safe), tanh-squashed exactly like the uniform
-            # path. Part k fills evidence cell k; absent cells stay 0
-            # (neutral, like null padding). A ``(0, 0)`` pad span yields
-            # sum 0 / len 1 -> 0 (neutral) by construction.
-            flat = u[:, 0, :] if u.dim() == 3 else u
-            pref = F.pad(flat.cumsum(dim=1), (1, 0))
-            n_atoms = int(flat.shape[1])
-            starts = spans[..., 0].clamp(min=0, max=n_atoms)
-            ends = spans[..., 1].clamp(min=0, max=n_atoms)
-            sums = pref.gather(1, ends) - pref.gather(1, starts)
-            lens = (ends - starts).clamp(min=1).to(sums.dtype)
-            means = torch.tanh((sums / lens) / 128.0)       # [B, K]
-            L = N * content
-            ev_flat = means.new_zeros(B, L)
-            _K = min(int(means.shape[1]), L)
-            ev_flat[:, :_K] = means[:, :_K]
-            evidence = ev_flat.reshape(B, N, content)
+        carrier, W = self._stage0_carrier(IS_concepts, spans)
+        # Thread the pre-snap z + indices as forward-locals (the repo's
+        # data-flow rule: thread, do not persist) -- consumed by tests and
+        # by the asymmetric recon gather when the 2-stream combiner lands.
+        object.__setattr__(self, "_stage0_z_pre_snap", carrier)
+        object.__setattr__(self, "_stage0_indices", None)
+        basis = self.subspace.what
+        z_q = carrier
+        object.__setattr__(self, "_stage0_recon_loss", None)
+        object.__setattr__(self, "_stage0_semantic_loss", None)
+        if (self.codebook and isinstance(basis, Codebook)
+                and W == int(self.nDim)):
+            # (Virgin rows were ADOPTED in the eager stem --
+            # ``adopt_stage0_evidence``, called by ``_lex_embed_stem`` --
+            # so the snap below finds data-initialised prototypes and the
+            # STE is honest from step one. The adoption is host-eager:
+            # its data-dependent ``unique`` cannot live in this compiled
+            # body.)
+            q, idx, _commit = basis.quantize(carrier.reshape(-1, W))
+            q = q[..., :W].reshape(B, N, W)
+            object.__setattr__(
+                self, "_stage0_indices", idx.reshape(B, N))
+            # Phase 6 (plan sec.7): the rows the stage-0 evidence snaps
+            # to are LF-COARSE descriptors -- the analysis outputs
+            # (coarse region characterizations), tagged as a ROLE in the
+            # one generality codebook.
+            with torch.no_grad():
+                basis.set_descriptor_role(idx, Codebook.ROLE_LF_COARSE)
+            # Task 5 (C-13): the post-sentence semantic arrangement over
+            # the activated rows (pode attraction + antipode repulsion);
+            # threaded like the recon term and lifted by _forward_body.
+            # Off unless <semanticArrangement> sets a weight.
+            if self.training:
+                object.__setattr__(
+                    self, "_stage0_semantic_loss",
+                    self.semantic_arrangement_loss(idx))
+            # NON-ALTERING forward (Phase 5 decision, 2026-06-10): the
+            # evidence stays the CARRIER -- the coarse description of
+            # THIS input -- and the snap only NAMES it (indices, roles,
+            # recon gather). Analysis "does not alter the data; it does
+            # snap to a codebook": the snap is annotation, not value
+            # replacement. The earlier STE substitution
+            # (``z_q = carrier + (q - carrier).detach()``) put codebook-
+            # row VALUES into the bind's SS half; as the recon gather
+            # drifts rows, nearest-row reassignments make the forward
+            # values jump discontinuously, and XOR_exact's late training
+            # transition (epoch ~250 under a plain basis) never
+            # consolidates: output loss stays at the constant-predictor
+            # floor for all 600 epochs (0/4) while recon converges.
+            # Adopt-on-first-sight alone (honest STE at init) did NOT
+            # rescue it -- the substitution itself is the poison.
+            z_q = carrier
+            # Asymmetric RECON leg (input -> codebook, asymmetric-vq
+            # sec.4): a plain differentiable gather of the SELECTED rows
+            # against the DETACHED evidence. The gradient lands on
+            # e[idx] only (z is detached; the argmin blocks the encoder
+            # leg) -- the exact-input-faithfulness EMA replacement.
+            # Threaded as a forward-local; _forward_body adds it onto
+            # the pipeline-chained error container at stage 0.
+            if self.training:
+                _vq = getattr(basis, "vq", None)
+                _cbp = getattr(_vq, "codebook", None) if _vq is not None else None
+                if isinstance(_cbp, nn.Parameter):
+                    _rows = _cbp[idx.reshape(-1)]
+                    _tgt = carrier.detach().reshape(-1, W)
+                    _n = min(int(_rows.shape[-1]), W)
+                    object.__setattr__(
+                        self, "_stage0_recon_loss",
+                        F.mse_loss(_rows[..., :_n], _tgt[..., :_n]))
+        # Narrow combine-facing code: per-slot coarse pooling of the
+        # carrier down to the muxed content width (deterministic, no new
+        # parameters).
+        if W == content:
+            narrow = z_q
         else:
-            # byte mode (default): uniform contiguous regions -- the
-            # Phase-2 region-mean pooling, unchanged.
-            pooled = F.adaptive_avg_pool1d(u, N * content)
-            evidence = torch.tanh(pooled.reshape(B, N, content) / 128.0)
-        event = F.pad(evidence, (0, D - content))
+            narrow = F.adaptive_avg_pool1d(
+                z_q.reshape(B * N, 1, W), content).reshape(B, N, content)
+        event = F.pad(narrow, (0, D - content))
         self.subspace.set_event(event)
         return self.subspace
 
@@ -15869,23 +16415,66 @@ class SymbolicSpace(Space):
         codebook_reversible = self.codebook and self.reversible
         codebook_nonreversible = self.codebook and not self.reversible
         if codebook_reversible:
+            # ASYMMETRIC dispatch rewrite (rev. 2026-06-10): the event
+            # stays the CONTINUOUS z (the reversible carrier). The legacy
+            # nearest-row TARGET PULL (``symbol_residual`` toward a
+            # codebook row) and the space-level commitment term are
+            # RETIRED -- they were the single-objective crutches the
+            # asymmetric routing replaces (STE carries output->encoder;
+            # the stage-0 recon gather carries input->codebook). Under
+            # the asymmetric VQ the codebook is gradient-trained, not
+            # EMA-tracked, so the old pull dragged z toward FROZEN random
+            # rows and steered training away from reconstruction
+            # (XOR_exact 4/4 -> 0/4 under a quantize basis -- the #13
+            # blocker, now removed). The snap still NAMES: indices are
+            # threaded (``_naming_indices``) without mutating the event,
+            # when widths agree and the naming cannot trigger an EMA
+            # write (standalone instances may lack the Models hardwire).
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             vspace = self.forwardEnd(self.subspace)
-            target = self._nearest_symbol_target(z_e)
-            if target is not None and self.commitment_beta > 0.0:
-                target_detached = target.detach().to(
-                    device=z_e.device, dtype=z_e.dtype)
-                n = min(z_e.shape[-1], target_detached.shape[-1], self.nDim)
-                if n > 0:
-                    commit = self.commitment_beta * F.mse_loss(
-                        z_e[..., :n], target_detached[..., :n])
-                    vspace.errors.add(
-                        "symbol_commitment", commit, weight=1.0,
-                        space="SymbolicSpace", category="symbol")
-            self._emit_symbol_terms(
-                vspace, self._compute_symbol_terms(predicted, target=target))
+            _serial = getattr(self, 'syntacticLayer', None) is not None
+            if _serial:
+                # SERIAL/grammar leg -- TRANSITIONAL: the legacy
+                # nearest-target coupling stays until the serial path
+                # gains its own asymmetric recon leg (the stage-0 unity
+                # gather is parallel-only; without EMA, commitment, or
+                # the residual, the serial SS codebook would be fully
+                # orphaned and the grammar XOR signal dies -- regression-
+                # gated by test_mm_grammar_learns_xor_signal). The
+                # symbolic side's real validation is D (corpus, serial).
+                target = self._nearest_symbol_target(z_e)
+                if target is not None and self.commitment_beta > 0.0:
+                    target_detached = target.detach().to(
+                        device=z_e.device, dtype=z_e.dtype)
+                    n = min(z_e.shape[-1], target_detached.shape[-1],
+                            self.nDim)
+                    if n > 0:
+                        commit = self.commitment_beta * F.mse_loss(
+                            z_e[..., :n], target_detached[..., :n])
+                        vspace.errors.add(
+                            "symbol_commitment", commit, weight=1.0,
+                            space="SymbolicSpace", category="symbol")
+                self._emit_symbol_terms(
+                    vspace,
+                    self._compute_symbol_terms(predicted, target=target))
+            else:
+                _basis = self.subspace.what
+                _vq = getattr(_basis, "vq", None)
+                _ema_safe = (not self.training
+                             or (getattr(_vq, "ema_update", True) is False))
+                if (isinstance(_basis, Codebook) and _ema_safe
+                        and torch.is_tensor(z_e) and z_e.dim() >= 2
+                        and int(z_e.shape[-1]) == int(self.nDim)):
+                    with torch.no_grad():
+                        _, _naming_idx, _ = _basis.quantize(
+                            z_e.reshape(-1, int(self.nDim)))
+                    object.__setattr__(
+                        self, "_naming_indices",
+                        _naming_idx.reshape(z_e.shape[:-1]))
+                self._emit_symbol_terms(
+                    vspace, self._compute_symbol_terms(predicted))
         elif codebook_nonreversible:
             z_e = act
             predicted = z_e.clone()
@@ -15897,22 +16486,38 @@ class SymbolicSpace(Space):
                 z_e, quantized, mode=self.gradient_mode)
             self.subspace.set_event(z_q)
             vspace = self.forwardEnd(self.subspace)
-            quantized_detached = quantized.detach()
-            n = min(z_e.shape[-1], quantized_detached.shape[-1], self.nDim)
-            if self.commitment_beta > 0.0 and n > 0:
-                commit = self.commitment_beta * F.mse_loss(
-                    z_e[..., :n], quantized_detached[..., :n])
-                vspace.errors.add(
-                    "symbol_commitment", commit, weight=1.0,
-                    space="SymbolicSpace", category="symbol")
-            cb_commit = getattr(self.subspace.what, "last_commit_loss", None)
-            if cb_commit is not None and torch.is_tensor(cb_commit) and cb_commit.requires_grad:
-                vspace.errors.add(
-                    "codebook_commit", cb_commit, weight=1.0,
-                    space="SymbolicSpace", category="symbol")
-            self._emit_symbol_terms(
-                vspace,
-                self._compute_symbol_terms(predicted, target=quantized_detached))
+            if getattr(self, 'syntacticLayer', None) is not None:
+                # SERIAL/grammar leg -- TRANSITIONAL legacy coupling (see
+                # the reversible branch's note): commitment + cb_commit +
+                # target stay until the serial asymmetric recon leg lands.
+                quantized_detached = quantized.detach()
+                n = min(z_e.shape[-1], quantized_detached.shape[-1],
+                        self.nDim)
+                if self.commitment_beta > 0.0 and n > 0:
+                    commit = self.commitment_beta * F.mse_loss(
+                        z_e[..., :n], quantized_detached[..., :n])
+                    vspace.errors.add(
+                        "symbol_commitment", commit, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+                cb_commit = getattr(
+                    self.subspace.what, "last_commit_loss", None)
+                if (cb_commit is not None and torch.is_tensor(cb_commit)
+                        and cb_commit.requires_grad):
+                    vspace.errors.add(
+                        "codebook_commit", cb_commit, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+                self._emit_symbol_terms(
+                    vspace,
+                    self._compute_symbol_terms(
+                        predicted, target=quantized_detached))
+            else:
+                # ASYMMETRIC dispatch (rev. 2026-06-10, PARALLEL leg): the
+                # space-level commitment, the VQ-internal cb_commit
+                # emission, and the target pull are RETIRED (C-11). The
+                # STE above IS the output->encoder leg; the
+                # input->codebook leg is the stage-0 recon gather.
+                self._emit_symbol_terms(
+                    vspace, self._compute_symbol_terms(predicted))
         else:
             # VQ snap when a codebook is configured but neither VQ-VAE
             # nor hard-quantize fires (the typical post-rollback,

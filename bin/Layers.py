@@ -1450,49 +1450,62 @@ class InvertibleLinearLayer(ErgodicLayer):
 
 
 class ConceptualCombine(Layer):
-    r"""Square, augment-threaded, exactly-invertible 3-stream conceptual combine.
+    r"""Square, exactly-invertible 2-STREAM conceptual bind (C-10).
 
-    Wraps an :class:`InvertibleLinearLayer` (the dense LDU, ``full`` / ``last``)
-    or the base :class:`GrammarLayer` butterfly cascade (``butterfly``) as a
-    SQUARE ``R^{3D} -> R^{3D}`` map over the per-position content streams
-    ``PS_t``, ``SS_t``, ``CS_t in R^D`` (doc/specs/2026-06-06 conceptual-
-    recurrence, sec. 3)::
+    Asymmetric-vq plan sec.5 (rev. 2026-06-09; slot geometry corrected
+    2026-06-10): a concept is the REVERSIBLE BIND of its perceptual form
+    (PS) and symbolic form (SS). The two streams are stacked along the
+    VECTOR axis -- ``N`` slots each, ``2N`` total -- and ONE cascade runs
+    over the flattened ``2N * D`` slab (``16 * nDim`` for the production
+    parallel config: ``2^14`` exactly, zero pad), so the bind mixes ACROSS
+    slots, not merely within each position. Wraps an
+    :class:`InvertibleLinearLayer` (the dense LDU, ``full`` / ``last``) or
+    the base :class:`GrammarLayer` butterfly cascade (``butterfly``)::
 
-        [ next_CS_t || aug_t ] = ILL_t( [ PS_t || SS_t || CS_t ] )
+        CS_t = ILL_t( stack[ PS_t ; SS_t ] )        # forward bind
+        [ PS_t ; SS_t ] = ILL_t^{-1}( CS_t )        # exact reverse
 
-    with ``next_CS_t in R^D`` the conceptual carrier and ``aug_t`` the
-    augment. The alpha-mixing of the three streams is ABSORBED into the
-    learned LDU weights -- there are no separate alpha knobs. The augment
-    WIDTH is mode-dependent: ``2D`` for the dense (``full`` / ``last``) path
-    where the square map is ``R^{3D} -> R^{3D}``; ``M - D`` for the
-    ``butterfly`` path, where ``M`` is the next power of two ``>= 3D`` and the
-    cascade is an exact bijection on the full ``R^M`` (see :meth:`__init__`).
-    The caller (the conceptual-recurrence forward) threads ``aug`` opaquely,
-    so this width difference is internal. The same square layer serves both
-    reconstruction regimes; the ``<perfectReconstruction>`` boolean only gates
-    whether the augment is threaded back (exact, :meth:`reverse`) or zeroed at
-    reverse (approximate, :meth:`reverse_dropped`):
+    with ``PS_t, SS_t`` of shape ``[..., N, D]`` (the FULL muxed event
+    width: the where/when band PARTICIPATES in the bind, option B -- the
+    spec's ``16 * nDim`` arithmetic is the event width, ``nDim`` being the
+    config event width). ``CS_t`` is the
+    WHOLE mixed bind, flattened (``[..., M]``, ``M = next_pow2(2N*D)``);
+    the PS / SS VIEWS are its slot-halves -- ``views(CS)[0] ==``
+    vectors ``0..N-1``, ``views(CS)[1] ==`` vectors ``N..2N-1`` -- exactly
+    the row-windows a Phase-5/6 ``.active`` index view can express. There
+    is NO augment and NO carrier/augment split. This retires the 3-stream
+    design's pathologies at the source (doc/plans/2026-06-09-asymmetric-
+    vq-symbolic-ss.md sec.5):
 
-      * **perfect** -- thread ``aug_t`` forward into reverse;
-        ``[PS||SS||CS] = ILL_t^{-1}([next_CS || aug_t])`` is a closed-form
-        round-trip exact to the LDU solve / cascade tolerance.
-      * **dropped** -- reverse with ``aug`` treated as the structured zero-pad.
-        EXACT on the rank-``D`` subspace that survived the forward; which
-        ``D``-subspace survives is learned through ``L``.
+      * **contraction gone** -- nothing is shed to an augment; the carrier
+        holds the full bind, so there is no rank bottleneck and no
+        per-stage scale collapse (the old design read the carrier from the
+        ps-slot only -- 1/3 rank -- bleeding 2/3 to the augment per stage);
+      * **exact inversion, no augment threading** -- the layer is a true
+        bijection on its operating width, so ``CS -> (PS, SS)`` is exact by
+        construction; the whole augment-pairing reverse is deleted
+        (``reverse_dropped`` retired with it);
+      * **right semantics** -- the mix of the three alphas is ABSORBED into
+        the learned weights; the carrier is the bind, not a slice.
+
+    The bind is kept PURELY LINEAR: a saturating squash inside the combine
+    would break exact inversion; PS/SS arrive already bounded (codebook /
+    fold), norm-carried through the layer (the +-1 OPERATING RANGE is an
+    input contract, not a tanh).
 
     The span is selected by the global ``<sigmaPi>`` knob via
     :meth:`Spaces.Space.sigma_pi_mode` (``last`` | ``butterfly`` | ``full``),
     matching the PS.Pi / SS.Sigma construction in Spaces.py so behaviour is
     consistent across the codebase:
 
-      * ``full``      -- ONE dense LDU over the whole ``[..., 3D]`` slab
+      * ``full``      -- ONE dense LDU over the whole ``[..., 2D]`` slab
                          (the wide<->deep invertible bridge).
       * ``last``      -- per-slot square fold over the last dim; for this
-                         per-position combine the slot IS the ``3D`` content
+                         per-position bind the slot IS the ``2D`` content
                          vector, so it is the same single dense LDU as
                          ``full`` (no cross-position flatten).
       * ``butterfly`` -- the O(M log M) cross-element 2x2-LDU cascade over a
-                         POWER-OF-TWO width ``M = next_pow2(3D)``. The base
+                         POWER-OF-TWO width ``M = next_pow2(2D)``. The base
                          GrammarLayer cascade is PURELY LINEAR: each node is a
                          bare 2x2 LDU pair op (:meth:`GrammarLayer.
                          _butterfly_pair_forward` /
@@ -1525,18 +1538,18 @@ class ConceptualCombine(Layer):
     later task.
     """
 
-    def __init__(self, content_dim, naive=False, sigma_pi_mode="full",
-                 hasBias=True, ergodic=False):
-        """Build the per-stage square combine.
+    def __init__(self, content_dim, n_vectors=1, naive=False,
+                 sigma_pi_mode="full", hasBias=True, ergodic=False):
+        """Build the per-stage square 2-stream slot bind.
 
         Args:
-            content_dim: ``D`` -- the per-stream slab width. The wrapped
-                layer is square ``3D -> 3D``. Pass the FULL muxed event
-                width (``cs.muxedSize`` = what + where + when) so the
-                .where/.when band PARTICIPATES in the combine rather than
-                riding along untouched (option B, doc/specs/2026-06-06-
-                muxed-events-and-positional-bands.md). The name ``content_dim``
-                is historical -- it is the whole muxed-event width now.
+            content_dim: ``D`` -- the per-vector width: the FULL muxed
+                event width (``cs.muxedSize`` == the config ``nDim``), so
+                the where/when band participates in the bind (option B).
+            n_vectors: ``N`` -- the per-stream slot count. The streams
+                stack to ``2N`` vectors and the wrapped layer is square
+                over ``M = next_pow2(2 * N * D)`` (``== 2ND`` when that is
+                a power of two -- the production 16*1024 = 2^14 case).
             naive: forwarded to ``InvertibleLinearLayer`` (dense path only);
                 ``naive=False`` routes reverse through the exact structured
                 ``_solve_ldu`` (the design's required path -- do NOT use
@@ -1551,13 +1564,16 @@ class ConceptualCombine(Layer):
                 butterfly path (the base cascade has no ergodic mode).
         """
         D = int(content_dim)
-        if D < 1:
+        Nv = int(n_vectors)
+        if D < 1 or Nv < 1:
             raise ValueError(
-                f"ConceptualCombine: content_dim must be >= 1; got {D}")
-        N = 3 * D
+                f"ConceptualCombine: content_dim and n_vectors must be "
+                f">= 1; got D={D}, N={Nv}")
+        N = 2 * Nv * D
         super().__init__(N, N)
         self.content_dim = D
-        self.combine_dim = N  # the 3D content slab width [ps||ss||cs]
+        self.n_vectors = Nv
+        self.combine_dim = N  # the flattened 2N*D stack [ps-slots ; ss-slots]
 
         # Normalise the <sigmaPi> span the same way the spaces do; a lazy
         # import keeps Layers.py free of a Spaces import cycle (Spaces
@@ -1586,13 +1602,15 @@ class ConceptualCombine(Layer):
         self.sigma_pi_mode = mode
 
         if mode == "butterfly":
-            # Cross-element linear 2x2-LDU cascade. The base GrammarLayer
-            # cascade is plain-linear and exactly invertible (closed-form
-            # per-node inverse), which is exactly the augment-threaded
-            # invertible combine we need -- no pi (atanh/tanh) fold.
+            # Cross-element linear 2x2-LDU cascade over the WHOLE flattened
+            # 2N*D stack -- the bind mixes across slots, the same
+            # cross-position reach PS.sigma / SS.pi get from their
+            # flattened cascades. The base GrammarLayer cascade is
+            # plain-linear and exactly invertible (closed-form per-node
+            # inverse); no pi (atanh/tanh) fold.
             #
-            # CRITICAL: size the cascade at M = next power of two >= 3D,
-            # NOT at 3D. The GrammarLayer butterfly cascade structurally
+            # CRITICAL: size the cascade at M = next power of two >= 2N*D,
+            # NOT at 2N*D. The GrammarLayer butterfly cascade structurally
             # runs over next_pow2(N) and, if N is not itself a power of
             # two, _butterfly_flatten zero-pads up to that width while
             # _butterfly_unflatten strips back down to N -- discarding the
@@ -1601,39 +1619,87 @@ class ConceptualCombine(Layer):
             # non-identity weights). By constructing the layer with
             # N == M (a power of two) the layer's N == M_total == M, so
             # NOTHING is padded or stripped and the cascade is an exact
-            # bijection on the full R^M. ConceptualCombine owns the 3D->M
-            # zero-pad (forward) and the M->3D read-back (reverse) itself.
-            M = 1 << ((N - 1).bit_length())  # next pow2 >= 3D (== 3D if pow2)
+            # bijection on the full R^M. ConceptualCombine owns the
+            # 2ND->M zero-pad (forward) and the M->2ND read-back (reverse)
+            # itself. For the production parallel config (N=8, D=1024)
+            # M == 16384 == 2^14 exactly: zero pad, zero waste.
+            M = 1 << ((N - 1).bit_length())  # next pow2 >= 2ND
             self.combine_padded = M          # cascade operating width
-            self.aug_dim = M - D             # augment width (butterfly)
             self.layer = GrammarLayer(M, M, butterfly=True, N=M)
         else:
-            # "full" and "last": a single dense LDU over the whole 3D
-            # slab. For this per-position combine the "last" per-slot fold
-            # and the "full" flattened bridge coincide (the slot is the 3D
-            # content vector), so both map to one InvertibleLinearLayer.
-            # Square 3D->3D, no padding: the operating width IS 3D and the
-            # augment is the 2D tail below the D-wide carrier.
+            # "full" and "last": a single dense LDU over the whole
+            # flattened 2N*D stack (per-position and flattened coincide
+            # once the stack is flattened), so both map to one
+            # InvertibleLinearLayer. Square, no padding. Practical only
+            # at small test widths -- production uses butterfly.
             self.combine_padded = N
-            self.aug_dim = 2 * D
             self.layer = InvertibleLinearLayer(
                 N, N, naive=naive, ergodic=ergodic,
                 hasBias=hasBias, stable=True)
+        # The carrier IS the full bind: the layer's operating width.
+        self.carrier_dim = self.combine_padded
         self.layers.append(self.layer)
+        # The CORPUS CALLOSUM (Alec, 2026-06-10): when CS glues the bind's
+        # two views for operation (until OutputSpace accepts both views as
+        # two subspaces), the halves are literally STACKED along the vector
+        # axis (2N vectors) and glued by a learned [2N, N] matrix over the
+        # SLOT axis (channel-preserving). Initialised to AVERAGING
+        # (0.5 * [I_N ; I_N]) so the glue starts as the balanced mix of the
+        # two hemispheres and learns its own routing from there. Tiny
+        # parameter cost (2N*N scalars; 128 for the production 16x8).
+        _cal = torch.zeros(2 * Nv, Nv)
+        _eye = torch.eye(Nv)
+        _cal[:Nv, :] = 0.5 * _eye
+        _cal[Nv:, :] = 0.5 * _eye
+        self.callosum = nn.Parameter(_cal)
 
-    def _combine(self, ps, ss, cs):
-        """Concatenate the three ``[..., D]`` streams into ``[..., 3D]``.
+    def _combine(self, ps, ss):
+        """Stack the two ``[..., N, D]`` streams along the VECTOR axis into
+        ``[..., 2N, D]``.
 
-        Internal order: ``[ps || ss || cs]``.  The wrapped layer's identity
-        init therefore maps ``out[..., :D] = ps_in``, giving the percept as
-        the initial carrier.
+        Internal order: ``[ps-slots ; ss-slots]``.  The wrapped layer's
+        identity init therefore maps vectors ``0..N-1`` to ``ps_in`` and
+        vectors ``N..2N-1`` to ``ss_in``.
         """
-        return torch.cat([ps, ss, cs], dim=-1)
+        return torch.cat([ps, ss], dim=-2)
 
     def _split_streams(self, x):
-        """Split ``[..., 3D]`` back into ``(ps, ss, cs)`` each ``[..., D]``."""
-        D = self.content_dim
-        return x[..., :D], x[..., D:2 * D], x[..., 2 * D:]
+        """Split ``[..., 2N, D]`` back into ``(ps, ss)`` each ``[..., N, D]``."""
+        Nv = self.n_vectors
+        return x[..., :Nv, :], x[..., Nv:2 * Nv, :]
+
+    def views(self, carrier):
+        """The PS / SS views of a bind: its slot-halves.
+
+        ``carrier`` is the ``[..., M]`` flat bind ``forward`` returned.
+        Returns ``(ps_view, ss_view)``, each ``[..., N, D]`` -- vectors
+        ``0..N-1`` and ``N..2N-1`` of the STORED mix (the row-windows a
+        Phase-5/6 ``.active`` index view expresses; NOT the inverse's
+        halves, so a consumer of the views keeps the bind in its gradient
+        path).
+        """
+        leading = tuple(carrier.shape[:-1])
+        body = carrier[..., :self.combine_dim].reshape(
+            *leading, 2 * self.n_vectors, self.content_dim)
+        ps_v, ss_v = self._split_streams(body)
+        return ps_v.contiguous(), ss_v.contiguous()
+
+    def glue(self, carrier):
+        """The corpus-callosum glue: the STACKED views reduced to N vectors.
+
+        Reads the bind's ``[..., 2N, D]`` stack (both views, literally
+        stacked) and applies the learned ``[2N, N]`` callosum over the
+        slot axis: ``out[..., n, :] = sum_k callosum[k, n] *
+        stack[..., k, :]``. Channel-preserving; init = averaging the two
+        hemispheres. This is the head-facing N-vector operation event
+        until OutputSpace accepts both views directly.
+        """
+        leading = tuple(carrier.shape[:-1])
+        stack = carrier[..., :self.combine_dim].reshape(
+            *leading, 2 * self.n_vectors, self.content_dim)
+        # [..., 2N, D] x [2N, N] -> [..., N, D] over the slot axis.
+        glued = torch.einsum("...kd,kn->...nd", stack, self.callosum)
+        return glued.contiguous()
 
     @staticmethod
     def _flatten_leading(x):
@@ -1653,75 +1719,54 @@ class ConceptualCombine(Layer):
         """Inverse of :meth:`_flatten_leading`: ``[B', W] -> [*leading, W]``."""
         return x.reshape(*leading, x.shape[-1])
 
-    def forward(self, ps, ss, cs):
-        """Square combine: ``[next_cs || aug] = layer([ps || ss || cs])``.
+    def forward(self, ps, ss):
+        """The bind: ``CS = layer(flatten(stack[ps ; ss]))``.
 
-        Concats the three ``[..., D]`` streams into ``[..., 3D]``, flattens
-        all leading dims to a single batch dim, zero-pads ``3D -> M`` (the
-        operating width; ``M == 3D`` for the dense path so the pad is empty),
-        applies the wrapped invertible layer, splits the ``M``-wide output
-        into the ``D``-wide conceptual carrier and the ``M - D`` augment, and
-        restores the original leading dims on both.
+        Stacks the two ``[..., N, D]`` streams along the vector axis into
+        ``[..., 2N, D]``, flattens the trailing ``(2N, D)`` into ``2N*D``
+        (and all leading dims to a single batch dim), zero-pads
+        ``2N*D -> M`` (the operating width; empty for the production
+        ``16*1024 = 2^14`` case), applies the wrapped invertible layer, and
+        restores the leading dims.
 
-        Returns ``(next_cs, aug)`` with ``next_cs`` width ``D`` and ``aug``
-        width ``self.aug_dim`` (``2D`` dense, ``M - D`` butterfly).
+        Returns the FULL ``[..., M]`` flat carrier ``CS`` -- the whole
+        mixed bind. There is no augment: the carrier and the bind are the
+        same tensor, which is what makes :meth:`reverse` an exact inversion
+        with nothing threaded alongside. Use :meth:`views` for the
+        ``[..., N, D]`` PS / SS slot-half windows.
         """
-        D = self.content_dim
-        x = self._combine(ps, ss, cs)            # [..., 3D]
-        flat, leading = self._flatten_leading(x)  # [B', 3D]
+        x = self._combine(ps, ss)                  # [..., 2N, D]
+        leading = tuple(x.shape[:-2])
+        flat = x.reshape(-1, self.combine_dim)     # [B', 2N*D]
         if self.combine_padded > self.combine_dim:
-            # Zero-pad 3D -> M (butterfly only; dense has M == 3D).
             pad = flat.new_zeros(
                 flat.shape[0], self.combine_padded - self.combine_dim)
             flat = torch.cat([flat, pad], dim=-1)  # [B', M]
-        out = self.layer.forward(flat)            # [B', M]
-        # A5 fullgraph fix: ``out[..., :D]`` / ``out[..., D:]`` are SLICE
-        # views of the padded ``[B', M]`` layer output; the subsequent
-        # ``reshape`` to the leading dims can keep them as views aliasing the
-        # M-wide base. When such a view escapes as a forward OUTPUT, AOT
-        # autograd records the view-meta against the M-wide base and tries to
-        # regenerate it from the (narrower) runtime base in its output-alias
-        # epilogue -- which crashes ``gen_alias_from_base`` with a shape
-        # mismatch (recorded [B*T, M] vs runtime [B, T, D]). ``.contiguous()``
-        # forces a materialised (non-aliasing) result so the combine outputs
-        # are clean tensors, not views of the padded intermediate.
-        next_cs = self._restore_leading(out[..., :D].contiguous(), leading)
-        aug = self._restore_leading(out[..., D:].contiguous(), leading)
-        return next_cs, aug
+        out = self.layer.forward(flat)             # [B', M]
+        # A5 fullgraph fix (kept from the 3-stream design): force a
+        # materialised, non-aliasing output so no view of a padded
+        # intermediate escapes the forward (AOT autograd's output-alias
+        # epilogue chokes on views whose recorded base width differs from
+        # the runtime base).
+        return out.contiguous().reshape(*leading, self.carrier_dim)
 
-    def reverse(self, next_cs, aug):
-        """Perfect (augment-threaded) reverse.
+    def reverse(self, carrier):
+        """Exact reverse: ``[ps ; ss] = layer^{-1}(CS)``.
 
-        Concatenates ``[next_cs || aug]`` into the full ``M``-wide vector,
-        flattens leading dims, applies the layer's exact structured inverse
+        Flattens leading dims, applies the layer's exact structured inverse
         (dense ``naive=False`` -> ``_solve_ldu``; butterfly -> the per-node
-        closed-form pair reverse), and reads back the FIRST ``3D`` coords as
-        ``[ps||ss||cs]`` (coords ``3D..M`` are the recovered zero-pad, ~0).
-        Splits into ``(ps, ss, cs)`` and restores the leading dims. Exact to
-        the solve / cascade tolerance.
+        closed-form pair reverse), reads back the first ``2N*D`` coords
+        (the ``M - 2N*D`` tail is the recovered zero-pad, ~0), un-flattens
+        to ``[..., 2N, D]``, and splits into ``(ps, ss)`` each
+        ``[..., N, D]``. Exact to the solve / cascade tolerance -- by
+        construction, with NOTHING threaded: the carrier IS the whole bind.
         """
-        y = torch.cat([next_cs, aug], dim=-1)     # [..., M]
-        flat, leading = self._flatten_leading(y)   # [B', M]
-        x = self.layer.reverse(flat)               # [B', M]
-        # Read back the full operating width, then keep only the 3D content
-        # slab (the M - 3D tail is the recovered zero-pad, ~0 for butterfly;
-        # empty for dense).
-        content = x[..., :self.combine_dim]        # [B', 3D]
-        content = self._restore_leading(content, leading)
-        return self._split_streams(content)
-
-    def reverse_dropped(self, next_cs):
-        """Dropped-augment (approximate) reverse.
-
-        Build the structured zero-pad ``aug = 0`` over the FULL augment width
-        (``self.aug_dim``; ``2D`` dense, ``M - D`` butterfly) and apply the
-        same exact inverse; split into ``(ps, ss, cs)``. Recovers the rank-
-        ``D`` subspace that survived the forward -- it does NOT equal the
-        original inputs (the augment was discarded), but it is finite and
-        bounded.
-        """
-        aug = next_cs.new_zeros(*next_cs.shape[:-1], self.aug_dim)
-        return self.reverse(next_cs, aug)
+        flat, leading = self._flatten_leading(carrier)  # [B', M]
+        x = self.layer.reverse(flat)                    # [B', M]
+        body = x[..., :self.combine_dim].reshape(
+            *leading, 2 * self.n_vectors, self.content_dim)
+        ps_v, ss_v = self._split_streams(body)
+        return ps_v.contiguous(), ss_v.contiguous()
 
 
 class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
@@ -7472,6 +7517,15 @@ class ChunkLayer(Layer):
             self.vocab[key] = i
             self.id_to_bytes[i] = key
         self._next_id = 256
+        # Task 4 (shared byte codebook): the PerceptStore that owns byte
+        # identity across synthesis front ends. Wired by PerceptualSpace
+        # (``mirror_to_store``) in bpe/mphf modes; when set, every vocab
+        # entry is mirrored into the store (percept_id == chunk_id) and
+        # ``bytes_for`` resolves through it -- ``id_to_bytes`` becomes
+        # the segmentation-side mirror, not the authority. Stashed
+        # without module registration: the store is owned (and
+        # registered) by the PerceptualSpace, not this layer.
+        object.__setattr__(self, "percept_store", None)
         self._max_merge_len = 1
         # Cumulative pair- and unigram-counts across batches. The two
         # gates of the promotion criterion read these directly:
@@ -7554,7 +7608,67 @@ class ChunkLayer(Layer):
         self.n_vectors = int(section.get("n_vectors", self.n_vectors))
         self.word_learning = int(section.get(
             "word_learning", self.word_learning))
+        # Task 4: an artifact load replaces the vocabulary wholesale --
+        # re-mirror it into the shared byte store (no-op when unwired).
+        self.mirror_to_store()
         return self
+
+    # -- Shared byte store (Task 4) -------------------------------------
+
+    def mirror_to_store(self, store=None):
+        """Mirror the chunk vocabulary into the shared ``PerceptStore``.
+
+        Task 4 (2026-06-09 build-batch plan): byte identity lives in ONE
+        store across synthesis front ends -- segmentation (BPE merges /
+        MPHF keys) is a strategy OVER the shared byte/percept codebook,
+        not a private table. Entries are inserted in chunk-id order and
+        ``RadixLayer.insert`` allocates sequential ids, so
+        ``percept_id == chunk_id`` for every mirrored entry. That
+        alignment is ASSERTED (fail loud): the reverse path
+        (``bytes_for`` -> ``store.bytes_for``) relies on it, and a store
+        that was grown by another writer cannot host this mirror.
+        Idempotent -- re-mirroring an already-mirrored vocabulary is a
+        no-op (``insert`` returns the existing id).
+
+        Args:
+            store: optional store to adopt as ``self.percept_store``
+                before mirroring. ``None`` keeps the current wiring.
+
+        Returns:
+            The number of vocabulary entries mirrored (0 when unwired).
+        """
+        if store is not None:
+            object.__setattr__(self, "percept_store", store)
+        store = self.percept_store
+        if store is None:
+            return 0
+        mirrored = 0
+        for cid in sorted(self.id_to_bytes):
+            bt = self.id_to_bytes[cid]
+            pid = store.insert(bytes(bt))
+            assert int(pid) == int(cid), (
+                f"ChunkLayer.mirror_to_store: percept_id {pid} != "
+                f"chunk_id {cid} for {bt!r} -- the shared store must be "
+                f"dedicated to this vocabulary (insertion in chunk-id "
+                f"order keeps the id spaces aligned).")
+            mirrored += 1
+        return mirrored
+
+    def bytes_for(self, chunk_id):
+        """Canonical bytes for ``chunk_id``, via the shared byte store.
+
+        Task 4: when the ``PerceptStore`` is wired, it is the byte-
+        identity authority and this resolves through
+        ``store.bytes_for`` (the same reverse surface radix uses);
+        ``id_to_bytes`` is the segmentation-side mirror and serves only
+        as the unwired fallback. Returns ``None`` for unknown ids.
+        """
+        cid = int(chunk_id)
+        store = self.percept_store
+        if store is not None and 0 <= cid < len(store):
+            return store.bytes_for(cid)
+        bt = self.id_to_bytes.get(cid)
+        return bytes(bt) if bt is not None else None
 
     # -- Boundary detection --------------------------------------------
 
@@ -7782,6 +7896,15 @@ class ChunkLayer(Layer):
             self._next_id += 1
             self.vocab[new_key] = new_id
             self.id_to_bytes[new_id] = new_key
+            # Task 4: promotions mirror into the shared byte store as
+            # they happen (id alignment asserted; see mirror_to_store).
+            if self.percept_store is not None:
+                _pid = self.percept_store.insert(bytes(new_key))
+                assert int(_pid) == int(new_id), (
+                    f"ChunkLayer.train_step: percept_id {_pid} != "
+                    f"chunk_id {new_id} for promoted merge {new_key!r}; "
+                    f"the shared store and the vocab id spaces must stay "
+                    f"aligned.")
             self.merges.append(pair)
             if len(new_key) > self._max_merge_len:
                 self._max_merge_len = len(new_key)
@@ -12667,6 +12790,14 @@ class VectorQuantize(nn.Module):
         # False preserves the byte-identical EMA path used by the
         # Conceptual/Symbolic codebooks (single-writer invariant).
         self.learnable_codebook = bool(learnable_codebook)
+        # Asymmetric VQ (asymmetric-vq plan sec.3, rev. 2026-06-09): master
+        # gate for the in-forward EMA codebook update. Default True (the
+        # standard VQ-VAE behavior). The SymbolicSpace VQ sets this False --
+        # EMA is a single-objective crutch replaced by the reconstruction
+        # gradient on the codebook (the input->codebook leg of the
+        # asymmetric routing). Distinct from ``learnable_codebook`` (which
+        # also flips the in-forward gradient estimator).
+        self.ema_update = True
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.
@@ -12906,7 +13037,8 @@ class VectorQuantize(nn.Module):
         # codebook-attached STE below) in the eager ``optimizer.step``,
         # not by an in-forward EMA write. This is what makes ``forward``
         # idempotent for the perceptual codebook.
-        if self.training and not freeze_codebook and not self.learnable_codebook:
+        if (self.training and not freeze_codebook
+                and not self.learnable_codebook and self.ema_update):
             with torch.no_grad():
                 self._sync_ema_buffers()
                 flat_f = flat.float()

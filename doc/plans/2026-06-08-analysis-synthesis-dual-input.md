@@ -64,6 +64,37 @@ standing commitments the draft contradicted:
 It also leaves the working XOR recipe intact (`asymmetric-vq` §1: radix +
 1-vector SBOW on PS), since the chunkers stay put.
 
+## Processing contract (Alec, 2026-06-10)
+
+A standing rule for every phase below and all future work:
+
+- **Contain calculations in Spaces** — the Models body loop orchestrates
+  only.
+- Within Spaces, the surface is mainly **`__init__` / `forward` /
+  `reverse` / `reset`**.
+- **Data passes to those methods inside SubSpaces**, and Spaces keep
+  **little or no state** — clearing the way for **pipeline parallelism
+  over Spaces**.
+
+Status (2026-06-10): the 2-stream bind calculation moved into
+`ConceptualSpace.bind_streams` / `unbind` (demux / fit / slot-stack /
+cascade / corpus-callosum glue), with the bind carrier riding ON the
+SubSpaces (`_bind_carrier`) rather than model state; the Models helpers
+delegate to the Space statics. **Known contract debt, tracked:**
+
+1. `concepts_in` (the unity view) is a raw tensor; the contract wants a
+   SubSpace carrier (Phase 5/6, with the `.active`-views work).
+2. SS stage-0 forward-locals (`_staged_analysis_spans`,
+   `_stage0_recon_loss`, `_stage0_z_pre_snap`, `_stage0_indices`) park on
+   the Space instance; they should ride the SubSpaces once the unity is
+   SubSpace-carried.
+3. Model-level staging (`_staged_in_sub`, `_staged_concepts_in`,
+   `_combine_carriers` as a test handle) is orchestrator staging — kept,
+   but the reverse path now prefers the SubSpace-carried bind.
+4. The Space lifecycle methods are `Start`/`Reset`/`End` today; the
+   contract names `reset` — align naming when next touching the
+   lifecycle.
+
 ## Goal
 
 Reformulate the two loops as an explicit analysis/synthesis pair:
@@ -239,7 +270,7 @@ Move the analytic front ends to SymbolicSpace:
 - The PS fold becomes `sigma` (§3); the chunk+embed pipeline itself is
   unchanged by this plan beyond the knob rename (§8).
 
-### 6. Reconstruction: Recombining Both Branches
+### 6. Reconstruction: Recombining Both Branches — PAINTING (rev. 2026-06-10)
 
 Reverse reconstruction synthesizes the original input from both branches:
 
@@ -247,22 +278,36 @@ Reverse reconstruction synthesizes the original input from both branches:
 InputSpace.reverse(percepts_recon, concepts_recon)
 ```
 
-Recombination layer:
+**Design (Alec, 2026-06-10 — supersedes the draft's concat+ILL
+recombiner):** the recombination is PAINTING, not a learned mix:
+
+- the **Universal view paints the background** — the coarse top-down
+  scaffold lays down the canvas first;
+- the **Atomic view is averaged in** (or painted over) — the exact
+  bottom-up content lands on that background; **start with averaging**,
+  graduate to paint-over (atomic wins where it has support) if averaging
+  proves too soft.
 
 ```text
-flatten(percepts_recon): [B, N]    (bottom-up content stream)
-flatten(concepts_recon): [B, N]    (top-down scaffold stream)
-concat:                  [B, 2N]
-InvertibleLinearLayer:   [B, 2N] -> [B, N]  (approximate)
-                      or [B, 2N] -> [B, 2N] (exact, augment-threaded)
+background = broadcast(concepts_recon)        # universal paints first
+recon      = average(background, percepts_recon)   # atoms averaged in
+             (later: paint-over -- atomic replaces where supported)
 ```
 
-Open engineering choice (pick ONE explicitly and test it; do not hide
-exactness assumptions in comments):
-
-- rectangular `ILL(2N, N)` — approximate, matches the output width;
-- square `ILL(2N, 2N)` + threaded/zeroed N-wide augment — exact, mirroring
-  `ConceptualCombine`.
+No recombination parameters. **LANDED (2026-06-10, uncommitted)** with
+one refinement learned from the XOR_exact gate: the painted COMBINED
+surface rides the SubSpace as ``_painted_event`` while the event itself
+stays the ATOMIC reverse -- the exact word/byte decode reads the
+continuous reversed tensor (XOR_exact's codebook-free chain), and
+painting it (even only the padding) decodes to junk words. The
+conceptual branch is the stage-0 SS stream of the bind's exact inverse,
+stamped by ``_reverse_body`` and carried across the PS handoff
+(``_concepts_recon`` -- SubSpace-carried; ``reverse`` stays single-arg
+per the processing contract). **Open hook:** promoting the painted
+surface to a consumer (the reconstruction loss and/or the report's
+Reconstructed column) -- decide when the decode can read the atomic
+branch separately. The retired alternative (flatten/concat/ILL,
+rectangular-vs-square) is recorded here for history only.
 
 ### 7. SS Descriptor Codebook (generalities)
 
@@ -414,7 +459,82 @@ Acceptance: smoke prompts reconstruct byte-perfect through the PS store on
 every synthesis mode; analysis modes produce non-altering
 boundaries+measurements; no compiled-path host sync regressions.
 
-### Phase 5: Materialization Split
+### The `<codebook>` knob STAYS: subsymbolic vs symbolic iteration (Alec, 2026-06-10 — SUPERSEDES the #13b knob-removal)
+
+The SS `<codebook>` tag is NOT removed. It is the iteration-mode switch:
+
+| `<codebook>` | PS iterations (up to conceptualOrder) | SS iterations |
+|---|---|---|
+| `none` | subsymbolic | **subsymbolic** (continuous legs; the whole loop is subsymbolic, then reconstitute) |
+| `quantize` | subsymbolic | **symbolic** (the SS leg QUANTIZES its input) |
+
+The knob's codebook applies to the **input from CS** (the t>0 recurrent
+leg, `CS_subspaceForSS`) — NOT the input from IS (stage-0 unity), where
+the ANALYSIS codebook lives. Two separate codebook families:
+
+1. **Meronymic/analysis codebooks on INPUT** — the stage-0 analytic
+   generality store (adopt-on-first-sight, recon gather, descriptor
+   roles — the Phase-5/6 machinery) governed by `<analysis>`, and the
+   PS-side percept/lexicon stores (`<synthesis>`, Task-4 shared byte
+   store). Always present; independent of the `<codebook>` knob.
+2. **The symbol codebook on the CS leg** — engaged by
+   `<codebook>quantize</codebook>`; it captures, in place, the
+   correspondence the retired cross-space path was groping at: the
+   **code-as-written vs the code-for-the-concept** — the first is a
+   SYMBOL for the second and must be interpreted. Codebook row =
+   concept code (full `nDim`-wide vector); row id / narrow code = the
+   written symbol (the 4-wide ID channel of the SS output). It emits
+   **ONE symbol at a time**, and per APOHA the emitted symbol's
+   copart is ZEROS everywhere — "the concept of the cup appears to
+   the mind through the negation of non-cup"; the exclusion is the
+   appearance, not padding. In symbolic iterations **the codebook
+   REPLACES the Pi operation** (selection-by-exclusion stands in for
+   computed intersection) — which is why thought is top-down, serial,
+   and can only be ACTED ON by Sigma: the emitted symbol is discrete
+   and given, composable but not re-analyzable (Alec, 2026-06-10;
+   details in `2026-06-10-symbolic-iteration-codebook.md` Step 1).
+
+**This codebook REPLACES `insert_paired_word`** (the PS→SS reach-across
+that wrote an orth row + random semantic partner per lexicon word and
+remapped `key_to_index` onto SS rows). Retirement blast radius,
+inventoried 2026-06-10: the `Embedding.insert` peer hook
+(Spaces.py ~3713), the `stage_oov` bulk migration (~3446–3495,
+`wv.tie_to_codebook`), the autobind `mark_word_atom` fallback,
+`embed.WordVectors.tie_to_codebook`, and five pinning test files
+(`test_tied_orth_storage`, `test_lexicon_ownership`,
+`test_tied_vectors_compile`, `test_tying_storage_shared`,
+`test_unified_lexicon_codebook`). The lexicon keeps PS-LOCAL storage
+permanently; the decode already resolves row→word through the inverse
+of `key_to_index` (identity for untied lexicons), so the decode layer
+needs no further change.
+
+**Implementation order (next iteration):**
+1. CS-leg symbolization (parallel leg, t>0, quantize): snap the CS
+   input against the SS codebook; the event becomes the SYMBOLIC code
+   (value substitution is correct HERE — these are symbolic
+   iterations) with honest STE via adopt-on-first-sight re-homed to
+   this leg (virgin rows adopt CS-input vectors; the bug-A lessons
+   hold: no `replace_W` clobber, recon gather trains rows toward
+   concept codes, EMA off).
+2. Stage-0 machinery re-homes under `<analysis>` (the input-side
+   analytic store becomes its own basis object, decoupled from the
+   `<codebook>` gate).
+3. Retire `insert_paired_word` + the tie (inventory above).
+4. **The 4-D second-order acceptance (MM_20M, SS quantize):** the SS
+   symbolic iteration emits `[1024, 8]` narrow codes (8 = 4 what +
+   2 where + 2 when; the 4-wide what IS the symbol ID); the REVERSE
+   keys the codebook by ID and recreates the full 1024-wide concept
+   representation — "reconstruct by keying the codebook with
+   indices"; quantization is what allows returning just the
+   activation values from CS, enabling SECOND-ORDER symbols. Lands as
+   the acceptance test of step 1 (xfail until then).
+
+XOR_exact stays `<codebook>none</codebook>` BY DESIGN (the
+all-subsymbolic mode), not as a gap. The 2026-06-10 quantize-mode
+fixes (the `replace_W` gate, the decode inverse-map) remain valid and
+load-bearing for the quantize mode regardless.
+
+### Phase 5: Materialization Split — **MECHANISM FOUND + FIRST HALF LANDED (2026-06-10, uncommitted)**
 
 - `SyntheticSubSpace` (PS): content spell-out through the percept store.
 - `AnalyticSubSpace` (SS): division/generality realization via
@@ -425,17 +545,171 @@ boundaries+measurements; no compiled-path host sync regressions.
 Acceptance: tests distinguish bottom-up content materialization from
 top-down generality materialization.
 
-### Phase 6: SS Generality Codebook
+**Status (rev. 2026-06-10).** The split materialized EMPIRICALLY before it
+materialized structurally — as the #13 mechanism. The blocker (XOR_exact
+4/4 → 0/4 the moment SS gets `<codebook>quantize</codebook>`) was bisected
+by a ladder of trained-CLI variants, each toggling one suspect (probe
+scripts under /tmp, fixture flip+restore per run; all post-dispatch-rewrite,
+all with the stage-0 forward already NON-ALTERING, `z_q = carrier`):
 
-- Formalize descriptor roles (meaning-general / term-general / LF-coarse) as
-  row metadata in ONE SS codebook (§7); HF surface rows live in the PS
-  store.
-- An LF generality and an HF content row can be materialized over the same
-  `.where`/`.when` (PS × SS cooperation).
+| variant | what differs | XOR output |
+|---|---|---|
+| B    | Codebook basis present, every `self.codebook` gate off | **learns** |
+| C2a  | full path minus the stage-0 recon term | flat (0.175 floor) |
+| C3   | C2a minus adoption | flat |
+| C4   | gates off (B) + Models VQ hardwire ON | **learns** |
+| C5   | C3 with `Codebook.quantize` forced to the fallback branch (no `vq()` / no `replace_W`) | **learns** |
+| C6   | C3 with the full `vq()` call, only `replace_W` skipped | **learns** |
+| fix  | everything ON, `replace_W` gated on `vq.ema_update` | **learns** (0.0010) |
 
-Acceptance: role metadata round-trips; analyzed supports can be described by
-generality rows without becoming percept-store content; synthesized
-generalities can be checked against PS supports.
+CONVICTION: `Codebook.quantize`'s per-call `replace_W(self.vq.codebook)` —
+an EMA-mode service (refresh the prototype after an in-forward EMA write)
+that, under the asymmetric hardwire, re-pointed the space-owned basis `W`
+at the VQ's gradient-orphaned random matrix on every call and severed the
+space's trained prototypes from every `W` consumer. Acquitted on the way:
+reverse mechanics, loss terms, plain materialization, `set_event` grad
+flow, `_active` override (stays None — event slot is a plain Tensor),
+recon-term loss competition, optimizer param append, adoption, roles,
+naming, RNG/init shift (baseline robust across unseeded runs).
+
+The TWO-STORE reading this forces (the split, realized inside the SS
+basis): **`basis.W` is the SYNTHETIC/materialization store** (task-
+gradient-trained, space-owned; what `.what` consumers read) and
+**`vq.codebook` is the ANALYTIC/generality store** (recon-gather-trained;
+quantize NAMES against it: indices/roles/adoption). Landed:
+
+- `Codebook.quantize`: the `replace_W` refresh gated on `vq.ema_update`
+  (EMA codebooks keep it; asymmetric SS leaves `W` alone).
+- Stage-0 forward NON-ALTERING (`z_q = carrier`): analysis "does not
+  alter the data; it does snap to a codebook" — the snap is annotation,
+  not value replacement. (The earlier STE substitution put drifting
+  codebook VALUES into the bind's SS half; with rows reassigned under the
+  recon gather, the late XOR transition could never consolidate. STE
+  alone was NOT the whole story — see the table — but it is contrary to
+  the stated analysis semantics and is retired on this path.)
+- `adopt_stage0_evidence` (host-eager, in `_lex_embed_stem` beside span
+  staging; the data-dependent `unique` cannot live in the compiled body):
+  VIRGIN rows (descriptor role UNASSIGNED) adopt the evidence vector that
+  selects them — data-dependent init in the lexicon's
+  insert-on-first-sight idiom; makes the STE/naming honest from step one.
+  No `replace_W` (two stores). `test_ss_vq_asymmetric_flags` updated:
+  first training forward may adopt ONCE; thereafter bit-stable.
+- `_stage0_carrier` factored out (shared by the compiled stage-0 forward
+  and the eager adoption pass).
+
+**SECOND HALF — OPEN (the analytic NULL descriptor + the wiring leak).**
+With gates off (variant B) the recon TEXT is already junk (`'A \x01'`),
+so the breakage is basis-object-level, not gated logic. Fill-probe
+finding: under `none` the SS `.what` Tensor receives NO per-batch fill at
+all — the only write is the per-batch CLEAR (`_clear_runtime_basis` →
+`setW(None)` from `Start`); the `none` fixture's exactness is a property
+of the basis-less passthrough. Input recon under a Codebook basis
+converges ~4× worse, degrading from when output training kicks in
+(epochs ~300+).
+
+**Design decision (Alec, 2026-06-10):** ASCII text carries little
+universal content — but NULL vs non-NULL IS the right text analysis.
+Today text synthesis spells only up to the first NULL; a FULL-FRAME
+reconstruction depends on NULLs being represented by SS. The SS
+contribution to text recon is therefore a FUNCTIONAL descriptor: a
+codebook row that materializes as "insert NULL over this row's `.where`
+extent" (a pointer to behavior, not content). Implementation sketch:
+a `ROLE_NULL_FILL` descriptor role; pad spans' zero-evidence names to
+that row at stage 0; the painting reverse materializes it by writing
+NULL across the span — universal background = NULL, atoms at support,
+full frame byte-exact. This also resolves Phase 7's consumer-promotion
+objection: with NULL painted (instead of coarse-mean upsample), the
+painted surface can BE the event for text — padding decodes to NULL,
+which the display contract already filters.
+
+**Acceptance (Alec): the byte-exact XOR_exact gate STAYS for #13b.**
+
+**Historical check (2026-06-10, Alec's lead "it worked until the commit
+before this"):** detached-worktree runs of the SS-quantize flip at
+e85bc1f (pre-plan) and 4ce3f2d (committed plan HEAD): at BOTH, the
+OUTPUT learns (legacy EMA loop alive: `replace_W` copied EMA-tracked
+values — coherent) and the recon TEXT is the SAME junk (`'A \x01'`).
+So: bug A (output collapse) was a true regression of the UNCOMMITTED
+asymmetric leg (the Parameter promotion flipped `replace_W` from
+value-copy into object-rebind) — found and FIXED today, parity
+restored. Bug B (text) is NOT a regression: byte-exact recon through
+an SS Codebook basis never existed — even a healthy EMA codebook
+reverses to 8 coarse centroids, not lexicon rows. Nothing to bisect in
+history; the NULL-descriptor design below is NEW capability and the
+whole remaining #13b gate.
+
+Transplant probe — **RUN (2026-06-10): WIRING LEAK CONFIRMED.** `none`
+weights loaded into a gates-off Codebook-basis model (`strict=False`;
+15 missing keys, all `what.W`/`what.vq.*`), one seeded eval epoch each:
+`allOut` max-diff 6.9e-3, **`lastIn` max-diff 1.793** — the REVERSE
+output differs at byte scale with identical weights.
+
+**BUG B CONVICTED + FIXED (2026-06-10, late). GATE PASSED.** A getW
+spy on the SS basis named the consumers: the PS lexicon's vector
+storage IS the SS basis (the 2026-05-27 tied-storage refactor —
+`WordVectors.tie_to_codebook`); `Embedding.insert` hands every fresh
+word to `SymbolicSpace.insert_paired_word`, which writes an ORTH row
+(the PS vector) + a random SEMANTIC partner row into the SS codebook's
+`W` and remaps the PS-side `key_to_index[word] -> orth_idx` — while
+`index_to_key` deliberately keeps plain insertion order ("we don't
+re-sparsify it here"). The decode (`decode_reverse_meta`) rendered
+rows POSITIONALLY via `index_to_key[idx]`, so every word decoded as
+whatever string sat at LIST position = its ROW index ('\x01'→'\x03',
+'\x04'→'\t' — the 2k+1 pairing arithmetic; junk from insert time, no
+training needed; self-lookup probe `/tmp/xor_tie.py`). Fix (in
+`decode_reverse_meta`): row→word via the INVERSE of `key_to_index`
+(identical behavior for untied lexicons where the maps coincide), and
+the nearest-row search RESTRICTED to mapped rows so semantic/virgin
+rows cannot shadow a word row. Self-lookup exact in both modes.
+
+**Acceptance run: XOR_exact with SS `<codebook>quantize</codebook>`,
+everything on (replace_W gate + non-altering stage-0 + adoption +
+recon gather + decode fix): 4/4 OK — byte-exact text AND XOR
+predictions** (0.16/1.01/1.05/0.02). Suite 2156/0. The #13b knob-
+removal hardwire is UNBLOCKED (and Task 4 with it).
+
+Codebook ADMISSIBILITY (Alec's question, answered): SS insertion is
+triggered by PS lexicon inserts — every word `Embedding.insert` adds
+(ASCII bootstrap atoms, lexed words on first sight) flows to
+`insert_paired_word` → orth+semantic row pair in SS `W`; capacity
+doubles via `grow_to` on exhaustion (XOR_exact's nVectors=8 grew to
+512). Stage-0 analysis naming writes NOTHING into `W` (it names
+against the analytic store `vq.codebook`; adopt-on-first-sight is the
+only writer there).
+
+CAVEAT (open observation): the SHIPPING `none` fixture's recon shows
+run-to-run flakiness post-session (predictions always 4/4; recon 4/4,
+4/4 early-day, then 3/4, 3/4, 2/4 — different rows each time;
+unseeded CLI). The `none` training path is untouched by inspection
+(gates off; decode change is render-only and identity for untied
+maps), but attribution needs a SEEDED fixture run — consider seeding
+the CLI (hygiene task) before reading too much into single runs.
+
+STILL OPEN (forward-looking, not gating): the NULL-descriptor
+materialization above (full-frame recon; pairs with Phase-7 painted-
+surface promotion), and Alec's second-order-symbol acceptance: under
+quantize, CS should be able to return ACTIVATION VALUES ONLY, with
+reconstruction re-keying the codebook by INDEX (the 4-wide symbolic-ID
+channel of MM_20M's 8x1024 muxed event) — add an MM_20M test that the
+4-D ID round-trips to the full conceptual representation.
+
+### Phase 6: SS Generality Codebook — **CORE LANDED (2026-06-10, uncommitted)**
+
+- Descriptor roles formalized as row metadata in ONE SS codebook (§7):
+  `Codebook.descriptor_roles` buffer + `ROLE_LF_COARSE` /
+  `ROLE_MEANING_GENERAL` (don-spyi) / `ROLE_TERM_GENERAL` (sgra-spyi)
+  constants, `set_descriptor_role` / `get_descriptor_role` /
+  `ensure_descriptor_roles` API (mirroring the category_ids /
+  part_parents idiom). The stage-0 evidence snap tags its selected rows
+  LF-COARSE (analysis outputs ARE the coarse characterizations).
+  Materialization is unchanged by the role — roles say which FACE of
+  generality a row carries. Pinned by
+  `test_descriptor_roles_lf_coarse_tagging`.
+- STILL OPEN (rides with Phase 5): the HF/LF cross-resolution placement
+  acceptance (an LF generality and an HF percept-store row materialized
+  over the same `.where`/`.when` — PS × SS cooperation), role
+  persistence in the ckpt bundle, and checking synthesized generalities
+  against PS supports.
 
 ### Phase 7: Reconstruction Recombination
 

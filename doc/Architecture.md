@@ -95,9 +95,9 @@ activations.
 | Space | Role | Owns | Notes |
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
-| **PerceptualSpace** | Single-arg input processor: pi + sigma + MPHF lookup | one `self.pi` (PiLayer), one `self.sigma` (SigmaLayer), MPHF + index table | `forward(x_subspace)` takes one positional arg (IS at bootstrap, CS in PARALLEL refinement). Result = `pi(x) + sigma(x)` (no outer tanh). PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
+| **PerceptualSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
 | **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~7) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
-| **SymbolicSpace** | Unified word lexicon codebook owner; dispatch site for codebook-write ops | unified codebook with paired (orth, semantic) rows | `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
+| **SymbolicSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The cross-space fold contract has changed:
@@ -341,9 +341,10 @@ unary (copy-side) or binary (reduce-side):
 - **Butterfly mode on `GrammarLayer`** (Stage 5): all GrammarLayer
   subclasses accept `butterfly=True, N=N` for efficient cross-STM
   pairwise composition via a packed `nn.Parameter[n_levels, N//2, 2D, 2D]`
-  cascade with bit-reversal permutations. Wired into `PerceptualSpace.pi`
-  by default in butterfly-enabled configs. Closes the XOR convergence
-  target.
+  cascade with bit-reversal permutations. Wired into the space folds
+  (`PerceptualSpace.sigma` / `SymbolicSpace.pi` post the Pi/Sigma swap,
+  rev. 2026-06-09) by default in butterfly-enabled configs. Closes the
+  XOR convergence target.
 
 Parthood (`part`) is the **fundamental** mereological operation, realized
 as clipped cosine projection on symbolic activations. The full suite

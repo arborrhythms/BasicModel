@@ -34,25 +34,33 @@ def test_reconstruct_enum_retired():
 
 
 def test_combine_square_roundtrip_exact():
+    # 2-stream SLOT bind (C-10; geometry corrected 2026-06-10):
+    # CS = ILL(stack[PS ; SS]) -- the streams stack along the VECTOR axis
+    # (N slots each) and the carrier is the WHOLE flattened bind (no
+    # augment); reverse is exact by construction. PS view = vectors
+    # 0..N-1, SS view = vectors N..2N-1 of the STORED mix.
     import torch
     from Layers import ConceptualCombine
-    B, D = 2, 6
-    c = ConceptualCombine(content_dim=D, naive=False, sigma_pi_mode="full")
-    ps, ss, cs = (torch.randn(B, D).clamp(-0.5, 0.5) for _ in range(3))
-    nxt, aug = c.forward(ps, ss, cs)
-    # next_cs is the D-wide conceptual carrier; aug is the 2D augment.
-    assert nxt.shape == (B, D)
-    assert aug.shape == (B, 2 * D)
-    ps2, ss2, cs2 = c.reverse(nxt, aug)
-    err = max((ps - ps2).abs().max(),
-              (ss - ss2).abs().max(),
-              (cs - cs2).abs().max())
-    assert err < 1e-3, f"perfect (aug-threaded) round-trip err={err:.2e}"
+    B, Nv, D = 2, 4, 6
+    c = ConceptualCombine(content_dim=D, n_vectors=Nv,
+                          naive=False, sigma_pi_mode="full")
+    ps, ss = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ss)
+    assert full.shape == (B, c.carrier_dim)
+    assert c.carrier_dim == 2 * Nv * D       # dense: no padding
+    # The views are the slot-halves of the bind itself.
+    ps_v, ss_v = c.views(full)
+    assert ps_v.shape == (B, Nv, D) and ss_v.shape == (B, Nv, D)
+    ps2, ss2 = c.reverse(full)
+    assert ps2.shape == (B, Nv, D) and ss2.shape == (B, Nv, D)
+    err = max((ps - ps2).abs().max(), (ss - ss2).abs().max())
+    assert err < 1e-3, f"2-stream slot-bind round-trip err={err:.2e}"
 
 
 def test_combine_square_roundtrip_exact_butterfly():
     # Butterfly is the production <sigmaPi> default; the cross-element
-    # linear 2x2-LDU cascade must round-trip EXACTLY (perfect regime).
+    # linear 2x2-LDU cascade must round-trip EXACTLY -- the 2-stream bind
+    # (C-10) is a true bijection with NOTHING threaded alongside.
     #
     # LOAD-BEARING: this test perturbs the butterfly node parameters OFF
     # the identity init before round-tripping. At identity init the cascade
@@ -67,19 +75,20 @@ def test_combine_square_roundtrip_exact_butterfly():
     torch.manual_seed(0)
     from Layers import ConceptualCombine
 
-    def _check(D, leading):
+    def _check(D, Nv, leading):
         c = ConceptualCombine(
-            content_dim=D, naive=False, sigma_pi_mode="butterfly")
+            content_dim=D, n_vectors=Nv,
+            naive=False, sigma_pi_mode="butterfly")
         assert c.sigma_pi_mode == "butterfly"
         gl = c.layer
-        N3 = 3 * D
-        M = 1 << ((N3 - 1).bit_length())  # next pow2 >= 3D
+        flat = 2 * Nv * D
+        M = 1 << ((flat - 1).bit_length())  # next pow2 >= 2N*D
         # The cascade must be sized at M, with NO padding/stripping.
         assert gl.N == M and gl.M_total == M, (
-            f"D={D}: cascade not sized at M=next_pow2(3D); "
+            f"D={D},N={Nv}: cascade not sized at M=next_pow2(2ND); "
             f"N={gl.N} M_total={gl.M_total} M={M}")
         assert c.combine_padded == M
-        assert c.aug_dim == M - D
+        assert c.carrier_dim == M
         # Perturb the per-level butterfly node params OFF identity so the
         # cascade actually mixes every coordinate (not a no-op).
         with torch.no_grad():
@@ -87,78 +96,71 @@ def test_combine_square_roundtrip_exact_butterfly():
                 p.add_(0.1 * torch.randn_like(p))
         # Verify the perturbation actually moved the cascade off identity:
         # a fresh random input must NOT be returned unchanged by forward.
-        probe = torch.randn(*leading, D)
-        nxt_p, aug_p = c.forward(probe, probe, probe)
+        probe = torch.randn(*leading, Nv, D)
+        full_p = c.forward(probe, probe)
+        ps_vp, _ = c.views(full_p)
         with torch.no_grad():
-            moved = float((nxt_p - probe).abs().max())
+            moved = float((ps_vp - probe).abs().max())
         assert moved > 1e-3, (
             f"D={D}: butterfly weights still at identity (moved={moved:.2e}); "
             "test would be vacuous")
 
-        ps, ss, cs = (
-            torch.randn(*leading, D).clamp(-0.5, 0.5) for _ in range(3))
-        nxt, aug = c.forward(ps, ss, cs)
-        assert nxt.shape == (*leading, D)
-        assert aug.shape == (*leading, M - D)
-        ps2, ss2, cs2 = c.reverse(nxt, aug)
-        for t in (ps2, ss2, cs2):
-            assert t.shape == (*leading, D)
+        ps, ss = (
+            torch.randn(*leading, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+        full = c.forward(ps, ss)
+        assert full.shape == (*leading, M), (
+            f"the carrier must be the WHOLE bind (width M={M}), got "
+            f"{tuple(full.shape)}")
+        # Views are interface-shaped [.., N, D] slot-halves.
+        ps_v, ss_v = c.views(full)
+        assert ps_v.shape == (*leading, Nv, D)
+        assert ss_v.shape == (*leading, Nv, D)
+        ps2, ss2 = c.reverse(full)
+        for t in (ps2, ss2):
+            assert t.shape == (*leading, Nv, D)
         with torch.no_grad():
             err = float(max((ps - ps2).abs().max(),
-                            (ss - ss2).abs().max(),
-                            (cs - cs2).abs().max()))
+                            (ss - ss2).abs().max()))
         assert err == err and err != float("inf"), "non-finite round-trip err"
         assert err < 1e-3, (
-            f"D={D} leading={leading}: butterfly perfect round-trip "
-            f"err={err:.2e} (perturbed weights)")
-        # Dropped-augment reverse on the butterfly aug width (M - D): must be
-        # finite and bounded (it discards the augment, so it is lossy).
-        with torch.no_grad():
-            pd, sd, cd = c.reverse_dropped(nxt)
-            for t in (pd, sd, cd):
-                assert t.shape == (*leading, D)
-                assert torch.isfinite(t).all(), "butterfly dropped non-finite"
-            drop_max = float(max(pd.abs().max(), sd.abs().max(),
-                                 cd.abs().max()))
-        assert drop_max < 50.0, (
-            f"D={D}: butterfly dropped-aug exploded: max={drop_max:.2e}")
+            f"D={D},N={Nv} leading={leading}: butterfly slot-bind "
+            f"round-trip err={err:.2e} (perturbed weights)")
         return err
 
-    # 3D=18 -> M=32, 3D=24 -> M=32, 3D=48 -> M=64. Single leading batch dim.
-    for D in (6, 8, 16):
-        _check(D, leading=(2,))
-    # Multi-leading-dim [B, T, D] locks the A4 per-position shape contract:
-    # ConceptualCombine must flatten leading dims itself (B=2, T=4).
-    _check(D=6, leading=(2, 4))
-    _check(D=8, leading=(2, 4))
+    # 2ND: 2*2*6=24 -> M=32; 2*2*8=32 -> M=32; 2*4*4=32 -> M=32.
+    for D, Nv in ((6, 2), (8, 2), (4, 4)):
+        _check(D, Nv, leading=(2,))
+    # Multi-leading-dim [B, T, N, D] locks the shape contract:
+    # ConceptualCombine must flatten leading dims itself (B=2, T=3).
+    _check(6, 2, leading=(2, 3))
+    _check(8, 2, leading=(2, 3))
 
 
 def test_combine_square_roundtrip_exact_dense_large_leading():
     # Dense (full) path at a production-scale width with a multi-leading-dim
-    # [B, T, D] input -- locks the dense shape contract A4 will feed and
+    # [B, T, D] input -- locks the dense shape contract the body feeds and
     # confirms the leading-dim flatten/restore is exact for the dense LDU.
     import torch
     torch.manual_seed(0)
     from Layers import ConceptualCombine
-    B, T, D = 2, 4, 128
-    c = ConceptualCombine(content_dim=D, naive=False, sigma_pi_mode="full")
-    assert c.combine_padded == 3 * D and c.aug_dim == 2 * D
+    B, T, Nv, D = 2, 3, 4, 64
+    c = ConceptualCombine(content_dim=D, n_vectors=Nv,
+                          naive=False, sigma_pi_mode="full")
+    assert c.combine_padded == 2 * Nv * D and c.carrier_dim == 2 * Nv * D
     # Perturb the LDU off identity so the round-trip is non-trivial.
     with torch.no_grad():
         c.layer.raw_L.add_(0.05 * torch.randn_like(c.layer.raw_L))
         c.layer.raw_U.add_(0.05 * torch.randn_like(c.layer.raw_U))
-    ps, ss, cs = (torch.randn(B, T, D).clamp(-0.5, 0.5) for _ in range(3))
-    nxt, aug = c.forward(ps, ss, cs)
-    assert nxt.shape == (B, T, D)
-    assert aug.shape == (B, T, 2 * D)
-    ps2, ss2, cs2 = c.reverse(nxt, aug)
-    for t in (ps2, ss2, cs2):
-        assert t.shape == (B, T, D)
+    ps, ss = (torch.randn(B, T, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ss)
+    assert full.shape == (B, T, 2 * Nv * D)
+    ps2, ss2 = c.reverse(full)
+    for t in (ps2, ss2):
+        assert t.shape == (B, T, Nv, D)
     with torch.no_grad():
         err = float(max((ps - ps2).abs().max(),
-                        (ss - ss2).abs().max(),
-                        (cs - cs2).abs().max()))
-    assert err < 1e-3, f"dense large-D [B,T,D] round-trip err={err:.2e}"
+                        (ss - ss2).abs().max()))
+    assert err < 1e-3, f"dense large [B,T,N,D] round-trip err={err:.2e}"
 
 
 def test_mm5m_forward_finite_after_combine():
@@ -182,12 +184,10 @@ def test_mm5m_forward_finite_after_combine():
 
 
 def test_mm5m_combine_carrier_roundtrip():
-    # Step-5 round-trip (A4): the per-stage ConceptualCombine threads its
-    # augment from forward into reverse, so the augment-threaded combine reverse
-    # reproduces the forward CS_0 to the LDU/cascade solve tolerance. The
-    # ``<reconstruct>`` enum was retired (A1, 2026-06-09) -- the combine now
-    # ALWAYS runs (the former ``perfect`` skip-combine mode is gone), so this
-    # builds from the STOCK MM_20M.xml with no injected knob.
+    # 2-stream bind round-trip (C-10, rev. 2026-06-09): each stage's
+    # threaded carrier is the WHOLE bind ILL([PS_t || SS_t]); reverse is an
+    # exact bijection with NOTHING threaded alongside (the augment machinery
+    # is retired). Builds from the STOCK MM_20M.xml with no injected knob.
     import os, warnings, torch
     import Models, Language
     from util import init_config
@@ -209,70 +209,60 @@ def test_mm5m_combine_carrier_roundtrip():
     # embedding (finiteness smoke check that the forward ran).
     input_state = m.forward(x)[0]
     assert torch.isfinite(input_state).all()
-    # Snapshot the forward's stage-0 advanced carrier content (CS_0 ==
-    # combine[0].forward output) and the threaded per-stage augments.
-    fwd_cs0 = m._combine_fwd_cs0.detach().clone()
-    augs = list(m._combine_augments)
     T = len(m.body_stages)
-    assert len(augs) == T and all(a is not None for a in augs), (
-        "every parallel stage must thread a (non-None) augment")
+    carriers = list(m._combine_carriers)
+    assert len(carriers) == T and all(c is not None for c in carriers), (
+        "every parallel stage must thread a (non-None) full-bind carrier")
+    # The augment thread is GONE: the 2-stream bind needs nothing alongside.
+    assert not hasattr(m, "_combine_augments"), (
+        "the augment thread was retired with the 2-stream bind (C-10)")
+    # The stage-0 snapshot IS the stage-0 carrier (the whole bind).
+    fwd_cs0 = m._combine_fwd_cs0.detach()
+    assert torch.equal(fwd_cs0, carriers[0].detach()), (
+        "_combine_fwd_cs0 must snapshot the stage-0 full bind")
+    combine0 = m.conceptualSpaces[0].combine
+    M = int(combine0.carrier_dim)
+    D = int(combine0.content_dim)
+    Nv = int(combine0.n_vectors)
+    assert fwd_cs0.shape[-1] == M, (
+        f"the carrier must be the WHOLE flattened bind (width {M}), got "
+        f"{tuple(fwd_cs0.shape)}")
+    # The production parallel bind: ONE cascade over 2N*D = 16*nDim
+    # (cross-slot reach; 2^14 exactly -- zero pad).
+    assert M == 2 * Nv * D, (
+        f"production bind must be unpadded (2N*D == M): "
+        f"2*{Nv}*{D} != {M}")
+    # The views are interface-shaped [B, N, D] slot-halves of the bind.
+    with torch.no_grad():
+        ps_v, ss_v = combine0.views(carriers[0].detach())
+    assert ps_v.shape[-2] == Nv and ps_v.shape[-1] == D
+    assert ss_v.shape[-2] == Nv and ss_v.shape[-1] == D
+    # Exact per-stage inversion: ILL^{-1}(full_t) -> (PS_t, SS_t), finite,
+    # and the t=0 PS-stream (the encoded input leg) must be NON-trivial --
+    # it is the leg that decodes back to the input (PS owns reconstruction).
+    with torch.no_grad():
+        for t in range(T):
+            ps_rec, ss_rec = m.conceptualSpaces[t].combine.reverse(
+                carriers[t].detach())
+            assert ps_rec.shape[-2:] == (Nv, D)
+            assert ss_rec.shape[-2:] == (Nv, D)
+            assert torch.isfinite(ps_rec).all() and torch.isfinite(ss_rec).all()
+        ps0_rec, ss0_rec = combine0.reverse(carriers[0].detach())
+        ps0_mag = float(ps0_rec.abs().max())
+    assert ps0_mag > 1e-6, (
+        f"stage 0 PS-stream (encoded input) must be non-trivial, "
+        f"got max={ps0_mag:.2e}")
+    # Bijection sanity at the production width: re-binding the recovered
+    # streams reproduces the carrier to solve tolerance.
+    with torch.no_grad():
+        rebound = combine0.forward(ps0_rec, ss0_rec)
+        err = float((rebound - carriers[0].detach()).abs().max())
+    assert err < 1e-2, f"bind/unbind round-trip err={err:.2e}"
     # End-to-end concept-carrier reverse on the integrated body path must be
-    # FINITE (exercises _reverse_body's combine-reverse + cs.reverse chain).
+    # FINITE (exercises _reverse_body's bind-reverse + cs.reverse chain).
     recon_sub = m._reverse_body(m._combine_last_cs_sub)
     recon_ev = recon_sub.materialize()
     assert recon_ev is not None and torch.isfinite(recon_ev).all()
-    # Reconstruct CS_0 by walking the SAME per-stage combine reverses the
-    # body uses, threading the EXACT forward carriers + augments back
-    # (perfect regime). The terminal carrier c_{T-1} unwinds:
-    # combine[t].reverse(c_t, aug_t) -> (PS_t, SS_t, c_{t-1}); the CS-stream
-    # output c_{t-1} feeds stage t-1. Stop after stage 1 so the recovered
-    # CS-stream IS c_0 (== forward CS_0). Uses the stored ``_combine_carriers``
-    # (the exact combine outputs, in forward position order) -- NOT the
-    # post-processed ``forward(x)[0]`` -- so the next_cs<->aug pairing the
-    # reverse relies on is exact.
-    carriers = list(m._combine_carriers)
-    assert len(carriers) == T and all(c is not None for c in carriers)
-    D = int(m.conceptualSpaces[0].combine.content_dim)
-    carrier = carriers[-1].detach().clone()   # c_{T-1} content
-    for t in reversed(range(1, T)):
-        _, _, carrier = m.conceptualSpaces[t].combine.reverse(
-            carrier, augs[t].detach())
-    err = float((carrier.detach() - fwd_cs0[..., :D]).abs().max())
-    assert torch.isfinite(torch.as_tensor(err))
-    # Bound: the per-stage square combine round-trip is exact to the LDU /
-    # butterfly-cascade solve tolerance; threading the real forward augments
-    # adds only that numerical slack. < 1e-2 is a defensible bound.
-    assert err < 1e-2, f"perfect-reconstruction CS_0 round-trip err={err:.2e}"
-    # --- Integration assertions (A4 review): the propagated walk above is
-    # guaranteed by A3's per-stage bijection + forward prev_cs threading, so
-    # on its own it adds little over A3. These assertions verify the FORWARD
-    # WIRING itself, which is what _reverse_body actually relies on (it
-    # re-inverts each stage against the stashed carrier, not a propagated one):
-    #   (a) chained consistency -- combine[t].reverse(c_t, aug_t) CS-stream
-    #       must equal the prior stashed carrier c_{t-1}; this is the assertion
-    #       that fails if a future change breaks the forward c_{t-1} -> c_t
-    #       prev_cs threading.
-    #   (b) the t=0 CS-stream must recover the empty CS_-1 seed (~0).
-    #   (c) the t=0 PS-stream (the pi-encoded input, alpha_ps live only at t=0)
-    #       must be NON-trivial -- it is the leg that decodes back to the input.
-    with torch.no_grad():
-        for t in range(1, T):
-            _, _, cs_rec = m.conceptualSpaces[t].combine.reverse(
-                carriers[t].detach(), augs[t].detach())
-            chain_err = float((cs_rec - carriers[t - 1].detach()).abs().max())
-            assert chain_err < 1e-2, (
-                f"stage {t}: combine.reverse(c_t) CS-stream != c_(t-1) "
-                f"-- forward prev_cs threading broken (err={chain_err:.2e})")
-        ps0_rec, _, cs0_rec = m.conceptualSpaces[0].combine.reverse(
-            carriers[0].detach(), augs[0].detach())
-        seed_mag = float(cs0_rec.abs().max())
-        ps0_mag = float(ps0_rec.abs().max())
-    assert seed_mag < 1e-2, (
-        f"stage 0 CS-stream must recover the empty CS_-1 seed (~0), "
-        f"got max={seed_mag:.2e}")
-    assert ps0_mag > 1e-6, (
-        f"stage 0 PS-stream (pi-encoded input) must be non-trivial, "
-        f"got max={ps0_mag:.2e}")
 
 
 def _write_mm5m_3ep_cfg():
@@ -345,38 +335,85 @@ def test_no_recompile_fullgraph():
 # reconstructEnum) is gone; reconstruction is unconditionally from concepts.
 
 
-def test_combine_dropped_aug_exact_on_rank():
-    # Dropped-augment reverse: aug is treated as the structured zero-pad.
-    # It does NOT recover the inputs exactly (the 2D augment is discarded),
-    # but the result must be FINITE and BOUNDED (no explosion). With a
-    # near-identity init the surviving rank-D subspace is recovered well;
-    # we assert finiteness + a generous bound rather than exact equality.
-    import torch
-    torch.manual_seed(0)
+def test_combine_no_dropped_reverse():
+    # The dropped-augment reverse was RETIRED with the 2-stream bind (C-10):
+    # the carrier is the whole bind, so there is no augment to drop and no
+    # approximate regime -- reverse is exact by construction.
     from Layers import ConceptualCombine
-    B, D = 2, 6
-    c = ConceptualCombine(content_dim=D, naive=False, sigma_pi_mode="full")
-    # Perturb the LDU off the identity so the dropped-aug reverse is a real
-    # (non-trivial) projection, not just the identity.
+    c = ConceptualCombine(content_dim=6, naive=False, sigma_pi_mode="full")
+    assert not hasattr(c, "reverse_dropped"), (
+        "reverse_dropped must be retired (the 2-stream bind has no augment)")
+    assert not hasattr(c, "aug_dim"), (
+        "aug_dim must be retired (the carrier IS the whole bind)")
+
+
+def test_callosum_glue_init_average():
+    # The corpus callosum (2026-06-10): CS glues the bind's STACKED views
+    # through a learned [2N, N] matrix over the slot axis. Initialised to
+    # AVERAGING the two hemispheres; learnable thereafter.
+    import torch
+    from Layers import ConceptualCombine
+    B, Nv, D = 2, 4, 6
+    c = ConceptualCombine(content_dim=D, n_vectors=Nv,
+                          naive=False, sigma_pi_mode="full")
+    assert c.callosum.shape == (2 * Nv, Nv)
+    assert c.callosum.requires_grad, "the callosum is a learned glue"
+    ps, ss = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ss)
+    glued = c.glue(full)
+    assert glued.shape == (B, Nv, D)
+    ps_v, ss_v = c.views(full)
+    assert torch.allclose(glued, 0.5 * (ps_v + ss_v), atol=1e-6), (
+        "at init the callosum must AVERAGE the two hemispheres")
+
+
+def test_bind_contained_in_conceptual_space():
+    # Processing contract (2026-06-10): the bind calculation lives ON
+    # ConceptualSpace (bind_streams / unbind), and the carrier rides ON
+    # the stage's SubSpace (_bind_carrier) -- not model-level state. The
+    # body loop is an orchestrator only.
+    import os, warnings, torch
+    import Models, Language
+    from util import init_config
+    data_dir = os.path.join(os.path.dirname(_BIN), "data")
+    p = os.path.join(data_dir, "MM_20M.xml")
+    init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
+    Language.TheGrammar._configured = False
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        m, _ = Models.BasicModel.from_config(p)
+    Models.TheData.load("xor")
+    loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+    items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
     with torch.no_grad():
-        c.layer.raw_L.add_(0.1 * torch.randn_like(c.layer.raw_L))
-        c.layer.raw_U.add_(0.1 * torch.randn_like(c.layer.raw_U))
-    ps, ss, cs = (torch.randn(B, D).clamp(-0.5, 0.5) for _ in range(3))
-    nxt, aug = c.forward(ps, ss, cs)
-    ps2, ss2, cs2 = c.reverse_dropped(nxt)
-    for t in (ps2, ss2, cs2):
-        assert t.shape == (B, D)
-        assert torch.isfinite(t).all(), "dropped-aug reverse produced non-finite"
-    # Bounded: the dropped-aug reconstruction stays on the same order of
-    # magnitude as the inputs (clamped to <=0.5); assert it does not blow up.
-    recon_max = max(ps2.abs().max(), ss2.abs().max(), cs2.abs().max())
-    assert recon_max < 50.0, f"dropped-aug reverse exploded: max={recon_max:.2e}"
-    # Sanity: dropping the 2D augment is lossy, so the error is generally
-    # NON-zero (this is the approximate regime, not the exact one).
-    err = max((ps - ps2).abs().max(),
-              (ss - ss2).abs().max(),
-              (cs - cs2).abs().max())
-    assert torch.isfinite(torch.as_tensor(err))
+        m.forward(x)
+    cs0 = m.conceptualSpaces[0]
+    # The carrier rides on the stage's SubSpace.
+    carrier = getattr(cs0.subspace, "_bind_carrier", None)
+    assert carrier is not None, (
+        "the bind carrier must ride ON the stage SubSpace (_bind_carrier)")
+    assert torch.equal(carrier.detach(), m._combine_carriers[0].detach()), (
+        "the SubSpace-carried bind and the test handle must be the same")
+    # unbind: the Space's exact inverse from SubSpace-carried state.
+    with torch.no_grad():
+        rec = cs0.unbind(cs0.subspace)
+    assert rec is not None
+    ps_rec, ss_rec = rec
+    Nv = int(cs0.combine.n_vectors)
+    D = int(cs0.combine.content_dim)
+    assert ps_rec.shape[-2:] == (Nv, D) and ss_rec.shape[-2:] == (Nv, D)
+    # The head-facing event is the corpus-callosum glue of the bind
+    # (+ the empty band at D == muxedSize), written by bind_streams onto
+    # the FLOWING sub (the per-batch CS_sub handed downstream).
+    last = m._combine_last_cs_sub
+    assert getattr(last, "_bind_carrier", None) is not None, (
+        "the flowing CS_sub must carry the bind too")
+    with torch.no_grad():
+        glued = cs0.combine.glue(carrier)
+        ev = last.materialize()
+    assert ev is not None and ev.shape[-2:] == (Nv, D)
+    assert torch.allclose(ev, glued, atol=1e-4), (
+        "the stage event must be the callosum glue of the bind")
 
 
 # ---------------------------------------------------------------------------

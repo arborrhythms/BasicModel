@@ -2890,6 +2890,15 @@ class BasicModel(BaseModel):
                       else None)
             for _ss in _ss_list:
                 _ss._staged_analysis_spans = _spans
+            # Phase 5 adopt-on-first-sight (host-eager): VIRGIN SS
+            # codebook rows adopt the stage-0 evidence BEFORE the
+            # compiled body snaps, so the STE substitutes data-
+            # initialised prototypes rather than frozen random rows
+            # (the #13 forward-poison). Data-dependent (``unique``) --
+            # must stay out of the compiled graph.
+            if (self.training and concepts_in is not None
+                    and hasattr(_ss_list[0], "adopt_stage0_evidence")):
+                _ss_list[0].adopt_stage0_evidence(concepts_in, _spans)
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -3047,30 +3056,10 @@ class BasicModel(BaseModel):
 
     @staticmethod
     def _intersentence_seed_slab(payload_hat, like, D):
-        """Broadcast a predicted end-state ``payload_hat[depth, Dp]`` into the
-        ``[B, N, D]`` CS_{-1} content slab the parallel combine consumes
-        (Task A6).
-
-        ``payload_hat`` is one ROW PER STM SLOT (newest-at-slot-0). Stage the
-        first ``depth`` rows across the first ``depth`` slots of an otherwise-
-        zero ``[B, N, D]`` slab, broadcast over the batch -- exactly the
-        slot-wise placement ``ConceptualSpace.forward``'s ``_c_prior`` consumer
-        uses for the chat-loop prime. ``like`` supplies the leading
-        ``[B, N]`` shape / device / dtype (the stage's ``cs_content``); the
-        predictor width ``Dp`` is fit to the combine content width ``D`` by
-        ``_combine_fit`` (truncating the muxed band tail -- content is the
-        leading ``nWhat`` columns). Returns a ``[B, N, D]`` tensor.
-        """
-        D = int(D)
-        B = int(like.shape[0])
-        N = int(like.shape[1])
-        depth = min(int(payload_hat.shape[0]), N)
-        slab = like.new_zeros(B, N, payload_hat.shape[-1])
-        if depth > 0:
-            slab[:, :depth, :] = (
-                payload_hat[:depth].to(device=like.device, dtype=like.dtype)
-                .unsqueeze(0).expand(B, -1, -1))
-        return BasicModel._combine_fit(slab, D, like)
+        """Delegates to :meth:`ConceptualSpace._bind_seed_slab` -- the
+        calculation lives in the Space (processing contract, 2026-06-10).
+        The A6 seed primes the SYMBOLIC stream at stage 0 of the bind."""
+        return ConceptualSpace._bind_seed_slab(payload_hat, like, D)
 
     def _discourse_arma_loss(self):
         """Inter-sentence ARMA(p, q) loss term for this step, or ``None``.
@@ -4906,6 +4895,35 @@ class BasicModel(BaseModel):
             _vq.growth_epsilon = (float(_eps) if _eps is not None
                                   else 0.0)
 
+        # Asymmetric VQ training (asymmetric-vq plan sec.3 / sec.7 tasks
+        # 11-12, rev. 2026-06-09): the SS codebook drops the standard VQ
+        # crutches. Commitment is replaced by STE (the output objective's
+        # gradient reaches the encoder directly through the snap); EMA is
+        # replaced by the reconstruction gradient on the codebook (the
+        # input->codebook leg -- the recon gather lands with the 2-stream
+        # combiner, C-10). PS/CS codebooks keep their defaults.
+        for _ss_stage in self.symbolicSpaces:
+            _cb = getattr(getattr(_ss_stage, 'subspace', None), 'what', None)
+            _vq = getattr(_cb, 'vq', None) if _cb is not None else None
+            if _vq is not None:
+                _vq.ema_update = False
+                _vq.commitment_weight = 0.0
+                # The recon leg (input -> codebook, asymmetric-vq sec.4):
+                # the SS codebook trains by the EXACT reconstruction
+                # gradient -- promote the VQ codebook to an nn.Parameter
+                # (auto-registered on the VQ module) and enlist it in the
+                # space's optimised params. The stage-0 unity path emits
+                # the recon term (plain differentiable gather vs the
+                # DETACHED pre-snap evidence: gradient lands on the
+                # selected rows only; the argmin blocks the encoder leg).
+                if not isinstance(_vq.codebook, nn.Parameter):
+                    _vq.codebook = nn.Parameter(
+                        _vq.codebook.detach().clone())
+                    with torch.no_grad():
+                        _vq._b_norms_sq.copy_(
+                            (_vq.codebook.detach() ** 2).sum(dim=-1))
+                _ss_stage.params += [_vq.codebook]
+
         # Cross-space forward inputs (perceptual + symbolic loop into C,
         # C→P feedback into P) are now passed as explicit ``forward``
         # arguments by the recurrent cell in ``_forward_body`` -- no
@@ -5255,14 +5273,25 @@ class BasicModel(BaseModel):
         _combine_naive = bool(TheXMLConfig.get("architecture.naive", False))
         for t in range(T):
             cs = self.conceptualSpaces[t]
+            # Slot-stack bind (geometry corrected 2026-06-10): the streams
+            # stack along the VECTOR axis (N slots each, 2N total) and ONE
+            # cascade runs over the flattened 2N*D slab -- 16*nDim for the
+            # production parallel config (= 2^14 exactly, zero pad):
+            # cross-slot reach. D is the FULL muxed event width
+            # (cs.muxedSize == the config nDim: content + where/when band)
+            # so the band PARTICIPATES in the bind (option B, as in the
+            # 3-stream design) -- the spec's 16*nDim arithmetic is the
+            # event width.
             D_t = int(getattr(cs, "muxedSize", 0))
             if D_t < 1:
                 # Defensive: fall back to the concept buffer / content width
                 # so the combine is always constructible (D>=1 is the bar).
                 D_t = max(1, int(getattr(cs, "concept_dim",
                                          getattr(cs, "nWhat", 1))))
+            N_t = max(1, int(cs.outputShape[0]))
             combine = ConceptualCombine(
                 content_dim=D_t,
+                n_vectors=N_t,
                 naive=_combine_naive,
                 sigma_pi_mode=self.sigma_pi_mode,
                 ergodic=self.ergodic)
@@ -5490,13 +5519,12 @@ class BasicModel(BaseModel):
         # warm, in which case A6 seeds CS_{-1} from the SAME predictor
         # ``generate_sentence`` primes from (``_intersentence_seed`` -- one
         # source). The predicted ``payload_hat[depth, Dp]`` is broadcast into
-        # the ``[B, N, D]`` CS_{-1} content slab at the t=0 combine site (where
-        # ``cs_content`` supplies the leading shape). ``prediction_mode ==
-        # "none"`` (default) and a cold ring both keep ``payload`` None ->
-        # zeros via ``_combine_fit`` (byte-identical to the prior empty seed).
-        augments = []
-        carriers = []            # per-stage exact combine output (next_cs)
-        prev_cs_content = None   # CS_{-1} -> zeros via _combine_fit
+        # the ``[B, N, D]`` slab at the t=0 bind site (where ``cs_content``
+        # supplies the leading shape) and ADDED INTO SS_t -- the symbolic
+        # prior (the CS stream is retired by the 2-stream bind, C-10).
+        # ``prediction_mode == "none"`` (default) and a cold ring both keep
+        # ``payload`` None -> no addition (byte-identical empty seed).
+        carriers = []            # per-stage exact bind output (the FULL mix)
         _seed = self._consume_intersentence_seed()
         seed_payload = _seed[1] if _seed is not None else None
         # Verification handle (Task A6 test): the predicted CS_{-1} seed
@@ -5527,8 +5555,31 @@ class BasicModel(BaseModel):
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
             # the combine only replaces the CONTENT advance below.
             CS_sub = cs.forward(contribution, SS_sub)
-            # A4 conceptual combine: ONE square augment-threaded invertible
-            # combine per stage (held by the cs) replaces the prior
+            if t == 0:
+                # Asymmetric recon leg (input -> codebook): lift the
+                # stage-0 SS codebook reconstruction term -- threaded by
+                # ``_stage0_unity_forward`` as a forward-local -- onto the
+                # pipeline-chained error container (CS_sub's errors object
+                # is shared down to the OutputSpace via copy_context; the
+                # fresh stage-0 SS subspace's is not).
+                _ss_recon = getattr(ss, "_stage0_recon_loss", None)
+                if (_ss_recon is not None and torch.is_tensor(_ss_recon)
+                        and _ss_recon.requires_grad):
+                    CS_sub.errors.add(
+                        "ss_codebook_recon", _ss_recon, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+                object.__setattr__(ss, "_stage0_recon_loss", None)
+                # Task 5 (C-13): lift the semantic-arrangement term the
+                # same way (off unless <semanticArrangement> is set).
+                _ss_sem = getattr(ss, "_stage0_semantic_loss", None)
+                if (_ss_sem is not None and torch.is_tensor(_ss_sem)
+                        and _ss_sem.requires_grad):
+                    CS_sub.errors.add(
+                        "ss_semantic_arrangement", _ss_sem, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+                object.__setattr__(ss, "_stage0_semantic_loss", None)
+            # A4 conceptual combine: ONE square invertible 2-stream BIND
+            # per stage (held by the cs) replaces the prior
             # ``cs.forward`` content fold + the SS.sigma (pi/sigma)
             # alternation (doc/plans/2026-06-06-parallel-conceptual-
             # recurrence.md sec. 3.3). Gated to the plain (non-grammar)
@@ -5552,77 +5603,24 @@ class BasicModel(BaseModel):
                        if self.conceptualOrder >= 1
                        and "merge" not in stage else None)
             if combine is not None:
-                D = int(combine.content_dim)
-                cs_content, cs_band, cs_event = self._combine_demux(
-                    CS_sub, D)
-                if cs_event is not None:
-                    # PS_t: the PERCEPT, re-fed at EVERY stage (``PS_sub_stage0``
-                    # -- the masked stage-0 percept -- NOT zeros and NOT the
-                    # carrier-bearing ``contribution``). The combine SELECTS /
-                    # mixes among PS/CS/SS; the routing decision lives in ONE
-                    # place, the CS combine, not in this caller. Zeroing PS
-                    # post-t=0 orphaned the carrier: the combine reads ``next_cs``
-                    # from the ps-aligned output coords, so a zero PS at t>0
-                    # collapsed next_cs to 0 even though the live carrier sat in
-                    # the cs slot. Keeping PS live keeps the rows distinct.
-                    ps_content, _, _ = self._combine_demux(PS_sub_stage0, D)
-                    PS_t = self._combine_fit(ps_content, D, cs_content)
-                    # SS_t: the FULL muxed SS event (option B -- where/when
-                    # participate). Demux AT D clamps to the SS event width
-                    # (the compressed symbol code is narrower than D), then
-                    # fit (zero-pad) up to D.
-                    ss_content, _, _ = self._combine_demux(SS_sub, D)
-                    SS_t = self._combine_fit(ss_content, D, cs_content)
-                    # CS_t: the prior conceptual carrier content. CS_{-1} is
-                    # the empty seed -> zeros at t=0, UNLESS A6's
-                    # ``<prediction>interSentence`` seed is live: stage the
-                    # predicted next-end-state across the first ``depth`` slots
-                    # of the ``[B, N, D]`` content slab (broadcast over batch),
-                    # then fit to D. ``cs_content`` supplies the leading shape
-                    # (only available here, inside the loop). t>0 always uses
-                    # the threaded ``prev_cs_content`` carrier (unchanged).
-                    if t == 0 and seed_payload is not None:
-                        cs_seed = self._intersentence_seed_slab(
-                            seed_payload, cs_content, D)
-                    else:
-                        cs_seed = prev_cs_content
-                    CS_t = self._combine_fit(cs_seed, D, cs_content)
-                    next_cs_content, aug_t = combine.forward(PS_t, SS_t, CS_t)
-                    augments.append(aug_t)
-                    if t == 0:
-                        # Snapshot the stage-0 advanced carrier content so a
-                        # perfect-reconstruction round-trip can compare CS_0
-                        # against its reverse-walk reconstruction. ``object.
-                        # __setattr__`` matches the augments/carriers idiom
-                        # below (forward-local, not an nn.Module buffer/param).
-                        object.__setattr__(
-                            self, "_combine_fwd_cs0", next_cs_content.detach())
-                    prev_cs_content = next_cs_content
-                    # Write the advanced carrier back into CS_sub, band
-                    # riding along unchanged.
-                    if cs_band is not None and cs_band.shape[-1] > 0:
-                        advanced_ev = torch.cat(
-                            [next_cs_content, cs_band], dim=-1)
-                    else:
-                        advanced_ev = next_cs_content
-                    CS_sub.set_event(advanced_ev)
-                    # Store the EXACT per-stage carrier (the combine output,
-                    # in forward position order) so ``_reverse_body`` can undo
-                    # the combine against the SAME tensor that produced
-                    # ``aug_t`` -- the augment is paired with this specific
-                    # ``next_cs_content``. Threading the carrier (not re-reading
-                    # it off the STM, which flips slot order and re-materialises
-                    # through codebooks, destroying the exact next_cs<->aug
-                    # pairing) is what keeps the perfect round-trip exact. The
-                    # STM keeps holding the cs.forward perception events
-                    # (unchanged) so the grammar-replay snapshot path
-                    # (``_chart_generate_from_stm``) is byte-identical.
-                    carriers.append(next_cs_content)
-                else:
-                    # Degenerate (empty / non-3-D) carrier: no advance, no
-                    # augment / carrier recorded for this stage.
-                    augments.append(None)
-                    carriers.append(None)
+                # Processing contract (2026-06-10): the bind CALCULATION
+                # lives on ConceptualSpace (``bind_streams``: demux / fit /
+                # slot-stack / cascade / corpus-callosum glue / event
+                # write); this loop only orchestrates. PS_t is the stage-0
+                # percept re-fed at EVERY stage; the A6 interSentence seed
+                # primes the SYMBOLIC stream at t=0; the FULL bind carrier
+                # rides ON the stage's SubSpace (``_bind_carrier``) for the
+                # reverse, with ``carriers`` kept as a test/verification
+                # handle.
+                full_t = cs.bind_streams(
+                    PS_sub_stage0, SS_sub, CS_sub,
+                    seed_payload=(seed_payload if t == 0 else None))
+                if full_t is not None and t == 0:
+                    # Snapshot the stage-0 bind so round-trip tests can
+                    # compare it against the threaded carrier.
+                    object.__setattr__(
+                        self, "_combine_fwd_cs0", full_t.detach())
+                carriers.append(full_t)
             # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
             # terminal C-tier idea lives on ``conceptualSpace.stm``
             # (the bookkeeping push happens inside cs.forward); the
@@ -5661,7 +5659,8 @@ class BasicModel(BaseModel):
         # torch.compile guards. ``_combine_last_cs_sub`` lets a caller
         # (e.g. the perfect-reconstruction test) reproduce CS_0 by driving
         # ``_reverse_body`` from the terminal carrier.
-        object.__setattr__(self, "_combine_augments", augments)
+        # 2-stream bind (C-10): the augment thread is GONE -- the carrier
+        # IS the whole bind, so the reverse needs nothing alongside it.
         object.__setattr__(self, "_combine_carriers", carriers)
         object.__setattr__(self, "_combine_last_cs_sub", last_cs)
         # Reset so standalone PerceptualSpace.forward calls (and the
@@ -6823,47 +6822,17 @@ class BasicModel(BaseModel):
     # ------------------------------------------------------------------
     @staticmethod
     def _combine_demux(sub, content_dim):
-        """Split a subspace's materialised event into (content, band, event).
-
-        ``content`` is ``event[..., :content_dim]`` (the leading what-content
-        slab, matching the muxed [what | where | when] layout where content is
-        the FIRST ``nWhat`` columns); ``band`` is the trailing remainder. The
-        full ``event`` is returned so a caller that did not produce it (e.g.
-        the combine forward, which reads ``content_dim`` from a different
-        space than ``sub``'s native width) can re-mux against the original
-        band. Returns ``(None, None, None)`` when ``sub`` is empty / not 3-D.
-        """
-        if sub is None or sub.is_empty():
-            return None, None, None
-        ev = sub.materialize()
-        if ev is None or ev.dim() != 3:
-            return None, None, None
-        cdim = int(content_dim)
-        if cdim <= 0 or cdim > ev.shape[-1]:
-            cdim = ev.shape[-1]
-        return ev[..., :cdim], ev[..., cdim:], ev
+        """Delegates to :meth:`ConceptualSpace._bind_demux` -- the
+        calculation lives in the Space (processing contract,
+        2026-06-10); this alias serves remaining Models-side callers."""
+        return ConceptualSpace._bind_demux(sub, content_dim)
 
     @staticmethod
     def _combine_fit(content, D, like):
-        """Fit a content slab to the combine width ``D``.
-
-        ``content`` may be ``None`` (no live stream -> a zero slab shaped
-        ``[*like.shape[:-1], D]``, used for the zeroed PS_t at t>0 and the
-        empty CS_{-1} seed), narrower than ``D`` (the compressed SS symbol
-        code -> zero-pad up to ``D``, exactly as ``ConceptualSpace.forward``
-        pads the SS event into its STM), or already width ``D``. ``like`` is a
-        reference tensor supplying the leading shape / device / dtype for the
-        zero case.
-        """
-        D = int(D)
-        if content is None:
-            return like.new_zeros(*like.shape[:-1], D)
-        w = int(content.shape[-1])
-        if w == D:
-            return content
-        if w < D:
-            return F.pad(content, (0, D - w))
-        return content[..., :D]
+        """Delegates to :meth:`ConceptualSpace._bind_fit` -- the
+        calculation lives in the Space (processing contract,
+        2026-06-10); this alias serves remaining Models-side callers."""
+        return ConceptualSpace._bind_fit(content, D, like)
 
     # ``_symbolic_sigma_step`` (the content-demux SS.sigma advance the
     # ConceptualCombine replaced) was removed 2026-06-06 (Action C): it was
@@ -6892,8 +6861,8 @@ class BasicModel(BaseModel):
         reconstruction (approximate through the averaged loops, per the
         single-input-reverse contract) instead of aborting.
         """
-        augments = getattr(self, "_combine_augments", None)
         carriers = getattr(self, "_combine_carriers", None)
+        _concepts_recon = None
         for t in reversed(range(len(self.body_stages))):
             stage = self.body_stages[t]
             # A4 (2026-06-06 parallel-conceptual-recurrence): invert the
@@ -6950,22 +6919,45 @@ class BasicModel(BaseModel):
                     D = int(combine.content_dim)
                     content, band, event = self._combine_demux(sub, D)
                     if event is not None:
-                        carrier_t = None
-                        if carriers is not None and t < len(carriers):
-                            carrier_t = carriers[t]
-                        if carrier_t is not None:
-                            ncs = self._combine_fit(carrier_t, D, content)
+                        # 2-stream EXACT inverse (C-10), in-Space per the
+                        # processing contract: ``cs.unbind`` reads the
+                        # bind carrier RIDING ON the stage's SubSpace
+                        # (``_bind_carrier``) and applies ILL^{-1} --
+                        # (PS_t, SS_t) exactly, nothing threaded
+                        # alongside. The PS stream is the percept leg
+                        # (re-fed at every stage), which the downstream
+                        # ``cs.reverse`` / ``_reverse_perceptual`` decode
+                        # back to the input: reconstruction ends at the
+                        # percept store (PS owns reconstruction). The
+                        # model-level ``carriers`` handle remains a
+                        # fallback for reverses driven from a foreign
+                        # subspace.
+                        rec = stage["cs"].unbind(stage["cs"].subspace)
+                        if (rec is None and carriers is not None
+                                and t < len(carriers)
+                                and carriers[t] is not None):
+                            rec = combine.reverse(carriers[t])
+                        if rec is not None:
+                            ps_rec, _ss_rec = rec
+                            recovered = ps_rec
+                            if t == 0:
+                                # Phase 7 (painting reverse): the stage-0
+                                # SS stream of the unbind IS the conceptual
+                                # reconstruction branch. Captured here and
+                                # stamped onto the RETURNED sub below (the
+                                # per-stage cs.reverse may swap subspace
+                                # objects); it rides the SubSpace down to
+                                # InputSpace.reverse (processing contract:
+                                # data in SubSpaces; reverse stays
+                                # single-arg), where the Universal view
+                                # paints the background and the Atomic
+                                # view is averaged in.
+                                _concepts_recon = _ss_rec.detach()
                         else:
-                            ncs = self._combine_fit(content, D, content)
-                        # Dropped reverse: recover the rank-D subspace that
-                        # survived the forward combine. (The forward augment-
-                        # threaded EXACT inverse was retired with the boolean
-                        # <perfectReconstruction>; this reachable path is
-                        # always the dropped reverse.)
-                        ps_rec, _, cs_rec = combine.reverse_dropped(ncs)
-                        # FINAL stage -> PS-stream (the pi-encoded input);
-                        # earlier stages -> CS-stream (the prior carrier).
-                        recovered = ps_rec if t == 0 else cs_rec
+                            # No carrier available (a reverse not preceded
+                            # by a body forward): surface the sub's own
+                            # content for cs.reverse's bookkeeping.
+                            recovered = content
                         # Write the recovered slab back, band riding along
                         # unchanged.
                         if band is not None and band.shape[-1] > 0:
@@ -6984,6 +6976,12 @@ class BasicModel(BaseModel):
                 sub = stage["cs"].reverse(sub)
             except (RuntimeError, AssertionError, ValueError):
                 pass
+        if _concepts_recon is not None and sub is not None:
+            # Stamp the conceptual reconstruction branch onto the RETURNED
+            # sub (the per-stage reverses may have swapped objects); the
+            # model reverse() re-stamps it across _reverse_perceptual's
+            # handoff so it reaches InputSpace.reverse for the painting.
+            object.__setattr__(sub, "_concepts_recon", _concepts_recon)
         return sub
 
     def _reverse_perceptual(self, sub):
@@ -7021,7 +7019,14 @@ class BasicModel(BaseModel):
             return None
         self._chart_generate_from_stm()
         x = self._reverse_body(x)
+        # Phase 7 (painting reverse): carry the conceptual reconstruction
+        # branch across the PS handoff (the perceptual reverse may swap
+        # subspace objects) so it reaches InputSpace.reverse riding the
+        # SubSpace.
+        _concepts = getattr(x, "_concepts_recon", None) if x is not None else None
         x = self._reverse_perceptual(x)
+        if _concepts is not None and x is not None:
+            object.__setattr__(x, "_concepts_recon", _concepts)
         x = self.inputSpace.reverse(x)
         return x
 

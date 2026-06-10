@@ -203,7 +203,14 @@ Lifts raw data into the model's internal representation.
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
-| `lexer` | string | `"word"` | Tokenization mode: `word`, `sentence`, `byte`. |
+
+> **`<lexer>` moved to `<SymbolicSpace>`** (Phase 4b of the
+> analysis/synthesis dual-input plan, rev. 2026-06-09): lexing is analytic
+> CUTTING, owned by the analysis side. An InputSpace-side `<lexer>` now
+> fails schema validation and the runtime reader. InputSpace emits the
+> dual view — `forward(x) -> (percepts_in, concepts_in)`: the atom view
+> (content `[B, N, 1]`) for the perceptual branch and the unity view
+> (`[B, 1, N]`) for the symbolic branch.
 
 `inputShape` uses the data's native dim (e.g. 784 for MNIST,
 `inputLength` for text); `outputShape` uses `nDim` from
@@ -211,8 +218,10 @@ Lifts raw data into the model's internal representation.
 
 ### `<PerceptualSpace>`
 
-Transforms lifted input into perceptual features via Pi layers
-(multiplicative interactions).
+Transforms lifted input into perceptual features via its synthesis fold —
+a `SigmaLayer` (additive/union; the Pi/Sigma swap of the analysis/synthesis
+plan, rev. 2026-06-09: PS is bottom-up SYNTHESIS over atoms; the
+multiplicative Pi fold moved to SymbolicSpace as top-down analysis).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -222,13 +231,15 @@ Transforms lifted input into perceptual features via Pi layers
 | `invertible` | bool | `false` | `true`: one `PiLayer(invertible=True)` handles both directions; `false`: separate `pi1` (forward) and `pi2` (reverse). |
 | `hasAttention` | bool | `true` | Attention reweighting of percepts before the Pi fold. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
-| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted. Set to `none` to make PS a pure input-encoder (the butterfly cascade carries the trainable transform); set to `quantize` for VQ-EMA snapping. `MM_xor.xml` uses `none` (the snap kills gradient flow into the butterfly weights). |
-| `chunking` | string | `"lexicon"` | Multi-token chunking strategy: `lexicon`, `bpe`, `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `RadixLayer` is in `bin/Layers.py` (relocated 2026-05-29 from `bin/PerceptStore.py`). |
-| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on `self.pi` (and `self.sigma` historically) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md). |
+| `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on SymbolicSpace as `<analysis>analyse`. |
+| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md). |
 | `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
 
-Pi layer math: $y_j = b_j \prod_i (1 + W_{ji} x_i)$. See [Architecture.md](Architecture.md).
-`InvertiblePiLayer` has been merged into `PiLayer(invertible=True)`.
+Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The
+PS `<codebook>` element was retired (the percept prototypes live on the
+`.what` basis; radix's PerceptStore IS the surface codebook). See
+[Architecture.md](Architecture.md) and [Philosophy.md](Philosophy.md) for
+the analysis/synthesis orientation.
 
 ### `<ConceptualSpace>`
 
@@ -263,31 +274,39 @@ Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md)
 ### `<SymbolicSpace>`
 
 Discrete symbolic representation --- the information bottleneck between
-perception and output. See [Language.md](Language.md) for the design.
+perception and output, and (post the analysis/synthesis plan, rev.
+2026-06-09) the home of top-down ANALYSIS: SS owns the Pi fold
+(multiplicative/intersection), the `<analysis>` division knob, and the
+`<lexer>` intake knob. See [Language.md](Language.md) and
+[Philosophy.md](Philosophy.md) for the design.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Total symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nOutput` are fed to output; the rest carry reconstruction information. |
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nVectors` | int | sentinel | Codebook size. When `codebook=quantize`, equals the number of symbol prototypes. |
-| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Required for the full symbolic pipeline. |
+| `codebook` | mode | `none` | `none`, `quantize`, or `project`. Required for the full symbolic pipeline. **Pending removal** (backlog #13: SS `quantize` becomes hardwired) — deliberately deferred until the reverse decodes pre-snap $z$ (backlog #16 / the asymmetric recon gather), because `XOR_exact.xml` relies on `none` for its byte-exact chain. |
+| `analysis` | string | `"byte"` | Top-down division strategy over the unity view (Phase 4b): `byte` = uniform contiguous regions (stage-0 region-mean pooling); `word` = whitespace-cut parts (part $k$ → symbol slot $k$, per-part coarse means); `analyse` = the meronymic analyzer front end (space-lexer cut today; learned-merge integration follows with the deeper SS analyzer work). |
+| `lexer` | string | — | Intake granularity InputSpace executes (`word`, `sentence`, `byte`, `raw`). Moved here from `<InputSpace>` (Phase 4b: lexing is analytic cutting). |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
 | `sortNetwork` | bool | `false` | Bitonic-sort regularizer on the codebook ordering. |
 | `sortPasses` | int | `0` | Sort-network depth. `0` disables. |
 | `l1Lambda` | decimal | `0.01` | L1 sparsity penalty on the symbolic activation. |
 | `symbolResidualScale` | decimal | `1.0` | Symbol-residual injection scale (legacy mereology hook). |
 | `outputSymbolResidualScale` | decimal | `0.0` | Output-side symbol-residual injection scale. |
-| `commitmentBeta` | float | `0.25` | VQ-VAE commitment-loss $\beta$. Active whenever `<codebook>quantize</codebook>` is set (2026-05-29: the prior `<useVQVAE>` toggle was retired; codebook training is implicit). |
+| `commitmentBeta` | float | `0.25` | Space-level VQ-VAE commitment-loss $\beta$. **Asymmetric dispatch (2026-06-10)**: on the PARALLEL leg this is now INERT — the dispatch rewrite retired the space-level commitment, the VQ-internal cb_commit, and the nearest-target `symbol_residual` pull (the recon gather + STE carry the two asymmetric legs; the codebook is gradient-trained, `vq.ema_update = False`, `vq.commitment_weight = 0`). The SERIAL/grammar leg keeps the legacy coupling (this $\beta$ included) behind an explicit gate until its own asymmetric recon leg lands (D-territory). |
+| `semanticArrangement` | float | `0` | Task 5 (C-13): post-sentence semantic arrangement over SS heat — pode (activated-rows centroid attraction) + antipode (rest-of-codebook repulsion), gradient on the active rows only. `0` = OFF (the default); the semantic payoff is validated under D, not XOR. |
 | `decorrelationWeight` | decimal | `0.0` | `ImpenetrableLayer` decorrelation regularizer on codebook rows. |
 | `spectralFlatnessWeight` | decimal | `0.0` | `ImpenetrableLayer` spectral-flatness regularizer. |
 | `truthCriterion` | unitInterval | `1.0` | **Single continuous truth bar** governing BOTH (a) SymbolicSpace truth **recording** --- a per-cell activation is recorded into the TruthLayer iff its clamped magnitude $\ge$ `truthCriterion` (fires during training and `store_truths` gold ingestion alike), and (b) learned relative-sentence **acceptance** --- a relation `predicate(idea1, idea2)` enters the SS codebook iff its learn-score $\ge$ `truthCriterion` (learn-score $= \text{children\_in\_codebook} \times \text{is\_truth\_obvious} \times \text{resolves\_contradiction}$). At `1` nothing is recorded/learned; at `0` everything is. Read onto both ConceptualSpace and SymbolicSpace; per-space override of the `<architecture>` value. Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 
-SymbolicSpace owns one
-`SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=monotonic)`
-at `self.sigma` bridging the C $\leftrightarrow$ S boundary in both directions via its
-own self-inverse (`forwardSigma` / `reverseSigma` pointer aliases hide
-the one-or-two-layer split). The legacy `SymbolicSpace.layer` PiLayer
-attribute is gone; consumers use `model.symbolicSpace.sigma` directly.
+SymbolicSpace owns one square invertible
+`PiLayer` at `self.pi` — the top-down analysis (product/intersection)
+fold — bridging the C $\leftrightarrow$ S boundary in both directions
+via its exact inverse (the Pi/Sigma swap, rev. 2026-06-09; SS owned a
+SigmaLayer at `self.sigma` before the corrected orientation). Consumers
+use `model.symbolicSpace.pi` directly; the grammar rule binding registers
+it under both the `pi` rule name and the legacy `sigma` alias.
 
 ### `<OutputSpace>`
 
@@ -301,6 +320,7 @@ Maps symbols to final predictions via linear layers.
 | `invertible` | bool | `false` | Rarely set on OutputSpace. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `nonlinear` | bool | `false` | OutputSpace is linear by default; rescales via `Data.denormalize`. |
+| `readout` | string | `identity` | Regression-head readout (backlog #11, 2026-06-09): with `nVectors == 1` (or no codebook) the head is an unquantised linear `nInputDim → nOutputDim`; `identity` is byte-identical to the old bare-linear head, `sigmoid` makes a binary $\{0,1\}$ target representable (XOR / the `predicted` column). Ignored by quantised heads. |
 
 `LinearLayer` with `(bias, temp)` support for ergodic mode.
 

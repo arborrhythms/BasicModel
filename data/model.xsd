@@ -705,6 +705,12 @@
                        today; the bottom-up merge integration follows with
                        the deeper SS analyzer work, Phases 5-6). -->
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+      <!-- Task 5 (C-13, asymmetric-vq sec.6): the post-sentence semantic
+           arrangement weight over SS heat (pode attraction + antipode
+           repulsion on the activated codebook rows). Default 0 = OFF:
+           the mechanism is validated under D (corpus, serial path). -->
+      <xs:element name="semanticArrangement" type="nonNegativeFloat"
+                  minOccurs="0"/>
       <xs:element name="analysis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
