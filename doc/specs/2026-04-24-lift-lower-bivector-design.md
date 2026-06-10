@@ -15,7 +15,7 @@ treat this as a starting commitment, not a finished decision.
 - Conceptual ground truth: [Logic.md](../Logic.md) §8
 - Ops inventory / mapping / divergences: [Logic.md](../Logic.md) §9 (formerly the standalone OpsComparison report).
 - Mereology: [Mereology.md](../Mereology.md)
-- Tetralemma semantics: [BuddhistParallels.md](../BuddhistParallels.md)
+- Tetralemma semantics: [Philosophy.md](../Philosophy.md)
 - Grammar: [../../data/grammar.cfg](../../data/grammar.cfg)
 - Grammar in-progress rewrite: [../../todo.md](../../todo.md)
 

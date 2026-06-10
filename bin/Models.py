@@ -4559,7 +4559,7 @@ class BasicModel(BaseModel):
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
-        # Quaternary-corner balance knobs (see BuddhistParallels.md for
+        # Quaternary-corner balance knobs (see Philosophy.md for
         # the tetralemma/catuskoti mapping). Defaults permit NEITHER
         # (epistemic uncertainty) but forbid BOTH (classical
         # non-contradiction):

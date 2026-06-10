@@ -951,6 +951,6 @@ shim exists specifically to make rollback cheap.
 - [Mereology.md](../Mereology.md) — to receive a one-line
   cross-reference back to Logic.md §8 once landed (independent
   doc-only follow-up).
-- [BuddhistParallels.md](../BuddhistParallels.md) — tetralemma
+- [Philosophy.md](../Philosophy.md) — tetralemma
   semantics that the bivector activation realizes; no change needed
   but worth re-reading before implementing Step 3.

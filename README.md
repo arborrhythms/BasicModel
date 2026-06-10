@@ -2,7 +2,7 @@
 
 ## Basic Model of Cognition
 
-*The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (which forms percepts from concepts), union (a bidirectional mapping between concepts and percepts), and equality (where symbols are elements that map across perceptual and conceptual domains).*
+*The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (analysis: the top-down division of the presented unity into symbolic generalities), union (synthesis: the bottom-up aggregation of atoms into perceptual particulars), and equality (where symbols are elements that map across perceptual and conceptual domains). See [Philosophy](doc/Philosophy.md) for the analytic/synthetic orientation.*
 
 ## Documentation
 
@@ -17,6 +17,7 @@
 | [Language](doc/Language.md) | Grammar, word encoding, symbolic and syntactic spaces |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
 | [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
+| [Philosophy](doc/Philosophy.md) | Kant's analysis/synthesis, Ramsey's theoretical roles, Buddhist epistemology (pramana, tetralemma) |
 | [MachineMinds](doc/MachineMinds.md) | What machine minds are, feel, and know |
 | [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
 

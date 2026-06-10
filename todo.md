@@ -1,5 +1,3 @@
-* Do the following two doc/plans:
-2026-06-09-build-batch-remaining.md 2026-06-08-analysis-synthesis-dual-input.md
 
 * All Grammars need to be role-collapsed
 

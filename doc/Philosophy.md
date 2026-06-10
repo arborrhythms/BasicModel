@@ -1,4 +1,88 @@
-# Buddhist Parallels
+# Philosophy
+
+This document maps the model's machinery onto three philosophical accounts
+of cognition: Kant's analysis/synthesis pair, Ramsey's treatment of
+theoretical structure, and Buddhist epistemology (pramana theory). The
+through-line is the corrected analysis/synthesis orientation
+(doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev. 2026-06-09):
+
+```text
+SymbolicSpace (SS)                  PerceptualSpace (PS)
+top-down ANALYSIS                   bottom-up SYNTHESIS
+Pi -- product, intersection         Sigma -- sum, union
+starts from UNITY [B, 1, N]         starts from ATOMS [B, N, 1]
+Universals / generalities           Particulars / specifically
+                                    characterized entities
+```
+
+## Analytic / Synthetic (Kant)
+
+For Kant, **synthesis** is "the act of putting different representations
+together, and grasping their manifoldness in one cognition" (A77/B103);
+**analysis** decomposes a given whole into its distinguishable conditions.
+Synthesis is bottom-up — a manifold of intuition is combined into an object;
+analysis is top-down — a given unity is divided into the concepts it falls
+under.
+
+The model realizes the pair literally:
+
+- The **perceptual branch synthesizes**: the input arrives as a manifold of
+  atoms (`[B, N, 1]`), and the bottom-up Sigma (union) fold — with the
+  chunking front ends (radix/BPE/byte) — combines atoms into recurring
+  surface forms held in the percept store.
+- The **symbolic branch analyzes**: the same input arrives as one undivided
+  unity (`[B, 1, N]`), and the top-down Pi (intersection) fold divides it —
+  lexer cuts, part-whole divisions, coarse large-scale characterizations
+  (means over large regions).
+- **Reconstruction is their joint employment.** Kant's dictum that thoughts
+  without content are empty and intuitions without concepts are blind maps
+  directly: symbolic generalities without perceptual particulars cannot
+  spell out a surface; perceptual particulars without the symbolic scaffold
+  carry structure but no meaning. `InputSpace.reverse(percepts, concepts)`
+  recombines both branches.
+
+## Epistemic Levels (Ramsey)
+
+The codebase's term **"Ramsified"** (e.g. `RamsifiedModel.xml`; spaces
+replicated "Ramsified across conceptual orders") descends from the **Ramsey
+sentence**: replace a theory's theoretical terms with existentially bound
+variables, so the theory's content lives in the *roles its structure
+realizes* rather than in privileged names. In the model, the per-order
+conceptual/symbolic spaces are exactly such role-realizations — what a tier
+*is* is exhausted by its position in the recurrent loop, not by an intrinsic
+label; the same structural theory is instantiated at each conceptual order.
+
+> Scholarship hedge (recorded deliberately): this section states the
+> project's working usage. Verify the mapping against Ramsey's "Theories"
+> (1929) before presenting it as Ramsey exegesis; the "epistemic levels"
+> phrasing in particular is the project's own.
+
+## Buddhist Epistemology
+
+Input reconstruction combines **specifically characterized perceptual
+particulars** with **generally characterized symbolic divisions**, under the
+corrected orientation:
+
+- **`rang-mtshan`** — specifically characterized particulars: the PS side,
+  bottom-up, grounded in the eidetic percept store over exact atoms. An
+  exact this-one surface form, recognized as a recurring particular within
+  the store's snap distance.
+- **`spyi-mtshan`** — generally characterized entities: the SS side,
+  top-down. Divisions of the presented unity, characterized at large scale.
+- **`don-spyi`** (meaning-generality) and **`sgra-spyi`** (term/sound-
+  generality) — descriptor **roles** inside the one SS generality codebook,
+  not separate codebooks; `.active` selects rows, `.where`/`.when` place
+  them over perceptual supports.
+
+The perceptual branch synthesizes bottom-up — union of atoms into recurring
+surface forms, content-represented in the percept store within a snap
+distance — so exact reconstruction stays grounded. The symbolic branch
+analyzes top-down — intersection/division of the presented unity into parts
+characterized at large scale — so meaning- and term-generalities never
+masquerade as particulars.
+
+The remainder of this document is the original pramana-theory mapping of
+the truth ontology.
 
 ## Purpose
 

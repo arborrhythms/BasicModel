@@ -4527,7 +4527,7 @@ class SmoothingRegLayer(Layer):
     bivector encoding: indices ``2k`` and ``2k+1`` are poles of the same
     concept -- penalising their difference would fight the 4-valued
     (quaternary) truth encoding, so we measure discontinuity between
-    *distinct* concepts only. See basicmodel/doc/BuddhistParallels.md
+    *distinct* concepts only. See basicmodel/doc/Philosophy.md
     for the tetralemma (catuskoti) mapping.
 
     Acts as identity (returns scalar zero) when disabled or ``lam <= 0``.
@@ -4586,7 +4586,7 @@ class ImpenetrableLayer(Layer):
     Returns a scalar. When ``enabled`` is false or all weights are zero,
     the layer short-circuits to zero without touching the codebook.
 
-    See basicmodel/doc/BuddhistParallels.md for the tetralemma (catuskoti)
+    See basicmodel/doc/Philosophy.md for the tetralemma (catuskoti)
     mapping of the 4-valued truth logic that the separated codebook carries.
     """
 
@@ -4862,7 +4862,7 @@ class TruthLayer(Layer):
         scale by ``|degree|``. This preserves 4-valued (quaternary)
         truth semantics: asserting A and asserting not(A) are
         orthogonal, not cancelling. See
-        basicmodel/doc/BuddhistParallels.md for the tetralemma mapping.
+        basicmodel/doc/Philosophy.md for the tetralemma mapping.
 
         Legacy path (no basis or odd last dim): the stored vector is
         ``activation * degree``, so the DoT is encoded in both the
@@ -5173,7 +5173,7 @@ class TruthLayer(Layer):
             (``sym_act[..., :2]``) to avoid applying tetralemma corner
             policy to positional-template dims. See
             basicmodel/doc/Spaces.md "Codebook shape" and
-            basicmodel/doc/BuddhistParallels.md.
+            basicmodel/doc/Philosophy.md.
 
         Flags control which corners are penalized:
             allow_excluded_middle == -1  =>  penalize N (force classical LEM)

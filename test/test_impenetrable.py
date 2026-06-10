@@ -6,7 +6,7 @@ part_ji, equal, overlap}. The penalty is
 ``overlap_strength(i, j) * |trust(i) - trust(j)|`` where
 ``overlap_strength = min(P[i,j], P[j,i]) * (1 - max(P[i,j], P[j,i])**k)``
 damps to zero as the pair approaches identity (equal). See
-basicmodel/doc/BuddhistParallels.md for the 4-valued (quaternary) truth
+basicmodel/doc/Philosophy.md for the 4-valued (quaternary) truth
 semantics the codebook underwrites.
 """
 

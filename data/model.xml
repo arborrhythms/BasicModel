@@ -97,7 +97,7 @@
     <!-- Quaternary-corner balance (catuskoti / tetralemma).
          allowExcludedMiddle:  1=permit NEITHER (default), -1=classical LEM
          allowContradiction:   0=forbid BOTH (default), 1=paraconsistent
-         See BuddhistParallels.md for the 4-valued truth semantics. -->
+         See Philosophy.md for the 4-valued truth semantics. -->
     <allowExcludedMiddle>1</allowExcludedMiddle>
     <allowContradiction>0</allowContradiction>
 

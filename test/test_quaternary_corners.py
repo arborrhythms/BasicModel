@@ -10,7 +10,7 @@ TruthLayer.tetralemma_balance_penalty penalizes forbidden corners based on
 ``allow_excluded_middle`` (-1 forbids N, +1 permits) and
 ``allow_contradiction`` (0 forbids B, +1 permits).
 
-See basicmodel/doc/BuddhistParallels.md for the tetralemma (catuskoti)
+See basicmodel/doc/Philosophy.md for the tetralemma (catuskoti)
 mapping.
 """
 

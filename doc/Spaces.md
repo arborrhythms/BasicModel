@@ -853,7 +853,7 @@ ConceptualSpace / SymbolicSpace instances for `conceptualOrder`. Symbol
 dimension is geometrically partitioned per order. See
 [Reasoning.md](Reasoning.md).
 
-See [BuddhistParallels.md](BuddhistParallels.md), [Logic.md](Logic.md),
+See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).
 
 ---
@@ -887,7 +887,7 @@ let $aP - aN$ cancel under summation.
 The `ImpenetrableLayer` regularizer maintains an antichain of same-rank
 prototypes, complementing the structural `.where`-uniqueness from the
 codebook offset registry. See [Logic.md Section Parthood as Projection](Logic.md)
-and [BuddhistParallels.md](BuddhistParallels.md).
+and [Philosophy.md](Philosophy.md).
 
 ---
 

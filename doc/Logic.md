@@ -359,4 +359,4 @@ namespace inventory have moved out of this document.
 - **Mereological suite** (`part`, `whole`, `equal`, `overlap`, `underlap`,
   `boundary`, `copart`): [Mereology.md](Mereology.md).
 - **Tetralemma bivector layout** (TRUE/FALSE/BOTH/NEITHER corners):
-  [Spaces.md](Spaces.md) and [BuddhistParallels.md](BuddhistParallels.md).
+  [Spaces.md](Spaces.md) and [Philosophy.md](Philosophy.md).

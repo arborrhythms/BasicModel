@@ -414,7 +414,7 @@ When MP is absent, the sentence carries an implicit assertoric modality ("truly"
 
 Definitive sentences (`S $\rightarrow$ NP is NP`, `S $\rightarrow$ NP has NP`) do not fit this pattern. They compare or relate two five-dimensional objects rather than predicating within one.
 
-The implicit "exists" deserves particular attention. A bare noun as sentence -- "Fire!" -- silently asserts existence. This grammatical convenience mirrors what Buddhist philosophy identifies as the root of conceptual error: treating phenomena as if they possess inherent, permanent selfhood (*svabhava*). When "exists" is left implicit, the noun appears to exist in its own right, independent of causes and conditions. Making the existential predicate explicit -- "fire exists" -- restores the processual character of phenomena: existence is something that happens, not something that inheres. See [BuddhistParallels](BuddhistParallels.md#implicit-existence-and-svabhava) for the full parallel.
+The implicit "exists" deserves particular attention. A bare noun as sentence -- "Fire!" -- silently asserts existence. This grammatical convenience mirrors what Buddhist philosophy identifies as the root of conceptual error: treating phenomena as if they possess inherent, permanent selfhood (*svabhava*). When "exists" is left implicit, the noun appears to exist in its own right, independent of causes and conditions. Making the existential predicate explicit -- "fire exists" -- restores the processual character of phenomena: existence is something that happens, not something that inheres. See [Philosophy](Philosophy.md#implicit-existence-and-svabhava) for the full parallel.
 
 #### Prep
 

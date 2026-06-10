@@ -384,7 +384,7 @@ contract. After this rollback, the geometry is:
   - OR / Union: `[max(p_a, p_b), min(n_a, n_b)]`.
   - De Morgan duality holds.
 
-  Cross-reference: [doc/BuddhistParallels.md](basicmodel/doc/BuddhistParallels.md)
+  Cross-reference: [doc/Philosophy.md](basicmodel/doc/Philosophy.md)
   for the catuskoti mapping.
 
 **The C↔S boundary as categorization**:
@@ -412,7 +412,7 @@ contract. After this rollback, the geometry is:
 - `doc/Logic.md` — confirm the catuskoti / De Morgan content reflects the
   activation-as-bivector model. May already be accurate; verify and
   extend with the snap-as-categorization note from §6.2.
-- `doc/BuddhistParallels.md` — confirm the four-corner table aligns with
+- `doc/Philosophy.md` — confirm the four-corner table aligns with
   the post-rollback activation semantics. Likely accurate as-is; no
   change expected.
 - `doc/Mereology.md` — confirm the Area / Luminosity / Contiguous /
@@ -428,7 +428,7 @@ Acceptance for Phase 6:
 - Cross-references between docs are consistent (e.g. mereology in
   `doc/Spaces.md` points to `doc/Mereology.md`; logic in
   `doc/Spaces.md` points to `doc/Logic.md` and
-  `doc/BuddhistParallels.md`).
+  `doc/Philosophy.md`).
 
 ## Phase 7 — Optional follow-on (deferred)
 

@@ -5254,7 +5254,7 @@ class SubSpace(nn.Module):
             [B, N] scalar tensor. A position is active only if all its
             modalities are present AND its event activation is positive.
             Scalar form comes from activation_presence() which reduces the
-            4-valued bivector via max(aP, aN). See BuddhistParallels.md
+            4-valued bivector via max(aP, aN). See Philosophy.md
             for the tetralemma mapping.
         """
         pres = self.activation_presence()
@@ -5849,7 +5849,7 @@ class SubSpace(nn.Module):
 
         # Apply activation gate: materialize() = event * activation_presence.
         # The 4-valued bivector is reduced to a scalar presence (max of
-        # poles) for event gating; see BuddhistParallels.md for the
+        # poles) for event gating; see Philosophy.md for the
         # tetralemma mapping.
         pres = self.activation_presence()
         if pres is not None:
@@ -12418,7 +12418,7 @@ class SymbolicSpace(Space):
     the ``_active_payload`` codebook shadow were retired (see
     doc/plans/2026-05-21-active-payload-retirement.md). The signed
     Degree-of-Truth ``aP - aN in [-1, +1]`` now lives as a single scalar on
-    ``subspace.activation`` ([B, N]); see doc/BuddhistParallels.md for the
+    ``subspace.activation`` ([B, N]); see doc/Philosophy.md for the
     4-valued semantics.
 
     With ``<codebook>quantize|project``, ``.what`` is a Codebook whose ``.W``
@@ -12645,7 +12645,7 @@ class SymbolicSpace(Space):
         # ``[B, V_S, 2]`` lives on ``subspace.activation`` instead and
         # is populated by ``Codebook.forward(input)`` --
         # the intrinsic snap. See doc/Spaces.md for the post-rollback
-        # geometry and doc/BuddhistParallels.md for the tetralemma.
+        # geometry and doc/Philosophy.md for the tetralemma.
         nSymbols = spaceShape[0]
         # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
         # SymbolicSpace owns a SINGLE square invertible PiLayer --
