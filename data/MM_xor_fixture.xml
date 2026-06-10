@@ -6,7 +6,7 @@
        MM_xor.xml so that runtime experiments on MM_xor (e.g. toggling
        SS <codebook>quantize</codebook> -> <codebook>none</codebook>)
        don't break the tests, which inherently require:
-         - <chunking>radix</chunking> so PerceptStore is constructed.
+         - <synthesis>radix</synthesis> so PerceptStore is constructed.
          - <codebook>quantize</codebook> on SymbolicSpace so
            ``SymbolicSpace.subspace.what`` is a Codebook and
            ``insert_symbol`` can allocate rows.
@@ -45,7 +45,7 @@
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <chunking>radix</chunking>
+    <synthesis>radix</synthesis>
     <butterfly>false</butterfly>
   </PerceptualSpace>
 

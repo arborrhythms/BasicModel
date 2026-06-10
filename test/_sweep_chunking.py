@@ -1,7 +1,7 @@
-"""Sweep MM_20M PerceptualSpace <chunking> options to compare reconstruction.
+"""Sweep MM_20M PerceptualSpace <synthesis> options to compare reconstruction.
 
 Builds temp configs from MM_20M.xml with a WORKING 1024-wide InputSpace
-(the 5-wide narrowing crashes the event mux), varying only <chunking>.
+(the 5-wide narrowing crashes the event mux), varying only <synthesis>.
 Runs each end-to-end and reports the reconstruction lines. Not a pytest test.
 """
 import os, re, subprocess, sys, time
@@ -28,7 +28,7 @@ if _order:
                   f"<conceptualOrder>{_order}</conceptualOrder>", base)
 _promo = os.environ.get("SWEEP_PROMO")
 if _promo:
-    base = re.sub(r"(\s*)(<chunking>\w+</chunking>)",
+    base = re.sub(r"(\s*)(<synthesis>\w+</synthesis>)",
                   rf"\1<chunkPromotionThreshold>{_promo}</chunkPromotionThreshold>\1\2",
                   base, count=1)
 _recon = os.environ.get("SWEEP_RECON")
@@ -78,7 +78,7 @@ if _ins:
 
 env = dict(os.environ, MODEL_COMPILE="none")
 for chunk in CHUNKS:
-    cfg = re.sub(r"<chunking>\w+</chunking>", f"<chunking>{chunk}</chunking>", base)
+    cfg = re.sub(r"<synthesis>\w+</synthesis>", f"<synthesis>{chunk}</synthesis>", base)
     path = os.path.join(PROJECT, "data", f"_sweep_{chunk}.xml")
     with open(path, "w") as f:
         f.write(cfg)

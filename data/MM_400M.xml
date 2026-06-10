@@ -54,7 +54,7 @@
          this is what reduces an 8192-char input to a small number of
          words in parallel mode without needing attention. radix = the
          PerceptStore (radix trie + promotion); flip here to experiment. -->
-    <chunking>analyse</chunking>
+    <synthesis>analyse</synthesis>
   </PerceptualSpace>
 
   <ConceptualSpace>

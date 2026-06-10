@@ -526,7 +526,7 @@ per-word surface → row lookup.
   flat-slab invariant).
 - `self._mphf_gpu_layer`: MPHF infrastructure for fast surface lookup.
 - `self.chunk_layer`: BPE machinery (the `ChunkLayer` from `bin/Layers.py`).
-- `self.radix_layer`: when `<chunking>radix</chunking>`, the input lookup
+- `self.radix_layer`: when `<synthesis>radix</synthesis>`, the input lookup
   routes through `RadixLayer` (radix trie + inverse table + learned
   codebook + byte fallback). `RadixLayer` is a first-class `Layer`
   subclass in `bin/Layers.py` (formerly the standalone

@@ -108,7 +108,7 @@ def _compute_valid_len_host(buf, peer):
     T = buf.shape[1]
     bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                 if peer is not None
-                and getattr(peer, "chunking_mode", None)
+                and getattr(peer, "synthesis_mode", None)
                 in ("bpe", "none", "mphf")
                 else None)
     if bpe_mask is not None:
@@ -224,7 +224,7 @@ def test_bpe_word_mask_is_the_validity_signal_when_present():
     mask = torch.zeros(B, T)
     mask[:, :3] = 1.0
     self._peer_perceptual = types.SimpleNamespace(
-        chunking_mode="bpe", _bpe_word_mask=mask)
+        synthesis_mode="bpe", _bpe_word_mask=mask)
     # Re-cache after seeding the BPE peer (the cache key changed).
     self._valid_len_host = _compute_valid_len_host(
         self._ar_embedded, self._peer_perceptual)

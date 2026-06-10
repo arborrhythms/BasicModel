@@ -51,7 +51,7 @@
          positions). XOR_exact relies on this for the exact-XOR
          convergence property. -->
     <butterfly>true</butterfly>
-    <chunking>lexicon</chunking>
+    <synthesis>lexicon</synthesis>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->

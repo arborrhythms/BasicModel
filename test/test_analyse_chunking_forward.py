@@ -56,7 +56,7 @@ def _write_analyse_xml(tmpdir, n_vectors=512):
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <chunking>analyse</chunking>
+    <synthesis>analyse</synthesis>
   </PerceptualSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
@@ -92,7 +92,7 @@ class TestAnalyseChunkingForward(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = _write_analyse_xml(tmp)
             model, _cfg = BaseModel.from_config(config_path=path)
-            self.assertEqual(model.perceptualSpace.chunking_mode, "analyse")
+            self.assertEqual(model.perceptualSpace.synthesis_mode, "analyse")
 
     def _tokens(self, chunk, lexer="byte"):
         import torch
@@ -104,8 +104,8 @@ class TestAnalyseChunkingForward(unittest.TestCase):
             xml = xml.replace("<lexer>byte</lexer>", f"<lexer>{lexer}</lexer>")
             with open(path, "w") as f:
                 f.write(xml.replace(
-                    "<chunking>analyse</chunking>",
-                    f"<chunking>{chunk}</chunking>"))
+                    "<synthesis>analyse</synthesis>",
+                    f"<synthesis>{chunk}</synthesis>"))
             model, _cfg = BaseModel.from_config(config_path=path)
             inp = model.inputSpace.prepInput(["hello world foo"])
             with torch.no_grad():

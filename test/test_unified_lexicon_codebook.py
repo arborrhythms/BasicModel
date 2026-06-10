@@ -79,7 +79,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      byte-slots -> row resolve.  ``mphf_table_rows`` (line 8403)
      gathers the rows.
    - Runtime entry: ``PerceptualSpace._embed_mphf`` (line 8540) is the
-     ``<chunking>mphf</chunking>`` path; ``_embed_bpe`` (line 7776) is
+     ``<synthesis>mphf</synthesis>`` path; ``_embed_bpe`` (line 7776) is
      the BPE / trie path that also resolves through ``self.subspace.what``.
    - MIGRATION: PS keeps the MPHF *algorithm* (``_mphf_gpu_layer``,
      ``_mphf_static_tables``) but the *target codebook* shifts from

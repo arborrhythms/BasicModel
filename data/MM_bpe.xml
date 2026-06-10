@@ -39,7 +39,7 @@
     <nDim>14</nDim>
     <nVectors>512</nVectors>
     <invertible>true</invertible>
-    <chunking>bpe</chunking>
+    <synthesis>bpe</synthesis>
   </PerceptualSpace>
 
   <ConceptualSpace>

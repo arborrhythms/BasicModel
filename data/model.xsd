@@ -555,7 +555,14 @@
            lexicon and tag it as a part of the "words" symbol on the
            meronomy. Only embed.py sets >0 at lexicon-build time. -->
       <xs:element name="wordLearning" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="chunking" minOccurs="0">
+      <!-- Phase 4 of the analysis/synthesis dual-input plan (rev.
+           2026-06-09): the perceptual front-end knob is SYNTHESIS,
+           the bottom-up union of atoms into chunks/surface forms. It
+           was named ``<chunking>``; the legacy spelling is REJECTED
+           LOUDLY by the PerceptualSpace reader (no silent aliasing).
+           ``analyse`` is accepted here only until Phase 4b moves the
+           meronymic analyzer to SymbolicSpace <analysis>. -->
+      <xs:element name="synthesis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
             <xs:enumeration value="bpe"/>
@@ -567,24 +574,24 @@
                  chunking boundary.  ``\0`` (byte 0) doubles as the
                  sentence-end / pad sentinel.  Requires nVectors>=256
                  and modelType=embedding.  See doc/Spaces.md
-                 §"Chunking modes" for the cognitive rationale. -->
+                 §"Chunking modes" for the cognitive rationale.
+                 ``byte`` is the canonical spelling; ``none`` is its
+                 legacy alias. -->
             <xs:enumeration value="none"/>
+            <xs:enumeration value="byte"/>
             <!-- Stage 7 (doc/plans/2026-05-27-perceptstore-meta-
                  taxonomy-reentrancy.md): ``radix`` routes chunking
                  through a ``PerceptStore`` (radix trie + hash map +
                  inverse table + learned codebook + byte fallback +
                  promotion). An alternative to Lexicon/MPHF/BPE for
                  the surface-form authoritative store; opt in with
-                 ``<chunking>radix</chunking>``. (The current default
-                 is ``analyse`` — see ``data/model.xml`` and
-                 ``Spaces.PerceptualSpace`` chunking_mode fallback.) -->
+                 ``<synthesis>radix</synthesis>``. -->
             <xs:enumeration value="radix"/>
-            <!-- R3-live: ``analyse`` makes the meronymic analyzer the
-                 perceptual front end. The default available op is a
-                 space-lexer (whitespace = a hard boundary); word runs
-                 resolve through the word codebook (reproducing word
-                 lexing), and from-scratch / sub-word analysis is the
-                 bottom-up merge mechanism (``learn_merges``). -->
+            <!-- ``analyse``: TRANSITIONAL (Phase 4a only). The
+                 meronymic analyzer is top-down ANALYSIS and belongs
+                 to SymbolicSpace; Phase 4b removes this value and
+                 migrates configs to PS <synthesis>byte +
+                 SS <analysis>analyse. -->
             <xs:enumeration value="analyse"/>
           </xs:restriction>
         </xs:simpleType>

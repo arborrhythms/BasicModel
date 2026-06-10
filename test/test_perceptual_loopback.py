@@ -337,13 +337,13 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
 class TestPerceptStoreIntegration(unittest.TestCase):
     """Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
     reentrancy.md): PerceptualSpace exposes ``self.percept_store`` when
-    ``<chunking>radix</chunking>`` is selected; legacy chunking modes
+    ``<synthesis>radix</synthesis>`` is selected; legacy chunking modes
     (``lexicon|bpe|mphf|none``) keep their existing ``ChunkLayer`` /
     Embedding-based wiring with ``self.percept_store is None``.
     """
 
     def test_radix_config_builds_percept_store(self):
-        """MM_xor.xml selects ``<chunking>radix</chunking>`` post-Stage-7
+        """MM_xor.xml selects ``<synthesis>radix</synthesis>`` post-Stage-7
         and the constructed PerceptualSpace must expose a PerceptStore.
         """
         import warnings
@@ -357,7 +357,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
             warnings.filterwarnings("ignore")
             m, _ = Models.BasicModel.from_config(cfg_path)
         ps_space = m.perceptualSpace
-        self.assertEqual(ps_space.chunking_mode, "radix",
+        self.assertEqual(ps_space.synthesis_mode, "radix",
                          "MM_xor.xml should now use radix chunking")
         self.assertIsNotNone(ps_space.percept_store,
                              "radix-mode PerceptualSpace must expose "
@@ -377,7 +377,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         ps_space = m.perceptualSpace
         # The default analyse mode reuses the chunklayer / Embedding path
         # (no PerceptStore), reproducing the legacy lexicon behavior.
-        self.assertEqual(ps_space.chunking_mode, "analyse")
+        self.assertEqual(ps_space.synthesis_mode, "analyse")
         self.assertIsNone(ps_space.percept_store,
                           "analyse (default) must leave percept_store unset "
                           "so the legacy ChunkLayer / Embedding path "

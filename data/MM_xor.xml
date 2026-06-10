@@ -44,7 +44,7 @@
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>
     <invertible>true</invertible>
-    <chunking>radix</chunking>
+    <synthesis>radix</synthesis>
     <butterfly>true</butterfly>
   </PerceptualSpace>
 

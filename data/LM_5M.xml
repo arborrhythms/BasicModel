@@ -82,7 +82,7 @@
     <nVectors>4096</nVectors>
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
-    <chunking>bpe</chunking>
+    <synthesis>bpe</synthesis>
     <wordLearning>0</wordLearning>
   </PerceptualSpace>
 

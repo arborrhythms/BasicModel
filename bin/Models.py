@@ -6104,7 +6104,7 @@ class BasicModel(BaseModel):
 
         # MPHF pre-warm (Dynamo-unfriendly build path).
         ps = self.perceptualSpace
-        if (ps.chunking_mode == "mphf"
+        if (ps.synthesis_mode == "mphf"
                 and ps._mphf_static_tables is None):
             try:
                 ps._mphf_tables()

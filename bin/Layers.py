@@ -9266,7 +9266,7 @@ class MPHFGpuLayer(Layer):
         ``verified`` ``[B, K]`` bool is True only for slots that hit the
         frozen lexicon via the collision-proof byte-verify (False for
         L==0 slots AND OOV slots; the row at those False positions is the
-        ``null_row`` fallback). The ``chunking_mode='mphf'`` selectable
+        ``null_row`` fallback). The ``synthesis_mode='mphf'`` selectable
         runtime path uses this signal to gate the OOV->BPE-trie fallback
         per spec.
         """

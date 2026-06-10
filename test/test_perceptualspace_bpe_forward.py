@@ -58,7 +58,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
-    <chunking>bpe</chunking>
+    <synthesis>bpe</synthesis>
     <wordLearning>2</wordLearning>
   </PerceptualSpace>
   <ConceptualSpace>
@@ -89,7 +89,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
 class TestPerceptualSpaceBPE(unittest.TestCase):
 
     def test_init_reads_new_config_fields(self):
-        """Task 3: PerceptualSpace reads <chunking>, <nVectors>, <wordLearning>."""
+        """Task 3: PerceptualSpace reads <synthesis>, <nVectors>, <wordLearning>."""
         import tempfile
         from util import init_config
         import Spaces
@@ -99,7 +99,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             init_config(path=path,
                         defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
             self.assertEqual(
-                Spaces.TheXMLConfig.space("PerceptualSpace", "chunking"), "bpe")
+                Spaces.TheXMLConfig.space("PerceptualSpace", "synthesis"), "bpe")
             self.assertEqual(
                 int(Spaces.TheXMLConfig.space("PerceptualSpace", "nVectors")), 512)
             self.assertEqual(
@@ -126,7 +126,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             path = _write_minimal_bpe_xml(tmp, n_vectors=512)
             model, cfg = BaseModel.from_config(config_path=path)
             ps = model.perceptualSpace
-            self.assertEqual(ps.chunking_mode, "bpe")
+            self.assertEqual(ps.synthesis_mode, "bpe")
             self.assertEqual(ps.word_learning, 2)
             self.assertTrue(ps.chunk_layer.bpe)
             self.assertEqual(ps.chunk_layer.n_vectors, 512)
@@ -269,7 +269,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         cfg_path = tmp.name
         model, cfg = BaseModel.from_config(config_path=cfg_path)
         ps = model.perceptualSpace
-        self.assertEqual(ps.chunking_mode, "bpe")
+        self.assertEqual(ps.synthesis_mode, "bpe")
         self.assertEqual(ps.nVectors, 4096)
 
         input_text = ["hello world foo"]

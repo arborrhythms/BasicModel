@@ -381,7 +381,7 @@
     <!-- Multi-token chunking strategy: analyse | lexicon | bpe | mphf | none | radix.
          R3-live default: the meronymic analyzer (space-lexer front end);
          with a word codebook it reproduces lexicon word lexing. -->
-    <chunking>analyse</chunking>
+    <synthesis>analyse</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
   </PerceptualSpace>

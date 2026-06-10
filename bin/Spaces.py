@@ -3190,7 +3190,7 @@ class Embedding(Basis):
             return parse(text, lex='bytes')
         if getattr(self, 'lexer_mode', 'word') == 'sentence':
             return parse(self._to_text(text), lex='sentences')
-        mode = getattr(self, 'chunking_mode', 'lexicon')
+        mode = getattr(self, 'synthesis_mode', 'lexicon')
         if mode in ('bpe', 'mphf'):
             return self._char_stream(text)
         # word / words mode: parse + explicit null-sentinel append.
@@ -7447,7 +7447,7 @@ class InputSpace(Space):
         # Action D (2026-06-06): in text/embedding mode InputSpace is a PURE
         # LEXER. ``_lex_and_embed`` populated ``subspace.what/where/when`` with
         # the null-terminated UTF-8 byte buffer; PerceptualSpace.forward owns
-        # ALL embedding -- it dispatches on its OWN ``chunking_mode`` to
+        # ALL embedding -- it dispatches on its OWN ``synthesis_mode`` to
         # ``_embed_*`` whenever ``not stem_embedded``. Hand the lexed subspace
         # off directly: NO ``_peer_perceptual`` back-ref, no pre-embed here;
         # leave ``stem_embedded`` False so PS runs its own ``_embed_*``.
@@ -7546,7 +7546,7 @@ class InputSpace(Space):
         # same name. (``peer`` resolved above for the output-width handoff.)
         bpe_mask = (getattr(peer, "_bpe_word_mask", None)
                     if peer is not None
-                    and getattr(peer, "chunking_mode", None) in ("bpe", "none", "mphf")
+                    and getattr(peer, "synthesis_mode", None) in ("bpe", "none", "mphf")
                     else None)
 
         # Pad / truncate to N.
@@ -7631,7 +7631,7 @@ class InputSpace(Space):
         if embedded is None:
             self._valid_len_host = 0
             return sub
-        _mode = getattr(ps, "chunking_mode", None)
+        _mode = getattr(ps, "synthesis_mode", None)
         source_valid_pos = None
         if getattr(self, "lexer", None) != "raw":
             with torch.no_grad():
@@ -7838,7 +7838,7 @@ class InputSpace(Space):
             # chunking modes keep the pre-lexed (nWhat-clipped) word tokens.
             # IS always emits RAW: hand PS the unanalyzed whole-line surface
             # (one token per row). PerceptualSpace owns ALL tokenization per
-            # its <chunking> mode. (Was gated to chunking=='analyse' via the
+            # its <synthesis> mode. (Was gated to chunking=='analyse' via the
             # peer; now universal and peer-free.)
             surfaces = getattr(self, '_analyse_surfaces', None)
             if surfaces is not None:
@@ -8092,18 +8092,36 @@ class PerceptualSpace(Space):
         else:
             self.doc_spans = []
             self.doc_sources = []
+        # Phase 4a (analysis/synthesis dual-input plan, rev. 2026-06-09):
+        # the knob is <synthesis> (bottom-up union of atoms). The legacy
+        # <chunking> spelling is rejected LOUDLY -- no silent aliasing.
         try:
-            self.chunking_mode = str(
-                TheXMLConfig.space(section, "chunking") or "analyse"
+            _legacy_chunking = TheXMLConfig.space(section, "chunking")
+        except KeyError:
+            _legacy_chunking = None
+        if _legacy_chunking:
+            raise ValueError(
+                "PerceptualSpace <chunking> was renamed <synthesis> "
+                "(analysis/synthesis dual-input plan, Phase 4, rev. "
+                "2026-06-09): the perceptual front end is bottom-up "
+                f"SYNTHESIS. Replace <chunking>{_legacy_chunking}</chunking> "
+                f"with <synthesis>{_legacy_chunking}</synthesis>.")
+        try:
+            self.synthesis_mode = str(
+                TheXMLConfig.space(section, "synthesis") or "analyse"
             )
         except KeyError:
-            self.chunking_mode = "analyse"
-        if self.chunking_mode not in (
+            self.synthesis_mode = "analyse"
+        if self.synthesis_mode == "byte":
+            # canonical spelling; ``none`` is the legacy alias the
+            # dispatch sites still use internally.
+            self.synthesis_mode = "none"
+        if self.synthesis_mode not in (
                 "bpe", "lexicon", "none", "mphf", "radix", "analyse"):
             raise ValueError(
-                f"PerceptualSpace.chunking must be "
-                f"bpe|lexicon|none|mphf|radix|analyse, "
-                f"got {self.chunking_mode!r}")
+                f"PerceptualSpace.synthesis must be "
+                f"bpe|lexicon|byte|none|mphf|radix|analyse, "
+                f"got {self.synthesis_mode!r}")
         # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
         # reentrancy.md): radix-mode promotion knobs. Defaults match the
         # plan's defaults (threshold=4, min_length=2). When chunking !=
@@ -8122,14 +8140,14 @@ class PerceptualSpace(Space):
         except (KeyError, TypeError, ValueError):
             self.chunk_promotion_min_length = 2
         if isinstance(lexical_basis, Embedding):
-            lexical_basis.chunking_mode = self.chunking_mode
+            lexical_basis.synthesis_mode = self.synthesis_mode
             lexical_basis.lexer_mode = self.lexer
         try:
             self.word_learning = int(
                 TheXMLConfig.space(section, "wordLearning") or 2)
         except (KeyError, TypeError, ValueError):
             self.word_learning = 2
-        if self.chunking_mode == "bpe":
+        if self.synthesis_mode == "bpe":
             if self.nVectors < 256:
                 raise ValueError(
                     f"PerceptualSpace.chunking='bpe' requires nVectors>=256 "
@@ -8138,7 +8156,7 @@ class PerceptualSpace(Space):
                 raise ValueError(
                     "PerceptualSpace.chunking='bpe' requires "
                     "<modelType>embedding</modelType>")
-        elif self.chunking_mode == "mphf":
+        elif self.synthesis_mode == "mphf":
             # MPHF is BPE+MPHF-fast-path: in-vocab whole words via MPHF
             # gather, OOV fall back to _embed_bpe_trie. Inherits BPE's
             # invariants (byte range seeding + Embedding modelType).
@@ -8150,12 +8168,12 @@ class PerceptualSpace(Space):
                 raise ValueError(
                     "PerceptualSpace.chunking='mphf' requires "
                     "<modelType>embedding</modelType>")
-        elif self.chunking_mode == "none":
+        elif self.synthesis_mode == "none":
             # Byte-direct mode: each byte is its own perceptual atom,
             # looked up via a 256-entry codebook (byte_value ==
             # codebook_index for 0..255, seeded by the ``\x00``
             # cold-start at Embedding cold-start; subsequent insert()
-            # calls are blocked downstream when chunking_mode='none').
+            # calls are blocked downstream when synthesis_mode='none').
             # No BPE walker, no Python trie, no graph break.  ``\0``
             # (byte 0) doubles as the sentence-end / pad sentinel and
             # lands at codebook index 0 by design.
@@ -8334,19 +8352,19 @@ class PerceptualSpace(Space):
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
-            bpe=(self.chunking_mode in ("bpe", "mphf")),
+            bpe=(self.synthesis_mode in ("bpe", "mphf")),
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
         # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): when ``<chunking>radix</chunking>`` is active,
+        # reentrancy.md): when ``<synthesis>radix</synthesis>`` is active,
         # build a ``PerceptStore`` and expose it as ``self.percept_store``.
         # The store is the authoritative surface-form codebook for the
         # radix path: a radix trie + hash-map cache + inverse table +
         # learned codebook + byte fallback + promotion. Legacy paths
         # (lexicon|bpe|mphf|none) keep using ``self.chunk_layer`` and the
         # Embedding-resident codebook.
-        if self.chunking_mode == "radix":
+        if self.synthesis_mode == "radix":
             from Layers import RadixLayer as _PerceptStore
             # 2026-06-04: the RadixLayer uses the Codebook Basis on
             # ``subspace.what`` (built by _build_what_basis in radix mode)
@@ -8523,14 +8541,16 @@ class PerceptualSpace(Space):
         # 2026-06-04: in radix mode the percept vectors live on a Codebook
         # ``.what`` Basis shared with the PerceptStore (RadixLayer), instead
         # of the lexicon Embedding -- ONE percept codebook, owned by the
-        # SubSpace on ``.what``, that the RadixLayer references. chunking is
-        # read from XML directly here (this runs inside super().__init__,
-        # before ``self.chunking_mode`` is stashed).
+        # SubSpace on ``.what``, that the RadixLayer references. The
+        # synthesis mode is read from XML directly here (this runs inside
+        # super().__init__, before ``self.synthesis_mode`` is stashed).
+        # Phase 4a (rev. 2026-06-09): the knob is <synthesis>; the legacy
+        # <chunking> spelling is rejected loudly by the main reader.
         try:
-            _chunking = TheXMLConfig.space(self.config_section, "chunking")
+            _synthesis = TheXMLConfig.space(self.config_section, "synthesis")
         except (KeyError, TypeError, ValueError):
-            _chunking = None
-        if _chunking == "radix":
+            _synthesis = None
+        if _synthesis == "radix":
             cb = Codebook()
             cb.use_dot_product = bool(getattr(self, "use_dot_product", False))
             cb.create(1, self.nVectors, self.nDim, customVQ=False)
@@ -8600,13 +8620,13 @@ class PerceptualSpace(Space):
         """Return the surface-form codebook for this Space.
 
         Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        reentrancy.md): in ``<chunking>radix</chunking>`` mode the
+        reentrancy.md): in ``<synthesis>radix</synthesis>`` mode the
         authoritative store is the ``PerceptStore`` (radix trie + hash
         map + inverse table + codebook + byte fallback). Legacy
         chunking modes keep the existing Embedding/Codebook on
         ``self.subspace.what`` -- the base-class property handles them.
         """
-        if (getattr(self, "chunking_mode", None) == "radix"
+        if (getattr(self, "synthesis_mode", None) == "radix"
                 and getattr(self, "percept_store", None) is not None):
             return self.percept_store
         return super().vocabulary
@@ -9706,7 +9726,7 @@ class PerceptualSpace(Space):
         return x
 
     def _embed_byte(self, upstream_vspace):
-        """Byte-direct chunking (``<chunking>none</chunking>``).
+        """Byte-direct chunking (``<synthesis>none</synthesis>``).
 
         Skips the BPE walker entirely.  Each byte from the upstream
         buffer becomes its own perceptual slot via direct embedding-
@@ -9822,7 +9842,7 @@ class PerceptualSpace(Space):
         return self._embed(upstream_vspace)
 
     def _embed_analyse(self, upstream_vspace):
-        """R3-live: meronymic-analyzer chunking (``<chunking>analyse</...>``).
+        """R3-live: meronymic-analyzer chunking (``<synthesis>analyse</...>``).
 
         The meronymic analyzer is the perceptual front end. The default
         available op is a SPACE-LEXER (whitespace = a hard boundary): it
@@ -9873,7 +9893,7 @@ class PerceptualSpace(Space):
         return self._embed(upstream_vspace)
 
     def _embed_mphf(self, upstream_vspace):
-        """MPHF word recognition (``chunking_mode='mphf'``): per-word,
+        """MPHF word recognition (``synthesis_mode='mphf'``): per-word,
         ``idx = MPHF(percept_bytes) in [0, V_percept)`` -> gather from
         the Phase-1A.1 learnable lookup ``codebook.wv._vectors[idx]``.
         OOV (the collision-proof byte-verify misses) falls back to
@@ -10125,7 +10145,7 @@ class PerceptualSpace(Space):
         if not (isinstance(self.subspace.what, Embedding)
                 or getattr(self, "percept_store", None) is not None):
             return None
-        mode = self.chunking_mode
+        mode = self.synthesis_mode
         if mode == "lexicon":
             return self._embed_lexicon(upstream_vspace)
         elif mode == "bpe":
@@ -10230,7 +10250,7 @@ class PerceptualSpace(Space):
         if not vspace.stem_embedded and (
                 isinstance(self.subspace.what, Embedding)
                 or getattr(self, 'percept_store', None) is not None):
-            mode = self.chunking_mode
+            mode = self.synthesis_mode
             if mode == "lexicon":
                 vspace = self._embed_lexicon(vspace)
             elif mode == "bpe":
@@ -10315,7 +10335,7 @@ class PerceptualSpace(Space):
         # ``_bpe_word_mask`` (one is real-vs-padding for BPE chunks,
         # the other is byte != 0); the post-VQ reapply is the same
         # under either mode.
-        if self.chunking_mode in ("bpe", "none", "mphf"):
+        if self.synthesis_mode in ("bpe", "none", "mphf"):
             mask = getattr(self, "_bpe_word_mask_flat", None)
             if mask is None:
                 mask = getattr(self, "_bpe_word_mask", None)
