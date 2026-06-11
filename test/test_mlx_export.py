@@ -158,7 +158,10 @@ def test_mlx_lower_writes_pte(tmp_path):
 
     pte = tmp_path / "mm5m.pte"
     script = os.path.join(_BIN, "export_mlx.py")
-    python = os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python")
+    python = os.environ.get(
+        "BASICMODEL_PYTHON",
+        os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python"),
+    )
     model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M.xml")
 
     r = subprocess.run(
@@ -213,7 +216,10 @@ def test_pte_runtime_parity(tmp_path):
     # -----------------------------------------------------------------------
     pte = tmp_path / "mm5m_parity.pte"
     script = os.path.join(_BIN, "export_mlx.py")
-    python = os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python")
+    python = os.environ.get(
+        "BASICMODEL_PYTHON",
+        os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python"),
+    )
     model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M.xml")
 
     r = subprocess.run(

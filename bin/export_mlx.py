@@ -204,8 +204,61 @@ def _get_partitioner():
     forced = os.environ.get("EXPORT_MLX_BACKEND", "").strip().lower()
 
     def _mlx():
-        from executorch.backends.mlx.partitioner import MLXPartitioner  # type: ignore[import]
-        return MLXPartitioner(), "MLXPartitioner"
+        from executorch.backends.mlx.partitioner import (  # type: ignore[import]
+            MLXOperatorSupport,
+            MLXPartitioner,
+        )
+        from executorch.exir.backend.canonical_partitioners.pattern_op_partitioner import (  # type: ignore[import]
+            generate_partitions_from_list_of_nodes,
+        )
+
+        class BasicModelMLXPartitioner(MLXPartitioner):
+            """Avoid MLX delegate kernels that fail on BasicModel gathers."""
+
+            _UNSAFE_TARGET_FRAGMENTS = (
+                "aten.index.",
+                "aten.index_select.",
+                "aten.gather.",
+                "aten.take_along_dim.",
+            )
+
+            @classmethod
+            def _is_basicmodel_unsafe(cls, target) -> bool:
+                text = str(target)
+                return any(fragment in text
+                           for fragment in cls._UNSAFE_TARGET_FRAGMENTS)
+
+            def ops_to_not_decompose(self, ep):
+                ops, predicate = super().ops_to_not_decompose(ep)
+                ops = [
+                    op for op in ops
+                    if not self._is_basicmodel_unsafe(op)
+                ]
+                return ops, predicate
+
+            def generate_partitions(self, edge_program):
+                class BasicModelMLXOperatorSupport(MLXOperatorSupport):
+                    def is_node_supported(_self, submodules, node):
+                        if (
+                            getattr(node, "op", None) == "call_function"
+                            and BasicModelMLXPartitioner._is_basicmodel_unsafe(
+                                getattr(node, "target", ""))
+                        ):
+                            return False
+                        return super().is_node_supported(submodules, node)
+
+                self.supported_ops = BasicModelMLXOperatorSupport(
+                    edge_program=edge_program,
+                    compile_specs=self.delegation_spec.compile_specs,
+                )
+                partitions = generate_partitions_from_list_of_nodes(
+                    edge_program.graph_module,
+                    op_support=self.supported_ops,
+                )
+                return self._include_sym_size_nodes_in_partitions(
+                    edge_program.graph_module, partitions)
+
+        return BasicModelMLXPartitioner(), "BasicModelMLXPartitioner"
 
     def _coreml():
         from executorch.backends.apple.coreml.partition import CoreMLPartitioner  # type: ignore[import]

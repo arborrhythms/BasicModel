@@ -68,7 +68,7 @@ Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL` | `data/BasicModel.xml` | XML config for training |
+| `MODEL` | `data/MM_20M.xml` | XML config for training |
 | `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
 | `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
 | `TRAIN_HOST` | *(empty)* | Remote training host |
@@ -90,6 +90,9 @@ training).
 | `--model`, `-m` | `data/BasicModel.xml` | XML config |
 | `--max-docs` | *(from XML)* | Override `maxDocs` |
 | `--num-shards` | *(from XML)* | Override `numShards` |
+| `--compile-target` | `gpu` | `gpu` runs normal training with accelerator torch.compile defaults; `mlx` exports an ExecuTorch/MLX `.pte` and skips Phase 2 training |
+| `--compile-mode` | *(env/runtime default)* | Forwarded as `MODEL_COMPILE_MODE` |
+| `--mlx-output` | `output/mlx/<model>.pte` | Destination for `--compile-target mlx` |
 | `--random-shards` | off | Pick random shard indices |
 | `--force-embeddings` | off | Retrain embeddings even if file exists |
 | `--log [FILE]` | off | Capture stdout/stderr to `.log` in `output/logs/`. Omit filename for timestamped name |
@@ -113,6 +116,9 @@ training).
 | `BASIC_MAX_DOCS` | Override `maxDocs` |
 | `BASIC_NUM_SHARDS` | Override `numShards` |
 | `BASICMODEL_DEVICE` | Force device, e.g. `cpu`. Used by `make test` |
+| `BASICMODEL_PYTHON` | Python executable for train.py subprocesses; overrides the in-project `.venv` lookup |
+| `MODEL_COMPILE` | torch.compile backend selector (`auto`, `none`, `inductor`, `eager`, `aot_eager`) |
+| `MODEL_COMPILE_MODE` | torch.compile mode (`default`, `reduce-overhead`, `max-autotune`, `max-autotune-no-cudagraphs`) |
 | `PYTORCH_MPS_HIGH_WATERMARK_RATIO` | MPS memory limit; set to `0.0` by `train.py` |
 | `PYTHONUNBUFFERED` | Set to `1` by `train.py` for real-time log streaming |
 

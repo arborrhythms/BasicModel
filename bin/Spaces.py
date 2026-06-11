@@ -55,6 +55,7 @@ from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, Mapppin
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
+from workarounds import Workarounds
 
 from util import parse
 from collections import namedtuple as _namedtuple
@@ -15716,7 +15717,7 @@ class SymbolicSpace(Space):
             _K = min(int(means.shape[1]), N)
             carrier[:, :_K, :] = means[:, :_K].unsqueeze(-1)
         else:
-            pooled = F.adaptive_avg_pool1d(u, N * W)
+            pooled = Workarounds.adaptive_avg_pool1d(u, N * W)
             carrier = torch.tanh(pooled.reshape(B, N, W) / 128.0)
         return carrier, W
 
@@ -16001,7 +16002,7 @@ class SymbolicSpace(Space):
         if W == content:
             narrow = z_q
         else:
-            narrow = F.adaptive_avg_pool1d(
+            narrow = Workarounds.adaptive_avg_pool1d(
                 z_q.reshape(B * N, 1, W), content).reshape(B, N, content)
         event = F.pad(narrow, (0, D - content))
         self.subspace.set_event(event)
