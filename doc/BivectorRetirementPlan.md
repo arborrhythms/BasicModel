@@ -28,6 +28,17 @@ inter-component interface carries a single signed scalar Degree-of-Truth in
 `trust`); `TruthLayer` accumulates them into `[aP,aN]` internally — paraconsistency
 is the accumulator's job, not the wire's.
 
+> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 rev b).** The
+> K3 invariant is EXTENDED, not contradicted — but not by the per-symbol
+> κ once proposed: that extension was implemented, reviewed, and
+> withdrawn. Contested-ness is **measured, not stored**: the conflict
+> region `min(T,F)` of the catuṣkoṭi truth measure
+> (`TruthLayer.luminosity`, computed over the codes). The one genuine
+> extension this plan gains is lookup-side: **pole-quotient retrieval is
+> licensed at the reference half only** (`embed._pole_aligned_score`;
+> identity `argmax |q·v|`, polarity `sign(q·v)`) — correct exactly where
+> stored sign is gauge; token/form codebooks keep full-vector lookup.
+
 **Intended outcome.** (1) Retire the subspace bivector substrate and the
 `bivectorOutput` head — this *structurally eliminates* "Bug #1" of
 `basicmodel/doc/BivectorOutputSpaceRebasePlan.md` (the `[B,V,2]` vs stale-width

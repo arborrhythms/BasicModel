@@ -24,6 +24,18 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 - **Negation (affirming)**: `neg(x) = -x`. Antipodal opposition on hypersphere.
 - **Non (non-affirming)**: `Basis.non()` --- bitonic returns zero (complete
   withdrawal); monotonic is `relu(x - threshold)`.
+
+> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 wins).** The
+> sign flip `−x` is licensed only at the REFERENCE tier — downstairs
+> the sign is occupied (form content) or nonexistent (one-sided
+> percepts); only at the reference tier is it vacant of denotational
+> duty and free to carry polarity (`a = −1` on A's row = present,
+> certain denial; never negative mass in ground space). `non()`'s
+> withdrawal reading is the prasajya move — lowering `|a|` toward 0
+> without crossing — gated, never spontaneous. RadMin/RadMax below
+> remain signed-scalar kernels at their own tier; the odds embedding
+> is retired from the meronymic path (legacy `PiLayer` keeps it for
+> non-meronymic consumers).
 - **Parthood** (fundamental): `Basis.part()` --- clipped cosine projection:
 
 $$
@@ -281,10 +293,29 @@ disagreement.
 
 ![Luminosity: Truth Coherence Measure](diagrams/luminosity.svg)
 
-Luminosity measures truth-set coherence as a scalar:
+> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 rev b wins).**
+> There are TWO measures, split as follows. The **truth-set
+> luminosity** — what `Mereology.Luminosity(truth_layer=…)` /
+> `TruthLayer.luminosity` computes — is now the catuṣkoṭi coverage
+> measure over the stored codes: per conceptual dimension the signed
+> references split into true/false pole coverage `(T_k, F_k)`
+> (elementwise max of `relu(±row)`), and
+>
+> ```
+> luminosity = mean_k[(T_k − F_k) − min(T_k, F_k)]   in [−1, 1]
+> ```
+>
+> — total area weighted by sign, minus the regions where the sign
+> differs (contradictory evidence). It is computed **on the codes**
+> (no decode pullback) and is order-independent. The meet/GLB form
+> below survives only as the **orthogonalization criterion**
+> (`TruthLayer._luminosity_without`) and `darkness()`'s mirror — it is
+> no longer the truth-set measure. (The diagram shows the meet form.)
+
+The meet-form coherence scalar (orthogonalization criterion):
 
 ```
-luminosity = ||relu(min(truths))||
+||relu(min(truths))||
 ```
 
 Element-wise min computes the conjunction (point where all truths agree); relu

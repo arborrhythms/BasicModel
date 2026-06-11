@@ -29,6 +29,67 @@ import util
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
 
+# ---------------------------------------------------------------------------
+# Meronomy constants (MeronomySpec §3-§4; MeronomyPlan Stage 0).
+#
+# EPS_LOG is the log-floor near m = 0 for the membership folds: PiLayer2 /
+# SigmaLayer2 run on memberships m in [0, 1] through log/exp, and m = 0
+# (the bottom element, "nothing") is floored to EPS_LOG before the log so
+# the fold stays finite while remaining within tolerance of the absorber
+# laws. Distinct from the global ``epsilon`` (1e-7), which guards the
+# legacy odds/atanh charts.
+EPS_LOG = 1e-6
+
+# Default upper clamp for the contractive diagonal (d >= 1) when
+# ``stable=True`` on ContractiveInvertibleLinearLayer: in log-membership
+# space "stable" means BOUNDED AMPLIFICATION of negative log-mass --
+# the opposite regime of the legacy (eps, 1.0] clamp, which wanted
+# non-expansion of |x| in the odds chart. Config-overridable; see
+# ``meronomy_d_max_stable()``.
+D_MAX_STABLE = 4.0
+
+
+def meronomy_enabled():
+    """Resolve the ``<architecture><meronomy>`` mode knob (off | on).
+
+    The single meronomy option (MeronomyPlan §0): ``on`` binds the
+    meronymic slots to the membership kernels and enables the interface
+    factoring and the reference table. Default ``off`` — stages land
+    dark; existing model XMLs are untouched until cutover. Accepts the
+    bare element text (``<meronomy>on</meronomy>``) or the attributed
+    form (text under ``"_"`` when attributes like ``dMaxStable`` are
+    present).
+    """
+    try:
+        raw = TheXMLConfig.get("architecture.meronomy", default=None)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return False
+    if isinstance(raw, dict):
+        raw = raw.get("_", None)
+    if raw is None:
+        return False
+    return str(raw).strip().lower() in ("on", "true", "1", "yes")
+
+
+def meronomy_d_max_stable():
+    """Resolve the stable-clamp upper bound for contractive diagonals.
+
+    Reads ``<architecture><meronomy dMaxStable="...">`` from the XML
+    config; falls back to the module default ``D_MAX_STABLE`` when the
+    key is absent, unparsable, or no config is loaded.
+    """
+    try:
+        raw = TheXMLConfig.get("architecture.meronomy.dMaxStable",
+                               default=None)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return D_MAX_STABLE
+    if raw is None:
+        return D_MAX_STABLE
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return D_MAX_STABLE
+
 
 class Lexicon(nn.Embedding):
     """nn.Embedding on the **projective unit ball** ``B^D / (x ~ -x)``.
@@ -1851,6 +1912,185 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     # _effective_bias, forwardBias, reverseBias inherited from
     # InvertibleLinearLayer -- no constraint needed with symmetric
     # log domain (-inf, +inf).
+
+
+class ContractiveInvertibleLinearLayer(NonNegativeInvertibleLinearLayer):
+    r"""Non-negative LDU layer under the meronymic weight law
+    (MeronomySpec §4; MeronomyPlan Stage 1).
+
+    A NEW class beside :class:`NonNegativeInvertibleLinearLayer`, not a
+    modification of it -- legacy layers and checkpoints are untouched.
+    All constraints hold BY CONSTRUCTION (softplus reparametrization),
+    at init and after arbitrary optimizer steps (spec §10.10):
+
+        diag(W)    >= 1   d = 1 + softplus(raw); init raw = -5 => d ~ 1
+        offdiag(W) >= 0   softplus-LDU as in the parent
+        b          <= 0   b = -softplus(raw); init raw = -5 => b ~ 0
+
+    Applied to log-memberships (log m <= 0, PiLayer2), contraction is a
+    theorem of the parametrization: the diagonal amplifies negative
+    log-mass, off-diagonal mixing only deepens the part, and the bias
+    can only deepen it further -- pi(m) <= m for all m. This is the
+    load-bearing member of the meronomy design: a minted whole
+    geometrically dominates its parts at mint, not after training.
+
+    ``stable=True`` clamps d to ``[1.0, d_max]`` -- the OPPOSITE regime
+    of the parent's ``(eps, 1.0]`` clamp: in log-membership space
+    "stable" means bounded amplification of negative log-mass, not
+    non-expansion of |x| (the odds chart's concern). ``d_max`` defaults
+    to ``meronomy_d_max_stable()`` (config-overridable D_MAX_STABLE).
+
+    ``blocks=k`` declares the k-operand fold form (binary folds use
+    ``blocks=2`` with ``nInput == 2 * nOutput``): the effective weight
+    is the stack of operand blocks ``W = [W_1; ...; W_k]`` and the law
+    holds PER BLOCK -- every block diagonal ``diag(W_b) >= 1`` per row
+    (spec §4: this yields the acceptance bound pi <= min(operands)).
+    Realized inside the LDU by lifting the block-diagonal entries of L
+    (rows ``b * nOutput + i``, col ``i``, ``b >= 1``; strict lower
+    triangle, so unit-triangularity and the exact triangular-solve
+    inverse are untouched) to the same ``1 + softplus`` law as d:
+    ``W[b*D + i, i] >= L[b*D + i, i] * d_i >= 1``.
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=False, blocks=1, d_max=None):
+        """Initialize ContractiveInvertibleLinearLayer; see class docstring.
+
+        ``blocks > 1`` requires ``nInput == blocks * nOutput`` (operand
+        blocks stack along the input axis). ``d_max=None`` resolves via
+        ``meronomy_d_max_stable()`` at construction time.
+        """
+        if int(blocks) < 1:
+            raise ValueError(
+                f"ContractiveInvertibleLinearLayer: blocks must be >= 1; "
+                f"got {blocks}")
+        if int(blocks) > 1 and nInput != int(blocks) * nOutput:
+            raise ValueError(
+                f"ContractiveInvertibleLinearLayer: blocks={blocks} "
+                f"requires nInput == blocks * nOutput; got "
+                f"nInput={nInput}, nOutput={nOutput}")
+        super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
+                         hasBias=hasBias, stable=stable)
+        self.blocks = int(blocks)
+        self.d_max = float(d_max) if d_max is not None \
+            else float(meronomy_d_max_stable())
+        with torch.no_grad():
+            # Parent fills d at softplus_inverse(1.0) for softplus(d) ~ 1;
+            # the contractive law is d = 1 + softplus(raw), so re-init the
+            # raw at -5 => d ~ 1.0067 ~ 1 (near-identity, just above it).
+            self.d.fill_(-5.0)
+            if hasBias:
+                # b = -softplus(raw); raw = -5 => b ~ -0.0067 ~ 0. The
+                # parent leaves biasWeight at zeros, which here would be
+                # b = -log(2) -- too deep for a near-identity init.
+                self.biasWeight.fill_(-5.0)
+        # +1.0 lift at the block-diagonal entries of L (see class
+        # docstring). None when blocks == 1 (unary form: no lift).
+        if self.blocks > 1:
+            lift = torch.zeros(nInput, nInput)
+            for b in range(1, self.blocks):
+                for i in range(nOutput):
+                    lift[b * nOutput + i, i] = 1.0
+            self.register_buffer('_block_diag_lift', lift)
+        else:
+            self.register_buffer('_block_diag_lift', None)
+        # Cached identity matrices for the unit-triangular factors.
+        # The parent materializes ``torch.eye`` on every call; under
+        # torch.export → executorch edge dialect, eye decomposes to an
+        # ``aten.arange`` whose dtype (uint16 for small ranges) the
+        # edge verifier rejects. Constant buffers trace as lifted
+        # constants instead, and skip the per-call build (non-persistent:
+        # derived data, not state).
+        self.register_buffer('_eye_in', torch.eye(nInput), persistent=False)
+        self.register_buffer('_eye_out', torch.eye(nOutput),
+                             persistent=False)
+
+    # --- Contractive factor helpers ---
+    def _L(self):
+        """Unit-lower-triangular, non-negative off-diagonals; block
+        diagonals (blocks > 1) carry the 1 + softplus(raw) >= 1 law."""
+        off = torch.tril(nn.functional.softplus(self.raw_L), diagonal=-1)
+        if self._block_diag_lift is not None:
+            off = off + self._block_diag_lift
+        return off + self._eye_in
+
+    def _U(self):
+        """Unit-upper-triangular with non-negative off-diagonals
+        (cached-identity variant of the parent's; export-safe)."""
+        off = torch.triu(nn.functional.softplus(self.raw_U), diagonal=1)
+        return off + self._eye_out
+
+    def _d_effective(self):
+        """Diagonal d = 1 + softplus(raw) >= 1; stable=True clamps to
+        [1.0, d_max] (bounded amplification of negative log-mass)."""
+        d = 1.0 + nn.functional.softplus(self.d)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    # --- Ergodic overrides (noise enters raw domain; law preserved) ---
+    def _L_eff(self):
+        """Ergodic _L: perturb raw, then reapply the per-entry law."""
+        raw = self.raw_L + self.var * self.noise_raw_L
+        off = torch.tril(nn.functional.softplus(raw), diagonal=-1)
+        if self._block_diag_lift is not None:
+            off = off + self._block_diag_lift
+        return off + self._eye_in
+
+    def _U_eff(self):
+        """Ergodic _U (cached-identity variant; export-safe)."""
+        raw = self.raw_U + self.var * self.noise_raw_U
+        off = torch.triu(nn.functional.softplus(raw), diagonal=1)
+        return off + self._eye_out
+
+    def _d_eff(self):
+        """Ergodic d: noise (and the anneal bias) enter the RAW domain
+        and the ``1 + softplus`` law is applied ONCE — the ``_L_eff``
+        convention. ``bias = 1, var = 0`` therefore reproduces the
+        clean ``_d_effective`` exactly (init ~1.0067, near-identity).
+
+        Review fix 2026-06-11: the previous form softplused ``self.d``
+        before the ergodic mix and then re-softplused, inflating the
+        init diagonal to ~1.697 — ergodic meronymy folds started far
+        more contractive than the documented near-identity point.
+        """
+        raw = self.bias * self.d + self.var * self.noise_d
+        d = 1.0 + nn.functional.softplus(raw)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
+        if self.stable:
+            d = d.clamp(1.0, self.d_max)
+        return d
+
+    # --- Non-positive bias (b <= 0 by construction) ---
+    # The legacy positive path (NonNegativeLinearLayer._effective_bias,
+    # b = +softplus) and the unconstrained invertible path (raw
+    # biasWeight) are both untouched; this class owns the third regime.
+    def _effective_bias(self):
+        """Bias b = -softplus(raw) <= 0; ergodic noise enters the raw."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            raw = self.bias * self.biasWeight + self.var * self.biasNoise
+            return -nn.functional.softplus(raw)
+        return -nn.functional.softplus(self.biasWeight)
+
+    def forwardBias(self, x):
+        """Add the constrained (non-positive) bias."""
+        if self.hasBias:
+            x = x + self._effective_bias()
+        return x
+
+    def reverseBias(self, y):
+        """Subtract the constrained (non-positive) bias."""
+        if self.hasBias:
+            y = y - self._effective_bias()
+        return y
+
 
 # =====================================================================
 # SurfaceSchema -- universal surface-realization templates (UG = shared
@@ -3759,6 +3999,263 @@ class PiLayer(GrammarLayer):
         check_stability("stable naive=F hasBias=F", naive=False, hasBias=False)
         check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
         print("PiLayer tests passed.")
+
+
+class PiLayer2(Layer):
+    r"""Membership-domain analysis fold (MeronomySpec §4; MeronomyPlan
+    Stage 2): the part-maker / intersection.
+
+    A NEW class beside the legacy :class:`PiLayer`, which stays untouched
+    for non-meronymic consumers. Runs on MEMBERSHIPS ``m in [0, 1]^D``
+    (the meronomy chart) -- ground content natively; epistemic scalars
+    enter only through the evaluation chart ``Ops.eval_chart`` (§3).
+    NO odds transforms anywhere in this class: the legacy odds embedding
+    ``(1+x)/(1-x)`` -- the ``p+n=1`` zero-ignorance slice, Bayesian
+    sharpening rather than contraction -- is retired from the meronymic
+    path.
+
+        forward:  z = exp(W · log(clamp(m, EPS_LOG, 1)) + b)
+        reverse:  m = exp(W^-1 · (log z − b))           (exact LDU solve)
+
+    The inner :class:`ContractiveInvertibleLinearLayer` enforces
+    ``diag(W) >= 1`` (per operand block for binary folds),
+    ``offdiag(W) >= 0``, ``b <= 0`` by construction, so CONTRACTION IS A
+    THEOREM: ``pi(m) <= m`` for all m, and for the binary ``2D -> D``
+    form (``blocks=2``) the acceptance bound ``pi <= min(operands)``
+    holds elementwise -- operand mixing is safe because off-diagonal
+    terms add negative log-mass (they can only deepen the part).
+
+    Identities / absorbers (§4): ``1`` is the pi-identity (intersecting
+    with everything is a no-op -- exact at near-identity init, to eps in
+    general) and ``0`` is the pi-absorber (a single zero witness
+    annihilates; exclusion propagates -- a THEOREM for all admissible
+    weights, since ``diag >= 1`` forces ``z <= EPS_LOG`` there).
+
+    The forward floors m at ``EPS_LOG`` (the §4 eps-floor near m = 0)
+    and ceils at 1 (log m <= 0 is what makes the contraction theorem
+    bite); NaN/Inf inputs propagate through the clamp and fail loud.
+    The binary reverse stays recommender-shaped as today
+    (``Ops.conjunctionReverse`` -- codebook search; the layer's own
+    ``reverse`` is the exact unary inverse / canonical binary preimage).
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=True, blocks=1, d_max=None):
+        """Initialize PiLayer2; see class docstring for the kernel law.
+
+        ``stable=True`` (default) bounds the diagonal in
+        ``[1, d_max]`` -- bounded amplification of negative log-mass.
+        ``blocks=2`` declares the binary ``2D -> D`` fold form.
+        """
+        super().__init__(nInput, nOutput)
+        self.blocks = int(blocks)
+        self.layer = ContractiveInvertibleLinearLayer(
+            nInput, nOutput, naive=naive, ergodic=ergodic,
+            hasBias=hasBias, stable=stable, blocks=blocks, d_max=d_max)
+        self.layers.append(self.layer)
+
+    @staticmethod
+    def _clamp_membership(m):
+        """Membership-chart domain guard: floor EPS_LOG, ceil 1.
+
+        The floor keeps ``log`` finite at the ``m -> 0`` corner (and is
+        what the corner round-trips recover); the ceil keeps
+        ``log m <= 0`` so the §4 contraction theorem holds. NaN/Inf
+        propagate (the clamp rescues finite out-of-domain values only).
+        """
+        return m.clamp(EPS_LOG, 1.0)
+
+    def forward(self, m, gate=None):
+        """pi(m) = exp(W · log(clamp(m, EPS_LOG, 1)) + b).
+
+        Memberships in, memberships out (``z in (0, 1]`` is automatic:
+        every log-domain term is <= 0 under the weight law).
+        ``gate`` flows to the inner LDU diagonal as in the legacy folds.
+        """
+        m = m.to(self.layer.d.device)
+        l = torch.log(self._clamp_membership(m))
+        wl = (self.layer.forward(l, gate=gate) if gate is not None
+              else self.layer.forward(l))
+        return torch.exp(wl)
+
+    def reverse(self, z, gate=None):
+        """m = exp(W^-1 · (log z − b)) -- the exact §4 inverse.
+
+        ``z`` is floored at the dtype's tiny (NOT at EPS_LOG: a fold of
+        EPS_LOG-floored operands lands far below EPS_LOG, and the corner
+        round-trip must recover the floor exactly) and ceiled at 1.
+        Output is clamped back to the membership chart ``[0, 1]``.
+        """
+        z = z.to(self.layer.d.device)
+        z = z.clamp(torch.finfo(z.dtype).tiny, 1.0)
+        lz = torch.log(z)
+        lx = (self.layer.reverse(lz, gate=gate) if gate is not None
+              else self.layer.reverse(lz))
+        return torch.exp(lx).clamp(0.0, 1.0)
+
+    def compose(self, left, right, gate=None):
+        """Binary AND fold on memberships: requires ``blocks == 2``.
+
+        Concatenates the operands along the feature axis and runs the
+        2D -> D forward; ``pi(left, right) <= min(left, right)``
+        elementwise is the §10.1 acceptance bound.
+        """
+        if self.blocks != 2:
+            raise RuntimeError(
+                "PiLayer2.compose requires the binary form "
+                f"(blocks=2); this layer has blocks={self.blocks}")
+        return self.forward(torch.cat([left, right], dim=-1), gate=gate)
+
+
+class SigmaLayer2(Layer):
+    r"""Membership-domain synthesis fold (MeronomySpec §4; MeronomyPlan
+    Stage 2): the whole-maker / union, as the De Morgan wrap of a pi
+    kernel:
+
+        sigma(m) = 1 − pi_kernel(1 − m)        (probabilistic-sum family)
+
+    ONE FOLD KERNEL PLUS ONE INVOLUTION implements both operators: this
+    class owns no weights of its own -- ``self.kernel`` is a
+    :class:`PiLayer2` (constructed here, or passed in to share an
+    existing kernel object), and extension ``sigma(m) >= m`` (binary:
+    ``sigma >= max(operands)``, §10.1) is the mirrored theorem under the
+    same weight law. No separate sigma constraint surface exists.
+
+    Identities / absorbers mirror pi's: ``0`` is the sigma-identity and
+    ``1`` the sigma-absorber (everything absorbs -- a theorem for all
+    admissible weights). Single-lump doctrine (§4): no adjacency exists
+    over witness dims, so every sigma extent is a single lump; no
+    abstraction classifier is implemented here or anywhere.
+
+    Legacy :class:`SigmaLayer` (tanh/atanh additive fold) stays untouched
+    for non-meronymic consumers.
+    """
+
+    def __init__(self, nInput=None, nOutput=None, kernel=None, **kw):
+        """Initialize SigmaLayer2 around a pi kernel.
+
+        Either pass ``nInput`` / ``nOutput`` (+ PiLayer2 kwargs) to
+        construct a fresh kernel, or pass ``kernel=`` an existing
+        :class:`PiLayer2` to share its object (the §10.4 De Morgan
+        exactness setup: one shared kernel, two operators).
+        """
+        if kernel is None:
+            if nInput is None or nOutput is None:
+                raise ValueError(
+                    "SigmaLayer2: pass nInput/nOutput or kernel=")
+            kernel = PiLayer2(nInput, nOutput, **kw)
+        elif kw:
+            raise ValueError(
+                "SigmaLayer2: kernel= and PiLayer2 kwargs are exclusive")
+        super().__init__(kernel.nInput, kernel.nOutput)
+        self.kernel = kernel
+        self.layers.append(kernel)
+        self.blocks = kernel.blocks
+
+    def forward(self, m, gate=None):
+        """sigma(m) = 1 − pi(1 − m); memberships in, memberships out."""
+        return 1.0 - self.kernel.forward(1.0 - m, gate=gate)
+
+    def reverse(self, z, gate=None):
+        """Exact inverse through the involution: 1 − pi.reverse(1 − z)."""
+        return 1.0 - self.kernel.reverse(1.0 - z, gate=gate)
+
+    def compose(self, left, right, gate=None):
+        """Binary OR fold on memberships: requires ``blocks == 2``.
+
+        ``sigma(left, right) >= max(left, right)`` elementwise is the
+        mirrored §10.1 bound. The binary reverse stays recommender-shaped
+        (``Ops.disjunctionReverse``) as today.
+        """
+        return 1.0 - self.kernel.compose(1.0 - left, 1.0 - right, gate=gate)
+
+
+class MeronymicFoldAdapter(Layer):
+    """K3-wire adapter binding a membership kernel at a meronymic slot
+    (MeronomyPlan Stage 9 cutover; MeronomySpec §2, §4).
+
+    The wire keeps carrying the K3 scalar ``a in [-1, +1]`` (the
+    BivectorRetirementPlan invariant); the fold computes in the
+    membership chart: ``χ`` in, kernel, ``χ⁻¹`` out — epistemic scalars
+    enter membership folds only through the evaluation chart (§3),
+    applied exactly once per crossing, here at the slot boundary. The
+    same chart pair on ``reverse`` makes the adapter exactly invertible
+    wherever the kernel is.
+
+    At near-identity init the membership kernel is approximately the
+    identity on memberships (d ≈ 1, offdiag ≈ 0, b ≈ 0), so the adapter
+    starts close to a pass-through: cutover begins from a benign
+    operating point and training shapes the fold from there.
+
+    ``kind``: ``'sigma'`` (PS slot — synthesis/whole-maker) or ``'pi'``
+    (SS slot — analysis/part-maker). ``binary=`` is accepted for
+    call-surface parity with the legacy folds and ignored (operand
+    selection belongs to the binary ``blocks=2`` form, not the unary
+    slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
+    item 4 — those operators are NOT legacy; only this slot rebinds).
+    """
+    invertible = True
+    # Legacy slot-surface attributes: consumers of the slot layers read
+    # these (e.g. the SS parallel-fold dispatch reads ``fold.N`` to
+    # match the construction-time flat total; ``butterfly`` is probed
+    # with getattr). The adapter is a per-slot membership fold -- no
+    # cascade -- but carries the legacy total so existing dispatch
+    # logic is preserved verbatim.
+    butterfly = False
+    nonlinear = False
+    monotonic = True
+
+    def __init__(self, kind, nInput, nOutput, stable=True, ergodic=False,
+                 naive=False, legacy_N=None):
+        super().__init__(nInput, nOutput)
+        if kind == 'sigma':
+            self.fold = SigmaLayer2(nInput, nOutput, stable=stable,
+                                    ergodic=ergodic, naive=naive)
+        elif kind == 'pi':
+            self.fold = PiLayer2(nInput, nOutput, stable=stable,
+                                 ergodic=ergodic, naive=naive)
+        else:
+            raise ValueError(
+                f"MeronymicFoldAdapter: kind must be 'sigma' or 'pi'; "
+                f"got {kind!r}")
+        self.kind = kind
+        self.N = int(legacy_N) if legacy_N is not None else int(nInput)
+        self.layers.append(self.fold)
+        self.activation = torch.zeros(1, nOutput, 1)
+
+    def forward(self, x, binary=False, gate=None):
+        """χ → membership fold → χ⁻¹ on the K3 wire.
+
+        Width-mismatched calls (the legacy butterfly cascade was
+        width-agnostic over flattened slabs; the membership fold is
+        per-slot) fall back to identity for the batch — the same
+        convention the SS parallel-fold dispatch uses for mismatched
+        totals.
+        """
+        if x.shape[-1] != self.nInput:
+            self.activation = x.detach()
+            return x
+        m = Ops.eval_chart(x.clamp(-1.0, 1.0))
+        z = self.fold.forward(m, gate=gate)
+        out = Ops.eval_chart_inv(z)
+        self.activation = out.detach()
+        return out
+
+    def reverse(self, y, gate=None):
+        """Exact inverse through the same chart pair (identity on
+        width-mismatched calls, mirroring forward)."""
+        if y.shape[-1] != self.nOutput:
+            self.activation = y.detach()
+            return y
+        z = Ops.eval_chart(y.clamp(-1.0, 1.0))
+        m = self.fold.reverse(z, gate=gate)
+        x = Ops.eval_chart_inv(m)
+        self.activation = x.detach()
+        return x
+
+    def getParameters(self):
+        """Optimizable parameters of the wrapped kernel."""
+        return [p for _, p in self.named_parameters()]
 
 class MapppingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces.
@@ -5860,75 +6357,49 @@ class TruthLayer(Layer):
     # internal to this accumulator; callers delegate here.
 
     def luminosity(self, sym=None) -> float:
-        """Cumulative-vs-rest luminosity fold over stored truths.
+        """Catuṣkoṭi luminosity of the truth store, computed on the codes.
 
-        Consolidated from ``Mereology._luminosity_truth_fold``. Decode
-        each stored truth to concept-space via ``sym.decode_to_concept``
-        then fold pairwise; result in ``[-1, 1]``. The bivector poles
-        (``[..., :2]``) are internal to this accumulator.
+        MeronomySpec §3 (rev 2026-06-10b). Per conceptual dimension
+        ``k``, the stored signed references split into the true/false
+        pole bivector — coverage, not mass: trust is already baked into
+        stored magnitudes, and duplicate truths must not inflate the
+        area —
+
+            T_k = max_i relu(+truths[i, k])
+            F_k = max_i relu(-truths[i, k])
+
+            luminosity = mean_k [ (T_k - F_k) - min(T_k, F_k) ]
+
+        clamped to ``[-1, 1]``: total area weighted by sign, minus the
+        regions where the sign differs (contradictory evidence — the
+        catuṣkoṭi B corner). Per-dimension corners: T-only ⇒ ``+T``,
+        F-only ⇒ ``-F``, both ⇒ ``-min(T, F)``, neither ⇒ ``0``.
+
+        Computed directly over the stored codes — no pullback to the
+        mereological ground: the §4 weight law puts the parthood
+        geometry on the codes themselves, so code-tier areas are a
+        registration-maintained approximation of ground areas (§5;
+        exact at mint, degrading conservatively under mixing). The
+        previous implementation decoded every row through
+        ``sym.decode_to_concept`` and folded sequentially (order-
+        dependent, and effectively stubbed: it returned 0.0 whenever
+        ``sym`` was absent); ``sym`` is retained for call-site
+        compatibility and ignored.
+
+        Paired-index bivector rows (``record`` with a monotonic basis)
+        are outside this measure's domain: their poles are orthogonal
+        by construction (no sign opposition arises), so such stores
+        read as pure positive area; B-corner policy for that layout
+        lives in ``tetralemma_balance_penalty``.
         """
-        try:
-            n = int(self.count.item())
-        except Exception:
-            return 0.0
+        n = int(self.count.item())
         if n == 0:
             return 0.0
-        if sym is None:
-            return 0.0
-        try:
-            stored = self.truths[:n]
-        except Exception:
-            return 0.0
-
-        decoded = []
-        decoder = getattr(sym, 'decode_to_concept', None)
-        for i in range(n):
-            row = stored[i:i+1]
-            if decoder is not None:
-                try:
-                    row_c = decoder(row)
-                except Exception:
-                    row_c = row
-            else:
-                row_c = row
-            if not torch.is_tensor(row_c) or row_c.shape[-1] < 2:
-                continue
-            decoded.append(row_c)
-        if not decoded:
-            return 0.0
-        if len(decoded) == 1:
-            box = decoded[0][..., :2]
-            box = box.reshape(*box.shape[:-1], 1, 2) if box.dim() < 3 else box.unsqueeze(-2)
-            vol = float(Ops.hyperrectangle_volume(box).mean().item())
-            return max(-1.0, min(1.0, vol))
-
-        def _box(t):
-            b = t[..., :2]
-            return b.reshape(*b.shape[:-1], 1, 2) if b.dim() < 3 else b.unsqueeze(-2)
-
-        def _dot(t):
-            return float((t[..., 0] - t[..., 1]).mean().item())
-
-        running = decoded[0]
-        running_lum = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
-        running_lum = max(-1.0, min(1.0, running_lum))
-
-        for i in range(1, len(decoded)):
-            t = decoded[i]
-            v_run = float(Ops.hyperrectangle_volume(_box(running)).mean().item())
-            v_new = float(Ops.hyperrectangle_volume(_box(t)).mean().item())
-            shared = float(Ops.hyperrectangle_overlap_volume(
-                _box(running), _box(t)).mean().item())
-            disagree = abs(_dot(running) - _dot(t))
-            pair_lum = (v_run + v_new) - shared * disagree
-            pair_lum = max(-1.0, min(1.0, pair_lum))
-            running_lum = pair_lum
-            try:
-                running = Ops.union(running, t, monotonic=False)
-            except Exception:
-                running = torch.where(running.abs() >= t.abs(), running, t)
-
-        return running_lum
+        stored = self.truths[:n]
+        T = stored.clamp(min=0).max(dim=0).values
+        F = (-stored).clamp(min=0).max(dim=0).values
+        lum = ((T - F) - torch.minimum(T, F)).mean().item()
+        return max(-1.0, min(1.0, lum))
 
     def isConsistent(self):
         """Fold stored truths via ``Ops.disjunction``; consistency summary.
@@ -10438,10 +10909,40 @@ class Ops:
     @staticmethod
     def unknown():
         """Unknown.
-        
+
         See class docstring for the operation contract.
         """
         return 0
+
+    # ---- Evaluation chart (MeronomySpec §3; math kernel, not a grammar
+    # op -- permitted on frozen Ops per the class-docstring layout note).
+
+    @staticmethod
+    def eval_chart(a):
+        """χ(a) = (1 + a) / 2: epistemic scalar → assumed membership.
+
+        The evaluation map of MeronomySpec §3 -- beliefs cash into
+        extents when they become membership-fold operands. χ is
+        EVALUATION, not injection: no coordinate-wise map from PS
+        memberships into a signed cube exists anywhere in the
+        architecture. Corners are exact: ``+1 ↦ 1`` (certain-true),
+        ``0 ↦ ½`` (Boole's maximal-vagueness point), ``−1 ↦ 0``
+        (certain-false).
+        """
+        t = torch.as_tensor(a)
+        return (1 + t) / 2
+
+    @staticmethod
+    def eval_chart_inv(m):
+        """χ⁻¹(m) = 2m − 1: assumed membership → epistemic scalar.
+
+        Exact inverse of :func:`eval_chart`; affine, total, no
+        rectification -- the old ReLU-injection law ``max(0, 2m−1)``
+        is retired (the Stage-4 factored interface replaces it; see
+        test_meronomy_laws.py's guard).
+        """
+        t = torch.as_tensor(m)
+        return 2 * t - 1
 
     # ---- Scalar / elementwise primitives ---------------------------------
 

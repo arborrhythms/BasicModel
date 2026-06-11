@@ -79,6 +79,23 @@
              off       = neither fires. -->
       <xs:element name="routerWireSerial" type="routerWireSerialEnum" minOccurs="0"/>
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
+      <!-- Meronomy mode (MeronomySpec; MeronomyPlan Stage 9 cutover,
+           2026-06-11): "on" binds the meronymic slots (PS.sigma /
+           SS.pi) to the membership kernels via the K3-wire adapter and
+           enables the interface factoring, the pole-quotient
+           reference-half lookup, and the word/object binding table.
+           Text on|off (default off in code; the cutover sets "on" in
+           model.xml). dMaxStable bounds the contractive diagonal's
+           stable clamp (default 4.0). -->
+      <xs:element name="meronomy" minOccurs="0">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="dMaxStable" type="nonNegativeFloat"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
       <!-- Master switch for symbolic-priming heat (forward working memory);

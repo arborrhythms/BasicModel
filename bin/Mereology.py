@@ -983,28 +983,19 @@ class Mereology:
         return lum
 
     def _luminosity_truth_fold(self, truth_layer) -> float:
-        """Cumulative-vs-rest luminosity fold over stored truths.
+        """Catuṣkoṭi luminosity of the truth store (thin delegator).
 
-        Decode each truth from symbol-space to concept-space (via
-        :meth:`SymbolicSpace.decode_to_concept`), then fold:
-
-          * running := decoded[0]
-          * running_lum := volume(running)
-          * for i in 2..N-1:
-              pair_lum = volume(running) + volume(t_i)
-                         - overlap(running, t_i) * |dot(running)
-                                                   − dot(t_i)|
-              running := union(running, t_i) (per-pole bivector
-                          element-wise max via ``Ops.union``)
-              running_lum := pair_lum
-
-        The result lies in ``[-1, 1]`` because total area is
-        normalised to 1 and ``overlap × DoT_disagreement ≤ 2``.
+        The computation lives on :meth:`TruthLayer.luminosity`
+        (MeronomySpec §3, rev 2026-06-10b): per conceptual dimension the
+        stored signed references split into true/false pole coverage
+        ``(T_k, F_k)`` and the measure is
+        ``mean_k[(T_k − F_k) − min(T_k, F_k)]`` in ``[-1, 1]`` — total
+        area weighted by sign minus sign-conflict regions, computed
+        directly over the codes. The former per-row
+        ``decode_to_concept`` pullback and sequential cumulative fold
+        are retired; the ``sym`` handle is still passed for signature
+        compatibility and ignored by the layer.
         """
-        # Phase 1 (bivector retirement): the truth-fold computation now
-        # lives on TruthLayer; this is a thin delegator passing the
-        # SymbolicSpace decoder. The bivector poles stay internal to the
-        # accumulator (TruthLayer.luminosity).
         if truth_layer is None:
             return 0.0
         return truth_layer.luminosity(sym=getattr(self, 'symbolicSpace', None))

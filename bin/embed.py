@@ -83,6 +83,12 @@ def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
     Idempotent on already-wrapped inputs; on legacy sphere vectors (norm
     ~= 1, components in [-1, 1]) it is a no-op. Optimizer-drifted values
     outside the cell get reprojected to their wrapped equivalent.
+
+    Scope (MeronomySpec §3; Stage 5 audit): the wrap is licensed for
+    **embedding position** -- periodic semantic/positional coordinates.
+    It is harmless exactly where stored coordinates carry no truth
+    (truth rides the activation against the row, never the stored
+    geometry); do not route activation/belief values through it.
     """
     return torch.remainder(x + 1.0, 2.0) - 1.0
 
@@ -143,6 +149,15 @@ def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     with this helper at those sites collapses distinct words and breaks
     reconstruction. For lexicon / token lookup keep the broadcast or
     chunked-broadcast form of ``_wrapped_mse_score``.
+
+    Why the restriction is principled (MeronomySpec §3; Stage 5): this
+    is **the reference-half lookup law** -- identity by ``argmax
+    |q·v|``, polarity by ``sign(q·v)`` -- and the quotient is correct
+    exactly where the stored sign is GAUGE (reference rows: the
+    referent is positive content, so the stored sign denotes nothing
+    and is fixed at mint by ``Spaces.gauge_orient``). Token/form
+    codebooks keep full-vector lookup because there the sign IS form
+    content. Certainty survives end-to-end since ``(a·u)·v = a(u·v)``.
 
     Args:
         a: shape ``[..., D]`` in [-1, 1), bivector-encoded.

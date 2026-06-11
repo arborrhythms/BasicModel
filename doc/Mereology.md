@@ -4,6 +4,31 @@ Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
 `ImpenetrableLayer` regularizer.
 
+> **Meronomy reconciliation (2026-06-11; MeronomySpec wins — plan §2).**
+> Four reframings of this page's claims:
+>
+> 1. **`part()` is the graded retrieval surrogate, not *the* parthood
+>    relation.** Exact dominance (`Ops.partOf` — elementwise `≤`
+>    reduced with `all`) is the semantic ground truth; the clipped
+>    cosine below is its retrieval-time score. `part()` stays total
+>    and form-level over everything — including symbol codes and
+>    binding-table-bound rows — and that totality is its cordon duty
+>    (spec §1, §7): geometric relations answer "looks like";
+>    *asserted* parthood lives in the truth store and the towers'
+>    registration, answers "is", and is a different call. Reading one
+>    relation as the other is the category error.
+> 2. **Fusion = elementwise max stays as the order-theoretic join.**
+>    The learned σ-fold satisfies `σ ≽ max` (MeronomySpec §10.1) —
+>    join versus parametric whole-maker; the whole-maker can only
+>    over-cover the join, never under-cover it.
+> 3. **The region partition (incl. exact `equal == 0` underlap) is a
+>    scoring vocabulary only.** No abstraction classifier consumes it
+>    (withdrawn, spec §9): no adjacency exists over witness
+>    dimensions, so disconnection is meaningless there.
+> 4. **Contiguity is sequential, never dimensional** (spec §2): it is
+>    owned by `Mereology.Contiguous` on the derivational axis; σ
+>    extents over witness dims are single lumps always.
+
 > **2026-05-29 delta — binary GrammarLayer reverses take Basis, not W.**
 > `Ops._binary_op_recommend(result, W, op_name, …)` (the
 > mereology-guided recommender that walks `W` rows to find an

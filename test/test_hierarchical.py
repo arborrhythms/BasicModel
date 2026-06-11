@@ -156,13 +156,17 @@ class TestPerLevelLayers(unittest.TestCase):
         2026-06-09): each SymbolicSpace OWNS the pi (the top-down
         analysis operator + the S-tier fold-rule binding target) but NO
         sigma -- Sigma (synthesis) lives on PerceptualSpace."""
-        from Layers import PiLayer
+        from Layers import PiLayer, MeronymicFoldAdapter
         model = _make_model('RamsifiedModel.xml')
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
         for s in model.symbolicSpaces:
+            # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
+            fold = getattr(s, 'pi', None)
             self.assertIsInstance(
-                getattr(s, 'pi', None), PiLayer,
-                "SymbolicSpace must own a pi (PiLayer).")
+                fold, (PiLayer, MeronymicFoldAdapter),
+                "SymbolicSpace must own a pi.")
+            if isinstance(fold, MeronymicFoldAdapter):
+                self.assertEqual(fold.kind, 'pi')
             self.assertFalse(hasattr(s, 'sigma'),
                              "SymbolicSpace must not own a sigma layer.")
 

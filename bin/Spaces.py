@@ -53,6 +53,64 @@ from Layers import GrammarLayer
 # class still lives in Layers.py.
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
+from Layers import meronomy_enabled  # MeronomySpec §3 mode knob (Stage 4)
+
+
+def gauge_orient(u, referent):
+    """Fix the stored-sign gauge at mint (MeronomySpec §3; Stage 5).
+
+    Returns ``u`` oriented so that ``+u`` agrees with the (positive)
+    referent: rows with ``u · referent < 0`` are flipped. A reference
+    row's stored sign carries no content (it is gauge -- the referent is
+    always positive content, so there is nothing downstairs for a minus
+    sign to denote); spending that freedom on a mint-time convention
+    makes polarity globally readable: ``sign(q · v) > 0`` means
+    presence-affirming, uniformly across the reference half, with no
+    per-row bookkeeping. Batched over leading dims; a zero dot
+    (orthogonal or zero referent) keeps ``u`` as-is. Idempotent, and
+    ``gauge_orient(-u, r) == gauge_orient(u, r)`` -- the two
+    representatives of one reference orient identically.
+    """
+    dot = (u * referent).sum(dim=-1, keepdim=True)
+    flip = torch.where(dot < 0, -torch.ones_like(dot), torch.ones_like(dot))
+    return u * flip
+
+
+def registration_loss(pi_fold, sigma_fold, codes):
+    """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
+    MeronomyPlan Stage 8).
+
+    Extent and intent are anti-monotone adjoints; the round-trips are
+    closure operators and well-formed concepts are their fixed points.
+    This differentiable consistency objective pulls the two towers (the
+    PS and SS codebooks, rev 2026-06-11) into mutual registration; it
+    sits beside CWCE as the meronymic analogue of reconstruction error.
+    Its second, load-bearing duty is MAINTENANCE: the asserted order and
+    the geometric order agree at mint by the §4 theorems, and training
+    drift is the only thing that can un-register them — this loss is the
+    mechanism that maintains the agreement (§8).
+
+    ``codes``: ``[N, D]`` memberships (stored symbol extents).
+    ``sigma_fold`` / ``pi_fold``: same-width membership folds
+    (SigmaLayer2 / PiLayer2).
+    """
+    s = sigma_fold.forward(codes)
+    sps = sigma_fold.forward(pi_fold.forward(s))
+    return ((sps - s) ** 2).mean()
+
+
+def asserted_dominance_loss(child, parent):
+    """Isomorphic pressure, predication channel (MeronomySpec §5).
+
+    Every definition read is a constraint pulling one extent above
+    another: an asserted pair ``child ⊑ parent`` becomes a hinge on the
+    per-witness dominance violation. At corpus scale these constraints
+    accumulate into the asserted partial order and training drives the
+    geometric order toward isomorphism with it. (Scoped consequence:
+    this pressure sculpts the towers only — the word/object table is
+    insulated by construction, symbols being atoms.)
+    """
+    return torch.relu(child - parent).mean()
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 from workarounds import Workarounds
@@ -1162,18 +1220,38 @@ class Basis(nn.Module):
         # sync that broke the brick CUDA-graph-capture contract
         # (test_brick_no_sync).
         if self.unit_ball:
+            # Torus / token-tier lookup: full-vector wrapped MSE. NO
+            # NEG-quotient here -- ``word`` and ``-word`` are distinct
+            # entries whose sign is form content (MeronomySpec §3;
+            # Stage 5 audit).
             scores = _wrapped_mse_score(
                 flat[nonzero].unsqueeze(1),
                 weight[:, :nWhat].unsqueeze(0),
             )
+            idx = scores.argmax(dim=1)
+            flat[nonzero] = weight[idx, :nWhat]
         else:
-            scores = F.cosine_similarity(
+            cos = F.cosine_similarity(
                 flat[nonzero].unsqueeze(1),
                 weight[:, :nWhat].unsqueeze(0),
                 dim=2,
             )
-        idx = scores.argmax(dim=1)
-        flat[nonzero] = weight[idx, :nWhat]
+            if meronomy_enabled() and not self.monotonic:
+                # Stage 5 (spec §3, §10.3): the reference-tier lookup
+                # law. Stored sign is gauge, so identity is the
+                # quotient ``argmax |q·v|`` and polarity is
+                # ``sign(q·v)``, riding the activation: the snap is
+                # SIGN-ALIGNED, making ``u`` and ``-u`` one reference
+                # (observational invariance under row relabeling).
+                # Knob-gated: dark until cutover.
+                idx = cos.abs().argmax(dim=1)
+                pol = torch.gather(cos, 1, idx.unsqueeze(1)).squeeze(1)
+                pol = torch.where(pol < 0, -torch.ones_like(pol),
+                                  torch.ones_like(pol))
+                flat[nonzero] = pol.unsqueeze(1) * weight[idx, :nWhat]
+            else:
+                idx = cos.argmax(dim=1)
+                flat[nonzero] = weight[idx, :nWhat]
         snapped[:, :, :nWhat] = flat.reshape(snapped.shape[0], snapped.shape[1], nWhat)
         return snapped
 
@@ -8444,6 +8522,23 @@ class PerceptualSpace(Space):
         self.sigma_pi_mode = _pi_mode
         self.butterfly_enabled = _butterfly_built
         self.butterflyN = _butterfly_total if _butterfly_built else None
+        if meronomy_enabled():
+            # Stage 9 cutover (MeronomyPlan; spec §2): the MERONYMIC
+            # slot binds the membership kernel through the K3-wire
+            # adapter (χ at the boundary, kernel on memberships;
+            # near-identity at init). Meronymic slots only — every
+            # non-meronymic consumer of the odds-kernel layers is
+            # untouched (plan §4 item 4). Dims read off the built
+            # layer so all three construction modes stay drop-in.
+            from Layers import MeronymicFoldAdapter
+            self.sigma = MeronymicFoldAdapter(
+                'sigma', self.sigma.nInput, self.sigma.nOutput,
+                stable=True, ergodic=ergodic, naive=naive,
+                legacy_N=_butterfly_total)
+            # butterflyN keeps recording the construction-time sizing
+            # (consumers read it as the flat-total contract); only the
+            # cascade itself is replaced by the per-slot adapter.
+            self.butterfly_enabled = False
 
         # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
         # heat-retrieval.md §Handoff addendum): PerceptualSpace no longer
@@ -12251,6 +12346,80 @@ class ConceptualSpace(Space):
                 .unsqueeze(0).expand(B, -1, -1))
         return ConceptualSpace._bind_fit(slab, D, like)
 
+    # -- Interface factoring (MeronomySpec §3; MeronomyPlan Stage 4) ----
+    # The percept leg crosses the callosum NAMELESS and FACTORED:
+    # content selects a reference row (embedding match against the
+    # codebook), evidence sets the activation magnitude a in [0, +1].
+    # No coordinate chart exists -- raw percept coordinates never cross
+    # as coordinates. Knob-gated (<architecture><meronomy>on</meronomy>);
+    # with the knob off (default), bind_streams is byte-identical to the
+    # pre-Stage-4 path.
+
+    @staticmethod
+    def factor_percept(percept, rows):
+        """Factor a percept into (row selection, evidence magnitude).
+
+        ``percept``: ``[..., D]`` -- only its POSITIVE content
+        participates (percepts are one-sided, spec §2; negative input
+        coordinates are structurally invisible to this path).
+        ``rows``: ``[V, D]`` reference rows (unit-norm by the
+        ConceptualSpace EMA convention).
+
+        Returns ``(idx, a)`` with ``idx [...]`` the selected row per
+        slot and ``a [...] in [0, +1]`` the evidence. Absence of
+        stimulation IS zero evidence -- a zero percept yields ``a = 0``
+        as a tautology of the dot product, not via a clamp; the
+        negative half is unreachable by construction (anti-matches are
+        non-matches, and the upper cap is the certainty ceiling).
+        Returns ``(None, None)`` when there are no rows to factor
+        against.
+        """
+        if rows is None or rows.shape[0] == 0:
+            return None, None
+        q = percept.clamp(min=0)
+        sims = (q @ rows.transpose(-1, -2)).clamp(min=0)
+        a, idx = sims.max(dim=-1)
+        return idx, a.clamp(max=1.0)
+
+    def belief_to_extent(self, a):
+        """THE belief→extent cash-out: ``χ(a) = (1 + a)/2``, exactly once.
+
+        Epistemic scalars enter membership folds only through the
+        evaluation chart (spec §3 -- evaluation, not injection). This
+        is the single sanctioned conversion site on the C tier; callers
+        must not pre- or re-chart (§10.6: applied exactly once per
+        cash-out). Out-of-range beliefs are clamped to the K3 wire
+        domain ``[-1, 1]`` first.
+        """
+        return Ops.eval_chart(torch.as_tensor(a).clamp(-1.0, 1.0))
+
+    def _factor_crossing(self, PS_t):
+        """Apply the nameless factored crossing to the PS leg (§3).
+
+        Per slot: ``(idx, a) = factor_percept(slot, rows)`` and the
+        crossing value is ``a · rows[idx]`` -- the evidence-weighted
+        reference row. The output lives in the row span (content
+        crossed by selection, never by coordinates) and stays in the
+        K3 wire domain (charting to memberships happens only at fold
+        cash-outs via ``belief_to_extent``). With no codebook rows or
+        a width-mismatched codebook, the leg crosses unchanged (there
+        is nothing to factor against).
+        """
+        sub = getattr(self, "subspace", None)
+        rows = None
+        if sub is not None and getattr(sub, "codebook_slot", None) is not None:
+            try:
+                rows = sub.prototype()
+            except Exception:
+                rows = None
+        if rows is None or rows.shape[0] == 0:
+            return PS_t
+        rows = rows.detach().to(PS_t.device, PS_t.dtype)
+        if rows.shape[-1] != PS_t.shape[-1]:
+            return PS_t
+        idx, a = self.factor_percept(PS_t, rows)
+        return a.unsqueeze(-1) * rows[idx]
+
     def bind_streams(self, PS_sub, SS_sub, CS_sub, seed_payload=None):
         """The stage's conceptual advance: bind, glue, store -- in-Space.
 
@@ -12274,6 +12443,11 @@ class ConceptualSpace(Space):
             return None
         ps_content, _, _ = self._bind_demux(PS_sub, D)
         PS_t = self._bind_fit(ps_content, D, cs_content)
+        if meronomy_enabled():
+            # Stage 4 (spec §3): the PS leg crosses nameless and
+            # factored. Dark by default; the 2N mixing matrix below is
+            # untouched either way -- the knob governs what crosses it.
+            PS_t = self._factor_crossing(PS_t)
         ss_content, _, _ = self._bind_demux(SS_sub, D)
         SS_t = self._bind_fit(ss_content, D, cs_content)
         if seed_payload is not None:
@@ -13097,6 +13271,19 @@ class SymbolicSpace(Space):
         self.sigma_pi_mode = _sigma_mode
         self.butterfly_enabled = _sigma_butterfly
         self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
+        if meronomy_enabled():
+            # Stage 9 cutover (MeronomyPlan; spec §2): SS's meronymic
+            # slot binds PiLayer2 through the K3-wire adapter — the
+            # analysis fold computes on memberships; the wire stays K3.
+            # Meronymic slots only; see the PS slot note above.
+            from Layers import MeronymicFoldAdapter
+            self.pi = MeronymicFoldAdapter(
+                'pi', self.pi.nInput, self.pi.nOutput,
+                stable=True, ergodic=_sigma_ergodic, naive=_sigma_naive,
+                legacy_N=_sigma_butterfly_total)
+            # butterflyN keeps recording the construction-time sizing;
+            # see the PS slot note above.
+            self.butterfly_enabled = False
         self.layers.append(self.pi)
         self.params += self.pi.getParameters()
 
@@ -15720,6 +15907,137 @@ class SymbolicSpace(Space):
             pooled = Workarounds.adaptive_avg_pool1d(u, N * W)
             carrier = torch.tanh(pooled.reshape(B, N, W) / 128.0)
         return carrier, W
+
+    # -- The interpret-as-word gate and the serial shift -----------------
+    # MeronomySpec §6 (rev 2026-06-11), §10.8/§10.11; MeronomyPlan
+    # Stage 7. The reference half is SS's symbol organ: a word/object
+    # binding table (References.ReferenceTable) hosted here, knob-gated
+    # (<architecture><meronomy>). Naming is SEARCH-THEN-MINT -- a
+    # first-class, loggable decision; never first sight. The serial
+    # forward shift is the single licensed callosum crossing: deref the
+    # word, place the SEMANTIC referent on the PS-side idea stack.
+    # ``adopt_stage0_evidence`` below is ground-half MEMORY, explicitly
+    # not naming, and stays as-is.
+
+    def _ensure_reference_table(self):
+        """Lazily build the binding table (knob-gated; None when off)."""
+        if not meronomy_enabled():
+            return None
+        if getattr(self, 'reference_table', None) is None:
+            from References import ReferenceTable
+            object.__setattr__(self, 'reference_table', ReferenceTable())
+            object.__setattr__(self, 'gate_log', [])
+        return self.reference_table
+
+    def interpret_word(self, word_id, licensed=False, object_id=None,
+                       object_row=None, referent=None, extent=None):
+        """The interpret-as-word gate: search, then mint on LICENSED miss.
+
+        Decisions (every one appended to ``self.gate_log``):
+          * ``use`` -- the word is bound; deref hit.
+          * ``mint`` -- miss, but ``licensed`` (demonstrated reuse) and
+            an object was supplied: bind it (append-only; gauge-orients
+            ``object_row`` toward ``referent`` when given).
+          * ``placeholder`` -- unlicensed miss: shift an ignorance
+            placeholder (``a = 0``); naming never happens on first
+            sight. (The ``a → 0`` end of the same soft lookup, spec §6
+            rev c -- not a separate branch in principle.)
+
+        Requires ``<architecture><meronomy>on`` (the table is the
+        knob-enabled organ); raises otherwise so dark mode stays dark.
+        """
+        table = self._ensure_reference_table()
+        if table is None:
+            raise RuntimeError(
+                "SymbolicSpace.interpret_word requires "
+                "<architecture><meronomy>on</meronomy> (Stage 7 lands "
+                "dark; the gate only exists with the meronomy enabled).")
+        obj = table.deref(word_id)
+        if obj is not None:
+            decision = {'word': int(word_id), 'action': 'use',
+                        'object': int(obj)}
+        elif licensed and object_id is not None:
+            oriented = table.bind(word=word_id, obj=object_id,
+                                  licensed=True, object_row=object_row,
+                                  referent=referent, extent=extent)
+            decision = {'word': int(word_id), 'action': 'mint',
+                        'object': int(object_id)}
+            if oriented is not None:
+                # Mint-time gauge fixing (spec §3/Stage 5): the table
+                # stores ids only; the GAUGE-ORIENTED row rides on the
+                # decision so the caller can write it back to the PS
+                # codebook, and the shift path pushes it directly.
+                # (Review fix 2026-06-11: this was previously dropped,
+                # so orientation never reached the codebook or the
+                # shift.)
+                decision['oriented_row'] = oriented
+        else:
+            decision = {'word': int(word_id), 'action': 'placeholder',
+                        'a': 0.0}
+        self.gate_log.append(decision)
+        return decision
+
+    def shift_word(self, word_subspace, b, word_id, rows, licensed=False,
+                   object_id=None, object_row=None, referent=None,
+                   extent=None, marker=False, mention=False,
+                   word_vec=None):
+        """The serial forward SHIFT -- one move, one workspace write.
+
+        Branches (the readout of one soft computation, spec §6 rev c):
+          * content word (default): ``interpret_word`` then push the
+            dereferenced SEMANTIC row ``rows[obj]`` onto the PS-side
+            idea stack -- the word is part of the sentence; the
+            referent is not. Unlicensed miss pushes the ``a = 0``
+            placeholder (zeros).
+          * ``marker=True``: closed-class word -- NOTHING shifts; the
+            word binds the router (GrammarLayer SurfaceSchema slots);
+            logged, no workspace write.
+          * ``mention=True``: quotation -- push ``word_vec`` (the word
+            code itself) verbatim, no deref; the zero-band signature of
+            symbol codes is what marks it as form content (rev
+            2026-06-11; the lone licensed appearance of orthographic
+            content on the PS side).
+
+        Exactly one workspace write per call (split | shift | reduce is
+        the mutex's move set); marker binds write nothing.
+        """
+        if self._ensure_reference_table() is None:
+            raise RuntimeError(
+                "SymbolicSpace.shift_word requires "
+                "<architecture><meronomy>on</meronomy> (Stage 7 lands "
+                "dark; serial shifts only exist with the meronomy "
+                "enabled).")
+        if marker:
+            decision = {'word': int(word_id), 'action': 'marker-bind'}
+            self.gate_log.append(decision)
+            return decision
+        if mention:
+            if word_vec is None:
+                raise ValueError(
+                    "shift_word(mention=True) needs the word code "
+                    "(word_vec) -- quotation shifts the form itself.")
+            word_subspace.idea_push(b, torch.as_tensor(word_vec))
+            decision = {'word': int(word_id), 'action': 'mention-shift'}
+            self.gate_log.append(decision)
+            return decision
+        decision = self.interpret_word(
+            word_id, licensed=licensed, object_id=object_id,
+            object_row=object_row, referent=referent, extent=extent)
+        if decision['action'] in ('use', 'mint'):
+            # On a mint with gauge fixing, the freshly ORIENTED row is
+            # what crosses (rows[obj] may still hold the un-oriented
+            # representative until the caller writes the orientation
+            # back). On a use, rows[obj] is the codebook row, oriented
+            # at its own mint.
+            referent_row = decision.get('oriented_row')
+            if referent_row is None:
+                referent_row = rows[decision['object']]
+            word_subspace.idea_push(b, referent_row)
+        else:
+            word_subspace.idea_push(
+                b, torch.zeros(rows.shape[-1], device=rows.device,
+                               dtype=rows.dtype))
+        return decision
 
     def adopt_stage0_evidence(self, IS_concepts, spans=None):
         """HOST-EAGER adopt-on-first-sight (Phase 5, rev. 2026-06-10).

@@ -1,5 +1,32 @@
 # Spaces
 
+> **2026-06-11 update (meronomy cutover — MeronomySpec/MeronomyPlan,
+> Stage 9).** With `<architecture><meronomy>on</meronomy>` (now the
+> `model.xml` default) the meronymic slots bind the membership
+> kernels: `PerceptualSpace.sigma` → `SigmaLayer2` and
+> `SymbolicSpace.pi` → `PiLayer2`, each through the K3-wire
+> `MeronymicFoldAdapter` (χ at the boundary; the wire keeps carrying
+> signed scalars; the fold computes on memberships, near-identity at
+> init). Additions this page should be read with:
+>
+> * **CS encoding**: stored reference rows are gauge-signed unit
+>   directions (semantic embedding only); certainty is activation
+>   magnitude, polarity activation sign; gauge fixed at mint
+>   (`Spaces.gauge_orient`). Reference-half lookup is the pole
+>   quotient (`embed._pole_aligned_score`); token/form codebooks keep
+>   full-vector lookup.
+> * **The callosum**: percepts cross NAMELESS and FACTORED
+>   (`ConceptualSpace.factor_percept` — content selects the row,
+>   evidence sets `a ∈ [0, +1]`); parallel mode is the `2N` mixing
+>   matrix; serial mode bypasses it (fusion migrates into the shift).
+> * **Two codebooks, one table**: the towers ARE the PS/SS codebooks
+>   (extent/intent; shared with IS recognition — recognition is tower
+>   lookup), linked by the word-keyed binding table
+>   (`References.ReferenceTable`) hosted on SymbolicSpace
+>   (search-then-mint gate; `adopt_stage0_evidence` stays ground-half
+>   memory, not naming). Symbols are atomic, zero-banded codes —
+>   wholes of symbols carry `.where = .when = 0` (the Mind marker).
+
 > **2026-06-09 update (analysis/synthesis orientation — supersedes the
 > ownership notes below).** The corrected orientation
 > (doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev.

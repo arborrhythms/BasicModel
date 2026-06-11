@@ -64,6 +64,14 @@ eligible method and accepts results that preserve or increase luminosity.
 Accepted truths recorded at `attenuation * min(DoT_i, DoT_j)`. Returns
 `{'added': [indices], 'rejected': [(i, j, rule, delta_lum), ...]}`.
 
+> **Meronomy reconciliation (2026-06-11).** The gate's role is
+> unchanged, but the gated quantity is now the MeronomySpec §3 rev-b
+> measure: `TruthLayer.luminosity` = the catuṣkoṭi coverage measure
+> over the codes, `mean_k[(T_k − F_k) − min(T_k, F_k)]` — signed area
+> minus conflict — order-independent, no decode pullback. The same
+> applies to the multiplicative luminosity modulation under
+> "TruthLoss" below.
+
 ## TruthLoss
 
 Additive loss penalty for false propositions, via `<TruthLoss>` in model.xml

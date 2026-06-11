@@ -45,6 +45,7 @@ if _BIN not in sys.path:
 import Models
 import Language
 from Layers import PiLayer, SigmaLayer
+from Layers import MeronymicFoldAdapter
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -82,9 +83,12 @@ class TestPSOwnsSingleLayers(unittest.TestCase):
         self.assertTrue(hasattr(ps, 'sigma'),
                         "PerceptualSpace must own a ``sigma`` attribute "
                         "post Pi/Sigma swap.")
-        self.assertIsInstance(ps.sigma, SigmaLayer,
+        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
+        self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter),
                               "PerceptualSpace.sigma must be a single "
-                              "SigmaLayer (not a ModuleList).")
+                              "fold layer (not a ModuleList).")
+        if isinstance(ps.sigma, MeronymicFoldAdapter):
+            self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertNotIsInstance(ps.sigma, torch.nn.ModuleList,
                                  "PerceptualSpace.sigma must NOT be a "
                                  "ModuleList (single-layer contract).")

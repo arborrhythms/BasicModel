@@ -48,6 +48,7 @@ if _BIN not in sys.path:
 import Models
 import Language
 from Layers import SigmaLayer, PiLayer
+from Layers import MeronymicFoldAdapter
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
@@ -71,7 +72,12 @@ class TestPerceptualSigmaOnly(unittest.TestCase):
         # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09).
         m = _make_model()
         ps = m.perceptualSpace
-        self.assertIsInstance(ps.sigma, SigmaLayer)
+        # Stage 9 cutover (2026-06-11): under <meronomy>on (the
+        # model.xml default) the slot binds the membership kernel via
+        # MeronymicFoldAdapter; the ownership contract is unchanged.
+        self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter))
+        if isinstance(ps.sigma, MeronymicFoldAdapter):
+            self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertFalse(hasattr(ps, "pi"),
                          "PerceptualSpace is sigma-only (synthesis); "
                          "pi moved to SymbolicSpace.")
@@ -117,9 +123,12 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
         m = _make_model()
         for k, ss in enumerate(m.symbolicSpaces):
             fold = getattr(ss, "pi", None)
+            # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
             self.assertIsInstance(
-                fold, PiLayer,
-                f"SymbolicSpace[{k}] must own a pi (PiLayer).")
+                fold, (PiLayer, MeronymicFoldAdapter),
+                f"SymbolicSpace[{k}] must own a pi.")
+            if isinstance(fold, MeronymicFoldAdapter):
+                self.assertEqual(fold.kind, 'pi')
             self.assertTrue(
                 getattr(fold, "invertible", False),
                 f"SymbolicSpace[{k}].pi must be invertible so the "
@@ -136,10 +145,19 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
         # XOR). N is the flattened content count inputShape[0]*nOutputDim.
         m = _make_model()
         ss = m.symbolicSpace
-        self.assertTrue(
-            getattr(ss.pi, "butterfly", False),
-            "SymbolicSpace.<butterfly>true</...> must wire a butterfly "
-            "cascade into SymbolicSpace.pi.")
+        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged. Under the adapter the cascade is replaced by the
+        # per-slot membership fold; the cross-slot SIZING contract
+        # survives as fold.N (the construction-time flat total).
+        if isinstance(ss.pi, MeronymicFoldAdapter):
+            self.assertEqual(
+                int(ss.pi.N),
+                int(ss.inputShape[0]) * int(ss.nOutputDim),
+                "adapter must record the legacy flat total as N")
+        else:
+            self.assertTrue(
+                getattr(ss.pi, "butterfly", False),
+                "SymbolicSpace.<butterfly>true</...> must wire a butterfly "
+                "cascade into SymbolicSpace.pi.")
         self.assertEqual(
             int(ss.butterflyN),
             int(ss.inputShape[0]) * int(ss.nOutputDim),

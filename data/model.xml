@@ -58,6 +58,16 @@
     <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
 
+    <!-- Meronomy (MeronomySpec, doc/plans/): "on" binds the meronymic
+         slots (PS.sigma / SS.pi) to the membership kernels
+         (SigmaLayer2 / PiLayer2 via the K3-wire adapter), enables the
+         interface factoring at the callosum, the reference-half
+         pole-quotient lookup, and the word/object binding table.
+         Stage 9 cutover flipped this default to "on" (2026-06-11);
+         set "off" per model to keep the legacy odds-path slots.
+         dMaxStable bounds the contractive diagonal's stable clamp. -->
+    <meronomy dMaxStable="4.0">on</meronomy>
+
     <!-- Constrain invertible Sigma / Pi to W ≥ 0 so the lift / lower
          chain is order-preserving on the parthood cone (Spaces.md). -->
     <monotonic>false</monotonic>

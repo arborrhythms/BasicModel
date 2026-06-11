@@ -183,21 +183,32 @@ class TestMMXorConvergence(unittest.TestCase):
         self.assertGreater(len(data.train_input), 0)
         self.assertLess(best_loss, 0.15)
 
-    def _grammar_xor_convergence(self, cfg_path, epochs=600,
+    def _grammar_xor_convergence(self, cfg_path, epochs=900,
                                  threshold=0.15, max_attempts=5):
         """Shared body: grammar-path XOR convergence on a given config path.
 
         The grammar path has a bimodal convergence landscape on XOR:
-        ~=30% of random inits fall into a zero-loss basin, the rest
-        plateau near 1/6.  We retry up to ``max_attempts`` times with
-        different seeds and pass if any attempt converges, isolating
-        the test from init-sensitivity (an architecture concern, not a
-        refactor concern).
+        a fraction of inits falls into a low-loss basin, the rest
+        plateau near 1/6.  We retry up to ``max_attempts`` times and
+        pass if any attempt converges, isolating the test from
+        init-sensitivity (an architecture concern, not a refactor
+        concern).
+
+        Stage 9 re-pin (meronomy cutover, 2026-06-11): per-attempt
+        seeds are now DETERMINISTIC (``manual_seed(attempt + 1)``) so
+        the attempt set is order-independent (previously the seeds
+        came from wherever the suite left the global RNG — pass/fail
+        depended on collection order), and the budget is 900 epochs:
+        the membership kernels start near-identity (gentle start), so
+        the basin is reached later than under the legacy odds kernels
+        (probed 2026-06-11: seed 1 → 0.125, seeds 3/4/7 < 0.15 at 900;
+        same seed-pinned + CPU discipline as the other XOR fixtures).
         """
         import torch
 
         best_ever = float("inf")
         for attempt in range(max_attempts):
+            torch.manual_seed(attempt + 1)
 
             m, _, data = _fresh_model(cfg_path)
             self.assertTrue(m.useGrammar)

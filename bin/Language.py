@@ -2319,6 +2319,17 @@ class LiftLayer(GrammarLayer):
     ``Language.WordSubSpace._attach_per_space_syntactic_layer``) but
     only their codebook dimension is consulted to determine the
     operand width when ``nInput`` is not provided.
+
+    Planned (2026-06-10, doc/plans/MeronomySpec.md §4): a declared
+    validity mask. ``lift`` is currently total -- it applies over ANY
+    operand pair, so "colorless green ideas sleep furiously" composes
+    as readily as sense does. The grammar-ops corrective pass (the
+    step after the meronomy plan) will have each operator declare the
+    mask/domain over which it is a valid operator; behavior outside
+    the mask is decided in that pass, not here. Likely mechanism seed:
+    the per-call ``gate`` low-rank operator slicing already plumbed
+    through ``PiLayer.forward`` / ``_d_effective`` (the internal
+    SigmaLayer takes the same hook).
     """
     rule_name  = "lift"
     arity      = 2
@@ -2516,6 +2527,10 @@ class LowerLayer(GrammarLayer):
 
     The construction is self-contained: no Space references.  See
     ``LiftLayer`` for the keyword-arg compatibility shim.
+
+    Planned (2026-06-10): declared validity mask -- see the
+    ``LiftLayer`` docstring note; the same contract applies to
+    ``lower``.
     """
     rule_name  = "lower"
     arity      = 2
@@ -8795,6 +8810,95 @@ class WordSubSpace(SubSpace):
             batch, self._idea_capacity, self._stm_payload_dim, device=device)
         self._idea_depth = torch.zeros(batch, dtype=torch.long, device=device)
         self._idea_max_depth_host = 0
+
+    # -- SS-side constituent stack (MeronomySpec §6 rev 2026-06-10c/11;
+    # MeronomyPlan Stage 7) -------------------------------------------
+    # The serial-mode ANALYSIS workspace: symbolic constituents under
+    # analysis, word codes at the leaves -- the dual of the PS-side
+    # ``_idea_*`` stack (which is structurally unchanged and holds
+    # semantic referent content). Same newest-at-slot-0 convention and
+    # capacity discipline. Allocated lazily on first use: parallel mode
+    # never touches it (the duals engage only in serial mode), so the
+    # stack stays dark for every existing path.
+
+    def _ensure_constituent_stack(self, code_dim=None):
+        """Lazily allocate the constituent stack beside the idea stack."""
+        if getattr(self, '_constituent_buffer', None) is not None:
+            return
+        B = int(self._idea_buffer.shape[0])
+        D = int(code_dim if code_dim is not None else self._stm_payload_dim)
+        cap = int(self._idea_capacity)
+        device = self._idea_buffer.device
+        self._constituent_buffer = torch.zeros(B, cap, D, device=device)
+        self._constituent_depth = torch.zeros(
+            B, dtype=torch.long, device=device)
+
+    def constituent_depth_of(self, b):
+        """Current analysis-stack depth for row ``b`` (0 when dark)."""
+        if getattr(self, '_constituent_buffer', None) is None:
+            return 0
+        return int(self._constituent_depth[b].item())
+
+    def constituent_peek(self, b, n=0):
+        """The n-th most recent constituent (newest at 0)."""
+        depth = self.constituent_depth_of(b)
+        if n >= depth:
+            raise IndexError(
+                f"constituent_peek({b}, {n}): depth is {depth}")
+        return self._constituent_buffer[b, n]
+
+    def constituent_push(self, b, code):
+        """One ANALYSIS write: push a symbolic constituent (newest at 0).
+
+        Overflow raises, mirroring ``idea_push`` -- capacity is the
+        workspace's Miller cap, managed by the caller.
+        """
+        code = torch.as_tensor(code)
+        self._ensure_constituent_stack(code_dim=int(code.shape[-1]))
+        depth = int(self._constituent_depth[b].item())
+        cap = int(self._constituent_buffer.shape[1])
+        if depth >= cap:
+            raise RuntimeError(
+                f"WordSubSpace.constituent_push: row {b} is at capacity "
+                f"({cap}); split/shift before pushing further.")
+        if depth > 0:
+            self._constituent_buffer[b, 1:depth + 1] = \
+                self._constituent_buffer[b, 0:depth].clone()
+        self._constituent_buffer[b, 0] = code
+        self._constituent_depth[b] = depth + 1
+
+    def constituent_pop(self, b):
+        """Pop and return the newest constituent (slot 0)."""
+        depth = self.constituent_depth_of(b)
+        if depth == 0:
+            raise RuntimeError(
+                f"WordSubSpace.constituent_pop: row {b} is empty")
+        top = self._constituent_buffer[b, 0].clone()
+        if depth > 1:
+            self._constituent_buffer[b, 0:depth - 1] = \
+                self._constituent_buffer[b, 1:depth].clone()
+        self._constituent_buffer[b, depth - 1] = 0
+        self._constituent_depth[b] = depth - 1
+        return top
+
+    def constituent_split(self, b, left, right):
+        """The binary SPLIT move (the serial form of π; spec §6 rev c).
+
+        Replaces the top constituent with its two parts -- ONE move,
+        one stack written (the single-writer mutex counts this as the
+        tick's move). ``left`` lands newest (slot 0), ``right`` beneath
+        it, mirroring left-to-right analysis order.
+        """
+        self.constituent_pop(b)
+        self.constituent_push(b, torch.as_tensor(right))
+        self.constituent_push(b, torch.as_tensor(left))
+
+    def constituent_clear(self):
+        """Sentence-boundary reset of the analysis stack (idempotent)."""
+        if getattr(self, '_constituent_buffer', None) is None:
+            return
+        self._constituent_buffer.zero_()
+        self._constituent_depth.zero_()
 
     # -- knowledge-artifact attach -----------------------------------------
     # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md

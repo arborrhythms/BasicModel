@@ -45,6 +45,7 @@ import torch
 import Models
 import Language
 from Layers import PiLayer, SigmaLayer, InvertibleLinearLayer
+from Layers import MeronymicFoldAdapter
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
@@ -82,7 +83,10 @@ class TestOwnership(unittest.TestCase):
         # ``pi_concept`` ModuleLists stay retired.
         model = _make_plain_model()
         ps = model.perceptualSpace
-        self.assertIsInstance(ps.sigma, SigmaLayer)
+        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
+        self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter))
+        if isinstance(ps.sigma, MeronymicFoldAdapter):
+            self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertFalse(
             hasattr(ps, 'pi'),
             "PerceptualSpace.pi moved to SymbolicSpace (Pi/Sigma swap); "
@@ -112,10 +116,14 @@ class TestOwnership(unittest.TestCase):
         # operator; the binding target for the S-tier fold rule -- bound
         # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
         model = _make_plain_model()
+        # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
+        fold = getattr(model.symbolicSpace, 'pi', None)
         self.assertIsInstance(
-            getattr(model.symbolicSpace, 'pi', None), PiLayer,
-            "SymbolicSpace must own a pi (PiLayer) under the corrected "
+            fold, (PiLayer, MeronymicFoldAdapter),
+            "SymbolicSpace must own a pi under the corrected "
             "analysis/synthesis ownership rule.")
+        if isinstance(fold, MeronymicFoldAdapter):
+            self.assertEqual(fold.kind, 'pi')
 
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
