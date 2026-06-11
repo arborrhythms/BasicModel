@@ -4873,6 +4873,21 @@ class BasicModel(BaseModel):
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
 
+        # §6d reference-partitioned codebook update law (GrammarOpsPass;
+        # author 2026-06-11): percepts are shaped by the parallel pass,
+        # references by the serial pass. Install on both towers with a
+        # LAZY table getter (the binding table is created on first gate
+        # use; the mask stays None — legacy behavior — until then or
+        # with the meronomy off). PS/extent tower: bound OBJECT ids are
+        # references; SS/intent tower: bound WORD ids (SS also
+        # self-installs at table creation; this is idempotent).
+        _law_ss = self.symbolicSpace
+        _law_get = lambda: getattr(_law_ss, 'reference_table', None)
+        if getattr(self, 'perceptualSpace', None) is not None:
+            self.perceptualSpace.install_reference_update_law(
+                _law_get, side='object')
+        _law_ss.install_reference_update_law(_law_get, side='word')
+
         # VQ-VAE EMA / growing-codebook knob overrides per space.
         # Each Space's ``subspace.what`` may carry an internal
         # ``VectorQuantize`` (``.vq``); when XSD knobs are set, override

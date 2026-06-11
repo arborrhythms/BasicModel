@@ -13569,14 +13569,44 @@ class VectorQuantize(nn.Module):
                     0, indices,
                     torch.ones_like(indices, dtype=flat_f.dtype),
                 )
-                self.cluster_size.mul_(self.decay).add_(
-                    cluster_size_batch.to(self.cluster_size.dtype),
-                    alpha=1.0 - self.decay,
-                )
-                self.embed_avg.mul_(self.decay).add_(
-                    embed_sum.to(self.embed_avg.dtype),
-                    alpha=1.0 - self.decay,
-                )
+                # Reference-partitioned update law (GrammarOpsPass §6d;
+                # author 2026-06-11). An installed ``update_mask_fn``
+                # returns the rows ALLOWED to move this step (BoolTensor
+                # [V]) or None (= all rows; the legacy path below is
+                # byte-identical when no mask is installed). Frozen rows
+                # keep their codebook value AND their EMA accumulators
+                # (no decay, no batch mass — they simply do not
+                # participate this step) and are exempt from dead-code
+                # expiry, so a later mask change cannot make them jump
+                # from stale statistics.
+                allowed = None
+                mask_fn = getattr(self, 'update_mask_fn', None)
+                if mask_fn is not None:
+                    allowed = mask_fn(V, flat_f.device)
+                if allowed is not None:
+                    allowed = allowed.to(device=self.cluster_size.device,
+                                         dtype=torch.bool)
+                    allow_f = allowed.to(self.cluster_size.dtype)
+                    decay_vec = self.decay * allow_f + (1.0 - allow_f)
+                    self.cluster_size.mul_(decay_vec).add_(
+                        cluster_size_batch.to(self.cluster_size.dtype)
+                        * allow_f,
+                        alpha=1.0 - self.decay,
+                    )
+                    self.embed_avg.mul_(decay_vec.unsqueeze(-1)).add_(
+                        embed_sum.to(self.embed_avg.dtype)
+                        * allow_f.unsqueeze(-1),
+                        alpha=1.0 - self.decay,
+                    )
+                else:
+                    self.cluster_size.mul_(self.decay).add_(
+                        cluster_size_batch.to(self.cluster_size.dtype),
+                        alpha=1.0 - self.decay,
+                    )
+                    self.embed_avg.mul_(self.decay).add_(
+                        embed_sum.to(self.embed_avg.dtype),
+                        alpha=1.0 - self.decay,
+                    )
                 n = self.cluster_size.sum()
                 cs_smooth = (
                     (self.cluster_size + self.eps)
@@ -13586,6 +13616,13 @@ class VectorQuantize(nn.Module):
                 new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
                 if self.use_cosine_sim:
                     new_embed = F.normalize(new_embed, dim=-1)
+                if allowed is not None:
+                    # §6d: frozen rows keep their current value exactly.
+                    new_embed = torch.where(
+                        allowed.unsqueeze(-1),
+                        new_embed.to(self.codebook.dtype),
+                        self.codebook,
+                    )
                 self.codebook.copy_(new_embed.to(self.codebook.dtype))
                 # Refresh the cached ||c_i||^2 so the Euclidean retrieval
                 # path on the next forward sees the updated codebook. In
@@ -13600,6 +13637,9 @@ class VectorQuantize(nn.Module):
                     expired = (
                         self.cluster_size < self.threshold_ema_dead_code
                     ).reshape(-1)
+                    if allowed is not None:
+                        # §6d: frozen rows never expire or get revived.
+                        expired = expired & allowed
                     if int(expired.numel()) != V:
                         raise RuntimeError(
                             "VectorQuantize EMA state corrupt: "

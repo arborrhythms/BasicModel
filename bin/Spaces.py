@@ -76,6 +76,27 @@ def gauge_orient(u, referent):
     return u * flip
 
 
+def reference_update_mask(serial_mode, reference_ids, n_rows, device=None):
+    """The reference-partitioned codebook update law (GrammarOpsPass
+    §6d; author 2026-06-11).
+
+    Percepts are shaped by the PARALLEL pass; references are shaped by
+    the SERIAL pass — because the serial pass is the only one that does
+    referential lookup, it is the only one that invokes the referential
+    taxonomy qua references. STE is fine in both modes; the real
+    distinction is whether parallel mode may shape references (it may
+    NOT) and whether serial mode may shape non-references (it may NOT).
+
+    Returns a BoolTensor ``[n_rows]`` of rows ALLOWED to move:
+    ``is_ref`` when serial, ``~is_ref`` when parallel.
+    """
+    is_ref = torch.zeros(int(n_rows), dtype=torch.bool, device=device)
+    ids = [int(i) for i in reference_ids if 0 <= int(i) < int(n_rows)]
+    if ids:
+        is_ref[torch.as_tensor(ids, dtype=torch.long, device=device)] = True
+    return is_ref if serial_mode else ~is_ref
+
+
 def registration_loss(pi_fold, sigma_fold, codes):
     """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
     MeronomyPlan Stage 8).
@@ -6605,6 +6626,65 @@ class Space(nn.Module):
         raise ValueError(
             f"<codebook> must be one of none|quantize|project "
             f"(legacy true/false accepted); got {raw!r}")
+
+    def install_reference_update_law(self, table_getter, side):
+        """Install the §6d reference-partitioned update law on this
+        Space's codebook VQ (GrammarOpsPass; author 2026-06-11).
+
+        ``side``: ``'object'`` — the PS/extent tower, where table-bound
+        OBJECT ids are the references; ``'word'`` — the SS/intent
+        tower, where bound WORD ids are. ``table_getter`` is a
+        zero-arg callable returning the live ReferenceTable (lazy: the
+        table is created on first gate use).
+
+        Dark by construction: with the meronomy off, no table yet, or
+        a codebook-less space, the mask is None and the VQ behaves
+        byte-identically to the legacy path. With the law live:
+        parallel mode may not shape references; serial mode may not
+        shape non-references. STE is untouched in both modes — the law
+        partitions ROW UPDATES (EMA and, in learnable-codebook mode,
+        the row gradient), not the through-gradient.
+
+        Returns True iff a VQ was found and the law installed.
+        """
+        sub = getattr(self, 'subspace', None)
+        cb = sub.codebook() if sub is not None and hasattr(sub, 'codebook') else None
+        vq = getattr(cb, 'vq', None) if cb is not None else None
+        if vq is None:
+            return False
+
+        def _mask(V, device, _space=self, _get=table_getter, _side=side):
+            try:
+                from Layers import meronomy_enabled as _on
+                if not _on():
+                    return None
+                table = _get() if callable(_get) else _get
+                if table is None:
+                    return None
+                ids = (table.bound_objects() if _side == 'object'
+                       else table.bound_words())
+                return reference_update_mask(
+                    getattr(_space, 'serial_mode', False), ids, V, device)
+            except Exception:
+                return None   # never let the law break a forward
+
+        vq.update_mask_fn = _mask
+        # Learnable-codebook mode trains rows by task gradient instead
+        # of EMA; apply the same partition there via a grad hook
+        # (zero the frozen rows' gradient). Guarded so repeated
+        # installs don't stack hooks.
+        if getattr(vq, 'learnable_codebook', False) \
+                and isinstance(getattr(vq, 'codebook', None), nn.Parameter) \
+                and not getattr(vq, '_ref_law_hooked', False):
+            def _grad_hook(grad, _vq=vq):
+                fn = getattr(_vq, 'update_mask_fn', None)
+                allowed = fn(grad.shape[0], grad.device) if fn else None
+                if allowed is None:
+                    return grad
+                return grad * allowed.to(grad.dtype).unsqueeze(-1)
+            vq.codebook.register_hook(_grad_hook)
+            vq._ref_law_hooked = True
+        return True
 
     @staticmethod
     def sigma_pi_mode(raw):
@@ -15927,6 +16007,12 @@ class SymbolicSpace(Space):
             from References import ReferenceTable
             object.__setattr__(self, 'reference_table', ReferenceTable())
             object.__setattr__(self, 'gate_log', [])
+            # §6d update law, intent-tower side: bound WORD ids are this
+            # space's references (serial shapes them; parallel may not).
+            # Lazy/idempotent; a codebook-less SS returns False, fine.
+            self.install_reference_update_law(
+                lambda: getattr(self, 'reference_table', None),
+                side='word')
         return self.reference_table
 
     def interpret_word(self, word_id, licensed=False, object_id=None,

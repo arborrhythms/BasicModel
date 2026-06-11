@@ -1,6 +1,4 @@
 
-* All Grammars need to be role-collapsed
-
 * Grammar Definition
   * NP and VP need masks on conceptual space that restrict their operation
   * Verbs are temporal things, nouns are spatial things, the full expression within conceptual space is possible only after lifting. 

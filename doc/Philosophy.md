@@ -84,6 +84,64 @@ masquerade as particulars.
 The remainder of this document is the original pramana-theory mapping of
 the truth ontology.
 
+## Direct Perception and the Conceptual Overlay (Gelug)
+
+In Gelug terms, the **first moment of encounter** with an object is a
+direct, non-conceptual cognition: the object appears before it has
+been taken up by naming, recognition, memory, preference, or
+conceptual elaboration. **Subsequent moments** are often mediated by
+conceptual construction, habit, and afflictive projection, so the mind
+no longer meets the object simply as it appears, but through an
+overlay of interpretation.
+
+The architecture realizes this distinction structurally
+(MeronomySpec; GrammarOpsPass §6c):
+
+- **The first moment is the parallel prelude.** Percepts cross the
+  corpus callosum **nameless** — the interface law (spec §3) factors
+  a percept into content (row selection) and evidence (magnitude),
+  with no naming side-channel — and the σ/π folds carve the scene:
+  the analysis, in its carving of the domain into parts, IS the
+  parallel act. The prelude pumps **up to the model's
+  `conceptualOrder`** (the per-order derivation ladder), seeding both
+  codebook towers with a scene description that is pre-conceptual in
+  exactly the Gelug sense: no table lookup, no naming, no story. The
+  σ and π layers are the real subsymbolic shapers of meaningfulness
+  within conceptual space — the words in the codebooks are produced
+  and conditioned by them — so the parallel scene description primes
+  semantics at that moment and shapes it to a minor degree (the small
+  EMA step; the word-learning guarantee).
+- **The subsequent moments are the serial STM process.** Naming (the
+  binding-table deref), recognition (the codebook snap), memory (the
+  workspace stacks), preference and afflictive projection (intent
+  priming, heat), conceptual elaboration (shift/reduce composition):
+  each serial pump meets the object through the gist-primed,
+  intent-weighted overlay, no longer as it first appeared. The serial
+  bit happens **in STM**.
+- **Collapse and back-action.** Where serial collapse is mandated,
+  serial processing selects a **story** — the soft superposition of
+  readings collapses, one commit per pump — and the wavefunction of
+  reality is simultaneously perturbed: selection is not passive
+  observation; the commits write (workspace, bindings, codebook EMA),
+  so the act of meaning-making back-acts on the state that produced
+  the appearance.
+- **The two truths (satya-dvaya).** A completed sentence's meaning is
+  either an **absolute truth** — an *idea*: a region-shaped extent,
+  evaluable by the luminosity/coverage criterion, rooted at the
+  grammar's absolute-truth start state (``ABS_T``) — or a **relative
+  truth** — a *relation between ideas* (causal implication, ``NP1 at
+  t₁ → VP → NP2 at t₂``, is the worked example), verified
+  relationally or by simulation through the serial reasoning loop,
+  never by coverage. Only absolute truths feed the preattentive
+  filter; relative truths are the conceptual overlay's own products
+  and are evaluated within it.
+
+Protocol summary: any sentence, when processed, has
+``conceptualOrder`` parallel steps to seed the codebook towers, and
+then meaning-making happens over the complete sentence, producing an
+absolute truth (an idea) or a relative truth (a relation between
+ideas).
+
 ## Purpose
 
 WikiOracle's truth ontology closely parallels Buddhist **pramana theory**,

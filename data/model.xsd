@@ -141,7 +141,7 @@
       <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Quaternary-corner balance knobs (tetralemma / catuskoti): select
            which corners of {T, F, N, B} are permitted during training. See
-           basicmodel/doc/BuddhistParallels.md for the 4-valued (quaternary)
+           basicmodel/doc/Philosophy.md for the 4-valued (quaternary)
            truth semantics.
              allowExcludedMiddle:  1  = permit NEITHER (default)
                                   -1  = forbid NEITHER (classical LEM)

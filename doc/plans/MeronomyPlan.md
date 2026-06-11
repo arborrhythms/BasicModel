@@ -394,6 +394,10 @@ and re-ran the full suite green.
 
 ## 6. Next step after this plan (recorded, out of scope)
 
+> Seeded 2026-06-11: [GrammarOpsPass.md](GrammarOpsPass.md) carries the
+> corrected scoping below as a structured plan (proposals marked for
+> author sign-off).
+
 **Grammar-ops corrective pass.** `lift()` / `lower()`
 (`Language.py:2286` / `:2490`) are total today — they apply over any
 operand pair; "colorless green ideas sleep furiously" is the canonical

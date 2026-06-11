@@ -1,5 +1,40 @@
 # Architecture
 
+## The three pieces: Mereology, Attention, Thought (2026-06-11)
+
+![Three pieces: LLM vs BasicModel](diagrams/three_pieces.svg)
+
+The architecture decomposes into three pieces; the first two run in
+parallel, the third is serial:
+
+1. **The mereological towers (and the symbol table).** In an LLM the
+   mereology is completely subsymbolic — implicit in the weights,
+   never surfaced. In BasicModel it is percept-based and symbolic: two
+   towers — the σ tower ascending bottom-up (extents, the PS codebook)
+   and the π tower descending top-down (intents, the SS codebook) —
+   linked by the word/object symbol table (`bin/References.py`), whose
+   rows are the references.
+2. **Attention.** In an LLM, attention is QKV per subsymbolic layer.
+   In BasicModel, attention is quadratic over all three structures —
+   both towers and the table — realized as priming (boost weights over
+   codebook rows; the single intent of GrammarOpsPass §5).
+3. **Thought.** In an LLM, thought is the computation of priors for
+   autoregressive word prediction. In BasicModel, thought is a
+   **subsequent isolation of attention over that space, enabled by
+   references** — the serial pass: referential lookup, shift/reduce
+   composition, story selection. Because thought is the only process
+   that invokes the referential taxonomy *qua references*, it is the
+   only process licensed to **shape the references**.
+
+This yields the codebook update law (GrammarOpsPass §6d,
+implemented): **percepts are shaped by the parallel pass; references
+are shaped by the serial pass.** STE is untouched in both modes; the
+partition governs row updates — parallel mode may not shape
+references, serial mode may not shape non-references
+(`Spaces.reference_update_mask`; the `update_mask_fn` chokepoint on
+`VectorQuantize`). Rational by construction — though possibly an
+overly optimistic arrangement with respect to human thinking.
+
 > **Status (2026-05-29 update):** further architectural pivots landed
 > on top of the 2026-05-27 substrate refactor:
 >

@@ -15,6 +15,12 @@ import pytest
 _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+# XOR convergence is deterministic only under the seed + CPU
+# discipline (see test/conftest.py's device-leak note): a leaked MPS
+# default device shifts numerics enough to miss the convergence
+# threshold under some suite compositions. Pin the env AND (in the
+# convergence helper) the runtime device.
+os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -205,9 +211,14 @@ class TestMMXorConvergence(unittest.TestCase):
         same seed-pinned + CPU discipline as the other XOR fixtures).
         """
         import torch
+        from util import init_device
 
         best_ever = float("inf")
         for attempt in range(max_attempts):
+            # Seed-pinned + CPU-pinned (the XOR determinism
+            # discipline). init_device guards against a leaked
+            # non-CPU process default from earlier modules.
+            init_device("cpu")
             torch.manual_seed(attempt + 1)
 
             m, _, data = _fresh_model(cfg_path)

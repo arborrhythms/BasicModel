@@ -173,6 +173,19 @@ class ReferenceTable:
         """Bound words, sorted (the table is word-sorted)."""
         return sorted(self._by_word)
 
+    def bound_words(self) -> List[int]:
+        """Reference rows of the SS/intent tower: the bound word ids.
+
+        Consumed by the §6d update law (GrammarOpsPass): references are
+        shaped by the serial pass only.
+        """
+        return sorted(self._by_word)
+
+    def bound_objects(self) -> List[int]:
+        """Reference rows of the PS/extent tower: the bound object ids
+        (deduplicated — synonyms bind one object many times)."""
+        return sorted(set(self._by_word.values()))
+
     def __len__(self) -> int:
         return len(self._by_word)
 
