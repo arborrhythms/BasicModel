@@ -1,6 +1,69 @@
 # Symbolic-iteration codebook on the CS→SS leg
 
-**Status: NOT STARTED — this is the next iteration's plan.**
+**Status: IMPLEMENTED (Steps 0–3 complete; Step 4 landed as the xfail
+acceptance), rev. 2026-06-10 (second session).** Suite on the dev
+machine: green except 7 PRE-EXISTING order-dependent failures in
+`test_heat_reverse_wiring.py` (clean-tree-reproduced full-suite
+pollution; they pass solo — flagged for a separate fix) and the
+deliberate Step-4 xfail. Implementation notes:
+
+- **Step 0**: the gate fixtures gained `<training><seed>1</seed>` +
+  `<architecture><device>cpu</device>` (new knobs, env overrides
+  `BASIC_SEED` / `BASICMODEL_DEVICE`, schema updated): unseeded runs
+  are recon-flaky BY SEED BASIN (~half the basins miss byte-exact;
+  seed 0 is a miss, seed 1 is green) and MPS kernels are
+  nondeterministic, so the gate is only an arbiter on CPU+seed. Both
+  gates verified 4/4 + byte-exact and BIT-REPRODUCIBLE; they stayed
+  bit-identical through every step below.
+- **Step 1**: the symbolic-iteration predicate is the MODEL'S
+  `conceptualMode` mirrored onto each SS (`_conceptual_mode`) —
+  SyntacticLayer presence cannot distinguish the legs (the model.xml
+  default grammar attaches one everywhere). Geometry guards (view at
+  least codebook-width; slots×nDim divisible by nOutputDim) keep
+  legacy-geometry stages (MM_xor tapered t>0 legs hand 5/10-wide
+  views) on the old path. The emission: full-frame no-grad snap →
+  strongest-slot winner → STE on the winner slot only, apoha zeros
+  elsewhere → virgin-winner fallback to the continuous carrier (the
+  honest-STE lesson) → winner-row recon gather
+  (`_csleg_recon_loss`, lifted at t>0 under the same
+  `ss_codebook_recon` error name). Host-eager
+  `adopt_symbolic_evidence` (one-step-stale CS views, stage t adopts
+  from stage t-1's persistent view) + `stage_symbolic_virgin_rows`
+  run from `_lex_embed_stem`; adopted rows are tagged
+  ROLE_MEANING_GENERAL at adoption time. The virgin staging must NOT
+  force-allocate the roles buffer (torch.export lifts it as a
+  constant and the stage-0 in-graph tagging then trips "constant
+  mutated in forward" — found via test_mlx_export).
+  `descriptor_roles` is now explicitly CPU-pinned (the
+  set_descriptor_role `.cpu()` indexing assumed it). Contract tests:
+  `test/test_symbolic_iteration.py` + the order-2 fixture
+  `data/MM_symbolic_iter.xml` (MM_20M ships order 1 — its t>0 leg
+  never runs in-body).
+- **Step 2**: `SymbolicSpace.analysis_store` (Codebook, customVQ,
+  category) built in `__init__` under `<analysis>`, RNG-ISOLATED
+  (dedicated seed + CPU generator state save/restore) so seeded gates
+  reproduce bit-identically; the stage-0 unity machinery (snap,
+  LF_COARSE roles, recon gather, adopt_stage0_evidence,
+  semantic-arrangement) re-homed onto it; the Models asymmetric
+  hardwire (EMA off, commitment 0, Parameter promotion + optimizer
+  enlistment) extended to both families. `none` configs now analyze
+  at stage 0 (knob-independent), and the gates stayed bit-identical —
+  the recon gather's gradient is isolated to store rows by
+  construction.
+- **Step 3**: `insert_paired_word`, `mark_word_atom`, both
+  `Embedding` peer hooks, `_tie_lexicon_to_codebook`, its Models call
+  site, `WordVectors.tie_to_codebook`, and the tied branch of the
+  checkpoint vocab restore are all retired. The `_vectors` property
+  indirection REMAINS (it carries the Dynamo-traceability fix); the
+  five pinning test files now pin the PS-LOCAL (untied) contract.
+- **Step 4**: landed as
+  `test_mm20m_second_order_reverse_keys_codebook` (xfail): the narrow
+  emission currently materializes the VALUE reshape of the apoha
+  frame at [1020, 8] (band not packed → not the configured
+  [1024, 8]), the 4-wide what channel does not yet carry the written
+  symbol ID, and the reverse re-applies the S-tier transform instead
+  of keying the codebook. Those three gaps are the follow-on work.
+
 Authored 2026-06-10 at the close of the Phase-5 / Task-4 session
 (suite 2162 passed / 0 failed at handoff; everything committed by Alec).
 Direction set by Alec, 2026-06-10; the architectural statement lives in

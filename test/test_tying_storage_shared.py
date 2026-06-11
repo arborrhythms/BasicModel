@@ -1,15 +1,18 @@
-"""Strict-tying contract: PS.vocabulary[word_idx] and SS.codebook[orth_idx]
-share the *same* memory (single trainable nn.Parameter on SS).
+"""UNTIED storage contract (Step 3, 2026-06-10 symbolic-iteration plan).
 
-This is the user-driven contract from the 2026-05-27 tied-storage refactor:
-no divergent copies; one Parameter; mutations through either view are
-visible to the other.
+This file used to pin the strict-tying contract of the 2026-05-27
+tied-storage refactor (PS.vocabulary rows aliasing SS.codebook rows
+through one shared nn.Parameter). The tie is RETIRED: the lexicon keeps
+PS-LOCAL storage permanently, and word insertion no longer reaches
+across to the SS codebook at all. This file now pins the word-flow side
+of the untied contract on the same fixture:
 
-The fixture must size SS such that the PS bootstrap (ASCII chars + the
-NULL_PERCEPT key) can be migrated onto SS without overflow. The
-``test_tied_orth_storage.py`` companion file exercises the same invariant
-on the loopback config; this file adds a direct word-flow check using a
-freshly inserted word.
+  * inserting a word grows ONLY the PS-side lexicon (the SS codebook
+    prototype is bit-identical before/after);
+  * the freshly inserted row is readable through ``wv._vectors`` (the
+    local Parameter) and carries the inserted values;
+  * ``key_to_index`` keeps the identity-style PS-local row mapping the
+    decode's inverse map relies on (no SS orth_idx remapping).
 """
 
 import os
@@ -18,7 +21,6 @@ import unittest
 import warnings
 
 import torch
-import torch.nn as nn
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -40,7 +42,6 @@ from util import init_config  # noqa: E402
 
 
 def _build_model():
-    """Cheap-boot MM_xor_loopback model; mirrors the Stage-1 fixtures."""
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
@@ -51,88 +52,55 @@ def _build_model():
     return model
 
 
-class TestTyingStorageShared(unittest.TestCase):
-    """``ps.vocabulary.lookup(word)`` and ``ss.codebook.W[orth_idx]`` share
-    the same underlying tensor storage after the tied-storage refactor.
-    """
+class TestUntiedWordFlow(unittest.TestCase):
+    """Word insertion is PS-local; the SS codebook never hears about it."""
 
-    def test_insert_paired_word_then_lookup_shares_dataptr(self):
-        """After ``insert_paired_word(word, ps_vec)``, the row stored on
-        ``SS.codebook.W[orth_idx]`` and the row retrieved from
-        ``ps.vocabulary.wv._vectors[orth_idx]`` are the same tensor
-        (identical ``data_ptr``).
-        """
+    def test_insert_grows_ps_only(self):
         model = _build_model()
-        ss = model.symbolicSpace
-        ps = model.perceptualSpace
-        cb = ss.subspace.what
-        emb = ps.vocabulary
+        emb = model.perceptualSpace.vocabulary
         self.assertIsInstance(emb, Embedding)
-
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.5
-        orth_idx, _sem_idx = ss.insert_paired_word("tiedword", ps_vec)
-
-        ss_row = cb.getW()[orth_idx]
-        ps_row = emb.wv._vectors[orth_idx]
-        self.assertEqual(
-            ps_row.data_ptr(), ss_row.data_ptr(),
-            "wv._vectors[orth_idx] and cb.getW()[orth_idx] must share "
-            "storage (single tied Parameter); got "
-            f"ps={ps_row.data_ptr()} vs ss={ss_row.data_ptr()}",
-        )
-
-    def test_no_separate_ps_vectors_parameter_after_tie(self):
-        """After tying, ``wv._parameters`` does NOT contain a local
-        ``_vectors`` / ``_local_vectors`` -- there is exactly one
-        Parameter for the orth storage, on the SS codebook.
-        """
-        model = _build_model()
         ss = model.symbolicSpace
-        ps = model.perceptualSpace
-        cb = ss.subspace.what
-        emb = ps.vocabulary
+        W = ss.subspace.what.getW()
+        ss_before = None if W is None else W.detach().clone()
+        rows_before = int(emb.wv._vectors.shape[0])
 
-        # Insert at least one word so tying is forced.
-        ps_vec = torch.zeros(int(ss.nDim))
-        ss.insert_paired_word("ensure_tie", ps_vec)
+        vec = torch.zeros(int(emb.wv._vectors.shape[1]))
+        vec[0] = 0.7
+        emb.insert("untiedword", vector=vec)
 
+        self.assertEqual(int(emb.wv._vectors.shape[0]), rows_before + 1,
+                         "insert must grow the PS-side lexicon by one row")
+        if ss_before is not None:
+            self.assertTrue(
+                torch.equal(ss_before, ss.subspace.what.getW().detach()),
+                "the SS codebook prototype must be bit-identical across a "
+                "PS-side word insert (the paired-row reach-across is "
+                "retired)")
+
+    def test_inserted_row_reads_back_through_local_parameter(self):
+        model = _build_model()
+        emb = model.perceptualSpace.vocabulary
         wv = emb.wv
-        # No ``_vectors`` Parameter on wv.
-        self.assertNotIn("_vectors", wv._parameters,
-                         "wv._parameters must not contain '_vectors' "
-                         "after tying.")
-        # No ``_local_vectors`` Parameter either (the canonical Parameter
-        # is on the SS codebook).
-        self.assertNotIn("_local_vectors", wv._parameters,
-                         "wv._parameters must not contain "
-                         "'_local_vectors' after tying.")
+        vec = torch.zeros(int(wv._vectors.shape[1]))
+        vec[0] = 0.25
+        emb.insert("localrow", vector=vec)
+        idx = wv.key_to_index["localrow"]
+        row = wv._vectors[idx].detach()
+        self.assertAlmostEqual(float(row[0]), 0.25, places=5)
+        self.assertEqual(
+            wv._vectors.data_ptr(), wv._local_vectors.data_ptr(),
+            "the readable storage must be the LOCAL Parameter")
 
-    def test_in_place_write_via_ss_visible_through_ps_view(self):
-        """A direct write to ``cb.getW().data[orth_idx]`` is reflected by
-        a subsequent ``emb.wv._vectors[orth_idx]`` read, because both
-        views index the same underlying tensor.
-        """
+    def test_key_to_index_stays_ps_local(self):
         model = _build_model()
-        ss = model.symbolicSpace
-        ps = model.perceptualSpace
-        cb = ss.subspace.what
-        emb = ps.vocabulary
-
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.25
-        orth_idx, _ = ss.insert_paired_word("aliasword", ps_vec)
-
-        W = cb.getW()
-        delta = 0.7
-        with torch.no_grad():
-            W.data[orth_idx, :] += delta
-
-        after_ps = emb.wv._vectors[orth_idx].detach().clone()
-        after_ss = W[orth_idx].detach().clone()
-        self.assertTrue(
-            torch.allclose(after_ps, after_ss),
-            "PS-side row must reflect direct SS write (alias contract).")
+        emb = model.perceptualSpace.vocabulary
+        wv = emb.wv
+        n = int(wv._vectors.shape[0])
+        for key, idx in list(wv.key_to_index.items())[:64]:
+            self.assertTrue(0 <= int(idx) < n, (
+                f"key {key!r} maps to row {idx}, outside the PS-local "
+                f"storage [0, {n}) -- the SS orth_idx remapping is "
+                "retired; the decode inverse map expects PS-local rows"))
 
 
 if __name__ == "__main__":

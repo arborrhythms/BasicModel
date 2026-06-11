@@ -27,7 +27,13 @@ import torch
 
 def _build(name):
     import Models, Language
-    from util import init_config
+    from util import init_config, init_device
+    # Run-time CPU pin: the env setdefault above only wins when this
+    # module is imported before util (solo runs). In-suite, the default
+    # device is whatever the process carries -- on real MPS the
+    # painting-reverse F.interpolate hard-aborts the interpreter -- and
+    # the conftest device guard unwinds this pin after the module.
+    init_device("cpu")
     p = os.path.join(os.path.dirname(_BIN), "data", name)
     init_config(path=p, defaults_path=os.path.join(
         os.path.dirname(_BIN), "data", "model.xml"))
@@ -226,7 +232,10 @@ def test_parallel_ss_quantize_fires():
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
     ss = m.symbolicSpace
-    basis = ss.subspace.what
+    # Step 2 (symbolic-iteration plan): stage 0 snaps the ANALYSIS STORE
+    # (its own basis under <analysis>); the symbol codebook on
+    # subspace.what belongs to the CS leg.
+    basis = ss.analysis_store
     real_q = basis.quantize
     calls = {"n": 0}
     def _counting(*a, **k):
@@ -259,23 +268,35 @@ def test_ss_vq_asymmetric_flags():
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
     ss = m.symbolicSpace
-    vq = getattr(ss.subspace.what, "vq", None)
-    assert vq is not None, "MM_20M SS must carry a customVQ codebook"
-    assert vq.ema_update is False, "SS VQ EMA must be OFF (asymmetric C-11)"
-    assert float(vq.commitment_weight) == 0.0, (
-        "SS VQ commitment must be 0 (replaced by STE, asymmetric C-11)")
+    # Step 2: BOTH SS codebook families carry the asymmetric flags --
+    # the symbol codebook (CS leg) and the analysis store (stage 0).
+    for fam, cb in (("symbol", ss.subspace.what),
+                    ("analysis", ss.analysis_store)):
+        vq = getattr(cb, "vq", None)
+        assert vq is not None, f"MM_20M SS {fam} must carry a customVQ"
+        assert vq.ema_update is False, (
+            f"SS {fam} VQ EMA must be OFF (asymmetric C-11)")
+        assert float(vq.commitment_weight) == 0.0, (
+            f"SS {fam} VQ commitment must be 0 (STE replaces it, C-11)")
+    vq = ss.analysis_store.vq
+    sym_vq = ss.subspace.what.vq
     m.train()
     try:
         m.forward(x)  # adoption + in-body role naming settle here
         before = vq.codebook.detach().clone()
+        before_sym = sym_vq.codebook.detach().clone()
         m.forward(x)
     finally:
         m.eval()
     after = vq.codebook.detach()
     assert torch.equal(before, after), (
         "with EMA off and adoption settled, a training-mode forward must "
-        "NOT mutate the SS codebook in-forward (it trains only via the "
-        "recon gradient)")
+        "NOT mutate the analysis store in-forward (it trains only via "
+        "the recon gradient)")
+    assert torch.equal(before_sym, sym_vq.codebook.detach()), (
+        "the SYMBOL codebook must be bit-stable too (no stage-0 writes "
+        "land on it after the Step-2 split; the CS leg never runs at "
+        "conceptualOrder=1)")
 
 
 def test_ss_codebook_recon_gradient():
@@ -286,10 +307,10 @@ def test_ss_codebook_recon_gradient():
     # replacement -- exact, not a running average.
     m = _build("MM_20M.xml")
     ss = m.symbolicSpace
-    vq = ss.subspace.what.vq
+    vq = ss.analysis_store.vq
     assert isinstance(vq.codebook, torch.nn.Parameter), (
-        "the SS VQ codebook must be an nn.Parameter (it trains by the "
-        "recon gradient)")
+        "the analysis-store VQ codebook must be an nn.Parameter (it "
+        "trains by the recon gradient)")
     ss.train()
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     try:
@@ -340,7 +361,7 @@ def test_descriptor_roles_lf_coarse_tagging():
     from Spaces import Codebook
     m = _build("MM_20M.xml")
     ss = m.symbolicSpace
-    basis = ss.subspace.what
+    basis = ss.analysis_store
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     ss.forward(m._empty_seed_ss, IS_concepts=u)
     idx = ss._stage0_indices
@@ -366,7 +387,7 @@ def test_semantic_arrangement_mechanism():
     # (asymmetric-vq sec.8: XOR cannot validate the semantic side).
     m = _build("MM_20M.xml")
     ss = m.symbolicSpace
-    vq = ss.subspace.what.vq
+    vq = ss.analysis_store.vq
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     # Off by default.
     assert float(getattr(ss, "semantic_arrangement_weight", 0.0)) == 0.0

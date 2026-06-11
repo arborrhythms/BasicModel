@@ -143,6 +143,10 @@
       <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
+      <!-- Runtime device default (cpu | gpu | cuda | mps). Env override:
+           BASICMODEL_DEVICE. Gate fixtures pin cpu: MPS kernels are
+           nondeterministic, so a seeded gate only reproduces on CPU. -->
+      <xs:element name="device" type="xs:string" minOccurs="0"/>
       <!-- L1 penalty on lift / lower gates. 0 disables. -->
       <xs:element name="gateL1Lambda" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Sparse-MoE load-balance loss weight (active when chartTopK > 0). -->
@@ -425,6 +429,11 @@
     <xs:all>
       <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="numEpochs" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- RNG seed for the whole run (torch/python/numpy). Pins
+           construction-time init and data order so single CLI runs are
+           reproducible; the XOR_exact gates rely on this. Env override:
+           BASIC_SEED. -->
+      <xs:element name="seed" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
       <!-- DataLoader prefetch workers. 0 means synchronous in-process
            batch assembly. -->

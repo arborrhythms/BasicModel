@@ -611,6 +611,16 @@ class BaseModel(Mereology, nn.Module):
                 f"'parallel' (got {_mode_raw!r}).")
         self.conceptualMode = _mode
 
+        # Step 1 (2026-06-10 symbolic-iteration plan): mirror the mode
+        # onto each SymbolicSpace. The SS forward dispatches SYMBOLIC
+        # ITERATIONS (quantize + parallel leg, t>0) on it -- the
+        # SyntacticLayer is attached unconditionally (model.xml default
+        # grammar), so layer presence cannot distinguish the legs.
+        # Space construction (``self.create`` above) runs before this
+        # knob is parsed, hence the post-hoc stamp.
+        for _ss in (getattr(self, 'symbolicSpaces', None) or []):
+            object.__setattr__(_ss, '_conceptual_mode', self.conceptualMode)
+
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors
         # ``self.conceptualMode`` (the new explicit knob). Kept as a
@@ -1427,35 +1437,15 @@ class BaseModel(Mereology, nn.Module):
         dim = wv._vectors.shape[1]
         vocab_size = len(keys)
         if wv._vectors.shape[0] != vocab_size:
+            # Step 3 (2026-06-10 symbolic-iteration plan): the lexicon is
+            # PS-LOCAL permanently -- the tied-storage branch (resize the
+            # shared SS codebook so the tied view follows) is retired
+            # with ``tie_to_codebook``. Vector DATA is populated by the
+            # subsequent load_state_dict; this just allocates the shape.
             new_W = torch.zeros(vocab_size, dim,
                                 device=wv._vectors.device,
                                 dtype=wv._vectors.dtype)
-            getter = object.__getattribute__(wv, "_tied_param_getter")
-            is_tied = getter is not None and getter() is not None
-            if is_tied:
-                # wv._vectors IS the SS codebook's W (single-storage
-                # invariant) whenever the SymbolicSpace owns a codebook --
-                # which the modality re-architecture made mandatory. Reassigning
-                # wv._vectors is forbidden in that state, so resize the shared
-                # codebook storage instead; the tied view (cb.getW()) follows
-                # automatically. Vector DATA is populated by the subsequent
-                # load_state_dict (this just allocates the right shape).
-                cb = None
-                ss = getattr(self, "symbolicSpace", None)
-                ss_sub = getattr(ss, "subspace", None) if ss is not None else None
-                if ss_sub is not None and hasattr(ss_sub, "get_vectors"):
-                    cb = ss_sub.get_vectors()
-                if cb is not None and hasattr(cb, "replace_W"):
-                    cb.replace_W(nn.Parameter(new_W, requires_grad=True))
-                    if hasattr(cb, "nVectors"):
-                        cb.nVectors = vocab_size
-                else:
-                    # SS codebook unreachable: untie and reassign locally so
-                    # restore still proceeds rather than hard-crashing.
-                    object.__setattr__(wv, "_tied_param_getter", None)
-                    wv._vectors = nn.Parameter(new_W, requires_grad=True)
-            else:
-                wv._vectors = nn.Parameter(new_W, requires_grad=True)
+            wv._vectors = nn.Parameter(new_W, requires_grad=True)
         wv.index_to_key = keys
         wv.key_to_index = {k: i for i, k in enumerate(keys)}
         wv.counts = (np.asarray(counts, dtype=np.int64) if counts
@@ -2899,6 +2889,27 @@ class BasicModel(BaseModel):
             if (self.training and concepts_in is not None
                     and hasattr(_ss_list[0], "adopt_stage0_evidence")):
                 _ss_list[0].adopt_stage0_evidence(concepts_in, _spans)
+            # Step 1 (2026-06-10 symbolic-iteration plan): CS-leg
+            # adopt-on-first-sight + virgin staging. Stage t's SS adopts
+            # from stage t-1's PERSISTENT CS view (one-step-stale: the
+            # in-step evidence is produced inside the compiled body,
+            # where the data-dependent ``unique`` cannot live), then
+            # parks the virgin-row mask the body's symbolic emission
+            # reads -- continuous fallback until the winner row has been
+            # adopted. Serial/grammar spaces no-op inside the methods.
+            _dev = (concepts_in.device
+                    if torch.is_tensor(concepts_in) else None)
+            _prev_cs = None
+            for _stage_k in (getattr(self, "body_stages", None) or []):
+                _ss_k = _stage_k["ss"] if "ss" in _stage_k else None
+                if _ss_k is not None:
+                    if (self.training and _prev_cs is not None
+                            and hasattr(_ss_k, "adopt_symbolic_evidence")):
+                        _ss_k.adopt_symbolic_evidence(
+                            getattr(_prev_cs, "_subspaceForSS", None))
+                    if hasattr(_ss_k, "stage_symbolic_virgin_rows"):
+                        _ss_k.stage_symbolic_virgin_rows(device=_dev)
+                _prev_cs = _stage_k["cs"] if "cs" in _stage_k else None
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -4902,10 +4913,19 @@ class BasicModel(BaseModel):
         # replaced by the reconstruction gradient on the codebook (the
         # input->codebook leg -- the recon gather lands with the 2-stream
         # combiner, C-10). PS/CS codebooks keep their defaults.
+        # Step 2 (2026-06-10 symbolic-iteration plan): the asymmetric
+        # flags apply to BOTH SS codebook families -- the symbol codebook
+        # on ``subspace.what`` (the CS-leg iteration store) and the
+        # ``analysis_store`` (the stage-0 generality store under
+        # <analysis>, present regardless of the <codebook> knob).
         for _ss_stage in self.symbolicSpaces:
-            _cb = getattr(getattr(_ss_stage, 'subspace', None), 'what', None)
-            _vq = getattr(_cb, 'vq', None) if _cb is not None else None
-            if _vq is not None:
+            for _cb in (
+                    getattr(getattr(_ss_stage, 'subspace', None), 'what',
+                            None),
+                    getattr(_ss_stage, 'analysis_store', None)):
+                _vq = getattr(_cb, 'vq', None) if _cb is not None else None
+                if _vq is None:
+                    continue
                 _vq.ema_update = False
                 _vq.commitment_weight = 0.0
                 # The recon leg (input -> codebook, asymmetric-vq sec.4):
@@ -4915,7 +4935,8 @@ class BasicModel(BaseModel):
                 # space's optimised params. The stage-0 unity path emits
                 # the recon term (plain differentiable gather vs the
                 # DETACHED pre-snap evidence: gradient lands on the
-                # selected rows only; the argmin blocks the encoder leg).
+                # selected rows only; the argmin blocks the encoder leg);
+                # the t>0 symbolic iteration emits the CS-leg twin.
                 if not isinstance(_vq.codebook, nn.Parameter):
                     _vq.codebook = nn.Parameter(
                         _vq.codebook.detach().clone())
@@ -4963,37 +4984,27 @@ class BasicModel(BaseModel):
             object.__setattr__(cs, 'terminalSymbolicSpace_ref',
                                self.symbolicSpace)
 
-        # Stage 1.B paired-row contract (2026-05-27): wire the back-ref
-        # SS <- Embedding so PS-side OOV inserts (Embedding.insert /
-        # Embedding.stage_oov) can trigger ``ss.insert_paired_word`` to
-        # create the orth + semantic paired rows on SS.codebook. The
-        # ref points from the lexicon Embedding back to the TERMINAL SS
-        # stage (``symbolicSpaces[-1]`` == ``self.symbolicSpace``), per
-        # the user's 2026-05-27 multi-stage decision: the terminal SS
-        # is the canonical lexicon-mirror owner because downstream
-        # consumers already reach it via ``model.symbolicSpace``. For
-        # multi-stage configs (e.g. MM_xor with 4 SS stages), the
-        # terminal stage may have lower nVectors than the widest stage
-        # — verify SS.nVectors >= 2 * max_OOV per config.
+        # Wire the back-ref SS <- Embedding (terminal stage:
+        # ``symbolicSpaces[-1]`` == ``self.symbolicSpace``) so the
+        # vocabulary/orthographic API delegation keeps working. The
+        # Stage-1.B paired-row contract this ref used to serve
+        # (``insert_paired_word`` on PS-side OOV inserts) was RETIRED in
+        # Step 3 of the 2026-06-10 symbolic-iteration plan.
         terminal_ss = (self.symbolicSpaces[-1]
                        if self.symbolicSpaces else None)
         emb = getattr(self.perceptualSpace, 'vocabulary', None)
         if terminal_ss is not None and isinstance(emb, Embedding):
             object.__setattr__(emb, 'symbolicSpace_ref', terminal_ss)
-            # Tied-storage refactor (2026-05-27 follow-up): after the
-            # back-ref is wired, retarget the PS-side WordVectors
-            # ``_vectors`` Parameter at the SS codebook's ``W``
-            # Parameter. The previously-bootstrapped ASCII rows on the
-            # local PS Parameter are migrated row-by-row into the SS
-            # codebook (each surface byte gets a paired (orth, sem)
-            # allocation on SS, and the PS-side ``key_to_index`` is
-            # remapped to the new orth row index). After this call,
-            # ``wv._vectors`` and ``ss.subspace.what.W`` are the SAME
-            # nn.Parameter; mutations through either view are visible
-            # to the other.
-            ss_cb = getattr(terminal_ss.subspace, 'what', None)
-            if ss_cb is not None and hasattr(emb, '_tie_lexicon_to_codebook'):
-                emb._tie_lexicon_to_codebook(terminal_ss, ss_cb)
+            # Step 3 (2026-06-10 symbolic-iteration plan): the tied-
+            # storage migration (``_tie_lexicon_to_codebook`` -- the
+            # PS->SS reach-across that wrote an orth row + random
+            # semantic partner per lexicon word and remapped
+            # ``key_to_index`` onto SS rows) is RETIRED. The Step-1
+            # symbol codebook on the CS leg captures the code-as-written
+            # vs code-for-the-concept correspondence in place; the
+            # lexicon keeps PS-LOCAL storage permanently (untied), and
+            # the decode resolves row->word through the inverse of
+            # ``key_to_index`` (identity when untied).
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -5578,6 +5589,19 @@ class BasicModel(BaseModel):
                         "ss_semantic_arrangement", _ss_sem, weight=1.0,
                         space="SymbolicSpace", category="symbol")
                 object.__setattr__(ss, "_stage0_semantic_loss", None)
+            else:
+                # Step 1 (2026-06-10 symbolic-iteration plan): lift the
+                # CS-leg recon gather the same way the stage-0 gather is
+                # lifted at t==0 -- the winner row trains toward the
+                # concept code that selected it. Same error name: Error
+                # sums same-name terms, so multi-stage runs accumulate.
+                _ss_recon = getattr(ss, "_csleg_recon_loss", None)
+                if (_ss_recon is not None and torch.is_tensor(_ss_recon)
+                        and _ss_recon.requires_grad):
+                    CS_sub.errors.add(
+                        "ss_codebook_recon", _ss_recon, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+                object.__setattr__(ss, "_csleg_recon_loss", None)
             # A4 conceptual combine: ONE square invertible 2-stream BIND
             # per stage (held by the cs) replaces the prior
             # ``cs.forward`` content fold + the SS.sigma (pi/sigma)
@@ -8383,6 +8407,41 @@ class ModelFactory:
         dat = arch.get("data", {})
         trn = arch.get("training", {})
 
+        # Device hydration: env var wins (the MODEL_AMP/MODEL_COMPILE
+        # precedent); XML <architecture><device> is a checked-in default
+        # applied only when BASICMODEL_DEVICE is unset. The XOR_exact
+        # gate fixtures pin <device>cpu</device>: MPS kernels are
+        # nondeterministic, so a seeded gate is only reproducible on CPU.
+        # The process-wide device is restored on exit so in-process
+        # callers (tests, probes) are not left on the fixture's device.
+        prev_device = None
+        if not os.environ.get("BASICMODEL_DEVICE"):
+            xml_device = arch.get("device")
+            if xml_device:
+                prev_device = str(TheDevice.get())
+                init_device(str(xml_device).strip().lower())
+
+        # Determinism: <training><seed> pins torch/python/numpy RNG for
+        # the whole run (construction init + data order + training).
+        # The XOR_exact gates are read as single CLI runs; unseeded,
+        # their recon column is run-to-run flaky (predictions stable).
+        seed = os.environ.get("BASIC_SEED", trn.get("seed"))
+        if seed is not None:
+            torch.manual_seed(int(seed))
+            random.seed(int(seed))
+            np.random.seed(int(seed))
+
+        try:
+            return ModelFactory._run_hydrated(config_path, arch, dat, trn)
+        finally:
+            if prev_device is not None:
+                init_device(prev_device)
+
+    @staticmethod
+    def _run_hydrated(config_path, arch, dat, trn):
+        """Post-hydration body of :meth:`run` (config parsed, device and
+        seed applied). Split out so the device override restores in a
+        ``finally`` regardless of how the run exits."""
         # AMP hydration: env var wins (matches MODEL_COMPILE precedent).
         # XML <architecture><amp> is a checked-in default applied only when
         # the env var is unset.

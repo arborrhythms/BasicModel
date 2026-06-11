@@ -727,105 +727,41 @@ def _make_plain_model():
     return model
 
 
-class TestSSCodebookPairedInsert(unittest.TestCase):
-    """Stage 1.B contract: when a new word is inserted into PS's lexicon,
-    ``SymbolicSpace.subspace.what`` (the SS codebook) gains paired
-    orthographic + semantic rows, directly parented orth -> semantic.
+class TestSSCodebookPairedInsertRetired(unittest.TestCase):
+    """Step 3 (2026-06-10 symbolic-iteration plan): the Stage-1.B
+    paired-row contract (orth copy + random semantic partner per lexicon
+    word on SS.codebook, orth parented to semantic) is RETIRED. The
+    CS-leg symbol codebook captures the code-as-written vs
+    code-for-the-concept correspondence in place (codebook row = concept
+    code; row id = the written symbol); the lexicon stays PS-local.
     """
 
-    def test_ss_codebook_has_insert_paired_word(self):
-        """SS exposes an ``insert_paired_word`` API that creates the
-        orth + semantic rows in a single atomic call.
-        """
+    def test_paired_insert_api_is_gone(self):
         model = _make_plain_model()
         ss = model.symbolicSpace
-        self.assertTrue(
-            hasattr(ss, "insert_paired_word"),
-            "SymbolicSpace must expose insert_paired_word(word, vector) "
-            "after Stage 1.B (paired-row insertion into SS.codebook).",
-        )
-        self.assertTrue(callable(ss.insert_paired_word))
-
-    def test_insert_paired_word_returns_orth_and_semantic_indices(self):
-        """``insert_paired_word`` returns ``(orth_idx, sem_idx)`` -- two
-        distinct rows in SS.codebook.
-        """
-        model = _make_plain_model()
-        ss = model.symbolicSpace
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.5
-        result = ss.insert_paired_word("novelword", ps_vec)
-        self.assertIsNotNone(result)
-        self.assertEqual(len(result), 2,
-                         "insert_paired_word must return (orth_idx, sem_idx).")
-        orth_idx, sem_idx = result
-        self.assertIsInstance(orth_idx, int)
-        self.assertIsInstance(sem_idx, int)
-        self.assertNotEqual(orth_idx, sem_idx,
-                            "Orth and semantic rows must be distinct.")
-
-    def test_orth_row_matches_ps_vector(self):
-        """Copy-from-PS contract: the orth row in SS.codebook is a copy
-        of the PS-side vector at insert time.
-        """
-        model = _make_plain_model()
-        ss = model.symbolicSpace
-        cb = ss.subspace.what
-        self.assertIsInstance(
-            cb, Codebook,
-            "SymbolicSpace.subspace.what must be a Codebook (the SS "
-            "codebook) for the paired-row contract.",
-        )
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.3
-        ps_vec[1] = -0.2
-        orth_idx, _ = ss.insert_paired_word("orthcopy", ps_vec)
-        W = cb.getW()
-        orth_row = W[orth_idx].detach().cpu()
-        self.assertTrue(
-            torch.allclose(orth_row, ps_vec.detach().cpu(), atol=1e-5),
-            f"Orth row at idx {orth_idx} must be a copy of PS vector; "
-            f"got {orth_row.tolist()} vs ps {ps_vec.tolist()}.",
-        )
-
-    def test_semantic_row_is_random_not_orth(self):
-        """Semantic row starts as a random CS-space vector, distinct
-        from the orth row at init (no initialization bias toward orth).
-        """
-        model = _make_plain_model()
-        ss = model.symbolicSpace
-        cb = ss.subspace.what
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.4
-        ps_vec[1] = 0.4
-        orth_idx, sem_idx = ss.insert_paired_word("semrandom", ps_vec)
-        W = cb.getW()
-        orth_row = W[orth_idx].detach().cpu()
-        sem_row = W[sem_idx].detach().cpu()
-        # Random init: must not equal the orth row (which is a copy of
-        # ps_vec). A near-zero random tensor of the same value is
-        # vanishingly unlikely; we assert non-equality.
         self.assertFalse(
-            torch.allclose(sem_row, orth_row, atol=1e-3),
-            "Semantic row must be random at init (not a copy of orth).",
-        )
+            hasattr(ss, "insert_paired_word"),
+            "SymbolicSpace.insert_paired_word must be RETIRED (Step 3 of "
+            "the 2026-06-10 symbolic-iteration plan).")
+        self.assertFalse(
+            hasattr(ss, "mark_word_atom"),
+            "the mark_word_atom autobind fallback retires with the "
+            "paired-row machinery.")
 
-    def test_orth_parents_semantic(self):
-        """Direct parenthood: ``set_part_parent`` links orth row ->
-        semantic row. ``get_part_parent(orth_idx) == sem_idx``.
-        """
+    def test_lexicon_insert_leaves_ss_codebook_untouched(self):
         model = _make_plain_model()
         ss = model.symbolicSpace
+        emb = model.perceptualSpace.vocabulary
         cb = ss.subspace.what
-        ps_vec = torch.zeros(int(ss.nDim))
-        ps_vec[0] = 0.1
-        orth_idx, sem_idx = ss.insert_paired_word("parented", ps_vec)
-        parent = cb.get_part_parent(orth_idx)
-        self.assertEqual(
-            parent, sem_idx,
-            f"Orth row {orth_idx} must be parented to semantic row "
-            f"{sem_idx}; got parent={parent}.",
-        )
+        self.assertIsInstance(cb, Codebook)
+        W_before = cb.getW().detach().clone()
+        vec = torch.zeros(int(emb.wv._vectors.shape[1]))
+        vec[0] = 0.5
+        emb.insert("novelword", vector=vec)
+        self.assertTrue(
+            torch.equal(W_before, cb.getW().detach()),
+            "a PS-side lexicon insert must leave the SS codebook "
+            "prototype bit-identical (no orth/semantic reach-across).")
 
 
 class TestFlatSlabInvariant(unittest.TestCase):

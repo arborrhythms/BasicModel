@@ -47,7 +47,22 @@ import torch
 import Layers
 from util import TheDevice, init_device
 
-init_device("cpu")
+
+@pytest.fixture(autouse=True, scope="module")
+def _cpu_device():
+    """Pin CPU for this module at RUN time, not import time.
+
+    A module-level ``init_device`` executes during pytest COLLECTION and
+    flips the process-wide default device under every module imported
+    after it -- while modules imported before it already built their
+    import-time globals on the original device. That frankenstate is
+    exactly the cross-device mix behind the full-suite-only
+    test_heat_reverse_wiring failures. As a run-time module fixture the
+    pin is scoped: conftest's ``_restore_process_device`` guard unwinds
+    it when this module's tests finish.
+    """
+    init_device("cpu")
+    yield
 
 
 def _pi(nonlinear, naive=True, n=4):

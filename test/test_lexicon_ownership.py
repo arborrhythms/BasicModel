@@ -52,25 +52,28 @@ class TestLexiconOwnership(unittest.TestCase):
         # lives here.
         self.assertNotIsInstance(m.inputSpace.vocabulary, Embedding)
 
-    def test_symbolic_space_has_paired_row_api(self):
-        """Stage 1.B contract (2026-05-27): SS exposes
-        ``insert_paired_word`` for creating orth + semantic paired rows
-        on SS.codebook (``self.subspace.what``) when a new PS-side
-        lexicon entry is inserted. PS still owns the Embedding; SS
-        owns the paired-row mirror.
+    def test_symbolic_space_paired_row_api_is_retired(self):
+        """Step 3 (2026-06-10 symbolic-iteration plan): the Stage-1.B
+        paired-row API (``insert_paired_word`` -- orth copy + random
+        semantic partner per lexicon word on SS.codebook) is RETIRED.
+        The CS-leg symbol codebook captures the code-as-written vs
+        code-for-the-concept correspondence in place; the lexicon stays
+        PS-local.
         """
         m = _build_text_model()
         ss = m.symbolicSpace
-        self.assertTrue(hasattr(ss, 'insert_paired_word'),
-                        "SymbolicSpace.insert_paired_word must exist "
-                        "after Stage 1.B (paired-row contract).")
-        self.assertTrue(callable(ss.insert_paired_word))
+        self.assertFalse(hasattr(ss, 'insert_paired_word'),
+                         "SymbolicSpace.insert_paired_word must be "
+                         "RETIRED (Step 3, symbolic-iteration plan).")
+        self.assertFalse(hasattr(ss, 'mark_word_atom'),
+                         "the mark_word_atom autobind fallback retires "
+                         "with the paired-row machinery.")
 
     def test_embedding_symbolic_back_ref_wired(self):
-        """The PS-side Embedding carries ``symbolicSpace_ref`` so its
-        ``insert`` / ``stage_oov`` paths can trigger
-        ``ss.insert_paired_word`` on every word added to the lexicon.
-        Wired in BasicModel after both spaces are built.
+        """The PS-side Embedding carries ``symbolicSpace_ref`` for the
+        vocabulary/orthographic API delegation. (Its former role --
+        triggering ``insert_paired_word`` on lexicon inserts -- retired
+        with Step 3 of the symbolic-iteration plan.)
         """
         m = _build_text_model()
         emb = m.perceptualSpace.vocabulary

@@ -1055,14 +1055,12 @@ class WordVectors(nn.Module):
     Being an nn.Module, the parameter moves to device via ``.to(device)``
     and participates in ``state_dict()`` / ``parameters()``.
 
-    Tied-storage (2026-05-27 lexicon refactor): when this WordVectors is
-    attached to a model, ``Models.py`` may call ``tie_to_codebook(cb)`` to
-    retarget ``_vectors`` at the SymbolicSpace codebook's ``W`` Parameter.
-    After tying, the local ``_vectors`` Parameter is unregistered (so
-    ``self._parameters`` no longer contains ``_vectors``) and the property
-    routes reads through the SS codebook -- a single trainable storage
-    for the orth rows, no divergence possible. Untied WordVectors keep
-    their local Parameter for back-compat with standalone SBOW training.
+    Storage is PS-LOCAL permanently (Step 3 of the 2026-06-10
+    symbolic-iteration plan retired the 2026-05-27 tied-storage
+    refactor's ``tie_to_codebook``): ``_vectors`` always resolves to the
+    locally-owned ``_local_vectors`` Parameter. The property indirection
+    remains because it carries the Dynamo-traceability fix (see the
+    ``_vectors`` property below).
     """
 
     def __init__(self, vectors, index_to_key: List[str],
@@ -1080,12 +1078,10 @@ class WordVectors(nn.Module):
         else:
             vectors = vectors.detach().float()
         vectors = _wrap_unit_ball(vectors)
-        # Tied-storage state (2026-05-27): when ``_tied_param_getter`` is
-        # set (via ``tie_to_codebook``), it is a callable returning the
-        # tied Parameter on SS.codebook. While unset, ``_vectors`` is the
-        # locally-owned Parameter (back-compat path; standalone SBOW
-        # trainers etc.). Both paths satisfy the same ``wv._vectors``
-        # access shape; only the underlying storage moves.
+        # Permanently None (Step 3, 2026-06-10 symbolic-iteration plan:
+        # ``tie_to_codebook`` retired; storage is PS-local). Kept so the
+        # ``_vectors`` property's plain-attribute read stays valid (the
+        # Dynamo-traceability contract documented at the property).
         object.__setattr__(self, "_tied_param_getter", None)
         self._local_vectors = nn.Parameter(vectors, requires_grad=True)
         self.index_to_key = list(index_to_key)
@@ -1180,33 +1176,12 @@ class WordVectors(nn.Module):
             return
         super().__setattr__(name, value)
 
-    def tie_to_codebook(self, codebook):
-        """Tie ``_vectors`` to ``codebook.W`` (an SS-codebook Parameter).
-
-        After this call, ``wv._vectors`` reads through ``codebook.getW()``
-        -- there is a single trainable Parameter (on the codebook), and
-        no separate PS-side Parameter named ``_vectors`` remains in
-        ``self._parameters``.
-
-        The local ``_local_vectors`` Parameter is unregistered (removed
-        from the module's parameter list) so the optimizer does not
-        double-count the storage.
-        """
-        # Capture by closure so the tied lookup tolerates downstream
-        # Parameter re-registration on the codebook (e.g. EMA writes
-        # via Codebook.replace_W).
-        def _getter(cb=codebook):
-            try:
-                return cb.getW()
-            except Exception:
-                return None
-        object.__setattr__(self, "_tied_param_getter", _getter)
-        # Drop the local Parameter so it does not appear in
-        # state_dict() / parameters(). The tied Parameter (on the
-        # codebook) is the sole trainable storage from this point on.
-        if "_local_vectors" in self._parameters:
-            del self._parameters["_local_vectors"]
-        object.__setattr__(self, "_local_vectors", None)
+    # Step 3 (2026-06-10 symbolic-iteration plan): ``tie_to_codebook``
+    # (retarget ``_vectors`` at the SS codebook's ``W``) is RETIRED. The
+    # lexicon keeps PS-LOCAL storage permanently; ``_tied_param_getter``
+    # stays permanently None and the ``_vectors`` property always
+    # resolves to ``_local_vectors`` (the property mechanics remain --
+    # they carry the Dynamo-traceability fix documented above).
 
     @property
     def vectors(self) -> nn.Parameter:

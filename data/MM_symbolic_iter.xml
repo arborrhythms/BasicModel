@@ -1,0 +1,77 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_symbolic_iter: TEST FIXTURE for the symbolic-iteration codebook
+       on the CS->SS leg (doc/plans/2026-06-10-symbolic-iteration-codebook.md,
+       Step 1). MM_20M's deep-slab geometry scaled down 32x, with
+       conceptualOrder=2 so the t>0 leg actually runs inside a full
+       forward (MM_20M ships conceptualOrder=1: its recurrent SS leg
+       never fires in-body). Used by test/test_symbolic_iteration.py;
+       not a training reference. -->
+  <architecture>
+    <modelType>embedding</modelType>
+    <conceptualMode>parallel</conceptualMode>
+    <conceptualOrder>2</conceptualOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>2</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>256</nOutput>
+    <nDim>5</nDim> <!-- 1 byte + 2 where + 2 when -->
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>256</nInput>
+    <nInputDim>5</nInputDim>
+    <nVectors>2048</nVectors>
+    <nDim>32</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>32</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>bpe</synthesis>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>32</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>32</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>32</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>8</nInput>
+    <nInputDim>32</nInputDim>
+    <nVectors>2048</nVectors>
+    <nDim>32</nDim>
+    <nOutput>32</nOutput>
+    <nOutputDim>8</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>32</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+    <readout>sigmoid</readout>
+  </OutputSpace>
+</model>

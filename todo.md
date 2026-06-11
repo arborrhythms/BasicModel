@@ -1,6 +1,5 @@
 
-* 
-
+* MereonomySpec.md
 
 * All Grammars need to be role-collapsed
 

@@ -2015,15 +2015,20 @@ class Codebook(Basis):
 
         ``descriptor_roles[i]`` is one of the ``ROLE_*`` constants
         (default ``ROLE_UNASSIGNED``). Grown alongside the codebook so a
-        row inserted after allocation still has a slot."""
+        row inserted after allocation still has a slot. Pinned to CPU
+        (the freezing-buffer convention above): ``set_descriptor_role``
+        indexes it with ``.cpu()`` indices, so a default-device (MPS)
+        allocation would split devices."""
         V = max(int(self.nVectors), int(self.codebookSize))
         if V <= 0:
             return None
         if self.descriptor_roles is None:
-            self.descriptor_roles = torch.zeros((V,), dtype=torch.long)
+            self.descriptor_roles = torch.zeros(
+                (V,), dtype=torch.long, device="cpu")
         elif int(self.descriptor_roles.shape[0]) < V:
-            grown = torch.zeros((V,), dtype=torch.long)
-            grown[:self.descriptor_roles.shape[0]] = self.descriptor_roles
+            grown = torch.zeros((V,), dtype=torch.long, device="cpu")
+            grown[:self.descriptor_roles.shape[0]] = \
+                self.descriptor_roles.cpu()
             self.descriptor_roles = grown
         return self.descriptor_roles
 
@@ -3438,65 +3443,15 @@ class Embedding(Basis):
     # ------------------------------------------------------------------
     # Tied-storage refactor (2026-05-27 follow-up)
     # ------------------------------------------------------------------
-    # The orthographic vector for a word should live in ONE place only --
-    # the SymbolicSpace codebook (``ss.subspace.what.W``). Stage 1.D+1.B
-    # left orth as a COPY on SS plus a separate Parameter on
-    # ``wv._vectors``. This method completes the tie: each ASCII /
-    # bootstrap row is allocated a paired (orth, sem) slot on SS via
-    # ``insert_paired_word``, the PS-side key_to_index map is remapped
-    # to the SS orth_idx, and ``wv._vectors`` is unregistered as a
-    # nn.Parameter (it becomes a property routing through ``cb.getW()``).
-    def _tie_lexicon_to_codebook(self, symbolic_space, codebook):
-        """Migrate the PS-side lexicon onto ``codebook`` and tie storage.
-
-        Called from ``Models.py`` after SS is wired so ASCII bootstrap
-        rows that were inserted into the local PS Parameter during
-        ``Embedding.create`` get a corresponding SS paired-row
-        allocation. After this call, ``wv._vectors`` reads through the
-        SS codebook's ``W`` Parameter -- a single trainable storage.
-        """
-        if self.wv is None:
-            return
-        wv = self.wv
-        if getattr(wv, "_tied_param_getter", None) is not None:
-            # Already tied; idempotent.
-            return
-        if codebook is None or codebook.getW() is None:
-            # No SS codebook prototype yet; tying is impossible.
-            return
-        # Migrate each PS-side surface key to SS via insert_paired_word.
-        # The local Parameter rows carry the PS-side initialization
-        # (ASCII bootstrap values); SS picks orth_idx sequentially via
-        # its own counter. After migration the PS-side key_to_index
-        # is replaced by SS-allocated orth_idx values.
-        local = wv._local_vectors
-        new_key_to_index = {}
-        new_index_to_key = []
-        # Preserve insertion order via the existing index_to_key list.
-        for old_idx, key in enumerate(list(wv.index_to_key)):
-            ps_vec = local.data[old_idx]
-            try:
-                orth_idx, _sem_idx = symbolic_space.insert_paired_word(
-                    key, ps_vec)
-            except Exception:
-                # Best-effort migration; if SS lacks capacity, leave the
-                # PS-side local Parameter in place for the overflow keys
-                # so reverse-mapping doesn't lose data.
-                return
-            new_key_to_index[key] = int(orth_idx)
-            # ``index_to_key`` is sparse by SS row index; we still keep
-            # a parallel list for callers that iterate insertion order.
-            new_index_to_key.append(key)
-        wv.key_to_index = new_key_to_index
-        wv.index_to_key = new_index_to_key
-        wv._normed = None
-        # Tie ``_vectors`` to the SS codebook. After this, no PS-side
-        # Parameter named ``_vectors`` remains in ``wv._parameters``.
-        wv.tie_to_codebook(codebook)
-        # Rebuild the SBOW optimizer so it trains the SS Parameter.
-        if self.pretrain is not None:
-            self._rebuild_optimizer()
-
+    # Step 3 (2026-06-10 symbolic-iteration plan): the tied-storage
+    # migration ``_tie_lexicon_to_codebook`` (orth rows copied onto the
+    # SS codebook via ``insert_paired_word``; ``key_to_index`` remapped
+    # onto SS rows; ``wv._vectors`` re-routed through ``cb.getW()``) is
+    # RETIRED. The Step-1 symbol codebook on the CS leg captures the
+    # code-as-written vs code-for-the-concept correspondence in place;
+    # the lexicon keeps PS-LOCAL storage permanently (untied), and the
+    # decode resolves row->word through the inverse of ``key_to_index``
+    # (identity when untied).
     def _inflate_to_capacity(self):
         # Inflate ``wv._vectors`` to ``[lexicon_capacity, dim]`` so future
         # OOV inserts write into preallocated reserve rows in place
@@ -3563,30 +3518,11 @@ class Embedding(Basis):
             self.pretrain.index_to_key = self.wv.index_to_key
             self.pretrain.key_to_index = self.wv.key_to_index
             self._zero_optimizer_moments_for_rows(start, end)
-            # Stage 1.B paired-row contract (2026-05-27): bulk OOV
-            # insert through stage_oov triggers paired-row insertion on
-            # the SS-side peer for every accepted key. Falls back to
-            # the legacy mark_word_atom tag if the peer pre-dates the
-            # insert_paired_word API.
-            s_peer = getattr(self, 'symbolicSpace_ref', None)
-            if s_peer is not None:
-                has_paired = hasattr(s_peer, 'insert_paired_word')
-                has_mark = hasattr(s_peer, 'mark_word_atom')
-                if has_paired:
-                    for i, key in enumerate(accepted):
-                        row = start + i
-                        try:
-                            ps_vec = self.wv._vectors.data[row].detach()
-                            s_peer.insert_paired_word(key, ps_vec)
-                        except Exception:
-                            # Best-effort; never block the bulk insert.
-                            pass
-                elif has_mark:
-                    for i in range(n):
-                        try:
-                            s_peer.mark_word_atom(start + i)
-                        except Exception:
-                            pass
+            # Step 3 (2026-06-10 symbolic-iteration plan): the bulk
+            # paired-row peer hook (orth + random semantic partner per
+            # accepted key on the SS codebook) is RETIRED with the tie;
+            # the lexicon is PS-local, and the CS-leg symbol codebook
+            # adopts concept codes via ``adopt_symbolic_evidence``.
         if overflowed:
             self._oov_fallback_count += len(overflowed)
             cap_sample = int(self._oov_fallback_sample_cap)
@@ -3703,35 +3639,11 @@ class Embedding(Basis):
         self.pretrain.index_to_key = self.wv.index_to_key
         self.pretrain.key_to_index = self.wv.key_to_index
 
-        # Stage 1.B paired-row contract (2026-05-27): hand the freshly-
-        # inserted PS-side per-word vector to the SymbolicSpace peer
-        # (when wired) so SS.codebook gains an orth + semantic paired
-        # row pointing at the same word. Wiring is via
-        # ``symbolicSpace_ref`` on this Embedding (set in Models.py
-        # after both spaces are built); unset in standalone
-        # construction (tests) -- in which case the call is a no-op.
-        # Fall back to the legacy ``mark_word_atom`` path if the SS peer
-        # is too old to know about ``insert_paired_word``.
-        s_peer = getattr(self, 'symbolicSpace_ref', None)
-        if s_peer is not None:
-            if hasattr(s_peer, 'insert_paired_word'):
-                try:
-                    # Per the flat-slab invariant, this PS vector is
-                    # already CS-space-dimensioned; SS.codebook's orth
-                    # row is a direct copy (no pi/sigma transform at
-                    # insert time).
-                    s_peer.insert_paired_word(word, new_vec.squeeze(0))
-                except Exception:
-                    # Paired-row insertion is best-effort; never block
-                    # the PS-side insert because the symbolic peer
-                    # codebook is exhausted (caller can pre-size
-                    # SS.nVectors to ~2*lexicon_cap to avoid this).
-                    pass
-            elif hasattr(s_peer, 'mark_word_atom'):
-                try:
-                    s_peer.mark_word_atom(idx)
-                except Exception:
-                    pass
+        # Step 3 (2026-06-10 symbolic-iteration plan): the per-insert
+        # paired-row peer hook (orth copy + random semantic partner on
+        # the SS codebook, with the ``mark_word_atom`` fallback) is
+        # RETIRED with the tie. The lexicon is PS-local; symbols arise
+        # on the CS leg by adopt-on-first-sight, not at word-insert.
 
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
@@ -13044,6 +12956,39 @@ class SymbolicSpace(Space):
                 f"SymbolicSpace.analysis must be byte|word|analyse, "
                 f"got {self.analysis_mode!r}")
         self._staged_analysis_spans = None
+        # Step 2 (2026-06-10 symbolic-iteration plan): the ANALYSIS
+        # (meronymic/generality) store -- the stage-0 unity machinery's
+        # codebook (snap-as-annotation, descriptor roles, LF tagging,
+        # recon gather, adopt-on-first-sight) -- is its OWN basis object
+        # governed by <analysis>, present REGARDLESS of the <codebook>
+        # iteration-mode knob: `none` models still ANALYZE (analysis is
+        # non-altering annotation; the knob only chooses subsymbolic vs
+        # symbolic ITERATIONS on the CS leg, which keeps using
+        # ``subspace.what``). Two codebook families, kept separate.
+        #
+        # Construction is RNG-ISOLATED (dedicated seed; CPU generator
+        # state saved/restored) so the store's presence does not shift
+        # the init sequence of seeded runs -- its rows are
+        # data-initialised by adopt-on-first-sight anyway.
+        _rng_state = torch.get_rng_state()
+        try:
+            torch.manual_seed(0x57A6E0)
+            _store = Codebook()
+            _store.use_dot_product = bool(
+                getattr(self, "use_dot_product", False))
+            _store.create(
+                self.inputShape[0],
+                self.nVectors,
+                self.nDim,
+                customVQ=True,
+                monotonic=True,
+                category=True,
+                STE=True,
+                invertible=False,
+            )
+        finally:
+            torch.set_rng_state(_rng_state)
+        self.analysis_store = _store
         # Task 5 (C-13): the semantic-arrangement weight. Default 0 = the
         # mechanism is OFF (it is validated under D, on a corpus via the
         # serial path -- not by XOR).
@@ -13496,201 +13441,16 @@ class SymbolicSpace(Space):
     # and the orthographic-API methods live here and delegate to
     # the Embedding via ``perceptualSpace_ref``.
 
-    def mark_word_atom(self, atom_idx):
-        """Mark codebook row ``atom_idx`` as a part of the canonical
-        "words" symbol so the meronomy explicitly records that this
-        atom is a word-instance rather than a fresh root concept.
+    # Step 3 (2026-06-10 symbolic-iteration plan): the Stage-1.B
+    # paired-row machinery (``insert_paired_word``: orth copy +
+    # random semantic partner per lexicon word on the SS codebook)
+    # and the ``mark_word_atom`` words-parent tag are RETIRED with
+    # the PS->SS tie. The Step-1 symbol codebook on the CS leg
+    # captures the code-as-written vs code-for-the-concept
+    # correspondence in place (codebook row = concept code; row id =
+    # the written symbol); the lexicon keeps PS-LOCAL storage
+    # permanently.
 
-        Called when a new word lands in the codebook (via the Lexicon
-        insert path). Without this tag the codebook quantizer would
-        treat every quantization as a new root atom and the vocabulary
-        would grow unbounded; with it, the quantizer can short-circuit
-        to the "words" parent when an input maps to a child of an
-        existing word.
-        """
-        cb = getattr(self.subspace, 'what', None)
-        if cb is None or not isinstance(cb, Codebook):
-            cb = getattr(self.subspace, 'event', None)
-        if (cb is None or not isinstance(cb, Codebook)
-                or getattr(cb, 'part_parents', None) is None):
-            return
-        if int(atom_idx) < 0 or int(atom_idx) >= cb.part_parents.numel():
-            return
-        cb.set_part_parent(int(atom_idx), int(self.words_atom_id))
-
-    # ------------------------------------------------------------------
-    # Stage 1.B paired-row insertion (orth + semantic) on SS.codebook
-    # ------------------------------------------------------------------
-    # Locked design (2026-05-27, doc/plans/2026-05-26-two-loop-pi-
-    # sigma-substrate.md): when a new word lands in PS's Lexicon, SS's
-    # codebook (``self.subspace.what``) gains TWO paired rows:
-    #   * orthographic row = a COPY of the per-word PS vector (flat-slab
-    #     invariant guarantees PS-side per-word is CS-space-dimensioned;
-    #     no pi/sigma transform at insert time);
-    #   * semantic row     = a fresh RANDOM CS-space vector (trainable,
-    #     no init bias toward orth; per Quine / Saussure -- word != object,
-    #     orth and semantic are free to diverge).
-    # The two are DIRECTLY parented: orth row -> semantic row, via the
-    # existing ``Codebook.set_part_parent``. No meta-symbol (skipped per
-    # the controller; orth and semantic remain free to diverge).
-    def insert_paired_word(self, word, ps_vector):
-        """Insert paired orthographic + semantic rows for ``word`` into
-        ``self.subspace.what`` (the SS codebook). Returns
-        ``(orth_idx, sem_idx)``.
-
-        ``ps_vector`` is a 1-D tensor of width ``self.nDim`` (the PS-
-        side per-word vector, which is CS-space-dimensioned per the
-        flat-slab invariant). The orth row is a copy of this vector;
-        the semantic row is freshly randomized.
-
-        Direct parenthood: ``part_parents[orth_idx] = sem_idx``. No
-        meta-symbol; orth and semantic are free to diverge during
-        training (per Quine / Saussure -- word != object).
-
-        Raises ``RuntimeError`` if the codebook lacks room for a pair
-        (``nVectors`` exhausted) -- caller must size SS.nVectors at
-        least 2x the expected lexicon capacity (see MM_20M.xml where
-        SS.nVectors=131072 = 2 * PS lexicon cap).
-        """
-        cb = getattr(self.subspace, 'what', None)
-        if cb is None or not isinstance(cb, Codebook):
-            raise RuntimeError(
-                f"SymbolicSpace.insert_paired_word requires "
-                f"self.subspace.what to be a Codebook; got "
-                f"{type(cb).__name__ if cb is not None else 'None'}.")
-        if cb.part_parents is None:
-            raise RuntimeError(
-                "SymbolicSpace.insert_paired_word requires the SS "
-                "codebook to carry meronomy storage "
-                "(create with category=True). _build_what_basis must "
-                "have built it with category=True; this looks like a "
-                "stale Codebook.")
-        # Lazy init: usable rows start after the highest reserved
-        # well-known atom index. Convention today: row 0 = "words".
-        # Re-entry is idempotent: ``_paired_next_row`` survives across
-        # inserts.
-        if not hasattr(self, '_paired_next_row'):
-            base = max(self.well_known_atoms.values())
-            self._paired_next_row = int(base) + 1
-            # Per-word orth_idx -> sem_idx mapping (precomputed so
-            # downstream lookup can collapse to ONE gather, not a
-            # runtime intersection). Built up at insert time.
-            self._paired_orth_to_sem = {}
-
-        orth_idx = int(self._paired_next_row)
-        sem_idx = orth_idx + 1
-        cap = int(cb.nVectors)
-        if sem_idx >= cap:
-            # 2026-05-27 tied-storage refactor: instead of refusing the
-            # insert when the configured ``nVectors`` is exhausted, grow
-            # the codebook in place. The where-space registry's last
-            # slice is extended to cover the new rows (see
-            # ``Codebook.grow_to``); this is safe because SS.subspace.what
-            # is the last codebook to register. Doubling on overflow
-            # amortizes the resize cost across bursty bootstrap inserts
-            # (e.g. PS-side ASCII migration).
-            target = max(sem_idx + 1, cap * 2)
-            try:
-                cb.grow_to(target)
-            except Exception as exc:
-                raise RuntimeError(
-                    f"SymbolicSpace.insert_paired_word: codebook is full "
-                    f"({orth_idx} / {cap} rows used) and grow_to failed: "
-                    f"{exc}. Raise <SymbolicSpace><nVectors> to at least "
-                    f"2x the expected lexicon capacity (currently {cap}).")
-            cap = int(cb.nVectors)
-            # The Parameter was re-registered; refresh ``W``.
-
-        # Resolve ps_vector to [nDim] float on the codebook's device.
-        if not torch.is_tensor(ps_vector):
-            ps_vector = torch.as_tensor(ps_vector, dtype=torch.float32)
-        if ps_vector.dim() == 2 and ps_vector.shape[0] == 1:
-            ps_vector = ps_vector.squeeze(0)
-        if ps_vector.dim() != 1:
-            raise RuntimeError(
-                f"insert_paired_word: ps_vector must be 1-D "
-                f"(shape [nDim={self.nDim}]); got shape "
-                f"{tuple(ps_vector.shape)}.")
-        if ps_vector.shape[0] != int(self.nDim):
-            raise RuntimeError(
-                f"insert_paired_word: ps_vector width "
-                f"{ps_vector.shape[0]} != SymbolicSpace.nDim "
-                f"({self.nDim}). Flat-slab invariant must hold so "
-                f"the orth row is a direct copy.")
-
-        W = cb.getW()
-        if W is None:
-            raise RuntimeError(
-                "SymbolicSpace.insert_paired_word: SS codebook W is "
-                "None; _build_what_basis did not allocate prototypes.")
-        ps_v = ps_vector.detach().to(device=W.device, dtype=W.dtype)
-        # Random semantic vector. Sample in the same scale as the
-        # codebook init (random in [-1, 1] before any per-row
-        # normalization). No bias toward orth: orth and semantic are
-        # free to diverge during training.
-        sem_v = torch.empty(
-            int(self.nDim), device=W.device, dtype=W.dtype
-        ).uniform_(-1.0, 1.0)
-
-        # In-place write into the codebook's prototype rows. ``W.data``
-        # preserves Parameter identity (the optimizer keeps owning the
-        # full-capacity prototype tensor).
-        with torch.no_grad():
-            W.data[orth_idx, :].copy_(ps_v)
-            W.data[sem_idx, :].copy_(sem_v)
-
-        # Direct parenthood: orth -> semantic. Per design (no meta-
-        # symbol), parent of orth is the semantic row, not a "words"
-        # atom. This means the legacy ``mark_word_atom`` (which would
-        # set part_parents[orth] = words_atom_id) is overridden by
-        # this insert path -- a paired-row insertion sets the orth's
-        # parent to its semantic partner.
-        cb.set_part_parent(orth_idx, sem_idx)
-        # Semantic row is a root atom in the orth->sem graph (it
-        # doesn't parent anything itself; -1 = no parent).
-        # Leave part_parents[sem_idx] at the default -1.
-
-        self._paired_orth_to_sem[orth_idx] = sem_idx
-        self._paired_next_row = sem_idx + 1
-
-        # 2026-05-27 tied-storage refactor: after the row is written, the
-        # PS-side Lexicon's ``wv._vectors`` should resolve to the SS
-        # codebook's ``W`` Parameter via the tie mechanism (see
-        # ``embed.WordVectors.tie_to_codebook``). Idempotent on subsequent
-        # inserts. The PS-side ``key_to_index`` is updated so the new
-        # word lookup lands on the freshly written orth row.
-        try:
-            peer = getattr(self, 'perceptualSpace_ref', None)
-            emb = peer.vocabulary if peer is not None else None
-            wv = getattr(emb, 'wv', None) if emb is not None else None
-            if wv is not None:
-                # Remap PS-side key_to_index for this word to the SS
-                # orth_idx so wv._vectors[wv.key_to_index[word]] resolves
-                # to the same row as cb.getW()[orth_idx].
-                # This must happen BEFORE tying because, after tying,
-                # ``_local_vectors`` is unregistered and the prior local
-                # row at the OLD index is lost.
-                old_idx = wv.key_to_index.get(word, None)
-                wv.key_to_index[word] = int(orth_idx)
-                if old_idx is not None and word in wv.index_to_key:
-                    # ``index_to_key`` is a parallel list whose order is
-                    # insertion order; we don't re-sparsify it here.
-                    pass
-                if getattr(wv, '_tied_param_getter', None) is None:
-                    wv.tie_to_codebook(cb)
-                    # Rebuild the embedding's optimizer so it tracks the
-                    # newly-tied SS Parameter rather than the unregistered
-                    # local one.
-                    if emb is not None and hasattr(emb, '_rebuild_optimizer'):
-                        try:
-                            emb._rebuild_optimizer()
-                        except Exception:
-                            pass
-        except Exception:
-            # Best-effort tying; never block insert_paired_word.
-            pass
-
-        return (orth_idx, sem_idx)
 
     # ------------------------------------------------------------------
     # Stage 3+4: ``.where``-keyed taxonomy (positive-int positions).
@@ -15894,7 +15654,13 @@ class SymbolicSpace(Space):
         w = float(getattr(self, "semantic_arrangement_weight", 0.0))
         if w <= 0.0 or indices is None or not torch.is_tensor(indices):
             return None
-        basis = self.subspace.what
+        # Step 2: the arrangement operates over the stage-0 ANALYSIS
+        # STORE's heat (the snap that produced ``indices`` runs there);
+        # fall back to the symbol codebook for standalone spaces built
+        # without the store.
+        basis = getattr(self, "analysis_store", None)
+        if not isinstance(basis, Codebook):
+            basis = self.subspace.what
         vq = getattr(basis, "vq", None)
         cb = getattr(vq, "codebook", None) if vq is not None else None
         if not isinstance(cb, nn.Parameter) or int(cb.shape[0]) < 2:
@@ -15978,8 +15744,12 @@ class SymbolicSpace(Space):
         codebook width."""
         if IS_concepts is None or not self.training:
             return
-        basis = self.subspace.what
-        if not (self.codebook and isinstance(basis, Codebook)):
+        # Step 2: adoption writes the ANALYSIS STORE (its own basis
+        # under <analysis>, knob-independent) -- the symbol codebook on
+        # ``subspace.what`` belongs to the CS leg and has its own
+        # adoption (``adopt_symbolic_evidence``).
+        basis = getattr(self, "analysis_store", None)
+        if not isinstance(basis, Codebook):
             return
         vq = getattr(basis, "vq", None)
         cbp = getattr(vq, "codebook", None) if vq is not None else None
@@ -16009,6 +15779,99 @@ class SymbolicSpace(Space):
             # NB: no ``replace_W`` here — under the asymmetric mode the
             # vq codebook (analytic store) and the basis ``W`` (synthetic
             # store) are deliberately separate; see Codebook.quantize.
+
+    def adopt_symbolic_evidence(self, cs_view):
+        """HOST-EAGER adopt-on-first-sight on the CS leg (symbolic
+        iterations -- 2026-06-10 symbolic-iteration-codebook plan, Step 1).
+
+        The ``adopt_stage0_evidence`` pattern re-homed to the recurrent
+        CS->SS leg: VIRGIN codebook rows (descriptor role UNASSIGNED)
+        adopt the CONCEPT-CODE evidence that selects them, so the
+        symbolic emission's value substitution is honest from its first
+        firing (the #13 lesson: substitution against a virgin/random
+        codebook poisons training). Runs in the eager stem
+        (``Models._lex_embed_stem``) on the PREVIOUS step's persistent
+        CS view -- the in-step CS evidence is produced inside the
+        compiled body, where the data-dependent ``unique`` cannot live;
+        one-step-stale evidence is exactly the insert-on-first-sight
+        idiom's contract (data-dependent init, refined by the recon
+        gather thereafter).
+
+        Adopted rows are tagged ``ROLE_MEANING_GENERAL`` (don-spyi: the
+        concept-universal face) at adoption time -- the CS leg has no
+        in-body role tagging (stage 0's LF_COARSE tagging is the
+        ANALYSIS face and stays where it is) -- which also makes the
+        pass idempotent. No ``replace_W`` (two stores). No-op outside
+        training, on serial/grammar spaces, without a Codebook basis,
+        or when the evidence is narrower than the codebook width."""
+        if cs_view is None or not self.training:
+            return
+        # The serial/grammar leg keeps its legacy coupling -- adoption is
+        # a symbolic-iteration (parallel-leg) mechanism. Mode test, not
+        # SyntacticLayer presence: the layer is attached unconditionally.
+        if getattr(self, '_conceptual_mode', None) != 'parallel':
+            return
+        basis = self.subspace.what
+        if not (self.codebook and isinstance(basis, Codebook)):
+            return
+        vq = getattr(basis, "vq", None)
+        cbp = getattr(vq, "codebook", None) if vq is not None else None
+        if cbp is None:
+            return
+        ev = (cs_view.materialize()
+              if hasattr(cs_view, "materialize") else cs_view)
+        if ev is None or not torch.is_tensor(ev) or ev.dim() != 3:
+            return
+        W = int(self.nDim)
+        if int(ev.shape[-1]) < W:
+            return
+        with torch.no_grad():
+            flat = ev.detach()[..., :W].reshape(-1, W).to(
+                device=cbp.device, dtype=cbp.dtype)
+            _, idx, _ = basis.quantize(flat)
+            roles = basis.ensure_descriptor_roles()
+            if roles is None:
+                return
+            idx_flat = idx.reshape(-1)
+            uniq = idx_flat.unique()
+            virgin = uniq[(roles[uniq.cpu()]
+                           == Codebook.ROLE_UNASSIGNED).to(uniq.device)]
+            if int(virgin.numel()) == 0:
+                return
+            for r in virgin.tolist():
+                src = (idx_flat == r).nonzero(as_tuple=False)[0, 0]
+                cbp.data[r, :W] = flat[src, :W]
+            basis.set_descriptor_role(virgin, Codebook.ROLE_MEANING_GENERAL)
+            if hasattr(vq, "_b_norms_sq"):
+                vq._b_norms_sq.copy_(
+                    (vq.codebook.detach() ** 2).sum(dim=-1))
+
+    def stage_symbolic_virgin_rows(self, device=None):
+        """Park the virgin-row mask for the compiled body's symbolic
+        emission (plan Step 1). Pure attr read in the body (the
+        ``_staged_analysis_spans`` idiom): ``_staged_virgin_rows[r]`` is
+        True while codebook row ``r`` has never been adopted/named, and
+        the emission falls back to the continuous carrier when the
+        winner row is still virgin. Parks None (= every row virgin)
+        without a Codebook basis or while the roles buffer is
+        unallocated -- deliberately NO ``ensure_descriptor_roles`` here:
+        eager allocation would turn the buffer into a LIFTED CONSTANT
+        for torch.export, and the stage-0 in-graph role tagging then
+        trips "constant mutated in forward" (the buffer must stay a
+        trace intermediate on eval/export paths, where adoption never
+        runs)."""
+        basis = self.subspace.what
+        if not (self.codebook and isinstance(basis, Codebook)):
+            object.__setattr__(self, "_staged_virgin_rows", None)
+            return
+        roles = getattr(basis, "descriptor_roles", None)
+        if roles is None:
+            object.__setattr__(self, "_staged_virgin_rows", None)
+            return
+        mask = (roles == Codebook.ROLE_UNASSIGNED)
+        if device is not None:
+            mask = mask.to(device)
+        object.__setattr__(self, "_staged_virgin_rows", mask)
 
     def _stage0_unity_forward(self, IS_concepts):
         """Stage-0 symbolic evidence from the UNITY view (analysis/synthesis
@@ -16065,12 +15928,16 @@ class SymbolicSpace(Space):
         # by the asymmetric recon gather when the 2-stream combiner lands.
         object.__setattr__(self, "_stage0_z_pre_snap", carrier)
         object.__setattr__(self, "_stage0_indices", None)
-        basis = self.subspace.what
+        # Step 2 (2026-06-10 symbolic-iteration plan): the stage-0
+        # machinery runs against the ANALYSIS STORE -- its own basis
+        # object under <analysis>, decoupled from the <codebook>
+        # iteration-mode knob (`none` models analyze too; the symbol
+        # codebook on ``subspace.what`` belongs to the CS leg).
+        basis = getattr(self, "analysis_store", None)
         z_q = carrier
         object.__setattr__(self, "_stage0_recon_loss", None)
         object.__setattr__(self, "_stage0_semantic_loss", None)
-        if (self.codebook and isinstance(basis, Codebook)
-                and W == int(self.nDim)):
+        if isinstance(basis, Codebook) and W == int(self.nDim):
             # (Virgin rows were ADOPTED in the eager stem --
             # ``adopt_stage0_evidence``, called by ``_lex_embed_stem`` --
             # so the snap below finds data-initialised prototypes and the
@@ -16210,16 +16077,51 @@ class SymbolicSpace(Space):
         vspace = CS_subspaceForSS
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
+        # SYMBOLIC ITERATION predicate (2026-06-10 symbolic-iteration-
+        # codebook plan, Step 1): parallel leg + <codebook>quantize</codebook>
+        # = the CS-leg snap REPLACES the Pi operation. Selection-by-
+        # exclusion stands in for computed intersection; the emitted
+        # symbol is discrete and given, composable only by Sigma
+        # downstream. Gates the transform bypass, the snap-width trim,
+        # and the one-symbol apoha emission below. The leg test is the
+        # MODEL'S ``conceptualMode`` (mirrored onto the space at
+        # create_from_config) -- the SyntacticLayer is attached
+        # unconditionally (model.xml default grammar), so layer presence
+        # cannot distinguish parallel from serial. Serial/grammar and
+        # stage-0 unity paths are untouched; a standalone space without
+        # the stamp keeps today's dispatch.
+        # Geometry guards keep legacy-geometry legs on today's path:
+        # a snap cannot consume a view narrower than the codebook row
+        # (e.g. MM_xor's t=1 view hands 5-wide muxed atoms; the S-tier
+        # dispatch does the width lift there), and the emission frame
+        # [N, nDim] must reshape cleanly into the narrow output
+        # [*, nOutputDim] (tapered multi-stage configs carry stages
+        # where it cannot).
+        _symbolic_iter = (bool(self.codebook)
+                          and getattr(self, '_conceptual_mode', None)
+                          == 'parallel'
+                          and isinstance(self.subspace.what, Codebook)
+                          and act_pre is not None
+                          and act_pre.dim() == 3
+                          and int(act_pre.shape[-1]) >= int(self.nDim)
+                          and int(self.nOutputDim) > 0
+                          and (int(act_pre.shape[-2]) * int(self.nDim))
+                          % int(self.nOutputDim) == 0)
         # Stage 3 router wiring: when the CS<->SS carrier is aliased to
         # a wider (muxed) PS subspace, the materialised event still
         # carries the nWhere/nWhen columns PS added. SS operates on a
         # concept-dim ``what`` slab; trim the extra columns here so the
         # signal-router-dispatched compose pass and the downstream
-        # forwardEnd reshape see ``nOutputDim``-wide tensors.
+        # forwardEnd reshape see ``nOutputDim``-wide tensors. On a
+        # symbolic iteration the snap consumes CODEBOOK-WIDTH (nDim)
+        # vectors per slot -- trim to that instead (the narrow nOutputDim
+        # view is forwardEnd's reshape of the emission frame, e.g.
+        # MM_20M [8, 1024] -> [1024, 8]).
+        _trim_w = int(self.nDim) if _symbolic_iter else self.nOutputDim
         if (act_pre is not None
-                and self.nOutputDim != -1
-                and act_pre.shape[-1] != self.nOutputDim):
-            act_pre = act_pre[..., :self.nOutputDim]
+                and _trim_w != -1
+                and act_pre.shape[-1] != _trim_w):
+            act_pre = act_pre[..., :_trim_w]
         # SyntacticLayer is unconditional: per the grammar XML, the
         # chart populates ``current_rules`` with one or more rules per
         # tier (e.g. ``S = sigma(S)`` from model.xml's default
@@ -16227,7 +16129,17 @@ class SymbolicSpace(Space):
         # dispatch is a no-op (post-2026-05-07 rollback removed the
         # ``default_rule`` code-level fallback — grammar XML is the
         # sole source of truth).
-        if getattr(self, 'syntacticLayer', None) is None:
+        if _symbolic_iter:
+            # THE CODEBOOK REPLACES PI (plan Step 1): on a symbolic
+            # iteration the snap below IS the analysis -- the pi
+            # transform (the parallel fold AND the S-tier syntactic
+            # dispatch alike) is bypassed, not resized or retired
+            # (`none` mode and the serial leg keep theirs). Thought is
+            # top-down, serial, and can only be acted on by Sigma:
+            # downstream composes with the emission, it does not
+            # re-analyze it.
+            act = act_pre
+        elif getattr(self, 'syntacticLayer', None) is None:
             # Parallel-mode SS fold. Post Pi/Sigma swap (Phase 3, rev.
             # 2026-06-09) the fold is ``self.pi`` -- the top-down ANALYSIS
             # (product/intersection) operator. It is the cross-slot symbolic
@@ -16306,10 +16218,12 @@ class SymbolicSpace(Space):
         # layer ran on the CS-shaped carrier and may have re-muxed the
         # where/when tail back on. Re-apply the CS->SS demux so the
         # downstream SS consumers (codebook snap, sortNetwork, forwardEnd
-        # reshape) see an nOutputDim-wide content slab.
-        if (act is not None and self.nOutputDim != -1
-                and act.ndim == 3 and act.shape[-1] != self.nOutputDim):
-            act = act[..., :self.nOutputDim]
+        # reshape) see an nOutputDim-wide content slab. (Symbolic
+        # iterations stay at the codebook width ``_trim_w == nDim``; the
+        # narrow view is forwardEnd's reshape of the emission frame.)
+        if (act is not None and _trim_w != -1
+                and act.ndim == 3 and act.shape[-1] != _trim_w):
+            act = act[..., :_trim_w]
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -16434,7 +16348,12 @@ class SymbolicSpace(Space):
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             vspace = self.forwardEnd(self.subspace)
-            _serial = getattr(self, 'syntacticLayer', None) is not None
+            # The serial/grammar leg keeps the legacy nearest-target
+            # coupling; a SYMBOLIC ITERATION (parallel + quantize) takes
+            # the emission branch below regardless of the (always-
+            # attached) SyntacticLayer.
+            _serial = (getattr(self, 'syntacticLayer', None) is not None
+                       and not _symbolic_iter)
             if _serial:
                 # SERIAL/grammar leg -- TRANSITIONAL: the legacy
                 # nearest-target coupling stays until the serial path
@@ -16460,19 +16379,96 @@ class SymbolicSpace(Space):
                     vspace,
                     self._compute_symbol_terms(predicted, target=target))
             else:
+                # SYMBOLIC ITERATION (plan Step 1, 2026-06-10): under
+                # quantize the event becomes the snapped SYMBOL CODE --
+                # value substitution is CORRECT here (these are symbolic
+                # iterations), unlike stage 0 where analysis must not
+                # alter the data. ONE SYMBOL AT A TIME: the codebook
+                # emits a single symbol per iteration, and per APOHA the
+                # copart is ZEROS EVERYWHERE -- "the concept of the cup
+                # appears to the mind through the negation of non-cup";
+                # the exclusion IS the appearance, not padding. The snap
+                # replaced Pi above; the emission is discrete and given,
+                # acted on only by Sigma downstream.
                 _basis = self.subspace.what
                 _vq = getattr(_basis, "vq", None)
+                # The #13 guard carries over: a training-mode snap must
+                # never reach an EMA-live VQ (its ``replace_W`` refresh
+                # would re-point the space-owned ``W`` at the VQ matrix).
                 _ema_safe = (not self.training
+                             or _vq is None
                              or (getattr(_vq, "ema_update", True) is False))
+                object.__setattr__(self, "_symbolic_emission", None)
+                object.__setattr__(self, "_csleg_recon_loss", None)
                 if (isinstance(_basis, Codebook) and _ema_safe
-                        and torch.is_tensor(z_e) and z_e.dim() >= 2
+                        and torch.is_tensor(z_e) and z_e.dim() == 3
                         and int(z_e.shape[-1]) == int(self.nDim)):
+                    _B, _N, _W = z_e.shape
                     with torch.no_grad():
-                        _, _naming_idx, _ = _basis.quantize(
-                            z_e.reshape(-1, int(self.nDim)))
+                        _q, _idx, _ = _basis.quantize(
+                            z_e.reshape(-1, _W))
+                    _q = _q[..., :_W].reshape(_B, _N, _W).to(z_e.dtype)
+                    _idx = _idx.reshape(_B, _N)
+                    object.__setattr__(self, "_naming_indices", _idx)
+                    # ONE-symbol selection: the strongest-matching slot
+                    # wins; NULL-padded AR cells are excluded.
+                    _score = (z_e.detach() * _q).sum(dim=-1)      # [B, N]
+                    _vm = self.subspace.valid_mask
+                    if _vm is not None:
+                        _score = torch.where(
+                            _vm.flatten().view(-1, 1).expand_as(_score),
+                            _score,
+                            torch.full_like(_score, float("-inf")))
+                    _win = _score.argmax(dim=1)                   # [B]
+                    _sel = F.one_hot(_win, _N).to(z_e.dtype).unsqueeze(-1)
+                    _wrow = _idx.gather(1, _win.unsqueeze(1)).squeeze(1)
                     object.__setattr__(
-                        self, "_naming_indices",
-                        _naming_idx.reshape(z_e.shape[:-1]))
+                        self, "_symbolic_emission",
+                        (_win.detach(), _wrow.detach()))
+                    # STE (the asymmetric output->encoder leg): the frame
+                    # forwards the winner row's CODE; the gradient passes
+                    # identity to the winner slot's z. The apoha mask
+                    # zeroes every other slot -- value AND gradient
+                    # (exclusion of the other).
+                    _frame = (z_e + (_q - z_e).detach()) * _sel
+                    # Honest STE from step one (the #13 lesson): while the
+                    # winner row is VIRGIN (the host-eager stem adoption
+                    # has not named it yet -- ``adopt_symbolic_evidence``)
+                    # the iteration stays CONTINUOUS: a symbol that does
+                    # not exist yet cannot be emitted, and substituting a
+                    # random row poisons training. With no staged mask at
+                    # all (standalone space, cold start) every row counts
+                    # virgin.
+                    _virgin = getattr(self, "_staged_virgin_rows", None)
+                    if _virgin is not None and torch.is_tensor(_virgin):
+                        _vw = _virgin.to(_wrow.device)[_wrow].view(-1, 1, 1)
+                        _frame = torch.where(_vw, z_e, _frame)
+                    else:
+                        _frame = z_e
+                    if _vm is not None:
+                        _frame = _frame * _vm.flatten().view(-1, 1, 1).to(
+                            _frame.dtype)
+                    # Recon gather on THIS leg (input -> codebook; the
+                    # asymmetric-VQ EMA replacement, retargeted from the
+                    # stage-0 unity): the WINNER row trains toward the
+                    # concept code that selected it. Evidence detached;
+                    # the argmax blocks the encoder leg. EMA stays off;
+                    # commitment stays 0 (Models hardwire).
+                    if self.training:
+                        _cbp = (getattr(_vq, "codebook", None)
+                                if _vq is not None else None)
+                        if isinstance(_cbp, nn.Parameter):
+                            _rows = _cbp[_wrow]
+                            _tgt = z_e.detach()[
+                                torch.arange(_B, device=z_e.device), _win]
+                            _n = min(int(_rows.shape[-1]), _W)
+                            object.__setattr__(
+                                self, "_csleg_recon_loss",
+                                F.mse_loss(_rows[..., :_n],
+                                           _tgt[..., :_n].to(_rows.dtype)))
+                    self.subspace.set_event(_frame)
+                    vspace = self.forwardEnd(self.subspace)
+                    predicted = _frame
                 self._emit_symbol_terms(
                     vspace, self._compute_symbol_terms(predicted))
         elif codebook_nonreversible:

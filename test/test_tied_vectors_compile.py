@@ -1,12 +1,12 @@
 """``torch.compile(fullgraph=True)`` must be able to trace a read of
 ``WordVectors._vectors``.
 
-Regression (the "graph break" fix): the tied-storage ``_vectors`` property
-read ``object.__getattribute__(self, "_tied_param_getter")``. Dynamo cannot
-trace ``object.__getattribute__`` (gb0156: "Dynamo does not know how to
-trace method ``__getattribute__`` of class ``type``"), so *any* compiled
-forward that reads ``wv._vectors`` raised ``torch._dynamo.exc.Unsupported``
-under ``fullgraph=True``.
+Regression (the "graph break" fix): the ``_vectors`` property used to
+read ``object.__getattribute__(self, "_tied_param_getter")``. Dynamo
+cannot trace ``object.__getattribute__`` (gb0156: "Dynamo does not know
+how to trace method ``__getattribute__`` of class ``type``"), so *any*
+compiled forward that reads ``wv._vectors`` raised
+``torch._dynamo.exc.Unsupported`` under ``fullgraph=True``.
 
 The production trigger is IR-mode ``Models.create_ir_mask``:
 
@@ -17,25 +17,14 @@ so the IR brick body could not be compiled with ``fullgraph=True`` (it is
 compiled unconditionally on CPU/CUDA). ``data/idempotent.xml`` reproduced
 the crash end-to-end.
 
-These tests pin the property to stay trace-able for both the tied and the
-untied storage path.
+Step 3 (2026-06-10 symbolic-iteration plan) retired the TIED storage path
+(``tie_to_codebook``); storage is PS-local permanently. The property
+indirection remains precisely for this traceability contract, so the
+untied pin stays.
 """
 import torch
-import torch.nn as nn
 
 from embed import WordVectors
-
-
-class _StubCodebook(nn.Module):
-    """Minimal tie target: exposes ``getW()`` returning a Parameter,
-    mirroring ``Spaces.Codebook`` from the property's point of view."""
-
-    def __init__(self, n, d):
-        super().__init__()
-        self.W = nn.Parameter(torch.randn(n, d))
-
-    def getW(self):
-        return self.W
 
 
 def _compiled_read(wv):
@@ -59,15 +48,16 @@ def _compiled_read(wv):
 
 
 def test_untied_vectors_compiles_fullgraph():
-    """Untied storage (local Parameter) read under fullgraph compile."""
+    """PS-local storage (the permanent layout) read under fullgraph."""
     wv = WordVectors(torch.randn(4, 8), ["a", "b", "c", "d"])
     out = _compiled_read(wv)
     assert out.dim() == 0
 
 
-def test_tied_vectors_compiles_fullgraph():
-    """Tied storage (routes through ``codebook.getW()``) under fullgraph."""
+def test_tie_api_is_retired():
+    """``tie_to_codebook`` is gone; the getter stays permanently None."""
     wv = WordVectors(torch.randn(4, 8), ["a", "b", "c", "d"])
-    wv.tie_to_codebook(_StubCodebook(4, 8))
-    out = _compiled_read(wv)
-    assert out.dim() == 0
+    assert not hasattr(wv, "tie_to_codebook"), (
+        "WordVectors.tie_to_codebook was retired (Step 3 of the "
+        "2026-06-10 symbolic-iteration plan)")
+    assert wv._tied_param_getter is None

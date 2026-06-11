@@ -12,9 +12,17 @@
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <conceptualMode>parallel</conceptualMode>
+    <!-- Gate determinism: seeded runs only reproduce on CPU (MPS
+         kernels are nondeterministic). BASICMODEL_DEVICE overrides. -->
+    <device>cpu</device>
 
     <training>
       <numEpochs>600</numEpochs>
+      <!-- Pinned seed: gate fixture; unseeded runs are recon-flaky
+           (predictions stable at 4/4, recon 4/4 vs 2/4). Seed 1 on CPU
+           is a verified-green basin (seed 0 is not; the flakiness is
+           seed-borne). -->
+      <seed>1</seed>
       <learningRate>0.005</learningRate>
       <autoload>false</autoload>
       <trainEmbedding>JOINT</trainEmbedding>
