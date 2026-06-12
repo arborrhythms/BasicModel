@@ -93,6 +93,17 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <!-- Phase 4b (2026-06-10) moved lexers to SymbolicSpace; this
+         config carried only the commented-out legacy InputSpace lexer
+         and so had NO live lexer at all — the content tier never
+         lexed, every sentence staged as the same slab (row-identical
+         [B, 8, 1024] at PS input) and no objective could learn from
+         input-invariant features. Byte is the design lexer (the
+         InputSpace is byte-shaped: nDim 5 = 1 byte + 2 where +
+         2 when, matching MM_xor) and keeps train.py's Phase-1
+         embedding skip (byte-lexer configs need no word-embedding
+         pretrain; train.py reads this knob). -->
+    <lexer>byte</lexer>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>

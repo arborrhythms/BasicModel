@@ -35,6 +35,13 @@ from collections import defaultdict
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 
+# The transitional POS-categoried grammar the D1 collapse is measured on,
+# archived as a fixture (GrammarOpsPass §1: data/complete.grammar is now
+# role-collapsed; the measurement baseline is preserved verbatim here).
+_TRANSITIONAL_GRAMMAR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "fixtures",
+    "transitional_pos.grammar")
+
 _BIN = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path:
@@ -84,7 +91,7 @@ def test_real_grammar_role_collapsed_op_roles_recover():
     from Language import Grammar
     from participation import role_participation, cluster_by_participation
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(_TRANSITIONAL_GRAMMAR)
     cls = cluster_by_participation(role_participation(g))
     for fam in (("CONJ_L3", "CONJ_L4", "CONJ_L5"),
                 ("DISJ_R3", "DISJ_R4", "DISJ_R5")):
@@ -107,7 +114,7 @@ def test_participation_drives_recovering_collapse():
     from participation import (grammar_rules, learned_collapse,
                                collapse_conflicts)
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(_TRANSITIONAL_GRAMMAR)
     rules = grammar_rules(g)
     collapse = learned_collapse(g)
     n_sym = len(collapse)

@@ -160,13 +160,91 @@ def test_forward_reverse_pairing():
     assert _REQUIRED_OPS <= dn
 
 
-def test_transitional_grammar_unchanged():
-    """The transitional ``complete.grammar`` is retained UNCHANGED as the
-    compatibility baseline (still POS-categoried, still spells
-    assertPart/queryPart) even though role-collapse is now the default."""
+def test_transitional_baseline_archived_as_fixture():
+    """GrammarOpsPass §1: ``complete.grammar`` is migrated to the
+    role-collapsed format; the transitional POS-categoried content (the
+    compatibility baseline the D1 collapse is measured on) is archived
+    verbatim at ``test/fixtures/transitional_pos.grammar`` and still
+    spells assertPart/queryPart."""
     from Language import Grammar
+    fixture = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "fixtures",
+        "transitional_pos.grammar")
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(fixture)
     methods = {r.method_name for r in g.rules if r.method_name}
-    assert "assertPart" in methods or "queryPart" in methods, (
-        "complete.grammar must remain unchanged as the compatibility baseline")
+    assert "assertPart" in methods and "queryPart" in methods, (
+        "the transitional baseline must stay archived (POS-categoried, "
+        "assertPart/queryPart spelled) for the D1 measurement")
+
+
+# -- Per-grammar-file format conformance (GrammarOpsPass §1) --------------
+#
+# Every LIVE grammar under data/ conforms to the role-collapsed format.
+# The transitional POS-categoried baseline lives under test/fixtures/
+# (test data for the D1 / participation measurements), not under data/.
+
+import glob
+
+import pytest
+
+_ALL_GRAMMAR_FILES = sorted(
+    os.path.basename(p) for p in glob.glob(os.path.join(_DATA, "*.grammar")))
+
+# queryPart / assertPart folded into isPart + query (decision 6). ``part``
+# stays a live spelling of the parthood family in default/shamatha.
+_RETIRED_METHOD_NAMES = {"queryPart", "assertPart"}
+
+# Relation families whose rules must carry an explicit query attribute.
+_RELATION_DOTTED = ("isEqual.", "isPart.", "part.")
+
+
+def test_sweep_covers_data_grammars():
+    """The sweep sees the live grammar set (complete.grammar included)."""
+    assert "complete.grammar" in _ALL_GRAMMAR_FILES
+    assert "role_collapsed.grammar" in _ALL_GRAMMAR_FILES
+    assert len(_ALL_GRAMMAR_FILES) >= 5, _ALL_GRAMMAR_FILES
+
+
+@pytest.mark.parametrize("fname", _ALL_GRAMMAR_FILES)
+def test_grammar_file_conforms_to_role_collapsed_format(fname):
+    """GrammarOpsPass §1 conformance, per grammar file: space-scoped
+    starts only (no top-level <start>), PS analyzer root ``U``, explicit
+    ``query`` on relation rules, no retired queryPart/assertPart method
+    spellings, no POS / category / transitional-role state names, and no
+    category-rename projection rules (method-less rules are identities)."""
+    from Language import Grammar
+    path = os.path.join(_DATA, fname)
+    root = ET.parse(path).getroot()
+
+    # Space-scoped starts only (decision 7).
+    assert root.find("start") is None, (
+        f"{fname}: top-level <start> (must be space-scoped)")
+
+    # A PS section declares the analyzer root U.
+    ps = root.find("PerceptualSpace")
+    if ps is not None:
+        starts = [(s.get("name"), (s.text or "").strip())
+                  for s in ps.findall("start")]
+        assert ("everything", "U") in starts, (fname, starts)
+
+    # Relation rules dispatch by explicit query (decision 6).
+    for rule in root.iter("rule"):
+        body = (rule.text or "")
+        if any(tag in body for tag in _RELATION_DOTTED):
+            assert rule.get("query") is not None, (
+                f"{fname}: relation rule missing explicit query: "
+                f"{body.strip()!r}")
+
+    g = Grammar()
+    g.load_from_grammar_file(fname)
+    methods = {r.method_name for r in g.rules if r.method_name}
+    assert not (methods & _RETIRED_METHOD_NAMES), (
+        f"{fname}: retired method spellings {methods & _RETIRED_METHOD_NAMES}")
+    for r in g.rules:
+        for tok in _rule_tokens(r):
+            assert tok not in _FORBIDDEN_STATE_TOKENS, (
+                f"{fname}: forbidden state name {tok!r} in {r.canonical!r}")
+        if r.method_name is None:
+            assert r.rhs_symbols == (r.lhs,), (
+                f"{fname}: non-identity projection rule {r.canonical!r}")

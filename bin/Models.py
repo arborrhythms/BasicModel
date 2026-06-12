@@ -611,6 +611,19 @@ class BaseModel(Mereology, nn.Module):
                 f"'parallel' (got {_mode_raw!r}).")
         self.conceptualMode = _mode
 
+        # GrammarOpsPass §6c sentence protocol (author sign-off
+        # 2026-06-11): in serial mode, every sentence opens with an
+        # independent PARALLEL prelude of ``conceptualOrder`` pumps
+        # (pump zero: EMA on — the word-learning guarantee; intent-only
+        # commit — the gist primes both towers via §5 ``set_intent``
+        # and nothing enters the workspace), then the serial per-word
+        # task runs with the §6d law in its serial partition; the gist
+        # re-pumps on preemption only. ``<architecture>
+        # <sentenceProtocol>`` — default OFF until the author's cutover
+        # (the meronomy pattern: land dark, cut over deliberately).
+        self.sentence_protocol = bool(TheXMLConfig.get(
+            "architecture.sentenceProtocol", default=False))
+
         # Step 1 (2026-06-10 symbolic-iteration plan): mirror the mode
         # onto each SymbolicSpace. The SS forward dispatches SYMBOLIC
         # ITERATIONS (quantize + parallel leg, t>0) on it -- the
@@ -2266,13 +2279,34 @@ class BasicModel(BaseModel):
         mask = torch.bernoulli(
             torch.full((B, K), rate, device=dev)).bool()
 
-        # Exclude padding slots (codebook index 0 == byte \x00 sentinel).
+        # Exclude padding slots (codebook index 0 == byte \x00 sentinel)
+        # — but only where the what-index column is INFORMATIVE.
+        # Byte-staged configs (MM_20M / MM_xor) leave ``_active``'s
+        # what-index column uniformly 0 even for REAL content, so the
+        # unconditional ``what_idx != 0`` exclusion silently zeroed the
+        # whole mask — ``compute_masked`` then returned exactly 0.0
+        # every batch, the reconstruction objective never engaged, and
+        # nothing stopped the body from collapsing content (the
+        # flat-0.5-prediction / blank-reconstruction failure,
+        # 2026-06-11). When the column is degenerate (all zero), fall
+        # back to NULL-CONTENT padding detection (an all-zero ``.what``
+        # slice — what a padding slot actually carries). The selection
+        # is a tensor ``torch.where`` on a 0-dim flag — on-device,
+        # sync-free — and word-staged configs (informative column,
+        # e.g. XOR_exact's verified seed basin) keep the index rule
+        # byte-identically.
         active = getattr(percept_subspace, '_active', None)
         if (active is not None and active.dim() == 3
                 and active.shape[-1] >= 1):
             what_idx = active[:, :K, 0].long()
             if what_idx.shape == mask.shape:
-                mask = mask & (what_idx != 0)
+                nWhat_excl = int(codebook.getW().shape[-1])
+                content_mass = event[..., :nWhat_excl].abs().amax(dim=-1)
+                idx_informative = what_idx.amax() > 0      # 0-dim, on-device
+                keep = torch.where(idx_informative,
+                                   what_idx != 0,
+                                   content_mass > 0)
+                mask = mask & keep
 
         # Snapshot pre-mask embedded event as the loss target.
         # Detach so backward through the loss target doesn't double up
@@ -2440,8 +2474,43 @@ class BasicModel(BaseModel):
                 # gracefully and the SHIFT-only depth-bound stays via
                 # back-pressure. Not a compile blocker.
                 self._stm_reducer_cached = False
+        # The strict gate holds where the forward traces end to end. A
+        # FULL-ROUTER grammar (anything beyond the default-only
+        # pi/sigma rules) routes through the host-side chart fires
+        # (``_chart_compose_at_C`` / ``_chart_generate_from_stm``,
+        # ``@torch.compiler.disable``'d: their rule-id bookkeeping is
+        # data-dependent ``.item()`` branching dynamo cannot guard on —
+        # the ``Eq(u0, 2)`` UserError on MM_xor's per-stage path). A
+        # disabled call is itself a graph break, which fullgraph=True
+        # turns into a hard error — so full-router configs compile
+        # with tolerated breaks. Default-only configs (MM_20M's
+        # bypass never reaches the router loops) keep the strict gate.
+        _ws = getattr(self, 'wordSubSpace', None)
+        _full_router = (_ws is not None and not getattr(
+            _ws, '_grammar_is_default_only', True))
+        # torch 2.12 inductor-MPS cannot codegen the FULL-ROUTER
+        # forward: the generated Metal references undeclared reduction
+        # indices ("use of undeclared identifier 'r0_1'" — an upstream
+        # backend bug, reproduced on MM_xor 2026-06-11; MM_20M's
+        # default-only forward compiles clean on the same device).
+        # Until the upstream fix lands those configs run eager on MPS;
+        # CUDA / CPU and default-only MPS configs compile as before.
+        # MODEL_COMPILE=none stays the manual override everywhere.
+        if _full_router and str(TheDevice.get()).startswith("mps"):
+            TheMessage(
+                "MPS compile skipped: full-router grammar config "
+                "(upstream torch 2.12 inductor-MPS codegen bug — "
+                "generated Metal references undeclared reduction "
+                "indices); running eager")
+            self._compiled_step = self.forward
+            return
+        _fullgraph = ENUM_FULLGRAPH and not _full_router
+        if ENUM_FULLGRAPH and _full_router:
+            TheMessage(
+                "fullgraph relaxed: full-router grammar config "
+                "(host-side chart routing is a tolerated break)")
         self._compiled_step = _compile(
-            self.forward, verbose=True, fullgraph=ENUM_FULLGRAPH)
+            self.forward, verbose=True, fullgraph=_fullgraph)
 
     def _start_spaces_for_forward(self):
         for space in self.spaces:
@@ -4888,6 +4957,15 @@ class BasicModel(BaseModel):
                 _law_get, side='object')
         _law_ss.install_reference_update_law(_law_get, side='word')
 
+        # §5 intent priming (GrammarOpsPass; author 2026-06-11): wire
+        # both codebook towers' row selection to the single current
+        # intent (``set_intent``). Dark by construction: with no intent
+        # set the producer returns None and recognition is
+        # byte-identical to the unprimed path.
+        if getattr(self, 'perceptualSpace', None) is not None:
+            self.perceptualSpace.install_intent_priming()
+        _law_ss.install_intent_priming()
+
         # VQ-VAE EMA / growing-codebook knob overrides per space.
         # Each Space's ``subspace.what`` may carry an internal
         # ``VectorQuantize`` (``.vq``); when XSD knobs are set, override
@@ -6251,6 +6329,80 @@ class BasicModel(BaseModel):
         self._per_word_contributions: list = []
         return stm, N_target, word_carrier, in_event
 
+    # -- §6c sentence protocol (GrammarOpsPass; author 2026-06-11) ------
+
+    # Preemption knobs (§6: threshold + hysteresis on the absolute
+    # set's conflict mass; per-dimension max as the trigger statistic).
+    PREEMPT_THRESHOLD = 0.5
+    PREEMPT_HYSTERESIS = 0.1
+
+    def _set_serial_pump(self, flag):
+        """Stamp the per-pump mode for the §6d update law (mode is a
+        PER-PUMP property within a serial sentence — §6b/§6c): the
+        parallel prelude runs with ``serial_pump=False`` (percepts
+        move), the per-word serial ticks with ``True`` (references
+        move). ``None`` un-stamps (the law falls back to the legacy
+        ``serial_mode`` read)."""
+        for sp in (getattr(self, 'perceptualSpace', None),
+                   getattr(self, 'symbolicSpace', None)):
+            if sp is not None:
+                sp.serial_pump = flag
+
+    def _sentence_prelude(self, in_event, word_carrier):
+        """Pump zero (§6c): one independent PARALLEL prelude per serial
+        sentence — ``conceptualOrder`` whole-slab pumps up the tier
+        ladder (the π carving with the σ fusion: the Gelug first
+        moment, direct and non-conceptual), seeding BOTH codebook
+        towers (EMA on — the word-learning guarantee).
+
+        Commit is INTENT-ONLY (sign-off): the terminal CS event's
+        pooled content is the gist, fed to §5 ``set_intent`` (one
+        intent priming both towers); NOTHING enters the workspace —
+        the empty-seed feedback pointers are restored after the pumps,
+        the STM is untouched (no push), and ``_per_word_prelude``'s
+        sentence state is re-read by the serial loop exactly as if the
+        prelude had not run. The §6d law sees these pumps as PARALLEL
+        (``serial_pump=False``); the per-word ticks that follow run
+        with ``serial_pump=True``. The mutex is honored throughout —
+        one commit per pump, interference avoided by temporal
+        separation.
+
+        Returns the gist (or ``None``). Eager-path only for now (the
+        protocol is config-gated OFF by default; the captured-graph
+        per-word path never sees it).
+        """
+        T = max(1, int(getattr(self, 'conceptualOrder', 1) or 1))
+        cs = self.conceptualSpace
+        ss = self.symbolicSpace
+        prev_ps, prev_ss = self._prev_cs_for_ps, self._prev_cs_for_ss
+        self._set_serial_pump(False)
+        try:
+            if in_event is not None:
+                word_carrier.set_event(in_event)
+                word_carrier.stem_embedded = True
+            gist = None
+            for _ in range(T):
+                PS_sub = self.perceptualSpace.forward(word_carrier)
+                SS_sub = ss.forward(self._prev_cs_for_ss)
+                CS_sub = cs.forward(PS_sub, SS_sub)
+                self._prev_cs_for_ps = cs._subspaceForPS
+                self._prev_cs_for_ss = cs._subspaceForSS
+                if CS_sub is not None:
+                    idea = CS_sub.materialize()
+                    if idea is not None and idea.dim() == 3:
+                        gist = idea.mean(dim=(0, 1))
+            self._last_gist = (gist.detach() if gist is not None
+                               else None)
+            self.set_intent(self._last_gist)
+            self._prelude_pumps = int(
+                getattr(self, '_prelude_pumps', 0)) + 1
+        finally:
+            # Intent-only: the star never becomes a workspace slot.
+            self._prev_cs_for_ps = prev_ps
+            self._prev_cs_for_ss = prev_ss
+            self._set_serial_pump(True)
+        return self._last_gist
+
     def _per_word_body_step(self, w, p, gate_b_1, out_slot, active_host=True):
         """One per-word iteration of the static loop (replaces the
         legacy data-dependent ``while next_word()`` body).
@@ -6483,6 +6635,17 @@ class BasicModel(BaseModel):
         # pads the S-tier rule cursor to N with id_SS.
         stm, N_target, word_carrier, in_event = self._per_word_prelude(in_sub)
 
+        # §6c sentence protocol (config-gated; default OFF until the
+        # author's cutover): pump zero — the independent parallel
+        # prelude seeding both towers and producing the §5 intent —
+        # runs BEFORE the serial task; the per-word ticks then carry
+        # the §6d serial partition (``serial_pump=True``, set by the
+        # prelude's epilogue). Gist refresh below is on preemption
+        # only (sign-off: no clause-boundary refresh, no sandwich).
+        protocol_on = bool(getattr(self, 'sentence_protocol', False))
+        if protocol_on:
+            self._sentence_prelude(in_event, word_carrier)
+
         # The per-word loop IS the recurrence: it replaces the
         # whole-slab cell's ``conceptualOrder`` pass loop with a
         # word-indexed loop. Per the ratified design each word is ONE
@@ -6545,6 +6708,8 @@ class BasicModel(BaseModel):
         N_loop = min(N_static, K_host)
 
         last_cs = None
+        _truth = self._get_truth_layer() if protocol_on else None
+        _preempt_latched = False
         for p in range(N_loop):
             w = self.inputSpace.word_at(p)
             if w is None:
@@ -6558,6 +6723,24 @@ class BasicModel(BaseModel):
                 w, p, gate_b_1, out_slot, active_host=True)
             if CS_sub is not None:
                 last_cs = CS_sub
+            # §6 preattention (protocol-gated; eager path only — the
+            # signal is a host read): the absolute set's conflict mass
+            # (per-dimension max of min(T, F), threshold + hysteresis)
+            # captures the serial thread. The ladder's live rungs:
+            # checkpoint (the workspace simply stays — no abort) →
+            # reground (re-pump the gist; the sign-off's
+            # refresh-on-preemption-only policy). Re-pump fires on the
+            # RISING edge so a latched conflict doesn't thrash.
+            if _truth is not None:
+                _, _fired = _truth.preemption_signal(
+                    self.PREEMPT_THRESHOLD, self.PREEMPT_HYSTERESIS)
+                if _fired and not _preempt_latched:
+                    self._sentence_prelude(in_event, word_carrier)
+                _preempt_latched = _fired
+        if protocol_on:
+            # Sentence end: un-stamp the per-pump mode (the §6d law
+            # falls back to the legacy read between sentences).
+            self._set_serial_pump(None)
         word_count = N_loop
         # STM host mirror is advanced inside the body's ``active_host``
         # branch per real push; no post-loop fixup needed.
@@ -6721,6 +6904,22 @@ class BasicModel(BaseModel):
         single uniform ``[B, max_depth, D_c]`` slab (rows with shorter
         sentences carry zero-padding at the tail).
 
+        FULL-ROUTER fires run as an eager island
+        (``_ws_compose_eager``, ``@torch.compiler.disable``'d — the
+        house pattern, cf. ``observe_stm_end_state``): the router's
+        rule-id bookkeeping (``languageLayer.compose``'s per-row
+        ``int(kind[b, j].item())`` branching) is data-dependent host
+        control flow dynamo cannot guard on (``Could not guard on
+        data-dependent expression Eq(u0, 2)`` — MM_xor on the compiled
+        per-stage path). Its products are host dicts
+        (``current_rules`` / cursors) read BEFORE captured regions, so
+        the island changes no numerics; full-router configs compile
+        with fullgraph=False (see ``enable_compiled_step``). The
+        DEFAULT-ONLY bypass never reaches the router loops, stays
+        traceable inline, and keeps the strict fullgraph gate
+        (a disabled call inside a fullgraph=True trace would itself
+        hard-error — MM_20M).
+
         Method name preserved across the Stage 3 chart retirement; it
         now drives ``WordSubSpace.compose`` -> ``languageLayer.compose``.
 
@@ -6736,14 +6935,31 @@ class BasicModel(BaseModel):
         snap = self.conceptualSpace.stm.snapshot()
         if snap is None:
             return
+        if getattr(self.wordSubSpace, '_grammar_is_default_only', True):
+            self.wordSubSpace.compose(snap)
+        else:
+            self._ws_compose_eager(snap)
+
+    @torch.compiler.disable
+    def _ws_compose_eager(self, snap):
+        """Eager island for the full-router compose fire (see
+        ``_chart_compose_at_C``)."""
         self.wordSubSpace.compose(snap)
+
+    @torch.compiler.disable
+    def _ws_generate_eager(self, snap):
+        """Eager island for the full-router generate fire (see
+        ``_chart_compose_at_C``)."""
+        self.wordSubSpace.generate(snap)
 
     def _chart_generate_from_stm(self):
         """Fire ``wordSubSpace.generate`` over the C-tier STM snapshot.
 
-        Reverse-path mirror of ``_chart_compose_at_C``: populates
-        ``wordSubSpace.generate_rules`` so each stage's reverse dispatch
-        can pop them via its SyntacticLayer cursor.
+        Reverse-path mirror of ``_chart_compose_at_C`` (full-router
+        fires run via the ``_ws_generate_eager`` island for the same
+        reason — see there): populates ``wordSubSpace.generate_rules``
+        so each stage's reverse dispatch can pop them via its
+        SyntacticLayer cursor.
 
         Method name preserved across the Stage 3 chart retirement; it
         now drives ``WordSubSpace.generate`` -> ``languageLayer.generate``.
@@ -6773,7 +6989,10 @@ class BasicModel(BaseModel):
         snap = stm.snapshot()
         if snap is None:
             return
-        ws.generate(snap)
+        if getattr(ws, '_grammar_is_default_only', True):
+            ws.generate(snap)
+        else:
+            self._ws_generate_eager(snap)
 
     def _stm_symbolic_roundtrip(self, slab):
         """Idempotent C→S→C round-trip over a full ``[B, cap, D_c]`` STM
@@ -7788,6 +8007,45 @@ class BasicModel(BaseModel):
             fh.write(ET.tostring(forward_el, encoding='unicode'))
             fh.write("\n")
 
+
+    # -- Intent priming (GrammarOpsPass §5; author 2026-06-11) ---------
+
+    def set_intent(self, intent, *, gain=1.0):
+        """ONE current-intent code priming BOTH codebook towers
+        simultaneously: primed RECOGNITION on the PS/extent tower
+        alongside primed RETRIEVAL on the SS/intent tower, weighting
+        the analytical and synthetic superpositions toward the same
+        context. Priming is attention over symbols — codebook focus
+        only, never rule dispatch.
+
+        The intent is the product of the parallel parse (the §6c
+        pump-zero gist); it is sentence-scoped and refreshed on
+        preemption. ``intent=None`` clears the tower boosts (the
+        byte-identical off state); the taxonomy buffer's merged boost
+        dissipates through its own sentence-scoped decay/reset.
+
+        Returns the SS-tower boosts (or ``None``).
+        """
+        ps = getattr(self, 'perceptualSpace', None)
+        ss = getattr(self, 'symbolicSpace', None)
+        if ps is not None and hasattr(ps, 'set_intent'):
+            ps.set_intent(intent, gain=gain)
+        ss_boosts = None
+        if ss is not None and hasattr(ss, 'set_intent'):
+            ss_boosts = ss.set_intent(intent, gain=gain)
+        # SS retrieval plumbing: merge into the word-space taxonomy
+        # priming buffer (consumed by the inverse recommender through
+        # priming_kwargs_for_slots). Best-effort and dark: no taxonomy
+        # or no buffer => recognition priming alone.
+        if ss_boosts is not None:
+            tax = getattr(getattr(self, 'wordSubSpace', None),
+                          'taxonomy', None)
+            if tax is not None and hasattr(tax, 'prime_with_weights'):
+                try:
+                    tax.prime_with_weights(ss_boosts)
+                except Exception:
+                    pass
+        return ss_boosts
 
     # -- Bidirectional Reasoning Loop (Phase 3) ------------------------
 

@@ -1,6 +1,10 @@
 # Grammar-Ops Corrective Pass — Plan Seed
 
-> **Status: SEED (proposals awaiting author sign-off).** Successor to
+> **Status: EXECUTED 2026-06-11 (all §7 signed off; workstreams §1,
+> §2, §5, §6/§6c landed, gated per-workstream; final suite 2361
+> passed / 0 failed from a 2324/0 baseline). §6c ships dark behind
+> ``<architecture><sentenceProtocol>`` (default off) — the cutover
+> flip is the author's, mirroring ``<meronomy>on``.** Successor to
 > [MeronomyPlan.md](MeronomyPlan.md) (complete: stages 0–9 landed,
 > `<meronomy>on` cutover live at basicmodel `ca437cd`, suite 2314
 > passed / 0 failures). Scoped by the author's corrections of
@@ -36,6 +40,13 @@ The unifying object (§6 below): one weight algebra,
 with commits at the single-writer tick and at mint, and preemption by
 the truth measure's conflict region.
 
+> **Sign-off adjustments (2026-06-11):** `role_gate` is struck with
+> §4's rejection (independent directional inventories — no shared rule
+> carries per-direction weights). `intent_priming` acts on the
+> **codebook towers** (attention/focus over rows during meronymic
+> parsing and lookup), not on rule weights — priming guides what the
+> operators see and retrieve, never which rules fire (§5).
+
 ## 1. Role-collapsed grammar migration (syntax stays in the grammars)
 
 **[DECIDED]** Syntactic validity — which categories a rule takes — is
@@ -52,6 +63,19 @@ migration: all grammars to the role-collapsed format (roles defined by
 - Tests: format conformance check per grammar file; the existing
   grammar-driven suites stay green through the migration.
 
+**[IMPLEMENTED 2026-06-11]** `complete.grammar` migrated in place
+(nested space-scoped starts carrying the `absolute_truth` /
+`relative_truth` names onto `exist_O1` / `isEqual_O1`+`isPart_O1`;
+`U` root; queryPart/assertPart → `isPart` + `query`; POS categories
+and rename rules deleted). The transitional POS-categoried content is
+archived VERBATIM at `test/fixtures/transitional_pos.grammar` — it
+remains the D1 measurement baseline, so the D1 / participation /
+semantic-categories / rewrite / merge-structural / order-typing
+suites were repointed at the fixture. New per-grammar-file
+conformance sweep: `test_role_collapsed_grammar.py::
+test_grammar_file_conforms_to_role_collapsed_format` over
+`data/*.grammar`.
+
 ## 2. Lexical masks on lift/lower (one matrix, many verbs)
 
 **[DECIDED]** The lift/lower masks are **lexical modulation of shared
@@ -63,13 +87,13 @@ selects its slice.
   on the LDU diagonal (`_d_effective`, `Layers.py`; flows through
   `LiftLayer` :2286 / `LowerLayer` :2501, and through the
   `MeronymicFoldAdapter` unchanged). The mask IS a gate vector.
-- **[PROPOSAL]** Mask source: the word's own code — a small learned
+- **[DECIDED 2026-06-11]** Mask source: the word's own code — a small learned
   projection from the lexical embedding to the gate's rank space,
   owned by LiftLayer/LowerLayer (one projection per operator, shared
   across the vocabulary; the per-verb difference rides entirely in the
   embedding → gate map). Gate parametrization stays the existing
   tanh-bounded convention.
-- **[PROPOSAL]** Training: end-to-end with the composition losses (no
+- **[DECIDED 2026-06-11]** Training: end-to-end with the composition losses (no
   separate mask objective); the registration loss (§5 of the spec)
   applies unchanged since gating preserves the weight law (the
   contractive clamp bounds the gated diagonal).
@@ -77,6 +101,18 @@ selects its slice.
   with masks on and indistinguishable ones with masks ablated; the
   weight law (§10.10) holds under arbitrary gates; gate flows through
   the adapter on the membership path.
+
+**[IMPLEMENTED 2026-06-11]** `lexical_gate(code)` producer on
+LiftLayer/LowerLayer (`Language._make_lex_gate`: one learned
+projection per operator, tanh-bounded, near-identity init,
+GLOBAL-RNG-NEUTRAL construction so seeded fixtures are unshifted);
+`gate=` threaded through forward/reverse/compose/generate to the
+inner Sigma/Pi, muxed-event path included. Pinned by
+`test_lexical_gate_lift_lower.py`: distinct-verbs / ablated-identical,
+end-to-end training from the composition loss alone, the §10.10
+weight law under arbitrary gates on the membership kernels
+(contractive clamp to `[1, d_max]`), the signed-kernel gated
+round-trip (§3's surviving constraint), and adapter flow.
 
 ## 3. Kernels: no audit — the boundary is already duty-clean
 
@@ -114,9 +150,9 @@ link is an identity. Note the signed domain contains the same pattern:
 parameters with each other** — PS's σ and SS's π each own their
 kernel; only the FORM is shared.
 
-**[OPEN — author wants English motivation; scope corrected]** The
-cross-direction sharing proposal applies to **grammar-tier rules
-only**. Perceptual analysis methods (on-center/off-surround
+**[DECIDED-AGAINST 2026-06-11 — independent directional inventories
+stay.]** The cross-direction sharing proposal applied to **grammar-tier
+rules only**. Perceptual analysis methods (on-center/off-surround
 segmentation, boundary-finding, figure/ground — in this codebase the
 chunking/lexing tier: `ChunkLayer`, BPE, the percept store) are
 PRE-grammatical, of a different character from the combinatorial ops,
@@ -142,7 +178,11 @@ English motivation offered for the grammar tier:
 If adopted: one grammar-tier rule inventory (each rule invertible),
 the two directions as its two readings, **per-role weights** (the
 `role_gate` factor) carrying the comprehension/production asymmetry.
-Decision deferred to author review of the evidence above.
+
+**Decision (author, 2026-06-11): REJECTED.** The two directions keep
+independent rule inventories; the English evidence above is recorded
+but not adopted. The `role_gate` factor of §0 is accordingly struck
+(no shared rule needs per-direction weights).
 
 ## 5. Semantic guidance = attention over symbols (single intent, both towers)
 
@@ -161,16 +201,30 @@ from **priming over symbols**, not semantic rules.
 - **[DECIDED]** Combine both grammars with a **single intent**: one
   current-intent code priming both towers simultaneously, weighting
   the analytical and synthetic superpositions toward the same context.
-- **[PROPOSAL]** Mechanics: the intent code is the current idea (top
-  of the PS-side workspace / the pursued goal event); per-tower boosts
-  are its graded similarity against each codebook's rows (one matmul
-  per tower, the pole-quotient law on the reference-bound rows);
-  boosts enter the recommender and the rule superposition through the
-  existing priming plumbing — no new mechanism, one new producer.
+- **[DECIDED 2026-06-11, corrected]** Mechanics: the intent code is
+  the **product of the parallel parse** (the §6c pump-zero gist) — not
+  the top-of-workspace idea, not a dedicated goal state: the parallel
+  parse does the priming across both meronymic codebooks. Per-tower
+  boosts are its graded similarity against each codebook's rows (one
+  matmul per tower); boosts enter **codebook attention/focus only**
+  (recognition and retrieval) through the existing priming plumbing —
+  priming is attention: it guides meronymic parsing/focus on the
+  towers, **never rule dispatch**. No new mechanism, one new producer.
 - Tests: priming a tower biases recognition/retrieval rankings
   monotonically in boost weight; the same intent code moves both
   syntaxes' dispatch in the same semantic direction; intent off ⇒
   byte-identical to today.
+
+**[IMPLEMENTED 2026-06-11]** `Spaces.intent_priming_weights` (one
+matmul per tower; boost-above-unity, monotone in similarity);
+`Space.set_intent` / `intent_boosts` / `install_intent_priming` +
+`VectorQuantize.selection_boost_fn` (additive log-boost on the row
+selection — primed RECOGNITION; byte-identical when absent);
+`Taxonomy.prime_with_weights` (max-merge into the existing
+recommender plumbing — primed RETRIEVAL); `BasicModel.set_intent`
+primes both towers from the one code. Pinned by
+`test_intent_priming.py` (monotone bias, same-direction towers,
+off ⇒ byte-identical, taxonomy merge).
 
 ## 6. Preattention, the serial lock, and the two truth sets
 
@@ -212,30 +266,57 @@ set):
   recording ``if a then b`` as ``¬a ∨ b`` both loses the temporal
   content and corrupts the absolute set with a region assertion the
   causal rule never licensed.
-- **[PROPOSAL]** Mechanics: two stores (cleanest under
-  measured-not-stored — causal entries are not region-shaped, so one
-  store with a type flag would force every coverage computation to
-  mask) — `TruthLayer` stays the absolute store; a sibling
-  causal store holds the typed triples and is consumed only by the
-  reasoning loop.
+- **[DECIDED 2026-06-11, schema corrected]** Mechanics: two stores
+  (cleanest under measured-not-stored — causal entries are not
+  region-shaped, so one store with a type flag would force every
+  coverage computation to mask) — `TruthLayer` stays the absolute
+  store (ideas: grammatically encoded, conceptual-codebook-shaped). A
+  sibling relative store holds **uncollapsed triples**: a relative
+  truth contains two ideas and a relation — model as ``NP = VP NP``,
+  but ``VP(NP)`` cannot be collapsed without making it specific, so
+  **all three are stored** and enforced as a **structural constraint**
+  (this structures references and creates universal truths). Consumed
+  only by the reasoning loop.
 
-**[PROPOSAL]** Preemption policy: threshold + hysteresis on the
-absolute set's conflict mass (per-dimension max, not the mean — one
-sharply contested witness should interrupt); action ladder:
-checkpoint the workspace → reground (re-run recognition on the
-contested span) → frame-split (fork contexts so both readings
-survive) — abort only as the degenerate case.
+**[DECIDED 2026-06-11, duties framing]** The absolute truth set is a
+**consistent corpus governing admission**: it (1) governs the
+admissibility of new truths/beliefs, (2) serves as the basis for
+causal reasoning, and (3) provides user feedback on the truth of a
+statement. The conflict measure serves those duties. Mechanics adopted
+in their service: threshold + hysteresis on the absolute set's
+conflict mass (per-dimension max, not the mean — one sharply contested
+witness should interrupt); action ladder: checkpoint the workspace →
+reground (re-run recognition on the contested span) → frame-split
+(fork contexts so both readings survive) — abort only as the
+degenerate case.
 
-**[PROPOSAL]** Unification: the serial-*with*-attention masks of
-`2026-05-29-stm-serial-parallel-modes.md` — meronymic (CS→PS,
-expectation painting) and taxonymic (CS→SS, retrieval restriction) —
-are the same algebra as §5's priming: multiplicative weights on soft
-superpositions, produced by context; implement as intent-priming
-producers rather than separate mask machinery.
+**[ADOPTED 2026-06-11]** Unification: the serial-*with*-attention
+masks of `2026-05-29-stm-serial-parallel-modes.md` — meronymic
+(CS→PS, expectation painting) and taxonymic (CS→SS, retrieval
+restriction) — are the same algebra as §5's priming: multiplicative
+weights on soft superpositions, produced by context; implemented as
+intent-priming producers rather than separate mask machinery (the §5
+`set_intent` boosts on the PS tower ARE the expectation painting,
+on the SS tower the retrieval restriction — no separate mask code).
 
 Fallback if one-workspace preattention proves too coarse: the mode
 flag moves from model-global to per-workspace (each workspace serial
 or parallel with its own single-writer rule).
+
+**[IMPLEMENTED 2026-06-11]** Two stores: `TruthLayer` stays the
+absolute store (untouched storage; luminosity input pure by
+construction); `Layers.RelativeTruthStore` holds the uncollapsed
+`(np1, vp, np2)` triples — relational `evaluate` (never coverage),
+reasoning-step `consequents` (the loop's expansion), and
+`constraint_residuals` (the structural-constraint face: agreeing
+`(np1, vp)` must agree on `np2` — universal truths). Owned by
+WordSpace next to `truth_layer` (`relative_store`). The corpus duties
+on `TruthLayer`: `conflict_profile` / `conflict_mass` (per-dimension
+MAX of `min(T_k, F_k)`, measured-not-stored, candidate never
+recorded), `admissible` (admission governance at the commit point),
+`preemption_signal` (threshold + hysteresis latch; transient
+controller state), `truth_of` (user feedback: signed agreement +
+contested mass). Pinned by `test_two_truth_stores.py`.
 
 ## 6b. The Gaussian window (IN RESERVE — superseded as primary by §6c)
 
@@ -357,20 +438,38 @@ Consequences:
   (`bind_streams`'s stage-0 ``seed_payload`` hook is an existing
   landing point).
 
-**[PROPOSAL] decisions:**
-1. Pump zero's commit: intent-only (gist = priming context; nothing
-   in the workspace) vs workspace floor (push the gist as the initial
-   idea — the star becomes slot zero of the tree's workspace; costs a
-   slot).
-2. Pump zero learns (full normal parallel pump, EMA on — the
-   word-learning guarantee) vs frozen read-only gist. "Independent"
-   suggests learning ON.
-3. Optional consolidation sandwich: one parallel pump AFTER the
-   parse, turning the §10.11 coincidence law (serial reduce-chain
-   extent ≈ parallel σ extent) from a test into a self-consistency
-   TRAINING SIGNAL (gist-vs-parse agreement). Deferred unless wanted —
-   but see §6d, which strengthens its case (the consolidation pump is
-   the channel by which serial lexical evidence reaches the rows).
+**[DECIDED 2026-06-11] decisions:**
+1. Pump zero's commit: **intent-only** — the gist is the priming
+   context (it IS the §5 intent); nothing is pushed into the
+   workspace (workspace-floor variant not adopted).
+2. Pump zero **learns**: full normal parallel pump, EMA on — the
+   word-learning guarantee ("independent" = learning ON).
+3. Consolidation sandwich: **not adopted** (stays deferred). Recorded:
+   §6d makes it the channel by which serial lexical evidence reaches
+   the (non-reference) percept rows — revisit if that channel is
+   wanted.
+4. Gist-refresh: **on preemption only** (clause-boundary refresh not
+   adopted).
+
+**[IMPLEMENTED 2026-06-11, config-gated]**
+`BasicModel._sentence_prelude` — pump zero: `conceptualOrder`
+whole-slab pumps on the terminal PS→SS→CS cell, EMA on (the
+word-learning guarantee), INTENT-ONLY commit (the empty-seed feedback
+pointers are restored and the STM untouched; the pooled terminal CS
+content is the gist, fed to §5 `set_intent`). Mode is a PER-PUMP
+property: the spaces carry `serial_pump=False` during the prelude and
+`True` during the per-word ticks (consumed by the §6d law, which
+falls back to the retired AR `serial_mode` knob for legacy callers;
+un-stamped at sentence end). Preemption polling on the per-word loop
+re-pumps the gist on the conflict latch's RISING edge (no per-word
+thrash; checkpoint→reground are the live ladder rungs — the
+workspace stays, recognition re-runs; frame-split is recorded, not
+wired). Knob: `<architecture><sentenceProtocol>` (model.xsd),
+**default OFF until the author's cutover** — the meronomy
+land-dark-then-cut-over pattern; the captured-graph per-word path
+never sees the protocol (eager-only for now), and the gist currently
+pools the batch (per-batch intents are a recorded follow-up). Pinned
+by `test_sentence_protocol.py`.
 
 ## 6d. Codebook update law: percepts ← parallel, references ← serial
 ## (author, 2026-06-11 — IMPLEMENTED)
@@ -412,27 +511,30 @@ the references.**
   off, no table, or no codebook ⇒ mask None ⇒ legacy behavior.
 - References gains `bound_objects()` / `bound_words()`.
 
-## 7. Open decisions for author sign-off
+## 7. Open decisions — ALL SIGNED OFF (author, 2026-06-11)
 
-1. §2 mask-source projection: per-operator learned projection from
-   the lexical embedding (default) vs direct embedding-slice.
-2. §4 grammar-tier rule sharing (one invertible inventory + per-role
-   weights) vs independent directional inventories — pending author
-   review of the English evidence in §4. Segmentation-tier methods
-   excluded either way.
-3. §5 intent = top-of-workspace idea (default) vs dedicated goal
-   state; priming enters rule dispatch as well as codebook lookup?
-4. §6 causal-store mechanics: sibling store (default) vs typed
-   entries in one store; the causal triple schema (state@t₁, change,
-   state@t₂) and its consumption by the reasoning loop.
-5. §6 preemption thresholds and the action ladder; per-dimension max
-   as the trigger statistic.
-6. §6c sentence protocol: pump zero's commit (intent-only vs
-   workspace floor); pump zero learns (default: yes — the
-   word-learning guarantee); gist-refresh policy (on preemption only,
-   vs also at clause boundaries); the optional consolidation sandwich
-   (coincidence law as training signal). (§6b's Gaussian window is in
-   reserve, not a live decision.)
+1. §2 mask source: **learned per-operator projection** from the
+   lexical embedding (default adopted; direct embedding-slice
+   rejected).
+2. §4 rule sharing: **REJECTED — independent directional inventories
+   stay**; the English evidence is recorded, not adopted.
+   Segmentation tier was excluded either way.
+3. §5 intent: **the parallel parse is the intent producer** — the
+   pump-zero gist primes both meronymic codebooks. Priming is
+   **attention**: it guides meronymic parsing/focus on the codebook
+   towers, **not rules** — it does NOT enter rule dispatch.
+4. §6 causal store: **sibling store**, schema corrected to the
+   uncollapsed triple ``(NP idea, VP relation, NP idea)`` — all three
+   stored, enforced as a structural constraint over references
+   (structures references; creates universal truths).
+5. §6 preemption: duties framing — the truth set governs
+   **admissibility of new truths**, grounds **causal reasoning**, and
+   provides **user truth feedback**; mechanics in their service:
+   per-dimension max + hysteresis, checkpoint→reground→frame-split
+   ladder.
+6. §6c: pump zero **intent-only + learning ON**; gist refresh **on
+   preemption only**; **no consolidation sandwich** (§6b's Gaussian
+   window stays in reserve).
 
 ## 8. Out of scope (recorded)
 
@@ -451,3 +553,73 @@ the references.**
   conflict region is computed, κ stays struck).
 - Validity-as-selection masks on operators (superseded by §1 + §2 —
   syntax in grammars, masks are lexical).
+
+## 9. Post-execution corrective (author, 2026-06-11): the slots keep
+## their butterflies
+
+**The regression.** XOR_exact predictions stopped tracking labels at
+the meronomy cutover (`ca437cd`): Stage 9 replaced the
+butterfly-built slot folds (PS.σ / SS.π) with PER-SLOT
+`MeronymicFoldAdapter` kernels (`butterfly_enabled = False`),
+silently removing the cascade's cross-position reach over the
+flattened slab — the mechanism XOR_exact's own config documents as
+the thing that computes XOR. Reconstruction survived (near-identity
+adapter); prediction degenerated to ~0.5 with a faint monotone lean.
+A/B at a shared lexicon: `31e69d1` (pre-cutover) tracks labels
+crisply; `ca437cd` is flat to four decimals of the reported numbers.
+
+**The clarification (author).** The order-preservation law of the
+meronymic slots constrains the KERNEL CLASS, not the fold's
+TOPOLOGY — and the order it preserves is PARTIAL. Monotone maps
+compose, so a cross-slot cascade of contractive non-negative
+log-mass kernels preserves the partial order end-to-end; and since
+distinct word codes sit INCOMPARABLE under that partial order,
+monotonicity never excluded XOR over word identity — only the lost
+reach did. The earlier "monotone ⇒ no XOR" framing was wrong.
+
+**The correction (implemented).** `MeronymicFoldAdapter` gains
+``butterfly=True``: the same FFT pairing topology as the signed
+cascade, each 2×2 node carrying the contractive law in log-mass —
+taps ``raw² ≥ 0``, diagonal ``(1 + raw_d²)`` clamped to
+``[1, d_max]``, bias-free; χ once at the slot boundary; the σ kind
+conjugates the π-law cascade by the complement involution (composes
+exactly). Two corrections the signed cascade never needed:
+(1) **square reparam, not softplus** — softplus locks gradient scale
+to tap size (~e^raw), so a benign near-identity start strangles
+learning (the empirically observed still-flat first attempt);
+squares decouple them (taps 0.0025 at init, gradient ~0.10).
+(2) **pad hygiene** — pairs touching a pad lane are pinned to the
+identity law, so pads stay exactly 𝟘 and the real-lane cascade is a
+bijection (the signed cascade leaks real mass into discarded pad
+lanes once trained; the membership cascade does not). The two
+cutover sites keep ``butterfly_enabled=True`` for butterfly-built
+slots; non-butterfly slots keep the unary per-slot adapter
+unchanged. Pinned by `test_meronymic_butterfly.py` (near-identity
+init, exact inverse, order preservation, cross-slot reach, live
+XOR_exact slots). Result: XOR_exact under ``<meronomy>on`` learns
+XOR again (4/4 at threshold; one corner softer than the signed
+control — the lawful slot routes the non-monotone share into the
+embeddings and the CS stack).
+
+**Recorded risk + contingency (author, 2026-06-11).** Trepidation
+stands about the membership folds even with the cascade restored:
+the lawful node matrices are **spectrally expansive in log-mass by
+construction** (``det = d₀·d₁ >= 1`` per node — an eigenvalue floor
+the law itself imposes, not a tunable), so ITERATED application
+drifts mass toward the chart corners — π toward 𝟘 (0000), σ toward
+𝟙 (1111) — and a saturated code carries no usable specification;
+and the constraint class may yet exclude solutions the signed
+kernels could reach. Guards in place: ``d_max`` bounds
+per-application drift, slots fire once per pump, σπσ = σ
+registration pressure acts against corner drift on stored symbols,
+and the saturation regime is pinned as a characterization test.
+**Contingency (author):** if the geometric constraint proves too
+restrictive, the meronomy is re-implemented as an explicit
+**part-whole tree on the codes** — parthood as stored structure
+over code atoms, the order law enforced on the tree — rather than
+as a geometric constraint on those codes. Discontiguity is
+certified meanwhile: multiple applications of the fold can PRODUCE
+discontiguous specifications (scattered wholes accreting parts
+across non-adjacent lanes — the FFT pairing has no contiguity
+bias), so the geometric form does not collapse wholes into
+contiguous bands before that decision is ever forced.

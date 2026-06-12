@@ -97,6 +97,40 @@ def reference_update_mask(serial_mode, reference_ids, n_rows, device=None):
     return is_ref if serial_mode else ~is_ref
 
 
+def intent_priming_weights(intent, rows, *, gain=1.0):
+    """Intent priming over a codebook tower (GrammarOpsPass §5; author
+    sign-off 2026-06-11).
+
+    Priming is ATTENTION over symbols: boost-above-unity weights per
+    tower row, from the graded similarity of ONE intent code against
+    the tower's rows — one matmul per tower, the same single intent
+    priming both towers (primed RECOGNITION on the PS/extent tower
+    alongside primed RETRIEVAL on the SS/intent tower). Boosts weight
+    soft superpositions downstream — codebook focus only, never rule
+    dispatch.
+
+    ``intent``: ``[D]`` (or ``[..., D]``: leading dims flattened and
+    averaged). ``rows``: ``[V, D_r]``; the trailing dims are sliced to
+    the common width. Returns ``[V]`` weights ``>= 1.0`` (1.0 =
+    multiplicative identity for dissimilar rows; ``1 + gain`` at
+    perfect alignment — monotone in similarity), or ``None`` when the
+    intent or the rows are absent (the byte-identical off-path).
+    """
+    if intent is None or rows is None or rows.numel() == 0:
+        return None
+    v = intent.reshape(-1, intent.shape[-1]).float().mean(dim=0)
+    W = rows.reshape(rows.shape[0], -1).float()
+    d = min(int(v.shape[-1]), int(W.shape[-1]))
+    if d == 0:
+        return None
+    v = v[:d]
+    W = W[:, :d]
+    v = v / v.norm().clamp_min(1e-12)
+    Wn = W / W.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+    sim = (Wn @ v).clamp_min(0.0)
+    return 1.0 + float(gain) * sim
+
+
 def registration_loss(pi_fold, sigma_fold, codes):
     """The drift-keeper: ``σπσ = σ`` on stored symbols (MeronomySpec §5;
     MeronomyPlan Stage 8).
@@ -6663,8 +6697,16 @@ class Space(nn.Module):
                     return None
                 ids = (table.bound_objects() if _side == 'object'
                        else table.bound_words())
-                return reference_update_mask(
-                    getattr(_space, 'serial_mode', False), ids, V, device)
+                # Mode is a PER-PUMP property within a serial sentence
+                # (GrammarOpsPass §6b/§6c): the sentence protocol
+                # drives ``serial_pump`` pump-by-pump (parallel prelude
+                # = False, per-word serial ticks = True) without
+                # touching the retired AR warm-path ``serial_mode``
+                # knob, which stays the fallback for legacy callers.
+                mode = getattr(_space, 'serial_pump', None)
+                if mode is None:
+                    mode = getattr(_space, 'serial_mode', False)
+                return reference_update_mask(bool(mode), ids, V, device)
             except Exception:
                 return None   # never let the law break a forward
 
@@ -6677,6 +6719,11 @@ class Space(nn.Module):
                 and isinstance(getattr(vq, 'codebook', None), nn.Parameter) \
                 and not getattr(vq, '_ref_law_hooked', False):
             def _grad_hook(grad, _vq=vq):
+                # Compiled-backward replays can fire the hook with
+                # grad=None (the codebook received no gradient in that
+                # subgraph) — nothing to partition then.
+                if grad is None:
+                    return grad
                 fn = getattr(_vq, 'update_mask_fn', None)
                 allowed = fn(grad.shape[0], grad.device) if fn else None
                 if allowed is None:
@@ -6684,6 +6731,80 @@ class Space(nn.Module):
                 return grad * allowed.to(grad.dtype).unsqueeze(-1)
             vq.codebook.register_hook(_grad_hook)
             vq._ref_law_hooked = True
+        return True
+
+    # -- Intent priming (GrammarOpsPass §5; author sign-off 2026-06-11) --
+    #
+    # ONE current-intent code primes BOTH codebook towers: boosts are
+    # the intent's graded similarity against this tower's rows
+    # (``intent_priming_weights``), consumed by the VQ row selection
+    # (primed recognition; ``install_intent_priming``) and — on the SS
+    # side — merged into the word-space taxonomy priming buffer for the
+    # inverse recommender (primed retrieval). Priming is attention over
+    # symbols: codebook focus only, never rule dispatch. The intent is
+    # sentence-scoped (set by the §6c parallel prelude, refreshed on
+    # preemption); row drift within one sentence is accepted.
+
+    def set_intent(self, intent, *, gain=1.0):
+        """Set (``None`` clears) the single current intent on this
+        Space's tower; computes and caches the ``[V]`` boost weights
+        against the tower's CURRENT codebook rows.
+
+        Dark by construction: no intent, or a codebook-less space,
+        caches ``None`` and recognition stays byte-identical.
+        Returns the cached boosts (or ``None``).
+        """
+        if intent is None:
+            self._intent_boosts = None
+            return None
+        sub = getattr(self, 'subspace', None)
+        cb = sub.codebook() if sub is not None and hasattr(sub, 'codebook') \
+            else None
+        W = None
+        if cb is not None:
+            getW = getattr(cb, 'getW', None)
+            W = getW() if callable(getW) else None
+        self._intent_boosts = intent_priming_weights(intent, W, gain=gain)
+        return self._intent_boosts
+
+    def intent_boosts(self):
+        """The cached ``[V]`` boost weights of the current intent, or
+        ``None`` when no intent is set (the identity off-state)."""
+        return getattr(self, '_intent_boosts', None)
+
+    def install_intent_priming(self):
+        """Wire this Space's codebook VQ to the §5 intent boosts: the
+        VQ row selection (recognition) consults the current intent
+        through ``selection_boost_fn`` — a multiplicative factor on
+        the soft selection, identity when no intent is set.
+
+        Returns True iff a VQ was found and the producer installed.
+        """
+        sub = getattr(self, 'subspace', None)
+        cb = sub.codebook() if sub is not None and hasattr(sub, 'codebook') \
+            else None
+        vq = getattr(cb, 'vq', None) if cb is not None else None
+        if vq is None:
+            return False
+
+        def _boosts(V, device, _space=self):
+            try:
+                b = getattr(_space, '_intent_boosts', None)
+                if b is None:
+                    return None
+                b = b.to(device=device)
+                n = int(b.shape[0])
+                if n == int(V):
+                    return b
+                if n > int(V):
+                    return b[:int(V)]
+                out = torch.ones(int(V), dtype=b.dtype, device=device)
+                out[:n] = b
+                return out
+            except Exception:
+                return None   # never let priming break a forward
+
+        vq.selection_boost_fn = _boosts
         return True
 
     @staticmethod
@@ -8610,15 +8731,23 @@ class PerceptualSpace(Space):
             # non-meronymic consumer of the odds-kernel layers is
             # untouched (plan §4 item 4). Dims read off the built
             # layer so all three construction modes stay drop-in.
+            #
+            # Cutover correction (author, 2026-06-11): a butterfly-built
+            # slot KEEPS its cascade — re-chartered on memberships with
+            # the contractive order-preserving law per node — instead of
+            # collapsing to the per-slot fold. The order law constrains
+            # the kernel class, not the topology; dropping the cascade
+            # silently removed the slot's cross-position reach (the
+            # XOR_exact regression).
             from Layers import MeronymicFoldAdapter
             self.sigma = MeronymicFoldAdapter(
                 'sigma', self.sigma.nInput, self.sigma.nOutput,
                 stable=True, ergodic=ergodic, naive=naive,
-                legacy_N=_butterfly_total)
+                legacy_N=_butterfly_total,
+                butterfly=_butterfly_built)
             # butterflyN keeps recording the construction-time sizing
-            # (consumers read it as the flat-total contract); only the
-            # cascade itself is replaced by the per-slot adapter.
-            self.butterfly_enabled = False
+            # (consumers read it as the flat-total contract).
+            self.butterfly_enabled = bool(_butterfly_built)
 
         # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
         # heat-retrieval.md §Handoff addendum): PerceptualSpace no longer
@@ -13356,14 +13485,18 @@ class SymbolicSpace(Space):
             # slot binds PiLayer2 through the K3-wire adapter — the
             # analysis fold computes on memberships; the wire stays K3.
             # Meronymic slots only; see the PS slot note above.
+            # Cutover correction (author, 2026-06-11): butterfly-built
+            # slots keep their cascade, re-chartered on memberships —
+            # see the PS slot note above.
             from Layers import MeronymicFoldAdapter
             self.pi = MeronymicFoldAdapter(
                 'pi', self.pi.nInput, self.pi.nOutput,
                 stable=True, ergodic=_sigma_ergodic, naive=_sigma_naive,
-                legacy_N=_sigma_butterfly_total)
+                legacy_N=_sigma_butterfly_total,
+                butterfly=_sigma_butterfly)
             # butterflyN keeps recording the construction-time sizing;
             # see the PS slot note above.
-            self.butterfly_enabled = False
+            self.butterfly_enabled = bool(_sigma_butterfly)
         self.layers.append(self.pi)
         self.params += self.pi.getParameters()
 

@@ -23,10 +23,18 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
+# The D1 collapse is measured on the transitional POS-categoried grammar,
+# archived as a fixture since the GrammarOpsPass §1 migration of
+# data/complete.grammar to the role-collapsed format.
+_FIXTURE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "fixtures",
+    "transitional_pos.grammar")
+
+
 def _complete():
     from Language import Grammar
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(_FIXTURE)
     return g
 
 

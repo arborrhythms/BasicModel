@@ -4193,45 +4193,238 @@ class MeronymicFoldAdapter(Layer):
     selection belongs to the binary ``blocks=2`` form, not the unary
     slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
     item 4 — those operators are NOT legacy; only this slot rebinds).
+
+    **Butterfly mode (author, 2026-06-11 — the cutover correction).**
+    ``butterfly=True`` rebuilds the slot's cascade in the membership
+    chart instead of dropping it: the order-preservation law of the
+    meronymic slots constrains the KERNEL CLASS (contractive,
+    non-negative log-mass weights), never the fold's TOPOLOGY — and
+    order-preserving maps compose, so the FFT-style cross-slot cascade
+    with the contractive law at every 2×2 node preserves the partial
+    order end-to-end while keeping the cascade's cross-position reach
+    (which per-slot folds lack, and which functions like XOR over the
+    slab require: distinct word codes sit INCOMPARABLE in the partial
+    order, so monotonicity never excluded them — only the lost reach
+    did). Each node is the 2×2 contractive LDU law in log-mass via
+    the SQUARE reparam: off-diagonal taps ``raw² >= 0``, diagonal
+    ``(1 + raw_d²)`` clamped to ``[1, d_max]``, bias-free; the
+    REVERSE divides by ``d >= 1`` (contractive — strictly tamer than
+    the signed cascade's ``1/d`` blow-up guard). χ applies once at
+    the slot boundary; ``kind='sigma'`` conjugates the π-law cascade
+    by the complement involution (``σ = 1 − π(1 − ·)``), which
+    composes through the levels exactly. Near-identity init
+    (raw = 0.05: taps ~0.0025 with gradient scale ~0.10 — squares
+    decouple tap size from gradient scale, where softplus locks them
+    together and strangles learning) keeps the cutover's benign-start
+    contract. ``gate`` is not honoured in butterfly mode (same
+    contract as the legacy cascade).
+
+    **Recorded risk + contingency (author, 2026-06-11).** The lawful
+    node matrices are SPECTRALLY EXPANSIVE in log-mass by
+    construction: ``det(LDU) = d₀·d₁ >= 1`` per 2×2 node, so the
+    spectral radius of every level — hence of any composition of
+    membership folds — is ``>= 1`` there. One application per pump
+    is benign (near-identity init; ``d_max`` bounds per-application
+    drift), but ITERATED application necessarily migrates mass
+    toward the chart corners — π toward 𝟘 (the 0000 code), σ toward
+    𝟙 (the 1111 code) — and a saturated code carries no usable
+    specification. The eigenvalue floor is the law itself (order
+    preservation + memberships-stay-memberships forces non-negative
+    log-mass weights with ``d >= 1``), so it cannot be trained away —
+    only bounded (``d_max``, shallow application counts, the
+    σπσ = σ registration pressure on stored symbols).
+    **Contingency:** if the geometric constraint proves too
+    restrictive in practice — folds saturating, or solutions
+    excluded — the meronomy moves to an explicit PART-WHOLE TREE ON
+    THE CODES (parthood as stored structure over code atoms, the
+    order law enforced on the tree) rather than a geometric
+    constraint baked into the fold operators.
+    ``test_meronymic_butterfly.py`` pins both sides of this boundary:
+    discontiguous specifications survive — and are PRODUCED by —
+    repeated lawful application (scattered wholes are first-class;
+    the FFT pairing carries no contiguity bias), and the saturation
+    regime under an aggressive law is characterized explicitly.
     """
     invertible = True
     # Legacy slot-surface attributes: consumers of the slot layers read
     # these (e.g. the SS parallel-fold dispatch reads ``fold.N`` to
     # match the construction-time flat total; ``butterfly`` is probed
-    # with getattr). The adapter is a per-slot membership fold -- no
-    # cascade -- but carries the legacy total so existing dispatch
-    # logic is preserved verbatim.
+    # with getattr). In unary mode the adapter is a per-slot membership
+    # fold and carries the legacy total for dispatch only; in butterfly
+    # mode the cascade is real and ``butterfly`` flips True per
+    # instance.
     butterfly = False
     nonlinear = False
     monotonic = True
 
     def __init__(self, kind, nInput, nOutput, stable=True, ergodic=False,
-                 naive=False, legacy_N=None):
+                 naive=False, legacy_N=None, butterfly=False, d_max=None):
         super().__init__(nInput, nOutput)
-        if kind == 'sigma':
-            self.fold = SigmaLayer2(nInput, nOutput, stable=stable,
-                                    ergodic=ergodic, naive=naive)
-        elif kind == 'pi':
-            self.fold = PiLayer2(nInput, nOutput, stable=stable,
-                                 ergodic=ergodic, naive=naive)
-        else:
+        if kind not in ('sigma', 'pi'):
             raise ValueError(
                 f"MeronymicFoldAdapter: kind must be 'sigma' or 'pi'; "
                 f"got {kind!r}")
         self.kind = kind
         self.N = int(legacy_N) if legacy_N is not None else int(nInput)
-        self.layers.append(self.fold)
+        self.butterfly = bool(butterfly)
+        if self.butterfly:
+            # Membership-chart cascade over the flattened slab (same
+            # pairing topology as GrammarLayer's signed cascade).
+            M = 1
+            while M < max(2, self.N):
+                M *= 2
+            self.M_total = M
+            self.n_levels = int(math.log2(M))
+            self.d_max = float(d_max) if d_max is not None \
+                else float(meronomy_d_max_stable())
+            pair_count = M // 2
+            # SQUARE reparam (tap = raw², d = 1 + raw_d²), NOT the
+            # unary kernel's softplus: softplus locks the gradient
+            # scale to the tap size (both ~ e^raw near identity), so a
+            # depth-compensated benign start would strangle learning —
+            # the signed cascade trains precisely because its raws are
+            # linear (taps init 0, gradient 1). Squares decouple them:
+            # at raw = 0.05 the taps are ~0.0025 (near-identity across
+            # a 7-level stack: the benign-start contract) while the
+            # gradient scale is 2·raw ~ 0.10. Non-negativity is
+            # guaranteed, exact identity stays reachable (raw → 0), and
+            # the sign symmetry leaves no dead zone.
+            self.raw_bfly_L = nn.Parameter(
+                torch.full((self.n_levels, pair_count), 0.05))
+            self.raw_bfly_d = nn.Parameter(
+                torch.full((self.n_levels, pair_count, 2), 0.05))
+            self.raw_bfly_U = nn.Parameter(
+                torch.full((self.n_levels, pair_count), 0.05))
+            self.register_buffer(
+                'butterfly_perms',
+                GrammarLayer._build_butterfly_perms(M, self.n_levels))
+            # Pad hygiene (exact-invertibility requirement the signed
+            # cascade lacks): when N is not a power of two, pairs that
+            # touch a pad lane are pinned to the IDENTITY law. Pads
+            # then stay exactly 𝟘 (log-mass 0) through every level —
+            # they never absorb real mass that the unflatten would
+            # discard — so the cascade restricted to the N real lanes
+            # is a bijection and the reverse is exact. Real↔real pairs
+            # are unaffected (full law, full reach).
+            mask = torch.ones(self.n_levels, pair_count)
+            for k in range(self.n_levels):
+                perm = self.butterfly_perms[k]
+                for p in range(pair_count):
+                    if (int(perm[2 * p]) >= self.N
+                            or int(perm[2 * p + 1]) >= self.N):
+                        mask[k, p] = 0.0
+            self.register_buffer('_bfly_pair_mask', mask)
+            self.fold = None
+        elif kind == 'sigma':
+            self.fold = SigmaLayer2(nInput, nOutput, stable=stable,
+                                    ergodic=ergodic, naive=naive)
+        else:
+            self.fold = PiLayer2(nInput, nOutput, stable=stable,
+                                 ergodic=ergodic, naive=naive)
+        if self.fold is not None:
+            self.layers.append(self.fold)
         self.activation = torch.zeros(1, nOutput, 1)
+
+    # -- membership cascade (butterfly mode) ---------------------------
+    # Borrow the signed cascade's flatten/permutation plumbing — the
+    # adapter carries the same ``M_total`` / ``butterfly_perms``
+    # surface, only the per-node law differs.
+    _bfly_flatten = GrammarLayer._butterfly_flatten
+    _bfly_unflatten = GrammarLayer._butterfly_unflatten
+
+    def _mem_law(self):
+        """The per-node contractive law via the square reparam:
+        L, U = raw² >= 0; d = (1 + raw_d²) in [1, d_max]. Pad-touching
+        pairs are pinned to identity (L = U = 0, d = 1) so pads stay
+        exactly 𝟘 and the real-lane cascade inverts."""
+        mask = self._bfly_pair_mask
+        L = self.raw_bfly_L.square() * mask
+        d = (1.0 + self.raw_bfly_d.square()).clamp(1.0, self.d_max)
+        d = d * mask.unsqueeze(-1) + (1.0 - mask.unsqueeze(-1))
+        U = self.raw_bfly_U.square() * mask
+        return L, d, U
+
+    def _mem_cascade(self, l, inverse=False):
+        """Run the contractive cascade over flattened log-mass.
+
+        GATHER-FREE pairing (MPS-compile requirement): bounds-checked
+        index ops each demand an error-report buffer argument in the
+        generated Metal kernels, and an Inductor fusion holding the
+        cascade's ``2·n_levels`` permutation gathers exhausts Metal's
+        31-buffer limit ("no 'buffer' resource location available for
+        'error_buf'"). At stride ``s = 2^k`` the XOR-partners
+        ``(i, i+s)`` sit at positions ``(off, s+off)`` of each
+        contiguous ``2s`` block, so a ``[B, M/2s, 2, s]`` VIEW
+        separates the pair members on pure reshapes — no advanced
+        indexing anywhere on the compute path. The per-pair math and
+        the parameter layout are identical to the permuted form
+        (pair ``p = blk·s + off`` — the legacy perm order;
+        ``butterfly_perms`` stays registered for the pad-mask
+        construction and lane-pair lookups in tests).
+
+        Per node forward (all entries >= 0: order-preserving;
+        log-mass stays <= 0 so memberships stay in (0, 1] — the
+        §10.10 weight law): ``u0 = l0 + U·l1``; ``y0 = d0·u0``;
+        ``y1 = L·y0 + d1·l1``. Reverse is the closed-form 2×2 LDU
+        inverse, dividing by ``d >= 1`` (contractive — no blow-up).
+
+        ``l``: ``[B, ...]`` log-mass (<= 0); flattened and zero-padded
+        to ``M_total`` — a log-mass pad of 0 is membership 𝟙, the
+        π-identity, so pad lanes contribute exactly nothing to real
+        lanes (the §10.2 identity theorem at the pad)."""
+        flat, original_shape = self._bfly_flatten(l)
+        B = flat.shape[0]
+        L, d, U = self._mem_law()
+        levels = range(self.n_levels)
+        if inverse:
+            levels = reversed(levels)
+        for level in levels:
+            s = 1 << level
+            blocks = flat.reshape(B, -1, 2, s)
+            l0 = blocks[..., 0, :]
+            l1 = blocks[..., 1, :]
+            # Per-pair scalars at [nblocks, s]; flat pair index
+            # blk·s + off matches the legacy perm-ordered layout.
+            Lk = L[level].reshape(-1, s)
+            d0 = d[level, :, 0].reshape(-1, s)
+            d1 = d[level, :, 1].reshape(-1, s)
+            Uk = U[level].reshape(-1, s)
+            if inverse:
+                a1 = l1 - Lk * l0
+                b0 = l0 / d0
+                b1 = a1 / d1
+                x0 = b0 - Uk * b1
+                flat = torch.stack([x0, b1], dim=-2).reshape(B, -1)
+            else:
+                u0 = l0 + Uk * l1
+                y0 = d0 * u0
+                y1 = Lk * y0 + d1 * l1
+                flat = torch.stack([y0, y1], dim=-2).reshape(B, -1)
+        return self._bfly_unflatten(flat, original_shape)
 
     def forward(self, x, binary=False, gate=None):
         """χ → membership fold → χ⁻¹ on the K3 wire.
 
-        Width-mismatched calls (the legacy butterfly cascade was
-        width-agnostic over flattened slabs; the membership fold is
-        per-slot) fall back to identity for the batch — the same
-        convention the SS parallel-fold dispatch uses for mismatched
-        totals.
+        Butterfly mode: χ once at the boundary, complement involution
+        for the σ kind, log-mass cascade (width-agnostic over the
+        flattened slab, like the signed cascade it re-charters).
+
+        Unary mode: width-mismatched calls (the legacy cascade was
+        width-agnostic; the per-slot membership fold is not) fall back
+        to identity for the batch — the same convention the SS
+        parallel-fold dispatch uses for mismatched totals.
         """
+        if self.butterfly:
+            m = Ops.eval_chart(x.clamp(-1.0, 1.0))
+            if self.kind == 'sigma':
+                m = 1.0 - m
+            l = torch.log(m.clamp(EPS_LOG, 1.0))
+            z = torch.exp(self._mem_cascade(l))
+            if self.kind == 'sigma':
+                z = 1.0 - z
+            out = Ops.eval_chart_inv(z)
+            self.activation = out.detach()
+            return out
         if x.shape[-1] != self.nInput:
             self.activation = x.detach()
             return x
@@ -4243,7 +4436,21 @@ class MeronymicFoldAdapter(Layer):
 
     def reverse(self, y, gate=None):
         """Exact inverse through the same chart pair (identity on
-        width-mismatched calls, mirroring forward)."""
+        width-mismatched unary calls, mirroring forward; in butterfly
+        mode the cascade inverts level-by-level, dividing by
+        d >= 1)."""
+        if self.butterfly:
+            z = Ops.eval_chart(y.clamp(-1.0, 1.0))
+            if self.kind == 'sigma':
+                z = 1.0 - z
+            lz = torch.log(z.clamp(torch.finfo(z.dtype).tiny, 1.0))
+            m = torch.exp(self._mem_cascade(lz, inverse=True)).clamp(
+                0.0, 1.0)
+            if self.kind == 'sigma':
+                m = 1.0 - m
+            x = Ops.eval_chart_inv(m)
+            self.activation = x.detach()
+            return x
         if y.shape[-1] != self.nOutput:
             self.activation = y.detach()
             return y
@@ -4254,7 +4461,7 @@ class MeronymicFoldAdapter(Layer):
         return x
 
     def getParameters(self):
-        """Optimizable parameters of the wrapped kernel."""
+        """Optimizable parameters of the wrapped kernel / cascade."""
         return [p for _, p in self.named_parameters()]
 
 class MapppingLayer(InvertibleLinearLayer):
@@ -6401,6 +6608,100 @@ class TruthLayer(Layer):
         lum = ((T - F) - torch.minimum(T, F)).mean().item()
         return max(-1.0, min(1.0, lum))
 
+    # -- The absolute corpus's duties (GrammarOpsPass §6; author
+    # sign-off 2026-06-11) ----------------------------------------------
+    #
+    # The absolute truth set is a CONSISTENT CORPUS governing admission:
+    # it (1) governs the admissibility of new truths/beliefs, (2) serves
+    # as the basis for causal reasoning (relations between ideas live in
+    # the sibling ``RelativeTruthStore`` and NEVER enter this store or
+    # its luminosity), and (3) provides user feedback on the truth of a
+    # statement. The conflict region ``min(T_k, F_k)`` is MEASURED,
+    # never stored; the preemption/admissibility statistic is its
+    # per-dimension MAX — one sharply contested witness interrupts,
+    # where a mean would dilute it away across nDim.
+
+    def conflict_profile(self, extra=None):
+        """Per-dimension contested mass ``min(T_k, F_k)`` over the
+        absolute store, optionally with candidate row(s) ``extra``
+        added (measured, never stored — the candidate is NOT recorded).
+        Returns a ``[nDim]`` tensor; zeros when the store is empty and
+        no candidate is given."""
+        n = int(self.count.item())
+        rows = [self.truths[:n]] if n else []
+        if extra is not None:
+            rows.append(
+                extra.reshape(-1, self.nDim).to(self.truths))
+        if not rows:
+            return torch.zeros(self.nDim)
+        stored = torch.cat(rows, dim=0)
+        T = stored.clamp(min=0).max(dim=0).values
+        F = (-stored).clamp(min=0).max(dim=0).values
+        return torch.minimum(T, F)
+
+    def conflict_mass(self, extra=None) -> float:
+        """The preemption / admissibility statistic (§6): the
+        per-dimension MAX of :meth:`conflict_profile`."""
+        prof = self.conflict_profile(extra=extra)
+        return float(prof.max().item()) if prof.numel() else 0.0
+
+    def admissible(self, candidate, threshold=0.5) -> bool:
+        """Admission governance (duty 1): a candidate truth/belief is
+        admissible iff admitting it would keep the corpus's conflict
+        mass at or below ``threshold``. A commit-point gate — the
+        measure itself is soft and stored nowhere; callers that want
+        legacy unconditional recording simply don't consult it."""
+        return self.conflict_mass(extra=candidate) <= float(threshold)
+
+    def preemption_signal(self, threshold=0.5, hysteresis=0.1,
+                          extra=None):
+        """Preattention trigger (§6): threshold + hysteresis on the
+        absolute set's conflict mass. ``extra`` carries the percept
+        stream's contested candidate(s) — conflict between incoming
+        evidence and the parse's commitments captures the serial
+        thread. Fires when the mass exceeds ``threshold``; once fired,
+        stays fired until the mass falls below ``threshold -
+        hysteresis`` (chatter guard). Returns ``(mass, fired)``.
+
+        The latch (``_preempt_active``) is a plain transient attribute:
+        measured-not-stored binds epistemic content; this is controller
+        state, absent from ``state_dict``.
+        """
+        mass = self.conflict_mass(extra=extra)
+        active = bool(getattr(self, '_preempt_active', False))
+        th = float(threshold)
+        if active:
+            active = mass > th - float(hysteresis)
+        else:
+            active = mass > th
+        self._preempt_active = active
+        return mass, active
+
+    def truth_of(self, statement, threshold=0.6):
+        """User truth feedback (duty 3): the graded truth of one
+        statement code against the corpus.
+
+        Returns ``dict(truth, contested, grounded)``: ``truth`` in
+        ``[-1, 1]`` is the signed cosine agreement of the
+        best-matching stored truth (0.0 when nothing matches above
+        ``threshold`` — unknown, not false); ``contested`` is the
+        conflict mass the statement would join (duty 1's measure,
+        reused); ``grounded`` says whether any stored truth spoke.
+        """
+        st = statement.reshape(-1)[: self.nDim].to(self.truths)
+        n = int(self.count.item())
+        contested = self.conflict_mass(extra=st)
+        if n == 0 or float(st.norm()) == 0.0:
+            return {'truth': 0.0, 'contested': contested,
+                    'grounded': False}
+        stored = self.truths[:n]
+        sims = F.normalize(stored, dim=-1) @ (st / st.norm())
+        best = sims[sims.abs().argmax()]
+        grounded = bool(best.abs().item() > float(threshold))
+        return {'truth': float(best.item()) if grounded else 0.0,
+                'contested': contested,
+                'grounded': grounded}
+
     def isConsistent(self):
         """Fold stored truths via ``Ops.disjunction``; consistency summary.
 
@@ -6742,6 +7043,154 @@ class TruthLayer(Layer):
         assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
 
         print("TruthLayer tests passed.")
+
+
+class RelativeTruthStore(Layer):
+    """The second of the two truth sets (GrammarOpsPass §6; author
+    sign-off 2026-06-11): **relative truths are relations between
+    ideas** — causal implication is the worked example.
+
+    A relative truth contains two ideas and a relation. Model it as
+    ``NP = VP NP``, but ``VP(NP)`` cannot be collapsed without making
+    it specific, so **all three components are stored uncollapsed**
+    (``np1`` — the state of affairs at t₁; ``vp`` — the change; ``np2``
+    — the consequent at t₂; the codes' ``.when`` band carries the
+    temporal shape) and enforced as a **structural constraint** over
+    references: this structures the references and creates universal
+    truths.
+
+    NOT expressible as material truth: recording ``if a then b`` as
+    ``¬a ∨ b`` both loses the temporal content and corrupts the
+    absolute set with a region assertion the causal rule never
+    licensed. Accordingly this store is a SIBLING of ``TruthLayer``
+    (the absolute store) — relative entries never enter the luminosity
+    measure, and no coverage computation ever has to mask them out.
+
+    Consumed only by the reasoning loop: evaluation is by SIMULATION or
+    RELATIONAL EVALUATION, never by coverage — evaluate NP₁, run
+    one-or-more VP reasoning steps (``consequents`` is the per-step
+    expansion), check NP₂ (``evaluate`` is the relational form).
+    """
+
+    def __init__(self, nDim: int, max_triples: int = 1024):
+        super().__init__(nDim, nDim)
+        self.nDim = int(nDim)
+        self.max_triples = int(max_triples)
+        # The three components, stored UNCOLLAPSED and aligned by row.
+        self.register_buffer('np1', torch.zeros(max_triples, nDim))
+        self.register_buffer('vp', torch.zeros(max_triples, nDim))
+        self.register_buffer('np2', torch.zeros(max_triples, nDim))
+        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        self._trusts = []
+
+    def __len__(self):
+        return int(self.count.item())
+
+    @torch.no_grad()
+    def record_triple(self, np1, vp, np2, degree: float = 1.0) -> int:
+        """Store one relation between ideas — all three components,
+        uncollapsed; ``degree`` (the relation's DoT/trust) is baked
+        into the stored magnitudes like ``TruthLayer.record``. Returns
+        the row index, or ``-1`` when the store is full."""
+        n = int(self.count.item())
+        if n >= self.max_triples:
+            return -1
+        d = float(degree)
+        self.np1[n] = np1.reshape(-1)[: self.nDim].to(self.np1) * d
+        self.vp[n] = vp.reshape(-1)[: self.nDim].to(self.vp) * d
+        self.np2[n] = np2.reshape(-1)[: self.nDim].to(self.np2) * d
+        self.count.fill_(n + 1)
+        self._trusts.append(d)
+        return n
+
+    def triple(self, idx: int):
+        """The stored ``(np1, vp, np2)`` at ``idx`` (views)."""
+        n = int(self.count.item())
+        if not (0 <= int(idx) < n):
+            raise IndexError(f"triple {idx} of {n}")
+        return self.np1[idx], self.vp[idx], self.np2[idx]
+
+    @staticmethod
+    def _sims(query, rows):
+        q = query.reshape(-1)[: rows.shape[-1]].to(rows)
+        qn = q / q.norm().clamp_min(1e-12)
+        rn = F.normalize(rows, dim=-1)
+        return rn @ qn
+
+    @torch.no_grad()
+    def consequents(self, state, vp=None, threshold: float = 0.7):
+        """One causal reasoning step (the loop's expansion): stored
+        relations whose antecedent matches ``state`` (graded cosine
+        over ``np1``; further filtered by ``vp`` similarity when a
+        change is specified) yield their consequents.
+
+        Returns a list of ``(idx, match, vp_row, np2_row)`` sorted by
+        descending match — the serial loop steps from a state of
+        affairs to its licensed next states.
+        """
+        n = int(self.count.item())
+        if n == 0:
+            return []
+        match = self._sims(state, self.np1[:n])
+        if vp is not None:
+            match = match * self._sims(vp, self.vp[:n]).clamp_min(0.0)
+        keep = (match > float(threshold)).nonzero(as_tuple=True)[0]
+        out = [(int(i), float(match[i]), self.vp[int(i)],
+                self.np2[int(i)]) for i in keep]
+        out.sort(key=lambda t: -t[1])
+        return out
+
+    @torch.no_grad()
+    def evaluate(self, np1, vp, np2) -> float:
+        """Relational evaluation of a queried relation against the
+        corpus of stored relations (the §6 evaluation that coverage
+        can never provide): the best joint match
+        ``max_i sim(np1, np1_i) · sim(vp, vp_i) · sim(np2, np2_i)``
+        over non-negative component similarities, in ``[0, 1]``.
+
+        0.0 = no stored relation licenses it; 1.0 = exactly the stored
+        universal. Verification by SIMULATION (running the VP steps)
+        composes from :meth:`consequents`; this is the one-shot
+        relational form.
+        """
+        n = int(self.count.item())
+        if n == 0:
+            return 0.0
+        j = (self._sims(np1, self.np1[:n]).clamp_min(0.0)
+             * self._sims(vp, self.vp[:n]).clamp_min(0.0)
+             * self._sims(np2, self.np2[:n]).clamp_min(0.0))
+        return float(j.max().item())
+
+    @torch.no_grad()
+    def constraint_residuals(self):
+        """The structural-constraint face (sign-off: 'store all three
+        and then enforce them as a structural constraint'): for every
+        pair of stored relations whose ``(np1, vp)`` agree, their
+        consequents must agree — a universal truth is one rule, not a
+        coincidence of instances. Returns ``[n]`` per-row residuals:
+        ``max_j agree_ij · (1 − sim(np2_i, np2_j))`` — 0 when the
+        corpus is functionally consistent. Measured, never stored."""
+        n = int(self.count.item())
+        if n == 0:
+            return torch.zeros(0)
+        a1 = F.normalize(self.np1[:n], dim=-1)
+        av = F.normalize(self.vp[:n], dim=-1)
+        a2 = F.normalize(self.np2[:n], dim=-1)
+        agree = ((a1 @ a1.T).clamp_min(0.0)
+                 * (av @ av.T).clamp_min(0.0))
+        agree.fill_diagonal_(0.0)
+        disagree = 1.0 - (a2 @ a2.T)
+        return (agree * disagree).max(dim=-1).values.clamp_min(0.0)
+
+    @torch.no_grad()
+    def reset(self):
+        """Clear the store (idempotent)."""
+        self.np1.zero_()
+        self.vp.zero_()
+        self.np2.zero_()
+        self.count.zero_()
+        self._trusts = []
+
 
 class InterSentenceLayer(Layer):
     """Inter-sentence ARMA(p, q) next-sentence predictor.
@@ -13462,6 +13911,25 @@ class VectorQuantize(nn.Module):
             chunk = max(1, max_pairs // max(V, 1))
         chunk = min(chunk, N) if N > 0 else 1
 
+        # Intent-priming selection boost (GrammarOpsPass §5; author
+        # 2026-06-11). An installed ``selection_boost_fn`` returns
+        # boost-above-unity row weights ``[V]`` (or None = identity),
+        # produced from the single current intent's graded similarity
+        # against this tower's rows. The boost enters the row selection
+        # as an additive LOG-boost on the scores — sign-safe in both
+        # score modes, monotone in the boost, with 1.0 the exact
+        # multiplicative identity. Byte-identical when no producer is
+        # installed (or it returns None): primed RECOGNITION is a
+        # multiplicative factor on the soft selection, never a guard.
+        log_boost = None
+        boost_fn = getattr(self, 'selection_boost_fn', None)
+        if boost_fn is not None:
+            boosts = boost_fn(V, flat.device)
+            if boosts is not None:
+                log_boost = torch.log(
+                    boosts.to(dtype=flat.dtype, device=flat.device)
+                    .clamp_min(1e-12))
+
         # ``indices`` is the argmin/argmax of distances; the gather that
         # follows (codebook[indices]) carries no gradient back through the
         # selection, so the entire indices computation can run under
@@ -13479,11 +13947,17 @@ class VectorQuantize(nn.Module):
                     # belief-certainty signal in ConceptualSpace) end-to-end
                     # and saves an O(N*D) normalize op per chunk.
                     if N <= chunk:
-                        indices = (flat @ codebook.T).argmax(dim=-1)
+                        scores = flat @ codebook.T
+                        if log_boost is not None:
+                            scores = scores + log_boost
+                        indices = scores.argmax(dim=-1)
                     else:
                         parts = []
                         for s in range(0, N, chunk):
-                            parts.append((flat[s:s+chunk] @ codebook.T).argmax(dim=-1))
+                            scores = flat[s:s+chunk] @ codebook.T
+                            if log_boost is not None:
+                                scores = scores + log_boost
+                            parts.append(scores.argmax(dim=-1))
                         indices = torch.cat(parts, dim=0)
                 else:
                     # Euclidean mode via the matmul / cached-norm trick:
@@ -13502,12 +13976,16 @@ class VectorQuantize(nn.Module):
                     if N <= chunk:
                         scores = flat @ codebook.T
                         scores = scores - half_b_norms_sq
+                        if log_boost is not None:
+                            scores = scores + log_boost
                         indices = scores.argmax(dim=-1)
                     else:
                         parts = []
                         for s in range(0, N, chunk):
                             scores = flat[s:s+chunk] @ codebook.T
                             scores = scores - half_b_norms_sq
+                            if log_boost is not None:
+                                scores = scores + log_boost
                             parts.append(scores.argmax(dim=-1))
                         indices = torch.cat(parts, dim=0)
         except RuntimeError as e:

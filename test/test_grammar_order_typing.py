@@ -245,7 +245,10 @@ def test_modal_sentence_lift():
 
 def test_complete_grammar_relation_ops_registered_and_mirrored():
     """The relation-truth rewrite uses productive op names, including
-    queryPart as the interrogative counterpart to assertPart."""
+    queryPart as the interrogative counterpart to assertPart. (Pinned on
+    the archived transitional baseline; GrammarOpsPass §1 migrated
+    data/complete.grammar itself to the role-collapsed format, where the
+    family is spelled isPart + query.)"""
     from Language import Grammar, GRAMMAR_LAYER_CLASSES
 
     def cats(text):
@@ -253,7 +256,9 @@ def test_complete_grammar_relation_ops_registered_and_mirrored():
                      if part.strip())
 
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(str(
+        Path(__file__).resolve().parent / "fixtures"
+        / "transitional_pos.grammar"))
     methods = {r.method_name for r in g.rules_upward if r.method_name}
     assert "queryPart" in methods
     assert "assertPart" in methods

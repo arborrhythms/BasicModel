@@ -25,8 +25,6 @@ activation is required.
 |---|---|
 | `make train` | Full training (Phase 1 embeddings + Phase 2 model), logged to `output/logs/` |
 | `make train_micro` | Small run: 500 docs, 1 random shard, logged |
-| `make train_remote` | Full training on `arbormini.local` via SSH |
-| `make train_micro_remote` | Micro training on `arbormini.local` via SSH |
 
 ### Models
 
@@ -71,10 +69,6 @@ Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
 | `MODEL` | `data/MM_20M.xml` | XML config for training |
 | `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
 | `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
-| `TRAIN_HOST` | *(empty)* | Remote training host |
-| `TRAIN_USER` | `arogers` | SSH user |
-| `TRAIN_KEY` | `~/.ssh/id_ed25519_arbormini` | SSH private key |
-| `TRAIN_DIR` | `~/WikiOracle/basicmodel` | Working directory on remote |
 
 ---
 
@@ -102,9 +96,9 @@ training).
 
 | Flag | Default | Description |
 |---|---|---|
-| `--host` | *(none)* | Remote host (e.g. `arbormini.local`); enables remote run |
+| `--host` | *(none)* | Remote host; enables remote run |
 | `--user` | `arogers` | SSH user |
-| `--key-file` | `~/.ssh/id_ed25519_arbormini` | SSH private key |
+| `--key-file` | *(none)* | Optional SSH key file; uses SSH config/agent when omitted |
 | `--remote-dir` | `~/WikiOracle/basicmodel` | Working directory on remote |
 
 ---
@@ -124,38 +118,9 @@ training).
 
 ---
 
-## Remote Training (ArborMini)
+## Private Remote Training
 
-`train_remote` and `train_micro_remote` set `TRAIN_HOST=arbormini.local` and
-delegate to `train.py --host`.
-
-### Workflow
-
-1. **Rsync** the project tree to `arbormini.local`, excluding `.venv/`,
-   `__pycache__/`, `.DS_Store`, `output/`.
-
-2. **SSH** and run `train.py` remotely with the same flags (minus `--host`):
-
-   ```bash
-   ssh -i ~/.ssh/id_ed25519_arbormini -t arogers@arbormini.local \
-     "cd ~/WikiOracle/basicmodel && PYTHONUNBUFFERED=1 PYTHONPATH=bin .venv/bin/python bin/train.py ..."
-   ```
-
-3. **Output stays remote** under `~/WikiOracle/basicmodel/output/`.
-
-### SSH Key Setup
-
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_arbormini
-ssh-copy-id -i ~/.ssh/id_ed25519_arbormini arogers@arbormini.local
-```
-
-### Quick Start
-
-```bash
-# Sanity check: 500 docs, 1 shard, on ArborMini
-make train_micro_remote
-
-# Full run on ArborMini
-make train_remote
-```
+Machine-specific SSH targets, LAN hostnames, and local training shortcuts should
+live in the ignored top-level `Makefile.local`. The public `train.py --host`
+mode remains available for generic SSH execution when a caller supplies the
+host, user, optional key, and remote directory explicitly.

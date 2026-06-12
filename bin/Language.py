@@ -27,7 +27,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, RelativeTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -1516,7 +1516,9 @@ class Grammar:
     #
     # doc/plans/2026-05-29-stm-serial-parallel-modes.md §7. A RELATIVE
     # truth is a binary predicate over two ideas (the ``part`` /
-    # ``isEqual`` family, ``REL_T`` in ``data/complete.grammar``); its
+    # ``isEqual`` family — the ``relative_truth`` starts of the
+    # role-collapsed grammars; ``REL_T`` in the archived transitional
+    # ``test/fixtures/transitional_pos.grammar``); its
     # serial sentence-boundary reduce must STOP at the depth-3 end-state
     # ``[predicate, idea1, idea2]`` rather than collapsing to a single
     # idea (which is the correct end-state for an ABSOLUTE truth). The
@@ -2267,6 +2269,27 @@ def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
     return enc.shift_tense(when, -_WHEN_TENSE_STEP)
 
 
+def _make_lex_gate(n_in, rank, seed):
+    """Build the §2 lexical-mask projection (word code -> gate rank
+    space) WITHOUT touching the global RNG (GrammarOpsPass §2).
+
+    ``nn.Linear``'s constructor draws its kaiming init from the global
+    generator; grammar operators are built inside seeded fixtures, so
+    that draw would shift every later seeded tensor. ``skip_init``
+    materializes the module without an init draw; the deterministic
+    init (small weight, bias at atanh(0.9): near-identity gates that
+    already differ per word) comes from a LOCAL generator.
+    """
+    lex = torch.nn.utils.skip_init(nn.Linear, int(n_in), int(rank))
+    gen = torch.Generator()
+    gen.manual_seed(int(seed))
+    with torch.no_grad():
+        lex.weight.copy_(
+            torch.randn(lex.weight.shape, generator=gen) * 0.05)
+        lex.bias.fill_(1.4722)                  # atanh(0.9)
+    return lex
+
+
 def _rotate_where(where, theta=0.6):
     """Rotate the 2-dim .where block by a fixed angle -- the prepositional
     relation's deterministic, invertible effect on the phrase's spatial/
@@ -2320,16 +2343,19 @@ class LiftLayer(GrammarLayer):
     only their codebook dimension is consulted to determine the
     operand width when ``nInput`` is not provided.
 
-    Planned (2026-06-10, doc/plans/MeronomySpec.md §4): a declared
-    validity mask. ``lift`` is currently total -- it applies over ANY
-    operand pair, so "colorless green ideas sleep furiously" composes
-    as readily as sense does. The grammar-ops corrective pass (the
-    step after the meronomy plan) will have each operator declare the
-    mask/domain over which it is a valid operator; behavior outside
-    the mask is decided in that pass, not here. Likely mechanism seed:
-    the per-call ``gate`` low-rank operator slicing already plumbed
-    through ``PiLayer.forward`` / ``_d_effective`` (the internal
-    SigmaLayer takes the same hook).
+    Lexical mask (GrammarOpsPass §2, author sign-off 2026-06-11;
+    supersedes the 2026-06-10 "declared validity mask" note): the
+    masks are LEXICAL, not validity -- syntactic validity is the
+    grammar files' job (GrammarOpsPass §1), and ``lift`` stays total
+    over its grammar-licensed operands. The per-call ``gate`` low-rank
+    slicing (``_d_effective``) is lexical modulation of this SHARED
+    operator matrix: one verb operator, a per-word gate selecting its
+    slice -- walking vs running without a weight matrix per verb.
+    ``lexical_gate(code)`` is the producer: one learned projection per
+    operator from the word's code to the gate rank space (tanh-bounded
+    per the ``_d_effective`` convention), trained end-to-end with the
+    composition losses. ``gate=None`` (the default everywhere) is
+    byte-identical to the un-gated baseline.
     """
     rule_name  = "lift"
     arity      = 2
@@ -2394,9 +2420,21 @@ class LiftLayer(GrammarLayer):
                 nInput=int(nInput), nOutput=int(nOutput),
                 invertible=invertible, nonlinear=nonlinear)
             self.layers.append(self._sigma)
+            # Lexical-mask projection (GrammarOpsPass §2): the word's
+            # code -> the inner LDU's gate rank space. One projection
+            # per operator, shared across the vocabulary; the per-verb
+            # difference rides entirely in this embedding->gate map.
+            # Init near-identity (small weight, bias at atanh(0.9)) so
+            # untrained gates barely perturb the shared matrix while
+            # already differing per word. Initialized GLOBAL-RNG-NEUTRAL
+            # (skip_init + local generator): constructing the operator
+            # must not shift the seeded draws of fixtures built after it.
+            self._lex_gate = _make_lex_gate(
+                int(nInput), min(int(nInput), int(nOutput)), seed=0x11F7)
         else:
             # Zero-width construction (parameter-free harness probe).
             self._sigma = None
+            self._lex_gate = None
 
     # -- Butterfly per-pair op delegation (Stage 5) -----------------
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -2441,12 +2479,38 @@ class LiftLayer(GrammarLayer):
                 "LiftLayer.reverse_butterfly: butterfly mode not enabled.")
         return self._butterfly_reverse(y)
 
-    def forward(self, left, right):
+    def lexical_gate(self, code):
+        """Per-word gate over the shared operator matrix (GrammarOpsPass
+        §2: one matrix, many verbs).
+
+        ``code``: the word's lexical embedding (its codebook row),
+        ``[D]`` or ``[..., D]`` -- leading dims are flattened and
+        averaged (a graded blend when several words prime one call);
+        a wider row (muxed event) is sliced to the content width.
+        Returns a tanh-bounded ``[rank]`` gate for ``forward`` /
+        ``reverse`` ``gate=``. ``None`` code (or a zero-width layer)
+        returns ``None``, so callers can pass the result through
+        unconditionally.
+        """
+        if code is None or getattr(self, '_lex_gate', None) is None:
+            return None
+        cw = self._content_width
+        v = code.reshape(-1, code.shape[-1])
+        if cw and v.shape[-1] > cw:
+            v = v[..., :cw]
+        v = v.to(self._lex_gate.weight.dtype).mean(dim=0)
+        return torch.tanh(self._lex_gate(v))
+
+    def forward(self, left, right, gate=None):
         """Sigma-style binary fold over the STM pair ``(left, right)``.
 
         Delegates to ``SigmaLayer.compose`` which packs the operands
         in atanh-domain (``a + b``), applies the inner linear
         transform, and returns ``tanh(W @ (atanh(a) + atanh(b)) + b)``.
+
+        ``gate`` (optional ``[rank]``, see ``lexical_gate``): lexical
+        slice of the shared operator; ``None`` is byte-identical to
+        the un-gated baseline.
         """
         if self._sigma is None:
             raise RuntimeError(
@@ -2461,11 +2525,11 @@ class LiftLayer(GrammarLayer):
             # result's .when span > 1 with the center advanced.
             l_what, l_where, _l_when = _split_event(left, cw)
             r_what, _r_where, r_when = _split_event(right, cw)
-            content = self._sigma.compose(l_what, r_what)
+            content = self._sigma.compose(l_what, r_what, gate=gate)
             return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
-        return self._sigma.compose(left, right)
+        return self._sigma.compose(left, right, gate=gate)
 
-    def reverse(self, parent):
+    def reverse(self, parent, gate=None):
         """Split ``parent`` back into a ``(left, right)`` pair.
 
         Delegates to ``SigmaLayer.generate`` which inverts the inner
@@ -2476,6 +2540,9 @@ class LiftLayer(GrammarLayer):
         ``(left, right)`` cannot be uniquely recovered from their
         atanh-sum alone -- but ``forward(*reverse(parent)) == parent``
         round-trip-consistently when the internal sigma is invertible.
+
+        ``gate``: the same gate that was passed to ``forward``; the
+        LDU inverse uses ``1/(d * gate)`` automatically.
         """
         if self._sigma is None:
             raise RuntimeError(
@@ -2484,19 +2551,19 @@ class LiftLayer(GrammarLayer):
         cw = self._content_width
         if cw and parent.shape[-1] > cw:
             p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = self._sigma.generate(p_what)
+            lc, rc = self._sigma.generate(p_what, gate=gate)
             back = _lower_when(p_when)
             return (torch.cat([lc, p_where, back], dim=-1),
                     torch.cat([rc, p_where, back], dim=-1))
-        return self._sigma.generate(parent)
+        return self._sigma.generate(parent, gate=gate)
 
-    def compose(self, left, right):
+    def compose(self, left, right, gate=None):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
-        return self.forward(left, right)
+        return self.forward(left, right, gate=gate)
 
-    def generate(self, parent):
+    def generate(self, parent, gate=None):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
-        return self.reverse(parent)
+        return self.reverse(parent, gate=gate)
 
 class LowerLayer(GrammarLayer):
     """``lower(idea_a, idea_b)`` -- binary C-tier grammar op (pi-style
@@ -2528,9 +2595,11 @@ class LowerLayer(GrammarLayer):
     The construction is self-contained: no Space references.  See
     ``LiftLayer`` for the keyword-arg compatibility shim.
 
-    Planned (2026-06-10): declared validity mask -- see the
-    ``LiftLayer`` docstring note; the same contract applies to
-    ``lower``.
+    Lexical mask (GrammarOpsPass §2; supersedes the 2026-06-10
+    "declared validity mask" note): see the ``LiftLayer`` docstring --
+    the same lexical-modulation contract applies to ``lower``
+    (``lexical_gate(code)`` producer; ``gate=`` threading to the
+    inner PiLayer; ``gate=None`` byte-identical to baseline).
     """
     rule_name  = "lower"
     arity      = 2
@@ -2569,8 +2638,12 @@ class LowerLayer(GrammarLayer):
                 nInput=int(nInput), nOutput=int(nOutput),
                 invertible=invertible, nonlinear=nonlinear)
             self.layers.append(self._pi)
+            # Lexical-mask projection (GrammarOpsPass §2); see LiftLayer.
+            self._lex_gate = _make_lex_gate(
+                int(nInput), min(int(nInput), int(nOutput)), seed=0x10E7)
         else:
             self._pi = None
+            self._lex_gate = None
 
     # -- Butterfly per-pair op delegation (Stage 5) -----------------
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -2602,7 +2675,11 @@ class LowerLayer(GrammarLayer):
                 "LowerLayer.reverse_butterfly: butterfly mode not enabled.")
         return self._butterfly_reverse(y)
 
-    def forward(self, left, right):
+    # Per-word gate producer (GrammarOpsPass §2); same contract as
+    # LiftLayer.lexical_gate (one learned projection per operator).
+    lexical_gate = LiftLayer.lexical_gate
+
+    def forward(self, left, right, gate=None):
         """Pi-style binary fold (multiplicative log-domain) over the
         STM pair ``(left, right)``.
 
@@ -2610,6 +2687,10 @@ class LowerLayer(GrammarLayer):
         log-mult domain (``log_mult(a) + log_mult(b)``), applies the
         inner linear transform, and returns
         ``tanh((W @ (log_mult(a) + log_mult(b)) + b) / 2)``.
+
+        ``gate`` (optional ``[rank]``, see ``lexical_gate``): lexical
+        slice of the shared operator; ``None`` is byte-identical to
+        the un-gated baseline.
         """
         if self._pi is None:
             raise RuntimeError(
@@ -2624,13 +2705,16 @@ class LowerLayer(GrammarLayer):
             # back toward a unit point (the inverse of LIFT).
             l_what, l_where, _l_when = _split_event(left, cw)
             r_what, _r_where, r_when = _split_event(right, cw)
-            content = self._pi.compose(l_what, r_what)
+            content = self._pi.compose(l_what, r_what, gate=gate)
             return torch.cat([content, l_where, _lower_when(r_when)], dim=-1)
-        return self._pi.compose(left, right)
+        return self._pi.compose(left, right, gate=gate)
 
-    def reverse(self, parent):
+    def reverse(self, parent, gate=None):
         """Split ``parent`` back into a ``(left, right)`` pair via the
         balanced log-mult-domain split (``PiLayer.generate``).
+
+        ``gate``: the same gate that was passed to ``forward``; the
+        LDU inverse uses ``1/(d * gate)`` automatically.
         """
         if self._pi is None:
             raise RuntimeError(
@@ -2639,19 +2723,19 @@ class LowerLayer(GrammarLayer):
         cw = self._content_width
         if cw and parent.shape[-1] > cw:
             p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = self._pi.generate(p_what)
+            lc, rc = self._pi.generate(p_what, gate=gate)
             back = _lift_when(p_when)
             return (torch.cat([lc, p_where, back], dim=-1),
                     torch.cat([rc, p_where, back], dim=-1))
-        return self._pi.generate(parent)
+        return self._pi.generate(parent, gate=gate)
 
-    def compose(self, left, right):
+    def compose(self, left, right, gate=None):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
-        return self.forward(left, right)
+        return self.forward(left, right, gate=gate)
 
-    def generate(self, parent):
+    def generate(self, parent, gate=None):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
-        return self.reverse(parent)
+        return self.reverse(parent, gate=gate)
 
 class PrepositionLayer(GrammarLayer):
     """preposition(P, X) -- marker-headed phrase packaging (binary, C-tier).
@@ -7272,6 +7356,37 @@ class Taxonomy:
         self._priming[b, rids] = torch.maximum(
             cur, torch.full_like(cur, target))
 
+    def prime_with_weights(self, weights, batch=None):
+        """Merge boost-above-unity row weights into the priming buffer
+        (element-wise max; GrammarOpsPass §5).
+
+        The single intent's per-tower boosts enter the SS retrieval
+        plumbing here: the merged buffer flows to the inverse
+        recommender through ``priming_kwargs_for_slots`` — no new
+        mechanism, one new producer. ``weights``: ``[V]`` (``>= 1.0``
+        by convention; sized to ``min(V, capacity)``, the rest stays).
+        ``batch=None`` merges into every row, an integer into one.
+        No-op when the buffer is unallocated (dark by construction);
+        the merge dissipates through ``decay`` / ``reset`` exactly like
+        every other priming write (sentence-scoped working memory).
+        """
+        if self._priming is None or weights is None:
+            return
+        import torch
+        w = torch.as_tensor(weights, dtype=self._priming.dtype,
+                            device=self._priming.device).reshape(-1)
+        n = min(int(w.shape[0]), self._priming_capacity)
+        if n <= 0:
+            return
+        if batch is None:
+            self._priming[:, :n] = torch.maximum(
+                self._priming[:, :n], w[:n].unsqueeze(0))
+            return
+        b = int(batch)
+        if 0 <= b < self._priming_B:
+            self._priming[b, :n] = torch.maximum(
+                self._priming[b, :n], w[:n])
+
     def propagate(self, ref_ids, batch=0, depth=2, hop_decay=0.5):
         """Spread the boost from ``ref_ids`` along the attached view's
         parent/children adjacency for ``depth`` hops, multiplying the
@@ -8122,6 +8237,14 @@ class WordSubSpace(SubSpace):
         for p in self.truth_layer.parameters():
             if all(p is not q for q in self.params):
                 self.params.append(p)
+
+        # 6a-bis. The SECOND truth set (GrammarOpsPass §6; sign-off
+        # 2026-06-11): relative truths — relations between ideas,
+        # stored as UNCOLLAPSED (np1, vp, np2) triples and consumed
+        # only by the reasoning loop. A sibling of the absolute store
+        # by construction, so luminosity/coverage never has to mask.
+        self.relative_store = RelativeTruthStore(
+            symbol_dim, max_triples=max_truths)
 
         # 6b. Category codebook -- learned embedding per derivation label.
         # The first len(TheGrammar.categories) rows are reserved one-per-

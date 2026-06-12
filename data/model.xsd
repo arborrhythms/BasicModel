@@ -67,6 +67,15 @@
            XML enables a non-substrate rule, else parallel. Explicit
            values override the default. -->
       <xs:element name="conceptualMode" type="conceptualModeEnum" minOccurs="0"/>
+      <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
+           protocol. In serial mode every sentence opens with an
+           independent PARALLEL prelude of <conceptualOrder> pumps
+           (pump zero: EMA on, intent-only commit — the gist primes
+           both towers via §5 set_intent; nothing enters the
+           workspace), then the per-word serial task runs under the
+           §6d serial partition; the gist re-pumps on preemption only.
+           Default false until the author's cutover. -->
+      <xs:element name="sentenceProtocol" type="xs:boolean" minOccurs="0"/>
       <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
            per-word router-fire gating for serial mode.
              per-word  = fire wordSubSpace.compose once per word in the

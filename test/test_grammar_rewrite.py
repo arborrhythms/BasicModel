@@ -22,10 +22,19 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
+# The transitional POS-categoried grammar this rewrite produced is archived
+# as a test fixture (GrammarOpsPass §1): data/complete.grammar itself is now
+# role-collapsed, and the rewrite properties documented here are pinned on
+# the archived transitional content.
+_FIXTURE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "fixtures",
+    "transitional_pos.grammar")
+
+
 def _complete_grammar():
     from Language import Grammar
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    g.load_from_grammar_file(_FIXTURE)
     return g
 
 

@@ -34,12 +34,6 @@ XML2 ?= data/ergodic-only.xml
 MODEL ?= data/MM_20M.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 
-# SSH defaults for ArborMini.local
-HOST ?=
-TRAIN_USER ?= arogers
-TRAIN_KEY  ?= ~/.ssh/id_ed25519_arbormini
-TRAIN_DIR  ?= ~/WikiOracle/basicmodel
-
 # The shared MAKE_PDF macro drops later options due to a broken line
 # continuation, so override it locally with the reader extensions these docs use.
 MAKE_PDF = pandoc $(PDFOPTS) \
@@ -49,7 +43,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--resource-path=.:doc
 
 .PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc clean \
-         train train_micro train_remote train_micro_remote
+         train train_micro
 
 all : xor
 

@@ -22,7 +22,16 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 
-def _ss_and_grammar(grammar_file="complete.grammar"):
+# The bare-sequence merge rules live in the archived transitional grammar
+# (GrammarOpsPass §1: data/complete.grammar is now role-collapsed and
+# carries no structural-merge rules; the loader property under test is
+# unchanged and is exercised on the archived content).
+_TRANSITIONAL_GRAMMAR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "fixtures",
+    "transitional_pos.grammar")
+
+
+def _ss_and_grammar(grammar_file=_TRANSITIONAL_GRAMMAR):
     from Spaces import SymbolicSpace
     from Language import Grammar
     ss = SymbolicSpace.__new__(SymbolicSpace)   # bypass full-model build
@@ -33,12 +42,13 @@ def _ss_and_grammar(grammar_file="complete.grammar"):
 
 
 def test_merge_not_inserted_as_operator():
-    """complete.grammar declares structural ``merge`` rules, but merge is not
-    registered in the operator codebook / superposition table."""
+    """The transitional grammar declares structural ``merge`` rules, but
+    merge is not registered in the operator codebook / superposition
+    table."""
     ss, g = _ss_and_grammar()
     assert any(r.method_name == "merge" for r in g.rules), (
-        "fixture sanity: complete.grammar should contain bare-sequence "
-        "'merge' rules")
+        "fixture sanity: the transitional grammar should contain "
+        "bare-sequence 'merge' rules")
     pos = ss.insert_operations(g)
     assert "merge" not in pos
     assert ss.operation_position("merge") is None

@@ -620,6 +620,27 @@ def compile(model, verbose=True, fullgraph=False):
     import torch._dynamo as _dyn
     _dyn.config.allow_unspec_int_on_nn_module = True
 
+    # MPS: Inductor emits a device-side bounds-check error buffer
+    # (``c10::metal::ErrorMessages* error_buf``) for every
+    # bounds-checked indirect load it generates. A large fusion (the
+    # MM-scale 2N×N glue + slot-cascade kernels run past 10k generated
+    # Metal lines) can then exceed Metal's hard 31-buffer binding
+    # limit and kernel compilation fails with "no 'buffer' resource
+    # location available for 'error_buf'" — observed on
+    # ``MM_20M.xml`` once the meronymic slot cascades joined the
+    # fusion (2026-06-11). Dropping the assert codegen removes the
+    # extra buffer argument; out-of-range indices on MPS become
+    # unchecked (the pre-error_buf behavior). CUDA / CPU keep their
+    # checks — they have no such binding limit.
+    try:
+        if str(TheDevice.get()).startswith("mps"):
+            import torch._inductor.config as _ind
+            _ind.assert_indirect_indexing = False
+            _msg("MPS: inductor assert_indirect_indexing disabled "
+                 "(Metal 31-buffer limit vs error_buf argument)")
+    except Exception:
+        pass
+
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:

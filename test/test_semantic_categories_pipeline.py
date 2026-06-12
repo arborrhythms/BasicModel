@@ -70,7 +70,11 @@ def test_recovers_on_transitional_grammar_participation():
     from semantic_categories import recover_semantic_categories
 
     g = Grammar()
-    g.load_from_grammar_file("complete.grammar")
+    # The transitional POS-categoried baseline, archived as a fixture
+    # (GrammarOpsPass §1: data/complete.grammar is now role-collapsed).
+    g.load_from_grammar_file(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "fixtures",
+        "transitional_pos.grammar"))
     part = role_participation(g)
     # Seed an operator codebook for every semantic operator in the grammar.
     seed = SymbolicSpace.__new__(SymbolicSpace)

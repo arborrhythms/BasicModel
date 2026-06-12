@@ -5,7 +5,7 @@ Usage:
     python train.py                           # local, defaults
     python train.py --model data/MM_20M.xml --compile-target gpu --batches 10
     python train.py --model data/MM_20M.xml --compile-target mlx
-    python train.py --host arbormini.local    # remote execution
+    python train.py --host example.org        # remote execution via SSH
 """
 
 import argparse
@@ -13,6 +13,7 @@ import cProfile
 import datetime
 import os
 import pstats
+import shlex
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -109,11 +110,11 @@ def parse_args(argv=None):
     # SSH remote execution
     ssh = p.add_argument_group("remote execution (SSH)")
     ssh.add_argument("--host", default=None,
-                     help="Remote host (e.g. arbormini.local)")
+                     help="Remote host")
     ssh.add_argument("--user", default="arogers",
                      help="SSH user (default: arogers)")
-    ssh.add_argument("--key-file", default="~/.ssh/id_ed25519_arbormini",
-                     help="SSH key file")
+    ssh.add_argument("--key-file", default=None,
+                     help="Optional SSH key file; uses SSH config/agent when omitted")
     ssh.add_argument("--remote-dir", default="~/WikiOracle/basicmodel",
                      help="Remote working directory")
     return p.parse_args(argv)
@@ -408,8 +409,10 @@ def train_remote(args):
     with the same flag set. Pulls generated weights back on completion.
     """
     proj = project_dir()
-    key = os.path.expanduser(args.key_file)
-    ssh_opts = f"ssh -i {key}"
+    ssh_cmd_base = ["ssh"]
+    if args.key_file:
+        ssh_cmd_base += ["-i", os.path.expanduser(args.key_file)]
+    ssh_opts = " ".join(shlex.quote(part) for part in ssh_cmd_base)
     dest = f"{args.user}@{args.host}:{args.remote_dir}/"
 
     # Reconcile weights first so remote training can resume from the newest
@@ -483,11 +486,7 @@ def train_remote(args):
         f"py=.venv/bin/python; [ -x \"$py\" ] || py=.venv/Scripts/python.exe; "
         f"{remote_env_vars} \"$py\" {' '.join(remote_args)}"
     )
-    ssh_cmd = [
-        "ssh", "-i", key,
-        f"{args.user}@{args.host}",
-        remote_cmd,
-    ]
+    ssh_cmd = ssh_cmd_base + [f"{args.user}@{args.host}", remote_cmd]
     run(ssh_cmd)
 
     TheMessage(f"\n=== Pulling generated weights from {args.host} ===")
