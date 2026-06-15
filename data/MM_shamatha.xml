@@ -5,18 +5,18 @@
        fusion. Mirrors MM_boolean's DNF stack (NegationLayer + Sigma AND-fold
        + Pi OR-fold) and adds the `Contiguous(S)` rule that fires
        ContiguousLayer before NegationLayer when thought_free is on.
-       The four SymbolicSpace regularizer knobs (l1Lambda,
+       The four WholeSpace regularizer knobs (l1Lambda,
        discontinuityLambda, impenetrableOverlap, impenetrableVariance)
        apply regardless of mode. -->
   <architecture>
-    <!-- conceptualOrder=0 keeps this one-pointed grammar out of higher-order
+    <!-- subsymbolicOrder=0 keeps this one-pointed grammar out of higher-order
          P/C/S cycles. Parser dispatch is derived from the grammar block. -->
-    <conceptualOrder>0</conceptualOrder>
+    <subsymbolicOrder>0</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <monotonic>true</monotonic>
 
     <training>
@@ -65,11 +65,11 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>16</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
        nPercepts=16 × dim=12.  Final level: 1 vector × 192 dim.
@@ -81,7 +81,7 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
@@ -92,7 +92,7 @@
     <discontinuityLambda>0.01</discontinuityLambda>
     <impenetrableOverlap>0.1</impenetrableOverlap>
     <impenetrableVariance>0.01</impenetrableVariance>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

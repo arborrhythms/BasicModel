@@ -5,15 +5,15 @@
        Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
        but scaled to XOR-sized dims. -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <modelType>embedding</modelType>
     <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-         butterfly cascade on PerceptualSpace.pi requires the parallel
+         butterfly cascade on PartSpace.pi requires the parallel
          (whole-slab) forward path so the cascade sees all N positions
          at once. Serial / per-word mode iterates the cascade with a
          single position per call (the cascade then passes through as
          a no-op). -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -35,7 +35,7 @@
     <nOutputDim>14</nOutputDim>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nInputDim>14</nInputDim>
     <nVectors>200</nVectors>
@@ -45,7 +45,7 @@
     <invertible>true</invertible>
     <synthesis>radix</synthesis>
     <butterfly>true</butterfly>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -58,7 +58,7 @@
     <butterfly>true</butterfly>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>byte</lexer>
     <nInput>8</nInput>
     <nInputDim>14</nInputDim>
@@ -67,7 +67,7 @@
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

@@ -51,7 +51,7 @@ def main():
           f"maxL={tables['maxL']}")
 
     captured = []
-    orig = Spaces.PerceptualSpace._embed_bpe
+    orig = Spaces.PartSpace._embed_bpe
 
     def _wrap(self, upstream_vspace):
         wb = upstream_vspace.materialize(mode="what")
@@ -60,13 +60,13 @@ def main():
             captured.append(bi.detach().clone())
         return orig(self, upstream_vspace)
 
-    Spaces.PerceptualSpace._embed_bpe = _wrap
+    Spaces.PartSpace._embed_bpe = _wrap
     try:
         opt = m.getOptimizer(lr=1e-4)
         m.runEpoch(optimizer=opt, batchSize=8, split="train",
                    max_batches=3)
     finally:
-        Spaces.PerceptualSpace._embed_bpe = orig
+        Spaces.PartSpace._embed_bpe = orig
 
     if not captured:
         print("[match-check] NO byte buffers captured -- abort")

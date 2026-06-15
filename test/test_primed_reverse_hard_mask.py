@@ -7,7 +7,7 @@ Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Hard
 admissibility mask + §Reverse operation flow.
 
 Uses ``object.__new__`` to bypass WordSpace's heavy __init__ (which
-needs PerceptualSpace / ConceptualSpace / SymbolicSpace). We only
+needs PartSpace / ConceptualSpace / WholeSpace). We only
 need attach_knowledge + the helper, which don't depend on the full
 Space wiring.
 """

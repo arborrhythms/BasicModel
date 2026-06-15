@@ -163,7 +163,7 @@ def test_order_independence():
 # ---------------------------------------------------------------------------
 
 class _PoisonedSym:
-    """A SymbolicSpace stand-in whose decoder must never be called."""
+    """A WholeSpace stand-in whose decoder must never be called."""
 
     def decode_to_concept(self, row):
         raise AssertionError(

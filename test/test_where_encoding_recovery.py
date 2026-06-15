@@ -1,7 +1,7 @@
-"""Stage 2: ``WhereEncoding.recover`` + ``SymbolicSpace.allocate_position``.
+"""Stage 2: ``WhereEncoding.recover`` + ``WholeSpace.allocate_position``.
 
 Covers the integer-recovery primitive on ``WhereEncoding`` and the
-monotonic position counter on ``SymbolicSpace`` introduced by
+monotonic position counter on ``WholeSpace`` introduced by
 [`doc/plans/2026-05-28-where-keyed-taxonomy.md`](../doc/plans/2026-05-28-where-keyed-taxonomy.md).
 
 ``recover(vec) -> int`` is the inverse view onto a sinusoidal encoding:
@@ -11,7 +11,7 @@ the nearest integer, and validates the result is in ``[0, maxP)``.
 which is the current default everywhere) must raise — recovery has no
 meaning when the encoding is zero-width.
 
-``SymbolicSpace.allocate_position()`` returns monotonically increasing
+``WholeSpace.allocate_position()`` returns monotonically increasing
 positive ints starting at 1. Position 0 is reserved as the
 frozen-zeros anchor (never allocated to a content row). The counter
 survives ``vocab_extras`` save/load.
@@ -60,18 +60,18 @@ def _make_radix_model():
 # Phase 4): .where no longer keys the codebook (identity is the row index),
 # so the .where -> int identity inverse was removed and its
 # TestWhereEncodingRecover suite is dropped with it. The position counter
-# below (SymbolicSpace.allocate_position) is row/position-keyed, not
+# below (WholeSpace.allocate_position) is row/position-keyed, not
 # .where-quadrature-based, and is kept.
 # ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
-# ``SymbolicSpace.allocate_position`` — monotonic positive-int allocator.
+# ``WholeSpace.allocate_position`` — monotonic positive-int allocator.
 # ---------------------------------------------------------------------------
 
 
 class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
-    """Monotonic position counter on SymbolicSpace; position 0 reserved."""
+    """Monotonic position counter on WholeSpace; position 0 reserved."""
 
     def test_allocate_starts_at_one(self):
         """First call returns 1 (position 0 is the reserved anchor)."""

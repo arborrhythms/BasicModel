@@ -4,7 +4,7 @@ Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
 2026-05-26-two-loop-pi-sigma-substrate.md). Stage 10 (doc/plans/
 2026-05-27-perceptstore-meta-taxonomy-reentrancy.md) revisions noted.
 
-    PerceptualSpace        -- ``pi`` (PiLayer). Stage 10 retired
+    PartSpace        -- ``pi`` (PiLayer). Stage 10 retired
                               ``self.sigma`` from PS — PS is pi-only.
                               The sigma half migrates to
                               ``ConceptualSpace.sigma_in`` per stage.
@@ -12,7 +12,7 @@ Post-Stage-1.A + Stage-1.C substrate refactor (doc/plans/
                               ``sigma_in`` / ``sigma_cs``: CS is a pure
                               bookkeeping carrier (forward pushes to STM;
                               forward and reverse are symmetric).
-    SymbolicSpace          -- OWNS ``self.sigma`` (invertible SigmaLayer;
+    WholeSpace          -- OWNS ``self.sigma`` (invertible SigmaLayer;
                               butterfly when configured) -- the symbolic-
                               loop generalization operator and the
                               ``S = sigma(S)`` binding target. No ``pi``.
@@ -89,11 +89,11 @@ class TestOwnership(unittest.TestCase):
             self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertFalse(
             hasattr(ps, 'pi'),
-            "PerceptualSpace.pi moved to SymbolicSpace (Pi/Sigma swap); "
+            "PartSpace.pi moved to WholeSpace (Pi/Sigma swap); "
             "PS is sigma-only (synthesis).")
         # 2026-06-04: ConceptualSpace is a pure bookkeeping carrier now --
         # the per-stage sigma_in / sigma_cs were retired; the symbolic-loop
-        # sigma lives on SymbolicSpace (see test_symbolic_owns_sigma).
+        # sigma lives on WholeSpace (see test_symbolic_owns_sigma).
         cs = model.conceptualSpaces[0]
         self.assertFalse(
             hasattr(cs, 'sigma_in'),
@@ -112,7 +112,7 @@ class TestOwnership(unittest.TestCase):
 
     def test_symbolic_owns_pi(self):
         # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # SymbolicSpace OWNS the pi (the top-down analysis/intersection
+        # WholeSpace OWNS the pi (the top-down analysis/intersection
         # operator; the binding target for the S-tier fold rule -- bound
         # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
         model = _make_plain_model()
@@ -120,7 +120,7 @@ class TestOwnership(unittest.TestCase):
         fold = getattr(model.symbolicSpace, 'pi', None)
         self.assertIsInstance(
             fold, (PiLayer, MeronymicFoldAdapter),
-            "SymbolicSpace must own a pi under the corrected "
+            "WholeSpace must own a pi under the corrected "
             "analysis/synthesis ownership rule.")
         if isinstance(fold, MeronymicFoldAdapter):
             self.assertEqual(fold.kind, 'pi')
@@ -128,7 +128,7 @@ class TestOwnership(unittest.TestCase):
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
         self.assertFalse(hasattr(model.symbolicSpace, 'sigma'),
-                         "SymbolicSpace.sigma moved to PerceptualSpace "
+                         "WholeSpace.sigma moved to PartSpace "
                          "(Pi/Sigma swap); SS is pi-only (analysis).")
 
     def test_conceptual_has_no_bare_sigma(self):
@@ -151,11 +151,11 @@ class TestOwnership(unittest.TestCase):
         # retired.
         model = _make_plain_model()
         self.assertTrue(hasattr(model.perceptualSpace, 'sigma'),
-                        "PerceptualSpace must own a bare ``sigma`` "
+                        "PartSpace must own a bare ``sigma`` "
                         "(SigmaLayer) post Pi/Sigma swap.")
         self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
-                         "Pi/Sigma swap: PerceptualSpace.pi moved to "
-                         "SymbolicSpace.")
+                         "Pi/Sigma swap: PartSpace.pi moved to "
+                         "WholeSpace.")
 
     def test_output_has_no_pilayer(self):
         model = _make_plain_model()
@@ -191,11 +191,11 @@ class TestForwardReverseAliases(unittest.TestCase):
         self.assertFalse(hasattr(cs, 'reversePi'),
                          "ConceptualSpace.reversePi alias removed")
         self.assertFalse(hasattr(ss, 'forwardSigma'),
-                         "SymbolicSpace.forwardSigma alias removed")
+                         "WholeSpace.forwardSigma alias removed")
         self.assertFalse(hasattr(ss, 'reverseSigma'),
-                         "SymbolicSpace.reverseSigma alias removed")
+                         "WholeSpace.reverseSigma alias removed")
         self.assertFalse(hasattr(ss, '_sigma_reverse'),
-                         "SymbolicSpace._sigma_reverse removed with sigma")
+                         "WholeSpace._sigma_reverse removed with sigma")
 
     def test_conceptual_no_sigma_percept_forward(self):
         # Post-Stage-1.C: the ``sigma_percept`` SigmaLayer (and the

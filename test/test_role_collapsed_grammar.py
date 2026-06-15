@@ -67,18 +67,18 @@ def test_grammar_loads():
 
 
 def test_perceptualspace_has_everything_start():
-    """PerceptualSpace carries the analyzer root ``<start>U</start>``."""
+    """PartSpace carries the analyzer root ``<start>U</start>``."""
     g = _load()
     assert g.ps_start_symbol == "U"
     root = ET.parse(_GRAMMAR_FILE).getroot()
-    ps = root.find("PerceptualSpace")
+    ps = root.find("PartSpace")
     assert ps is not None
     starts = [(s.get("name"), (s.text or "").strip()) for s in ps.findall("start")]
     assert ("everything", "U") in starts, starts
 
 
 def test_symbolicspace_owns_its_starts():
-    """SymbolicSpace owns the operator-output starts, split by name."""
+    """WholeSpace owns the operator-output starts, split by name."""
     g = _load()
     ss_syms = {sym for pat in g.ss_start_patterns for sym in pat}
     assert {"isEqual_O1", "isPart_O1", "exist_O1"} <= ss_syms, ss_syms
@@ -88,7 +88,7 @@ def test_symbolicspace_owns_its_starts():
 
 def test_no_top_level_start():
     """No grammar-wide top-level ``<start>`` (decision 7): starts are
-    nested under PerceptualSpace / SymbolicSpace only."""
+    nested under PartSpace / WholeSpace only."""
     root = ET.parse(_GRAMMAR_FILE).getroot()
     assert root.find("start") is None, (
         "role-collapsed grammar must not declare a top-level <start>")
@@ -222,7 +222,7 @@ def test_grammar_file_conforms_to_role_collapsed_format(fname):
         f"{fname}: top-level <start> (must be space-scoped)")
 
     # A PS section declares the analyzer root U.
-    ps = root.find("PerceptualSpace")
+    ps = root.find("PartSpace")
     if ps is not None:
         starts = [(s.get("name"), (s.text or "").strip())
                   for s in ps.findall("start")]

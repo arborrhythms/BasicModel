@@ -78,14 +78,14 @@ def test_error_clear_empties_terms():
 def test_error_terms_shape_is_five_tuples():
     e = Error()
     e.add("foo", torch.tensor(1.5), weight=2.0,
-          space="SymbolicSpace", category="symbol")
+          space="WholeSpace", category="symbol")
     terms = e.terms()
     assert len(terms) == 1
     name, tensor, weight, space, category = terms[0]
     assert name == "foo"
     assert isinstance(tensor, torch.Tensor)
     assert weight == 2.0
-    assert space == "SymbolicSpace"
+    assert space == "WholeSpace"
     assert category == "symbol"
 
 

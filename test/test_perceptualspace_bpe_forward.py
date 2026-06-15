@@ -1,4 +1,4 @@
-"""End-to-end BPE tests for PerceptualSpace.
+"""End-to-end BPE tests for PartSpace.
 
 Covers the config-consolidation + forward-wiring change documented in
 doc/specs/2026-04-23-perceptualspace-bpe-chunking-design.md.
@@ -22,7 +22,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
     xml = f"""<?xml version='1.0'?>
 <model>
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
@@ -52,28 +52,28 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
          replaced the truncation with an assert. -->
     <nOutput>32</nOutput>
   </InputSpace>
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
     <synthesis>{synthesis}</synthesis>
     <wordLearning>2</wordLearning>
-  </PerceptualSpace>
+  </PartSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
-    <!-- Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting). -->
+    <!-- Phase 4b: <lexer> lives on WholeSpace (analytic cutting). -->
     <lexer>byte</lexer>
-  </SymbolicSpace>
+  </WholeSpace>
   <OutputSpace>
     <nOutput>1</nOutput>
     <nDim>1</nDim>
@@ -90,7 +90,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
 class TestPerceptualSpaceBPE(unittest.TestCase):
 
     def test_init_reads_new_config_fields(self):
-        """Task 3: PerceptualSpace reads <synthesis>, <nVectors>, <wordLearning>."""
+        """Task 3: PartSpace reads <synthesis>, <nVectors>, <wordLearning>."""
         import tempfile
         from util import init_config
         import Spaces
@@ -100,11 +100,11 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             init_config(path=path,
                         defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
             self.assertEqual(
-                Spaces.TheXMLConfig.space("PerceptualSpace", "synthesis"), "bpe")
+                Spaces.TheXMLConfig.space("PartSpace", "synthesis"), "bpe")
             self.assertEqual(
-                int(Spaces.TheXMLConfig.space("PerceptualSpace", "nVectors")), 512)
+                int(Spaces.TheXMLConfig.space("PartSpace", "nVectors")), 512)
             self.assertEqual(
-                int(Spaces.TheXMLConfig.space("PerceptualSpace", "wordLearning")), 2)
+                int(Spaces.TheXMLConfig.space("PartSpace", "wordLearning")), 2)
 
     def test_init_rejects_bpe_with_nVectors_below_256(self):
         """Task 4: bpe mode requires nVectors>=256."""
@@ -147,9 +147,9 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             input_text = ["hello world foo"]
             inp_tensor = model.inputSpace.prepInput(input_text)
             # ``ps.subspace`` is a working buffer the body CONSUMES after the
-            # PerceptualSpace stage (the per-stage cs.forward loop + head
+            # PartSpace stage (the per-stage cs.forward loop + head
             # mutate it), so reading it after the full forward is fragile.
-            # Capture PerceptualSpace.forward's OUTPUT (the percept) at the
+            # Capture PartSpace.forward's OUTPUT (the percept) at the
             # source instead.
             captured = {}
             _orig_ps_fwd = ps.forward
@@ -171,11 +171,11 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
                 ps.forward = _orig_ps_fwd
 
             ps_event = captured.get("active")
-            self.assertIsNotNone(ps_event, "PerceptualSpace.forward must emit a percept")
+            self.assertIsNotNone(ps_event, "PartSpace.forward must emit a percept")
             self.assertEqual(ps_event.shape[0], 1)
-            # "6+2+2": PerceptualSpace is a (2,2) muxed tier, so the
+            # "6+2+2": PartSpace is a (2,2) muxed tier, so the
             # materialized event is the full EVENT width = content(4) +
-            # .where(2) + .when(2) = 8, matching <PerceptualSpace><nDim>8
+            # .where(2) + .when(2) = 8, matching <PartSpace><nDim>8
             # in the fixture above (was 4 before the muxed-tier migration).
             self.assertEqual(ps_event.shape[-1], 8)
             non_zero_rows = (ps_event[0].abs().sum(dim=-1) > 0).sum().item()
@@ -280,7 +280,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         event = ps.subspace.event.getW()
         self.assertIsNotNone(event)
         self.assertTrue(torch.isfinite(event).all(),
-            "PerceptualSpace output must be finite")
+            "PartSpace output must be finite")
 
 
 class TestSharedByteStore(unittest.TestCase):

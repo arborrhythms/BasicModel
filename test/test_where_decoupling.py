@@ -2,7 +2,7 @@
 
 RECONCILIATION (Alec, 2026-06-04) with doc/plans/2026-05-28-where-keyed-
 taxonomy.md:
-  * That plan OWNS: the META taxonomy + LBG split + the SymbolicSpace position
+  * That plan OWNS: the META taxonomy + LBG split + the WholeSpace position
     counter (``allocate_position`` + the explicit row<->position dicts) + the
     content-match (nearest-row) reverse decode. Those are row/position-based,
     NOT .where-quadrature-based, and are KEPT.
@@ -10,7 +10,7 @@ taxonomy.md:
     cross-codebook ``WhereEncoding`` slice registry (``allocate_codebook_slice``
     / ``_codebook_registry`` / ``global_max_val`` / ``reset_codebook_registry``),
     the per-codebook ``where_offset`` global key, and the dead ``recover``
-    (.where -> int inverse). Codebook identity is the row index (the ``_active``
+    (.where -> int inverse). Codebook identity is the row index (the ``_index``
     selection); .where keeps its input-offset + positional/spatial-extent roles
     (``WhereEncoding.forward``, period = architecture.nObjects). Consequence
     (accepted): CS->SS reverse is approximate (content match), not an exact
@@ -41,7 +41,7 @@ class TestWhereDecoupling(unittest.TestCase):
     def test_codebook_identity_is_the_active_row_index(self):
         ss, _cb, nVectors = _ss_subspace()
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
-        rows = ss.lookup(sel)                      # identity via _active selection
+        rows = ss.lookup(sel)                      # identity via _index selection
         proto = ss.prototype()
         self.assertTrue(torch.allclose(rows[0, 0], proto[0]))
         self.assertTrue(torch.allclose(rows[1, 0], proto[3]))

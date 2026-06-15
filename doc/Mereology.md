@@ -4,6 +4,15 @@ Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
 `ImpenetrableLayer` regularizer.
 
+> **Part/whole spaces (2026-06-12).** The perceptual side now names the
+> duality directly: `PartSpace` (bottom-up synthesis over atoms) and
+> `WholeSpace` (top-down analysis over unity), both subclassing the thin
+> `PerceptualSpace` base. At the corpus callosum, objects are analysed
+> and synthesized by sending them back to PerceptualSpace — wholes get
+> split, parts get chunked. For the object/reference (sign/symbol)
+> vocabulary, see [Spaces.md](Spaces.md) and
+> [Philosophy.md](Philosophy.md).
+
 > **Meronomy reconciliation (2026-06-11; MeronomySpec wins — plan §2).**
 > Four reframings of this page's claims:
 >
@@ -36,7 +45,7 @@ fundamental operation, the five mereological relations, and the
 > the raw `W` tensor at the low-level kernel signature. But the
 > public `UnionLayer.reverse(parent, basis=None)` /
 > `IntersectionLayer.reverse(parent, basis=None)` now accept a
-> Codebook / Basis object (typically `SymbolicSpace.subspace.what`)
+> Codebook / Basis object (typically `WholeSpace.subspace.what`)
 > and extract `W = basis.getW()` internally before dispatching to
 > `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. The chart
 > reverse / signal-router dispatch (`bin/Language.py::unreduce()`)
@@ -47,7 +56,7 @@ fundamental operation, the five mereological relations, and the
 > **Codebook IS the meronymic structure.** The standalone
 > `MereologicalTree` sidecar that formerly stored explicit parent /
 > equality links was retired in favour of pure-geometric parthood
-> on the `SymbolicSpace` bivector codebook. The grammar layers
+> on the `WholeSpace` bivector codebook. The grammar layers
 > `PartLayer`, `IsEqualLayer`, `EqualLayer`, and `QueryLayer` operate directly on
 > codebook bivector activations via clipped cosine projection --- no
 > separate adjacency table, no `<architecture><mereologicalTreeSize>`
@@ -152,7 +161,7 @@ leading-bivector / paired-index layout caveat.
 
 ## ImpenetrableLayer: Five-Relations Regularizer
 
-`ImpenetrableLayer` regularizes the SymbolicSpace symbol codebook. It
+`ImpenetrableLayer` regularizes the WholeSpace symbol codebook. It
 classifies each ordered pair of codebook rows $(i, j)$ into one of the five
 mereological relations (using `Basis.part`), and penalizes partial overlap
 when paired with a trust mismatch. The learned half of the [Codebook
@@ -195,7 +204,7 @@ When VQ is absent, trust falls back to $\|cb[i]\| / \max_j \|cb[j]\|$.
 > the `part` / `isEqual` predicate family is preserved at depth 3 as
 > `[predicate, idea1, idea2]` and may be learned into the codebook as a
 > ternary META edge (predicate as parent, the two ideas as children) via
-> `SymbolicSpace.insert_relation`. An accepted relation carries a
+> `WholeSpace.insert_relation`. An accepted relation carries a
 > **tetralemma trust 4-tuple** $(t, f, b, n)$ (TRUE / FALSE / BOTH /
 > NEITHER, summing to $1$) from the TruthSet posture, gated by the
 > content-aware learn-score against `<truthCriterion>`. See
@@ -208,7 +217,7 @@ After `forward()`: `last_overlap_loss`, `last_variance`,
 
 ### Configuration
 
-XML knobs (under SymbolicSpace):
+XML knobs (under WholeSpace):
 
 | Knob | Default | Meaning |
 |------|---------|---------|
@@ -247,17 +256,17 @@ XML knobs (under SymbolicSpace):
 
 ---
 
-## Meronymic Analyzer (PerceptualSpace)
+## Meronymic Analyzer (PartSpace)
 
 Parthood is not only the symbolic relation of the previous sections; it
-is also how `PerceptualSpace` *analyzes* a surface into structure. The
+is also how `PartSpace` *analyzes* a surface into structure. The
 default perceptual chunking mode is `analyse`
-(`<PerceptualSpace><chunking>analyse</chunking>`), which routes the input
+(`<PartSpace><chunking>analyse</chunking>`), which routes the input
 through the meronymic analyzer rather than a fixed lexicon or BPE table.
 
 `InputSpace` hands the analyzer the unanalyzed surface --- with
 `<lexer>raw</lexer>` it passes the whole `[B, 1, N]` byte buffer and lets
-`PerceptualSpace` own tokenization. The analyzer's default (and only
+`PartSpace` own tokenization. The analyzer's default (and only
 enabled-by-default) operation is a *space-lexer*: a boundary detector
 that recognizes whitespace breaks, reproducing the current word-level
 behavior for verbal input. `raw` keeps the word-level codebook (unlike
@@ -282,6 +291,6 @@ per segment).
 operator (arity 2). Under a query model it dispatches to `queryPart`
 (`_dispatch_method_name_for_rule`), so `isPart` and `isEqual` are the
 relative operators recognized by `_relative_start_categories`
-(`_RELATIVE_OP_NAMES`). Its identity vector lives in the `SymbolicSpace`
+(`_RELATIVE_OP_NAMES`). Its identity vector lives in the `WholeSpace`
 operator codebook and participates in the same soft superposition as the
 other operators.

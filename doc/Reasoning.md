@@ -5,7 +5,7 @@
 > reverses as `basis=tier_basis`. The mereology-guided recommender
 > (`Ops._binary_op_recommend`) walks the Codebook's `W` rows to find
 > operand pairs $(x_1, x_2)$ such that $\mathrm{op}(x_1, x_2) \approx \mathit{parent}$. Under
-> `<codebook>none</codebook>` on SymbolicSpace the recommender has no
+> `<codebook>none</codebook>` on WholeSpace the recommender has no
 > rows to walk and falls back to the lossy `(parent, parent)`
 > pseudo-inverse — degrading the reasoning loop's structural recovery
 > on multi-stage chart parses. See
@@ -130,7 +130,7 @@ Grammar mode is derived from the loaded grammar block. Default-only unary
 `pi` / `sigma` rules take the fast path; non-default operator rules enable
 grammar-directed parser dispatch.
 
-`conceptualOrder` controls the number of P$\to$C$\to$S stages and the
+`subsymbolicOrder` controls the number of P$\to$C$\to$S stages and the
 symbol partition geometry. Higher-order symbols write to later partitions,
 so truth grounding, consistency, and extrapolation can respect conceptual
 order.
@@ -159,9 +159,9 @@ argument/return order.
 | Parameter | Location | Default | Description |
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
-| `<conceptualOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
+| `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
 | `<parserBackend>` | `<WordSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
-| `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<SymbolicSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH SymbolicSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
@@ -180,7 +180,7 @@ they define the target characterization, not implementation.
 
 | Method | Stage | Characterization |
 |--------|-------|------------------|
-| `Contiguous()` | One-Pointedness (Shamatha / FA) | Single connected, convex region in PerceptualSpace; contiguous span in SymbolicSpace |
+| `Contiguous()` | One-Pointedness (Shamatha / FA) | Single connected, convex region in PartSpace; contiguous span in WholeSpace |
 | `Continuous()` | Simplicity (Continuity / OA) | Concept states flow continuously; Jacobian of forward map is bounded |
 | `Peaceful()` | One Taste (Emotional Symmetry) | TruthLayer luminosity uniformly high across stored propositions |
 | `Done()` | Buddhahood (Non-Meditation) | Model is a fixed point of forward-reverse; reconstruction loss zero |

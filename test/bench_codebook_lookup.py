@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Benchmark codebook lookup as a function of vocabulary size.
 
-The IR-mode parallel forward path is dominated by PerceptualSpace
+The IR-mode parallel forward path is dominated by PartSpace
 codebook quantization (nearest-neighbor over the lexicon). MM_20M
 uses a 4096-entry byte codebook; MM_5M_IR uses a 1,000,000-entry
 word lexicon. The ratio shows up directly in `(B*N, V, D)` distance
@@ -100,7 +100,7 @@ def bench_wrapped_chunked(B, N, V, D, device, n_iter=10, warmup=2,
                           chunk=8192):
     """Torus-distance lookup with chunked V to bound peak memory.
 
-    PerceptualSpace uses ``_wrapped_mse_score`` (torus distance with
+    PartSpace uses ``_wrapped_mse_score`` (torus distance with
     ``remainder(x-y+1, 2)-1``). The wrap precludes the matmul
     shortcut, but chunking the V axis bounds the intermediate to
     ``(B*N, chunk, D)`` regardless of full V -- which is what blows
@@ -138,7 +138,7 @@ def main():
     p.add_argument("--N", type=int, default=32,
                    help="positions per row (sentence length)")
     p.add_argument("--D", type=int, default=6,
-                   help="embedding dim (PerceptualSpace.nDim)")
+                   help="embedding dim (PartSpace.nDim)")
     p.add_argument("--n-iter", type=int, default=10)
     args = p.parse_args()
 

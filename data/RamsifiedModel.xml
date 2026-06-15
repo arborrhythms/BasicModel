@@ -1,15 +1,15 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- RamsifiedModel: MentalModel with conceptualOrder=2.
+  <!-- RamsifiedModel: MentalModel with subsymbolicOrder=2.
        Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <weightsPath>RamsifiedModel.ckpt</weightsPath>
     <data>
       <shardDir>data/fineweb</shardDir>
@@ -55,11 +55,11 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
@@ -68,12 +68,12 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>sentence</lexer>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

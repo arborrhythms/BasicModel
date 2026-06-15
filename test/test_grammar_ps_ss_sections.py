@@ -1,9 +1,9 @@
-"""Loader support for <PerceptualSpace>/<SymbolicSpace> grammar sections.
+"""Loader support for <PartSpace>/<WholeSpace> grammar sections.
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
 (Phase 8b / execution-manifest step 3): ``Grammar.load_from_grammar_file``
 parses the two sections into separate PS/SS rule tables. Backward-compat:
-a file with bare ``<compose>``/``<generate>`` loads as ``<SymbolicSpace>``.
+a file with bare ``<compose>``/``<generate>`` loads as ``<WholeSpace>``.
 """
 
 import os
@@ -23,22 +23,22 @@ _PS_SS_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="ps_ss_probe">
       <start>S</start>
-      <PerceptualSpace>
+      <PartSpace>
         <compose>
           <rule>WORD = boundary.forward(WORD, WORD)</rule>
         </compose>
         <generate>
           <rule>WORD, WORD = boundary.reverse(WORD)</rule>
         </generate>
-      </PerceptualSpace>
-      <SymbolicSpace>
+      </PartSpace>
+      <WholeSpace>
         <compose>
           <rule>S = conjunction.forward(CONJ_L, CONJ_R)</rule>
         </compose>
         <generate>
           <rule>CONJ_L, CONJ_R = conjunction.reverse(S)</rule>
         </generate>
-      </SymbolicSpace>
+      </WholeSpace>
     </grammar>
 """)
 
@@ -113,7 +113,7 @@ def test_cfg_loader_removed():
 
 
 def test_bare_compose_generate_loads_as_symbolic_space(monkeypatch, tmp_path):
-    """Backward-compat: a bare <compose>/<generate> file == SymbolicSpace."""
+    """Backward-compat: a bare <compose>/<generate> file == WholeSpace."""
     g = _load_grammar_text(_BARE_GRAMMAR, monkeypatch, tmp_path)
     assert len(g.ps_rules) == 0
     ss_methods = {r.method_name for r in g.ss_rules if r.method_name}

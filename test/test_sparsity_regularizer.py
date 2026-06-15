@@ -38,7 +38,7 @@ def test_preserves_grad():
 
 
 def test_symbolic_space_uses_sparsity_regularizer():
-    """SymbolicSpace.l1_proximal delegates to SparsityRegLayer."""
-    from Spaces import SymbolicSpace
-    assert hasattr(SymbolicSpace, "_build_sparsity_regularizer"), \
-        "SymbolicSpace should expose a factory for its regularizer"
+    """WholeSpace.l1_proximal delegates to SparsityRegLayer."""
+    from Spaces import WholeSpace
+    assert hasattr(WholeSpace, "_build_sparsity_regularizer"), \
+        "WholeSpace should expose a factory for its regularizer"

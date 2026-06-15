@@ -11,7 +11,7 @@ fixed point on the codebook's row space within one cycle:
     stays there.
   * at-prototype input: cycle 0 already at fixed point.
 
-Tests exercise the Codebook directly (not the SymbolicSpace shell), to
+Tests exercise the Codebook directly (not the WholeSpace shell), to
 keep the focus on the snap loop without grammar entanglement. The
 intrinsic snap exposed via ``Codebook.forward(input)`` is
 the architectural definition of what naming a symbol means: project an

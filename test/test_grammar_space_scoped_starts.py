@@ -1,8 +1,8 @@
 """Space-scoped grammar starts (Phase R1.1 / R1.4).
 
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
-decision 7 + §4.4 + §6: ``PerceptualSpace.start`` configures the PS starts
-(the analyzer root ``U``) and ``SymbolicSpace.start`` configures the SS
+decision 7 + §4.4 + §6: ``PartSpace.start`` configures the PS starts
+(the analyzer root ``U``) and ``WholeSpace.start`` configures the SS
 starts (the operator outputs that count as completed expressions). There
 is no grammar-wide top-level ``<start>`` in the role-collapsed grammar;
 the global ``start_symbol`` / ``start_patterns`` alias the *symbolic*
@@ -27,7 +27,7 @@ if _BIN not in sys.path:
 _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="scoped_starts_probe">
-      <PerceptualSpace>
+      <PartSpace>
         <start name="everything">U</start>
         <compose>
           <rule>U = boundary.forward(U, U)</rule>
@@ -35,8 +35,8 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
         <generate>
           <rule>U, U = boundary.reverse(U)</rule>
         </generate>
-      </PerceptualSpace>
-      <SymbolicSpace>
+      </PartSpace>
+      <WholeSpace>
         <start name="relative_truth">isEqual_O1</start>
         <start name="absolute_truth">exist_O1</start>
         <compose>
@@ -47,7 +47,7 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
           <rule>isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
           <rule>exist_I1 = exist.reverse(exist_O1)</rule>
         </generate>
-      </SymbolicSpace>
+      </WholeSpace>
     </grammar>
 """)
 
@@ -56,14 +56,14 @@ _TOP_LEVEL_START_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="top_start_probe">
       <start>S</start>
-      <SymbolicSpace>
+      <WholeSpace>
         <compose>
           <rule>S = conjunction.forward(S, S)</rule>
         </compose>
         <generate>
           <rule>S, S = conjunction.reverse(S)</rule>
         </generate>
-      </SymbolicSpace>
+      </WholeSpace>
     </grammar>
 """)
 
@@ -79,14 +79,14 @@ def _load_grammar_text(text, monkeypatch, tmp_path):
 
 
 def test_ps_start_scoped_to_perceptual_space(monkeypatch, tmp_path):
-    """``<start>U</start>`` under ``<PerceptualSpace>`` configures PS starts."""
+    """``<start>U</start>`` under ``<PartSpace>`` configures PS starts."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.ps_start_symbol == "U"
     assert ("U",) in g.ps_start_patterns
 
 
 def test_ss_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
-    """``<start>`` under ``<SymbolicSpace>`` configures SS starts; the PS
+    """``<start>`` under ``<WholeSpace>`` configures SS starts; the PS
     root ``U`` does NOT leak into the symbolic start set."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.ss_start_symbol == "isEqual_O1"
@@ -97,7 +97,7 @@ def test_ss_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
 
 def test_global_start_aliases_symbolic_space(monkeypatch, tmp_path):
     """The back-compat global ``start_symbol`` / ``start_patterns`` mirror
-    the SymbolicSpace starts (the symbolic parse), not the PS root."""
+    the WholeSpace starts (the symbolic parse), not the PS root."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.start_symbol == g.ss_start_symbol == "isEqual_O1"
     assert tuple(g.start_patterns) == tuple(g.ss_start_patterns)
@@ -114,8 +114,8 @@ def test_relative_and_absolute_starts_from_name_attribute(monkeypatch, tmp_path)
 
 
 def test_identity_rule_uses_symbolic_start(monkeypatch, tmp_path):
-    """R1.4: the injected identity no-op is on the SymbolicSpace start, not
-    the PerceptualSpace root ``U``."""
+    """R1.4: the injected identity no-op is on the WholeSpace start, not
+    the PartSpace root ``U``."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
     assert g.id_SS is not None
     rd = g.rules[g.id_SS]

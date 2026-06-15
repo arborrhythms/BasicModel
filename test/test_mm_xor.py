@@ -271,7 +271,7 @@ class TestMMXorConvergence(unittest.TestCase):
     # test_mm_grammar_without_vqvae_learns_xor_signal retired
     # 2026-05-29: the ```` mode it tested no
     # longer exists. The prior hard_quantize branch in
-    # SymbolicSpace.forward was a footgun (codebook frozen at random
+    # WholeSpace.forward was a footgun (codebook frozen at random
     # init, no learning signal) and was removed; ``<codebook>quantize</codebook>``
     # now always trains the codebook via the VQ-VAE / EMA path. There
     # is no longer a meaningful "without VQVAE" variant to test.

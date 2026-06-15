@@ -167,7 +167,7 @@ def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
     assert model.inputSpace.subspace is not None
     assert model.inputSpace.subspace.materialize() is not None
     assert getattr(model, 'symbolic_state', None) is not None
-    # symbolic_state shape: [B, nOutput, nDim] from SymbolicSpace.outputShape
+    # symbolic_state shape: [B, nOutput, nDim] from WholeSpace.outputShape
     sshape = tuple(model.symbolic_state.shape)
     assert len(sshape) == 3
     assert sshape[0] == x.shape[0]   # batch dim matches

@@ -5,7 +5,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>xor_weights.ckpt</weightsPath>
 
     <training>
@@ -22,13 +22,13 @@
     <nVectors>2</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace is subsymbolic (codebook retired 2026-06-09); the 16
+  <!-- PartSpace is subsymbolic (codebook retired 2026-06-09); the 16
        percept prototypes live on the .what Embedding, so nVectors (16) may
        exceed nOutput (4) without a VQ snap on .event. -->
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>4</nOutput>
     <nVectors>16</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->
   <ConceptualSpace>
@@ -37,10 +37,10 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>4</nOutput>
     <nVectors>3</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

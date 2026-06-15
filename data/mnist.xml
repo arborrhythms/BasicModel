@@ -2,11 +2,11 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <modelType>passthrough</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>mnist_weights.ckpt</weightsPath>
 
     <data>
@@ -28,13 +28,13 @@
     <nVectors>1</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace is subsymbolic (codebook retired 2026-06-09): nVectors
+  <!-- PartSpace is subsymbolic (codebook retired 2026-06-09): nVectors
        (16) may exceed nOutput (8); percept prototypes live on .what. The
        ConceptualSpace below keeps its VQ codebook=quantize. -->
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
@@ -42,10 +42,10 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

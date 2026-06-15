@@ -7,7 +7,7 @@
          * non-default grammar    (parser dispatch is derived from the
                                    grammar block; per-space SyntacticLayers
                                    dispatch on parser rule selections)
-         * conceptualOrder=1      (the per-stage Sigma-Pi cascade is
+         * subsymbolicOrder=1      (the per-stage Sigma-Pi cascade is
                                    replaced by single-stage signal-router
                                    composition)
          * grammar block          (full English grammar instead of the
@@ -19,16 +19,16 @@
        Server port also distinct so both can serve in parallel.
   -->
   <architecture>
-    <!-- conceptualOrder=3: per-stage Sigma-Pi cascade depth.  At least 3
+    <!-- subsymbolicOrder=3: per-stage Sigma-Pi cascade depth.  At least 3
          to give the chart a reasonable tree depth (each conceptual stage
          is one level of the constituency hierarchy; 3 stages cover S ->
          NP/VP -> N/V/AP -> word). -->
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <weightsPath>LM_5M.ckpt</weightsPath>
     <amp>bf16</amp>
 
@@ -37,7 +37,7 @@
     <mereologicalTreeSize>1024</mereologicalTreeSize>
 
     <!-- Per-stage chart firing is now built into the per-word stem
-         + chart-at-C body (see Architecture.md): each conceptualOrder
+         + chart-at-C body (see Architecture.md): each subsymbolicOrder
          stage fires the chart at C-tier over the STM buffer. The
          legacy perStageChartReparse knob was retired 2026-05-12. -->
 
@@ -76,16 +76,16 @@
     <nOutput>1024</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
     <synthesis>bpe</synthesis>
     <wordLearning>0</wordLearning>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <!-- ConceptualSpace: 3 stages (conceptualOrder=3 above). The chart's
+  <!-- ConceptualSpace: 3 stages (subsymbolicOrder=3 above). The chart's
        chart-driven composition gives 3 stages enough tree depth for basic
        constituency (S, NP/VP, word). -->
   <ConceptualSpace>
@@ -95,7 +95,7 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>byte</lexer>
     <nInput>1024</nInput>
     <nInputDim>10</nInputDim>
@@ -103,7 +103,7 @@
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

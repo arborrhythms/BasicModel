@@ -1,7 +1,7 @@
 """End-to-end: shape the operator codebook from consequence, then recover
 grammatical categories from it (Phase R4-sem 3).
 
-Composes R4-sem 1 (``SymbolicSpace.shape_operators`` -- the live codebook
+Composes R4-sem 1 (``WholeSpace.shape_operators`` -- the live codebook
 shaped by truth/consequence through the soft superposition) with R4-sem 2
 (``recover_semantic_categories`` -- categories from the operators' semantic
 vectors). Demonstrates the full "live-codebook" pipeline the design calls
@@ -23,8 +23,8 @@ import torch
 
 
 def _ss_with_ops(*op_names, nDim=8):
-    from Spaces import SymbolicSpace
-    ss = SymbolicSpace.__new__(SymbolicSpace)
+    from Spaces import WholeSpace
+    ss = WholeSpace.__new__(WholeSpace)
     ss.nDim = nDim
     ss._operation_positions = {}
     ss._operation_vectors = {}
@@ -65,7 +65,7 @@ def test_recovers_on_transitional_grammar_participation():
     the role-collapse the structural learner also achieves, now via the
     operator-vector signature."""
     from Language import Grammar, GRAMMAR_LAYER_CLASSES
-    from Spaces import SymbolicSpace
+    from Spaces import WholeSpace
     from participation import role_participation
     from semantic_categories import recover_semantic_categories
 
@@ -77,7 +77,7 @@ def test_recovers_on_transitional_grammar_participation():
         "transitional_pos.grammar"))
     part = role_participation(g)
     # Seed an operator codebook for every semantic operator in the grammar.
-    seed = SymbolicSpace.__new__(SymbolicSpace)
+    seed = WholeSpace.__new__(WholeSpace)
     seed.nDim = 16
     op_vectors = {m: seed._seed_operator_vector(m)
                   for sym in part for (m, _p) in part[sym]

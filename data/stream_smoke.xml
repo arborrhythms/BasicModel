@@ -8,7 +8,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>stream_smoke.ckpt</weightsPath>
     <data>
       <dataset>text</dataset>
@@ -34,12 +34,12 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
@@ -49,12 +49,12 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>sentence</lexer>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

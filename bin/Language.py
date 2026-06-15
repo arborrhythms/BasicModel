@@ -51,7 +51,7 @@ from Layers import (
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -229,7 +229,7 @@ def _starts_by_name(start_raw):
     """Map each start *symbol* (after compact-order expansion) to the
     ``name`` attribute of the ``<start>`` it came from (or ``None``).
 
-    Lets the loader partition SymbolicSpace starts into ``relative_truth``
+    Lets the loader partition WholeSpace starts into ``relative_truth``
     / ``absolute_truth`` role sets for relative-rule detection (R1.3).
     """
     if start_raw is None:
@@ -398,10 +398,10 @@ class Grammar:
 
     Tiers tag each rule with the space (or pseudo-space) that
     dispatches it:
-      - ``P`` (perceptual) -- PerceptualSpace's SyntacticLayer.
+      - ``P`` (perceptual) -- PartSpace's SyntacticLayer.
       - ``C`` (conceptual) -- ConceptualSpace's SyntacticLayer.
         Bivector pre-codebook activation ``[B, V, 2]``.
-      - ``S`` (symbolic)   -- SymbolicSpace's SyntacticLayer.
+      - ``S`` (symbolic)   -- WholeSpace's SyntacticLayer.
         Post-codebook activation: a scalar ``[B, V]`` per
         prototype. S-tier ops (``conjunction``, ``disjunction``,
         ``not``, ``lift``, ``lower``, ``part``, ``equals``,
@@ -468,8 +468,8 @@ class Grammar:
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
-        # PerceptualSpace meronymic rule tables. Populated only when a
-        # grammar file carries a ``<PerceptualSpace>`` section (Phase 8b,
+        # PartSpace meronymic rule tables. Populated only when a
+        # grammar file carries a ``<PartSpace>`` section (Phase 8b,
         # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
         # These are kept SEPARATE from the symbolic tables above: the
         # existing symbolic parser reads ``self.rules`` (== the SS table),
@@ -487,7 +487,7 @@ class Grammar:
         self.interpretation = 0.5
         self.thought_free = False
         # Phase 1 of the SubSpace.what STM refactor: V_sym is the size of
-        # the terminal symbol codebook, which SymbolicSpace wires in once
+        # the terminal symbol codebook, which WholeSpace wires in once
         # its symbol codebook is built. Until then, the rule namespace
         # starts at 1 (treating V_sym=0). Used only by where_id_for_rule.
         # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
@@ -502,11 +502,11 @@ class Grammar:
         self.start_patterns = (("S",),)
         # Space-scoped starts (Phase R1.1,
         # doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
-        # decision 7 / §4.4). ``SymbolicSpace.start`` configures the
+        # decision 7 / §4.4). ``WholeSpace.start`` configures the
         # symbolic parse starts; ``start_symbol`` / ``start_patterns``
         # above are the back-compat *alias* of them (id_SS,
         # is_start_pattern, reset and relative-rule code key off the
-        # symbolic start). ``PerceptualSpace.start`` configures the
+        # symbolic start). ``PartSpace.start`` configures the
         # analyzer root (``U``) -- a separate namespace the symbolic
         # parser never reads.
         self.ss_start_symbol = "S"
@@ -554,27 +554,27 @@ class Grammar:
         """Return the list of rule_ids that have arity 2."""
         return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
 
-    # -- SymbolicSpace / PerceptualSpace rule views --------------------
+    # -- WholeSpace / PartSpace rule views --------------------
     #
     # The symbolic parser reads ``self.rules`` (and rules_upward /
     # rules_downward). These read-only aliases name that table the
-    # SymbolicSpace table, mirroring ``ps_rules`` for the PerceptualSpace
+    # WholeSpace table, mirroring ``ps_rules`` for the PartSpace
     # meronymic table. See
     # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md.
 
     @property
     def ss_rules(self):
-        """SymbolicSpace rule table (alias of the canonical ``rules``)."""
+        """WholeSpace rule table (alias of the canonical ``rules``)."""
         return self.rules
 
     @property
     def ss_rules_upward(self):
-        """SymbolicSpace compose (synthesis) rules."""
+        """WholeSpace compose (synthesis) rules."""
         return self.rules_upward
 
     @property
     def ss_rules_downward(self):
-        """SymbolicSpace generate (analysis) rules."""
+        """WholeSpace generate (analysis) rules."""
         return self.rules_downward
 
     # -- Phase 1 GrammarRegistry surface --------------------------------
@@ -615,7 +615,7 @@ class Grammar:
     #     0                           empty slot
     #     1..V_sym                    terminal symbol locations
     #     V_sym+1..V_sym+R_rule       grammar rule locations
-    # V_sym is ``self.symbol_vocab_size``, populated by SymbolicSpace
+    # V_sym is ``self.symbol_vocab_size``, populated by WholeSpace
     # in Phase 3. Empty/invalid inputs collapse to 0.
 
     def where_id_for_symbol(self, symbol_id):
@@ -669,8 +669,8 @@ class Grammar:
     # -- Configuration from XML ----------------------------------------
 
     # Maps the new tier-bucket section names to the RuleDef.tier
-    # field. Each space tier (PerceptualSpace, ConceptualSpace,
-    # SymbolicSpace) reads its own subset by tier when filtering for
+    # field. Each space tier (PartSpace, ConceptualSpace,
+    # WholeSpace) reads its own subset by tier when filtering for
     # which rules are licensed in its forward path.
     _TIER_SECTIONS = {
         'percepts': 'P',
@@ -713,13 +713,13 @@ class Grammar:
         # New PS/SS-sectioned form (Phase 8b,
         # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md):
         # a grammar may nest its <compose>/<generate> under
-        # <PerceptualSpace> and/or <SymbolicSpace>. PerceptualSpace rules
-        # go to the separate ps_* tables tagged tier 'P'; SymbolicSpace
+        # <PartSpace> and/or <WholeSpace>. PartSpace rules
+        # go to the separate ps_* tables tagged tier 'P'; WholeSpace
         # rules go to the canonical symbolic tables (so symbolic rule ids
         # are unperturbed by the presence of a PS section). A file with
-        # neither wrapper is the legacy form and loads as SymbolicSpace.
-        ps_block = grammar_dict.get('PerceptualSpace')
-        ss_block = grammar_dict.get('SymbolicSpace')
+        # neither wrapper is the legacy form and loads as WholeSpace.
+        ps_block = grammar_dict.get('PartSpace')
+        ss_block = grammar_dict.get('WholeSpace')
         if ps_block is not None or ss_block is not None:
             if isinstance(ps_block, dict):
                 self._fill_section(self.ps_rules_upward,
@@ -783,8 +783,8 @@ class Grammar:
 
         Tier-bucket detection is non-destructive: a section with both a
         `<rule>` directly and tier sub-sections will read both, with the
-        direct rules tagged ``default_tier`` ('S' for a SymbolicSpace /
-        legacy section, 'P' for a PerceptualSpace section).
+        direct rules tagged ``default_tier`` ('S' for a WholeSpace /
+        legacy section, 'P' for a PartSpace section).
         """
         if not isinstance(section_dict, dict):
             return
@@ -1219,13 +1219,13 @@ class Grammar:
         """
         cfg = load_grammar(filename)
         if isinstance(cfg, dict):
-            # Space-scoped starts: <start> nested under <PerceptualSpace>
-            # configures the analyzer root; nested under <SymbolicSpace>
+            # Space-scoped starts: <start> nested under <PartSpace>
+            # configures the analyzer root; nested under <WholeSpace>
             # configures the symbolic parse. A top-level <start> (legacy /
             # unsectioned form) configures the symbolic start unless the
-            # SymbolicSpace section declares its own.
-            ps_block = cfg.get('PerceptualSpace')
-            ss_block = cfg.get('SymbolicSpace')
+            # WholeSpace section declares its own.
+            ps_block = cfg.get('PartSpace')
+            ss_block = cfg.get('WholeSpace')
             ps_start_raw = (ps_block.get('start')
                             if isinstance(ps_block, dict) else None)
             ss_start_raw = (ss_block.get('start')
@@ -1248,7 +1248,7 @@ class Grammar:
     def _configure_starts(self, ps_start_raw, ss_start_raw):
         """Set space-scoped starts from the raw ``<start>`` blocks.
 
-        ``ss_start_raw`` configures the SymbolicSpace starts and the
+        ``ss_start_raw`` configures the WholeSpace starts and the
         back-compat global alias (``start_symbol`` / ``start_patterns``);
         the symbolic start is what ``id_SS`` / ``is_start_pattern`` /
         reset and relative-rule detection key off. ``ps_start_raw``
@@ -1313,11 +1313,11 @@ class Grammar:
             cfg = {'compose': {'rule': [identity_body]}}
             return cfg
         # PS/SS-sectioned form: the identity rule is a symbolic no-op
-        # transition, so it belongs in SymbolicSpace's compose section.
-        if 'PerceptualSpace' in cfg or 'SymbolicSpace' in cfg:
-            ss = cfg.get('SymbolicSpace')
+        # transition, so it belongs in WholeSpace's compose section.
+        if 'PartSpace' in cfg or 'WholeSpace' in cfg:
+            ss = cfg.get('WholeSpace')
             ss = dict(ss) if isinstance(ss, dict) else {}
-            cfg['SymbolicSpace'] = ss
+            cfg['WholeSpace'] = ss
             compose = ss.get('compose')
             if compose is None:
                 ss['compose'] = {'rule': [identity_body]}
@@ -1538,7 +1538,7 @@ class Grammar:
         """Return the set of category symbols that head a RELATIVE start.
 
         Grammar-driven primary signal for ``is_relative_rule``: the
-        SymbolicSpace starts tagged ``<start name="relative_truth">`` (the
+        WholeSpace starts tagged ``<start name="relative_truth">`` (the
         role-collapsed ``isEqual_O1`` / ``isPart_O1`` outputs), retained
         through parse on ``ss_relative_starts``. For grammars that do not
         name their starts (the inline-XML path, or a bare
@@ -1975,7 +1975,7 @@ class IntersectionLayer(GrammarLayer):
         pseudo-inverse (broadcast averaged form); ``basis`` is ignored.
 
         Callers (signal-router dispatch, chart reverse) are expected
-        to pass the relevant Basis (typically ``SymbolicSpace.
+        to pass the relevant Basis (typically ``WholeSpace.
         subspace.what``) at the call site -- no back-ref is stored on
         the layer. See class docstring for the inversion contract.
 
@@ -2132,7 +2132,7 @@ class UnionLayer(GrammarLayer):
 
         Butterfly mode: cross-STM cascade reverse; ``basis`` is ignored.
 
-        Callers pass the relevant Basis (typically ``SymbolicSpace.
+        Callers pass the relevant Basis (typically ``WholeSpace.
         subspace.what``) at the call site -- no back-ref is stored on
         the layer. See class docstring for the inversion contract.
 
@@ -2313,7 +2313,7 @@ class LiftLayer(GrammarLayer):
     Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
     LiftLayer becomes a first-class binary ``GrammarLayer`` subclass
     dispatched by the signal router over STM pairs. The previous
-    substrate-borrow pattern (reaching into a PerceptualSpace-owned
+    substrate-borrow pattern (reaching into a PartSpace-owned
     sigma fold via a gating round-trip through the symbol codebook)
     is retired -- LiftLayer owns its own internal SigmaLayer for the
     pairwise math and is fully self-contained.
@@ -2334,8 +2334,8 @@ class LiftLayer(GrammarLayer):
     parameterisation.  ``reverse(parent)`` returns a ``(left, right)``
     pair via the balanced split.
 
-    The construction is self-contained: no PerceptualSpace /
-    ConceptualSpace / SymbolicSpace references.  Pass ``nInput`` /
+    The construction is self-contained: no PartSpace /
+    ConceptualSpace / WholeSpace references.  Pass ``nInput`` /
     ``nOutput`` to size the internal SigmaLayer; the back-compat
     keyword arguments ``symbolicSpace`` / ``perceptualSpace`` /
     ``conceptualSpace`` are still accepted (for legacy call sites in
@@ -3001,8 +3001,8 @@ class SymbolizeLayer(GrammarLayer):
     Originally named ``MetaLayer``; renamed 2026-05-28 to better reflect
     the operation ("symbolize a percept into a symbol") rather than the
     artifact produced (a META node in the taxonomy). The META node
-    concept survives unchanged on the SymbolicSpace side (see
-    ``SymbolicSpace.insert_meta`` / ``taxonomy``).
+    concept survives unchanged on the WholeSpace side (see
+    ``WholeSpace.insert_meta`` / ``taxonomy``).
 
     Semantic contract (forward):
 
@@ -3010,10 +3010,10 @@ class SymbolizeLayer(GrammarLayer):
           - left:  CS-tier vector derived from a PS percept.
           - right: CS-tier vector derived from an SS symbol.
           1. Identify the percept_id by nearest-row search in
-             ``PerceptualSpace.percept_store.codebook``.
+             ``PartSpace.percept_store.codebook``.
           2. Identify the symbol_idx by nearest-row search in
-             ``SymbolicSpace.subspace.what.getW()``.
-          3. Call ``SymbolicSpace.insert_meta(ps_idx, ss_idx,
+             ``WholeSpace.subspace.what.getW()``.
+          3. Call ``WholeSpace.insert_meta(ps_idx, ss_idx,
              fused_vec=(left + right) / 2)``. The call is idempotent on
              the pair: a fresh allocation on first sight, EMA-blend on
              subsequent calls.
@@ -3025,7 +3025,7 @@ class SymbolizeLayer(GrammarLayer):
           parent is a META vector.
           1. Find the nearest SS row to ``parent``.
           2. If the row is a META node, walk
-             ``SymbolicSpace.taxonomy_children`` to recover the
+             ``WholeSpace.taxonomy_children`` to recover the
              ``(ps_idx, ss_idx)`` children.
           3. Return ``(PS.codebook[ps_row], SS.codebook[ss_row])`` as
              the ``(left, right)`` recovery.
@@ -3035,7 +3035,7 @@ class SymbolizeLayer(GrammarLayer):
              recovery is approximate when no META binding exists for
              the parent's identity).
 
-    Fallback: when the wired ``PerceptualSpace`` lacks a
+    Fallback: when the wired ``PartSpace`` lacks a
     ``percept_store`` (legacy lexicon mode), SymbolizeLayer cannot
     identify the percept_id structurally; forward then returns the
     no-op average ``(left + right) / 2`` without registering a META
@@ -3203,7 +3203,7 @@ class SymbolizeLayer(GrammarLayer):
             # Width mismatch: caller passed a non-codebook-shaped vec.
             # Fall back to the no-op average.
             return fused
-        # Delegate to SymbolicSpace.insert_meta. Idempotent on the
+        # Delegate to WholeSpace.insert_meta. Idempotent on the
         # pair: first call allocates a fresh META row; subsequent calls
         # return the cached META position and EMA-update the stored vec.
         meta_pos = ss.insert_meta(ps_pos, ss_pos,
@@ -3308,7 +3308,7 @@ class ConjunctionLayer(GrammarLayer):
 
     Symbolic-tier conjunction is the AND of two **codebook
     activation patterns**. Per the 2026-05-05 directive,
-    SymbolicSpace's ``materialize(mode='activation')`` returns
+    WholeSpace's ``materialize(mode='activation')`` returns
     the **post-codebook** activation -- a ``[B, V]`` *scalar*
     strength per prototype (``effective_activation()``: the
     bivector ``[pos, neg]`` reduced via ``max(pos, neg)`` and
@@ -4176,7 +4176,7 @@ _bind_moved_ops_singletons()
 #   * an optional learned per-rule embedding for router scoring
 #   * an optional rule identity vector for diagnostics
 #
-# Distinct from the SymbolicSpace symbol codebook (`SymbolicSpace
+# Distinct from the WholeSpace symbol codebook (`WholeSpace
 # .subspace.what`), which holds the long-term terminal symbol prototypes
 # the SHIFT path quantizes against.
 # =====================================================================
@@ -4364,14 +4364,45 @@ class LanguageLayer(Layer):
         self.feature_dim = int(feature_dim)
         self.max_depth = int(max_depth)
         self.temperature = float(temperature)
-        # Conceptual reduction order (T = conceptualOrder). Used as the
+        # Conceptual reduction order (T = subsymbolicOrder). Used as the
         # recursive-reduction round floor in ``compose`` (plan \xa76: the
         # per-tier compose loop is collapsed into a single reduction tier,
-        # so the bound is ``max(conceptual_order, N-1)`` rather than the
+        # so the bound is ``max(subsymbolic_order, N-1)`` rather than the
         # number of declared tiers). Defaults to 1; the host space sets it
-        # when it can reach the model's conceptualOrder. ``max(1, N-1) ==
+        # when it can reach the model's subsymbolicOrder. ``max(1, N-1) ==
         # N-1`` so the default reproduces the pre-collapse round count.
-        self.conceptual_order = 1
+        self.subsymbolic_order = 1
+        # NeuralToolUser cutover (doc/plans/NeuralToolUser.md). When True,
+        # the binary stage of ``compose`` runs the greedy hard-parse
+        # executor and records the route + cross-product distribution on
+        # the route store below. Default False -> the legacy soft-DP fold
+        # loop (state_dict / basin unchanged). The host space sets it from
+        # ``<architecture><neuralToolUser>`` (mirrors subsymbolic_order).
+        self.neural_tool_user = False
+        # Placement-chooser kind for the structured layers built by
+        # ``attach_unary_ops`` / ``attach_layer_ops``. "anchordot" (default)
+        # = the stateless behavior-preserving scorer (no params); "mlp" =
+        # the contextual MLPTransformChooser (owns params, new basin). The
+        # host sets it from ``<architecture><transformChooser>`` BEFORE the
+        # ops are attached (the layers pick the chooser at construction).
+        self.transform_chooser = "anchordot"
+        # Route store (per tier): the pass-1 greedy route (detached masks)
+        # and the live per-level cross-product distributions, populated when
+        # ``neural_tool_user`` is on. Pass-2 replay reads the route; the
+        # distributions are the new rule_probs source.
+        self._ntu_route = {}
+        self._ntu_dist = {}
+        # Legacy hard-executor two-pass state (superseded by the soft-
+        # superposition two-pass; retained only by the obsolete executor path).
+        # ``_ntu_explore`` toggles compose's executor between pass A (greedy,
+        # saves the route) and pass B (replay the saved route + diverge with
+        # ``_ntu_temperature``); ``_ntu_explore_info`` receives the divergence
+        # info (logp_a / logp_b / entropy@L) the driver reads for the policy
+        # loss. Default off -> pass-A greedy only (the live cutover today).
+        self._ntu_explore = False
+        self._ntu_temperature = 0.5
+        self._ntu_generator = None
+        self._ntu_explore_info = None
         self._unary_layers = nn.ModuleDict()
         self._binary_layers = nn.ModuleDict()
         # Parallel arrays of global rule_ids per attached layer; keyed by
@@ -4402,6 +4433,7 @@ class LanguageLayer(Layer):
             d_model=self.feature_dim,
             ops=ops, r_copy=r_copy,
             temperature=self.temperature,
+            chooser=getattr(self, "transform_chooser", "anchordot"),
         )
         layer.op_names = list(op_names) if op_names is not None else None
         layer.op_tiers = list(op_tiers) if op_tiers is not None else None
@@ -4437,6 +4469,7 @@ class LanguageLayer(Layer):
             ops=ops, op_tiers=op_tiers, op_names=op_names,
             r_copy=r_copy,
             temperature=self.temperature,
+            chooser=getattr(self, "transform_chooser", "anchordot"),
         )
         self._binary_layers[tier] = layer
         if rule_ids is None:
@@ -4501,30 +4534,79 @@ class LanguageLayer(Layer):
                 #
                 rid_table = self._binary_rule_ids[tier]
                 # plan \xa76: with C and S collapsed into one reduction tier,
-                # fold for ``max(conceptualOrder, N-1)`` rounds. Extra rounds
+                # fold for ``max(subsymbolicOrder, N-1)`` rounds. Extra rounds
                 # on an already-folded slab are safe no-ops (the layer
                 # returns the degenerate path for N<=1).
-                max_rounds = max(self.conceptual_order, x.shape[1] - 1)
-                round_routings = []
-                for _ in range(max_rounds):
-                    b_hard, b_soft, b_routing = binary_layer(x)
-                    round_routings.append(b_routing)
-                    kind = b_routing["action_kind"]
-                    op = b_routing["action_op"]
-                    lengths = b_routing["lengths"]
-                    B_now = kind.shape[0]
-                    for b in range(B_now):
-                        L = int(lengths[b].item())
-                        for j in range(L):
-                            if int(kind[b, j].item()) == 1:
-                                tier_rules_per_row[b].append(
-                                    rid_table[int(op[b, j].item())])
-                    x = b_soft
-                if round_routings:
-                    # Last round's routing is the canonical "binary"
-                    # diagnostic; the full sequence is in "binary_rounds".
-                    tier_routing["binary"] = round_routings[-1]
-                    tier_routing["binary_rounds"] = round_routings
+                max_rounds = max(self.subsymbolic_order, x.shape[1] - 1)
+                if self.neural_tool_user:
+                    # NeuralToolUser cutover: replace the soft-DP fold loop
+                    # with the greedy hard-parse executor (pass 1). It folds
+                    # the slab via per-level Viterbi tilings, records the
+                    # route + per-level cross-product distribution on the
+                    # route store, and the fired rule-ids come from the
+                    # route's reduce masks. The two-hard-parse policy
+                    # training runs at the model/train level (the chooser is
+                    # not trained here); rule_probs becomes the detached
+                    # route summary (see _synthesize_rule_probs).
+                    adapter = _BinaryStepperAdapter(binary_layer)
+                    ntu = NeuralToolUser(max_levels=max(1, max_rounds))
+                    if (self._ntu_explore and self._ntu_route.get(tier)):
+                        # Pass B: replay pass-A's saved route to a random
+                        # divergence level, force a different op there
+                        # (temperature), and re-decide. Stash the divergence
+                        # info for the two-pass policy loss; the fired rules
+                        # come from pass A's route (the divergence is one op).
+                        _saved = RouteStats()
+                        _saved.route = self._ntu_route[tier]
+                        _out = ntu.parse_explore(
+                            x, adapter, _saved,
+                            temperature=self._ntu_temperature,
+                            generator=self._ntu_generator)
+                        if _out is not None:
+                            x, _stats_b, _info = _out
+                            self._ntu_explore_info = _info
+                        else:
+                            x, _stats_g = ntu.parse_greedy(x, adapter)
+                        route_for_rules = self._ntu_route[tier]
+                    else:
+                        # Pass A: greedy; save the route + distributions.
+                        x, stats = ntu.parse_greedy(x, adapter)
+                        self._ntu_route[tier] = stats.route
+                        self._ntu_dist[tier] = [
+                            e["dist_probs"] for e in stats.route]
+                        route_for_rules = stats.route
+                    for lvl in route_for_rules:
+                        rm = lvl["reduce_mask"]
+                        if rm.numel() == 0:
+                            continue
+                        for b in range(rm.shape[0]):
+                            for p in range(rm.shape[1]):
+                                if rm[b, p].sum() > 0:
+                                    tier_rules_per_row[b].append(
+                                        rid_table[int(rm[b, p].argmax())])
+                    tier_routing["neural_tool_user"] = True
+                    tier_routing["route_levels"] = len(route_for_rules)
+                else:
+                    round_routings = []
+                    for _ in range(max_rounds):
+                        b_hard, b_soft, b_routing = binary_layer(x)
+                        round_routings.append(b_routing)
+                        kind = b_routing["action_kind"]
+                        op = b_routing["action_op"]
+                        lengths = b_routing["lengths"]
+                        B_now = kind.shape[0]
+                        for b in range(B_now):
+                            L = int(lengths[b].item())
+                            for j in range(L):
+                                if int(kind[b, j].item()) == 1:
+                                    tier_rules_per_row[b].append(
+                                        rid_table[int(op[b, j].item())])
+                        x = b_soft
+                    if round_routings:
+                        # Last round's routing is the canonical "binary"
+                        # diagnostic; the full sequence is in "binary_rounds".
+                        tier_routing["binary"] = round_routings[-1]
+                        tier_routing["binary_rounds"] = round_routings
 
             self._last_tier_routings[tier] = tier_routing
             rules[tier] = tier_rules_per_row
@@ -4542,7 +4624,67 @@ class LanguageLayer(Layer):
         self._last_input = data
         self._last_output = self._last_root_state.expand(
             -1, data.shape[1], -1).contiguous()
+
+        # MetaSymbol category role observation (Phase 1; doc/Language.md
+        # "Participation Categories as the Chooser's Syntactic-Category
+        # Context"). Gated: only when the terminal WholeSpace has the category
+        # codebook enabled. Captures the FIRST binary tier's round-0 reduces
+        # (the only round whose slab positions map 1:1 to the original
+        # percepts) as per-row (left_pos, right_pos, method) tuples, stashed on
+        # the SS for the autobind hook (which holds pid_2d) to attribute to
+        # MetaSymbols. Off -> not computed (byte-identical).
+        ss = getattr(word_space, 'symbolicSpace', None)
+        if (ss is not None
+                and getattr(ss, 'category_codebook_enabled', None) is not None
+                and ss.category_codebook_enabled()):
+            ss._category_role_obs = self._collect_round0_role_obs()
+
         return rules
+
+    def _collect_round0_role_obs(self):
+        """Round-0 reduces of the first binary tier as per-row
+        ``(left_pos, right_pos, method)`` tuples for Phase-1 category learning.
+
+        Only round 0 has slab positions == original percept positions, so the
+        operand positions index ``pid_2d`` directly in the autobind hook.
+        Returns a list of B lists (empty when no binary tier fired). Host-side
+        bookkeeping; only runs when the category codebook is enabled."""
+        for tier in sorted(self._binary_layers.keys()):
+            tr = (self._last_tier_routings or {}).get(tier) or {}
+            rounds = tr.get("binary_rounds")
+            if not rounds:
+                continue
+            r0 = rounds[0]
+            kind = r0.get("action_kind")
+            op = r0.get("action_op")
+            sl = r0.get("src_left")
+            sr = r0.get("src_right")
+            if kind is None or op is None or sl is None or sr is None:
+                continue
+            rid_table = (getattr(self, "_binary_rule_ids", {}) or {}).get(tier) or []
+            kind_h = kind.tolist()
+            op_h = op.tolist()
+            sl_h = sl.tolist()
+            sr_h = sr.tolist()
+            obs = [[] for _ in range(len(kind_h))]
+            for b in range(len(kind_h)):
+                row_kind = kind_h[b]
+                for j in range(len(row_kind)):
+                    if int(row_kind[j]) != 1:          # 1 == fired reduce
+                        continue
+                    o = int(op_h[b][j])
+                    if o < 0 or o >= len(rid_table):
+                        continue
+                    try:
+                        method = TheGrammar.rules[rid_table[o]].method_name
+                    except (IndexError, AttributeError, TypeError):
+                        method = None
+                    if not method:
+                        continue
+                    obs[b].append(
+                        (int(sl_h[b][j]), int(sr_h[b][j]), str(method)))
+            return obs          # first binary tier only (positions == percepts)
+        return []
 
     def generate(self, target, word_space, subspace=None):
         """Reverse-pass mirror: emit the compose-order rule list reversed.
@@ -5027,7 +5169,7 @@ class LanguageLayer(Layer):
             # tier may differ from this syntactic_layer's tier (e.g.
             # intersection lives in IntersectionLayer with tier='C', so it
             # binds on ConceptualSpace's syntactic layer rather than the
-            # SymbolicSpace one). Fall back to a fresh GRAMMAR_LAYER_CLASSES
+            # WholeSpace one). Fall back to a fresh GRAMMAR_LAYER_CLASSES
             # instance so the dispatch path still completes; the identity-
             # stub reverse logic below will run on it.
             cls = GRAMMAR_LAYER_CLASSES.get(method_name)
@@ -5132,7 +5274,7 @@ class LanguageLayer(Layer):
                         # Phase 5: read retrieval scalar knobs from config
                         # (plan §Configuration).  All keys are optional; fall
                         # back to the sensible defaults below when absent.
-                        # The space section name is "SymbolicSpace" for tier
+                        # The space section name is "WholeSpace" for tier
                         # 'S' and "ConceptualSpace" for tier 'C'.
                         #
                         # ROBUSTNESS (critical): a knob read must NEVER disable
@@ -5155,7 +5297,7 @@ class LanguageLayer(Layer):
                                 return TheXMLConfig.space(_sec, _key, _default)
                             except Exception:
                                 return _default
-                        _cfg_sec = ('SymbolicSpace' if tier == 'S'
+                        _cfg_sec = ('WholeSpace' if tier == 'S'
                                     else 'ConceptualSpace')
                         _r_alpha = float(_cfg_knob(
                             _cfg_sec, 'retrievalAlpha', 1.0))
@@ -5457,7 +5599,7 @@ class LanguageLayer(Layer):
                 stamping.
             terminal_codebook: accepted for plan-API symmetry but
                 NOT consumed yet -- the terminal snap currently
-                lives in ``SymbolicSpace._stack_route_forward`` as
+                lives in ``WholeSpace._stack_route_forward`` as
                 the eager bridge; future phases can move it here.
             actions: explicit ``[('shift', payload, where_id), ...]``
                 action list. Required until a learned policy is wired.
@@ -5468,7 +5610,7 @@ class LanguageLayer(Layer):
                 level shift/reduce primitives for the explicit path.
         """
         # ``terminal_codebook`` is part of the plan's target signature
-        # but the stack-rewrite path's snap stays in SymbolicSpace for
+        # but the stack-rewrite path's snap stays in WholeSpace for
         # now (first-patch eager bridge). Accepting + ignoring keeps
         # the API stable so future phases can move the snap here.
         del terminal_codebook
@@ -5541,6 +5683,19 @@ def _masked_softmax_lastdim(scores: torch.Tensor) -> torch.Tensor:
     post = F.softmax(safe_scores, dim=-1)
     post = torch.where(dead, torch.zeros_like(post), post)
     return post
+
+
+def superposition_scale(temperature):
+    """Score scale for the soft-superposition temperature (the parser's
+    differentiable route, replacing Viterbi + straight-through under
+    ``<learning>``). ``temperature`` in [0, 1] maps to ``1 - t``: at ``t=0``
+    the scores pass through unchanged (the chooser's own softmax -- the
+    sharp/deterministic exploit pass), at ``t=1`` the scores are zeroed so
+    the superposition is uniform (the flat-random explore pass). Multiplying
+    the scores by ``(1-t)`` keeps the chooser in the gradient path with the
+    gradient scaled by ``(1-t)`` -- full at ``t=0``, vanishing at ``t=1``
+    (a fully random route carries no preference to learn)."""
+    return 1.0 - min(1.0, max(0.0, float(temperature or 0.0)))
 
 
 def binary_tiling_soft_dp(
@@ -5786,6 +5941,427 @@ def binary_tiling_viterbi(
         "action_kind": back_kind,
         "action_op": back_op,
     }
+
+
+def cross_product_action_dist(copy_score, reduce_score, temperature=1.0):
+    """Joint softmax over the per-level (operation x location) cross-product.
+
+    The structured layers score every candidate action separately -- COPY
+    op ``c`` at position ``t``, REDUCE op ``r`` at adjacent pair
+    ``(t, t+1)``. The neural tool user (doc/plans/NeuralToolUser.md)
+    normalizes them JOINTLY: one softmax over the whole cross-product of
+    (op x location) choices, so the chooser's probability is comparable
+    across rules AND positions (the user's Q5 answer). The selected route
+    is still a valid non-overlapping tiling (``binary_tiling_viterbi``,
+    which already fires several compatible reduces per level); this is the
+    distribution the route's log-prob / entropy are read from for the
+    two-pass policy update.
+
+    The flattened action axis is the copy block (``N * R_copy``, position-
+    major) followed by the reduce block (``(N-1) * R_reduce``).
+
+    Args:
+        copy_score:   ``[B, N, R_copy]``   per-(position, copy-op) logits.
+        reduce_score: ``[B, N-1, R_reduce]`` per-(pair, reduce-op) logits.
+        temperature:  policy-softmax divisor (default 1.0). Distinct from
+            the pass-2 exploration knob (0=greedy .. 1=uniform), which is a
+            SAMPLING mechanism, not this normalizer.
+
+    Returns dict: ``probs`` ``[B, A]``, ``logits`` ``[B, A]``,
+    ``entropy`` ``[B]``, and ``layout`` (N, R_copy, R_reduce, n_copy, Nm1)
+    for decoding an action index back to (kind, position, op).
+    """
+    B, N, R_copy = copy_score.shape
+    R_reduce = reduce_score.shape[-1] if reduce_score.numel() > 0 else 0
+    Nm1 = (reduce_score.shape[1]
+           if (reduce_score.numel() > 0 and reduce_score.dim() == 3)
+           else max(N - 1, 0))
+    n_copy = N * R_copy
+    copy_flat = copy_score.reshape(B, n_copy)
+    reduce_flat = (reduce_score.reshape(B, Nm1 * R_reduce)
+                   if R_reduce > 0 and Nm1 > 0
+                   else copy_score.new_zeros(B, 0))
+    logits = torch.cat([copy_flat, reduce_flat], dim=1)        # [B, A]
+    layout = {"N": N, "R_copy": R_copy, "R_reduce": R_reduce,
+              "n_copy": n_copy, "Nm1": Nm1}
+    if logits.shape[1] == 0:
+        z = copy_score.new_zeros(B)
+        return {"probs": copy_score.new_zeros(B, 0), "logits": logits,
+                "entropy": z, "layout": layout}
+    logp = F.log_softmax(logits / temperature, dim=-1)         # [B, A]
+    probs = logp.exp()
+    entropy = -(probs * logp).sum(dim=-1)                      # [B]
+    return {"probs": probs, "logits": logits,
+            "entropy": entropy, "layout": layout}
+
+
+def cross_product_route_logprob(dist, copy_mask, reduce_mask):
+    """Log-prob of a selected tiling route under the joint distribution.
+
+    ``copy_mask`` ``[B, N, R_copy]`` / ``reduce_mask`` ``[B, N-1, R_reduce]``
+    are the one-hot route masks (``binary_tiling_viterbi`` output). The
+    route log-prob is the sum of ``log P`` over its selected actions -- the
+    live policy log-prob the two-pass advantage multiplies. Must be
+    recomputed from the LIVE distribution each pass (not read from a saved
+    detached buffer) so it carries gradient into the chooser.
+    """
+    probs = dist["probs"]
+    layout = dist["layout"]
+    B = probs.shape[0]
+    if probs.shape[1] == 0:
+        return probs.new_zeros(B)
+    N, R_copy = layout["N"], layout["R_copy"]
+    Nm1, R_reduce = layout["Nm1"], layout["R_reduce"]
+    logp = torch.log(probs.clamp_min(1e-30))                   # [B, A]
+    copy_sel = (copy_mask.reshape(B, N * R_copy)
+                if N * R_copy > 0 else probs.new_zeros(B, 0))
+    reduce_sel = (reduce_mask.reshape(B, Nm1 * R_reduce)
+                  if Nm1 * R_reduce > 0 else probs.new_zeros(B, 0))
+    sel = torch.cat([copy_sel, reduce_sel], dim=1).to(logp.dtype)   # [B, A]
+    return (sel * logp).sum(dim=-1)                            # [B]
+
+
+class RouteStats:
+    """Accumulated policy stats for ONE hard parse (no full route log).
+
+    Per doc/plans/NeuralToolUser.md only ``log_prob_sum`` / ``entropy_sum``
+    / ``step_count`` need to survive a parse -- the full route is not
+    stored for the loss (the route IS saved separately in WordSpace for
+    pass-2 replay, but detached). ``log_prob_sum`` / ``entropy_sum`` are
+    LIVE graph tensors so the policy advantage backprops into the chooser.
+    """
+
+    def __init__(self):
+        self.log_prob_sum = None     # [B] live tensor, or None until first add
+        self.entropy_sum = None      # [B] live tensor
+        self.step_count = 0
+        # The detached per-level route (copy_mask, reduce_mask) saved on
+        # pass 1 for pass-2 replay; never feeds the loss.
+        self.route = []
+        # The divergence level chosen on an explore parse (None on pass 1).
+        self.diverge_level = None
+
+    def add(self, log_prob, entropy):
+        """Accumulate one level's live log-prob and entropy ([B] each)."""
+        self.log_prob_sum = (log_prob if self.log_prob_sum is None
+                             else self.log_prob_sum + log_prob)
+        self.entropy_sum = (entropy if self.entropy_sum is None
+                            else self.entropy_sum + entropy)
+        self.step_count += 1
+
+
+def _substitute_op_at_location(copy_mask, reduce_mask, copy_score, reduce_score,
+                               temperature, rng_choice):
+    """Force a DIFFERENT operation at ONE fired location of a saved route.
+
+    Pass-2 divergence (the user's design): keep the saved tiling SHAPE
+    (same fired locations) but swap the operation at one of them for a
+    different one. Same location + same action-kind => the tiling stays
+    valid by construction; the routes differ by exactly one op-choice, so
+    ``loss_B - loss_A`` is cleanly attributable to that single decision.
+
+    ``temperature`` is the [0, 1] exploration knob. The new op is drawn
+    from the per-location op distribution with the OLD op excluded and the
+    rest renormalized, so a genuine divergence is GUARANTEED in one draw
+    whenever >= 2 ops are legal (this subsumes the escalate-on-collision
+    rule -- there are no collisions to escalate past). Temperature shapes
+    WHICH alternative: 0 = the best alternative (second-best op), 1 =
+    uniform among the non-winner ops.
+
+    ``rng_choice(probs_row)`` -> int sampled from the given probabilities.
+    Returns ``(new_copy_mask, new_reduce_mask, kind, loc, old_op, new_op)``
+    for the (single, batch-0) substituted action, or ``None`` when no fired
+    location has >= 2 legal ops (caller picks another level).
+    """
+    # Operate per batch row 0 for the standalone executor's single-stream
+    # parse; the live integration batches this. Collect fired locations.
+    cm = copy_mask.clone()
+    rm = reduce_mask.clone()
+    B = cm.shape[0]
+    # Build the candidate fired locations: (kind, pos) where a one-hot fired.
+    fired = []
+    if cm.numel() > 0:
+        for pos in range(cm.shape[1]):
+            if cm[0, pos].sum() > 0 and cm.shape[2] >= 2:
+                fired.append((0, pos))     # kind 0 = copy
+    if rm.numel() > 0:
+        for pos in range(rm.shape[1]):
+            if rm[0, pos].sum() > 0 and rm.shape[2] >= 2:
+                fired.append((1, pos))     # kind 1 = reduce
+    if not fired:
+        return None
+    # Pick one fired location uniformly.
+    loc_idx = int(rng_choice(
+        [1.0 / len(fired)] * len(fired)))
+    kind, pos = fired[loc_idx]
+    mask = cm if kind == 0 else rm
+    score = copy_score if kind == 0 else reduce_score
+    R = mask.shape[2]
+    old_op = int(mask[0, pos].argmax())
+    # Per-location op distribution: temperature interpolates argmax->uniform.
+    # Sampling is a non-differentiable selection -- detach (the gradient
+    # rides only the live log-prob computed by the caller, not this draw).
+    row = score[0, pos].detach()              # [R]
+    sharp = torch.softmax(row, dim=-1)
+    uniform = torch.full_like(sharp, 1.0 / R)
+    t = float(max(0.0, min(1.0, temperature)))
+    op_probs = (1.0 - t) * sharp + t * uniform
+    # Exclude the saved op so the draw always diverges; renormalize.
+    op_probs = op_probs.clone()
+    op_probs[old_op] = 0.0
+    total = float(op_probs.sum())
+    if total <= 0:
+        op_probs = uniform.clone()
+        op_probs[old_op] = 0.0
+    new_op = int(rng_choice(op_probs.tolist()))
+    mask[0, pos] = 0
+    mask[0, pos, new_op] = 1
+    return cm, rm, kind, pos, old_op, new_op
+
+
+class NeuralToolUser(nn.Module):
+    """Hard-parse executor over reduction LEVELS (NeuralToolUser plan).
+
+    Drives a ``stepper`` through reduction levels (mirroring
+    ``LanguageLayer.compose``'s binary rounds). The stepper exposes:
+
+      * ``score(x) -> (copy_score, reduce_score)`` -- per-level candidate
+        logits (``[B, N, R_copy]``, ``[B, N-1, R_reduce]``);
+      * ``apply(x, copy_mask, reduce_mask) -> next_x`` -- execute the
+        selected route's ops, producing the next slab;
+      * ``done(x) -> bool`` -- stop when the slab has folded.
+
+    **Pass 1 (greedy, ``parse_greedy``).** Per level: the Viterbi tiling
+    (``binary_tiling_viterbi``) is the winning route; its live cross-product
+    log-prob / entropy accumulate into a :class:`RouteStats`; the detached
+    route + scores are saved per level for replay; ``apply`` advances.
+
+    **Pass 2 (explore, ``parse_explore``).** Pick a divergence level ``L``
+    among saved levels that have a fired location with >= 2 legal ops;
+    replay the saved routes for levels ``< L``; at ``L`` substitute a
+    DIFFERENT op at one fired location (temperature 0..1 greedy->uniform,
+    escalated until the draw differs -- guaranteeing route B != route A);
+    then re-decide greedily for levels ``> L`` on the diverged slab.
+
+    **Loss (the driver, not here).** Both parses execute and incur a task
+    loss. The chooser is trained by the single-point advantage at ``L``::
+
+        baseline = 0.5 * (loss_A.detach() + loss_B.detach())
+        adv_A = loss_A.detach() - baseline   # route A's op at L
+        adv_B = loss_B.detach() - baseline   # route B's op at L
+        loss_choose = adv_A * logp_a + adv_B * logp_b      # both off ONE live dist@L
+        loss = loss_A + loss_B + lam_choose*loss_choose - lam_entropy*entropy@L
+
+    ``logp_a`` / ``logp_b`` are the log-probs of the two competing ops at
+    ``L`` read from the SAME live cross-product distribution, so the
+    advantage trains exactly the one decision that differs.
+    """
+
+    def __init__(self, max_levels=64):
+        super().__init__()
+        self.max_levels = int(max_levels)
+
+    @staticmethod
+    def _has_multi_op_fired(entry):
+        cm, rm = entry["copy_mask"], entry["reduce_mask"]
+        if cm.numel() > 0 and cm.shape[2] >= 2 and cm[0].sum() > 0:
+            return True
+        if rm.numel() > 0 and rm.shape[2] >= 2 and rm[0].sum() > 0:
+            return True
+        return False
+
+    def parse_greedy(self, x, stepper):
+        """Pass 1: greedy Viterbi route per level; save route + stats."""
+        stats = RouteStats()
+        for _ in range(self.max_levels):
+            if stepper.done(x):
+                break
+            cs, rs = stepper.score(x)
+            route = binary_tiling_viterbi(cs, rs)
+            dist = cross_product_action_dist(cs, rs)
+            lp = cross_product_route_logprob(
+                dist, route["copy_mask"], route["reduce_mask"])
+            stats.add(lp, dist["entropy"])
+            stats.route.append({
+                "copy_mask": route["copy_mask"].detach(),
+                "reduce_mask": route["reduce_mask"].detach(),
+                "copy_score": cs.detach(),
+                "reduce_score": rs.detach(),
+                "dist_probs": dist["probs"].detach(),
+            })
+            x = stepper.apply(x, route["copy_mask"], route["reduce_mask"])
+        return x, stats
+
+    def parse_explore(self, x, stepper, saved, temperature=0.1,
+                      temperature_step=0.2, generator=None):
+        """Pass 2: replay to a random divergence level L, force a different
+        op there, re-decide after. Returns ``(final_x, stats, info)`` or
+        ``None`` when no level admits a divergence (caller trains tools on
+        route A only). ``info`` carries ``L``, ``logp_a``, ``logp_b`` (both
+        off the live dist at L) for the single-point advantage.
+        """
+        def rng_choice(probs_list):
+            p = torch.as_tensor(probs_list, dtype=torch.float32)
+            p = p.clamp_min(0)
+            if float(p.sum()) <= 0:
+                p = torch.ones_like(p)
+            return int(torch.multinomial(p, 1, generator=generator).item())
+
+        candidates = [i for i, e in enumerate(saved.route)
+                      if self._has_multi_op_fired(e)]
+        if not candidates:
+            return None
+        L = candidates[rng_choice([1.0] * len(candidates))]
+
+        # Replay saved routes for levels < L (no re-score; deterministic).
+        for i in range(L):
+            e = saved.route[i]
+            x = stepper.apply(x, e["copy_mask"], e["reduce_mask"])
+
+        # Live distribution at L (carries gradient into the chooser).
+        cs, rs = stepper.score(x)
+        dist = cross_product_action_dist(cs, rs)
+        cmA = saved.route[L]["copy_mask"]
+        rmA = saved.route[L]["reduce_mask"]
+
+        # Force a different op at one fired location; escalate temperature
+        # to 1 (uniform) until the draw genuinely differs.
+        sub = None
+        t = float(temperature)
+        while sub is None and t <= 1.0 + 1e-9:
+            sub = _substitute_op_at_location(cmA, rmA, cs, rs, t, rng_choice)
+            if sub is None:
+                if t >= 1.0:
+                    break
+                t = min(1.0, t + temperature_step)
+        if sub is None:
+            return None
+        cmB, rmB, kind, pos, old_op, new_op = sub
+
+        logp_a = cross_product_route_logprob(dist, cmA, rmA)
+        logp_b = cross_product_route_logprob(dist, cmB, rmB)
+
+        x = stepper.apply(x, cmB, rmB)
+        stats = RouteStats()
+        stats.diverge_level = L
+        stats.add(logp_b, dist["entropy"])
+
+        # Re-decide greedily after the divergence.
+        for _ in range(self.max_levels):
+            if stepper.done(x):
+                break
+            cs2, rs2 = stepper.score(x)
+            route2 = binary_tiling_viterbi(cs2, rs2)
+            x = stepper.apply(x, route2["copy_mask"], route2["reduce_mask"])
+
+        info = {"L": L, "logp_a": logp_a, "logp_b": logp_b,
+                "kind": kind, "pos": pos, "old_op": old_op, "new_op": new_op,
+                "entropy_at_L": dist["entropy"]}
+        return x, stats, info
+
+    @staticmethod
+    def binary_layer_stepper(layer):
+        """Adapt a ``BinaryStructuredReductionLayer`` to the executor's
+        stepper protocol (``score`` / ``apply`` / ``done``), reusing the
+        layer's own ``_stacked_reduced`` / ``chooser`` / ``_selected_reduced``
+        and ``compact_hard`` so the scored logits and applied ops are
+        identical to the layer's forward."""
+        return _BinaryStepperAdapter(layer)
+
+    def two_pass_loss(self, x, stepper, task_loss_fn, *, lam_choose=1.0,
+                      lam_entropy=0.0, temperature=0.1, generator=None):
+        """One two-hard-parse training step -> ``(loss, diagnostics)``.
+
+        ``task_loss_fn(final_x) -> [B]`` is the ordinary differentiable task
+        loss of an executed parse. The execution loss trains the tools (it
+        flows through the applied ops); the single-point advantage at the
+        divergence level ``L`` trains the chooser::
+
+            baseline = 0.5 * (loss_A.detach() + loss_B.detach())
+            adv_A = loss_A.detach() - baseline      # route A's op at L
+            adv_B = loss_B.detach() - baseline      # route B's op at L
+            loss_choose = mean(adv_A*logp_a + adv_B*logp_b)
+            loss = mean(loss_A + loss_B)
+                   + lam_choose*loss_choose
+                   - lam_entropy*mean(entropy@L)
+
+        Because ``loss`` is minimized and ``loss_choose`` is linear in the
+        log-probs with detached advantages, a route with below-baseline loss
+        (negative advantage) has its op's log-prob pushed UP -- the doc's
+        central credit-assignment rule. When no divergence is possible the
+        step trains the tools on route A alone (no chooser update).
+        """
+        final_a, saved = self.parse_greedy(x, stepper)
+        loss_a = task_loss_fn(final_a)
+        out = self.parse_explore(x, stepper, saved, temperature=temperature,
+                                 generator=generator)
+        if out is None:
+            loss = loss_a.mean()
+            return loss, {"diverged": False, "loss_a": loss_a.detach()}
+        final_b, stats_b, info = out
+        loss_b = task_loss_fn(final_b)
+        baseline = 0.5 * (loss_a.detach() + loss_b.detach())
+        adv_a = loss_a.detach() - baseline
+        adv_b = loss_b.detach() - baseline
+        loss_choose = (adv_a * info["logp_a"] + adv_b * info["logp_b"]).mean()
+        entropy = info["entropy_at_L"].mean()
+        loss = (loss_a.mean() + loss_b.mean()
+                + lam_choose * loss_choose - lam_entropy * entropy)
+        diagnostics = {
+            "diverged": True, "L": info["L"],
+            "loss_a": loss_a.detach(), "loss_b": loss_b.detach(),
+            "adv_a": adv_a, "adv_b": adv_b,
+            "logp_a": info["logp_a"], "logp_b": info["logp_b"],
+            "loss_choose": loss_choose.detach(), "entropy": entropy.detach(),
+            "old_op": info["old_op"], "new_op": info["new_op"],
+        }
+        return loss, diagnostics
+
+
+class _BinaryStepperAdapter:
+    """Bridge a ``BinaryStructuredReductionLayer`` to the ``NeuralToolUser``
+    stepper protocol. ``score`` reproduces the layer forward's scoring
+    preamble (bind-context, ``_stacked_reduced``, d_model slice,
+    ``chooser.score_binary``); ``apply`` gathers the chosen reduce ops and
+    compacts the slab exactly as the forward does. The scored logits and
+    the applied ops are therefore identical to the layer's own forward."""
+
+    def __init__(self, layer):
+        self.layer = layer
+
+    def _stacked(self, x):
+        L = self.layer
+        for _op in L.ops:
+            _gl = getattr(_op, 'gl', _op)
+            if hasattr(_gl, 'set_bind_context'):
+                _gl.set_bind_context(slab=x)
+        return L._stacked_reduced(x)
+
+    def score(self, x):
+        L = self.layer
+        stacked = self._stacked(x)
+        x_score = x[..., :L.d_model] if x.shape[-1] > L.d_model else x
+        sr_score = (stacked[..., :L.d_model]
+                    if stacked.shape[-1] > L.d_model else stacked)
+        return L.chooser.score_binary(
+            x_score, sr_score, L.copy_anchor, L.reduce_anchor)
+
+    def apply(self, x, copy_mask, reduce_mask):
+        L = self.layer
+        stacked = self._stacked(x)
+        if reduce_mask.numel() > 0:
+            reduce_op = reduce_mask.argmax(-1)               # [B, N-1]
+        else:
+            reduce_op = torch.zeros(x.shape[0], 0, dtype=torch.long,
+                                    device=x.device)
+        chosen = L._selected_reduced(stacked, reduce_op)
+        hard_slab, _meta = compact_hard(
+            x=x, reduced=chosen, copy_mask=copy_mask, reduce_mask=reduce_mask,
+            span_start=None, span_end=None)
+        return hard_slab
+
+    def done(self, x):
+        return x.shape[1] <= 1
 
 
 # BinaryPlacementScorer was removed in favor of anchor-based scoring on
@@ -6048,6 +6624,254 @@ class _IdentityContext(nn.Module):
         """Return ``x`` unchanged."""
         return x
 
+
+class TransformChooser(nn.Module):
+    """Routing policy: scores tool/location candidates for a structured
+    layer (doc/plans/NeuralToolUser.md).
+
+    The plan separates the transform/tool IMPLEMENTATION (the
+    ``GrammarLayer`` ops) from the CHOICE POLICY (which op to apply,
+    where). ``UnaryStructuredLayer`` / ``BinaryStructuredReductionLayer``
+    delegate their placement scoring here; the soft-DP / Viterbi route and
+    the op execution stay on the layer.
+
+    Step 1 of the migration is behavior-preserving: the default chooser
+    (:class:`AnchorDotTransformChooser`) reproduces the layers' inline
+    anchor-dot scoring exactly. A future ``MLPTransformChooser`` swaps in a
+    contextual network behind a config flag once parity holds. Subclasses
+    implement ``score_unary`` / ``score_binary``.
+    """
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+        raise NotImplementedError
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+        raise NotImplementedError
+
+
+class AnchorDotTransformChooser(TransformChooser):
+    """Anchor-dot placement scorer -- the behavior-preserving default.
+
+    Reproduces the original inline scoring (Stern et al. 2017 /
+    Vaswani et al. 2017 style): the placement score is the inner product
+    between a candidate's output and a per-rule learnable anchor.
+
+    Deliberately STATELESS: the ``copy_anchor`` / ``apply_anchor`` /
+    ``reduce_anchor`` Parameters stay OWNED BY THE LAYER and are passed in
+    at call time. Moving them into this submodule would rename their
+    state_dict keys (``layer.copy_anchor`` -> ``layer.chooser.copy_anchor``)
+    and risk a pinned basin; a param-less chooser adds no keys and keeps
+    the scoring byte-identical. (The future MLPTransformChooser owns its own
+    params -- a deliberate new-params cutover, behind a config flag.)
+    """
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+        """Return ``(copy_score, apply_score)`` for the unary layer.
+
+        ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
+        ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
+        """
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
+        r_apply = int(apply_anchor.shape[0])
+        if r_apply > 0 and applied_score.shape[2] > 0:
+            apply_score = torch.einsum(
+                'bnad,ad->bna', applied_score, apply_anchor)
+        else:
+            apply_score = x_score.new_zeros(
+                x_score.shape[0], x_score.shape[1], r_apply)
+        return copy_score, apply_score
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+        """Return ``(copy_score, reduce_score)`` for the binary layer.
+
+        ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
+        ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
+        """
+        copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
+        r_reduce = int(reduce_anchor.shape[0])
+        if reduced_score.shape[1] > 0 and r_reduce > 0:
+            reduce_score = torch.einsum(
+                'bnrd,rd->bnr', reduced_score, reduce_anchor)
+        else:
+            reduce_score = x_score.new_zeros(
+                x_score.shape[0], max(x_score.shape[1] - 1, 0), r_reduce)
+        return copy_score, reduce_score
+
+
+class MLPTransformChooser(TransformChooser):
+    """Contextual MLP placement scorer -- the expressive cutover chooser
+    (doc/plans/NeuralToolUser.md "MLP TransformChooser").
+
+    Replaces the anchor-dot single inner product with a learned MLP over
+    per-candidate CONTEXT: the slot / pair state, the candidate op's output,
+    a learned tool-identity embedding, and a sinusoidal position encoding.
+    It produces the same per-(op, location) logit shapes as
+    ``AnchorDotTransformChooser`` -- ``copy_score`` / ``apply_score`` (unary)
+    and ``copy_score`` / ``reduce_score`` (binary) -- so it is a drop-in for
+    the layers, the cross-product distribution, and the hard-parse executor.
+
+    UNLIKE the anchor-dot chooser this OWNS parameters (the tool embeddings
+    + the MLP), so enabling it CHANGES the state_dict and starts a fresh
+    basin -- a deliberate cutover behind ``<transformChooser>mlp`` (default
+    anchordot). The copy/apply/reduce anchors passed by the layer are
+    ignored; the MLP conditions on context instead.
+
+    Sizing (one chooser per layer): ``n_copy`` copy ops then ``n_op``
+    apply/reduce ops, one tool-embedding row each (copy rows first).
+    """
+
+    def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
+                 hidden=None):
+        super().__init__()
+        self.d_model = int(d_model)
+        self.n_copy = int(n_copy)
+        self.n_op = int(n_op)
+        self.embed_dim = int(embed_dim)
+        self.pos_dim = int(pos_dim)
+        hidden = int(hidden) if hidden is not None else max(8, self.d_model)
+        self.tool_embedding = nn.Parameter(
+            torch.randn(max(1, self.n_copy + self.n_op), self.embed_dim) * 0.02)
+        in_dim = 2 * self.d_model + self.embed_dim + self.pos_dim
+        self.mlp = nn.Sequential(
+            nn.Linear(in_dim, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+
+    def _pos_emb(self, n, device, dtype):
+        """Sinusoidal positional encoding ``[n, pos_dim]``."""
+        if n <= 0:
+            return torch.zeros(0, self.pos_dim, device=device, dtype=dtype)
+        pos = torch.arange(n, device=device, dtype=dtype).unsqueeze(1)   # [n,1]
+        half = max(1, self.pos_dim // 2)
+        k = torch.arange(half, device=device, dtype=dtype)
+        div = torch.exp(-math.log(10000.0) * k / float(half))           # [half]
+        ang = pos * div.unsqueeze(0)                                    # [n, half]
+        pe = torch.cat([torch.sin(ang), torch.cos(ang)], dim=-1)
+        if pe.shape[-1] < self.pos_dim:                                # pad odd
+            pe = torch.cat(
+                [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
+        return pe[:, :self.pos_dim]
+
+    def _score(self, slot, cand, tool_rows, pos):
+        """Score ``R`` candidates at each of ``Npos`` locations.
+
+        ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
+        ``[B, Npos, R, D]``; ``tool_rows``: ``[R, embed_dim]``; ``pos``:
+        ``[Npos, pos_dim]``. Returns ``[B, Npos, R]``.
+        """
+        B, Npos = slot.shape[0], slot.shape[1]
+        R = int(tool_rows.shape[0])
+        if R == 0 or Npos == 0:
+            return slot.new_zeros(B, Npos, R)
+        slot_e = slot.unsqueeze(2).expand(B, Npos, R, self.d_model)
+        cand_e = (cand if cand.dim() == 4
+                  else cand.unsqueeze(2).expand(B, Npos, R, self.d_model))
+        tool_e = tool_rows.view(1, 1, R, self.embed_dim).expand(
+            B, Npos, R, self.embed_dim)
+        pos_e = pos.view(1, Npos, 1, self.pos_dim).expand(
+            B, Npos, R, self.pos_dim)
+        feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
+        # Cast to the slot dtype so the computed path and the degenerate
+        # zero fallbacks agree even under autocast (the MLP may emit
+        # bf16/fp16; the fallbacks keep the input dtype).
+        return self.mlp(feat).squeeze(-1).to(slot.dtype)              # [B,Npos,R]
+
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+        B, N, D = x_score.shape
+        pos = self._pos_emb(N, x_score.device, x_score.dtype)
+        copy_rows = self.tool_embedding[:self.n_copy]
+        copy_score = self._score(x_score, x_score, copy_rows, pos)     # copy=slot
+        r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
+        if r_apply > 0:
+            apply_rows = self.tool_embedding[self.n_copy:self.n_copy + r_apply]
+            apply_score = self._score(x_score, applied_score, apply_rows, pos)
+        else:
+            apply_score = x_score.new_zeros(B, N, 0)
+        return copy_score, apply_score
+
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+        B, N, D = x_score.shape
+        pos = self._pos_emb(N, x_score.device, x_score.dtype)
+        copy_rows = self.tool_embedding[:self.n_copy]
+        copy_score = self._score(x_score, x_score, copy_rows, pos)
+        if (N >= 2 and reduced_score.dim() == 4
+                and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
+            pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
+            pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
+            r_reduce = int(reduced_score.shape[2])
+            # The reduce op-axis must equal n_op (the construction-time
+            # r_reduce) so the R_reduce layout is consistent with the
+            # degenerate branch below and with the cross-product / Viterbi
+            # readers -- fail loud on any future contract drift.
+            assert r_reduce == self.n_op, (
+                f"reduced_score op-axis {r_reduce} != n_op {self.n_op}")
+            reduce_rows = self.tool_embedding[
+                self.n_copy:self.n_copy + r_reduce]
+            reduce_score = self._score(
+                pair_slot, reduced_score, reduce_rows, pos_pair)
+        else:
+            reduce_score = x_score.new_zeros(B, max(N - 1, 0), self.n_op)
+        return copy_score, reduce_score
+
+
+def make_transform_chooser(kind, *, d_model, n_copy, n_op):
+    """Factory: build the placement chooser for a structured layer.
+
+    ``kind`` ``"anchordot"`` (default) -> the stateless behavior-preserving
+    scorer (no params, basin unchanged); ``"mlp"`` -> the contextual
+    :class:`MLPTransformChooser` (owns params; a deliberate new-basin
+    cutover behind ``<transformChooser>``).
+    """
+    k = str(kind or "anchordot").strip().lower()
+    if k == "mlp":
+        return MLPTransformChooser(
+            d_model=d_model, n_copy=n_copy, n_op=n_op)
+    # Accept exactly the values the <transformChooser> XSD enum allows, so
+    # the factory and schema validation agree on the legal set.
+    if k != "anchordot":
+        raise ValueError(
+            f"<transformChooser> must be 'anchordot' or 'mlp' (got {kind!r}).")
+    return AnchorDotTransformChooser()
+
+
+def compute_role_vocabulary(grammar):
+    """Enumerate the role-collapsed grammar's operator roles for the
+    MetaSymbol Category codebook (doc/Language.md "Participation Categories as
+    the Chooser's Syntactic-Category Context").
+
+    A ROLE is one operator argument slot. Input role ``(method, pos)`` renders
+    ``<method>_I<pos+1>`` (operand position ``pos`` fed INTO the operator);
+    output role ``(method,)`` renders ``<method>_O1`` (the result produced BY
+    the operator) -- the same naming as ``bin/participation.py``. Roles are
+    read off the live UPWARD (compose) rules; a rule with no ``method_name``
+    (epsilon / passthrough projection) declares no role and is skipped.
+
+    Returns ``(roles, role_index, n_roles)``: ``roles`` a deterministically
+    ordered list of role-name strings (sorted inputs, then sorted outputs),
+    ``role_index`` mapping role-name -> int column, ``n_roles == len(roles)``.
+    Enumerate ONCE at build from the live rule set (not the .grammar text) --
+    ``method_name is None`` projections drop out, so the file is not the
+    source of truth.
+    """
+    rules = (getattr(grammar, 'rules_upward', None)
+             or getattr(grammar, 'rules', None) or [])
+    in_roles = set()
+    out_roles = set()
+    for r in rules:
+        method = getattr(r, 'method_name', None)
+        if not method:
+            continue
+        method = str(method)
+        rhs = getattr(r, 'rhs_symbols', None) or []
+        for pos in range(len(rhs)):
+            in_roles.add((method, pos))
+        out_roles.add(method)
+    roles = [f"{m}_I{pos + 1}" for (m, pos) in sorted(in_roles)]
+    roles += [f"{m}_O1" for m in sorted(out_roles)]
+    role_index = {name: i for i, name in enumerate(roles)}
+    return roles, role_index, len(roles)
+
 class BinaryStructuredReductionLayer(nn.Module):
     """One layer: contextualize, score, route, compact (hard + soft).
 
@@ -6072,7 +6896,8 @@ class BinaryStructuredReductionLayer(nn.Module):
     """
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, op_tiers=None, op_names=None):
+                 temperature=1.0, op_tiers=None, op_names=None,
+                 chooser="anchordot"):
         """Wire ops list, per-rule anchor params, and the comparator mixer.
 
         Builds learnable ``copy_anchor`` ``[r_copy, D]`` and
@@ -6093,6 +6918,15 @@ class BinaryStructuredReductionLayer(nn.Module):
         # separate scorer MLP / second-optimizer pathology.
         self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * 0.02)
+        # Placement scoring delegated to the TransformChooser
+        # (doc/plans/NeuralToolUser.md). ``chooser="anchordot"`` (default)
+        # is the stateless scorer that keeps the anchors owned here
+        # (state_dict unchanged, byte-identical); ``"mlp"`` builds the
+        # contextual MLPTransformChooser (owns params -> new basin), sized
+        # to this layer's r_copy copy ops + r_reduce reduce ops.
+        self.chooser = make_transform_chooser(
+            chooser, d_model=self.d_model,
+            n_copy=self.r_copy, n_op=self.r_reduce)
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
         # Per-rule name / tier metadata retained for op identification
@@ -6193,14 +7027,26 @@ class BinaryStructuredReductionLayer(nn.Module):
         sr_score = (stacked_reduced[..., :self.d_model]
                     if stacked_reduced.shape[-1] > self.d_model
                     else stacked_reduced)
-        copy_score = torch.einsum('bnd,cd->bnc', x_score, self.copy_anchor)
-        if stacked_reduced.shape[1] > 0 and self.r_reduce > 0:
-            reduce_score = torch.einsum(
-                'bnrd,rd->bnr', sr_score, self.reduce_anchor)
-        else:
-            reduce_score = x.new_zeros(B, max(N - 1, 0), self.r_reduce)
+        copy_score, reduce_score = self.chooser.score_binary(
+            x_score, sr_score, self.copy_anchor, self.reduce_anchor)
 
-        soft = binary_tiling_soft_dp(copy_score, reduce_score)
+        # Soft-superposition temperature (the parser's differentiable route
+        # under <learning>; doc/Language.md "weighted deduction"). When set,
+        # the FORWARD value is the pure sum-product superposition at this
+        # temperature -- NO Viterbi route and NO straight-through; the
+        # chooser is in the gradient path directly. ``0`` = the chooser's own
+        # (sharp/deterministic) softmax, ``1`` = uniform; the scores are
+        # scaled by ``1-t`` (superposition_scale). Default None keeps the
+        # legacy hard-Viterbi + straight-through forward (byte-identical).
+        # Viterbi is still computed for the routing / tree read-off (that
+        # read-off is outside the gradient path in both modes).
+        _st = getattr(self, 'superposition_temperature', None)
+        if _st is not None:
+            _sc = superposition_scale(_st)
+            cs_dp, rs_dp = copy_score * _sc, reduce_score * _sc
+        else:
+            cs_dp, rs_dp = copy_score, reduce_score
+        soft = binary_tiling_soft_dp(cs_dp, rs_dp)
         hard = binary_tiling_viterbi(copy_score, reduce_score)
 
         if hard["reduce_mask"].numel() > 0:
@@ -6219,11 +7065,15 @@ class BinaryStructuredReductionLayer(nn.Module):
         # would propagate into the next round's folded slab and poison the
         # whole DP).
         if reduce_score.numel() > 0:
-            op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
-            op_hard = F.one_hot(
-                op_soft.argmax(-1), num_classes=op_soft.shape[-1]
-            ).to(op_soft.dtype)
-            op_weights = op_hard + op_soft - op_soft.detach()
+            if _st is not None:
+                # Pure soft op superposition at temperature (no straight-through).
+                op_weights = _masked_softmax_lastdim(rs_dp)     # [B, N-1, R]
+            else:
+                op_soft = _masked_softmax_lastdim(reduce_score)     # [B, N-1, R]
+                op_hard = F.one_hot(
+                    op_soft.argmax(-1), num_classes=op_soft.shape[-1]
+                ).to(op_soft.dtype)
+                op_weights = op_hard + op_soft - op_soft.detach()
             chosen_reduced = (op_weights.unsqueeze(-1) * stacked_reduced).sum(dim=2)
         else:
             chosen_reduced = self._selected_reduced(
@@ -6247,13 +7097,20 @@ class BinaryStructuredReductionLayer(nn.Module):
             reduce_hard_action = hard["reduce_mask"].sum(-1)     # [B, N-1]
         else:
             reduce_hard_action = soft["reduce_marginal"]
-        copy_marginal_st = (
-            copy_hard_action + soft["copy_marginal"] - soft["copy_marginal"].detach()
-        )
-        reduce_marginal_st = (
-            reduce_hard_action + soft["reduce_marginal"]
-            - soft["reduce_marginal"].detach()
-        )
+        if _st is not None:
+            # Pure soft superposition: the forward value IS the differentiable
+            # sum-product marginal at this temperature (no hard route, no
+            # straight-through). This is the parser's training-time route.
+            copy_marginal_st = soft["copy_marginal"]
+            reduce_marginal_st = soft["reduce_marginal"]
+        else:
+            copy_marginal_st = (
+                copy_hard_action + soft["copy_marginal"] - soft["copy_marginal"].detach()
+            )
+            reduce_marginal_st = (
+                reduce_hard_action + soft["reduce_marginal"]
+                - soft["reduce_marginal"].detach()
+            )
         marginal_slab = compact_soft(
             x=x, reduced=chosen_reduced,
             copy_marginal=copy_marginal_st,
@@ -6307,7 +7164,7 @@ class UnaryStructuredLayer(nn.Module):
     """
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0):
+                 temperature=1.0, chooser="anchordot"):
         """Wire ops list and per-(copy/apply) anchor params.
 
         Action space is ``R_copy + R_apply`` choices per position with
@@ -6325,6 +7182,14 @@ class UnaryStructuredLayer(nn.Module):
         # is the inner product of the candidate output with the anchor.
         self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * 0.02)
+        # Placement scoring delegated to the TransformChooser
+        # (doc/plans/NeuralToolUser.md). ``chooser="anchordot"`` (default)
+        # is the stateless scorer (anchors owned here, state_dict
+        # unchanged); ``"mlp"`` builds the contextual MLPTransformChooser
+        # (owns params -> new basin), sized to r_copy copy + r_apply ops.
+        self.chooser = make_transform_chooser(
+            chooser, d_model=self.d_model,
+            n_copy=self.r_copy, n_op=self.r_apply)
 
     def _stacked_applied(self, x):
         """[B, N, R_apply, D] each unary op applied to every position."""
@@ -6356,20 +7221,30 @@ class UnaryStructuredLayer(nn.Module):
         x_score = x[..., :self.d_model] if D > self.d_model else x
         applied_score = (applied[..., :self.d_model]
                          if applied.shape[-1] > self.d_model else applied)
-        copy_score = torch.einsum('bnd,cd->bnc', x_score, self.copy_anchor)
-        if self.r_apply > 0:
-            apply_score = torch.einsum(
-                'bnad,ad->bna', applied_score, self.apply_anchor)
+        copy_score, apply_score = self.chooser.score_unary(
+            x_score, applied_score, self.copy_anchor, self.apply_anchor)
+        # Soft-superposition temperature (the differentiable route under
+        # <learning>; same contract as the binary layer). When set, the
+        # forward is the pure softmax superposition at this temperature
+        # (scores scaled by 1-t) -- no argmax / straight-through; the chooser
+        # is in the gradient path. Default None keeps the legacy
+        # argmax-forward / soft-backward straight-through (byte-identical).
+        _st = getattr(self, 'superposition_temperature', None)
+        if _st is not None:
+            _sc = superposition_scale(_st)
+            action_logits = torch.cat(
+                [copy_score, apply_score], dim=-1) * _sc / self.temperature
+            action_probs = F.softmax(action_logits, dim=-1)
         else:
-            apply_score = x.new_zeros(B, N, 0)
-        action_logits = torch.cat([copy_score, apply_score], dim=-1) / self.temperature
-        action_soft = F.softmax(action_logits, dim=-1)
-        # Hardened: forward uses argmax one-hot, backward gets the
-        # softmax gradient via straight-through.
-        action_hard = F.one_hot(
-            action_soft.argmax(-1), num_classes=action_soft.shape[-1]
-        ).to(action_soft.dtype)
-        action_probs = action_hard + action_soft - action_soft.detach()
+            action_logits = torch.cat(
+                [copy_score, apply_score], dim=-1) / self.temperature
+            action_soft = F.softmax(action_logits, dim=-1)
+            # Hardened: forward uses argmax one-hot, backward gets the
+            # softmax gradient via straight-through.
+            action_hard = F.one_hot(
+                action_soft.argmax(-1), num_classes=action_soft.shape[-1]
+            ).to(action_soft.dtype)
+            action_probs = action_hard + action_soft - action_soft.detach()
 
         # Soft slab: weighted blend over (copy x_j) and applied_op(x_j).
         copy_branch = x.unsqueeze(2).expand(B, N, self.r_copy, D)
@@ -6379,8 +7254,14 @@ class UnaryStructuredLayer(nn.Module):
             branches = copy_branch
         soft_slab = (action_probs.unsqueeze(-1) * branches).sum(dim=2)
 
-        # Hard slab: argmax over actions.
-        action_id = action_logits.argmax(dim=-1)            # [B, N]
+        # Hard slab: argmax over actions. Read the UNSCALED scores (not the
+        # _sc-scaled action_logits) so the routing read-off is temperature-
+        # stable and matches the binary layer's unscaled Viterbi read-off.
+        # At t=1 superposition_scale is 0, which would zero action_logits and
+        # collapse the argmax to all-copy; argmax is invariant to the positive
+        # 1/temperature factor, so this is byte-identical on the default path.
+        action_id = torch.cat(
+            [copy_score, apply_score], dim=-1).argmax(dim=-1)   # [B, N]
         is_copy = action_id < self.r_copy
         gather_idx = action_id.unsqueeze(-1).unsqueeze(-1).expand(B, N, 1, D)
         hard_slab = branches.gather(dim=2, index=gather_idx).squeeze(2)
@@ -6520,7 +7401,7 @@ def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
 #
 # Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md §4.
 #
-# Each PerceptualSpace / ConceptualSpace / SymbolicSpace owns one of
+# Each PartSpace / ConceptualSpace / WholeSpace owns one of
 # these. Holds the parametrized GrammarLayer instances for its tier's
 # rules and dispatches `forward` / `reverse` based on the rule choice
 # the chart wrote into ``word_space.current_rules`` /
@@ -6703,7 +7584,7 @@ class SyntacticLayer(Layer):
             # bind at a different tier's syntactic layer than self
             # (intersection / union / lift / lower carry the C-tier class
             # tier so they register on ConceptualSpace rather than
-            # SymbolicSpace; an S-tier execute that hits one of those
+            # WholeSpace; an S-tier execute that hits one of those
             # rule_ids needs the layer even though _by_name doesn't have
             # it). Fall back to a fresh GRAMMAR_LAYER_CLASSES instance for
             # the dispatch; parameterized layers that need an inner pi /
@@ -6957,8 +7838,8 @@ def build_space_syntactic_layer(space, word_space, *, tier,
     """Construct a per-space SyntacticLayer.
 
     Args:
-        space: the host Space (PerceptualSpace / ConceptualSpace /
-            SymbolicSpace). The constructed layer is stored on
+        space: the host Space (PartSpace / ConceptualSpace /
+            WholeSpace). The constructed layer is stored on
             ``space.syntacticLayer`` and registered in the wordSubSpace's
             host_layer registry.
         word_space: the WordSpace coordinator. Owns the host_layer
@@ -7693,7 +8574,7 @@ class Taxonomy:
         return U.t() @ U                                   # [D, D]
 
 class ObjectSubSpace(nn.Module):
-    """Durable PerceptualSpace meronymic-analysis carrier -- the PS
+    """Durable PartSpace meronymic-analysis carrier -- the PS
     analogue of :class:`WordSubSpace`.
 
     doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
@@ -7943,7 +8824,7 @@ class WordSubSpace(SubSpace):
     pipeline (reached via ``subspace.wordSubSpace`` after
     ``copy_context`` stamps the back-reference).
 
-    Runtime-parallel to PerceptualSpace / ConceptualSpace / SymbolicSpace
+    Runtime-parallel to PartSpace / ConceptualSpace / WholeSpace
     but functionally a composition dispatcher rather than a pipeline
     stage that produces data tensors. WordSubSpace owns:
 
@@ -7952,7 +8833,7 @@ class WordSubSpace(SubSpace):
         ``reverseSymbols``);
       * the CKY chart and truth store;
       * the per-sentence parser cursor (``self.cursor`` — Python ints,
-        one per tier) and PerceptualSpace recurrent-pass index
+        one per tier) and PartSpace recurrent-pass index
         (``self.recur_pass`` — Python int);
       * the **typed STM stack** (payload frames + per-frame category /
         order / ref_id metadata) — formerly held by ``TypedStack`` at
@@ -7995,7 +8876,7 @@ class WordSubSpace(SubSpace):
         install ``syntacticLayer``, ``chart``, ``truthLayer``, the
         host_layer registry, per-row buffers, and the typed STM stack.
         """
-        # 1. Mirror SymbolicSpace's column layout for the Space-contract
+        # 1. Mirror WholeSpace's column layout for the Space-contract
         # fields that downstream callers occasionally read off WordSpace
         # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
         sub = symbolicSpace.subspace
@@ -8008,7 +8889,7 @@ class WordSubSpace(SubSpace):
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
         # — WordSubSpace is a data carrier (typed STM stack), not a
         # pipeline space that produces tensors via ``.what`` / ``.event``.
-        # Pass encodings sized to mirror SymbolicSpace's band so encoding
+        # Pass encodings sized to mirror WholeSpace's band so encoding
         # nDim == self.nWhen / self.nWhere downstream readers expect (the
         # 2026-06-06 uniform-band convention gives SS (2, 2) so the
         # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
@@ -8021,7 +8902,7 @@ class WordSubSpace(SubSpace):
             whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
             whenEncoding=_WhenEncoding(n_when=nWhen) if nWhen else None,
         )
-        # Restamp nWhat / nWhere / nWhen to mirror SymbolicSpace's column
+        # Restamp nWhat / nWhere / nWhen to mirror WholeSpace's column
         # layout (downstream callers read these to size projections).
         self.nWhat = nWhat
         self.nWhere = nWhere
@@ -8047,7 +8928,7 @@ class WordSubSpace(SubSpace):
         TheGrammar._ensure_configured()
         grammar = TheGrammar
 
-        # 3-op. Insert the grammar's operations into the SymbolicSpace
+        # 3-op. Insert the grammar's operations into the WholeSpace
         # codebook so the operator-prefixed parse tree's operation nodes
         # are codebook-resolvable (doc/plans/2026-05-30-subsymbolic-
         # analyzer-terminal-emitter.md, Phase 2 amended 2026-06-02): every
@@ -8134,7 +9015,7 @@ class WordSubSpace(SubSpace):
         #                     traced graph per observed cursor value;
         #                     compose() resets to ``[0, 0, 0]`` at the
         #                     top of every call.
-        #   ``recur_pass``  — Python int, PerceptualSpace recurrent-pass
+        #   ``recur_pass``  — Python int, PartSpace recurrent-pass
         #                     index that selects ``pi_input[oi]`` from a
         #                     ModuleList (Dynamo-specialized natively;
         #                     Inductor would emit an unbacked SymInt for
@@ -8225,7 +9106,7 @@ class WordSubSpace(SubSpace):
         self._wire_signal_router_grammar_ops()
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
-        # Lives on WordSpace so SymbolicSpace doesn't have to carry it
+        # Lives on WordSpace so WholeSpace doesn't have to carry it
         # alongside its already heavy pi/sort/codebook machinery.
         try:
             max_truths = int(TheXMLConfig.get("WordSpace.truthMaxEntries"))
@@ -8260,8 +9141,8 @@ class WordSubSpace(SubSpace):
         # per-label slot reservation.  Legacy XML grammars stay at 64
         # since their category set is small.
         # Category / part-of-speech codebook.  This is the WordSpace's
-        # ONLY codebook -- distinct from SymbolicSpace's symbol-prototype
-        # codebook on ``SymbolicSpace.subspace.what.W``.
+        # ONLY codebook -- distinct from WholeSpace's symbol-prototype
+        # codebook on ``WholeSpace.subspace.what.W``.
         #
         # Stores learned ``pos_dim``-wide embeddings for grammar
         # nonterminals AND POS terminals (S, NP, VP, AP, MP, PP, N, V,
@@ -8275,7 +9156,7 @@ class WordSubSpace(SubSpace):
         #   * the rule predictor's input stack (the parsing-history
         #     vectors pushed onto ``self.category_stack``)
         # NOT used for symbol quantization -- that runs against the
-        # symbolic codebook on SymbolicSpace.subspace.what.
+        # symbolic codebook on WholeSpace.subspace.what.
         #
         # 2026-05-20 category_codebook retirement (plan
         # ``doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md``):
@@ -8325,7 +9206,7 @@ class WordSubSpace(SubSpace):
         max_depth = int(nPercepts)
         # pos_dim already bound above (category_embedding / category_stack dim).
         rule_in_features = max_depth * pos_dim
-        # When nPercepts=0 (minimal test configs with no PerceptualSpace),
+        # When nPercepts=0 (minimal test configs with no PartSpace),
         # rule_in_features is 0; nn.Linear(0, 0) would emit a "zero-element
         # tensor init is a no-op" UserWarning. Widen to 1 feature so init
         # is well-defined. predict_rule pads the flattened stack to the
@@ -9631,14 +10512,14 @@ class WordSubSpace(SubSpace):
     def pos_lookup(self, active_symbols):
         """Activation-similarity nearest-neighbor lookup into the embedding.
 
-        Legacy path kept so ``SymbolicSpace.forward`` (and its tests) can
+        Legacy path kept so ``WholeSpace.forward`` (and its tests) can
         map an active-symbol pattern to an embedding row without knowing
         the grammar category up-front. New code that already has the
         category name should use ``category_lookup(name)`` instead.
 
         Args:
             active_symbols: 1-D tensor of shape [N], typically resolved
-                activations from SymbolicSpace.resolve().
+                activations from WholeSpace.resolve().
 
         Returns:
             Tensor of shape (pos_dim,) -- the matching prototype row.
@@ -9746,7 +10627,7 @@ class WordSubSpace(SubSpace):
         ``{tier: [rule_id, ...]}``). The CS-side execution stage --
         actually applying the chosen reductions (lift / lower / union /
         intersection / swap / quantize / not) to the concept tensors --
-        runs in ``ConceptualSpace.forward`` (and the SymbolicSpace
+        runs in ``ConceptualSpace.forward`` (and the WholeSpace
         stack-route path) and the per-tier ``SyntacticLayer`` cursors
         during reverse. Only lift / lower / union / intersection consult
         the codebook (inverse-recommended via ``Ops.disjunctionReverse``
@@ -9962,6 +10843,14 @@ class WordSubSpace(SubSpace):
         populated.
         """
         ll = getattr(self, 'languageLayer', None)
+        # NeuralToolUser cutover: the chooser is trained by the two-hard-parse
+        # policy loss (model/train level), NOT through rule_probs, so here
+        # rule_probs is the detached downstream summary of the SELECTED route
+        # (the user's Q5 answer). Skip the soft-marginal aggregation -- the
+        # NTU route has no soft-DP marginals -- and use the hard scatter.
+        if ll is not None and getattr(ll, 'neural_tool_user', False):
+            return self._synthesize_rule_probs_hard(
+                rules_by_tier, batch_size, device=device)
         tier_routings = getattr(ll, '_last_tier_routings', None) if ll is not None else None
         if tier_routings:
             soft = self._synthesize_rule_probs_soft(
@@ -10521,6 +11410,13 @@ class WordSubSpace(SubSpace):
                 bucket["op_names"].append(name)
                 # preserve the op's *original* tier letter as the role label
                 bucket["op_tiers"].append(tier)
+        # Placement-chooser cutover (doc/plans/NeuralToolUser.md): pick the
+        # chooser kind BEFORE the structured layers are built (they choose
+        # at construction). ``<architecture><transformChooser>`` -- default
+        # "anchordot" (stateless, basin unchanged); "mlp" builds the
+        # contextual MLPTransformChooser (owns params, deliberate new basin).
+        router.transform_chooser = str(TheXMLConfig.get(
+            "architecture.transformChooser", default="anchordot"))
         for arity, bucket in sorted(by_arity.items()):
             if arity == 1:
                 router.attach_unary_ops(
@@ -10534,14 +11430,19 @@ class WordSubSpace(SubSpace):
                     tier=REDUCE_TIER)
 
         # plan \xa76: plumb the conceptual-reduction round floor onto the
-        # router. conceptualOrder lives on the model (Models.py), not on
+        # router. subsymbolicOrder lives on the model (Models.py), not on
         # WordSubSpace, and is not cleanly reachable here within ~2 attribute
         # hops -- so leave the LanguageLayer default of 1. ``max(1, N-1) ==
         # N-1`` reproduces the pre-collapse round count, making the floor a
-        # harmless no-op until/unless a host wires conceptualOrder through.
-        _co = getattr(self, 'conceptualOrder', None)
+        # harmless no-op until/unless a host wires subsymbolicOrder through.
+        _co = getattr(self, 'subsymbolicOrder', None)
         if _co is not None:
-            router.conceptual_order = int(_co)
+            router.subsymbolic_order = int(_co)
+        # Mirror the NeuralToolUser cutover flag onto the router (same
+        # reachability caveat as subsymbolic_order; default stays False).
+        _ntu = getattr(self, 'neuralToolUser', None)
+        if _ntu is not None:
+            router.neural_tool_user = bool(_ntu)
 
     def _resolve_rule_layer(self, tier, rule_name):
         """Return a Layer instance for ``(tier, rule_name)`` from the host
@@ -10604,7 +11505,7 @@ class WordSubSpace(SubSpace):
            iteration.  Both operands of the
            disjunction then live in symbol space by construction
            (stored truths were also recorded from symbol-space
-           activations in ``SymbolicSpace.forwardEnd``).
+           activations in ``WholeSpace.forwardEnd``).
 
         Returns ``total_loss`` unchanged when the TruthLayer is
         absent or empty (bootstrap case with no truths recorded
@@ -10699,7 +11600,7 @@ class WordSubSpace(SubSpace):
         # Inner instance probes: use try/except rather than getattr-with-
         # defaults per the project's no-defensive-getattr stance.
         if tier == 'P':
-            # Phase C (2026-05-13 rebalance): PerceptualSpace owns
+            # Phase C (2026-05-13 rebalance): PartSpace owns
             # ``pi_input`` (input_dim → percept_dim) and ``pi_concept``
             # (concept_dim → percept_dim); both fire unconditionally
             # in the bare forward path. The chart can dispatch them by
@@ -10825,7 +11726,7 @@ class WordSubSpace(SubSpace):
             #
             # Mereological grammar layers (``part`` / ``isEqual`` /
             # ``query`` / ...) are pure-geometric operations on the
-            # SymbolicSpace codebook (clipped cosine projection on the
+            # WholeSpace codebook (clipped cosine projection on the
             # non-negative paired-index cone, per Architecture.md
             # §"Monotonicity of the bivector chain"); the standalone
             # ``MereologicalTree`` sidecar was retired -- the codebook IS
@@ -11231,7 +12132,7 @@ class WordSubSpace(SubSpace):
         at B (per source row), persist across forward calls within a
         sentence, and are owned by :meth:`ensure_microbatch`.  Wiping
         them on every K-change (which happens whenever ``actual_max``
-        BPE word count crosses a power-of-two boundary in PerceptualSpace's
+        BPE word count crosses a power-of-two boundary in PartSpace's
         AR unfold) would re-arm the once-per-sentence STM-residual fire
         flag mid-sentence, causing the discourse bias to inject multiple
         times for the same source row.

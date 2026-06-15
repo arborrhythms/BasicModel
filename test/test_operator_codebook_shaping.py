@@ -2,7 +2,7 @@
 
 User steering (2026-06-03): grammatical categories are distinguished by the
 SEMANTIC EFFECT of their associated operators, where the semantic effect is
-the operator's vector in the SymbolicSpace operator codebook
+the operator's vector in the WholeSpace operator codebook
 (``_operation_vectors``). Those vectors are shaped LIVE by the soft operator
 superposition under truth/consequence supervision -- all operators
 participate in a soft superposition per slot until one is chosen, so even a
@@ -26,8 +26,8 @@ import torch
 
 
 def _ss_with_ops(*op_names, nDim=8):
-    from Spaces import SymbolicSpace
-    ss = SymbolicSpace.__new__(SymbolicSpace)
+    from Spaces import WholeSpace
+    ss = WholeSpace.__new__(WholeSpace)
     ss.nDim = nDim
     ss._operation_positions = {}
     ss._operation_vectors = {}

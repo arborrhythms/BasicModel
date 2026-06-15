@@ -1,5 +1,5 @@
 """Grammar-file rewrite: marker-helper removal + per-operator-position
-categories under <SymbolicSpace>.
+categories under <WholeSpace>.
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md (Phase 8b,
 "Grammar file rewrite"): the ``*_MARK`` categories and the copy/swap
@@ -7,7 +7,7 @@ MARKER helper rules are deleted; surface markers become learned and owned
 by the operator (absorb/emit). Each operator-argument position becomes its
 own category in the operator's namespace (e.g. CONJ_L45 / CONJ_R45).
 Existing modification rules (lower(VP, PP), ...) are kept, restated under
-<SymbolicSpace> with per-position categories.
+<WholeSpace> with per-position categories.
 """
 
 import os

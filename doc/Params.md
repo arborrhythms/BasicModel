@@ -15,7 +15,7 @@ treat that as the same thing as `nOutput`.
 
 > 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
 > `data/model.xml` carries per-Space defaults (`<nWhere>2</nWhere>` on
-> InputSpace / PerceptualSpace / SymbolicSpace, `0` elsewhere). The
+> InputSpace / PartSpace / WholeSpace, `0` elsewhere). The
 > `.where` field is now the canonical positional identifier (quadrature
 > sinusoidal); see [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
 
@@ -30,13 +30,18 @@ sub-elements `<training>` and `<data>` (see below).
 |-----------|------|---------|-------------|
 | `modelType` | string | `"simple"` | `simple` (feedforward), `embedding` (LM / chat with sequence processing), `passthrough` (identity bench), `vq` (codebook-only). |
 | `reconstruct` | string | `"concepts"` | Reverse-pass mode: `none` disables; `symbols` reconstructs from cached output symbols; `concepts` reconstructs at the conceptual tier (default); `both` combines both reconstruction losses. (Default flipped from `symbols` to `concepts` on 2026-05-29; per-experiment XMLs no longer need to override.) |
-| `conceptualOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
+| `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: every Layer uses `W_eff = bias * W + temp * noise`. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
-| `conceptualMode` | string | `"parallel"` | `parallel` (whole-slab `[B, N, D]` forward; required for the butterfly cascade), `serial` (per-word `[B, 1, D]`). The class-level default on `BaseModel` is `parallel` (2026-05-29). See [STM.md](STM.md#2-serial-sequencing). |
+| `symbolicOrder` | int | `0` | Forward-dispatch depth (replaced the `conceptualMode` enum 2026-06-13). `0` = parallel (whole-slab `[B, N, D]` forward; required for the butterfly cascade); `>= 1` = serial (per-word `[B, 1, D]`, loops the modules). Values > 1 plumbed but behave as 1. Default derives from the grammar (1 when `useGrammar != "none"`, else 0); class-level default on `BaseModel` is `0`. See [STM.md](STM.md#2-serial-sequencing). |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `wordSubSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
+| `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Independent of `neuralToolUser`. Default off → one ordinary forward (byte-identical). See [Language.md → Soft-superposition route](Language.md). |
+| `exploreTemperature` | decimal | `0.5` | Superposition temperature $t \in [0,1]$ for pass B of `learning`. `0` = the chooser's own (sharp) softmax, `1` = uniform (flat). Route scores are scaled by `1 - t`. |
+| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [NeuralToolUser.md → MLP TransformChooser](plans/NeuralToolUser.md). |
+| `symbolicComposition` | bool | `false` | Cognitive op (2): at `subsymbolicOrder > 0`, re-feed the prior pass's symbolic carrier (`cs._subspaceForSS`) to PartSpace so Sigma composes higher-order symbols. Default off is byte-identical. See [Architecture.md](Architecture.md). |
+| `neuralToolUser` | bool | `false` | Legacy hard-parse executor for the grammar's binary reduce stage (`parse_greedy` route + cross-product distributions). **Superseded by the soft-superposition route (`learning`); off the live path.** See [NeuralToolUser.md](plans/NeuralToolUser.md). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -48,9 +53,9 @@ sub-elements `<training>` and `<data>` (see below).
 | `allowContradiction` | int | `0` | Catuskoti policy: `0` forbids BOTH (non-contradiction), `1` permits paraconsistent BOTH. |
 | `gateL1Lambda` | float | `0.0` | L1 sparsity penalty on lift / lower gates. `0` disables. |
 | `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Active only when `WordSpace.chartTopK > 0`. |
-| `l1Lambda` | decimal | `0.0` | Architecture-wide L1 penalty hook. Most configs leave this at `0` and use `SymbolicSpace.l1Lambda` instead. |
+| `l1Lambda` | decimal | `0.0` | Architecture-wide L1 penalty hook. Most configs leave this at `0` and use `WholeSpace.l1Lambda` instead. |
 | `discontinuityLambda` | decimal | `0.0` | Architecture-wide discontinuity penalty hook (legacy). |
-| `conceptualWidth` | string | `"tapered"` | Symbol-partition geometry for `conceptualOrder > 1`. `tapered` = geometrically narrowing slices; `uniform` = equal-width slices. |
+| `conceptualWidth` | string | `"tapered"` | Symbol-partition geometry for `subsymbolicOrder > 1`. `tapered` = geometrically narrowing slices; `uniform` = equal-width slices. |
 | `maxActivePerLayer` | int | `8` | Maximum active nodes per layer for reverse / mereological walks. |
 | `codebookRetire` | bool | `false` | Retire codebook path where supported. Mostly a migration hook. |
 | `symbolLearning.enabled` | bool | `false` | Enables runtime symbol-learning hooks. Disabled by default. |
@@ -155,7 +160,7 @@ The two configurations that train the full P$\to$C$\to$S pipeline:
   <truthBiasScale>0.1</truthBiasScale>
   <LuminosityWeight>0.1</LuminosityWeight>
   <UniversalityWeight>0.1</UniversalityWeight>
-  <conceptualOrder>1</conceptualOrder>
+  <subsymbolicOrder>1</subsymbolicOrder>
   <monotonic>false</monotonic>
 </architecture>
 
@@ -204,7 +209,7 @@ Lifts raw data into the model's internal representation.
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
 
-> **`<lexer>` moved to `<SymbolicSpace>`** (Phase 4b of the
+> **`<lexer>` moved to `<WholeSpace>`** (Phase 4b of the
 > analysis/synthesis dual-input plan, rev. 2026-06-09): lexing is analytic
 > CUTTING, owned by the analysis side. An InputSpace-side `<lexer>` now
 > fails schema validation and the runtime reader. InputSpace emits the
@@ -216,12 +221,12 @@ Lifts raw data into the model's internal representation.
 `inputLength` for text); `outputShape` uses `nDim` from
 `TheObjectEncoding`. `LiftingLayer` bridges the two.
 
-### `<PerceptualSpace>`
+### `<PartSpace>`
 
 Transforms lifted input into perceptual features via its synthesis fold —
 a `SigmaLayer` (additive/union; the Pi/Sigma swap of the analysis/synthesis
 plan, rev. 2026-06-09: PS is bottom-up SYNTHESIS over atoms; the
-multiplicative Pi fold moved to SymbolicSpace as top-down analysis).
+multiplicative Pi fold moved to WholeSpace as top-down analysis).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -231,7 +236,7 @@ multiplicative Pi fold moved to SymbolicSpace as top-down analysis).
 | `invertible` | bool | `false` | `true`: one `PiLayer(invertible=True)` handles both directions; `false`: separate `pi1` (forward) and `pi2` (reverse). |
 | `hasAttention` | bool | `true` | Attention reweighting of percepts before the Pi fold. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
-| `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on SymbolicSpace as `<analysis>analyse`. |
+| `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on WholeSpace as `<analysis>analyse`. |
 | `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md). |
 | `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
 
@@ -255,7 +260,7 @@ Transforms perceptual features into abstract concepts via Sigma layers
 | `hasAttention` | bool | `false` | Attention in conceptual processing. Violates position locality required by `serial_mode`. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
-| `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PerceptualSpace). Required by `MM_xor.xml`. |
+| `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PartSpace). Required by `MM_xor.xml`. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band; also the `wMax` fallback). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
@@ -271,7 +276,7 @@ Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md)
 > the current experiment. See
 > [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
-### `<SymbolicSpace>`
+### `<WholeSpace>`
 
 Discrete symbolic representation --- the information bottleneck between
 perception and output, and (post the analysis/synthesis plan, rev.
@@ -298,9 +303,9 @@ perception and output, and (post the analysis/synthesis plan, rev.
 | `semanticArrangement` | float | `0` | Task 5 (C-13): post-sentence semantic arrangement over SS heat — pode (activated-rows centroid attraction) + antipode (rest-of-codebook repulsion), gradient on the active rows only. `0` = OFF (the default); the semantic payoff is validated under D, not XOR. |
 | `decorrelationWeight` | decimal | `0.0` | `ImpenetrableLayer` decorrelation regularizer on codebook rows. |
 | `spectralFlatnessWeight` | decimal | `0.0` | `ImpenetrableLayer` spectral-flatness regularizer. |
-| `truthCriterion` | unitInterval | `1.0` | **Single continuous truth bar** governing BOTH (a) SymbolicSpace truth **recording** --- a per-cell activation is recorded into the TruthLayer iff its clamped magnitude $\ge$ `truthCriterion` (fires during training and `store_truths` gold ingestion alike), and (b) learned relative-sentence **acceptance** --- a relation `predicate(idea1, idea2)` enters the SS codebook iff its learn-score $\ge$ `truthCriterion` (learn-score $= \text{children\_in\_codebook} \times \text{is\_truth\_obvious} \times \text{resolves\_contradiction}$). At `1` nothing is recorded/learned; at `0` everything is. Read onto both ConceptualSpace and SymbolicSpace; per-space override of the `<architecture>` value. Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
+| `truthCriterion` | unitInterval | `1.0` | **Single continuous truth bar** governing BOTH (a) WholeSpace truth **recording** --- a per-cell activation is recorded into the TruthLayer iff its clamped magnitude $\ge$ `truthCriterion` (fires during training and `store_truths` gold ingestion alike), and (b) learned relative-sentence **acceptance** --- a relation `predicate(idea1, idea2)` enters the SS codebook iff its learn-score $\ge$ `truthCriterion` (learn-score $= \text{children\_in\_codebook} \times \text{is\_truth\_obvious} \times \text{resolves\_contradiction}$). At `1` nothing is recorded/learned; at `0` everything is. Read onto both ConceptualSpace and WholeSpace; per-space override of the `<architecture>` value. Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 
-SymbolicSpace owns one square invertible
+WholeSpace owns one square invertible
 `PiLayer` at `self.pi` — the top-down analysis (product/intersection)
 fold — bridging the C $\leftrightarrow$ S boundary in both directions
 via its exact inverse (the Pi/Sigma swap, rev. 2026-06-09; SS owned a
@@ -406,7 +411,7 @@ factor-level noise injection.
     <nOutputDim>10</nOutputDim>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nVectors>1000</nVectors>
     <nDim>10</nDim>
@@ -414,7 +419,7 @@ factor-level noise injection.
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -425,13 +430,13 @@ factor-level noise injection.
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
     <nDim>2</nDim>
     <nOutput>8</nOutput>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

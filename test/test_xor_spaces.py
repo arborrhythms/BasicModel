@@ -243,17 +243,17 @@ class TestSpacePrediction(unittest.TestCase):
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
-        _obj = _obj_size("PerceptualSpace")
-        psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
+        _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        _obj = _obj_size("PartSpace")
+        psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
         emb = psp.vocabulary
         self.assertIsInstance(emb, Models.Embedding)
 
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(psp)
 
@@ -294,17 +294,17 @@ class TestSpacePrediction(unittest.TestCase):
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
-        _obj = _obj_size("PerceptualSpace")
-        psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
+        _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        _obj = _obj_size("PartSpace")
+        psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
         emb = psp.vocabulary
         self.assertIn(" ", emb.pretrain.key_to_index)
 
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(psp)
 
@@ -348,12 +348,12 @@ class TestNullEOS(unittest.TestCase):
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
-        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
-        cls.psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim],
+        _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PartSpace", "nVectors")
+        cls.psp = Models.PartSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim],
                              model_type="embedding")
         cls.emb = cls.psp.vocabulary
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         cls.os_ = Models.OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
         cls.os_.set_text_mode(cls.psp)

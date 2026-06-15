@@ -65,21 +65,21 @@ _MODEL_XML_FOOTER = """
     <nVectors>4</nVectors>
     <nOutput>4</nOutput>
   </InputSpace>
-  <PerceptualSpace>
+  <PartSpace>
     <nDim>4</nDim>
     <nVectors>4</nVectors>
     <nOutput>4</nOutput>
-  </PerceptualSpace>
+  </PartSpace>
   <ConceptualSpace>
     <nDim>4</nDim>
     <nVectors>4</nVectors>
     <nOutput>4</nOutput>
   </ConceptualSpace>
-  <SymbolicSpace>
+  <WholeSpace>
     <nDim>4</nDim>
     <nVectors>4</nVectors>
     <nOutput>4</nOutput>
-  </SymbolicSpace>
+  </WholeSpace>
   <OutputSpace>
     <nDim>1</nDim>
     <nVectors>1</nVectors>

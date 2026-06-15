@@ -5,7 +5,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>xor_3d_weights.ckpt</weightsPath>
 
     <training>
@@ -26,11 +26,11 @@
     <nVectors>4</nVectors>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>4</nOutput>
     <nDim>14</nDim>
     <nVectors>16</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>4</nOutput>
@@ -39,11 +39,11 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>4</nOutput>
     <nDim>14</nDim>
     <nVectors>4</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

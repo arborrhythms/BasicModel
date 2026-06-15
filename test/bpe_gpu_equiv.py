@@ -44,8 +44,8 @@ import Spaces
 
 # The reference: the verified trie-walk path (explicit method, never
 # the dispatcher -- so the gate compares GPU-vs-trie, not GPU-vs-GPU).
-_REFERENCE_EMBED_BPE = Spaces.PerceptualSpace._embed_bpe_trie
-_CANDIDATE_EMBED_BPE = Spaces.PerceptualSpace._embed_bpe_gpu
+_REFERENCE_EMBED_BPE = Spaces.PartSpace._embed_bpe_trie
+_CANDIDATE_EMBED_BPE = Spaces.PartSpace._embed_bpe_gpu
 
 
 def _clone(t):
@@ -99,7 +99,7 @@ def install_gate(model, candidate_fn, max_calls=None):
         state["n"] = i + 1
         return ref_out
 
-    Spaces.PerceptualSpace._embed_bpe = _gated
+    Spaces.PartSpace._embed_bpe = _gated
     return state
 
 
@@ -120,7 +120,7 @@ def run_gate(candidate_fn, max_batches=3):
         m.runEpoch(optimizer=opt, batchSize=8, split="train",
                    max_batches=max_batches)
     finally:
-        Spaces.PerceptualSpace._embed_bpe = _REFERENCE_EMBED_BPE
+        Spaces.PartSpace._embed_bpe = _REFERENCE_EMBED_BPE
     return state["n"]
 
 

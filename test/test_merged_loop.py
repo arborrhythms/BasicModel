@@ -5,11 +5,11 @@ flat (non-grammar) configuration. ``useGrammar="all"`` still uses its
 specialized path.
 
 These tests verify:
-* ``SymbolicSpace.empty_state`` is callable and shape-correct -- the
+* ``WholeSpace.empty_state`` is callable and shape-correct -- the
   unified loop's seed for ``ss``.
-* The j-loop runs ``conceptualOrder`` times (via
+* The j-loop runs ``subsymbolicOrder`` times (via
   ``_unified_j_iterations`` counter).
-* ``conceptualOrder==0`` -> zero j-iterations + a single pre-seed C->S
+* ``subsymbolicOrder==0`` -> zero j-iterations + a single pre-seed C->S
   pass (spec's implicit j=-1); concepts/symbols are still populated.
 """
 import os
@@ -17,26 +17,26 @@ import warnings
 
 import torch
 
-from Spaces import SymbolicSpace
+from Spaces import WholeSpace
 
 
 def test_symbolicspace_empty_state_is_callable():
     """Used to seed ``ss`` in the unified loop."""
-    assert callable(getattr(SymbolicSpace, "empty_state", None))
+    assert callable(getattr(WholeSpace, "empty_state", None))
 
 
 def test_symbolicspace_empty_state_shape():
     """empty_state returns zeros of shape [batch, nOutput, nDim]."""
-    space = SymbolicSpace.__new__(SymbolicSpace)
+    space = WholeSpace.__new__(WholeSpace)
     space.outputShape = (5, 7)
     state = space.empty_state(batch=3)
     assert tuple(state.shape) == (3, 5, 7)
     assert state.abs().sum().item() == 0.0
 
 
-def _load_mental_model(conceptualOrder: int = 1):
+def _load_mental_model(subsymbolicOrder: int = 1):
     """Build a BasicModel from MentalModel.xml with the requested
-    conceptualOrder, via an XML patch."""
+    subsymbolicOrder, via an XML patch."""
     import xml.etree.ElementTree as ET
     import tempfile
     import Models
@@ -47,10 +47,10 @@ def _load_mental_model(conceptualOrder: int = 1):
     tree = ET.parse(src)
     root = tree.getroot()
     arch = root.find("architecture")
-    co = arch.find("conceptualOrder")
+    co = arch.find("subsymbolicOrder")
     if co is None:
-        co = ET.SubElement(arch, "conceptualOrder")
-    co.text = str(conceptualOrder)
+        co = ET.SubElement(arch, "subsymbolicOrder")
+    co.text = str(subsymbolicOrder)
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
     tree.write(tmp.name)

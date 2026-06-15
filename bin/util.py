@@ -426,7 +426,7 @@ def auto_compile_mode():
     ``reduce-overhead`` (the CUDAGraph-bearing modes) now beat both
     the no-cudagraphs autotune and eager, with much smaller tails
     (max-autotune max=42s vs no-cudagraphs max=204s). Re-bench when
-    architecture changes meaningfully (new spaces, conceptualOrder,
+    architecture changes meaningfully (new spaces, subsymbolicOrder,
     N-halving width) since shape diversity drives the trade-off.
     """
     override = os.environ.get("MODEL_COMPILE_MODE", "").strip().lower()
@@ -589,7 +589,7 @@ def compile(model, verbose=True, fullgraph=False):
     Set ``MODEL_COMPILE_MODE=reduce-overhead`` (or ``max-autotune``) to
     opt into CUDAGraph capture. The CUDAGraph-bearing modes recompile
     per distinct static shape; for architectures with many shapes
-    (N-halving / conceptualOrder), wall-clock can be dominated by
+    (N-halving / subsymbolicOrder), wall-clock can be dominated by
     per-shape capture. ``default`` skips that entirely.
 
     Patches inductor compile commands first when paths contain spaces.
@@ -1025,8 +1025,8 @@ class XMLConfig:
         sections are skipped (no error).
         """
         total = 0
-        for s in ("InputSpace", "PerceptualSpace", "ConceptualSpace",
-                  "SymbolicSpace", "OutputSpace"):
+        for s in ("InputSpace", "PartSpace", "ConceptualSpace",
+                  "WholeSpace", "OutputSpace"):
             try:
                 total += self.space(s, "nVectors")
             except KeyError:
@@ -1137,7 +1137,7 @@ class XMLConfig:
         Per spec O4 of the lift/lower/bivector design, the conceptual
         and symbolic layers share a default tetralemma policy unless a
         per-space override is enabled. ``space_name`` is the XML section
-        tag ("ConceptualSpace", "SymbolicSpace", ...).
+        tag ("ConceptualSpace", "WholeSpace", ...).
 
         Returns a 3-tuple. Defaults: permit NEITHER, forbid BOTH
         (Kleene). The shared block lives under ``<architecture>``;

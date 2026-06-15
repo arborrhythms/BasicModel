@@ -23,7 +23,7 @@ Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
     half-sum in atanh / log-mult domain, exactly mirroring
     ``SigmaLayer.generate`` / ``PiLayer.generate``).
 
-  * The new bodies do not reach into ``PerceptualSpace.sigma`` or
+  * The new bodies do not reach into ``PartSpace.sigma`` or
     ``ConceptualSpace.pi`` from inside the layer -- the substrate
     folds are no longer borrowed by Lift / Lower.
 
@@ -270,7 +270,7 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
 
 class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
     """Stage 4 acceptance: LiftLayer / LowerLayer no longer reach into
-    Space-owned substrate folds (``PerceptualSpace.sigma`` /
+    Space-owned substrate folds (``PartSpace.sigma`` /
     ``ConceptualSpace.pi``).
 
     The layers become first-class GrammarLayer ops with their own
@@ -299,7 +299,7 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
         self.assertTrue(torch.isfinite(out).all())
 
     def test_lift_lower_classes_no_substrate_borrow_in_source(self):
-        """grep gate: ``PerceptualSpace.sigma`` / ``ConceptualSpace.pi``
+        """grep gate: ``PartSpace.sigma`` / ``ConceptualSpace.pi``
         do not appear in LiftLayer / LowerLayer source.
 
         (Stage 4 acceptance criterion in the master plan.)
@@ -316,8 +316,8 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
             # Space attributes. Stage 4 forbids these references
             # inside the layer class bodies.
             self.assertNotIn(
-                "PerceptualSpace.sigma", src,
-                f"{cls.__name__} must not borrow PerceptualSpace.sigma "
+                "PartSpace.sigma", src,
+                f"{cls.__name__} must not borrow PartSpace.sigma "
                 f"after Stage 4 (substrate retirement).")
             self.assertNotIn(
                 "ConceptualSpace.pi", src,

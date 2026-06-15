@@ -1,4 +1,4 @@
-"""Tests for SymbolicSpace.resolve() -- Task 2.1.
+"""Tests for WholeSpace.resolve() -- Task 2.1.
 
 resolve(subspace) sets subspace.activation to the scalar **balance of
 evidence** ``pos - neg`` per symbol, where ``subspace.what[..., 0]`` is
@@ -40,7 +40,7 @@ from test_basicmodel import _populate_test_config
 # ---------------------------------------------------------------------------
 
 def _make_symbolic_space(nSymbols=3, symbolDim=6, conceptDim=6):
-    """Construct a minimal SymbolicSpace via TheXMLConfig + direct constructor.
+    """Construct a minimal WholeSpace via TheXMLConfig + direct constructor.
 
     Uses the same _populate_test_config / TheXMLConfig approach used by the
     rest of basicmodel's unit tests.  No nWhere / nWhen so the muxed layout
@@ -73,17 +73,17 @@ def _make_symbolic_space(nSymbols=3, symbolDim=6, conceptDim=6):
     # obj = nWhere + nWhen = 0, so outputShape = [nSymbols, symbolDim].
     inputShape  = [nSymbols, conceptDim]   # ConceptualSpace output
     spaceShape  = [nSymbols, symbolDim]    # codebook internal shape
-    outputShape = [nSymbols, symbolDim]    # SymbolicSpace output
+    outputShape = [nSymbols, symbolDim]    # WholeSpace output
 
-    sym = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
+    sym = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     # Width contract under the uniform (2,2) band (2026-06): content nWhat ==
     # nDim minus the where/when band (the SS=(0,0) special case where
     # nWhat == nDim exactly was retired).
     from architecture import canonical_shape
-    _band = sum(canonical_shape("SymbolicSpace"))
+    _band = sum(canonical_shape("WholeSpace"))
     assert sym.subspace.nWhat == sym.nDim - _band, (
         f"Expected subspace.nWhat==sym.nDim-band ({sym.nDim - _band}) after "
-        f"SymbolicSpace init, got {sym.subspace.nWhat}"
+        f"WholeSpace init, got {sym.subspace.nWhat}"
     )
     return sym
 
@@ -100,11 +100,11 @@ def _make_symbolic_space(nSymbols=3, symbolDim=6, conceptDim=6):
 
 
 # ---------------------------------------------------------------------------
-# Task 2.3 — failing tests for SymbolicSpace.inside() / outside()
+# Task 2.3 — failing tests for WholeSpace.inside() / outside()
 # ---------------------------------------------------------------------------
 
 @pytest.mark.skip(
-    reason="Task 2.4 (SymbolicSpace.inside) not yet implemented — "
+    reason="Task 2.4 (WholeSpace.inside) not yet implemented — "
            "pre-existing failure documented in the test docstring.")
 def test_inside_of_parthood_matches_part_primitive():
     """inside(point, symbol_idx) delegates to Basis.part() on resolved activation.
@@ -124,7 +124,7 @@ def test_inside_of_parthood_matches_part_primitive():
     The exact comparison rule is left to Task 2.4; these values cleanly separate.
 
     This test FAILS until Task 2.4 implements inside():
-        AttributeError: 'SymbolicSpace' object has no attribute 'inside'
+        AttributeError: 'WholeSpace' object has no attribute 'inside'
     """
     sym = _make_symbolic_space(nSymbols=1)
 
@@ -143,7 +143,7 @@ def test_inside_of_parthood_matches_part_primitive():
 
 
 @pytest.mark.skip(
-    reason="Task 2.4 (SymbolicSpace.inside/outside) not yet implemented — "
+    reason="Task 2.4 (WholeSpace.inside/outside) not yet implemented — "
            "pre-existing failure documented in the test docstring.")
 def test_outside_is_negation_of_inside():
     """outside(point, symbol_idx) is the logical complement of inside(...).
@@ -152,7 +152,7 @@ def test_outside_is_negation_of_inside():
     We check the complement property for a single representative point.
 
     This test FAILS until Task 2.4 implements inside() / outside():
-        AttributeError: 'SymbolicSpace' object has no attribute 'inside'
+        AttributeError: 'WholeSpace' object has no attribute 'inside'
     """
     sym = _make_symbolic_space(nSymbols=1)
 
@@ -173,7 +173,7 @@ def test_outside_is_negation_of_inside():
 # ---------------------------------------------------------------------------
 
 def test_symbol_codebook_quantizes_activation_not_what():
-    """SymbolicSpace.forward() calls resolve() so output.activation is 1-D.
+    """WholeSpace.forward() calls resolve() so output.activation is 1-D.
 
     Two key assertions:
 

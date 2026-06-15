@@ -6,10 +6,10 @@ Exercises:
   - Grammar wiring: NOT (unary), conjunction / disjunction (binary)
     from GRAMMAR_LAYER_CLASSES are attached to the LanguageLayer at
     WordSpace construction time, with global rule_ids preserved.
-  - ChartCompose fires on the post-PerceptualSpace subspace (the
+  - ChartCompose fires on the post-PartSpace subspace (the
     "data is None" failure mode that hid the wiring failure earlier
     must stay fixed).
-  - SymbolicSpace's per-tier SyntacticLayer is a no-op on the signal
+  - WholeSpace's per-tier SyntacticLayer is a no-op on the signal
     path (would otherwise crash on truly-binary ConjunctionLayer /
     DisjunctionLayer that don't expose a unary forward).
 """
@@ -263,7 +263,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             "attached to some binary tier")
 
     def test_chart_compose_fires_on_forward_pass(self):
-        """Retired 2026-05-14: conceptualOrder=2 + useGrammar='all' shape contract no longer matches IR-only forward; chart-compose wiring covered by test/test_compose_chart.py."""
+        """Retired 2026-05-14: subsymbolicOrder=2 + useGrammar='all' shape contract no longer matches IR-only forward; chart-compose wiring covered by test/test_compose_chart.py."""
         return  # AR-specific behaviour; covered elsewhere or no longer applicable
 
 

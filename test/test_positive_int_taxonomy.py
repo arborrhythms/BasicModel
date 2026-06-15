@@ -4,7 +4,7 @@ End-to-end test for the new taxonomy keying introduced by
 [`doc/plans/2026-05-28-where-keyed-taxonomy.md`](../doc/plans/2026-05-28-where-keyed-taxonomy.md):
 
   * Every ``insert_*`` allocates a position via
-    :meth:`SymbolicSpace.allocate_position`. The return is the position
+    :meth:`WholeSpace.allocate_position`. The return is the position
     (a positive int), not a signed-int row reference.
   * ``meta_pair_to_idx[(ps_pos, ss_pos)] -> meta_pos`` keys positive
     ints to positive ints. Idempotent on the pair.

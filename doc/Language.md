@@ -11,11 +11,11 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 > [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
 >
 > - **PS/SS grammar sections.** A `.grammar` file may nest its
->   `<compose>`/`<generate>` under `<PerceptualSpace>` and
->   `<SymbolicSpace>`. `Grammar.configure` parses them into separate rule
+>   `<compose>`/`<generate>` under `<PartSpace>` and
+>   `<WholeSpace>`. `Grammar.configure` parses them into separate rule
 >   tables: `ps_rules` (tier `P`, read by the PS analyzer) and the
 >   canonical symbolic `rules` (`ss_rules`). A bare `<compose>`/`<generate>`
->   file loads as `<SymbolicSpace>` (backward-compat). The legacy `.cfg`
+>   file loads as `<WholeSpace>` (backward-compat). The legacy `.cfg`
 >   loader is gone.
 > - **Grammar rewrite.** `*_MARK` categories and the copy/swap MARKER
 >   helper rules are deleted; surface markers are learned and owned by the
@@ -28,8 +28,8 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   co-occurring marker to the operator (many-to-one); `emit` replays it
 >   from recorded route metadata, never the lossy `generate()`.
 > - **Operators in the SS codebook, not the STM idea space** (amends plan
->   decision #2). `SymbolicSpace.insert_operations(grammar)` registers each
->   operation in a dedicated operator codebook on SymbolicSpace
+>   decision #2). `WholeSpace.insert_operations(grammar)` registers each
+>   operation in a dedicated operator codebook on WholeSpace
 >   (`_operation_vectors` / `_operation_positions`), separate from the
 >   `subspace.what` symbol codebook so the symbol / idea / `.where` position
 >   namespace is untouched; it is wired into `WordSubSpace.__init__` so every
@@ -49,11 +49,11 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   the current lexer), writes durable spans to an `ObjectSubSpace`, exposes
 >   a fixed-capacity terminal-stream view, and reverse-synthesizes surface
 >   (`synthesize` exact replay; `synthesize_tree` from an operator-prefixed
->   tree with `emit`). `soft_operator_compose` + `SymbolicSpace
+>   tree with `emit`). `soft_operator_compose` + `WholeSpace
 >   .operator_superposition` apply a soft operator distribution over the SS
 >   operation codebook (one-hot $\to$ the typed grammar; spread $\to$ the
 >   superposition that discriminates `A AND B` from `A OR B`).
-> - **PS-to-SS binding.** `SymbolicSpace.resolve_ps_terminal(ps_id)` emits
+> - **PS-to-SS binding.** `WholeSpace.resolve_ps_terminal(ps_id)` emits
 >   `null_sem()` before a binding exists, counts exposures, and promotes a
 >   repeated terminal into a fresh SS row.
 
@@ -245,13 +245,13 @@ front: symbols that fill the same roles cluster into the same category.
 
 Starts are scoped per space (`_configure_starts`):
 
-- `PerceptualSpace.start` is the universal whole-input role `U` --- the
+- `PartSpace.start` is the universal whole-input role `U` --- the
   analyzer begins from the entire surface and decomposes it.
-- `SymbolicSpace.start` is the set of operator output roles
+- `WholeSpace.start` is the set of operator output roles
   (`isEqual_O1`, `isPart_O1`, `exist_O1`, ...) --- parsing begins from
   what an operator can *produce*.
 
-The **operator codebook** is a second codebook on `SymbolicSpace`,
+The **operator codebook** is a second codebook on `WholeSpace`,
 separate from the symbol codebook:
 
 - `_operation_vectors`: operator name $\to$ identity vector.
@@ -306,9 +306,100 @@ superposition, and participation clustering are live and tested. See the
 status blocks in
 [doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md](plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md).
 
+### Participation Categories as the Chooser's Syntactic-Category Context
+
+*(Design direction. The category SOURCE — operator codebook, soft
+superposition, participation clustering — is live and tested, and the
+**MetaSymbol** the category attaches to already exists in the live forward
+(below). Learning a category codebook over it from perception, and threading
+it into the placement chooser, is PLANNED. See status at the end.)*
+
+A word's grammatical **category is its frequency of participation across the
+operator roles** above (`<op>_I<n>` inputs / `<op>_O1` output), **learned from
+perception** (analysis of input), not from generation. No part-of-speech label
+is declared or needed: if *cat* fills `ADV`'s operand role and `LIFT`'s
+argument role with roughly equal frequency, *collapsing* that frequency profile
+is what makes it a **noun** — the model knows the category by its role
+distribution, never by a name. This is exactly what `participation.learned_collapse`
+formalizes (merge by participation similarity, keeping every rule
+distinguishable).
+
+This role-participation profile is the **primary determinant of syntax** — what
+a constituent *is* (its category) governs what it can combine with more than its
+surface content does. So it is precisely the context the placement chooser
+(`MLPTransformChooser`, the soft route's scorer — see
+[Soft-superposition route](#soft-superposition-route-the-learning-two-pass))
+needs when scoring "should this pair reduce, and with which operator?": the
+chooser must see the **category of the value already sitting in each slot**, not
+only the candidate operator's own output. The design realizes this as a small
+**Category codebook keyed by the MetaSymbol**, learned online by E/M from
+perception:
+
+- **The MetaSymbol unifies word and object (it already exists, live).** The
+  symbol table stores `symbol → code`; a **MetaSymbol** is the exception — one
+  symbol that holds *two* codes, the **word code and the object code**, a
+  deliberate equivalence class asserting *this word ≡ this object*. This is the
+  live **META node** in the WholeSpace taxonomy: `WholeSpace.insert_meta`
+  allocates one SS-codebook row tagged `"meta"` whose two taxonomy children are
+  the PS object position and the SS word position, minted during **perception**
+  by the autobind hook (`ConceptualSpace._maybe_autobind_meta` at the sentence
+  boundary). Because the category attaches to the MetaSymbol, the syntactic
+  signal learned from the *word's* role participation directly shapes the
+  *object's* category, and vice versa.
+- **A small Category codebook, not a per-word count table.** Each MetaSymbol
+  already carries a learned ND vector (its `subspace.what` row, EMA-updated on
+  revisit); that vector VQ-assigns to the nearest of `K ≈ n_roles (~30)`
+  **category centroids**, and each centroid carries the uncollapsed `~30`-D role
+  vector (`<op>_I<n>` inputs + `<op>_O1` output). Reuses the live
+  `VectorQuantize` machinery; the role vector is a sidecar mirroring the
+  `category_logits` EMA lifecycle.
+- **E/M learned from perception, with emergent collapse.** *E-step*: assign each
+  MetaSymbol's vector to its nearest centroid. *M-step*: EMA the centroid's role
+  vector toward the roles the object filled **during analysis** (read off the
+  parse route — `op_I<n>` for the operands a reduction consumes, `op_O1` for its
+  result), and EMA-recentroid (the VQ's own update). Starting from `K ≈ 30` and
+  letting unused centroids decay, **effective K shrinks as words pull centroids
+  together** — the online realization of `participation.learned_collapse`, where
+  "noun" emerges without a label.
+- **Feeds the per-slot category to the chooser.** The chooser conditions each
+  slot on the **role vector of the centroid its object maps to** — gathered, at
+  the terminal layer, via `percept id → taxonomy parent (MetaSymbol) → centroid
+  → role vector` and concatenated into `feat` (`MLPTransformChooser`). The
+  default anchor-dot chooser ignores it, so the addition is opt-in and
+  basin-preserving.
+
+This splits into two phases: **(1)** learn the category codebook from perception
+in the autobind hook (no change to the layer forwards — reads the stashed
+analysis route); **(2)** thread the per-slot category through `compose` /
+`score_binary` / `score_unary` into the chooser `feat` (the larger change — the
+layer forwards carry only `[B,N,D]` today, with no per-slot symbol identity).
+
+**Status (Phase 1 IMPLEMENTED, gated dark by `<categoryCodebook>`; Phase 2
+PENDING).** Phase 1 is wired and byte-identical when off:
+`WholeSpace.enable_category_codebook` builds the VQ (`codebook_retire=False`)
++ a `_category_role[K, n_roles]` sidecar, enumerated from `compute_role_vocabulary`;
+it is requested at build and **lazily enabled on the first perception forward**
+(the grammar's role rules are not configured at build, so a build-time enable
+sees 0 roles). `LanguageLayer._collect_round0_role_obs` stashes the first binary
+tier's round-0 reduces (`op_I1`/`op_I2` per operand) on the SS, and the autobind
+hook (`_maybe_autobind_meta`) runs the E/M: assign each MetaSymbol to a centroid
+(`assign_category`, + the VQ's free recentroid) and EMA the centroid's role
+vector (`update_category_role`). The codebook mechanics (assign / role-EMA /
+gather / decay-collapse) are unit-tested; the off path is verified byte-identical
+(full suite green). NOT yet done: a live end-to-end E/M smoke (needs a small
+`role_collapsed.grammar` + tiny-dataset fixture — XOR has 0 operator roles,
+MentalModel needs the fineweb corpus), and **Phase 2** (thread the per-slot
+centroid role vector into `MLPTransformChooser.feat`; the layer forwards carry no
+per-slot symbol identity today). The current round-0/first-tier observation is
+parallel-mode-correct; serial (`symbolicOrder>=1`) attribution is approximate.
+The old `WordSpace.category_codebook` was retired 2026-05-20 and is gone; the
+dormant declared-POS tables (`category_embedding`, `category_logits`/
+`category_ids`, the order-taxonomy admissibility gate) are superseded and slated
+for follow-up retirement, not reuse.
+
 ## Shared Weighted-Deduction Framework
 
-PerceptualSpace analysis and SymbolicSpace parsing are two readings of
+PartSpace analysis and WholeSpace parsing are two readings of
 the *same* item graph under semiring-weighted dynamic programming
 (weighted deduction). The graph is scored once; the semiring chosen
 selects the quantity:
@@ -325,13 +416,62 @@ Both spaces share the same direction-agnostic primitives in
 - `binary_tiling_soft_dp` --- sum-product marginals
   (`reduce_marginal_op`, `logZ`).
 
-The SymbolicSpace reducer (`BinaryStructuredReductionLayer`) scores
-copy / reduce items over rule columns; the PerceptualSpace analyzer
+The WholeSpace reducer (`BinaryStructuredReductionLayer`) scores
+copy / reduce items over rule columns; the PartSpace analyzer
 (`MeronymicRouter`, `bin/perceptual_analyzer.py`) scores merge evidence
 over perceptual atoms. Because the soft marginals are retained even when
 the Viterbi route hardens to one rule, two tied reduce rules both keep
 positive mass and both receive gradient --- the property pinned by
 `test/test_signal_router_layer.py::test_layer_keeps_soft_superposition_over_reduce_rules`.
+
+### Soft-superposition route (the `<learning>` two-pass)
+
+The straight-through forward above is the **default** (and the byte-identical
+basin when `<architecture><learning>` is off): the forward value commits to
+the Viterbi route while the soft marginals carry the gradient. Under the
+two-pass `<learning>` mode the structured layers instead run a **pure
+sum-product superposition at a temperature**, and the chooser sits in the
+gradient path *directly* --- no argmax, no `.detach()`, no straight-through.
+
+A single scalar `superposition_temperature` $t \in [0, 1]$ drives it
+(`BinaryStructuredReductionLayer` / `UnaryStructuredLayer`):
+
+- the route scores are scaled by `superposition_scale(t)` $= 1 - t$ before
+  the soft DP / softmax, so $t = 0$ is the chooser's own (sharp) softmax and
+  $t = 1$ collapses the scores to uniform (flat, maximally exploratory);
+- the forward value **is** `binary_tiling_soft_dp`'s temperature-scaled
+  marginals (binary) or the temperature-scaled action softmax (unary). The
+  op blend is the pure `op_soft` posterior, not the hardened one-hot.
+
+`binary_tiling_viterbi` is still computed, but only to read off the routing
+masks for the tree (below) --- that read-off is outside the gradient path in
+both modes. When `superposition_temperature` is unset (`None`) every branch
+falls back to the legacy straight-through, object-for-object, so the
+default basin is unchanged.
+
+**Two passes as two trials.** With `<learning>` on, `runEpoch` runs each
+sentence through `runBatch` *twice*, as two independent forward/loss/backward
+trials (no `loss_A + loss_B`, no shared graph):
+
+1. **pass A** at $t = 0$ (sharp / deterministic) --- recorded into the
+   batch error like any ordinary step;
+2. **pass B** at $t =$ `<exploreTemperature>` (default `0.5`, flatter) ---
+   an exploration trial whose value is trimmed from the per-batch error and
+   does **not** increment the batch count.
+
+Pass B is temperature sampling, not a separate objective: a flatter route
+lets the chooser escape a local commitment that pass A's sharp argmax would
+otherwise lock in, and because the chooser is differentiable in both passes
+the exploration gradient updates the same anchors. `BasicModel`
+`_set_superposition_temperature(t)` walks the router's `_unary_layers` /
+`_binary_layers` (and the STM reducer) to stamp $t$; `runBatch` sets it
+before the forward and resets to `None` in a `finally`.
+
+**Reading a tree.** A hard derivation is always recoverable on demand: pin
+$t = 0$, run a temp-0 analysis, and read the argmax routing trace
+(`action_kind` / `action_op` / the copy / reduce masks) that
+`BasicModel.write_syntax_tree()` already walks. Running several sentences
+through a temp-0 pass yields one tree each.
 
 This is the standard semiring-parsing pattern (Goodman 1999, *Semiring
 Parsing*; the SCFG inside-outside line of Lari and Young 1990; weighted

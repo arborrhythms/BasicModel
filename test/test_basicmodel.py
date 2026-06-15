@@ -62,33 +62,33 @@ def _obj_size(section):
 
 
 def _build_text_pair(nInput):
-    """Build an (InputSpace, PerceptualSpace) pair for text-mode tests.
+    """Build an (InputSpace, PartSpace) pair for text-mode tests.
 
-    The lexicon now lives on PerceptualSpace; tests that want a post-embed
-    tensor from raw text must drive both spaces. PerceptualSpace's output
+    The lexicon now lives on PartSpace; tests that want a post-embed
+    tensor from raw text must drive both spaces. PartSpace's output
     count matches InputSpace's output count so the embedded tensor has
     shape [batch, nInput, embSize].
     """
     _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
     _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
     _iobj = _obj_size("InputSpace")
-    _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
-    _pobj = _obj_size("PerceptualSpace")
+    _pdim = Models.TheXMLConfig.space("PartSpace", "nDim")
+    _pobj = _obj_size("PartSpace")
     inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                             [nInput, _idim + _iobj], model_type="embedding")
-    psp = Models.PerceptualSpace([nInput, _idim + _iobj],
+    psp = Models.PartSpace([nInput, _idim + _iobj],
                                  [nInput, _pdim],
                                  [nInput, _pdim + _pobj],
                                  model_type="embedding")
     # Wire the peer reference BasicModel.create_from_config normally installs.
-    # InputSpace._lex_batch requires the PerceptualSpace back-pointer so it
+    # InputSpace._lex_batch requires the PartSpace back-pointer so it
     # can delegate tokenization to the owning lexicon.
     object.__setattr__(inp, '_peer_perceptual', psp)
     return inp, psp
 
 
 def _text_embed(inp, psp, raw_input):
-    """Run raw text input through InputSpace then PerceptualSpace's lex+embed.
+    """Run raw text input through InputSpace then PartSpace's lex+embed.
     Returns the post-embedding tensor [batch, nVectors, embSize]."""
     inp_sub, _ = inp.forward(raw_input)
     psp_sub = psp._embed(inp_sub)
@@ -170,9 +170,9 @@ def _populate_test_config(*,
     Models.TheData.test_output = []
     _pq = perceptCodebook if perceptCodebook is not None else codebook
     _cq = conceptCodebook if conceptCodebook is not None else codebook
-    # PerceptualSpace codebook is mandatory in the converged modality
+    # PartSpace codebook is mandatory in the converged modality
     # architecture; force quantize when the test would otherwise leave it
-    # none/false (PerceptualSpace + its ModalSpace branches both read _pq).
+    # none/false (PartSpace + its ModalSpace branches both read _pq).
     if Models.Space.normalize_codebook_mode(_pq) == "none":
         _pq = "quantize"
     # The *Dim args express CONTENT (.what) width. Under "6+2+2" the config
@@ -188,7 +188,7 @@ def _populate_test_config(*,
     # need a positive SS content must pass ``symbolDim >= band`` themselves.
     from architecture import canonical_shape as _cshape
     inputDim = inputDim + sum(_cshape("InputSpace"))
-    perceptDim = perceptDim + sum(_cshape("PerceptualSpace"))
+    perceptDim = perceptDim + sum(_cshape("PartSpace"))
     conceptDim = conceptDim + sum(_cshape("ConceptualSpace"))
     _objectSize = nWhere + nWhen
     _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
@@ -225,7 +225,7 @@ def _populate_test_config(*,
             "codebook": codebook,
             "demuxed": demuxed,
         },
-        "PerceptualSpace": {
+        "PartSpace": {
             "nActive": nPercepts,
             "nDim": perceptDim,
             "nVectors": nPercepts,
@@ -243,13 +243,13 @@ def _populate_test_config(*,
             "hasAttention": conceptHasAttention,
             "invertible": invertible,
         },
-        "SymbolicSpace": {
+        "WholeSpace": {
             "nActive": nSymbols,
             "nDim": _symbol_dim,
             "nVectors": nSymbols,
             "nInputDim": _nInputDim,
             "codebook": True,
-            # Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting).
+            # Phase 4b: <lexer> lives on WholeSpace (analytic cutting).
             "lexer": lexer,
         },
         "OutputSpace": {
@@ -439,7 +439,7 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Simple path: BasicModel with conceptualOrder=1
+# Simple path: BasicModel with subsymbolicOrder=1
 # ---------------------------------------------------------------------------
 def _make_simple_model(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nWords=16, nOutput=4):
     """Helper to create a BasicModel with config set up for simple path."""
@@ -1231,23 +1231,23 @@ class TestBaseModelFactory(unittest.TestCase):
         try:
             model, cfg = Models.BaseModel.from_config(path)
             self.assertIsInstance(model, Models.BasicModel)
-            self.assertEqual(model.conceptualOrder, 1)
+            self.assertEqual(model.subsymbolicOrder, 1)
         finally:
             os.unlink(path)
 
     def test_factory_creates_basic_model(self):
-        # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
+        # nSymbols must equal nConcepts (WholeSpace 1:1 mapping constraint),
         # and nPercepts must be 2*nConcepts (PiLayer invertibility).
-        # symbol_dim must equal concept_dim (SymbolicSpace owns no
+        # symbol_dim must equal concept_dim (WholeSpace owns no
         # SigmaLayer/PiLayer post 2026-05 ownership rule).
         xml = """<model>
   <architecture>
-    <conceptualOrder>2</conceptualOrder>    <training><autoload>false</autoload></training>
+    <subsymbolicOrder>2</subsymbolicOrder>    <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>32</nOutput><nDim>8</nDim></InputSpace>
-  <PerceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors></PerceptualSpace>
+  <PartSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors></PartSpace>
   <ConceptualSpace><nOutput>2</nOutput><nDim>8</nDim><nVectors>2</nVectors></ConceptualSpace>
-  <SymbolicSpace><nOutput>2</nOutput></SymbolicSpace>
+  <WholeSpace><nOutput>2</nOutput></WholeSpace>
   <OutputSpace><nOutput>2</nOutput><nDim>4</nDim></OutputSpace>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
@@ -1317,11 +1317,11 @@ class TestSymbolDimZero(unittest.TestCase):
         from architecture import canonical_shape
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
                               outputDim=1)
-        self.assertEqual(Models.TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
-        # Uniform (2,2) convention (2026-06): SymbolicSpace carries the same
+        self.assertEqual(Models.TheXMLConfig.space("WholeSpace", "nDim"), 0)
+        # Uniform (2,2) convention (2026-06): WholeSpace carries the same
         # (nWhere=2, nWhen=2) band as every interior tier -- the retired
         # SS=(0,0) special case is gone.
-        self.assertEqual(canonical_shape("SymbolicSpace"), (2, 2))
+        self.assertEqual(canonical_shape("WholeSpace"), (2, 2))
 
     def test_objectencoding_adds_canonical_overhead(self):
         """ObjectEncoding adds the canonical .where/.when overhead (objectSize)
@@ -1343,7 +1343,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         return Models.TheData
 
     def _make_input_space(self, lexer="word"):
-        """Create an (InputSpace, PerceptualSpace) pair from XOR text data."""
+        """Create an (InputSpace, PartSpace) pair from XOR text data."""
         nInput = 8
         _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
@@ -1353,7 +1353,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         return inp, psp, Models.TheData
 
     def test_token_stream_available(self):
-        """PerceptualSpace with model_type='embedding' can tokenize via _token_stream."""
+        """PartSpace with model_type='embedding' can tokenize via _token_stream."""
         _, psp, _ = self._make_input_space()
         emb = psp.vocabulary
         tokens = emb._token_stream("hello world")
@@ -1361,7 +1361,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         self.assertEqual(tokens[0][0], "hello")
 
     def test_per_doc_spans_created(self):
-        """PerceptualSpace stores per-document `(text, start)` token streams."""
+        """PartSpace stores per-document `(text, start)` token streams."""
         _, psp, _ = self._make_input_space()
         self.assertTrue(hasattr(psp, 'doc_spans'))
         self.assertIsInstance(psp.doc_spans, list)
@@ -1419,7 +1419,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         # With nWhere > 0, the reserved encoding dims should be non-zero
         # (ObjectEncoding.forward stamps sin/cos into the last objectSize dims)
         embSize = output.shape[-1]
-        objSize = _obj_size("PerceptualSpace")
+        objSize = _obj_size("PartSpace")
         if objSize > 0:
             encoding_dims = output[0, 0, -objSize:]
             self.assertFalse(torch.all(encoding_dims == 0).item(),
@@ -1458,9 +1458,9 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         inp, psp = _build_text_pair(nInput)
         nOut = 8
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
         self.assertTrue(os_.text_mode)
 
@@ -1474,16 +1474,16 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         inp, psp = _build_text_pair(nInput)
         nOut = 4
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build synthetic vectors from known codebook entries with known nWhere
         codebook = psp.vocabulary.getW().detach()
         words_list = psp.vocabulary.wv.index_to_key
         embSize = psp.muxedSize
-        nWhat = embSize - _obj_size("PerceptualSpace")
+        nWhat = embSize - _obj_size("PartSpace")
         where = psp.subspace.whereEncoding
 
         # Pick first two non-[MASK] words from the codebook
@@ -1510,9 +1510,9 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         inp, psp = _build_text_pair(nInput)
         nOut = 4
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build vectors with nWhere = 0 (all zeros)
@@ -1527,8 +1527,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Skip [MASK] (zero vector) -- cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
-            vectors[0, slot, :embSize - _obj_size("PerceptualSpace")] = \
-                codebook[j, :embSize - _obj_size("PerceptualSpace")]
+            vectors[0, slot, :embSize - _obj_size("PartSpace")] = \
+                codebook[j, :embSize - _obj_size("PartSpace")]
             expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
@@ -1545,9 +1545,9 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         inp, psp = _build_text_pair(nInput)
         nOut = 4
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build synthetic vectors with nWhere at known positions
@@ -1588,12 +1588,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
-        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("WholeSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
-        _obj_sym = _obj_size("SymbolicSpace")
+        _obj_sym = _obj_size("WholeSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
         # SS -> OS handoff is content-width in the converged architecture
-        # (SymbolicSpace and OutputSpace are both (nWhere,nWhen)=(0,0)), so the
+        # (WholeSpace and OutputSpace are both (nWhere,nWhen)=(0,0)), so the
         # input event matches os_.inputShape[1] (_sdim + _obj_sym). The old
         # tier-agnostic encodingSize() added a now-absent where/when band.
         inEmb = _sdim + _obj_sym
@@ -1606,10 +1606,10 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
 
 class TestInputSpaceTextRoundTrip(unittest.TestCase):
-    """PerceptualSpace.reverse() must reconstruct text from latent state."""
+    """PartSpace.reverse() must reconstruct text from latent state."""
 
     def _make_text_input_space(self):
-        """Create an (InputSpace, PerceptualSpace) pair from XOR text data."""
+        """Create an (InputSpace, PartSpace) pair from XOR text data."""
         nInput = 8
         _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
@@ -1637,7 +1637,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         expected_tokens = psp.vocabulary.tokenize(inputTensor)
         # Forward pass through input->perceptual
         latent = psp._embed(inp.forward(inputTensor)[0])
-        # Reverse pass via PerceptualSpace
+        # Reverse pass via PartSpace
         psp.reverse(latent)
         recovered = psp.reconstruct_data()
         for b in range(batch_size):
@@ -1960,7 +1960,7 @@ class TestXorForwardPass(unittest.TestCase):
     """Embedding-backed text path handles xor.xml forward pass without assertion error."""
 
     def test_xor_forward_produces_output(self):
-        """InputSpace + PerceptualSpace can forward xor data through Embedding."""
+        """InputSpace + PartSpace can forward xor data through Embedding."""
         nInput = 8
         _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput)
         Models.TheData.load("xor")
@@ -1995,11 +1995,11 @@ class TestModelTypeVariants(unittest.TestCase):
     # test_invertible retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
     def test_conceptual_order_1(self):
-        """conceptualOrder=1 with non-passthrough symbolic -- forward only.
+        """subsymbolicOrder=1 with non-passthrough symbolic -- forward only.
 
         After the 2026-05-05 BasicModel/BasicModel merger, the
         per-stage path is the only construction path and
-        ``conceptualOrder`` literally drives the per-stage iteration.
+        ``subsymbolicOrder`` literally drives the per-stage iteration.
         """
         # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
         # under the uniform (2,2) band SS content = symbolDim - 4, which must
@@ -2013,7 +2013,7 @@ class TestModelTypeVariants(unittest.TestCase):
                               flatten=True)
         model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-                     conceptualOrder=1)
+                     subsymbolicOrder=1)
         x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -2060,7 +2060,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         """Helper: create XOR model from XOR_exact.xml with given symbol/output counts.
 
         Also patches ConceptualSpace/nVectors to match nSymbols, because
-        SymbolicSpace requires inputShape[0] == nVectors (1:1 concept->symbol mapping).
+        WholeSpace requires inputShape[0] == nVectors (1:1 concept->symbol mapping).
         """
         import tempfile
         import xml.etree.ElementTree as ET
@@ -2082,10 +2082,10 @@ class TestReconstructionSymbols(unittest.TestCase):
         # <codebook> element was retired (#13 / asymmetric-vq), so DROP any PS
         # codebook and do not emit one. XOR_exact ships SS as none, so force
         # quantize for the fixture build.
-        _ps_cb = root.find("PerceptualSpace/codebook")
+        _ps_cb = root.find("PartSpace/codebook")
         if _ps_cb is not None:
-            root.find("PerceptualSpace").remove(_ps_cb)
-        for _sect in ("SymbolicSpace",):
+            root.find("PartSpace").remove(_ps_cb)
+        for _sect in ("WholeSpace",):
             _cb = root.find(f"{_sect}/codebook")
             if _cb is None:
                 _cb = ET.SubElement(root.find(_sect), "codebook")
@@ -2093,8 +2093,8 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         # Drop old-width nInputDim/nOutputDim overrides so the +4 muxed width
         # (architectural where/when) divides the IS->PS handoff cleanly.
-        for _sp in ("InputSpace", "PerceptualSpace", "ConceptualSpace",
-                    "SymbolicSpace", "OutputSpace"):
+        for _sp in ("InputSpace", "PartSpace", "ConceptualSpace",
+                    "WholeSpace", "OutputSpace"):
             _node = root.find(_sp)
             if _node is None:
                 continue
@@ -2103,11 +2103,11 @@ class TestReconstructionSymbols(unittest.TestCase):
                 if _e is not None:
                     _node.remove(_e)
 
-        # Patch symbol count (and concepts to match -- SymbolicSpace requires nConcepts == nSymbols)
-        sym_active = root.find("SymbolicSpace/nOutput")
+        # Patch symbol count (and concepts to match -- WholeSpace requires nConcepts == nSymbols)
+        sym_active = root.find("WholeSpace/nOutput")
         if sym_active is not None:
             sym_active.text = str(nSymbols)
-        sym_nvec = root.find("SymbolicSpace/nVectors")
+        sym_nvec = root.find("WholeSpace/nVectors")
         if sym_nvec is not None:
             sym_nvec.text = str(nSymbols)
         con_active = root.find("ConceptualSpace/nOutput")
@@ -2161,7 +2161,7 @@ class TestReconstructionSymbols(unittest.TestCase):
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 
-        Uses XOR_exact.xml which configures PerceptualSpace with invertible=True
+        Uses XOR_exact.xml which configures PartSpace with invertible=True
         and nActive=8 so that the non-naive PiLayer(invertible=True) path is
         exercised. The non-naive path uses the LDU/triangular-solve inverse.
         """
@@ -2681,7 +2681,7 @@ class TestSubspaceActivation(unittest.TestCase):
         result = ss.materialize(mode="activation")
         # Bivector retired: the event-derived activation is the signed
         # scalar aP - aN; effective_activation() returns presence =
-        # |DoT| * modal_gate (no _active set, so gate = 1).
+        # |DoT| * modal_gate (no _index set, so gate = 1).
         what_slice = x[:, :, :ss.nWhat]
         d = max(ss.nWhat, 1)
         pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
@@ -3155,13 +3155,13 @@ class TestSubspaceNormalize(unittest.TestCase):
 
 
 class TestSymbolObjective(unittest.TestCase):
-    """SymbolicSpace uses residual-first objective terms."""
+    """WholeSpace uses residual-first objective terms."""
 
     def test_symbol_objective_residual_primary_l1_secondary(self):
         _populate_test_config(conceptDim=3, symbolDim=3,
                               nConcepts=2, nSymbols=2,
                               perceptHasAttention=False)
-        sym = Models.SymbolicSpace(
+        sym = Models.WholeSpace(
             inputShape=[2, 3],
             spaceShape=[2, 3],
             outputShape=[2, 3],
@@ -3198,7 +3198,7 @@ class TestSymbolObjective(unittest.TestCase):
         _populate_test_config(conceptDim=3, symbolDim=3,
                               nConcepts=2, nSymbols=2,
                               perceptHasAttention=False)
-        sym = Models.SymbolicSpace(
+        sym = Models.WholeSpace(
             inputShape=[2, 3],
             spaceShape=[2, 3],
             outputShape=[2, 3],
@@ -3469,7 +3469,7 @@ class TestInputSpaceDemuxed(unittest.TestCase):
     "where/when (2/2) changed its branch muxing. Demuxed ModalSpace is out of "
     "scope for the modality re-architecture substrate flip."))
 class TestModalSpace(unittest.TestCase):
-    """ModalSpace routes what/where/when through independent PerceptualSpaces."""
+    """ModalSpace routes what/where/when through independent PartSpaces."""
 
     def test_forward_shape(self):
         """ModalSpace.forward() produces correct muxed output shape."""
@@ -3494,7 +3494,7 @@ class TestModalSpace(unittest.TestCase):
         self.assertEqual(list(materialized.shape), [2, nInput, muxed_w])
 
     def test_degenerate_no_position(self):
-        """With nWhere=nWhen=0, ModalSpace degenerates to a single PerceptualSpace."""
+        """With nWhere=nWhen=0, ModalSpace degenerates to a single PartSpace."""
         nInput = 4
         nDim = 8
         _populate_test_config(inputDim=nDim, perceptDim=nDim,

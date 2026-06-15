@@ -184,13 +184,13 @@ class TestChunkLayerBPE(unittest.TestCase):
             defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
         )
         cfg = Spaces.TheXMLConfig
-        self.assertEqual(cfg.space("PerceptualSpace", "synthesis"), "bpe",
+        self.assertEqual(cfg.space("PartSpace", "synthesis"), "bpe",
                          "MM_bpe.xml must set chunking=bpe")
-        n_vec = int(cfg.space("PerceptualSpace", "nVectors"))
-        freq = int(cfg.space("PerceptualSpace", "wordLearning"))
+        n_vec = int(cfg.space("PartSpace", "nVectors"))
+        freq = int(cfg.space("PartSpace", "wordLearning"))
         layer = ChunkLayer(
             nDim=8,
-            bpe=(cfg.space("PerceptualSpace", "synthesis") == "bpe"),
+            bpe=(cfg.space("PartSpace", "synthesis") == "bpe"),
             n_vectors=n_vec,
             word_learning=freq,
         )

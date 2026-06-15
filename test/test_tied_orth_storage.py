@@ -12,7 +12,7 @@ PS-LOCAL storage permanently. The same file now pins the inverse:
     Parameter (registered on the WordVectors module).
   * PS lexicon storage and the SS codebook prototype are SEPARATE
     memory; in-place SS writes do not leak into PS rows.
-  * ``SymbolicSpace.insert_paired_word`` no longer exists.
+  * ``WholeSpace.insert_paired_word`` no longer exists.
 """
 
 import os
@@ -60,12 +60,12 @@ class TestPsLocalOrthStorage(unittest.TestCase):
         ss = model.symbolicSpace
         self.assertFalse(
             hasattr(ss, "insert_paired_word"),
-            "SymbolicSpace.insert_paired_word was retired (Step 3 of the "
+            "WholeSpace.insert_paired_word was retired (Step 3 of the "
             "2026-06-10 symbolic-iteration plan); the CS-leg symbol "
             "codebook replaces the PS->SS reach-across.")
         self.assertFalse(
             hasattr(ss, "mark_word_atom"),
-            "SymbolicSpace.mark_word_atom (the autobind fallback) was "
+            "WholeSpace.mark_word_atom (the autobind fallback) was "
             "retired with the paired-row machinery.")
 
     def test_local_parameter_is_registered(self):

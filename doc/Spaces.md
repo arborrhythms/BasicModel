@@ -1,10 +1,57 @@
 # Spaces
 
+> **2026-06-12 update (part/whole rename — the perceptual split).**
+> `PerceptualSpace` → **`PartSpace`** and `SymbolicSpace` →
+> **`WholeSpace`**; both now subclass a thin shared
+> `PerceptualSpace(Space)` base (no parameters, no submodules —
+> state-dict keys unchanged). Both views are *perceptual*: PartSpace
+> synthesizes bottom-up over atoms (Sigma), WholeSpace analyses
+> top-down over unity (Pi). XML config sections and grammar-file
+> scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
+> PS/SS shorthand in older notes reads part-side/whole-side. The name
+> `SymbolicSpace` is RESERVED for re-introduction with new semantics.
+>
+> **At the corpus callosum, objects are analysed and synthesized** —
+> by sending them back to PerceptualSpace: wholes get split and parts
+> get chunked. In symbolic "mode", the objects that get sent back are
+> *symbols*.
+>
+> **Terminology (semiotics).** There are **objects** and
+> **references**. A reference is either a **sign** or a **symbol**. A
+> *sign* is a quantized version of the referent (same space, snapped
+> to a codebook row). A *symbol* is an unrelated version of the
+> referent — an arbitrary code of much lower dimensionality (cf. the
+> zero-banded symbol codes below: wholes of symbols carry
+> `.where = .when = 0`).
+>
+> **`subspace.what`: atoms vs properties.** On `PartSpace` the `.what`
+> rows are **atoms** (letters and words — the existing lexicon / BPE /
+> MPHF front ends, gathered by `Codebook.lookup`). On `WholeSpace` the
+> `.what` rows are **properties** — things that range over the whole
+> input rather than naming one character (a sinusoid value is the
+> worked example; "whitespace"/"words" are content-keyed properties).
+> `materialize` hands the per-position selection (`subspace._index`,
+> renamed from `_active` 2026-06-12) to the codebook so it produces the
+> materialized object: atoms via `lookup`, or a per-position **region
+> membership** via `Codebook.materialize_property` (`mode="property"`) —
+> the region that has the property (`> 0`) and the region that doesn't
+> (`<= 0`). The property path is additive and opt-in
+> (`Codebook.property_basis`); the continuous sinusoid backend is wired,
+> the content-keyed (whitespace/words) backend reuses the meronymic
+> analyzer's span segmentation and is a documented seam.
+> Properties are **low-frequency by construction**: there is too much
+> detail to learn a codebook over the whole input unless the atoms are
+> low-frequency, so the property basis frequency is tied to the input
+> length (the k-th harmonic completes only ~k/2 cycles over the whole
+> field, mirroring `EndpointSumWhere`'s sub-half-period `div_term`). The
+> learnable property row is the low-frequency atom; the basis enforces
+> the coarseness.
+
 > **2026-06-11 update (meronomy cutover — MeronomySpec/MeronomyPlan,
 > Stage 9).** With `<architecture><meronomy>on</meronomy>` (now the
 > `model.xml` default) the meronymic slots bind the membership
-> kernels: `PerceptualSpace.sigma` → `SigmaLayer2` and
-> `SymbolicSpace.pi` → `PiLayer2`, each through the K3-wire
+> kernels: `PartSpace.sigma` → `SigmaLayer2` and
+> `WholeSpace.pi` → `PiLayer2`, each through the K3-wire
 > `MeronymicFoldAdapter` (χ at the boundary; the wire keeps carrying
 > signed scalars; the fold computes on memberships, near-identity at
 > init). Additions this page should be read with:
@@ -22,7 +69,7 @@
 > * **Two codebooks, one table**: the towers ARE the PS/SS codebooks
 >   (extent/intent; shared with IS recognition — recognition is tower
 >   lookup), linked by the word-keyed binding table
->   (`References.ReferenceTable`) hosted on SymbolicSpace
+>   (`References.ReferenceTable`) hosted on WholeSpace
 >   (search-then-mint gate; `adopt_stage0_evidence` stays ground-half
 >   memory, not naming). Symbols are atomic, zero-banded codes —
 >   wholes of symbols carry `.where = .when = 0` (the Mind marker).
@@ -54,7 +101,7 @@
 > **2026-06-02 update (subsymbolic analyzer).** New `ObjectSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
 > `WordSubSpace` (spans, parent/child links, route ids, marker-route
-> replay fields). `SymbolicSpace` gains `insert_operations` (grammar
+> replay fields). `WholeSpace` gains `insert_operations` (grammar
 > operations in a dedicated operator codebook -- `_operation_vectors` /
 > `_operation_positions` -- separate from the symbol codebook so the
 > symbol/idea/`.where` namespace is untouched), `resolve_ps_terminal` /
@@ -81,19 +128,19 @@ transformation. Data flows forward from raw input to task output; the
 reverse pass reconstructs the original input from the symbolic
 representation. The legacy `SubsymbolicSpace` and `SyntacticSpace`
 classes have been retired — the subsymbolic role is filled by
-`PerceptualSpace` itself, and the grammar runs from
+`PartSpace` itself, and the grammar runs from
 `WordSubSpace.languageLayer` (the signal router; subsumed the retired
 `Chart`).
 
 ```
-Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
-Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+Forward:  InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace
+Reverse:  OutputSpace -> WholeSpace -> ConceptualSpace -> PartSpace -> InputSpace
 ```
 
 The pre-2026-05-27 "two feedback loops" (S → C per-stage, C → P
 cross-forward) are retired. The recurrent character lives in (a) STM
 accumulation across words in SERIAL / GRAMMATICAL mode, and (b) the T-pass
-PARALLEL refinement loop driven by `<conceptualOrder>` via
+PARALLEL refinement loop driven by `<subsymbolicOrder>` via
 `PS.forward(CS)` iterations.
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -145,21 +192,21 @@ History: the 2026-05-13 rebalance described "each space owns one
 operator"; the 2026-05-27 substrate refactor gave PS both folds; Stage 10
 made PS pi-only. The **corrected analysis/synthesis orientation
 (2026-06-09) swaps the folds to their proper sides**: Sigma (sum/union)
-is synthesis and belongs to the bottom-up PerceptualSpace; Pi
+is synthesis and belongs to the bottom-up PartSpace; Pi
 (product/intersection) is analysis and belongs to the top-down
-SymbolicSpace. CS remains an STM bookkeeper with **no atomic forward
+WholeSpace. CS remains an STM bookkeeper with **no atomic forward
 operator**; Lift / Lower stay **binary `GrammarLayer` subclasses** with
 internal Sigma / Pi (no substrate-borrowing).
 
 | Space | Owns | Forward signature |
 |---|---|---|
-| **PerceptualSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
+| **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
 | **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace, SS_subspace=None)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
-| **SymbolicSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
+| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
 
-- **SERIAL / GRAMMATICAL** (`<conceptualMode>serial</...>`): one
+- **SERIAL / GRAMMATICAL** (`<symbolicOrder>1</symbolicOrder>`): one
   iteration per word.
 
   ```
@@ -169,12 +216,12 @@ internal Sigma / Pi (no substrate-borrowing).
   router.dispatch_at_S(STM)           # codebook-write-required ops via SS
   ```
 
-- **PARALLEL** (`<conceptualMode>parallel</...>`): T iterations of PS over
+- **PARALLEL** (`<symbolicOrder>0</symbolicOrder>`): T iterations of PS over
   CS.
 
   ```
   PS_0 = PS.forward(IS); CS_0 = PS_0
-  for t in 1..T = <conceptualOrder>:
+  for t in 1..T = <subsymbolicOrder>:
       PS_t = PS.forward(CS_{t-1})    # refinement pass
       CS_t = CS.forward(PS_t)         # STM[t] = PS_t (parallel write; no shift)
   router.dispatch_at_C(STM)           # grammar ops after STM population
@@ -222,8 +269,8 @@ per-pair math:
 - `ConjunctionLayer` / `DisjunctionLayer`: hard-coded monotonic min / max.
 
 Parameter savings: `O(N · log N · D²)` cascade vs `O(N² · D²)` for a
-single big matrix. Wired into the space folds (`PerceptualSpace.sigma` /
-`SymbolicSpace.pi` post the Pi/Sigma swap) by the global `<sigmaPi>`
+single big matrix. Wired into the space folds (`PartSpace.sigma` /
+`WholeSpace.pi` post the Pi/Sigma swap) by the global `<sigmaPi>`
 mode (default butterfly). Closes the XOR convergence target
 (`test_mm_xor.py`).
 
@@ -234,14 +281,14 @@ mode (default butterfly). Closes the XOR convergence target
 | Space | Data Contract | Geometry |
 |-------|--------------|----------|
 | InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` |
-| PerceptualSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors. No negation operator | Signed hypercube `[-1,1]^d` |
+| PartSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors. No negation operator | Signed hypercube `[-1,1]^d` |
 | ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude (tanh-bounded). Event norm on `subspace.activation` | `[-1,1]` per element (tanh) |
-| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time | `[0,1]` presence |
+| WholeSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time | `[0,1]` presence |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
 `SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
 Grammar / chart machinery lives on `WordSpace` and is attached to
-`SymbolicSpace` (the canonical grammar host).
+`WholeSpace` (the canonical grammar host).
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
 `output_min`/`output_max` at load time. InputSpace uses `Data.normalize(x,
@@ -254,7 +301,7 @@ range `[-1, 1]`, the mapping is `symbol = (activation + 1) / 2`.
 
 **Demuxed mode.** When `InputSpace.demuxed=true`, what/where/when components
 are stored independently in the SubSpace rather than concatenated. ModalSpace
-routes each component through independent PerceptualSpaces; downstream spaces
+routes each component through independent PartSpaces; downstream spaces
 see an identical muxed tensor via `materialize()`.
 
 ---
@@ -265,8 +312,8 @@ see an identical muxed tensor via `materialize()`.
 
 | Space | Codebook geometry | Stored | Metric | Retrieval |
 |-------|------------------|--------|--------|-----------|
-| PerceptualSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| SymbolicSpace | $[-1, +1]^d$ hypercube | Symbol *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
+| PartSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
+| WholeSpace | $[-1, +1]^d$ hypercube | Symbol *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
 | ConceptualSpace | Unit L2-norm directions (named directions) | Concept *directions*; input magnitude in $[-1, +1]$ encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ |
 
 ### Euclidean (Perceptual / Symbolic)
@@ -326,6 +373,36 @@ unit-norm; rank by dot product".
 
 ---
 
+## Ramsification table (per-code fold record)
+
+The Pi / Sigma folds carry a reference onto sortable mereological space
+but do **not** preserve their own *ramsification* — the record of how the
+code was produced — so a folded code cannot, on its own, be reconstituted.
+`Codebook.ramsification` is the small adjacent table that fixes this: a
+`[V, max_order]` `uint8` sidecar, index-aligned with the codebook rows
+(both perceptual codebooks — `PartSpace.subspace.what` and
+`WholeSpace.subspace.what`), recording for each code which fold it was
+routed through at each subsymbolic pass — `FOLD_NEITHER` / `FOLD_SIGMA`
+/ `FOLD_PI`. `invert_ramsified(code, row, sigma, pi)` walks that sequence
+in reverse pass order, applying `sigma.reverse` / `pi.reverse` per
+recorded fold, landing back at the codebook row that produced the code.
+
+The table is an **opt-in additive sidecar** (`enable_ramsification`; a
+plain attr like `part_parents` / `category_ids`, not a Parameter or
+buffer) — it adds no state_dict keys and cannot move a pinned basin; it
+resizes with the codebook (`grow_to`). Live per-pass stamping in the
+subsymbolic pump loop is the deliberate cutover seam (call `record_fold`
+where `PartSpace.sigma` / `WholeSpace.pi` fire).
+
+**Word abstraction order.** A code's `abstraction_order` is its fold count
+(non-`NEITHER` passes), and words are subsymbolic at several abstraction
+levels: a **proper noun** (prototype / token) matches raw at **order 0**;
+a **regular noun** (type) at **order 1**; a **count noun** (concrete only
+under a determiner) at **order 2**; higher orders are more abstract. Words
+need not be nouns, but all benefit from an abstract / discontiguous
+spatial representation. This connects to the ramsified order hierarchy in
+`Language.Taxonomy` and the order-typed STM plan.
+
 ## Codebook Uniqueness Contract
 
 Every codebook entry must be **unique under both `WhereEncoding` and
@@ -345,10 +422,10 @@ Current enforcement:
 
 | Source | Mechanism | Status |
 |---|---|---|
-| SymbolicSpace codebook | `ImpenetrableLayer` overlap penalty + variance floor; five-relations classifier pushes pairs toward **disjoint** | Active by default |
+| WholeSpace codebook | `ImpenetrableLayer` overlap penalty + variance floor; five-relations classifier pushes pairs toward **disjoint** | Active by default |
 | ConceptualSpace codebook | `ImpenetrableLayer` available; not yet wired by default | Opt-in |
-| PerceptualSpace Lexicon | Cosine-margin pode/antipode SBOW training | Active for trained Lexicons |
-| InputSpace vocabulary | Shares PerceptualSpace's Lexicon | Inherited (text); manual (raw) |
+| PartSpace Lexicon | Cosine-margin pode/antipode SBOW training | Active for trained Lexicons |
+| InputSpace vocabulary | Shares PartSpace's Lexicon | Inherited (text); manual (raw) |
 
 `.where` uniqueness is **structural** (enforced at construction); `.what`
 uniqueness is **learned** (encouraged by `ImpenetrableLayer` + antipodal
@@ -358,8 +435,8 @@ quotient). Together they guarantee the parthood lattice is well-formed.
 
 ## Lexicon (Projective Unit Ball)
 
-The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) backs PerceptualSpace
-word embeddings and SymbolicSpace symbol prototypes. Each row is a vector
+The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) backs PartSpace
+word embeddings and WholeSpace symbol prototypes. Each row is a vector
 $w_i$ in the **projective unit ball** --- the closed ball $B^D = \{x : \|x\|_2
 \le 1\}$ with the **negation identification** $w \sim -w$ realizing real
 projective space $\mathbb{RP}^D$.
@@ -474,13 +551,13 @@ scaled to `[-1, 1]` via the global data min/max.
 |-----------|-------------|
 | `nActive` | Sequence length |
 | `nDim` | Output dim per vector |
-| `lexer` | (Moved to `<SymbolicSpace>`, Phase 4b — lexing is analytic cutting. InputSpace executes the intake; the knob lives SS-side.) |
+| `lexer` | (Moved to `<WholeSpace>`, Phase 4b — lexing is analytic cutting. InputSpace executes the intake; the knob lives SS-side.) |
 | `codebook` | Whether input values are discrete |
 | `demuxed` | Store what/where/when independently |
 
 > 2026-05-28: per-Space `<nWhere>` / `<nWhen>` XML knobs are retired.
 > `model.xml` carries the per-Space defaults (`<nWhere>2</nWhere>` on
-> InputSpace / PerceptualSpace / SymbolicSpace, `0` elsewhere). Per-file
+> InputSpace / PartSpace / WholeSpace, `0` elsewhere). Per-file
 > configs no longer declare them. See
 > [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
 
@@ -532,7 +609,7 @@ not next-token within a sentence.
 emits `[B, N, D]` (left-aligned, right-padded to N) and
 `_forward_per_stage` runs a single masked-LM pass:
 
-1. **Stem**: `InputSpace.forward` + `PerceptualSpace.forward` $\to$
+1. **Stem**: `InputSpace.forward` + `PartSpace.forward` $\to$
    `[B, N, D]`.
 2. **Mask**: `create_ir_mask` replaces a `mask_rate` fraction of WHAT
    positions with `NULL_PERCEPT`; pre-mask event stored on
@@ -561,7 +638,7 @@ for the ARMA(p, q) design.
 
 ---
 
-## PerceptualSpace
+## PartSpace
 
 **Role.** Single-arg input processor — the bottom-up SYNTHESIS branch
 (Pi/Sigma swap, rev. 2026-06-09). Applies `self.sigma` (the additive/
@@ -576,7 +653,7 @@ and the MPHF + index table for per-word surface → row lookup.
   a widening PS sizes the fold at `nOutputDim`, not the raw
   `nInputDim`). Inherits from `GrammarLayer`; accepts
   `butterfly=True, N=N` for cross-position cascade mode. (The PiLayer
-  PS used to own moved to SymbolicSpace — Pi is analysis.)
+  PS used to own moved to WholeSpace — Pi is analysis.)
 - `self.vocabulary`: the Lexicon (`Embedding`), keyed by MPHF over
   surface bytes. Per-word vectors are `nDim`-wide (CS-space-dim per the
   flat-slab invariant).
@@ -586,7 +663,7 @@ and the MPHF + index table for per-word surface → row lookup.
   routes through `RadixLayer` (radix trie + inverse table + learned
   codebook + byte fallback). `RadixLayer` is a first-class `Layer`
   subclass in `bin/Layers.py` (formerly the standalone
-  `PerceptStore`). `PerceptualSpace.reverse` invokes
+  `PerceptStore`). `PartSpace.reverse` invokes
   `RadixLayer.reverse` for the structural decode (chunk-id → bytes →
   slot). Promotion knobs default to `threshold=4, min_length=2`.
 
@@ -613,7 +690,7 @@ sigma(x) = tanh(W_sigma @ atanh(x) + b_sigma)   # additive/union, log-domain
 ```
 
 (The multiplicative pi math — `pi(x) = tanh(W_pi @ atanh-domain + b)`
-in the `(1+x)/(1-x)` log embedding — now lives on **SymbolicSpace** as
+in the `(1+x)/(1-x)` log embedding — now lives on **WholeSpace** as
 the analysis fold; see the orientation banner.)
 
 **Reverse.** `PS.reverse` applies `self.sigma.reverse` on the text path
@@ -622,7 +699,7 @@ through `object_basis.reverse` and (in radix mode) the
 `RadixLayer.reverse` chunk-id → bytes decode.
 
 **Butterfly mode (Stage 5):** when
-`<PerceptualSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`,
+`<PartSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`,
 `self.pi` is constructed with `butterfly=True, N=N`. Internal storage
 becomes a packed `nn.Parameter[n_levels, N//2, 2D, 2D]` cascade with
 bit-reversal permutations. Closes the XOR convergence target. Note:
@@ -703,14 +780,14 @@ space-wide output mode.
 The compiled per-batch forward (`BaseModel.enable_compiled_step`,
 `torch.compile(fullgraph=True)`) must carry **zero graph breaks**. The
 word auto-bind --- `ConceptualSpace._maybe_autobind_meta`, which grows the
-SymbolicSpace codebook and META taxonomy when a freshly-seen percept first
+WholeSpace codebook and META taxonomy when a freshly-seen percept first
 lands --- is irreducibly host-side: `.item()` loops, `if pid < 0` branches,
 Python dict/set taxonomy mutation, and (pre-allocation aside) codebook
 growth. Dynamo cannot trace any of those, so the auto-bind no longer runs
 on the `forward` path.
 
 Instead (2026-06-03 refactor) it is **deferred to the sentence/document
-boundary**. `PerceptualSpace._embed_radix` stashes the encountered percept
+boundary**. `PartSpace._embed_radix` stashes the encountered percept
 ids (`_forward_input['indices']`) and the pre-pi seed (`_embedded_input`)
 during the forward --- a side-effect dynamo simply replays. On the next
 hard `ConceptualSpace.Reset` (fired on `hard_eos`, between sentences),
@@ -757,7 +834,7 @@ API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
   (default cap = 8, so slots 0..6 take from 1..7 and the new idea lands in
   slot 7). Per-word cadence: one push per `PS.forward(IS_t)` call.
 - **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
-  simultaneously; no shift. T = `<conceptualOrder>`.
+  simultaneously; no shift. T = `<subsymbolicOrder>`.
 
 The signal router (`WordSubSpace.languageLayer`) consumes
 `stm.snapshot()` as its slab input for grammar op dispatch.
@@ -772,9 +849,9 @@ chain of end-states — is in the dedicated [STM.md](STM.md) chapter.
 ### Lift / Lower as binary GrammarLayer subclasses
 
 (Pre-2026-05-27, Lift / Lower were "substrate-borrowing" — they reached
-into `PerceptualSpace.sigma` and `ConceptualSpace.pi` for their math.
+into `PartSpace.sigma` and `ConceptualSpace.pi` for their math.
 That pattern is retired in Stage 4 of the substrate refactor.
-`PerceptualSpace.sigma` itself was subsequently retired in Stage 5 / 10
+`PartSpace.sigma` itself was subsequently retired in Stage 5 / 10
 of the two-loop pi-sigma plan; the sigma half migrated to
 `ConceptualSpace.sigma_in` per stage. The 2026-05-29 clean-stack STM
 experiment further bypasses `sigma_in` on the forward path — see
@@ -825,7 +902,7 @@ GrammarLayer specifics.
 
 ---
 
-## SymbolicSpace
+## WholeSpace
 
 **Role.** Owns the **unified word lexicon codebook** with paired
 (orthographic, semantic) rows. Hosts grammar ops that need codebook write
@@ -899,7 +976,7 @@ The terminal SS must be sized for paired-row capacity. See
 for the dispatch rationale.
 
 **Conceptual order.** `BasicModel` stores per-stage
-ConceptualSpace / SymbolicSpace instances for `conceptualOrder`. Symbol
+ConceptualSpace / WholeSpace instances for `subsymbolicOrder`. Symbol
 dimension is geometrically partitioned per order. See
 [Reasoning.md](Reasoning.md).
 
@@ -945,7 +1022,7 @@ and [Philosophy.md](Philosophy.md).
 
 The standalone `SyntacticSpace` class has been retired. Grammar /
 parser / derivation-tree machinery now lives on `WordSpace`, which
-attaches a `SyntacticLayer` to `SymbolicSpace` (the canonical grammar
+attaches a `SyntacticLayer` to `WholeSpace` (the canonical grammar
 host). The binary-derivation behavior previously documented here
 is preserved by `WordSpace.compose`; words are still
 concepts encoding grammatical rules, and the derivation is still

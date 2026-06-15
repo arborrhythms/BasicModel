@@ -6,11 +6,11 @@
        is implicit when <codebook>quantize</codebook> is set
        (the <useVQVAE> knob was retired 2026-05-29). -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -29,12 +29,12 @@
     <nOutput>8</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
@@ -43,12 +43,12 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

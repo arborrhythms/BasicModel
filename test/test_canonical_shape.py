@@ -17,10 +17,10 @@ def test_canonical_shape_table():
     # principled (0,0) exception is OutputSpace: the terminal answer has no
     # .where/.when to mux.
     assert canonical_shape("InputSpace")      == (2, 2)
-    assert canonical_shape("PerceptualSpace") == (2, 2)
+    assert canonical_shape("PartSpace") == (2, 2)
     assert canonical_shape("ModalSpace")      == (2, 2)
     assert canonical_shape("ConceptualSpace") == (2, 2)
-    assert canonical_shape("SymbolicSpace")   == (2, 2)
+    assert canonical_shape("WholeSpace")   == (2, 2)
     assert canonical_shape("OutputSpace")     == (0, 0)
     assert canonical_shape("WordSpace")       == (2, 2)
 
@@ -28,7 +28,7 @@ def test_canonical_shape_table():
 def test_mandatory_codebook_tiers():
     # 2026-06-04: the mandatory-codebook constraint was reverted. XOR_exact
     # (and other invertible-passthrough fixtures) need <codebook>none</codebook>
-    # on PerceptualSpace / SymbolicSpace -- a full-width invertible passthrough
+    # on PartSpace / WholeSpace -- a full-width invertible passthrough
     # with no VQ snap, so the forward<->reverse chain round-trips exactly and
     # the butterfly pi/sigma compute XOR with cross-slot reach. No tier is
     # mandatory now; a config opts into a codebook explicitly via

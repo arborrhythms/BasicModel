@@ -50,7 +50,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         self.assertTrue(Language.TheGrammar._configured)
         # Post 2026-05-08 SyntacticLayer rename: per-space dispatchers
         # live on the home spaces (C / S each own a SyntacticLayer).
-        # Bivector retirement (2026-05-20) made the PerceptualSpace-
+        # Bivector retirement (2026-05-20) made the PartSpace-
         # tier SyntacticLayer optional — not all configs wire a
         # ``P`` SyntacticLayer, so accept None there.
         for space in (model.conceptualSpace, model.symbolicSpace):

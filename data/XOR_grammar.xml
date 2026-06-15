@@ -15,7 +15,7 @@
        tier-scoped defaults; the rules in <compose> below add the
        3-rule Boolean grammar at the symbolic tier. -->
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <!-- conceptualWidth=uniform: every conceptual level keeps the
          same nVectors width (4+4+4 at order 2). Wide enough at each
          level to accommodate terminals and their negations
@@ -28,7 +28,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -63,12 +63,12 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>6</nOutput>
     <nDim>8</nDim>
     <nVectors>200</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
@@ -77,7 +77,7 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>6</nOutput>
     <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
@@ -85,7 +85,7 @@
     <nDim>8</nDim>
     <nVectors>6</nVectors>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

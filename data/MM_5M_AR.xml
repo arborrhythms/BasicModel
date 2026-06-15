@@ -6,12 +6,12 @@
        compared directly without confounding tokenization differences.
        Differs from MM_20M only on the input-side lexicon path. -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <weightsPath>MM_5M_AR.ckpt</weightsPath>
     <amp>bf16</amp>
 
@@ -46,13 +46,13 @@
     <nOutput>1024</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
     <nDim>12</nDim>
     <nOutput>1024</nOutput>
     <wordLearning>1</wordLearning>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: final level shape is 8x1024 (flat slab 8192).
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
@@ -63,7 +63,7 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nInput>1024</nInput>
     <nDim>1028</nDim>
     <nInputDim>1028</nInputDim>
@@ -71,7 +71,7 @@
     <nVectors>2000000</nVectors>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

@@ -63,7 +63,7 @@ class TestLexiconOwnership(unittest.TestCase):
         m = _build_text_model()
         ss = m.symbolicSpace
         self.assertFalse(hasattr(ss, 'insert_paired_word'),
-                         "SymbolicSpace.insert_paired_word must be "
+                         "WholeSpace.insert_paired_word must be "
                          "RETIRED (Step 3, symbolic-iteration plan).")
         self.assertFalse(hasattr(ss, 'mark_word_atom'),
                          "the mark_word_atom autobind fallback retires "
@@ -203,7 +203,7 @@ class TestLexiconOwnership(unittest.TestCase):
         on wrapped MSE, so a query at +0.95 finds a codebook entry at
         -0.90 (wrapped distance 0.15) over one at +0.20 (Euclidean
         0.75). Mirrors the lexicon test, but on a plain Codebook so the
-        torus path lifted into Basis is exercised for SymbolicSpace's
+        torus path lifted into Basis is exercised for WholeSpace's
         codebook geometry too."""
         from Spaces import Basis
         b = Basis()
@@ -280,7 +280,7 @@ class TestCheckpointBundle(unittest.TestCase):
                                            and "state_dict" in saved else saved
             # The embedding vectors are stored as ``wv._local_vectors`` when
             # WordVectors owns its own Parameter. In the converged modality
-            # architecture the SymbolicSpace codebook is mandatory and
+            # architecture the WholeSpace codebook is mandatory and
             # WordVectors ties to it (single trainable storage), so the local
             # Parameter is dropped and the vectors live in the SS codebook's
             # ``W`` -- which the state_dict still carries (under the codebook's
@@ -392,12 +392,12 @@ def test_inputspace_forward_does_not_stash_raw_input():
 
 
 def test_perceptualspace_embed_reads_subspace_not_raw():
-    """After lex move: PerceptualSpace._embed decodes the upstream
+    """After lex move: PartSpace._embed decodes the upstream
     byte buffer (subspace.what.W), not _raw_input. Tokenization no longer
     hides inside vocab.forward(raw_input, return_meta=True)."""
     from bin import Spaces
     import inspect
-    src = inspect.getsource(Spaces.PerceptualSpace._embed)
+    src = inspect.getsource(Spaces.PartSpace._embed)
     assert '_raw_input' not in src, \
         "_embed should read upstream subspace.what.W, not _raw_input"
     assert 'vocab.forward' not in src, \
@@ -409,9 +409,9 @@ def test_perceptualspace_lex_and_embed_renamed_to_embed():
     """After Task 4: the old _lex_and_embed name is gone -- the method is
     codebook-only now (it doesn't lex) so it's just _embed."""
     from bin import Spaces
-    assert not hasattr(Spaces.PerceptualSpace, '_lex_and_embed'), \
+    assert not hasattr(Spaces.PartSpace, '_lex_and_embed'), \
         "_lex_and_embed was renamed to _embed; delete the old reference"
-    assert hasattr(Spaces.PerceptualSpace, '_embed'), \
+    assert hasattr(Spaces.PartSpace, '_embed'), \
         "_embed must exist after Task 4 rename"
 
 

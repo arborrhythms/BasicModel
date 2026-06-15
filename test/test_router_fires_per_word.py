@@ -65,22 +65,22 @@ _GRAMMAR_CONFIG = os.path.join(_DATA_DIR, "MM_xor_loopback.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _write_config_with_overrides(base_config_path, conceptual_mode="serial",
+def _write_config_with_overrides(base_config_path, symbolic_order=1,
                                  router_wire_serial=None):
-    """Materialize a temp XML overlaying ``<conceptualMode>`` and
+    """Materialize a temp XML overlaying ``<symbolicOrder>`` and
     (optionally) ``<routerWireSerial>`` inside ``<architecture>``.
 
     ``BasicModel.from_config`` re-reads ``TheXMLConfig`` from disk, so the
     knobs must be written to a file (an in-memory ``set()`` is clobbered).
-    Mirrors ``test_two_mode_dispatch._write_config_with_mode_override``.
+    Mirrors ``test_two_mode_dispatch._write_config_with_order_override``.
     """
     with open(base_config_path, "r") as f:
         text = f.read()
     text = re.sub(
-        r"\s*<conceptualMode>[^<]*</conceptualMode>\s*\n", "\n", text)
+        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n", "\n", text)
     text = re.sub(
         r"\s*<routerWireSerial>[^<]*</routerWireSerial>\s*\n", "\n", text)
-    inject = f"<conceptualMode>{conceptual_mode}</conceptualMode>"
+    inject = f"<symbolicOrder>{symbolic_order}</symbolicOrder>"
     if router_wire_serial is not None:
         inject += (
             f"\n    <routerWireSerial>{router_wire_serial}</routerWireSerial>")
@@ -106,7 +106,7 @@ def _make_serial_model(router_wire_serial=None):
     ``<routerWireSerial>``."""
     init_device("cpu")
     cfg = _write_config_with_overrides(
-        _GRAMMAR_CONFIG, conceptual_mode="serial",
+        _GRAMMAR_CONFIG, symbolic_order=1,
         router_wire_serial=router_wire_serial)
     try:
         init_config(path=cfg, defaults_path=_DEFAULTS)

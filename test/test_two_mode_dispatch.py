@@ -1,26 +1,26 @@
-"""Stage 1.E substrate refactor: explicit two-mode forward dispatch.
+"""Stage 1.E substrate refactor: explicit forward-dispatch depth.
 
-Post-Stage-1.E contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
+Post-Stage-1.E contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md),
+updated 2026-06-13 (conceptualMode enum -> symbolicOrder integer):
 
-  * ``BasicModel`` reads ``<architecture><conceptualMode>`` from XML at
-    construction time and stores it on ``self.conceptualMode``.
+  * ``BasicModel`` reads ``<architecture><symbolicOrder>`` from XML at
+    construction time and stores it on ``self.symbolicOrder`` (an int).
 
-  * Valid values are ``"serial"`` (= GRAMMATICAL, the per-word body via
-    :meth:`_forward_body_per_word`) and ``"parallel"`` (the per-stage
-    body via :meth:`_forward_per_stage`'s body). The substrate-level
-    SERIAL / GRAMMATICAL collapse is the spec's design decision — at the
-    substrate level there is one ``"serial"`` mode; grammar dispatch is
-    a chart / rule-catalog config, not a substrate mode.
+  * ``0`` = PARALLEL (the per-stage body via :meth:`_forward_per_stage`);
+    ``>= 1`` = SERIAL / GRAMMATICAL (the per-word body via
+    :meth:`_forward_body_per_word`). The substrate-level SERIAL /
+    GRAMMATICAL collapse is the spec's design decision — at the substrate
+    level serial is one mode; grammar dispatch is a chart / rule-catalog
+    config, not a substrate mode. Values > 1 are plumbed but behave as 1.
 
-  * Invalid values raise loudly at config load time (per the project's
-    fail-loud rule).
+  * Negative / non-integer values raise loudly at config load time (per
+    the project's fail-loud rule).
 
-  * ``BasicModel._forward_body`` dispatches based on
-    ``self.conceptualMode`` directly — no longer indirectly via
-    ``InputSpace._per_word_enabled``. The ``_per_word_enabled`` boolean
-    is preserved for back-compat (it is set from the new knob during
-    construction so existing readers — e.g. the per-word AR cursor in
-    ``InputSpace.next_word`` — see the same value they used to).
+  * ``BasicModel._forward_body`` dispatches based on ``self.symbolicOrder``
+    directly — no longer indirectly via ``InputSpace._per_word_enabled``.
+    The ``_per_word_enabled`` boolean is preserved for back-compat (set
+    from the new knob during construction so existing readers — e.g. the
+    per-word AR cursor in ``InputSpace.next_word`` — see the same value).
 
 This file is the targeted TDD gate for Stage 1.E. It uses the same
 ``MM_xor_loopback.xml`` config as the sibling Stage 1.A / 1.C / 1.D /
@@ -56,25 +56,25 @@ _NONGRAMMAR_CONFIG = os.path.join(_DATA_DIR, "MM_xor.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _write_config_with_mode_override(base_config_path, override_mode):
+def _write_config_with_order_override(base_config_path, override_order):
     """Materialize a temporary XML file that sets
-    ``<conceptualMode>override_mode</conceptualMode>`` on
+    ``<symbolicOrder>override_order</symbolicOrder>`` on
     ``base_config_path``.
 
     Because ``BasicModel.from_config`` re-loads ``TheXMLConfig`` from
     disk (clobbering any in-memory ``set()`` we'd do), exercising the
     XML read path requires actually writing the override to a file.
-    Strip any existing ``<conceptualMode>`` element first so the
-    overlay does not produce a list value, then inject inside
-    ``<architecture>`` (creating the block when missing).
+    Strip any existing ``<symbolicOrder>`` element first so the overlay
+    does not produce a list value, then inject inside ``<architecture>``
+    (creating the block when missing).
     """
     with open(base_config_path, "r") as f:
         text = f.read()
-    # Strip any pre-existing <conceptualMode>...</conceptualMode>
+    # Strip any pre-existing <symbolicOrder>...</symbolicOrder>
     text = re.sub(
-        r"\s*<conceptualMode>[^<]*</conceptualMode>\s*\n",
+        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n",
         "\n", text)
-    inject = f"<conceptualMode>{override_mode}</conceptualMode>"
+    inject = f"<symbolicOrder>{override_order}</symbolicOrder>"
     if "<architecture>" in text:
         text = text.replace(
             "<architecture>", f"<architecture>\n    {inject}", 1)
@@ -92,15 +92,15 @@ def _write_config_with_mode_override(base_config_path, override_mode):
     return tmp.name
 
 
-def _make_model(config_path, override_mode=None):
+def _make_model(config_path, override_order=None):
     """Build a fresh BasicModel from ``config_path``. If
-    ``override_mode`` is set, write a sibling XML file with
-    ``<architecture><conceptualMode>override_mode</conceptualMode>``
+    ``override_order`` is set, write a sibling XML file with
+    ``<architecture><symbolicOrder>override_order</symbolicOrder>``
     overlaid so the constructor reads it from disk.
     """
-    if override_mode is not None:
-        config_path = _write_config_with_mode_override(
-            config_path, override_mode)
+    if override_order is not None:
+        config_path = _write_config_with_order_override(
+            config_path, override_order)
     try:
         init_config(path=config_path, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
@@ -111,7 +111,7 @@ def _make_model(config_path, override_mode=None):
         model.eval()
         return model
     finally:
-        if override_mode is not None:
+        if override_order is not None:
             try:
                 os.unlink(config_path)
             except OSError:
@@ -126,76 +126,76 @@ def _one_input(model):
     return model.inputSpace.prepInput(inp_items)
 
 
-class TestConceptualModeAttribute(unittest.TestCase):
-    """``BasicModel`` exposes ``self.conceptualMode`` as a string after
-    construction, with valid values ``"serial"`` / ``"parallel"``."""
+class TestSymbolicOrderAttribute(unittest.TestCase):
+    """``BasicModel`` exposes ``self.symbolicOrder`` as a non-negative
+    integer after construction."""
 
-    def test_conceptualMode_attribute_exists(self):
+    def test_symbolicOrder_attribute_exists(self):
         model = _make_model(_GRAMMAR_CONFIG)
         self.assertTrue(
-            hasattr(model, "conceptualMode"),
-            "BasicModel must expose ``self.conceptualMode`` after "
+            hasattr(model, "symbolicOrder"),
+            "BasicModel must expose ``self.symbolicOrder`` after "
             "construction (Stage 1.E).")
 
-    def test_conceptualMode_is_a_string(self):
+    def test_symbolicOrder_is_an_int(self):
         model = _make_model(_GRAMMAR_CONFIG)
         self.assertIsInstance(
-            model.conceptualMode, str,
-            "self.conceptualMode must be a string "
-            f"(got {type(model.conceptualMode).__name__}).")
+            model.symbolicOrder, int,
+            "self.symbolicOrder must be an int "
+            f"(got {type(model.symbolicOrder).__name__}).")
 
-    def test_conceptualMode_value_is_valid(self):
+    def test_symbolicOrder_value_is_non_negative(self):
         model = _make_model(_GRAMMAR_CONFIG)
-        self.assertIn(
-            model.conceptualMode, ("serial", "parallel"),
-            "self.conceptualMode must be one of 'serial' / 'parallel' "
-            f"(got {model.conceptualMode!r}).")
+        self.assertGreaterEqual(
+            model.symbolicOrder, 0,
+            "self.symbolicOrder must be >= 0 "
+            f"(got {model.symbolicOrder!r}).")
 
 
-class TestConceptualModeXMLRead(unittest.TestCase):
-    """Explicit XML override of ``<conceptualMode>`` flows through to
-    ``self.conceptualMode``."""
+class TestSymbolicOrderXMLRead(unittest.TestCase):
+    """Explicit XML override of ``<symbolicOrder>`` flows through to
+    ``self.symbolicOrder``."""
 
     def test_serial_override_sticks(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="serial")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
         self.assertEqual(
-            model.conceptualMode, "serial",
-            "Explicit <conceptualMode>serial</conceptualMode> must be "
-            "read into self.conceptualMode at construction.")
+            model.symbolicOrder, 1,
+            "Explicit <symbolicOrder>1</symbolicOrder> must be read into "
+            "self.symbolicOrder at construction.")
 
     def test_parallel_override_sticks(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="parallel")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
         self.assertEqual(
-            model.conceptualMode, "parallel",
-            "Explicit <conceptualMode>parallel</conceptualMode> must be "
-            "read into self.conceptualMode at construction.")
+            model.symbolicOrder, 0,
+            "Explicit <symbolicOrder>0</symbolicOrder> must be read into "
+            "self.symbolicOrder at construction.")
 
 
-class TestConceptualModeInvalidRaisesLoud(unittest.TestCase):
-    """Invalid ``<conceptualMode>`` values raise loudly at config load
+class TestSymbolicOrderInvalidRaisesLoud(unittest.TestCase):
+    """Invalid ``<symbolicOrder>`` values raise loudly at config load
     (per the project memory's fail-loud rule)."""
 
-    def test_invalid_value_raises(self):
+    def test_negative_value_raises(self):
         with self.assertRaises(Exception) as cm:
-            _make_model(_GRAMMAR_CONFIG, override_mode="invalid_mode")
+            _make_model(_GRAMMAR_CONFIG, override_order=-1)
         msg = str(cm.exception)
         self.assertTrue(
-            "conceptualMode" in msg or "invalid_mode" in msg,
-            "Invalid <conceptualMode> exception must mention the knob "
+            "symbolicOrder" in msg or "-1" in msg,
+            "Invalid <symbolicOrder> exception must mention the knob "
             f"name or the bad value (got: {msg!r}).")
 
-    def test_empty_string_raises(self):
+    def test_non_integer_raises(self):
         with self.assertRaises(Exception):
-            _make_model(_GRAMMAR_CONFIG, override_mode="")
+            _make_model(_GRAMMAR_CONFIG, override_order="not_an_int")
 
 
-class TestForwardBodyDispatchesOnConceptualMode(unittest.TestCase):
+class TestForwardBodyDispatchesOnSymbolicOrder(unittest.TestCase):
     """The ``_forward_body`` dispatch is governed by
-    ``self.conceptualMode``, NOT by ``InputSpace._per_word_enabled``.
-    Setting ``conceptualMode`` flips which body fires."""
+    ``self.symbolicOrder``, NOT by ``InputSpace._per_word_enabled``.
+    Setting ``symbolicOrder`` flips which body fires."""
 
     def test_serial_mode_dispatches_to_per_word_body(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="serial")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
         x = _one_input(model)
         with mock.patch.object(
                 model, "_forward_body_per_word",
@@ -206,11 +206,10 @@ class TestForwardBodyDispatchesOnConceptualMode(unittest.TestCase):
                     model.forward(x)
         self.assertTrue(
             per_word_spy.called,
-            "conceptualMode='serial' must dispatch to "
-            "_forward_body_per_word.")
+            "symbolicOrder>=1 must dispatch to _forward_body_per_word.")
 
     def test_parallel_mode_skips_per_word_body(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="parallel")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
         x = _one_input(model)
         with mock.patch.object(
                 model, "_forward_body_per_word",
@@ -221,48 +220,47 @@ class TestForwardBodyDispatchesOnConceptualMode(unittest.TestCase):
                     model.forward(x)
         self.assertFalse(
             per_word_spy.called,
-            "conceptualMode='parallel' must NOT dispatch to "
-            "_forward_body_per_word; the per-stage body owns the loop.")
+            "symbolicOrder=0 must NOT dispatch to _forward_body_per_word; "
+            "the per-stage body owns the loop.")
 
 
-class TestPerWordEnabledBackrefFromMode(unittest.TestCase):
+class TestPerWordEnabledBackrefFromOrder(unittest.TestCase):
     """The legacy ``InputSpace._per_word_enabled`` boolean is preserved
     for back-compat (existing readers — the AR cursor in
     ``InputSpace.next_word`` and a handful of late-stage loops — must
     keep seeing it). After Stage 1.E it MUST mirror the new
-    ``conceptualMode`` knob (``"serial"`` => True; ``"parallel"`` =>
-    False)."""
+    ``symbolicOrder`` knob (``>= 1`` => True; ``0`` => False)."""
 
     def test_serial_mode_implies_per_word_enabled_true(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="serial")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
         isp = model.inputSpace
         self.assertTrue(
             getattr(isp, "_per_word_enabled", False),
-            "conceptualMode='serial' must imply "
+            "symbolicOrder>=1 must imply "
             "InputSpace._per_word_enabled=True for back-compat.")
 
     def test_parallel_mode_implies_per_word_enabled_false(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_mode="parallel")
+        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
         isp = model.inputSpace
         self.assertFalse(
             getattr(isp, "_per_word_enabled", True),
-            "conceptualMode='parallel' must imply "
+            "symbolicOrder=0 must imply "
             "InputSpace._per_word_enabled=False for back-compat.")
 
 
-class TestConfigsHaveExplicitMode(unittest.TestCase):
-    """The repo configs in ``data/*.xml`` set ``<conceptualMode>``
+class TestConfigsHaveExplicitOrder(unittest.TestCase):
+    """The repo configs in ``data/*.xml`` set ``<symbolicOrder>``
     explicitly post-Stage-1.E."""
 
     def test_grammar_config_default_is_serial(self):
         """Grammar configs (the existing ``_per_word_enabled=True``
-        configs) default to ``"serial"``."""
+        configs) default to serial (``symbolicOrder >= 1``)."""
         model = _make_model(_GRAMMAR_CONFIG)
-        self.assertEqual(
-            model.conceptualMode, "serial",
+        self.assertGreaterEqual(
+            model.symbolicOrder, 1,
             f"{os.path.basename(_GRAMMAR_CONFIG)} (grammar config) must "
-            f"have conceptualMode='serial' "
-            f"(got {model.conceptualMode!r}).")
+            f"have symbolicOrder>=1 (serial) "
+            f"(got {model.symbolicOrder!r}).")
 
 
 if __name__ == "__main__":

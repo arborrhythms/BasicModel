@@ -7,17 +7,17 @@
        SS <codebook>quantize</codebook> -> <codebook>none</codebook>)
        don't break the tests, which inherently require:
          - <synthesis>radix</synthesis> so PerceptStore is constructed.
-         - <codebook>quantize</codebook> on SymbolicSpace so
-           ``SymbolicSpace.subspace.what`` is a Codebook and
+         - <codebook>quantize</codebook> on WholeSpace so
+           ``WholeSpace.subspace.what`` is a Codebook and
            ``insert_symbol`` can allocate rows.
        Used by test/test_two_codebook_meta_taxonomy.py,
        test/test_symbolize_layer.py, test/test_autobind_from_cs.py,
        test/test_radix_layer_reverse.py. Do not consume this from
        production code. -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <modelType>embedding</modelType>
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -38,7 +38,7 @@
     <nOutput>8</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
     <nDim>14</nDim>
@@ -46,7 +46,7 @@
     <invertible>true</invertible>
     <synthesis>radix</synthesis>
     <butterfly>false</butterfly>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -56,14 +56,14 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>word</lexer>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

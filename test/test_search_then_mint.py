@@ -20,7 +20,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Layers import PiLayer2, SigmaLayer2
-from Spaces import SymbolicSpace, ConceptualSpace
+from Spaces import WholeSpace, ConceptualSpace
 
 D = 4
 
@@ -34,8 +34,8 @@ def _knob(value):
 
 
 def bare_ss():
-    """A SymbolicSpace stub: the gate touches only its own table state."""
-    return SymbolicSpace.__new__(SymbolicSpace)
+    """A WholeSpace stub: the gate touches only its own table state."""
+    return WholeSpace.__new__(WholeSpace)
 
 
 # ---------------------------------------------------------------------------

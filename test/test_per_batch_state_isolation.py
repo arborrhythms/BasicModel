@@ -4,7 +4,7 @@ Task 2 of the microbatch AR refactor (see
 basicmodel/doc/specs/2026-04-22-microbatch-ar-refactor-design.md).
 
 WordSpace cannot be constructed in isolation -- it requires real
-PerceptualSpace, ConceptualSpace, and SymbolicSpace objects.  We build the
+PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by the test_partition_* tests.
 """
@@ -49,9 +49,9 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     inputShape   = [nPercepts,  conceptDim]
     spaceShape   = [nSymbols,   symbolDim]
     outputShape  = [nSymbols,   symbolDim]
-    percept_space   = Spaces.PerceptualSpace(inputShape, spaceShape, outputShape)
+    percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
-    symbolic_space  = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
+    symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
     ws = Language.WordSubSpace(
         perceptualSpace=percept_space,

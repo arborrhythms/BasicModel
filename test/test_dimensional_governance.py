@@ -199,7 +199,7 @@ def test_reference_configs_still_build_no_false_positive():
 # Task: the reconstruction REVERSE must round-trip a DEEP-CS config.
 # (doc/specs/2026-06-05-dimensional-governance.md sec.2/sec.5)
 #
-# MM_20M_grammar is a SERIAL deep-CS config: PerceptualSpace event width = 12
+# MM_20M_grammar is a SERIAL deep-CS config: PartSpace event width = 12
 # (content 8 + band 4), ConceptualSpace event width = 1028 (content 1024 +
 # band 4). The FORWARD PS->CS handoff is the wide->deep flat-slab reshape
 # (ConceptualSpace.forward: content [B,1024,8] -> [B,8,1024], band re-padded;

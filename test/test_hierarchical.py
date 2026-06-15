@@ -44,7 +44,7 @@ class TestLevelShapes(unittest.TestCase):
             self.assertEqual(d, 4)
 
     def test_single_order(self):
-        """conceptualOrder=1 returns a single post-merge shape."""
+        """subsymbolicOrder=1 returns a single post-merge shape."""
         shapes = Models.BasicModel._level_shapes(64, 8, 1)
         self.assertEqual(len(shapes), 1)
         # Post-merge: 64/2 = 32 vectors, D stays 8
@@ -125,7 +125,7 @@ class TestWordEncoding(unittest.TestCase):
 class TestBackwardCompat(unittest.TestCase):
 
     def test_mentalmodel_unchanged(self):
-        """MentalModel.xml (conceptualOrder=1) still creates and forwards."""
+        """MentalModel.xml (subsymbolicOrder=1) still creates and forwards."""
         model = _make_model('MentalModel.xml')
 
         sentences = ['hello world']
@@ -141,10 +141,10 @@ class TestBackwardCompat(unittest.TestCase):
         self.assertIsNotNone(result)
 
     def test_symbolicspace_per_stage_instances(self):
-        """BasicModel builds T independent SymbolicSpace instances
-        (T = conceptualOrder) in the symbolicSpaces ModuleList."""
+        """BasicModel builds T independent WholeSpace instances
+        (T = subsymbolicOrder) in the symbolicSpaces ModuleList."""
         model = _make_model('MentalModel.xml')
-        self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
+        self.assertEqual(len(model.symbolicSpaces), model.subsymbolicOrder)
 
 
 # -- Per-level layer construction -------------------------------------
@@ -153,22 +153,22 @@ class TestPerLevelLayers(unittest.TestCase):
 
     def test_symbolic_spaces_own_pi_not_sigma(self):
         """Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
-        2026-06-09): each SymbolicSpace OWNS the pi (the top-down
+        2026-06-09): each WholeSpace OWNS the pi (the top-down
         analysis operator + the S-tier fold-rule binding target) but NO
-        sigma -- Sigma (synthesis) lives on PerceptualSpace."""
+        sigma -- Sigma (synthesis) lives on PartSpace."""
         from Layers import PiLayer, MeronymicFoldAdapter
         model = _make_model('RamsifiedModel.xml')
-        self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
+        self.assertEqual(len(model.symbolicSpaces), model.subsymbolicOrder)
         for s in model.symbolicSpaces:
             # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
             fold = getattr(s, 'pi', None)
             self.assertIsInstance(
                 fold, (PiLayer, MeronymicFoldAdapter),
-                "SymbolicSpace must own a pi.")
+                "WholeSpace must own a pi.")
             if isinstance(fold, MeronymicFoldAdapter):
                 self.assertEqual(fold.kind, 'pi')
             self.assertFalse(hasattr(s, 'sigma'),
-                             "SymbolicSpace must not own a sigma layer.")
+                             "WholeSpace must not own a sigma layer.")
 
 
 if __name__ == '__main__':

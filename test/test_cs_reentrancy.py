@@ -1,27 +1,27 @@
-"""ConceptualSpace bookkeeping carrier + SymbolicSpace sigma ownership.
+"""ConceptualSpace bookkeeping carrier + WholeSpace sigma ownership.
 
 2026-06-04 parallel-symbolic-substrate refactor. SUPERSEDES the Stage-10
 per-stage CS ``sigma_in`` / ``sigma_cs`` + residual-lift design (that
 machinery -- and its ``_prev_cs_event_cache`` roundtrip cache -- is
 RETIRED). New ownership / forward contract:
 
-  * PerceptualSpace -- pi-only (PiLayer; no sigma).
+  * PartSpace -- pi-only (PiLayer; no sigma).
   * ConceptualSpace -- a PURE BOOKKEEPING CARRIER: no ``sigma_in`` /
     ``sigma_cs`` / ``sigma``. ``forward`` pushes the perceptual event
     onto the STM; forward and reverse are symmetric (no parameterised
     fold to invert), which is what makes the reconstruction round-trip
     exact.
-  * SymbolicSpace   -- OWNS ``self.sigma`` (invertible SigmaLayer; a
+  * WholeSpace   -- OWNS ``self.sigma`` (invertible SigmaLayer; a
     BUTTERFLY cascade when ``<butterfly>true</...>`` so it has cross-slot
     reach). It is the symbolic-loop generalization operator and the
     binding target for the default ``S = sigma(S)`` grammar rule.
   * The non-grammar PARALLEL forward = perception (PS->CS_0) followed by
-    ``conceptualOrder`` applications of ``SymbolicSpace.sigma``
+    ``subsymbolicOrder`` applications of ``WholeSpace.sigma``
     (``BasicModel._symbolic_sigma_step``); the reverse inverts each
     ``sigma`` before ``ConceptualSpace.reverse`` so the round-trip stays
     exact.
 
-The gate builds ``XOR_exact.xml`` (parallel, conceptualOrder=1, invertible
+The gate builds ``XOR_exact.xml`` (parallel, subsymbolicOrder=1, invertible
 PS/CS/SS passthroughs, butterfly pi AND sigma) -- the fixture this refactor
 restored to exact 4/4 reconstruction (see
 test_explicit_dimensions.TestXorExactCliReconstruction for the end-to-end
@@ -79,8 +79,8 @@ class TestPerceptualSigmaOnly(unittest.TestCase):
         if isinstance(ps.sigma, MeronymicFoldAdapter):
             self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertFalse(hasattr(ps, "pi"),
-                         "PerceptualSpace is sigma-only (synthesis); "
-                         "pi moved to SymbolicSpace.")
+                         "PartSpace is sigma-only (synthesis); "
+                         "pi moved to WholeSpace.")
 
 
 class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
@@ -110,13 +110,13 @@ class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
         m = _make_model()
         self.assertIsInstance(m.conceptualSpaces, torch.nn.ModuleList)
         self.assertEqual(
-            len(m.conceptualSpaces), max(1, int(m.conceptualOrder)),
+            len(m.conceptualSpaces), max(1, int(m.subsymbolicOrder)),
             "self.conceptualSpaces length must equal max(1, "
-            "conceptualOrder).")
+            "subsymbolicOrder).")
 
 
 class TestSymbolicOwnsSigma(unittest.TestCase):
-    """SymbolicSpace owns the invertible (butterfly) sigma."""
+    """WholeSpace owns the invertible (butterfly) sigma."""
 
     def test_ss_owns_invertible_pi(self):
         # Pi/Sigma swap (rev. 2026-06-09): SS owns the analysis fold.
@@ -126,20 +126,20 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
             # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
             self.assertIsInstance(
                 fold, (PiLayer, MeronymicFoldAdapter),
-                f"SymbolicSpace[{k}] must own a pi.")
+                f"WholeSpace[{k}] must own a pi.")
             if isinstance(fold, MeronymicFoldAdapter):
                 self.assertEqual(fold.kind, 'pi')
             self.assertTrue(
                 getattr(fold, "invertible", False),
-                f"SymbolicSpace[{k}].pi must be invertible so the "
+                f"WholeSpace[{k}].pi must be invertible so the "
                 f"reconstruction reverse can apply pi.reverse exactly.")
             self.assertFalse(
                 hasattr(ss, "sigma"),
-                f"SymbolicSpace[{k}] must NOT own a sigma (Sigma moved "
+                f"WholeSpace[{k}] must NOT own a sigma (Sigma moved "
                 f"to PS -- synthesis).")
 
     def test_ss_fold_butterfly_wired_from_xml(self):
-        # XOR_exact sets <butterfly>true</butterfly> on SymbolicSpace; the
+        # XOR_exact sets <butterfly>true</butterfly> on WholeSpace; the
         # flag must reach the fold constructor (cross-slot reach -- a
         # per-slot square fold cannot combine the two word slots for
         # XOR). N is the flattened content count inputShape[0]*nOutputDim.
@@ -156,8 +156,8 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
         else:
             self.assertTrue(
                 getattr(ss.pi, "butterfly", False),
-                "SymbolicSpace.<butterfly>true</...> must wire a butterfly "
-                "cascade into SymbolicSpace.pi.")
+                "WholeSpace.<butterfly>true</...> must wire a butterfly "
+                "cascade into WholeSpace.pi.")
         self.assertEqual(
             int(ss.butterflyN),
             int(ss.inputShape[0]) * int(ss.nOutputDim),
@@ -180,7 +180,7 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
         ss = m.symbolicSpace
         fold = getattr(ss, "pi", None)
         self.assertIsNotNone(
-            fold, "SymbolicSpace must own a pi to round-trip the carrier.")
+            fold, "WholeSpace must own a pi to round-trip the carrier.")
         N = int(ss.inputShape[0])
         D = int(ss.nOutputDim)            # content width the fold acts on
         torch.manual_seed(0)

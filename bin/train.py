@@ -89,7 +89,7 @@ def parse_args(argv=None):
     p.add_argument("--latent-vector-size", type=int, default=None,
                    help="Phase 1 SBOW training dim. Forwarded to "
                         "embed.py train. Defaults (in embed.py) to "
-                        "max(64, PerceptualSpace.nDim) -- SBOW trains "
+                        "max(64, PartSpace.nDim) -- SBOW trains "
                         "at the higher latent dim and PCA projects the "
                         "codebook to nDim for the saved artifact, giving "
                         "the codebook geometric room during training "
@@ -224,15 +224,15 @@ def run(cmd, **kwargs):
 
 
 def _find_lexer(root):
-    """Return the XML lexer knob from SymbolicSpace or legacy InputSpace."""
-    ss = root.find(".//SymbolicSpace")
+    """Return the XML lexer knob from WholeSpace or legacy InputSpace."""
+    ss = root.find(".//WholeSpace")
     lexer = ss.findtext("lexer") if ss is not None else None
     if lexer:
         return lexer
     inp = root.find(".//InputSpace")
     legacy = inp.findtext("lexer") if inp is not None else None
     if legacy:
-        print("[train] DEPRECATED: <lexer> belongs in <SymbolicSpace> "
+        print("[train] DEPRECATED: <lexer> belongs in <WholeSpace> "
               "(Phase 4b); found it under <InputSpace>.")
         return legacy
     return None
@@ -241,8 +241,8 @@ def _find_lexer(root):
 def read_xml_config(xml_path):
     """Read embedding and training params from the XML config.
 
-    Extracts ``embeddingPath``, the ``SymbolicSpace.lexer`` knob, and the
-    ``PerceptualSpace`` ``nDim`` / ``nVectors`` pair if present. Falls back
+    Extracts ``embeddingPath``, the ``WholeSpace.lexer`` knob, and the
+    ``PartSpace`` ``nDim`` / ``nVectors`` pair if present. Falls back
     to ``data/model.xml`` for the default lexer so configs such as MM_20M
     correctly skip the word-embedding Phase 1 when they inherit raw input.
     Returns a dict that train_local uses to forward consistent flags to
@@ -257,7 +257,7 @@ def read_xml_config(xml_path):
         if ep:
             result["embeddingPath"] = ep
     # Check the lexer knob. Phase 4b (rev. 2026-06-09): <lexer> lives on
-    # SymbolicSpace (lexing is analytic cutting); fall back to legacy
+    # WholeSpace (lexing is analytic cutting); fall back to legacy
     # InputSpace and then to the project default XML.
     lexer = _find_lexer(root)
     if not lexer:
@@ -269,9 +269,9 @@ def read_xml_config(xml_path):
                 lexer = None
     if lexer:
         result["lexer"] = lexer
-    # PerceptualSpace.nDim is the lexicon vector size; SBOW must train at
+    # PartSpace.nDim is the lexicon vector size; SBOW must train at
     # this dim or downstream codebook lookups blow up at load time.
-    perc = root.find(".//PerceptualSpace")
+    perc = root.find(".//PartSpace")
     if perc is not None:
         ndim = perc.findtext("nDim")
         if ndim:
@@ -335,7 +335,7 @@ def train_local(args):
             embed_cmd += ["--max-docs", str(args.max_docs)]
         if args.random_shards:
             embed_cmd += ["--random-shards"]
-        # Honor PerceptualSpace.nDim from the XML; embed.py defaults to
+        # Honor PartSpace.nDim from the XML; embed.py defaults to
         # 100, which silently mismatches small-D lexicon configs.
         if cfg.get("vectorSize"):
             embed_cmd += ["--vector-size", str(cfg["vectorSize"])]

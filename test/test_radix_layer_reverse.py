@@ -5,7 +5,7 @@ Covers the relocated structural-decode body that previously lived on
 
   * Standalone fallback (no ``symbolic_space``): nearest-PS-codebook
     decode returns the canonical bytes for the matching percept.
-  * SS-walk: when a SymbolicSpace peer is supplied, the walk goes
+  * SS-walk: when a WholeSpace peer is supplied, the walk goes
     nearest -> META taxonomy children -> positive PS percept id ->
     ``bytes_for``.
   * NaN / Inf input raises ``RuntimeError`` (fail-loud policy).
@@ -36,7 +36,7 @@ _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
 def _ss_row_from_pos(ss, pos):
-    """``pos`` -> SS.codebook row index via ``SymbolicSpace._ss_pos_to_row``."""
+    """``pos`` -> SS.codebook row index via ``WholeSpace._ss_pos_to_row``."""
     row = ss._ss_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(

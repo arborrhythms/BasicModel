@@ -2,7 +2,7 @@
 author sign-off 2026-06-11).
 
 In serial mode, every sentence gets an independent PARALLEL prelude of
-``conceptualOrder`` pumps — pump zero — seeding the codebook towers
+``subsymbolicOrder`` pumps — pump zero — seeding the codebook towers
 (EMA on: the word-learning guarantee) and producing the gist that IS
 the §5 single intent (intent-only commit: nothing enters the
 workspace), then the serial per-word task runs under the §6d serial

@@ -1,25 +1,25 @@
-"""Stage 1.A substrate refactor: PerceptualSpace single-arg forward.
+"""Stage 1.A substrate refactor: PartSpace single-arg forward.
 
 Post-Stage-1.A contract:
 
-  * ``PerceptualSpace`` owns ``self.pi: PiLayer`` (single layer
+  * ``PartSpace`` owns ``self.pi: PiLayer`` (single layer
     instance, NOT an ``nn.ModuleList``); the per-order Ramsified
     ``pi_input`` / ``pi_concept`` lists are retired. The
-    ``conceptualOrder`` knob's new role is driving PARALLEL-mode
+    ``subsymbolicOrder`` knob's new role is driving PARALLEL-mode
     forward iteration count over the per-stage CS pipeline.
 
 Stage 10 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
 reentrancy.md) revision:
 
-  * ``PerceptualSpace.sigma`` is RETIRED. PS is pi-only. The sigma
+  * ``PartSpace.sigma`` is RETIRED. PS is pi-only. The sigma
     half migrates to ``ConceptualSpace.sigma_in`` per stage
     (Ramsified across ``self.conceptualSpaces``).
 
-  * ``PerceptualSpace.forward(x_subspace)`` body becomes
+  * ``PartSpace.forward(x_subspace)`` body becomes
     ``return self.pi(x.materialize())`` (drop the ``+ self.sigma(x)``
     term).
 
-  * ``PerceptualSpace.reverse(y_subspace)`` is symmetric (pi-only).
+  * ``PartSpace.reverse(y_subspace)`` is symmetric (pi-only).
 
 This file is the targeted TDD gate for the refactor. It is independent
 of the broader pipeline (loopback test) and uses the same plain config
@@ -55,10 +55,10 @@ _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 def _make_plain_model():
     """Build a working model from MM_xor_loopback.xml + xor data so
-    the new pi/sigma single-layer instances exist on PerceptualSpace.
+    the new pi/sigma single-layer instances exist on PartSpace.
 
     Mirrors ``test/test_perceptual_loopback.py::_fresh_model`` because
-    that's a known-good cheap config for PerceptualSpace inspection on
+    that's a known-good cheap config for PartSpace inspection on
     ``main``.
     """
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
@@ -72,7 +72,7 @@ def _make_plain_model():
 
 
 class TestPSOwnsSingleLayers(unittest.TestCase):
-    """PerceptualSpace owns ``self.pi`` directly, not a ``ModuleList``
+    """PartSpace owns ``self.pi`` directly, not a ``ModuleList``
     container. Stage 10 retired ``self.sigma`` from PS."""
 
     def test_ps_has_sigma_attribute(self):
@@ -81,28 +81,28 @@ class TestPSOwnsSingleLayers(unittest.TestCase):
         model = _make_plain_model()
         ps = model.perceptualSpace
         self.assertTrue(hasattr(ps, 'sigma'),
-                        "PerceptualSpace must own a ``sigma`` attribute "
+                        "PartSpace must own a ``sigma`` attribute "
                         "post Pi/Sigma swap.")
         # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
         self.assertIsInstance(ps.sigma, (SigmaLayer, MeronymicFoldAdapter),
-                              "PerceptualSpace.sigma must be a single "
+                              "PartSpace.sigma must be a single "
                               "fold layer (not a ModuleList).")
         if isinstance(ps.sigma, MeronymicFoldAdapter):
             self.assertEqual(ps.sigma.kind, 'sigma')
         self.assertNotIsInstance(ps.sigma, torch.nn.ModuleList,
-                                 "PerceptualSpace.sigma must NOT be a "
+                                 "PartSpace.sigma must NOT be a "
                                  "ModuleList (single-layer contract).")
 
     def test_ps_pi_attribute_retired(self):
         """Pi/Sigma swap (rev. 2026-06-09): ``self.pi`` on
-        PerceptualSpace moved to SymbolicSpace (Pi is the top-down
+        PartSpace moved to WholeSpace (Pi is the top-down
         analysis operator)."""
         model = _make_plain_model()
         ps = model.perceptualSpace
         self.assertFalse(
             hasattr(ps, 'pi'),
-            "Pi/Sigma swap: PerceptualSpace.pi must be gone (PS is "
-            "sigma-only -- synthesis). The pi lives on SymbolicSpace.")
+            "Pi/Sigma swap: PartSpace.pi must be gone (PS is "
+            "sigma-only -- synthesis). The pi lives on WholeSpace.")
 
 
 class TestPSForwardSingleArg(unittest.TestCase):
@@ -112,20 +112,20 @@ class TestPSForwardSingleArg(unittest.TestCase):
 
     def test_forward_signature_is_single_arg(self):
         import Spaces
-        sig = inspect.signature(Spaces.PerceptualSpace.forward)
+        sig = inspect.signature(Spaces.PartSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
         self.assertEqual(
             len(params), 1,
-            f"PerceptualSpace.forward must have exactly 1 positional "
+            f"PartSpace.forward must have exactly 1 positional "
             f"arg (x_subspace); got {params}")
 
     def test_reverse_signature_is_single_arg(self):
         import Spaces
-        sig = inspect.signature(Spaces.PerceptualSpace.reverse)
+        sig = inspect.signature(Spaces.PartSpace.reverse)
         params = [n for n in sig.parameters if n != "self"]
         self.assertEqual(
             len(params), 1,
-            f"PerceptualSpace.reverse must have exactly 1 positional "
+            f"PartSpace.reverse must have exactly 1 positional "
             f"arg; got {params}")
 
 
@@ -154,7 +154,7 @@ class TestPSForwardReturnsValidSubspace(unittest.TestCase):
                 in_sub, _ = inp_space.forward(x_input)
                 out = ps.forward(in_sub)
         self.assertIsNotNone(out,
-                             "PerceptualSpace.forward must return a "
+                             "PartSpace.forward must return a "
                              "SubSpace.")
         ev = out.materialize()
         self.assertIsNotNone(ev,
@@ -188,7 +188,7 @@ class TestPSLegacyAttributesGone(unittest.TestCase):
         ps = model.perceptualSpace
         self.assertFalse(
             hasattr(ps, 'pi_input'),
-            "PerceptualSpace.pi_input ModuleList must be retired by "
+            "PartSpace.pi_input ModuleList must be retired by "
             "the Stage 1.A single-layer refactor.")
 
     def test_pi_concept_module_list_gone(self):
@@ -196,7 +196,7 @@ class TestPSLegacyAttributesGone(unittest.TestCase):
         ps = model.perceptualSpace
         self.assertFalse(
             hasattr(ps, 'pi_concept'),
-            "PerceptualSpace.pi_concept ModuleList must be retired by "
+            "PartSpace.pi_concept ModuleList must be retired by "
             "the Stage 1.A single-layer refactor.")
 
 

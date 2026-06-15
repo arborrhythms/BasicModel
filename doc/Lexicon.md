@@ -2,9 +2,9 @@
 
 > **2026-05-29 deltas:**
 >
-> - **Two-codebook split (Stage 8, 2026-05-27).** PerceptualSpace owns
+> - **Two-codebook split (Stage 8, 2026-05-27).** PartSpace owns
 >   the orthographic Lexicon Embedding (`PS.subspace.what`, learned
->   surface-keyed); SymbolicSpace owns a separate VQ-quantized
+>   surface-keyed); WholeSpace owns a separate VQ-quantized
 >   prototype Codebook (`SS.subspace.what`). The two are bound
 >   per-row via the META cross-codebook taxonomy
 >   (`(ps_row, ss_row) → meta_row`), populated by
@@ -31,22 +31,22 @@
 The Lexicon's narrative description and distance math have moved into
 [Spaces.md --- Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball),
 co-located with the Codebook Similarity Metric and the per-space
-geometry discussion (PerceptualSpace, ConceptualSpace, SymbolicSpace).
+geometry discussion (PartSpace, ConceptualSpace, WholeSpace).
 
-> **Lexicon ownership: API on SymbolicSpace, physical Embedding on
-> PerceptualSpace.** Post-2026-05-12 the orthographic-lexicon **API**
+> **Lexicon ownership: API on WholeSpace, physical Embedding on
+> PartSpace.** Post-2026-05-12 the orthographic-lexicon **API**
 > (the `vocabulary` property, `train_embeddings`, `sbow_loss`,
 > `reconstruct_data`, `reconstruct_to_buffer`, `get_recovered_word`,
 > `_snapshot_embeddings`, `set_embedding_sigma`) lives on
-> `SymbolicSpace`. The Embedding *tensor* still lives on
-> `PerceptualSpace.subspace.what` because `InputSpace`'s
+> `WholeSpace`. The Embedding *tensor* still lives on
+> `PartSpace.subspace.what` because `InputSpace`'s
 > `_peer_perceptual.vocabulary` wiring at the lexer is too deeply
 > integrated to relocate without a separate refactor. S accesses the
 > Embedding via its `perceptualSpace_ref` back-reference. The full
 > codebook-as-lexicon physical unification is a deferred follow-up.
 
 > **BPE as the option-flipped lexicon mode.** `<chunking>bpe</chunking>`
-> on PerceptualSpace makes the chunker produce byte-aligned BPE units
+> on PartSpace makes the chunker produce byte-aligned BPE units
 > instead of whitespace-split words, reusing the same Embedding for
 > storage. The byte round-trip is fully invertible via the chunker's
 > `id_to_bytes` table; see
@@ -92,8 +92,8 @@ backward compatibility, see
   `topk_rp_chunked` helpers.
 - [`bin/embed.py`](../bin/embed.py) --- SBOW training loop.
 - [Spaces.md](Spaces.md) --- full per-space geometry discussion, including
-  the contrast between the projective Lexicon (PerceptualSpace,
-  SymbolicSpace) and ConceptualSpace's unit-direction codebook.
+  the contrast between the projective Lexicon (PartSpace,
+  WholeSpace) and ConceptualSpace's unit-direction codebook.
 - [test/bench_codebook_lookup.py](../test/bench_codebook_lookup.py) ---
   performance comparison of the broadcast, matmul, pole-aligned, and
   chunked-wrap forms.

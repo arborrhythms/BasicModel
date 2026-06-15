@@ -30,7 +30,7 @@ if _TEST not in sys.path:
 
 from Layers import SigmaLayer2
 from References import symbol_code
-from Spaces import SymbolicSpace
+from Spaces import WholeSpace
 
 D = 4
 CAP = 8
@@ -127,7 +127,7 @@ def test_split_replaces_whole_with_parts():
 # ---------------------------------------------------------------------------
 
 def _bound_ss(rows):
-    ss = SymbolicSpace.__new__(SymbolicSpace)
+    ss = WholeSpace.__new__(WholeSpace)
     ss.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
     return ss
 
@@ -153,7 +153,7 @@ def test_unknown_word_shifts_ignorance_placeholder():
     ws = make_ws()
     _knob("on")
     try:
-        ss = SymbolicSpace.__new__(SymbolicSpace)
+        ss = WholeSpace.__new__(WholeSpace)
         d = ss.shift_word(ws, 0, 99, rows, licensed=False)
         assert d['action'] == 'placeholder'
         assert (ws._idea_buffer[0, 0] == 0).all(), "a = 0 placeholder"
@@ -168,7 +168,7 @@ def test_marker_word_binds_router_and_shifts_nothing():
     ws = make_ws()
     _knob("on")
     try:
-        ss = SymbolicSpace.__new__(SymbolicSpace)
+        ss = WholeSpace.__new__(WholeSpace)
         before = snapshot(ws)
         d = ss.shift_word(ws, 0, 5, rows, marker=True)
         after = snapshot(ws)
@@ -185,7 +185,7 @@ def test_mention_shifts_the_word_code_verbatim():
     ws = make_ws()
     _knob("on")
     try:
-        ss = SymbolicSpace.__new__(SymbolicSpace)
+        ss = WholeSpace.__new__(WholeSpace)
         # A zero-banded word code (the signature that marks form
         # content): what-part then zeroed where/when.
         code = symbol_code(7, n_what=2, n_where=1, n_when=1)
@@ -234,7 +234,7 @@ def test_deref_round_trip_preserves_extent():
     ws = make_ws()
     _knob("on")
     try:
-        ss = SymbolicSpace.__new__(SymbolicSpace)
+        ss = WholeSpace.__new__(WholeSpace)
         ext = torch.rand(D) * 0.5 + 0.2
         ss.interpret_word(7, licensed=True, object_id=1, extent=ext)
         ss.shift_word(ws, 0, 7, rows)

@@ -16,23 +16,23 @@ class TestGetSpaceParam(unittest.TestCase):
     def test_space_overrides_architecture(self):
         cfg = {
             "architecture": {"hasAttention": True},
-            "PerceptualSpace": {"hasAttention": False},
+            "PartSpace": {"hasAttention": False},
         }
-        result = Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasAttention")
+        result = Models.BasicModelFactory.get_space_param(cfg, "PartSpace", "hasAttention")
         self.assertFalse(result)
 
     def test_falls_back_to_architecture(self):
         cfg = {
             "architecture": {"invertible": True},
-            "PerceptualSpace": {"nActive": 4},
+            "PartSpace": {"nActive": 4},
         }
-        result = Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "invertible")
+        result = Models.BasicModelFactory.get_space_param(cfg, "PartSpace", "invertible")
         self.assertTrue(result)
 
     def test_raises_when_missing_everywhere(self):
-        cfg = {"architecture": {}, "PerceptualSpace": {}}
+        cfg = {"architecture": {}, "PartSpace": {}}
         with self.assertRaises(KeyError):
-            Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "nonExistentKey")
+            Models.BasicModelFactory.get_space_param(cfg, "PartSpace", "nonExistentKey")
 
     def test_space_section_missing_entirely(self):
         cfg = {"architecture": {"invertible": True}}
@@ -53,19 +53,19 @@ class TestDefaultsXml(unittest.TestCase):
         cls.cfg = Models.BaseModel.load_config(defaults_path)
 
     def test_has_space_sections(self):
-        for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
-                      "SymbolicSpace", "OutputSpace"]:
+        for name in ["InputSpace", "PartSpace", "ConceptualSpace",
+                      "WholeSpace", "OutputSpace"]:
             self.assertIn(name, self.cfg, f"Missing <{name}> section")
 
     def test_space_has_nOutput(self):
-        for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
-                      "SymbolicSpace", "OutputSpace"]:
+        for name in ["InputSpace", "PartSpace", "ConceptualSpace",
+                      "WholeSpace", "OutputSpace"]:
             self.assertIn("nOutput", self.cfg[name],
                           f"<{name}> missing nOutput")
 
     def test_space_has_nDim(self):
-        for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
-                      "SymbolicSpace", "OutputSpace"]:
+        for name in ["InputSpace", "PartSpace", "ConceptualSpace",
+                      "WholeSpace", "OutputSpace"]:
             self.assertIn("nDim", self.cfg[name], f"<{name}> missing nDim")
 
     def test_architecture_has_model_wide_only(self):
@@ -82,7 +82,7 @@ class TestDefaultsXml(unittest.TestCase):
         arch = self.cfg["architecture"]
         # ``reconstruct`` was retired (A1); reconstruction is now
         # unconditionally concepts-seeded.
-        for key in ["conceptualOrder",
+        for key in ["subsymbolicOrder",
                     "ergodic", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})
@@ -123,19 +123,19 @@ class TestCreateFromConfig(unittest.TestCase):
     <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>2</nOutput><nDim>5</nDim></InputSpace>
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>4</nOutput><nDim>5</nDim>
 
     <hasAttention>false</hasAttention>
-  </PerceptualSpace>
+  </PartSpace>
   <ConceptualSpace>
     <nOutput>3</nOutput><nDim>5</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>3</nOutput><nDim>5</nDim><nVectors>3</nVectors>
 
-  </SymbolicSpace>
+  </WholeSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
 </model>""")
         try:
@@ -164,9 +164,9 @@ class TestValidateConfig(unittest.TestCase):
         """
         cfg = {
             "architecture": {},
-            "PerceptualSpace": {"hasAttention": True, "invertible": False,
+            "PartSpace": {"hasAttention": True, "invertible": False,
                                 "nActive": 4, "nDim": 1, "flatten": True},
-            "SymbolicSpace": {},
+            "WholeSpace": {},
             "ConceptualSpace": {"hasAttention": True, "flatten": True},
         }
         # Should not raise: the reshape-vs-QKV incompatibility no longer exists.
@@ -179,9 +179,9 @@ class TestValidateConfig(unittest.TestCase):
         remains functional after the reshape-vs-QKV guard was removed."""
         cfg = {
             "architecture": {},
-            "PerceptualSpace": {"hasAttention": False, "invertible": False,
+            "PartSpace": {"hasAttention": False, "invertible": False,
                                 "nActive": 4, "nDim": 1, "flatten": True},
-            "SymbolicSpace": {},
+            "WholeSpace": {},
             "ConceptualSpace": {"hasAttention": False, "flatten": False},
         }
         # Should not raise
@@ -196,7 +196,7 @@ class TestValidateConfig(unittest.TestCase):
         return  # retired check; see plan §1
 
     def test_symbol_dim_must_match_concept_dim(self):
-        """Post 2026-05 ownership rule: SymbolicSpace owns no SigmaLayer,
+        """Post 2026-05 ownership rule: WholeSpace owns no SigmaLayer,
         so symbol_dim must match the ConceptualSpace effective output dim.
         """
         cfg = {
@@ -204,9 +204,9 @@ class TestValidateConfig(unittest.TestCase):
                 "reconstruct": "symbols",
             },
             "InputSpace": {"nOutput": 8, "nDim": 4},
-            "PerceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,
+            "PartSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,
                                 "invertible": True},
-            "SymbolicSpace": {"nOutput": 5, "nDim": 3},
+            "WholeSpace": {"nOutput": 5, "nDim": 3},
             "ConceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False},
             "OutputSpace": {"nOutput": 1, "nDim": 1},
         }

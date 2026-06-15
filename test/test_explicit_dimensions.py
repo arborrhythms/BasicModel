@@ -144,7 +144,7 @@ class TestXorReconCliReconstruction(unittest.TestCase):
     """``data/XOR_recon.xml`` should reconstruct its inputs.
 
     XOR_recon is a sibling of XOR_exact that exercises the reconstruction
-    head explicitly (``SymbolicSpace.nOutput > OutputSpace.nOutput`` so the
+    head explicitly (``WholeSpace.nOutput > OutputSpace.nOutput`` so the
     last 5 symbol slots are reserved as reconstruction targets). Asserts
     OK/MISMATCH on the per-input reconstruction lines (word-level match).
     """
@@ -180,8 +180,8 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     """``data/XOR_exact.xml`` should reconstruct its inputs end-to-end.
 
     XOR_exact is a fully INVERTIBLE, non-quantized chain: embedding ->
-    PerceptualSpace.pi (butterfly, codebook=none) -> ConceptualSpace
-    bookkeeping (codebook=none) -> SymbolicSpace.sigma (butterfly,
+    PartSpace.pi (butterfly, codebook=none) -> ConceptualSpace
+    bookkeeping (codebook=none) -> WholeSpace.sigma (butterfly,
     codebook=none) -> OutputSpace. The butterfly on BOTH pi and sigma
     gives cross-slot reach (a per-slot fold cannot combine the two word
     slots for XOR); codebook=none keeps the forward<->reverse round-trip
@@ -192,7 +192,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     modality re-architecture forced a mandatory lossy PS codebook (VQ
     snap) that destroyed exact reconstruction and blocked gradient. The
     fix restored the invertible chain (PS/SS codebook=none) plus a
-    butterfly ``SymbolicSpace.sigma``; the xfail is removed so this gate
+    butterfly ``WholeSpace.sigma``; the xfail is removed so this gate
     now catches future regressions.
     """
 

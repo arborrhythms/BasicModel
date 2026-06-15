@@ -6,7 +6,7 @@ Tests the new ``SymbolizeLayer`` class:
     ``tier == 'C'``, ``invertible == True``.
   * ``forward(left, right)`` identifies a percept_id and a symbol_idx
     (by nearest-row match in PS.percept_store / SS.codebook), then
-    delegates to ``SymbolicSpace.insert_meta(ps_idx, ss_idx,
+    delegates to ``WholeSpace.insert_meta(ps_idx, ss_idx,
     fused_vec=combine(left, right))`` and returns the META vector.
   * ``reverse(parent)`` walks the SS taxonomy starting from a
     nearest-match to ``parent`` and recovers the ``(left, right)``
@@ -17,7 +17,7 @@ Tests the new ``SymbolizeLayer`` class:
   * Signal-router dispatch: a grammar declaring ``symbolize(C, C)`` at the
     C tier causes ``SymbolizeLayer`` to bind to the signal router via
     ``_attach_per_space_syntactic_layer``.
-  * No-PerceptStore fallback: when ``PerceptualSpace`` lacks a
+  * No-PerceptStore fallback: when ``PartSpace`` lacks a
     ``percept_store`` (legacy lexicon mode), ``forward`` falls back to
     a no-op average ``(left + right) / 2`` without registering a META
     node.
@@ -133,7 +133,7 @@ class TestSymbolizeLayerClassAttributes(unittest.TestCase):
 
 class TestSymbolizeLayerForward(unittest.TestCase):
     """``forward(left, right)`` identifies (ps_idx, ss_idx) by nearest
-    match, calls ``SymbolicSpace.insert_meta``, returns the META vector."""
+    match, calls ``WholeSpace.insert_meta``, returns the META vector."""
 
     def test_forward_creates_meta_node_and_returns_meta_vector(self):
         from Layers import SymbolizeLayer
@@ -547,7 +547,7 @@ class TestSymbolizeLayerNumericalGuard(unittest.TestCase):
 
 
 class TestSymbolizeLayerNoPerceptStoreFallback(unittest.TestCase):
-    """When the PerceptualSpace lacks a percept_store (legacy lexicon),
+    """When the PartSpace lacks a percept_store (legacy lexicon),
     forward is a no-op: returns ``(left + right) / 2`` without
     registering a META node."""
 
@@ -645,7 +645,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
     mode (``PerceptStore`` wired), the path from ``left, right`` to the
     returned META vector is **detached** inside ``forward`` -- the
     ``fused = (left + right) / 2`` is ``.detach()``-ed before being
-    handed to ``SymbolicSpace.insert_meta`` (which does an in-place
+    handed to ``WholeSpace.insert_meta`` (which does an in-place
     ``W.data[meta_row].copy_()`` under ``torch.no_grad``). So
     ``left.grad`` / ``right.grad`` are ``None`` after the radix-mode
     forward; the gradient flows from the return value back to the

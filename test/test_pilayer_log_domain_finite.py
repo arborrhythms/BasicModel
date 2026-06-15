@@ -15,7 +15,7 @@ value that must be strictly positive:
 
   * REVERSE: the ``nonlinear=False`` branch did a BARE ``log(y)`` on the
     signed reverse signal ``y in [-1, 1]``, so ``log(negative) = NaN``.
-    (Surfaced as "Finding B": ``PerceptualSpace.reverse`` ->
+    (Surfaced as "Finding B": ``PartSpace.reverse`` ->
     ``PiLayer.reverse`` turned a finite seed NaN.)
 
 The fix makes the ``_to_mult`` clamp unconditional and clamps the reverse

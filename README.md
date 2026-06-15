@@ -34,7 +34,7 @@ Model configurations are specified in XML. See [doc/Architecture.md](doc/Archite
 |------|-------------|
 | [bin/BasicModel.py](bin/BasicModel.py) | Main entry point: model factory, training loop, comparison plots, HTML report |
 | [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
-| [bin/Space.py](bin/Space.py) | Space classes: InputSpace, PerceptualSpace, ConceptualSpace, SymbolicSpace, OutputSpace, Grammar |
+| [bin/Space.py](bin/Space.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, Grammar |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [bin/SigmaPi.py](bin/SigmaPi.py) | Standalone demo of the SigmaPi network solving XOR |
 | [data/](data/) | XML model configurations |
@@ -94,9 +94,9 @@ Models are configured via XML files in `data/`. Training and data parameters liv
   </architecture>
 
   <InputSpace> ... </InputSpace>
-  <PerceptualSpace> ... </PerceptualSpace>
+  <PartSpace> ... </PartSpace>
   <ConceptualSpace> ... </ConceptualSpace>
-  <SymbolicSpace> ... </SymbolicSpace>
+  <WholeSpace> ... </WholeSpace>
   <OutputSpace> ... </OutputSpace>
 </model>
 ```

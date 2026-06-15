@@ -512,13 +512,13 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "nWhere": nWhere, "nWhen": nWhen,
             # Isolated Space tests stage pre-built tensors directly and
             # never invoke the Embedding lexer; force model_type to a
-            # non-embedding value so PerceptualSpace does not build an
+            # non-embedding value so PartSpace does not build an
             # Embedding basis if a prior test left modelType="embedding".
             "modelType": "simple",
             "embeddingPath": None, "data": {}, "training": {},
         },
         "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "codebook": False, "lexer": "word"},
-        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},
+        "PartSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},
         "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": False, "invertible": invertible},
         "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "codebook": False, "invertible": False},
     }
@@ -530,7 +530,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
 
 
 # TestPerceptualSpacePassthrough was removed in Stage 1: passThrough was
-# deleted from Space, so PerceptualSpace no longer has an identity mode.
+# deleted from Space, so PartSpace no longer has an identity mode.
 # The Tensor-basis path replaces the legacy passthrough Codebook for
 # `<codebook>false</codebook>`, but the surrounding PiLayer still applies.
 
@@ -541,8 +541,8 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
 class TestPiLayerInvertibleTrained(unittest.TestCase):
     """PiLayer with invertible=True, trained for roundtrip.
 
-    Tests PiLayer directly (previously tested via PerceptualSpace, which
-    no longer uses PiLayer -- it remains in SymbolicSpace).
+    Tests PiLayer directly (previously tested via PartSpace, which
+    no longer uses PiLayer -- it remains in WholeSpace).
     """
     def _check(self, dim):
 
@@ -782,7 +782,7 @@ class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
 
 
 class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
-    """PerceptualSpace.reverse() checks output is in [-1, 1] (input range)."""
+    """PartSpace.reverse() checks output is in [-1, 1] (input range)."""
 
     # test_roundtrip_output_in_range retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
     pass

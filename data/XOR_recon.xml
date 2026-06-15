@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- XOR_recon: XOR with reconstruction symbols (last 5 SymbolicSpace
+  <!-- XOR_recon: XOR with reconstruction symbols (last 5 WholeSpace
        slots reserved for reconstruction targets). Scalar codebook regime:
        PiLayer stays a square isomorphism inside conceptual content space. -->
   <architecture>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -29,7 +29,7 @@
     <nOutputDim>6</nOutputDim>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nInputDim>6</nInputDim>
     <nVectors>1000</nVectors>
@@ -37,7 +37,7 @@
     <nOutput>8</nOutput>
     <nOutputDim>6</nOutputDim>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -50,8 +50,8 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
-  <SymbolicSpace>
+  <!-- WholeSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
+  <WholeSpace>
     <nInput>8</nInput>
     <!-- 2026-06-06 uniform-band migration: nDim is the EVENT width
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
@@ -63,7 +63,7 @@
     <nOutput>8</nOutput>
     <nOutputDim>6</nOutputDim>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

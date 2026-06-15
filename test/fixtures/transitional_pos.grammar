@@ -4,7 +4,7 @@
   <start name="absolute_truth">ABS_T</start>
   <start name="relative_truth">REL_T</start>
 
-  <PerceptualSpace>
+  <PartSpace>
     <!-- Meronymic operation registry (Phase 3,
          doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
          PS operations relate a surface whole to its parts: <compose> =
@@ -16,7 +16,7 @@
          (prefix / suffix / compound / coordination / quote_or_bracket)
          are added with the routing PS analyzer. These rules carry tier
          'P' and are read by the PS analyzer, never by the symbolic
-         parser (which reads the <SymbolicSpace> table only). -->
+         parser (which reads the <WholeSpace> table only). -->
     <compose>
       <rule>SURF = stop.forward(SURF)</rule>
       <rule>SURF = boundary.forward(SURF, SURF)</rule>
@@ -27,9 +27,9 @@
       <rule>SURF, SURF = boundary.reverse(SURF)</rule>
       <rule>SURF, SURF = uniform.reverse(SURF)</rule>
     </generate>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <compose>
       <!-- Relative Truth. -->
       <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_AP)</rule>
@@ -192,5 +192,5 @@
       <rule>S45, S45 = intersection.reverse(S45)</rule>
       <rule>S45, S45 = union.reverse(S45)</rule>
     </generate>
-  </SymbolicSpace>
+  </WholeSpace>
 </grammar>

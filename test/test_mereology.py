@@ -139,7 +139,7 @@ class _StubSubspace:
 
 
 class _StubSymbolicSpace:
-    """Minimal SymbolicSpace shim for Mereology tests."""
+    """Minimal WholeSpace shim for Mereology tests."""
 
     def __init__(self, event_tensor, threshold=0.0):
         self.subspace = _StubSubspace(event_tensor)
@@ -160,7 +160,7 @@ class _StubModel(Mereology):
         self.symbolicSpace = _StubSymbolicSpace(event_tensor, threshold)
         self.conceptualSpace = _StubConceptualSpace()
         self.wordSubSpace = None
-        self.conceptualOrder = n_stages
+        self.subsymbolicOrder = n_stages
 
 
 class TestArea(unittest.TestCase):

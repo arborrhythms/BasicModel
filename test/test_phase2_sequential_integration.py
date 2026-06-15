@@ -65,8 +65,8 @@ def test_sequential_builds_body_stages_and_invertible_path():
         "(reconstructs input from the terminal ConceptualSpace state)")
 
 
-def test_sequential_unrolls_conceptual_order():
-    """body_stages has T (conceptualOrder) per-stage ModuleDicts.
+def test_sequential_unrolls_subsymbolic_order():
+    """body_stages has T (subsymbolicOrder) per-stage ModuleDicts.
 
     Replaces the prior pipeline_fwd.modules() walk: the per-stage
     structure is now first-class in ``body_stages`` (no more buried
@@ -74,16 +74,16 @@ def test_sequential_unrolls_conceptual_order():
     """
     model = _model()
     T = len(model.conceptualSpaces)
-    from Spaces import ConceptualSpace, SymbolicSpace
+    from Spaces import ConceptualSpace, WholeSpace
     assert len(model.body_stages) == T
     cs_count = sum(
         1 for stage in model.body_stages
         if isinstance(stage["cs"], ConceptualSpace))
     ss_count = sum(
         1 for stage in model.body_stages
-        if isinstance(stage["ss"], SymbolicSpace))
+        if isinstance(stage["ss"], WholeSpace))
     assert cs_count == T, f"expected {T} ConceptualSpaces, got {cs_count}"
-    assert ss_count == T, f"expected {T} SymbolicSpaces, got {ss_count}"
+    assert ss_count == T, f"expected {T} WholeSpaces, got {ss_count}"
 
 
 # test_sequential_reconstruction_produced retired 2026-05-14: the

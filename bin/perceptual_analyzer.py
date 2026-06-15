@@ -1,4 +1,4 @@
-"""PerceptualSpace meronymic analyzer (PS forward analysis / PS reverse
+"""PartSpace meronymic analyzer (PS forward analysis / PS reverse
 synthesis).
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md. This module

@@ -10,9 +10,9 @@ Verifies the Phase-2 primitives compose into a working pipeline:
   4. Attach the loaded ``KnowledgeView`` to three Space subclasses.
   5. Each Space exposes its expected knowledge-derived fields:
        - WordSpace.knowledge       (view)
-       - SymbolicSpace.references  (Parameter)
-       - SymbolicSpace.order       (buffer)
-       - PerceptualSpace.wv.ref_ids (long)
+       - WholeSpace.references  (Parameter)
+       - WholeSpace.order       (buffer)
+       - PartSpace.wv.ref_ids (long)
   6. Build a runtime admissibility mask over the real loaded
      rule_order_signatures and verify it correctly identifies
      admissible rules for given stack-top state.
@@ -64,7 +64,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     from embed import (save_artifact, build_knowledge_section,
                        load_knowledge_view, KnowledgeView)
     from Language import WordSubSpace
-    from Spaces import PerceptualSpace, SymbolicSpace
+    from Spaces import PartSpace, WholeSpace
     import torch
     import torch.nn as nn
 
@@ -83,8 +83,8 @@ def test_phase2_end_to_end_round_trip(tmp_path):
 
     # 4: Attach to three Spaces (all bare instances)
     ws = object.__new__(WordSubSpace); nn.Module.__init__(ws)
-    ps = _bare_space(PerceptualSpace)
-    ss = _bare_space(SymbolicSpace)
+    ps = _bare_space(PartSpace)
+    ss = _bare_space(WholeSpace)
     ps.wv = wv
 
     ws.attach_knowledge(view)
@@ -95,7 +95,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     assert ws.knowledge is view
     assert ws.knowledge.ref_id_for('NP') is not None
 
-    # 5b: SymbolicSpace has trainable references Parameter + order buffer
+    # 5b: WholeSpace has trainable references Parameter + order buffer
     assert isinstance(ss.references, nn.Parameter)
     assert ss.references.dim() == 1
     assert ss.references.shape[0] >= 256
@@ -103,7 +103,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     assert ss.order.dtype == torch.long
     assert 'order' in [n for n, _ in ss.named_buffers()]
 
-    # 5c: PerceptualSpace.wv.ref_ids stamped (Phase-1 bootstrap → all -1)
+    # 5c: PartSpace.wv.ref_ids stamped (Phase-1 bootstrap → all -1)
     assert hasattr(ps.wv, 'ref_ids')
     assert ps.wv.ref_ids.shape[0] == 3
     assert all(int(ps.wv.ref_ids[i].item()) == -1 for i in range(3))
@@ -196,18 +196,18 @@ def test_phase2_end_to_end_extend_then_load(tmp_path):
 
 
 def test_phase2_end_to_end_reattach_after_extend(tmp_path):
-    """SymbolicSpace.attach_knowledge handles an extended artifact:
+    """WholeSpace.attach_knowledge handles an extended artifact:
     capacity-slack pattern preserves Parameter identity when capacity
     didn't change."""
     from embed import (save_artifact, build_knowledge_section,
                        extend_artifact, load_knowledge_view, NewRef)
-    from Spaces import SymbolicSpace
+    from Spaces import WholeSpace
     import torch.nn as nn
     grammar = _grammar_with_lift_lower_and_ordinary()
     path = str(tmp_path / "growable.kv")
     save_artifact(path, knowledge=build_knowledge_section(grammar))
 
-    ss = _bare_space(SymbolicSpace)
+    ss = _bare_space(WholeSpace)
     view1 = load_knowledge_view(path)
     ss.attach_knowledge(view1)
     refs_param_id_1 = id(ss.references)

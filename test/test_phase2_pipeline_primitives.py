@@ -130,9 +130,9 @@ def test_space_forward_arities():
 
     Cross-space combination moved out of ``_sourced_input``/``*_ref``
     into explicit ``forward`` arguments supplied by the recurrent cell:
-      * PerceptualSpace.forward(x_subspace)        -- Stage 1.A single-arg
+      * PartSpace.forward(x_subspace)        -- Stage 1.A single-arg
       * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
-      * SymbolicSpace.forward(CS_subspaceForSS, IS_concepts=None)
+      * WholeSpace.forward(CS_subspaceForSS, IS_concepts=None)
         -- the optional stage-0 UNITY input (analysis/synthesis
         dual-input plan, rev. 2026-06-09)
       * InputSpace / ModalSpace / OutputSpace    -- single arg
@@ -142,7 +142,7 @@ def test_space_forward_arities():
     single-arg callers still work.
 
     Stage 1.A substrate refactor (doc/plans/
-    2026-05-26-two-loop-pi-sigma-substrate.md): PerceptualSpace.forward
+    2026-05-26-two-loop-pi-sigma-substrate.md): PartSpace.forward
     is single-arg now. The body composes ``pi(x) + sigma(x)`` on the
     same materialized input; the legacy two-input
     ``tanh(pi_input(IS) + pi_concept(C_prev))`` contract (with
@@ -154,14 +154,14 @@ def test_space_forward_arities():
     ``subspace.wordSubSpace``. Forwards take ONLY data SubSpaces.
     """
     import inspect
-    from Spaces import (InputSpace, PerceptualSpace, ModalSpace,
-                        ConceptualSpace, SymbolicSpace, OutputSpace)
+    from Spaces import (InputSpace, PartSpace, ModalSpace,
+                        ConceptualSpace, WholeSpace, OutputSpace)
     expected = {
         InputSpace: (1, 1),
-        PerceptualSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
+        PartSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
         ModalSpace: (1, 1),
         ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
-        SymbolicSpace: (1, 2),     # CS_subspaceForSS req, IS_concepts opt
+        WholeSpace: (1, 2),     # CS_subspaceForSS req, IS_concepts opt
         OutputSpace: (1, 1),
     }
     for cls, (min_req, max_params) in expected.items():
@@ -191,8 +191,8 @@ def test_all_spaces_have_single_arg_reverse():
     never reads forward bookkeeping.
     """
     import inspect
-    from Spaces import InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
-    for cls in (InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace):
+    from Spaces import InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
+    for cls in (InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace):
         sig = inspect.signature(cls.reverse)
         params = [p for name, p in sig.parameters.items() if name != "self"]
         assert len(params) == 1, (
@@ -230,12 +230,12 @@ def test_build_pipelines_creates_body_stages():
     import torch.nn as nn_
     model = _make_mm_xor_model()
     assert isinstance(model.body_stages, nn_.ModuleList)
-    assert len(model.body_stages) == model.conceptualOrder
+    assert len(model.body_stages) == model.subsymbolicOrder
     for stage in model.body_stages:
         assert isinstance(stage, nn_.ModuleDict)
         assert "cs" in stage and "ss" in stage
     # Pipeline boundaries are methods, not attributes. ``_forward_stem``
-    # stays retired (the IR forward inlines InputSpace+PerceptualSpace
+    # stays retired (the IR forward inlines InputSpace+PartSpace
     # directly into ``_forward_per_stage``); ``reverse()`` reconstructs input
     # from the terminal ConceptualSpace state (§5 of the recurrent-cell plan).
     # The head-seeded ``_run_pipeline_rev`` primitive was removed 2026-06-07.

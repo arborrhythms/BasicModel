@@ -26,7 +26,7 @@
 -->
 <grammar name="role_collapsed">
 
-  <PerceptualSpace>
+  <PartSpace>
     <!-- The analyzer root: U is "everything currently visible to the
          analyzer", recursively decomposable into sub-surfaces that are
          themselves U-typed spans. The marker-free structural cover
@@ -46,9 +46,9 @@
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
     </generate>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <!-- Completed symbolic expressions (the operator OUTPUTS that count
          as start states). Relative truths are binary-predicate end-states
          (isEqual / isPart); absolute truths collapse to a single idea
@@ -169,5 +169,5 @@
            is lossy, tense reverse rotates back). -->
       <rule>morphology_I1 = morphology.reverse(morphology_O1)</rule>
     </generate>
-  </SymbolicSpace>
+  </WholeSpace>
 </grammar>

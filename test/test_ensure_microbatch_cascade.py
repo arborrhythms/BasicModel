@@ -102,7 +102,7 @@ def test_ensure_microbatch_method_explicit_BK():
 
 def test_stm_fired_survives_K_change():
     """``_stm_fired`` is B-indexed sentence-lifecycle state.  When the
-    AR microbatch K changes between batches (PerceptualSpace.forward
+    AR microbatch K changes between batches (PartSpace.forward
     re-quantises K to a power-of-two from the current batch's
     ``actual_max`` BPE word count), the cumulative B*K body batch
     changes -- but the per-source-row fire flag must NOT reset.

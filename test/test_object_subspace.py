@@ -1,4 +1,4 @@
-"""ObjectSubSpace -- durable PerceptualSpace meronymic-analysis carrier.
+"""ObjectSubSpace -- durable PartSpace meronymic-analysis carrier.
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Carrier
 State" + "Absorb/Emit/Swap codification"): the PS analogue of WordSubSpace.

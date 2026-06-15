@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_xor_loopback: PerceptualSpace + ConceptualSpace + SymbolicSpace
+  <!-- MM_xor_loopback: PartSpace + ConceptualSpace + WholeSpace
        scalar-codebook loopback on the XOR dataset. This is the surviving
        scalar replacement for the retired bivector smoke config. -->
   <architecture>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <!-- Pure forward-only smoke: zero out truth weights and learning so
          the scalar loopback path is the only thing exercised. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -33,7 +33,7 @@
     <nOutputDim>8</nOutputDim>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
@@ -48,7 +48,7 @@
     <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -57,7 +57,7 @@
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input
 	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep
-	         with PerceptualSpace post-bivector-retirement.
+	         with PartSpace post-bivector-retirement.
 	         "6+2+2": nDim is the EVENT width (4 content + 2 .where + 2 .when). -->
     <nDim>8</nDim>
     <nOutput>8</nOutput>
@@ -67,7 +67,7 @@
     <nonlinear>false</nonlinear>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nInput>8</nInput>
     <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
@@ -82,7 +82,7 @@
     <commitmentBeta>0.0</commitmentBeta>
     <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

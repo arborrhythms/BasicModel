@@ -1,14 +1,14 @@
 """Task G regression: auto-META binding fires from ConceptualSpace, not
-PerceptualSpace.
+PartSpace.
 
 After Task G the cross-space PS<->SS allocation that previously lived on
-``PerceptualSpace._maybe_autobind_meta`` (and called from
+``PartSpace._maybe_autobind_meta`` (and called from
 ``_embed_radix``) moved to ``ConceptualSpace._maybe_autobind_meta``
 (called from ``cs.forward`` at stage 0). Verify:
 
-  * PerceptualSpace no longer holds a back-ref to SymbolicSpace
+  * PartSpace no longer holds a back-ref to WholeSpace
     (``symbolicSpace_ref`` attribute absent).
-  * PerceptualSpace no longer defines ``_maybe_autobind_meta``.
+  * PartSpace no longer defines ``_maybe_autobind_meta``.
   * ConceptualSpace defines ``_maybe_autobind_meta``.
   * Each per-stage ConceptualSpace has a ``perceptualSpace_ref`` and a
     ``terminalSymbolicSpace_ref`` after BasicModel construction.
@@ -56,23 +56,23 @@ def _make_radix_model():
 
 class TestAutobindMovedFromPSToCS(unittest.TestCase):
     """``_maybe_autobind_meta`` lives on ConceptualSpace, not
-    PerceptualSpace."""
+    PartSpace."""
 
     def test_perceptualspace_has_no_symbolicspace_ref(self):
         m = _make_radix_model()
         ps = m.perceptualSpace
         self.assertFalse(
             hasattr(ps, 'symbolicSpace_ref'),
-            "PerceptualSpace must NOT hold a back-ref to SymbolicSpace "
+            "PartSpace must NOT hold a back-ref to WholeSpace "
             "after Task G; the auto-bind cross-space hop moved to "
             "ConceptualSpace.",
         )
 
     def test_perceptualspace_does_not_define_autobind(self):
-        from Spaces import PerceptualSpace
+        from Spaces import PartSpace
         self.assertFalse(
-            hasattr(PerceptualSpace, '_maybe_autobind_meta'),
-            "PerceptualSpace must NOT define _maybe_autobind_meta after "
+            hasattr(PartSpace, '_maybe_autobind_meta'),
+            "PartSpace must NOT define _maybe_autobind_meta after "
             "Task G; the body moved to ConceptualSpace.",
         )
 
@@ -94,7 +94,7 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
                 f"ConceptualSpace[{i}] missing perceptualSpace_ref")
             self.assertIs(cs.perceptualSpace_ref, ps,
                           f"ConceptualSpace[{i}].perceptualSpace_ref "
-                          f"must point at the canonical PerceptualSpace")
+                          f"must point at the canonical PartSpace")
             self.assertTrue(
                 hasattr(cs, 'terminalSymbolicSpace_ref'),
                 f"ConceptualSpace[{i}] missing "
@@ -102,7 +102,7 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
             self.assertIs(
                 cs.terminalSymbolicSpace_ref, terminal_ss,
                 f"ConceptualSpace[{i}].terminalSymbolicSpace_ref must "
-                f"point at the terminal SymbolicSpace "
+                f"point at the terminal WholeSpace "
                 f"(symbolicSpaces[-1])",
             )
 

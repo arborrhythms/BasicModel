@@ -8,8 +8,8 @@
 
        The idempotent loop is the round-trip:
 
-         x  =>  SymbolicSpace.forward(x)   =>  scalar activation
-         activation  =>  SymbolicSpace.reverse(activation)  =>  x'
+         x  =>  WholeSpace.forward(x)   =>  scalar activation
+         activation  =>  WholeSpace.reverse(activation)  =>  x'
 
        Properties:
          (a) For x in span(W) (codebook row space), x' == x: the round
@@ -20,7 +20,7 @@
          (c) For x orthogonal to span(W), x' == 0: bivec is the
              NEITHER corner [0, 0] for every prototype.
 
-       This config exercises that primitive through a full SymbolicSpace
+       This config exercises that primitive through a full WholeSpace
        in the default-only unary sigma/pi substrate grammar; see the WordSpace
        grammar block below for why an empty block would NOT be
        non-grammatical). The C to S codebook snap that CREATES symbols
@@ -34,11 +34,11 @@
            (Phase 5 option A) makes per-prototype shape [B, V_S=4, 2]
            coincide with per-slot shape [B, N=4, 2]; no diagonal /
            outer-product disambiguation needed.
-         - conceptualOrder = 1: a single ConceptualSpace -> SymbolicSpace
+         - subsymbolicOrder = 1: a single ConceptualSpace -> WholeSpace
            step with no slot halving, so the round trip is exactly one
            forward + one reverse.
          - codebook training path is the default VQ-VAE / EMA
-           dispatch in SymbolicSpace.forward; the prior
+           dispatch in WholeSpace.forward; the prior
            ``<useVQVAE>false</useVQVAE>`` "frozen-codebook" branch was
            retired 2026-05-29 (no learning signal was supplied, so
            prototypes stayed at random init).
@@ -50,7 +50,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <!-- idempotent reuses the snap primitive only; disable the truth
          weights so loss = reconstruction error alone. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -85,13 +85,13 @@
     <nVectors>40</nVectors>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>10</nInput>
     <nVectors>10</nVectors>
     <nDim>104</nDim>
     <nOutput>10</nOutput>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>10</nInput>
@@ -109,7 +109,7 @@
     <stmCapacity>7</stmCapacity>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nInput>10</nInput>
     <nVectors>200</nVectors>
     <nDim>104</nDim>
@@ -121,7 +121,7 @@
     <codebook>quantize</codebook>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nVectors>1</nVectors>
@@ -146,7 +146,7 @@
              data/model.xml's canonical default-only grammar verbatim.
 
              The symbolic loop still creates symbols in this mode: the
-	             C to S codebook snap (SymbolicSpace.forward, bin/Spaces.py)
+	             C to S codebook snap (WholeSpace.forward, bin/Spaces.py)
              is a subsymbolic SUBSTRATE op that runs UNCONDITIONALLY
              regardless of grammar state (same precedent as the
              post-#21 unconditional ``sigma_percept``). Symbol

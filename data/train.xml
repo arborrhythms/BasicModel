@@ -5,7 +5,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>weights.ckpt</weightsPath>
 
     <data>
@@ -22,20 +22,20 @@
     <nOutput>32</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>32</nOutput>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS. -->
   <ConceptualSpace>
     <nOutput>32</nOutput>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>32</nOutput>
     <nDim>0</nDim>
     <nVectors>256</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>32</nOutput>

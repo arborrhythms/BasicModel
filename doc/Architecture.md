@@ -40,7 +40,7 @@ overly optimistic arrangement with respect to human thinking.
 >
 > - **PerceptStore → RadixLayer.** The radix-trie input encoder is
 >   now a first-class `Layer` subclass in `bin/Layers.py`;
->   `PerceptualSpace.reverse` invokes `RadixLayer.reverse` for the
+>   `PartSpace.reverse` invokes `RadixLayer.reverse` for the
 >   structural decode.
 > - **MetaLayer → SymbolizeLayer.** The binary GrammarLayer that
 >   promotes a freshly-seen percept to a symbolic prototype is now
@@ -56,7 +56,7 @@ overly optimistic arrangement with respect to human thinking.
 > - **`basis=` kwarg for grammar reverses.** `UnionLayer.reverse(parent,
 >   basis=None)` / `IntersectionLayer.reverse(parent, basis=None)`
 >   accept a Codebook / Basis object (typically
->   `SymbolicSpace.subspace.what`) instead of a raw `W` tensor;
+>   `WholeSpace.subspace.what`) instead of a raw `W` tensor;
 >   `bin/Language.py::unreduce()` dispatches accordingly.
 > - **LSE soft-max kernels.** `Ops._disjunction_kernel` /
 >   `Ops._conjunction_kernel` default to LogSumExp smooth variants
@@ -80,10 +80,10 @@ overly optimistic arrangement with respect to human thinking.
 > borrowing substrate folds). `GrammarLayer` gains an optional butterfly
 > cascade mode for cross-position mixing — closes the XOR convergence
 > target. Two operating modes: **SERIAL/GRAMMATICAL** (per-word PS with
-> grammar dispatch over STM) and **PARALLEL** (T = `<conceptualOrder>`
+> grammar dispatch over STM) and **PARALLEL** (T = `<subsymbolicOrder>`
 > iterations of PS over CS). The `<parserBackend>`, `<routerKind>`,
 > `<chartTau>`, `<chartTopK>`, `<chartNoiseEps>` XML knobs are retired;
-> `<conceptualMode>` is the new dispatch knob.
+> `<symbolicOrder>` is the new dispatch knob.
 
 ## Overview
 
@@ -92,8 +92,8 @@ BasicModel is a bidirectional neural architecture organized as a pipeline of fiv
 representational transformation:
 
 ```
-Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
-Reverse:  OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+Forward:  InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace
+Reverse:  OutputSpace -> WholeSpace -> ConceptualSpace -> PartSpace -> InputSpace
 ```
 
 The pre-2026-05-27 "two feedback loops" (S → C symbolic loopback per stage,
@@ -103,7 +103,7 @@ refactor:
 - **Subsymbolic loop dissolves.** PS is a single-direction input processor.
   No recurrent C → P feedback at the substrate level. In PARALLEL mode,
   iteration happens by passing `CS` to the same `PS.forward(x)` for T
-  refinement passes (the `<conceptualOrder>` knob).
+  refinement passes (the `<subsymbolicOrder>` knob).
 - **Symbolic loop generalizes** to pairwise grammar ops over STM, dispatched
   by the signal router (`LanguageLayer`). `Lift` and `Lower` join the same
   GrammarLayer dispatch surface as `Intersection`, `Union`, etc.
@@ -118,21 +118,32 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
 The legacy `SubsymbolicSpace` and `SyntacticSpace` classes have been
-retired. The subsymbolic role is filled by `PerceptualSpace`; syntax /
+retired. The subsymbolic role is filled by `PartSpace`; syntax /
 grammar dispatch lives on `WordSubSpace.languageLayer` (the signal router,
 which subsumes the retired `Chart`). The `MereologicalTree` sidecar that
 backed `part` / `equals` / `query` is also retired --- those operations are
-pure-geometric clipped-cosine projections over SymbolicSpace codebook
+pure-geometric clipped-cosine projections over WholeSpace codebook
 activations.
+
+`PartSpace` and `WholeSpace` (renamed 2026-06-12 from `PerceptualSpace`
+/ `SymbolicSpace`) both subclass a thin shared `PerceptualSpace(Space)`
+base: both views are perceptual. At the corpus callosum, objects are
+analysed and synthesized by sending them back to PerceptualSpace —
+wholes get split, parts get chunked. In symbolic "mode" the objects
+sent back are symbols. Terminologically there are objects and
+references; a reference is a *sign* (a quantized version of the
+referent) or a *symbol* (an unrelated version of the referent, of much
+lower dimensionality). The name `SymbolicSpace` is reserved for
+re-introduction with new semantics.
 
 ### Spaces
 
 | Space | Role | Owns | Notes |
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
-| **PerceptualSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
+| **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
 | **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~7) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
-| **SymbolicSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
+| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The cross-space fold contract has changed:
@@ -233,15 +244,49 @@ is the inverse of the ergodic math convention; layers translate internally.
 See [Params.md](Params.md) for all XML parameters. See
 [Training.md](Training.md) for embedding modes.
 
+### The three cognitive operations (2026-06-14)
+
+Processing decomposes into three operations, in increasing order of
+abstraction. Each maps to a knob (or, for the first, to the folds themselves):
+
+1. **Granularity of analysis and synthesis** — done *automatically* by the
+   two perceptual views' folds, per pass. PartSpace's **Sigma synthesizes**
+   (union; count-reducing: many atoms → fewer chunks); WholeSpace's **Pi
+   analyses** (intersection; count-increasing: one unity → many parts). How
+   finely the scene is carved, or how coarsely it is chunked, is set by the
+   folds — there is no separate granularity knob.
+
+2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
+   codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
+   passes (the CS→PS loop). Synthesis chunks the codes into higher-order
+   symbols (fewer each pass); analysis re-expands, attention selecting what
+   to expand (a top-k over the priming, applied after the WholeSpace
+   codebook lookup). With **`<SymbolicComposition>`** on, the symbols handed
+   back to PartSpace are re-encoded through the **CS symbol table** — the
+   wide↔deep remap (MM_20M: `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma
+   composes a high-order word out of several lower-order words; the inverse
+   decode runs on the reverse leg of the loop.
+
+3. **Symbolic order** (`<symbolicOrder>`) — the serial / grammatical stages:
+   words are read **one at a time** from WholeSpace (reading isolated words
+   to ConceptualSpace *is* attention) and processed grammatically in
+   ConceptualSpace's STM and on the PartSpace side. `symbolicOrder ≥ 1`
+   loops the same modules (no pre-built stages); each word enters STM and
+   the grammar composes.
+
+So: granularity is intrinsic to the folds, subsymbolic order iterates the
+subsymbolic passes (composing symbols), and symbolic order is the serial
+grammatical loop over words.
+
 ### Modes of operation
 
-Two operating modes, selected by `<architecture><conceptualMode>` (XML knob
-added in the substrate refactor):
+Two operating modes, selected by the integer `<architecture><symbolicOrder>`
+(0 = parallel, >= 1 = serial; replaced the `conceptualMode` enum 2026-06-13):
 
 | Mode | Trigger | PS.forward argument | Iterations | STM behavior |
 |---|---|---|---|---|
-| **SERIAL / GRAMMATICAL** | `<conceptualMode>serial</...>` (default when `useGrammar != "none"`) | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (oldest dropped, newest at slot 7); signal router dispatches over STM contents per word or at sentence boundary |
-| **PARALLEL** | `<conceptualMode>parallel</...>` (default otherwise) | `IS` once, then `CS` for T-1 iterations | T = `<conceptualOrder>` | parallel write of T slots; signal router dispatches after STM population |
+| **SERIAL / GRAMMATICAL** | `<symbolicOrder>1</symbolicOrder>` (default when `useGrammar != "none"`) | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (oldest dropped, newest at slot 7); signal router dispatches over STM contents per word or at sentence boundary |
+| **PARALLEL** | `<symbolicOrder>0</symbolicOrder>` (default otherwise) | `IS` once, then `CS` for T-1 iterations | T = `<subsymbolicOrder>` | parallel write of T slots; signal router dispatches after STM population |
 
 SERIAL and GRAMMATICAL are not architecturally distinguished — grammar
 dispatch is a chart / rule-catalog config, not a substrate mode. PS.forward
@@ -263,7 +308,7 @@ The recurrent character of the architecture lives in (a) STM accumulation
 across words in SERIAL mode, and (b) the T-pass PARALLEL refinement loop.
 Cross-call serial-cache (`subspace.serial_cache`) for streaming /
 autoregressive contexts is preserved; gated by
-`PerceptualSpace._recurrent_pass_idx == 0`.
+`PartSpace._recurrent_pass_idx == 0`.
 
 ### Pipeline as a unit, two-tier reset
 
@@ -377,7 +422,7 @@ unary (copy-side) or binary (reduce-side):
   subclasses accept `butterfly=True, N=N` for efficient cross-STM
   pairwise composition via a packed `nn.Parameter[n_levels, N//2, 2D, 2D]`
   cascade with bit-reversal permutations. Wired into the space folds
-  (`PerceptualSpace.sigma` / `SymbolicSpace.pi` post the Pi/Sigma swap,
+  (`PartSpace.sigma` / `WholeSpace.pi` post the Pi/Sigma swap,
   rev. 2026-06-09) by default in butterfly-enabled configs. Closes the
   XOR convergence target.
 
@@ -402,7 +447,7 @@ holds a Layer that transforms its input. The mode dispatch:
 - **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (oldest
   dropped from slot 0). Grammar ops dispatched per word or at sentence
   boundary.
-- **PARALLEL**: T = `<conceptualOrder>` iteration outputs written to STM
+- **PARALLEL**: T = `<subsymbolicOrder>` iteration outputs written to STM
   slots simultaneously; no shift.
 
 STM is cleared on hard `Reset` (sentence boundary) and survives soft
@@ -436,7 +481,7 @@ insert time; the semantic row is random; the two are parented via
 `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row →
 parented semantic row.
 
-**POS rides the codebook for free.** The SymbolicSpace reference
+**POS rides the codebook for free.** The WholeSpace reference
 codebook carries two POS-bearing fields per atom: `category_ids: [V]`
 (hard POS tag — one of the grammar's nonterminals) and `category_logits:
 [V, C]` (learnable soft POS distribution per atom). So per-word snap
@@ -444,7 +489,7 @@ returns `(word_id, POS)` simultaneously — no separate POS tagger needed.
 The router uses POS for typing reduce candidates; POS is learned through
 parsing alongside the codebook.
 
-**POS rides the codebook for free.** The SymbolicSpace reference
+**POS rides the codebook for free.** The WholeSpace reference
 codebook carries two POS-bearing fields per atom: `category_ids: [V]`
 (hard POS tag --- one of the grammar's nonterminals, e.g. NP / VP / N /
 V / ADJ) and `category_logits: [V, C]` (learnable soft POS distribution

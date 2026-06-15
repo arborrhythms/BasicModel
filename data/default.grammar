@@ -8,7 +8,7 @@
 -->
 <grammar name="default">
 
-  <PerceptualSpace>
+  <PartSpace>
     <!-- Analyzer root U; marker-free structural cover (stop / boundary /
          uniform). compose = parts to whole (PS reverse); generate = whole
          to parts (PS forward). -->
@@ -23,9 +23,9 @@
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
     </generate>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <!-- The truth-producing relations are the start states; the connective
          / composition outputs are intermediate ideas. -->
     <start name="relative_truth">isEqual_O1</start>
@@ -67,6 +67,6 @@
       <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
       <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
     </generate>
-  </SymbolicSpace>
+  </WholeSpace>
 
 </grammar>

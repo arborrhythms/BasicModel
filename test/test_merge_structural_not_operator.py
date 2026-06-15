@@ -32,9 +32,9 @@ _TRANSITIONAL_GRAMMAR = os.path.join(
 
 
 def _ss_and_grammar(grammar_file=_TRANSITIONAL_GRAMMAR):
-    from Spaces import SymbolicSpace
+    from Spaces import WholeSpace
     from Language import Grammar
-    ss = SymbolicSpace.__new__(SymbolicSpace)   # bypass full-model build
+    ss = WholeSpace.__new__(WholeSpace)   # bypass full-model build
     ss.nDim = 8
     g = Grammar()
     g.load_from_grammar_file(grammar_file)

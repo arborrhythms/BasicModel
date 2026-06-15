@@ -32,8 +32,8 @@ class TestAttentionModeResolution(unittest.TestCase):
     """``XMLConfig.space(section, 'attention', default='off')`` resolution.
 
     Uses the same ``space()`` lookup (space section first, then
-    ``<architecture>`` fallback) that PerceptualSpace / ConceptualSpace /
-    SymbolicSpace ``__init__`` call to read ``self.attention_mode``.
+    ``<architecture>`` fallback) that PartSpace / ConceptualSpace /
+    WholeSpace ``__init__`` call to read ``self.attention_mode``.
     """
 
     def _cfg(self, data):
@@ -53,29 +53,29 @@ class TestAttentionModeResolution(unittest.TestCase):
     def test_explicit_modes_on_each_space(self):
         cfg = self._cfg({
             "architecture": {},
-            "PerceptualSpace": {"attention": "low-rank"},
+            "PartSpace": {"attention": "low-rank"},
             "ConceptualSpace": {"attention": "second-order"},
-            "SymbolicSpace": {"attention": "primer"},
+            "WholeSpace": {"attention": "primer"},
         })
         self.assertEqual(
-            cfg.space("PerceptualSpace", "attention", default="off"),
+            cfg.space("PartSpace", "attention", default="off"),
             "low-rank")
         self.assertEqual(
             cfg.space("ConceptualSpace", "attention", default="off"),
             "second-order")
         self.assertEqual(
-            cfg.space("SymbolicSpace", "attention", default="off"),
+            cfg.space("WholeSpace", "attention", default="off"),
             "primer")
 
     def test_absent_resolves_to_off(self):
         """No ``<attention>`` anywhere => default ``off`` (current behavior)."""
         cfg = self._cfg({
             "architecture": {},
-            "PerceptualSpace": {"nDim": 4},
+            "PartSpace": {"nDim": 4},
             "ConceptualSpace": {"nDim": 4},
-            "SymbolicSpace": {"nDim": 4},
+            "WholeSpace": {"nDim": 4},
         })
-        for sect in ("PerceptualSpace", "ConceptualSpace", "SymbolicSpace"):
+        for sect in ("PartSpace", "ConceptualSpace", "WholeSpace"):
             self.assertEqual(
                 cfg.space(sect, "attention", default="off"), "off",
                 f"{sect} with no <attention> should resolve to 'off'")
@@ -85,19 +85,19 @@ class TestAttentionModeResolution(unittest.TestCase):
         default (``space()`` falls back to ``<architecture>``)."""
         cfg = self._cfg({
             "architecture": {"attention": "primer"},
-            "SymbolicSpace": {"nDim": 4},
+            "WholeSpace": {"nDim": 4},
         })
         self.assertEqual(
-            cfg.space("SymbolicSpace", "attention", default="off"),
+            cfg.space("WholeSpace", "attention", default="off"),
             "primer")
 
     def test_local_overrides_architecture(self):
         cfg = self._cfg({
             "architecture": {"attention": "primer"},
-            "PerceptualSpace": {"attention": "off"},
+            "PartSpace": {"attention": "off"},
         })
         self.assertEqual(
-            cfg.space("PerceptualSpace", "attention", default="off"),
+            cfg.space("PartSpace", "attention", default="off"),
             "off")
 
 
@@ -113,9 +113,9 @@ class TestAttentionReshapeGuardRetired(unittest.TestCase):
     def test_has_attention_plus_flatten_accepted(self):
         cfg = {
             "architecture": {},
-            "PerceptualSpace": {"hasAttention": True, "invertible": False,
+            "PartSpace": {"hasAttention": True, "invertible": False,
                                 "nActive": 4, "nDim": 1, "flatten": True},
-            "SymbolicSpace": {},
+            "WholeSpace": {},
             "ConceptualSpace": {"hasAttention": True, "flatten": True},
         }
         # Must NOT raise (the guard was retired).
@@ -124,9 +124,9 @@ class TestAttentionReshapeGuardRetired(unittest.TestCase):
     def test_has_attention_plus_ninputdim_accepted(self):
         cfg = {
             "architecture": {},
-            "PerceptualSpace": {"hasAttention": True, "invertible": False,
+            "PartSpace": {"hasAttention": True, "invertible": False,
                                 "nActive": 4, "nDim": 1, "nInputDim": 10},
-            "SymbolicSpace": {},
+            "WholeSpace": {},
             "ConceptualSpace": {"hasAttention": False, "flatten": False},
         }
         # Must NOT raise (the guard was retired).

@@ -15,7 +15,7 @@ operands at the C-tier:
 
 Lift's gating operand is VP (predication); Lower's gating operand is ADJ
 (attribution).  Both layers own their internal SigmaLayer / PiLayer (NOT
-borrowed from PerceptualSpace.sigma / ConceptualSpace.pi); the layers
+borrowed from PartSpace.sigma / ConceptualSpace.pi); the layers
 train independently.  When constructed parameter-free
 (``LiftLayer()`` / ``LowerLayer()``), forward falls back to the static
 lattice kernel (``Ops._lower_kernel`` for lift / ``Ops._lift_kernel`` for
@@ -114,14 +114,14 @@ class TestSigmaSPiSRetired(unittest.TestCase):
         for sym in self.model.symbolicSpaces:
             self.assertFalse(
                 hasattr(sym, 'sigma_S') and getattr(sym, 'sigma_S') is not None,
-                f"SymbolicSpace must not retain `sigma_S` after the "
+                f"WholeSpace must not retain `sigma_S` after the "
                 f"lift/lower refactor; found on {sym}")
 
     def test_no_pi_S_on_symbolic_space(self):
         for sym in self.model.symbolicSpaces:
             self.assertFalse(
                 hasattr(sym, 'pi_S') and getattr(sym, 'pi_S') is not None,
-                f"SymbolicSpace must not retain `pi_S` after the "
+                f"WholeSpace must not retain `pi_S` after the "
                 f"lift/lower refactor; found on {sym}")
 
 

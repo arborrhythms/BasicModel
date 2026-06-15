@@ -5,10 +5,10 @@
        trained over the FineWeb shard dataset. -->
   <architecture>
     <modelType>embedding</modelType>
-    <!-- serial: PerceptualSpace reduces the raw byte slab, then the body
+    <!-- serial: PartSpace reduces the raw byte slab, then the body
          processes the staged percept slots one at a time. -->
-    <conceptualMode>serial</conceptualMode>
-    <conceptualOrder>3</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
          butterfly cascade (moved from per-space to architecture-level). -->
@@ -38,7 +38,7 @@
 
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
     <nInputDim>1024</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
     <nVectors>65536</nVectors>
@@ -54,7 +54,7 @@
          words in parallel mode without needing attention. radix = the
          PerceptStore (radix trie + promotion); flip here to experiment. -->
     <synthesis>lexicon</synthesis>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
@@ -69,7 +69,7 @@
     <codebook>none</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>raw</lexer>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
@@ -80,7 +80,7 @@
 
     <invertible>true</invertible>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

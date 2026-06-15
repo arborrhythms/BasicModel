@@ -8,7 +8,7 @@ whose tier shapes were the SS-promotion convergence target):
     a codebook on ``.event`` (``codebook_slot == 'event'``, ``muxed == True``)
     at the full muxed width. It must round-trip a ``.where`` position + a
     ``.when`` bracket and reconstruct from the codebook selection.
-  - SS (SymbolicSpace) carries NEITHER where nor when: ``where=0, when=0`` with
+  - SS (WholeSpace) carries NEITHER where nor when: ``where=0, when=0`` with
     a codebook on ``.what`` (``codebook_slot == 'what'``, ``muxed == False``).
     It must round-trip content only.
 

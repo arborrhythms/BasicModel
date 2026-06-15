@@ -4,7 +4,7 @@ The meronymic Viterbi router replaces the util.parse heuristic as the
 analysis path: known words cohere into one stop terminal, unknown surface
 stays byte terminals -- the same known-vs-byte cover as the compatibility
 analyzer, now produced by the SHARED DP primitive. The analyzer's
-terminal_view is the seam PerceptualSpace.forward / the signal-router
+terminal_view is the seam PartSpace.forward / the signal-router
 dispatch consume, so routing here IS the PS-forward analysis path.
 """
 

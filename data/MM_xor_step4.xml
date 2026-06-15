@@ -1,14 +1,14 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- Step 4 (legacy name): conceptualOrder=3, nVectors=8. Butterfly path retired
+  <!-- Step 4 (legacy name): subsymbolicOrder=3, nVectors=8. Butterfly path retired
        2026-05-12; this config now matches Step 3 modulo the original flag. -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <ergodic>true</ergodic>
 
     <training>
@@ -47,12 +47,12 @@
     <nVectors>16</nVectors>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>16</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>16</nOutput>
@@ -61,11 +61,11 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nDim>16</nDim>
     <nOutput>8</nOutput>
     <nVectors>8</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

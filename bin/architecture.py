@@ -19,13 +19,13 @@ and the loss would otherwise slice empty where/when segments and NaN."""
 
 _CANONICAL_SHAPE = {
     "InputSpace":      (2, 2),
-    "PerceptualSpace": (2, 2),
+    "PartSpace": (2, 2),
     # ModalSpace is the demuxed perceptual-tier composite (Spaces.ModalSpace):
-    # it routes what/where/when through sub-PerceptualSpaces and shares the
+    # it routes what/where/when through sub-PartSpaces and shares the
     # perceptual shape. No live config currently enables demuxed mode.
     "ModalSpace":      (2, 2),
     "ConceptualSpace": (2, 2),
-    "SymbolicSpace":   (2, 2),
+    "WholeSpace":   (2, 2),
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
@@ -34,8 +34,8 @@ _CANONICAL_SHAPE = {
 # 2026-06-04: no tier's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any tier may resolve to
 # <codebook>none</codebook>. This restores compatibility with the pre-modality
-# exact-XOR reconstruction smoke test, where PerceptualSpace / ConceptualSpace
-# / SymbolicSpace are full-width INVERTIBLE PASSTHROUGHS (no VQ snap) so the
+# exact-XOR reconstruction smoke test, where PartSpace / ConceptualSpace
+# / WholeSpace are full-width INVERTIBLE PASSTHROUGHS (no VQ snap) so the
 # forward<->reverse chain round-trips exactly and the butterfly pi computes
 # XOR with cross-slot reach. Reverts the modality re-architecture's
 # mandatory-PS/SS-codebook constraint.

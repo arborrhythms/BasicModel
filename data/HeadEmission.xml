@@ -9,9 +9,9 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).
-         The converged modality architecture keeps the SymbolicSpace carrier
+         The converged modality architecture keeps the WholeSpace carrier
          at D=nDim (SS carries no .where/.when; see canonical_shape), so the
          SyntacticLayer's pair_scorer linear is shape-compatible with the
          live tensor during chart compose. -->
@@ -45,11 +45,11 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>32</nOutput>
     <nDim>12</nDim>
     <nVectors>8</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>32</nOutput>
@@ -58,11 +58,11 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>32</nOutput>
     <nDim>12</nDim>
     <nVectors>8</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

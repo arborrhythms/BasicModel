@@ -1,4 +1,4 @@
-"""Sweep MM_20M PerceptualSpace <synthesis> options to compare reconstruction.
+"""Sweep MM_20M PartSpace <synthesis> options to compare reconstruction.
 
 Builds temp configs from MM_20M.xml with a WORKING 1024-wide InputSpace
 (the 5-wide narrowing crashes the event mux), varying only <synthesis>.
@@ -15,7 +15,7 @@ with open(os.path.join(PROJECT, "data", "MM_20M.xml")) as f:
     base = f.read()
 
 # Restore a WORKING 1024-wide InputSpace + PS handoff (the 5-wide IS crashes).
-# Phase 4b: <lexer> lives on SymbolicSpace (analytic cutting), so the
+# Phase 4b: <lexer> lives on WholeSpace (analytic cutting), so the
 # sweep injects it there, not into the rebuilt InputSpace block.
 _lexer = os.environ.get("SWEEP_LEXER", "raw")
 base = re.sub(r"  <InputSpace>.*?</InputSpace>",
@@ -23,14 +23,14 @@ base = re.sub(r"  <InputSpace>.*?</InputSpace>",
               "    <nVectors>256</nVectors>\n    <nDim>1024</nDim>\n"
               "  </InputSpace>",
               base, count=1, flags=re.DOTALL)
-base = re.sub(r"(<SymbolicSpace>\n)",
+base = re.sub(r"(<WholeSpace>\n)",
               rf"\1    <lexer>{_lexer}</lexer>\n",
               base, count=1)
 base = base.replace("<nInputDim>5</nInputDim>", "<nInputDim>1024</nInputDim>")
 _order = os.environ.get("SWEEP_ORDER")
 if _order:
-    base = re.sub(r"<conceptualOrder>\d+</conceptualOrder>",
-                  f"<conceptualOrder>{_order}</conceptualOrder>", base)
+    base = re.sub(r"<subsymbolicOrder>\d+</subsymbolicOrder>",
+                  f"<subsymbolicOrder>{_order}</subsymbolicOrder>", base)
 _promo = os.environ.get("SWEEP_PROMO")
 if _promo:
     base = re.sub(r"(\s*)(<synthesis>\w+</synthesis>)",
@@ -70,7 +70,7 @@ if _ps_cb:
 _ss_cb = os.environ.get("SWEEP_SS_CB")
 if _ss_cb:
     base = base.replace("<codebook>quantize</codebook>", f"<codebook>{_ss_cb}</codebook>")
-# SS commitmentBeta / l1Lambda overrides (insert into the SymbolicSpace block).
+# SS commitmentBeta / l1Lambda overrides (insert into the WholeSpace block).
 _ins = ""
 _ssc = os.environ.get("SWEEP_SS_COMMIT")
 if _ssc is not None:
@@ -79,7 +79,7 @@ _ssl = os.environ.get("SWEEP_SS_L1")
 if _ssl is not None:
     _ins += f"    <l1Lambda>{_ssl}</l1Lambda>\n"
 if _ins:
-    base = base.replace("  </SymbolicSpace>", _ins + "  </SymbolicSpace>")
+    base = base.replace("  </WholeSpace>", _ins + "  </WholeSpace>")
 
 env = dict(os.environ, MODEL_COMPILE="none")
 for chunk in CHUNKS:

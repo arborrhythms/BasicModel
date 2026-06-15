@@ -4,9 +4,9 @@ R4-sem 2).
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
 + user steering (2026-06-03). A symbol's grammatical category is determined
 by the SEMANTIC EFFECT of the operators it participates with, where the
-semantic effect is the operator's vector in the SymbolicSpace operator
+semantic effect is the operator's vector in the WholeSpace operator
 codebook (shaped live by the soft superposition under truth/consequence
-supervision -- see ``SymbolicSpace.shape_operators``). A symbol's *semantic
+supervision -- see ``WholeSpace.shape_operators``). A symbol's *semantic
 signature* is the aggregate of its operators' codebook vectors; clustering
 the signatures recovers categories.
 

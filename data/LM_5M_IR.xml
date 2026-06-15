@@ -15,12 +15,12 @@
        you can copy MM_5M_IR.kv → LM_5M_IR.kv as a warm start.
   -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <weightsPath>LM_5M_IR.ckpt</weightsPath>
     <amp>bf16</amp>
 
@@ -67,7 +67,7 @@
     <codebook>none</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
     <nDim>12</nDim>
@@ -75,11 +75,11 @@
     <invertible>false</invertible>
     <synthesis>lexicon</synthesis>
     <wordLearning>1</wordLearning>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: hierarchical-mode shape from MM_5M_IR.
        Per-level shapes are computed dynamically by _level_shapes
-       based on conceptualOrder and the conceptualWidth mode. -->
+       based on subsymbolicOrder and the conceptualWidth mode. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>1028</nDim>
@@ -88,7 +88,7 @@
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>word</lexer>
     <nInput>1024</nInput>
     <nDim>1028</nDim>
@@ -97,7 +97,7 @@
     <nVectors>2000000</nVectors>
     <nOutput>1024</nOutput>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

@@ -6,7 +6,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <ergodic>true</ergodic>
 
     <training>
@@ -24,12 +24,12 @@
     <nVectors>6</nVectors>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS
        (slab 6*10=60). nOutput halved from 12 to 6 to match. -->
@@ -40,11 +40,11 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

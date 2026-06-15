@@ -10,7 +10,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <weightsPath>MentalModel.ckpt</weightsPath>
     <data>
       <shardDir>data/fineweb</shardDir>
@@ -34,7 +34,7 @@
     </server>
 
     <!-- Shared 4-valued (catuskoti) balance policy inherited by
-         ConceptualSpace and SymbolicSpace unless their
+         ConceptualSpace and WholeSpace unless their
          <tetralemmaOverride enabled="true"> opts out. -->
     <TetralemmaPolicy>
       <allowExcludedMiddle>1</allowExcludedMiddle>
@@ -57,11 +57,11 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: matches percept/symbol row count; state mixing
        happens via iterative Sigma-Pi (not concatenation). -->
@@ -73,13 +73,13 @@
     <tetralemmaOverride enabled="false" />
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>sentence</lexer>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>
     <tetralemmaOverride enabled="false" />
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

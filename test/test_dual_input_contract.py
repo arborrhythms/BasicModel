@@ -296,7 +296,7 @@ def test_ss_vq_asymmetric_flags():
     assert torch.equal(before_sym, sym_vq.codebook.detach()), (
         "the SYMBOL codebook must be bit-stable too (no stage-0 writes "
         "land on it after the Step-2 split; the CS leg never runs at "
-        "conceptualOrder=1)")
+        "subsymbolicOrder=1)")
 
 
 def test_ss_codebook_recon_gradient():

@@ -142,8 +142,8 @@ def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     monotone-equivalent to projective distance argmin under the
     ``+/-`` quotient.
 
-    **Use only at bivector / symbol-tier lookup sites.** PerceptualSpace
-    and SymbolicSpace token codebooks treat each entry as an
+    **Use only at bivector / symbol-tier lookup sites.** PartSpace
+    and WholeSpace token codebooks treat each entry as an
     independent vector -- ``word`` and ``-word`` are *different*
     entries, not NEG-quotient partners. Replacing ``_wrapped_mse_score``
     with this helper at those sites collapses distinct words and breaks
@@ -1116,7 +1116,7 @@ class WordVectors(nn.Module):
     # tied SS codebook Parameter when the wiring is in place. The local
     # ``_local_vectors`` Parameter remains for back-compat with untied
     # callers (standalone WordVectors used by SBOW trainers without a
-    # SymbolicSpace).
+    # WholeSpace).
     #
     # The setter handles legacy reassignments (``wv._vectors =
     # nn.Parameter(...)``) by routing the new Parameter at the local
@@ -1823,9 +1823,9 @@ class StreamingSBOWTrainer:
         the corpus) reuse the reserved slot rather than getting a
         duplicate.
         """
-        from Spaces import PerceptualSpace
+        from Spaces import PartSpace
 
-        reserved = [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        reserved = [PartSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
         for word in reserved:
             self.word_to_idx[word] = len(self.idx_to_word)
             self.idx_to_word.append(word)
@@ -1867,7 +1867,7 @@ class StreamingSBOWTrainer:
         corpus-word indices remain valid. New kvs always have them at
         indices 0..256 by ``build_vocab``'s contract.
         """
-        from Spaces import PerceptualSpace
+        from Spaces import PartSpace
         self.idx_to_word = list(wv.index_to_key)
         self.word_to_idx = {w: i for i, w in enumerate(self.idx_to_word)}
         # Restore frequency counts so any future build_vocab() call (e.g.,
@@ -1879,7 +1879,7 @@ class StreamingSBOWTrainer:
 
         # Backfill any missing reserved entries at the tail. New kvs
         # have these at the head (build_vocab); legacy kvs may not.
-        reserved = [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        reserved = [PartSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
         appended = []
         for word in reserved:
             if word not in self.word_to_idx:
@@ -2084,12 +2084,12 @@ DEFAULT_LEARNING_RATE = 0.01
 
 def _mphf_reserved_keys() -> List[str]:
     """Rows that must exist before corpus words in an MPHF lexicon."""
-    from Spaces import PerceptualSpace
-    return [PerceptualSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+    from Spaces import PartSpace
+    return [PartSpace.NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
 
 
 def _mphf_runtime_tokens(text: str) -> Iterable[str]:
-    """Yield the same byte spans that ``PerceptualSpace._embed_mphf`` hashes.
+    """Yield the same byte spans that ``PartSpace._embed_mphf`` hashes.
 
     Runtime MPHF splits only on ``ChunkLayer.BOUNDARY_BYTES``: NUL, tab,
     newline, carriage return, and space. Punctuation remains attached to
@@ -2847,7 +2847,7 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
     """Pretrain a model's BPE codebook + lexicon + C-tier transform
     weights through the per-word stem with a CBOW-over-STM loss.
 
-    Sets ``PerceptualSpace.wordLearning=1`` so the ChunkLayer grows
+    Sets ``PartSpace.wordLearning=1`` so the ChunkLayer grows
     the BPE codebook during the run; the saved ``.ckpt`` bundle
     contains the trained lexicon + BPE merges + model weights.
 
@@ -2869,7 +2869,7 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
 
     # Force active codebook growth for the lexicon-building pass.
     # ``embed.py`` is the only stage where the vocab grows.
-    TheXMLConfig.set("PerceptualSpace.wordLearning", 1)
+    TheXMLConfig.set("PartSpace.wordLearning", 1)
 
     model, _cfg = BasicModel.from_config(config_path)
     model.train()

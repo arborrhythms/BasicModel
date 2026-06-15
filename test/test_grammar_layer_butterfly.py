@@ -15,7 +15,7 @@ Contract verified here:
 Acceptance signal: this file passes, and the XOR convergence test
 ``test/test_mm_xor.py::TestMMXorConvergence::test_convergence`` /
 ``::test_learns_xor_signal`` close their convergence thresholds once
-butterfly mode is enabled on PerceptualSpace.pi via the new XML knob.
+butterfly mode is enabled on PartSpace.pi via the new XML knob.
 """
 
 import math

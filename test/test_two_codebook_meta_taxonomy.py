@@ -1,10 +1,10 @@
 """Stage 8 + Stage 3+4: Two-codebook split + META taxonomy (positive-int keyed).
 
-Tests the SymbolicSpace API surface as it exists post-`.where`-keyed
+Tests the WholeSpace API surface as it exists post-`.where`-keyed
 taxonomy refactor (doc/plans/2026-05-28-where-keyed-taxonomy.md):
 
   * ``insert_percept(canonical_bytes) -> int (position)`` delegates to
-    ``PerceptualSpace.percept_store`` and binds a position.
+    ``PartSpace.percept_store`` and binds a position.
   * ``insert_symbol(init_vec=None) -> int (position)`` allocates a new
     SS.codebook row + position; tagged ``"ss"`` in ``_pos_kind``.
   * ``insert_meta(ps_pos, ss_pos, fused_vec=None) -> int (position)``
@@ -68,7 +68,7 @@ def _make_radix_model():
 
 
 def _ss_row_from_pos(ss, pos):
-    """``pos`` -> SS.codebook row index via ``SymbolicSpace._ss_pos_to_row``."""
+    """``pos`` -> SS.codebook row index via ``WholeSpace._ss_pos_to_row``."""
     row = ss._ss_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
@@ -78,7 +78,7 @@ def _ss_row_from_pos(ss, pos):
 
 
 def _ps_row_from_pos(ss, pos):
-    """``pos`` -> PerceptStore row index via ``SymbolicSpace._ps_pos_to_row``."""
+    """``pos`` -> PerceptStore row index via ``WholeSpace._ps_pos_to_row``."""
     row = ss._ps_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
@@ -102,7 +102,7 @@ class TestInsertPercept(unittest.TestCase):
         ps = m.perceptualSpace.percept_store
         self.assertIsNotNone(ps,
                              "MM_xor radix-mode model must have a "
-                             "percept_store on PerceptualSpace")
+                             "percept_store on PartSpace")
         starting_size = len(ps)
         pos = ss.insert_percept(b"hello")
         self.assertIsInstance(pos, int)
@@ -394,9 +394,9 @@ class TestPersistenceRoundtrip(unittest.TestCase):
         self.assertIn("taxonomy", extras)
         self.assertIn("taxonomy_parent", extras)
         self.assertIn("meta_pair_to_idx", extras)
-        # Fresh SymbolicSpace, load extras.
-        from Spaces import SymbolicSpace
-        ss2 = SymbolicSpace(
+        # Fresh WholeSpace, load extras.
+        from Spaces import WholeSpace
+        ss2 = WholeSpace(
             list(ss.inputShape), list(ss.spaceShape), list(ss.outputShape))
         # Grow ss2's codebook to match capacity (needed if grow_to had to
         # extend the original).
@@ -495,7 +495,7 @@ class TestReverseDecodeGuards(unittest.TestCase):
 
 
 class TestInsertMetaGuards(unittest.TestCase):
-    """Stage 8 code-quality guards on ``SymbolicSpace.insert_meta``:
+    """Stage 8 code-quality guards on ``WholeSpace.insert_meta``:
 
       * ``ema`` outside ``[0.0, 1.0]`` must raise ``ValueError``.
       * ``fused_vec`` containing NaN/Inf must raise ``RuntimeError``

@@ -55,7 +55,7 @@ def test_idempotent_forward_compiles_fullgraph_eager():
 
 @pytest.mark.skipif(not _RUN_SLOW, reason="slow (~60s CLI fullgraph trace) -- set RUN_SLOW=1")
 def test_serial_per_word_forward_compiles_fullgraph_eager():
-    """The serial ``conceptualMode`` path (per-word forward dispatch) must
+    """The serial ``symbolicOrder>=1`` path (per-word forward dispatch) must
     trace fullgraph too. ``MM_grammar.xml`` drives ``_forward_body_per_word``
     -> ``ConceptualSpace.forward`` -> ``_stm_shift_and_push`` -> the STM
     reduce sweep -> host-side relation learning. The two STM data-dependent

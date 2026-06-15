@@ -36,8 +36,8 @@
     <modelType>embedding</modelType>
     <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
          the serial sibling is MM_5M_grammar.xml). -->
-    <conceptualMode>parallel</conceptualMode>
-    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <subsymbolicOrder>1</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
          butterfly cascade (moved from per-space to architecture-level). -->
@@ -47,9 +47,9 @@
       <dataset>xor</dataset>
     </data>
     <training>
-      <numEpochs>400</numEpochs>
+      <numEpochs>600</numEpochs>
       <batchSize>12</batchSize>
-      <learningRate>0.0005</learningRate>
+      <learningRate>0.001</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
     </training>
   </architecture>
@@ -60,7 +60,7 @@
     <!-- lexer>word</lexer -->
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8192</nInput>        <!--    8 FROM CONCEPTUAL -->
     <nInputDim>5</nInputDim>     <!-- 1024 FROM CONCEPTUAL -->
     <nVectors>65536</nVectors>
@@ -77,7 +77,7 @@
          PerceptStore (radix trie + promotion); flip here to experiment. -->
     <synthesis>bpe</synthesis>
     <!-- codebook>quantize</codebook -->
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
@@ -92,8 +92,8 @@
     <codebook>none</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
-    <!-- Phase 4b (2026-06-10) moved lexers to SymbolicSpace; this
+  <WholeSpace>
+    <!-- Phase 4b (2026-06-10) moved lexers to WholeSpace; this
          config carried only the commented-out legacy InputSpace lexer
          and so had NO live lexer at all — the content tier never
          lexed, every sentence staged as the same slab (row-identical
@@ -113,7 +113,7 @@
 
     <invertible>true</invertible>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

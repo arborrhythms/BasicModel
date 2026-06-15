@@ -12,10 +12,10 @@
         <xs:element name="architecture" type="architectureType" minOccurs="0"/>
         <xs:element name="mentalModel" type="mentalModelType" minOccurs="0"/>
         <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
-        <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
+        <xs:element name="PartSpace" type="partSpaceType" minOccurs="0"/>
         <xs:element name="ModalSpace" type="modalSpaceType" minOccurs="0"/>
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
-        <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
+        <xs:element name="WholeSpace" type="wholeSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
         <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
         <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
@@ -24,7 +24,7 @@
   </xs:element>
 
   <!-- TetralemmaPolicy: shared 4-valued (catuskoti) balance policy
-       inherited by ConceptualSpace and SymbolicSpace unless their
+       inherited by ConceptualSpace and WholeSpace unless their
        <tetralemmaOverride enabled="true"> opts out. -->
   <xs:complexType name="tetralemmaPolicyType">
     <xs:all>
@@ -46,7 +46,7 @@
   <xs:complexType name="architectureType">
     <xs:all>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
-      <!-- conceptualOrder = T = number of per-stage ConceptualSpace
+      <!-- subsymbolicOrder = T = number of per-stage ConceptualSpace
            instances in self.conceptualSpaces. Stage 10 (doc/plans/
            2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): each
            stage owns its own Ramsified sigma_in (incoming fold) and
@@ -56,20 +56,82 @@
            SyntacticLayer.compose dispatch per stage replaces
            sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
            currently the per-word loop uses the terminal CS). -->
-      <xs:element name="conceptualOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="subsymbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-           explicit two-mode forward dispatch knob.
-             serial    = GRAMMATICAL: per-word body via _forward_body_per_word
-                         (one IS_t per word, push to STM per word).
-             parallel  = per-stage body via _forward_per_stage
-                         (T iterations from <conceptualOrder>).
-           Default derives from the configured grammar — serial when the
-           XML enables a non-substrate rule, else parallel. Explicit
-           values override the default. -->
-      <xs:element name="conceptualMode" type="conceptualModeEnum" minOccurs="0"/>
+           explicit forward-dispatch depth. Integer (replaces the retired
+           conceptualMode serial|parallel enum, 2026-06-13):
+             0     = PARALLEL: per-stage body via _forward_per_stage
+                     (T iterations from <subsymbolicOrder>), no serial loop.
+             >= 1  = SERIAL / GRAMMATICAL: per-word body via
+                     _forward_body_per_word (one IS_t per word, push to STM
+                     per word). Unlike subsymbolicOrder, serial LOOPS the
+                     same modules rather than building stages, so a serial
+                     mind still takes its subsymbolicOrder subsymbolic pumps.
+                     Values > 1 are plumbed but behave as 1 for now.
+           Default derives from the configured grammar — 1 when the XML
+           enables a non-substrate rule, else 0. Explicit values override. -->
+      <xs:element name="symbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- NeuralToolUser (doc/plans/NeuralToolUser.md): when true, the
+           binary reduction stage of LanguageLayer.compose runs the
+           hard-parse executor (greedy Viterbi tiling per level, route +
+           cross-product distribution saved to the route store) instead of
+           the soft-DP fold loop. Default false keeps the soft-DP path
+           (state_dict / basin unchanged); the two-hard-parse policy
+           training is driven at the model/train level. -->
+      <xs:element name="neuralToolUser" type="xs:boolean" minOccurs="0"/>
+      <!-- SymbolicComposition (doc/plans/NeuralToolUser.md; Architecture.md
+           "three cognitive operations"). When true, during the
+           subsymbolicOrder CS-to-PS loop the symbols handed back to
+           PartSpace are re-encoded through the CS symbol table (the
+           wide/deep remap; MM_20M: [8, 1020+2+2] to [1024, 4+2+2]) so
+           SigmaLayer composes a high-order word out of several lower-order
+           words; the inverse decode runs on the reverse leg. Default false
+           keeps the stage-0 percept re-fed every pass (state_dict / basin
+           unchanged). Reuses the existing wide/deep regroup; only engages
+           for subsymbolicOrder greater than 1. -->
+      <xs:element name="symbolicComposition" type="xs:boolean" minOccurs="0"/>
+      <!-- TransformChooser kind (doc/plans/NeuralToolUser.md "MLP
+           TransformChooser"). The placement scorer the structured grammar
+           layers use: "anchordot" (default) is the stateless inner-product
+           scorer (no params, state_dict / basin unchanged); "mlp" is the
+           contextual MLPTransformChooser (a learned MLP over slot/pair
+           state, candidate output, tool embedding and position). The MLP
+           OWNS parameters, so selecting it changes the state_dict and
+           starts a fresh basin (a deliberate cutover). -->
+      <xs:element name="transformChooser" type="transformChooserEnum" minOccurs="0"/>
+      <!-- Two-pass soft-superposition training for the grammar chooser
+           (doc/Language.md "Soft-superposition route"). When true, each
+           TRAINING batch runs twice as two separate trials: pass A at
+           superposition temperature 0 (sharp, recorded) and pass B at
+           exploreTemperature (flatter exploration, trimmed from the batch
+           error, no batch-count increment). The chooser is in the gradient
+           path directly (no straight-through). Independent of neuralToolUser.
+           Default false keeps the single forward (byte-identical). -->
+      <xs:element name="learning" type="xs:boolean" minOccurs="0"/>
+      <!-- The [0, 1] superposition temperature for pass B of learning (0 =
+           the chooser's own sharp softmax, 1 = uniform / flat; route scores
+           are scaled by (1 - t)). Default 0.5. -->
+      <xs:element name="exploreTemperature" type="xs:decimal" minOccurs="0"/>
+      <!-- MetaSymbol role-participation Category codebook (doc/Language.md
+           "Participation Categories as the Chooser's Syntactic-Category
+           Context"). PHASE 1: when true, a small VectorQuantize codebook is
+           learned over the live MetaSymbol vectors during PERCEPTION (E/M in
+           the autobind hook): each MetaSymbol assigns to a nearest centroid;
+           each centroid carries an uncollapsed role vector (op_I[n] inputs +
+           op_O1 outputs) EMA-updated from the roles the object filled in the
+           analysis parse. Unused centroids decay (natural collapse). Default
+           false: no codebook is allocated (byte-identical). -->
+      <xs:element name="categoryCodebook" type="xs:boolean" minOccurs="0"/>
+      <!-- PHASE 2: feed the per-slot object's category (its centroid role
+           vector) to the placement chooser as syntactic-category context. Only
+           meaningful with transformChooser=mlp and categoryCodebook=true; it
+           threads the per-slot category into MLPTransformChooser's feature and
+           widens its input (a fresh-basin extension of the MLP chooser).
+           Default false: the chooser ignores category (byte-identical). -->
+      <xs:element name="chooserCategoryContext" type="xs:boolean" minOccurs="0"/>
       <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
            protocol. In serial mode every sentence opens with an
-           independent PARALLEL prelude of <conceptualOrder> pumps
+           independent PARALLEL prelude of <subsymbolicOrder> pumps
            (pump zero: EMA on, intent-only commit — the gist primes
            both towers via §5 set_intent; nothing enters the
            workspace), then the per-word serial task runs under the
@@ -160,7 +222,7 @@
       <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
       <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
       <!-- Shared tetralemma policy block for ConceptualSpace /
-           SymbolicSpace; per-space override via that section's
+           WholeSpace; per-space override via that section's
            ``<tetralemmaOverride enabled="true">`` plus its own nested
            <TetralemmaPolicy>. -->
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
@@ -177,15 +239,15 @@
       <xs:element name="gateL1Lambda" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Sparse-MoE load-balance loss weight (active when chartTopK > 0). -->
       <xs:element name="loadBalanceWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Symbol-partition geometry for conceptualOrder > 1:
+      <!-- Symbol-partition geometry for subsymbolicOrder > 1:
            tapered = geometrically narrowing slices (default);
            uniform = equal-width slices. -->
       <xs:element name="conceptualWidth" type="conceptualWidthEnum" minOccurs="0"/>
       <xs:element name="maxActivePerLayer" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Single continuous truth bar in [0, 1] (read onto ConceptualSpace
-           AND SymbolicSpace; overridable per-space). 0 = record/accept all
+           AND WholeSpace; overridable per-space). 0 = record/accept all
            truths, 1 = none. Governs BOTH content-aware learned-relation
-           codebook insertion and SymbolicSpace truth recording (gold +
+           codebook insertion and WholeSpace truth recording (gold +
            training). Replaces the retired binary accumulateTruth /
            truthMinMagnitude switches. -->
       <xs:element name="truthCriterion" type="unitInterval" minOccurs="0"/>
@@ -242,15 +304,6 @@
     </xs:restriction>
   </xs:simpleType>
 
-  <!-- Stage 1.E forward-dispatch mode (doc/plans/2026-05-26-two-loop-
-       pi-sigma-substrate.md). -->
-  <xs:simpleType name="conceptualModeEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="serial"/>
-      <xs:enumeration value="parallel"/>
-    </xs:restriction>
-  </xs:simpleType>
-
   <!-- Task 4 per-word router-fire gating (doc/plans/2026-05-29-stm-
        serial-parallel-modes.md §4). -->
   <xs:simpleType name="routerWireSerialEnum">
@@ -259,6 +312,14 @@
       <xs:enumeration value="boundary"/>
       <xs:enumeration value="both"/>
       <xs:enumeration value="off"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Placement-chooser kind for the structured grammar layers. -->
+  <xs:simpleType name="transformChooserEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="anchordot"/>
+      <xs:enumeration value="mlp"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -328,7 +389,7 @@
          low-rank     : active factors U = diag(sqrt(r_S)) A_S; Cq = U^T(Uq)
                         without materializing C.
        The legacy boolean hasAttention (which formerly requested a QKV
-       AttentionLayer in PerceptualSpace/ConceptualSpace) is DEPRECATED and
+       AttentionLayer in PartSpace/ConceptualSpace) is DEPRECATED and
        inert; it is kept only as a backward-compat alias (data/model.xml still
        sets it). New configs should use the attention element instead. The
        mode is stored on the owning space and consumed by the reverse-
@@ -538,13 +599,13 @@
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
-           the <lexer> element moved to SymbolicSpace - lexing is analytic
+           the <lexer> element moved to WholeSpace - lexing is analytic
            cutting, owned by the analysis side. An InputSpace-side <lexer>
            now fails schema validation AND the runtime reader. -->
     </xs:all>
   </xs:complexType>
 
-  <xs:complexType name="perceptualSpaceType">
+  <xs:complexType name="partSpaceType">
     <xs:all>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -565,7 +626,7 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-           optional butterfly cascade on PerceptualSpace.pi for
+           optional butterfly cascade on PartSpace.pi for
            cross-element FFT-style mixing over the flattened [B, N*D]
            view. When ``butterfly=true`` the PiLayer is built with the
            cascade enabled. The cascade length N is AUTO-COMPUTED from
@@ -577,12 +638,12 @@
       <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
            -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
-      <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+      <!-- PartSpace is subsymbolic: its <codebook> element was retired
            (2026-06-09, asymmetric-VQ plan §7 task 7). PS behaviour is fixed
            to "none" (continuous .event passthrough; percept prototypes live
-           on the .what Embedding). Only SymbolicSpace carries a <codebook>. -->
+           on the .what Embedding). Only WholeSpace carries a <codebook>. -->
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
-           symbolicSpaceType; see comments there). -->
+           wholeSpaceType; see comments there). -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
       <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -597,9 +658,9 @@
            2026-06-09): the perceptual front-end knob is SYNTHESIS,
            the bottom-up union of atoms into chunks/surface forms. It
            was named ``<chunking>``; the legacy spelling is REJECTED
-           LOUDLY by the PerceptualSpace reader (no silent aliasing).
+           LOUDLY by the PartSpace reader (no silent aliasing).
            ``analyse`` is accepted here only until Phase 4b moves the
-           meronymic analyzer to SymbolicSpace <analysis>. -->
+           meronymic analyzer to WholeSpace <analysis>. -->
       <xs:element name="synthesis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
@@ -627,7 +688,7 @@
             <xs:enumeration value="radix"/>
             <!-- ``analyse`` was REMOVED (Phase 4b, rev. 2026-06-09):
                  the meronymic analyzer is top-down ANALYSIS and lives
-                 on SymbolicSpace as <analysis>analyse. Configs that
+                 on WholeSpace as <analysis>analyse. Configs that
                  ran PS analyse migrate to <synthesis>lexicon (the
                  closest surviving word-resolution mode). -->
           </xs:restriction>
@@ -688,13 +749,13 @@
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <!-- Optional butterfly cascade on the ConceptualSpace sigma fold
            (cross-element mixing; the cascade length is auto-computed from
-           the space shape; see perceptualSpaceType/butterfly). -->
+           the space shape; see partSpaceType/butterfly). -->
       <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
            -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <!-- VQ-VAE EMA / growing-codebook knobs (shared semantics with
-           symbolicSpaceType; see comments there). -->
+           wholeSpaceType; see comments there). -->
       <xs:element name="commitmentDecay" type="positiveFloat" minOccurs="0"/>
       <xs:element name="codebookRetire" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebookEmaDeadThreshold" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -717,7 +778,7 @@
     </xs:all>
   </xs:complexType>
 
-  <xs:complexType name="symbolicSpaceType">
+  <xs:complexType name="wholeSpaceType">
     <xs:all>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -729,7 +790,7 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Phase 4b (analysis/synthesis dual-input plan, rev. 2026-06-09):
-           SymbolicSpace owns the top-down ANALYSIS knobs.
+           WholeSpace owns the top-down ANALYSIS knobs.
            <lexer> (moved here from InputSpace): the intake granularity
            InputSpace executes - lexing is analytic cutting.
            <analysis>: the division strategy over the unity view.
@@ -757,23 +818,23 @@
       </xs:element>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <!-- Symbolic-retrieval mode (off|primer|second-order|low-rank);
-           default off. SymbolicSpace has no hasAttention legacy alias:
+           default off. WholeSpace has no hasAttention legacy alias:
            it never constructed a QKV AttentionLayer. See attentionModeEnum
            and doc/plans/2026-06-06-symbolic-heat-retrieval.md. -->
       <xs:element name="attention" type="attentionModeEnum" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
-      <!-- Optional butterfly cascade on the SymbolicSpace sigma operator
+      <!-- Optional butterfly cascade on the WholeSpace sigma operator
            (cross-slot mixing, needed for tasks like XOR that combine
            positions; the cascade length is auto-computed from the space
-           shape; see perceptualSpaceType/butterfly). -->
+           shape; see partSpaceType/butterfly). -->
       <!-- DEPRECATED alias for <sigmaPi> (true -> butterfly, false/absent
            -> last). New configs should use architecture-level <sigmaPi> instead. -->
       <xs:element name="butterfly" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="codebookModeEnum" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Gate SymbolicSpace's stack-rewrite LanguageLayer dispatch
+      <!-- Gate WholeSpace's stack-rewrite LanguageLayer dispatch
            (``self.use_stack_router``). Default false keeps the legacy
            forward path. -->
       <xs:element name="useStackRouter" type="xs:boolean" minOccurs="0"/>
@@ -814,7 +875,7 @@
            reentrancy.md §Stage 8): META taxonomy storage placeholder.
            The actual taxonomy graph (parent -> children, child -> parent,
            and (ps_idx, ss_idx) -> meta_idx) is a runtime structure on
-           ``SymbolicSpace`` (``self.taxonomy``,
+           ``WholeSpace`` (``self.taxonomy``,
            ``self.taxonomy_parent_map``, ``self.meta_pair_to_idx``);
            it serialises through ``vocab_extras`` (the same sidecar that
            carries WordVectors mappings). This optional XSD element exists

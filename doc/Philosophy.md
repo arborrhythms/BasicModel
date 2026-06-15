@@ -7,7 +7,7 @@ through-line is the corrected analysis/synthesis orientation
 (doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev. 2026-06-09):
 
 ```text
-SymbolicSpace (SS)                  PerceptualSpace (PS)
+WholeSpace (SS)                  PartSpace (PS)
 top-down ANALYSIS                   bottom-up SYNTHESIS
 Pi -- product, intersection         Sigma -- sum, union
 starts from UNITY [B, 1, N]         starts from ATOMS [B, N, 1]
@@ -103,7 +103,7 @@ The architecture realizes this distinction structurally
   with no naming side-channel — and the σ/π folds carve the scene:
   the analysis, in its carving of the domain into parts, IS the
   parallel act. The prelude pumps **up to the model's
-  `conceptualOrder`** (the per-order derivation ladder), seeding both
+  `subsymbolicOrder`** (the per-order derivation ladder), seeding both
   codebook towers with a scene description that is pre-conceptual in
   exactly the Gelug sense: no table lookup, no naming, no story. The
   σ and π layers are the real subsymbolic shapers of meaningfulness
@@ -136,8 +136,21 @@ The architecture realizes this distinction structurally
   filter; relative truths are the conceptual overlay's own products
   and are evaluated within it.
 
+At the corpus callosum, objects are analysed and synthesized — by
+sending them back to PerceptualSpace (the shared base of the two
+perceptual views): wholes get split and parts get chunked. In symbolic
+"mode", the objects that get sent back are **symbols**. The semiotic
+vocabulary: there are **objects** and **references**, and a reference
+is either a **sign** or a **symbol**. A *sign* is a quantized version
+of the referent — it stays in the referent's space, snapped to a
+codebook row (the direct-perception side of the ledger). A *symbol* is
+an unrelated version of the referent, of much lower dimensionality —
+an arbitrary stand-in, related to its referent only through the
+binding table (the conceptual-overlay side; cf. *sgra-spyi*, the term
+generality, versus the object it evokes).
+
 Protocol summary: any sentence, when processed, has
-``conceptualOrder`` parallel steps to seed the codebook towers, and
+``subsymbolicOrder`` parallel steps to seed the codebook towers, and
 then meaning-making happens over the complete sentence, producing an
 absolute truth (an idea) or a relative truth (a relation between
 ideas).

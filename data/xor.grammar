@@ -10,7 +10,7 @@
 -->
 <grammar name="xor">
 
-  <PerceptualSpace>
+  <PartSpace>
     <!-- The analyzer root: U is "everything currently visible to the
          analyzer", recursively decomposable into U-typed sub-surfaces.
          The marker-free structural cover (stop / boundary / uniform) is
@@ -28,9 +28,9 @@
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
     </generate>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <!-- Minimal XOR symbolic grammar: each connective declares its input
          roles (op_I[n]) and output role (op_O1); the operator outputs are
          the start states. Tier / arity / invertibility derive from each
@@ -51,6 +51,6 @@
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
       <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
     </generate>
-  </SymbolicSpace>
+  </WholeSpace>
 
 </grammar>

@@ -16,7 +16,7 @@ Post-Stage-2 contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
   * Pi / Sigma stay anonymous substrate folds: their empty ``rule_name``
     means ``GrammarLayer.__init__``'s auto-registration with the chart
     authority is a no-op. They are instantiated directly by spaces
-    (``PerceptualSpace.pi`` / ``PerceptualSpace.sigma``), not by the
+    (``PartSpace.pi`` / ``PartSpace.sigma``), not by the
     chart parser's typed-GrammarLayer registry.
 
   * This Stage 2 inheritance change is a precondition for Stage 5

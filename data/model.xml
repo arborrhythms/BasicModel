@@ -21,22 +21,26 @@
 
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
          the symbolic codebook geometrically (see Reasoning.md). -->
-    <conceptualOrder>1</conceptualOrder>
+    <subsymbolicOrder>1</subsymbolicOrder>
 
     <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-         explicit two-mode forward dispatch.
-           serial    = GRAMMATICAL: per-word body via
-                       _forward_body_per_word (one IS_t per word, push
-                       to STM per word). Grammar configs default here.
-           parallel  = per-stage body via _forward_per_stage
-                       (T iterations from <conceptualOrder>). Non-grammar
-                       configs (whole-slab path) default here.
+         explicit forward-dispatch depth (integer; replaces the retired
+         conceptualMode serial|parallel enum, 2026-06-13).
+           0     = PARALLEL: per-stage body via _forward_per_stage
+                   (T iterations from <subsymbolicOrder>). Non-grammar
+                   (whole-slab) configs default here.
+           >= 1  = SERIAL / GRAMMATICAL: per-word body via
+                   _forward_body_per_word (one IS_t per word, push to STM
+                   per word). Grammar configs default here. Serial LOOPS
+                   the modules (it does not build stages like
+                   subsymbolicOrder), so a serial mind still takes its
+                   subsymbolicOrder subsymbolic pumps.
          The default is OMITTED here so each config inherits via the
-         grammar-derived default: ``serial`` when the XML enables a
-         non-substrate rule (``useGrammar != 'none'``), else
-         ``parallel``. Concrete configs should set this explicitly so
-         the mode is documented at the config level. -->
-    <!-- <conceptualMode>serial|parallel</conceptualMode> -->
+         grammar-derived default: ``1`` when the XML enables a
+         non-substrate rule (``useGrammar != 'none'``), else ``0``.
+         Concrete configs should set this explicitly so the mode is
+         documented at the config level. -->
+    <!-- <symbolicOrder>0</symbolicOrder> -->
 
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
          per-word router-fire gating for serial mode.
@@ -121,11 +125,11 @@
     <loadBalanceWeight>0.0</loadBalanceWeight>
 
     <!-- Architecture-wide L1 / discontinuity penalties (legacy hooks).
-         Most configs leave these at 0 and use SymbolicSpace.l1Lambda. -->
+         Most configs leave these at 0 and use WholeSpace.l1Lambda. -->
     <l1Lambda>0.0</l1Lambda>
     <discontinuityLambda>0.0</discontinuityLambda>
 
-    <!-- Symbol-partition geometry for conceptualOrder > 1.
+    <!-- Symbol-partition geometry for subsymbolicOrder > 1.
          tapered = geometrically narrowing slices (default);
          uniform = equal-width slices. -->
     <conceptualWidth>tapered</conceptualWidth>
@@ -133,11 +137,11 @@
     <codebookRetire>false</codebookRetire>
 
     <!-- Single continuous truth bar in [0, 1] (read onto BOTH
-         ConceptualSpace and SymbolicSpace; overridable per-space).
+         ConceptualSpace and WholeSpace; overridable per-space).
          1 = nothing learned/recorded (highest bar); 0 = everything
          learned/recorded (no bar). Governs BOTH content-aware
          learned-relation insertion into the relative-sentence codebook
-         AND SymbolicSpace truth recording (gold ingestion + training).
+         AND WholeSpace truth recording (gold ingestion + training).
          Replaces the retired binary accumulateTruth / truthMinMagnitude
          switches. Default 1.0: truth-learning is OFF by default (opt-in by
          lowering toward 0). -->
@@ -369,7 +373,7 @@
          lexer (byte/word) so they keep the pre-lexed buffer. -->
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
@@ -383,19 +387,19 @@
     <invertible>false</invertible>
     <!-- Tanh-bound the output to [-1, 1]. -->
     <nonlinear>true</nonlinear>
-    <!-- PerceptualSpace is subsymbolic: the <codebook> element was retired
+    <!-- PartSpace is subsymbolic: the <codebook> element was retired
          (2026-06-09, asymmetric-VQ plan §7 task 7). PS is hardwired to "none"
          (continuous .event passthrough; percept prototypes live on the .what
-         Embedding). Only SymbolicSpace carries a <codebook>. -->
+         Embedding). Only WholeSpace carries a <codebook>. -->
     <!-- Synthesis (bottom-up union) strategy: lexicon | bpe | mphf | byte/none | radix.
          Phase 4b default: lexicon (word resolution through the word
          codebook - the closest surviving mode to the retired PS analyse;
-         the meronymic analyzer is ANALYSIS and lives on SymbolicSpace as
+         the meronymic analyzer is ANALYSIS and lives on WholeSpace as
          <analysis>analyse). -->
     <synthesis>lexicon</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ModalSpace>
     <nInput>0</nInput>
@@ -432,12 +436,12 @@
     <codebook>none</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <lexer>raw</lexer>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- symbol_dim must equal concept_dim under the ownership rule
-         (SymbolicSpace owns no SigmaLayer/PiLayer). nDim=0 means
+         (WholeSpace owns no SigmaLayer/PiLayer). nDim=0 means
          "inherit from ConceptualSpace.nDim". Concrete configs may set
          a positive value, but it must match ConceptualSpace.nDim. -->
     <nDim>0</nDim>
@@ -448,7 +452,7 @@
     <nonlinear>true</nonlinear>
     <!-- Discrete symbol prototypes (required for the full symbolic
          pipeline). Mandatory in the converged modality architecture
-         (SymbolicSpace is a MANDATORY_CODEBOOK_TIER). -->
+         (WholeSpace is a MANDATORY_CODEBOOK_TIER). -->
     <codebook>quantize</codebook>
     <!-- Bitonic-sort regularizer on the codebook ordering. -->
     <sortNetwork>false</sortNetwork>
@@ -469,7 +473,7 @@
          the single continuous <truthCriterion> bar (declared under
          <architecture>; 0 = record/accept all, 1 = none). The binary
          truthMinMagnitude / accumulateTruth switches are retired. -->
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>0</nInput>

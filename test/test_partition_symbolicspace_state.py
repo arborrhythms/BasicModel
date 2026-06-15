@@ -3,7 +3,7 @@
 The Task 6.1 forward-contract tests in this file were deleted on
 2026-05-29: they tested the legacy setW-writes-per-batch-shadow contract
 that doc/plans/2026-05-21-active-payload-retirement.md §4 retired.
-Under the new spec, ``forward()`` updates the SELECTION on ``_active``
+Under the new spec, ``forward()`` updates the SELECTION on ``_index``
 and the prototype Parameter is stable, so the old assertions were no
 longer meaningful. See git log for the deleted code.
 
@@ -25,18 +25,18 @@ import Spaces
 
 # ---------------------------------------------------------------------------
 # Task 7.1 -- characterization: chunking behavior must be unchanged by the
-# grammar-dispatch refactor.  PerceptualSpace.chunk_static is a pure static
+# grammar-dispatch refactor.  PartSpace.chunk_static is a pure static
 # method (no space state), so we can call it without constructing any Space
 # chain.  Covers the raw and lexicon modes that survive the refactor.
 # ---------------------------------------------------------------------------
 
 def test_chunk_static_modes_smoke():
     """Smoke-test the supported chunking modes.  Task 7.2 removed the
-    grammar-client call from PerceptualSpace.forward; ``chunk_static``
+    grammar-client call from PartSpace.forward; ``chunk_static``
     itself was never in scope, so this is a belt-and-braces sentinel
     against accidental drift of the two-way (bpe | lexicon) switch.
     """
-    lex = Spaces.PerceptualSpace.chunk_static(b"the cat sat", mode="lexicon")
+    lex = Spaces.PartSpace.chunk_static(b"the cat sat", mode="lexicon")
     assert lex == [b"the", b"cat", b"sat"]
-    bpe = Spaces.PerceptualSpace.chunk_static(b"abc", mode="bpe")
+    bpe = Spaces.PartSpace.chunk_static(b"abc", mode="bpe")
     assert bpe == [b"a", b"b", b"c"]

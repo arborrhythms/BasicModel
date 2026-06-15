@@ -89,9 +89,9 @@ def _assert_tier_shapes(tc, model, name):
         except Exception: return (0, 0)
     checks = [
         ("inputSpace", getattr(model, "inputSpace", None), *cs("InputSpace")),
-        ("perceptualSpace", getattr(model, "perceptualSpace", None), *cs("PerceptualSpace")),
+        ("perceptualSpace", getattr(model, "perceptualSpace", None), *cs("PartSpace")),
         ("conceptualSpace", getattr(model, "conceptualSpace", None), *cs("ConceptualSpace")),
-        ("symbolicSpace", getattr(model, "symbolicSpace", None), *cs("SymbolicSpace")),
+        ("symbolicSpace", getattr(model, "symbolicSpace", None), *cs("WholeSpace")),
         ("outputSpace", getattr(model, "outputSpace", None), *cs("OutputSpace")),
     ]
     for tier, space, ew, en in checks:

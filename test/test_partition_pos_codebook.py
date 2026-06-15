@@ -3,11 +3,11 @@
 Tasks 3.2 and 3.4 (TDD harness) + Tasks 3.3 and 3.5 (implementation).
 
 WordSpace cannot be constructed in isolation -- it requires real
-PerceptualSpace, ConceptualSpace, and SymbolicSpace objects (it calls
+PartSpace, ConceptualSpace, and WholeSpace objects (it calls
 attach_wordSpace() on each home space and grammar.symbolic() etc.).
 We build the minimal chain using _populate_test_config + direct Space
 constructors, the same pattern used by test_partition_resolve.py for
-SymbolicSpace alone.
+WholeSpace alone.
 """
 import os
 import sys
@@ -40,7 +40,7 @@ from test_basicmodel import _populate_test_config
 def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     """Construct the minimal WordSpace via TheXMLConfig + direct constructors.
 
-    Builds the full PerceptualSpace -> ConceptualSpace -> SymbolicSpace chain
+    Builds the full PartSpace -> ConceptualSpace -> WholeSpace chain
     required by WordSpace.__init__, then constructs WordSpace from it.
 
     WordSpace is NOT an isolated object: it back-wires all three home spaces
@@ -70,9 +70,9 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     spaceShape   = [nSymbols,   symbolDim]
     outputShape  = [nSymbols,   symbolDim]
 
-    percept_space   = Spaces.PerceptualSpace(inputShape, spaceShape, outputShape)
+    percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
-    symbolic_space  = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
+    symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
     # Reset grammar so WordSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False

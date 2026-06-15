@@ -13,7 +13,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
 
     <writeSyntax>true</writeSyntax>
     <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>
@@ -105,11 +105,11 @@
     <codebook>quantize</codebook>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>8</nOutput>
     <nDim>20</nDim>
     <nVectors>128</nVectors>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
@@ -118,12 +118,12 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>8</nOutput>
     <nDim>20</nDim>
     <nVectors>128</nVectors>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

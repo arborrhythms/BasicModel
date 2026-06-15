@@ -2257,7 +2257,7 @@ class GrammarLayer(Layer):
         nInputDim`` for a per-position-D layer). Padded to the next
         power of two internally; the pad slots are zero-init and
         contribute identity at forward / reverse. Callers may pass
-        ``N=None`` to defer; the wrapping space (e.g. ``PerceptualSpace``)
+        ``N=None`` to defer; the wrapping space (e.g. ``PartSpace``)
         auto-computes it.
 
         Per-node LDU storage (vs the prior single packed ``W`` Parameter
@@ -3585,7 +3585,7 @@ class PiLayer(GrammarLayer):
     ``[-1, 1] -> [-1, 1]``.
 
     Substrate, not a grammar operation. Instantiated directly by spaces
-    (``PerceptualSpace.pi_input`` / ``pi_concept``) and used by the
+    (``PartSpace.pi_input`` / ``pi_concept``) and used by the
     subsymbolic loop; not chart-dispatched.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
@@ -5048,13 +5048,13 @@ class LiftingLayer(Layer):
             subject: [B, N, D] subject concepts (S).
             verb: [B, N, D] verb concepts (V).
             obj: [B, N, D] object concepts (O).
-            symbolic_space: SymbolicSpace for concept<->symbol projection.
+            symbolic_space: WholeSpace for concept<->symbol projection.
         Returns:
             [B, N, D] lifted subject concepts.
         """
         ss = symbolic_space
 
-        # 1. Project concept vectors to symbol space via SymbolicSpace.forward()
+        # 1. Project concept vectors to symbol space via WholeSpace.forward()
         ss.subspace.set_event(verb)
         verb_syms = ss.forward(ss.subspace).materialize()     # [B, N, symbol_dim]
         ss.subspace.set_event(obj)
@@ -5064,7 +5064,7 @@ class LiftingLayer(Layer):
         restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
 
         # 3. Symbols are already in concept-space coordinates
-        # (symbol_dim == concept_dim is enforced in SymbolicSpace).
+        # (symbol_dim == concept_dim is enforced in WholeSpace).
         restricted = restricted_syms                          # [B, N, D]
 
         # 4. Weight verb by restricted concept norms -> query
@@ -5128,9 +5128,9 @@ class LiftingLayer(Layer):
                 """Return the stashed event tensor."""
                 return self._event
         class _MockSymSpace:
-            """Test double for SymbolicSpace bound to a PiLayer.
+            """Test double for WholeSpace bound to a PiLayer.
 
-            Implements just enough of SymbolicSpace's API for
+            Implements just enough of WholeSpace's API for
             LiftingLayer.test to exercise the ternary SVO lift path.
             """
             def __init__(self, pi):
@@ -5233,9 +5233,9 @@ class LoweringLayer(Layer):
 class SparsityRegLayer(Layer):
     """Soft-threshold L1 proximal operator.
 
-    Shared by PerceptualSpace, ConceptualSpace, and SymbolicSpace so a
+    Shared by PartSpace, ConceptualSpace, and WholeSpace so a
     single sparsity implementation is reused across tiers. Extracted from
-    ``SymbolicSpace.l1_proximal``.
+    ``WholeSpace.l1_proximal``.
 
     Acts as identity when disabled or when ``l1_lambda <= 0``. Otherwise
     applies ``sign(x) * max(|x| - l1_lambda, 0)``, which zeros activations
@@ -5522,7 +5522,7 @@ def ste_answer(q, f):
 
 
 class TruthLayer(Layer):
-    """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
+    """Truth store on WholeSpace: encoded truth statements scaled by DoT.
 
     Each truth statement is processed through the model pipeline to produce
     a symbolic activation ``[nSymbols]``.  The activation is then scaled by
@@ -5852,7 +5852,7 @@ class TruthLayer(Layer):
         Even indices are positive poles; odd indices are negative poles.
 
         .. warning::
-            This layout is **not** the current SymbolicSpace codebook layout,
+            This layout is **not** the current WholeSpace codebook layout,
             where each row is ``[pos_pole, neg_pole, where..., when...]``
             with a single leading bivector plus trailing positional data.
             Before calling ``luminosity``/``darkness``/
@@ -5867,7 +5867,7 @@ class TruthLayer(Layer):
         """Extract negative poles from a paired-index storage vector.
 
         See :meth:`_positive_poles` for the layout caveat regarding the
-        new leading-bivector SymbolicSpace codebook.
+        new leading-bivector WholeSpace codebook.
         """
         return v[..., 1::2]
 
@@ -5914,7 +5914,7 @@ class TruthLayer(Layer):
             N = (0, 0)   B = (1, 1)
 
         .. warning::
-            The current SymbolicSpace codebook layout is
+            The current WholeSpace codebook layout is
             ``[pos_pole, neg_pole, where..., when...]`` — a **single**
             leading bivector plus trailing positional template data, not
             repeated pairs. If passing a symbol activation from the new
@@ -5972,7 +5972,7 @@ class TruthLayer(Layer):
         its per-truth maximum — the hyperrectangle's "top right" corner
         in the 2D ``(pos, neg)`` plane of every concept.
 
-        Under the current SymbolicSpace codebook layout
+        Under the current WholeSpace codebook layout
         ``[pos_pole, neg_pole, where..., when...]``, fusion on raw stored
         rows also maxes the positional trailers; slice ``[..., :2]``
         at the call site for a pure bivector fusion.
@@ -6034,7 +6034,7 @@ class TruthLayer(Layer):
             verb: [B, N, D] verb concepts.
             obj: [B, N, D] object concepts.
             lifting_layer: LiftingLayer for verb application.
-            symbolic_space: SymbolicSpace for projection.
+            symbolic_space: WholeSpace for projection.
             model: ``Mereology``-mixed model providing
                 ``Luminosity(truth_layer=...)``.  Required for the
                 measure; when omitted (legacy callers) the method
@@ -6057,7 +6057,7 @@ class TruthLayer(Layer):
         result_ovs = lifting_layer.forward_transitive_svo(
             obj, verb, subject, ss)
 
-        # Project results to symbol space via SymbolicSpace.forward()
+        # Project results to symbol space via WholeSpace.forward()
         ss.subspace.set_event(result_svo)
         svo_syms = ss.forward(ss.subspace).materialize()  # [B, N, symbol_dim]
         ss.subspace.set_event(result_ovs)
@@ -6423,7 +6423,7 @@ class TruthLayer(Layer):
 
         Both sides of the disjunction live in symbol space by
         construction: stored truths are recorded from
-        ``SymbolicSpace.forwardEnd``, and ``symbol_states`` should be
+        ``WholeSpace.forwardEnd``, and ``symbol_states`` should be
         the post-pi activations cached during the Sigma-Pi loop (the
         model's ``self.symbol_states[-1]``).  Using symbols rather
         than pre-pi concepts keeps both operands in the basis's
@@ -6814,7 +6814,7 @@ class TruthLayer(Layer):
         """Generalize ``derive()`` to all two-argument grammar methods.
 
         Consolidated from ``Models.BaseModel.extrapolate``. Requires a
-        model handle for the SymbolicSpace/ConceptualSpace context, the
+        model handle for the WholeSpace/ConceptualSpace context, the
         luminosity non-decrease gate, partition-aware ordering and the
         basis. Returns ``dict(added, rejected)``.
         """
@@ -6980,7 +6980,7 @@ class TruthLayer(Layer):
         # -- Luminosity --------------------------------------------
         # Luminosity is now a Mereology measure on the model itself
         # (see bin/Mereology.py); the standalone TruthLayer.luminosity
-        # surface was removed when SymbolicSpace.luminosity migrated.
+        # surface was removed when WholeSpace.luminosity migrated.
         # The new measure is exercised in test/test_mereology.py.
 
         # -- Consistency -------------------------------------------
@@ -7017,11 +7017,11 @@ class TruthLayer(Layer):
         O = torch.randn(B, N, D)
 
         # Mock symbolic space: expose ``sigma`` attribute (the canonical
-        # surface after the C->S swap to SigmaLayer on SymbolicSpace).
+        # surface after the C->S swap to SigmaLayer on WholeSpace).
         _sigma = SigmaLayer(N, nSym, monotonic=True, invertible=True,
                             nonlinear=True)
         class _MockSS:
-            """Test double for SymbolicSpace exposing only a ``sigma`` attribute.
+            """Test double for WholeSpace exposing only a ``sigma`` attribute.
 
             TruthLayer's record / record_svo path reads
             ``symbolic_space.sigma`` to project SVO vectors into the
@@ -8438,13 +8438,13 @@ class ChunkLayer(Layer):
             self.id_to_bytes[i] = key
         self._next_id = 256
         # Task 4 (shared byte codebook): the PerceptStore that owns byte
-        # identity across synthesis front ends. Wired by PerceptualSpace
+        # identity across synthesis front ends. Wired by PartSpace
         # (``mirror_to_store``) in bpe/mphf modes; when set, every vocab
         # entry is mirrored into the store (percept_id == chunk_id) and
         # ``bytes_for`` resolves through it -- ``id_to_bytes`` becomes
         # the segmentation-side mirror, not the authority. Stashed
         # without module registration: the store is owned (and
-        # registered) by the PerceptualSpace, not this layer.
+        # registered) by the PartSpace, not this layer.
         object.__setattr__(self, "percept_store", None)
         self._max_merge_len = 1
         # Cumulative pair- and unigram-counts across batches. The two
@@ -9374,7 +9374,7 @@ class RadixLayer(Layer):
         self._capacity: int = cap
         self._size: int = 0
         # 2026-06-04: vector storage is a Codebook *Basis*, not a raw
-        # nn.Parameter. When ``basis`` is supplied (PerceptualSpace passes
+        # nn.Parameter. When ``basis`` is supplied (PartSpace passes
         # ``subspace.what`` in radix mode) the percept vectors live on that
         # shared Basis -- ONE percept codebook, on ``.what``, so the SubSpace
         # can store ``.active`` selections and materialize lazily (no vector
@@ -9672,7 +9672,7 @@ class RadixLayer(Layer):
 
         Accepts a single ``bytes`` / ``bytearray`` chunk and returns
         the ``(vector, percept_id_or_None)`` tuple. Batched / tensor
-        inputs are NOT supported here -- the PerceptualSpace's
+        inputs are NOT supported here -- the PartSpace's
         ``_embed_radix`` loop calls :meth:`lookup_with_id` per slot for
         clarity; this overload just exposes the same routine under the
         canonical Layer name so the symmetric ``forward()`` /
@@ -9698,7 +9698,7 @@ class RadixLayer(Layer):
         ``vec -> SS.codebook nearest -> META taxonomy children
         -> positive PS percept id -> bytes_for(pid)``. When it is
         ``None`` the fallback is nearest-PS-codebook directly (no META
-        walk); useful for standalone tests without a full SymbolicSpace
+        walk); useful for standalone tests without a full WholeSpace
         wired.
 
         Numerical-divergence policy:
@@ -9792,7 +9792,7 @@ class RadixLayer(Layer):
             except IndexError:
                 return b""
         # SS-walk: nearest may be the META itself, or its SS child.
-        # Resolve the row's position via SymbolicSpace's lookup tables;
+        # Resolve the row's position via WholeSpace's lookup tables;
         # an unbound row (not in _ss_row_to_pos) has no taxonomy entry
         # and no surface-bytes path -- return b"" rather than
         # mis-indexing the PS table with an SS row id.
@@ -9841,7 +9841,7 @@ class RadixLayer(Layer):
         ``nn.Parameter`` with the new capacity, copy the old rows,
         small-stddev init the new ones. Existing optimizer state is
         not preserved -- callers that hold an optimizer over
-        :attr:`codebook` must rebuild it (PerceptualSpace does this via
+        :attr:`codebook` must rebuild it (PartSpace does this via
         the standard ``rebuild_optimizer`` plumbing on insert).
         """
         new_cap = int(new_cap)
@@ -9922,7 +9922,7 @@ class BPEGpuLayer(Layer):
     that needs ``byte_indices.tolist()`` -- a per-step cudaMemcpyDtoH. When
     the BPE vocab is frozen (``word_learning <= 0`` -- the CPU-pretrain ->
     freeze -> GPU-train workflow), the whole tokenizer becomes static
-    tensor ops with zero host sync. ``PerceptualSpace`` owns an instance
+    tensor ops with zero host sync. ``PartSpace`` owns an instance
     of this layer and caches the per-(frozen) vocab static tables on
     itself (``self._bpe_static_tables``); this layer holds the algorithm
     only.
@@ -10179,7 +10179,7 @@ class MPHFGpuLayer(Layer):
 
     Build/verify pattern mirrors ``BPEGpuLayer``: frozen, built ONCE at
     the CPU->GPU handoff over the frozen lexicon key set, cached on the
-    owning ``PerceptualSpace`` as ``self._mphf_static_tables``; runtime is
+    owning ``PartSpace`` as ``self._mphf_static_tables``; runtime is
     pure static tensor ops -- poly-hash + ``searchsorted`` + collision-
     proof byte-verify -- ZERO host sync, O(1) per slot. The MPHF is
     **non-invertible**: the reverse map is the table lookup, never an
@@ -12723,7 +12723,7 @@ class ModelLoss(Loss):
                  what_scale=0.7, where_scale=0.2, when_scale=0.1,
                  embedding_scale=0.1,
                  certainty=False, nOutput=2,
-                 conceptualOrder=0,
+                 subsymbolicOrder=0,
                  nWhere=None, nWhen=None):
         """Initialize ModelLoss; allocate state for the class contract.
         
@@ -12748,7 +12748,7 @@ class ModelLoss(Loss):
             self.output_criterion = CertaintyWeightedCrossEntropy()
         elif nOutput <= 2:
             self.output_criterion = nn.MSELoss()
-        elif conceptualOrder > 0:
+        elif subsymbolicOrder > 0:
             self.output_criterion = nn.MSELoss()
         else:
             self.output_criterion = nn.CrossEntropyLoss()
@@ -12934,7 +12934,7 @@ class Error:
 
     Why a registry? There are currently 12+ loss terms accumulated across
     four different call sites (``ModelLoss``, ``BasicModel.runBatch``,
-    ``SymbolicSpace.accumulate_symbol_objective``, ``WordSpace.truth_modulated_loss``).
+    ``WholeSpace.accumulate_symbol_objective``, ``WordSpace.truth_modulated_loss``).
     Debugging convergence problems used to require grepping each site to
     answer "what fraction of today's gradient came from which term?".
     The registry makes that a one-call breakdown, and supports:
@@ -12961,7 +12961,7 @@ class Error:
                           method="compute", weight=self.loss.reconstruction_scale,
                           space="InputSpace", category="reconstruction")
         TheError.add("symbol_residual", sym_term, weight=1.0,
-                      space="SymbolicSpace", category="symbol")
+                      space="WholeSpace", category="symbol")
         total = TheError.total()          # for backprop
         TheError.snapshot()                # record for covariance
     """
@@ -13678,7 +13678,7 @@ class CorrMem(Mem):
 #     The codebook lives in the [-1, +1] hypercube; magnitude carries
 #     information (feature intensity) and there is no codebook-level
 #     negation operator, so two patterns differ when their coordinates
-#     differ. Right metric for PerceptualSpace and SymbolicSpace.
+#     differ. Right metric for PartSpace and WholeSpace.
 #
 #   ``use_cosine_sim=True`` (dot product, codebook unit-norm):
 #     ``indices = (flat @ codebook.T).argmax(dim=-1)``
@@ -13742,7 +13742,7 @@ class VectorQuantize(nn.Module):
         self.learnable_codebook = bool(learnable_codebook)
         # Asymmetric VQ (asymmetric-vq plan sec.3, rev. 2026-06-09): master
         # gate for the in-forward EMA codebook update. Default True (the
-        # standard VQ-VAE behavior). The SymbolicSpace VQ sets this False --
+        # standard VQ-VAE behavior). The WholeSpace VQ sets this False --
         # EMA is a single-objective crutch replaced by the reconstruction
         # gradient on the codebook (the input->codebook leg of the
         # asymmetric routing). Distinct from ``learnable_codebook`` (which

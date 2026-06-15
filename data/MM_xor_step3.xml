@@ -6,7 +6,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <ergodic>true</ergodic>
 
     <training>
@@ -42,12 +42,12 @@
     <nVectors>6</nVectors>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): CS aligned to IS/PS. -->
   <ConceptualSpace>
@@ -57,11 +57,11 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

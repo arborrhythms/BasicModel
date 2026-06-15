@@ -5,7 +5,7 @@
 This document defines the logic system at three levels:
 
 1. **Subsymbolic (vector / field level)** --- geometry in ConceptualSpace
-2. **Symbolic (scalar level in [-1,1])** --- order + polarity in SymbolicSpace
+2. **Symbolic (scalar level in [-1,1])** --- order + polarity in WholeSpace
 3. **Rationality** --- propositional truth store built on both
 
 Executable implementations of the subsymbolic and symbolic operators are the
@@ -153,14 +153,14 @@ $$
 
 ### TruthLayer (WordSpace.truth_layer)
 
-`TruthLayer` is instantiated by `WordSpace.__init__`. `SymbolicSpace.forward`
+`TruthLayer` is instantiated by `WordSpace.__init__`. `WholeSpace.forward`
 records activations into the TruthLayer governed by the single continuous
 `<truthCriterion>` bar (0 $=$ record every activation, 1 $=$ record none): a
 per-cell activation is recorded when its clamped magnitude clears
 `truthCriterion`. The same knob also gates learned-relation acceptance in
 `ConceptualSpace`, so one continuous knob governs all truth learning. The
 binary `<accumulateTruth>` / `<truthMinMagnitude>` switches are **retired**.
-Recording now fires wherever `SymbolicSpace.forward` runs — both normal
+Recording now fires wherever `WholeSpace.forward` runs — both normal
 training and the `store_truths` gold-ingestion epoch (which drops
 `truthCriterion` to `0` to capture every provided gold truth, then restores
 it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
@@ -202,7 +202,7 @@ Together they define a partial order over symbolic activations.
 
 Truth entries arrive as `(text, DoT)` pairs. `store_truths()` stages all texts
 on TheData and runs a standard inference epoch via `runEpoch(split="runtime")`.
-During forward, `SymbolicSpace.forward()` records each raw symbolic activation
+During forward, `WholeSpace.forward()` records each raw symbolic activation
 (degree 1.0). After the epoch, each activation is scaled by its DoT:
 
 $$
@@ -350,8 +350,8 @@ automatically.
 
 **Layout caveat.** TruthLayer's paired-index slicing (`[..., 0::2]` for
 positive poles, `[..., 1::2]` for negative) assumes a *repeated* bivector
-layout. The SymbolicSpace codebook uses a *leading* bivector plus positional
-trailers: `[pos, neg, where..., when...]`. Callers feeding SymbolicSpace
+layout. The WholeSpace codebook uses a *leading* bivector plus positional
+trailers: `[pos, neg, where..., when...]`. Callers feeding WholeSpace
 activations into `luminosity()` must slice the leading 2 dims first
 (`acts[..., :2]`); see `truth_loss` call-site in `bin/Spaces.py`.
 

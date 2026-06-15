@@ -104,7 +104,7 @@ def _codebook_bearing_subspace():
     """A SubSpace whose ``.event`` slot is a Codebook with a registered
     Parameter — the configuration where ``_active_payload`` shadows.
 
-    Mirrors the PerceptualSpace MM_xor / MM_20M layout: muxed event
+    Mirrors the PartSpace MM_xor / MM_20M layout: muxed event
     holds the codebook prototype.
     """
     cb = Codebook()
@@ -129,7 +129,7 @@ def _exercise_codebook_event_write(sub):
 
 # Post-Stage 4 contract: codebook-bearing slots REFUSE per-batch event
 # writes (Codebook.setW raises on 3-D plain-tensor writes). Per-batch
-# content reconstructs from prototype + selection (``codebook[_active]``)
+# content reconstructs from prototype + selection (``codebook[_index]``)
 # via ``SubSpace.materialize``. The ``_active_payload`` shadow on
 # Tensor / Codebook / ProjectionBasis was retired.
 #
@@ -143,9 +143,9 @@ BASELINE_GETW_PER_MATERIALIZE = 0
 def test_set_event_on_codebook_snaps_through_codebook():
     """Spec: ``set_event`` / ``set_muxed`` on a muxed subspace snaps
     the per-batch tensor through the codebook (``Codebook.forward``)
-    to produce the per-position selection, which lands on ``_active``.
+    to produce the per-position selection, which lands on ``_index``.
     The selection IS the per-batch storage; ``materialize`` later
-    reconstructs as ``codebook[_active]``.
+    reconstructs as ``codebook[_index]``.
 
     The Codebook's own ``set_event`` still raises if called directly —
     that's the band-aid path being retired; the spec contract is to
@@ -155,9 +155,9 @@ def test_set_event_on_codebook_snaps_through_codebook():
     sub = _codebook_bearing_subspace()
     # No raise: set_event snaps through the codebook on .event.
     _exercise_codebook_event_write(sub)
-    # Post-snap: _active holds per-position indices selected by the snap.
-    assert sub._active is not None
-    assert sub._active.ndim == 3 and sub._active.shape[-1] >= 1
+    # Post-snap: _index holds per-position indices selected by the snap.
+    assert sub._index is not None
+    assert sub._index.ndim == 3 and sub._index.shape[-1] >= 1
     # Direct ``Basis.set_event`` on the codebook STILL raises — that's
     # the spec-aligned strict assertion. The SubSpace setter API
     # (``set_event`` / ``set_muxed``) is the legal write surface.
@@ -175,7 +175,7 @@ def test_setw_audit_after_selection_write(setw_audit):
     cb.create(nInput=4, nVectors=8, nDim=6)
     cb.addVectors(8)
     sub = SubSpace(inputShape=[4, 6], outputShape=[4, 6], object=cb)
-    # Spec-aligned write: per-position selection indices on ``_active``.
+    # Spec-aligned write: per-position selection indices on ``_index``.
     indices = torch.randint(0, 8, (2, 4))  # [B=2, N=4]
     sub.set_forward_content(indices)
     # Materialize reconstructs from prototype + selection.
@@ -225,7 +225,7 @@ def test_codebook_slot_event_for_muxed_codebook():
 
 
 def test_codebook_slot_what_for_unmuxed_codebook():
-    """Codebook on .what (e.g. SymbolicSpace) → codebook_slot == 'what'."""
+    """Codebook on .what (e.g. WholeSpace) → codebook_slot == 'what'."""
     cb = Codebook()
     cb.create(nInput=4, nVectors=8, nDim=2)
     cb.addVectors(8)
@@ -272,7 +272,7 @@ def test_pure_event_lookup_raises():
 
 def test_codebook_forward_writes_selection_for_muxed_subspace():
     """Stage 3.2: Codebook.forward on a muxed destination writes the
-    per-position selection to ``_active`` via ``set_forward_content``;
+    per-position selection to ``_index`` via ``set_forward_content``;
     ``materialize`` reconstructs from prototype + selection (no
     ``_active_payload`` shadow involved).
     """
@@ -287,10 +287,10 @@ def test_codebook_forward_writes_selection_for_muxed_subspace():
     sub.set_event(torch.randn(2, 4, 6), compute_activation=False)
     cb.forward(sub)
 
-    # After forward: ``_active`` holds per-position selection.
-    assert sub._active is not None
-    assert sub._active.ndim == 3 and sub._active.shape[-1] >= 1
-    sel = sub._active[:, :, 0]
+    # After forward: ``_index`` holds per-position selection.
+    assert sub._index is not None
+    assert sub._index.ndim == 3 and sub._index.shape[-1] >= 1
+    sel = sub._index[:, :, 0]
     V = cb.prototype().shape[0]
     assert int(sel.max()) < V and int(sel.min()) >= 0
 

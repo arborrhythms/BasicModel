@@ -3,7 +3,7 @@
 Task 4.1 (TDD harness) -- failing tests written BEFORE Task 4.2 implementation.
 
 WordSpace cannot be constructed in isolation -- it requires real
-PerceptualSpace, ConceptualSpace, and SymbolicSpace objects.  We build the
+PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by test_partition_pos_codebook.py.
 """
@@ -38,7 +38,7 @@ from test_basicmodel import _populate_test_config
 def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     """Construct the minimal WordSpace via TheXMLConfig + direct constructors.
 
-    Builds the full PerceptualSpace -> ConceptualSpace -> SymbolicSpace chain
+    Builds the full PartSpace -> ConceptualSpace -> WholeSpace chain
     required by WordSpace.__init__, then constructs WordSpace from it.
 
     WordSpace is NOT an isolated object: it back-wires all three home spaces
@@ -68,9 +68,9 @@ def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercep
     spaceShape   = [nSymbols,   symbolDim]
     outputShape  = [nSymbols,   symbolDim]
 
-    percept_space   = Spaces.PerceptualSpace(inputShape, spaceShape, outputShape)
+    percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
-    symbolic_space  = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
+    symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
     # Reset grammar so WordSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False

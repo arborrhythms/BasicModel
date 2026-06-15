@@ -9,13 +9,13 @@ above the existing atol=2e-1 closeness threshold."*
 
 Harness (mirrors ``test/test_router_fires_per_word.py``):
   * Build the cheap serial-grammar model from ``data/MM_xor_loopback.xml``
-    (``<conceptualMode>serial</conceptualMode>``), load the ``xor`` data.
+    (``<symbolicOrder>1</symbolicOrder>``), load the ``xor`` data.
   * Run ONE real per-word ``model.forward`` -- this fills the C-tier STM,
     populates ``wordSubSpace.current_rules`` / ``generate_rules``, and
     reduces the STM to the single sentence idea ``S = model._stm_single_S``
     (``[B, D_c]``).
   * Snapshot ``S`` and the per-position forward word indices
-    (``perceptualSpace.subspace._active[:, :, 0]`` -- the frozen-lexicon
+    (``perceptualSpace.subspace._index[:, :, 0]`` -- the frozen-lexicon
     MPHF index the forward placed at each slot).
   * DELETE the WordSubSpace syntactic cache (``current_rules`` -> {} ,
     ``generate_rules`` -> {} , ``recur_pass`` -> 0).
@@ -42,7 +42,7 @@ FINDING A (FIXED) -- forward left the STM (and ``_stm_single_S``) as NaN.
 
 FINDING B (FIXED) -- the reverse perceptual leg turned a finite seed NaN.
   ``_reverse_body`` preserved finiteness but ``_reverse_perceptual`` ->
-  ``PerceptualSpace.reverse`` -> ``_reverse_text`` -> ``PiLayer.reverse``
+  ``PartSpace.reverse`` -> ``_reverse_text`` -> ``PiLayer.reverse``
   did a BARE ``log(y)`` on the signed reverse signal (``nonlinear=False``
   branch). Fix: clamp the reverse log to its positive domain and use the
   overflow-safe ``tanh(lx/2)`` exit (== ``_from_mult(exp(lx))``).
@@ -119,15 +119,15 @@ TOPK = 3            # top-k recovered words per position to compare
 # -- harness ---------------------------------------------------------------
 
 def _write_serial_config():
-    """Materialize a temp XML overlaying ``<conceptualMode>serial`` --
+    """Materialize a temp XML overlaying ``<symbolicOrder>1`` (serial) --
     BasicModel.from_config re-reads from disk, so the knob must be on a
     file. Mirrors test_router_fires_per_word._write_config_with_overrides.
     """
     with open(_GRAMMAR_CONFIG, "r") as f:
         text = f.read()
     text = re.sub(
-        r"\s*<conceptualMode>[^<]*</conceptualMode>\s*\n", "\n", text)
-    inject = "<conceptualMode>serial</conceptualMode>"
+        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n", "\n", text)
+    inject = "<symbolicOrder>1</symbolicOrder>"
     if "<architecture>" in text:
         text = text.replace("<architecture>", f"<architecture>\n    {inject}", 1)
     else:
@@ -183,7 +183,7 @@ def _run_forward(model):
     S = getattr(model, "_stm_single_S", None)
     ps = model.perceptualSpace
     sub = getattr(ps, "subspace", None)
-    active = getattr(sub, "_active", None) if sub is not None else None
+    active = getattr(sub, "_index", None) if sub is not None else None
     fwd_idx = (active[:, :, 0].long().clone()
                if active is not None and active.dim() == 3 else None)
     return (S.clone() if torch.is_tensor(S) else None), fwd_idx
@@ -246,7 +246,7 @@ def test_forward_produces_single_S_and_targets():
         "forward must set model._stm_single_S (the held STM idea)."
     assert S.dim() == 2, f"S must be [B, D_c]; got {tuple(S.shape)}"
     assert fwd_idx is not None and fwd_idx.dim() == 2, \
-        "forward must expose per-position word indices (PS._active[:, :, 0])."
+        "forward must expose per-position word indices (PS._index[:, :, 0])."
     assert int(fwd_idx.numel()) > 0
 
 
@@ -371,7 +371,7 @@ def test_reverse_perceptual_preserves_finiteness_on_finite_seed():
     FINITE seed finite, deterministically (verified across random inits).
 
     ``_reverse_body`` keeps the seed finite (prior test); the perceptual
-    leg (``_reverse_perceptual`` -> ``PerceptualSpace.reverse`` ->
+    leg (``_reverse_perceptual`` -> ``PartSpace.reverse`` ->
     ``_reverse_text`` -> ``PiLayer.reverse``) USED TO turn the finite seed
     NaN via an unguarded ``log(y)`` on the signed reverse signal (the
     ``nonlinear=False`` branch). Fixed by clamping the reverse log to its

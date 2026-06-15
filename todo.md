@@ -1,4 +1,12 @@
 
+* WholeSpace property mechanism — I made a scoping call worth confirming. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
+
+* Genuinely future (engine built/tested but not wired into training): the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option. Flag-on paths (neuralToolUser, symbolicComposition, intent-driven top-k) run but their semantics are yours to validate via training.
+* Subsymbolic: learning higher-order words
+
+* We should also include the TruthLayer, which ascertains the truth of all propositions before encoding them over symbols if they are consistent. In other words, besides the subsymbolic system that we have already built to lear the extension of words, we may learn a taxonomy that defines words in virtue of their intension. So, learning the syntax of a RelativeTruth is different than learning the syntax of an AbsoluteTruth because it encodes a relation over propositions which should be stored in a Taxonomy (e.g. "men" < "mortal"). That can be encoded as a part/whole relationship over symbols (the symbol for mortal is a part of the symbol for mortal: this can be stored in the representation (i.e. geometrically), and what it means is that the equivalence class of one is a subset of the equivalence class of the other). In terms of tokens that are assigned to types, such as socrates, if socrates is categorized as mortal, he should be promoted to a token of the type man (tokens define their nearest containing symbolic wholes).   
+
+
 * Grammar Definition
   * NP and VP need masks on conceptual space that restrict their operation
   * Verbs are temporal things, nouns are spatial things, the full expression within conceptual space is possible only after lifting. 

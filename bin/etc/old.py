@@ -670,7 +670,7 @@ class OldLogicLayer(Layer):
 class SyntacticSpace:
     """Moved to etc/old.py -- syntax is now handled by Grammar.forward()
     with soft superposition via SyntacticLayer, called directly from
-    ConceptualSpace and SymbolicSpace.
+    ConceptualSpace and WholeSpace.
 
     Original class identified logical structures over the symbolic activation
     space using LR(1) left-to-right processing over symbols.

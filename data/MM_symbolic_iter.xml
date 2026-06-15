@@ -4,14 +4,14 @@
   <!-- MM_symbolic_iter: TEST FIXTURE for the symbolic-iteration codebook
        on the CS->SS leg (doc/plans/2026-06-10-symbolic-iteration-codebook.md,
        Step 1). MM_20M's deep-slab geometry scaled down 32x, with
-       conceptualOrder=2 so the t>0 leg actually runs inside a full
-       forward (MM_20M ships conceptualOrder=1: its recurrent SS leg
+       subsymbolicOrder=2 so the t>0 leg actually runs inside a full
+       forward (MM_20M ships subsymbolicOrder=1: its recurrent SS leg
        never fires in-body). Used by test/test_symbolic_iteration.py;
        not a training reference. -->
   <architecture>
     <modelType>embedding</modelType>
-    <conceptualMode>parallel</conceptualMode>
-    <conceptualOrder>2</conceptualOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
 
@@ -31,7 +31,7 @@
     <nDim>5</nDim> <!-- 1 byte + 2 where + 2 when -->
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>256</nInput>
     <nInputDim>5</nInputDim>
     <nVectors>2048</nVectors>
@@ -40,7 +40,7 @@
     <nOutputDim>32</nOutputDim>
     <invertible>true</invertible>
     <synthesis>bpe</synthesis>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
@@ -54,7 +54,7 @@
     <codebook>none</codebook>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nInput>8</nInput>
     <nInputDim>32</nInputDim>
     <nVectors>2048</nVectors>
@@ -63,7 +63,7 @@
     <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

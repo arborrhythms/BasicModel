@@ -12,7 +12,7 @@ measures that share it:
 
 The mixin is pure (no `__init__`, no state of its own); it accesses
 model-owned attributes (`self.symbolicSpace`, `self.conceptualSpace`,
-`self.wordSubSpace`, `self.conceptualOrder`) via ``self``.  Mix in by
+`self.wordSubSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
 inheriting *first*: ``class BaseModel(Mereology, nn.Module): ...``.
 
 See ``doc/research/three-surfaces.md`` and the
@@ -109,7 +109,7 @@ class Mereology:
         targets.
       * ``self.wordSubSpace``      -- chart / grammar host for
         ``host_layer`` lookups in ``_lookup_host_layer``.
-      * ``self.conceptualOrder`` -- number of stages for the default
+      * ``self.subsymbolicOrder`` -- number of stages for the default
         derivation path.
     """
 
@@ -119,7 +119,7 @@ class Mereology:
         """Continuous mereological-contiguity measure in ``[-1, +1]``.
 
         One-Pointedness / Shamatha / Focused Attention. The forward
-        pass produces higher-order symbols at SymbolicSpace; this
+        pass produces higher-order symbols at WholeSpace; this
         method back-projects each active higher-order symbol through
         every layer of the derivation (via ``hoc_shape``) to expose
         the C(1) constituent regions, then runs pairwise
@@ -364,7 +364,7 @@ class Mereology:
         """Build the outer-to-inner rule sequence for hoc_shape.
 
         Default-only mode: synthesize a fixed alternating
-        ``[sigma(S), pi(C)] * conceptualOrder`` path -- no chart was
+        ``[sigma(S), pi(C)] * subsymbolicOrder`` path -- no chart was
         consulted (Phase 1.5 fast-path bypass keeps current_rules
         empty), so every position followed the per-tier default
         unary rule.
@@ -374,7 +374,7 @@ class Mereology:
         in pipeline-reverse order) and concatenate. Same canonical-
         path convention as ``_row_zero_rules`` at Language.py:2247.
         """
-        n_stages = max(1, int(getattr(self, 'conceptualOrder', 1) or 1))
+        n_stages = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         path = []
 
         ws = getattr(self, 'wordSubSpace', None)
@@ -485,7 +485,7 @@ class Mereology:
         adaptation so a layer whose ``nInput`` differs from
         ``x.shape[-1]`` still works.
 
-        Some host layers (e.g. SymbolicSpace.sigma in BasicModel)
+        Some host layers (e.g. WholeSpace.sigma in BasicModel)
         are per-position: ``nInput == per-position dim``, and
         ``layer.reverse(x: [B, V, D])`` returns ``[B, V, D']``.
 
@@ -536,7 +536,7 @@ class Mereology:
         """Resolve a (tier, rule_name) to a layer instance.
 
         Tries ``wordSubSpace.host_layer`` first (chart-registered host
-        layers, including SymbolicSpace.sigma / ConceptualSpace.pi /
+        layers, including WholeSpace.sigma / ConceptualSpace.pi /
         LiftLayer / LowerLayer). Falls back to the parameter-free
         ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
         aren't on the host registry (e.g. NotLayer when it isn't
@@ -600,9 +600,9 @@ class Mereology:
             branch=str(branch),
             active_indices=idx, active_count=count, K_cap=int(K_cap))
 
-    def _reverse_one_conceptual_order(self, x, stage_idx):
-        """Back-project ``x`` through one conceptualOrder stage:
-        SymbolicSpace.sigma.reverse -> ConceptualSpace.pi.reverse.
+    def _reverse_one_subsymbolic_order(self, x, stage_idx):
+        """Back-project ``x`` through one subsymbolicOrder stage:
+        WholeSpace.sigma.reverse -> ConceptualSpace.pi.reverse.
 
         Legacy helper retained for callers that pre-date the
         ``hoc_shape`` rewrite. New callers should go through
@@ -889,7 +889,7 @@ class Mereology:
         Unary form with ``truth_layer``:
           Cumulative-vs-rest fold over the layer's stored truths.
           Each truth is decoded back to concept-space (via
-          :meth:`SymbolicSpace.decode_to_concept`) and treated as a
+          :meth:`WholeSpace.decode_to_concept`) and treated as a
           single-leaf bivector.  Initialise running region from
           ``(t0, t1)``; for each next truth ``t_i`` compute
           ``lum(running, t_i)`` and update
@@ -1146,7 +1146,7 @@ class Mereology:
             -- that is the nihilist's mistake.  Instead they must be
             *appropriate*: consonant with reality.
           * Appropriateness manifests when the objects that are loved are
-            either real (grounded in PerceptualSpace with trust > 0) or
+            either real (grounded in PartSpace with trust > 0) or
             when the representations are at least 5-dimensional (which
             limits the dissonance that arises from reification of
             low-dimensional abstractions).

@@ -11,7 +11,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <!-- Gate determinism: seeded runs only reproduce on CPU (MPS
          kernels are nondeterministic). BASICMODEL_DEVICE overrides. -->
     <device>cpu</device>
@@ -37,17 +37,17 @@
     <nOutput>8</nOutput>
   </InputSpace>
 
-  <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
+  <!-- PartSpace: WIDE codebook so 1000 word prototypes have room
        to sit pairwise-distinct. Stays content-wide on the output
        (nOutputDim=nDim=10) so reconstruction lookups operate in the
        full vocabulary space. -->
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>8</nInput>
     <nVectors>1000</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <!-- PerceptualSpace is subsymbolic: its <codebook> element was retired
+    <!-- PartSpace is subsymbolic: its <codebook> element was retired
          (2026-06-09 asymmetric-VQ plan, sec 7 task 7); PS is hardwired to
          "none". The 1000 word prototypes live on the .what Embedding, not a
          VQ snap on .event. -->
@@ -59,7 +59,7 @@
          convergence property. -->
     <butterfly>true</butterfly>
     <synthesis>lexicon</synthesis>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: full-width, invertible reconstruction carrier. -->
   <ConceptualSpace>
@@ -72,21 +72,21 @@
     <butterfly>true</butterfly>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: full-width passthrough for the exact smoke test. -->
-  <SymbolicSpace>
+  <!-- WholeSpace: full-width passthrough for the exact smoke test. -->
+  <WholeSpace>
     <lexer>word</lexer>
     <nInput>8</nInput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <!-- XOR_exact overrides the codebook defaults: drop the SymbolicSpace
+    <!-- XOR_exact overrides the codebook defaults: drop the WholeSpace
          l1 / VQ-VAE commitment for the exact-reconstruction smoke test. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <!-- SymbolicSpace codebook is mandatory (modality re-architecture); was none. -->
+    <!-- WholeSpace codebook is mandatory (modality re-architecture); was none. -->
     <codebook>none</codebook>
     <butterfly>true</butterfly>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

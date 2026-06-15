@@ -363,7 +363,7 @@ def test_mm20m_second_order_reverse_keys_codebook():
 
 
 def test_forward_body_lifts_csleg_recon():
-    # Full-model wiring (conceptualOrder=2, parallel, SS quantize -- the
+    # Full-model wiring (subsymbolicOrder=2, parallel, SS quantize -- the
     # MM_symbolic_iter fixture; MM_20M ships order 1, whose t>0 leg
     # never runs in-body): the t>0 recon term reaches the pipeline error
     # container, and the stem's adopt-on-first-sight + virgin staging

@@ -1,5 +1,5 @@
 """Side-by-side perf: MM_5M_IR (useGrammar=none) vs LM_5M
-(grammar=all, conceptualOrder=3) under pure IR mode.
+(grammar=all, subsymbolicOrder=3) under pure IR mode.
 
 Each config runs in its own subprocess so module-level singletons
 (TheData, TheXMLConfig, TheGrammar) start fresh.  Forces CPU + small
@@ -49,7 +49,7 @@ results = []
 for label, cfg in [
     ("MM_5M_IR (useGrammar=none, IR)",
      str(PROJECT / "data" / "MM_5M_IR.xml")),
-    ("LM_5M (grammar=all, conceptualOrder=3, IR)",
+    ("LM_5M (grammar=all, subsymbolicOrder=3, IR)",
      str(PROJECT / "data" / "LM_5M.xml")),
 ]:
     results.append(time_one(cfg, label))

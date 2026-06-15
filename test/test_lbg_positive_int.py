@@ -4,7 +4,7 @@
 ``record_lbg_pull(pos, vec)`` accumulates per-position displacement
 statistics for SS-side rows; ``maybe_split_lbg(pos)`` triggers a
 codebook-row split when the variance + count thresholds are met. The
-split allocates a fresh position via :meth:`SymbolicSpace.allocate_position`
+split allocates a fresh position via :meth:`WholeSpace.allocate_position`
 and -- when the original was a META child -- registers a new META edge
 for the split-off row so both halves remain reachable via the reverse
 decode walk.

@@ -3,7 +3,7 @@
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
 §6: relative-rule detection replaces the transitional
 ``{isEqual, queryPart, assertPart, part, REL_T}`` set with
-``{isEqual, isPart}`` plus the SymbolicSpace relative-start role states
+``{isEqual, isPart}`` plus the WholeSpace relative-start role states
 (the ``<start name="relative_truth">`` outputs). A relative truth is a
 binary predicate end-state (the isEqual / isPart family); its serial
 sentence-boundary reduce stops at the depth-3 ``[predicate, idea1, idea2]``
@@ -26,7 +26,7 @@ if _BIN not in sys.path:
 _COLLAPSED_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="rel_collapse_probe">
-      <SymbolicSpace>
+      <WholeSpace>
         <start name="relative_truth">isEqual_O1</start>
         <start name="relative_truth">isPart_O1</start>
         <start name="absolute_truth">exist_O1</start>
@@ -40,7 +40,7 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
           <rule query="false">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
           <rule>exist_I1 = exist.reverse(exist_O1)</rule>
         </generate>
-      </SymbolicSpace>
+      </WholeSpace>
     </grammar>
 """)
 
@@ -49,7 +49,7 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
 _REL_T_NO_NAME_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="rel_t_probe">
-      <SymbolicSpace>
+      <WholeSpace>
         <start>REL_T</start>
         <compose>
           <rule>REL_T = isEqual.forward(NP_A, NP_B)</rule>
@@ -57,7 +57,7 @@ _REL_T_NO_NAME_GRAMMAR = textwrap.dedent("""\
         <generate>
           <rule>NP_A, NP_B = isEqual.reverse(REL_T)</rule>
         </generate>
-      </SymbolicSpace>
+      </WholeSpace>
     </grammar>
 """)
 

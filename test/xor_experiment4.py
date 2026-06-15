@@ -46,7 +46,7 @@ def create_model(ergodic=False, nSymbols=3, nConcepts=3):
     auto_elem.text = "false"
 
     # Patch nSymbols
-    sym_nvec = root.find("SymbolicSpace/nVectors")
+    sym_nvec = root.find("WholeSpace/nVectors")
     if sym_nvec is not None:
         sym_nvec.text = str(nSymbols)
 

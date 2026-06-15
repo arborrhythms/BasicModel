@@ -1,19 +1,19 @@
-"""PerceptualSpace conceptual loopback (C→P) — explicit two-input
+"""PartSpace conceptual loopback (C→P) — explicit two-input
 recurrent-cell contract (post-2026-05 reconciliation).
 
 The cross-space combination that used to live in
-``PerceptualSpace._sourced_input`` (reading ``conceptualSpace_ref``)
+``PartSpace._sourced_input`` (reading ``conceptualSpace_ref``)
 is now an explicit ``forward`` argument supplied by the recurrent cell:
 
-  * ``PerceptualSpace.forward(IS_subspace, CS_subspaceForPS=None)``
+  * ``PartSpace.forward(IS_subspace, CS_subspaceForPS=None)``
   * ``ConceptualSpace.forward(PS_subspace, SS_subspace=None)`` exposing
     ``_subspaceForPS`` / ``_subspaceForSS`` for the next pass
-  * ``SymbolicSpace.forward(CS_subspaceForSS)``
+  * ``WholeSpace.forward(CS_subspaceForSS)``
 
 The ``_sourced_input`` / ``_read_event`` / ``_get_active_input_sibling``
 helpers and the ``conceptualSpace_ref`` / ``symbolicSpace_ref`` /
 ConceptualSpace.``perceptualSpace_ref`` forward-input refs are deleted.
-``SymbolicSpace.perceptualSpace_ref`` is KEPT (structural lexicon
+``WholeSpace.perceptualSpace_ref`` is KEPT (structural lexicon
 ownership) and is still covered by ``TestLexiconOnSymbolicSpace`` below.
 
 Tests in this file:
@@ -25,7 +25,7 @@ Tests in this file:
   * Cold start (``CS_subspaceForPS`` None / empty) degrades to the
     primary ``pi_input`` path.
   * ``SubsymbolicSpace`` and its mode selector remain retired.
-  * Lexicon ownership on SymbolicSpace (structural ref) unchanged.
+  * Lexicon ownership on WholeSpace (structural ref) unchanged.
 """
 import os
 import sys
@@ -77,13 +77,13 @@ class TestForwardArityContract(unittest.TestCase):
         # stages).
         import inspect
         import Spaces
-        sig = inspect.signature(Spaces.PerceptualSpace.forward)
+        sig = inspect.signature(Spaces.PartSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
         self.assertEqual(len(params), 1,
-                         f"PerceptualSpace.forward must be "
+                         f"PartSpace.forward must be "
                          f"(x_subspace); got {params}")
         self.assertNotIn("work", sig.parameters,
-                         "PerceptualSpace.forward must not carry the "
+                         "PartSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
 
     def test_conceptual_forward_arity(self):
@@ -102,22 +102,22 @@ class TestForwardArityContract(unittest.TestCase):
                          "retired Phase-1 'work' carrier.")
 
     def test_symbolic_forward_arity(self):
-        # Dual-input plan (rev. 2026-06-09): SymbolicSpace.forward gains the
+        # Dual-input plan (rev. 2026-06-09): WholeSpace.forward gains the
         # optional stage-0 unity input -- (CS_subspaceForSS, IS_concepts=None).
         import inspect
         import Spaces
-        sig = inspect.signature(Spaces.SymbolicSpace.forward)
+        sig = inspect.signature(Spaces.WholeSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
         self.assertEqual(params, ["CS_subspaceForSS", "IS_concepts"],
-                         f"SymbolicSpace.forward must be "
+                         f"WholeSpace.forward must be "
                          f"(CS_subspaceForSS, IS_concepts=None); got {params}")
         self.assertNotIn("work", sig.parameters,
-                         "SymbolicSpace.forward must not carry the "
+                         "WholeSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
 
     def test_sourced_input_and_read_event_removed(self):
         import Spaces
-        for cls in (Spaces.PerceptualSpace, Spaces.ConceptualSpace):
+        for cls in (Spaces.PartSpace, Spaces.ConceptualSpace):
             self.assertFalse(
                 hasattr(cls, '_sourced_input'),
                 f"{cls.__name__}._sourced_input must be folded into "
@@ -134,9 +134,9 @@ class TestForwardArityContract(unittest.TestCase):
         perceptualSpace_ref are no longer initialised in __init__."""
         import inspect
         import Spaces
-        p_src = inspect.getsource(Spaces.PerceptualSpace.__init__)
+        p_src = inspect.getsource(Spaces.PartSpace.__init__)
         self.assertNotIn("self.conceptualSpace_ref = None", p_src,
-                         "PerceptualSpace must not init conceptualSpace_ref "
+                         "PartSpace must not init conceptualSpace_ref "
                          "(C→P feedback is now an explicit forward arg).")
         c_src = inspect.getsource(Spaces.ConceptualSpace.__init__)
         self.assertNotIn("self.symbolicSpace_ref = None", c_src)
@@ -152,7 +152,7 @@ class TestSubsymbolicSpaceRetired(unittest.TestCase):
         import Spaces
         self.assertFalse(hasattr(Spaces, 'SubsymbolicSpace'),
                          "SubsymbolicSpace should be removed; "
-                         "PerceptualSpace is the subsymbolic substrate "
+                         "PartSpace is the subsymbolic substrate "
                          "via the explicit C→P forward arg.")
 
     def test_subsymbolicSpace_ref_not_on_conceptual(self):
@@ -252,7 +252,7 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
 
 
 class TestLexiconOnSymbolicSpace(unittest.TestCase):
-    """SymbolicSpace is the logical owner of the orthographic Lexicon.
+    """WholeSpace is the logical owner of the orthographic Lexicon.
 
     Post-lexicon-migration: ``S.vocabulary`` returns the Embedding, and
     the orthographic-API methods delegate to the physical Embedding via
@@ -275,7 +275,7 @@ class TestLexiconOnSymbolicSpace(unittest.TestCase):
                              "lexicon ownership, NOT forward input).")
         import Spaces
         self.assertIsInstance(sym.perceptualSpace_ref,
-                              Spaces.PerceptualSpace)
+                              Spaces.PartSpace)
 
     def test_symbolic_vocabulary_returns_lexicon(self):
         sym = self.model.symbolicSpace
@@ -292,7 +292,7 @@ class TestLexiconOnSymbolicSpace(unittest.TestCase):
             'reconstruct_to_buffer', 'get_recovered_word',
         ):
             self.assertTrue(hasattr(sym, name),
-                            f"SymbolicSpace must expose {name!r} after "
+                            f"WholeSpace must expose {name!r} after "
                             f"the lexicon-API migration.")
 
 
@@ -314,7 +314,7 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
             layer = getattr(s, 'syntacticLayer', None)
             self.assertIsNotNone(
                 layer,
-                f"SymbolicSpace must retain its SyntacticLayer "
+                f"WholeSpace must retain its SyntacticLayer "
                 f"(the grammar's canonical dispatch host); missing on {s}")
 
     def test_no_p_tier_rules_in_grammar(self):
@@ -336,7 +336,7 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
 
 class TestPerceptStoreIntegration(unittest.TestCase):
     """Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-    reentrancy.md): PerceptualSpace exposes ``self.percept_store`` when
+    reentrancy.md): PartSpace exposes ``self.percept_store`` when
     ``<synthesis>radix</synthesis>`` is selected; legacy chunking modes
     (``lexicon|bpe|mphf|none``) keep their existing ``ChunkLayer`` /
     Embedding-based wiring with ``self.percept_store is None``.
@@ -344,7 +344,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
 
     def test_radix_config_builds_percept_store(self):
         """MM_xor.xml selects ``<synthesis>radix</synthesis>`` post-Stage-7
-        and the constructed PerceptualSpace must expose a PerceptStore.
+        and the constructed PartSpace must expose a PerceptStore.
         """
         import warnings
         import Models
@@ -360,7 +360,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         self.assertEqual(ps_space.synthesis_mode, "radix",
                          "MM_xor.xml should now use radix chunking")
         self.assertIsNotNone(ps_space.percept_store,
-                             "radix-mode PerceptualSpace must expose "
+                             "radix-mode PartSpace must expose "
                              "self.percept_store")
         # Importing RadixLayer directly verifies the class identity.
         from Layers import RadixLayer

@@ -164,7 +164,7 @@ class TestTruthFusion(unittest.TestCase):
 
         (The corresponding luminosity assertion moved to
         ``test_resolve_luminosity.py`` once luminosity migrated from
-        TruthLayer to SymbolicSpace; the area-overlap formula no longer
+        TruthLayer to WholeSpace; the area-overlap formula no longer
         equates non-overlapping disjoint truths with darkness.)
         """
         tl = _truth_layer()

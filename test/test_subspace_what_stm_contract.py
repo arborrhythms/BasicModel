@@ -384,14 +384,14 @@ def test_execute_superposed_independent_then_weighted_sum():
 
 
 # ---------------------------------------------------------------------------
-# Contract F: SymbolicSpace rule codebook (Phase 3)
+# Contract F: WholeSpace rule codebook (Phase 3)
 # ---------------------------------------------------------------------------
 
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
 def test_symbolic_space_init_builds_rule_codebook():
-    """SymbolicSpace.__init__ wires the rule codebook.
+    """WholeSpace.__init__ wires the rule codebook.
 
     We cannot use a class-level default because nn.Module routes Module
     submodules through ``_modules`` and a class attribute would shadow
@@ -399,10 +399,10 @@ def test_symbolic_space_init_builds_rule_codebook():
     level: the __init__ body must construct ``self.rule_codebook``.
     """
     import inspect
-    from Spaces import SymbolicSpace
-    src = inspect.getsource(SymbolicSpace.__init__)
+    from Spaces import WholeSpace
+    src = inspect.getsource(WholeSpace.__init__)
     assert "self.rule_codebook = RuleCodebook(" in src, (
-        "SymbolicSpace.__init__ must build self.rule_codebook = "
+        "WholeSpace.__init__ must build self.rule_codebook = "
         "RuleCodebook(...) per the SubSpace.what STM refactor"
     )
 
@@ -446,7 +446,7 @@ def test_rule_codebook_with_embedding_initializes_xavier():
 
 @pytest.fixture(scope="module")
 def _xor_model():
-    """A real BasicModel from MM_xor.xml — has a fully-built SymbolicSpace."""
+    """A real BasicModel from MM_xor.xml — has a fully-built WholeSpace."""
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
@@ -455,7 +455,7 @@ def _xor_model():
 
 
 def test_symbolic_space_instance_owns_rule_codebook(_xor_model):
-    """A built SymbolicSpace replaces the class-default None with a real codebook."""
+    """A built WholeSpace replaces the class-default None with a real codebook."""
     from Language import RuleCodebook
     ss = _xor_model.symbolicSpace
     assert isinstance(ss.rule_codebook, RuleCodebook)
@@ -464,7 +464,7 @@ def test_symbolic_space_instance_owns_rule_codebook(_xor_model):
 
 
 def test_v_sym_wired_into_grammar_from_symbolic_space(_xor_model):
-    """SymbolicSpace.__init__ must set Grammar.symbol_vocab_size = V_sym."""
+    """WholeSpace.__init__ must set Grammar.symbol_vocab_size = V_sym."""
     from Language import TheGrammar
     ss = _xor_model.symbolicSpace
     # V_sym should equal the symbol codebook's vocab dimension.
@@ -754,18 +754,18 @@ def test_reduce_gradient_flows_to_child_payloads_and_op_params():
 
 
 # ---------------------------------------------------------------------------
-# Contract H: SymbolicSpace owns + dispatches the stack router (Phase 5)
+# Contract H: WholeSpace owns + dispatches the stack router (Phase 5)
 # ---------------------------------------------------------------------------
 
 def test_symbolic_space_owns_signal_router(_xor_model):
-    """SymbolicSpace owns its own LanguageLayer (distinct from Chart's).
+    """WholeSpace owns its own LanguageLayer (distinct from Chart's).
 
-    Plan acceptance: "SymbolicSpace owns and calls LanguageLayer."
+    Plan acceptance: "WholeSpace owns and calls LanguageLayer."
     """
     from Language import LanguageLayer
     ss = _xor_model.symbolicSpace
     assert isinstance(ss.languageLayer, LanguageLayer), (
-        f"SymbolicSpace.languageLayer must be a LanguageLayer, got "
+        f"WholeSpace.languageLayer must be a LanguageLayer, got "
         f"{type(ss.languageLayer)}"
     )
     # The router must be a different instance from any Chart-owned one
@@ -774,7 +774,7 @@ def test_symbolic_space_owns_signal_router(_xor_model):
         getattr(ss.wordSubSpace, 'chart', None), '_signal_router', None)
     if chart_router is not None:
         assert ss.languageLayer is not chart_router, (
-            "SymbolicSpace must own its own router, not share Chart's"
+            "WholeSpace must own its own router, not share Chart's"
         )
 
 
@@ -1504,9 +1504,9 @@ def test_reverse_dispatches_to_reverse_stack():
 
 
 def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
-    """SymbolicSpace._stack_route_forward must dispatch through
+    """WholeSpace._stack_route_forward must dispatch through
     languageLayer.forward(...), not through the low-level shift/reduce
-    primitives directly. Pins that the SymbolicSpace integration uses
+    primitives directly. Pins that the WholeSpace integration uses
     the plan's target call shape.
     """
     ss = _xor_model.symbolicSpace
@@ -1545,7 +1545,7 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
         ss.forward(in_sub)
 
         # Canonical forward fired exactly once (one call per
-        # SymbolicSpace.forward invocation).
+        # WholeSpace.forward invocation).
         assert calls['forward'] == 1, (
             f"Expected exactly one languageLayer.forward(...) call; "
             f"got {calls['forward']}"
@@ -1564,12 +1564,12 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
 
 
 # ---------------------------------------------------------------------------
-# Contract M: SymbolicSpace.reverse dispatches to LanguageLayer.reverse
+# Contract M: WholeSpace.reverse dispatches to LanguageLayer.reverse
 # under the same flag as the forward branch (symmetry with Phase 5)
 # ---------------------------------------------------------------------------
 
 def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model):
-    """SymbolicSpace.reverse calls LanguageLayer.reverse(...) when the
+    """WholeSpace.reverse calls LanguageLayer.reverse(...) when the
     use_stack_router flag is on. Symmetric counterpart to the forward
     branch (Phase 5).
     """
@@ -1582,7 +1582,7 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
         return orig_reverse(*a, **kw)
 
     from Spaces import SubSpace
-    # The SymbolicSpace.reverse input is in symbol space; size to match.
+    # The WholeSpace.reverse input is in symbol space; size to match.
     n = int(ss.subspace.inputShape[0])
     d = int(ss.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
@@ -1597,7 +1597,7 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
         ss.use_stack_router = True
         ss.reverse(in_sub)
         assert calls['reverse'] == 1, (
-            f"SymbolicSpace.reverse must call languageLayer.reverse exactly "
+            f"WholeSpace.reverse must call languageLayer.reverse exactly "
             f"once with the flag on; got {calls['reverse']}"
         )
     finally:
@@ -1608,7 +1608,7 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
 
 
 def test_symbolic_space_reverse_flag_off_does_not_call_language_layer(_xor_model):
-    """With use_stack_router=False (default), SymbolicSpace.reverse must
+    """With use_stack_router=False (default), WholeSpace.reverse must
     NOT call languageLayer.reverse; the legacy cursor-based reverse
     runs unchanged.
     """

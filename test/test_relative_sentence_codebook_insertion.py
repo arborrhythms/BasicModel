@@ -14,7 +14,7 @@ operand vectors (the full forward wiring is best-effort / separate); the
 factor methods are mocked so the gate is guaranteed to accept and the
 test focuses on the insertion shape + trust storage.
 
-Also covers the SymbolicSpace insertion primitive (``insert_relation``)
+Also covers the WholeSpace insertion primitive (``insert_relation``)
 in isolation, the idempotency of a re-derived relation, and the
 ``insert_meta(trust=...)`` storage path.
 """
@@ -137,7 +137,7 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
 
 
 class TestInsertRelationPrimitive(unittest.TestCase):
-    """``SymbolicSpace.insert_relation`` builds the predicate-parent /
+    """``WholeSpace.insert_relation`` builds the predicate-parent /
     two-children edges + stores trust; idempotent on the triple."""
 
     def test_insert_relation_children_and_trust(self):
@@ -227,8 +227,8 @@ class TestInsertMetaTrustKwarg(unittest.TestCase):
         meta = ss.insert_meta(pid, sid, trust=(1, 0, 0, 0))
         extras = ss.vocab_extras()
         self.assertIn("meta_trust", extras)
-        from Spaces import SymbolicSpace
-        ss2 = SymbolicSpace(
+        from Spaces import WholeSpace
+        ss2 = WholeSpace(
             list(ss.inputShape), list(ss.spaceShape), list(ss.outputShape))
         cb2 = ss2.subspace.what
         cb1 = ss.subspace.what

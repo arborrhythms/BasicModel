@@ -2,7 +2,7 @@
 
 > **2026-06-02 update (subsymbolic analyzer).** Operators no longer enter
 > the STM idea space. They are kept in the SS **codebook**
-> (`SymbolicSpace.insert_operations`, wired into `WordSubSpace.__init__`)
+> (`WholeSpace.insert_operations`, wired into `WordSubSpace.__init__`)
 > and resolved as a soft superposition over the operator-prefixed parse
 > tree; the STM idea slots hold only **combined meanings** -- an operator
 > defines *how* meanings combine, contributing none of its own. See
@@ -32,7 +32,7 @@ sentence boundary. This chapter is the single reference for what the STM
 is, how it fills, what reads it, and how its end-states chain into
 long-term memory.
 
-Two cadences write the STM, selected by `<conceptualMode>` (see
+Two cadences write the STM, selected by `<symbolicOrder>` (see
 [Architecture.md](Architecture.md#modes-of-operation)):
 
 ```
@@ -101,7 +101,7 @@ the next sentence starts empty. Soft reset leaves the STM intact (see
 ## 2. Serial sequencing
 
 In SERIAL / GRAMMATICAL mode each word traverses a per-word path: MPHF
-surface lookup $\to$ `PerceptualSpace.forward` ($\pi(x) + \sigma(x)$, no
+surface lookup $\to$ `PartSpace.forward` ($\pi(x) + \sigma(x)$, no
 outer $\tanh$) $\to$ `ConceptualSpace.forward`, which does the STM
 bookkeeping. The whole pass is **predict-then-perceive per word**,
 implemented in `ConceptualSpace.forward`
@@ -202,7 +202,7 @@ slot-preserving `_stm_set_all_slots` is the fix.
 
 **Serial mode IS the attentional-filtering regime.** The old
 serial-vs-attention guard was **lifted**: `MentalModel.xml` runs serial
-*with* attention by design (`<conceptualMode>serial</conceptualMode>`
+*with* attention by design (`<symbolicOrder>1</symbolicOrder>`
 with `<hasAttention>true</hasAttention>` on ConceptualSpace). Serial
 sequencing and attentional filtering are the same regime, not mutually
 exclusive options.
@@ -269,7 +269,7 @@ The grammar runs through the signal router (`LanguageLayer`,
   *which* reductions fire.
 - **CS-execution** — actually applying the chosen reductions (lift,
   lower, union, intersection, swap, quantize, not) to the concept tensors
-  runs CS-side in `ConceptualSpace.forward` and the SymbolicSpace
+  runs CS-side in `ConceptualSpace.forward` and the WholeSpace
   stack-route path, with the per-tier `SyntacticLayer` cursors
   ([Language.py:5453](../bin/Language.py)) executing the unary $\pi$ /
   $\sigma$ folds on reverse. Only lift / lower / union / intersection
@@ -422,7 +422,7 @@ exercises this path.
 >   non-finite, so the reduced single-$S$ seed is already NaN before
 >   reverse runs.
 > - **Finding B** — even with a *finite* seed, the reverse perceptual leg
->   (`PerceptualSpace.reverse`) turns it NaN.
+>   (`PartSpace.reverse`) turns it NaN.
 >
 > The non-`xfail` assertions in that file pin everything that *does* hold
 > today (the per-op reverses reconstruct `[B, N, D_c]`; the decode uses
@@ -614,7 +614,7 @@ across the first `depth` STM slots as a sentence-level conditioning bias
 ## 12. nanochat comparison framing
 
 The trainable target is `MentalModel.xml`:
-`<conceptualMode>serial</conceptualMode>`,
+`<symbolicOrder>1</symbolicOrder>`,
 `<modelType>embedding</modelType>`, `<hasAttention>true</hasAttention>`
 (ConceptualSpace), `<sentencePrediction>true</sentencePrediction>`,
 FineWeb data (`<shardDir>data/fineweb</shardDir>`). This is the

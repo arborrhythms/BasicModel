@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", message=".*script_method.*",
                         category=DeprecationWarning)
 
 from util import parse
-from Spaces import Embedding, PerceptualSpace
+from Spaces import Embedding, PartSpace
 
 
 class TestWordLexerRegex(unittest.TestCase):
@@ -67,9 +67,9 @@ class TestNullPerceptSlot(unittest.TestCase):
 
     def test_null_percept_key_in_vocab(self):
         emb = self._make_embedding()
-        self.assertIn(PerceptualSpace.NULL_PERCEPT_KEY, emb.wv.key_to_index)
+        self.assertIn(PartSpace.NULL_PERCEPT_KEY, emb.wv.key_to_index)
         self.assertEqual(
-            emb.wv.key_to_index[PerceptualSpace.NULL_PERCEPT_KEY],
+            emb.wv.key_to_index[PartSpace.NULL_PERCEPT_KEY],
             emb.null_percept_idx)
 
     def test_null_percept_vector_in_unit_ball(self):
@@ -93,7 +93,7 @@ class TestIRInjectMask(unittest.TestCase):
 
         Avoids spinning up the full model factory: the helper only needs
         ``percept_subspace.event.getW/setW``, ``.what.null_percept_idx``,
-        ``.what.getW()``, and ``._active``.
+        ``.what.getW()``, and ``._index``.
         """
         D = nWhat + nWhere
         event_data = torch.randn(B, K, D)
@@ -129,7 +129,7 @@ class TestIRInjectMask(unittest.TestCase):
         subspace = SimpleNamespace(
             event=event_basis,
             what=codebook,
-            _active=active,
+            _index=active,
             is_empty=lambda: False,
             materialize=lambda mode="active", k=None: (
                 event_basis._W if mode in ("event", "active") else None),

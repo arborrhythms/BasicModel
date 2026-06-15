@@ -10,7 +10,7 @@ from util import TheDevice
 class StackSpace(SubSpace):
     """Preallocated SubSpace with stack semantics (push/pop/peek).
 
-    Used by SymbolicSpace to hold the symbol stack during shift/reduce.
+    Used by WholeSpace to hold the symbol stack during shift/reduce.
     Each entry has what (codebook vector), where (position), and when
     (derivation order). The stack is a contiguous region of a preallocated
     SubSpace buffer with a position pointer.

@@ -1,4 +1,4 @@
-"""PerceptualSpace serial_mode invariants.
+"""PartSpace serial_mode invariants.
 
 The tests exercise the slide-and-recompute fast path via
 full-model forward() calls so the text-mode lex/embed flow
@@ -131,7 +131,7 @@ def test_warm_path_skips_slot_forward_embed():
         def materialize(self):
             return self._t
         _demuxed = False
-        _active = None
+        _index = None
     upstream = _FakeSubspace(_t.randn(B, N, D))
     upstream.serial_cache[id(ps)] = _t.zeros(B, N, D)
 

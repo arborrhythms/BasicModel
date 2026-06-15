@@ -7,7 +7,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
-    <conceptualMode>parallel</conceptualMode>
+    <symbolicOrder>0</symbolicOrder>
     <weightsPath>XOR_spaces.ckpt</weightsPath>
 
     <data>
@@ -33,15 +33,15 @@
     <nVectors>6</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible, per-vector [B,N,D] (no flatten; the
+  <!-- PartSpace: invertible, per-vector [B,N,D] (no flatten; the
        OutputSpace head is the sole flattener). nInputDim=0 -> inherit
        inputShape[1] (the event width). -->
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
@@ -51,12 +51,12 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
-  <SymbolicSpace>
+  <!-- WholeSpace: nOutput = ConceptualSpace.nOutput = 6 -->
+  <WholeSpace>
     <nOutput>6</nOutput>
     <nDim>14</nDim>
     <nVectors>6</nVectors>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

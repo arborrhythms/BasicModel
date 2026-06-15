@@ -564,7 +564,7 @@ def test_intersentence_seed_used():
 
 def test_parallel_ps_called_once():
     # A6 Step 4 (PS-not-IS invariant): a single MM_20M forward calls
-    # PerceptualSpace.forward EXACTLY ONCE for stage-0 ingestion, and the
+    # PartSpace.forward EXACTLY ONCE for stage-0 ingestion, and the
     # input it receives is the REDUCED percept carrier (the post-chunk
     # word-slots, N <= nOutput) -- never the raw InputSpace char buffer
     # (nInput = 8192). The subsymbolic substrate is single-pass; PS.pi(IS) is
@@ -597,7 +597,7 @@ def test_parallel_ps_called_once():
         m.perceptualSpace.forward = real_fwd
 
     assert rec["n"] == 1, (
-        "PerceptualSpace.forward must be called EXACTLY once per forward "
+        "PartSpace.forward must be called EXACTLY once per forward "
         "(single-pass subsymbolic stage-0 ingestion), got %d" % rec["n"])
     shp = rec["shapes"][0]
     assert shp is not None and len(shp) == 3, (
@@ -613,7 +613,7 @@ def test_parallel_ps_called_once():
 
 
 def test_widening_ps_pi_sized_at_embedded_percept_width():
-    # A widening PerceptualSpace (nInputDim != nOutputDim: MM_20M's 5-wide
+    # A widening PartSpace (nInputDim != nOutputDim: MM_20M's 5-wide
     # raw byte event -> 1024-wide embedded percept) must size ``pi`` -- and
     # the butterfly cascade -- at the EMBEDDED percept width, and
     # ``forwardBegin`` must reshape the embedded event to that same width
@@ -630,7 +630,7 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
 
 
 def test_mm5m_grammar_builds_and_forwards():
-    # Phase B (B1): the SERIAL sibling (conceptualMode=serial, role-collapsed
+    # Phase B (B1): the SERIAL sibling (symbolicOrder>=1, role-collapsed
     # grammar) must build + forward FINITE under the new dims and A5's threaded
     # STM, with the bounded STM staying within capacity. A5 preserved serial
     # accumulation (the per-word fold threads through begin_forward's live

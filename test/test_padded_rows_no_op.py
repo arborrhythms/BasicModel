@@ -104,7 +104,7 @@ def test_loss_mask_matches_stem_valid_mask():
 
 
 def test_symbolic_act_masking_zeros_invalid_cells():
-    """SymbolicSpace.forward zeros `act` for invalid cells before VQ.
+    """WholeSpace.forward zeros `act` for invalid cells before VQ.
 
     The §2c mask zeros NULL-padded rows of `act` so the truth layer,
     parse-stack push, and codebook quantize all see zeros and skip

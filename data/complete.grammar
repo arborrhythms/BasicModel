@@ -18,7 +18,7 @@
 -->
 <grammar name="complete">
 
-  <PerceptualSpace>
+  <PartSpace>
     <!-- Analyzer root U ("everything currently visible to the analyzer"),
          recursively decomposable into U-typed sub-surfaces. Marker-free
          structural cover (stop / boundary / uniform), tier 'P': read by
@@ -36,9 +36,9 @@
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
     </generate>
-  </PerceptualSpace>
+  </PartSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <!-- Completed symbolic expressions (operator OUTPUTS that count as
          start states). The start names carry the two-truths split
          (GrammarOpsPass Section 6): absolute_truth roots the single
@@ -114,5 +114,5 @@
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
     </generate>
-  </SymbolicSpace>
+  </WholeSpace>
 </grammar>

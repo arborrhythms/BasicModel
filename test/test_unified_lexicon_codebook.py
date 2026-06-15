@@ -1,4 +1,4 @@
-"""Stages 1.D + 1.B (combined): Unified lexicon codebook on SymbolicSpace.
+"""Stages 1.D + 1.B (combined): Unified lexicon codebook on WholeSpace.
 
 ==========================================================================
 PHASE 1 MIGRATION PROPOSAL  --  STATUS: NEEDS_CONTEXT (paused for review)
@@ -14,8 +14,8 @@ RECON FINDINGS (the six areas the dispatch enumerates)
 --------------------------------------------------------------------------
 
 1. CURRENT SS.codebook STRUCTURE
-   - File: ``bin/Spaces.py`` ``class SymbolicSpace(Space)`` at line 9807.
-   - Constructed in ``SymbolicSpace.__init__`` (line 9915). The codebook
+   - File: ``bin/Spaces.py`` ``class WholeSpace(Space)`` at line 9807.
+   - Constructed in ``WholeSpace.__init__`` (line 9915). The codebook
      lives on ``self.subspace.what`` and is built by ``_build_what_basis``
      (line 10389).  Modes: ``"none"`` -> Tensor passthrough,
      ``"project"`` -> ``ProjectionBasis`` (LDU-factored), ``"quantize"``
@@ -41,7 +41,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
    - File: ``bin/Spaces.py`` ``class InputSpace(Space)`` at line 6354.
    - ``InputSpace._build_what_basis`` (line 6407) explicitly returns
      ``None`` when ``model_type == "embedding"``:  the Embedding (lexicon)
-     is OWNED BY PerceptualSpace.  IS only carries non-lexical bases
+     is OWNED BY PartSpace.  IS only carries non-lexical bases
      (Codebook / Tensor for numeric modes).
    - InputSpace's text-mode contribution to the lexicon is the LEXER:
      ``_lex_batch`` (line 6621).  It takes raw bytes, calls the peer's
@@ -51,7 +51,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      null-terminated UTF-8 byte buffer + offsets, no vector lookup yet.
    - The MIGRATION TARGET: the BPE / Embedding / WordVectors structure
      that today resolves a surface byte buffer to a vector
-     (PerceptualSpace._embed / _embed_bpe / _embed_mphf -- see #3 below)
+     (PartSpace._embed / _embed_bpe / _embed_mphf -- see #3 below)
      moves OFF the input-pipeline side and onto SS.  IS's lexer is
      pure-byte and that's where it stays; the LOOKUP (bytes -> vector)
      is what migrates.
@@ -70,15 +70,15 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      Pure static (poly-hash + searchsorted + byte-verify); zero
      host-sync; non-invertible (reverse is table lookup, never inverse
      hash).
-   - Build-once cache lives on PerceptualSpace: ``self._mphf_gpu_layer``
+   - Build-once cache lives on PartSpace: ``self._mphf_gpu_layer``
      (line 7439), ``self._mphf_static_tables`` (line 7448).
-   - Access path: ``PerceptualSpace._mphf_codebook`` (line 8360) returns
+   - Access path: ``PartSpace._mphf_codebook`` (line 8360) returns
      ``self.subspace.what`` when it is an Embedding (today's lexicon
      location).  ``_mphf_tables`` (line 8369) builds the static tables
      against that codebook.  ``mphf_index`` (line 8388) does the
      byte-slots -> row resolve.  ``mphf_table_rows`` (line 8403)
      gathers the rows.
-   - Runtime entry: ``PerceptualSpace._embed_mphf`` (line 8540) is the
+   - Runtime entry: ``PartSpace._embed_mphf`` (line 8540) is the
      ``<synthesis>mphf</synthesis>`` path; ``_embed_bpe`` (line 7776) is
      the BPE / trie path that also resolves through ``self.subspace.what``.
    - MIGRATION: PS keeps the MPHF *algorithm* (``_mphf_gpu_layer``,
@@ -120,7 +120,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
        * ``self.id_to_bytes: dict[int, tuple[int,...]]``.
        * Boundary set ``BOUNDARY_BYTES``.
        * Growth counters / pair / unigram Counters.
-   - Lives on ``PerceptualSpace.chunk_layer`` (built at line 7413).
+   - Lives on ``PartSpace.chunk_layer`` (built at line 7413).
      Save/load through ``embed.bpe_section_from_chunk_layer`` /
      ``embed.save_artifact`` (lines 6786, 6818); ckpt bundle stashes
      pure-Python state as ``bpe_extras`` (Models.py line 1142).
@@ -129,9 +129,9 @@ RECON FINDINGS (the six areas the dispatch enumerates)
        * ChunkLayer emits chunk-byte-tuple keys.
        * Embedding (= Lexicon) stores the per-key vector.
    - MIGRATION: ChunkLayer itself is read-only ``bin/Layers.py``; it
-     STAYS THERE.  The PerceptualSpace-side wiring of where ChunkLayer
+     STAYS THERE.  The PartSpace-side wiring of where ChunkLayer
      emits its keys (currently: ``self.subspace.what`` Embedding via
-     PerceptualSpace._embed_bpe_trie line 7847) is what changes -- the
+     PartSpace._embed_bpe_trie line 7847) is what changes -- the
      keys land in the SS-owned Embedding instead.
 
 6. EXISTING TESTS THAT AFFIRM CURRENT OWNERSHIP
@@ -176,8 +176,8 @@ RECON FINDINGS (the six areas the dispatch enumerates)
 MIGRATION PROPOSAL  --  CONCRETE CHANGES PER FILE
 --------------------------------------------------------------------------
 
-A.  ``bin/Spaces.py``  --  SymbolicSpace
-    A1. Extend ``SymbolicSpace.__init__`` to BUILD the Embedding (the
+A.  ``bin/Spaces.py``  --  WholeSpace
+    A1. Extend ``WholeSpace.__init__`` to BUILD the Embedding (the
         orthographic + semantic + meta-symbol unified codebook) on
         ``self.codebook`` when ``model_type == "embedding"`` AND the
         InputSpace lexer is text-mode.  This is the "SS owns the
@@ -186,21 +186,21 @@ A.  ``bin/Spaces.py``  --  SymbolicSpace
         the orthographic + semantic + meta-symbol Embedding is a
         SEPARATE attribute (``self.codebook``) sized to the lexicon
         capacity (~65k+).
-    A2. Add ``SymbolicSpace.codebook`` (the new physical Embedding
+    A2. Add ``WholeSpace.codebook`` (the new physical Embedding
         attribute).  The existing ``self.codebook`` boolean property
         on ``Space`` (line 6113) is a NAME COLLISION: that property
         means "is a codebook present" and is consulted by ~25 sites
         across the codebase (see grep above).  Resolution: rename the
         new attribute to avoid the collision.  Two options:
-          (a) ``SymbolicSpace.word_codebook``  -- explicit, narrow scope.
-          (b) ``SymbolicSpace.lexicon``       -- aligns with Lexicon.md
+          (a) ``WholeSpace.word_codebook``  -- explicit, narrow scope.
+          (b) ``WholeSpace.lexicon``       -- aligns with Lexicon.md
                                                   doc terminology and
-                                                  ``SymbolicSpace.vocabulary``
+                                                  ``WholeSpace.vocabulary``
                                                   already exists as the
                                                   read-side property.
         Recommendation: use ``self.lexicon`` (the Embedding instance) on
         SS, keep ``self.vocabulary`` as the property that returns it.
-        ``PerceptualSpace`` then exposes ``self.codebook`` as the
+        ``PartSpace`` then exposes ``self.codebook`` as the
         *reference back to* ``symbolicSpace.lexicon`` (resolving the
         spec's "PS.self.codebook" requirement without colliding with
         ``Space.codebook`` -- on PS the attribute is set as a direct
@@ -209,9 +209,9 @@ A.  ``bin/Spaces.py``  --  SymbolicSpace
         NOTE TO REVIEWER: please confirm naming preference before
         Phase 2.  If you prefer the spec text literally ("PS gains
         self.codebook"), we can shadow on PS only and use
-        ``SymbolicSpace.codebook`` on SS too -- but that does collide
+        ``WholeSpace.codebook`` on SS too -- but that does collide
         with the ``Space.codebook`` bool property on SS (which is
-        consumed at lines 10153 / 10689 / 10755 inside SymbolicSpace
+        consumed at lines 10153 / 10689 / 10755 inside WholeSpace
         itself).  Renaming SS's attribute to ``lexicon`` keeps that
         boolean working while still giving SS ownership.
     A3. Add the orthographic-vs-semantic vs meta-symbol partitioning:
@@ -269,8 +269,8 @@ B.  ``bin/Spaces.py``  --  InputSpace
         ``None`` for embedding mode -- no change.  IS stays free of
         the lexicon.
 
-C.  ``bin/Spaces.py``  --  PerceptualSpace
-    C1. ``PerceptualSpace._build_what_basis`` (line 7535): for
+C.  ``bin/Spaces.py``  --  PartSpace
+    C1. ``PartSpace._build_what_basis`` (line 7535): for
         ``model_type == "embedding"``, return ``None`` instead of
         building an Embedding.  PS subspace.what becomes empty (or a
         passthrough Tensor) for embedding mode; the Embedding lives
@@ -300,14 +300,14 @@ D.  ``bin/Models.py``
           (a) Build IS, PS, CS, SS as today.
           (b) After SS is built, build ``ss.lexicon`` (the Embedding)
               -- this is a refactor of the eager call in
-              ``PerceptualSpace.__init__`` that today builds
+              ``PartSpace.__init__`` that today builds
               ``self.subspace.what`` Embedding.  Move that build into
               the SS init or a post-init Models.py step.
-              Recommendation: build inside ``SymbolicSpace.__init__``
+              Recommendation: build inside ``WholeSpace.__init__``
               so SS is the structural owner, but SS init reads the
               configured PS knobs (embedding_path, byte_mode, etc.)
               -- supplied via the existing
-              TheXMLConfig.space("PerceptualSpace", ...) reads (the
+              TheXMLConfig.space("PartSpace", ...) reads (the
               XML schema doesn't change; SS init reads from a
               different XML section).
           (c) Wire ``object.__setattr__(inputSpace, '_symbolicSpace_ref',
@@ -350,7 +350,7 @@ E.  ``data/*.xml``
             * ``<nOutputDim>`` (per-slot dim).
             For "size" we interpret per the spec as the FLAT vector
             size: ``nOutput * nOutputDim``.
-          * PS.inputSize   ==  ``<PerceptualSpace><nInput>`` *
+          * PS.inputSize   ==  ``<PartSpace><nInput>`` *
             ``<nInputDim>``.
           * CS.outputSize  ==  ``<ConceptualSpace><nOutput>`` *
             ``<nOutputDim>``.
@@ -437,7 +437,7 @@ Step 4 (semantic vector):  ``sem_vec = ss.lexicon.lookup(sem_idx)``
        -> ``[B, N, sym_D]``.
 
 Step 5 (cast to conceptual space):  the existing
-       ``SymbolicSpace.decode_to_concept`` (line 10445) does the pass-
+       ``WholeSpace.decode_to_concept`` (line 10445) does the pass-
        through cast (validate_config enforces ``sym_dim == concept_dim``
        so no learned remap is needed).  Result feeds downstream into
        ``ConceptualSpace.stm.push`` per the Stage 1.C contract.
@@ -473,7 +473,7 @@ BACKWARD-INCOMPATIBLE CHANGES (what existing tests will break)
    still work *value-wise* (the property still returns the same
    Embedding), but if the property is dropped the .vocabulary
    chain breaks.  RECOMMENDATION: KEEP the
-   ``PerceptualSpace.vocabulary`` property as a back-compat view of
+   ``PartSpace.vocabulary`` property as a back-compat view of
    ``ss.lexicon``.  Tests need no change.
 
 3. ``test/test_perceptual_loopback.py`` test_symbolic_perceptualSpace_ref_wired
@@ -483,7 +483,7 @@ BACKWARD-INCOMPATIBLE CHANGES (what existing tests will break)
 4. ``test/test_perceptualspace_bpe_forward.py``,
    ``test/test_perceptual_chunking.py``,
    ``test/test_serial_mode_perceptual.py``: these dispatch into
-   ``PerceptualSpace._embed*`` paths.  They will continue to work if
+   ``PartSpace._embed*`` paths.  They will continue to work if
    the embed methods are updated to read from ``self.codebook`` instead
    of ``self.subspace.what`` (a one-line attribute swap inside each
    method).  No test-level changes expected.
@@ -589,7 +589,7 @@ RISKS / OPEN QUESTIONS FOR THE CONTROLLER
 R1. NAMING.  ``Space.codebook`` is a bool property today; the new
     SS-side ATTRIBUTE that holds the Embedding cannot share that
     name on SS without breaking ``if self.codebook:`` consumers
-    INSIDE SymbolicSpace itself (lines 10153, 10689, 10755).
+    INSIDE WholeSpace itself (lines 10153, 10689, 10755).
     Recommendation: rename SS attribute to ``self.lexicon``; on PS the
     new reference ``self.codebook`` shadows the bool property via
     instance-level set (a known pattern in this codebase; see
@@ -603,7 +603,7 @@ R2. INVARIANT INTERPRETATION.  ``IS.outputSize ==
     MM_20M's progressive-bottleneck stand; the flat-slab forces
     MM_20M to be redesigned.  Recommendation: PER-SLOT (the IS->PS
     handoff and C->P feedback already operate per-slot in
-    ``PerceptualSpace`` line 7385; the slab equality is enforced
+    ``PartSpace`` line 7385; the slab equality is enforced
     SEPARATELY by ``_register_requirements`` line 7523 for muxed
     width divisibility).  PLEASE CONFIRM.
 
@@ -631,10 +631,10 @@ R4. ConfigA (MM_20M) WILL CHANGE STATE_DICT KEYS.  The dispatch
     -- if not, a one-time conversion script becomes in scope.
 
 R5. WORD-LEARNING (Embedding.insert) IS A WRITE PATH.  The Stage-1.B
-    spec line (".bn/Spaces.py" "SymbolicSpace owns the unified word
+    spec line (".bn/Spaces.py" "WholeSpace owns the unified word
     lexicon codebook and hosts grammar ops needing codebook write
     access") suggests SS-side insert plumbing.  Today's insert path
-    runs through ``PerceptualSpace._embed`` line 7717.  Migration
+    runs through ``PartSpace._embed`` line 7717.  Migration
     moves the insert call to an SS-side method
     (``ss.insert_oov(word)`` or similar) called from PS.  No
     behavioral change in this stage; just relocates the call site.
@@ -646,8 +646,8 @@ R6. ``_peer_perceptual`` retirement: today ``InputSpace._lex_batch``
     No semantic change.  Confirming the rewire of one structural
     reference (IS._peer_perceptual -> IS._symbolicSpace_ref) is in scope.
 
-R7. SYM_LEARN / KNOWLEDGE ARTIFACT: ``SymbolicSpace.attach_knowledge``
-    (line 10234) and ``PerceptualSpace.attach_knowledge`` (line 7583)
+R7. SYM_LEARN / KNOWLEDGE ARTIFACT: ``WholeSpace.attach_knowledge``
+    (line 10234) and ``PartSpace.attach_knowledge`` (line 7583)
     both write metadata onto the lexicon.  Today they write at
     different levels (SS writes reference codebook; PS writes
     word_table.ref_ids onto wv).  Post-migration both write through
@@ -669,7 +669,7 @@ END PROPOSAL  --  AWAITING CONTROLLER GO-AHEAD FOR PHASE 2
 #   No migration of these.
 # - PS's per-word representation is already CS-space-dimensioned
 #   (flat-slab invariant validated below).
-# - ``SymbolicSpace.codebook`` (= ``SymbolicSpace.subspace.what`` Codebook)
+# - ``WholeSpace.codebook`` (= ``WholeSpace.subspace.what`` Codebook)
 #   gains PAIRED ROWS per word at insert time:
 #     * an orthographic row = a copy of PS's per-word vector
 #     * a semantic row      = a fresh random CS-space vector (trainable)
@@ -741,7 +741,7 @@ class TestSSCodebookPairedInsertRetired(unittest.TestCase):
         ss = model.symbolicSpace
         self.assertFalse(
             hasattr(ss, "insert_paired_word"),
-            "SymbolicSpace.insert_paired_word must be RETIRED (Step 3 of "
+            "WholeSpace.insert_paired_word must be RETIRED (Step 3 of "
             "the 2026-06-10 symbolic-iteration plan).")
         self.assertFalse(
             hasattr(ss, "mark_word_atom"),
@@ -784,7 +784,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
         """
         from architecture import canonical_shape
         is_event = is_dim + sum(canonical_shape("InputSpace"))
-        ps_event = ps_dim + sum(canonical_shape("PerceptualSpace"))
+        ps_event = ps_dim + sum(canonical_shape("PartSpace"))
         cs_event = cs_dim + sum(canonical_shape("ConceptualSpace"))
         return {
             "architecture": {
@@ -796,7 +796,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
                 "nOutput": is_out, "nDim": is_event,
                 "nInputDim": 0, "flatten": False, "hasAttention": False,
             },
-            "PerceptualSpace": {
+            "PartSpace": {
                 "nInput": is_out, "nInputDim": is_event,
                 "nOutput": ps_out, "nDim": ps_event,
                 "invertible": True, "hasAttention": False,
@@ -808,7 +808,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
                 "invertible": True, "hasAttention": False,
                 "codebook": "quantize",
             },
-            "SymbolicSpace": {
+            "WholeSpace": {
                 "nInput": cs_out, "nInputDim": cs_event,
                 "nOutput": cs_out, "nDim": cs_dim,
                 "codebook": "quantize",
@@ -935,7 +935,7 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         """The META node's children list contains a PS-tagged position
         and an SS-tagged position. PS-side bytes are recoverable via
         ``PerceptStore.bytes_for(ps_row)`` where ``ps_row`` resolves
-        through ``SymbolicSpace._ps_pos_to_row``.
+        through ``WholeSpace._ps_pos_to_row``.
         """
         ss = self.model.symbolicSpace
         ps_store = self.model.perceptualSpace.percept_store

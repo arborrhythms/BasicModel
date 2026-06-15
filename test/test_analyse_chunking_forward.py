@@ -1,7 +1,7 @@
 """analyse migration contracts (Phase 4b, analysis/synthesis dual-input
 plan rev. 2026-06-09).
 
-The meronymic analyzer is top-down ANALYSIS and lives on SymbolicSpace
+The meronymic analyzer is top-down ANALYSIS and lives on WholeSpace
 (``<analysis>analyse``, consuming the unity view): PS-side
 ``<synthesis>analyse`` is REJECTED loudly (schema + reader), the lexicon
 synthesis path keeps the surface word resolution PS analyse used to
@@ -34,7 +34,7 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     xml = f"""<?xml version='1.0'?>
 <model>
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
+    <subsymbolicOrder>2</subsymbolicOrder>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
@@ -58,20 +58,20 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>
   </InputSpace>
-  <PerceptualSpace>
+  <PartSpace>
     <nInput>32</nInput>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>{n_vectors}</nVectors>
     <synthesis>{synthesis}</synthesis>
-  </PerceptualSpace>
+  </PartSpace>
   <ConceptualSpace>
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>32</nOutput>
     <!-- Uniform (2,2): SS.nWhat must equal CS.nWhat (handoff invariant);
          nDim = content(4) + band(4) = 8 (was 4 under the retired SS=(0,0)). -->
@@ -79,7 +79,7 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     <nVectors>8</nVectors>
     <codebook>true</codebook>
     <lexer>{lexer}</lexer>{analysis_elem}
-  </SymbolicSpace>
+  </WholeSpace>
   <OutputSpace>
     <nOutput>1</nOutput>
     <nDim>1</nDim>
@@ -106,7 +106,7 @@ class TestAnalyseMigration(unittest.TestCase):
                 BaseModel.from_config(config_path=path)
 
     def test_is_side_lexer_rejected_loudly(self):
-        # <lexer> moved to SymbolicSpace; an InputSpace-side <lexer> fails
+        # <lexer> moved to WholeSpace; an InputSpace-side <lexer> fails
         # validation (schema) and the runtime reader (resolve_lexer).
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
@@ -122,7 +122,7 @@ class TestAnalyseMigration(unittest.TestCase):
                 BaseModel.from_config(config_path=path)
 
     def test_ss_analysis_knob_accepted(self):
-        # <analysis>analyse on SymbolicSpace builds; mode is stashed.
+        # <analysis>analyse on WholeSpace builds; mode is stashed.
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
             path = _write_xml(tmp, analysis="analyse")

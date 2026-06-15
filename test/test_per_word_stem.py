@@ -5,7 +5,7 @@ that pushed one C-tier idea onto ``ConceptualSpace.stm`` per
 perceptual slot, so the body's chart-at-C had something to read.
 With the IR-only refactor (no per-cursor walk, single-shot masked-LM
 forward) the stem inlines into ``_forward_per_stage`` as
-``InputSpace.forward`` + ``PerceptualSpace.forward`` and STM is left
+``InputSpace.forward`` + ``PartSpace.forward`` and STM is left
 empty -- the chart's ``valid_mask`` handles the no-op cleanly.
 
 All tests in this file depended on the per-word STM contract that no

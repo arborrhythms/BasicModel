@@ -14,7 +14,7 @@
     <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
-    <conceptualMode>serial</conceptualMode>
+    <symbolicOrder>1</symbolicOrder>
     <!-- Boolean DNF test: disable truth weights so loss reflects only
          the prediction objective. -->
     <truthBiasScale>0.0</truthBiasScale>
@@ -66,12 +66,12 @@
     <nOutput>8</nOutput>
   </InputSpace>
 
-  <PerceptualSpace>
+  <PartSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
-  </PerceptualSpace>
+  </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
@@ -80,12 +80,12 @@
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <SymbolicSpace>
+  <WholeSpace>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
     <codebook>quantize</codebook>
-  </SymbolicSpace>
+  </WholeSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>
@@ -104,7 +104,7 @@
 
          Layer correspondence (gated on rule transition probability):
             S = not(S)            -> propositional NEG (bivector swap)
-            S = union(C, C)       -> SigmaLayer  (in SymbolicSpace)
+            S = union(C, C)       -> SigmaLayer  (in WholeSpace)
             S = C                 -> passthrough
             C = intersection(...) -> PiLayer     (in ConceptualSpace)
             C = P                 -> bare percept

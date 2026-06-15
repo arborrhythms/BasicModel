@@ -77,7 +77,7 @@ def test_word_at_returns_padded_shape_past_valid_len():
     # embed -> IS.finalize_stem (which populates ``_ar_embedded_N``).
     m._lex_embed_stem(inputTensor)
     # ``word_at`` / ``_word_active_mask`` index the PS-reduced per-word slab
-    # (``_ar_embedded_N``), whose width is PerceptualSpace.nOutput -- NOT the
+    # (``_ar_embedded_N``), whose width is PartSpace.nOutput -- NOT the
     # InputSpace char width (text models reduce chars -> words). Read N off the
     # padded slab so word_at(N-1) is the last real per-word slot.
     N = int(isp._ar_embedded_N.shape[1])
