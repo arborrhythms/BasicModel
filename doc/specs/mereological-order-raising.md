@@ -378,3 +378,263 @@ byte-identical** (verified by the full suite).
 - **"Many" / "good" thresholds**: config knobs; ultimately gradient-driven.
 - **Well-representability of the trigger**: parts/whole counts are the primary signal
   (per this spec); `invert_ramsified` reconstruction residual is an auxiliary check.
+
+## Reframing — two parthoods, two memories, two gates (2026-06-16)
+
+A design discussion (with a cited cognitive-science check) sharpened where the `.where`
+machinery applies and what the rest must be. Recorded here for later doc inclusion.
+
+### Two parthoods
+
+- **Mereological part-of — ORDER 0, `.where`-grounded, within one presentation.** paw ⊑
+  this-cat; byte ⊑ "cat"; "New York" ⊑ the sentence. The part's extent nests in the whole's
+  extent *now*. This is what `.where`-containment (`RunStructureLayer.contained_mask`) and
+  the autobind binding (below) build. **The meronomy proper is over 0th-order parts/wholes.**
+- **Taxonomic subsumption — SYMBOLIC, across presentations.** the class *cats* ⊑ the class
+  *animals*. This is **NOT** `.where`-containment: classes range over **discontiguous
+  prototypes** and have no single extent (Principle 4). It is a relation between abstract
+  symbols, learned explicitly (trusted language) and/or by reasoning over examples, with the
+  π intensional **meet-absorption** (`π(cat,animal)≈cat`) + `abstraction_order` as the
+  geometric/order correlate — a *similarity weight*, not the source.
+
+> **Cognitive grounding (deep-research, adversarially verified).** Superordinate categories
+> cohere poorly perceptually (Rosch et al. 1976: ~0–3 shared attributes vs ~7–9 basic-level);
+> a label glues perceptually-dissimilar things (Markman & Hutchinson 1984; Waxman & Gelman
+> 1986) but does not *create* categories (Waxman et al. 1991); category-over-appearance
+> induction is gradual (Godwin & Fisher 2015) and the theory-vs-similarity question is a
+> hybrid (Fisher/Godwin/Matlen 2015); explicit class-inclusion is a late achievement
+> (~8–9; Politzer 2016). Verdict: subsumption is **fundamentally symbolic / language-mediated
+> / inferential**, not perceptual-similarity or spatial-containment — a qualified yes, hybrid,
+> emerging developmentally. basic-level (the *word* level) is the perceptual/early rung;
+> superordinate is the symbolic rung; **order-raising is the basic→superordinate trajectory,
+> and the word/label is the bridge** (the word↔object MetaSymbol).
+
+### The partition (codes vs relations × absolute vs relative)
+
+- **Absolute / perceptual.** **Codes** live in the **PartSpace (σ) + WholeSpace (π)
+  codebooks**; **relations** live in the **CS meronymy** (the part↔whole META taxonomy,
+  `insert_meta`/`taxonomy`).
+- **Relative / taxonomic.** **Relations** live in the **CS symbolic taxonomy** (symbol↔symbol,
+  `RelativeTruthStore`).
+
+### User truth, and the two gates
+
+User-provided **Truth = English sentences**. At the surface they give **meronymic relations**
+(the parse); composed syntactically they yield an **idea = absolute truth** (a proposition) or
+a **relation between ideas = relative truth**. Where a truth lands is decided by **two gates**:
+
+1. **Reducibility.** Can it be **encoded within the codebook** (reduced to codes + relations)?
+   **Grammar is the reduction mechanism.** A sentence that **cannot be reduced to the codebook
+   absent grammatical operations** must be **stored as an IDEA** (a composed proposition — not
+   a code, not a meronymy edge). An *absolute* truth can itself be an idea, not only a relative
+   one.
+2. **Trust.** Is it trusted? Trust is the **tetralemma** `(t,f,b,n)` (TRUE/FALSE/BOTH/NEITHER;
+   `meta_trust` / `insert_meta(trust=...)` / `RelativeTruthStore`).
+
+**Asymmetry (key):** the **codebooks are assumed VALID — they carry NO per-proposition
+DegreeOfTrust**. A proposition enters the codebook (and thereby the meronymy/taxonomy *as the
+truth table*) only when it is **both reducible AND trusted**. **Untrusted and/or irreducible**
+truths are **represented in the TruthLayer / as ideas**, carrying DegreeOfTrust. Hence
+"CS meronymy == absolute-truth table" and "CS symbolic taxonomy == relative-truth table" hold
+**only for the reducible-and-trusted portion**; the remainder lives as trust-annotated ideas.
+
+### Three memories (all but the codebook trust-bearing)
+
+- **Codebooks** (PS σ, WS π) — *codes*; assumed valid; no per-proposition trust.
+- **CS meronymy + symbolic taxonomy** — *relations* (the absolute/relative truth tables for the
+  reducible-and-trusted portion); trust-bearing.
+- **Ideas / relations-between-ideas** — composed propositions that did not reduce; held in
+  **STM** (transient, per-sentence) and persisted in **LTM** (episodic exemplar store);
+  trust-bearing. LTM verifies a general (symbolic) relation by **retrieving order-0 instances**
+  and checking parthood where `.where`/co-occurrence still hold (feeds the TruthLayer trust).
+
+> **"LTM" disambiguation.** The code already uses *LTM* for the inter-sentence AR chain of STM
+> end-states (`Layers.py` ~7365, discourse continuation). The store meant here is a NEW
+> **episodic exemplar store** of persisted CS `.events` (or PS `.what`+`.where`+`.when`),
+> distinct from PerceptStore (types), the codebooks (prototypes), and STM (transient).
+
+> **✗ FUTURE TODO — provision LTM by pre-parsing a corpus.** WikiOracle is **stateless**, so it
+> cannot accumulate memory across runs: LTM must be **provisioned (loaded), not learned
+> online**. Pre-process a large database (e.g. **Wikipedia**) into an explicit **pre-parsed**
+> format — sentences pre-composed into ideas (absolute) / relations (relative) with per-memory
+> trust, reduced into codes + taxonomy where possible, else held as ideas — and load it as the
+> model's LTM. (Fits the project name: an oracle that has ingested Wikipedia.)
+
+### Analysis = property-tiling; the wholes are intensional TYPES (2026-06-16, Alec)
+
+How WholeSpace chunks (π) — and why there is no per-sentence churn:
+
+- **The first whole is "a sentence" — a generic TYPE, minted once**, not per-occurrence. Its
+  spatial extent *is* the **Universe** (the entire `[0, N_raw)` input passed from InputSpace).
+  So binding under it does not grow the codebook (no churn): one reusable Universe/sentence
+  whole.
+- **A property IS a binary tiling.** Applying a property — `word` (runs of letters vs
+  non-letters), `whitespace`, `punctuation`, `digits` — splits the input into two wholes:
+  `{has-property}` and `{¬has-property}`, each an **intensional** class carrying a **`.what`**
+  (which class) AND a **`.where`** (the regions satisfying it). This is the analysis dual of a
+  synthesis chunk.
+- **`.index` selection is OR over properties (analysis), dual to AND over particles
+  (synthesis).** Selecting several property rows via `SubSpace._index` unions their tilings:
+  `letters OR digits` → `{letters ∪ digits}` vs `{¬(letters ∪ digits)}`. In PartSpace the same
+  `_index` mechanism is an AND over particles (a part is the conjunction of its constituents —
+  more particles narrow it); in WholeSpace it is an OR over properties (more properties widen
+  the whole). Union-of-properties widens; conjunction-of-particles narrows.
+- **Both towers chunk and return representations.** PS chunks by *synthesis* (merge particles →
+  parts; radix spell-out); WS chunks by *analysis* (tile by property → wholes); both emit
+  `.what` + `.where` codes.
+- **Properties are TOKENS, and they range from localizable to GLOBAL/BACKGROUND.** A property is
+  a codebook row (a token), selected via `.index`. Some properties are *localizable* (char-class:
+  letters at positions 3–7) and tile into regions *with* a `.where`. Others are *global /
+  background* characterizations of the WHOLE that belong to **no part** — the canonical example is
+  the **frequency content of an image** (a property of the entire image, not any pixel). A global
+  property has **no localized `.where`** (the Universe is its extent; abstract by Principle 4).
+  This is exactly why `materialize_property`'s basis is **low-frequency / whole-ranging**: a
+  property row dotted with the positional (frequency) basis IS a frequency/background
+  characterization of the whole. So the property-token codebook + `materialize_property` + `.index`
+  is **one unified API** spanning char-class tilings and global characterizations — char-class is
+  just a content-keyed backend, not a separate mechanism.
+
+### Both towers are over TYPES; the distinguishing axis is mereological support
+
+The PS↔WS duality completes: **both towers deal in TYPES, not tokens.** A PS percept (the letter
+`a`) is a *type* of which an image may hold **many tokens** (the PerceptStore already works this
+way — a percept-id IS the type, its occurrences are uses); a WS property is likewise a type. The
+**one thing that distinguishes a part-type from a whole-type is its mereological SUPPORT** — the
+`.where`(s) of its instances:
+
+- **PS type → extensional support**: the SET of its token-occurrences (AND-of-particles narrows
+  the type; occurrences may be many and scattered).
+- **WS type → intensional support**: the REGION it tiles (OR-of-properties widens the type).
+
+Consequence: **a type whose support is many/scattered tokens has no single `.where` → it is
+abstract / higher-order** (Principle 4), carried by its **footprint** (the support set). So "many
+tokens of `a` → the type `a`" is the SAME order-raising move as "bytes → word": many parts under
+one whole, raise a higher-order type, track it by its support footprint; the order-0 case is a
+single contiguous token. Therefore the `.where` / run-structure / containment machinery
+(`RunStructureLayer`: `contained_mask`, `n_runs`, `tightest_container`) **IS the mereological-
+support computation** — the shared substrate both towers' types stand on, and the defining
+feature that separates a part-type (extensional support) from a whole-type (intensional support).
+
+### How analysis/whole types integrate with the `(ps,ss)` meronomy (2026-06-16, Alec — RESOLVED)
+
+The integration question — "how do WholeSpace analysis/property wholes (which have `.where`
+regions but are not PS percepts) connect to the `(ps,ss)` meronomy?" — is answered by the
+type/instance/`.where` distinction:
+
+- A WholeSpace **word** whole is ONE `.what` code (the word TYPE); the several word-instances in a
+  sentence are that one type at different `.where`s — exactly as the PartSpace **`A`** is one
+  `.what` code (the letter TYPE) with many `.where` instances. Neither is "actual" (a glyph in a
+  font). The word-type may even **reconstruct better** than a letter-part (its constituent letters
+  average to the type mean M) — the code is the stable thing.
+- **The meronomy edge is TYPE → TYPE:** "is `A` a part of *word*?" means "do we store the PS
+  `A`-code as a part of the WS word-code?" — a single edge between the two TYPE codes in the
+  `(ps,ss)` taxonomy.
+- **`.where` is the EVIDENCE that decides the edge, not the storage:** *"sometimes we do and
+  sometimes we don't, and we know by looking at the `.where` for each."* The edge holds when the
+  part's `.where` nests inside the whole's `.where` (cross-tower **`contained_mask`** /
+  `tightest_container`: PS-part `.where` ⊆ WS-whole `.where`). So the per-instance `.where`s are
+  the deciding evidence; the **codes (types) + their type→type edges are what persist** — instances
+  are never stored as parts, so there is **no taxonomy churn** (this resolves the open
+  instance/type ↔ STM/codebook integration point).
+
+**Implementation consequence.** The binding is the cross-tower `.where`-containment ("atom-index
+join"): compare PS-part `.where`s (`where_idx` byte offsets) against WS-whole `.where`s
+(`property_spans` / `stage_analysis_spans` runs) via `contained_mask`/`tightest_container`, and
+store the part-code ⊑ whole-code edge where it nests. The substrate is built (`property_spans`,
+`where_idx`, `contained_mask`, `tightest_container`). NOTE: **A4-core bound per-instance run-span
+positions — the wrong granularity**; the correct A4 binds the PS part-TYPE to the WS whole-TYPE,
+`.where`-gated. `property_class_whole` (the generic WS class/"word" type) and the raise plumbing
+are reused unchanged; only the binding granularity (per-instance → type→type, `.where`-gated)
+changes.
+
+## Implementation plan (sequenced, 2026-06-16)
+
+The consolidated roadmap, folding in this session's refinements. Status: ✓ done · ◑ partial ·
+→ next · ✗ deferred. Each step is gated behind `<mereologyRaise>` and byte-identical with the
+flag off unless noted.
+
+**Workstream A — Order-0 mereology: the support machinery + binding (the `.where` tower).**
+- **A1 ✓** `RunStructureLayer` measure — runs / gaps / `contained_mask` / extent over a span set,
+  fixed-shape, owned by WholeSpace, called gated+read-only in `_stage0_unity_forward`. *(committed)*
+- **A2 ✓ (S3)** Word-whole binding — `_embed_radix` stashes `word_groups`; `_autobind_word_wholes`
+  binds a token's spell-out pids to ONE shared whole (keyed by text), `maybe_raise_order` fires.
+  *(uncommitted; suite 2518/0)*
+- **A3 ◑ (S4)** `tightest_container` — force-#1 (largest part ↔ smallest whole) from
+  `contained_mask`. The "A isa B" edge, computed; **not yet recorded into the taxonomy**.
+- **A4 → (S4-bind)** Record the isa-edges as meronomy edges, under the **generic Universe /
+  "sentence" TYPE** (minted once — no churn). Trivial on flat word-spans; becomes non-trivial once
+  B (property-tiling) yields nested/multi-class tilings. Depends on **B**.
+- **A5 ✗ (S5)** Higher-order part synthesis — replace the raise's mean-combine with
+  `SigmaLayer.synthesize_over_set` (needs a *trained* σ at SS width — not a trivial swap) + prune /
+  relink the moot per-part edges WITHOUT orphan churn; plus force-#3 (singleton → analyse or drop).
+
+**Workstream B — Analysis = property-tiling (the π chunker), one unified property-token API (S6).**
+- **B1 →** Char-class property backend — `letters` / `digits` / `whitespace` / `punctuation` as
+  content-keyed masks (fixed-shape byte-range tensor ops); the run→span cut in the eager stem,
+  generalizing `stage_analysis_spans`' whitespace special case. Each = a binary tiling → `.what`
+  (class) + `.where` (regions). Wire into `Codebook.materialize_property`'s documented seam
+  (approach (a): unify, don't fork).
+- **B2 →** OR-union over `.index` — combine multiple selected property rows into one tiling
+  (`letters ∪ digits` vs complement); the analysis-side OR, dual to PartSpace's AND-of-particles.
+- **B3 ✗** Global / background properties — the low-frequency whole-ranging characterization
+  (image frequencies); the **no-localized-`.where`** (abstract, Principle-4) case; reuse the
+  sinusoidal `materialize_property` basis + `descriptor_roles` (`ROLE_LF_COARSE`).
+- **B unblocks A4** (real containment for `contained_mask` / `tightest_container`).
+
+**Workstream C — Ratio-driven refinement + three-aspect contiguity routing (S8).** CS reads the
+`.where` run-structure per representation: **contiguous → refine** (more σ/π in that `.where`),
+**discontiguous → raise order**, **zero → null**; integrate (→PS σ) vs disintegrate (→WS π) by
+run-count. Wrong part/whole ratio requests further synthesis/analysis until the granularity is
+right (the convergence loop). Depends on A+B.
+
+**Workstream D — Radix-climb σ + the real MM_20M fix (S7).** End-to-end on `data/MM_mereology.xml`:
+let σ climb (radix promotion) and π descend (property tiling) until word-granularity parts emerge
+and the ratio is right. NEVER mutate `MM_20M.xml`. Depends on B+C.
+
+**Workstream E — Types + support (cross-cutting frame).** Both towers are over TYPES; mereological
+support (extensional token-set / intensional region) is the distinguishing axis. "Many tokens →
+type" is the SAME raise as "bytes → word". Wire order tracking (`abstraction_order` /
+`record_fold` live) + the **footprint** (support set) so abstract (no-`.where`) types keep their
+meronymy. Higher-order parthood = footprint-`.where`-containment (A+D) + provenance (`part_chain`)
++ optionally lattice absorption / `synthesize_over_set` for novel codes.
+
+**Workstream F — Taxonomic subsumption (the SEPARATE symbolic/relational machine).** `cat ⊑ animal`
+lives in `RelativeTruthStore` (the relative-truth table = CS symbolic taxonomy), learned from
+**trusted language** + category-based **induction over examples**, with **π meet-absorption** on
+property codes as a *similarity weight* — NOT `.where`. Two gates decide where a user truth lands:
+**reducibility** (encodable in the codebook via grammatical operations, else stored as an IDEA) and
+**trust** (tetralemma `(t,f,b,n)`); codebooks are assumed valid (no per-proposition trust). Cited
+cognitive grounding: subsumption is symbolic/inferential, not perceptual (Rosch / Markman / Waxman
+& Gelman / Politzer / Murphy & Medin), a developmental hybrid.
+
+**Workstream G — Memories (three tiers + episodic LTM).** Codebooks (codes, assumed valid) · CS
+meronymy + symbolic taxonomy (relations = the truth tables, trust-bearing, only for the
+reducible-and-trusted portion) · IDEAS / relations-between-ideas (STM transient, LTM persisted —
+both trust-bearing). The **episodic LTM** (persisted CS `.events` / PS `.what`+`.where`+`.when`,
+distinct from the existing discourse-AR "LTM") verifies a general relation by retrieving order-0
+instances and checking parthood where `.where`/co-occurrence still hold → feeds the TruthLayer
+trust. **WikiOracle is stateless ⇒ LTM is PROVISIONED, not accumulated: ✗ FUTURE TODO — pre-parse
+Wikipedia into ideas (absolute) / relations (relative) + per-memory trust and load it as LTM.**
+
+**Critical path:** B1 → B2 → A4 → C → A5 → D (the perceptual mereology end-to-end). F + G (the
+symbolic/relational + memory tracks) are largely independent and proceed in parallel. The next
+concrete code step is **B1** (char-class property-tiling).
+
+> **Substrate (partly built).** `Codebook.property_basis` + `Codebook.materialize_property(index,
+> n_positions)` ([Spaces.py:2081](../../bin/Spaces.py)) already read rows as PROPERTIES
+> (whole-ranging) and tile the input via a positional basis: `>0` has-property, `≤0` complement
+> (the sinusoidal worked example). **Unwired (= S6 property-tiling π):** (a) the CHAR-CLASS
+> properties (letters / digits / whitespace / punctuation) as the content-keyed backend (the
+> documented "precomputed span mask" seam); (b) the **OR-union over multiple `.index`-selected
+> properties** (today `materialize_property` returns the regions per-property, not unioned). The
+> whitespace cut in `stage_analysis_spans` is the one hard-wired special case of this. Wiring
+> these unblocks `contained_mask` / `tightest_container` on REAL nested/multi-class tilings and
+> is the documented MM_20M-fix mechanism (π descends from the Universe by tiling until the
+> part/whole ratio is right).
+
+### Build consequence
+
+The `.where`-containment order-raising binding (Stages S3/S4 below) builds **order-0
+MEREOLOGY** (byte ⊑ word word-formation; the dormant `maybe_raise_order` fires on a multi-part
+word). **Taxonomic subsumption is a separate, symbolic/relational machine** (relation store +
+trusted language + reasoning over examples + episodic-LTM verification), not a `.where` binding.

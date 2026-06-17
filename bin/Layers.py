@@ -3149,7 +3149,14 @@ class RunStructureLayer(Layer):
             ``span_extent`` ``[..., K]`` per-part width (0 for pads);
             ``max_extent`` / ``total_extent`` ``[...]`` -- the extent dimension
                 the run-count misses: a singleton with large ``max_extent`` is a
-                long part that property-tiling should analyse.
+                long part that property-tiling should analyse;
+            ``tightest_container`` ``[..., K]`` (long) -- force #1: for each span
+                the index of its SMALLEST strict container (the smallest whole
+                over it), or ``-1`` when none. The "A isa B" edge with no
+                intervening smaller whole;
+            ``route_hint`` ``[...]`` (long) -- the three-aspect routing class:
+                ``0`` NULL (no valid runs), ``1`` REFINE (one contiguous run /
+                singleton), ``2`` RAISE (>1 run / discontiguous).
         """
         tol = self.contiguity_tol if tol is None else float(tol)
         starts = spans[..., 0]
@@ -3183,11 +3190,102 @@ class RunStructureLayer(Layer):
         span_extent = (ends - starts).clamp(min=0) * valid.to(ends.dtype)  # [..., K]
         max_extent = span_extent.amax(dim=-1)                              # [...]
         total_extent = span_extent.sum(dim=-1)                            # [...]
+        # Force #1 -- the TIGHTEST link (doc/specs/mereological-order-raising.md:
+        # "link the largest part with the smallest whole; skip when a bigger
+        # part or smaller whole already subsumes the relation"). For each span i
+        # (a candidate part), pick its SMALLEST STRICT container j (i != j, i in
+        # j, minimal extent) -- that is the smallest whole over it; -1 when none.
+        # Fixed-shape: mask the diagonal out of contained_mask, fill non-container
+        # extents with +big, argmin over j. (Ties -> lowest index, the repo's
+        # index tie-break.) This is the "A isa B" edge with no intervening whole.
+        eye = torch.eye(K, dtype=torch.bool, device=spans.device)
+        eye = eye.view((1,) * (contained_mask.dim() - 2) + (K, K))
+        strict = contained_mask & (~eye)                            # [..., K, K]
+        has_container = strict.any(dim=-1)                          # [..., K]
+        _BIG = float(2 ** 30)
+        cand_ext = torch.where(
+            strict, span_extent.unsqueeze(-2),
+            torch.full_like(span_extent.unsqueeze(-2), _BIG))       # [..., K, K]
+        argmin_j = cand_ext.argmin(dim=-1)                          # [..., K]
+        tightest_container = torch.where(
+            has_container, argmin_j, torch.full_like(argmin_j, -1))  # [..., K]
+        # Three-aspect routing hint (doc/specs/mereological-order-raising.md
+        # "contiguity routes refine vs raise"): per whole, classify its .where
+        # run-structure -- 0 = NULL (no valid runs, nothing to act on);
+        # 1 = REFINE (one contiguous run = a localized singleton -> chunk finer
+        # / property-tile); 2 = RAISE (>1 run = discontiguous -> raise order).
+        # A computed signal from n_runs; the routing ACTION (the feedback loop)
+        # consumes it later.
+        route_hint = torch.where(
+            n_runs <= 0, torch.zeros_like(n_runs),
+            torch.where(n_runs == 1, torch.ones_like(n_runs),
+                        torch.full_like(n_runs, 2)))                  # [...]
         return {"n_runs": n_runs, "n_gaps": n_gaps,
                 "is_run_start": is_run_start, "valid": valid,
                 "contained_mask": contained_mask, "ratio": n_runs,
                 "span_extent": span_extent, "max_extent": max_extent,
-                "total_extent": total_extent}
+                "total_extent": total_extent,
+                "tightest_container": tightest_container,
+                "route_hint": route_hint}
+
+
+# Char-class property tiling (doc/specs/mereological-order-raising.md "Analysis
+# = property-tiling"). A char-class property is a BINARY TILING of a byte input
+# into {has-class} / {not} -- the analysis-side (WholeSpace π) dual of a
+# synthesis chunk. ASCII byte ranges (inclusive) per class; selecting a SET of
+# classes ORs them (the analysis-side OR over .index-selected properties, dual
+# to PartSpace's AND over particles).
+LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
+_CHAR_CLASS_RANGES = {
+    LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
+    DIGIT: [(48, 57)],                       # 0-9
+    WHITESPACE: [(9, 9), (10, 10), (13, 13), (32, 32)],  # tab, LF, CR, space
+    PUNCT: [(33, 47), (58, 64), (91, 96), (123, 126)],   # ASCII punctuation
+}
+
+
+def char_class_region(byte_input, class_ids):
+    """Binary-tiling region of ``byte_input`` for a SET of char classes.
+
+    ``byte_input`` ``[..., N]`` (byte values 0..255); ``class_ids`` an iterable
+    of ``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``. Returns a signed
+    region ``[..., N]`` in ``{+1, -1}``: ``+1`` where the byte is in ANY
+    selected class (the OR-union -- the has-property whole), ``-1`` otherwise
+    (the complement whole). Same ``>0 has / <=0 not`` convention as
+    :meth:`Codebook.materialize_property`. A fixed 256-entry membership LUT
+    (built from the selected classes, then gathered) keeps this a fixed-shape
+    tensor op -- no host-side per-position control flow (the class loop is over
+    the fixed selected set, not the data)."""
+    if not torch.is_tensor(byte_input):
+        byte_input = torch.as_tensor(byte_input)
+    b = byte_input.long()
+    lut = torch.zeros(256, dtype=torch.bool)
+    for cid in class_ids:
+        for (lo, hi) in _CHAR_CLASS_RANGES[int(cid)]:
+            lut[lo:hi + 1] = True
+    member = lut.to(b.device)[b.clamp(min=0, max=255)]
+    return member.to(torch.float32) * 2.0 - 1.0
+
+
+class PropertyTilingLayer(Layer):
+    """WholeSpace char-class property tiling (doc/specs/mereological-order-
+    raising.md): an ANALYSIS op that binary-tiles a byte input into
+    ``{has-class}`` / ``{not}`` for a selected SET of char classes
+    (``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``), OR-unioned -- the
+    analysis-side dual of a synthesis chunk. Parameter-free, fixed-shape (like
+    :class:`RunStructureLayer`). ``forward(byte_input, class_ids)`` returns the
+    signed region ``[..., N]`` in ``{+1, -1}`` (``+1`` = the has-property whole,
+    ``-1`` = the complement whole), each carrying a ``.what`` (the class) and,
+    via the run/containment measure over the ``+1`` runs, a ``.where``."""
+
+    LETTER, DIGIT, WHITESPACE, PUNCT = LETTER, DIGIT, WHITESPACE, PUNCT
+
+    def __init__(self):
+        super().__init__(1, 1)              # parameter-free measure; nominal widths
+
+    def forward(self, byte_input, class_ids):
+        """Signed ``{+1,-1}`` tiling region for the OR-union of ``class_ids``."""
+        return char_class_region(byte_input, class_ids)
 
 
 class NegationLayer(Layer):

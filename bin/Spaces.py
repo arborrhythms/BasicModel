@@ -42,6 +42,7 @@ from embed import (
 ) 
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
+from Layers import PropertyTilingLayer, char_class_region  # char-class property tiling (S6/B1)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer
 # NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
@@ -1917,6 +1918,14 @@ class Codebook(Basis):
         # PS percept-store rows, never SS roles. Allocated lazily by
         # ``ensure_descriptor_roles``.
         self.descriptor_roles = None
+        # Char-class PROPERTY tag (S6/B1, doc/specs/mereological-order-raising.md
+        # "Analysis = property-tiling"). ``property_kind[row] = {LETTER, ...}``
+        # marks a property row as a CONTENT-KEYED char-class tiling, so
+        # ``materialize_property`` returns its byte-membership region (the
+        # documented content-keyed seam) instead of the sinusoidal whole-ranging
+        # basis. Lazy dict; ``None`` (default) => every row stays sinusoidal,
+        # byte-identical. See :meth:`set_property_kind`.
+        self.property_kind = None
         # Per-row meronomy parent index. ``part_parents[i] = j`` means
         # atom ``i`` is a part of atom ``j``. ``-1`` is the sentinel for
         # "no parent" (atom is a root concept). Used by the codebook
@@ -2080,7 +2089,7 @@ class Codebook(Basis):
     # untouched until a caller opts a property codebook in.
     property_basis = False
 
-    def materialize_property(self, index, n_positions):
+    def materialize_property(self, index, n_positions, input_bytes=None):
         """Materialize selected PROPERTY rows as per-position region membership.
 
         A property row (e.g. "color", "whitespace", a sinusoid value) is
@@ -2106,11 +2115,25 @@ class Codebook(Basis):
         The learnable property row is the low-frequency atom; the basis
         enforces the coarseness.
 
-        Content-keyed properties (whitespace, words) reuse the meronymic
-        analyzer's span segmentation (``perceptual_analyzer.MeronymicAnalyzer.
-        analyze``) and land here as a precomputed span mask; that backend is
-        a documented seam, not yet wired.
+        Content-keyed CHAR-CLASS properties (S6/B1): when ``input_bytes`` is
+        given AND any selected row is tagged via :meth:`set_property_kind`, the
+        region is the BYTE-MEMBERSHIP tiling (``Layers.char_class_region``: ``+1``
+        in any selected class, ``-1`` otherwise) -- the OR-union of all selected
+        rows' classes (the analysis-side OR over ``.index``, dual to PartSpace's
+        AND). Default (no tags / no ``input_bytes``) falls through to the
+        sinusoidal whole-ranging basis below, byte-identical.
         """
+        # Char-class content-keyed backend (the documented seam, now wired).
+        # Gated by an explicit property_kind tag + supplied input_bytes, so the
+        # legacy sinusoidal path is unchanged when neither is present.
+        if input_bytes is not None and self.property_kind:
+            classes = set()
+            for _r in torch.as_tensor(index).reshape(-1).tolist():
+                _cs = self.property_kind.get(int(_r))
+                if _cs:
+                    classes.update(_cs)
+            if classes:
+                return char_class_region(input_bytes, sorted(classes))
         rows = self.lookup(index)                         # [..., D]
         D = int(rows.shape[-1])
         half = max(1, D // 2)
@@ -2129,6 +2152,25 @@ class Codebook(Basis):
         # region signal = property row . positional basis  ->  [..., N]
         region = torch.tensordot(rows, basis, dims=([rows.ndim - 1], [1]))
         return torch.tanh(region)
+
+    def set_property_kind(self, row, classes):
+        """Tag codebook ``row`` as a CONTENT-KEYED char-class property over
+        ``classes`` (an int or iterable of ``PropertyTilingLayer`` class ids:
+        LETTER / DIGIT / WHITESPACE / PUNCT). :meth:`materialize_property` then
+        returns this row's byte-membership tiling (given ``input_bytes``)
+        instead of the sinusoidal basis. Stored in the lazy ``property_kind``
+        dict; selecting several tagged rows OR-unions their classes."""
+        if self.property_kind is None:
+            self.property_kind = {}
+        if isinstance(classes, int):
+            classes = (classes,)
+        self.property_kind[int(row)] = set(int(c) for c in classes)
+
+    def get_property_kind(self, row):
+        """Return the char-class set tagged on ``row`` (``None`` if untagged)."""
+        if self.property_kind is None:
+            return None
+        return self.property_kind.get(int(row))
 
     def set_event(self, event_tensor):
         """Codebook-bearing slots DO NOT cache per-batch events.
@@ -9773,6 +9815,23 @@ class PartSpace(PerceptualSpace):
         # follow-on -- see the muxed-width note in
         # doc/plans/2026-06-04-radix-spell-out-percept-codebook.md).
         pid_2d: list = []
+        # Order-0 mereology (doc/specs/mereological-order-raising.md): record,
+        # per emitted slot, the index of the LEXER TOKEN it was spelled out
+        # from. The spell-out of one token (a word) is a contiguous RUN of
+        # percept pids -- bytes for an unfamiliar word, one pid once promoted --
+        # so the token-group IS the word-as-whole and its pids ARE the parts.
+        # Purely additive bookkeeping (parked on _forward_input); no consumer
+        # unless <mereologyRaise> routes the autobind through the word-whole
+        # binding, so flag-off is byte-identical.
+        group_2d: list = []
+        # Per-slot byte OFFSET (the percept instance's `.where`): the start byte
+        # position of the lexer token a spelled-out pid came from. Filled onto
+        # ``subspace.where`` below (the SubSpace field, gated by
+        # ``_mereology_raise``) so the cross-tower meronomy reads the percept
+        # `.where` from the SubSpace and gates a part ⊑ whole edge on its nesting
+        # inside a WS whole `.where`. Token-start granularity (coarse, sufficient
+        # for word-level containment); -1 pad.
+        offset_2d: list = []
         for b, row in enumerate(batch_tokens):
             # Pass 1 -- frequency observation for EVERY chunk in the row,
             # independent of the nObj emission budget below. ``observe_chunk``
@@ -9793,28 +9852,41 @@ class PartSpace(PerceptualSpace):
             # Promotions from Pass 1 already took effect, so a just-promoted
             # recurring word now spells out as ONE percept here.
             row_pids: list = []
+            row_groups: list = []
+            row_offsets: list = []
+            byte_off = 0
             for n in range(len(row)):
                 text = row[n]
                 if text is None:
                     continue
                 chunk = (text.encode("utf-8") if isinstance(text, str)
                          else bytes(text))
+                tok_start = byte_off
+                byte_off += len(chunk)            # surface byte position
                 if len(chunk) == 0:
                     continue
                 for pid in ps.spell_out(chunk):
                     if len(row_pids) >= nObj:
                         break
                     row_pids.append(int(pid))
+                    row_groups.append(int(n))     # this pid is a part of token n
+                    row_offsets.append(int(tok_start))  # the pid's byte .where
                 if len(row_pids) >= nObj:
                     break
             while len(row_pids) < nObj:
                 row_pids.append(int(null_pid))
+                row_groups.append(-1)             # pad slots: no token group
+                row_offsets.append(-1)
             pid_2d.append(row_pids[:nObj])
+            group_2d.append(row_groups[:nObj])
+            offset_2d.append(row_offsets[:nObj])
         if os.environ.get("XCHUNK_PROBE"):
             _nn = [sum(1 for p in r if p != null_pid) for r in pid_2d[:4]]
             print(f"=XCHUNK2= non-null-pids/row={_nn} pid_2d[0]={pid_2d[0]} "
                   f"lexer-tokens[0]={batch_tokens[0]!r}", flush=True)
         pid_grid = torch.tensor(pid_2d, dtype=torch.long, device=dev)
+        word_group_grid = torch.tensor(group_2d, dtype=torch.long, device=dev)
+        word_offset_grid = torch.tensor(offset_2d, dtype=torch.long, device=dev)
         # Gather per-slot vectors from the shared ``.what`` codebook (the
         # same Codebook the RadixLayer writes its percepts into), so the
         # event reflects the learned percept prototypes and gradient flows
@@ -9834,11 +9906,21 @@ class PartSpace(PerceptualSpace):
             what_event = torch.cat([what_event, pad], dim=-1)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(what_event)
+        # The percept ``.where`` belongs on ``subspace.where`` -- the SubSpace
+        # field PS fills in ``forward`` and passes out (mirrors the lex path's
+        # ``self.subspace.where.setW(where_idx)`` in ``_lex_and_embed``), NOT a
+        # side stash. The radix path left this band unfilled (a gap); fill it
+        # with the pid-aligned token-start offsets so the cross-tower
+        # ``.where`` binding reads the percept ``.where`` from the SubSpace.
+        # Gated by ``_mereology_raise`` so flag-off radix is byte-identical (the
+        # band stays exactly as before).
+        if getattr(self, '_mereology_raise', False):
+            self.subspace.where.setW(word_offset_grid)
         self._embedded_input = what_event
         self._last_tokens = batch_tokens
         self._forward_input = {
             'tokens': batch_tokens, 'indices': pid_grid,
-            'percept_store': ps,
+            'percept_store': ps, 'word_groups': word_group_grid,
         }
         return self.subspace
 
@@ -12374,9 +12456,13 @@ class ConceptualSpace(Space):
                 and torch.is_tensor(seed_event)
                 and seed_event.dim() == 3
                 and seed_event.shape[:2] == pid_2d.shape):
-            self._maybe_autobind_meta(pid_2d, seed_event)
+            self._maybe_autobind_meta(
+                pid_2d, seed_event,
+                word_groups=ps_fwd.get('word_groups'),
+                tokens=ps_fwd.get('tokens'))
 
-    def _maybe_autobind_meta(self, pid_2d, vec_tensor):
+    def _maybe_autobind_meta(self, pid_2d, vec_tensor, word_groups=None,
+                             tokens=None):
         """Auto-bind PS percepts to fresh SS symbols + META edges.
 
         Task G relocation: moved here from ``PartSpace`` so the
@@ -12429,6 +12515,19 @@ class ConceptualSpace(Space):
         if pid_2d is None or vec_tensor is None:
             return
         if not torch.is_tensor(pid_2d) or not torch.is_tensor(vec_tensor):
+            return
+        # Order-0 mereology binding (GATED <mereologyRaise>, dark by default ->
+        # byte-identical). A lexer token's spell-out pids (``word_groups``,
+        # parked by PartSpace._embed_radix) all bind to ONE shared word-whole,
+        # so the whole accumulates > 1 part and ``maybe_raise_order`` fires
+        # (doc/specs/mereological-order-raising.md, order-0 MEREOLOGY). The
+        # per-pid path below is the flag-off default.
+        if (getattr(ss, '_mereology_raise', False)
+                and word_groups is not None
+                and torch.is_tensor(word_groups)
+                and tuple(word_groups.shape) == tuple(pid_2d.shape)):
+            self._autobind_word_wholes(
+                pid_2d, vec_tensor, word_groups, tokens, ss)
             return
         bound = getattr(self, '_autobound_percept_ids', None)
         if bound is None:
@@ -12554,6 +12653,76 @@ class ConceptualSpace(Space):
                             idx, torch.tensor([vec], dtype=torch.float32))
             if hasattr(ss, '_category_role_obs'):
                 ss._category_role_obs = None
+
+    def _autobind_word_wholes(self, pid_2d, vec_tensor, word_groups, tokens, ss):
+        """Order-0 mereology word-whole binding (gated ``<mereologyRaise>``;
+        doc/specs/mereological-order-raising.md "order-0 MEREOLOGY").
+
+        A lexer token's spell-out is a contiguous RUN of percept pids -- bytes
+        for an unfamiliar word, one pid once the radix has promoted it -- and
+        those pids ARE the parts of the word-as-WHOLE. Bind every part to ONE
+        shared whole symbol (keyed by the token's surface TEXT so the same word
+        is one stable whole across rows / presentations), then rebalance via
+        :meth:`maybe_raise_order` -- which now sees > 1 part under the whole and
+        can fire (the per-pid path mints one whole per part, so the whole always
+        had exactly one part and the raise was dormant).
+
+        Reuses the SAME APIs as the per-pid path (``ensure_ps_position`` /
+        ``insert_symbol`` / ``insert_meta`` / ``maybe_raise_order``); only the
+        WHOLE is shared across a token's parts. Word-keyed wholes persist on
+        ``ss._word_whole_ss`` (text -> ss position). This gated path
+        deliberately skips the per-pid LBG / category-codebook bookkeeping (both
+        orthogonal experimental features); it runs only on a dedicated
+        ``<mereologyRaise>`` config. Errors propagate (fail-loud)."""
+        B = int(pid_2d.shape[0])
+        N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
+        if N == 0:
+            return
+        pid_host = pid_2d.detach().reshape(B, N).tolist()
+        grp_host = word_groups.detach().reshape(B, N).tolist()
+        whole_by_text = getattr(ss, '_word_whole_ss', None)
+        if whole_by_text is None:
+            whole_by_text = {}
+            object.__setattr__(ss, '_word_whole_ss', whole_by_text)
+        for b in range(B):
+            # Group this row's promoted slots by lexer-token index (the spelled-
+            # out run of one word); skip pads (pid < 0) and pad groups (g < 0).
+            groups: dict = {}
+            for n in range(N):
+                pid = int(pid_host[b][n])
+                g = int(grp_host[b][n])
+                if pid < 0 or g < 0:
+                    continue
+                groups.setdefault(g, []).append(n)
+            for g, slots in groups.items():
+                # Whole identity = the token's surface text when available (a
+                # stable, content-keyed whole), else a presentation-local key.
+                key = None
+                if (tokens is not None and b < len(tokens)
+                        and g < len(tokens[b]) and tokens[b][g] is not None):
+                    key = str(tokens[b][g])
+                if key is None:
+                    key = f"__b{b}_g{g}"
+                whole_pos = whole_by_text.get(key)
+                if whole_pos is None:
+                    # Seed a fresh whole with the mean of its parts' vectors
+                    # (insert_symbol demuxes the muxed width down to .what).
+                    idx = torch.tensor(slots, device=vec_tensor.device)
+                    seed_whole = vec_tensor[b].index_select(
+                        0, idx).mean(dim=0).detach()
+                    whole_pos = ss.insert_symbol(init_vec=seed_whole)
+                    whole_by_text[key] = int(whole_pos)
+                last_meta = None
+                for n in slots:
+                    pid = int(pid_host[b][n])
+                    part_seed = vec_tensor[b, n].detach().clone()
+                    ps_pos = ss.ensure_ps_position(pid)
+                    last_meta = ss.insert_meta(
+                        ps_pos, int(whole_pos), fused_vec=part_seed)
+                # Rebalance: a whole with > k_many parts raises a higher-order
+                # part subsuming them (idempotent per whole).
+                if last_meta is not None:
+                    ss.maybe_raise_order(int(last_meta))
 
     # ------------------------------------------------------------------
     # Task 6c: content-aware learn-score acceptance gate + tetralemma
@@ -15093,8 +15262,27 @@ class WholeSpace(PerceptualSpace):
         return list(self.taxonomy.get(int(pos), []))
 
     def taxonomy_parent(self, pos):
-        """Return the parent position of ``pos`` or ``None``."""
+        """Return the parent position of ``pos`` or ``None``.
+
+        Single-parent view (``taxonomy_parent_map``, last-write-wins). The
+        meronomy is a LATTICE -- a part can belong to several wholes at once
+        (letter ``A`` ⊑ "cat" AND ⊑ "word" AND ⊑ "letters") -- so for the full
+        set of parents use :meth:`taxonomy_parents`; this returns only the most
+        recently bound one (sufficient for the legacy tree-shaped callers)."""
         return self.taxonomy_parent_map.get(int(pos))
+
+    def taxonomy_parents(self, pos):
+        """ALL parent META positions of ``pos`` -- the LATTICE (multi-parent)
+        view (doc/specs/mereological-order-raising.md "How analysis/whole types
+        integrate"). A part bound under several wholes appears as a child in
+        each whole's META, so the multi-parent set is DERIVED from
+        ``self.taxonomy`` (no separate map to maintain / persist) -- the dual of
+        :meth:`ps_children_of_whole`. ``taxonomy_parent_map`` keeps only the
+        last-bound parent; this recovers them all, so binding ``A ⊑ cat`` then
+        ``A ⊑ word`` retains BOTH edges. Returns a sorted list of META
+        positions."""
+        p = int(pos)
+        return sorted(m for m, kids in self.taxonomy.items() if p in kids)
 
     def is_meta(self, pos):
         """True iff ``pos`` is tagged as a META node in ``_pos_kind``."""
@@ -15247,6 +15435,69 @@ class WholeSpace(PerceptualSpace):
                 cb.record_fold(torch.tensor([int(ho_row)]), _pidx, cb.FOLD_SIGMA)
         raised.add(int(whole))
         return ho_pos
+
+    def property_class_whole(self, class_ids):
+        """The generic TYPE whole for a char-class set (minted ONCE per set,
+        keyed by the sorted class tuple) -- the intensional "letters" /
+        "digits" / "letters OR digits" type (doc/specs/mereological-order-
+        raising.md "Analysis = property-tiling"; the whole is a TYPE, not a
+        per-occurrence token, so it never churns). PS part-TYPES bind under it
+        via :meth:`record_cross_tower_meronomy`."""
+        d = getattr(self, "_property_class_whole", None)
+        if d is None:
+            d = {}
+            object.__setattr__(self, "_property_class_whole", d)
+        key = tuple(sorted(int(c) for c in class_ids))
+        if key not in d:
+            d[key] = int(self.insert_symbol(init_vec=None))
+        return d[key]
+
+    @torch.no_grad()
+    def record_cross_tower_meronomy(self, part_pids, part_where, whole_spans,
+                                    whole_class_ids, *, fused=None):
+        """Cross-tower ``.where``-gated meronomy (S6/A4; doc/specs/mereological-
+        order-raising.md "How analysis/whole types integrate"). Store a
+        **TYPE → TYPE** edge ``part-code ⊑ whole-TYPE`` for each PS part whose
+        ``.where`` nests inside a WS whole ``.where`` region -- "is letter A a
+        part of *word*? sometimes yes, sometimes no, and we know by the
+        ``.where``."
+
+        ``part_pids`` ``[P]`` (the PS part-TYPE ids -- a percept-id is the
+        type, shared across its instances); ``part_where`` ``[P]`` (each part
+        instance's byte-offset ``.where``); ``whole_spans`` ``[K, 2]`` (the WS
+        whole instances' ``.where`` regions, e.g. from :meth:`property_spans`);
+        ``whole_class_ids`` selects the WS whole TYPE via
+        :meth:`property_class_whole`. The edge is **idempotent per
+        (part-type, whole-type)** -- the TYPES and their edges persist, the
+        per-instance ``.where`` is only the deciding evidence, so there is NO
+        taxonomy churn. :meth:`maybe_raise_order` then forms the higher-order
+        whole-type over its accumulated part-types. Returns the whole-type
+        position. Gated: reached only under ``<mereologyRaise>``.
+
+        The point-in-interval containment test is the host-side binding move
+        (mirrors the autobind at ``Reset``); the fixed-shape ``contained_mask``
+        / ``tightest_container`` Layer is its compiled-forward counterpart for
+        the live wire."""
+        whole = self.property_class_whole(whole_class_ids)
+        K = int(whole_spans.shape[0]) if whole_spans.dim() >= 1 else 0
+        spans = [(int(whole_spans[k, 0]), int(whole_spans[k, 1]))
+                 for k in range(K) if int(whole_spans[k, 1]) > int(whole_spans[k, 0])]
+        P = int(part_where.shape[0]) if part_where.dim() >= 1 else 0
+        last_meta = None
+        for p in range(P):
+            pid = int(part_pids[p])
+            if pid < 0:
+                continue
+            wp = int(part_where[p])
+            # .where containment: is this part's position inside any whole span?
+            if any(s <= wp < e for (s, e) in spans):
+                ps_pos = self.ensure_ps_position(pid)
+                seed = (fused if fused is not None
+                        else torch.zeros(int(self.nDim), dtype=torch.float32))
+                last_meta = self.insert_meta(ps_pos, whole, fused_vec=seed)
+        if last_meta is not None:
+            self.maybe_raise_order(int(last_meta))
+        return whole
 
     @torch.no_grad()
     def nearest_ss_row(self, vec):
@@ -16740,6 +16991,57 @@ class WholeSpace(PerceptualSpace):
                 else:
                     if start is None:
                         start = i
+            if start is not None:
+                parts.append((start, N))
+            if not parts:
+                parts = [(0, 0)]
+            all_spans.append(parts)
+            K = max(K, len(parts))
+        t = torch.zeros(B, K, 2, dtype=torch.long)
+        for b, parts in enumerate(all_spans):
+            for k, (s, e) in enumerate(parts):
+                t[b, k, 0] = s
+                t[b, k, 1] = e
+        return t.to(IS_concepts.device)
+
+    def property_spans(self, IS_concepts, class_ids):
+        """Host-eager CHAR-CLASS property tiling → ``[B, K, 2]`` spans of the
+        has-property RUNS (the ``.where`` of the ``{has-class}`` whole; S6/B1).
+
+        The analysis-side GENERALIZATION of :meth:`stage_analysis_spans` (whose
+        whitespace boundary is the implicit "not-whitespace word" property): the
+        membership region is the fixed-shape :func:`char_class_region` tiling
+        (``+1`` in any selected class, OR-unioned), and the run→span cut runs in
+        the eager stem (the host-side data-dependent CUTTING the processing
+        contract allows there, exactly like ``stage_analysis_spans``). ``class_ids``
+        is an iterable of ``LETTER`` / ``DIGIT`` / ``WHITESPACE`` / ``PUNCT``.
+        Returns a ``LongTensor [B, K, 2]`` of ``(start, end)`` for the ``+1``
+        runs, zero-padded ``(0, 0)`` for rows with fewer runs; ``None`` when
+        ``IS_concepts`` is ``None``. The result feeds ``self.run_structure``
+        (``contained_mask`` / ``n_runs`` / ``tightest_container``) like the
+        whitespace spans do."""
+        if IS_concepts is None:
+            return None
+        u = IS_concepts
+        if u.dim() == 3:
+            u = u[:, 0, :]
+        region = char_class_region(u, class_ids)          # [B, N] in {+1, -1}
+        has = (region > 0).detach().to("cpu")
+        B, N = int(has.shape[0]), int(has.shape[1])
+        all_spans = []
+        K = 1
+        for b in range(B):
+            row = has[b].tolist()
+            parts = []
+            start = None
+            for i, v in enumerate(row):
+                if v:
+                    if start is None:
+                        start = i
+                else:
+                    if start is not None:
+                        parts.append((start, i))
+                        start = None
             if start is not None:
                 parts.append((start, N))
             if not parts:
