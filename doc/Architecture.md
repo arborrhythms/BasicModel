@@ -35,6 +35,11 @@ references, serial mode may not shape non-references
 `VectorQuantize`). Rational by construction — though possibly an
 overly optimistic arrangement with respect to human thinking.
 
+See [SymbolFirewall.md](SymbolFirewall.md) for the governing principle this
+update law (and the codebook/meronomy ownership model generally) instances: all
+computation is composed over typed, symbol-attached units — read/write masks,
+no anonymous global residual stream.
+
 > **Status (2026-05-29 update):** further architectural pivots landed
 > on top of the 2026-05-27 substrate refactor:
 >
@@ -135,6 +140,18 @@ references; a reference is a *sign* (a quantized version of the
 referent) or a *symbol* (an unrelated version of the referent, of much
 lower dimensionality). The name `SymbolicSpace` is reserved for
 re-introduction with new semantics.
+
+The corpus callosum **builds a single meronomy out of the two towers**: a part
+`A` (PartSpace) and a whole `B` (WholeSpace) carry `.what` codes from different
+codebooks (incomparable), but their `.where` is comparable, so the callosum links
+**`A isa B`** (token `isa` type) when `A.where` is contained in `B.where` with no
+greater-part/lesser-whole intervening. Word↔object — too unlike to link directly —
+is bridged by a **second-order meta-object** (synthesized in PartSpace, outside
+`.where`/`.when`: the MetaSymbol). The correctness signal is the **part/whole
+ratio** (many-parts→one-whole = under-analysed; one-part→one-whole = over-analysed),
+which requests further σ-synthesis / π-analysis in the offending `.where` — and is
+the principled fix for the MM_20M mean-collapse. Full design:
+[doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
 
 ### Spaces
 
@@ -254,7 +271,14 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    (union; count-reducing: many atoms → fewer chunks); WholeSpace's **Pi
    analyses** (intersection; count-increasing: one unity → many parts). How
    finely the scene is carved, or how coarsely it is chunked, is set by the
-   folds — there is no separate granularity knob.
+   folds — there is no separate granularity knob. The InputSpace feeds the two
+   views directly: the **Atom** view (`[B, N, D]`, which PartSpace synthesizes
+   bottom-up) and the **Universe** view (`_unity_view`, the whole as one event,
+   which WholeSpace analyses top-down). Optionally (`<mereologyRaise>`),
+   perception builds a meronymic lattice over the towers and **raises
+   abstraction order** as attention requires — see
+   [Mereology.md → Order-raising](Mereology.md) and
+   [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
 
 2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
    codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
@@ -266,6 +290,20 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    wide↔deep remap (MM_20M: `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma
    composes a high-order word out of several lower-order words; the inverse
    decode runs on the reverse leg of the loop.
+
+   > **Proposed refinement (mereological-order-raising spec).** This single
+   > subsymbolic loop is really **two** moves CS should choose between *per
+   > representation*, by reading the **contiguity of `.where`**: a *contiguous*
+   > extent → **refine granularity** (chunk finer / tile — drive the radix), same
+   > order; a *discontiguous* extent → **raise order** (another σ/π fold, lifting
+   > out of `.where`/`.when`); a *zero* `.where` → null. The number of contiguous
+   > runs in a whole's `.where` *is* its part/whole ratio, so the same read also
+   > routes integrate-vs-disintegrate (→PartSpace σ vs →WholeSpace π). See
+   > [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md)
+   > "The three-aspect loop". As of 2026-06-16 the contiguity read has its
+   > substrate: `.where` / `.when` are **endpoint-sum brackets** `[start, end]`
+   > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
+   > code (a zero-extent instant vs a span); see [doc/Spaces.md](Spaces.md).
 
 3. **Symbolic order** (`<symbolicOrder>`) — the serial / grammatical stages:
    words are read **one at a time** from WholeSpace (reading isolated words

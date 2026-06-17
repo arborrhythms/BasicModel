@@ -81,25 +81,24 @@ class TestCSWidthGuard(unittest.TestCase):
         cs, whenEnc, whereEnc, dim, _nWhat, _nVectors = self._build_cs()
         B, V = 2, 3
         # Build a muxed event from real codebook rows, then stamp a fresh
-        # .where position (p=3) and a present .when phasor (D=0.5) at time t=0.
-        # (2026-06-07 .when redesign: angle=absolute time, magnitude=tense.)
+        # .where position (p=3) and a present .when instant at time t=0.
+        # (2026-06-16 .when bracket redesign: angle=event center, magnitude=duration.)
         whenEnc.t = 0
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
         event = cs.lookup(sel).clone()
         when_idx = whenEnc.resolve(dim)
-        event[..., when_idx] = whenEnc.encode(0, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)
+        event[..., when_idx] = whenEnc.encode(0).expand(B, V, -1)
         where_idx = whereEnc.resolve(dim)
         event[..., where_idx] = whereEnc.encode(torch.tensor(3.0)).expand(B, V, -1)
 
         cleaned, space, time = cs.decode(event.clone())
 
-        # (a) .when round-trips to (t, D) = (0, 0.5).
-        t_dec, D_dec = time
-        self.assertTrue(torch.allclose(t_dec, torch.zeros_like(t_dec), atol=1e-2),
-                        f"when time did not round-trip: {t_dec}")
-        self.assertTrue(torch.allclose(D_dec, torch.full_like(D_dec, _WHEN_TENSE_DEFAULT),
-                                       atol=1e-3),
-                        f"when tense magnitude did not round-trip: {D_dec}")
+        # (a) .when round-trips to (center, extent) = (0, 0) -- a present instant.
+        c_dec, ext_dec = time
+        self.assertTrue(torch.allclose(c_dec, torch.zeros_like(c_dec), atol=1e-2),
+                        f"when center did not round-trip: {c_dec}")
+        self.assertTrue(torch.allclose(ext_dec, torch.zeros_like(ext_dec), atol=1e-3),
+                        f"when duration (extent) did not round-trip: {ext_dec}")
         # (b) .where round-trips to the stamped position (3).
         self.assertTrue(torch.allclose(space, torch.full_like(space, 3.0), atol=1e-3),
                         f"where did not round-trip: {space}")
@@ -110,7 +109,7 @@ class TestCSWidthGuard(unittest.TestCase):
                                        torch.zeros_like(cleaned[..., where_idx]), atol=1e-6))
         # Fail-loud: no NaN/Inf escaped the demux.
         self.assertTrue(torch.isfinite(cleaned).all())
-        self.assertTrue(torch.isfinite(t_dec).all() and torch.isfinite(D_dec).all())
+        self.assertTrue(torch.isfinite(c_dec).all() and torch.isfinite(ext_dec).all())
         self.assertTrue(torch.isfinite(space).all())
 
     def test_cs_event_muxing_coexists_and_reconstructs(self):

@@ -1,11 +1,11 @@
-""".when present-phasor + tense-magnitude convention (2026-06-07 redesign).
+""".when endpoint-sum BRACKET convention (2026-06-16 redesign).
 
-The single-stamp ``.when`` is the present scaled phasor ``encode(t, D=0.5) =
-0.5 * [sin(2*pi*t/period), cos(2*pi*t/period)]``: the ANGLE encodes the
-absolute time ``t``, the MAGNITUDE ``D in [0, 1]`` is the TENSE position
-(0.5 = present default). The former unit-bracket / aspect-interval / duration
-scheme is retired (the magnitude is tense now, not event duration); aspect is a
-no-op. These tests re-express the old bracket tests against the new behavior.
+``.when`` is the same endpoint-sum bracket as ``.where`` over a span of model
+TIME ``[start, end]``: the ANGLE decodes the event-time center, the MAGNITUDE the
+event duration. An INSTANT (start == end) is the present stamp (magnitude 1).
+Tense is the interval-vs-now relation, applied by shifting the event-time center
+(``shift_time``); the former magnitude-D tense / aspect-interval duration schemes
+are retired (aspect is a no-op).
 """
 
 import math, os, sys, unittest
@@ -15,47 +15,55 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Spaces import WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
 
 
 def _enc(): return WhenRangeEncoding(_WHEN_PERIOD, 2)
 
 
-# --- encode -> present scaled phasor, decode recovers (t, D) ----------------
-def test_encode_is_present_phasor_and_decodes_t_and_D():
+# --- encode -> instant, decode recovers (center, extent) --------------------
+def test_instant_decodes_time_and_zero_extent():
     enc = _enc()
-    # Times inside the non-aliasing window so the angle decode is faithful.
     for t in (-1.0, 0.0, 1.0, float(_WHEN_PERIOD // 8)):
-        key = enc.encode(t)                          # D defaults to 0.5
-        # |key| == D == 0.5 (the present tense magnitude), NOT a duration.
-        assert math.isclose(float(key.norm()), _WHEN_TENSE_DEFAULT, abs_tol=1e-6)
-        dt, dD = enc.decode(key)
-        assert math.isclose(float(dt), t, abs_tol=0.05)
-        assert math.isclose(float(dD), _WHEN_TENSE_DEFAULT, abs_tol=1e-6)
+        key = enc.encode(t)                          # instant
+        assert math.isclose(float(key.norm()), 1.0, abs_tol=1e-6)
+        c, ext = enc.decode(key)
+        assert math.isclose(float(c), t, abs_tol=0.05)
+        assert math.isclose(float(ext), 0.0, abs_tol=1e-3)
+
+
+def test_bracket_decodes_center_and_duration():
+    enc = _enc()
+    key = enc.encode(2000, 2400)                      # center 2200, duration 400
+    c, ext = enc.decode(key)
+    assert math.isclose(float(c), 2200.0, abs_tol=0.1)
+    assert math.isclose(float(ext), 400.0, abs_tol=0.5)
+    ds, de = enc.decode_span(key)
+    assert math.isclose(float(ds), 2000.0, abs_tol=0.5)
+    assert math.isclose(float(de), 2400.0, abs_tol=0.5)
 
 
 def test_encode_tensor_input_round_trips_time():
     enc = _enc(); ts = torch.tensor([-1.0, 0.0, 1.0])
-    dt, dD = enc.decode(enc.encode(ts))
-    assert torch.allclose(dt, ts, atol=0.05)
-    assert torch.allclose(dD, torch.full_like(dD, _WHEN_TENSE_DEFAULT), atol=1e-6)
+    c, ext = enc.decode(enc.encode(ts))
+    assert torch.allclose(c, ts, atol=0.05)
+    assert torch.allclose(ext, torch.zeros_like(ext), atol=1e-3)
 
 
-# --- tense via the .when magnitude (next/previous), angle preserved ---------
-def test_tense_magnitude_moves_by_step_via_shift_tense():
-    enc = _enc(); enc.t = _WHEN_PERIOD // 8
-    when = enc.encode(enc.t, D=_WHEN_TENSE_DEFAULT).expand(1, 1, -1).clone()
-    # FUTURE: D + step (toward future), time-angle preserved.
-    fut = enc.shift_tense(when, +_WHEN_TENSE_STEP)
-    dt, dD = enc.decode(fut)
-    assert math.isclose(float(dD.reshape(-1)[0]), _WHEN_TENSE_DEFAULT + _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
-    assert math.isclose(float(dt.reshape(-1)[0]), float(enc.t), abs_tol=0.05)
-    # PAST: D - step (toward past).
-    past = enc.shift_tense(when, -_WHEN_TENSE_STEP)
-    _t, pD = enc.decode(past)
-    assert math.isclose(float(pD.reshape(-1)[0]), _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
+# --- tense via the event-time center (shift_time), duration preserved -------
+def test_tense_shifts_center_by_step_via_shift_time():
+    enc = _enc()
+    base = _WHEN_PERIOD // 8
+    when = enc.encode(base).expand(1, 1, -1).clone()
+    # FUTURE: center + step ticks.
+    fut = enc.shift_time(when, +_WHEN_TENSE_STEP)
+    c, ext = enc.decode(fut)
+    assert math.isclose(float(c.reshape(-1)[0]), float(base) + _WHEN_TENSE_STEP, abs_tol=0.05)
+    assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
+    # PAST: center - step ticks.
+    past = enc.shift_time(when, -_WHEN_TENSE_STEP)
+    c2, _ext = enc.decode(past)
+    assert math.isclose(float(c2.reshape(-1)[0]), float(base) - _WHEN_TENSE_STEP, abs_tol=0.05)
 
 
 def test_aspect_layer_is_identity():
@@ -68,12 +76,12 @@ def test_aspect_layer_is_identity():
         assert torch.allclose(a.forward(x), x, atol=1e-7), kind   # no-op
 
 
-# --- present-default stamp -> [0, 0.5] at t=0 -------------------------------
-def test_forward_stamps_present_phasor():
+# --- present-instant stamp -> [0, 1] at t=0 --------------------------------
+def test_forward_stamps_present_instant():
     enc = _enc(); y = enc.forward(torch.zeros(2, 3, 10))
-    dt, dD = enc.decode(y[0, 0, enc.resolve(y.shape[-1])])
-    assert math.isclose(float(dt), 0.0, abs_tol=1e-4)
-    assert math.isclose(float(dD), _WHEN_TENSE_DEFAULT, abs_tol=1e-6)
+    c, ext = enc.decode(y[0, 0, enc.resolve(y.shape[-1])])
+    assert math.isclose(float(c), 0.0, abs_tol=1e-4)
+    assert math.isclose(float(ext), 0.0, abs_tol=1e-3)
 
 
 if __name__ == "__main__":

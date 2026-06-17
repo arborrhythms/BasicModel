@@ -27,18 +27,17 @@ def test_will_run():       assert normalize_surface(["will", "run"]) == ("FUTURE
 
 
 # --- Task 4.2: TenseLayer / AspectLayer unary .when ops --------------------
-# 2026-06-07 .when redesign: tense is the phasor MAGNITUDE D in [0, 1]
-# (0=past, 0.5=present default, 1=future), NOT event duration. PAST = D-0.1,
-# FUTURE = D+0.1, PRESENT = identity; the time-angle is preserved. AspectLayer
-# is RETIRED to a no-op (duration is gone).
+# 2026-06-16 .when bracket redesign: tense is the interval-vs-now relation, NOT
+# a magnitude. PAST shifts the event-time CENTER -step ticks, FUTURE +step,
+# PRESENT = identity; the event duration is preserved. AspectLayer is a no-op.
 from Language import TenseLayer, AspectLayer
-from Spaces import WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
 
 
 def _event_with_present_when(B=2, V=3, nhead=6, t=0):  # nhead = nWhat+nWhere; +2 for .when
     enc = WhenRangeEncoding(_WHEN_PERIOD, 2); enc.t = t
     head = torch.randn(B, V, nhead)
-    when = enc.encode(t, D=_WHEN_TENSE_DEFAULT).expand(B, V, -1)  # present default (D=0.5)
+    when = enc.encode(t).expand(B, V, -1)  # present instant at time t
     return torch.cat([head, when], dim=-1), head, enc
 
 
@@ -47,27 +46,27 @@ def test_class_contracts():
     assert AspectLayer.tier == 'C' and AspectLayer.arity == 1
 
 
-def test_past_moves_tense_magnitude_down():
-    # Use a non-zero time so the angle (absolute time) is checked to survive.
+def test_past_moves_event_time_back():
+    # Use a non-zero time so the angle (event center) is checked to survive.
     T = _WHEN_PERIOD // 8
     t = TenseLayer(); t.set_op("PAST")
     x, _head, enc = _event_with_present_when(t=T)
     y = t.forward(x)
-    dt, dD = enc.decode(y[..., -2:])
-    # PAST: D 0.5 -> 0.4 (toward past); the time-angle is unchanged.
-    assert math.isclose(float(dD.reshape(-1)[0]), _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
-    assert math.isclose(float(dt.reshape(-1)[0]), float(T), abs_tol=0.05)
+    center, ext = enc.decode(y[..., -2:])
+    # PAST: center T -> T-step (toward past); the (zero) duration is unchanged.
+    assert math.isclose(float(center.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
+                        abs_tol=0.05)
+    assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
 
 
-def test_future_moves_tense_magnitude_up():
+def test_future_moves_event_time_forward():
     T = _WHEN_PERIOD // 8
     t = TenseLayer(); t.set_op("FUTURE")
     x, _head, enc = _event_with_present_when(t=T)
-    dt, dD = enc.decode(t.forward(x)[..., -2:])
-    assert math.isclose(float(dD.reshape(-1)[0]), _WHEN_TENSE_DEFAULT + _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
-    assert math.isclose(float(dt.reshape(-1)[0]), float(T), abs_tol=0.05)
+    center, ext = enc.decode(t.forward(x)[..., -2:])
+    assert math.isclose(float(center.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
+                        abs_tol=0.05)
+    assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
 
 
 def test_present_is_identity():
@@ -76,9 +75,9 @@ def test_present_is_identity():
     assert torch.allclose(t.forward(x), x, atol=1e-6)
 
 
-def test_tense_round_trips_in_unclamped_range():
-    # PAST/FUTURE compose then reverse to the original .when (round-trip is
-    # invertible within [0, 1]; the present default 0.5 +/- 0.1 stays unclamped).
+def test_tense_round_trips():
+    # PAST/FUTURE compose then reverse to the original .when (the center shift is
+    # an exact, invertible phase rotation).
     x, _head, _enc = _event_with_present_when(t=_WHEN_PERIOD // 8)
     for op in ("PAST", "PRESENT", "FUTURE"):
         t = TenseLayer(); t.set_op(op)

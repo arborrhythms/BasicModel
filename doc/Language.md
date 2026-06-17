@@ -62,8 +62,15 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 > - `unreduce()` passes the tier-local Basis (Codebook) to binary
 >   GrammarLayer reverses as `basis=tier_basis` (replacing the prior
 >   raw-`W` form). `UnionLayer.reverse` / `IntersectionLayer.reverse`
+>   **and now `ConjunctionLayer.reverse` / `DisjunctionLayer.reverse`**
 >   extract `W = basis.getW()` internally and dispatch to
->   `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. Layers that
+>   `Ops.disjunctionReverse` / `Ops.conjunctionReverse` — the codebook
+>   recommender recovers the operand pair exactly on a discrete
+>   vocabulary (the serial XOR reconstruction path); without a basis they
+>   keep the lossy `(parent, parent)` fallback. The genuinely
+>   non-invertible predicate folds (`isEqual` / `isPart` / `exist`)
+>   declare `invertible = False` and are not invertible by design (a
+>   truth/predicate value does not retain its operands). Layers that
 >   don't accept the `basis` kwarg yet are handled by a `TypeError`
 >   fallback. No back-ref is stored on the layer.
 > - `MetaLayer` was renamed to `SymbolizeLayer` (no semantic change).

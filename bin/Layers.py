@@ -3013,6 +3013,29 @@ class SigmaLayer(GrammarLayer):
         self.activation = out.detach()
         return out
 
+    def synthesize_over_set(self, part_codes):
+        """σ-fold a SET of M codes ``[..., M, D]`` into ONE code ``[..., D]``
+        that geometrically contains them (doc/specs/mereological-order-
+        raising.md: a higher-order PART synthesized from its constituents).
+
+        The M-way generalization of :meth:`compose`'s binary atanh-sum: every
+        constituent's logit contributes additively before one shared
+        ``self.layer.forward`` + ``tanh``, so the parent contains all M.
+        Order-invariant, ``M -> 1``, reuses the SAME ``self.layer`` (NO new
+        parameters), and for ``M == 2`` reduces exactly to ``compose``. The
+        balanced split in :meth:`generate` inverts it (each constituent
+        ``= tanh(s / M)``) when the inner layer is invertible -- the explicit
+        ``part_chain`` provenance is the fallback when it is not."""
+        if self.nonlinear:
+            a = torch.atanh(part_codes.clamp(-1 + epsilon, 1 - epsilon))
+        else:
+            a = part_codes
+        a_sum = a.sum(dim=-2)
+        out = self.layer.forward(a_sum)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out
+
     def generate(self, parent, gate=None):
         """Inverse of compose; balanced split.
 
@@ -3084,6 +3107,88 @@ class SigmaLayer(GrammarLayer):
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
+
+
+class RunStructureLayer(Layer):
+    """Fixed-shape mereological run / gap / containment structure over a SET of
+    ``.where`` brackets (``doc/specs/mereological-order-raising.md``).
+
+    Given the sibling part spans under a candidate whole -- ``spans``
+    ``[..., K, 2]`` of ``(start, end)`` with a ``valid`` mask -- it reports how
+    many CONTIGUOUS RUNS they form (``n_runs`` == the part count == the
+    part/whole ratio numerator) plus the pairwise containment mask (the
+    ``A isa B`` test). Subsymbolic + compiled-forward-safe: NO host-side control
+    flow, no sort, no variable shapes. A span ``i`` starts a new run iff NO
+    valid earlier span (by start, index tie-broken) reaches ``start_i - tol`` --
+    one ``[..., K, K]`` broadcast of comparisons + an ``any``-reduction, O(K^2)
+    over the small slot count K. Parameter-free (a measure), but a real
+    ``Layer`` so the Start/End/Reset/paramUpdate cascade reaches it via
+    ``self.layers``.
+    """
+
+    def __init__(self, nWhere=2, contiguity_tol=0.5):
+        """``nWhere`` is the bracket width (2); ``contiguity_tol`` is the error
+        band around "the spans touch" (gap ~= 0): touching / overlapping spans
+        (gap 0) merge into one run, while a skipped position (gap >= 1, e.g. a
+        space that is not itself a part -- a word boundary) opens a new run."""
+        super().__init__(nWhere, nWhere)
+        self.contiguity_tol = float(contiguity_tol)
+
+    def forward(self, spans, valid=None, tol=None):
+        """``spans`` ``[..., K, 2]`` (start, end). ``valid`` ``[..., K]`` bool
+        (default ``end > start`` -- analysis-span pads are ``(0, 0)``).
+
+        Returns a dict of FIXED-SHAPE tensors:
+            ``n_runs`` / ``n_gaps`` ``[...]`` (long);
+            ``is_run_start`` / ``valid`` ``[..., K]`` (bool);
+            ``contained_mask`` ``[..., K, K]`` bool (``[..., i, j]`` = span i
+                within span j: ``start_i >= start_j - tol`` and
+                ``end_i <= end_j + tol``, both valid; the diagonal is True);
+            ``ratio`` ``[...]`` (== ``n_runs``, the routing input: one run =>
+                singleton / refine, many => integrate / disintegrate);
+            ``span_extent`` ``[..., K]`` per-part width (0 for pads);
+            ``max_extent`` / ``total_extent`` ``[...]`` -- the extent dimension
+                the run-count misses: a singleton with large ``max_extent`` is a
+                long part that property-tiling should analyse.
+        """
+        tol = self.contiguity_tol if tol is None else float(tol)
+        starts = spans[..., 0]
+        ends = spans[..., 1]
+        if valid is None:
+            valid = ends > starts
+        K = int(starts.shape[-1])
+        idx = torch.arange(K, device=spans.device)
+        si = starts.unsqueeze(-1)                  # [..., K, 1] (i)
+        sj = starts.unsqueeze(-2)                  # [..., 1, K] (j)
+        ei = ends.unsqueeze(-1)
+        ej = ends.unsqueeze(-2)                    # [..., 1, K]
+        vj = valid.unsqueeze(-2)                   # [..., 1, K]
+        # j precedes i (start order, index tie-break) AND j's end reaches i's
+        # start within tol -> i is connected to an earlier span.
+        precedes = (sj < si) | ((sj == si)
+                                & (idx.unsqueeze(-1) > idx.unsqueeze(-2)))
+        reaches = ej >= (si - tol)
+        has_earlier = (precedes & reaches & vj).any(dim=-1)        # [..., K]
+        is_run_start = valid & (~has_earlier)
+        n_runs = is_run_start.sum(dim=-1)                           # [...]
+        n_gaps = (n_runs - 1).clamp(min=0)
+        contained_mask = ((si >= sj - tol) & (ei <= ej + tol)
+                          & valid.unsqueeze(-1) & vj)               # [..., K, K]
+        # Extent signals (the "how WIDE is each part" dimension, fixed-shape):
+        # the run-count alone cannot tell a basic-level word from a long
+        # single part (e.g. "antidisestablishmentarianism" -> 1 run, extent 28).
+        # A singleton (n_runs == 1) with a LARGE max_extent is the
+        # property-tiling-analysis trigger that n_runs misses; routing combines
+        # the two. Pads (invalid) contribute 0.
+        span_extent = (ends - starts).clamp(min=0) * valid.to(ends.dtype)  # [..., K]
+        max_extent = span_extent.amax(dim=-1)                              # [...]
+        total_extent = span_extent.sum(dim=-1)                            # [...]
+        return {"n_runs": n_runs, "n_gaps": n_gaps,
+                "is_run_start": is_run_start, "valid": valid,
+                "contained_mask": contained_mask, "ratio": n_runs,
+                "span_extent": span_extent, "max_extent": max_extent,
+                "total_extent": total_extent}
+
 
 class NegationLayer(Layer):
     """Materialize bivalent or ternary literals for Sigma/Pi logic.

@@ -684,6 +684,26 @@ class BaseModel(Mereology, nn.Module):
         self.chooser_category_context = bool(TheXMLConfig.get(
             "architecture.chooserCategoryContext", default=False))
 
+        # Verb sparse eigenvalue edit on lift(NP, VP) (doc/specs/
+        # semantic_verb_np_mask_eigenvalue_proposal.md). When on, LiftLayer
+        # applies the verb as a sparse, noun-class-masked eigenvalue edit of
+        # the NP (the mask is read from the NP's eigen-signature -- no learned
+        # parameter; the only per-verb parameter is the sparse edit). LiftLayer
+        # reads this same flag from config at construction (order-safe);
+        # mirrored here for introspection. Default off -> sigma fold unchanged.
+        self.verb_eig_edit = bool(TheXMLConfig.get(
+            "architecture.verbEigEdit", default=False))
+
+        # Mereological order-raising (doc/specs/mereological-order-raising.md).
+        # When on, perception's autobind hook builds a meronymic lattice and
+        # raises abstraction order as attention requires. The request + the
+        # ramsification-table enable happen in _create_per_stage (order-safe:
+        # this self.* read runs AFTER spaces are built, so it is introspection-
+        # only -- gating reads the live config at build, like categoryCodebook).
+        # Default off -> no table, no raising (byte-identical).
+        self.mereology_raise = bool(TheXMLConfig.get(
+            "architecture.mereologyRaise", default=False))
+
         # Two-pass soft-superposition learning (doc/Language.md
         # "Soft-superposition route"). When ``<learning>`` is true, runEpoch
         # runs each TRAINING batch twice as two independent trials -- pass A
@@ -5313,13 +5333,43 @@ class BasicModel(BaseModel):
         # the META taxonomy); the role columns are enumerated from the
         # now-configured grammar (WordSubSpace.__init__ ran _ensure_configured
         # above). Default off -> not allocated -> byte-identical.
-        if getattr(self, 'category_codebook', False) and terminal_ss is not None:
+        # Read the flag from config HERE (not self.category_codebook): the
+        # architecture flags are assigned in create_from_config AFTER the
+        # spaces are built, so self.category_codebook is not yet set when
+        # _create_per_stage runs -- reading the live config is the order-safe
+        # source (the config is loaded before any space is created).
+        _category_codebook = bool(TheXMLConfig.get(
+            "architecture.categoryCodebook", default=False))
+        if _category_codebook and terminal_ss is not None:
             # REQUEST allocation; the actual enable runs LAZILY from the
             # autobind hook on the first perception forward, when TheGrammar is
             # fully configured with the (role-collapsed) operator roles. At
             # build the role rules may not be loaded yet, so a build-time
             # enable would see 0 roles and no-op.
             terminal_ss._category_codebook_requested = True
+
+        # Mereological order-raising (doc/specs/mereological-order-raising.md).
+        # Opt-in via <mereologyRaise>: build a meronymic lattice in perception
+        # and raise abstraction order as attention requires. Unlike the category
+        # codebook (which needs the grammar's role rules, hence its lazy enable),
+        # the ramsification table needs only (nVectors, max_order) -- both known
+        # at build -- so enable it DIRECTLY here. Read the LIVE config (the
+        # self.* arch flags are not yet assigned when _create_per_stage runs).
+        # Enabled on exactly two codebooks: the PartSpace (sigma / parts) and the
+        # terminal WholeSpace (pi / wholes, owns the META taxonomy). Stamp the
+        # flag onto the PartSpace + terminal WholeSpace so the perception hot
+        # path reads it off ``self`` (the _symbolic_order stamping convention).
+        # Default off -> table stays None -> byte-identical.
+        _mereology_raise = bool(TheXMLConfig.get(
+            "architecture.mereologyRaise", default=False))
+        if _mereology_raise and terminal_ss is not None:
+            _max_order = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
+            object.__setattr__(terminal_ss, '_mereology_raise', True)
+            object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
+            for _cb in (getattr(self.perceptualSpace.subspace, 'what', None),
+                        getattr(terminal_ss.subspace, 'what', None)):
+                if _cb is not None and hasattr(_cb, 'enable_ramsification'):
+                    _cb.enable_ramsification(_max_order)
 
         # The conceptual basis honours the ``architecture.monotonic``
         # knob rather than being unconditionally bitonic: monotone

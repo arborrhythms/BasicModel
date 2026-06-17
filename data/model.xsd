@@ -129,6 +129,25 @@
            widens its input (a fresh-basin extension of the MLP chooser).
            Default false: the chooser ignores category (byte-identical). -->
       <xs:element name="chooserCategoryContext" type="xs:boolean" minOccurs="0"/>
+      <!-- Verb sparse eigenvalue edit on lift(NP, VP) (doc/specs/
+           semantic_verb_np_mask_eigenvalue_proposal.md). When true, lift
+           applies the verb as a SPARSE eigenvalue edit of the NP, masked by
+           the noun CLASS the verb selects (class membership read from the NP's
+           own eigen-signature; no learned mask parameter), preserving the
+           NP complement: x2 = x1 + p_class (.) delta_v. The only per-verb
+           parameter is the sparse edit delta_v (built only when on). Default
+           false leaves lift's sigma fold byte-identical. -->
+      <xs:element name="verbEigEdit" type="xs:boolean" minOccurs="0"/>
+      <!-- Mereological order-raising (doc/specs/mereological-order-raising.md).
+           When true, perception's autobind hook builds a meronymic lattice over
+           the two towers: it mints objects at abstraction order 0 and raises
+           order as attention requires (subsymbolicOrder sets the max order) by
+           synthesizing a higher-order PART when many parts collapse onto one
+           whole, relinking it and pruning the moot part-whole edges. The
+           ramsification table is enabled at build on the PartSpace + terminal
+           WholeSpace codebooks. Default false: no table allocated, no raising
+           (byte-identical). -->
+      <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
       <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
            protocol. In serial mode every sentence opens with an
            independent PARALLEL prelude of <subsymbolicOrder> pumps

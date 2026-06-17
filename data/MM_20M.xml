@@ -79,19 +79,6 @@
     <!-- codebook>quantize</codebook -->
   </PartSpace>
 
-  <ConceptualSpace>
-    <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
-    <nInputDim>1024</nInputDim>  <!--    8 FROM SYMBOLIC -->
-    <nVectors>8</nVectors>
-    <stmCapacity>8</stmCapacity>
-    <nDim>1024</nDim>
-    <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
-
-    <invertible>true</invertible>
-    <codebook>none</codebook>
-  </ConceptualSpace>
-
   <WholeSpace>
     <!-- Phase 4b (2026-06-10) moved lexers to WholeSpace; this
          config carried only the commented-out legacy InputSpace lexer
@@ -114,6 +101,19 @@
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </WholeSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>           <!-- 1024 FROM SYMBOLIC -->
+    <nInputDim>1024</nInputDim>  <!--    8 FROM SYMBOLIC -->
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </ConceptualSpace>
 
   <OutputSpace>
     <nInput>8</nInput>

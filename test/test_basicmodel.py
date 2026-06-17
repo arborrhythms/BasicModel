@@ -575,40 +575,44 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 
 
 class TestWhenEncodingRoundTrip(unittest.TestCase):
-    """WhenRangeEncoding: the single scaled quadrature phasor .when round-trips
-    (2026-06-07 redesign). ``.when = D * [sin(2*pi*t/period), cos(...)]``: the
-    ANGLE encodes the absolute time t, the MAGNITUDE D in [0, 1] is the tense
-    position (0.5 = present default). Full contract in
+    """WhenRangeEncoding: the endpoint-sum BRACKET .when round-trips (2026-06-16
+    redesign). ``.when = 0.5*[sin(s*ω)+sin(e*ω), cos(s*ω)+cos(e*ω)]``: the ANGLE
+    decodes the event-time CENTER, the MAGNITUDE the DURATION (extent); an INSTANT
+    is the present stamp (magnitude 1). Full contract in
     test/test_when_range_encoding.py. Constructed here with n_when=2 (enabled);
     the bare Models.WhenEncoding(maxT) default is disabled (nDim=0), so .when
     forward/reverse are no-ops until a space turns it on.
     """
 
     def test_forward_stamps_present_and_reverse_recovers_it(self):
-        from Spaces import _WHEN_TENSE_DEFAULT
-        te = Models.WhenEncoding(64, 2)               # enabled 2-dim phasor
+        te = Models.WhenEncoding(64, 2)               # enabled 2-dim bracket
         te.t = 0
         x = torch.zeros(5, 2, 10, device=Models.TheDevice.get())
-        y = te.forward(x)                             # stamps the present default [0, 0.5]
-        _, decoded = te.reverse(y)                    # decoded == (t, D), each [B, V]
-        t_dec, D_dec = decoded
+        y = te.forward(x)                             # stamps the present instant [0, 1]
+        _, decoded = te.reverse(y)                    # decoded == (center, extent), each [B, V]
+        c_dec, ext_dec = decoded
         for b in range(5):
             for v in range(2):
-                self.assertAlmostEqual(float(t_dec[b, v]), 0.0, places=3,
-                    msg=f"present time not recovered at batch={b}, vec={v}")
-                self.assertAlmostEqual(float(D_dec[b, v]), _WHEN_TENSE_DEFAULT, places=3,
-                    msg=f"present tense magnitude not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(c_dec[b, v]), 0.0, places=3,
+                    msg=f"present center not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(ext_dec[b, v]), 0.0, places=3,
+                    msg=f"present (zero) extent not recovered at batch={b}, vec={v}")
 
-    def test_time_and_tense_round_trip(self):
-        """Absolute time (angle) and tense magnitude round-trip through
-        encode/decode for times inside the non-aliasing window."""
+    def test_time_and_duration_round_trip(self):
+        """Event-time center (angle) and duration (magnitude) round-trip through
+        encode/decode: instants for the center sweep, a span for the duration."""
         from Spaces import _WHEN_PERIOD
         te = Models.WhenEncoding(_WHEN_PERIOD, 2)
+        # Center (instant) sweep across the non-aliasing window.
         for t in (0.0, 1.0, float(_WHEN_PERIOD // 8), -float(_WHEN_PERIOD // 8)):
-            for D in (0.2, 0.5, 1.0):
-                dt, dD = te.decode(te.encode(t, D=D))
-                self.assertAlmostEqual(float(dt), t, delta=0.05, msg=f"time {t} (D={D})")
-                self.assertAlmostEqual(float(dD), D, places=4, msg=f"tense {D} (t={t})")
+            c, ext = te.decode(te.encode(t))
+            self.assertAlmostEqual(float(c), t, delta=0.05, msg=f"center {t}")
+            self.assertAlmostEqual(float(ext), 0.0, delta=1e-3, msg=f"instant extent (t={t})")
+        # Duration (above the resolution floor) round-trips.
+        for s, e in ((1000, 1100), (3000, 3500)):
+            c, ext = te.decode(te.encode(s, e))
+            self.assertAlmostEqual(float(c), (s + e) / 2.0, delta=0.1, msg=f"center ({s},{e})")
+            self.assertAlmostEqual(float(ext), float(e - s), delta=0.5, msg=f"duration ({s},{e})")
 
     def test_content_preserved(self):
         """Content dimensions (non-encoding slots) survive the round-trip."""

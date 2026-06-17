@@ -16,8 +16,15 @@ treat that as the same thing as `nOutput`.
 > 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
 > `data/model.xml` carries per-Space defaults (`<nWhere>2</nWhere>` on
 > InputSpace / PartSpace / WholeSpace, `0` elsewhere). The
-> `.where` field is now the canonical positional identifier (quadrature
-> sinusoidal); see [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
+> `.where` field is the canonical positional identifier; see
+> [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
+>
+> 2026-06-16: `.where` and `.when` are now **endpoint-sum brackets** `[start,
+> end]` (angle = span center, magnitude = extent), the invertible
+> `EndpointSumWhere` form. An instant (`start==end`) is byte-identical to the
+> prior single-quadrature point, so `whereScale` / `whenScale` are unchanged.
+> `.when` tense is the interval-vs-`now` relation (the magnitude-D tense scheme
+> is retired); see [doc/Spaces.md](Spaces.md).
 
 ---
 
@@ -42,6 +49,10 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [NeuralToolUser.md → MLP TransformChooser](plans/NeuralToolUser.md). |
 | `symbolicComposition` | bool | `false` | Cognitive op (2): at `subsymbolicOrder > 0`, re-feed the prior pass's symbolic carrier (`cs._subspaceForSS`) to PartSpace so Sigma composes higher-order symbols. Default off is byte-identical. See [Architecture.md](Architecture.md). |
 | `neuralToolUser` | bool | `false` | Legacy hard-parse executor for the grammar's binary reduce stage (`parse_greedy` route + cross-product distributions). **Superseded by the soft-superposition route (`learning`); off the live path.** See [NeuralToolUser.md](plans/NeuralToolUser.md). |
+| `categoryCodebook` | bool | `false` | MetaSymbol participation-category codebook: a small `VectorQuantize` over the live MetaSymbol vectors, learned in perception (E/M in the autobind hook), keying each word's syntactic category to its frequency of participation across operator roles. Default off → no codebook allocated (byte-identical). See [Language.md → Participation Categories](Language.md). |
+| `chooserCategoryContext` | bool | `false` | Phase 2 of `categoryCodebook`: thread the per-slot centroid role vector into `MLPTransformChooser` as syntactic-category context (widens its first `Linear`). Meaningful only with `transformChooser=mlp` + `categoryCodebook=true`. Default off → chooser ignores category (byte-identical). |
+| `verbEigEdit` | bool | `false` | Verb sparse eigenvalue edit on `lift(NP, VP)`: the verb edits the NP through a sparse residual `x₂ = x₁ + p_class ⊙ δ_v`, masked by the NP's own eigen-signature (no learned mask), zero-init so untrained = the sigma fold. Default off → byte-identical. See [doc/specs/semantic_verb_np_mask_eigenvalue_proposal.md](specs/semantic_verb_np_mask_eigenvalue_proposal.md). |
+| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off → no table, no raising (byte-identical). See [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |

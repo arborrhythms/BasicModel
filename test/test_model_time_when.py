@@ -93,71 +93,66 @@ def test_tense_magnitude_resolution_above_float32_eps():
     # The angle step per time-tick (2*pi/period), scaled by the present D~0.5,
     # stays well above float32 eps so adjacent ticks are distinguishable.
     enc = _enc(t=0)
-    a0 = enc.encode(0, D=_WHEN_TENSE_DEFAULT)
-    a1 = enc.encode(1, D=_WHEN_TENSE_DEFAULT)
+    a0 = enc.encode(0)
+    a1 = enc.encode(1)
     sep = float((a1 - a0).abs().max())
     assert sep > 100 * 1.2e-7, f"adjacent-tick separation {sep} too small for float32"
 
 
 # ---------------------------------------------------------------------------
-# Encoding: present default + absolute angle via self.t
+# Encoding: present instant + absolute angle (center) via self.t
 # ---------------------------------------------------------------------------
-def test_forward_at_t0_is_present_default_zero_half():
-    # At self.t == 0 the stamped .when is the present default 0.5*[0,1]=[0,0.5].
+def test_forward_at_t0_is_present_instant():
+    # At self.t == 0 the stamped .when is the present instant [sin0, cos0]=[0,1].
     enc = _enc(t=0)
     x = torch.zeros(2, 4, 10)
     y = enc.forward(x)
     idx = enc.resolve(y.shape[-1])
     stamped = y[0, 0, idx]
-    expect = torch.tensor([0.0, _WHEN_TENSE_DEFAULT], device=stamped.device)
+    expect = torch.tensor([0.0, 1.0], device=stamped.device)
     assert torch.allclose(stamped, expect, atol=1e-6)
-    # encode(0) at the present default magnitude equals the same vector.
-    assert torch.allclose(enc.encode(enc.t, D=_WHEN_TENSE_DEFAULT), expect, atol=1e-6)
+    # encode(0) (an instant) equals the same vector.
+    assert torch.allclose(enc.encode(enc.t), expect, atol=1e-6)
 
 
 def test_forward_stamps_absolute_time_in_angle():
-    # The decoded angle (time) is faithful inside the (-period/2, period/2)
-    # window; the magnitude is the present tense default.
+    # The decoded center (time) is faithful inside the (-period/2, period/2)
+    # window; an instant has zero extent.
     T = _WHEN_PERIOD // 8
     enc = _enc(t=T)
     x = torch.zeros(2, 3, 10)
     y = enc.forward(x)
     idx = enc.resolve(y.shape[-1])
-    t_dec, D = enc.decode(y[0, 0, idx])
-    assert math.isclose(float(t_dec), float(T), abs_tol=0.05)
-    assert math.isclose(float(D), _WHEN_TENSE_DEFAULT, abs_tol=1e-5)
+    center, ext = enc.decode(y[0, 0, idx])
+    assert math.isclose(float(center), float(T), abs_tol=0.05)
+    assert math.isclose(float(ext), 0.0, abs_tol=1e-3)
 
 
-def test_encode_at_T_decodes_angle_to_T():
+def test_encode_at_T_decodes_center_to_T():
     T = _WHEN_PERIOD // 8
     enc = _enc(t=0)  # self.t is irrelevant to encode(T) (explicit arg)
-    t_dec, D = enc.decode(enc.encode(T))
-    assert math.isclose(float(t_dec), float(T), abs_tol=0.05)
-    assert math.isclose(float(D), _WHEN_TENSE_DEFAULT, abs_tol=1e-5)
+    center, ext = enc.decode(enc.encode(T))
+    assert math.isclose(float(center), float(T), abs_tol=0.05)
+    assert math.isclose(float(ext), 0.0, abs_tol=1e-3)
 
 
 # ---------------------------------------------------------------------------
-# next() / previous(): move the tense magnitude, preserve the time-angle
+# next() / previous(): advance / retreat the event time by the tense step
 # ---------------------------------------------------------------------------
-def test_next_previous_move_magnitude_preserving_time():
+def test_next_previous_move_time_by_step():
     base = _WHEN_PERIOD // 8
     enc = _enc(t=base)
-    enc.D = _WHEN_TENSE_DEFAULT
-    t_dec, D = enc.decode(enc.next())
-    assert math.isclose(float(D), _WHEN_TENSE_DEFAULT + _WHEN_TENSE_STEP, abs_tol=1e-5)
-    assert math.isclose(float(t_dec), float(base), abs_tol=0.05)
-    enc.D = _WHEN_TENSE_DEFAULT
-    t_dec, D = enc.decode(enc.previous())
-    assert math.isclose(float(D), _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP, abs_tol=1e-5)
-    assert math.isclose(float(t_dec), float(base), abs_tol=0.05)
+    center, _ext = enc.decode(enc.next())
+    assert math.isclose(float(center), float(base) + _WHEN_TENSE_STEP, abs_tol=0.05)
+    center, _ext = enc.decode(enc.previous())
+    assert math.isclose(float(center), float(base) - _WHEN_TENSE_STEP, abs_tol=0.05)
 
 
-def test_next_previous_clamp_to_unit_interval():
-    enc = _enc(t=10)
-    enc.D = 0.95; enc.next(); enc.next()
-    assert math.isclose(enc.D, 1.0, abs_tol=1e-9)
-    enc.D = 0.05; enc.previous(); enc.previous()
-    assert math.isclose(enc.D, 0.0, abs_tol=1e-9)
+def test_next_previous_are_symmetric_time_shifts():
+    enc = _enc(t=1000)
+    c_next, _ = enc.decode(enc.next(3))
+    c_prev, _ = enc.decode(enc.previous(3))
+    assert math.isclose(float(c_next) - 1000.0, 1000.0 - float(c_prev), abs_tol=0.05)
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +162,7 @@ def test_tense_layer_round_trips():
     import Language
     head = torch.randn(2, 3, 4)
     enc = _enc(t=_WHEN_PERIOD // 8)
-    when = enc.encode(enc.t, D=_WHEN_TENSE_DEFAULT).expand(2, 3, -1)
+    when = enc.encode(enc.t).expand(2, 3, -1)
     x = torch.cat([head, when], dim=-1)
     for op in ("PAST", "PRESENT", "FUTURE"):
         layer = Language.TenseLayer()
@@ -177,23 +172,23 @@ def test_tense_layer_round_trips():
         assert torch.allclose(back, x, atol=1e-5), op
 
 
-def test_tense_layer_present_is_identity_and_past_future_shift_D():
+def test_tense_layer_present_is_identity_and_past_future_shift_time():
     import Language
     T = _WHEN_PERIOD // 8
     enc = _enc(t=T)
     head = torch.randn(1, 1, 4)
-    when = enc.encode(T, D=_WHEN_TENSE_DEFAULT).expand(1, 1, -1)
+    when = enc.encode(T).expand(1, 1, -1)
     x = torch.cat([head, when], dim=-1)
     pres = Language.TenseLayer(); pres.set_op("PRESENT")
     assert torch.allclose(pres.forward(x), x, atol=1e-6)
     past = Language.TenseLayer(); past.set_op("PAST")
-    _t, D = enc.decode(past.forward(x)[..., -2:])
-    assert math.isclose(float(D.reshape(-1)[0]), _WHEN_TENSE_DEFAULT - _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
+    center, _ext = enc.decode(past.forward(x)[..., -2:])
+    assert math.isclose(float(center.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
+                        abs_tol=0.05)
     fut = Language.TenseLayer(); fut.set_op("FUTURE")
-    _t, D = enc.decode(fut.forward(x)[..., -2:])
-    assert math.isclose(float(D.reshape(-1)[0]), _WHEN_TENSE_DEFAULT + _WHEN_TENSE_STEP,
-                        abs_tol=1e-5)
+    center, _ext = enc.decode(fut.forward(x)[..., -2:])
+    assert math.isclose(float(center.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
+                        abs_tol=0.05)
 
 
 def test_aspect_layer_is_noop():

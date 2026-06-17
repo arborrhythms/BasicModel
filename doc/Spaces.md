@@ -529,12 +529,20 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims --- positional information, materialized as a
-  quadrature-sinusoidal vector via `WhereEncoding` (see the 2026-05-28
-  where-keyed-taxonomy plan). The integer position is recoverable via
-  `atan2(sin, cos) / $\omega_0$` and serves as the canonical positional
-  identifier across IS / PS / SS taxonomies (no more signed-int
-  cross-codebook hack).
+- `nWhere` dims --- positional information, materialized via `WhereEncoding`
+  (see the 2026-05-28 where-keyed-taxonomy plan). As of the 2026-06-16 redesign
+  `.where` is an **endpoint-sum BRACKET** over a span `[start, end]` (the
+  invertible `EndpointSumWhere` form adopted into the muxed tail): the key is
+  `0.5·[sin(s·ω₀)+sin(e·ω₀), cos(s·ω₀)+cos(e·ω₀)]`, so the **angle decodes the
+  span center** and the **magnitude the span extent**. An INSTANT (`start==end`)
+  collapses to the legacy single-quadrature point `[sin(p·ω₀), cos(p·ω₀)]`
+  (byte-identical to the pre-bracket stamp). `decode` returns the center (the
+  canonical positional identifier across IS / PS / SS taxonomies, recoverable via
+  `atan2(sin, cos) / ω₀`); `decode_span` returns `(start, end)` for the
+  mereology **contiguity / containment** test (instants snap to zero extent).
+  `.when` uses the **same bracket** over event TIME (center = event time,
+  magnitude = duration); tense is the interval-vs-`now` relation, not a
+  magnitude (see `WhenRangeEncoding`).
 
 Result: `[nActive, nWhat + nWhere]` tensor.
 

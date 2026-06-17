@@ -2243,33 +2243,36 @@ def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
     return WhenRangeEncoding(n_when=when_width)      # default period (_WHEN_PERIOD)
 
 
-def _when_tense(when, when_width=_EVENT_WHEN_WIDTH):
-    """The tense magnitude D in [0, 1] decoded from a .when tail (0.5=present)."""
+def _when_extent(when, when_width=_EVENT_WHEN_WIDTH):
+    """The event DURATION (extent) decoded from a .when bracket tail (0 for an
+    instant). Under the 2026-06-16 bracket redesign the magnitude is duration,
+    not tense; tense is the interval-vs-now relation (see WhenRangeEncoding)."""
     enc = _event_when_encoding(when_width)
-    _t, D = enc.decode(when.detach())
-    fD = D.reshape(-1)
-    return float(fD[0]) if fD.numel() else 0.0
+    _center, ext = enc.decode(when.detach())
+    fe = ext.reshape(-1)
+    return float(fe[0]) if fe.numel() else 0.0
 
 
 def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Advance the event tense one step toward the future (the
-    verb-advances-future rule of spec Section 5), preserving the time-angle.
-    Under the 2026-06-07 .when redesign the magnitude is TENSE (not duration),
-    so LIFT is a +_WHEN_TENSE_STEP tense shift rather than a span extension."""
+    """Advance the event one tense step toward the FUTURE (the
+    verb-advances-future rule of spec Section 5), preserving the event duration.
+    Under the 2026-06-16 .when bracket redesign tense is the interval position
+    relative to now, so LIFT shifts the event-time CENTER by +_WHEN_TENSE_STEP
+    ticks (``shift_time``) rather than rescaling a magnitude."""
     from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
-    return enc.shift_tense(when, +_WHEN_TENSE_STEP)
+    return enc.shift_time(when, +_WHEN_TENSE_STEP)
 
 
 def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
-    """Inverse of _lift_when: retreat the event tense one step toward the past
-    (-_WHEN_TENSE_STEP), preserving the time-angle."""
+    """Inverse of _lift_when: retreat the event one tense step toward the PAST
+    (-_WHEN_TENSE_STEP ticks), preserving the event duration."""
     from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
-    return enc.shift_tense(when, -_WHEN_TENSE_STEP)
+    return enc.shift_time(when, -_WHEN_TENSE_STEP)
 
 
-def _make_lex_gate(n_in, rank, seed):
+def _make_lex_gate(n_in, rank, seed, bias=1.4722):
     """Build the §2 lexical-mask projection (word code -> gate rank
     space) WITHOUT touching the global RNG (GrammarOpsPass §2).
 
@@ -2279,6 +2282,11 @@ def _make_lex_gate(n_in, rank, seed):
     materializes the module without an init draw; the deterministic
     init (small weight, bias at atanh(0.9): near-identity gates that
     already differ per word) comes from a LOCAL generator.
+
+    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The verb
+    eigenvalue edit (``LiftLayer._lex_edit``) passes ``bias=0.0`` so an
+    untrained edit is ``tanh(0) ~= 0`` -- the residual barely perturbs the
+    sigma fold until training shapes it.
     """
     lex = torch.nn.utils.skip_init(nn.Linear, int(n_in), int(rank))
     gen = torch.Generator()
@@ -2286,7 +2294,7 @@ def _make_lex_gate(n_in, rank, seed):
     with torch.no_grad():
         lex.weight.copy_(
             torch.randn(lex.weight.shape, generator=gen) * 0.05)
-        lex.bias.fill_(1.4722)                  # atanh(0.9)
+        lex.bias.fill_(float(bias))
     return lex
 
 
@@ -2431,10 +2439,39 @@ class LiftLayer(GrammarLayer):
             # must not shift the seeded draws of fixtures built after it.
             self._lex_gate = _make_lex_gate(
                 int(nInput), min(int(nInput), int(nOutput)), seed=0x11F7)
+            # Verb sparse eigenvalue edit (doc/specs/
+            # semantic_verb_np_mask_eigenvalue_proposal.md). When
+            # <verbEigEdit> is on, lift applies the verb as a sparse
+            # eigenvalue edit of the NP, masked by the noun class (read from
+            # the NP's own eigen-signature -- no learned mask parameter). The
+            # ONLY per-verb parameter is this edit projection δ_v(VP_code).
+            # Built ONLY when on so flag-off is byte-identical (no extra
+            # Parameter in the state_dict). Zero bias -> an untrained edit is
+            # ~0 (the residual barely perturbs the fold until trained).
+            self._verb_eig_edit = bool(
+                TheXMLConfig.get("architecture.verbEigEdit", default=False))
+            if self._verb_eig_edit:
+                # Zero-init residual branch (cf. LoRA-B / zero-init adapters):
+                # weight AND bias start at 0 so an UNTRAINED edit is exactly 0
+                # (delta_v = tanh(0) = 0) -> flag-on-untrained reproduces the
+                # sigma fold; training shapes the edit from there. The skip_init
+                # + bias=0.0 path keeps it global-RNG-neutral.
+                self._lex_edit = _make_lex_gate(
+                    int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
+                with torch.no_grad():
+                    self._lex_edit.weight.zero_()
+            else:
+                self._lex_edit = None
+            # Per-call verb-purchase diagnostic (the firewall "delta"); host
+            # bookkeeping only, no autograd / state_dict footprint.
+            self._verb_purchase = None
         else:
             # Zero-width construction (parameter-free harness probe).
             self._sigma = None
             self._lex_gate = None
+            self._verb_eig_edit = False
+            self._lex_edit = None
+            self._verb_purchase = None
 
     # -- Butterfly per-pair op delegation (Stage 5) -----------------
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -2526,8 +2563,46 @@ class LiftLayer(GrammarLayer):
             l_what, l_where, _l_when = _split_event(left, cw)
             r_what, _r_where, r_when = _split_event(right, cw)
             content = self._sigma.compose(l_what, r_what, gate=gate)
+            content = self._apply_verb_edit(content, l_what, r_what)
             return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
-        return self._sigma.compose(left, right, gate=gate)
+        content = self._sigma.compose(left, right, gate=gate)
+        return self._apply_verb_edit(content, left, right)
+
+    def _apply_verb_edit(self, content, np_what, vp_what):
+        """Verb sparse eigenvalue edit on the lift result (doc/specs/
+        semantic_verb_np_mask_eigenvalue_proposal.md).
+
+        No-op (returns ``content`` unchanged) unless ``<verbEigEdit>`` built the
+        edit projection -- so flag-off is byte-identical. When on:
+
+        * ``δ_v`` -- the verb's per-eigenfeature edit from the VP code, made
+          SPARSE by soft-thresholding (the verb touches few eigs);
+        * ``p_class`` -- the noun-class mask, read from the NP's OWN
+          eigen-signature (its activated eigenfeatures), NOT a learned
+          parameter: the class the verb applies to is already an object in the
+          taxonomy, so membership *is* the mask. Where the NP lacks a feature
+          (out of class) ``p_class ~= 0`` and that feature is preserved;
+        * the edit is the masked residual ``a2 = atanh(content) + p_class ⊙ δ_v``
+          (the spec's identity-preserving form). ``purchase_v`` is stashed for
+          introspection (the firewall "delta")."""
+        if not getattr(self, '_verb_eig_edit', False) or self._lex_edit is None:
+            return content
+        a = torch.atanh(content.clamp(-1 + epsilon, 1 - epsilon))
+        # δ_v from the VP code, soft-thresholded for sparsity (few eigs).
+        delta = torch.tanh(self._lex_edit(vp_what.to(self._lex_edit.weight.dtype)))
+        tau = 0.1
+        delta = torch.sign(delta) * torch.clamp(delta.abs() - tau, min=0.0)
+        # p_class: the noun-class mask = the NP's normalized eigen-signature
+        # (in [0, 1]); no learned parameter.
+        a_np = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
+        amax = a_np.abs().amax(dim=-1, keepdim=True)
+        p_class = a_np.abs() / (amax + epsilon)
+        # purchase_v(x) = ||p_class ⊙ a_np|| / ||a_np|| (spec §8.1).
+        with torch.no_grad():
+            num = (p_class * a_np).norm(dim=-1)
+            den = a_np.norm(dim=-1) + epsilon
+            self._verb_purchase = (num / den).detach()
+        return torch.tanh(a + p_class * delta)
 
     def reverse(self, parent, gate=None):
         """Split ``parent`` back into a ``(left, right)`` pair.
@@ -2859,21 +2934,20 @@ class _WhenOpMixin:
         return x[..., :-w], x[..., -w:]
 
 class TenseLayer(_WhenOpMixin, GrammarLayer):
-    """tense(X) -- move the event .when TENSE position (the phasor magnitude D)
-    (unary, C-tier; 2026-06-07 .when redesign). The magnitude is the tense axis
-    now (0=past, 0.5=PRESENT default, 1=future), NOT event duration. PRESENT is
-    identity (D=0.5 is the default); PAST applies ``previous`` (D - step);
-    FUTURE applies ``next`` (D + step). The shift rescales the phasor, PRESERVING
-    the time-angle (WhenRangeEncoding.shift_tense), so the absolute time the
-    angle encodes is untouched. ``reverse`` applies the inverse step (invertible
-    round-trip WITHIN [0, 1] -- clamping at the ends is lossy, hence the
-    round-trip tests stay in the unclamped range). Selected per-instance via
-    set_op before dispatch."""
+    """tense(X) -- move the event .when along TIME relative to ``now`` (unary,
+    C-tier; 2026-06-16 .when bracket redesign). Tense is the interval-vs-now
+    relation, NOT a magnitude: PRESENT is identity (event stays at its time);
+    PAST shifts the event-time CENTER -step ticks (toward the past); FUTURE shifts
+    it +step ticks (toward the future). The shift is an exact phase rotation that
+    PRESERVES the event duration (WhenRangeEncoding.shift_time), so an event at
+    ``now`` becomes ``now-step`` (past) / ``now+step`` (future). ``reverse``
+    applies the inverse shift (invertible round-trip, modulo the period wrap).
+    Selected per-instance via set_op before dispatch."""
     rule_name = "tense"; arity = 1
     invertible = True; lossy = False; tier = 'C'; reads_activation = False
-    # _DELTA is the TENSE step applied to the phasor magnitude D: PRESENT keeps
-    # the present default (no shift), PAST = -step (toward past), FUTURE = +step
-    # (toward future). step == _WHEN_TENSE_STEP (0.1).
+    # _DELTA is the TENSE step applied to the event-time CENTER (in clock ticks):
+    # PRESENT = no shift, PAST = -step (toward past), FUTURE = +step (toward
+    # future). step == _WHEN_TENSE_STEP (1.0 tick).
     from Spaces import _WHEN_TENSE_STEP as _STEP
     _DELTA = {"PRESENT": 0.0, "PAST": -_STEP, "FUTURE": +_STEP}
     del _STEP
@@ -2886,25 +2960,26 @@ class TenseLayer(_WhenOpMixin, GrammarLayer):
     def forward(self, x):
         head, when = self._split_when(x); delta = self._DELTA[self._op]
         if delta == 0.0: return x
-        return torch.cat([head, self._when_encoding().shift_tense(when, delta)], dim=-1)
+        return torch.cat([head, self._when_encoding().shift_time(when, delta)], dim=-1)
     def reverse(self, y):
         head, when = self._split_when(y); delta = self._DELTA[self._op]
         if delta == 0.0: return y
-        return torch.cat([head, self._when_encoding().shift_tense(when, -delta)], dim=-1)
+        return torch.cat([head, self._when_encoding().shift_time(when, -delta)], dim=-1)
     def compose(self, x):     return self.forward(x)
     def generate(self, parent): return self.reverse(parent)
 
 class AspectLayer(_WhenOpMixin, GrammarLayer):
-    """aspect(X) -- RETIRED to a no-op (2026-06-07 .when redesign).
+    """aspect(X) -- a no-op (identity).
 
-    Event-extent duration is gone: the .when phasor MAGNITUDE is the tense
-    position now (owned by TenseLayer), not an interval width, so there is no
-    longer a duration channel for aspect to reshape. ``forward`` / ``compose`` /
-    ``reverse`` / ``generate`` are all identity (return the input unchanged).
-    The class is KEPT (not deleted) so the grammar's ``aspect`` rule dispatch
-    stays intact; ``set_op`` still validates the kind for back-compat callers
-    (e.g. MorphologyLayer) but has no numerical effect. The former
-    ``aspect_interval`` interval helper is removed."""
+    Under the 2026-06-16 .when bracket redesign the magnitude carries event
+    DURATION again, so an aspect that reshapes duration (PERFECT / PROGRESSIVE)
+    *could* return -- but that op is NOT redesigned here, so AspectLayer stays a
+    no-op: ``forward`` / ``compose`` / ``reverse`` / ``generate`` are all identity
+    (return the input unchanged). The class is KEPT (not deleted) so the grammar's
+    ``aspect`` rule dispatch stays intact; ``set_op`` still validates the kind for
+    back-compat callers (e.g. MorphologyLayer) but has no numerical effect. A
+    duration-reshaping aspect (operating on the bracket extent) is a documented
+    growth path."""
     rule_name = "aspect"; arity = 1
     # No-op: nothing is lost (identity), so it is trivially invertible.
     invertible = True; lossy = False; tier = 'C'; reads_activation = False
@@ -3395,13 +3470,28 @@ class ConjunctionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.intersection(left, right, monotonic=True)
 
-    def reverse(self, parent):
+    def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
         """Reverse pass; inverse of ``forward``.
 
-        See class docstring for the inversion contract.
+        ``basis`` supplied (a Codebook/Basis with ``getW()``) -> the mereology
+        recommender :py:meth:`Ops.conjunctionReverse` recovers an operand pair
+        ``(x1, x2)`` with ``intersection(x1, x2) ~= parent`` from the codebook
+        rows -- EXACT on a discrete vocabulary (the XOR reconstruction path).
+        The AND-fold is many-to-one, so ``basis is None`` (no codebook handy)
+        falls back to the lossy ``(parent, parent)`` pseudo-inverse. Mirrors
+        ``IntersectionLayer.reverse``; the reconstruction driver passes
+        ``basis=tier_basis`` at ``LanguageLayer.unreduce``.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.conjunctionReverse(
+                    parent, parent, W, monotonic=True,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
         return parent, parent
 
     def compose(self, left, right):
@@ -3496,13 +3586,26 @@ class DisjunctionLayer(GrammarLayer):
             return self._butterfly_forward(left)
         return Ops.union(left, right, monotonic=True)
 
-    def reverse(self, parent):
+    def reverse(self, parent, basis=None, left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
         """Reverse pass; inverse of ``forward``.
 
-        See class docstring for the inversion contract.
+        ``basis`` supplied (a Codebook/Basis with ``getW()``) -> the mereology
+        recommender :py:meth:`Ops.disjunctionReverse` recovers an operand pair
+        ``(x1, x2)`` with ``union(x1, x2) ~= parent`` from the codebook rows --
+        EXACT on a discrete vocabulary (the XOR reconstruction path). The
+        OR-fold is many-to-one, so ``basis is None`` falls back to the lossy
+        ``(parent, parent)`` pseudo-inverse. Mirrors ``UnionLayer.reverse``.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = basis.getW() if hasattr(basis, 'getW') else None
+            if W is not None:
+                return Ops.disjunctionReverse(
+                    parent, parent, W, monotonic=True,
+                    left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
         return parent, parent
 
     def compose(self, left, right):
@@ -4386,6 +4489,14 @@ class LanguageLayer(Layer):
         # host sets it from ``<architecture><transformChooser>`` BEFORE the
         # ops are attached (the layers pick the chooser at construction).
         self.transform_chooser = "anchordot"
+        # Phase 2 (MetaSymbol Category codebook): when True AND the MLP chooser
+        # is selected, the structured layers' MLP choosers are sized with a
+        # per-slot syntactic-category context block (width = the grammar's role
+        # count) and ``compose`` threads the per-slot role vector in. The host
+        # sets it from ``<architecture><chooserCategoryContext>`` BEFORE the ops
+        # are attached (the layers size the chooser at construction). Default
+        # False keeps the chooser byte-identical.
+        self.chooser_category_context = False
         # Route store (per tier): the pass-1 greedy route (detached masks)
         # and the live per-level cross-product distributions, populated when
         # ``neural_tool_user`` is on. Pass-2 replay reads the route; the
@@ -4415,6 +4526,24 @@ class LanguageLayer(Layer):
         self._last_output = None
         self._last_tier_routings = {}
 
+    def _chooser_role_cats(self):
+        """Phase-2 category-context width for the structured layers' MLP
+        chooser: the grammar's operator-role count when
+        ``chooser_category_context`` is on AND the MLP chooser is selected,
+        else 0 (chooser byte-identical). The role count comes from the same
+        :func:`compute_role_vocabulary` the WholeSpace category codebook uses,
+        so the chooser's context block and the codebook's role vectors share a
+        width. Returns 0 if the grammar declares no roles (the feature is then
+        inert)."""
+        if not getattr(self, "chooser_category_context", False):
+            return 0
+        if str(getattr(self, "transform_chooser", "anchordot")) != "mlp":
+            return 0
+        try:
+            return int(compute_role_vocabulary(TheGrammar)[2])
+        except Exception:
+            return 0
+
     def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
                          op_tiers=None, r_copy=1, tier="S"):
         """Attach a unary tier; ops fire per-position with one selection.
@@ -4434,6 +4563,7 @@ class LanguageLayer(Layer):
             ops=ops, r_copy=r_copy,
             temperature=self.temperature,
             chooser=getattr(self, "transform_chooser", "anchordot"),
+            n_role_cats=self._chooser_role_cats(),
         )
         layer.op_names = list(op_names) if op_names is not None else None
         layer.op_tiers = list(op_tiers) if op_tiers is not None else None
@@ -4470,6 +4600,7 @@ class LanguageLayer(Layer):
             r_copy=r_copy,
             temperature=self.temperature,
             chooser=getattr(self, "transform_chooser", "anchordot"),
+            n_role_cats=self._chooser_role_cats(),
         )
         self._binary_layers[tier] = layer
         if rule_ids is None:
@@ -4500,6 +4631,22 @@ class LanguageLayer(Layer):
         all_tiers = sorted(set(self._unary_layers.keys())
                            | set(self._binary_layers.keys()))
 
+        # Phase 2 (chooser conditioning): build the per-slot category context
+        # ONCE from the terminal-slot identities, threaded into the FIRST
+        # tier's scoring only -- later rounds/tiers fold composed slots whose
+        # MetaSymbol identity no longer maps 1:1 to a percept (their category
+        # is neutral). Gated on the MLP chooser + <chooserCategoryContext> +
+        # the terminal codebook being enabled. Off -> None (byte-identical).
+        cat_e = None
+        if (getattr(self, 'chooser_category_context', False)
+                and str(getattr(self, 'transform_chooser', 'anchordot')) == 'mlp'):
+            _ss = getattr(word_space, 'symbolicSpace', None)
+            if (_ss is not None
+                    and getattr(_ss, 'category_codebook_enabled', None) is not None
+                    and _ss.category_codebook_enabled()):
+                cat_e = self._build_category_context(x, _ss)
+        terminal_tier = all_tiers[0] if all_tiers else None
+
         for tier in all_tiers:
             B = x.shape[0]
             tier_routing = {}
@@ -4507,7 +4654,8 @@ class LanguageLayer(Layer):
 
             unary_layer = self._unary_layers[tier] if tier in self._unary_layers else None
             if unary_layer is not None:
-                u_hard, u_soft, u_routing = unary_layer(x)
+                u_hard, u_soft, u_routing = unary_layer(
+                    x, cat_ctx=(cat_e if tier == terminal_tier else None))
                 tier_routing["unary"] = u_routing
                 rid_table = self._unary_rule_ids[tier]
                 kind = u_routing["action_kind"]
@@ -4588,8 +4736,10 @@ class LanguageLayer(Layer):
                     tier_routing["route_levels"] = len(route_for_rules)
                 else:
                     round_routings = []
-                    for _ in range(max_rounds):
-                        b_hard, b_soft, b_routing = binary_layer(x)
+                    for _round_i in range(max_rounds):
+                        b_hard, b_soft, b_routing = binary_layer(
+                            x, cat_ctx=(cat_e if (tier == terminal_tier
+                                                  and _round_i == 0) else None))
                         round_routings.append(b_routing)
                         kind = b_routing["action_kind"]
                         op = b_routing["action_op"]
@@ -4640,6 +4790,43 @@ class LanguageLayer(Layer):
             ss._category_role_obs = self._collect_round0_role_obs()
 
         return rules
+
+    def _build_category_context(self, x, ss):
+        """Phase 2: per-slot category role vector ``[B, N, n_roles]`` for the
+        MLP chooser, or ``None`` when unavailable.
+
+        Pure reads only (no E-step at score time): each terminal slot position
+        -> percept id (stashed by the autobind hook earlier this step) -> PS
+        position -> MetaSymbol -> assigned centroid -> role vector. Slots with
+        no percept, no binding, or no centroid yet map to ``-1`` and become a
+        zero (neutral) row via :meth:`category_role_of`. The position index
+        aligns with the round-0 slab (== original percept positions; the same
+        correspondence Phase 1's role observation relies on)."""
+        last_pid = getattr(ss, '_category_last_pid', None)
+        n_roles = int(getattr(ss, '_category_n_roles', 0) or 0)
+        row_to_pos = getattr(ss, '_ps_row_to_pos', None)
+        if not last_pid or n_roles == 0 or row_to_pos is None:
+            return None
+        assign = getattr(ss, '_category_assign', None) or {}
+        B, N = int(x.shape[0]), int(x.shape[1])
+        centroids = [[-1] * N for _ in range(B)]
+        for b in range(min(B, len(last_pid))):
+            prow = last_pid[b]
+            for n in range(min(N, len(prow))):
+                pid = int(prow[n])
+                if pid < 0:
+                    continue
+                ps_pos = row_to_pos.get(pid)
+                if ps_pos is None:
+                    continue
+                meta_pos = ss.taxonomy_parent(ps_pos)
+                if meta_pos is None:
+                    continue
+                ci = assign.get(int(meta_pos))
+                if ci is not None:
+                    centroids[b][n] = int(ci)
+        idx_t = torch.tensor(centroids, dtype=torch.long, device=x.device)
+        return ss.category_role_of(idx_t)
 
     def _collect_round0_role_obs(self):
         """Round-0 reduces of the first binary tier as per-row
@@ -6642,10 +6829,12 @@ class TransformChooser(nn.Module):
     implement ``score_unary`` / ``score_binary``.
     """
 
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None):
         raise NotImplementedError
 
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None):
         raise NotImplementedError
 
 
@@ -6665,11 +6854,16 @@ class AnchorDotTransformChooser(TransformChooser):
     params -- a deliberate new-params cutover, behind a config flag.)
     """
 
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None):
         """Return ``(copy_score, apply_score)`` for the unary layer.
 
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
         ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
+
+        ``cat_ctx`` (Phase 2 category context) is ignored -- the anchor-dot
+        scorer is stateless and basin-pinned; only the MLP chooser conditions
+        on it.
         """
         copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
         r_apply = int(apply_anchor.shape[0])
@@ -6681,11 +6875,14 @@ class AnchorDotTransformChooser(TransformChooser):
                 x_score.shape[0], x_score.shape[1], r_apply)
         return copy_score, apply_score
 
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None):
         """Return ``(copy_score, reduce_score)`` for the binary layer.
 
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
         ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
+
+        ``cat_ctx`` (Phase 2 category context) is ignored (stateless scorer).
         """
         copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
         r_reduce = int(reduce_anchor.shape[0])
@@ -6721,17 +6918,25 @@ class MLPTransformChooser(TransformChooser):
     """
 
     def __init__(self, *, d_model, n_copy, n_op, embed_dim=8, pos_dim=8,
-                 hidden=None):
+                 hidden=None, n_role_cats=0):
         super().__init__()
         self.d_model = int(d_model)
         self.n_copy = int(n_copy)
         self.n_op = int(n_op)
         self.embed_dim = int(embed_dim)
         self.pos_dim = int(pos_dim)
+        # Phase 2 (MetaSymbol Category codebook): per-slot syntactic-category
+        # context width fed alongside the slot/cand/tool/pos features. 0
+        # (default) = the category context is OFF, in_dim and the first Linear
+        # are byte-identical to the pre-Phase-2 chooser. >0 widens the first
+        # Linear by ``n_role_cats``; ``_score`` then concatenates the per-slot
+        # role vector (zeros when no ``cat_ctx`` is supplied at call time).
+        self.n_role_cats = int(n_role_cats)
         hidden = int(hidden) if hidden is not None else max(8, self.d_model)
         self.tool_embedding = nn.Parameter(
             torch.randn(max(1, self.n_copy + self.n_op), self.embed_dim) * 0.02)
-        in_dim = 2 * self.d_model + self.embed_dim + self.pos_dim
+        in_dim = (2 * self.d_model + self.embed_dim
+                  + self.n_role_cats + self.pos_dim)
         self.mlp = nn.Sequential(
             nn.Linear(in_dim, hidden),
             nn.GELU(),
@@ -6753,12 +6958,15 @@ class MLPTransformChooser(TransformChooser):
                 [pe, pe.new_zeros(n, self.pos_dim - pe.shape[-1])], dim=-1)
         return pe[:, :self.pos_dim]
 
-    def _score(self, slot, cand, tool_rows, pos):
+    def _score(self, slot, cand, tool_rows, pos, cat_ctx=None):
         """Score ``R`` candidates at each of ``Npos`` locations.
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
         ``[B, Npos, R, D]``; ``tool_rows``: ``[R, embed_dim]``; ``pos``:
-        ``[Npos, pos_dim]``. Returns ``[B, Npos, R]``.
+        ``[Npos, pos_dim]``. ``cat_ctx`` (Phase 2): optional per-slot category
+        role vector ``[B, Npos, n_role_cats]`` broadcast over R; ``None`` (or
+        ``n_role_cats == 0``) feeds a zero block / no block (byte-identical to
+        the pre-Phase-2 feature concat). Returns ``[B, Npos, R]``.
         """
         B, Npos = slot.shape[0], slot.shape[1]
         R = int(tool_rows.shape[0])
@@ -6771,33 +6979,55 @@ class MLPTransformChooser(TransformChooser):
             B, Npos, R, self.embed_dim)
         pos_e = pos.view(1, Npos, 1, self.pos_dim).expand(
             B, Npos, R, self.pos_dim)
-        feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
+        if self.n_role_cats > 0:
+            # Category context block: the per-slot role vector, broadcast over
+            # candidates and placed between the tool and position blocks (the
+            # in_dim layout the first Linear was sized for). Missing context
+            # (terminal codebook off, composed slot) -> a zero block.
+            if cat_ctx is None:
+                cat_e = slot.new_zeros(B, Npos, R, self.n_role_cats)
+            else:
+                cat_e = cat_ctx.to(slot.dtype).unsqueeze(2).expand(
+                    B, Npos, R, self.n_role_cats)
+            feat = torch.cat([slot_e, cand_e, tool_e, cat_e, pos_e], dim=-1)
+        else:
+            feat = torch.cat([slot_e, cand_e, tool_e, pos_e], dim=-1)
         # Cast to the slot dtype so the computed path and the degenerate
         # zero fallbacks agree even under autocast (the MLP may emit
         # bf16/fp16; the fallbacks keep the input dtype).
         return self.mlp(feat).squeeze(-1).to(slot.dtype)              # [B,Npos,R]
 
-    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor):
+    def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
+                    cat_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
-        copy_score = self._score(x_score, x_score, copy_rows, pos)     # copy=slot
+        copy_score = self._score(x_score, x_score, copy_rows, pos,
+                                 cat_ctx=cat_ctx)                      # copy=slot
         r_apply = applied_score.shape[2] if applied_score.dim() == 4 else 0
         if r_apply > 0:
             apply_rows = self.tool_embedding[self.n_copy:self.n_copy + r_apply]
-            apply_score = self._score(x_score, applied_score, apply_rows, pos)
+            apply_score = self._score(x_score, applied_score, apply_rows, pos,
+                                      cat_ctx=cat_ctx)
         else:
             apply_score = x_score.new_zeros(B, N, 0)
         return copy_score, apply_score
 
-    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor):
+    def score_binary(self, x_score, reduced_score, copy_anchor, reduce_anchor,
+                     cat_ctx=None):
         B, N, D = x_score.shape
         pos = self._pos_emb(N, x_score.device, x_score.dtype)
         copy_rows = self.tool_embedding[:self.n_copy]
-        copy_score = self._score(x_score, x_score, copy_rows, pos)
+        copy_score = self._score(x_score, x_score, copy_rows, pos,
+                                 cat_ctx=cat_ctx)
         if (N >= 2 and reduced_score.dim() == 4
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
             pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
+            # Pair the operands' category rows the same way the slot is paired
+            # (the spec's left/right operand reduction; avg here). None stays
+            # None so the pre-Phase-2 path is byte-identical.
+            pair_cat = (0.5 * (cat_ctx[:, :-1] + cat_ctx[:, 1:])
+                        if cat_ctx is not None else None)
             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
             r_reduce = int(reduced_score.shape[2])
             # The reduce op-axis must equal n_op (the construction-time
@@ -6809,24 +7039,29 @@ class MLPTransformChooser(TransformChooser):
             reduce_rows = self.tool_embedding[
                 self.n_copy:self.n_copy + r_reduce]
             reduce_score = self._score(
-                pair_slot, reduced_score, reduce_rows, pos_pair)
+                pair_slot, reduced_score, reduce_rows, pos_pair,
+                cat_ctx=pair_cat)
         else:
             reduce_score = x_score.new_zeros(B, max(N - 1, 0), self.n_op)
         return copy_score, reduce_score
 
 
-def make_transform_chooser(kind, *, d_model, n_copy, n_op):
+def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
     """Factory: build the placement chooser for a structured layer.
 
     ``kind`` ``"anchordot"`` (default) -> the stateless behavior-preserving
     scorer (no params, basin unchanged); ``"mlp"`` -> the contextual
     :class:`MLPTransformChooser` (owns params; a deliberate new-basin
     cutover behind ``<transformChooser>``).
+
+    ``n_role_cats`` (Phase 2): the MetaSymbol category-context width fed to the
+    MLP chooser; 0 (default) leaves the MLP byte-identical and is ignored by the
+    anchor-dot scorer (which has no context input).
     """
     k = str(kind or "anchordot").strip().lower()
     if k == "mlp":
         return MLPTransformChooser(
-            d_model=d_model, n_copy=n_copy, n_op=n_op)
+            d_model=d_model, n_copy=n_copy, n_op=n_op, n_role_cats=n_role_cats)
     # Accept exactly the values the <transformChooser> XSD enum allows, so
     # the factory and schema validation agree on the legal set.
     if k != "anchordot":
@@ -6897,7 +7132,7 @@ class BinaryStructuredReductionLayer(nn.Module):
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
                  temperature=1.0, op_tiers=None, op_names=None,
-                 chooser="anchordot"):
+                 chooser="anchordot", n_role_cats=0):
         """Wire ops list, per-rule anchor params, and the comparator mixer.
 
         Builds learnable ``copy_anchor`` ``[r_copy, D]`` and
@@ -6926,7 +7161,7 @@ class BinaryStructuredReductionLayer(nn.Module):
         # to this layer's r_copy copy ops + r_reduce reduce ops.
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
-            n_copy=self.r_copy, n_op=self.r_reduce)
+            n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats)
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
         # Per-rule name / tier metadata retained for op identification
@@ -6980,7 +7215,7 @@ class BinaryStructuredReductionLayer(nn.Module):
     # concept tensors (``op(left, right)`` over self.ops in
     # _stacked_reduced), the counterpart to WordSubSpace.compose's
     # SS-side analysis. See WordSubSpace.compose docstring for the split.
-    def forward(self, x, *, span_start=None, span_end=None):
+    def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
 
         Returns:
@@ -6989,6 +7224,10 @@ class BinaryStructuredReductionLayer(nn.Module):
             routing:   dict with masks, scores, marginals, lengths, gates,
                        optionally ``span_start`` / ``span_end``.
         Degenerate N<=1 returns the input twice with a stub routing.
+
+        ``cat_ctx`` (Phase 2): optional per-slot category role vector
+        ``[B, N, n_role_cats]`` forwarded to the MLP chooser; ``None`` (the
+        default, and always for the anchor-dot chooser) is byte-identical.
         """
         B, N, D = x.shape
         if N <= 1:
@@ -7028,7 +7267,8 @@ class BinaryStructuredReductionLayer(nn.Module):
                     if stacked_reduced.shape[-1] > self.d_model
                     else stacked_reduced)
         copy_score, reduce_score = self.chooser.score_binary(
-            x_score, sr_score, self.copy_anchor, self.reduce_anchor)
+            x_score, sr_score, self.copy_anchor, self.reduce_anchor,
+            cat_ctx=cat_ctx)
 
         # Soft-superposition temperature (the parser's differentiable route
         # under <learning>; doc/Language.md "weighted deduction"). When set,
@@ -7164,7 +7404,7 @@ class UnaryStructuredLayer(nn.Module):
     """
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, chooser="anchordot"):
+                 temperature=1.0, chooser="anchordot", n_role_cats=0):
         """Wire ops list and per-(copy/apply) anchor params.
 
         Action space is ``R_copy + R_apply`` choices per position with
@@ -7189,7 +7429,7 @@ class UnaryStructuredLayer(nn.Module):
         # (owns params -> new basin), sized to r_copy copy + r_apply ops.
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
-            n_copy=self.r_copy, n_op=self.r_apply)
+            n_copy=self.r_copy, n_op=self.r_apply, n_role_cats=n_role_cats)
 
     def _stacked_applied(self, x):
         """[B, N, R_apply, D] each unary op applied to every position."""
@@ -7199,12 +7439,16 @@ class UnaryStructuredLayer(nn.Module):
         per_op = [op(x) for op in self.ops]
         return torch.stack(per_op, dim=2)
 
-    def forward(self, x):
+    def forward(self, x, cat_ctx=None):
         """Score, choose per-position action, return (hard, soft, routing).
 
         Hard slab argmax-selects one branch per position; soft slab is
         the softmax-weighted blend over (copy_branch + applied_ops).
         Straight-through gradient connects the hard-forward / soft-backward.
+
+        ``cat_ctx`` (Phase 2): optional per-position category role vector
+        ``[B, N, n_role_cats]`` forwarded to the MLP chooser; ``None`` (default,
+        and always for anchor-dot) is byte-identical.
         """
         B, N, D = x.shape
         h = self.context_net(x)
@@ -7222,7 +7466,8 @@ class UnaryStructuredLayer(nn.Module):
         applied_score = (applied[..., :self.d_model]
                          if applied.shape[-1] > self.d_model else applied)
         copy_score, apply_score = self.chooser.score_unary(
-            x_score, applied_score, self.copy_anchor, self.apply_anchor)
+            x_score, applied_score, self.copy_anchor, self.apply_anchor,
+            cat_ctx=cat_ctx)
         # Soft-superposition temperature (the differentiable route under
         # <learning>; same contract as the binary layer). When set, the
         # forward is the pure softmax superposition at this temperature
@@ -11272,10 +11517,19 @@ class WordSubSpace(SubSpace):
         total = None
         for (_tier, _name), layer in self._host_layer_registry.items():
             raw = getattr(layer, 'raw_gate', None)
-            if raw is None or not torch.is_tensor(raw):
-                continue
-            term = torch.tanh(raw).abs().sum()
-            total = term if total is None else total + term
+            if raw is not None and torch.is_tensor(raw):
+                term = torch.tanh(raw).abs().sum()
+                total = term if total is None else total + term
+            # Verb eigenvalue edit (doc/specs/semantic_verb_np_mask_
+            # eigenvalue_proposal.md): an L1 pull on the per-verb edit
+            # projection encourages a sparse expression over the eigs (the
+            # primary sparsity is the in-forward soft-threshold; this is the
+            # additional training pressure). Only present when <verbEigEdit>
+            # built it, so this is naturally gated.
+            lex_edit = getattr(layer, '_lex_edit', None)
+            if lex_edit is not None and hasattr(lex_edit, 'weight'):
+                term = torch.tanh(lex_edit.weight).abs().sum()
+                total = term if total is None else total + term
         if total is None:
             return None
         return lam * total
@@ -11417,6 +11671,11 @@ class WordSubSpace(SubSpace):
         # contextual MLPTransformChooser (owns params, deliberate new basin).
         router.transform_chooser = str(TheXMLConfig.get(
             "architecture.transformChooser", default="anchordot"))
+        # Phase 2: mirror the category-context flag onto the router BEFORE the
+        # structured layers are attached (they size the MLP chooser's context
+        # block at construction). Default False -> chooser byte-identical.
+        router.chooser_category_context = bool(TheXMLConfig.get(
+            "architecture.chooserCategoryContext", default=False))
         for arity, bucket in sorted(by_arity.items()):
             if arity == 1:
                 router.attach_unary_ops(

@@ -19,8 +19,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 from Language import LiftLayer, LowerLayer, PrepositionLayer
-from Spaces import (WhenRangeEncoding, _WHEN_TENSE_DEFAULT, _WHEN_TENSE_STEP,
-                    _WHEN_PERIOD)
+from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
 
 _NWHAT, _NWHERE, _NWHEN = 4, 2, 2
 _ENC = WhenRangeEncoding(_WHEN_PERIOD, _NWHEN)
@@ -34,9 +33,10 @@ def _event(what, where, when):
 
 
 def _decode_when(ev):
-    """Decode the trailing 2 .when columns to (t, D): absolute time, tense."""
-    t, D = _ENC.decode(ev[..., -_NWHEN:].detach())
-    return float(t.reshape(-1)[0]), float(D.reshape(-1)[0])
+    """Decode the trailing 2 .when columns to (center, extent): event-time
+    center and duration (2026-06-16 .when bracket redesign)."""
+    c, ext = _ENC.decode(ev[..., -_NWHEN:].detach())
+    return float(c.reshape(-1)[0]), float(ext.reshape(-1)[0])
 
 
 def _what(ev):   return ev[..., :_NWHAT]
@@ -49,40 +49,40 @@ class TestLiftLowerWhen(unittest.TestCase):
         _ENC.t = int(t)
         what = torch.randn(_NWHAT).tanh()
         where = torch.tensor([0.3, -0.4])
-        when = _ENC.encode(t, D=_WHEN_TENSE_DEFAULT)    # present phasor at time t
+        when = _ENC.encode(t)                            # present instant at time t
         return _event(what, where, when)
 
-    def test_lift_advances_when_tense_toward_future(self):
-        # 2026-06-07 .when redesign: the magnitude is TENSE (not duration), so
-        # LIFT advances the tense one step toward the future (D + step),
-        # preserving the absolute time-angle.
+    def test_lift_advances_when_toward_future(self):
+        # 2026-06-16 .when bracket redesign: tense is the interval-vs-now
+        # relation, so LIFT advances the event-time CENTER one step toward the
+        # future (+step ticks), preserving the event duration (0 for an instant).
         T = _WHEN_PERIOD // 8
         lift = LiftLayer(nInput=_NWHAT)
-        ev = self._point_event(t=T)                     # present tense (D=0.5) at T
+        ev = self._point_event(t=T)                     # present instant at T
         out = lift.compose(ev, ev)
         self.assertEqual(out.shape[-1], _NWHAT + _NWHERE + _NWHEN)
-        t_dec, D = _decode_when(out)
-        self.assertAlmostEqual(D, _WHEN_TENSE_DEFAULT + _WHEN_TENSE_STEP, delta=1e-4,
-                               msg=f"LIFT must advance tense by +step; got D={D}")
-        self.assertGreater(D, _WHEN_TENSE_DEFAULT,
-                           f"LIFT must move tense toward future; got D={D}")
-        self.assertAlmostEqual(t_dec, float(T), delta=0.05,
-                               msg=f"LIFT must preserve the time-angle; got t={t_dec}")
+        center, ext = _decode_when(out)
+        self.assertAlmostEqual(center, float(T) + _WHEN_TENSE_STEP, delta=0.05,
+                               msg=f"LIFT must advance time by +step; got center={center}")
+        self.assertGreater(center, float(T),
+                           f"LIFT must move the event toward future; got center={center}")
+        self.assertAlmostEqual(ext, 0.0, delta=1e-3,
+                               msg=f"LIFT must preserve the (zero) duration; got ext={ext}")
         self.assertTrue(torch.isfinite(out).all())
 
     def test_lower_inverts_lift_on_when(self):
         T = _WHEN_PERIOD // 8
         lift, lower = LiftLayer(nInput=_NWHAT), LowerLayer(nInput=_NWHAT)
         ev = self._point_event(t=T)
-        lifted = lift.compose(ev, ev)                   # D 0.5 -> 0.6
-        lowered = lower.compose(lifted, lifted)         # D 0.6 -> 0.5 (back)
-        t_dec, D = _decode_when(lowered)
-        # LOWER retreats the tense one step toward the past, returning to the
-        # original present magnitude (~0.5) with the time-angle preserved.
-        self.assertAlmostEqual(D, _WHEN_TENSE_DEFAULT, delta=1e-4,
-                               msg=f"LOWER must invert LIFT's tense step; got D={D}")
-        self.assertAlmostEqual(t_dec, float(T), delta=0.05,
-                               msg=f"LOWER must preserve the time-angle; got t={t_dec}")
+        lifted = lift.compose(ev, ev)                   # center T -> T+step
+        lowered = lower.compose(lifted, lifted)         # center T+step -> T (back)
+        center, ext = _decode_when(lowered)
+        # LOWER retreats the event one step toward the past, returning to the
+        # original event time T, duration preserved.
+        self.assertAlmostEqual(center, float(T), delta=0.05,
+                               msg=f"LOWER must invert LIFT's time step; got center={center}")
+        self.assertAlmostEqual(ext, 0.0, delta=1e-3,
+                               msg=f"LOWER must preserve the (zero) duration; got ext={ext}")
         self.assertTrue(torch.isfinite(lowered).all())
 
     def test_content_only_operand_passes_through_legacy_fold(self):
@@ -101,7 +101,7 @@ class TestPrepositionWhere(unittest.TestCase):
         prep = PrepositionLayer(nInput=_NWHAT)
         what = torch.randn(_NWHAT).tanh()
         where = torch.tensor([0.5, -0.2])
-        when = _ENC.encode(0, D=_WHEN_TENSE_DEFAULT)    # present .when phasor
+        when = _ENC.encode(0)                           # present .when instant
         P = _event(torch.randn(_NWHAT).tanh(), torch.tensor([0.1, 0.1]), when)
         X = _event(what, where, when)
         out = prep.compose(P, X)

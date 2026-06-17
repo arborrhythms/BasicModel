@@ -41,7 +41,7 @@ from embed import (
     _random_unit_ball,
 ) 
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer
 # NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
@@ -350,6 +350,85 @@ class ActiveEncoding(Encoding):
         semantics; encode/decode are pure pass-through.
         """
         return encoded
+
+
+# ---------------------------------------------------------------------------
+# Endpoint-sum bracket key (shared by the muxed WhereEncoding / WhenEncoding).
+# ---------------------------------------------------------------------------
+# A span ``[start, end]`` is keyed by the SUM of its two endpoint phasors:
+#
+#   key = scale * [sin(s*dt) + sin(e*dt),  cos(s*dt) + cos(e*dt)]
+#
+# By the sum-to-product identity this equals
+#
+#   scale * 2*cos((e-s)*dt/2) * [sin(c*dt), cos(c*dt)],   c = (s+e)/2,
+#
+# so the ANGLE decodes the span CENTER and the MAGNITUDE decodes the span
+# EXTENT (length). With ``scale = 0.5`` an INSTANT (start == end) collapses to
+# the legacy single-quadrature point ``[sin(c*dt), cos(c*dt)]`` -- BYTE-IDENTICAL
+# to the pre-bracket WhereEncoding / WhenEncoding stamp (``0.5 * 2 == 1`` exactly
+# in float). This is the invertible EndpointSumWhere form (perceptual_analyzer.py)
+# adopted into the muxed event tail so ``.where`` / ``.when`` carry the start-end
+# bracket the mereology contiguity test reads directly (center = position/time,
+# extent = spatial size / duration). ``decode`` (the inherited atan2 center) is
+# scale-and-sum invariant, so it stays byte-identical and returns the center;
+# ``decode_span`` recovers ``(start, end)``.
+_BRACKET_SCALE = 0.5
+
+
+def _bracket_encode(start, end, div_term, scale=_BRACKET_SCALE):
+    """Endpoint-sum key for span ``[start, end]`` (tensor- or scalar-capable).
+
+    ``end is None`` => an instant at ``start`` (byte-identical to the legacy
+    single-quadrature stamp for ``scale == 0.5``)."""
+    if not isinstance(start, torch.Tensor):
+        start = torch.tensor(float(start), device=TheDevice.get())
+    start = start.to(torch.float32)
+    if end is None:
+        end = start
+    elif not isinstance(end, torch.Tensor):
+        end = torch.tensor(float(end), device=start.device, dtype=torch.float32)
+    else:
+        end = end.to(device=start.device, dtype=torch.float32)
+    ds, de = start * div_term, end * div_term
+    s = torch.sin(ds) + torch.sin(de)
+    c = torch.cos(ds) + torch.cos(de)
+    return scale * torch.stack((s, c), dim=-1)
+
+
+def _bracket_decode_span(encoded, div_term, scale=_BRACKET_SCALE, wrap=True,
+                         instant_tol=1e-6):
+    """Recover ``(start, end)`` from an endpoint-sum key.
+
+    ``center = atan2(.) / dt`` (wrapped to ``[0, 2*pi)`` when ``wrap`` so a
+    .where position decodes into ``[0, period)`` like the legacy decode; left
+    unwrapped for signed time axes). ``extent = 2*arccos(radius/2)/dt`` from the
+    magnitude.
+
+    INSTANT SNAP: ``arccos`` is catastrophically sensitive near 1 (an instant
+    has ``radius/2 == 1``), and the slope ``1/dt`` is huge for a large period
+    (~1e4 for ``.when``), so float32 error in ``sin**2+cos**2`` would otherwise
+    give an instant a spurious multi-tick extent. ``radius/2 >= 1 - instant_tol``
+    (i.e. ``1 - cos(half*dt) <= instant_tol``) is snapped to a zero-extent
+    instant. This fixes the resolution FLOOR at ``~sqrt(2*instant_tol)/dt`` --
+    fine (sub-byte) for ``.where`` at a typical ``nObjects``, ~15 ticks for
+    ``.when`` at period 65536 (durations below the floor read as instants).
+    Both outputs broadcast over ``encoded[..., :2]``."""
+    if not isinstance(encoded, torch.Tensor):
+        encoded = torch.as_tensor(encoded, dtype=torch.float32)
+    w0 = encoded[..., 0] / scale
+    w1 = encoded[..., 1] / scale
+    angle = torch.atan2(w0, w1)
+    if wrap:
+        angle = angle % (2 * math.pi)
+    center = angle / div_term
+    radius = torch.sqrt(w0 * w0 + w1 * w1)
+    ratio = torch.clamp(radius / 2.0, -1.0, 1.0)
+    half = torch.arccos(ratio) / div_term
+    half = torch.where(ratio >= 1.0 - instant_tol, torch.zeros_like(half), half)
+    return center - half, center + half
+
+
 class WhereEncoding(QuadratureEncoding):
     """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
 
@@ -397,6 +476,25 @@ class WhereEncoding(QuadratureEncoding):
             self.nDim = 0
         self.p = 0
 
+    def encode(self, start, end=None):
+        """Endpoint-sum bracket key for a span ``[start, end]`` (sin/cos pair).
+
+        ``end is None`` (every legacy single-position call site -- ``forward``,
+        ``set_where``, the codebook stamp) => an INSTANT at ``start``, which is
+        BYTE-IDENTICAL to the pre-bracket single-quadrature encoding (``0.5 * 2``
+        is exact). Passing a distinct ``end`` (the word-span compaction, the
+        mereology synthesis path) carries the real start-end bracket: the angle
+        is the span center, the magnitude the span extent."""
+        return _bracket_encode(start, end, self.div_term)
+
+    def decode_span(self, encoded):
+        """Recover ``(start, end)`` byte positions from a .where bracket key.
+
+        ``decode`` (inherited) returns the span CENTER (byte-identical, the
+        position for an instant); ``decode_span`` adds the endpoints for the
+        contiguity / containment test (centers wrap into ``[0, period)``)."""
+        return _bracket_decode_span(encoded, self.div_term, wrap=True)
+
     def forward(self, x):
         """Stamp sin/cos positional values into reserved embedding slots.
 
@@ -434,59 +532,64 @@ class WhereEncoding(QuadratureEncoding):
         print(f"Positions decoded: {offsets}")
 
 
-# .when single-scaled-quadrature-phasor scheme (2026-06-07 redesign, FINAL).
+# .when endpoint-sum BRACKET scheme (2026-06-16 redesign).
 #
-# ``.when = D * [sin(2*pi*t/_WHEN_PERIOD), cos(2*pi*t/_WHEN_PERIOD)]`` -- a
-# single 2-vector whose ANGLE encodes the absolute model time ``t`` and whose
-# MAGNITUDE ``D in [0, 1]`` is the TENSE position (0=past, 0.5=PRESENT default,
-# 1=future). Event-extent DURATION is retired: the magnitude is tense now, not
-# duration. The serialized ``BasicModel.when_time`` long counter owns the EXACT
-# absolute time; ``.when``'s angle is the coarse (folded/aliasing) feature.
+# ``.when`` is now the same endpoint-sum bracket as ``.where`` (see
+# ``_bracket_encode``), keyed on a span of model TIME ``[start, end]`` measured
+# from the model clock origin:
 #
-# Float resolution: the per-time-tick angular step is
-# ``2*pi/_WHEN_PERIOD ~ 9.6e-5`` rad; scaled by the present magnitude
-# ``D ~ 0.5`` it is ``~4.8e-5`` -- still >~400x float32 epsilon (~1.2e-7), so
-# adjacent ticks stay distinguishable in the float32 ``.when`` dtype. Tense
-# steps are ``_WHEN_TENSE_STEP = 0.1`` apart in magnitude (a huge margin). The
-# magnitude lives in ``[0, 1]`` (no magnitude-near-2 precision problem) and
-# every component stays in ``[-1, 1]`` (network-friendly).
+#   .when = 0.5 * [sin(s*dt)+sin(e*dt),  cos(s*dt)+cos(e*dt)],   dt = 2*pi/period
+#
+# so the ANGLE decodes the event-time CENTER and the MAGNITUDE decodes the event
+# DURATION (extent). An INSTANT event (start == end == t) collapses to
+# ``[sin(t*dt), cos(t*dt)]`` (magnitude 1). The serialized ``BasicModel.when_time``
+# long counter owns the EXACT absolute time; ``.when``'s angle is the coarse
+# (folded / aliasing) feature.
+#
+# TENSE (past / present / future) is no longer a magnitude axis: it is DERIVED
+# from the interval's position relative to ``now`` (the model clock ``self.t``) --
+# center < now = past, interval contains now = present, center > now = future.
+# ``TenseLayer`` / ``_lift_when`` / ``_lower_when`` move the interval CENTER along
+# time (``shift_time``), preserving the duration. The pre-2026-06-16 magnitude-D
+# tense scheme (and the earlier endpoint-sum *range* / aspect-interval duration)
+# are both superseded.
 #
 # ``_WHEN_MAXT`` is retained as a back-compat alias for ``_WHEN_PERIOD`` so the
 # existing construction sites that import / pass it keep working.
 _WHEN_PERIOD = 65536
 _WHEN_MAXT = _WHEN_PERIOD
-# Tense magnitude defaults / step: 0.5 = PRESENT, +/- 0.1 per next()/previous().
+# ``_WHEN_TENSE_DEFAULT`` is RETAINED only as a back-compat constant for the many
+# construction sites that pass ``encode(t, D=_WHEN_TENSE_DEFAULT)``; the ``D``
+# kwarg is now ignored (tense is the interval-vs-now relation, not a magnitude).
 _WHEN_TENSE_DEFAULT = 0.5
-_WHEN_TENSE_STEP = 0.1
+# Tense TIME step in clock ticks: one tense step (PAST / FUTURE, _lift_when /
+# _lower_when) shifts the event-time center by this many ticks toward past /
+# future, preserving the event duration.
+_WHEN_TENSE_STEP = 1.0
 
 
 class WhenRangeEncoding(QuadratureEncoding):
-    """Single scaled quadrature phasor temporal feature in 2 dims (2026-06-07
-    redesign, FINAL). ``.when = D * [sin(2*pi*t/period), cos(2*pi*t/period)]``:
+    """Endpoint-sum BRACKET temporal feature in 2 dims (2026-06-16 redesign).
 
-      * the ANGLE encodes the ABSOLUTE model time ``t`` (``self.t``, synced
-        from the serialized ``BasicModel.when_time`` clock, default 0). The
-        long-int clock owns the EXACT time; ``.when``'s angle is the coarse
-        (folded / aliasing) feature.
-      * the MAGNITUDE ``D in [0, 1]`` is the TENSE position: ``0`` = past,
-        ``0.5`` = PRESENT (default), ``1.0`` = future. ``D`` is tense, NOT
-        event duration (event-extent duration is retired in this redesign).
+    ``.when`` is the same endpoint-sum key as ``.where`` (see ``_bracket_encode``)
+    over a span of model TIME ``[start, end]``:
 
-    Every component lies in ``[-1, 1]`` (network-friendly); the magnitude lives
-    in ``[0, 1]`` (no magnitude-near-2 precision problem). At ``t == 0`` the
-    present default is ``0.5 * [0, 1] = [0, 0.5]``.
+      ``.when = 0.5 * [sin(s*dt)+sin(e*dt), cos(s*dt)+cos(e*dt)]``, dt=2*pi/period
 
-    Tense moves the magnitude by ``+/-_WHEN_TENSE_STEP`` (next/previous),
-    preserving the time-angle. nDim=2 (== nWhere); disabled (nDim=0) when
+      * the ANGLE decodes the event-time CENTER (``self.t`` is the live clock,
+        synced from the serialized ``BasicModel.when_time``; the long-int clock
+        owns the EXACT time, the angle is the coarse / folded feature).
+      * the MAGNITUDE decodes the event DURATION (extent). An INSTANT event
+        (start == end == t) collapses to ``[sin(t*dt), cos(t*dt)]`` (magnitude
+        1), the default stamp.
+
+    TENSE (past / present / future) is DERIVED from the interval vs ``now``
+    (``self.t``): center < now = past, interval straddles now = present, center
+    > now = future. ``TenseLayer`` / ``_lift_when`` / ``_lower_when`` move the
+    event-time CENTER (``shift_time``), preserving duration. The former
+    magnitude-D tense axis is retired (the ``D`` kwarg on ``encode`` is accepted
+    for back-compat and ignored). nDim=2 (== nWhere); disabled (nDim=0) when
     n_when=0.
-
-    Float resolution (per the constant block): the per-time-tick angular step
-    ``2*pi/period ~ 9.6e-5`` rad, scaled by ``D ~ 0.5`` (~4.8e-5), is still
-    >~400x float32 eps; tense steps are 0.1 apart in magnitude (huge margin).
-
-    Edge: ``D == 0`` (extreme past after 5 previous() from 0.5) gives
-    ``.when == [0, 0]`` (no angle); accepted -- the long int owns the time. The
-    rescale (``shift_tense``) and decode guard the divide-by-zero.
     """
     index = []
 
@@ -498,81 +601,72 @@ class WhenRangeEncoding(QuadratureEncoding):
             Encoding.__init__(self, [], 1)
             self.div_term = 2 * math.pi / max(1, maxT)
             self.nDim = 0
-        # Absolute model time the angle encodes. The live BasicModel clock
-        # (``when_time``) propagates here once per batch so a default-stamped
-        # .when carries the ABSOLUTE model time. next/previous are NOT t-shifts
-        # in this scheme -- they move the tense MAGNITUDE, leaving t fixed.
+        # ``now`` -- the model clock origin the tense relation is measured
+        # against. The live BasicModel clock (``when_time``) propagates here once
+        # per batch (see BasicModel._advance_when_time) so a default-stamped
+        # .when is an INSTANT at the absolute model time.
         self.t = 0
-        # Tense magnitude D in [0, 1]; 0.5 = present default. Set by
-        # next()/previous() (scalar form) and by the construction default.
-        self.D = _WHEN_TENSE_DEFAULT
 
-    def encode(self, offsets, D=_WHEN_TENSE_DEFAULT):
-        """Time(s) ``t`` -> scaled phasor ``D * [sin(2*pi*t/period),
-        cos(2*pi*t/period)]`` of shape ``[..., 2]``. ``D`` is the tense
-        magnitude (default 0.5 = present). At ``t == 0, D == 0.5`` this is
-        ``[0, 0.5]``. Used by the event-muxing sites and anywhere a scalar /
-        tensor time is stamped."""
-        if not isinstance(offsets, torch.Tensor):
-            offsets = torch.tensor(float(offsets), device=TheDevice.get())
-        ang = offsets * self.div_term
-        phasor = torch.stack((torch.sin(ang), torch.cos(ang)), dim=-1)
-        return float(D) * phasor
+    def encode(self, start, end=None, D=None):
+        """Endpoint-sum bracket key for an event over time span ``[start, end]``.
+
+        ``end is None`` (every legacy single-time call site) => an INSTANT at
+        ``start`` (magnitude 1). A distinct ``end`` carries the real event
+        duration: angle = time center, magnitude = duration. ``D`` is accepted
+        for back-compat with the retired magnitude-tense scheme and IGNORED."""
+        return _bracket_encode(start, end, self.div_term)
 
     def decode(self, encoded):
-        """Recover ``(t, D)``. ``t = atan2(sin, cos) * period / (2*pi)`` (the
-        folded / approximate angle -- the long-int clock owns the exact time);
-        ``D = sqrt(sin**2 + cos**2)`` is the tense magnitude. Both are returned
-        as float tensors broadcasting over ``encoded[..., :2]``."""
-        w0, w1 = encoded[..., 0], encoded[..., 1]
-        t = torch.atan2(w0, w1) / self.div_term
-        D = torch.sqrt(w0 * w0 + w1 * w1)
-        return t, D
+        """Recover ``(center, extent)`` -- the event-time center (the folded /
+        approximate angle; the long-int clock owns the exact time) and the event
+        duration (from the magnitude). For an INSTANT this is ``(t, 0)``. Both
+        broadcast over ``encoded[..., :2]``."""
+        start, end = _bracket_decode_span(encoded, self.div_term, wrap=False)
+        return (start + end) / 2.0, (end - start)
+
+    def decode_span(self, encoded):
+        """Recover ``(start, end)`` event times (the temporal bracket) for the
+        contiguity / duration test. ``decode`` returns the (center, extent)
+        summary; ``decode_span`` the endpoints."""
+        return _bracket_decode_span(encoded, self.div_term, wrap=False)
+
+    def shift_time(self, when, dt_ticks):
+        """Move a ``.when`` bracket's event-time CENTER by ``dt_ticks`` clock
+        ticks, PRESERVING the duration (extent). Implemented as an exact phase
+        rotation by ``phi = dt_ticks * div_term`` of the endpoint-sum key (no
+        decode -> re-encode round-trip, so it is robust near instants):
+
+          [w0, w1] -> [w0*cos(phi) + w1*sin(phi),  w1*cos(phi) - w0*sin(phi)]
+
+        which advances BOTH endpoint angles by ``phi`` (the time origin shift).
+        Returns a new tensor; invertible via ``-dt_ticks``."""
+        phi = float(dt_ticks) * self.div_term
+        cos_p = math.cos(phi)
+        sin_p = math.sin(phi)
+        w0 = when[..., 0]
+        w1 = when[..., 1]
+        return torch.stack((w0 * cos_p + w1 * sin_p,
+                            w1 * cos_p - w0 * sin_p), dim=-1)
 
     def next(self, k=1):
-        """Scalar FUTURE handle: move the tense magnitude toward future,
-        ``D -> clamp(D + step*k, 0, 1)`` (time-angle preserved), update
-        ``self.D``, and return the re-encoded present phasor at the new D."""
-        self.D = float(min(1.0, max(0.0, self.D + _WHEN_TENSE_STEP * k)))
-        return self.encode(self.t, D=self.D)
+        """Scalar FUTURE handle: the present instant advanced ``k`` ticks toward
+        the future, ``encode(self.t + step*k)`` (time center moves, no mutation
+        of the clock origin ``self.t``)."""
+        return self.encode(self.t + _WHEN_TENSE_STEP * k)
 
     def previous(self, k=1):
-        """Scalar PAST handle: move the tense magnitude toward past,
-        ``D -> clamp(D - step*k, 0, 1)`` (time-angle preserved), update
-        ``self.D``, and return the re-encoded present phasor at the new D."""
-        self.D = float(min(1.0, max(0.0, self.D - _WHEN_TENSE_STEP * k)))
-        return self.encode(self.t, D=self.D)
-
-    def shift_tense(self, when, dD):
-        """Move a ``.when`` tensor's tense magnitude by ``dD`` (clamped to
-        ``[0, 1]``), preserving the time-angle. Rescales the phasor by
-        ``D_new / D`` where ``D > 0``; where the old magnitude is ~0 (a zero
-        phasor has no angle) re-encodes from ``(self.t, D_new)``. Guards the
-        divide-by-zero. Returns a new tensor (.when math used by TenseLayer)."""
-        if not isinstance(dD, torch.Tensor):
-            dD = torch.tensor(float(dD), device=when.device, dtype=when.dtype)
-        _t, D = self.decode(when)
-        D_new = (D + dD).clamp(0.0, 1.0)
-        eps = 1e-8
-        # Safe scale where D>0; fallback re-encode where the old magnitude is
-        # ~0 (no angle to preserve -- use the present-time angle at self.t).
-        scale = torch.where(D > eps, D_new / D.clamp_min(eps),
-                            torch.zeros_like(D))
-        rescaled = when * scale.unsqueeze(-1)
-        unit = self.encode(self.t, D=1.0).to(when.device, when.dtype)
-        unit = unit.expand_as(when)
-        fallback = unit * D_new.unsqueeze(-1)
-        return torch.where((D > eps).unsqueeze(-1), rescaled, fallback)
+        """Scalar PAST handle: the present instant retreated ``k`` ticks toward
+        the past, ``encode(self.t - step*k)``."""
+        return self.encode(self.t - _WHEN_TENSE_STEP * k)
 
     def forward(self, x):
-        """Stamp the PRESENT default ``.when = encode(self.t, D=0.5)`` into the
-        when slots for every input event. At ``self.t == 0`` that is
-        ``0.5 * [0, 1] = [0, 0.5]``; the angle tracks the absolute model clock
-        as it advances."""
+        """Stamp the PRESENT instant ``.when = encode(self.t)`` (start == end ==
+        now, magnitude 1) into the when slots for every input event; the angle
+        tracks the absolute model clock as it advances."""
         if self.nDim == 0:
             return x
         index = np.add([x.shape[-1]] * len(self.index), self.index)
-        key = self.encode(self.t, D=_WHEN_TENSE_DEFAULT)
+        key = self.encode(self.t)
         y = x.clone()
         y[:, :, index] = key.to(y.device).expand(x.shape[0], x.shape[1], -1)
         return y
@@ -585,10 +679,10 @@ class WhenRangeEncoding(QuadratureEncoding):
 
     @staticmethod
     def test():
-        """Self-test: stamp the present phasor and decode it back to (t, D)."""
+        """Self-test: stamp the present instant and decode it to (center, extent)."""
         te = WhenRangeEncoding(n_when=2)              # default period (_WHEN_PERIOD)
-        t, D = te.decode(te.encode(0))
-        print(f"present .when decodes to (t={float(t):.3f}, D={float(D):.3f})")
+        c, ext = te.decode(te.encode(0))
+        print(f"present .when decodes to (center={float(c):.3f}, extent={float(ext):.3f})")
 
 
 # Back-compat alias: existing imports (bin/Models.py) / construction sites
@@ -12382,6 +12476,16 @@ class ConceptualSpace(Space):
                 if sym_pos is not None:
                     ss.record_lbg_pull(int(sym_pos), seed)
                     ss.maybe_split_lbg(int(sym_pos))
+                # Mereological order-raising (gated <mereologyRaise>, dark by
+                # default -> byte-identical). After a percept's META gains /
+                # refreshes its child, rebalance the lattice: a whole with
+                # > K_many parts raises a higher-order part subsuming them.
+                # Re-resolve the parent META via ps_pos (the fresh-bind branch
+                # never set ``meta_pos``); the raise is idempotent per whole.
+                if getattr(ss, '_mereology_raise', False):
+                    _pm = ss.taxonomy_parent(ps_pos)
+                    if _pm is not None:
+                        ss.maybe_raise_order(int(_pm))
 
         # --------------------------------------------------------------
         # MetaSymbol Category codebook E/M (Phase 1; opt-in via
@@ -12396,6 +12500,13 @@ class ConceptualSpace(Space):
         # not re-apply stale observations.
         if (getattr(ss, 'category_codebook_enabled', None) is not None
                 and ss.category_codebook_enabled()):
+            # Phase 2 (chooser conditioning): stash this perception's per-
+            # position percept ids so the NEXT compose can map each terminal
+            # slot -> MetaSymbol -> centroid -> role vector for the MLP
+            # chooser's category context. Perception runs before compose in the
+            # same step (compose reads the STM this forward populated), so the
+            # stash is current. Host list [B][N] (mirrors pid_host).
+            ss._category_last_pid = pid_host
             role_obs = getattr(ss, '_category_role_obs', None)
             role_index = getattr(ss, '_category_role_index', None) or {}
             n_roles = int(getattr(ss, '_category_n_roles', 0) or 0)
@@ -12433,6 +12544,12 @@ class ConceptualSpace(Space):
                         idx = ss.assign_category(W[int(meta_row)].detach().unsqueeze(0))
                         if idx is None:
                             continue
+                        # Phase 2: record the MetaSymbol -> centroid assignment
+                        # so compose can read the centroid (a pure dict read)
+                        # without re-running the E-step at score time.
+                        ca = getattr(ss, '_category_assign', None)
+                        if ca is not None:
+                            ca[int(meta_pos)] = int(idx.reshape(-1)[0])
                         ss.update_category_role(
                             idx, torch.tensor([vec], dtype=torch.float32))
             if hasattr(ss, '_category_role_obs'):
@@ -13519,6 +13636,14 @@ class WholeSpace(PerceptualSpace):
         # nodes that carry no trust posture (e.g. the percept<->symbol
         # autobind METAs). Persisted via ``vocab_extras``.
         self.meta_trust: dict = {}
+        # Mereological order-raising provenance (doc/specs/mereological-order-
+        # raising.md). Keyed by a higher-order META position -> ordered list of
+        # the constituent PS positions it subsumes. A higher-order part's .where
+        # is discontiguous (it is abstract), so its meronymy to its lower-order
+        # parts is tracked explicitly here, not read off .where. Empty unless
+        # <mereologyRaise> raises an order; persisted via ``vocab_extras`` only
+        # when non-empty (so flag-off checkpoints stay byte-identical).
+        self.part_chain: dict = {}
         # LBG (Linde-Buzo-Gray) codebook-splitting state (2026-05-28).
         # When an SS row collects training pulls in opposite directions
         # (assignment-variance > threshold), split it into two perturbed
@@ -13811,6 +13936,13 @@ class WholeSpace(PerceptualSpace):
             self.butterfly_enabled = bool(_sigma_butterfly)
         self.layers.append(self.pi)
         self.params += self.pi.getParameters()
+
+        # Mereological run-structure measure (the part/whole ratio + the
+        # A-isa-B containment test, doc/specs/mereological-order-raising.md).
+        # Parameter-free Layer; on self.layers so the Start/End/Reset cascade
+        # reaches it. Consumed GATED + read-only in _stage0_unity_forward.
+        self.run_structure = RunStructureLayer()
+        self.layers.append(self.run_structure)
 
         # Propositional negation slot: NEG sits at the WholeSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
@@ -14968,6 +15100,154 @@ class WholeSpace(PerceptualSpace):
         """True iff ``pos`` is tagged as a META node in ``_pos_kind``."""
         return self._pos_kind.get(int(pos)) == "meta"
 
+    # -- Mereological order-raising: link removal + enumeration ---------
+    #
+    # doc/specs/mereological-order-raising.md (force #2 prune the moot
+    # part-whole edges; force #3 drop a spurious / singleton link). These
+    # invert the registrations ``insert_meta`` makes; they are called ONLY
+    # from the <mereologyRaise> path (no default-path caller), so flag-off is
+    # byte-identical. The underlying codebook row is left in place (rows are
+    # never freed -- same convention as dead LBG-split rows).
+
+    def ps_children_of_whole(self, ss_pos):
+        """The PS positions (parts) linked to a whole ``ss_pos`` across ALL its
+        METAs -- the "how many parts under this whole" count for force #2.
+
+        ``taxonomy_children(meta)`` is always the 2-tuple ``[ps, ss]`` of one
+        autobind META, so counting parts of a WHOLE requires scanning every
+        META whose children include ``ss_pos`` and collecting the PS child."""
+        ss = int(ss_pos)
+        out = []
+        for _meta, kids in self.taxonomy.items():
+            if ss in kids:
+                for c in kids:
+                    if self._pos_kind.get(int(c)) == "ps":
+                        out.append(int(c))
+        return out
+
+    @torch.no_grad()
+    def delete_meta(self, meta_pos):
+        """Retire an autobind-shaped META node, inverting every registration
+        ``insert_meta`` made (taxonomy, parent_map, the (ps,ss)-keyed pair
+        cache, _pos_kind, the pos<->row maps, meta_trust, the LBG accumulators,
+        and part_chain). Idempotent: returns ``False`` when ``meta_pos`` is not
+        a live META node. Leaves the codebook row allocated (never freed)."""
+        p = int(meta_pos)
+        if self._pos_kind.get(p) != "meta":
+            return False
+        children = list(self.taxonomy.get(p, []))
+        # meta_pair_to_idx is keyed by the (ps,ss) tuple, never by p -- reverse-
+        # scan by value (idempotent, robust to re-parented children).
+        for k in [k for k, v in self.meta_pair_to_idx.items() if int(v) == p]:
+            self.meta_pair_to_idx.pop(k, None)
+        self.taxonomy.pop(p, None)
+        for c in children:
+            if self.taxonomy_parent_map.get(int(c)) == p:
+                self.taxonomy_parent_map.pop(int(c), None)
+        self._pos_kind.pop(p, None)
+        self.meta_trust.pop(p, None)
+        self.part_chain.pop(p, None)
+        row = self._ss_pos_to_row.pop(p, None)
+        if row is not None and self._ss_row_to_pos.get(int(row)) == p:
+            self._ss_row_to_pos.pop(int(row), None)
+        # LBG accumulators are keyed by sym position (defensive pop of p).
+        self._lbg_disp_sum.pop(p, None)
+        self._lbg_disp_sum_sq.pop(p, None)
+        self._lbg_count.pop(p, None)
+        return True
+
+    @torch.no_grad()
+    def unlink_child(self, parent_pos, child_pos):
+        """Remove ONE part-whole edge ``parent_pos -> child_pos`` without
+        retiring the parent. If the parent is left with no children it is
+        retired via :meth:`delete_meta`. Returns ``True`` on a change."""
+        parent = int(parent_pos)
+        child = int(child_pos)
+        kids = self.taxonomy.get(parent)
+        if not kids or child not in kids:
+            return False
+        kids = [c for c in kids if int(c) != child]
+        self.taxonomy[parent] = kids
+        if self.taxonomy_parent_map.get(child) == parent:
+            self.taxonomy_parent_map.pop(child, None)
+        # Repair the (ps,ss)-keyed pair cache: drop any entry -> parent whose
+        # key references the removed child.
+        for k in [k for k, v in self.meta_pair_to_idx.items()
+                  if int(v) == parent and child in k]:
+            self.meta_pair_to_idx.pop(k, None)
+        if not kids:
+            self.delete_meta(parent)
+        return True
+
+    @torch.no_grad()
+    def maybe_raise_order(self, meta_pos):
+        """Mereological order-raising (doc/specs/mereological-order-raising.md,
+        force #2): when a whole has accumulated more than ``K_many`` parts,
+        synthesize a higher-order PART that subsumes them -- a new node carrying
+        the combined code, abstraction order one above its constituents, with
+        explicit ``part_chain`` provenance (a higher-order part is abstract: its
+        ``.where``/``.when`` are discontiguous, so its meronymy is tracked here,
+        not read off ``.where``). **Idempotent per whole** (fires once it first
+        crosses the threshold, never churns). Returns the new higher-order
+        position on a raise, else ``None``.
+
+        First pass (the spec's "subsymbolic first" phase): the higher-order code
+        is the mean-combine of its constituents' bound vectors and ``part_chain``
+        is the source of truth; the σ-over-set geometric synthesis
+        (:meth:`SigmaLayer.synthesize_over_set`) and the prune-and-rebind of the
+        moot per-part edges (which needs discriminate-from-others re-binding to
+        avoid orphan churn) are deferred. Gated: only ever reached when
+        ``_mereology_raise`` is set."""
+        children = self.taxonomy_children(int(meta_pos))
+        if not children:
+            return None
+        whole = next((int(c) for c in children
+                      if self._pos_kind.get(int(c)) in ("ss", "meta")), None)
+        if whole is None:
+            return None
+        raised = getattr(self, '_mereology_raised', None)
+        if raised is None:
+            raised = set()
+            object.__setattr__(self, '_mereology_raised', raised)
+        if whole in raised:
+            return None                       # idempotent -- already raised
+        ps_children = self.ps_children_of_whole(whole)
+        k_many = int(getattr(self, '_mereology_k_many', 4))
+        if len(ps_children) <= k_many:
+            return None
+        cb = getattr(self.subspace, 'what', None)
+        W = cb.getW() if cb is not None else None
+        if W is None:
+            return None
+        # Gather the constituents' bound META vectors -> [M, D], and their
+        # current abstraction orders (the raised part sits one fold above).
+        rows, orders = [], []
+        for pc in ps_children:
+            m = self.taxonomy_parent(int(pc))
+            if m is None:
+                continue
+            r = self._ss_pos_to_row.get(int(m))
+            if r is None or int(r) >= int(W.shape[0]):
+                continue
+            rows.append(int(r))
+            orders.append(int(cb.abstraction_order(int(r))))
+        if len(rows) < 2:
+            return None
+        raised_code = W[rows].detach().mean(dim=0)   # subsymbolic-first combine
+        # Mint the higher-order node, record its constituents, and bump its
+        # order one above the max constituent order (clamped to the table width
+        # = subsymbolicOrder, per "subsymbolicOrder sets the max order").
+        ho_pos = self.insert_symbol(init_vec=raised_code)
+        self._pos_kind[ho_pos] = "meta"
+        self.taxonomy[ho_pos] = [int(whole)] + [int(p) for p in ps_children]
+        self.part_chain[ho_pos] = [int(p) for p in ps_children]
+        ho_row = self._ss_pos_to_row.get(ho_pos)
+        if ho_row is not None and cb.ramsification is not None:
+            for _pidx in range((max(orders) if orders else 0) + 1):
+                cb.record_fold(torch.tensor([int(ho_row)]), _pidx, cb.FOLD_SIGMA)
+        raised.add(int(whole))
+        return ho_pos
+
     @torch.no_grad()
     def nearest_ss_row(self, vec):
         """Return ``(row, distance)`` of the nearest SS-codebook row to
@@ -15140,7 +15420,7 @@ class WholeSpace(PerceptualSpace):
         existing ``well_known_atoms`` + ``_paired_orth_to_sem`` state.
         Lists/dicts are JSON-friendly; tuple keys are stringified.
         """
-        return {
+        _ve = {
             "well_known_atoms": dict(self.well_known_atoms),
             "paired_orth_to_sem": {
                 int(k): int(v)
@@ -15184,6 +15464,15 @@ class WholeSpace(PerceptualSpace):
                 int(k): int(v) for k, v in self._ss_pos_to_row.items()
             },
         }
+        # Mereological order-raising provenance (doc/specs/mereological-order-
+        # raising.md). Emitted ONLY when non-empty so a flag-off checkpoint
+        # blob is byte-identical to the pre-feature baseline (no new key).
+        if getattr(self, "part_chain", None):
+            _ve["part_chain"] = {
+                int(k): [int(c) for c in v]
+                for k, v in self.part_chain.items()
+            }
+        return _ve
 
     def load_vocab_extras(self, extras):
         """Restore the pure-Python state from a :meth:`vocab_extras` blob.
@@ -15283,6 +15572,12 @@ class WholeSpace(PerceptualSpace):
         if isinstance(mt, dict):
             self.meta_trust = {
                 int(k): tuple(float(x) for x in v) for k, v in mt.items()
+            }
+        # Mereological order-raising provenance (absent in pre-feature blobs).
+        pc = extras.get("part_chain")
+        if isinstance(pc, dict):
+            self.part_chain = {
+                int(k): [int(c) for c in v] for k, v in pc.items()
             }
 
     def _migrate_signed_int_taxonomy(self, tax, tp_blob, mp_blob):
@@ -16884,6 +17179,15 @@ class WholeSpace(PerceptualSpace):
                 B, N, D, device=dev, dtype=torch.get_default_dtype()))
             return self.subspace
         spans = getattr(self, "_staged_analysis_spans", None)
+        # Mereological ratio observation (GATED + READ-ONLY): the part/whole
+        # run-structure of the live analysis spans, computed by the
+        # WholeSpace-owned RunStructureLayer and threaded as a forward-local
+        # (the repo's "thread, do not persist" rule). ``spans`` is [B, K, 2]
+        # (start, end), None in byte mode. Off (default ``_mereology_raise``
+        # unset) => not computed, byte-identical.
+        if getattr(self, "_mereology_raise", False) and spans is not None:
+            object.__setattr__(self, "_mereology_ratio_obs",
+                               self.run_structure(spans.to(torch.float32)))
         carrier, W = self._stage0_carrier(IS_concepts, spans)
         # Thread the pre-snap z + indices as forward-locals (the repo's
         # data-flow rule: thread, do not persist) -- consumed by tests and

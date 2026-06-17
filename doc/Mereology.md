@@ -229,6 +229,80 @@ XML knobs (under WholeSpace):
 
 ---
 
+## Order-raising (building the meronymic lattice)
+
+Gated behind `<mereologyRaise>` (default off → byte-identical). Full design +
+code map: [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
+
+The two towers stay **in-kind** — `PartSpace` σ *composes parts → parts*,
+`WholeSpace` π *analyses wholes → wholes* — and the **symbol (META node) is the
+cross-tower link**, associated with both an overlapping part and whole
+(`insert_meta(ps_pos, ss_pos)`). An object's identity is **isomorphic**: σ-up
+meets π-down at the object. At init there are only **atoms** (PartSpace) and the
+**universe** (WholeSpace); objects emerge from attention.
+
+Three balancing forces keep a single coherent lattice and converge it:
+
+1. **Link the tightest relation** — the largest part ↔ the smallest whole (via
+   `.where` extent); skip a link a bigger-part/smaller-whole already subsumes;
+   drop useless symbols.
+2. **Too many parts → synthesize a higher-order part** (`maybe_raise_order`):
+   when a whole accumulates more than `K_many` parts, mint a higher-order PART
+   that subsumes them, with **abstraction order** one above its constituents
+   (tracked via the ramsification table — order 0 = atom, 1 = basic category,
+   …) and explicit `part_chain` provenance (a higher-order part is abstract, so
+   its `.where`/`.when` are discontiguous and the meronymy is tracked, not read
+   off `.where`). Idempotent per whole.
+3. **Only one part → Lewis' Singleton → analyse the whole** (π divides) or drop
+   the spurious link.
+
+Link surgery: `delete_meta` / `unlink_child` (invert `insert_meta`'s
+registrations); `ps_children_of_whole` counts a whole's parts. The higher-order
+code is synthesized by `SigmaLayer.synthesize_over_set` (the M-way generalization
+of the binary atanh-sum fold) — or, in the "subsymbolic first" phase, the
+mean-combine of constituents, with `part_chain` as the source of truth. (First
+pass: the raise fires correctly when a whole has many parts; the live pid-keyed
+autobind binds 1 percept→1 symbol, so similarity-based many-to-one binding + the
+prune-and-rebind of moot edges are noted follow-ups.)
+
+### The corpus callosum links the towers (part `isa` whole)
+
+The full mechanism (see the spec): the **corpus callosum** in ConceptualSpace (the
+learned `[2N,N]` `self.callosum` glue) is what joins the towers into one meronomy. A
+part `A` (PartSpace) and a whole `B` (WholeSpace) have `.what` codes from *different*
+codebooks (incomparable), but their **`.where` is comparable** — so the callosum
+asks `WhereEncoding` whether `A.where` is *part of* `B.where`; when it is (and no
+greater part / lesser whole intervenes, per codebook activation) it links **`A isa
+B`** (token `isa` type; the type *names* the token). Co-occurrence at the same
+`.where`/`.when` drives the link, weakening when they dissociate — a **Hebbian**
+coupling between codebooks.
+
+Since the 2026-06-16 redesign `.where` (and `.when`) is an **endpoint-sum bracket**
+`[start, end]` (angle = span center, magnitude = extent), so this *part-of* test is
+a direct read: `WhereEncoding.decode_span` recovers each code's `(start, end)` and
+containment is `A.start ≥ B.start ∧ A.end ≤ B.end`; **contiguity** (adjacency / gap)
+between sibling parts is the same endpoint comparison. An instant snaps to zero
+extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.)
+
+Word ↔ object cannot be linked this way (too unlike; no convex set is specific
+enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
+`.where`/`.when`**, fusing the word-code and object-code into the symbol used in
+serial communication (the MetaSymbol). Because symbols are outliers, part↔whole
+associations live in a **two-code LUT** and the symbolic taxonomy is **relations
+over symbol indices** — which are the TruthLayer's **absolute truths** (propositions)
+and **relative truths** (`RelativeTruthStore`), to be integrated. Taxonomy relations
+are also learned **explicitly from trusted language** ("cats are furry" → `[cats] <=
+[furry]`).
+
+**Granularity / the part-whole ratio** is the correctness signal (and the MM_20M
+mean-collapse fix): *many parts → one whole* = under-analysed; *one part → one whole*
+= over-analysed. An incorrect ratio is the criterion to request **further synthesis
+(σ, e.g. radix) or analysis (π, property tiling) within the problematic `.where`** —
+until words emerge as parts. MM_20M collapses because its byte chunker never climbs
+and its analyser never descends, so no word-granularity parts exist for XOR.
+
+---
+
 ## Why This Design
 
 - **Parthood as projection.** One formula, Boole-contrapositive exact,

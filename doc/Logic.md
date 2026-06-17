@@ -171,6 +171,16 @@ it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
 - **`field(concepts)`** --- project all stored truths into ConceptualSpace as a
   scalar field over concept vectors.
 
+> **Integration with the meronomy ([doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md)).**
+> The absolute truth set (propositions, e.g. `cat <= [animal() & orange() &
+> object()]`) and the `RelativeTruthStore` (relations between two ideas, e.g.
+> `[cats] <= [furry]`) are **the same two structures** the corpus callosum needs for
+> the symbol-relation meronomy: a two-code part↔whole LUT (absolute) plus relations
+> over symbol indices (relative). These are to be **integrated** — the part↔whole LUT
+> *is* the absolute table; the symbol-taxonomy relations *are* the relative table.
+> Taxonomy relations are also learned **explicitly from trusted language** ("cats are
+> furry" → the relation `[cats] <= [furry]`, admitted when trusted).
+
 ### Truth Field
 
 $$
