@@ -42,7 +42,7 @@ from embed import (
 ) 
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
-from Layers import PropertyTilingLayer, char_class_region  # char-class property tiling (S6/B1)
+from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer
 # NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
@@ -11594,7 +11594,10 @@ class ConceptualSpace(Space):
     the pushed idea verbatim.
 
     Supports optional self-attention and VQ codebook quantization on
-    the pushed idea (read-only snap; codebook writes happen at SS).
+    the pushed idea (a read-only snap into a tower codebook). The SYMBOL
+    TABLE (cross-tower part<->whole bindings) and the TAXONOMY over those
+    symbols are owned by ConceptualSpace; the per-tower codebooks
+    (PartSpace parts, WholeSpace wholes) are READ-ONLY to CS.
     """
     name = "Concepts"
     config_section = "ConceptualSpace"
@@ -12456,13 +12459,19 @@ class ConceptualSpace(Space):
                 and torch.is_tensor(seed_event)
                 and seed_event.dim() == 3
                 and seed_event.shape[:2] == pid_2d.shape):
+            # Percept `.where` rides on the PS ``subspace.where`` (filled in
+            # _embed_radix, gated); read it from the SubSpace, not a stash.
+            _ps_sub = getattr(ps_peer, 'subspace', None)
+            _ps_where = getattr(_ps_sub, 'where', None)
+            percept_where = _ps_where.getW() if _ps_where is not None else None
             self._maybe_autobind_meta(
                 pid_2d, seed_event,
                 word_groups=ps_fwd.get('word_groups'),
-                tokens=ps_fwd.get('tokens'))
+                tokens=ps_fwd.get('tokens'),
+                percept_where=percept_where)
 
     def _maybe_autobind_meta(self, pid_2d, vec_tensor, word_groups=None,
-                             tokens=None):
+                             tokens=None, percept_where=None):
         """Auto-bind PS percepts to fresh SS symbols + META edges.
 
         Task G relocation: moved here from ``PartSpace`` so the
@@ -12528,6 +12537,12 @@ class ConceptualSpace(Space):
                 and tuple(word_groups.shape) == tuple(pid_2d.shape)):
             self._autobind_word_wholes(
                 pid_2d, vec_tensor, word_groups, tokens, ss)
+            # Cross-tower `.where`-gated binding (A4): percept-TYPE ⊑ generic
+            # word-TYPE when the percept `.where` (subspace.where) nests inside a
+            # WS whole `.where` (the staged analysis spans). The LATTICE
+            # (taxonomy_parents) retains this ALONGSIDE the per-text word edge
+            # above. No-op when `.where` / spans are unavailable (byte analysis).
+            self._autobind_cross_tower(pid_2d, percept_where, ss)
             return
         bound = getattr(self, '_autobound_percept_ids', None)
         if bound is None:
@@ -12723,6 +12738,233 @@ class ConceptualSpace(Space):
                 # part subsuming them (idempotent per whole).
                 if last_meta is not None:
                     ss.maybe_raise_order(int(last_meta))
+
+    def _autobind_cross_tower(self, pid_2d, percept_where, ss):
+        """Live cross-tower ``.where``-gated meronomy (S6/A4; doc/specs/
+        mereological-order-raising.md "How analysis/whole types integrate").
+
+        Bind each PS percept-TYPE to the generic WS **word** whole-TYPE when its
+        ``.where`` (read from PS ``subspace.where`` -- the SubSpace field, not a
+        stash) nests inside a WS whole ``.where`` (the staged analysis spans,
+        the WS-side ``.where``). "Is letter A part of *word*? by the ``.where``."
+        Runs ALONGSIDE :meth:`_autobind_word_wholes` (the per-text σ binding):
+        the LATTICE (``taxonomy_parents``) retains BOTH edges (A ⊑ "cat" AND
+        A ⊑ word-type), no single-parent conflict. No-op when the percept
+        ``.where`` or the WS whole spans are unavailable (e.g. byte-mode
+        analysis stages no spans) -- so it is inert until a config stages word/
+        analyse spans. Errors propagate (fail-loud)."""
+        if percept_where is None or not torch.is_tensor(percept_where):
+            return
+        spans = getattr(ss, '_staged_analysis_spans', None)
+        if spans is None or not torch.is_tensor(spans):
+            return
+        B = int(pid_2d.shape[0])
+        for b in range(B):
+            if b >= int(percept_where.shape[0]) or b >= int(spans.shape[0]):
+                break
+            ss.record_cross_tower_meronomy(
+                pid_2d[b], percept_where[b], spans[b], [_WORD_CLASS])
+        # S2a: ALSO populate the relation-only CS symbol table (the new home).
+        # Runs alongside the legacy WS taxonomy above; the CS table is the
+        # migration target. Additive -- new CS state, the WS path is unchanged.
+        self._populate_cs_symbols(pid_2d, percept_where, spans)
+        # S2b: zero out the 1:1 mappings -- a location-symbol that resolved to a
+        # single part + single whole is the id-of-indiscernibles identity tie and
+        # needs no further processing; the N:1 / 1:N (large N) symbols remain in
+        # the active set for the subsymbolic loop (+ the doc-noted send-back).
+        # Host-side (at Reset), like the binding above.
+        self.resolve_identities()
+
+    def _populate_cs_symbols(self, pid_2d, percept_where, spans):
+        """Populate the relation-only CS symbol table from the live `.where`
+        binding (S2a; doc/specs/mereological-order-raising.md "The CS symbol
+        table"). For each analysis-span (a LOCATION), mint a symbol whose
+        ``Parts`` are the percept-codes whose `.where` nests in the span and
+        whose ``Whole`` is the word-type -- the per-location "knitting" of the
+        parts covering a location to the wholes covering it. The location-symbol
+        is transient (it later collapses to an identity tie or triggers
+        refinement + retires). No-op when `.where` / spans are unavailable."""
+        if (percept_where is None or not torch.is_tensor(percept_where)
+                or spans is None or not torch.is_tensor(spans)):
+            return
+        B = int(pid_2d.shape[0])
+        N = int(pid_2d.shape[1])
+        K = int(spans.shape[1]) if spans.dim() == 3 else 0
+        for b in range(B):
+            if b >= int(percept_where.shape[0]) or b >= int(spans.shape[0]):
+                break
+            for k in range(K):
+                s = int(spans[b, k, 0])
+                e = int(spans[b, k, 1])
+                if e <= s:
+                    continue                      # pad span
+                loc_sym = None
+                for n in range(N):
+                    pid = int(pid_2d[b, n])
+                    if pid < 0:
+                        continue
+                    wp = int(percept_where[b, n])
+                    if s <= wp < e:               # percept `.where` in the span
+                        if loc_sym is None:
+                            loc_sym = self.new_symbol()
+                        self.add_part(loc_sym, pid)
+                if loc_sym is not None:
+                    self.add_whole(loc_sym, _WORD_CLASS)
+
+    # ------------------------------------------------------------------
+    # Relation-only CS symbol table + taxonomy (2026-06-17; doc/specs/
+    # mereological-order-raising.md "The CS symbol table + taxonomy").
+    #
+    # A SYMBOL is RELATION-ONLY -- no learnable vector, no codebook row. It
+    # ties PS part-codes <-> WS whole-codes (read from their codebooks), and is
+    # defined by TWO INDEPENDENT multi-valued attribute sets: Parts(S) and
+    # Wholes(S). A relation BETWEEN symbols is REIFIED as a new symbol (the
+    # word<->object META is this special case). Symbols are stable ids that
+    # accumulate parts/wholes; OVER-collection is actionable (triggers
+    # refinement); collapse to ONE part + ONE whole is the id-of-indiscernibles
+    # IDENTITY tie (the sets' role is subsumed by the codebooks). This is the
+    # NEW home (additive); the legacy WholeSpace meta-vector taxonomy migrates
+    # onto it in a later stage.
+    # ------------------------------------------------------------------
+
+    def _sym_tables(self):
+        """Lazy-init the relation-only symbol tables. Returns ``(parts,
+        wholes)``; also sets ``_sym_next`` (id allocator, 0 reserved) and
+        ``_sym_relate_idx`` ((part, whole) -> symbol idempotency cache)."""
+        parts = getattr(self, "_sym_parts", None)
+        if parts is None:
+            parts = {}
+            object.__setattr__(self, "_sym_parts", parts)
+            object.__setattr__(self, "_sym_wholes", {})
+            object.__setattr__(self, "_sym_next", 1)
+            object.__setattr__(self, "_sym_relate_idx", {})
+        return self._sym_parts, self._sym_wholes
+
+    def new_symbol(self):
+        """Allocate a fresh relation-only symbol id (a stable handle, no
+        vector). Parts(S) / Wholes(S) start empty."""
+        self._sym_tables()
+        sid = int(self._sym_next)
+        object.__setattr__(self, "_sym_next", sid + 1)
+        self._sym_parts[sid] = set()
+        self._sym_wholes[sid] = set()
+        return sid
+
+    def add_part(self, sym, part):
+        """Add ``part`` (a part-code or a sub-symbol ref) to Parts(sym)."""
+        self._sym_tables()
+        self._sym_parts.setdefault(int(sym), set()).add(part)
+
+    def add_whole(self, sym, whole):
+        """Add ``whole`` (a whole-code or a super-symbol ref) to Wholes(sym)."""
+        self._sym_tables()
+        self._sym_wholes.setdefault(int(sym), set()).add(whole)
+
+    def symbol_parts(self, sym):
+        """Parts(sym) as a deterministically-ordered list (may mix part-codes
+        and ``('sym', id)`` sub-symbol refs)."""
+        self._sym_tables()
+        return sorted(self._sym_parts.get(int(sym), ()), key=repr)
+
+    def symbol_wholes(self, sym):
+        """Wholes(sym) as a deterministically-ordered list."""
+        self._sym_tables()
+        return sorted(self._sym_wholes.get(int(sym), ()), key=repr)
+
+    def relate(self, part, whole):
+        """The per-location symbol tying ``part`` to ``whole`` -- minted once
+        (idempotent per ``(part, whole)``). The symbol accumulates more parts /
+        wholes as it evolves (use :meth:`add_part` / :meth:`add_whole`)."""
+        self._sym_tables()
+        key = (part, whole)
+        existing = self._sym_relate_idx.get(key)
+        if existing is not None:
+            return int(existing)
+        sid = self.new_symbol()
+        self._sym_parts[sid].add(part)
+        self._sym_wholes[sid].add(whole)
+        self._sym_relate_idx[key] = sid
+        return sid
+
+    def reify_relation(self, a_sym, b_sym):
+        """Reify ``a <= b`` between two symbols as a new symbol C with
+        Parts(C)={a}, Wholes(C)={b} -- the taxonomy edge (word<->object META is
+        the special case). Sub-symbol refs are tagged ``('sym', id)`` so they
+        never collide with raw part/whole codes."""
+        return self.relate(("sym", int(a_sym)), ("sym", int(b_sym)))
+
+    def symbol_is_identity(self, sym):
+        """True iff Parts(sym) and Wholes(sym) have each collapsed to exactly
+        ONE element -- the id-of-indiscernibles identity tie (σ-up meets π-down
+        at the object); the sets' role is then subsumed by the codebooks."""
+        self._sym_tables()
+        s = int(sym)
+        return (len(self._sym_parts.get(s, ())) == 1
+                and len(self._sym_wholes.get(s, ())) == 1)
+
+    def symbol_over_collected(self, sym, *, k_parts=None, k_wholes=None):
+        """True iff ``sym`` has TOO MANY parts or wholes -- actionable, i.e. it
+        should trigger refinement (more-parts-per-symbol via σ-synthesis;
+        fewer-wholes-per-symbol via π-analysis / splitting an over-subscribed
+        whole). Thresholds default to ``_sym_k_many`` (4)."""
+        self._sym_tables()
+        kp = int(k_parts if k_parts is not None
+                 else getattr(self, "_sym_k_many", 4))
+        kw = int(k_wholes if k_wholes is not None
+                 else getattr(self, "_sym_k_many", 4))
+        s = int(sym)
+        return (len(self._sym_parts.get(s, ())) > kp
+                or len(self._sym_wholes.get(s, ())) > kw)
+
+    def retire_symbol(self, sym):
+        """Retire a TRANSIENT symbol that has triggered refinement -- the
+        restructuring it signaled supersedes it. Idempotent; drops its
+        Parts / Wholes sets and any idempotency-cache entries pointing at it."""
+        self._sym_tables()
+        s = int(sym)
+        self._sym_parts.pop(s, None)
+        self._sym_wholes.pop(s, None)
+        for k in [k for k, v in self._sym_relate_idx.items() if int(v) == s]:
+            self._sym_relate_idx.pop(k, None)
+
+    def resolve_identities(self):
+        """ZERO OUT the 1:1 mappings — the main over-collection deliverable
+        (doc/specs/mereological-order-raising.md "over-collection driving both
+        towers"). A symbol with exactly ONE part + ONE whole is the
+        id-of-indiscernibles IDENTITY tie (σ-up meets π-down at the object); its
+        role is subsumed by the part / whole codebooks, so it needs **no further
+        processing**. Record the ``(part, whole)`` identity on ``_sym_identity``
+        and CLEAR its Parts / Wholes sets (they vanish), removing it from the
+        active processing set. Returns the newly-resolved symbol ids. The
+        per-code refinement of the still-active symbols is the existing
+        subsymbolic loop's job (over ``subsymbolicOrder`` iterations)."""
+        parts, wholes = self._sym_tables()
+        ident = getattr(self, "_sym_identity", None)
+        if ident is None:
+            ident = {}
+            object.__setattr__(self, "_sym_identity", ident)
+        resolved = []
+        for sym in list(parts.keys()):
+            if len(parts.get(sym, ())) == 1 and len(wholes.get(sym, ())) == 1:
+                ident[sym] = (next(iter(parts[sym])), next(iter(wholes[sym])))
+                parts[sym] = set()        # sets vanish (subsumed by codebooks)
+                wholes[sym] = set()
+                resolved.append(sym)
+        return resolved
+
+    def symbol_identity(self, sym):
+        """The ``(part, whole)`` identity a resolved 1:1 symbol established (via
+        :meth:`resolve_identities`), or ``None`` if the symbol is not a resolved
+        identity."""
+        ident = getattr(self, "_sym_identity", None)
+        return None if ident is None else ident.get(int(sym))
+
+    def symbols_needing_processing(self):
+        """The symbols that still need refinement: those with a non-empty Parts
+        or Wholes set (not yet resolved to a 1:1 identity, not retired). The
+        zeroed-out 1:1 identities are excluded — they are done."""
+        parts, wholes = self._sym_tables()
+        return sorted(s for s in parts if parts.get(s) or wholes.get(s))
 
     # ------------------------------------------------------------------
     # Task 6c: content-aware learn-score acceptance gate + tetralemma

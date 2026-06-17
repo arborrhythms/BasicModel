@@ -3236,6 +3236,10 @@ class RunStructureLayer(Layer):
 # classes ORs them (the analysis-side OR over .index-selected properties, dual
 # to PartSpace's AND over particles).
 LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
+# Key-only sentinel for the generic "word" whole-TYPE (a whole, not a tiling
+# predicate): used as a property_class_whole key, never passed to
+# char_class_region (whose spans come from the whitespace analysis cut).
+WORD = 100
 _CHAR_CLASS_RANGES = {
     LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
     DIGIT: [(48, 57)],                       # 0-9

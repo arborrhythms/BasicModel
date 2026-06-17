@@ -16,8 +16,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 import torch
 
+import Spaces
 from Layers import (PropertyTilingLayer, char_class_region,
-                    LETTER, DIGIT, WHITESPACE, PUNCT)
+                    LETTER, DIGIT, WHITESPACE, PUNCT, WORD)
 from Spaces import Codebook, WholeSpace
 from Layers import RunStructureLayer
 from test_basicmodel import _populate_test_config
@@ -221,6 +222,30 @@ def test_taxonomy_parents_empty_for_unbound():
     ws = _whole_space()
     ps = ws.ensure_ps_position(99)
     assert ws.taxonomy_parents(ps) == []              # no wholes yet
+
+
+# -- live cross-tower binding (reads subspace.where + WS whole spans) ----------
+
+def test_autobind_cross_tower_live_where_gated():
+    ws = _whole_space()
+    ws.subspace.what.enable_ramsification(2)
+    ws._mereology_k_many = 2
+    ws._staged_analysis_spans = torch.tensor([[[0, 3]]])   # B=1, one word span (0,3)
+    pid_2d = torch.tensor([[65, 66, 67, 68]])              # 4 percept-types
+    percept_where = torch.tensor([[0, 1, 2, 9]])           # last is OUTSIDE the span
+    cs = Spaces.ConceptualSpace([4, _D], [128, _D], [128, _D])   # self (CS owns the symbol table)
+    Spaces.ConceptualSpace._autobind_cross_tower(cs, pid_2d, percept_where, ws)
+    word = ws.property_class_whole([WORD])
+    assert len(set(ws.ps_children_of_whole(word))) == 3    # 65,66,67 in span; 68 out
+    assert ws.part_chain                                   # raise fired (3 > 2)
+
+
+def test_autobind_cross_tower_noop_without_spans():
+    ws = _whole_space()
+    # no _staged_analysis_spans -> no-op (inert until a config stages word spans)
+    Spaces.ConceptualSpace._autobind_cross_tower(
+        None, torch.tensor([[65, 66]]), torch.tensor([[0, 1]]), ws)
+    assert getattr(ws, '_property_class_whole', None) is None   # nothing minted
 
 
 def test_cross_tower_type_edge_idempotent_no_churn():

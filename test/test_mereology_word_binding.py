@@ -52,6 +52,12 @@ def _cs_stub(ws):
         Spaces.ConceptualSpace._maybe_autobind_meta, stub)
     stub._autobind_word_wholes = types.MethodType(
         Spaces.ConceptualSpace._autobind_word_wholes, stub)
+    stub._autobind_cross_tower = types.MethodType(
+        Spaces.ConceptualSpace._autobind_cross_tower, stub)
+    # The cross-tower path also populates the relation-only CS symbol table.
+    for _m in ("_populate_cs_symbols", "_sym_tables", "new_symbol",
+               "add_part", "add_whole", "resolve_identities"):
+        setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 
 

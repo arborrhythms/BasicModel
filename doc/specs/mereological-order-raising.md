@@ -638,3 +638,106 @@ The `.where`-containment order-raising binding (Stages S3/S4 below) builds **ord
 MEREOLOGY** (byte ⊑ word word-formation; the dormant `maybe_raise_order` fires on a multi-part
 word). **Taxonomic subsumption is a separate, symbolic/relational machine** (relation store +
 trusted language + reasoning over examples + episodic-LTM verification), not a `.where` binding.
+
+## The CS symbol table + taxonomy — relation-only; data model + lifecycle (2026-06-17, Alec)
+
+Resolves *where* the meronomy lives and *how symbols behave dynamically*.
+
+### Ownership and access
+- **ConceptualSpace owns two things:** (1) the **symbol table** (cross-tower part↔whole
+  relations), and (2) the **taxonomy** over those symbols. This is the spec's "the corpus
+  callosum, in ConceptualSpace, builds the single meronomy out of the two towers."
+- CS **reads** the PartSpace part codebook and the WholeSpace whole codebook (read-only
+  lookups) and **writes only its own** symbol table + taxonomy. **No space mutates another's
+  codebook.**
+- **Access rule:** per-forward *state* (events, live `.where`, which parts/wholes appeared)
+  flows **only via subspaces passed into `forward`/`reverse`** — never peer-reads of a peer's
+  transient `_forward_input` / `_embedded_input` / `subspace.where`. Persistent **codebook
+  reads** are the sanctioned cross-space access for CS (the meronomy owner).
+- **Preallocate** the table/position capacity so binding is index-assignment → it runs **in
+  `forward`**, not the `Reset` growth-workaround.
+
+### Symbols are RELATION-ONLY
+- A symbol has **no learnable vector and no codebook row** — it is a *relation* tying PS
+  part-codes ↔ WS whole-codes (read from their codebooks). There is **no symbol codebook**
+  (the current `insert_symbol` meta-vector seeding is retired).
+- **Per location (`.where` region):** a symbol ties *the parts covering that location* to
+  *the wholes covering that location* — the "space in between" part-codes and whole-codes.
+- A symbol is defined by **two INDEPENDENT multi-valued attribute-sets** keyed by the symbol:
+  **`Parts(S)`** (the part-codes / sub-symbols on its part side) and **`Wholes(S)`** (the
+  whole-codes / super-symbols on its whole side). Independent — *not* a global
+  `X∈Parts(S) ⟺ S∈Wholes(X)` dual — because a reified relation's operands aren't the operands'
+  meronymic parts/wholes. Reverse lookups are derived on demand.
+- A **relation between symbols is reified as a new symbol**: `C : A <= B` ⇒ `Parts(C)={A}`,
+  `Wholes(C)={B}` ("the cat-object is a cat-word"; no larger whole ties them). The word↔object
+  META is this special case.
+
+```
+A : cat-object <= cat-object-properties    Parts(A)={cat-object, felix-object}
+B : cat-word   <= cat-word-properties       Wholes(A)={cat-object-properties}
+C : A <= B  (the object is a word)          Parts(C)={A}   Wholes(C)={B}
+```
+
+### Lifecycle — over-collection triggers refinement; convergence → identity
+- **Over-collection is ACTIONABLE.** Too many parts OR too many wholes on a symbol triggers
+  refinement:
+  - **too few parts per symbol → SYNTHESIZE (σ):** group parts so a symbol covers *more* parts
+    (a higher-order part);
+  - **a whole over-subscribed by too many symbols → ANALYSE (π):** split that whole into finer
+    wholes (*fewer* wholes per symbol).
+  - **First round:** PS = atoms, WS = universe. The universe is on **too many** symbols, and
+    each part is on **only one** symbol ⇒ *both* remedies fire (more parts per symbol via σ;
+    split the universe via π). **The symbol table drives both towers + order-raising.**
+- **Triggering symbols are TRANSIENT:** a symbol that signals "restructure here" is **retired**
+  once it has triggered the analysis / synthesis / order-raise (the restructuring supersedes
+  it).
+- **Convergence → IDENTITY (id of indiscernibles):** when a symbol's sets collapse to exactly
+  **one part + one whole**, the multi-valued sets **disappear** (their role is subsumed by the
+  codebooks) and the symbol becomes a stable **identity tie** between that part-code and that
+  whole-code — σ-up meets π-down at the object (Principle 1). Non-triggering symbols **persist**.
+
+> **What the over-collection step actually drives (2026-06-17, Alec).** The per-code refinement
+> already happens in the **existing subsymbolic loop** (it treats the codes appropriately over
+> `subsymbolicOrder` iterations). So the **built** deliverable here is just to **zero out the 1:1
+> mappings** — a 1:1 symbol is the resolved identity and needs no further processing
+> (`ConceptualSpace.resolve_identities`; the still-active set is `symbols_needing_processing`).
+> **✗ Second step (doc-note, not built):** send back **only** the symbols that are **N:1 or 1:N for
+> large N** — too many parts for one whole, or too many wholes for one part — by handing that
+> symbol's **parts back to PartSpace** (for finer synthesis) or its **wholes back to WholeSpace**
+> (for finer analysis). A large N:1 or 1:N indicates a *lack of flexibility* at that symbol; the
+> send-back is what requests the extra σ/π that restores it. (This is the explicit feedback that
+> complements the subsymbolic loop's implicit per-code processing.)
+
+### The analytical basis (the current gap)
+- The right WS analytical basis is **binary properties** — analysis = **OR over properties**
+  (0-fill elsewhere); currently insufficient. The property basis is the S6 build (partly done:
+  `char_class_region` / the `materialize_property` content-keyed seam / OR-over-`.index`).
+- Meanwhile, with WS codebook codes available, each input is **tiled with codes over `.where`**,
+  and parts↔wholes are related mereologically by that `.where` (cross-tower `.where`-containment).
+
+### How the built primitives realize this
+| Built | Role in the model |
+|---|---|
+| property-tiling (`char_class_region`, `materialize_property` seam, OR-over-`.index`) | the binary-property analytical basis |
+| `record_cross_tower_meronomy` (PS `.where` ⊆ WS `.where`) | the `.where` relating that mints a symbol per location |
+| `RunStructureLayer` `n_runs` / `route_hint` / `tightest_container` | the over-collection / part-whole-ratio trigger (refine / raise / null; tightest = smallest whole) |
+| `maybe_raise_order` | the σ-synthesis / order-increase |
+| lattice `taxonomy_parents` / `ps_children_of_whole` | the multi-valued `Wholes(S)` / `Parts(S)` views |
+
+**To build (new dynamics on top):** the **retire-on-trigger** lifecycle; the **1:1 → identity
+collapse** (sets vanish, symbol persists as the identity); the trigger driving **both**
+π-analysis (split over-subscribed wholes) and σ-synthesis (today only the raise fires).
+
+### Relocation (WholeSpace → ConceptualSpace) — relation-only ⇒ mainly movement
+Because symbols are relation-only, **there is no codebook split**: move the *relational* tables
++ methods from WholeSpace to ConceptualSpace and **drop the meta-vector creation**
+(`insert_symbol` for metas).
+- **Moves:** the taxonomy / `Parts`-`Wholes` dicts (+ position maps, idempotency cache,
+  `meta_trust`, `part_chain`, LBG accumulators) and the ~25 methods; the autobind (already on
+  CS) switches `ss.method()` → `self.method()`; persistence (`vocab_extras` / `load_vocab_extras`
+  + `Models._collect/_restore_vocab_extras` + a one-generation checkpoint shim +
+  `_migrate_signed_int_taxonomy`); Models wiring (CS built before WS; CS keeps read refs to PS +
+  WS codebooks); repoint the ~18 test files.
+- **Staged, suite-green per stage:** Stage 1 tables+methods on CS with WS delegation shims (suite
+  stays green) → Stage 2 repoint autobind + Models wiring → Stage 3 persistence + checkpoint shim
+  → Stage 4 repoint tests, drop shims.
