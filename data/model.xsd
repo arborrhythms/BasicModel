@@ -148,6 +148,33 @@
            WholeSpace codebooks. Default false: no table allocated, no raising
            (byte-identical). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
+           mereological-order-raising.md "Overcomplete tiling bounded by the
+           basic level"). When the part tower matches an input against its
+           .what codebook it returns MANY matching parts (an overcomplete
+           tiling, not a partition); these bound which matches are kept by
+           Eleanor Rosch's BASIC LEVEL = the size of a part in .what, i.e. the
+           count of COMMITTED (+/-1) properties (all-0 = the Universe/general;
+           all-committed = an atom/specific; the basic level is the mid band).
+           Only matches whose .what-size lies in [min, max] are kept; the rest
+           (too general / too specific) are dropped. For a TEXT model "size in
+           .what" is simply the COUNT OF LETTERS, so parts range from 0 to the
+           length of the longest reasonable word. Refine for non-text models
+           (where size is the committed-property count in the relevant basis).
+           Read only under <mereologyRaise>; default (unset) imposes no bound
+           (byte-identical). -->
+      <xs:element name="basicLevelMinSize" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="basicLevelMaxSize" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Serial word-at-a-time object/meta (doc/specs/mereological-order-
+           raising.md "Serial-mode word-at-a-time loop"). When true (serial
+           only: symbolicOrder>=1), the per-word body HARD-MASKS each step to
+           the active word's span (PartSpace processes the word block via
+           word_span_window instead of the soft gaussian window) and the STM
+           push + the eager A/B/C mint fire ONCE PER WORD (the last-slot commit
+           gate). Whole-sentence context re-enters via the §6c prelude's
+           gist/intent. Independent of <mereologyRaise>. Default false ->
+           gaussian window + per-slot push (byte-identical). -->
+      <xs:element name="serialObjectMeta" type="xs:boolean" minOccurs="0"/>
       <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
            protocol. In serial mode every sentence opens with an
            independent PARALLEL prelude of <subsymbolicOrder> pumps

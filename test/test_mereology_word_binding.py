@@ -24,6 +24,7 @@ if _BIN not in sys.path:
 import torch
 
 import Spaces
+from Layers import ATOM, UNIVERSE
 from test_basicmodel import _populate_test_config
 
 _D = 8
@@ -54,9 +55,12 @@ def _cs_stub(ws):
         Spaces.ConceptualSpace._autobind_word_wholes, stub)
     stub._autobind_cross_tower = types.MethodType(
         Spaces.ConceptualSpace._autobind_cross_tower, stub)
-    # The cross-tower path also populates the relation-only CS symbol table.
+    # The cross-tower path also populates the relation-only CS symbol table,
+    # and the orchestrator mints the per-word A/B/C symbols.
     for _m in ("_populate_cs_symbols", "_sym_tables", "new_symbol",
-               "add_part", "add_whole", "resolve_identities"):
+               "add_part", "add_whole", "resolve_identities",
+               "relate", "reify_relation", "create_word_object_meta",
+               "symbol_parts", "symbol_wholes"):
         setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 
@@ -145,3 +149,70 @@ def test_gate_off_does_not_word_bind():
     stub._maybe_autobind_meta(
         pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
     assert getattr(ws, "_word_whole_ss", None) is None
+
+
+def test_gate_on_creates_word_object_meta():
+    """The orchestrator mints the per-word A/B/C relation-only symbols on CS
+    (Alec 2026-06-17): A = word-symbol (word-parts ⊑ word-whole), B =
+    object-symbol (ATOM ⊑ UNIVERSE, to be refined), C = reify(A, B)."""
+    ws = _whole_space()
+    ws.subspace.what.enable_ramsification(2)
+    ws._mereology_raise = True
+    ws._mereology_k_many = 2
+    stub = _cs_stub(ws)
+    pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc" -> 10,11,12
+    stub._maybe_autobind_meta(
+        pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
+    wom = getattr(stub, "_word_obj_meta", {})
+    assert "abc" in wom
+    A, B, C = wom["abc"]
+    # A = word-symbol: parts = the word-parts, whole = the WS word-whole.
+    assert set(stub.symbol_parts(A)) == {10, 11, 12}
+    assert stub.symbol_wholes(A) == [ws._word_whole_ss["abc"]]
+    # B = object-symbol: maximally unspecified poles, awaiting refinement.
+    assert stub.symbol_parts(B) == [ATOM] and stub.symbol_wholes(B) == [UNIVERSE]
+    # C = META: reify A ⊑ B (word≡object).
+    assert stub.symbol_parts(C) == [("sym", A)]
+    assert stub.symbol_wholes(C) == [("sym", B)]
+
+
+def test_cs_owns_relation_taxonomy_by_reference():
+    """S3 relocation (Fix #1; doc/specs "relation-only completion"): CS owns the
+    relation taxonomy BY REFERENCE -- its forwarding accessors return the
+    terminal WholeSpace's taxonomy, so callers can migrate WS->CS behavior-
+    equivalently. The physical position-keyed dicts stay on WS (insert_symbol /
+    insert_meta mint codebook rows atomically; a physical move is gated on the
+    deferred meta-vector retirement)."""
+    ws = _whole_space()
+    ws.subspace.what.enable_ramsification(2)
+    ws._mereology_k_many = 4                         # 3 parts <= 4 -> no raise
+    pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc"
+    Spaces.ConceptualSpace._autobind_word_wholes(
+        None, pid_2d, vec_tensor, word_groups, tokens, ws)
+    whole = ws._word_whole_ss["abc"]
+    # a CS host wired to the terminal WS as its relation store (mirrors the
+    # Models terminalSymbolicSpace_ref / terminalConceptualSpace_ref fan-out).
+    cs = types.SimpleNamespace()
+    cs.terminalSymbolicSpace_ref = ws
+    cs.symbolicSpace_ref = None
+    for _m in ("_relation_store", "taxonomy_children", "taxonomy_parent",
+               "taxonomy_parents", "is_meta", "ps_children_of_whole"):
+        setattr(cs, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), cs))
+    # the relation store resolves to the terminal WS, and every read-API
+    # accessor forwards byte-for-byte.
+    assert cs._relation_store() is ws
+    assert sorted(cs.ps_children_of_whole(whole)) == sorted(
+        ws.ps_children_of_whole(whole))
+    part = ws.ps_children_of_whole(whole)[0]
+    meta = ws.taxonomy_parent(part)
+    assert cs.taxonomy_parent(part) == meta
+    assert cs.taxonomy_parents(part) == ws.taxonomy_parents(part)
+    assert cs.is_meta(meta) is True and ws.is_meta(meta) is True
+    assert cs.taxonomy_children(meta) == ws.taxonomy_children(meta)
+    # unwired CS -> safe empty/false defaults (no crash).
+    bare = types.SimpleNamespace(terminalSymbolicSpace_ref=None,
+                                 symbolicSpace_ref=None)
+    for _m in ("_relation_store", "taxonomy_children", "is_meta"):
+        setattr(bare, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), bare))
+    assert bare._relation_store() is None
+    assert bare.taxonomy_children(0) == [] and bare.is_meta(0) is False

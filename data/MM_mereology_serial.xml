@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_mereology_serial: the SERIAL (word-at-a-time) sibling of
+       MM_mereology.xml (doc/specs/mereological-order-raising.md "Serial-mode
+       word-at-a-time loop"). Identical to MM_mereology EXCEPT symbolicOrder=1
+       (serial / grammatical: the per-word body via _forward_body_per_word,
+       one idea pushed to STM per word, syntax fired at the sentence boundary).
+
+       WHY this file exists: no committed config combined symbolicOrder>=1 with
+       synthesis=radix; the serial+radix path was UNEXERCISED end-to-end. This
+       is the home for the Option-A build (Alec, 2026-06-17): force PartSpace +
+       WholeSpace to process the ACTIVE WORD ONLY (hard mask: PS parts inside
+       the word, WS whole covering it), so ConceptualSpace can create the
+       per-word Word-symbol A + object-symbol B + meta C BEFORE syntax. Hard
+       masking forgoes the word2vec-like contextual embedding (acknowledged).
+
+       NEVER mutate the shared MM_20M.xml. With <mereologyRaise> OFF this would
+       behave like a plain serial radix config; the gate is the behavioural
+       delta. The serialObjectMeta per-word object/meta path (increments 2-4)
+       is gated separately so it is dark until wired + signed off. -->
+  <architecture>
+    <modelType>embedding</modelType>
+    <!-- serial mereology: per-word body, syntax at the sentence boundary. -->
+    <symbolicOrder>1</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <!-- Serial word-at-a-time: HARD-MASK each per-word step to the active
+         word's span (PS on the word block via word_span_window) + fire the STM
+         push / A/B/C mint once per word. Context comes from the §6c prelude
+         (sentenceProtocol, on by default in serial). -->
+    <serialObjectMeta>true</serialObjectMeta>
+
+    <!-- Basic-level bounds for the overcomplete part-tiling (Eleanor Rosch's
+         "basic level"); "size in .what" for text = letter count, range 0..24
+         (len "disestablishmentarianism"). Read only under <mereologyRaise>. -->
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

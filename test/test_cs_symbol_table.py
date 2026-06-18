@@ -21,7 +21,7 @@ if _BIN not in sys.path:
 import torch
 
 import Spaces
-from Layers import WORD
+from Layers import WORD, UNIVERSE, ATOM
 from test_basicmodel import _populate_test_config
 
 _D = 8
@@ -147,5 +147,71 @@ def test_populate_then_resolve_identities_live_lifecycle():
     # the 3-part location (N:1) stays ACTIVE -- the send-back candidate
     active = cs.symbols_needing_processing()
     assert any(set(cs._sym_parts[s]) == {65, 66, 67} for s in active)
+
+
+# -- word / object / meta creation (Alec 2026-06-17) -------------------------
+
+def test_create_word_object_meta_structure():
+    cs = _cs()
+    # PS gives the word-parts (pids 65,66,67); WS gives the word-whole (WORD).
+    A, B, C = cs.create_word_object_meta([65, 66, 67], WORD)
+    # A = WORD-symbol: parts = the word-parts, whole = the word-whole.
+    assert set(cs.symbol_parts(A)) == {65, 66, 67}
+    assert cs.symbol_wholes(A) == [WORD]
+    # B = OBJECT-symbol: maximally unspecified -- ATOM <= UNIVERSE, to be refined.
+    assert cs.symbol_parts(B) == [ATOM]
+    assert cs.symbol_wholes(B) == [UNIVERSE]
+    # C = META: reify A <= B (the word≡object binding).
+    assert cs.symbol_parts(C) == [("sym", A)]
+    assert cs.symbol_wholes(C) == [("sym", B)]
+
+
+def test_create_word_object_meta_idempotent_per_key():
+    cs = _cs()
+    A1, B1, C1 = cs.create_word_object_meta([65, 66], WORD, key="ab")
+    A2, B2, C2 = cs.create_word_object_meta([65, 66], WORD, key="ab")
+    assert (A1, B1, C1) == (A2, B2, C2)              # same word -> same triple
+    # a different surface text mints a fresh triple
+    A3, _, _ = cs.create_word_object_meta([67], WORD, key="c")
+    assert A3 != A1
+    # no key -> always fresh
+    A4, _, _ = cs.create_word_object_meta([65, 66], WORD)
+    assert A4 != A1
+
+
+def test_create_word_object_meta_accumulates_word_parts():
+    cs = _cs()
+    A, _, _ = cs.create_word_object_meta([65], WORD, key="grows")
+    # the same word re-presented with a new spelled-out part accrues it onto A.
+    A2, _, _ = cs.create_word_object_meta([66], WORD, key="grows")
+    assert A2 == A
+    assert set(cs.symbol_parts(A)) == {65, 66}
+
+
+def test_object_symbol_is_refinable_not_yet_identity():
+    cs = _cs()
+    _, B, _ = cs.create_word_object_meta([65, 66, 67], WORD)
+    # B starts as a 1-part/1-whole tie (ATOM <= UNIVERSE) -- structurally an
+    # identity SHAPE, but it is the unspecified poles awaiting refinement, so it
+    # is still in the active set until the lifecycle specializes it.
+    assert cs.symbol_is_identity(B)                  # one pole each
+    assert B in cs.symbols_needing_processing()      # poles not yet resolved
+
+
+def test_resolve_identities_does_not_collapse_unspecified_object():
+    cs = _cs()
+    A, B, C = cs.create_word_object_meta([65, 66, 67], WORD)
+    resolved = cs.resolve_identities()
+    # B (ATOM <= UNIVERSE) is the unspecified object -> NOT collapsed; it stays
+    # active for refinement and is not recorded as a resolved identity.
+    assert B not in resolved
+    assert cs.symbol_identity(B) is None
+    assert B in cs.symbols_needing_processing()
+    assert cs.symbol_parts(B) == [ATOM] and cs.symbol_wholes(B) == [UNIVERSE]
+    # once refined to a CONCRETE part + whole, it DOES resolve to an identity.
+    cs._sym_parts[B] = {65}
+    cs._sym_wholes[B] = {WORD}
+    assert B in cs.resolve_identities()
+    assert cs.symbol_identity(B) == (65, WORD)
 
 

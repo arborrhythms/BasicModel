@@ -636,8 +636,16 @@ class BaseModel(Mereology, nn.Module):
         # re-pumps on preemption only. ``<architecture>
         # <sentenceProtocol>`` — default OFF until the author's cutover
         # (the meronomy pattern: land dark, cut over deliberately).
+        # §6c default cutover (2026-06-18, Alec): ON by default in SERIAL mode
+        # (``symbolicOrder >= 1``) so the whole-sentence gist (the initial
+        # subsymbolic-order prelude pass) CONDITIONS each word's parts/wholes —
+        # the context the per-word hard mask drops re-enters via the gist/intent.
+        # OFF in parallel (the prelude is only invoked from the serial
+        # ``_forward_body_per_word``, so parallel never runs it regardless).
+        # Explicit ``<sentenceProtocol>`` in the XML overrides either way.
+        _sp_default = (self.symbolicOrder >= 1)
         self.sentence_protocol = bool(TheXMLConfig.get(
-            "architecture.sentenceProtocol", default=False))
+            "architecture.sentenceProtocol", default=_sp_default))
 
         # NeuralToolUser cutover (doc/plans/NeuralToolUser.md): when
         # ``<architecture><neuralToolUser>`` is true, LanguageLayer.compose's
@@ -704,6 +712,16 @@ class BaseModel(Mereology, nn.Module):
         self.mereology_raise = bool(TheXMLConfig.get(
             "architecture.mereologyRaise", default=False))
 
+        # Serial word-at-a-time object/meta (doc/specs/mereological-order-
+        # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
+        # on (serial only), the per-word body HARD-MASKS each step to the active
+        # word's span (PS processes the word block via word_span_window) and the
+        # STM push + the eager A/B/C mint fire ONCE PER WORD (last-slot commit
+        # gate). Independent of <mereologyRaise>. Default off -> the gaussian
+        # window + per-slot push (byte-identical).
+        self.serial_object_meta = bool(TheXMLConfig.get(
+            "architecture.serialObjectMeta", default=False))
+
         # Two-pass soft-superposition learning (doc/Language.md
         # "Soft-superposition route"). When ``<learning>`` is true, runEpoch
         # runs each TRAINING batch twice as two independent trials -- pass A
@@ -740,6 +758,10 @@ class BaseModel(Mereology, nn.Module):
         if getattr(self, 'inputSpace', None) is not None:
             self.inputSpace._per_word_enabled = bool(
                 self.symbolicOrder >= 1)
+            # serialObjectMeta must reach InputSpace.finalize_stem (it builds the
+            # capturable word-index / per-word commit tensors only when on).
+            object.__setattr__(self.inputSpace, '_serial_object_meta',
+                               bool(self.serial_object_meta))
 
         # DOCTRINE (Task 4, doc/plans/2026-05-29-stm-serial-parallel-modes.md
         # §"Serial mode = attentional filtering"): serial mode **is** the
@@ -2518,6 +2540,41 @@ class BasicModel(BaseModel):
         wcol = w.view(1, T, 1).to(full_seq.dtype)
         windowed = full_seq * wcol                                # [B,T,D]
         return windowed.sum(dim=1, keepdim=True)                  # [B,1,D]
+
+    def word_span_window(self, full_seq, center_k, word_idx):
+        """Increment 2 (HARD-MASK-TO-WORD-SPAN; doc/specs/mereological-order-
+        raising.md "Serial-mode word-at-a-time loop"). The HARD same-word window
+        that replaces :meth:`gaussian_window_word` on the serial
+        ``serialObjectMeta`` path: returns word ``center_k``'s representation
+        ``[B,1,D]`` as the masked SUM over the slots belonging to the SAME word
+        as slot ``center_k`` (so PartSpace processes the ACTIVE WORD ONLY — no
+        part with a ``.where`` outside the word). Same ``[B,1,D]`` contract as
+        the gaussian, so the caller's shape guard accepts it unchanged.
+
+        ``word_idx`` is a ``[B,T]`` long per-slot word index (slots of one word
+        share an id). Pure static tensor ops — DtoH-free, CUDA-graph-capturable
+        (``k`` is a host-int constant per unrolled loop position; the mask is a
+        fixed-shape elementwise compare). When ``word_idx`` is unavailable
+        (None / wrong shape — e.g. byte mode has no word grouping), falls back to
+        the single slot ``full_seq[:, k:k+1, :]`` (in fused modes the active word
+        IS its own slot; the byte fallback degrades safely)."""
+        if (full_seq is None or not torch.is_tensor(full_seq)
+                or full_seq.dim() != 3):
+            return full_seq
+        B, T, D = full_seq.shape
+        k = int(center_k)
+        if k < 0:
+            k = 0
+        if k > T - 1:
+            k = T - 1
+        if (word_idx is None or not torch.is_tensor(word_idx)
+                or word_idx.dim() != 2 or int(word_idx.shape[0]) != B
+                or int(word_idx.shape[1]) != T):
+            return full_seq[:, k:k + 1, :]                # single-slot fallback
+        center_id = word_idx[:, k:k + 1]                  # [B,1] (static slice)
+        same = (word_idx == center_id)                    # [B,T] same-word mask
+        mcol = same.to(full_seq.dtype).unsqueeze(-1)      # [B,T,1] hard 0/1
+        return (full_seq * mcol).sum(dim=1, keepdim=True)  # [B,1,D] word rep
 
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
@@ -5264,6 +5321,30 @@ class BasicModel(BaseModel):
                                self.perceptualSpace)
             object.__setattr__(cs, 'terminalSymbolicSpace_ref',
                                self.symbolicSpace)
+            # serialObjectMeta reaches CS here (a NEW stamp site — _mereology_
+            # raise never reaches CS; _maybe_autobind_meta reads it off self).
+            # Read the live config directly: _create_per_stage runs DURING
+            # construction, before self.serial_object_meta is parsed (same
+            # order-safety idiom as the mereologyRaise request below).
+            object.__setattr__(cs, '_serial_object_meta', bool(
+                TheXMLConfig.get("architecture.serialObjectMeta", default=False)))
+
+        # S3 relocation (2026-06-17): ConceptualSpace is the OWNER of the
+        # relation-only symbol table / taxonomy (doc/specs/mereological-order-
+        # raising.md "relation-only completion"). Like the META taxonomy, the
+        # relation table is a SINGLE TERMINAL owner -- the terminal CS
+        # (``conceptualSpaces[-1]`` == ``self.conceptualSpace``) -- so wire a
+        # ``terminalConceptualSpace_ref`` onto every cs AND every ss, mirroring
+        # the ``terminalSymbolicSpace_ref`` fan-out, so any stage can reach the
+        # one canonical relation owner without fragmenting it into N tables.
+        # (Fix #1 ownership-by-reference: the physical position-keyed dicts are
+        # still served from the terminal WholeSpace, which mints the codebook
+        # rows atomically; CS owns the relation INTERFACE. A full physical move
+        # is blocked on retiring the meta-vector seed -- a gradient-path change,
+        # deferred -- and is NOT attempted here.)
+        for sp in list(self.conceptualSpaces) + list(self.symbolicSpaces):
+            object.__setattr__(sp, 'terminalConceptualSpace_ref',
+                               self.conceptualSpace)
 
         # Wire the back-ref SS <- Embedding (terminal stage:
         # ``symbolicSpaces[-1]`` == ``self.symbolicSpace``) so the
@@ -6692,7 +6773,16 @@ class BasicModel(BaseModel):
         # loop position; the legacy ``_per_word_cursor - 1`` mirror is
         # retired with ``next_word()``.
         _full_seq = isp._ar_embedded
-        _ctx_w = self.gaussian_window_word(_full_seq, p)
+        # serialObjectMeta: HARD-MASK-TO-WORD-SPAN — replace the soft gaussian
+        # window with the hard same-word window so PS processes the ACTIVE WORD
+        # ONLY (the word's block; no slot outside it). Whole-sentence context
+        # re-enters via the §6c prelude's gist/intent, not this window. Flag-off
+        # keeps the gaussian path byte-identical.
+        if getattr(self, 'serial_object_meta', False):
+            _ctx_w = self.word_span_window(
+                _full_seq, p, getattr(isp, '_word_index_N', None))
+        else:
+            _ctx_w = self.gaussian_window_word(_full_seq, p)
         if (_ctx_w is not None and torch.is_tensor(_ctx_w)
                 and _ctx_w.dim() == 3
                 and _ctx_w.shape[1] == 1
@@ -6779,6 +6869,21 @@ class BasicModel(BaseModel):
                     and idea.shape[1] >= 1):
                 idea_bd = idea[:, 0, :]                 # [B, D_c]
                 if stm is not None and active_host:
+                    # serialObjectMeta: fire the STM push ONCE PER WORD (the
+                    # last-slot-of-word commit gate) so a multi-slot
+                    # (radix-spelled) word pushes ONE idea, not one per byte.
+                    # Flag-off / no word-index -> commit_b_1 IS gate_b_1
+                    # (per-slot, byte-identical). The host depth mirror stays
+                    # per-iteration -- a conservative UPPER bound that may
+                    # trigger an early (but safe) reduce in radix multi-slot
+                    # words; raise stmCapacity in the serial config if a long
+                    # sentence would trip it.
+                    if (getattr(self, 'serial_object_meta', False)
+                            and getattr(isp, '_word_last_slot_mask', None)
+                            is not None):
+                        commit_b_1 = isp._word_last_slot_mask[:, p:p + 1]
+                    else:
+                        commit_b_1 = gate_b_1
                     # Capacity back-pressure check fires here; the host
                     # mirror is also advanced per real push so the
                     # check is accurate inside the loop.
@@ -6788,7 +6893,7 @@ class BasicModel(BaseModel):
                     if stm._max_depth_host >= stm.capacity:
                         self._stm_bounded_reduce_step()
                         stm._max_depth_host = stm.capacity - 1
-                    stm.push_step_masked(idea_bd, gate_b_1)
+                    stm.push_step_masked(idea_bd, commit_b_1)
                     stm._max_depth_host = stm._max_depth_host + 1
                 # Masked contribution: at inactive batch rows / padding
                 # columns the contribution is zero so it doesn't push

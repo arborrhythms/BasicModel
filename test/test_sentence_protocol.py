@@ -10,9 +10,12 @@ partition (``serial_pump`` is a PER-PUMP property). The gist re-pumps
 on preemption ONLY (rising edge of the conflict latch; threshold +
 hysteresis on the absolute set's per-dimension-max conflict mass).
 
-The protocol is config-gated (``<architecture><sentenceProtocol>``,
-default OFF — the meronomy land-dark-then-cut-over pattern), so the
-default path stays byte-identical to today.
+The protocol is config-gated (``<architecture><sentenceProtocol>``).
+DEFAULT CUTOVER (2026-06-18): default is now **ON in SERIAL mode**
+(``symbolicOrder >= 1``) so the whole-sentence gist conditions each
+word's parts/wholes (the context the per-word hard mask drops re-enters
+via the gist/intent); **OFF in parallel** (the prelude is only invoked
+from the serial per-word body). Explicit ``<sentenceProtocol>`` overrides.
 """
 
 import os
@@ -58,17 +61,42 @@ def _xor_input():
     ).float().unsqueeze(1)
 
 
-def test_protocol_off_by_default_and_dark():
-    """Default OFF: no prelude pumps, no intent, no per-pump stamp —
-    the legacy serial path byte-identical."""
+def test_protocol_on_by_default_in_serial():
+    """DEFAULT CUTOVER (2026-06-18): the serial fixture (symbolicOrder>=1)
+    now has the protocol ON by default — pump zero runs and sets the gist
+    WITHOUT any explicit ``<sentenceProtocol>`` in the config."""
     m = _make_model()
-    assert m.sentence_protocol is False
+    assert m.sentence_protocol is True               # serial default = ON
+    m.forward(_xor_input())
+    assert int(getattr(m, '_prelude_pumps', 0)) == 1
+    assert getattr(m, '_last_gist', None) is not None
+
+
+def test_protocol_off_is_dark_when_disabled():
+    """Forcing the protocol OFF restores the dark path: no prelude pumps,
+    no intent, no per-pump stamp — the legacy serial path."""
+    m = _make_model()
+    m.sentence_protocol = False                       # explicit override
     m.forward(_xor_input())
     assert int(getattr(m, '_prelude_pumps', 0)) == 0
     assert getattr(m, '_last_gist', None) is None
     for sp in (m.perceptualSpace, m.symbolicSpace):
         assert getattr(sp, 'serial_pump', None) is None
         assert sp.intent_boosts() is None
+
+
+def test_protocol_off_by_default_in_parallel():
+    """Parallel mode (symbolicOrder==0) keeps the protocol OFF by default —
+    the prelude is a serial-only pass."""
+    init_config(path=os.path.join(_DATA_DIR, "MM_xor.xml"),
+                defaults_path=_DEFAULTS)
+    Language.TheGrammar._configured = False
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        m, cfg = Models.BasicModel.from_config(
+            os.path.join(_DATA_DIR, "MM_xor.xml"))
+    assert int(cfg["architecture"].get("symbolicOrder", 0)) == 0
+    assert m.sentence_protocol is False               # parallel default = OFF
 
 
 def test_protocol_runs_pump_zero_and_sets_intent():

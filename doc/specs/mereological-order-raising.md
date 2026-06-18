@@ -329,6 +329,9 @@ its object. So each word is **two associations** in the symbol table:
 | Symbol-relation LUT ↔ TruthLayer integration | ✗ integrate | part↔whole LUT == absolute; symbol-taxonomy == relative ([Logic.md](../Logic.md)) |
 | Part/whole-ratio criterion → request σ/π refinement | ✗ build | wrong ratio in a `.where` triggers further synthesis/analysis (MM_20M fix) |
 | `.where` run-structure (extent + gap count over constituents) | ✗ build (per-code extent built) | the one new primitive; per-code extent via `decode_span` (2026-06-16); remaining = gap-count aggregation over a set |
+| Factorize a π fold (log-domain dual of σ's balanced split) | ✗ build | `PiLayer` ([Layers.py:~3790](../../bin/Layers.py)) reverse via `W⁻¹` then split the recovered log-sum equally by `M` |
+| Overcomplete tiling (match `.what`, many parts, paint/average) vs. partition | ✗ build | part tower returns many matches; IS paint/average recombination; over-collection lifecycle prunes |
+| Basic-level bound (`.what`-size ∈ [min,max]; text = letter count) | config present, wiring ✗ | `architecture.basicLevel{Min,Max}Size` ([model.xsd](../../data/model.xsd); `MM_mereology.xml` = `0`/`24`) |
 | Pass-back routing: contiguous→refine / discontiguous→raise / zero→null | ✗ build | CS reads run-structure, splits `<subsymbolicOrder>` into aspects 1 vs 2 |
 | Integrate (→PartSpace σ) vs disintegrate (→WholeSpace π) by run-count | ✗ build | CS routes the wrong-ratio `.where` to the correcting tower |
 | Serial word↔object substitution around compose | ✗ verify/wire | `_forward_body_per_word`, `resolve_ps_terminal` |
@@ -547,6 +550,72 @@ positions — the wrong granularity**; the correct A4 binds the PS part-TYPE to 
 are reused unchanged; only the binding granularity (per-instance → type→type, `.where`-gated)
 changes.
 
+### Ramsification with the towers — synthesize/factorize vs. categorize (2026-06-17, Alec)
+
+Ramsification (fold a set into one code) runs on **both** towers, and the **contiguity** of the
+support decides whether the fold is **invertible**:
+
+- **PartSpace (σ).** **Contiguous parts → synthesize a higher-order WHOLE part.** The fold is
+  **invertible**: `SigmaLayer.generate` does the balanced split (divide the summed membership
+  equally across the `M` constituents), so the constituents are recoverable — the high-order code
+  *geometrically contains* them. **Discontiguous parts → categorize a COMMON output vector.** The
+  scattered constituents share one category code; this is **lossy / non-invertible** (the category
+  alone cannot say *which* scattered constituents produced it). Contiguity is read from `.where`
+  run-structure (`RunStructureLayer.n_runs`): one run ⇒ synthesize; many runs ⇒ categorize.
+- **WholeSpace (π) — the dual.** **Analyse-into-properties** (the π fold) and its inverse
+  **factorize**. A contiguous intensional region factorizes back into its sub-properties; a
+  discontiguous one collapses to a common intensional characterization (lossy, the analysis-side
+  mirror of "categorize").
+
+**How to factorize a PiLayer's output.** `PiLayer` is the multiplicative / log-domain fold
+([Layers.py:~3790](../../bin/Layers.py)): `z = _from_mult(exp(W·log(_to_mult(x)) + b))` with
+`log(_to_mult(x)) = 2·atanh(x)`. The exact reverse exists when `W` is invertible. **`factorize_
+over_set` is the log-domain DUAL of σ's balanced split:** recover the summed log-membership with
+`W⁻¹` (and subtract `b`), then **split it equally across the `M` factors** (divide the recovered
+log-sum by `M`) and map back through `_from_mult`/`exp`. Where σ splits a *sum* equally in the
+linear domain, π splits a *product* equally in the log domain — same balanced-split idea, dual
+algebra. In `monotonic` mode (`W ≥ 0`) the ordering is preserved, so the factorization is stable.
+
+**Two structural decisions for high-order codes.**
+1. **Contiguous blocks per order.** A high-order code reserves a **contiguous block** in `.what`
+   so its constituents remain addressable as a run and the run-structure / containment machinery
+   (`contained_mask`, `tightest_container`) keeps working on it. The codebook is partitioned into
+   per-order contiguous regions rather than interleaving orders.
+2. **A symbol table per order.** Each abstraction order keeps **its own** symbol table — order-`k`
+   `Parts`/`Wholes` relations are within-order (or one order up), so order-`k` structure never
+   collides with the order-0 identity ties. "The symbol table drives both towers + order-raising"
+   is thereby naturally **stratified by order**.
+
+### Overcomplete tiling bounded by the basic level (2026-06-17, Alec)
+
+Instead of returning a **partition** of the input (every position in exactly one part), the part
+tower returns an **OVERCOMPLETE TILING**: the `.what` codebook already lives in `subspace.what`, so
+**match the input against `.what` and return MANY matching parts** — overlapping, redundant. The
+overlaps are resolved by the existing **IS paint/average** recombination (see
+[[processing-contract-spaces]]: paint each match into its `.where`, average the overlaps), and the
+redundant matches are **pruned by the over-collection lifecycle** (the CS symbol table's
+over-collection trigger retires the ones that don't earn their keep).
+
+**Bound the overcomplete set by Eleanor Rosch's BASIC LEVEL — not top-`k`** (top-`k` is an odd
+spec: it fixes a count rather than a meaningful grain). The bound is a **min/max SIZE in `.what`**,
+where *size* = the count of **COMMITTED (`±1`) properties** = **specificity**:
+
+- **all-`0`** = the **Universe** / maximally general (no committed property);
+- **all-committed** = an **atom** / proper noun / maximally specific;
+- the **mid band** = the **basic level** (Rosch et al. 1976: the level acquired first, maximally
+  informative-yet-distinctive).
+
+Keep matches whose `.what`-size ∈ `[min, max]`; drop the too-general (below `min`) and too-specific
+(above `max`).
+
+**Text-model bounds as model-spec properties.** For a TEXT model "size in `.what`" is simply the
+**count of letters**, so a part ranges from **0** (the Universe) up to the longest reasonable word:
+`len("disestablishmentarianism") == 24`. These are set as model-spec properties
+`architecture.basicLevelMinSize` / `basicLevelMaxSize`
+([model.xsd](../../data/model.xsd); `data/MM_mereology.xml` = `0` / `24`), read only under
+`<mereologyRaise>` (unset ⇒ no bound ⇒ byte-identical). **Refine for non-text models**, where size
+is the committed-property count in the relevant (e.g. char-class or frequency) basis.
+
 ## Implementation plan (sequenced, 2026-06-16)
 
 The consolidated roadmap, folding in this session's refinements. Status: ✓ done · ◑ partial ·
@@ -567,6 +636,15 @@ flag off unless noted.
 - **A5 ✗ (S5)** Higher-order part synthesis — replace the raise's mean-combine with
   `SigmaLayer.synthesize_over_set` (needs a *trained* σ at SS width — not a trivial swap) + prune /
   relink the moot per-part edges WITHOUT orphan churn; plus force-#3 (singleton → analyse or drop).
+  Invertibility follows contiguity (see "Ramsification with the towers"): contiguous ⇒ synthesize
+  (invertible via `SigmaLayer.generate` balanced split); discontiguous ⇒ categorize a common code
+  (lossy). High-order codes reserve **contiguous `.what` blocks** and a **per-order symbol table**.
+- **A6 ✗** Overcomplete tiling bounded by the basic level (see "Overcomplete tiling bounded by the
+  basic level"). The part tower matches the input against `subspace.what` and returns MANY parts
+  (not a partition), recombined by IS paint/average, keeping only matches whose `.what`-size (count
+  of committed `±1` properties; for text = letter count) lies in `[basicLevelMinSize,
+  basicLevelMaxSize]` — config present (`architecture.basicLevel{Min,Max}Size`, text = `0`/`24`),
+  matching/pruning to be wired (the over-collection lifecycle prunes the redundant matches).
 
 **Workstream B — Analysis = property-tiling (the π chunker), one unified property-token API (S6).**
 - **B1 →** Char-class property backend — `letters` / `digits` / `whitespace` / `punctuation` as
@@ -678,6 +756,172 @@ B : cat-word   <= cat-word-properties       Wholes(A)={cat-object-properties}
 C : A <= B  (the object is a word)          Parts(C)={A}   Wholes(C)={B}
 ```
 
+### Word / object / meta creation (BUILT 2026-06-17, Alec)
+> *"PS and WS are constrained to give word-parts and word-wholes. CS can create the word-symbol (A)
+> and object-symbol (B) and their meta (C). B will have as parts and wholes only atoms and the
+> universe, but these will be successively refined."*
+
+`ConceptualSpace.create_word_object_meta(word_parts, word_whole, key=None)` ([Spaces.py](../../bin/Spaces.py))
+mints the three relation-only symbols per perceived word:
+- **A = word-symbol** — `Parts(A)` = the word-parts (PS part-codes), `Wholes(A)` = the word-whole
+  (WS whole-code). The orthographic word; A accumulates word-parts across presentations.
+- **B = object-symbol** — `Parts(B) = {ATOM}`, `Wholes(B) = {UNIVERSE}` **initially**: the referent is
+  maximally unspecified (bottom pole ↔ top pole) and is **successively refined** (σ synthesizes the
+  atoms into higher-order parts; π splits the universe into finer wholes — the lifecycle loop).
+- **C = meta** — `reify_relation(A, B)`: `Parts(C)={('sym',A)}`, `Wholes(C)={('sym',B)}` — the
+  word≡object binding (the second-order MetaSymbol above).
+
+`ATOM` / `UNIVERSE` are key-only lattice-pole sentinels ([Layers.py](../../bin/Layers.py), beside
+`WORD`), references in the relation-only table — **no vector, no codebook row**. **Refinement guard:**
+`resolve_identities()` does **not** collapse a pole-pair (`ATOM`/`UNIVERSE`) — B has the *shape* of a
+1:1 identity but is the unspecified placeholder, so it stays in `symbols_needing_processing()` until
+the lifecycle specializes it to a tie between **concrete** codes. Idempotent per surface `key`. Tests:
+`test/test_cs_symbol_table.py` (`create_word_object_meta_*`, `resolve_identities_does_not_collapse_
+unspecified_object`).
+
+**LIVE-WIRED (2026-06-17, gated `<mereologyRaise>`).** `_autobind_word_wholes` now **returns** its
+per-word descriptors `(word_parts, word_whole, surface_key)` (it still touches only the WS handle, so
+the `self=None` standalone tests are unchanged); the orchestrator `_maybe_autobind_meta` then calls
+`create_word_object_meta` for each, minting A/B/C alongside the legacy WS word-whole binding and the
+cross-tower `.where` edges. Additive CS state, dark by default (byte-identical flag-off). Test:
+`test/test_mereology_word_binding.py::test_gate_on_creates_word_object_meta`.
+
+**How B (the object) is refined — AUTHORITY, not the perceptual lifecycle (Alec, 2026-06-17).**
+> *"A valid cognizer must learn the object through experience, reasoning, or authority. We are a text
+> interface right now, so authority is the primary means (the TruthSet from the user). Reasoning
+> happens later, after we create a working knower."*
+
+So B's `ATOM`/`UNIVERSE` poles are **not** refined by the σ/π over-collection lifecycle (that refines
+the *perceptual* part/whole structure of the towers). The OBJECT is refined by **authority** — the
+user's **TruthSet** (trusted English sentences). **Experience** (episodic LTM, Workstream G) and
+**reasoning** (category-based induction over examples) come **later**, once there is a working knower.
+
+**The truth is mostly NOT a codebook part-whole edge — it is a relation between composed IDEAS
+(Alec, 2026-06-17).** A copular "is-of-predication" sentence reduces to a part-whole relation over the
+two codebooks **only when both sides are single codes**. "*bowling pins are white*" does **not**:
+"bowling pins" is a syntactically-composed NP, not one code. So the general case must be encoded as a
+**relation between syntactically-composed IDEAS in STM/LTM** — structures that **need not be codebook
+codes** and are **often more complex than the isomorphically-defined `_sym_*` symbols**. This is the
+spec's **reducibility gate**: only the *reducible single-code* subset becomes a `_sym_*` part-whole
+edge (or refines B's poles directly); everything else is an **idea / relation-between-ideas** in the
+STM/LTM truth memory (`RelativeTruthStore` / `TruthLayer`; Workstreams **F + G**). Build consequence:
+the authority channel targets the **ideas memory** (composed-idea relations), **not** a naïve "route
+every assertion into `_sym_*`" — that only works for single-code subjects.
+
+**Reducibility is gated by TRUST (Alec, 2026-06-17).** Even a single-code-reducible truth must **not**
+be written straight into the codebook part-whole table — the codebook is **assumed-valid / absolute**
+(no per-proposition trust), so promoting user **testimony** (3rd-person authority) into it would
+**treat testimony as direct experience**. Keep the reduction **scoped by the trust score** (tetralemma
+`(t,f,b,n)`): testimony lives in the **relative / trust-bearing** store; it does not become an absolute
+codebook edge merely because it is structurally reducible. Reducibility AND trust are **both** gates.
+
+**The truth/ideas subsystem is the OUTPUT of serial parsing**, not a separate prerequisite: serially
+parsing a sentence and storing it as an absolute or relative truth IS the subsystem — so it falls out
+of the serial-mode work below, which the build heads toward anyway.
+
+### Serial-mode word-at-a-time loop — strategy (mapped 2026-06-17, Alec deciding)
+Alec: in serial mode FORCE PS to combine letters up to word-sized chunks and FORCE WS to isolate
+"words", LOOP over PS+WS one word at a time so each word adds its object (B) + meta (C) *before*
+syntax, and "depending on our strategy, we can drop the gaussian masking." A 5-facet read-only map
+established the **current state**:
+- **A slot ≠ a word.** Radix `spell_out` emits a RUN of letter-chunk percepts; `InputSpace.word_at(p)`
+  ([Spaces.py:8376](../../bin/Spaces.py)) ticks once per *chunk* until frequency-promotion
+  ([Layers.py:9858](../../bin/Layers.py), default 4×) collapses a word to one percept. The word
+  boundary is known in `_embed_radix` (`word_groups`, [Spaces.py:9749](../../bin/Spaces.py)) but is
+  **not** used to force one-pid-per-token; PS explicitly declines a whitespace force.
+- **The per-word body is torch.compile-captured** (`_per_word_body_step`, [Models.py:6671](../../bin/Models.py);
+  loop at 6978) — which is *why* the A/B/C mint was exiled to eager `Reset`. A per-word B/C hook must
+  run eager / `@torch.compiler.disable`.
+- **A/B/C fires at the sentence boundary, AFTER compose** (`_maybe_autobind_meta` ← `Reset`), so today
+  it can only inform the *next* sentence — wrong place to be "the basis for syntactic analysis."
+- **Word↔object substitution primitives** `resolve_ps_terminal` ([Spaces.py:15229](../../bin/Spaces.py))
+  + `ReferenceTable` ([Spaces.py:17509](../../bin/Spaces.py)) exist with **zero production callers**
+  (the spec's ✗ verify/wire item).
+- **Gaussian "mask"** is a per-word attentional WINDOW (`gaussian_window_word`,
+  [Models.py:2447](../../bin/Models.py)), not BERT masking; it supplies neighbour context. D3 loss
+  reconstructs the UNMASKED input regardless.
+
+**Strategy options** (full analysis in the workflow transcript):
+- **Option A — reuse the existing serial body + eager per-word B/C shim + word→object substitution
+  around compose.** Force PS via a runtime `_embed_radix` "one pid per lexer token" branch; KEEP the
+  Gaussian window (it now centres on a real word); new `serialObjectMeta` gate (independent of
+  `<mereologyRaise>`); flag-off byte-identical. Medium blast radius; **closes the ✗ substitution item**.
+- **Option B — relocate the word loop into ConceptualSpace** (loop + mint in one eager object; WS span
+  carrier drives each step). The architecturally "right" home, **drops** the Gaussian window (WS whole
+  + recurrent C→P/S carry subsume context), but **moves the torch.compile capture boundary** → largest
+  re-pin.
+- **Option C — config-forced chunking + minimal per-word meta read via the existing
+  `_build_category_context` bridge, no substitution.** Smallest, fast probe; does **not** fully satisfy
+  "B/C as the basis for syntax."
+
+**DECISION (Alec, 2026-06-17): Option A, refined — both PS and WS process the ACTIVE WORD ONLY (hard
+mask).** During the per-word step the Word-symbol A is built from spatially-correct parts and wholes:
+- **PS parts:** *no part with a `.where` outside the active word* (parts ⊆ word span);
+- **WS wholes:** *no whole that fails to include the entirety of the word in its `.where`* (whole ⊇ word span).
+
+This is a **HARD mask** to the active word (it replaces — does **not** keep — the soft Gaussian window).
+**Acknowledged downside:** hard masking forgoes the **word2vec-like contextual embedding** the Gaussian
+window provided (no neighbour-context shaping of a word's code). Accepted for now.
+
+**Object-as-vector (B is relation-only):** the word's own vector stands in for the object until B is
+**grounded by authority** (the TruthSet); the word→object substitution is a no-op until the object is
+known, then becomes live. Other settled defaults: B/C gets its **own gate** (`serialObjectMeta`,
+independent of `<mereologyRaise>`); flag-off byte-identical.
+
+**Context for the hard mask = the §6c sentence-protocol prelude (DEFAULT CUTOVER, 2026-06-18, Alec).**
+The hard mask drops neighbour context (no word2vec-like embedding). That context re-enters via the
+**initial subsymbolic-order pass** — `_sentence_prelude` ([Models.py:6651](../../bin/Models.py)) runs
+`subsymbolicOrder` **whole-sentence** pumps (both towers, EMA on) → a **gist** → `set_intent` priming
+both towers (intent-only: feedback restored, no STM push; eager, before the captured per-word loop). So
+a hard-masked word is processed **against gist-primed towers** — sentence context conditions its
+parts/wholes through the **intent channel**. **Cutover:** `sentence_protocol` default changed
+`False → (symbolicOrder ≥ 1)` ([Models.py ~639](../../bin/Models.py)) — **ON in serial, OFF in
+parallel** (the prelude is only invoked from `_forward_body_per_word`); explicit `<sentenceProtocol>`
+overrides. Triage of the ~18 serial configs: **only** `test_sentence_protocol::test_protocol_off_by_
+default_and_dark` failed (it pinned the old default) — updated to the new contract (on-in-serial /
+dark-when-forced-off / off-in-parallel); all serial configs' functional tests stayed green.
+
+**Build increments (incremental, suite-green per step):**
+1. **✓ DONE (2026-06-17).** Serial mereology config — `data/MM_mereology_serial.xml` = MM_mereology +
+   `symbolicOrder=1`. The serial+radix path (previously unexercised) **constructs and forwards
+   cleanly**; `terminalConceptualSpace_ref` wiring verified. Suite 2564/0.
+2. **Word-span hard mask + per-word commit (mapped + adversarially verified 2026-06-17).** Replace
+   `gaussian_window_word` with `word_span_window` (the HARD same-word mask: sum the slots sharing
+   slot `k`'s word index → the active word's rep `[B,1,D]`), gated `serialObjectMeta`, byte-identical
+   off. **Verified correction:** `MM_mereology_serial.xml` is `synthesis=radix`, so `_embed_radix`
+   emits **one slot per pid** — an unfamiliar word spans MULTIPLE byte-pid slots (grouped by
+   `word_group_grid`); promoted words are 1 slot. So a **per-word commit gate** (fire the STM push +
+   the eager A/B/C **once per word**, at the last slot of each word) is *genuinely required* (not a
+   no-op). Byte mode has no `word_groups` → `word_span_window` degrades to the single-slot fallback.
+   - **2a ✓ DONE:** `word_span_window` pure helper (`Models.py`, after `gaussian_window_word`; reads
+     none of `self`, fully unit-tested in `test/test_serial_object_meta.py`, 6 tests). Unwired ⇒
+     byte-identical.
+   - **2b ✓ DONE (2026-06-18, captured-loop wiring).** `serialObjectMeta` config + XSD; stamped on the
+     model **+ InputSpace** (reaches `finalize_stem`) **+ CS** (a NEW stamp site — read live in
+     `_create_per_stage`, order-safe, since `_mereology_raise` never reaches CS). `InputSpace.finalize_stem`
+     surfaces `word_group_grid` as the capturable `[B,N]` `_word_index_N` (+ `_word_last_slot_mask` =
+     last-slot-of-word AND active), flag-guarded (None elsewhere ⇒ consumers fall back to per-slot).
+     `_per_word_body_step` branches `gaussian → word_span_window` at the window call (PS processes the
+     active-word block) and gates the STM push on `commit_b_1` (per-word last-slot) so a radix
+     multi-slot word pushes ONE idea. **Capture-safe** (compiled forward + capture-gate test pass;
+     the branch is a const-folded Python bool, the mask/slice are fixed-shape). **Byte-identical off**
+     (flag-off → gaussian + per-slot, `_word_index_N` not built). Tests: `test_serial_object_meta.py`
+     (6 unit + 3 integration: stamps/tensors, commit-once-per-word, flag-off-no-build). The A/B/C mint
+     **already fires** under the config's `mereologyRaise` gate (no gate-widen needed here). **Host
+     STM-depth mirror** stays per-iteration (conservative upper bound → at worst an early-but-safe
+     reduce in long radix words; raise `stmCapacity` if needed). **Deferred to 2c:** route the per-word
+     UNITY to WS (`ss.forward(prevCS, IS_concepts=masked per-word unity)` → `_stage0_unity_forward`
+     emits the covering whole with wide `.where`) — the WS half of the dual view; and the per-pid
+     stack vs per-word STM reconstruction test.
+3. **Per-word A/B/C before compose** — the eager mint **already** fires once-per-word keyed by surface
+   text at `ConceptualSpace.Reset`→`_maybe_autobind_meta`→`create_word_object_meta` (a per-`p` eager
+   seam inside the compiled forward is impossible; the `@torch.compiler.disable` idea was wrong — a
+   disabled call is itself a fullgraph break). So step 3 ≈ widening that gate (part of 2b).
+4. **Word→object substitution** — wire `resolve_ps_terminal` / `ReferenceTable` around the per-word
+   compose (no-op until B is authority-grounded); inverse on the reverse path.
+Workstream B/C lifecycle and the authority→ideas truth encoding ride on top once the per-word loop
+delivers clean word-symbols.
+
 ### Lifecycle — over-collection triggers refinement; convergence → identity
 - **Over-collection is ACTIONABLE.** Too many parts OR too many wholes on a symbol triggers
   refinement:
@@ -741,3 +985,121 @@ Because symbols are relation-only, **there is no codebook split**: move the *rel
 - **Staged, suite-green per stage:** Stage 1 tables+methods on CS with WS delegation shims (suite
   stays green) → Stage 2 repoint autobind + Models wiring → Stage 3 persistence + checkpoint shim
   → Stage 4 repoint tests, drop shims.
+
+### Migration reality check (2026-06-17, verified against source — corrects the framing above)
+A read-only blast-radius mapping (6 facets) + adversarial critique, **verified against the live
+tree**, found the "relation-only ⇒ mainly movement / no codebook split" framing is **wrong on the
+points that matter**. The corrected, code-grounded picture:
+
+1. **`insert_symbol`/`insert_meta` are CODEBOOK-COUPLED — they cannot just move to CS.**
+   `insert_symbol` hard-requires `self.subspace.what` be a `Codebook` ([Spaces.py:14844](../../bin/Spaces.py),
+   raises otherwise) and mints rows through the **shared `_paired_next_row` / `_paired_orth_to_sem`
+   cursor** seeded from `well_known_atoms` (shared with the legacy `insert_paired_word` lexicon).
+   `ConceptualSpace.subspace.what` is a **plain Tensor**, not a Codebook. So the **Codebook + the
+   atomic row/position allocation stay on WholeSpace** (the owner); CS gets **only the pure-dict
+   taxonomy bookkeeping**.
+2. **The META taxonomy is TERMINAL-SS-scoped, not per-stage.** `_maybe_autobind_meta` targets
+   `terminalSymbolicSpace_ref` ([Spaces.py:12509](../../bin/Spaces.py); docstring: *"the META
+   taxonomy is owned by the canonical (terminal) SS … growing a per-stage SS codebook would overrun
+   the where-space registry"*). There are **N per-stage CS instances but ONE terminal table** — a
+   naive `ss.`→`self.` flip would **fragment the shared taxonomy into N**. The migration must target
+   a **single terminal CS**; do NOT pair each per-stage CS with its co-stage WS.
+3. **`ConceptualSpace(Space)` ≠ `WholeSpace(PerceptualSpace)`.** `_peer_percept_store` /
+   `insert_percept` ([Spaces.py:14790/14803](../../bin/Spaces.py)) are PerceptualSpace machinery CS
+   lacks — the percept-seed/allocator helpers stay on WS.
+4. **Corrected decomposition.** CS owns the pure-dict taxonomy (`taxonomy`, `taxonomy_parent_map`,
+   `meta_pair_to_idx`, `meta_trust`, `part_chain`). WS keeps the `Codebook` + a new **atomic
+   `allocate_symbol_row(init_vec) → (pos, row)`** that mints the row AND binds `pos↔row` in one
+   owner; CS calls it and records the position. **One owner for `_pos_kind` / `_ss_pos_to_row` /
+   `_ss_row_to_pos`** (the `"ss"` vs `"meta"` tag desyncs if split) — keep them **with the allocator
+   on WS**, or move the allocator too; **never split allocator from the maps it mutates**.
+5. **Persistence is wider than the taxonomy.** `vocab_extras` also serializes `well_known_atoms` /
+   `_paired_orth_to_sem` / `_paired_next_row` ([Spaces.py:15917](../../bin/Spaces.py)) and Models
+   reads `well_known_atoms` off WS ([Models.py:1329/1573](../../bin/Models.py)). Either keep
+   `vocab_extras` on WS (serializing a CS taxonomy sub-blob) or add those three to the inventory.
+6. **RadixLayer.reverse repoint site is [Models.py:1742](../../bin/Models.py)** (the caller passing
+   `symbolic_space=ss`), not the layer body — `RadixLayer` holds no CS handle.
+7. **vector→relation retirements are DEFERRED past S3** (need their own design + sign-off): the
+   `_nearest_symbol_target` MSE quantization loss (a gradient-path training signal with no row to
+   regress to under relation-only), `_snap_content` decode-by-similarity, and `RelativeTruthStore`
+   cosine → graded collection-overlap + component-wise ternary negation (reuse `NegationLayer`).
+8. **Verified baseline = 2557 passed / 0 failed (2641 collected), 2026-06-17** — *not* the stale
+   2505 some memories cite. Re-pin the per-stage suite-green gate to this.
+9. **Scope trim:** `test_search_then_mint.py` / `test_serial_stm_split.py` touch no migrated method
+   (grep-confirmed; they use the separate `ReferenceTable`) — out of scope. ~9 WS-relevant test
+   files, not ~18.
+
+**Verdict:** the migration is **not "mainly movement"**. Two relocation readings were surfaced and
+**Alec chose RELATION-ONLY COMPLETION (2026-06-17)** — *not* a codebook move:
+
+> CS becomes the **sole owner** of the symbol/taxonomy as a **relation-only LUT** (the landed
+> `_sym_*` table) that references **existing PartSpace part-codes and WholeSpace whole-codes**
+> (whole = a reference to the part). **Symbols stay vectorless** (no codebook row); the legacy WS
+> `insert_symbol` meta-vector seed is retired. **WS keeps its whole codebook; PS keeps its part
+> codebook.** This matches the "Symbols are RELATION-ONLY" principle above.
+
+Consequences vs. a codebook move: **no new CS codebook**, so **no per-stage fragmentation risk, no
+codebook state_dict/VQ/ramsification migration** — only the taxonomy **JSON blob** (`vocab_extras`)
+re-homes. The one genuinely hard piece: the legacy meta **vector is load-bearing** (the
+`_nearest_symbol_target` MSE quantization loss regresses to it; `SymbolizeLayer.forward` reads
+`W[meta_row]` downstream), so **retiring it is a gradient-path change** — sequenced **last**, behind
+its own sign-off + behavioral-equivalence harness.
+
+**Staged plan (relation-only completion):**
+- **S3a — golden harness (read-only).** Snapshot the META bindings (decode/reverse) + taxonomy
+  **AND the codebook rows** (`subspace.what.getW()` for the META/SS rows) over a fixed corpus
+  pre-migration. Suite 2557/0. (Review correction: the silent-divergence path is row-mint ordering
+  → `_nearest_symbol_target` MSE target, which a decode/taxonomy-only snapshot would miss.) Safe
+  under any plan; the behavioral-equivalence oracle for later stages.
+- **S3b — CS owns the relation LUT (mechanism revised after adversarial review, 2026-06-17).** The
+  review found the original "move the dicts to CS, keep the codebook on WS, forward via `@property`"
+  is **internally inconsistent**: `insert_symbol`/`insert_meta` mint a codebook row AND write the
+  position dicts **in one atomic call sharing cursors** ([Spaces.py:14786/15433-15439](../../bin/Spaces.py)),
+  so splitting dict-ownership from row-mint re-introduces the peer-write coupling. **Adopt Fix #1
+  (invert the shim direction):** the legacy taxonomy dicts + position maps + cursors (`_next_position`,
+  `well_known_atoms`, `_paired_next_row`) **stay physically on the terminal WholeSpace** (already a
+  singleton — `terminalSymbolicSpace_ref`, so there is **no fragmentation to fix**); **CS owns the
+  relation-only INTERFACE by reference** — the `_sym_*` table + any new CS relation API forward to
+  `terminalSymbolicSpace_ref`. This preserves the atomic row-mint+dict-write, keeps the cursors
+  co-located, and needs **zero reader/mutator repointing** ⇒ behavior-equivalent. (True physical
+  CS ownership = **Fix #2**: move the dicts + the atomic methods + all three cursors as a unit, WS
+  exposing *identity-forwarding* descriptors, not copies — materially larger, deferred.) `_sym_*`
+  stays the live relation view over the WS dicts; it is **ephemeral** (not persisted) under Fix #1.
+- **S3c — persistence.** Under Fix #1 the physical store stays on WS, so persistence is **unchanged
+  / no re-home needed**. (Review correction: `vocab_extras` is **one entangled blob** — taxonomy +
+  `well_known_atoms` + `_paired_*` cursor + position cursor + `part_chain`-only-when-non-empty
+  ([Spaces.py:15908-15968](../../bin/Spaces.py)); a re-home could not move "only the taxonomy". Fix
+  #1 sidesteps this entirely. If Fix #2 is later chosen, the WHOLE `vocab_extras`/`load_vocab_extras`
+  pair moves, preserving the inverse-map rebuild and the byte-identical-flag-off `part_chain` rule.)
+- **S3d — tests + drop shims.** Repoint the ~9 WS-relevant test files; drop the WS delegation shims.
+- **S3e — DEFERRED, separate sign-off (gradient-path change).** Retire the meta-vector seed +
+  `_nearest_symbol_target` MSE loss; reroute the `SymbolizeLayer` `W[meta_row]` consumer to a
+  relation-derived value; `RelativeTruthStore` cosine → component-wise ternary negation
+  (reuse `NegationLayer`). The **only** non-byte-identical, training-signal-changing piece; last.
+
+**Converged conclusion (three verified rounds, 2026-06-17).** Two planning workflows + one adversarial
+code review (verdicts: unsafe, unsafe, needs-revision) converge on: **the physical relocation of the
+legacy taxonomy is low-value churn** — it is *already* a terminal singleton (no fragmentation to fix),
+its methods are atomically codebook-coupled (can't be cleanly split), and the only behavior-equivalent
+"CS ownership" is **Fix #1 = ownership-by-reference** (physical state stays on WS; CS is the relation
+interface). The **real relation-only capability is S3e** (retire the meta vectors → vectorless symbols
++ component-wise negation), which is a **gradient-path change needing its own sign-off**. The
+`_sym_*` relation-only LUT — the thing Alec actually specified — **is already landed** (15 tests).
+
+**LANDED (2026-06-17, Alec: "Do S3 relocation").** Fix #1 executed: `Models` wires a single
+`terminalConceptualSpace_ref` (= `conceptualSpaces[-1]`) onto every CS **and** every WS (mirroring the
+`terminalSymbolicSpace_ref` fan-out); `ConceptualSpace` gains `_relation_store()` + forwarding relation
+read-API accessors (`taxonomy_children` / `taxonomy_parent` / `taxonomy_parents` / `is_meta` /
+`ps_children_of_whole`) so **CS is the canonical relation-only owner-by-reference** — callers can
+migrate WS→CS behavior-equivalently. Additive, byte-identical (suite 2564/0). Test:
+`test/test_mereology_word_binding.py::test_cs_owns_relation_taxonomy_by_reference`.
+
+**S3e is NOT needed — superseded by the A/B/C creation (Alec, 2026-06-17).** "S3e" was a proposed step
+to make the *legacy* metas vectorless (retire `insert_meta`'s codebook-row seed + the
+`_nearest_symbol_target` MSE loss). But the relation-only symbols **are** the freshly-created A/B/C
+(which never carry a vector): A (word-symbol) is built from PS+WS **serial-mode** behavior once
+word-parts and word-wholes are ensured, with B (object) and C (meta) minted at the same moment. The
+legacy vector-bearing metas are a **separate, coexisting path** — nothing must be "retired" to obtain
+the relation-only model. **⇒ S3 is effectively complete** (Fix #1 ownership + A/B/C creation); the
+gradient-path change is dropped. Removing the legacy vector machinery later is optional **cleanup**,
+not a capability gate.

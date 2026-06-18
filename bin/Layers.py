@@ -3240,6 +3240,17 @@ LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
 # predicate): used as a property_class_whole key, never passed to
 # char_class_region (whose spans come from the whitespace analysis cut).
 WORD = 100
+# Key-only sentinels for the two POLES of the relation-only CS symbol lattice
+# (doc/specs/mereological-order-raising.md, the word/object/meta creation). A
+# freshly-minted OBJECT-symbol B starts maximally unspecified: its only WHOLE is
+# the UNIVERSE (the top -- the entire input extent, more general than a word)
+# and its only PART is the ATOM level (the bottom -- "made of some atoms",
+# unspecified). Successive refinement (σ synthesizes the atoms into higher-order
+# parts; π splits the universe into finer wholes -- the lifecycle loop) replaces
+# these poles with concrete part / whole codes. Like WORD, these are key-only
+# whole/part-code sentinels in the relation-only table, never tiling predicates.
+UNIVERSE = 101
+ATOM = 102
 _CHAR_CLASS_RANGES = {
     LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
     DIGIT: [(48, 57)],                       # 0-9

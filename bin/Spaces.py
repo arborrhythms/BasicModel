@@ -43,6 +43,7 @@ from embed import (
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
+from Layers import UNIVERSE as _UNIVERSE, ATOM as _ATOM  # relation-only lattice poles (word/object/meta)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer
 # NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
@@ -8001,6 +8002,8 @@ class InputSpace(Space):
         # per-word body.
         self._ar_embedded_N = None
         self._word_active_mask = None
+        self._word_index_N = None
+        self._word_last_slot_mask = None
 
     def Reset(self, batch=None, hard=True):
         """Per-document teardown for AR state.
@@ -8029,6 +8032,8 @@ class InputSpace(Space):
         self._valid_len_host = 0
         self._ar_embedded_N = None
         self._word_active_mask = None
+        self._word_index_N = None
+        self._word_last_slot_mask = None
         self._cached_embedding = None
         # _end_of_stream is a host-side ``list[bool]`` under the
         # rolling-cursor contract (the canonical hard-reset signal is
@@ -8364,6 +8369,31 @@ class InputSpace(Space):
             else:
                 _wam = embedded_N.detach().abs().sum(dim=-1) > 0
         self._word_active_mask = _wam
+        # serialObjectMeta (doc/specs/mereological-order-raising.md "Serial-mode
+        # word-at-a-time loop"): surface the per-slot WORD INDEX ``[B,N]`` and
+        # the per-word LAST-SLOT commit boundary as capturable device tensors
+        # (the per-word loop slices them ``[:, p:p+1]`` inside the captured
+        # body). Source the word-index from PartSpace's ``_embed_radix`` stash
+        # (``word_group_grid``); ``None`` in byte / lexicon modes (no word
+        # grouping) -> consumers fall back to the per-slot active mask. Built
+        # ONLY when the flag is on, so flag-off output is unchanged.
+        self._word_index_N = None
+        self._word_last_slot_mask = None
+        if getattr(self, '_serial_object_meta', False):
+            _wg = None
+            _pfi = getattr(ps, '_forward_input', None)
+            if isinstance(_pfi, dict):
+                _wg = _pfi.get('word_groups', None)
+            if (torch.is_tensor(_wg) and _wg.dim() == 2
+                    and int(_wg.shape[0]) == B and int(_wg.shape[1]) == N):
+                widx = _wg.to(device=embedded_N.device)
+                self._word_index_N = widx
+                # last-slot-of-word: this slot's word id differs from the NEXT
+                # slot's (or it is the final slot); AND active so pads never
+                # commit. The per-word STM push / A/B/C fire on this gate.
+                _sentinel = torch.full_like(widx[:, :1], -1)
+                _shifted = torch.cat([widx[:, 1:], _sentinel], dim=1)
+                self._word_last_slot_mask = (widx != _shifted) & _wam
         ps._bpe_word_mask_flat = bpe_mask_N
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
@@ -12535,7 +12565,7 @@ class ConceptualSpace(Space):
                 and word_groups is not None
                 and torch.is_tensor(word_groups)
                 and tuple(word_groups.shape) == tuple(pid_2d.shape)):
-            self._autobind_word_wholes(
+            word_bindings = self._autobind_word_wholes(
                 pid_2d, vec_tensor, word_groups, tokens, ss)
             # Cross-tower `.where`-gated binding (A4): percept-TYPE ⊑ generic
             # word-TYPE when the percept `.where` (subspace.where) nests inside a
@@ -12543,6 +12573,13 @@ class ConceptualSpace(Space):
             # (taxonomy_parents) retains this ALONGSIDE the per-text word edge
             # above. No-op when `.where` / spans are unavailable (byte analysis).
             self._autobind_cross_tower(pid_2d, percept_where, ss)
+            # CS-side relation-only symbols per word (Alec 2026-06-17): A =
+            # word-symbol (its word-parts ⊑ word-whole), B = object-symbol
+            # (ATOM ⊑ UNIVERSE initially -- successively refined), C = the
+            # word≡object META = reify(A, B). Keyed by surface text so a word is
+            # one stable triple across presentations. Additive CS state, gated.
+            for (w_parts, w_whole, w_key) in (word_bindings or ()):
+                self.create_word_object_meta(w_parts, w_whole, key=w_key)
             return
         bound = getattr(self, '_autobound_percept_ids', None)
         if bound is None:
@@ -12692,13 +12729,18 @@ class ConceptualSpace(Space):
         B = int(pid_2d.shape[0])
         N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
         if N == 0:
-            return
+            return []
         pid_host = pid_2d.detach().reshape(B, N).tolist()
         grp_host = word_groups.detach().reshape(B, N).tolist()
         whole_by_text = getattr(ss, '_word_whole_ss', None)
         if whole_by_text is None:
             whole_by_text = {}
             object.__setattr__(ss, '_word_whole_ss', whole_by_text)
+        # Per-word descriptors (word-parts, word-whole, surface-key) returned to
+        # the orchestrator so CS can mint the relation-only A/B/C symbols. This
+        # method itself only uses ``ss`` (the WS binding); ``self`` is untouched
+        # here -- the standalone tests call it directly with ``self=None``.
+        bindings = []
         for b in range(B):
             # Group this row's promoted slots by lexer-token index (the spelled-
             # out run of one word); skip pads (pid < 0) and pad groups (g < 0).
@@ -12728,8 +12770,10 @@ class ConceptualSpace(Space):
                     whole_pos = ss.insert_symbol(init_vec=seed_whole)
                     whole_by_text[key] = int(whole_pos)
                 last_meta = None
+                word_parts = []
                 for n in slots:
                     pid = int(pid_host[b][n])
+                    word_parts.append(pid)
                     part_seed = vec_tensor[b, n].detach().clone()
                     ps_pos = ss.ensure_ps_position(pid)
                     last_meta = ss.insert_meta(
@@ -12738,6 +12782,8 @@ class ConceptualSpace(Space):
                 # part subsuming them (idempotent per whole).
                 if last_meta is not None:
                     ss.maybe_raise_order(int(last_meta))
+                bindings.append((word_parts, int(whole_pos), key))
+        return bindings
 
     def _autobind_cross_tower(self, pid_2d, percept_where, ss):
         """Live cross-tower ``.where``-gated meronomy (S6/A4; doc/specs/
@@ -12946,7 +12992,17 @@ class ConceptualSpace(Space):
         resolved = []
         for sym in list(parts.keys()):
             if len(parts.get(sym, ())) == 1 and len(wholes.get(sym, ())) == 1:
-                ident[sym] = (next(iter(parts[sym])), next(iter(wholes[sym])))
+                p = next(iter(parts[sym]))
+                w = next(iter(wholes[sym]))
+                # An UNSPECIFIED pole-pair (a freshly-minted OBJECT-symbol:
+                # ATOM as its part and/or UNIVERSE as its whole) has the SHAPE
+                # of a 1:1 tie but is the maximally-general placeholder awaiting
+                # refinement -- NOT a resolved identity. Leave it active so the
+                # lifecycle can specialize it (σ over the atoms; π over the
+                # universe). Only a tie between CONCRETE codes is an identity.
+                if p == _ATOM or w == _UNIVERSE:
+                    continue
+                ident[sym] = (p, w)
                 parts[sym] = set()        # sets vanish (subsumed by codebooks)
                 wholes[sym] = set()
                 resolved.append(sym)
@@ -12965,6 +13021,99 @@ class ConceptualSpace(Space):
         zeroed-out 1:1 identities are excluded — they are done."""
         parts, wholes = self._sym_tables()
         return sorted(s for s in parts if parts.get(s) or wholes.get(s))
+
+    def create_word_object_meta(self, word_parts, word_whole, key=None):
+        """Create the per-word A / B / C symbols in the relation-only table
+        (Alec, 2026-06-17; doc/specs/mereological-order-raising.md "word /
+        object / meta creation"). PartSpace and WholeSpace are constrained to
+        give the word-PARTS and the word-WHOLE; ConceptualSpace mints the three
+        symbols on top:
+
+          A = WORD-symbol   — Parts(A) = the word-parts (PS codes), Wholes(A) =
+                              the word-whole (WS code). The orthographic word.
+          B = OBJECT-symbol — Parts(B) = {ATOM}, Wholes(B) = {UNIVERSE},
+                              INITIALLY: the referent is maximally unspecified
+                              and is SUCCESSIVELY REFINED (σ synthesizes the
+                              atoms into higher-order parts; π splits the
+                              universe into finer wholes — the lifecycle loop).
+          C = META          — ``reify_relation(A, B)``: Parts(C)={('sym',A)},
+                              Wholes(C)={('sym',B)}. The word≡object binding.
+
+        Relation-only: no vectors, no codebook rows — the parts/wholes are
+        references into the EXISTING PartSpace / WholeSpace codebooks (plus the
+        ATOM / UNIVERSE poles). Idempotent per surface ``key`` (the same word
+        reuses its A/B/C; A still ACCUMULATES any newly-presented word-parts);
+        with ``key=None`` every call mints a fresh triple. Returns ``(A, B, C)``.
+        """
+        wom = getattr(self, "_word_obj_meta", None)
+        if wom is None:
+            wom = {}
+            object.__setattr__(self, "_word_obj_meta", wom)
+        if key is not None and key in wom:
+            A, B, C = wom[key]
+            for p in word_parts:                  # A keeps accruing word-parts
+                self.add_part(A, int(p))
+            return A, B, C
+        A = self.new_symbol()                     # the WORD-symbol
+        for p in word_parts:
+            self.add_part(A, int(p))
+        if word_whole is not None:
+            self.add_whole(A, int(word_whole))
+        B = self.new_symbol()                     # the OBJECT-symbol
+        self.add_part(B, _ATOM)                   # bottom pole — to be refined
+        self.add_whole(B, _UNIVERSE)              # top pole — to be refined
+        C = self.reify_relation(A, B)             # the word≡object META (A ≤ B)
+        if key is not None:
+            wom[key] = (A, B, C)
+        return A, B, C
+
+    # ------------------------------------------------------------------
+    # S3 relocation (2026-06-17; doc/specs/mereological-order-raising.md
+    # "relation-only completion" + "Migration reality check"). ConceptualSpace
+    # is the OWNER of the relation-only symbol table (the _sym_* /
+    # word-object-meta APIs above). The LEGACY position-keyed taxonomy is
+    # physically served from the TERMINAL WholeSpace -- whose insert_symbol /
+    # insert_meta mint a codebook ROW and write the position dicts in ONE
+    # ATOMIC call, so the dicts cannot move off WS without either a CS codebook
+    # (rejected -- symbols are relation-only) or retiring the meta-vector seed
+    # (a gradient-path change, deferred to S3e). Until then CS owns the relation
+    # taxonomy BY REFERENCE (Fix #1): these accessors forward to the single
+    # terminal store so CS is the canonical relation interface and callers can
+    # migrate WS->CS now, behavior-equivalent.
+    # ------------------------------------------------------------------
+
+    def _relation_store(self):
+        """The physical owner of the legacy position-keyed taxonomy: the TERMINAL
+        WholeSpace (``terminalSymbolicSpace_ref``), with the per-stage
+        ``symbolicSpace_ref`` as the standalone-test fallback (mirrors the
+        resolution in :meth:`_maybe_autobind_meta`). ``None`` if unwired."""
+        return (getattr(self, 'terminalSymbolicSpace_ref', None)
+                or getattr(self, 'symbolicSpace_ref', None))
+
+    def taxonomy_children(self, pos):
+        """Children of META ``pos`` (forwards to the relation store); ``[]``."""
+        store = self._relation_store()
+        return [] if store is None else store.taxonomy_children(pos)
+
+    def taxonomy_parent(self, pos):
+        """Last-bound parent of ``pos`` (forwards); ``None`` if unwired."""
+        store = self._relation_store()
+        return None if store is None else store.taxonomy_parent(pos)
+
+    def taxonomy_parents(self, pos):
+        """ALL parent METAs of ``pos`` — the lattice view (forwards); ``[]``."""
+        store = self._relation_store()
+        return [] if store is None else store.taxonomy_parents(pos)
+
+    def is_meta(self, pos):
+        """True iff ``pos`` is a META node (forwards); ``False`` if unwired."""
+        store = self._relation_store()
+        return False if store is None else store.is_meta(pos)
+
+    def ps_children_of_whole(self, ss_pos):
+        """PS parts linked to whole ``ss_pos`` across its METAs (forwards)."""
+        store = self._relation_store()
+        return [] if store is None else store.ps_children_of_whole(ss_pos)
 
     # ------------------------------------------------------------------
     # Task 6c: content-aware learn-score acceptance gate + tetralemma
