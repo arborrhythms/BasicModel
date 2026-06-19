@@ -620,24 +620,40 @@ def compile(model, verbose=True, fullgraph=False):
     import torch._dynamo as _dyn
     _dyn.config.allow_unspec_int_on_nn_module = True
 
-    # MPS: Inductor emits a device-side bounds-check error buffer
-    # (``c10::metal::ErrorMessages* error_buf``) for every
-    # bounds-checked indirect load it generates. A large fusion (the
-    # MM-scale 2N×N glue + slot-cascade kernels run past 10k generated
-    # Metal lines) can then exceed Metal's hard 31-buffer binding
-    # limit and kernel compilation fails with "no 'buffer' resource
-    # location available for 'error_buf'" — observed on
-    # ``MM_20M.xml`` once the meronymic slot cascades joined the
-    # fusion (2026-06-11). Dropping the assert codegen removes the
-    # extra buffer argument; out-of-range indices on MPS become
-    # unchecked (the pre-error_buf behavior). CUDA / CPU keep their
-    # checks — they have no such binding limit.
+    # MPS: Inductor injects a device-side error buffer
+    # (``c10::metal::ErrorMessages* error_buf``) into any kernel whose
+    # codegen adds the "error" header. A large fusion (the MM-scale 2N×N
+    # glue + slot-cascade kernels run past 10k generated Metal lines) can
+    # then exceed Metal's hard 31-buffer binding limit and kernel
+    # compilation fails with "no 'buffer' resource location available for
+    # 'error_buf'" — observed on ``MM_20M.xml`` (2026-06-11; reproduced
+    # 2026-06-19). There are TWO emitters of that header in
+    # ``torch/_inductor/codegen/mps.py``:
+    #   1. ``check_bounds`` (indirect-LOAD bounds) -- gated by
+    #      ``config.assert_indirect_indexing`` via ``generate_assert``.
+    #   2. ``device_assert_async`` (``torch._check`` / ``aten._assert_async``,
+    #      e.g. the embedding-scatter index validation) -- NOT gated by that
+    #      config, so disabling (1) alone still leaves ``error_buf`` (the
+    #      pre-2026-06-19 mitigation missed this and MM_20M still failed).
+    # Both are runtime SAFETY asserts; dropping them on MPS makes
+    # out-of-range / failed-check indices UNCHECKED (the pre-error_buf
+    # behavior) but removes the extra buffer argument so the kernel stays
+    # within the 31-buffer limit. CUDA / CPU keep their checks (no such
+    # binding limit). The class-method no-ops cover the case where the
+    # config change does not reach codegen; the config set covers any
+    # out-of-process compile worker (config serializes, monkeypatches do
+    # not).
     try:
         if str(TheDevice.get()).startswith("mps"):
             import torch._inductor.config as _ind
             _ind.assert_indirect_indexing = False
-            _msg("MPS: inductor assert_indirect_indexing disabled "
-                 "(Metal 31-buffer limit vs error_buf argument)")
+            from torch._inductor.codegen import mps as _mps_cg
+            _mps_cg.MetalKernel.device_assert_async = (
+                lambda self, cond, msg: None)
+            _mps_cg.MetalKernel.check_bounds = (
+                lambda self, expr, size, lower, upper: None)
+            _msg("MPS: inductor device asserts disabled (check_bounds + "
+                 "device_assert_async) -- Metal 31-buffer limit vs error_buf")
     except Exception:
         pass
 
@@ -862,11 +878,11 @@ class XMLConfig:
     # signals that the overlay XML takes full ownership of that
     # sub-tree -- the defaults' contents are dropped, not merged in.
     #
-    # Currently a single entry: ``WordSpace.language.grammar``. A model
+    # Currently a single entry: ``SymbolicSpace.language.grammar``. A model
     # XML that defines its own <grammar> block fully owns the rule set;
     # the model.xml defaults' tier-scoped grammar does not leak in.
     _NON_MERGING_PATHS = (
-        ('WordSpace', 'language', 'grammar'),
+        ('SymbolicSpace', 'language', 'grammar'),
     )
 
     def overlay(self, path):

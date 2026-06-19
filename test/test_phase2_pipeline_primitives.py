@@ -92,10 +92,10 @@ from Models import GrammarMergeGlue  # noqa: E402
 
 def test_grammar_merge_glue_averages_pairs():
     x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
+    ws = _FakeSymbols(x.clone())
     g = GrammarMergeGlue(stage_idx=0, initial_n=8, is_last=False)
-    g.forward(ss)
-    y = ss.materialize()
+    g.forward(ws)
+    y = ws.materialize()
     assert y.shape == (2, 4, 4)
     expected = (x[:, 0::2, :] + x[:, 1::2, :]) / 2
     assert torch.allclose(y, expected, atol=1e-6)
@@ -103,26 +103,26 @@ def test_grammar_merge_glue_averages_pairs():
 
 def test_grammar_merge_glue_is_last_identity():
     x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
+    ws = _FakeSymbols(x.clone())
     g = GrammarMergeGlue(stage_idx=0, initial_n=8, is_last=True)
-    g.forward(ss)
-    assert torch.equal(ss.materialize(), x)
+    g.forward(ws)
+    assert torch.equal(ws.materialize(), x)
 
 
 def test_grammar_merge_glue_roundtrip_via_diff_cache():
     x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
+    ws = _FakeSymbols(x.clone())
     g = GrammarMergeGlue(stage_idx=0, initial_n=8, is_last=False)
-    g.forward(ss)
-    g.reverse(ss)
-    assert torch.allclose(ss.materialize(), x, atol=1e-6)
+    g.forward(ws)
+    g.reverse(ws)
+    assert torch.allclose(ws.materialize(), x, atol=1e-6)
 
 
 def test_grammar_merge_glue_empty_passthrough():
-    ss = _FakeSymbols(torch.zeros(0, 0, 0))
+    ws = _FakeSymbols(torch.zeros(0, 0, 0))
     g = GrammarMergeGlue(stage_idx=0, initial_n=8, is_last=False)
-    out = g.forward(ss)
-    assert out is ss
+    out = g.forward(ws)
+    assert out is ws
 
 
 def test_space_forward_arities():
@@ -132,7 +132,7 @@ def test_space_forward_arities():
     into explicit ``forward`` arguments supplied by the recurrent cell:
       * PartSpace.forward(x_subspace)        -- Stage 1.A single-arg
       * ConceptualSpace.forward(PS_subspace, SS_subspace=None)
-      * WholeSpace.forward(CS_subspaceForSS, IS_concepts=None)
+      * WholeSpace.forward(CS_subspaceForWS, IS_concepts=None)
         -- the optional stage-0 UNITY input (analysis/synthesis
         dual-input plan, rev. 2026-06-09)
       * InputSpace / ModalSpace / OutputSpace    -- single arg
@@ -150,8 +150,8 @@ def test_space_forward_arities():
 
     Post-2026-05-21 SentenceState dissolution: the per-sentence ``work``
     carrier was retired. Grammar / serial-processing state lives directly
-    on ``WordSubSpace`` (cursor, recur_pass) and is reached via
-    ``subspace.wordSubSpace``. Forwards take ONLY data SubSpaces.
+    on ``SymbolicSubSpace`` (cursor, recur_pass) and is reached via
+    ``subspace.symbolicSpace``. Forwards take ONLY data SubSpaces.
     """
     import inspect
     from Spaces import (InputSpace, PartSpace, ModalSpace,
@@ -161,7 +161,7 @@ def test_space_forward_arities():
         PartSpace: (1, 1),   # x_subspace -- Stage 1.A single-arg
         ModalSpace: (1, 1),
         ConceptualSpace: (1, 2),   # PS_subspace req, SS_subspace opt
-        WholeSpace: (1, 2),     # CS_subspaceForSS req, IS_concepts opt
+        WholeSpace: (1, 2),     # CS_subspaceForWS req, IS_concepts opt
         OutputSpace: (1, 1),
     }
     for cls, (min_req, max_params) in expected.items():
@@ -233,7 +233,7 @@ def test_build_pipelines_creates_body_stages():
     assert len(model.body_stages) == model.subsymbolicOrder
     for stage in model.body_stages:
         assert isinstance(stage, nn_.ModuleDict)
-        assert "cs" in stage and "ss" in stage
+        assert "cs" in stage and "ws" in stage
     # Pipeline boundaries are methods, not attributes. ``_forward_stem``
     # stays retired (the IR forward inlines InputSpace+PartSpace
     # directly into ``_forward_per_stage``); ``reverse()`` reconstructs input

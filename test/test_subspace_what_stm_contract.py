@@ -256,18 +256,18 @@ def _make_syntactic_layer_with(host_layers, tier='S'):
 
     Bypasses build_space_syntactic_layer (which depends on TheGrammar
     being configured for the host_space). We just need the dispatcher
-    plus its _by_name table; the WordSpace it's wired to is a stub
+    plus its _by_name table; the SymbolicSpace it's wired to is a stub
     that satisfies register_host_layer.
     """
     from Language import SyntacticLayer
 
-    class _StubWordSpace:
+    class _StubSymbolicSpace:
         def __init__(self):
             self.calls = []
         def register_host_layer(self, tier, rule_name, layer):
             self.calls.append((tier, rule_name))
 
-    return SyntacticLayer(tier=tier, word_space=_StubWordSpace(),
+    return SyntacticLayer(tier=tier, word_space=_StubSymbolicSpace(),
                           host_layers=host_layers)
 
 
@@ -457,18 +457,18 @@ def _xor_model():
 def test_symbolic_space_instance_owns_rule_codebook(_xor_model):
     """A built WholeSpace replaces the class-default None with a real codebook."""
     from Language import RuleCodebook
-    ss = _xor_model.symbolicSpace
-    assert isinstance(ss.rule_codebook, RuleCodebook)
+    ws = _xor_model.wholeSpace
+    assert isinstance(ws.rule_codebook, RuleCodebook)
     # The grammar is wired through so locations route to the V_sym+1 namespace.
-    assert ss.rule_codebook.grammar is not None
+    assert ws.rule_codebook.grammar is not None
 
 
 def test_v_sym_wired_into_grammar_from_symbolic_space(_xor_model):
     """WholeSpace.__init__ must set Grammar.symbol_vocab_size = V_sym."""
     from Language import TheGrammar
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     # V_sym should equal the symbol codebook's vocab dimension.
-    cb_W = ss.subspace.what.getW()
+    cb_W = ws.subspace.what.getW()
     if cb_W is not None and cb_W.ndim >= 1:
         v_sym = int(cb_W.shape[0])
         assert TheGrammar.symbol_vocab_size == v_sym, (
@@ -484,8 +484,8 @@ def test_rule_codebook_does_not_determine_parent_vectors(_xor_model):
     method (it stores identity + location, not content). Phase 4's
     REDUCE path computes the parent via SyntacticLayer.execute.
     """
-    ss = _xor_model.symbolicSpace
-    rc = ss.rule_codebook
+    ws = _xor_model.wholeSpace
+    rc = ws.rule_codebook
     # The codebook must not be confused with a content codebook.
     assert not hasattr(rc, 'forward_to_parent_what'), (
         "RuleCodebook must not provide parent-vector lookup"
@@ -532,14 +532,14 @@ def _make_minimal_signal_router(D=8):
 
 
 def _make_syntactic_layer_for_stack(host_layers, tier='S'):
-    """SyntacticLayer wrapper that doesn't require a real WordSpace."""
+    """SyntacticLayer wrapper that doesn't require a real SymbolicSpace."""
     from Language import SyntacticLayer
 
-    class _StubWordSpace:
+    class _StubSymbolicSpace:
         def register_host_layer(self, *args, **kw):
             pass
 
-    return SyntacticLayer(tier=tier, word_space=_StubWordSpace(),
+    return SyntacticLayer(tier=tier, word_space=_StubSymbolicSpace(),
                           host_layers=host_layers)
 
 
@@ -763,17 +763,17 @@ def test_symbolic_space_owns_signal_router(_xor_model):
     Plan acceptance: "WholeSpace owns and calls LanguageLayer."
     """
     from Language import LanguageLayer
-    ss = _xor_model.symbolicSpace
-    assert isinstance(ss.languageLayer, LanguageLayer), (
+    ws = _xor_model.wholeSpace
+    assert isinstance(ws.languageLayer, LanguageLayer), (
         f"WholeSpace.languageLayer must be a LanguageLayer, got "
-        f"{type(ss.languageLayer)}"
+        f"{type(ws.languageLayer)}"
     )
     # The router must be a different instance from any Chart-owned one
     # so the two paths cannot accidentally share scoring state.
     chart_router = getattr(
-        getattr(ss.wordSubSpace, 'chart', None), '_signal_router', None)
+        getattr(ws.symbolicSpace, 'chart', None), '_signal_router', None)
     if chart_router is not None:
-        assert ss.languageLayer is not chart_router, (
+        assert ws.languageLayer is not chart_router, (
             "WholeSpace must own its own router, not share Chart's"
         )
 
@@ -784,8 +784,8 @@ def test_use_stack_router_flag_default_false(_xor_model):
     If MM_xor.xml ever ships <useStackRouter>true</useStackRouter> the
     legacy tests would shift to the new path silently; pin the default.
     """
-    ss = _xor_model.symbolicSpace
-    assert ss.use_stack_router is False, (
+    ws = _xor_model.wholeSpace
+    assert ws.use_stack_router is False, (
         "Default config must keep use_stack_router=False so existing "
         "training + tests run on the legacy path"
     )
@@ -798,10 +798,10 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
     We toggle the flag on the live instance (the xor fixture is built
     with the flag off; this test exercises the dispatch path).
     """
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     cs = _xor_model.conceptualSpace
     # Build a small CS-shaped input subspace. The CS subspace's
-    # event width matches ss's nDim (symbol_dim == concept_dim).
+    # event width matches ws's nDim (symbol_dim == concept_dim).
     from Spaces import SubSpace
     n = int(cs.subspace.inputShape[0])
     d = int(cs.subspace.muxedSize)
@@ -809,16 +809,16 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
     # Seed event so is_empty() returns False and materialize() yields a tensor.
     in_sub.set_event(torch.randn(1, n, d))
     # Stamp a minimal context the forward path expects.
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(1 * n, dtype=torch.bool)
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.use_stack_router = True
-        out = ss.forward(in_sub)
+        ws.use_stack_router = True
+        out = ws.forward(in_sub)
         # Returns self.subspace.
-        assert out is ss.subspace
+        assert out is ws.subspace
         new_what = out.materialize(mode="what")
         # Stack-rewrite path writes a non-empty .what (not None).
         assert new_what is not None
@@ -826,9 +826,9 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
         act = out.materialize(mode="activation")
         assert act is not None and torch.all(act > 0)
     finally:
-        ss.use_stack_router = saved
+        ws.use_stack_router = saved
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 # ---------------------------------------------------------------------------
@@ -837,51 +837,51 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
 
 def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
     """With use_stack_router=True, the forward must NOT read or write
-    WordSubSpace.current_rules / generate_rules.
+    SymbolicSubSpace.current_rules / generate_rules.
 
-    Plan §"Phase 6: Retire Active WordSpace Parser State" -- "bypass"
+    Plan §"Phase 6: Retire Active SymbolicSpace Parser State" -- "bypass"
     leg: the new path skips the cursor-driven current_rules surface
     entirely.
     """
-    ss = _xor_model.symbolicSpace
-    ws = ss.wordSubSpace
+    ws = _xor_model.wholeSpace
+    ss = ws.symbolicSpace
     from Spaces import SubSpace
-    n = int(ss.conceptualSpace.subspace.inputShape[0])
-    d = int(ss.conceptualSpace.subspace.muxedSize)
+    n = int(ws.conceptualSpace.subspace.inputShape[0])
+    d = int(ws.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ws
+    in_sub.symbolicSpace = ss
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     # Stamp sentinel values so we can detect any write.
     sentinel = {'S': [['SENTINEL_NOT_TOUCHED']]}
-    ws.current_rules = dict(sentinel)
-    ws.generate_rules = dict(sentinel)
-    pre_compose_gen = ws._compose_generation
-    pre_generate_gen = ws._generate_generation
+    ss.current_rules = dict(sentinel)
+    ss.generate_rules = dict(sentinel)
+    pre_compose_gen = ss._compose_generation
+    pre_generate_gen = ss._generate_generation
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.use_stack_router = True
-        ss.forward(in_sub)
+        ws.use_stack_router = True
+        ws.forward(in_sub)
         # current_rules / generate_rules untouched (still the sentinel).
-        assert ws.current_rules == sentinel, (
-            f"current_rules mutated under flag-on path: {ws.current_rules}"
+        assert ss.current_rules == sentinel, (
+            f"current_rules mutated under flag-on path: {ss.current_rules}"
         )
-        assert ws.generate_rules == sentinel, (
-            f"generate_rules mutated under flag-on path: {ws.generate_rules}"
+        assert ss.generate_rules == sentinel, (
+            f"generate_rules mutated under flag-on path: {ss.generate_rules}"
         )
         # Generation counters untouched (no compose / generate fired).
-        assert ws._compose_generation == pre_compose_gen
-        assert ws._generate_generation == pre_generate_gen
+        assert ss._compose_generation == pre_compose_gen
+        assert ss._generate_generation == pre_generate_gen
     finally:
-        ss.use_stack_router = saved
+        ws.use_stack_router = saved
         # Reset state for downstream tests.
-        ws.current_rules = {}
-        ws.generate_rules = {}
+        ss.current_rules = {}
+        ss.generate_rules = {}
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
@@ -890,8 +890,8 @@ def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
     The new path runs on a temporary stack-mode SubSpace, never on
     ConceptualSpace.stm._buffer / _depth (the legacy STM side channel).
     """
-    ss = _xor_model.symbolicSpace
-    cs = ss.conceptualSpace
+    ws = _xor_model.wholeSpace
+    cs = ws.conceptualSpace
     stm = getattr(cs, 'stm', None)
     if stm is None:
         pytest.skip("This config has no ConceptualSpace.stm")
@@ -901,17 +901,17 @@ def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
     d = int(cs.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     pre_buffer = stm._buffer.detach().clone() if hasattr(stm, '_buffer') else None
     pre_depth = stm._depth.detach().clone() if hasattr(stm, '_depth') else None
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.use_stack_router = True
-        ss.forward(in_sub)
+        ws.use_stack_router = True
+        ws.forward(in_sub)
         if pre_buffer is not None:
             assert torch.equal(stm._buffer, pre_buffer), (
                 "ConceptualSpace.stm._buffer mutated under flag-on path"
@@ -921,9 +921,9 @@ def test_stack_router_does_not_touch_conceptual_stm(_xor_model):
                 "ConceptualSpace.stm._depth mutated under flag-on path"
             )
     finally:
-        ss.use_stack_router = saved
+        ws.use_stack_router = saved
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
@@ -933,8 +933,8 @@ def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
     Plan acceptance: "LanguageLayer calls SyntacticLayer executor, not
     cursor dispatch."
     """
-    ss = _xor_model.symbolicSpace
-    sl = ss.syntacticLayer
+    ws = _xor_model.wholeSpace
+    sl = ws.syntacticLayer
 
     cursor_calls = {'n': 0}
     execute_calls = {'n': 0}
@@ -951,20 +951,20 @@ def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
         return orig_exec(*a, **kw)
 
     from Spaces import SubSpace
-    n = int(ss.conceptualSpace.subspace.inputShape[0])
-    d = int(ss.conceptualSpace.subspace.muxedSize)
+    n = int(ws.conceptualSpace.subspace.inputShape[0])
+    d = int(ws.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
         sl._next_rule_name = spy_next_rule
         sl.execute = spy_execute
-        ss.use_stack_router = True
-        ss.forward(in_sub)
+        ws.use_stack_router = True
+        ws.forward(in_sub)
         # Cursor must not have fired.
         assert cursor_calls['n'] == 0, (
             f"Stack-router path called _next_rule_name "
@@ -980,9 +980,9 @@ def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
     finally:
         sl._next_rule_name = orig_next
         sl.execute = orig_exec
-        ss.use_stack_router = saved
+        ws.use_stack_router = saved
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 # ---------------------------------------------------------------------------
@@ -993,32 +993,32 @@ def test_flag_off_does_not_call_stack_route_forward(_xor_model):
     """With use_stack_router=False, the new _stack_route_forward must
     NOT run; the legacy path stays the only forward dispatcher.
     """
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     calls = {'n': 0}
-    orig = ss._stack_route_forward
+    orig = ws._stack_route_forward
 
     def spy(*a, **kw):
         calls['n'] += 1
         return orig(*a, **kw)
 
     from Spaces import SubSpace
-    n = int(ss.conceptualSpace.subspace.inputShape[0])
-    d = int(ss.conceptualSpace.subspace.muxedSize)
+    n = int(ws.conceptualSpace.subspace.inputShape[0])
+    d = int(ws.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     try:
-        ss._stack_route_forward = spy
+        ws._stack_route_forward = spy
         # use_stack_router is False by default.
-        assert ss.use_stack_router is False
-        ss.forward(in_sub)
+        assert ws.use_stack_router is False
+        ws.forward(in_sub)
         assert calls['n'] == 0, (
             f"_stack_route_forward ran {calls['n']} times with flag off"
         )
     finally:
-        ss._stack_route_forward = orig
+        ws._stack_route_forward = orig
 
 
 # ---------------------------------------------------------------------------
@@ -1509,11 +1509,11 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
     primitives directly. Pins that the WholeSpace integration uses
     the plan's target call shape.
     """
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     calls = {'forward': 0, 'shift': 0, 'reduce': 0}
-    orig_forward = ss.languageLayer.forward
-    orig_shift = ss.languageLayer.shift
-    orig_reduce = ss.languageLayer.reduce
+    orig_forward = ws.languageLayer.forward
+    orig_shift = ws.languageLayer.shift
+    orig_reduce = ws.languageLayer.reduce
 
     def spy_forward(*a, **kw):
         calls['forward'] += 1
@@ -1528,21 +1528,21 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
         return orig_reduce(*a, **kw)
 
     from Spaces import SubSpace
-    n = int(ss.conceptualSpace.subspace.inputShape[0])
-    d = int(ss.conceptualSpace.subspace.muxedSize)
+    n = int(ws.conceptualSpace.subspace.inputShape[0])
+    d = int(ws.conceptualSpace.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.languageLayer.forward = spy_forward
-        ss.languageLayer.shift = spy_shift
-        ss.languageLayer.reduce = spy_reduce
-        ss.use_stack_router = True
-        ss.forward(in_sub)
+        ws.languageLayer.forward = spy_forward
+        ws.languageLayer.shift = spy_shift
+        ws.languageLayer.reduce = spy_reduce
+        ws.use_stack_router = True
+        ws.forward(in_sub)
 
         # Canonical forward fired exactly once (one call per
         # WholeSpace.forward invocation).
@@ -1555,12 +1555,12 @@ def test_symbolic_space_stack_route_uses_canonical_forward(_xor_model):
         # forward_stack invokes self.shift / self.reduce on the same
         # router instance. This is informational, not a contract.
     finally:
-        ss.languageLayer.forward = orig_forward
-        ss.languageLayer.shift = orig_shift
-        ss.languageLayer.reduce = orig_reduce
-        ss.use_stack_router = saved
+        ws.languageLayer.forward = orig_forward
+        ws.languageLayer.shift = orig_shift
+        ws.languageLayer.reduce = orig_reduce
+        ws.use_stack_router = saved
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 # ---------------------------------------------------------------------------
@@ -1573,9 +1573,9 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
     use_stack_router flag is on. Symmetric counterpart to the forward
     branch (Phase 5).
     """
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     calls = {'reverse': 0}
-    orig_reverse = ss.languageLayer.reverse
+    orig_reverse = ws.languageLayer.reverse
 
     def spy_reverse(*a, **kw):
         calls['reverse'] += 1
@@ -1583,28 +1583,28 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
 
     from Spaces import SubSpace
     # The WholeSpace.reverse input is in symbol space; size to match.
-    n = int(ss.subspace.inputShape[0])
-    d = int(ss.subspace.muxedSize)
+    n = int(ws.subspace.inputShape[0])
+    d = int(ws.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.languageLayer.reverse = spy_reverse
-        ss.use_stack_router = True
-        ss.reverse(in_sub)
+        ws.languageLayer.reverse = spy_reverse
+        ws.use_stack_router = True
+        ws.reverse(in_sub)
         assert calls['reverse'] == 1, (
             f"WholeSpace.reverse must call languageLayer.reverse exactly "
             f"once with the flag on; got {calls['reverse']}"
         )
     finally:
-        ss.languageLayer.reverse = orig_reverse
-        ss.use_stack_router = saved
+        ws.languageLayer.reverse = orig_reverse
+        ws.use_stack_router = saved
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 def test_symbolic_space_reverse_flag_off_does_not_call_language_layer(_xor_model):
@@ -1612,69 +1612,69 @@ def test_symbolic_space_reverse_flag_off_does_not_call_language_layer(_xor_model
     NOT call languageLayer.reverse; the legacy cursor-based reverse
     runs unchanged.
     """
-    ss = _xor_model.symbolicSpace
+    ws = _xor_model.wholeSpace
     calls = {'reverse': 0}
-    orig_reverse = ss.languageLayer.reverse
+    orig_reverse = ws.languageLayer.reverse
 
     def spy_reverse(*a, **kw):
         calls['reverse'] += 1
         return orig_reverse(*a, **kw)
 
     from Spaces import SubSpace
-    n = int(ss.subspace.inputShape[0])
-    d = int(ss.subspace.muxedSize)
+    n = int(ws.subspace.inputShape[0])
+    d = int(ws.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ss.wordSubSpace
+    in_sub.symbolicSpace = ws.symbolicSpace
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
-    saved = ss.use_stack_router
+    saved = ws.use_stack_router
     try:
-        ss.languageLayer.reverse = spy_reverse
-        assert ss.use_stack_router is False
-        ss.reverse(in_sub)
+        ws.languageLayer.reverse = spy_reverse
+        assert ws.use_stack_router is False
+        ws.reverse(in_sub)
         assert calls['reverse'] == 0, (
             f"Legacy reverse path must not call languageLayer.reverse; "
             f"got {calls['reverse']} calls"
         )
     finally:
-        ss.languageLayer.reverse = orig_reverse
-        ss.use_stack_router = saved
+        ws.languageLayer.reverse = orig_reverse
+        ws.use_stack_router = saved
 
 
 def test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules(_xor_model):
     """Phase 6 symmetry for the reverse path: with the flag on, the
     cursor-driven generate_rules path is bypassed.
     """
-    ss = _xor_model.symbolicSpace
-    ws = ss.wordSubSpace
+    ws = _xor_model.wholeSpace
+    ss = ws.symbolicSpace
     from Spaces import SubSpace
-    n = int(ss.subspace.inputShape[0])
-    d = int(ss.subspace.muxedSize)
+    n = int(ws.subspace.inputShape[0])
+    d = int(ws.subspace.muxedSize)
     in_sub = SubSpace([n, d], [n, d], nInputDim=d, nOutputDim=d)
     in_sub.set_event(torch.randn(1, n, d))
-    in_sub.wordSubSpace = ws
+    in_sub.symbolicSpace = ss
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     sentinel = {'S': [['SENTINEL_NOT_TOUCHED']]}
-    ws.generate_rules = dict(sentinel)
-    pre_generate_gen = ws._generate_generation
+    ss.generate_rules = dict(sentinel)
+    pre_generate_gen = ss._generate_generation
 
-    saved = ss.use_stack_router
-    saved_what = ss.subspace.what.getW()
+    saved = ws.use_stack_router
+    saved_what = ws.subspace.what.getW()
     try:
-        ss.use_stack_router = True
-        ss.reverse(in_sub)
-        assert ws.generate_rules == sentinel, (
+        ws.use_stack_router = True
+        ws.reverse(in_sub)
+        assert ss.generate_rules == sentinel, (
             f"generate_rules mutated under flag-on reverse path: "
-            f"{ws.generate_rules}"
+            f"{ss.generate_rules}"
         )
-        assert ws._generate_generation == pre_generate_gen
+        assert ss._generate_generation == pre_generate_gen
     finally:
-        ss.use_stack_router = saved
-        ws.generate_rules = {}
+        ws.use_stack_router = saved
+        ss.generate_rules = {}
         if saved_what is not None:
-            ss.subspace.what.setW(saved_what)
+            ws.subspace.what.setW(saved_what)
 
 
 def test_forward_stack_orchestrates_shift_then_reduce():

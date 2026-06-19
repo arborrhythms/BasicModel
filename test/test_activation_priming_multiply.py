@@ -32,13 +32,13 @@ def _tiny_view():
 
 
 def _bare_word_space(batch=1):
-    from Language import WordSubSpace, Taxonomy
+    from Language import SymbolicSubSpace, Taxonomy
     import torch.nn as nn
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.batch = int(batch)
-    ws.taxonomy = Taxonomy()
-    return ws
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.batch = int(batch)
+    ss.taxonomy = Taxonomy()
+    return ss
 
 
 # -- Basis.apply_priming ---------------------------------------------------
@@ -150,13 +150,13 @@ def test_configure_priming_none_args_leave_unchanged():
 
 
 def test_priming_disabled_omits_kwargs_from_helper():
-    """When priming_enabled=False, the WordSpace helper omits the
+    """When priming_enabled=False, the SymbolicSpace helper omits the
     left_priming / right_priming kwargs entirely (typed-only mode)."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    ws.taxonomy.configure_priming(priming_enabled=False)
-    kw = ws.priming_kwargs_for_slots(
+    ss.attach_knowledge(view)
+    ss.taxonomy.configure_priming(priming_enabled=False)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     assert 'left_rows' in kw
@@ -218,23 +218,23 @@ def test_taxonomy_decay_per_batch():
 
 
 def test_word_space_soft_reset_clears_priming():
-    """WordSubSpace.soft_reset() drops the taxonomy priming back to
+    """SymbolicSubSpace.soft_reset() drops the taxonomy priming back to
     identity at the sentence boundary.
 
     We synthesize the minimum scaffolding soft_reset needs (host-side
     flags + a stub cursor / recur_pass source); the priming-reset
     branch we care about is the trailing tax.reset() call.
     """
-    from Language import WordSubSpace, Taxonomy
+    from Language import SymbolicSubSpace, Taxonomy
     import torch.nn as nn
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.batch = 1
-    ws.taxonomy = Taxonomy()
-    ws.attach_knowledge(_tiny_view())
-    ws.taxonomy.prime([2, 3], batch=0)
-    assert not torch.all(ws.taxonomy._priming == 1.0)
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.batch = 1
+    ss.taxonomy = Taxonomy()
+    ss.attach_knowledge(_tiny_view())
+    ss.taxonomy.prime([2, 3], batch=0)
+    assert not torch.all(ss.taxonomy._priming == 1.0)
     # Drive the public reset method directly (the inner reset path is
     # what we care about, not the rest of soft_reset's scaffolding).
-    ws.taxonomy.reset()
-    assert torch.all(ws.taxonomy._priming == 1.0)
+    ss.taxonomy.reset()
+    assert torch.all(ss.taxonomy._priming == 1.0)

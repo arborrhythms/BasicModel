@@ -59,9 +59,9 @@ class TestUntiedWordFlow(unittest.TestCase):
         model = _build_model()
         emb = model.perceptualSpace.vocabulary
         self.assertIsInstance(emb, Embedding)
-        ss = model.symbolicSpace
-        W = ss.subspace.what.getW()
-        ss_before = None if W is None else W.detach().clone()
+        ws = model.wholeSpace
+        W = ws.subspace.what.getW()
+        ws_before = None if W is None else W.detach().clone()
         rows_before = int(emb.wv._vectors.shape[0])
 
         vec = torch.zeros(int(emb.wv._vectors.shape[1]))
@@ -70,9 +70,9 @@ class TestUntiedWordFlow(unittest.TestCase):
 
         self.assertEqual(int(emb.wv._vectors.shape[0]), rows_before + 1,
                          "insert must grow the PS-side lexicon by one row")
-        if ss_before is not None:
+        if ws_before is not None:
             self.assertTrue(
-                torch.equal(ss_before, ss.subspace.what.getW().detach()),
+                torch.equal(ws_before, ws.subspace.what.getW().detach()),
                 "the SS codebook prototype must be bit-identical across a "
                 "PS-side word insert (the paired-row reach-across is "
                 "retired)")

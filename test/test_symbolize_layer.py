@@ -6,7 +6,7 @@ Tests the new ``SymbolizeLayer`` class:
     ``tier == 'C'``, ``invertible == True``.
   * ``forward(left, right)`` identifies a percept_id and a symbol_idx
     (by nearest-row match in PS.percept_store / SS.codebook), then
-    delegates to ``WholeSpace.insert_meta(ps_idx, ss_idx,
+    delegates to ``WholeSpace.insert_meta(ps_idx, ws_idx,
     fused_vec=combine(left, right))`` and returns the META vector.
   * ``reverse(parent)`` walks the SS taxonomy starting from a
     nearest-match to ``parent`` and recovers the ``(left, right)``
@@ -64,9 +64,9 @@ def _make_radix_model():
     return m
 
 
-def _ss_row_from_pos(ss, pos):
-    """Position -> SS.codebook row index via ``_ss_pos_to_row``."""
-    row = ss._ss_pos_to_row.get(int(pos))
+def _ws_row_from_pos(ws, pos):
+    """Position -> SS.codebook row index via ``_ws_pos_to_row``."""
+    row = ws._ws_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
             f"position {pos} has no SS-side row binding; expected an "
@@ -74,9 +74,9 @@ def _ss_row_from_pos(ss, pos):
     return int(row)
 
 
-def _ps_row_from_pos(ss, pos):
+def _ps_row_from_pos(ws, pos):
     """Position -> PS.percept_store row index via ``_ps_pos_to_row``."""
-    row = ss._ps_pos_to_row.get(int(pos))
+    row = ws._ps_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
             f"position {pos} has no PS-side row binding; expected a "
@@ -132,98 +132,98 @@ class TestSymbolizeLayerClassAttributes(unittest.TestCase):
 
 
 class TestSymbolizeLayerForward(unittest.TestCase):
-    """``forward(left, right)`` identifies (ps_idx, ss_idx) by nearest
+    """``forward(left, right)`` identifies (ps_idx, ws_idx) by nearest
     match, calls ``WholeSpace.insert_meta``, returns the META vector."""
 
     def test_forward_creates_meta_node_and_returns_meta_vector(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         # Pre-seed a percept and a symbol so the nearest-match lookups
         # can identify them.
-        ps_idx = ss.insert_percept(b"hello")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
+        ps_idx = ws.insert_percept(b"hello")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
         # Pin the codebook rows to deterministic vectors so nearest-
         # match is unambiguous.
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Construct SymbolizeLayer with Space refs.
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         # Forward with the codebook vectors themselves; should find
         # exact nearest matches and create a META node.
-        n_taxonomy_before = len(ss.taxonomy)
-        out = meta.forward(ps_vec, ss_vec)
+        n_taxonomy_before = len(ws.taxonomy)
+        out = meta.forward(ps_vec, ws_vec)
         # Output is a tensor of shape [D] (the META row vector).
         self.assertTrue(torch.is_tensor(out))
         self.assertEqual(out.shape[-1], D)
         # A new META node was registered.
         self.assertEqual(
-            len(ss.taxonomy), n_taxonomy_before + 1,
+            len(ws.taxonomy), n_taxonomy_before + 1,
             "SymbolizeLayer.forward must register a new META node when none "
             "exists for the pair.")
-        # The new META node's children are {ps_idx, ss_idx}.
-        meta_idx = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
+        # The new META node's children are {ps_idx, ws_idx}.
+        meta_idx = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
         self.assertIsNotNone(
             meta_idx,
             "SymbolizeLayer.forward must register the pair in "
-            "ss.meta_pair_to_idx.")
-        children = set(ss.taxonomy_children(meta_idx))
-        self.assertEqual(children, {ps_idx, ss_idx})
+            "ws.meta_pair_to_idx.")
+        children = set(ws.taxonomy_children(meta_idx))
+        self.assertEqual(children, {ps_idx, ws_idx})
 
     def test_forward_returns_existing_meta_vector_when_pair_known(self):
         """forward on a pair with an existing META returns that META's vec."""
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"world")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"world")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[2] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[3] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[3] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Pre-register the META node directly.
         explicit_fused = torch.zeros(D)
         explicit_fused[4] = 0.5
-        meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=explicit_fused)
-        meta_row = _ss_row_from_pos(ss,meta_idx)
-        meta_vec = ss.subspace.what.getW()[meta_row].detach().clone()
+        meta_idx = ws.insert_meta(ps_idx, ws_idx, fused_vec=explicit_fused)
+        meta_row = _ws_row_from_pos(ws,meta_idx)
+        meta_vec = ws.subspace.what.getW()[meta_row].detach().clone()
         # Forward through SymbolizeLayer; must return the existing META vec
         # (post-EMA-update with the new fused), not allocate a new row.
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
-        n_taxonomy_before = len(ss.taxonomy)
-        out = meta.forward(ps_vec, ss_vec)
+        n_taxonomy_before = len(ws.taxonomy)
+        out = meta.forward(ps_vec, ws_vec)
         self.assertEqual(
-            len(ss.taxonomy), n_taxonomy_before,
+            len(ws.taxonomy), n_taxonomy_before,
             "SymbolizeLayer.forward must NOT register a new META node when the "
             "pair already has one.")
         # Output must match the (EMA-updated) META row, not the original
         # pre-EMA snapshot. We just check it's finite and is the row's
         # current value.
-        cur_meta_vec = ss.subspace.what.getW()[meta_row].detach()
+        cur_meta_vec = ws.subspace.what.getW()[meta_row].detach()
         self.assertTrue(
             torch.allclose(out.detach(), cur_meta_vec, atol=1e-5),
             f"SymbolizeLayer.forward must return the SS row hosting the "
@@ -237,35 +237,35 @@ class TestSymbolizeLayerForward(unittest.TestCase):
 
 class TestSymbolizeLayerReverse(unittest.TestCase):
     """``reverse(parent)`` walks SS.codebook nearest-match to a META
-    node, returns ``(ps_vec, ss_vec)`` for the children."""
+    node, returns ``(ps_vec, ws_vec)`` for the children."""
 
     def test_reverse_recovers_pair_from_meta_vector(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"alpha")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"alpha")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 0.9
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 0.8
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 0.8
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Register a META node and pin its row to a deterministic vec
         # so the nearest-match snaps to it.
         fused = torch.zeros(D)
         fused[2] = 1.0
-        meta_idx = ss.insert_meta(ps_idx, ss_idx, fused_vec=fused)
-        meta_row = _ss_row_from_pos(ss,meta_idx)
-        meta_vec = ss.subspace.what.getW()[meta_row].detach().clone()
+        meta_idx = ws.insert_meta(ps_idx, ws_idx, fused_vec=fused)
+        meta_row = _ws_row_from_pos(ws,meta_idx)
+        meta_vec = ws.subspace.what.getW()[meta_row].detach().clone()
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         left_out, right_out = meta.reverse(meta_vec)
@@ -275,7 +275,7 @@ class TestSymbolizeLayerReverse(unittest.TestCase):
         # left should be the PS child's codebook vector (positive idx).
         # right should be the SS child's codebook vector (negative idx).
         expected_ps = ps_store.codebook[ps_row].detach()
-        expected_ss = ss.subspace.what.getW()[ss_row].detach()
+        expected_ss = ws.subspace.what.getW()[ws_row].detach()
         self.assertTrue(
             torch.allclose(left_out.detach(),
                            expected_ps.to(left_out.dtype),
@@ -302,39 +302,39 @@ class TestSymbolizeLayerIdempotency(unittest.TestCase):
     def test_forward_twice_returns_same_meta_idx(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"gamma")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"gamma")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[5] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[6] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[6] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         # First call: allocates a fresh META node.
-        n_tax_before = len(ss.taxonomy)
-        meta.forward(ps_vec, ss_vec)
-        meta_idx_1 = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
+        n_tax_before = len(ws.taxonomy)
+        meta.forward(ps_vec, ws_vec)
+        meta_idx_1 = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
         self.assertIsNotNone(meta_idx_1)
         # Second call: must NOT allocate a new META row; same idx.
-        meta.forward(ps_vec, ss_vec)
-        meta_idx_2 = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
+        meta.forward(ps_vec, ws_vec)
+        meta_idx_2 = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
         self.assertEqual(
             meta_idx_1, meta_idx_2,
             "Two SymbolizeLayer.forward calls on the same pair must return "
             f"the same meta idx; got {meta_idx_1} vs {meta_idx_2}")
         # And no new taxonomy node was created.
-        self.assertEqual(len(ss.taxonomy), n_tax_before + 1,
+        self.assertEqual(len(ws.taxonomy), n_tax_before + 1,
                          "Exactly one META node should exist after two "
                          "forward calls on the same pair.")
 
@@ -433,11 +433,11 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language
         from collections import namedtuple
         m = _make_radix_model()
-        # WordSubSpace lives on perceptualSpace.wordSubSpace
-        # (set by Space.attach_wordSubSpace).
-        ws = getattr(m.perceptualSpace, 'wordSubSpace', None)
-        if ws is None:
-            self.skipTest("No WordSubSpace constructed; cannot test wiring.")
+        # SymbolicSubSpace lives on perceptualSpace.symbolicSpace
+        # (set by Space.attach_symbolicSpace).
+        ss = getattr(m.perceptualSpace, 'symbolicSpace', None)
+        if ss is None:
+            self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
         FakeRule = namedtuple(
             'FakeRule',
             ['tier', 'canonical', 'arity', 'method_name', 'lhs',
@@ -455,9 +455,9 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language as _Lang
         orig_builder = _Lang.build_space_syntactic_layer
 
-        def _capture_builder(space, ws, *, tier, builtin_layers):
+        def _capture_builder(space, ss, *, tier, builtin_layers):
             captured.setdefault(tier, dict(builtin_layers))
-            return orig_builder(space, ws,
+            return orig_builder(space, ss,
                                 tier=tier,
                                 builtin_layers=builtin_layers)
         try:
@@ -468,7 +468,7 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
             cs = getattr(m, 'conceptualSpace', None)
             if cs is None:
                 self.skipTest("No conceptualSpace; cannot test C-tier wiring.")
-            ws._attach_per_space_syntactic_layer(cs, tier='C')
+            ss._attach_per_space_syntactic_layer(cs, tier='C')
         finally:
             Language.TheGrammar.rules = prev_rules
             _Lang.build_space_syntactic_layer = orig_builder
@@ -481,13 +481,13 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
             "_attach_per_space_syntactic_layer must wire a SymbolizeLayer "
             "into builtin_layers['symbolize'].")
         self.assertIsInstance(meta_layer, SymbolizeLayer)
-        # The SymbolizeLayer must have BOTH symbolicSpace and perceptualSpace
+        # The SymbolizeLayer must have BOTH wholeSpace and perceptualSpace
         # back-references (it needs both for the discrete-identity
         # lookups in forward / reverse).
         self.assertIsNotNone(
-            getattr(meta_layer, 'symbolicSpace', None),
+            getattr(meta_layer, 'wholeSpace', None),
             "SymbolizeLayer wired by _attach_per_space must carry a "
-            "symbolicSpace back-reference.")
+            "wholeSpace back-reference.")
         self.assertIsNotNone(
             getattr(meta_layer, 'perceptualSpace', None),
             "SymbolizeLayer wired by _attach_per_space must carry a "
@@ -505,15 +505,15 @@ class TestSymbolizeLayerNumericalGuard(unittest.TestCase):
     def test_forward_raises_on_nan_left(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         # Ensure PS / SS have at least one row so the nearest-match
         # search isn't a no-op.
-        ss.insert_percept(b"nan_guard_left")
-        ss.insert_symbol()
+        ws.insert_percept(b"nan_guard_left")
+        ws.insert_symbol()
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         bad = torch.full((D,), float("nan"))
@@ -525,13 +525,13 @@ class TestSymbolizeLayerNumericalGuard(unittest.TestCase):
     def test_forward_raises_on_inf_right(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
-        D = int(ss.nDim)
-        ss.insert_percept(b"inf_guard_right")
-        ss.insert_symbol()
+        D = int(ws.nDim)
+        ws.insert_percept(b"inf_guard_right")
+        ws.insert_symbol()
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         good = torch.zeros(D)
@@ -554,20 +554,20 @@ class TestSymbolizeLayerNoPerceptStoreFallback(unittest.TestCase):
     def test_forward_falls_back_to_average_without_perceptstore(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         # Swap percept_store out to simulate the legacy lexicon path.
         saved_ps_store = getattr(ps_space, 'percept_store', None)
         try:
             ps_space.percept_store = None
             meta = SymbolizeLayer(
-                symbolicSpace=ss,
+                wholeSpace=ws,
                 perceptualSpace=ps_space,
             )
-            D = int(ss.nDim)
+            D = int(ws.nDim)
             a = torch.full((D,), 0.4)
             b = torch.full((D,), 0.2)
-            n_tax_before = len(ss.taxonomy)
+            n_tax_before = len(ws.taxonomy)
             out = meta.forward(a, b)
             # Output is the average.
             expected = (a + b) / 2.0
@@ -579,7 +579,7 @@ class TestSymbolizeLayerNoPerceptStoreFallback(unittest.TestCase):
                 f"{out.tolist()} vs {expected.tolist()}")
             # No META node was registered.
             self.assertEqual(
-                len(ss.taxonomy), n_tax_before,
+                len(ws.taxonomy), n_tax_before,
                 "No-perceptstore fallback must NOT register a META node.")
         finally:
             ps_space.percept_store = saved_ps_store
@@ -597,23 +597,23 @@ class TestSymbolizeLayerComposeGenerate(unittest.TestCase):
     def test_compose_dispatches_to_forward(self):
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"compose_word")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"compose_word")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         a = torch.zeros(D)
         a[0] = 1.0
         b = torch.zeros(D)
         b[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = a
-            ss.subspace.what.getW().data[ss_row, :] = b
+            ws.subspace.what.getW().data[ws_row, :] = b
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         # First call: forward seeds a META; capture state for an
@@ -633,7 +633,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
     """Stage 9 acceptance: META vectors must accumulate gradient from the loss.
 
     The META vector lives in ``SS.codebook`` (specifically
-    ``ss.subspace.what.W[meta_row]``, an ``nn.Parameter``).
+    ``ws.subspace.what.W[meta_row]``, an ``nn.Parameter``).
     SymbolizeLayer.forward returns the live ``SS.codebook`` slice (via
     ``getW()[meta_row]``) so the gradient path is:
 
@@ -667,16 +667,16 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         differentiable in the simple-fallback regime."""
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         saved_ps_store = getattr(ps_space, 'percept_store', None)
         try:
             ps_space.percept_store = None
             meta = SymbolizeLayer(
-                symbolicSpace=ss,
+                wholeSpace=ws,
                 perceptualSpace=ps_space,
             )
-            D = int(ss.nDim)
+            D = int(ws.nDim)
             left = torch.full((D,), 0.4, requires_grad=True)
             right = torch.full((D,), 0.2, requires_grad=True)
             out = meta.forward(left, right)
@@ -701,7 +701,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         finally:
             ps_space.percept_store = saved_ps_store
 
-    def test_forward_output_carries_gradient_to_ss_codebook(self):
+    def test_forward_output_carries_gradient_to_ws_codebook(self):
         """Stage 9 acceptance gate: the META vector (output of forward)
         is differentiable into the SS.codebook Parameter that hosts the
         META row. After ``loss = out.sum(); loss.backward()`` the
@@ -712,37 +712,37 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         """
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         # Pre-seed PS + SS so nearest-match resolves deterministically.
-        ps_idx = ss.insert_percept(b"grad_word")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"grad_word")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         # Construct codebook-matching operands so the nearest-match
-        # snaps to (ps_row, ss_row) and forward allocates a META.
+        # snaps to (ps_row, ws_row) and forward allocates a META.
         left = ps_vec.clone().detach()
-        right = ss_vec.clone().detach()
+        right = ws_vec.clone().detach()
         meta_vec = meta.forward(left, right)
         # Capture the SS-side trainable Parameter AFTER forward:
         # ``insert_meta`` -> ``insert_symbol`` -> ``grow_to`` may
         # replace ``subspace.what.W`` with a new Parameter, so the
         # gradient must be read off the post-forward identity.
-        ss_param = ss.subspace.what.W
-        self.assertIsNotNone(ss_param,
+        ws_param = ws.subspace.what.W
+        self.assertIsNotNone(ws_param,
                              "Test precondition: SS codebook must have a "
                              "trainable W Parameter post-forward.")
         # The output must be a tensor carrying autograd state (it is a
@@ -759,20 +759,20 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         loss.backward()
         # SS.codebook Parameter MUST have gradient at the META row.
         self.assertIsNotNone(
-            ss_param.grad,
+            ws_param.grad,
             "SS.codebook Parameter must accumulate gradient on backward "
             "through SymbolizeLayer.forward (Stage 9: META vectors are "
             "trainable; they accumulate gradient from the loss).")
-        meta_idx = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
+        meta_idx = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
         self.assertIsNotNone(meta_idx,
                              "Test precondition: META row must have been "
                              "registered by forward.")
-        meta_row = _ss_row_from_pos(ss,meta_idx)
+        meta_row = _ws_row_from_pos(ws,meta_idx)
         self.assertTrue(
-            torch.any(ss_param.grad[meta_row] != 0),
+            torch.any(ws_param.grad[meta_row] != 0),
             f"SS.codebook gradient at META row {meta_row} must be "
             f"non-zero after loss.backward(); got "
-            f"{ss_param.grad[meta_row].tolist()}.")
+            f"{ws_param.grad[meta_row].tolist()}.")
 
     def test_forward_detaches_operands_in_radix_mode(self):
         """Documented gradient-path finding: in radix mode, the path
@@ -788,27 +788,27 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         """
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"detach_word")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"detach_word")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
         left = ps_vec.clone().detach().requires_grad_(True)
-        right = ss_vec.clone().detach().requires_grad_(True)
+        right = ws_vec.clone().detach().requires_grad_(True)
         out = meta.forward(left, right)
         loss = out.sum()
         loss.backward()
@@ -828,59 +828,59 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
             "to make the combine differentiable into the operands, "
             "update this test deliberately.")
 
-    def test_forward_on_existing_meta_carries_gradient_to_ss_codebook(self):
+    def test_forward_on_existing_meta_carries_gradient_to_ws_codebook(self):
         """Idempotent (existing META) branch also carries gradient: the
         returned vector is still a slice of the trainable SS.codebook,
         and the EMA-update of the stored row is a ``no_grad`` write
         that does not break the read-side gradient path."""
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"existing_grad")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"existing_grad")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[2] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[3] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[3] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Pre-register the META node so the second forward call hits
         # the idempotent existing-META branch.
         explicit_fused = torch.zeros(D)
         explicit_fused[4] = 0.5
-        ss.insert_meta(ps_idx, ss_idx, fused_vec=explicit_fused)
+        ws.insert_meta(ps_idx, ws_idx, fused_vec=explicit_fused)
         meta = SymbolizeLayer(
-            symbolicSpace=ss,
+            wholeSpace=ws,
             perceptualSpace=ps_space,
         )
-        out = meta.forward(ps_vec.clone(), ss_vec.clone())
+        out = meta.forward(ps_vec.clone(), ws_vec.clone())
         # Capture post-forward; on the idempotent branch no fresh row
         # is allocated, so the Parameter identity SHOULD be stable --
         # but read it post-forward for symmetry with the fresh-alloc
         # path and to guard against any internal grow_to.
-        ss_param = ss.subspace.what.W
+        ws_param = ws.subspace.what.W
         self.assertTrue(out.requires_grad,
                         "Idempotent-path output must still require_grad "
                         "(reads from the trainable SS codebook).")
         loss = out.sum()
         loss.backward()
         self.assertIsNotNone(
-            ss_param.grad,
+            ws_param.grad,
             "SS.codebook Parameter must accumulate gradient even on "
             "the existing-META idempotent branch.")
-        meta_idx = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
-        meta_row = _ss_row_from_pos(ss,meta_idx)
+        meta_idx = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
+        meta_row = _ws_row_from_pos(ws,meta_idx)
         self.assertTrue(
-            torch.any(ss_param.grad[meta_row] != 0),
+            torch.any(ws_param.grad[meta_row] != 0),
             f"SS.codebook gradient at META row {meta_row} must be "
             f"non-zero after backward on the idempotent-existing-META "
-            f"branch; got {ss_param.grad[meta_row].tolist()}.")
+            f"branch; got {ws_param.grad[meta_row].tolist()}.")
 
 
 # ---------------------------------------------------------------------------
@@ -891,14 +891,14 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
 
 class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
     """Stage 9 acceptance: the per-space SyntacticLayer wiring path
-    registers the SymbolizeLayer instance against ``wordSubSpace.host_layer
+    registers the SymbolizeLayer instance against ``symbolicSpace.host_layer
     ('C', 'symbolize')``; when the chart / signal router fires a 'symbolize'
     rule at the C tier it dispatches through ``SymbolizeLayer.compose``.
 
     Two-pronged check:
       1. After ``_attach_per_space_syntactic_layer`` runs on the
          ConceptualSpace with a 'symbolize' C-tier rule in TheGrammar,
-         ``WordSubSpace.host_layer('C', 'symbolize')`` returns a SymbolizeLayer.
+         ``SymbolicSubSpace.host_layer('C', 'symbolize')`` returns a SymbolizeLayer.
       2. Invoking ``compose(left, right)`` on the registered layer
          routes through ``SymbolizeLayer.forward`` (verified by monkey-
          patching the bound method).
@@ -917,14 +917,14 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         """Helper: monkey-patch TheGrammar.rules to inject a C-tier
         ``symbolize(C, C)`` rule, then re-attach the C-tier per-space
         SyntacticLayer so ``host_layer('C', 'symbolize')`` registers the
-        SymbolizeLayer. Returns ``(ws, cs, prev_rules)`` for the caller
+        SymbolizeLayer. Returns ``(ss, cs, prev_rules)`` for the caller
         to restore on teardown.
         """
         import Language
         from collections import namedtuple
-        ws = getattr(m.perceptualSpace, 'wordSubSpace', None)
-        if ws is None:
-            self.skipTest("No WordSubSpace constructed; cannot test wiring.")
+        ss = getattr(m.perceptualSpace, 'symbolicSpace', None)
+        if ss is None:
+            self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
         cs = getattr(m, 'conceptualSpace', None)
         if cs is None:
             self.skipTest(
@@ -939,25 +939,25 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         prev_rules = list(Language.TheGrammar.rules)
         Language.TheGrammar.rules = prev_rules + [synthetic_meta]
         # Re-attach C-tier; SyntacticLayer.__init__ calls
-        # ws.register_host_layer('C', 'symbolize', meta_layer).
-        ws._attach_per_space_syntactic_layer(cs, tier='C')
-        return ws, cs, prev_rules
+        # ss.register_host_layer('C', 'symbolize', meta_layer).
+        ss._attach_per_space_syntactic_layer(cs, tier='C')
+        return ss, cs, prev_rules
 
     def test_host_layer_registry_resolves_meta_after_attach(self):
         """After the C-tier SyntacticLayer is rebuilt with a 'symbolize' rule
-        in the grammar, ``WordSubSpace.host_layer('C', 'symbolize')`` returns
+        in the grammar, ``SymbolicSubSpace.host_layer('C', 'symbolize')`` returns
         a registered SymbolizeLayer instance (NOT just a class entry --
         the actual instance the chart will dispatch to).
         """
         import Language
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ws, cs, prev_rules = self._wire_meta_into_c_tier(m)
+        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
         try:
-            registered = ws.host_layer('C', 'symbolize')
+            registered = ss.host_layer('C', 'symbolize')
             self.assertIsNotNone(
                 registered,
-                "wordSubSpace.host_layer('C', 'symbolize') must return the "
+                "symbolicSpace.host_layer('C', 'symbolize') must return the "
                 "registered SymbolizeLayer after _attach_per_space_syntactic_"
                 "layer runs with 'symbolize' in the C-tier grammar.")
             self.assertIsInstance(
@@ -967,8 +967,8 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
             # Sanity: BOTH back-references are set (forward needs them
             # to dispatch through PS / SS codebook nearest-match).
             self.assertIsNotNone(
-                getattr(registered, 'symbolicSpace', None),
-                "Registered SymbolizeLayer must carry a symbolicSpace ref.")
+                getattr(registered, 'wholeSpace', None),
+                "Registered SymbolizeLayer must carry a wholeSpace ref.")
             self.assertIsNotNone(
                 getattr(registered, 'perceptualSpace', None),
                 "Registered SymbolizeLayer must carry a perceptualSpace ref.")
@@ -993,26 +993,26 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         import Language
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
         # Pre-seed a PS row + SS row so forward can resolve nearest-
         # match cleanly and register a META.
-        ps_idx = ss.insert_percept(b"dispatch_word")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"dispatch_word")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
-        ws, cs, prev_rules = self._wire_meta_into_c_tier(m)
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
+        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
         try:
-            registered = ws.host_layer('C', 'symbolize')
+            registered = ss.host_layer('C', 'symbolize')
             self.assertIsInstance(registered, SymbolizeLayer)
             # Monkey-patch the bound forward to record calls + delegate.
             calls = []
@@ -1026,7 +1026,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
             # Invoke the registered layer's compose with codebook-
             # matching operands (so forward exercises the radix-mode
             # META-allocation branch).
-            out = registered.compose(ps_vec, ss_vec)
+            out = registered.compose(ps_vec, ws_vec)
             self.assertTrue(torch.is_tensor(out),
                             "compose must return a tensor (META vec).")
             self.assertEqual(out.shape[-1], D)
@@ -1039,11 +1039,11 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
                 len(calls[0]), 2,
                 "SymbolizeLayer.forward must receive (left, right) "
                 "operands from compose.")
-            meta_idx = ss.meta_pair_to_idx.get((ps_idx, ss_idx))
+            meta_idx = ws.meta_pair_to_idx.get((ps_idx, ws_idx))
             self.assertIsNotNone(
                 meta_idx,
                 "After compose -> forward, a META node should be "
-                "registered for the (ps_idx, ss_idx) pair.")
+                "registered for the (ps_idx, ws_idx) pair.")
         finally:
             Language.TheGrammar.rules = prev_rules
 
@@ -1059,24 +1059,24 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         import Language
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps_space = m.perceptualSpace
         ps_store = ps_space.percept_store
-        ps_idx = ss.insert_percept(b"adapter_word")
-        ps_row = _ps_row_from_pos(ss,ps_idx)
-        ss_idx = ss.insert_symbol()
-        ss_row = _ss_row_from_pos(ss,ss_idx)
-        D = int(ss.nDim)
+        ps_idx = ws.insert_percept(b"adapter_word")
+        ps_row = _ps_row_from_pos(ws,ps_idx)
+        ws_idx = ws.insert_symbol()
+        ws_row = _ws_row_from_pos(ws,ws_idx)
+        D = int(ws.nDim)
         ps_vec = torch.zeros(D)
         ps_vec[0] = 1.0
-        ss_vec = torch.zeros(D)
-        ss_vec[1] = 1.0
+        ws_vec = torch.zeros(D)
+        ws_vec[1] = 1.0
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
-            ss.subspace.what.getW().data[ss_row, :] = ss_vec
-        ws, cs, prev_rules = self._wire_meta_into_c_tier(m)
+            ws.subspace.what.getW().data[ws_row, :] = ws_vec
+        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
         try:
-            registered = ws.host_layer('C', 'symbolize')
+            registered = ss.host_layer('C', 'symbolize')
             self.assertIsInstance(registered, SymbolizeLayer)
             calls = []
             orig_forward = registered.forward
@@ -1088,7 +1088,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
             object.__setattr__(registered, 'forward', _record)
             # Wrap with the production binary-op adapter.
             adapter = Language._BinaryGrammarOpAdapter(registered)
-            out = adapter(ps_vec, ss_vec)
+            out = adapter(ps_vec, ws_vec)
             self.assertTrue(torch.is_tensor(out))
             self.assertEqual(out.shape[-1], D)
             self.assertEqual(

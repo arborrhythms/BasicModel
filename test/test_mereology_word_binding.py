@@ -41,14 +41,14 @@ def _whole_space(nS=128):
     return Spaces.WholeSpace([nP, _D], [nS, _D], [nS, _D])
 
 
-def _cs_stub(ws):
+def _cs_stub(ss):
     """A minimal ConceptualSpace-method host: the autobind methods use only
     ``self.terminalSymbolicSpace_ref`` (+ ``self._autobound_percept_ids`` on
     the flag-off path), so a stub with the bound methods exercises the real
     code without standing up a full model."""
     stub = types.SimpleNamespace()
-    stub.terminalSymbolicSpace_ref = ws
-    stub.symbolicSpace_ref = None
+    stub.terminalSymbolicSpace_ref = ss
+    stub.wholeSpace_ref = None
     stub._maybe_autobind_meta = types.MethodType(
         Spaces.ConceptualSpace._maybe_autobind_meta, stub)
     stub._autobind_word_wholes = types.MethodType(
@@ -75,91 +75,91 @@ def _one_word_inputs():
 
 
 def test_word_whole_accumulates_parts_and_raises():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 2                       # 3 parts > 2 -> raise
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_k_many = 2                       # 3 parts > 2 -> raise
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
     Spaces.ConceptualSpace._autobind_word_wholes(
-        None, pid_2d, vec_tensor, word_groups, tokens, ws)
+        None, pid_2d, vec_tensor, word_groups, tokens, ss)
     # ONE whole, keyed by surface text, with 3 DISTINCT byte-parts under it.
     # (After a raise, ps_children_of_whole double-counts because the new
     # higher-order node's taxonomy references the whole + parts; the part_chain
     # below is the authoritative provenance -- mirrors the existing raise test.)
-    assert "abc" in ws._word_whole_ss
-    whole = ws._word_whole_ss["abc"]
-    parts = set(ws.ps_children_of_whole(whole))
+    assert "abc" in ss._word_whole_ss
+    whole = ss._word_whole_ss["abc"]
+    parts = set(ss.ps_children_of_whole(whole))
     assert len(parts) == 3
-    assert all(ws._pos_kind.get(int(p)) == "ps" for p in parts)
+    assert all(ss._pos_kind.get(int(p)) == "ps" for p in parts)
     # the raise fired: a higher-order part subsuming the 3 constituents,
     # order 1, with explicit provenance.
-    assert ws.part_chain
-    ho = next(iter(ws.part_chain))
-    assert len(ws.part_chain[ho]) == 3
-    ho_row = ws._ss_pos_to_row[int(ho)]
-    assert ws.subspace.what.abstraction_order(int(ho_row)) == 1
+    assert ss.part_chain
+    ho = next(iter(ss.part_chain))
+    assert len(ss.part_chain[ho]) == 3
+    ho_row = ss._ws_pos_to_row[int(ho)]
+    assert ss.subspace.what.abstraction_order(int(ho_row)) == 1
 
 
 def test_same_word_reuses_one_whole_idempotently():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 4                         # no raise -> clean counts
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_k_many = 4                         # no raise -> clean counts
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
     Spaces.ConceptualSpace._autobind_word_wholes(
-        None, pid_2d, vec_tensor, word_groups, tokens, ws)
-    whole_first = ws._word_whole_ss["abc"]
-    parts_first = sorted(ws.ps_children_of_whole(whole_first))
+        None, pid_2d, vec_tensor, word_groups, tokens, ss)
+    whole_first = ss._word_whole_ss["abc"]
+    parts_first = sorted(ss.ps_children_of_whole(whole_first))
     # second presentation of the SAME word -> same whole, same parts (the
     # (ps, whole) META edges are idempotent), no churn.
     Spaces.ConceptualSpace._autobind_word_wholes(
-        None, pid_2d, vec_tensor.clone(), word_groups, tokens, ws)
-    assert ws._word_whole_ss["abc"] == whole_first
-    assert sorted(ws.ps_children_of_whole(whole_first)) == parts_first
+        None, pid_2d, vec_tensor.clone(), word_groups, tokens, ss)
+    assert ss._word_whole_ss["abc"] == whole_first
+    assert sorted(ss.ps_children_of_whole(whole_first)) == parts_first
 
 
 def test_short_word_below_threshold_does_not_raise():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 4                        # 3 parts <= 4 -> no raise
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_k_many = 4                        # 3 parts <= 4 -> no raise
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
     Spaces.ConceptualSpace._autobind_word_wholes(
-        None, pid_2d, vec_tensor, word_groups, tokens, ws)
-    whole = ws._word_whole_ss["abc"]
-    assert len(ws.ps_children_of_whole(whole)) == 3
-    assert not ws.part_chain                        # singleton-ish; no raise
+        None, pid_2d, vec_tensor, word_groups, tokens, ss)
+    whole = ss._word_whole_ss["abc"]
+    assert len(ss.ps_children_of_whole(whole)) == 3
+    assert not ss.part_chain                        # singleton-ish; no raise
 
 
 def test_gate_on_routes_to_word_binding():
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_raise = True
-    ws._mereology_k_many = 2
-    stub = _cs_stub(ws)
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_raise = True
+    ss._mereology_k_many = 2
+    stub = _cs_stub(ss)
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
     stub._maybe_autobind_meta(
         pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
-    assert "abc" in getattr(ws, "_word_whole_ss", {})
-    assert len(set(ws.ps_children_of_whole(ws._word_whole_ss["abc"]))) == 3
+    assert "abc" in getattr(ss, "_word_whole_ss", {})
+    assert len(set(ss.ps_children_of_whole(ss._word_whole_ss["abc"]))) == 3
 
 
 def test_gate_off_does_not_word_bind():
-    ws = _whole_space()
+    ss = _whole_space()
     # _mereology_raise unset (default) -> per-pid flag-off path, NO word-whole.
-    stub = _cs_stub(ws)
+    stub = _cs_stub(ss)
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
     stub._maybe_autobind_meta(
         pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
-    assert getattr(ws, "_word_whole_ss", None) is None
+    assert getattr(ss, "_word_whole_ss", None) is None
 
 
 def test_gate_on_creates_word_object_meta():
     """The orchestrator mints the per-word A/B/C relation-only symbols on CS
     (Alec 2026-06-17): A = word-symbol (word-parts ⊑ word-whole), B =
     object-symbol (ATOM ⊑ UNIVERSE, to be refined), C = reify(A, B)."""
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_raise = True
-    ws._mereology_k_many = 2
-    stub = _cs_stub(ws)
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_raise = True
+    ss._mereology_k_many = 2
+    stub = _cs_stub(ss)
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc" -> 10,11,12
     stub._maybe_autobind_meta(
         pid_2d, vec_tensor, word_groups=word_groups, tokens=tokens)
@@ -168,7 +168,7 @@ def test_gate_on_creates_word_object_meta():
     A, B, C = wom["abc"]
     # A = word-symbol: parts = the word-parts, whole = the WS word-whole.
     assert set(stub.symbol_parts(A)) == {10, 11, 12}
-    assert stub.symbol_wholes(A) == [ws._word_whole_ss["abc"]]
+    assert stub.symbol_wholes(A) == [ss._word_whole_ss["abc"]]
     # B = object-symbol: maximally unspecified poles, awaiting refinement.
     assert stub.symbol_parts(B) == [ATOM] and stub.symbol_wholes(B) == [UNIVERSE]
     # C = META: reify A ⊑ B (word≡object).
@@ -183,35 +183,35 @@ def test_cs_owns_relation_taxonomy_by_reference():
     equivalently. The physical position-keyed dicts stay on WS (insert_symbol /
     insert_meta mint codebook rows atomically; a physical move is gated on the
     deferred meta-vector retirement)."""
-    ws = _whole_space()
-    ws.subspace.what.enable_ramsification(2)
-    ws._mereology_k_many = 4                         # 3 parts <= 4 -> no raise
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_k_many = 4                         # 3 parts <= 4 -> no raise
     pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()  # "abc"
     Spaces.ConceptualSpace._autobind_word_wholes(
-        None, pid_2d, vec_tensor, word_groups, tokens, ws)
-    whole = ws._word_whole_ss["abc"]
+        None, pid_2d, vec_tensor, word_groups, tokens, ss)
+    whole = ss._word_whole_ss["abc"]
     # a CS host wired to the terminal WS as its relation store (mirrors the
     # Models terminalSymbolicSpace_ref / terminalConceptualSpace_ref fan-out).
     cs = types.SimpleNamespace()
-    cs.terminalSymbolicSpace_ref = ws
-    cs.symbolicSpace_ref = None
+    cs.terminalSymbolicSpace_ref = ss
+    cs.wholeSpace_ref = None
     for _m in ("_relation_store", "taxonomy_children", "taxonomy_parent",
                "taxonomy_parents", "is_meta", "ps_children_of_whole"):
         setattr(cs, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), cs))
     # the relation store resolves to the terminal WS, and every read-API
     # accessor forwards byte-for-byte.
-    assert cs._relation_store() is ws
+    assert cs._relation_store() is ss
     assert sorted(cs.ps_children_of_whole(whole)) == sorted(
-        ws.ps_children_of_whole(whole))
-    part = ws.ps_children_of_whole(whole)[0]
-    meta = ws.taxonomy_parent(part)
+        ss.ps_children_of_whole(whole))
+    part = ss.ps_children_of_whole(whole)[0]
+    meta = ss.taxonomy_parent(part)
     assert cs.taxonomy_parent(part) == meta
-    assert cs.taxonomy_parents(part) == ws.taxonomy_parents(part)
-    assert cs.is_meta(meta) is True and ws.is_meta(meta) is True
-    assert cs.taxonomy_children(meta) == ws.taxonomy_children(meta)
+    assert cs.taxonomy_parents(part) == ss.taxonomy_parents(part)
+    assert cs.is_meta(meta) is True and ss.is_meta(meta) is True
+    assert cs.taxonomy_children(meta) == ss.taxonomy_children(meta)
     # unwired CS -> safe empty/false defaults (no crash).
     bare = types.SimpleNamespace(terminalSymbolicSpace_ref=None,
-                                 symbolicSpace_ref=None)
+                                 wholeSpace_ref=None)
     for _m in ("_relation_store", "taxonomy_children", "is_meta"):
         setattr(bare, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), bare))
     assert bare._relation_store() is None

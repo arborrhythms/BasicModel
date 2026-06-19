@@ -2,7 +2,7 @@
 
 Post-Stage-1.F contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
 
-  * The per-stage forward capture lists ``self._ss_cache`` and
+  * The per-stage forward capture lists ``self._ws_cache`` and
     ``self._cs_cache`` (plain Python lists allocated by
     ``_build_pipelines_per_stage`` and reallocated by
     ``_per_word_prelude``, written each forward stage) are RETIRED.
@@ -69,16 +69,16 @@ def _one_input(model):
 
 
 class TestPerStageCachesRetiredAtConstruction(unittest.TestCase):
-    """``_ss_cache`` / ``_cs_cache`` attributes are NOT created by the
+    """``_ws_cache`` / ``_cs_cache`` attributes are NOT created by the
     constructor. The master plan doctrine: "No per-stage forward
     caches." (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md
     Stage 1.F.)"""
 
-    def test_ss_cache_not_present_after_construction(self):
+    def test_ws_cache_not_present_after_construction(self):
         model = _make_plain_model()
         self.assertFalse(
-            hasattr(model, '_ss_cache'),
-            "BasicModel._ss_cache must be retired by Stage 1.F "
+            hasattr(model, '_ws_cache'),
+            "BasicModel._ws_cache must be retired by Stage 1.F "
             "(no per-stage forward caches; reverse reads terminal STM).")
 
     def test_cs_cache_not_present_after_construction(self):
@@ -90,10 +90,10 @@ class TestPerStageCachesRetiredAtConstruction(unittest.TestCase):
 
 
 class TestPerStageCachesRetiredAfterForward(unittest.TestCase):
-    """A full forward pass does not (re)allocate ``_ss_cache`` /
+    """A full forward pass does not (re)allocate ``_ws_cache`` /
     ``_cs_cache`` either. These lists are gone from every code path."""
 
-    def test_ss_cache_not_present_after_forward(self):
+    def test_ws_cache_not_present_after_forward(self):
         model = _make_plain_model()
         x = _one_input(model)
         with warnings.catch_warnings():
@@ -101,8 +101,8 @@ class TestPerStageCachesRetiredAfterForward(unittest.TestCase):
             with torch.no_grad():
                 model.forward(x)
         self.assertFalse(
-            hasattr(model, '_ss_cache'),
-            "BasicModel._ss_cache must remain absent after a forward "
+            hasattr(model, '_ws_cache'),
+            "BasicModel._ws_cache must remain absent after a forward "
             "pass (Stage 1.F: no per-stage forward caches).")
 
     def test_cs_cache_not_present_after_forward(self):

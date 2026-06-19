@@ -42,8 +42,8 @@ from test_partition_pos_codebook import _make_word_space  # noqa: E402
 def test_symbolic_codebook_no_longer_pinned_bivector():
     """``WholeSpace.subspace.what.W.shape[1]`` is NOT 2 — the legacy
     pinned-bivector codebook is gone."""
-    ws = _make_word_space(symbolDim=4)
-    sym = ws.symbolicSpace
+    ss = _make_word_space(symbolDim=4)
+    sym = ss.wholeSpace
     W = sym.subspace.what.W
     assert W is not None
     assert W.ndim == 2
@@ -59,8 +59,8 @@ def test_symbolic_nwhat_equals_ndim():
     rollback that decoupled them; the SS=(0,0) special case (where nWhat ==
     nDim exactly) was retired by the uniform-(2,2) convention."""
     from architecture import canonical_shape
-    ws = _make_word_space(symbolDim=4 + sum(canonical_shape("WholeSpace")))
-    sym = ws.symbolicSpace
+    ss = _make_word_space(symbolDim=4 + sum(canonical_shape("WholeSpace")))
+    sym = ss.wholeSpace
     assert sym.nWhat == sym.nDim - sum(canonical_shape("WholeSpace"))
 
 
@@ -71,8 +71,8 @@ def test_symbolic_references_parameter_attached_via_knowledge():
     ``references`` is the remaining narrow-bivector-retirement work."""
     from Language import Grammar
     from embed import build_knowledge_section, KnowledgeView
-    ws = _make_word_space(symbolDim=4)
-    sym = ws.symbolicSpace
+    ss = _make_word_space(symbolDim=4)
+    sym = ss.wholeSpace
 
     g = Grammar()
     g.rules = [
@@ -94,8 +94,8 @@ def test_symbolic_activation_carries_bivector():
     """Activation (the place per-batch bivectors live) still has
     ``activation.W`` shape matching the bivector / scalar carrier per
     the activation-channeling convention."""
-    ws = _make_word_space(symbolDim=4)
-    sym = ws.symbolicSpace
+    ss = _make_word_space(symbolDim=4)
+    sym = ss.wholeSpace
     # activation.W is the per-batch payload — its dim reflects the
     # activation carrier, NOT the codebook prototype width.
     act_basis = sym.subspace.activation

@@ -12,7 +12,7 @@ Does NOT call ``extend_artifact`` during forward. That happens at an
 explicit flush boundary so codebook mutations stay out of autograd.
 
 Migrated from the retired ``symbol_learning`` module to
-``Layers.SymbolLearningLayer`` (2026-05-21 WordSubSpace / STM Layer
+``Layers.SymbolLearningLayer`` (2026-05-21 SymbolicSubSpace / STM Layer
 refactor).
 """
 import sys

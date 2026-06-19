@@ -53,7 +53,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Bivector retirement (2026-05-20) made the PartSpace-
         # tier SyntacticLayer optional — not all configs wire a
         # ``P`` SyntacticLayer, so accept None there.
-        for space in (model.conceptualSpace, model.symbolicSpace):
+        for space in (model.conceptualSpace, model.wholeSpace):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")
@@ -75,7 +75,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         _reload_config()
         model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Should not raise
-        for space in (model.symbolicSpace, model.conceptualSpace, model.perceptualSpace):
+        for space in (model.wholeSpace, model.conceptualSpace, model.perceptualSpace):
             space.subspace.set_words([])
 
 
@@ -135,9 +135,9 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
         # Stage 3 (2026-05-27): the chart retired; the signal router
-        # (``WordSubSpace.languageLayer``) carries the grammar reference
+        # (``SymbolicSubSpace.languageLayer``) carries the grammar reference
         # for diagnostics and gating.
-        self.assertIs(model.wordSubSpace.languageLayer.grammar,
+        self.assertIs(model.symbolicSpace.languageLayer.grammar,
                       Language.TheGrammar)
         # Post-2026-05-29 grammar-file refactor: ``load_from_grammar_file``
         # injects an ``S = S`` identity rule (method_name=None, arity=1,

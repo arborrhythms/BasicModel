@@ -1,0 +1,89 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_ltm_consolidation_serial_fixture: SERIAL (symbolicOrder>=1) test
+       fixture for the LTM-consolidation FOLLOW-UPS (Change 2 / FU3 and the
+       real-parse provisioning of Change 3; Alec 2026-06-18).
+
+       Unlike MM_ltm_consolidation_fixture (symbolicOrder=0, which exercises
+       the store API + observe-write contract directly, no parsing forward)
+       this fixture turns ON BOTH:
+         * a DISCOURSE via training/sentencePrediction=true (builds
+           symbolicSpace.discourse, the InterSentenceLayer AR predictor), and
+         * ltmConsolidation=true (the unified TernaryTruthStore).
+       With symbolicOrder=1 the per-word serial forward
+       (_forward_body_per_word) runs, so the observe-site conversation push
+       (the SINGLE store-append, Change 1) fires per sentence. That is what
+       provision_ltm now uses to land REAL parsed end-state rows (no mean-pool
+       placeholder), and what FU3's store-backed AR predictor reads. A small
+       truthSet exercises the real-parse provisioning at first runEpoch.
+       Do not consume from production code. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <modelType>embedding</modelType>
+    <symbolicOrder>1</symbolicOrder>
+    <!-- sentenceProtocol defaults ON in serial mode, but its prelude +
+         top-k priming gate has a pre-existing shape mismatch with
+         default.grammar at the small space widths used here; FU3 only needs
+         the discourse predict->observe cycle, so turn it OFF explicitly to
+         get a clean serial discourse forward. -->
+    <sentenceProtocol>false</sentenceProtocol>
+    <ltmConsolidation>true</ltmConsolidation>
+    <truthSet>
+      <truth text="cat" trust="0.9"/>
+      <truth text="fire causes smoke" trust="0.8" kind="implies"/>
+      <truth text="paw partOf cat" trust="0.7" kind="partOf"/>
+    </truthSet>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <sentencePrediction>true</sentencePrediction>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <nOutput>8</nOutput>
+    <nDim>14</nDim>
+    <nVectors>8</nVectors>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <SymbolicSpace>
+    <ltmCapacity>64</ltmCapacity>
+    <language>
+      <grammar>default.grammar</grammar>
+    </language>
+  </SymbolicSpace>
+
+</model>

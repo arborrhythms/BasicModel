@@ -199,13 +199,13 @@ def test_subspace_muxed_size_includes_two_when_slots():
     SubSpace, WhereEncoding = _import_subspace()
     nWhat, nWhere, nWhen = 4, 2, 2
     dim = nWhat + nWhere + nWhen
-    ss = SubSpace(
+    ws = SubSpace(
         whereEncoding=WhereEncoding(64, nWhere, nWhen),
         whenEncoding=WhenRangeEncoding(_WHEN_PERIOD, nWhen),
         inputShape=[3, dim], outputShape=[3, dim],
     )
-    assert ss.nWhen == 2
-    assert ss.muxedSize == nWhat + nWhere + 2
+    assert ws.nWhen == 2
+    assert ws.muxedSize == nWhat + nWhere + 2
 
 
 def test_subspace_demux_round_trips_present_instant():
@@ -215,7 +215,7 @@ def test_subspace_demux_round_trips_present_instant():
     whenEnc = WhenRangeEncoding(_WHEN_PERIOD, nWhen)
     T = _WHEN_PERIOD // 8
     whenEnc.t = T
-    ss = SubSpace(
+    ws = SubSpace(
         whereEncoding=WhereEncoding(64, nWhere, nWhen),
         whenEncoding=whenEnc,
         inputShape=[3, dim], outputShape=[3, dim],
@@ -227,14 +227,14 @@ def test_subspace_demux_round_trips_present_instant():
     objects[..., when_idx] = key.expand(2, 3, -1)
     # Demux / reverse: SubSpace.decode -> (objects, space, time); time is the
     # new (center, extent) tuple.
-    cleaned, _space, time = ss.decode(objects)
+    cleaned, _space, time = ws.decode(objects)
     c_dec, ext_dec = time
     assert torch.allclose(c_dec, torch.full_like(c_dec, float(T)), atol=0.05)
     assert torch.allclose(ext_dec, torch.zeros_like(ext_dec), atol=1e-3)
     # reverse zeroed the .when slots.
     assert torch.allclose(cleaned[..., when_idx], torch.zeros_like(cleaned[..., when_idx]),
                           atol=1e-6)
-    assert ss.muxedSize == nWhat + nWhere + 2
+    assert ws.muxedSize == nWhat + nWhere + 2
 
 
 if __name__ == "__main__":

@@ -91,7 +91,7 @@ def test_svo_extraction_on_real_sentence():
     with torch.no_grad():
         m(batch)
 
-    chart = m.wordSubSpace.chart
+    chart = m.symbolicSpace.chart
     svo = chart.extract_svo()
     assert svo is not None, (
         "chart.extract_svo() returned None — no subject lift over a "
@@ -104,7 +104,7 @@ def test_svo_extraction_on_real_sentence():
 
     # Decode each operand to its nearest codebook atom, then resolve
     # that atom to a surface token via the InputSpace's word vectors.
-    sym_sub = m.symbolicSpace.subspace
+    sym_sub = m.wholeSpace.subspace
     cb_W = sym_sub.what.getW()
     assert cb_W is not None and torch.is_tensor(cb_W)
 

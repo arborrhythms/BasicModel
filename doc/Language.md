@@ -14,7 +14,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   `<compose>`/`<generate>` under `<PartSpace>` and
 >   `<WholeSpace>`. `Grammar.configure` parses them into separate rule
 >   tables: `ps_rules` (tier `P`, read by the PS analyzer) and the
->   canonical symbolic `rules` (`ss_rules`). A bare `<compose>`/`<generate>`
+>   canonical symbolic `rules` (`ws_rules`). A bare `<compose>`/`<generate>`
 >   file loads as `<WholeSpace>` (backward-compat). The legacy `.cfg`
 >   loader is gone.
 > - **Grammar rewrite.** `*_MARK` categories and the copy/swap MARKER
@@ -32,13 +32,13 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   operation in a dedicated operator codebook on WholeSpace
 >   (`_operation_vectors` / `_operation_positions`), separate from the
 >   `subspace.what` symbol codebook so the symbol / idea / `.where` position
->   namespace is untouched; it is wired into `WordSubSpace.__init__` so every
+>   namespace is untouched; it is wired into `SymbolicSubSpace.__init__` so every
 >   built model's operator-prefixed parse-tree nodes are codebook-resolvable. The STM idea space holds only combined meanings --
 >   the operator says *how* meanings combine, contributing none of its own.
 >   The rule-id stays in `.where` (its presence marks a slot as a *computed*
 >   idea, which is by definition not a codebook vector).
 > - **ObjectSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
->   analogue of `WordSubSpace`: span buffers + parent/child links + route
+>   analogue of `SymbolicSubSpace`: span buffers + parent/child links + route
 >   ids/scores + the marker-route replay fields
 >   (`_marker_ps_id`/`_marker_span`/`_order_bit`/`_marker_position`).
 > - **Perceptual analyzer** (`bin/perceptual_analyzer.py`). `EndpointSumWhere`
@@ -80,8 +80,8 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 ## Current Parser Surface
 
-`WordSpace.compose()` and `WordSpace.generate()` are the public parser
-entry points. `WordSpace.parser_backend` selects the implementation:
+`SymbolicSpace.compose()` and `SymbolicSpace.generate()` are the public parser
+entry points. `SymbolicSpace.parser_backend` selects the implementation:
 
 | backend | status | notes |
 |---|---|---|
@@ -89,7 +89,7 @@ entry points. `WordSpace.parser_backend` selects the implementation:
 | `stm` | active | Shift/reduce over `ConceptualSpace.stm_typed`; requires an attached `KnowledgeView`. |
 | `parallel` | bridge | Builds the STM driver, then runs the chart path authoritatively. |
 
-`WordSpace.routerKind` is separate from `parserBackend` and only affects
+`SymbolicSpace.routerKind` is separate from `parserBackend` and only affects
 the chart backend:
 
 | routerKind | status |
@@ -106,16 +106,16 @@ cannot.
 These XML fields are no longer read by the runtime and should not appear
 in `data/*.xml`:
 
-- `WordSpace.useGrammar`
-- `WordSpace.chartCompose`
-- `WordSpace.softChartCompose`
+- `SymbolicSpace.useGrammar`
+- `SymbolicSpace.chartCompose`
+- `SymbolicSpace.softChartCompose`
 - `bivectorOutput`
 
 Grammar mode is derived from the loaded grammar: default-only unary
 `pi` / `sigma` rules derive `useGrammar == "none"` internally; any
 non-default operator rule derives `useGrammar == "all"`.
 
-> **SS-analysis vs CS-execution.** `WordSubSpace.compose` is the
+> **SS-analysis vs CS-execution.** `SymbolicSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-tier hard rule dict
 > `current_rules`); the CS-side *execution* (applying lift / lower /
 > union / intersection / swap / quantize / not to the concept tensors)
@@ -125,13 +125,13 @@ non-default operator rule derives `useGrammar == "all"`.
 > `LanguageLayer.compose` does both selection and tensor reduction, and
 > the per-tier cursors are deliberately bypassed
 > (`not _grammar_is_default_only`). See
-> [STM.md Section 5](STM.md#5-routing-parser-ss-analysis-vs-cs-execution)
+> [STM.md Section 5](STM.md#5-routing-parser-ws-analysis-vs-cs-execution)
 > for the accurate, audited account.
 
 ## Grammar
 
 `TheGrammar` is the singleton `Grammar` instance. Rules are loaded from
-XML `<WordSpace><language><grammar>` blocks or from a configured grammar
+XML `<SymbolicSpace><language><grammar>` blocks or from a configured grammar
 CFG. A `RuleDef` stores:
 
 ```text
@@ -186,11 +186,11 @@ NP
 (`NP`), while `KnowledgeView.order_of_ref(ref_id)` returns the
 conceptual order (`3`, `4`, etc.).
 
-`WordSpace.category_codebook` has been retired. The live category
+`SymbolicSpace.category_codebook` has been retired. The live category
 embedding is:
 
 ```python
-WordSpace.category_embedding: nn.Embedding
+SymbolicSpace.category_embedding: nn.Embedding
 ```
 
 ## STM Shift/Reduce
@@ -399,7 +399,7 @@ MentalModel needs the fineweb corpus), and **Phase 2** (thread the per-slot
 centroid role vector into `MLPTransformChooser.feat`; the layer forwards carry no
 per-slot symbol identity today). The current round-0/first-tier observation is
 parallel-mode-correct; serial (`symbolicOrder>=1`) attribution is approximate.
-The old `WordSpace.category_codebook` was retired 2026-05-20 and is gone; the
+The old `WholeSpace.category_codebook` was retired 2026-05-20 and is gone; the
 dormant declared-POS tables (`category_embedding`, `category_logits`/
 `category_ids`, the order-taxonomy admissibility gate) are superseded and slated
 for follow-up retirement, not reuse.

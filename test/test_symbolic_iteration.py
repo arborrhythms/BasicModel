@@ -67,29 +67,29 @@ def _staged_batch(m):
 
 def _cs_view(m):
     """Drive one full forward and return the REAL persistent CS->SS view
-    (``cs._subspaceForSS``) -- the t>0 leg's input geometry. The
+    (``cs._subspaceForWS``) -- the t>0 leg's input geometry. The
     completed forward leaves a stale all-False AR valid_mask on the
     persistent subspaces; in-body t>0 passes run with the batch's live
     mask (None for IR/XOR), so it is cleared here."""
     x = _staged_batch(m)
     with torch.no_grad():
         m.forward(x)
-    view = m.body_stages[0]["cs"]._subspaceForSS
+    view = m.body_stages[0]["cs"]._subspaceForWS
     assert view is not None and not view.is_empty()
     view.valid_mask = None
-    m.symbolicSpace.subspace.valid_mask = None
+    m.wholeSpace.subspace.valid_mask = None
     return view
 
 
-def _plant_rows(ss, rows, scale=0.9):
+def _plant_rows(ws, rows, scale=0.9):
     """Write deterministic block-sign codes into codebook rows ``rows``
     (the analytic store, ``vq.codebook``), refresh the VQ's cached row
     norms, and tag the rows MEANING_GENERAL (simulating completed
     adoption). Returns the planted [len(rows), W] codes."""
     from Spaces import Codebook
-    basis = ss.subspace.what
+    basis = ws.subspace.what
     vq = basis.vq
-    W = int(ss.nDim)
+    W = int(ws.nDim)
     codes = []
     with torch.no_grad():
         for k, r in enumerate(rows):
@@ -127,9 +127,9 @@ def test_csleg_pi_bypassed_under_quantize():
     # analysis. (The S-tier syntactic dispatch is bypassed by the same
     # predicate; the fold is the directly patchable surface.)
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    fold = getattr(ss, "pi", None)
+    fold = getattr(ws, "pi", None)
     if fold is None:
         pytest.skip("MM_20M SS carries no parallel fold to bypass")
     real = fold.forward
@@ -140,7 +140,7 @@ def test_csleg_pi_bypassed_under_quantize():
     fold.forward = _boom
     try:
         with torch.no_grad():
-            out = ss.forward(view)
+            out = ws.forward(view)
     finally:
         fold.forward = real
     ev = out.materialize()
@@ -153,25 +153,25 @@ def test_csleg_one_symbol_apoha_emission():
     # exactly that one slot carrying that one code; every other slot is
     # exactly zero, value AND copart.
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    W = int(ss.nDim)
-    N = int(ss.inputShape[0])
-    codes = _plant_rows(ss, rows=[20, 21])
-    ss.stage_symbolic_virgin_rows()
+    W = int(ws.nDim)
+    N = int(ws.inputShape[0])
+    codes = _plant_rows(ws, rows=[20, 21])
+    ws.stage_symbolic_virgin_rows()
     B = view.materialize().shape[0]
     placements = [(b, 5 if b % 2 == 0 else 2, codes[b % 2]) for b in range(B)]
     _craft_event(view, W, placements)
     with torch.no_grad():
-        out = ss.forward(view)
+        out = ws.forward(view)
     ev = out.materialize()
     frame = ev.reshape(B, N, W)
     nonzero_slots = (frame.abs().sum(dim=-1) > 0)
     assert nonzero_slots.sum(dim=1).tolist() == [1] * B, (
         "apoha: exactly ONE live slot per batch row, got "
         f"{nonzero_slots.sum(dim=1).tolist()}")
-    win_slot, win_row = ss._symbolic_emission
-    vq = ss.subspace.what.vq
+    win_slot, win_row = ws._symbolic_emission
+    vq = ws.subspace.what.vq
     for b, n, c in placements:
         assert int(win_slot[b]) == n, (
             f"row {b}: winner slot {int(win_slot[b])} != planted slot {n}")
@@ -189,21 +189,21 @@ def test_csleg_virgin_fallback_stays_continuous():
     # must stay CONTINUOUS -- no codebook value substitution, no apoha
     # sparsity (a symbol that does not exist yet cannot be emitted).
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    W = int(ss.nDim)
-    N = int(ss.inputShape[0])
-    basis = ss.subspace.what
+    W = int(ws.nDim)
+    N = int(ws.inputShape[0])
+    basis = ws.subspace.what
     roles = basis.ensure_descriptor_roles()
     with torch.no_grad():
         roles.zero_()                  # forget stage-0 tagging: all virgin
-    ss.stage_symbolic_virgin_rows()
-    assert bool(ss._staged_virgin_rows.all())
+    ws.stage_symbolic_virgin_rows()
+    assert bool(ws._staged_virgin_rows.all())
     ev0 = view.materialize()
     dense = torch.full_like(ev0, 0.3)
     view.set_event(dense)
     with torch.no_grad():
-        out = ss.forward(view)
+        out = ws.forward(view)
     ev = out.materialize()
     B = ev0.shape[0]
     frame = ev.reshape(B, N, W)
@@ -220,11 +220,11 @@ def test_csleg_adoption_writes_tags_and_is_idempotent():
     # analysis face, LF_COARSE), and a second pass is bit-stable.
     from Spaces import Codebook
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    basis = ss.subspace.what
+    basis = ws.subspace.what
     vq = basis.vq
-    W = int(ss.nDim)
+    W = int(ws.nDim)
     roles = basis.ensure_descriptor_roles()
     target = 33
     assert roles[target] == Codebook.ROLE_UNASSIGNED, (
@@ -234,22 +234,22 @@ def test_csleg_adoption_writes_tags_and_is_idempotent():
     with torch.no_grad():
         evidence = vq.codebook[target][:W].clone() + 0.01
     _craft_event(view, W, [(0, 0, evidence)])
-    ss.train()
+    ws.train()
     try:
-        ss.adopt_symbolic_evidence(view)
+        ws.adopt_symbolic_evidence(view)
     finally:
-        ss.eval()
+        ws.eval()
     assert roles[target] == Codebook.ROLE_MEANING_GENERAL, (
         "the adopted row must be tagged MEANING_GENERAL at adoption time")
     assert torch.allclose(
         vq.codebook[target][:W].detach(), evidence.to(vq.codebook.dtype),
         atol=1e-6), "the virgin row must ADOPT the evidence that selected it"
     snapshot = vq.codebook.detach().clone()
-    ss.train()
+    ws.train()
     try:
-        ss.adopt_symbolic_evidence(view)
+        ws.adopt_symbolic_evidence(view)
     finally:
-        ss.eval()
+        ws.eval()
     assert torch.equal(snapshot, vq.codebook.detach()), (
         "second adoption pass must be bit-stable (adoption tags; tagged "
         "rows are no longer virgin)")
@@ -260,22 +260,22 @@ def test_csleg_recon_gather_lands_on_winner_rows():
     # the winner rows -- the argmax blocks the encoder leg, the evidence
     # is detached, EMA stays off.
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    W = int(ss.nDim)
-    codes = _plant_rows(ss, rows=[40, 41])
-    ss.stage_symbolic_virgin_rows()
+    W = int(ws.nDim)
+    codes = _plant_rows(ws, rows=[40, 41])
+    ws.stage_symbolic_virgin_rows()
     B = view.materialize().shape[0]
     placements = [(b, 1, codes[b % 2]) for b in range(B)]
     _craft_event(view, W, placements)
-    vq = ss.subspace.what.vq
+    vq = ws.subspace.what.vq
     assert isinstance(vq.codebook, torch.nn.Parameter)
-    ss.train()
+    ws.train()
     try:
-        ss.forward(view)
-        recon = getattr(ss, "_csleg_recon_loss", None)
+        ws.forward(view)
+        recon = getattr(ws, "_csleg_recon_loss", None)
     finally:
-        ss.eval()
+        ws.eval()
     assert recon is not None and recon.requires_grad, (
         "training-mode symbolic iteration must thread the CS-leg recon term")
     if vq.codebook.grad is not None:
@@ -283,7 +283,7 @@ def test_csleg_recon_gather_lands_on_winner_rows():
     recon.backward()
     g = vq.codebook.grad
     assert g is not None
-    _, win_row = ss._symbolic_emission
+    _, win_row = ws._symbolic_emission
     sel = torch.zeros(g.shape[0], dtype=torch.bool)
     sel[win_row.reshape(-1).cpu()] = True
     assert float(g[~sel].abs().max()) == 0.0, (
@@ -294,15 +294,15 @@ def test_csleg_naming_indices_thread_full_frame():
     # The snap still NAMES every slot (indices thread for the narrow
     # output / downstream consumers) even though only one symbol emits.
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    ss.stage_symbolic_virgin_rows()
+    ws.stage_symbolic_virgin_rows()
     with torch.no_grad():
-        ss.forward(view)
-    idx = getattr(ss, "_naming_indices", None)
+        ws.forward(view)
+    idx = getattr(ws, "_naming_indices", None)
     assert idx is not None and idx.dim() == 2, (
         "per-slot naming indices must thread on the symbolic iteration")
-    assert int(idx.shape[1]) == int(ss.inputShape[0])
+    assert int(idx.shape[1]) == int(ws.inputShape[0])
 
 
 @pytest.mark.xfail(
@@ -325,34 +325,34 @@ def test_mm20m_second_order_reverse_keys_codebook():
     # indices". Quantization is what allows CS to return ACTIVATION
     # VALUES ONLY -> second-order symbols.
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     view = _cs_view(m)
-    W = int(ss.nDim)
-    codes = _plant_rows(ss, rows=[50, 51])
-    ss.stage_symbolic_virgin_rows()
+    W = int(ws.nDim)
+    codes = _plant_rows(ws, rows=[50, 51])
+    ws.stage_symbolic_virgin_rows()
     B = view.materialize().shape[0]
     placements = [(b, 3, codes[b % 2]) for b in range(B)]
     _craft_event(view, W, placements)
     with torch.no_grad():
-        out = ss.forward(view)
+        out = ws.forward(view)
     narrow = out.materialize()
     # The narrow emission at the CONFIGURED output geometry (muxed:
     # nOutput rows of nOutputDim = what+where+when).
     assert narrow.dim() == 3, "narrow emission must be [B, nOutput, nOutputDim]"
     assert (int(narrow.shape[1]), int(narrow.shape[2])) == (
-        int(ss.outputShape[0]), int(ss.nOutputDim)), (
+        int(ws.outputShape[0]), int(ws.nOutputDim)), (
         f"the symbolic iteration must emit the configured narrow geometry "
-        f"[{int(ss.outputShape[0])}, {int(ss.nOutputDim)}], got "
+        f"[{int(ws.outputShape[0])}, {int(ws.nOutputDim)}], got "
         f"{tuple(narrow.shape[1:])}")
-    win_slot, win_row = ss._symbolic_emission
+    win_slot, win_row = ws._symbolic_emission
     # REVERSE: recreate the full concept representation by KEYING the
     # codebook with the emitted symbol id.
     with torch.no_grad():
-        rec = ss.reverse(out)
+        rec = ws.reverse(out)
     wide = rec.materialize()
-    N = int(ss.inputShape[0])
+    N = int(ws.inputShape[0])
     frame = wide.reshape(B, N, -1)
-    vq = ss.subspace.what.vq
+    vq = ws.subspace.what.vq
     for b in range(B):
         s = int(win_slot[b]); r = int(win_row[b])
         n = min(int(frame.shape[-1]), W)
@@ -377,7 +377,7 @@ def test_forward_body_lifts_csleg_recon():
     finally:
         m.eval()
     terms = getattr(m.outputSpace.subspace.errors, "_terms", {})
-    assert "ss_codebook_recon" in terms, (
+    assert "ws_codebook_recon" in terms, (
         f"the CS-leg recon term must reach the pipeline error container; "
         f"got terms={list(terms)}")
     # The stem staged the virgin mask on every SS stage. None is a
@@ -385,7 +385,7 @@ def test_forward_body_lifts_csleg_recon():
     # only allocated by the first adoption/tagging); the contract is
     # that staging RAN, i.e. the attribute exists.
     for stage in m.body_stages:
-        ss = stage["ss"] if "ss" in stage else None
-        if ss is not None:
-            assert hasattr(ss, "_staged_virgin_rows"), (
+        ws = stage["ws"] if "ws" in stage else None
+        if ws is not None:
+            assert hasattr(ws, "_staged_virgin_rows"), (
                 "the stem must park the virgin-row staging for the body")

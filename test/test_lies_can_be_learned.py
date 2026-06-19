@@ -74,7 +74,7 @@ class TestLowTruthObviousDoesNotBlockAlone(unittest.TestCase):
     def test_low_obvious_high_others_still_learns(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         cs.truth_criterion = 0.3
         # is_truth_obvious = 0.4 (low-ish, a contested / partly-false
         # claim), children = 1.0, resolves = 1.0 -> product 0.4 >= 0.3.
@@ -90,7 +90,7 @@ class TestLowTruthObviousDoesNotBlockAlone(unittest.TestCase):
             pred_pos,
             "low is_truth_obvious must NOT block when children + "
             "resolves are high (product 0.4 >= tc 0.3)")
-        self.assertEqual(len(ss.taxonomy_children(pred_pos)), 2)
+        self.assertEqual(len(ws.taxonomy_children(pred_pos)), 2)
 
     def test_low_obvious_low_others_does_reject(self):
         """Control: when the OTHER factors are also low, the same low
@@ -115,8 +115,8 @@ class TestLieCarriesBothTrust(unittest.TestCase):
     def test_contested_relation_learned_with_high_both(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
-        tl = cs.wordSubSpace.truth_layer
+        ws = cs.terminalSymbolicSpace_ref
+        tl = cs.symbolicSpace.truth_layer
         cs.truth_criterion = 0.3
         D = int(cs.nDim)
 
@@ -137,8 +137,8 @@ class TestLieCarriesBothTrust(unittest.TestCase):
 
         # Make both ideas already-known concepts so children == 1.0.
         pred, a, b = _ideas(cs)
-        ss.insert_symbol(init_vec=a)
-        ss.insert_symbol(init_vec=b)
+        ws.insert_symbol(init_vec=a)
+        ws.insert_symbol(init_vec=b)
         children_factor = cs._learn_score_children_in_codebook(a, b)
         self.assertEqual(children_factor, 1.0)
 
@@ -157,9 +157,9 @@ class TestLieCarriesBothTrust(unittest.TestCase):
             "a contested relation grounded in known concepts must be "
             "learnable even with low is_truth_obvious")
         # It landed in the codebook taxonomy.
-        self.assertEqual(len(ss.taxonomy_children(pred_pos)), 2)
+        self.assertEqual(len(ws.taxonomy_children(pred_pos)), 2)
         # And carries a tetralemma 4-tuple recording the conflict.
-        trust = ss.meta_trust.get(pred_pos)
+        trust = ws.meta_trust.get(pred_pos)
         self.assertIsNotNone(
             trust, "accepted relation must carry a tetralemma trust tuple")
         self.assertEqual(len(trust), 4)

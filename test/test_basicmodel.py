@@ -333,6 +333,29 @@ class TestPiLayer(unittest.TestCase):
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
+    def test_factorize_over_set_is_log_domain_dual_of_sigma_split(self):
+        # π factorize-over-set: the log-domain dual of σ.generate's balanced
+        # split (doc/specs "Ramsification with the towers"). M=1 reduces to
+        # reverse; folding M EQUAL factors back recovers the parent (round-trip).
+        torch.manual_seed(0)
+        D = 4
+        layer = Layers.PiLayer(nInput=D, nOutput=D, invertible=True)
+        dev = Models.TheDevice.get()
+        y = (torch.randn(2, D) * 0.3).clamp(-0.9, 0.9).to(dev)
+        # M == 1 is exactly the single reverse.
+        self.assertTrue(torch.allclose(
+            layer.factorize_over_set(y, 1), layer.reverse(y), atol=1e-5))
+        # M-way: re-folding M equal copies (their log-memberships SUM through W)
+        # recovers y.
+        M = 3
+        f = layer.factorize_over_set(y, M)
+        self.assertEqual(f.shape, (2, D))
+        summed_log = M * torch.log(layer._to_mult(f))     # M equal factors
+        W = layer.layer.compute_W_current()
+        b = layer.layer._effective_bias()
+        refolded = torch.tanh((summed_log @ W + b) / 2.0)
+        self.assertTrue(torch.allclose(refolded, y, atol=1e-3))
+
 
 class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
@@ -632,36 +655,36 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
     """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match EventEncoding math."""
 
     def test_getEncodingSize_returns_muxedSize(self):
-        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       inputShape=[3, 8], outputShape=[3, 8])
         # muxedSize = nWhat(4) + nWhere(2) + nWhen(2) = 8 (inputShape[1])
-        self.assertEqual(ss.getEncodingSize(8), 8)
-        self.assertEqual(ss.muxedSize, 8)
+        self.assertEqual(ws.getEncodingSize(8), 8)
+        self.assertEqual(ws.muxedSize, 8)
 
     def test_getEncodedIO_no_reshape(self):
         # Shapes already include muxed width (nWhere=2 + nWhen=2)
         # nInputDim/nOutputDim default to 0 -> resolves to inputShape[1]/outputShape[1]
-        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       inputShape=[3, 12], outputShape=[5, 20])
-        self.assertEqual(ss.getEncodedInputSize(), 12)
-        self.assertEqual(ss.getEncodedOutputSize(), 20)
+        self.assertEqual(ws.getEncodedInputSize(), 12)
+        self.assertEqual(ws.getEncodedOutputSize(), 20)
 
     def test_getEncodedIO_reshape(self):
         # Equivalent of old flatten=True: nInputDim = flat_in, nOutputDim = per-vector dim.
         # Layer sees flat_in -> flat_out; forwardEnd reshapes flat_out -> [nOut, per_dim].
-        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       nInputDim=12 * 3, nOutputDim=20,
                       inputShape=[3, 12], outputShape=[5, 20])
-        self.assertEqual(ss.getEncodedInputSize(), 12 * 3)
-        self.assertEqual(ss.getEncodedOutputSize(), 20 * 5)
+        self.assertEqual(ws.getEncodedInputSize(), 12 * 3)
+        self.assertEqual(ws.getEncodedOutputSize(), 20 * 5)
 
     def test_zero_nWhere_nWhen(self):
-        ss = Models.SubSpace(objectEncoding=Models.EventEncoding([2, 10], [2, 10]),
+        ws = Models.SubSpace(objectEncoding=Models.EventEncoding([2, 10], [2, 10]),
                       inputShape=[2, 10], outputShape=[2, 10])
-        self.assertEqual(ss.getEncodedInputSize(), 10)
-        self.assertEqual(ss.getEncodedOutputSize(), 10)
+        self.assertEqual(ws.getEncodedInputSize(), 10)
+        self.assertEqual(ws.getEncodedOutputSize(), 10)
 
 
 class TestSubSpaceMaterialize(unittest.TestCase):
@@ -669,25 +692,25 @@ class TestSubSpaceMaterialize(unittest.TestCase):
 
     def test_materialize_tensor(self):
         t = torch.randn(2, 4, 12)
-        ss = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                                   inputShape=[4, 8], outputShape=[4, 8])
-        result = ss.materialize()
+        result = ws.materialize()
         self.assertIs(result, t)
-        self.assertIsInstance(ss.event, Models.Tensor)
+        self.assertIsInstance(ws.event, Models.Tensor)
 
     def test_materialize_none_when_unset(self):
-        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsNone(ss.materialize())
+        self.assertIsNone(ws.materialize())
 
     def test_shape_property(self):
         t = torch.randn(2, 4, 12)
-        ss = Models.SubSpace.from_tensor(t, inputShape=[4, 8], outputShape=[4, 8])
-        self.assertEqual(ss.shape, torch.Size([2, 4, 12]))
+        ws = Models.SubSpace.from_tensor(t, inputShape=[4, 8], outputShape=[4, 8])
+        self.assertEqual(ws.shape, torch.Size([2, 4, 12]))
 
     def test_shape_property_none(self):
-        ss = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsNone(ss.shape)
+        ws = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsNone(ws.shape)
 
 
 class TestSubSpaceProperties(unittest.TestCase):
@@ -695,12 +718,12 @@ class TestSubSpaceProperties(unittest.TestCase):
 
     def test_batch_from_tensor(self):
         t = torch.randn(5, 4, 8, device=Models.TheDevice.get())
-        ss = Models.SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
-        self.assertEqual(ss.batch, 5)
+        ws = Models.SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
+        self.assertEqual(ws.batch, 5)
 
     def test_batch_zero_when_empty(self):
-        ss = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertEqual(ss.batch, 0)
+        ws = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertEqual(ws.batch, 0)
 
 
 class TestSubSpaceConstruction(unittest.TestCase):
@@ -708,36 +731,36 @@ class TestSubSpaceConstruction(unittest.TestCase):
 
     def test_from_tensor(self):
         t = torch.randn(2, 3, 10)
-        ss = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+        ws = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                                   inputShape=[3, 6], outputShape=[3, 6])
-        self.assertIsInstance(ss.event, Models.Tensor)
-        self.assertIs(ss.event.W, t)
-        self.assertEqual(ss.nWhere, 2)
-        self.assertEqual(ss.nWhen, 2)
-        self.assertEqual(ss.muxedSize, 6)
-        self.assertEqual(ss.inputShape, [3, 6])
+        self.assertIsInstance(ws.event, Models.Tensor)
+        self.assertIs(ws.event.W, t)
+        self.assertEqual(ws.nWhere, 2)
+        self.assertEqual(ws.nWhen, 2)
+        self.assertEqual(ws.muxedSize, 6)
+        self.assertEqual(ws.inputShape, [3, 6])
 
     def test_from_components(self):
         object = torch.randn(2, 4, 8)
         act = torch.ones(2, 4)
         ae = Models.ActiveEncoding()
-        ss = Models.SubSpace.from_components(
+        ws = Models.SubSpace.from_components(
             object=object, activation=act, activeEncoding=ae,
             whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
             inputShape=[4, 4], outputShape=[4, 4])
-        self.assertIsInstance(ss.event, Models.Tensor)
-        self.assertIsInstance(ss.activation, Models.Tensor)
-        self.assertIs(ss.event.W, object)
-        self.assertIs(ss.activation.W, act)
-        self.assertIs(ss.activeEncoding, ae)
+        self.assertIsInstance(ws.event, Models.Tensor)
+        self.assertIsInstance(ws.activation, Models.Tensor)
+        self.assertIs(ws.event.W, object)
+        self.assertIs(ws.activation.W, act)
+        self.assertIs(ws.activeEncoding, ae)
 
     def test_from_components_defaults_initialized(self):
         """All modalities are initialized (as empty Tensor bases) even with no args."""
-        ss = Models.SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsInstance(ss.event, Models.Tensor)
-        self.assertIsInstance(ss.activation, Models.Tensor)
-        self.assertIsInstance(ss.where, Models.Tensor)
-        self.assertIsInstance(ss.when, Models.Tensor)
+        ws = Models.SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsInstance(ws.event, Models.Tensor)
+        self.assertIsInstance(ws.activation, Models.Tensor)
+        self.assertIsInstance(ws.where, Models.Tensor)
+        self.assertIsInstance(ws.when, Models.Tensor)
 
 
 class TestSubSpaceActiveEncoding(unittest.TestCase):
@@ -756,12 +779,12 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
         ae = Models.ActiveEncoding()
         self.assertEqual(ae.nDim, 1)
         act_scalar = torch.tensor([[0.5, -0.8, 0.1]])  # [1, 3] signed DoT
-        ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
-        ss.set_activation(act_scalar)
-        retrieved = ss.get_activation()
+        ws = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
+        ws.set_activation(act_scalar)
+        retrieved = ws.get_activation()
         torch.testing.assert_close(retrieved, act_scalar)
         # Presence = |DoT|: zero gates the slot off, any belief present.
-        pres = ss.activation_presence()
+        pres = ws.activation_presence()
         torch.testing.assert_close(pres, act_scalar.abs())
 
     def test_two_spaces_independent_encoding(self):
@@ -1172,18 +1195,29 @@ class TestOutputSpaceRegressionHead(unittest.TestCase):
                                       readout="identity", nOut=4)
         self.assertFalse(os_._regression_head)
 
-    def test_identity_readout_matches_bare_linear(self):
-        """identity readout is byte-identical to the historical bare-linear
-        head (no new params, no value change)."""
+    def test_identity_readout_zero_init_bias_matches_bare_linear(self):
+        """identity readout now carries a learned intercept (the regression
+        head's bias-free LinearLayer cannot offset on its own). The bias is
+        zero-init, so at step 0 the head is byte-identical to the historical
+        bare-linear head; a nonzero intercept then shifts the readout."""
         os_ = self._make_output_space(nVectors=1, codebook="none",
                                       readout="identity")
-        self.assertIsNone(os_._readout_bias)
+        # Intercept allocated for the identity regression head too (was
+        # sigmoid-only), zero-init.
+        self.assertIsNotNone(os_._readout_bias)
+        self.assertEqual(float(os_._readout_bias.abs().max()), 0.0)
         x = torch.randn(2, 4, 1).to(Models.TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x.clone())))
         with torch.no_grad():
             expected = os_.forwardLinear(
                 x.reshape(2, 1, 4)).reshape(2, 3, 1)
+        # Zero-init bias => byte-identical to the bare linear at step 0.
         self.assertLess(float((y - expected).abs().max()), 1e-6)
+        # A nonzero intercept shifts the readout (proves it is a real bias).
+        with torch.no_grad():
+            os_._readout_bias.fill_(0.5)
+        y2 = _unwrap(os_(_wrap_tensor(os_, x.clone())))
+        self.assertLess(float((y2 - (expected + 0.5)).abs().max()), 1e-6)
 
     def test_sigmoid_readout_in_unit_interval_and_separable(self):
         """sigmoid readout squashes to (0,1) and distinct inputs map to
@@ -2610,22 +2644,22 @@ class TestSubspaceActivation(unittest.TestCase):
         The bivector lift was retired (2026-05): a signed scalar
         ``[B, N]`` stores and retrieves unchanged.
         """
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
-        ss.set_activation(activation)
-        got = ss.get_activation()
+        ws.set_activation(activation)
+        got = ws.get_activation()
         self.assertTrue(torch.equal(got, activation))
 
     def test_materialize_topk(self):
         """Materialize(k) returns top-k vectors by activation, gated."""
-        ss = Models.SubSpace(inputShape=[8, 3], outputShape=[8, 3])
+        ws = Models.SubSpace(inputShape=[8, 3], outputShape=[8, 3])
         # Create a known tensor: 8 vectors of dim 3
         x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(Models.TheDevice.get())
-        ss.set_event(x)
+        ws.set_event(x)
         # Set activation: highest at indices 7, 5, 3, 1
         activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(Models.TheDevice.get())
-        ss.set_activation(activation)
-        selected = ss.materialize(k=4)
+        ws.set_activation(activation)
+        selected = ws.materialize(k=4)
         self.assertEqual(selected.shape, (1, 4, 3))
         # The top-4 by activation are indices 7(1.0), 5(0.9), 1(0.8), 3(0.7)
         expected_indices = [7, 5, 1, 3]
@@ -2640,36 +2674,36 @@ class TestSubspaceActivation(unittest.TestCase):
         Presence = max(aP, aN) = |activation| for a scalar lifted to the
         bivector, so the effective gate is abs(scalar).
         """
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
-        ss.set_event(x)
+        ws.set_event(x)
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
-        ss.set_activation(activation)
-        result = ss.materialize(k=None)
+        ws.set_activation(activation)
+        result = ws.materialize(k=None)
         expected = x * activation.abs().unsqueeze(-1)
         self.assertTrue(torch.equal(result, expected))
 
     def test_materialize_k_geq_nspace(self):
         """Materialize(k >= nSpace) returns event * presence."""
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
-        ss.set_event(x)
+        ws.set_event(x)
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
-        ss.set_activation(activation)
+        ws.set_activation(activation)
         expected = x * activation.abs().unsqueeze(-1)
-        result = ss.materialize(k=4)
+        result = ws.materialize(k=4)
         self.assertTrue(torch.equal(result, expected))
-        result2 = ss.materialize(k=10)
+        result2 = ws.materialize(k=10)
         self.assertTrue(torch.equal(result2, expected))
 
 
     def test_materialize_activation_mode_with_stored(self):
         """materialize(mode='activation') returns stored activation."""
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
-        ss.set_event(x)
+        ws.set_event(x)
         # set_event defaults to unit activation
-        result = ss.materialize(mode="activation")
+        result = ws.materialize(mode="activation")
         expected = torch.ones(2, 4, device=x.device)
         self.assertTrue(torch.allclose(result, expected))
 
@@ -2677,17 +2711,17 @@ class TestSubspaceActivation(unittest.TestCase):
         """materialize(mode='activation') computes 4-valued activation when
         not stored, reduced to presence = max(aP, aN).
         """
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         # Store event directly without setting activation
-        ss.event.setW(x)
-        ss.activation.setW(None)
-        result = ss.materialize(mode="activation")
+        ws.event.setW(x)
+        ws.activation.setW(None)
+        result = ws.materialize(mode="activation")
         # Bivector retired: the event-derived activation is the signed
         # scalar aP - aN; effective_activation() returns presence =
         # |DoT| * modal_gate (no _index set, so gate = 1).
-        what_slice = x[:, :, :ss.nWhat]
-        d = max(ss.nWhat, 1)
+        what_slice = x[:, :, :ws.nWhat]
+        d = max(ws.nWhat, 1)
         pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
         neg = torch.relu(-what_slice).norm(dim=-1) / math.sqrt(d)
         expected_presence = (pos.clamp(0.0, 1.0) - neg.clamp(0.0, 1.0)).abs()
@@ -2695,18 +2729,18 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_activation_mode_no_data_asserts(self):
         """materialize(mode='activation') asserts when no event vectors exist."""
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        ss.event.setW(None)
-        ss.activation.setW(None)
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws.event.setW(None)
+        ws.activation.setW(None)
         with self.assertRaises(AssertionError):
-            ss.materialize(mode="activation")
+            ws.materialize(mode="activation")
 
     def test_materialize_default_mode_unchanged(self):
         """materialize() with default mode='active' behaves as before."""
-        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ws = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
-        ss.set_event(x)
-        result = ss.materialize()
+        ws.set_event(x)
+        result = ws.materialize()
         self.assertTrue(torch.equal(result, x))
 
 
@@ -3064,31 +3098,31 @@ class TestSubspaceWords(unittest.TestCase):
         return Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_words_default_empty(self):
-        ss = self._make_ss()
-        self.assertEqual(ss.get_words(), [])
+        ws = self._make_ss()
+        self.assertEqual(ws.get_words(), [])
 
     def test_add_word_start_state(self):
-        ss = self._make_ss()
-        ss.add_word(0, 0, 0)
-        self.assertEqual(ss.get_words(), [(0, 0, 0, 0, -1, -1, -1)])
+        ws = self._make_ss()
+        ws.add_word(0, 0, 0)
+        self.assertEqual(ws.get_words(), [(0, 0, 0, 0, -1, -1, -1)])
 
     def test_add_multiple_words(self):
-        ss = self._make_ss()
-        ss.add_word(0, 0, 0)
-        ss.add_word(0, 42, 0)
-        self.assertEqual(ss.get_words(),
+        ws = self._make_ss()
+        ws.add_word(0, 0, 0)
+        ws.add_word(0, 42, 0)
+        self.assertEqual(ws.get_words(),
                          [(0, 0, 0, 0, -1, -1, -1), (0, 42, 0, 0, -1, -1, -1)])
 
     def test_set_words(self):
-        ss = self._make_ss()
+        ws = self._make_ss()
         words = [(0, 0, 0), (0, 1, 2), (0, 2, 3)]
-        ss.set_words(words)
-        self.assertEqual(ss.get_words(), words)
+        ws.set_words(words)
+        self.assertEqual(ws.get_words(), words)
 
     def test_add_word_validates(self):
-        ss = self._make_ss()
+        ws = self._make_ss()
         with self.assertRaises(AssertionError):
-            ss.add_word(0, 0, 99)  # bad rule
+            ws.add_word(0, 0, 99)  # bad rule
 
 
 class TestSubspaceNormalize(unittest.TestCase):
@@ -3099,49 +3133,49 @@ class TestSubspaceNormalize(unittest.TestCase):
 
     def test_percepts_range(self):
         """normalize('percepts') produces values in [-1, 1] via tanh."""
-        ss = self._make_ss()
+        ws = self._make_ss()
         x = torch.randn(2, 4, 3)
-        ss.set_event(x.clone())
-        ss.normalize("percepts", target="what", normalize=True)
-        y = ss.select("what")
+        ws.set_event(x.clone())
+        ws.normalize("percepts", target="what", normalize=True)
+        y = ws.select("what")
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(x)))
 
     def test_percepts_reverse_normalize_roundtrip(self):
         """reverse=True applies atanh as the inverse percept normalization."""
-        ss = self._make_ss()
+        ws = self._make_ss()
         x = torch.randn(2, 4, 3) * 0.25
-        ss.set_event(x.clone())
-        ss.normalize("percepts", target="event", normalize=True)
-        ss.normalize("percepts", target="event", normalize=True, reverse=True)
-        self.assertTrue(torch.allclose(ss.materialize(), x, atol=1e-6))
+        ws.set_event(x.clone())
+        ws.normalize("percepts", target="event", normalize=True)
+        ws.normalize("percepts", target="event", normalize=True, reverse=True)
+        self.assertTrue(torch.allclose(ws.materialize(), x, atol=1e-6))
 
     def test_concepts_range(self):
         """normalize('concepts') maps the signed scalar activation into
         ``[-1, 1]`` via tanh (the bivector pole lift was retired 2026-05).
         """
-        ss = self._make_ss()
+        ws = self._make_ss()
         scalar = torch.randn(2, 4)
-        ss.set_activation(scalar.clone())
-        ss.normalize("concepts", target="activation", normalize=True)
-        y = ss.get_activation()
+        ws.set_activation(scalar.clone())
+        ws.normalize("concepts", target="activation", normalize=True)
+        y = ws.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(scalar), atol=1e-6))
 
     def test_reverse_requires_normalize_true(self):
         """reverse=True is an inverse transform, not a range check."""
-        ss = self._make_ss()
-        ss.set_event(torch.randn(2, 4, 3))
+        ws = self._make_ss()
+        ws.set_event(torch.randn(2, 4, 3))
         with self.assertRaises(ValueError):
-            ss.normalize("percepts", target="event", normalize=False, reverse=True)
+            ws.normalize("percepts", target="event", normalize=False, reverse=True)
 
     def test_symbols_discrete(self):
         """normalize('symbols') produces {0, 1} integers with STE gradients."""
-        ss = self._make_ss()
+        ws = self._make_ss()
         x = torch.randn(2, 4, requires_grad=True)
-        ss.set_activation(x)
-        ss.normalize("symbols", target="activation", normalize=True)
-        y = ss.get_activation()
+        ws.set_activation(x)
+        ws.normalize("symbols", target="activation", normalize=True)
+        y = ws.get_activation()
         # Output should be exactly 0 or 1
         self.assertTrue(torch.all((y == 0) | (y == 1)))
         # Gradients should flow (straight-through estimator)
@@ -3152,10 +3186,10 @@ class TestSubspaceNormalize(unittest.TestCase):
 
     def test_invalid_kind_raises(self):
         """normalize() with unknown kind raises ValueError."""
-        ss = self._make_ss()
-        ss.set_event(torch.randn(2, 4, 3))
+        ws = self._make_ss()
+        ws.set_event(torch.randn(2, 4, 3))
         with self.assertRaises(ValueError):
-            ss.normalize("bogus", target="what", normalize=True)
+            ws.normalize("bogus", target="what", normalize=True)
 
 
 class TestSymbolObjective(unittest.TestCase):
@@ -3285,24 +3319,24 @@ class TestNormalizeFlag(unittest.TestCase):
         """
         import util
         _populate_test_config(inputDim=4, nInput=4)
-        ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        ws = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
         # Set vectors that are NOT in [-1,1] range
         x = torch.randn(2, 4, 4) * 5
-        ss.set_event(x.clone())
-        original = ss.materialize().clone()
+        ws.set_event(x.clone())
+        original = ws.materialize().clone()
         try:
             # MODEL_DEBUG off (default hot path): no sync, no raise.
             util.init_model_debug(False)
-            ss.normalize("percepts", target="what", normalize=False)
+            ws.normalize("percepts", target="what", normalize=False)
             self.assertTrue(
-                torch.equal(original, ss.materialize()),
+                torch.equal(original, ws.materialize()),
                 "normalize=False must not modify the tensor (gate off)")
             # MODEL_DEBUG on: the strict range assert fires.
             util.init_model_debug(True)
             with self.assertRaises(AssertionError):
-                ss.normalize("percepts", target="what", normalize=False)
+                ws.normalize("percepts", target="what", normalize=False)
             self.assertTrue(
-                torch.equal(original, ss.materialize()),
+                torch.equal(original, ws.materialize()),
                 "normalize=False must not modify the tensor (gate on)")
         finally:
             util.init_model_debug(None)  # restore from MODEL_DEBUG env
@@ -3310,12 +3344,12 @@ class TestNormalizeFlag(unittest.TestCase):
     def test_normalize_true_does_modify(self):
         """normalize=True modifies the tensor."""
         _populate_test_config(inputDim=4, nInput=4)
-        ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        ws = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
         x = torch.randn(2, 4, 4) * 5
-        ss.set_event(x.clone())
-        original = ss.materialize().clone()
-        ss.normalize("percepts", target="what", normalize=True)
-        after = ss.materialize()
+        ws.set_event(x.clone())
+        original = ws.materialize().clone()
+        ws.normalize("percepts", target="what", normalize=True)
+        after = ws.materialize()
         self.assertFalse(torch.equal(original, after),
                          "normalize=True should modify the tensor")
         self.assertTrue(torch.all(after >= -1) and torch.all(after <= 1))
@@ -3390,7 +3424,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
                 continue
             if isinstance(space, Models.ConceptualSpace):
                 continue
-            # WordSubSpace carries the per-sentence grammar / serial-
+            # SymbolicSubSpace carries the per-sentence grammar / serial-
             # processing state, not a data SubSpace; ``space.subspace``
             # is ``None`` by design (the SR-parser stack was retired
             # into ConceptualSpace.stm 2026-05-20).
@@ -3491,9 +3525,9 @@ class TestModalSpace(unittest.TestCase):
         what_t = torch.randn(2, nInput, nDim).to(Models.TheDevice.get())
         where_t = torch.randn(2, nInput, nWhere).to(Models.TheDevice.get())
         when_t = torch.randn(2, nInput, nWhen).to(Models.TheDevice.get())
-        ss = Models.SubSpace(inputShape=[nInput, muxed_w], outputShape=[nInput, muxed_w])
-        ss.set_demuxed(what_t, where_t, when_t)
-        result = space.forward(ss)
+        ws = Models.SubSpace(inputShape=[nInput, muxed_w], outputShape=[nInput, muxed_w])
+        ws.set_demuxed(what_t, where_t, when_t)
+        result = space.forward(ws)
         materialized = result.materialize()
         self.assertEqual(list(materialized.shape), [2, nInput, muxed_w])
 
@@ -3510,9 +3544,9 @@ class TestModalSpace(unittest.TestCase):
         self.assertIsNone(space.whenSpace)
         # Forward with muxed input (no demux needed)
         x = torch.randn(2, nInput, nDim).to(Models.TheDevice.get())
-        ss = Models.SubSpace(inputShape=[nInput, nDim], outputShape=[nInput, nDim])
-        ss.set_event(x)
-        result = space.forward(ss)
+        ws = Models.SubSpace(inputShape=[nInput, nDim], outputShape=[nInput, nDim])
+        ws.set_event(x)
+        result = space.forward(ws)
         self.assertEqual(list(result.materialize().shape), [2, nInput, nDim])
 
 

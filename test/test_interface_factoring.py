@@ -224,28 +224,28 @@ def test_bind_streams_knob_paths():
     cs = getattr(m, "conceptualSpace", None)
     if cs is None or getattr(cs, "combine", None) is None:
         return  # model variant without the bind stage: nothing to pin
-    ps_sub, ss_sub, cs_sub = (m.perceptualSpace.subspace,
-                              m.symbolicSpace.subspace,
+    ps_sub, ws_sub, cs_sub = (m.perceptualSpace.subspace,
+                              m.wholeSpace.subspace,
                               cs.subspace)
     torch.manual_seed(2)
     ev = torch.rand(2, cs_sub.nVectors if hasattr(cs_sub, 'nVectors') else 4,
                     cs_sub.muxedSize if hasattr(cs_sub, 'muxedSize') else 8)
     try:
-        ps_sub.set_event(ev.clone()); ss_sub.set_event(ev.clone())
+        ps_sub.set_event(ev.clone()); ws_sub.set_event(ev.clone())
         cs_sub.set_event(ev.clone())
     except Exception:
         return  # fixture shapes unavailable: covered by unit tests above
-    off1 = cs.bind_streams(ps_sub, ss_sub, cs_sub)
-    ps_sub.set_event(ev.clone()); ss_sub.set_event(ev.clone())
+    off1 = cs.bind_streams(ps_sub, ws_sub, cs_sub)
+    ps_sub.set_event(ev.clone()); ws_sub.set_event(ev.clone())
     cs_sub.set_event(ev.clone())
-    off2 = cs.bind_streams(ps_sub, ss_sub, cs_sub)
+    off2 = cs.bind_streams(ps_sub, ws_sub, cs_sub)
     if off1 is not None:
         assert torch.allclose(off1, off2), "knob-off bind is deterministic"
     TheXMLConfig.set("architecture.meronomy", "on")
     try:
-        ps_sub.set_event(ev.clone()); ss_sub.set_event(ev.clone())
+        ps_sub.set_event(ev.clone()); ws_sub.set_event(ev.clone())
         cs_sub.set_event(ev.clone())
-        on1 = cs.bind_streams(ps_sub, ss_sub, cs_sub)
+        on1 = cs.bind_streams(ps_sub, ws_sub, cs_sub)
         if off1 is not None and on1 is not None:
             assert on1.shape == off1.shape, "knob-on path stays shape-safe"
     finally:

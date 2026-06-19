@@ -7,7 +7,7 @@ After Task G the cross-space PS<->SS allocation that previously lived on
 (called from ``cs.forward`` at stage 0). Verify:
 
   * PartSpace no longer holds a back-ref to WholeSpace
-    (``symbolicSpace_ref`` attribute absent).
+    (``wholeSpace_ref`` attribute absent).
   * PartSpace no longer defines ``_maybe_autobind_meta``.
   * ConceptualSpace defines ``_maybe_autobind_meta``.
   * Each per-stage ConceptualSpace has a ``perceptualSpace_ref`` and a
@@ -62,7 +62,7 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
         m = _make_radix_model()
         ps = m.perceptualSpace
         self.assertFalse(
-            hasattr(ps, 'symbolicSpace_ref'),
+            hasattr(ps, 'wholeSpace_ref'),
             "PartSpace must NOT hold a back-ref to WholeSpace "
             "after Task G; the auto-bind cross-space hop moved to "
             "ConceptualSpace.",
@@ -84,9 +84,9 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
             "Task G.",
         )
 
-    def test_each_cs_has_perceptual_and_terminal_ss_refs(self):
+    def test_each_cs_has_perceptual_and_terminal_ws_refs(self):
         m = _make_radix_model()
-        terminal_ss = m.symbolicSpace
+        terminal_ss = m.wholeSpace
         ps = m.perceptualSpace
         for i, cs in enumerate(m.conceptualSpaces):
             self.assertTrue(
@@ -103,7 +103,7 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
                 cs.terminalSymbolicSpace_ref, terminal_ss,
                 f"ConceptualSpace[{i}].terminalSymbolicSpace_ref must "
                 f"point at the terminal WholeSpace "
-                f"(symbolicSpaces[-1])",
+                f"(wholeSpaces[-1])",
             )
 
 
@@ -115,7 +115,7 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         m = _make_radix_model()
         ps = m.perceptualSpace
         ps_store = ps.percept_store
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Use the FIRST conceptualSpace stage (stage_idx == 0) where the
         # production autobind fires. NB: since the 2026-06-03 fullgraph
         # refactor it fires from cs.Reset (sentence boundary), not mid-
@@ -131,9 +131,9 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         pid_grid = torch.tensor([[pid]], dtype=torch.long)
         vec_event = seed.view(1, 1, -1)
         # Snapshot the SS taxonomy size before the call.
-        size_before = len(ss.taxonomy)
+        size_before = len(ws.taxonomy)
         cs._maybe_autobind_meta(pid_grid, vec_event)
-        size_after = len(ss.taxonomy)
+        size_after = len(ws.taxonomy)
         self.assertGreater(
             size_after, size_before,
             "autobind from CS should have grown the SS META taxonomy",
@@ -152,10 +152,10 @@ class TestAutobindFiresFromCS(unittest.TestCase):
         D = int(m.perceptualSpace.percept_store.dim)
         pid_grid = torch.tensor([[-1, -1]], dtype=torch.long)
         vec_event = torch.zeros(1, 2, D)
-        ss = m.symbolicSpace
-        size_before = len(ss.taxonomy)
+        ws = m.wholeSpace
+        size_before = len(ws.taxonomy)
         cs._maybe_autobind_meta(pid_grid, vec_event)
-        size_after = len(ss.taxonomy)
+        size_after = len(ws.taxonomy)
         self.assertEqual(size_before, size_after,
                          "all-sentinel pid grid should be a no-op")
 

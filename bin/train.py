@@ -225,8 +225,8 @@ def run(cmd, **kwargs):
 
 def _find_lexer(root):
     """Return the XML lexer knob from WholeSpace or legacy InputSpace."""
-    ss = root.find(".//WholeSpace")
-    lexer = ss.findtext("lexer") if ss is not None else None
+    ws = root.find(".//WholeSpace")
+    lexer = ws.findtext("lexer") if ws is not None else None
     if lexer:
         return lexer
     inp = root.find(".//InputSpace")

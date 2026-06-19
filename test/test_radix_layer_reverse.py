@@ -35,9 +35,9 @@ _CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _ss_row_from_pos(ss, pos):
-    """``pos`` -> SS.codebook row index via ``WholeSpace._ss_pos_to_row``."""
-    row = ss._ss_pos_to_row.get(int(pos))
+def _ws_row_from_pos(ws, pos):
+    """``pos`` -> SS.codebook row index via ``WholeSpace._ws_pos_to_row``."""
+    row = ws._ws_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
             f"position {pos} has no SS-side row binding; expected an "
@@ -107,25 +107,25 @@ class TestRadixLayerReverseStandalone(unittest.TestCase):
 
 
 class TestRadixLayerReverseWithSS(unittest.TestCase):
-    """``RadixLayer.reverse(vec, symbolic_space=ss)`` walks META taxonomy."""
+    """``RadixLayer.reverse(vec, symbolic_space=ws)`` walks META taxonomy."""
 
-    def test_ss_walk_recovers_bytes_via_meta_taxonomy(self):
+    def test_ws_walk_recovers_bytes_via_meta_taxonomy(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps = m.perceptualSpace.percept_store
         words = [b"alpha", b"beta", b"gamma"]
         meta_idxs = []
         for w in words:
-            pid = ss.insert_percept(w)
-            sid = ss.insert_symbol()
-            mid = ss.insert_meta(pid, sid)
+            pid = ws.insert_percept(w)
+            sid = ws.insert_symbol()
+            mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin META rows to deterministic vectors.
-        cb = ss.subspace.what
+        cb = ws.subspace.what
         W = cb.getW()
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_pos(ss,mid)
+            row = _ws_row_from_pos(ws,mid)
             v = torch.zeros(D, device=W.device, dtype=W.dtype)
             v[i] = 1.0
             with torch.no_grad():
@@ -133,7 +133,7 @@ class TestRadixLayerReverseWithSS(unittest.TestCase):
         # Target "beta" -> pinned META vector.
         target_vec = torch.zeros(D, device=W.device, dtype=W.dtype)
         target_vec[1] = 1.0
-        out = ps.reverse(target_vec, symbolic_space=ss)
+        out = ps.reverse(target_vec, symbolic_space=ws)
         self.assertEqual(out, b"beta",
                          f"SS-walk reverse should recover the matching "
                          f"surface bytes; got {out!r}")

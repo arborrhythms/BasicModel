@@ -3,7 +3,7 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- HeadEmission: inline sentences corpus for the downward S -> C
        generation MVP. Each sentence's head word is predicted from the
-       final deep symbolic state via WordSpace.reconstruct(). This is the
+       final deep symbolic state via SymbolicSpace.reconstruct(). This is the
        plumbing fixture referenced from test_head_emission.py. -->
   <architecture>
     <modelType>embedding</modelType>
@@ -70,7 +70,7 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <WordSpace>
+  <SymbolicSpace>
 	    <downwardGeneration>true</downwardGeneration>
     <language>
       <grammar>
@@ -83,6 +83,6 @@
         </generate>
       </grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
 </model>

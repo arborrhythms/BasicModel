@@ -223,7 +223,7 @@ class TestMMBoolean(unittest.TestCase):
                 ipt = m.inputSpace.prepInput([sentence])
                 with torch.no_grad():
                     m.forward(ipt)
-                sym = m.symbolicSpace.subspace.materialize()
+                sym = m.wholeSpace.subspace.materialize()
                 # sym shape: [B, N, D] or [B, K, N, D]; squeeze to [N, D].
                 while sym.dim() > 2:
                     sym = sym.squeeze(0)

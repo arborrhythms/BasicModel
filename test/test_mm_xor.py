@@ -78,15 +78,15 @@ class TestMMXorConvergence(unittest.TestCase):
         # Post-2026-05-05 merger: BasicModel is an alias for BasicModel,
         # so the class name is "BasicModel". The semantically meaningful
         # check is that the per-stage pipeline is built (conceptualSpaces
-        # / symbolicSpaces lists), not the legacy class identity.
+        # / wholeSpaces lists), not the legacy class identity.
         self.assertTrue(hasattr(self.model, "conceptualSpaces"))
-        self.assertTrue(hasattr(self.model, "symbolicSpaces"))
+        self.assertTrue(hasattr(self.model, "wholeSpaces"))
         self.assertGreaterEqual(len(self.model.conceptualSpaces), 1)
-        self.assertGreaterEqual(len(self.model.symbolicSpaces), 1)
+        self.assertGreaterEqual(len(self.model.wholeSpaces), 1)
 
     def test_has_conceptual_symbolic_spaces(self):
         self.assertTrue(hasattr(self.model, 'conceptualSpace'))
-        self.assertTrue(hasattr(self.model, 'symbolicSpace'))
+        self.assertTrue(hasattr(self.model, 'wholeSpace'))
 
     def test_a_forward_runs(self):
         """Forward pass smoke test. Runs before test_convergence (alpha order)."""
@@ -113,7 +113,7 @@ class TestMMXorConvergence(unittest.TestCase):
         """The recurrent path should not collapse via symbol VQ.
 
         Updated 2026-05-20: ``m.forward`` writes a reduced terminal
-        event ([B, 1, D]) into ``symbolicSpace.subspace`` on its way
+        event ([B, 1, D]) into ``wholeSpace.subspace`` on its way
         through the head — that final reduction is intentionally
         sparse on an untrained model and isn't where VQ collapse would
         show. Probe the per-stage symbolic activation directly (call
@@ -132,8 +132,8 @@ class TestMMXorConvergence(unittest.TestCase):
             with torch.no_grad():
                 in_sub, _ = m.inputSpace.forward(inputTensor)
                 ps_sub = m.perceptualSpace.forward(in_sub)
-                ss_sub = m.symbolicSpace.forward(ps_sub)
-        symbols = ss_sub.materialize()
+                ws_sub = m.wholeSpace.forward(ps_sub)
+        symbols = ws_sub.materialize()
         self.assertTrue(torch.isfinite(symbols).all())
         self.assertGreater(symbols.std().item(), 1e-6,
                            "Symbolic activation collapsed to a single VQ "

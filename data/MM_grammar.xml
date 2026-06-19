@@ -55,12 +55,12 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <WordSpace>
+  <SymbolicSpace>
     <!-- Stage 3 cleanup: chartTau retired alongside the chart. The
          signal router (LanguageLayer) is the canonical parser. -->
     <language>
       <grammar>default.grammar</grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
 </model>

@@ -76,27 +76,27 @@ class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
     def test_allocate_starts_at_one(self):
         """First call returns 1 (position 0 is the reserved anchor)."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        self.assertEqual(ss.allocate_position(), 1)
+        ws = m.wholeSpace
+        self.assertEqual(ws.allocate_position(), 1)
 
     def test_allocate_monotonic(self):
         """Subsequent calls return strictly increasing ints."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        positions = [ss.allocate_position() for _ in range(8)]
+        ws = m.wholeSpace
+        positions = [ws.allocate_position() for _ in range(8)]
         self.assertEqual(positions, list(range(1, 9)),
                          "allocate_position must produce 1, 2, 3, …")
 
     def test_allocate_position_persists_via_vocab_extras(self):
         """``next_position`` survives a ``vocab_extras`` roundtrip."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Burn a few positions on the live SS.
         for _ in range(5):
-            ss.allocate_position()
+            ws.allocate_position()
         # The next allocation would yield 6.
-        self.assertEqual(ss.allocate_position(), 6)
-        blob = ss.vocab_extras()
+        self.assertEqual(ws.allocate_position(), 6)
+        blob = ws.vocab_extras()
         self.assertIn("next_position", blob,
                       "vocab_extras must persist the position counter")
         self.assertEqual(int(blob["next_position"]), 7,
@@ -106,7 +106,7 @@ class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
         # Build a fresh model + apply the blob; new SS should resume the
         # counter rather than restart at 1.
         m2 = _make_radix_model()
-        ss2 = m2.symbolicSpace
+        ss2 = m2.wholeSpace
         ss2.load_vocab_extras(blob)
         self.assertEqual(ss2.allocate_position(), 7,
                          "after load, the next allocation must be 7, not 1")
@@ -114,7 +114,7 @@ class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
     def test_load_vocab_extras_without_counter_defaults_to_one(self):
         """Older blobs without ``next_position`` start the counter at 1."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Construct a minimal extras blob with no ``next_position`` key.
         legacy_blob = {
             "well_known_atoms": {},
@@ -124,8 +124,8 @@ class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
             "taxonomy_parent": {},
             "meta_pair_to_idx": {},
         }
-        ss.load_vocab_extras(legacy_blob)
-        self.assertEqual(ss.allocate_position(), 1,
+        ws.load_vocab_extras(legacy_blob)
+        self.assertEqual(ws.allocate_position(), 1,
                          "legacy blob without next_position must default "
                          "the counter to 1")
 

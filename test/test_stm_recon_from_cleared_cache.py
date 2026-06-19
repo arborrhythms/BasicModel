@@ -1,8 +1,8 @@
 """Full integration: reconstruct words from the held STM idea ALONE,
-after deleting WordSubSpace's syntactic cache.
+after deleting SymbolicSubSpace's syntactic cache.
 
 Task 9 (plan §6) of the STM serial/parallel modes plan. The deliverable
-goal (verbatim): *"deleting WordSubSpace's syntactic cache and running
+goal (verbatim): *"deleting SymbolicSubSpace's syntactic cache and running
 reverse should reconstruct the words that best match the held STM idea.
 ... assert top-k recovered words at each position overlap with input
 above the existing atol=2e-1 closeness threshold."*
@@ -11,13 +11,13 @@ Harness (mirrors ``test/test_router_fires_per_word.py``):
   * Build the cheap serial-grammar model from ``data/MM_xor_loopback.xml``
     (``<symbolicOrder>1</symbolicOrder>``), load the ``xor`` data.
   * Run ONE real per-word ``model.forward`` -- this fills the C-tier STM,
-    populates ``wordSubSpace.current_rules`` / ``generate_rules``, and
+    populates ``symbolicSpace.current_rules`` / ``generate_rules``, and
     reduces the STM to the single sentence idea ``S = model._stm_single_S``
     (``[B, D_c]``).
   * Snapshot ``S`` and the per-position forward word indices
     (``perceptualSpace.subspace._index[:, :, 0]`` -- the frozen-lexicon
     MPHF index the forward placed at each slot).
-  * DELETE the WordSubSpace syntactic cache (``current_rules`` -> {} ,
+  * DELETE the SymbolicSubSpace syntactic cache (``current_rules`` -> {} ,
     ``generate_rules`` -> {} , ``recur_pass`` -> 0).
   * Drive the reverse-from-STM legs and decode the top-``k`` nearest
     words per position against the perceptual MPHF codebook, asserting
@@ -71,7 +71,7 @@ The NON-xfail assertions below pin everything that DOES hold today: the
 forward produces a usable ``S`` shape, finite per-position targets, and a
 FINITE held idea; clearing the cache works and the
 ``_chart_generate_from_stm`` re-derive site re-fires
-``wordSubSpace.generate`` from the STM snapshot ALONE (rebuilding
+``symbolicSpace.generate`` from the STM snapshot ALONE (rebuilding
 ``generate_rules``); the ``_reverse_from_S`` leg is drivable from the
 cleared-cache state and returns a finite, decodable-width surface; and
 both the body AND perceptual reverse legs preserve finiteness. When the
@@ -189,11 +189,11 @@ def _run_forward(model):
     return (S.clone() if torch.is_tensor(S) else None), fwd_idx
 
 
-def _clear_word_cache(ws):
-    """Delete WordSubSpace's syntactic cache (the §6 cache fields)."""
-    ws.current_rules = {}
-    ws.generate_rules = {}
-    ws.recur_pass = 0
+def _clear_word_cache(ss):
+    """Delete SymbolicSubSpace's syntactic cache (the §6 cache fields)."""
+    ss.current_rules = {}
+    ss.generate_rules = {}
+    ss.recur_pass = 0
 
 
 def _codebook_W(model):
@@ -252,39 +252,39 @@ def test_forward_produces_single_S_and_targets():
 
 def test_cache_clears_and_chart_generate_rederives_from_stm():
     """Clearing the syntactic cache works, and the cache RE-DERIVE site
-    (``_chart_generate_from_stm``) re-fires ``wordSubSpace.generate`` from
+    (``_chart_generate_from_stm``) re-fires ``symbolicSpace.generate`` from
     the STM snapshot ALONE -- repopulating ``generate_rules`` -- which is
     exactly the reverse-leg behavior §6 relies on after the cache is
     deleted."""
     model = _make_serial_model()
     _run_forward(model)
-    ws = model.wordSubSpace
-    assert ws is not None
-    _clear_word_cache(ws)
-    assert ws.current_rules == {} and ws.generate_rules == {} \
-        and ws.recur_pass == 0
+    ss = model.symbolicSpace
+    assert ss is not None
+    _clear_word_cache(ss)
+    assert ss.current_rules == {} and ss.generate_rules == {} \
+        and ss.recur_pass == 0
 
     fired = {"n": 0}
-    orig = ws.generate
+    orig = ss.generate
 
     def _spy(*a, **k):
         fired["n"] += 1
         return orig(*a, **k)
 
-    ws.generate = _spy
+    ss.generate = _spy
     try:
         with torch.no_grad():
             model._chart_generate_from_stm()
     finally:
-        ws.generate = orig
+        ss.generate = orig
 
     assert fired["n"] >= 1, (
         "the reverse-leg cache re-derive (_chart_generate_from_stm) must "
-        "re-fire wordSubSpace.generate over the STM snapshot.")
+        "re-fire symbolicSpace.generate over the STM snapshot.")
     # generate_rules must have been rebuilt from the snapshot alone.
-    assert isinstance(ws.generate_rules, dict) and len(ws.generate_rules) > 0, (
+    assert isinstance(ss.generate_rules, dict) and len(ss.generate_rules) > 0, (
         f"generate must repopulate generate_rules from the STM snapshot; "
-        f"got {ws.generate_rules!r}")
+        f"got {ss.generate_rules!r}")
 
 
 def test_reverse_from_cleared_cache_is_drivable_and_decodable():
@@ -295,8 +295,8 @@ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
     of the recovered words is the xfail below (Findings A/B)."""
     model = _make_serial_model()
     S, _ = _run_forward(model)
-    ws = model.wordSubSpace
-    _clear_word_cache(ws)
+    ss = model.symbolicSpace
+    _clear_word_cache(ss)
     with torch.no_grad():
         recon = model._reverse_from_S(S)
     assert recon is not None and torch.is_tensor(recon) and recon.dim() == 3, \
@@ -423,8 +423,8 @@ def test_topk_recovered_words_overlap_input():
     the remaining real gap rather than passing vacuously."""
     model = _make_serial_model()
     S, fwd_idx = _run_forward(model)
-    ws = model.wordSubSpace
-    _clear_word_cache(ws)
+    ss = model.symbolicSpace
+    _clear_word_cache(ss)
     with torch.no_grad():
         recon = model._reverse_from_S(S)
     # Defensive: if the recon were non-finite the decode would be

@@ -51,13 +51,13 @@ with torch.no_grad():
         captured['cs_pre_sigma'] = x.clone()
         y = self.forwardSigma(x)
         captured['cs_post_sigma'] = y.clone()
-        ws = getattr(self, 'wordSubSpace', None)
-        c_sl = getattr(ws, 'syntacticLayer', None) if ws is not None else None
+        ss = getattr(self, 'symbolicSpace', None)
+        c_sl = getattr(ss, 'syntacticLayer', None) if ss is not None else None
         if c_sl is not None:
             result = c_sl.compose(y, self.subspace, Language.TheGrammar)
             y = result[0] if isinstance(result, tuple) else result
-            if ws is not None:
-                ws.clear_last_svo()
+            if ss is not None:
+                ss.clear_last_svo()
             captured['cs_post_compose'] = y.clone()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")

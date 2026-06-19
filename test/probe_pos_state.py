@@ -34,13 +34,13 @@ m.eval()
 # Train a tiny bit so the lex_cat_scorer has nontrivial weights.
 m.run(numTrials=1, numEpochs=20, batchSize=16, lr=0.005)
 
-ws = m.wordSubSpace
-chart = ws.chart
+ss = m.symbolicSpace
+chart = ss.chart
 print("\n===== Chart category names =====")
 print(chart._category_names)
 
 print("\n===== Codebook category_ids (per atom) =====")
-sym_sub = m.symbolicSpace.subspace
+sym_sub = m.wholeSpace.subspace
 what = getattr(sym_sub, 'what', None)
 if what is not None and getattr(what, 'category_ids', None) is not None:
     ids = what.category_ids

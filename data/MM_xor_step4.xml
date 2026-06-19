@@ -21,7 +21,7 @@
 
   </architecture>
 
-  <WordSpace>
+  <SymbolicSpace>
     <language>
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
@@ -36,7 +36,7 @@
         <S>lift(S, S)</S>
       </grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
        the same flat slab. CS terminal is 16*12=192; IS/PS aligned to

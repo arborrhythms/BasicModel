@@ -79,11 +79,11 @@ def test_sequential_unrolls_subsymbolic_order():
     cs_count = sum(
         1 for stage in model.body_stages
         if isinstance(stage["cs"], ConceptualSpace))
-    ss_count = sum(
+    ws_count = sum(
         1 for stage in model.body_stages
-        if isinstance(stage["ss"], WholeSpace))
+        if isinstance(stage["ws"], WholeSpace))
     assert cs_count == T, f"expected {T} ConceptualSpaces, got {cs_count}"
-    assert ss_count == T, f"expected {T} WholeSpaces, got {ss_count}"
+    assert ws_count == T, f"expected {T} WholeSpaces, got {ws_count}"
 
 
 # test_sequential_reconstruction_produced retired 2026-05-14: the

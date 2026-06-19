@@ -11,8 +11,8 @@ measures that share it:
 * `Luminosity()` -- totalArea − pairwise(overlap × DoT_disagreement).
 
 The mixin is pure (no `__init__`, no state of its own); it accesses
-model-owned attributes (`self.symbolicSpace`, `self.conceptualSpace`,
-`self.wordSubSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
+model-owned attributes (`self.wholeSpace`, `self.conceptualSpace`,
+`self.symbolicSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
 inheriting *first*: ``class BaseModel(Mereology, nn.Module): ...``.
 
 See ``doc/research/three-surfaces.md`` and the
@@ -102,12 +102,12 @@ class Mereology:
     by inheriting *first*: ``class BaseModel(Mereology, nn.Module):``.
 
     Required host attributes (all set by ``BaseModel.__init__``):
-      * ``self.symbolicSpace``  -- carrier of the higher-order
+      * ``self.wholeSpace``  -- carrier of the higher-order
         bivector activation that drives every measure.
-      * ``self.conceptualSpace`` (and optionally ``self.symbolicSpaces`` /
+      * ``self.conceptualSpace`` (and optionally ``self.wholeSpaces`` /
         ``self.conceptualSpaces`` for staged models) -- back-projection
         targets.
-      * ``self.wordSubSpace``      -- chart / grammar host for
+      * ``self.symbolicSpace``      -- chart / grammar host for
         ``host_layer`` lookups in ``_lookup_host_layer``.
       * ``self.subsymbolicOrder`` -- number of stages for the default
         derivation path.
@@ -143,7 +143,7 @@ class Mereology:
         A single trustworthy leaf returns ``+1.0`` (trivially one-
         pointed); a single untrustworthy leaf returns ``0.0``.
         """
-        sym = getattr(self, 'symbolicSpace', None)
+        sym = getattr(self, 'wholeSpace', None)
         if sym is None or not hasattr(sym, 'subspace'):
             return 0.0
         try:
@@ -291,7 +291,7 @@ class Mereology:
         Args:
             symbolic_vector: ``[B, V, D]`` activation tensor at the
                 highest conceptual order. Typically obtained via
-                ``self.symbolicSpace.subspace.materialize()`` so the
+                ``self.wholeSpace.subspace.materialize()`` so the
                 ``.active`` mask is already applied.
             max_active_per_layer: optional int. Caps how many top-K
                 positions per layer carry into
@@ -370,15 +370,15 @@ class Mereology:
         unary rule.
 
         Chart-driven mode: read row 0 of
-        ``self.wordSubSpace.generate_rules`` per tier (S then C then P
+        ``self.symbolicSpace.generate_rules`` per tier (S then C then P
         in pipeline-reverse order) and concatenate. Same canonical-
         path convention as ``_row_zero_rules`` at Language.py:2247.
         """
         n_stages = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         path = []
 
-        ws = getattr(self, 'wordSubSpace', None)
-        gen_rules = getattr(ws, 'generate_rules', None) if ws is not None else None
+        ss = getattr(self, 'symbolicSpace', None)
+        gen_rules = getattr(ss, 'generate_rules', None) if ss is not None else None
         chart_populated = bool(gen_rules) and any(
             v for v in gen_rules.values() if v
         ) if isinstance(gen_rules, dict) else False
@@ -535,17 +535,17 @@ class Mereology:
     def _lookup_host_layer(self, tier, rule_name):
         """Resolve a (tier, rule_name) to a layer instance.
 
-        Tries ``wordSubSpace.host_layer`` first (chart-registered host
+        Tries ``symbolicSpace.host_layer`` first (chart-registered host
         layers, including WholeSpace.sigma / ConceptualSpace.pi /
         LiftLayer / LowerLayer). Falls back to the parameter-free
         ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
         aren't on the host registry (e.g. NotLayer when it isn't
         attached as a builtin).
         """
-        ws = getattr(self, 'wordSubSpace', None)
-        if ws is not None and hasattr(ws, 'host_layer'):
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is not None and hasattr(ss, 'host_layer'):
             try:
-                lyr = ws.host_layer(tier, rule_name)
+                lyr = ss.host_layer(tier, rule_name)
                 if lyr is not None:
                     return lyr
             except Exception:
@@ -610,13 +610,13 @@ class Mereology:
         and per-step contiguity tracking).
         """
         try:
-            sym_stages = getattr(self, 'symbolicSpaces', None)
+            sym_stages = getattr(self, 'wholeSpaces', None)
             con_stages = getattr(self, 'conceptualSpaces', None)
             if sym_stages is not None and stage_idx < len(sym_stages):
                 sym = sym_stages[stage_idx]
                 con = con_stages[stage_idx]
             else:
-                sym = self.symbolicSpace
+                sym = self.wholeSpace
                 con = self.conceptualSpace
         except (AttributeError, IndexError):
             return None
@@ -675,7 +675,7 @@ class Mereology:
           ``architecture.continuitySharpness``   (default 1.0).
           ``architecture.continuityNorm``        (default 'inf'; 'l2' available).
         """
-        sym = getattr(self, 'symbolicSpace', None)
+        sym = getattr(self, 'wholeSpace', None)
         if sym is None or not hasattr(sym, 'subspace'):
             return 0.0
         try:
@@ -793,7 +793,7 @@ class Mereology:
         :meth:`Continuous`.
 
         Unary form (``x2 is None``):
-          1. ``sym_act = self.symbolicSpace.subspace.materialize()``
+          1. ``sym_act = self.wholeSpace.subspace.materialize()``
           2. ``shape = self.hoc_shape(sym_act); leaves = shape.leaves``
           3. Filter leaves by :meth:`_leaf_path_trust`.
           4. For each trustworthy leaf, take ``leaf[..., :2]`` and
@@ -814,7 +814,7 @@ class Mereology:
         (matches the ``Contiguous`` / ``Continuous`` no-trust
         convention).  Otherwise returns a Python float in ``[0, 1]``.
         """
-        sym = getattr(self, 'symbolicSpace', None)
+        sym = getattr(self, 'wholeSpace', None)
         if sym is None or not hasattr(sym, 'subspace'):
             return 0.0
         try:
@@ -906,7 +906,7 @@ class Mereology:
         if truth_layer is not None:
             return self._luminosity_truth_fold(truth_layer)
 
-        sym = getattr(self, 'symbolicSpace', None)
+        sym = getattr(self, 'wholeSpace', None)
         if sym is None or not hasattr(sym, 'subspace'):
             return 0.0
         try:
@@ -998,7 +998,7 @@ class Mereology:
         """
         if truth_layer is None:
             return 0.0
-        return truth_layer.luminosity(sym=getattr(self, 'symbolicSpace', None))
+        return truth_layer.luminosity(sym=getattr(self, 'wholeSpace', None))
 
     def _record_knowing(self, *, leaves, leaf_trust, leaf_vols, area,
                         luminosity):
@@ -1068,12 +1068,12 @@ class Mereology:
 
         Args:
             x1: optional ``[B, V, D]`` bivector. Defaults to
-                ``self.symbolicSpace.subspace.materialize()``.
+                ``self.wholeSpace.subspace.materialize()``.
             x2: ``[B, V, D]`` bivector to compare against. Required
                 for a non-zero return.
         """
         if x1 is None:
-            sym = getattr(self, 'symbolicSpace', None)
+            sym = getattr(self, 'wholeSpace', None)
             if sym is None or not hasattr(sym, 'subspace'):
                 return 0.0
             try:

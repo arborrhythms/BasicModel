@@ -4,21 +4,21 @@ ref_id) alongside the vector payload.
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
 §STM Shift/Reduce Runtime — STM stack item metadata.
 
-Post-2026-05-21 (WordSubSpace/STM Layer refactor) the typed STM data
-lives directly on ``WordSubSpace`` (not on a standalone ``TypedStack``
+Post-2026-05-21 (SymbolicSubSpace/STM Layer refactor) the typed STM data
+lives directly on ``SymbolicSubSpace`` (not on a standalone ``TypedStack``
 module). The data layout is unchanged:
 
-    ws._buffer    [B, cap, D]
-    ws._category  [B, cap]   long, -1 for empty
-    ws._order     [B, cap]   long
-    ws._ref_id    [B, cap]   long, -1 for unsnapped
-    ws._depth     [B]        long
+    ss._buffer    [B, cap, D]
+    ss._category  [B, cap]   long, -1 for empty
+    ss._order     [B, cap]   long
+    ss._ref_id    [B, cap]   long, -1 for unsnapped
+    ss._depth     [B]        long
 
 ``make_typed_stack(batch, max_depth, dim)`` from ``_stm_test_fixtures``
-constructs a bare WordSubSpace with those buffers; the tests below
+constructs a bare SymbolicSubSpace with those buffers; the tests below
 exercise ``push``/``pop``/``top``/``reduce_admissibility`` on it (the
 same names as the retired ``TypedStack`` class — those methods now
-live on WordSubSpace).
+live on SymbolicSubSpace).
 """
 import sys
 from pathlib import Path
@@ -148,7 +148,7 @@ def _three_rule_list():
 
 
 def test_reduce_admissibility_binary_picks_only_lift():
-    """``ws.reduce_admissibility(b, rule_signatures)`` returns a
+    """``ss.reduce_admissibility(b, rule_signatures)`` returns a
     boolean mask matching the stack top two items against each rule.
     With NP@3, VP@1 on the stack, only the lift rule is admissible."""
     import torch

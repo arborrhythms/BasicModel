@@ -142,9 +142,9 @@ class TestBackwardCompat(unittest.TestCase):
 
     def test_symbolicspace_per_stage_instances(self):
         """BasicModel builds T independent WholeSpace instances
-        (T = subsymbolicOrder) in the symbolicSpaces ModuleList."""
+        (T = subsymbolicOrder) in the wholeSpaces ModuleList."""
         model = _make_model('MentalModel.xml')
-        self.assertEqual(len(model.symbolicSpaces), model.subsymbolicOrder)
+        self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
 
 
 # -- Per-level layer construction -------------------------------------
@@ -158,8 +158,8 @@ class TestPerLevelLayers(unittest.TestCase):
         sigma -- Sigma (synthesis) lives on PartSpace."""
         from Layers import PiLayer, MeronymicFoldAdapter
         model = _make_model('RamsifiedModel.xml')
-        self.assertEqual(len(model.symbolicSpaces), model.subsymbolicOrder)
-        for s in model.symbolicSpaces:
+        self.assertEqual(len(model.wholeSpaces), model.subsymbolicOrder)
+        for s in model.wholeSpaces:
             # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
             fold = getattr(s, 'pi', None)
             self.assertIsInstance(

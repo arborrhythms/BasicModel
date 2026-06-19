@@ -1020,13 +1020,18 @@ class Data():
         the DataLoader-yielded batches; ``num_workers`` / ``prefetch_factor``
         only affect the legacy ``__iter__`` path.
         """
-        inputs = getattr(self, f"{split}_input")
-        outputs = getattr(self, f"{split}_output", None)
+        # ``runtime`` is the transient inference split that ``runtime_batch``
+        # stages into ``train_input`` / ``train_output`` (there is no separate
+        # ``runtime_*`` attribute); map it to those so a runtime/inference
+        # epoch (``runEpoch(split="runtime")``) drives the staged data.
+        eff_split = "train" if split == "runtime" else split
+        inputs = getattr(self, f"{eff_split}_input")
+        outputs = getattr(self, f"{eff_split}_output", None)
         n = (inputs.shape[0] if isinstance(inputs, torch.Tensor)
              else len(inputs))
         if n == 0:
             raise RuntimeError(
-                f"data_loader: {split}_input is empty -- "
+                f"data_loader: {eff_split}_input is empty -- "
                 "load() before building a loader"
             )
         streams = max(1, min(num_streams, n))

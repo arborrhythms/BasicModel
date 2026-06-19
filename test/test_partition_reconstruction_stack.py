@@ -1,8 +1,8 @@
-"""Tests for the reconstruction stack (rule_ids + word_ids) on WordSpace.
+"""Tests for the reconstruction stack (rule_ids + word_ids) on SymbolicSpace.
 
 Task 5.1 (TDD harness) -- failing tests written BEFORE Task 5.2 implementation.
 
-WordSpace cannot be constructed in isolation -- it requires real
+SymbolicSpace cannot be constructed in isolation -- it requires real
 PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by test_partition_pos_codebook.py and
@@ -37,12 +37,12 @@ from test_basicmodel import _populate_test_config
 # ---------------------------------------------------------------------------
 
 def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
-    """Construct the minimal WordSpace via TheXMLConfig + direct constructors.
+    """Construct the minimal SymbolicSpace via TheXMLConfig + direct constructors.
 
     Builds the full PartSpace -> ConceptualSpace -> WholeSpace chain
-    required by WordSpace.__init__, then constructs WordSpace from it.
+    required by SymbolicSpace.__init__, then constructs SymbolicSpace from it.
 
-    WordSpace is NOT an isolated object: it back-wires all three home spaces
+    SymbolicSpace is NOT an isolated object: it back-wires all three home spaces
     via attach_wordSpace(), configures TheGrammar, and reads TheXMLConfig for
     TruthLayer capacity and discourse gating.  The minimal chain is therefore
     required -- there is no lighter-weight path.
@@ -73,20 +73,20 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
-    # Reset grammar so WordSubSpace.__init__ can (re)configure it cleanly.
+    # Reset grammar so SymbolicSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ws = Language.WordSubSpace(
+    ss = Language.SymbolicSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
-        symbolicSpace=symbolic_space,
+        wholeSpace=symbolic_space,
         nPercepts=nPercepts,
         nConcepts=nSymbols,
         nSymbols=nSymbols,
         concept_dim=conceptDim,
         symbol_dim=symbolDim,
     )
-    return ws
+    return ss
 
 
 # ---------------------------------------------------------------------------
@@ -94,22 +94,22 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
 # ---------------------------------------------------------------------------
 
 def test_reconstruction_stack_records_rule_and_word():
-    ws = _make_word_space()
-    ws.record_derivation(rule_id=3, word_id=7)
-    ws.record_derivation(rule_id=1, word_id=9)
-    assert ws.reconstruction_stack.depth(0) == 2
-    top = ws.reconstruction_stack.peek(0)
+    ss = _make_word_space()
+    ss.record_derivation(rule_id=3, word_id=7)
+    ss.record_derivation(rule_id=1, word_id=9)
+    assert ss.reconstruction_stack.depth(0) == 2
+    top = ss.reconstruction_stack.peek(0)
     assert top == (1, 9)
 
 
 def test_reconstruction_stack_roundtrip():
-    ws = _make_word_space()
+    ss = _make_word_space()
     entries = [(2, 5), (0, 8), (4, 1)]
     for rid, wid in entries:
-        ws.record_derivation(rule_id=rid, word_id=wid)
+        ss.record_derivation(rule_id=rid, word_id=wid)
     for rid, wid in reversed(entries):
-        assert ws.reconstruction_stack.pop(0) == (rid, wid)
-    assert ws.reconstruction_stack.depth(0) == 0
+        assert ss.reconstruction_stack.pop(0) == (rid, wid)
+    assert ss.reconstruction_stack.depth(0) == 0
 
 
 # ---------------------------------------------------------------------------

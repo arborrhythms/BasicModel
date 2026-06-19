@@ -180,9 +180,9 @@ def test_same_intent_moves_both_towers_same_direction():
         W_ps[1] = intent           # PS row 1 carries the intent's extent
         W_ss[4] = intent           # SS row 4 carries the intent's word
     ps, _ = _stub_space(W_ps)
-    ss, _ = _stub_space(W_ss)
+    ws, _ = _stub_space(W_ss)
     b_ps = Space.set_intent(ps, intent)
-    b_ss = Space.set_intent(ss, intent)
+    b_ss = Space.set_intent(ws, intent)
     assert int(b_ps.argmax()) == 1
     assert int(b_ss.argmax()) == 4
     # Same direction: both towers' aligned rows get the SAME top boost.

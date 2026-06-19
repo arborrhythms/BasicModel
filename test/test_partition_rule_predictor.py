@@ -1,8 +1,8 @@
-"""Tests for the rule-predictor NonlinearLayer on WordSpace.
+"""Tests for the rule-predictor NonlinearLayer on SymbolicSpace.
 
 Task 4.1 (TDD harness) -- failing tests written BEFORE Task 4.2 implementation.
 
-WordSpace cannot be constructed in isolation -- it requires real
+SymbolicSpace cannot be constructed in isolation -- it requires real
 PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by test_partition_pos_codebook.py.
@@ -36,12 +36,12 @@ from test_basicmodel import _populate_test_config
 # ---------------------------------------------------------------------------
 
 def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
-    """Construct the minimal WordSpace via TheXMLConfig + direct constructors.
+    """Construct the minimal SymbolicSpace via TheXMLConfig + direct constructors.
 
     Builds the full PartSpace -> ConceptualSpace -> WholeSpace chain
-    required by WordSpace.__init__, then constructs WordSpace from it.
+    required by SymbolicSpace.__init__, then constructs SymbolicSpace from it.
 
-    WordSpace is NOT an isolated object: it back-wires all three home spaces
+    SymbolicSpace is NOT an isolated object: it back-wires all three home spaces
     via attach_wordSpace(), configures TheGrammar, and reads TheXMLConfig for
     TruthLayer capacity and discourse gating.  The minimal chain is therefore
     required -- there is no lighter-weight path.
@@ -72,20 +72,20 @@ def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercep
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
-    # Reset grammar so WordSubSpace.__init__ can (re)configure it cleanly.
+    # Reset grammar so SymbolicSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ws = Language.WordSubSpace(
+    ss = Language.SymbolicSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
-        symbolicSpace=symbolic_space,
+        wholeSpace=symbolic_space,
         nPercepts=nPercepts,
         nConcepts=nSymbols,
         nSymbols=nSymbols,
         concept_dim=conceptDim,
         symbol_dim=symbolDim,
     )
-    return ws
+    return ss
 
 
 # ---------------------------------------------------------------------------
@@ -94,29 +94,29 @@ def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercep
 
 def test_rule_predictor_output_shape():
     """Predictor emits [nRules]-shaped logits."""
-    ws = _make_word_space_with_grammar()
+    ss = _make_word_space_with_grammar()
     for _ in range(3):
-        ws.category_stack.push(0, torch.randn(4))
-    logits = ws.predict_rule(0)
-    assert logits.shape == (ws.n_rules,)
+        ss.category_stack.push(0, torch.randn(4))
+    logits = ss.predict_rule(0)
+    assert logits.shape == (ss.n_rules,)
 
 
 def test_rule_predictor_softmax_sums_to_one():
-    ws = _make_word_space_with_grammar()
+    ss = _make_word_space_with_grammar()
     for _ in range(3):
-        ws.category_stack.push(0, torch.randn(4))
-    probs = torch.softmax(ws.predict_rule(0), dim=-1)
+        ss.category_stack.push(0, torch.randn(4))
+    probs = torch.softmax(ss.predict_rule(0), dim=-1)
     assert torch.isclose(probs.sum(), torch.tensor(1.0), atol=1e-5)
 
 
 def test_rule_predictor_hard_inference_argmax():
-    ws = _make_word_space_with_grammar()
-    ws.training = False  # inference mode
+    ss = _make_word_space_with_grammar()
+    ss.training = False  # inference mode
     for _ in range(3):
-        ws.category_stack.push(0, torch.randn(4))
-    chosen = ws.predict_rule_hard(0)
+        ss.category_stack.push(0, torch.randn(4))
+    chosen = ss.predict_rule_hard(0)
     assert isinstance(chosen, int)
-    assert 0 <= chosen < ws.n_rules
+    assert 0 <= chosen < ss.n_rules
 
 
 # ---------------------------------------------------------------------------
@@ -124,10 +124,10 @@ def test_rule_predictor_hard_inference_argmax():
 # ---------------------------------------------------------------------------
 
 def test_rule_predictor_gradient_flows_through_stack():
-    ws = _make_word_space_with_grammar()
+    ss = _make_word_space_with_grammar()
     v = torch.randn(4, requires_grad=True)
-    ws.category_stack.push(0, v)
-    logits = ws.predict_rule(0)
+    ss.category_stack.push(0, v)
+    logits = ss.predict_rule(0)
     loss = logits.sum()
     loss.backward()
     assert v.grad is not None
@@ -136,22 +136,22 @@ def test_rule_predictor_gradient_flows_through_stack():
 
 def test_rule_predictor_empty_stack_zero_pads():
     """predict_rule with empty category_stack uses all-zero input; no NaN."""
-    ws = _make_word_space_with_grammar()
-    assert ws.category_stack.depth(0) == 0
-    logits = ws.predict_rule(0)
-    assert logits.shape == (ws.n_rules,)
+    ss = _make_word_space_with_grammar()
+    assert ss.category_stack.depth(0) == 0
+    logits = ss.predict_rule(0)
+    assert logits.shape == (ss.n_rules,)
     assert not torch.isnan(logits).any()
 
 
 def test_rule_predictor_overflow_stack_truncates_to_recent():
     """When category_stack depth exceeds max_depth, most recent frames are kept."""
-    ws = _make_word_space_with_grammar()
-    target_len = ws._rule_predictor_in_features
+    ss = _make_word_space_with_grammar()
+    target_len = ss._rule_predictor_in_features
     pos_dim = 4
     max_frames = target_len // pos_dim
     # Push one more than max_frames so the oldest must be dropped.
     for _ in range(max_frames + 2):
-        ws.category_stack.push(0, torch.randn(pos_dim))
-    logits = ws.predict_rule(0)
-    assert logits.shape == (ws.n_rules,)
+        ss.category_stack.push(0, torch.randn(pos_dim))
+    logits = ss.predict_rule(0)
+    assert logits.shape == (ss.n_rules,)
     assert not torch.isnan(logits).any()

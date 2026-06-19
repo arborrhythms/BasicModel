@@ -215,3 +215,93 @@ def test_resolve_identities_does_not_collapse_unspecified_object():
     assert cs.symbol_identity(B) == (65, WORD)
 
 
+# -- over-collection lifecycle: retire-on-trigger driving both towers --------
+
+def test_refine_over_collected_too_many_parts_requests_synthesize():
+    cs = _cs()
+    A = cs.new_symbol()
+    for p in range(6):
+        cs.add_part(A, p)                 # 6 parts > k_many(4) -> over-collected
+    cs.add_whole(A, 100)
+    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+    assert len(reqs) == 1
+    assert reqs[0]["sym"] == A and reqs[0]["op"] == "synthesize"
+    assert set(reqs[0]["codes"]) == set(range(6))
+    # retire-on-trigger: the transient triggering symbol is gone.
+    assert cs.symbol_parts(A) == [] and A not in cs.symbols_needing_processing()
+
+
+def test_refine_over_collected_too_many_wholes_requests_analyse():
+    cs = _cs()
+    B = cs.new_symbol()
+    cs.add_part(B, 10)
+    for w in range(6):
+        cs.add_whole(B, ("w", w))         # 6 wholes > k_many -> over-collected
+    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+    assert len(reqs) == 1 and reqs[0]["op"] == "analyse" and reqs[0]["sym"] == B
+    assert len(reqs[0]["codes"]) == 6
+
+
+def test_refine_over_collected_both_sides_emits_both_requests():
+    cs = _cs()
+    S = cs.new_symbol()
+    for p in range(5):
+        cs.add_part(S, p)
+    for w in range(5):
+        cs.add_whole(S, ("w", w))
+    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+    ops = sorted(r["op"] for r in reqs)
+    assert ops == ["analyse", "synthesize"]
+    assert all(r["sym"] == S for r in reqs)
+    assert S not in cs.symbols_needing_processing()        # retired once
+
+
+def test_refine_over_collected_leaves_well_sized_and_identities_alone():
+    cs = _cs()
+    ident = cs.relate(1, 2)                                 # 1:1 -> identity
+    keep = cs.new_symbol()
+    cs.add_part(keep, 7)
+    cs.add_part(keep, 8)                                    # 2 parts <= 4
+    cs.add_whole(keep, 9)
+    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+    assert reqs == []                                       # nothing over-collected
+    assert cs.symbol_identity(ident) == (1, 2)             # identity resolved
+    assert keep in cs.symbols_needing_processing()         # well-sized, untouched
+
+
+def test_refine_over_collected_is_idempotent():
+    cs = _cs()
+    A = cs.new_symbol()
+    for p in range(6):
+        cs.add_part(A, p)
+    cs.add_whole(A, 100)
+    assert len(cs.refine_over_collected(k_parts=4, k_wholes=4)) == 1
+    assert cs.refine_over_collected(k_parts=4, k_wholes=4) == []   # already retired
+
+
+def test_refine_over_collected_applies_synthesis():
+    cs = _cs()
+    A = cs.new_symbol()
+    for p in range(6):
+        cs.add_part(A, p)
+    cs.add_whole(A, 100)
+    reqs = cs.refine_over_collected(k_parts=4, k_wholes=4)
+    H = reqs[0]["result"]                       # the σ-synthesized higher-order
+    # H subsumes the over-collected parts as its provenance...
+    assert set(cs.symbol_parts(H)) == set(range(6))
+    # ...is tagged RAISED (so the lifecycle never re-refines it), and is
+    # therefore excluded from the active processing set even though it carries
+    # > k_many parts.
+    assert H in cs._sym_raise_set()
+    assert H not in cs.symbols_needing_processing()
+    assert not cs.refine_over_collected(k_parts=4, k_wholes=4)  # H not re-raised
+
+
+def test_synthesize_higher_order_idempotent_per_part_set():
+    cs = _cs()
+    H1 = cs.synthesize_higher_order([1, 2, 3])
+    H2 = cs.synthesize_higher_order([3, 2, 1])   # same set, order-independent
+    assert H1 == H2
+    assert cs.synthesize_higher_order([1, 2, 4]) != H1   # different set -> new
+
+

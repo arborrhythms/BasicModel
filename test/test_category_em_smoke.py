@@ -101,10 +101,10 @@ def _run_forwards(model, n=15):
 
 def _terminal_ss(model):
     """The WholeSpace the autobind hook targets (terminalSymbolicSpace_ref when
-    wired, else the model's symbolicSpace)."""
+    wired, else the model's wholeSpace)."""
     cs = getattr(model, "conceptualSpace", None)
-    ss = getattr(cs, "terminalSymbolicSpace_ref", None) if cs is not None else None
-    return ss if ss is not None else getattr(model, "symbolicSpace", None)
+    ws = getattr(cs, "terminalSymbolicSpace_ref", None) if cs is not None else None
+    return ws if ws is not None else getattr(model, "wholeSpace", None)
 
 
 def test_codebook_enables_and_em_populates_on_real_model():
@@ -116,18 +116,18 @@ def test_codebook_enables_and_em_populates_on_real_model():
         assert n_roles > 0, "operator grammar should declare roles"
         fired = _run_forwards(model)
         assert fired > 0, "no forward pass completed"
-        ss = _terminal_ss(model)
-        assert ss is not None
+        ws = _terminal_ss(model)
+        assert ws is not None
         # The autobind hook lazily enabled the codebook with the grammar roles.
-        assert ss.category_codebook_enabled(), "codebook never enabled"
-        assert int(ss._category_n_roles) == n_roles
+        assert ws.category_codebook_enabled(), "codebook never enabled"
+        assert int(ws._category_n_roles) == n_roles
         # Phase 2 stash: per-position percept ids recorded for compose.
-        assert getattr(ss, "_category_last_pid", None) is not None
+        assert getattr(ws, "_category_last_pid", None) is not None
         # The E-step ran: at least one MetaSymbol assigned to a centroid.
-        assert len(getattr(ss, "_category_assign", {})) > 0, (
+        assert len(getattr(ws, "_category_assign", {})) > 0, (
             "no MetaSymbol -> centroid assignment recorded")
         # The role M-step ran: at least one centroid role vector is non-zero.
-        assert float(ss._category_role.abs().sum()) > 0.0, (
+        assert float(ws._category_role.abs().sum()) > 0.0, (
             "centroid role vectors never populated")
     finally:
         os.unlink(path)
@@ -141,7 +141,7 @@ def test_phase2_chooser_sized_and_context_built():
         assert n_roles > 0
         # The router's structured-layer MLP choosers were sized with the
         # category context block (width == role count).
-        router = model.wordSubSpace.languageLayer
+        router = model.symbolicSpace.languageLayer
         sized = []
         for layers in (router._unary_layers, router._binary_layers):
             for layer in layers.values():
@@ -154,10 +154,10 @@ def test_phase2_chooser_sized_and_context_built():
         # Drive perception so the codebook enables + assignments populate, then
         # the compose-side context builder returns [B, N, n_roles].
         _run_forwards(model)
-        ss = _terminal_ss(model)
-        assert ss.category_codebook_enabled()
-        x = torch.zeros(2, 4, int(ss.nDim))
-        cat = router._build_category_context(x, ss)
+        ws = _terminal_ss(model)
+        assert ws.category_codebook_enabled()
+        x = torch.zeros(2, 4, int(ws.nDim))
+        cat = router._build_category_context(x, ws)
         # None is acceptable only before any percept is bound; after forwards a
         # stash exists, so we expect a populated [B, N, n_roles] tensor.
         assert cat is not None

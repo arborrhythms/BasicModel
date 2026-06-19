@@ -85,22 +85,22 @@ def test_ps_start_scoped_to_perceptual_space(monkeypatch, tmp_path):
     assert ("U",) in g.ps_start_patterns
 
 
-def test_ss_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
+def test_ws_start_scoped_to_symbolic_space(monkeypatch, tmp_path):
     """``<start>`` under ``<WholeSpace>`` configures SS starts; the PS
     root ``U`` does NOT leak into the symbolic start set."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.ss_start_symbol == "isEqual_O1"
-    assert ("isEqual_O1",) in g.ss_start_patterns
-    assert ("exist_O1",) in g.ss_start_patterns
-    assert ("U",) not in g.ss_start_patterns
+    assert g.ws_start_symbol == "isEqual_O1"
+    assert ("isEqual_O1",) in g.ws_start_patterns
+    assert ("exist_O1",) in g.ws_start_patterns
+    assert ("U",) not in g.ws_start_patterns
 
 
 def test_global_start_aliases_symbolic_space(monkeypatch, tmp_path):
     """The back-compat global ``start_symbol`` / ``start_patterns`` mirror
     the WholeSpace starts (the symbolic parse), not the PS root."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.start_symbol == g.ss_start_symbol == "isEqual_O1"
-    assert tuple(g.start_patterns) == tuple(g.ss_start_patterns)
+    assert g.start_symbol == g.ws_start_symbol == "isEqual_O1"
+    assert tuple(g.start_patterns) == tuple(g.ws_start_patterns)
     flat = {sym for pat in g.start_patterns for sym in pat}
     assert "U" not in flat
 
@@ -109,8 +109,8 @@ def test_relative_and_absolute_starts_from_name_attribute(monkeypatch, tmp_path)
     """The ``name`` attribute distinguishes relative-truth from
     absolute-truth SS starts (used by relative-rule detection, R1.3)."""
     g = _load_grammar_text(_SCOPED_STARTS_GRAMMAR, monkeypatch, tmp_path)
-    assert g.ss_relative_starts == frozenset({"isEqual_O1"})
-    assert g.ss_absolute_starts == frozenset({"exist_O1"})
+    assert g.ws_relative_starts == frozenset({"isEqual_O1"})
+    assert g.ws_absolute_starts == frozenset({"exist_O1"})
 
 
 def test_identity_rule_uses_symbolic_start(monkeypatch, tmp_path):
@@ -129,7 +129,7 @@ def test_top_level_start_back_compat(monkeypatch, tmp_path):
     """A grammar with only a top-level ``<start>`` still configures the SS
     (and global alias) start; PS starts stay empty."""
     g = _load_grammar_text(_TOP_LEVEL_START_GRAMMAR, monkeypatch, tmp_path)
-    assert g.ss_start_symbol == "S"
+    assert g.ws_start_symbol == "S"
     assert g.start_symbol == "S"
     assert g.ps_start_symbol is None
     assert tuple(g.ps_start_patterns) == ()

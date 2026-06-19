@@ -50,7 +50,7 @@ from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
 # Switched from MentalModel.xml to MM_xor_loopback.xml because the
-# former is broken on ``main`` (WordSubSpace.__init__ reads
+# former is broken on ``main`` (SymbolicSubSpace.__init__ reads
 # ``self.subspace`` which doesn't exist for that config path).
 # MM_xor_loopback.xml exercises the same PS/CS/SS ownership rules
 # and is what ``test_perceptual_loopback.py`` already uses cleanly.
@@ -117,7 +117,7 @@ class TestOwnership(unittest.TestCase):
         # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
         model = _make_plain_model()
         # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
-        fold = getattr(model.symbolicSpace, 'pi', None)
+        fold = getattr(model.wholeSpace, 'pi', None)
         self.assertIsInstance(
             fold, (PiLayer, MeronymicFoldAdapter),
             "WholeSpace must own a pi under the corrected "
@@ -127,7 +127,7 @@ class TestOwnership(unittest.TestCase):
 
     def test_symbolic_has_no_sigma(self):
         model = _make_plain_model()
-        self.assertFalse(hasattr(model.symbolicSpace, 'sigma'),
+        self.assertFalse(hasattr(model.wholeSpace, 'sigma'),
                          "WholeSpace.sigma moved to PartSpace "
                          "(Pi/Sigma swap); SS is pi-only (analysis).")
 
@@ -185,16 +185,16 @@ class TestForwardReverseAliases(unittest.TestCase):
     def test_aliases_removed(self):
         model = _make_plain_model()
         cs = model.conceptualSpace
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         self.assertFalse(hasattr(cs, 'forwardPi'),
                          "ConceptualSpace.forwardPi alias removed")
         self.assertFalse(hasattr(cs, 'reversePi'),
                          "ConceptualSpace.reversePi alias removed")
-        self.assertFalse(hasattr(ss, 'forwardSigma'),
+        self.assertFalse(hasattr(ws, 'forwardSigma'),
                          "WholeSpace.forwardSigma alias removed")
-        self.assertFalse(hasattr(ss, 'reverseSigma'),
+        self.assertFalse(hasattr(ws, 'reverseSigma'),
                          "WholeSpace.reverseSigma alias removed")
-        self.assertFalse(hasattr(ss, '_sigma_reverse'),
+        self.assertFalse(hasattr(ws, '_sigma_reverse'),
                          "WholeSpace._sigma_reverse removed with sigma")
 
     def test_conceptual_no_sigma_percept_forward(self):

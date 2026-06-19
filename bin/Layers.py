@@ -1515,7 +1515,7 @@ class ConceptualCombine(Layer):
 
     Asymmetric-vq plan sec.5 (rev. 2026-06-09; slot geometry corrected
     2026-06-10): a concept is the REVERSIBLE BIND of its perceptual form
-    (PS) and symbolic form (SS). The two streams are stacked along the
+    (PS) and symbolic form (WS). The two streams are stacked along the
     VECTOR axis -- ``N`` slots each, ``2N`` total -- and ONE cascade runs
     over the flattened ``2N * D`` slab (``16 * nDim`` for the production
     parallel config: ``2^14`` exactly, zero pad), so the bind mixes ACROSS
@@ -1523,40 +1523,40 @@ class ConceptualCombine(Layer):
     :class:`InvertibleLinearLayer` (the dense LDU, ``full`` / ``last``) or
     the base :class:`GrammarLayer` butterfly cascade (``butterfly``)::
 
-        CS_t = ILL_t( stack[ PS_t ; SS_t ] )        # forward bind
-        [ PS_t ; SS_t ] = ILL_t^{-1}( CS_t )        # exact reverse
+        CS_t = ILL_t( stack[ PS_t ; WS_t ] )        # forward bind
+        [ PS_t ; WS_t ] = ILL_t^{-1}( CS_t )        # exact reverse
 
-    with ``PS_t, SS_t`` of shape ``[..., N, D]`` (the FULL muxed event
+    with ``PS_t, WS_t`` of shape ``[..., N, D]`` (the FULL muxed event
     width: the where/when band PARTICIPATES in the bind, option B -- the
     spec's ``16 * nDim`` arithmetic is the event width, ``nDim`` being the
     config event width). ``CS_t`` is the
     WHOLE mixed bind, flattened (``[..., M]``, ``M = next_pow2(2N*D)``);
-    the PS / SS VIEWS are its slot-halves -- ``views(CS)[0] ==``
+    the PS / WS VIEWS are its slot-halves -- ``views(CS)[0] ==``
     vectors ``0..N-1``, ``views(CS)[1] ==`` vectors ``N..2N-1`` -- exactly
     the row-windows a Phase-5/6 ``.active`` index view can express. There
     is NO augment and NO carrier/augment split. This retires the 3-stream
     design's pathologies at the source (doc/plans/2026-06-09-asymmetric-
-    vq-symbolic-ss.md sec.5):
+    vq-symbolic-ws.md sec.5):
 
       * **contraction gone** -- nothing is shed to an augment; the carrier
         holds the full bind, so there is no rank bottleneck and no
         per-stage scale collapse (the old design read the carrier from the
         ps-slot only -- 1/3 rank -- bleeding 2/3 to the augment per stage);
       * **exact inversion, no augment threading** -- the layer is a true
-        bijection on its operating width, so ``CS -> (PS, SS)`` is exact by
+        bijection on its operating width, so ``CS -> (PS, WS)`` is exact by
         construction; the whole augment-pairing reverse is deleted
         (``reverse_dropped`` retired with it);
       * **right semantics** -- the mix of the three alphas is ABSORBED into
         the learned weights; the carrier is the bind, not a slice.
 
     The bind is kept PURELY LINEAR: a saturating squash inside the combine
-    would break exact inversion; PS/SS arrive already bounded (codebook /
+    would break exact inversion; PS/WS arrive already bounded (codebook /
     fold), norm-carried through the layer (the +-1 OPERATING RANGE is an
     input contract, not a tanh).
 
     The span is selected by the global ``<sigmaPi>`` knob via
     :meth:`Spaces.Space.sigma_pi_mode` (``last`` | ``butterfly`` | ``full``),
-    matching the PS.Pi / SS.Sigma construction in Spaces.py so behaviour is
+    matching the PS.Pi / WS.Sigma construction in Spaces.py so behaviour is
     consistent across the codebase:
 
       * ``full``      -- ONE dense LDU over the whole ``[..., 2D]`` slab
@@ -1634,7 +1634,7 @@ class ConceptualCombine(Layer):
         super().__init__(N, N)
         self.content_dim = D
         self.n_vectors = Nv
-        self.combine_dim = N  # the flattened 2N*D stack [ps-slots ; ss-slots]
+        self.combine_dim = N  # the flattened 2N*D stack [ps-slots ; ws-slots]
 
         # Normalise the <sigmaPi> span the same way the spaces do; a lazy
         # import keeps Layers.py free of a Spaces import cycle (Spaces
@@ -1665,7 +1665,7 @@ class ConceptualCombine(Layer):
         if mode == "butterfly":
             # Cross-element linear 2x2-LDU cascade over the WHOLE flattened
             # 2N*D stack -- the bind mixes across slots, the same
-            # cross-position reach PS.sigma / SS.pi get from their
+            # cross-position reach PS.sigma / WS.pi get from their
             # flattened cascades. The base GrammarLayer cascade is
             # plain-linear and exactly invertible (closed-form per-node
             # inverse); no pi (atanh/tanh) fold.
@@ -1714,26 +1714,26 @@ class ConceptualCombine(Layer):
         _cal[Nv:, :] = 0.5 * _eye
         self.callosum = nn.Parameter(_cal)
 
-    def _combine(self, ps, ss):
+    def _combine(self, ps, ws):
         """Stack the two ``[..., N, D]`` streams along the VECTOR axis into
         ``[..., 2N, D]``.
 
-        Internal order: ``[ps-slots ; ss-slots]``.  The wrapped layer's
+        Internal order: ``[ps-slots ; ws-slots]``.  The wrapped layer's
         identity init therefore maps vectors ``0..N-1`` to ``ps_in`` and
-        vectors ``N..2N-1`` to ``ss_in``.
+        vectors ``N..2N-1`` to ``ws_in``.
         """
-        return torch.cat([ps, ss], dim=-2)
+        return torch.cat([ps, ws], dim=-2)
 
     def _split_streams(self, x):
-        """Split ``[..., 2N, D]`` back into ``(ps, ss)`` each ``[..., N, D]``."""
+        """Split ``[..., 2N, D]`` back into ``(ps, ws)`` each ``[..., N, D]``."""
         Nv = self.n_vectors
         return x[..., :Nv, :], x[..., Nv:2 * Nv, :]
 
     def views(self, carrier):
-        """The PS / SS views of a bind: its slot-halves.
+        """The PS / WS views of a bind: its slot-halves.
 
         ``carrier`` is the ``[..., M]`` flat bind ``forward`` returned.
-        Returns ``(ps_view, ss_view)``, each ``[..., N, D]`` -- vectors
+        Returns ``(ps_view, ws_view)``, each ``[..., N, D]`` -- vectors
         ``0..N-1`` and ``N..2N-1`` of the STORED mix (the row-windows a
         Phase-5/6 ``.active`` index view expresses; NOT the inverse's
         halves, so a consumer of the views keeps the bind in its gradient
@@ -1742,8 +1742,8 @@ class ConceptualCombine(Layer):
         leading = tuple(carrier.shape[:-1])
         body = carrier[..., :self.combine_dim].reshape(
             *leading, 2 * self.n_vectors, self.content_dim)
-        ps_v, ss_v = self._split_streams(body)
-        return ps_v.contiguous(), ss_v.contiguous()
+        ps_v, ws_v = self._split_streams(body)
+        return ps_v.contiguous(), ws_v.contiguous()
 
     def glue(self, carrier):
         """The corpus-callosum glue: the STACKED views reduced to N vectors.
@@ -1780,8 +1780,8 @@ class ConceptualCombine(Layer):
         """Inverse of :meth:`_flatten_leading`: ``[B', W] -> [*leading, W]``."""
         return x.reshape(*leading, x.shape[-1])
 
-    def forward(self, ps, ss):
-        """The bind: ``CS = layer(flatten(stack[ps ; ss]))``.
+    def forward(self, ps, ws):
+        """The bind: ``CS = layer(flatten(stack[ps ; ws]))``.
 
         Stacks the two ``[..., N, D]`` streams along the vector axis into
         ``[..., 2N, D]``, flattens the trailing ``(2N, D)`` into ``2N*D``
@@ -1794,9 +1794,9 @@ class ConceptualCombine(Layer):
         mixed bind. There is no augment: the carrier and the bind are the
         same tensor, which is what makes :meth:`reverse` an exact inversion
         with nothing threaded alongside. Use :meth:`views` for the
-        ``[..., N, D]`` PS / SS slot-half windows.
+        ``[..., N, D]`` PS / WS slot-half windows.
         """
-        x = self._combine(ps, ss)                  # [..., 2N, D]
+        x = self._combine(ps, ws)                  # [..., 2N, D]
         leading = tuple(x.shape[:-2])
         flat = x.reshape(-1, self.combine_dim)     # [B', 2N*D]
         if self.combine_padded > self.combine_dim:
@@ -1812,13 +1812,13 @@ class ConceptualCombine(Layer):
         return out.contiguous().reshape(*leading, self.carrier_dim)
 
     def reverse(self, carrier):
-        """Exact reverse: ``[ps ; ss] = layer^{-1}(CS)``.
+        """Exact reverse: ``[ps ; ws] = layer^{-1}(CS)``.
 
         Flattens leading dims, applies the layer's exact structured inverse
         (dense ``naive=False`` -> ``_solve_ldu``; butterfly -> the per-node
         closed-form pair reverse), reads back the first ``2N*D`` coords
         (the ``M - 2N*D`` tail is the recovered zero-pad, ~0), un-flattens
-        to ``[..., 2N, D]``, and splits into ``(ps, ss)`` each
+        to ``[..., 2N, D]``, and splits into ``(ps, ws)`` each
         ``[..., N, D]``. Exact to the solve / cascade tolerance -- by
         construction, with NOTHING threaded: the carrier IS the whole bind.
         """
@@ -1826,8 +1826,8 @@ class ConceptualCombine(Layer):
         x = self.layer.reverse(flat)                    # [B', M]
         body = x[..., :self.combine_dim].reshape(
             *leading, 2 * self.n_vectors, self.content_dim)
-        ps_v, ss_v = self._split_streams(body)
-        return ps_v.contiguous(), ss_v.contiguous()
+        ps_v, ws_v = self._split_streams(body)
+        return ps_v.contiguous(), ws_v.contiguous()
 
 
 class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
@@ -4046,6 +4046,45 @@ class PiLayer(GrammarLayer):
             self.layer._current_gate = None
         return out
 
+    def factorize_over_set(self, y, M, gate=None):
+        r"""π-FACTORIZE a fold into M EQUAL factors -- the log-domain DUAL of
+        :meth:`SigmaLayer.generate`'s balanced split (doc/specs/mereological-
+        order-raising.md "Ramsification with the towers"; the π-analyse split's
+        property-source). The π forward folds factors MULTIPLICATIVELY (their
+        log-memberships SUM through ``W``); this recovers the summed
+        log-membership ``lx = (log(_to_mult(y)) - b) @ W^-1`` exactly as
+        :meth:`reverse`, then SPLITS IT EQUALLY by ``M`` and exits, returning ONE
+        representative factor ``[..., nInput]`` in ``[-1, 1]`` (the M factors are
+        equal, exactly as ``σ.generate`` returns equal halves). ``M == 1``
+        reduces to :meth:`reverse`. Where σ splits a SUM by M in the atanh
+        domain, π splits a PRODUCT by M in the log-mult domain. Requires
+        ``invertible=True``; round-trips (re-folding M equal copies recovers
+        ``y``)."""
+        M = max(1, int(M))
+        if self.butterfly:
+            if self.nonlinear:
+                l = torch.log(self._to_mult(y))
+            else:
+                l = torch.log(y.clamp(min=self._eps))
+            lx = self._butterfly_reverse(l)
+            return torch.tanh((lx / float(M)) / 2.0)
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            y = y.to(W_inv.device)
+            if self.nonlinear:
+                l = torch.log(self._to_mult(y))
+            else:
+                l = torch.log(y.clamp(min=self._eps))
+            b = self.layer._effective_bias()
+            lx = (l - b) @ W_inv
+            out = torch.tanh((lx / float(M)) / 2.0)
+            if self.layer.ergodic:
+                self.resample_noise()
+        finally:
+            self.layer._current_gate = None
+        return out
+
     # -- Binary tensor ops (chart parser) -----------------------------
     #
     # ``forward(x: [..., D])`` is the unary feature-fold form. The
@@ -4406,7 +4445,7 @@ class MeronymicFoldAdapter(Layer):
     operating point and training shapes the fold from there.
 
     ``kind``: ``'sigma'`` (PS slot — synthesis/whole-maker) or ``'pi'``
-    (SS slot — analysis/part-maker). ``binary=`` is accepted for
+    (WS slot — analysis/part-maker). ``binary=`` is accepted for
     call-surface parity with the legacy folds and ignored (operand
     selection belongs to the binary ``blocks=2`` form, not the unary
     slot). Non-meronymic consumers keep the odds-kernel layers (plan §4
@@ -4465,7 +4504,7 @@ class MeronymicFoldAdapter(Layer):
     """
     invertible = True
     # Legacy slot-surface attributes: consumers of the slot layers read
-    # these (e.g. the SS parallel-fold dispatch reads ``fold.N`` to
+    # these (e.g. the WS parallel-fold dispatch reads ``fold.N`` to
     # match the construction-time flat total; ``butterfly`` is probed
     # with getattr). In unary mode the adapter is a per-slot membership
     # fold and carries the legacy total for dispatch only; in butterfly
@@ -4629,7 +4668,7 @@ class MeronymicFoldAdapter(Layer):
 
         Unary mode: width-mismatched calls (the legacy cascade was
         width-agnostic; the per-slot membership fold is not) fall back
-        to identity for the batch — the same convention the SS
+        to identity for the batch — the same convention the WS
         parallel-fold dispatch uses for mismatched totals.
         """
         if self.butterfly:
@@ -5270,13 +5309,13 @@ class LiftingLayer(Layer):
         Returns:
             [B, N, D] lifted subject concepts.
         """
-        ss = symbolic_space
+        ws = symbolic_space
 
         # 1. Project concept vectors to symbol space via WholeSpace.forward()
-        ss.subspace.set_event(verb)
-        verb_syms = ss.forward(ss.subspace).materialize()     # [B, N, symbol_dim]
-        ss.subspace.set_event(obj)
-        obj_syms = ss.forward(ss.subspace).materialize()      # [B, N, symbol_dim]
+        ws.subspace.set_event(verb)
+        verb_syms = ws.forward(ws.subspace).materialize()     # [B, N, symbol_dim]
+        ws.subspace.set_event(obj)
+        obj_syms = ws.forward(ws.subspace).materialize()      # [B, N, symbol_dim]
 
         # 2. Intersect: restrict verb by object (monotonic -> min)
         restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
@@ -5806,7 +5845,7 @@ class TruthLayer(Layer):
 
         # Host-side emptiness flag. ``len(self)`` reads ``count.item()``
         # (a GPU->host sync); the only in-brick consumer
-        # (WordSpace.truth_modulated_loss) needs *emptiness*, not the
+        # (SymbolicSpace.truth_modulated_loss) needs *emptiness*, not the
         # count. This bool mirrors ``count > 0`` and is maintained
         # co-located with every ``count`` write from an already-host-side
         # value, so it never adds a sync and cannot drift. Read via
@@ -6264,26 +6303,26 @@ class TruthLayer(Layer):
         """
         if model is None or not hasattr(model, 'Luminosity'):
             return 0.0
-        ss = symbolic_space
+        ws = symbolic_space
         luminosity_before = float(model.Luminosity(truth_layer=self))
 
         # K(X, Y): original action SVO
         result_svo = lifting_layer.forward_transitive_svo(
-            subject, verb, obj, ss)
+            subject, verb, obj, ws)
 
         # K(Y, X): dual action OVS
         result_ovs = lifting_layer.forward_transitive_svo(
-            obj, verb, subject, ss)
+            obj, verb, subject, ws)
 
         # Project results to symbol space via WholeSpace.forward()
-        ss.subspace.set_event(result_svo)
-        svo_syms = ss.forward(ss.subspace).materialize()  # [B, N, symbol_dim]
-        ss.subspace.set_event(result_ovs)
-        ovs_syms = ss.forward(ss.subspace).materialize()  # [B, N, symbol_dim]
+        ws.subspace.set_event(result_svo)
+        svo_syms = ws.forward(ws.subspace).materialize()  # [B, N, symbol_dim]
+        ws.subspace.set_event(result_ovs)
+        ovs_syms = ws.forward(ws.subspace).materialize()  # [B, N, symbol_dim]
 
         # Temporarily extend truth store (average over batch and vectors)
         saved_count = self.count.item()
-        basis = getattr(getattr(ss, 'subspace', None), 'basis', None)
+        basis = getattr(getattr(ws, 'subspace', None), 'basis', None)
         self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
         self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
 
@@ -7049,7 +7088,7 @@ class TruthLayer(Layer):
         added = []
         rejected = []
 
-        ss = getattr(model, 'symbolicSpace', None) if model is not None else None
+        ws = getattr(model, 'wholeSpace', None) if model is not None else None
         from Language import GRAMMAR_LAYER_CLASSES
         rule_kernels = {}
         for rule_name in two_arg_rules:
@@ -7094,7 +7133,7 @@ class TruthLayer(Layer):
                     if candidate.norm() < 1e-6:
                         continue
 
-                    if ss is not None and model is not None:
+                    if ws is not None and model is not None:
                         lum_before = model.Luminosity(truth_layer=self)
                     else:
                         lum_before = 0.0
@@ -7106,7 +7145,7 @@ class TruthLayer(Layer):
 
                     direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
                     self.record(direction, degree, basis=basis)
-                    if ss is not None and model is not None:
+                    if ws is not None and model is not None:
                         lum_after = model.Luminosity(truth_layer=self)
                     else:
                         lum_after = lum_before
@@ -7127,7 +7166,7 @@ class TruthLayer(Layer):
 
         Mirror of ``len(self) == 0`` that reads the host-side
         ``_nonempty`` flag instead of ``count.item()``, so the in-brick
-        consumer (``WordSpace.truth_modulated_loss``) does not force a
+        consumer (``SymbolicSpace.truth_modulated_loss``) does not force a
         GPU->host sync (CUDA-graph-capture contract; see
         doc/BrickHostSyncStatus.md residual F).
         """
@@ -7299,7 +7338,23 @@ class RelativeTruthStore(Layer):
         self.register_buffer('vp', torch.zeros(max_triples, nDim))
         self.register_buffer('np2', torch.zeros(max_triples, nDim))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
-        self._trusts = []
+        # Per-triple relation trust (DoT), aligned by row with np1/vp/np2.
+        # A REGISTERED BUFFER (not a plain list) so it survives a
+        # state_dict save/load round-trip alongside the magnitude buffers
+        # -- otherwise a reloaded relation silently reverts to the 1.0
+        # fallback in ConceptualSpace.reason / verify_relation. Zero-init
+        # means an OLD checkpoint lacking this key loads (non-strict) with
+        # all-zero trust rather than erroring.
+        self.register_buffer('trust', torch.zeros(max_triples))
+
+    @property
+    def _trusts(self):
+        """Read-only back-compat view of the per-triple trust as a Python
+        list over the live rows. The canonical store is the ``trust``
+        buffer; this exists for callers/docstrings that referred to the
+        old list. Writes must target the ``trust`` buffer directly (a
+        list snapshot would not write back)."""
+        return self.trust[: int(self.count.item())].tolist()
 
     def __len__(self):
         return int(self.count.item())
@@ -7317,8 +7372,8 @@ class RelativeTruthStore(Layer):
         self.np1[n] = np1.reshape(-1)[: self.nDim].to(self.np1) * d
         self.vp[n] = vp.reshape(-1)[: self.nDim].to(self.vp) * d
         self.np2[n] = np2.reshape(-1)[: self.nDim].to(self.np2) * d
+        self.trust[n] = d
         self.count.fill_(n + 1)
-        self._trusts.append(d)
         return n
 
     def triple(self, idx: int):
@@ -7407,7 +7462,178 @@ class RelativeTruthStore(Layer):
         self.vp.zero_()
         self.np2.zero_()
         self.count.zero_()
-        self._trusts = []
+        self.trust.zero_()
+
+
+class TernaryTruthStore(Layer):
+    """The unified LTM + relative-truth store (Truth / Ideas consolidation,
+    Alec 2026-06-18): ONE tensor of ternary rows that combines the discourse
+    LTM end-state chain and the ``RelativeTruthStore`` relation corpus.
+
+    Each row is ``(NP1, VP, NP2)`` -- three FULL idea vectors (event width
+    ``nDim``; ``Null`` = the zero vector) -- plus a per-row ``timestamp`` and
+    a per-row scalar ``trust`` in ``[-1, 1]``:
+
+      * ``NP  .   .``  -> an IDEA (absolute truth)
+      * ``NP  VP  .``  -> a unary predication
+      * ``NP  VP  NP`` -> an IDEA-RELATION-IDEA (relative truth)
+
+    The relation kind is tagged in ``rel_type`` (``REL_NONE`` for an absolute
+    idea; ``REL_PARTOF`` / ``REL_IMPLIES`` are the two canonical relations;
+    ``REL_OTHER`` for any learned predicate carried in the VP slot).
+    ``partOf`` rows feed the meronomy / parthood; ``implies`` rows feed
+    modus-ponens reasoning.
+
+    UNLIKE ``RelativeTruthStore`` the idea vectors are stored UNSCALED (trust
+    is a SEPARATE column, not baked into the magnitude), so a reader needs no
+    un-baking. All state is registered buffers, so the corpus rides the
+    state_dict -- it is PERSISTENT (provisioned from an XML TruthSet at load
+    time, grown by conversation at runtime). The monotonic ``timestamp`` gives
+    the single ordering both readers need: the AR predictor takes the recent
+    slice (:meth:`recent`); reasoning scans the whole corpus
+    (:meth:`relations`).
+
+    Storage-only foundation (stage 1 of the consolidation): nothing
+    constructs it yet, so it is inert / byte-identical until wired.
+    """
+
+    REL_NONE = 0
+    REL_PARTOF = 1
+    REL_IMPLIES = 2
+    REL_OTHER = 3
+
+    def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
+        super().__init__(nDim, nDim)
+        self.nDim = int(nDim)
+        self.capacity = int(capacity)
+        # Content ('what') width a reasoning reader slices to (the leading
+        # band of the event vector); defaults to the full width. Stored for
+        # forward-compat -- this class keeps the FULL idea vectors.
+        self.content_width = int(content_width) if content_width else self.nDim
+        # ONE tensor: [capacity, 3, nDim] -- slot 0 = NP1, 1 = VP, 2 = NP2.
+        self.register_buffer('slots', torch.zeros(capacity, 3, nDim))
+        self.register_buffer('rel_type',
+                             torch.zeros(capacity, dtype=torch.long))
+        self.register_buffer('timestamp', torch.zeros(capacity))
+        self.register_buffer('trust', torch.zeros(capacity))
+        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        # Monotonic logical clock: each append without an explicit timestamp
+        # takes the next tick. XML provisioning appends first (earliest
+        # ticks); conversation appends continue from there.
+        self.register_buffer('_next_ts', torch.tensor(0, dtype=torch.long))
+
+    def __len__(self):
+        return int(self.count.item())
+
+    def _fit(self, vec):
+        """Conform an idea operand to the store width (leading ``nDim``,
+        zero-padded). ``None`` -> the zero (Null) vector."""
+        if vec is None:
+            return self.slots.new_zeros(self.nDim)
+        v = vec.reshape(-1).to(self.slots)
+        if v.numel() == self.nDim:
+            return v
+        out = self.slots.new_zeros(self.nDim)
+        k = min(self.nDim, v.numel())
+        out[:k] = v[:k]
+        return out
+
+    @torch.no_grad()
+    def append(self, np1, vp=None, np2=None, *, rel_type=REL_NONE,
+               trust=0.0, timestamp=None) -> int:
+        """Append one ternary row. ``Null`` slots (``None``) store the zero
+        vector. ``trust`` is clamped to ``[-1, 1]``. ``timestamp`` defaults to
+        the next monotonic tick. Returns the row index, or ``-1`` when the
+        store is full."""
+        n = int(self.count.item())
+        if n >= self.capacity:
+            return -1
+        self.slots[n, 0] = self._fit(np1)
+        self.slots[n, 1] = self._fit(vp)
+        self.slots[n, 2] = self._fit(np2)
+        self.rel_type[n] = int(rel_type)
+        self.trust[n] = max(-1.0, min(1.0, float(trust)))
+        if timestamp is None:
+            self.timestamp[n] = float(self._next_ts.item())
+            self._next_ts.fill_(int(self._next_ts.item()) + 1)
+        else:
+            ts = float(timestamp)
+            self.timestamp[n] = ts
+            # keep the clock monotonic past any explicit (e.g. provisioned) ts
+            if ts >= float(self._next_ts.item()):
+                self._next_ts.fill_(int(ts) + 1)
+        self.count.fill_(n + 1)
+        return n
+
+    def append_idea(self, np1, *, trust=0.0, timestamp=None) -> int:
+        """Append an ABSOLUTE truth (``NP . .``)."""
+        return self.append(np1, None, None, rel_type=self.REL_NONE,
+                           trust=trust, timestamp=timestamp)
+
+    def append_relation(self, np1, vp, np2, *, rel_type=REL_OTHER,
+                        trust=0.0, timestamp=None) -> int:
+        """Append an IDEA-RELATION-IDEA (``NP VP NP``); ``np2=None`` ->
+        ``NP VP .``."""
+        return self.append(np1, vp, np2, rel_type=rel_type,
+                           trust=trust, timestamp=timestamp)
+
+    def row(self, idx: int) -> dict:
+        """The stored row as ``{np1, vp, np2, rel_type, timestamp, trust}``
+        (vectors are views; ``rel_type`` int, the rest floats)."""
+        n = int(self.count.item())
+        if not (0 <= int(idx) < n):
+            raise IndexError(f"row {idx} of {n}")
+        i = int(idx)
+        return {
+            'np1': self.slots[i, 0], 'vp': self.slots[i, 1],
+            'np2': self.slots[i, 2], 'rel_type': int(self.rel_type[i].item()),
+            'timestamp': float(self.timestamp[i].item()),
+            'trust': float(self.trust[i].item()),
+        }
+
+    def recent(self, n: int):
+        """Row indices of the ``n`` most-recent rows (descending timestamp) --
+        the AR predictor's recency window."""
+        c = int(self.count.item())
+        if c == 0 or n <= 0:
+            return self.count.new_zeros(0)
+        order = torch.argsort(self.timestamp[:c], descending=True)
+        return order[: int(n)]
+
+    def relations(self, rel_type=None):
+        """Row indices of RELATION rows (``rel_type != REL_NONE``), optionally
+        filtered to a single ``rel_type`` -- the reasoning scan."""
+        c = int(self.count.item())
+        if c == 0:
+            return self.count.new_zeros(0)
+        rt = self.rel_type[:c]
+        mask = rt != self.REL_NONE if rel_type is None else rt == int(rel_type)
+        return mask.nonzero(as_tuple=True)[0]
+
+    def ideas(self):
+        """Row indices of ABSOLUTE-idea rows (``rel_type == REL_NONE``)."""
+        c = int(self.count.item())
+        if c == 0:
+            return self.count.new_zeros(0)
+        return (self.rel_type[:c] == self.REL_NONE).nonzero(as_tuple=True)[0]
+
+    @torch.no_grad()
+    def set_trust(self, idx: int, trust: float):
+        """Overwrite a row's scalar trust (verification / re-assertion)."""
+        i = int(idx)
+        if not (0 <= i < int(self.count.item())):
+            raise IndexError(f"row {i} of {int(self.count.item())}")
+        self.trust[i] = max(-1.0, min(1.0, float(trust)))
+
+    @torch.no_grad()
+    def reset(self):
+        """Clear the store (idempotent)."""
+        self.slots.zero_()
+        self.rel_type.zero_()
+        self.timestamp.zero_()
+        self.trust.zero_()
+        self.count.zero_()
+        self._next_ts.zero_()
 
 
 class InterSentenceLayer(Layer):
@@ -7443,8 +7669,8 @@ class InterSentenceLayer(Layer):
 
     **Subclass.** ``Layer`` rather than ``Space``: no SubSpace, no
     forward/reverse tensor-map contract.  Lives inside
-    ``WordSpace.layers`` so the Layer ergodic walk reaches the MLP
-    predictor's parameters via ``WordSpace.params``.
+    ``SymbolicSpace.layers`` so the Layer ergodic walk reaches the MLP
+    predictor's parameters via ``SymbolicSpace.params``.
 
     Replaces the pre-2026-05-14 contrastive cosine machinery
     (``context_window`` recent buffer, ``centroid_history`` repulsive
@@ -7466,7 +7692,7 @@ class InterSentenceLayer(Layer):
         ``[S | W]`` snapshot layout the caller used to hand in; under
         ARMA we only need the flat ``sentence_dim`` (defaults to
         ``n_symbols * n_dim``) but keep the constructor signature for
-        smooth migration of the WordSpace instantiation site.
+        smooth migration of the SymbolicSpace instantiation site.
 
         ``p`` = AR lag count (number of past sentence reps consumed
         by the predictor); ``q`` = MA lag count (past residuals).
@@ -7601,7 +7827,7 @@ class InterSentenceLayer(Layer):
         # ``stm_capacity`` here is the CHAIN WINDOW ``K`` (the number of
         # most-recent end-states fed to the predictor), NOT the intra-level
         # STM slot count. The plan suggests ``truthMaxEntries``; that knob
-        # (default 1024) is the TruthLayer SS-codebook cap and is NOT
+        # (default 1024) is the TruthLayer WS-codebook cap and is NOT
         # plumbed to this constructor, and a 1024-wide predictor input would
         # be wasteful for a short AR context. So we use a small bounded
         # window ``K = min(ltm_capacity, 8)`` (documented deviation): the AR
@@ -7635,10 +7861,25 @@ class InterSentenceLayer(Layer):
         self._inter_last_pred_root = [None] * self._batch
         self._inter_loss_weight = 0.1
 
+        # LTM consolidation FU3 (Change 2, 2026-06-18): when wired to the
+        # unified ``TernaryTruthStore`` (``_ltm_store`` set by the host at
+        # construction, ``_ltm_consolidation`` True), the AR predictor reads
+        # the GLOBAL store's recency window (:meth:`get_stm_chain` ->
+        # ``ltm_store.recent``) instead of this layer's per-row deque
+        # ``_stm_end_states``, and ``observe_stm_end_state`` STOPS appending
+        # to that deque (the store-append at the Models observe site is the
+        # single source). ``None`` / ``False`` (the default) -> the legacy
+        # per-row deque path, byte-identical. NOTE: the unified store is
+        # GLOBAL (one recency window, not per row), so the store-backed read
+        # is the correct semantics for B=1 / a single conversation; B>1
+        # batched training shares one global recency window across rows.
+        self._ltm_store = None
+        self._ltm_consolidation = False
+
     # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
         """Resize per-row substrate to a new batch size.  Cascaded
-        from ``WordSpace.ensure_batch`` so the body's per-B state is
+        from ``SymbolicSpace.ensure_batch`` so the body's per-B state is
         sized correctly.  Zeroes the rings.
         """
         batch = int(batch)
@@ -7660,7 +7901,7 @@ class InterSentenceLayer(Layer):
         # Resize the per-row LTM chains to match. Reallocate fresh
         # deques: the ARMA rings above zero on resize, so the LTM chain
         # follows the same "new batch -> clean per-row state" semantic
-        # (cascaded from ``WordSpace.ensure_batch`` at the start of a
+        # (cascaded from ``SymbolicSpace.ensure_batch`` at the start of a
         # microbatch; the old document's chain does not survive a batch
         # reshape any more than ``_s_history`` does).
         self._stm_end_states = [
@@ -7836,7 +8077,7 @@ class InterSentenceLayer(Layer):
         sentence's end-state lands in LTM regardless of
         ``truthCriterion`` — LTM is the AR sequence the inter-sentence
         predictor consumes; ``truthCriterion`` only gates the separate
-        SS-codebook insertion of *learned relations* (Task 6c), not
+        WS-codebook insertion of *learned relations* (Task 6c), not
         this chain.
 
         Args:
@@ -7907,8 +8148,19 @@ class InterSentenceLayer(Layer):
                 if (self._inter_predictor is not None
                         and b < len(self._inter_last_pred_root)
                         and self._inter_last_pred_root[b] is not None):
-                    actual_root = self._reduce_end_state_to_root(
-                        payload.detach())
+                    pd = payload.detach()
+                    if (self._ltm_store is not None and pd.dim() == 2
+                            and pd.shape[0] >= 2):
+                        # Consolidated: the incoming payload is STM-order
+                        # [idea2, idea1, predicate] (newest-at-slot-0); the AR
+                        # root is idea1 (slot depth-2). Wrap as [1, D] so
+                        # _reduce (consolidated -> slot 0) returns it, matching
+                        # the infix slot-0 root get_stm_chain feeds the
+                        # predictor (so context and actual roots agree).
+                        actual_root = self._reduce_end_state_to_root(
+                            pd[pd.shape[0] - 2].unsqueeze(0))
+                    else:
+                        actual_root = self._reduce_end_state_to_root(pd)
                     pred_root = self._inter_last_pred_root[b]
                     if actual_root is not None:
                         actual_root = actual_root.to(
@@ -7927,7 +8179,17 @@ class InterSentenceLayer(Layer):
             tet = None
             if tetralemmas is not None and b < len(tetralemmas):
                 tet = tetralemmas[b]
-            self._stm_end_states[b].append((int(depth), payload, tet))
+            # LTM consolidation FU3 (Change 2): when wired to the unified
+            # store the per-row deque is NOT the source of truth -- the
+            # Models observe site appends each end-state to the global
+            # ``ltm_store`` (sink (a)). Skip the deque append here so the AR
+            # chain is read SOLELY from the store (via ``get_stm_chain``);
+            # the L_inter predict/score cycle ABOVE still runs (it reads
+            # context through ``get_stm_chain`` -> store, and scores the
+            # ``payload`` arg against the staged prediction). Legacy /
+            # non-consolidated path is unchanged (deque append as today).
+            if self._ltm_store is None:
+                self._stm_end_states[b].append((int(depth), payload, tet))
 
     @torch.compiler.disable
     def predict_and_observe_stm_end_state(self, depths, payloads,
@@ -7994,7 +8256,46 @@ class InterSentenceLayer(Layer):
         most-recent last), each ``(depth:int, payload:[depth,D] tensor,
         tetralemma:tuple|None)``. Returns ``[]`` for an out-of-range row
         or an empty chain.
+
+        LTM consolidation FU3 (Change 2): when wired to the unified store
+        (``self._ltm_store is not None``) the chain is read from the GLOBAL
+        ``TernaryTruthStore`` recency window, NOT this layer's per-row deque.
+        The store is global (one recency window), so ``b`` is IGNORED -- this
+        is the correct semantics for B=1 / a single conversation; B>1 batched
+        training shares the one global recency window across rows.
+        ``store.recent(n)`` returns DESCENDING-timestamp indices, so we
+        reverse to OLDEST-FIRST time order and reconstruct each row as a
+        ``(depth, payload, tet)`` tuple matching the deque convention:
+          * an ABSOLUTE row (``rel_type == REL_NONE``) ->
+            ``(1, np1[None, :], trust)``;
+          * a RELATION row -> ``(3, stack([np1, vp, np2]), trust)`` -- INFIX
+            ``[idea1, predicate, idea2]`` (the store's native ``[NP1, VP, NP2]``
+            order; idea1 may be present without a predicate, so it anchors the
+            triple). The consolidated ``_reduce_end_state_to_root`` reads slot
+            0 = idea1 (the subject / always-present anchor) as the AR root.
         """
+        store = self._ltm_store
+        if store is not None:
+            total = len(store)
+            if total == 0:
+                return []
+            if n is not None and int(n) <= 0:
+                return []                            # match the deque path
+            k = total if n is None else min(int(n), total)
+            # recent() -> descending timestamp; reverse for oldest-first.
+            idxs = store.recent(k)
+            idx_list = list(reversed([int(i) for i in idxs.tolist()]))
+            out = []
+            for i in idx_list:
+                r = store.row(i)
+                tet = r["trust"]
+                if r["rel_type"] == store.REL_NONE:
+                    out.append((1, r["np1"].reshape(1, -1).clone(), tet))
+                else:
+                    payload = torch.stack(
+                        [r["np1"], r["vp"], r["np2"]], dim=0).clone()
+                    out.append((3, payload, tet))
+            return out
         bi = int(b)
         if bi < 0 or bi >= len(self._stm_end_states):
             return []
@@ -8038,7 +8339,13 @@ class InterSentenceLayer(Layer):
         if x.dim() == 1:
             root = x
         elif x.dim() == 2 and x.shape[0] >= 1:
-            root = x[x.shape[0] - 1]                 # oldest slot = root
+            if self._ltm_store is not None:
+                # Consolidated / INFIX payloads [idea1, predicate, idea2]: the
+                # AR root is idea1 (slot 0) -- the subject/topic, present even
+                # when there is no predicate (Alec 2026-06-18, infix order).
+                root = x[0]
+            else:
+                root = x[x.shape[0] - 1]             # legacy newest-at-slot-0: oldest slot
         else:
             return None
         D = int(self._inter_predictor.concept_dim)
@@ -8260,7 +8567,7 @@ class InterSentenceLayer(Layer):
         Returns ``(prediction, confidence)`` where confidence is a
         scalar / per-row tensor fixed at 1.0 — the legacy attention-
         entropy confidence had no analog in the MLP predictor, but
-        downstream callers (``WordSpace.stm_residual_microbatch``)
+        downstream callers (``SymbolicSpace.stm_residual_microbatch``)
         gate the priming bias on ``conf is None`` so we emit a
         placeholder rather than break that wiring.  Real cold-start
         gating happens via ``_s_count``: rows whose ring is empty
@@ -8268,7 +8575,7 @@ class InterSentenceLayer(Layer):
 
         Compiled path: ``predict()`` is called from two traced sites
         (``BasicModel._forward_per_stage`` and
-        ``WordSpace.stm_residual_microbatch``), always with ``b is
+        ``SymbolicSpace.stm_residual_microbatch``), always with ``b is
         None``.  When ``stage_prediction()`` has parked a tuple, return
         it directly — the live body calls ``predict_next`` (which is
         ``@torch.compiler.disable``'d → graph break) and reads
@@ -8361,7 +8668,7 @@ class IntraSentenceLayer(Layer):
     """In-STM autoregressive predictor: STM[1:end] -> predicted STM[0]
     (serial) / STM_prev[0:end] -> predicted STM_new[0:end] (parallel).
     Combined PI-then-Sigma, no intermediate tanh; the routing
-    distribution from WordSubSpace.current_rules conditions the
+    distribution from SymbolicSubSpace.current_rules conditions the
     Sigma collapse (rule-aware predictor).
 
     Architecture (PI first, per the design note):
@@ -9913,7 +10220,7 @@ class RadixLayer(Layer):
           * ``vec`` of shape ``[B, N, D]`` -> returns ``List[List[bytes]]``.
 
         When ``symbolic_space`` is supplied, the walk goes
-        ``vec -> SS.codebook nearest -> META taxonomy children
+        ``vec -> WS.codebook nearest -> META taxonomy children
         -> positive PS percept id -> bytes_for(pid)``. When it is
         ``None`` the fallback is nearest-PS-codebook directly (no META
         walk); useful for standalone tests without a full WholeSpace
@@ -9951,14 +10258,14 @@ class RadixLayer(Layer):
                 "masked. "
                 f"vec[finite]={int(finite.sum().item())}/"
                 f"{int(vec.numel())}.")
-        # Pick the comparison codebook. SS-driven walk if a SS peer is
+        # Pick the comparison codebook. WS-driven walk if a WS peer is
         # supplied (preferred); else nearest-PS-codebook fallback.
         if symbolic_space is not None:
             cb = getattr(symbolic_space.subspace, "what", None)
             W = cb.getW() if cb is not None else None
             if W is None:
-                # SS codebook absent (e.g. <codebook>none</codebook>): there
-                # is no SS taxonomy to walk, so fall back to the standalone
+                # WS codebook absent (e.g. <codebook>none</codebook>): there
+                # is no WS taxonomy to walk, so fall back to the standalone
                 # PS-table decode (nearest ACTIVE percept -> inverse_table)
                 # rather than emitting an empty slot for every word.
                 symbolic_space = None
@@ -10003,43 +10310,43 @@ class RadixLayer(Layer):
         diffs = W - target.unsqueeze(0)
         sq = (diffs * diffs).sum(dim=1)
         nearest_row = int(torch.argmin(sq).item())
-        # Standalone fallback: no SS, decode directly via PS table.
+        # Standalone fallback: no WS, decode directly via PS table.
         if symbolic_space is None:
             try:
                 return self.bytes_for(nearest_row)
             except IndexError:
                 return b""
-        # SS-walk: nearest may be the META itself, or its SS child.
+        # WS-walk: nearest may be the META itself, or its WS child.
         # Resolve the row's position via WholeSpace's lookup tables;
-        # an unbound row (not in _ss_row_to_pos) has no taxonomy entry
+        # an unbound row (not in _ws_row_to_pos) has no taxonomy entry
         # and no surface-bytes path -- return b"" rather than
-        # mis-indexing the PS table with an SS row id.
-        ss = symbolic_space
-        nearest_pos = ss._ss_row_to_pos.get(nearest_row)
+        # mis-indexing the PS table with an WS row id.
+        ws = symbolic_space
+        nearest_pos = ws._ws_row_to_pos.get(nearest_row)
         if nearest_pos is None:
             return b""
         # Walk to a META node: either the nearest row IS a META, or
-        # it's the SS-child of one (auto-bound under word learning
-        # initializes both the META row and its SS child to the same
+        # it's the WS-child of one (auto-bound under word learning
+        # initializes both the META row and its WS child to the same
         # seed vector; the META row drifts during training while the
         # child stays close to seed, so the nearest match often lands
         # on the child, not the META). Climb one level via
         # ``taxonomy_parent`` to recover the META in that case.
         meta_pos = None
-        children = ss.taxonomy_children(nearest_pos)
+        children = ws.taxonomy_children(nearest_pos)
         if children:
             meta_pos = nearest_pos
         else:
-            parent = ss.taxonomy_parent(nearest_pos)
-            if parent is not None and ss.is_meta(int(parent)):
+            parent = ws.taxonomy_parent(nearest_pos)
+            if parent is not None and ws.is_meta(int(parent)):
                 meta_pos = int(parent)
-                children = ss.taxonomy_children(meta_pos)
+                children = ws.taxonomy_children(meta_pos)
         if meta_pos is None or not children:
             return b""
         for child in children:
             ci = int(child)
-            if ss._pos_kind.get(ci) == "ps":
-                ps_row = ss._ps_pos_to_row.get(ci)
+            if ws._pos_kind.get(ci) == "ps":
+                ps_row = ws._ps_pos_to_row.get(ci)
                 if ps_row is None:
                     continue
                 try:
@@ -10875,7 +11182,7 @@ class _RuleScorer(nn.Module):
     """Small MLP scoring rules from top-of-stack payloads.
 
     Private to ``ShortTermMemory``; replaces the standalone
-    ``stm_driver.RuleScorer`` (2026-05-21 WordSubSpace/STM Layer
+    ``stm_driver.RuleScorer`` (2026-05-21 SymbolicSubSpace/STM Layer
     refactor). Input: top operand payload(s) — ``left`` (required) and
     ``right`` (optional, ``None`` for unary REDUCE). Concatenates and
     projects to a per-rule logit vector. Architecturally minimal -- one
@@ -10908,12 +11215,12 @@ class _RuleScorer(nn.Module):
 class ShortTermMemory(Layer):
     """Short-term memory (STM) on ConceptualSpace.
 
-    Carries two roles after the 2026-05-21 WordSubSpace/STM Layer refactor:
+    Carries two roles after the 2026-05-21 SymbolicSubSpace/STM Layer refactor:
 
     1. **Per-batch idea stack** (legacy chart consumer surface). A
        ``[B, capacity, concept_dim]`` payload buffer that the chart's
        CKY compose path pushes "ideas" (continuous compositions) onto.
-       Distinct from ``WordSpace._stm_fired`` (once-per-sentence
+       Distinct from ``SymbolicSpace._stm_fired`` (once-per-sentence
        discourse-priming flag). Spec §"Removed Public Surfaces" calls
        for ``ShortTermMemory`` to become data-free; the legacy push /
        peek / snapshot surface is retained transitionally for the
@@ -10952,20 +11259,20 @@ class ShortTermMemory(Layer):
         # Phase E completion of doc/specs/2026-05-21-wordsubspace-stm-
         # layer-refactor.md: the Layer is data-free. ``_init_capacity``
         # / ``_init_concept_dim`` are the constructor's record of the
-        # requested sizes — used only to seed WordSubSpace's
-        # ``_idea_buffer`` if a standalone (no-WordSubSpace) test
+        # requested sizes — used only to seed SymbolicSubSpace's
+        # ``_idea_buffer`` if a standalone (no-SymbolicSubSpace) test
         # constructs a ShortTermMemory directly. Once
         # ``attach_word_subspace`` is called the data lives on
-        # WordSubSpace's ``_idea_*`` buffers and the proxy properties /
+        # SymbolicSubSpace's ``_idea_*`` buffers and the proxy properties /
         # methods below route there.
         self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
         self._init_concept_dim = int(concept_dim)
         self._init_batch = int(batch)
-        # Standalone fallback: when no WordSubSpace has been attached
+        # Standalone fallback: when no SymbolicSubSpace has been attached
         # yet (e.g. test_conceptual_stm.py constructs ShortTermMemory
         # bare), we allocate a local idea-stack so the legacy push /
         # peek / snapshot surface keeps working. ``attach_word_subspace``
-        # later switches the proxy onto the WordSubSpace's buffers and
+        # later switches the proxy onto the SymbolicSubSpace's buffers and
         # drops the local allocation.
         self._word_subspace = None
         # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
@@ -11000,18 +11307,18 @@ class ShortTermMemory(Layer):
         object.__setattr__(self, 'rule_signatures', None)
 
     def attach_word_subspace(self, word_subspace):
-        """Wire a ``WordSubSpace`` so the Layer's data-accessor methods
+        """Wire a ``SymbolicSubSpace`` so the Layer's data-accessor methods
         route to its ``_idea_*`` buffers. Stored via
         ``object.__setattr__`` to bypass nn.Module's submodule
-        registration (the WordSubSpace owns the back-reference; this is
+        registration (the SymbolicSubSpace owns the back-reference; this is
         a non-owning routing pointer).
 
-        Called from ``WordSubSpace.__init__`` (Phase E completion of the
+        Called from ``SymbolicSubSpace.__init__`` (Phase E completion of the
         2026-05-21 refactor). Once attached, the local ``_fallback_*``
         buffers are dropped.
         """
         object.__setattr__(self, '_word_subspace', word_subspace)
-        # If the WordSubSpace's idea-stack capacity is smaller than the
+        # If the SymbolicSubSpace's idea-stack capacity is smaller than the
         # one this ShortTermMemory was constructed for, grow it now so
         # we honour the constructor's sizing contract.
         if hasattr(word_subspace, 'idea_ensure_capacity'):
@@ -11025,9 +11332,9 @@ class ShortTermMemory(Layer):
     # re-creates ``_live_buffer`` fresh inside the traced forward each pass,
     # making it a graph intermediate -- so the in-place STM writes mutate the
     # intermediate (legal) instead of a persisted, output-aliased input.
-    # When a WordSubSpace is attached the buffer is still data-free in the
+    # When a SymbolicSubSpace is attached the buffer is still data-free in the
     # nn.Module sense (the live data is not a registered buffer); the
-    # ``capacity`` proxy honours ``ws._idea_capacity`` so a caller that grows
+    # ``capacity`` proxy honours ``ss._idea_capacity`` so a caller that grows
     # the attached idea-stack capacity (e.g. test_bounded_stm_fold) still
     # sizes the next forward's fresh buffer correctly.
 
@@ -11057,17 +11364,17 @@ class ShortTermMemory(Layer):
 
     @property
     def capacity(self):
-        ws = self._word_subspace
-        if ws is None:
+        ss = self._word_subspace
+        if ss is None:
             return self._live_capacity
-        return ws._idea_capacity
+        return ss._idea_capacity
 
     @property
     def concept_dim(self):
-        ws = self._word_subspace
-        if ws is None:
+        ss = self._word_subspace
+        if ss is None:
             return self._init_concept_dim
-        return ws._stm_payload_dim
+        return ss._stm_payload_dim
 
     def begin_forward(self, batch, device=None, dtype=None):
         """Seed a FRESH per-forward working buffer (A5 fullgraph fix).
@@ -11076,7 +11383,7 @@ class ShortTermMemory(Layer):
         (the load-bearing principle): per-batch DATA threads THROUGH the
         forward as tensors and is NEVER persisted as accumulated state on a
         space/Layer across forwards. The idea buffer used to be a persistent
-        registered buffer (``ws._idea_buffer`` when attached, the standalone
+        registered buffer (``ss._idea_buffer`` when attached, the standalone
         ``_fallback_buffer`` otherwise) that the compiled forward mutated
         IN PLACE. That made it a graph INPUT that was mutated and
         output-aliased, so torch.compile/AOT autograd had to regenerate it
@@ -11097,7 +11404,7 @@ class ShortTermMemory(Layer):
         identity.
 
         Routed through the ``_buffer`` / ``_depth`` setters so it works for
-        both the WordSubSpace-attached proxy and the standalone fallback.
+        both the SymbolicSubSpace-attached proxy and the standalone fallback.
         """
         batch = int(batch)
         cap = int(self.capacity)
@@ -11118,10 +11425,10 @@ class ShortTermMemory(Layer):
     #
     # A5: all operations act on the single live store (the ``_buffer`` /
     # ``_depth`` / ``_max_depth_host`` properties -> the ``_live_*`` plain
-    # attributes). The former ``ws is None`` branch (WordSubSpace-attached
+    # attributes). The former ``ss is None`` branch (SymbolicSubSpace-attached
     # vs standalone ``_fallback_*``) is gone -- the live data is no longer a
     # registered buffer on either, so the compiled forward never sees it as a
-    # graph input. ``capacity`` still proxies to ``ws._idea_capacity`` when
+    # graph input. ``capacity`` still proxies to ``ss._idea_capacity`` when
     # attached so an externally-grown idea-stack capacity sizes the next
     # ``begin_forward`` correctly.
 
@@ -11288,7 +11595,7 @@ class ShortTermMemory(Layer):
 
     def init_scorer(self, rule_signatures, payload_dim, hidden_dim=None):
         """Allocate the rule scorer for the STM driver path. Called by
-        ``WordSubSpace._init_stm_driver`` once the knowledge artifact's
+        ``SymbolicSubSpace._init_stm_driver`` once the knowledge artifact's
         rule signature list is known. Idempotent — re-calling with the
         same shape is a no-op; a shape change replaces the scorer.
         """
@@ -11307,7 +11614,7 @@ class ShortTermMemory(Layer):
         """SHIFT one token onto ``word_subspace``'s typed STM at row ``b``.
 
         Mirrors the old ``STMDriver.shift``; the operand state now lives
-        on the WordSubSpace's typed buffers (Phase D of the refactor).
+        on the SymbolicSubSpace's typed buffers (Phase D of the refactor).
         """
         word_subspace.push(
             b, payload,
@@ -13152,7 +13459,7 @@ class Error:
 
     Why a registry? There are currently 12+ loss terms accumulated across
     four different call sites (``ModelLoss``, ``BasicModel.runBatch``,
-    ``WholeSpace.accumulate_symbol_objective``, ``WordSpace.truth_modulated_loss``).
+    ``WholeSpace.accumulate_symbol_objective``, ``SymbolicSpace.truth_modulated_loss``).
     Debugging convergence problems used to require grepping each site to
     answer "what fraction of today's gradient came from which term?".
     The registry makes that a one-call breakdown, and supports:

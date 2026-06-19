@@ -1,11 +1,11 @@
-"""Shared fixtures for STM-related tests after the 2026-05-21 WordSubSpace
+"""Shared fixtures for STM-related tests after the 2026-05-21 SymbolicSubSpace
 / STM Layer refactor.
 
 Provides factory functions that produce the post-refactor equivalents of
 the retired `typed_stack.TypedStack` + `stm_driver.STMDriver` +
 `stm_driver.RuleScorer` combinations:
 
-  * ``make_typed_stack(batch, max_depth, dim)`` -> a bare ``WordSubSpace``
+  * ``make_typed_stack(batch, max_depth, dim)`` -> a bare ``SymbolicSubSpace``
     with manually-allocated typed-STM buffers (same surface as the
     retired ``TypedStack``: ``_buffer`` / ``_category`` / ``_order`` /
     ``_ref_id`` / ``_depth``, plus ``push`` / ``pop`` / ``top`` /
@@ -14,7 +14,7 @@ the retired `typed_stack.TypedStack` + `stm_driver.STMDriver` +
   * ``make_driver(typed_stack, rule_signatures, payload_dim)`` -> a
     ``ShortTermMemory`` Layer with the scorer initialised. Exposes
     ``shift`` / ``reduce_step`` / ``reduce_step_soft`` /
-    ``train_scorer_step`` / ``_score_reduce`` taking a WordSubSpace
+    ``train_scorer_step`` / ``_score_reduce`` taking a SymbolicSubSpace
     (the ``typed_stack`` arg). Mirrors the retired ``STMDriver`` API
     where the driver was constructed once and methods looked up the
     typed stack from ``self.typed_stack``; here we hold the
@@ -37,52 +37,52 @@ sys.path.insert(0, str(_project / "bin"))
 
 
 def make_typed_stack(batch=1, max_depth=8, dim=4):
-    """Bare WordSubSpace with manually-allocated typed-STM buffers."""
-    from Language import WordSubSpace
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.batch = int(batch)
-    ws._stm_capacity = int(max_depth)
-    ws._stm_payload_dim = int(dim)
-    ws.max_depth = ws._stm_capacity
-    ws.dim = ws._stm_payload_dim
-    ws.register_buffer(
+    """Bare SymbolicSubSpace with manually-allocated typed-STM buffers."""
+    from Language import SymbolicSubSpace
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.batch = int(batch)
+    ss._stm_capacity = int(max_depth)
+    ss._stm_payload_dim = int(dim)
+    ss.max_depth = ss._stm_capacity
+    ss.dim = ss._stm_payload_dim
+    ss.register_buffer(
         '_buffer',
-        torch.zeros(ws.batch, ws._stm_capacity, dim),
+        torch.zeros(ss.batch, ss._stm_capacity, dim),
         persistent=False)
-    ws.register_buffer(
+    ss.register_buffer(
         '_category',
-        torch.full((ws.batch, ws._stm_capacity), -1, dtype=torch.long),
+        torch.full((ss.batch, ss._stm_capacity), -1, dtype=torch.long),
         persistent=False)
-    ws.register_buffer(
+    ss.register_buffer(
         '_order',
-        torch.zeros((ws.batch, ws._stm_capacity), dtype=torch.long),
+        torch.zeros((ss.batch, ss._stm_capacity), dtype=torch.long),
         persistent=False)
-    ws.register_buffer(
+    ss.register_buffer(
         '_ref_id',
-        torch.full((ws.batch, ws._stm_capacity), -1, dtype=torch.long),
+        torch.full((ss.batch, ss._stm_capacity), -1, dtype=torch.long),
         persistent=False)
-    ws.register_buffer(
+    ss.register_buffer(
         '_depth',
-        torch.zeros(ws.batch, dtype=torch.long),
+        torch.zeros(ss.batch, dtype=torch.long),
         persistent=False)
-    ws._category_names = [
-        [None] * ws._stm_capacity for _ in range(ws.batch)]
+    ss._category_names = [
+        [None] * ss._stm_capacity for _ in range(ss.batch)]
     # Idea-stack buffers (Phase E completion of doc/specs/
     # 2026-05-21-wordsubspace-stm-layer-refactor.md): the chart's
     # ``ShortTermMemory.push`` lives here too so ``_ensure_stm_batch``
     # can grow both in lockstep. Same shape as the typed buffer.
-    ws._idea_capacity = ws._stm_capacity
-    ws._idea_max_depth_host = 0
-    ws.register_buffer(
+    ss._idea_capacity = ss._stm_capacity
+    ss._idea_max_depth_host = 0
+    ss.register_buffer(
         '_idea_buffer',
-        torch.zeros(ws.batch, ws._idea_capacity, dim),
+        torch.zeros(ss.batch, ss._idea_capacity, dim),
         persistent=False)
-    ws.register_buffer(
+    ss.register_buffer(
         '_idea_depth',
-        torch.zeros(ws.batch, dtype=torch.long),
+        torch.zeros(ss.batch, dtype=torch.long),
         persistent=False)
-    return ws
+    return ss
 
 
 class _DriverWrapper:
@@ -127,7 +127,7 @@ class _DriverWrapper:
 
 def make_driver(typed_stack, rule_signatures, payload_dim=None):
     """ShortTermMemory + initialised scorer wrapped in a backward-compat
-    object that pins the WordSubSpace reference (mirrors the retired
+    object that pins the SymbolicSubSpace reference (mirrors the retired
     ``STMDriver(typed_stack, rule_signatures, scorer)`` constructor).
     """
     from Layers import ShortTermMemory

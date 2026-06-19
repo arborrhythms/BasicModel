@@ -8,8 +8,9 @@
 > synthesizes bottom-up over atoms (Sigma), WholeSpace analyses
 > top-down over unity (Pi). XML config sections and grammar-file
 > scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
-> PS/SS shorthand in older notes reads part-side/whole-side. The name
-> `SymbolicSpace` is RESERVED for re-introduction with new semantics.
+> PS/SS shorthand in older notes reads part-side/whole-side. The freed
+> name `SymbolicSpace` was **reintroduced 2026-06-19** as the grammar/word
+> tier (formerly `WordSpace`); see `doc/plans/2026-06-19-handoff.md`.
 >
 > **At the corpus callosum, objects are analysed and synthesized** —
 > by sending them back to PerceptualSpace: wholes get split and parts
@@ -100,7 +101,7 @@
 
 > **2026-06-02 update (subsymbolic analyzer).** New `ObjectSubSpace`
 > (`bin/Language.py`) -- the PS-meronymic carrier analogue of
-> `WordSubSpace` (spans, parent/child links, route ids, marker-route
+> `SymbolicSubSpace` (spans, parent/child links, route ids, marker-route
 > replay fields). `WholeSpace` gains `insert_operations` (grammar
 > operations in a dedicated operator codebook -- `_operation_vectors` /
 > `_operation_positions` -- separate from the symbol codebook so the
@@ -114,7 +115,7 @@
 > container + grammatical CPU; no atomic forward fold. SS owns the
 > unified word lexicon codebook with paired (orth, semantic) rows.
 > Grammar dispatch lives on the signal router (`LanguageLayer`) at
-> `WordSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
+> `SymbolicSubSpace.languageLayer`; the CKY `Chart` and STM shift-reduce
 > parsers are retired. `LiftLayer` / `LowerLayer` are binary
 > `GrammarLayer` subclasses with internal Sigma / Pi (no longer
 > substrate-borrowing). `GrammarLayer` gains an optional butterfly
@@ -123,13 +124,13 @@
 ## Overview
 
 BasicModel is a pipeline of five **spaces** plus a grammar host
-(`WordSpace`), each performing a distinct representational
+(`SymbolicSpace`), each performing a distinct representational
 transformation. Data flows forward from raw input to task output; the
 reverse pass reconstructs the original input from the symbolic
-representation. The legacy `SubsymbolicSpace` and `SyntacticSpace`
+representation. The legacy `SubwholeSpace` and `SyntacticSpace`
 classes have been retired — the subsymbolic role is filled by
 `PartSpace` itself, and the grammar runs from
-`WordSubSpace.languageLayer` (the signal router; subsumed the retired
+`SymbolicSubSpace.languageLayer` (the signal router; subsumed the retired
 `Chart`).
 
 ```
@@ -202,7 +203,7 @@ internal Sigma / Pi (no substrate-borrowing).
 |---|---|---|
 | **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
 | **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace, SS_subspace=None)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
+| **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
 
@@ -287,7 +288,7 @@ mode (default butterfly). Closes the XOR convergence target
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
 `SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
-Grammar / chart machinery lives on `WordSpace` and is attached to
+Grammar / chart machinery lives on `SymbolicSpace` and is attached to
 `WholeSpace` (the canonical grammar host).
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
@@ -808,7 +809,7 @@ convergence suites). Whole-slab configs run one forward per sentence, so
 the stash is the whole sentence; a per-word/serial config commits the last
 forward's stash per reset.
 
-Two smaller forward-purity fixes accompany it: `WordSubSpace._synthesize_
+Two smaller forward-purity fixes accompany it: `SymbolicSubSpace._synthesize_
 rule_probs` normalizes branchlessly (`probs / row_sums.clamp_min(tiny)`
 instead of `if nz.any()`), and the fail-loud `isfinite` guards (here and in
 `insert_meta` / `record_lbg_pull`) are gated behind `util.MODEL_DEBUG` --- a
@@ -844,7 +845,7 @@ API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
 - **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
   simultaneously; no shift. T = `<subsymbolicOrder>`.
 
-The signal router (`WordSubSpace.languageLayer`) consumes
+The signal router (`SymbolicSubSpace.languageLayer`) consumes
 `stm.snapshot()` as its slab input for grammar op dispatch.
 
 Both transitions follow a **predict-then-perceive** discipline (the
@@ -891,7 +892,7 @@ class LowerLayer(GrammarLayer):
         return self._pi.generate(parent)
 ```
 
-Both register with the signal router (`WordSubSpace.languageLayer`) as
+Both register with the signal router (`SymbolicSubSpace.languageLayer`) as
 C-tier reduce ops via the existing host-layer registry path. Both
 inherit `GrammarLayer` butterfly mode (Stage 5) — set
 `butterfly=True, N=N` at construction to enable cross-position cascade.
@@ -938,7 +939,7 @@ access. The information bottleneck for word identity.
 - `get_semantic_row(orth_idx)`: O(1) lookup via `_paired_orth_to_sem` map
   precomputed at insert time.
 - **META taxonomy** (2026-05-27 Stage 8): a separate cross-codebook
-  taxonomy mapping `(ps_row, ss_row) → meta_row`. Originally keyed by
+  taxonomy mapping `(ps_row, ws_row) → meta_row`. Originally keyed by
   signed-int refs (positive=PS, negative=SS); the 2026-05-28 plan
   migrates this to a `.where`-keyed integer-position scheme. META
   entries are populated by `ConceptualSpace._maybe_autobind_meta` at
@@ -978,7 +979,7 @@ Retrieved via Euclidean L2 (per Codebook's metric contract).
 accommodate paired rows (e.g., MM_5M sets `nVectors=131072 = 2 * 65536`).
 
 **Multi-stage SS.** In multi-stage configs, the lexicon mirror is wired
-to **`self.symbolicSpaces[-1]`** (the terminal stage; `model.symbolicSpace`).
+to **`self.wholeSpaces[-1]`** (the terminal stage; `model.wholeSpace`).
 The terminal SS must be sized for paired-row capacity. See
 [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md)
 for the dispatch rationale.
@@ -1029,12 +1030,12 @@ and [Philosophy.md](Philosophy.md).
 ## SyntacticSpace --- retired
 
 The standalone `SyntacticSpace` class has been retired. Grammar /
-parser / derivation-tree machinery now lives on `WordSpace`, which
+parser / derivation-tree machinery now lives on `SymbolicSpace`, which
 attaches a `SyntacticLayer` to `WholeSpace` (the canonical grammar
 host). The binary-derivation behavior previously documented here
-is preserved by `WordSpace.compose`; words are still
+is preserved by `WholeSpace.compose`; words are still
 concepts encoding grammatical rules, and the derivation is still
-stored as word tuples --- just on `WordSpace` rather than on a separate
+stored as word tuples --- just on `WholeSpace` rather than on a separate
 Space.
 
 See [Language.md](Language.md) for grammar and parser dispatch.

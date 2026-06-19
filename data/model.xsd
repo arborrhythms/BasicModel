@@ -17,7 +17,7 @@
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
         <xs:element name="WholeSpace" type="wholeSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
-        <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
+        <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
@@ -175,6 +175,62 @@
            gist/intent. Independent of <mereologyRaise>. Default false ->
            gaussian window + per-slot push (byte-identical). -->
       <xs:element name="serialObjectMeta" type="xs:boolean" minOccurs="0"/>
+      <!-- Truth / Ideas processing (doc/specs/mereological-order-raising.md
+           "Truth / Ideas processing"; Workstreams F+G). When true, a learned
+           relative relation is ROUTED by reducibility (Alec 2026-06-18, "the
+           intuitive and explicit knowings"): a relation whose two ENTITY
+           operands both snap to EXISTING WS codebook rows (no mint) reduces to
+           codes and is stored in the WS META taxonomy (the INTUITIVE knowing);
+           an ineffable / composed-idea relation is stored uncollapsed in the
+           sibling RelativeTruthStore as an (idea1, predicate, idea2) triple
+           (the EXPLICIT knowing) with a scalar trust collapsed from the full
+           tetralemma (t-f in [-1,1]; "inconsistency is not a valid object of
+           knowing"). Off by default -> the legacy always-reduce path
+           (byte-identical). Independent of <mereologyRaise>/<serialObjectMeta>. -->
+      <xs:element name="truthIdeas" type="xs:boolean" minOccurs="0"/>
+      <!-- LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
+           Ideas processing", "Two consolidation questions"; Alec 2026-06-18).
+           When true, the discourse LTM (InterSentenceLayer end-state chain) and
+           the RelativeTruthStore are COMBINED into ONE unified TernaryTruthStore
+           tensor (Layers.TernaryTruthStore): rows (NP1, VP, NP2) of FULL idea
+           vectors + a per-row timestamp + a scalar trust, stored UNSCALED. The
+           store is constructed on SymbolicSubSpace (ltm_store), written at the
+           observe site (every end-state appends a row), retired RelativeTruthStore
+           (relative_store is built ONLY when this gate is OFF), persists via
+           submodule registration (rides the state_dict) and survives Reset
+           (it is an attribute, not in self.layers). reason/verify_relation read
+           it on the content-width slice. Augmentable from an XML <truthSet> at
+           load (provision_ltm). Off by default -> the legacy two-store path
+           (byte-identical). Independent of <truthIdeas> (which gates the
+           reduce-or-describe routing); this gate governs the storage home. -->
+      <xs:element name="ltmConsolidation" type="xs:boolean" minOccurs="0"/>
+      <!-- LTM provisioning (doc/specs/mereological-order-raising.md "Augment the
+           LTM by parsing a TruthSet from XML config"; Alec 2026-06-18). A set of
+           trusted truths appended to the consolidated LTM at model load
+           (provision_ltm), earliest timestamps. Each <truth> carries the text
+           (the 'text' attribute or element content) and a 'trust' value in
+           [-1, 1]; optional 'kind' (partOf | implies | other) tags the relation
+           type. Read only when <ltmConsolidation> is on and an ltm_store exists;
+           otherwise ignored. See <truthIdeas>/<truthCriterion> for the runtime
+           (JSON) truth-ingest path; this is the static, config-time
+           provisioning path. -->
+      <xs:element name="truthSet" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="truth" minOccurs="0" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:simpleContent>
+                  <xs:extension base="xs:string">
+                    <xs:attribute name="text" type="xs:string"/>
+                    <xs:attribute name="trust" type="xs:decimal"/>
+                    <xs:attribute name="kind" type="xs:string"/>
+                  </xs:extension>
+                </xs:simpleContent>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
       <!-- GrammarOpsPass §6c (author sign-off 2026-06-11): the sentence
            protocol. In serial mode every sentence opens with an
            independent PARALLEL prelude of <subsymbolicOrder> pumps
@@ -186,7 +242,7 @@
       <xs:element name="sentenceProtocol" type="xs:boolean" minOccurs="0"/>
       <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
            per-word router-fire gating for serial mode.
-             per-word  = fire wordSubSpace.compose once per word in the
+             per-word  = fire symbolicSpace.compose once per word in the
                          serial per-word loop (intra-predictor routing
                          context); boundary fire OFF.
              boundary  = fire only at the sentence boundary
@@ -597,7 +653,7 @@
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <!-- Inter-sentence ARMA(p, q) next-sentence prediction
            (InterSentenceLayer). The layer's AR/MA orders and hidden
-           dim live under <WordSpace> (armaP/armaQ/armaHiddenDim);
+           dim live under <SymbolicSpace> (armaP/armaQ/armaHiddenDim);
            this scale is the loss weight applied on top of the
            per-batch ARMA MSE. -->
       <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
@@ -920,7 +976,7 @@
       <!-- Stage 8 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
            reentrancy.md §Stage 8): META taxonomy storage placeholder.
            The actual taxonomy graph (parent -> children, child -> parent,
-           and (ps_idx, ss_idx) -> meta_idx) is a runtime structure on
+           and (ps_idx, ws_idx) -> meta_idx) is a runtime structure on
            ``WholeSpace`` (``self.taxonomy``,
            ``self.taxonomy_parent_map``, ``self.meta_pair_to_idx``);
            it serialises through ``vocab_extras`` (the same sidecar that
@@ -951,11 +1007,18 @@
            See readoutEnum. Only consulted when the head is the unquantised
            regression path (nVectors==1 or <codebook>none</codebook>). -->
       <xs:element name="readout" type="readoutEnum" minOccurs="0"/>
+      <!-- lrScale: multiplier on the base learning rate for the OutputSpace
+           (readout) parameters only; they go in their own Adam group at
+           lr*lrScale. Default 1.0 (single group, byte-identical). >1 lets the
+           ill-conditioned, co-adapting regression readout track the upstream
+           features faster so it converges to a crisp solution within the
+           epoch budget. -->
+      <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       WordSpace section — unified container for grammar infrastructure
+       SymbolicSpace section — unified container for grammar infrastructure
        (SyntacticLayers, TruthLayer) and the per-batch inter-sentence
        ARMA(p, q) predictor (InterSentenceLayer). Sentence-level AR
        lives here, not in the within-sentence body — the body is now
@@ -965,7 +1028,7 @@
        (armaP / armaQ / armaHiddenDim); the loss weight lives under
        <architecture><training> as <armaScale>.
        ═══════════════════════════════════════════════════════════════════ -->
-  <xs:complexType name="wordSpaceType">
+  <xs:complexType name="symbolicSpaceType">
     <xs:all>
       <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
@@ -1003,7 +1066,7 @@
       <!-- Number of P->C iterations per word in the per-word stem path. -->
       <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Downward generation: when true, MentalModel.forward() emits a
-           codebook head via WordSpace.reconstruct() and stashes it on
+           codebook head via SymbolicSpace.reconstruct() and stashes it on
            self._predicted_head for downstream (e.g. loss) consumption. -->
       <xs:element name="downwardGeneration" type="xs:boolean" minOccurs="0"/>
       <xs:element name="language" type="languageType" minOccurs="0"/>
@@ -1022,7 +1085,7 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Language section (inside <WordSpace>)
+       Language section (inside <SymbolicSpace>)
        ═══════════════════════════════════════════════════════════════════ -->
   <!-- ``start`` may repeat: multiple ``<start>`` tags define accepted
        unreduced forms / start patterns (see test_grammar_start_rule), so
@@ -1041,7 +1104,7 @@
          tier tags (<P>, <C>, <S>) and structured sections such as
          <compose>/<generate>, OR a bare text filename reference
          (``<grammar>complete.grammar</grammar>``) that
-         ``WordSubSpace.load_from_grammar_file`` resolves under
+         ``SymbolicSubSpace.load_from_grammar_file`` resolves under
          ``data/``. ``mixed="true"`` admits both forms. Language.py
          owns rule parsing. -->
     <xs:sequence>

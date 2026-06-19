@@ -21,7 +21,7 @@ if _BIN not in sys.path:
 
 _PS_SS_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
-    <grammar name="ps_ss_probe">
+    <grammar name="ps_ws_probe">
       <start>S</start>
       <PartSpace>
         <compose>
@@ -68,13 +68,13 @@ def _load_grammar_text(text, monkeypatch, tmp_path):
     return g
 
 
-def test_grammar_loads_ps_and_ss_sections(monkeypatch, tmp_path):
+def test_grammar_loads_ps_and_ws_sections(monkeypatch, tmp_path):
     """PS and SS sections parse into separate, disjoint rule tables."""
     g = _load_grammar_text(_PS_SS_GRAMMAR, monkeypatch, tmp_path)
 
-    # SS section -> the parser's rule table (g.rules / g.ss_rules).
-    ss_methods = {r.method_name for r in g.ss_rules if r.method_name}
-    assert "conjunction" in ss_methods
+    # SS section -> the parser's rule table (g.rules / g.ws_rules).
+    ws_methods = {r.method_name for r in g.ws_rules if r.method_name}
+    assert "conjunction" in ws_methods
 
     # PS section -> a separate ps_rules table, tagged tier 'P'.
     assert len(g.ps_rules) > 0
@@ -84,7 +84,7 @@ def test_grammar_loads_ps_and_ss_sections(monkeypatch, tmp_path):
         [(r.method_name, r.tier) for r in g.ps_rules])
 
     # The two tables are disjoint: no PS rule leaks into the SS table.
-    assert "boundary" not in ss_methods
+    assert "boundary" not in ws_methods
     assert all(r.method_name != "boundary" for r in g.rules)
 
     # Both directions of the PS section land (compose + generate).
@@ -116,7 +116,7 @@ def test_bare_compose_generate_loads_as_symbolic_space(monkeypatch, tmp_path):
     """Backward-compat: a bare <compose>/<generate> file == WholeSpace."""
     g = _load_grammar_text(_BARE_GRAMMAR, monkeypatch, tmp_path)
     assert len(g.ps_rules) == 0
-    ss_methods = {r.method_name for r in g.ss_rules if r.method_name}
-    assert "conjunction" in ss_methods
-    # ss_rules is the same table the existing parser reads.
-    assert list(g.ss_rules) == list(g.rules)
+    ws_methods = {r.method_name for r in g.ws_rules if r.method_name}
+    assert "conjunction" in ws_methods
+    # ws_rules is the same table the existing parser reads.
+    assert list(g.ws_rules) == list(g.rules)

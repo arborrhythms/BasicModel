@@ -30,7 +30,7 @@
 
   </architecture>
 
-  <WordSpace>
+  <SymbolicSpace>
     <language>
       <start>S</start>
       <grammar>
@@ -52,7 +52,7 @@
         <C>P</C>
       </grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): IS, PS, CS share
        the same flat slab. CS terminal is 16*12=192; align IS/PS to

@@ -57,14 +57,14 @@ class TestPsLocalOrthStorage(unittest.TestCase):
 
     def test_paired_row_api_is_retired(self):
         model = _make_plain_model()
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         self.assertFalse(
-            hasattr(ss, "insert_paired_word"),
+            hasattr(ws, "insert_paired_word"),
             "WholeSpace.insert_paired_word was retired (Step 3 of the "
             "2026-06-10 symbolic-iteration plan); the CS-leg symbol "
             "codebook replaces the PS->SS reach-across.")
         self.assertFalse(
-            hasattr(ss, "mark_word_atom"),
+            hasattr(ws, "mark_word_atom"),
             "WholeSpace.mark_word_atom (the autobind fallback) was "
             "retired with the paired-row machinery.")
 
@@ -84,11 +84,11 @@ class TestPsLocalOrthStorage(unittest.TestCase):
             wv._vectors.data_ptr(), wv._local_vectors.data_ptr(),
             "wv._vectors must resolve to the local Parameter.")
 
-    def test_ps_storage_is_separate_from_ss_codebook(self):
+    def test_ps_storage_is_separate_from_ws_codebook(self):
         model = _make_plain_model()
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         wv = model.perceptualSpace.vocabulary.wv
-        W = ss.subspace.what.getW()
+        W = ws.subspace.what.getW()
         if W is None:
             self.skipTest("SS codebook carries no prototype matrix")
         self.assertNotEqual(
@@ -96,11 +96,11 @@ class TestPsLocalOrthStorage(unittest.TestCase):
             "PS lexicon storage and the SS codebook prototype must be "
             "SEPARATE memory (the tie is retired).")
 
-    def test_ss_write_does_not_leak_into_ps_rows(self):
+    def test_ws_write_does_not_leak_into_ps_rows(self):
         model = _make_plain_model()
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         wv = model.perceptualSpace.vocabulary.wv
-        W = ss.subspace.what.getW()
+        W = ws.subspace.what.getW()
         if W is None:
             self.skipTest("SS codebook carries no prototype matrix")
         n = min(int(wv._vectors.shape[0]), int(W.shape[0]))

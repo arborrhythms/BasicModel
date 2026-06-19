@@ -122,6 +122,22 @@ def _parse_input_match_counts(stdout):
     return sum(1 for s in lines if s == "OK"), len(lines)
 
 
+def _parse_output_mse(stdout):
+    """Mean-squared error of the XOR OUTPUT predictions vs labels, from the
+    per-input report lines ``... label=<L> predicted=<P> (OK|MISMATCH)``.
+
+    Returns ``(mse, n)`` -- ``(None, 0)`` when no rows are found. This is the
+    metric the accuracy + reconstruction gates MISS: predictions can round to
+    the right class (4/4 accuracy, reconstruction OK) yet sit near 0.5 (high
+    MSE), as in the pre-lrScale readout-convergence regression (MSE ~0.22)."""
+    pairs = re.findall(
+        r"label=(-?\d+\.\d+)\s+predicted=(-?\d+\.\d+)", stdout)
+    if not pairs:
+        return None, 0
+    se = [(float(p) - float(l)) ** 2 for l, p in pairs]
+    return sum(se) / len(se), len(se)
+
+
 class TestIdempotentCliRuns(unittest.TestCase):
     """``data/idempotent.xml`` is the minimal C-S round-trip config.
 
@@ -211,6 +227,26 @@ class TestXorExactCliReconstruction(unittest.TestCase):
             f"XOR_exact reconstruction: {ok}/{total} inputs match "
             f"(expected >=25%).",
         )
+
+    def test_output_mse_is_crisp(self):
+        # XOR accuracy + reconstruction can both pass while the predictions
+        # sit near 0.5 (mushy). Assert the OUTPUT MSE so a mushy-but-accurate
+        # XOR cannot silently regress again. The crisp basin (OutputSpace
+        # lrScale=0.5 -- the readout trains at half the model LR so it stops
+        # chasing the co-adapting features) gives MSE ~0.004; the prior
+        # readout-convergence regression gave ~0.22.
+        rc, stdout, stderr = _run_cli("data/XOR_exact.xml", timeout=240)
+        self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
+        mse, n = _parse_output_mse(stdout)
+        self.assertIsNotNone(
+            mse, "no 'label=.. predicted=..' report lines found")
+        self.assertEqual(n, 4, f"expected 4 XOR rows, got {n}")
+        self.assertLess(
+            mse, 0.05,
+            f"XOR_exact output MSE={mse:.4f} over {n} rows (expected <0.05; "
+            f"crisp basin ~0.004). Predictions near 0.5 => the readout "
+            f"under-converged (regression of the OutputSpace lrScale=0.5 "
+            f"two-timescale fix).")
 
 
 def _run_xor_grammar_in_process(seed):

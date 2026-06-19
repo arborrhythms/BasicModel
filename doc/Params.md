@@ -43,11 +43,11 @@ sub-elements `<training>` and `<data>` (see below).
 | `ergodic` | bool | `false` | Ergodic exploration: every Layer uses `W_eff = bias * W + temp * noise`. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `symbolicOrder` | int | `0` | Forward-dispatch depth (replaced the `conceptualMode` enum 2026-06-13). `0` = parallel (whole-slab `[B, N, D]` forward; required for the butterfly cascade); `>= 1` = serial (per-word `[B, 1, D]`, loops the modules). Values > 1 plumbed but behave as 1. Default derives from the grammar (1 when `useGrammar != "none"`, else 0); class-level default on `BaseModel` is `0`. See [STM.md](STM.md#2-serial-sequencing). |
-| `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `wordSubSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
+| `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolicSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Independent of `neuralToolUser`. Default off → one ordinary forward (byte-identical). See [Language.md → Soft-superposition route](Language.md). |
 | `exploreTemperature` | decimal | `0.5` | Superposition temperature $t \in [0,1]$ for pass B of `learning`. `0` = the chooser's own (sharp) softmax, `1` = uniform (flat). Route scores are scaled by `1 - t`. |
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [NeuralToolUser.md → MLP TransformChooser](plans/NeuralToolUser.md). |
-| `symbolicComposition` | bool | `false` | Cognitive op (2): at `subsymbolicOrder > 0`, re-feed the prior pass's symbolic carrier (`cs._subspaceForSS`) to PartSpace so Sigma composes higher-order symbols. Default off is byte-identical. See [Architecture.md](Architecture.md). |
+| `symbolicComposition` | bool | `false` | Cognitive op (2): at `subsymbolicOrder > 0`, re-feed the prior pass's symbolic carrier (`cs._subspaceForWS`) to PartSpace so Sigma composes higher-order symbols. Default off is byte-identical. See [Architecture.md](Architecture.md). |
 | `neuralToolUser` | bool | `false` | Legacy hard-parse executor for the grammar's binary reduce stage (`parse_greedy` route + cross-product distributions). **Superseded by the soft-superposition route (`learning`); off the live path.** See [NeuralToolUser.md](plans/NeuralToolUser.md). |
 | `categoryCodebook` | bool | `false` | MetaSymbol participation-category codebook: a small `VectorQuantize` over the live MetaSymbol vectors, learned in perception (E/M in the autobind hook), keying each word's syntactic category to its frequency of participation across operator roles. Default off → no codebook allocated (byte-identical). See [Language.md → Participation Categories](Language.md). |
 | `chooserCategoryContext` | bool | `false` | Phase 2 of `categoryCodebook`: thread the per-slot centroid role vector into `MLPTransformChooser` as syntactic-category context (widens its first `Linear`). Meaningful only with `transformChooser=mlp` + `categoryCodebook=true`. Default off → chooser ignores category (byte-identical). |
@@ -63,7 +63,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `allowExcludedMiddle` | int | `1` | Catuskoti policy: `1` permits NEITHER, `-1` enforces classical LEM. |
 | `allowContradiction` | int | `0` | Catuskoti policy: `0` forbids BOTH (non-contradiction), `1` permits paraconsistent BOTH. |
 | `gateL1Lambda` | float | `0.0` | L1 sparsity penalty on lift / lower gates. `0` disables. |
-| `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Active only when `WordSpace.chartTopK > 0`. |
+| `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Active only when `SymbolicSpace.chartTopK > 0`. |
 | `l1Lambda` | decimal | `0.0` | Architecture-wide L1 penalty hook. Most configs leave this at `0` and use `WholeSpace.l1Lambda` instead. |
 | `discontinuityLambda` | decimal | `0.0` | Architecture-wide discontinuity penalty hook (legacy). |
 | `conceptualWidth` | string | `"tapered"` | Symbol-partition geometry for `subsymbolicOrder > 1`. `tapered` = geometrically narrowing slices; `uniform` = equal-width slices. |
@@ -321,7 +321,7 @@ WholeSpace owns one square invertible
 fold — bridging the C $\leftrightarrow$ S boundary in both directions
 via its exact inverse (the Pi/Sigma swap, rev. 2026-06-09; SS owned a
 SigmaLayer at `self.sigma` before the corrected orientation). Consumers
-use `model.symbolicSpace.pi` directly; the grammar rule binding registers
+use `model.wholeSpace.pi` directly; the grammar rule binding registers
 it under both the `pi` rule name and the legacy `sigma` alias.
 
 ### `<OutputSpace>`
@@ -342,7 +342,7 @@ Maps symbols to final predictions via linear layers.
 
 ---
 
-## `<WordSpace>`
+## `<SymbolicSpace>`
 
 Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 `<architecture>` as a top-level sibling.
@@ -360,7 +360,7 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `chartTopK` | int | `0` | Sparse-MoE rule gating: keep top-K rules per (cell, split). `0` disables. |
 | `chartNoiseEps` | float | `0.0` | Gaussian noise epsilon for `chartTopK` gating. |
 | `iterationsPerWord` | int | `1` | P->C iterations per word in the per-word stem path. |
-| `downwardGeneration` | bool | `false` | Emit a codebook head via `WordSpace.reconstruct()` and stash on `self._predicted_head`. |
+| `downwardGeneration` | bool | `false` | Emit a codebook head via `SymbolicSpace.reconstruct()` and stash on `self._predicted_head`. |
 | `language.interpretation` | float | `0.5` | Soft-interpolation weight between forward and generation directions. |
 
 The `<language><grammar>` block contains tier-scoped rules in

@@ -117,7 +117,7 @@ def test_cap_equivalence_short_sentence():
     m.eval()
 
     stm = m.conceptualSpace.stm
-    ws = stm._word_subspace
+    ss = stm._word_subspace
 
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
     items, _ = next(iter(loader))
@@ -125,15 +125,15 @@ def test_cap_equivalence_short_sentence():
 
     # --- Phase 1: measure N_total using a large cap (no pressure possible)
     LARGE_CAP = 32
-    ws.idea_ensure_capacity(LARGE_CAP)
+    ss.idea_ensure_capacity(LARGE_CAP)
     # Reset to clean state before measurement pass
     m.conceptualSpace.Reset(hard=True)
-    ws._idea_capacity = LARGE_CAP
-    ws._idea_buffer = torch.zeros(
-        int(ws._idea_buffer.shape[0]), LARGE_CAP,
-        int(ws._idea_buffer.shape[2]))
-    ws._idea_max_depth_host = 0
-    ws._idea_depth.zero_()
+    ss._idea_capacity = LARGE_CAP
+    ss._idea_buffer = torch.zeros(
+        int(ss._idea_buffer.shape[0]), LARGE_CAP,
+        int(ss._idea_buffer.shape[2]))
+    ss._idea_max_depth_host = 0
+    ss._idea_depth.zero_()
 
     with torch.no_grad(), warnings.catch_warnings():
         warnings.filterwarnings("ignore")
@@ -148,12 +148,12 @@ def test_cap_equivalence_short_sentence():
     def _reset_to_cap(cap):
         """Hard-reset the STM and set idea-stack capacity to `cap`."""
         m.conceptualSpace.Reset(hard=True)
-        ws._idea_capacity = cap
-        ws._idea_buffer = torch.zeros(
-            int(ws._idea_buffer.shape[0]), cap,
-            int(ws._idea_buffer.shape[2]))
-        ws._idea_max_depth_host = 0
-        ws._idea_depth.zero_()
+        ss._idea_capacity = cap
+        ss._idea_buffer = torch.zeros(
+            int(ss._idea_buffer.shape[0]), cap,
+            int(ss._idea_buffer.shape[2]))
+        ss._idea_max_depth_host = 0
+        ss._idea_depth.zero_()
 
     # cap=N_total: depth-before-push semantics guarantee the last push sees
     # _max_depth_host = N_total - 1 < N_total = cap → no reduce fires.

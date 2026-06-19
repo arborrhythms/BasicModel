@@ -1,42 +1,15 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_20M: PARALLEL MentalModel, dimensional-governance reference config
-       (doc/specs/2026-06-05-dimensional-governance.md).
-
-       SHAPE (2026-06-05 decision): in PARALLEL mode every analyzed space
-       carries the DEEP shape [B, N=8, D=1024] (8 = STM depth, 1024 =
-       content). IS/PS/CS/SS are all 8 x 1024, so every space-to-space
-       handoff is the IDENTITY reshape over the constant content slab
-       nOutput * (nDim - where - when) = 8 * 1024 = 8192. No wide<->deep
-       position collapse (that is the SERIAL sibling MM_5M_grammar, which
-       walks the [B, 1024, 1024] word sequence one word at a time).
-
-       Bridges: PS.Pi and SS.Sigma are <sigmaPi>butterfly</sigmaPi>: a
-       cross-position O(N log N) cascade over the 8192 flat slab, still
-       structurally invertible. (Spec sec.7 names <sigmaPi>full</sigmaPi>,
-       but a dense square LDU over slab 8192 is ~134M params/bridge
-       (2*8192^2); two of them dwarf the ~5M target, so butterfly is used.
-       The full span is exercised by the Task 3 invertibility gate on
-       small slabs.)
-
-       Param budget (~5-6M, dominated by the SS symbol codebook):
-         PS  : <codebook>none</codebook> (choose-1 CONTINUOUS, spec sec.4)
-               + butterfly Pi bridge (~0.2M)
-         CS  : <codebook>none</codebook> (deep hub; no D-vector table)
-         SS  : symbol codebook nVectors * content (the dominant term)
-               + butterfly Sigma bridge (~0.2M)
-       PHASE-1 NOTE: validate_config requires SS.nDim == CS effective
-       content (1024): the CS->SS handoff is a dimensional pass-through
-       (the square butterfly Sigma does not change width). So each codebook
-       entry is concept-width (1024) and the ~5M comes from codebook
-       CARDINALITY (~5000 entries), not 1e6 small 5-dim codes. The spec's
-       wide small-code SS needs the Phase-3 relaxation of that rule. -->
   <architecture>
     <modelType>embedding</modelType>
     <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
          the serial sibling is MM_5M_grammar.xml). -->
     <symbolicOrder>0</symbolicOrder>
+    <!-- subsymbolicOrder reverted 3->1 for a green handoff: sO=3 needs the
+         multi-stage wide<->deep x combine reconciliation (the t>0 WholeSpace
+         emits the wide [1024,8] form, the combine wants deep N=8 -> bind None).
+         See the 2026-06-19 handoff doc; sO=3 is the desired target. -->
     <subsymbolicOrder>1</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position

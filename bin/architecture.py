@@ -7,8 +7,8 @@ the SAME (nWhere=2, nWhen=2) band so the dimensional formula is uniform:
 ``nDim = nWhat + nWhere + nWhen``. The only difference between interior tiers
 is whether the band slots are actively muxed (carry per-event where/when
 values) or ride along as inert padding — the bookkeeping is identical. This
-SUPERSEDES the earlier convention that gave SS/WordSpace ``(0, 0)`` and
-demuxed at the CS->SS boundary (now a no-op identity reshape), which
+SUPERSEDES the earlier convention that gave WS/SymbolicSpace ``(0, 0)`` and
+demuxed at the CS->WS boundary (now a no-op identity reshape), which
 simplifies the constructor chain and makes ``space[i].nOutputDim ==
 space[i+1].nInputDim`` directly comparable for handoff validation.
 
@@ -29,7 +29,7 @@ _CANONICAL_SHAPE = {
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "WordSpace":       (2, 2),
+    "SymbolicSpace":       (2, 2),
 }
 # 2026-06-04: no tier's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any tier may resolve to
@@ -38,7 +38,7 @@ _CANONICAL_SHAPE = {
 # / WholeSpace are full-width INVERTIBLE PASSTHROUGHS (no VQ snap) so the
 # forward<->reverse chain round-trips exactly and the butterfly pi computes
 # XOR with cross-slot reach. Reverts the modality re-architecture's
-# mandatory-PS/SS-codebook constraint.
+# mandatory-PS/WS-codebook constraint.
 MANDATORY_CODEBOOK_TIERS = set()
 
 

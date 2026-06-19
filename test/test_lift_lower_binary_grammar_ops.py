@@ -27,8 +27,8 @@ Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
     ``ConceptualSpace.pi`` from inside the layer -- the substrate
     folds are no longer borrowed by Lift / Lower.
 
-  * Registration with the signal router (``WordSubSpace.languageLayer``):
-    after a WordSubSpace is constructed, LiftLayer and LowerLayer
+  * Registration with the signal router (``SymbolicSubSpace.languageLayer``):
+    after a SymbolicSubSpace is constructed, LiftLayer and LowerLayer
     attach as C-tier reduce ops on the LanguageLayer.
 
 The pre-Stage-4 contract (``tier='S'``, internal ``_sigma`` /
@@ -369,11 +369,11 @@ class TestLiftLowerHasInternalSubstrate(unittest.TestCase):
 
 
 class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
-    """Stage 4 acceptance gate: when a WordSubSpace is constructed,
+    """Stage 4 acceptance gate: when a SymbolicSubSpace is constructed,
     LiftLayer and LowerLayer attach to the C-tier of its
     ``languageLayer`` as binary reduce ops.
 
-    Path: WordSubSpace.__init__ -> ``_wire_signal_router_grammar_ops``
+    Path: SymbolicSubSpace.__init__ -> ``_wire_signal_router_grammar_ops``
     walks ``TheGrammar.rules`` and calls
     ``router.attach_layer_ops(ops=..., rule_ids=..., tier='C')``
     for every binary C-tier rule. The ``ops`` list is wrapped per-op
@@ -382,7 +382,7 @@ class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
     """
 
     def test_lift_and_lower_registered_with_word_subspace_authority(self):
-        """When a WordSubSpace is the chart authority,
+        """When a SymbolicSubSpace is the chart authority,
         ``register_grammar_layer`` adds any newly-built LiftLayer /
         LowerLayer to its roster."""
         import Language
@@ -411,10 +411,10 @@ class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
         # have non-empty rule_names, so both register with the
         # authority.
         self.assertIn(lift, auth.registered,
-                      "LiftLayer must auto-register with the WordSpace "
+                      "LiftLayer must auto-register with the SymbolicSpace "
                       "chart authority (Stage 4 wiring).")
         self.assertIn(lower, auth.registered,
-                      "LowerLayer must auto-register with the WordSpace "
+                      "LowerLayer must auto-register with the SymbolicSpace "
                       "chart authority (Stage 4 wiring).")
 
 

@@ -21,7 +21,7 @@ candidates via MDL-flavored criteria:
 call ``extend_artifact`` if there are candidates.
 
 Migrated from the retired ``symbol_learning`` module to
-``Layers.SymbolLearningLayer`` (2026-05-21 WordSubSpace / STM Layer
+``Layers.SymbolLearningLayer`` (2026-05-21 SymbolicSubSpace / STM Layer
 refactor).
 """
 import sys

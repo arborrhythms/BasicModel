@@ -61,36 +61,36 @@ def _make_model():
     return m
 
 
-def test_ps_to_ss_null_before_binding():
+def test_ps_to_ws_null_before_binding():
     """A first-seen PS terminal emits NULL_SEM (zeros), ungrounded."""
-    ss = _make_model().symbolicSpace
-    vec, pos, grounded = ss.resolve_ps_terminal(4242, promote_threshold=2)
+    ws = _make_model().wholeSpace
+    vec, pos, grounded = ws.resolve_ps_terminal(4242, promote_threshold=2)
     assert grounded is False
     assert pos == -1
     assert torch.allclose(vec, torch.zeros_like(vec))
 
 
-def test_ps_to_ss_binding_after_repetition():
+def test_ps_to_ws_binding_after_repetition():
     """Repeated stable exposure promotes the PS terminal to an SS row."""
-    ss = _make_model().symbolicSpace
+    ws = _make_model().wholeSpace
     pid = 4242
-    _, _, g1 = ss.resolve_ps_terminal(pid, promote_threshold=2)
+    _, _, g1 = ws.resolve_ps_terminal(pid, promote_threshold=2)
     assert g1 is False
-    vec2, pos2, g2 = ss.resolve_ps_terminal(pid, promote_threshold=2)
+    vec2, pos2, g2 = ws.resolve_ps_terminal(pid, promote_threshold=2)
     assert g2 is True and pos2 > 0
     assert float(torch.linalg.vector_norm(vec2)) > 0  # a real SS row
     # Now bound: same position, still grounded.
-    vec3, pos3, g3 = ss.resolve_ps_terminal(pid, promote_threshold=2)
+    vec3, pos3, g3 = ws.resolve_ps_terminal(pid, promote_threshold=2)
     assert g3 is True and pos3 == pos2
     # A different PS terminal is independent (still ungrounded on first sight).
-    _, _, g_other = ss.resolve_ps_terminal(9999, promote_threshold=2)
+    _, _, g_other = ws.resolve_ps_terminal(9999, promote_threshold=2)
     assert g_other is False
 
 
 def test_byte_fallback_terminal_is_never_grounded():
     """An unidentified terminal (ps_id < 0) is never bound."""
-    ss = _make_model().symbolicSpace
+    ws = _make_model().wholeSpace
     for _ in range(5):
-        vec, pos, grounded = ss.resolve_ps_terminal(-1, promote_threshold=2)
+        vec, pos, grounded = ws.resolve_ps_terminal(-1, promote_threshold=2)
         assert grounded is False and pos == -1
         assert torch.allclose(vec, torch.zeros_like(vec))

@@ -118,11 +118,11 @@ class TestConceptualIsBookkeepingCarrier(unittest.TestCase):
 class TestSymbolicOwnsSigma(unittest.TestCase):
     """WholeSpace owns the invertible (butterfly) sigma."""
 
-    def test_ss_owns_invertible_pi(self):
+    def test_ws_owns_invertible_pi(self):
         # Pi/Sigma swap (rev. 2026-06-09): SS owns the analysis fold.
         m = _make_model()
-        for k, ss in enumerate(m.symbolicSpaces):
-            fold = getattr(ss, "pi", None)
+        for k, ws in enumerate(m.wholeSpaces):
+            fold = getattr(ws, "pi", None)
             # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
             self.assertIsInstance(
                 fold, (PiLayer, MeronymicFoldAdapter),
@@ -134,33 +134,33 @@ class TestSymbolicOwnsSigma(unittest.TestCase):
                 f"WholeSpace[{k}].pi must be invertible so the "
                 f"reconstruction reverse can apply pi.reverse exactly.")
             self.assertFalse(
-                hasattr(ss, "sigma"),
+                hasattr(ws, "sigma"),
                 f"WholeSpace[{k}] must NOT own a sigma (Sigma moved "
                 f"to PS -- synthesis).")
 
-    def test_ss_fold_butterfly_wired_from_xml(self):
+    def test_ws_fold_butterfly_wired_from_xml(self):
         # XOR_exact sets <butterfly>true</butterfly> on WholeSpace; the
         # flag must reach the fold constructor (cross-slot reach -- a
         # per-slot square fold cannot combine the two word slots for
         # XOR). N is the flattened content count inputShape[0]*nOutputDim.
         m = _make_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged. Under the adapter the cascade is replaced by the
         # per-slot membership fold; the cross-slot SIZING contract
         # survives as fold.N (the construction-time flat total).
-        if isinstance(ss.pi, MeronymicFoldAdapter):
+        if isinstance(ws.pi, MeronymicFoldAdapter):
             self.assertEqual(
-                int(ss.pi.N),
-                int(ss.inputShape[0]) * int(ss.nOutputDim),
+                int(ws.pi.N),
+                int(ws.inputShape[0]) * int(ws.nOutputDim),
                 "adapter must record the legacy flat total as N")
         else:
             self.assertTrue(
-                getattr(ss.pi, "butterfly", False),
+                getattr(ws.pi, "butterfly", False),
                 "WholeSpace.<butterfly>true</...> must wire a butterfly "
                 "cascade into WholeSpace.pi.")
         self.assertEqual(
-            int(ss.butterflyN),
-            int(ss.inputShape[0]) * int(ss.nOutputDim),
+            int(ws.butterflyN),
+            int(ws.inputShape[0]) * int(ws.nOutputDim),
             "SS fold butterfly N must be inputShape[0] * nOutputDim "
             "(flattened content element count).")
 
@@ -174,15 +174,15 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
         # (the parallel carrier advance moved into the ConceptualCombine on
         # the full muxed event). The invariant it guarded -- the SS fold is
         # exactly invertible, the basis of the reconstruction round-trip --
-        # is now asserted directly on ``ss.pi`` (the fold post Pi/Sigma
+        # is now asserted directly on ``ws.pi`` (the fold post Pi/Sigma
         # swap, rev. 2026-06-09).
         m = _make_model()
-        ss = m.symbolicSpace
-        fold = getattr(ss, "pi", None)
+        ws = m.wholeSpace
+        fold = getattr(ws, "pi", None)
         self.assertIsNotNone(
             fold, "WholeSpace must own a pi to round-trip the carrier.")
-        N = int(ss.inputShape[0])
-        D = int(ss.nOutputDim)            # content width the fold acts on
+        N = int(ws.inputShape[0])
+        D = int(ws.nOutputDim)            # content width the fold acts on
         torch.manual_seed(0)
         # Keep values inside the atanh domain so the nonlinear fold
         # round-trips to LDU precision.
@@ -193,7 +193,7 @@ class TestSymbolicSigmaStepRoundtrips(unittest.TestCase):
         err = (ev - rec).abs().max().item()
         self.assertLess(
             err, 1e-3,
-            f"ss.pi forward->reverse must round-trip the carrier to LDU "
+            f"ws.pi forward->reverse must round-trip the carrier to LDU "
             f"precision; got max abs error {err:g}.")
 
 

@@ -1,5 +1,5 @@
 """Tests for the STM substrate properties (after the 2026-05-21
-WordSubSpace/STM Layer refactor).
+SymbolicSubSpace/STM Layer refactor).
 
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
 §Phase 2 deferred — STM parity work, step 1 ("Fix the substrate
@@ -8,10 +8,10 @@ before adding features"):
   * The STM driver is an ``nn.Module`` (now via ``ShortTermMemory``,
     a ``Layer``) so its rule scorer's parameters register through the
     standard ``parameters()`` walk.
-  * The typed STM stack is part of an ``nn.Module`` (now WordSubSpace
+  * The typed STM stack is part of an ``nn.Module`` (now SymbolicSubSpace
     itself, inherited from SubSpace) with the parallel tensors
     registered as buffers so ``.to(device)`` moves them together.
-  * ``category_embedding`` parameters land in ``WordSpace.params`` (the
+  * ``category_embedding`` parameters land in ``SymbolicSpace.params`` (the
     manual optimizer-feed list, not just ``parameters()``).
 """
 import os
@@ -59,7 +59,7 @@ def test_stm_driver_parameters_include_scorer_params():
 
 
 def test_typed_stack_is_nn_module():
-    """The typed STM stack lives on WordSubSpace, an ``nn.Module``, so
+    """The typed STM stack lives on SymbolicSubSpace, an ``nn.Module``, so
     ``.to(device)`` moves all parallel tensors together."""
     ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     assert isinstance(ts, nn.Module)
@@ -67,7 +67,7 @@ def test_typed_stack_is_nn_module():
 
 def test_typed_stack_tensors_are_registered_buffers():
     """``_buffer`` / ``_category`` / ``_order`` / ``_ref_id`` /
-    ``_depth`` are registered as buffers on the WordSubSpace so
+    ``_depth`` are registered as buffers on the SymbolicSubSpace so
     ``.to(device)`` and ``state_dict`` see them as a single module."""
     ts = make_typed_stack(batch=1, max_depth=4, dim=4)
     buffer_names = {n for n, _ in ts.named_buffers()}
@@ -88,13 +88,13 @@ def test_typed_stack_to_moves_all_tensors():
 
 
 def test_word_space_params_include_category_embedding():
-    """``WordSpace.params`` contains the ``category_embedding`` weight
+    """``SymbolicSpace.params`` contains the ``category_embedding`` weight
     so the optimizer-feed list (used by ``getParameters``) reflects
     every gradient-flowing tensor."""
     from test_partition_pos_codebook import _make_word_space
-    ws = _make_word_space()
-    embed_param = ws.category_embedding.weight
-    param_ids = {id(p) for p in ws.params}
+    ss = _make_word_space()
+    embed_param = ss.category_embedding.weight
+    param_ids = {id(p) for p in ss.params}
     assert id(embed_param) in param_ids
 
 

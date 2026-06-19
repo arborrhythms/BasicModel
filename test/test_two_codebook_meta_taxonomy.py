@@ -6,15 +6,15 @@ taxonomy refactor (doc/plans/2026-05-28-where-keyed-taxonomy.md):
   * ``insert_percept(canonical_bytes) -> int (position)`` delegates to
     ``PartSpace.percept_store`` and binds a position.
   * ``insert_symbol(init_vec=None) -> int (position)`` allocates a new
-    SS.codebook row + position; tagged ``"ss"`` in ``_pos_kind``.
-  * ``insert_meta(ps_pos, ss_pos, fused_vec=None) -> int (position)``
-    allocates a META node binding ``(ps_pos, ss_pos)``; idempotent on
+    SS.codebook row + position; tagged ``"ws"`` in ``_pos_kind``.
+  * ``insert_meta(ps_pos, ws_pos, fused_vec=None) -> int (position)``
+    allocates a META node binding ``(ps_pos, ws_pos)``; idempotent on
     the pair (subsequent calls return the same META position and
     EMA-update the stored fused vec). Tagged ``"meta"`` in
     ``_pos_kind``.
   * ``taxonomy``, ``taxonomy_parent`` (dicts), ``taxonomy_children``,
     ``is_meta`` helpers (positive-int keys / values).
-  * ``_pos_kind[pos]`` / ``_{ps,ss}_pos_to_row`` lookup tables resolve
+  * ``_pos_kind[pos]`` / ``_{ps,ws}_pos_to_row`` lookup tables resolve
     positions back to their underlying codebook rows.
   * Reverse decode: terminal CS state -> SS nearest match -> walk META
     taxonomy -> PS percept_id -> ``inverse_table`` -> canonical bytes.
@@ -67,9 +67,9 @@ def _make_radix_model():
 # ---------------------------------------------------------------------------
 
 
-def _ss_row_from_pos(ss, pos):
-    """``pos`` -> SS.codebook row index via ``WholeSpace._ss_pos_to_row``."""
-    row = ss._ss_pos_to_row.get(int(pos))
+def _ws_row_from_pos(ws, pos):
+    """``pos`` -> SS.codebook row index via ``WholeSpace._ws_pos_to_row``."""
+    row = ws._ws_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
             f"position {pos} has no SS-side row binding; expected an "
@@ -77,9 +77,9 @@ def _ss_row_from_pos(ss, pos):
     return int(row)
 
 
-def _ps_row_from_pos(ss, pos):
+def _ps_row_from_pos(ws, pos):
     """``pos`` -> PerceptStore row index via ``WholeSpace._ps_pos_to_row``."""
-    row = ss._ps_pos_to_row.get(int(pos))
+    row = ws._ps_pos_to_row.get(int(pos))
     if row is None:
         raise AssertionError(
             f"position {pos} has no PS-side row binding; expected a "
@@ -97,27 +97,27 @@ class TestInsertPercept(unittest.TestCase):
 
     def test_insert_percept_returns_positive_idx_and_inserts(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # PerceptStore starts empty in a freshly built model
         ps = m.perceptualSpace.percept_store
         self.assertIsNotNone(ps,
                              "MM_xor radix-mode model must have a "
                              "percept_store on PartSpace")
         starting_size = len(ps)
-        pos = ss.insert_percept(b"hello")
+        pos = ws.insert_percept(b"hello")
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
                            f"insert_percept must return a positive position; "
                            f"got {pos}")
-        self.assertEqual(ss._pos_kind.get(pos), "ps",
+        self.assertEqual(ws._pos_kind.get(pos), "ps",
                          "PS position must be tagged 'ps' in _pos_kind")
-        ps_row = _ps_row_from_pos(ss, pos)
+        ps_row = _ps_row_from_pos(ws, pos)
         self.assertEqual(ps_row, starting_size,
                          "the new percept id should be the next slot")
         self.assertEqual(ps.bytes_for(ps_row), b"hello",
                          "inverse_table lookup must match insertion")
         # Repeat insert of the same canonical bytes returns the same position.
-        again = ss.insert_percept(b"hello")
+        again = ws.insert_percept(b"hello")
         self.assertEqual(again, pos,
                          "re-inserting same bytes must return the same position")
 
@@ -127,33 +127,33 @@ class TestInsertSymbol(unittest.TestCase):
 
     def test_insert_symbol_returns_positive_position_and_writes_row(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        cb = ss.subspace.what
+        ws = m.wholeSpace
+        cb = ws.subspace.what
         W_before = cb.getW().detach().clone()
         # Use a custom init vector so the test can check exact write.
-        init_vec = torch.zeros(int(ss.nDim))
+        init_vec = torch.zeros(int(ws.nDim))
         init_vec[0] = 0.7
         init_vec[1] = -0.3
-        pos = ss.insert_symbol(init_vec=init_vec)
+        pos = ws.insert_symbol(init_vec=init_vec)
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
                            f"insert_symbol must return a positive position; "
                            f"got {pos}")
-        self.assertEqual(ss._pos_kind.get(pos), "ss",
-                         "fresh SS symbol must be tagged 'ss' in _pos_kind")
-        ss_row = _ss_row_from_pos(ss, pos)
-        self.assertGreaterEqual(ss_row, 0)
-        self.assertLess(ss_row, cb.nVectors)
+        self.assertEqual(ws._pos_kind.get(pos), "ws",
+                         "fresh SS symbol must be tagged 'ws' in _pos_kind")
+        ws_row = _ws_row_from_pos(ws, pos)
+        self.assertGreaterEqual(ws_row, 0)
+        self.assertLess(ws_row, cb.nVectors)
         W_after = cb.getW().detach()
         # Compare on the codebook's dtype/device.
         expected = init_vec.to(device=W_after.device, dtype=W_after.dtype)
         self.assertTrue(
-            torch.allclose(W_after[ss_row], expected, atol=1e-5),
-            f"SS row {ss_row} should match init_vec; got "
-            f"{W_after[ss_row].tolist()} vs {expected.tolist()}")
+            torch.allclose(W_after[ws_row], expected, atol=1e-5),
+            f"SS row {ws_row} should match init_vec; got "
+            f"{W_after[ws_row].tolist()} vs {expected.tolist()}")
         # Other pre-existing rows untouched.
         for r in range(min(W_before.shape[0], W_after.shape[0])):
-            if r == ss_row:
+            if r == ws_row:
                 continue
             self.assertTrue(
                 torch.allclose(W_before[r], W_after[r], atol=1e-6),
@@ -162,65 +162,65 @@ class TestInsertSymbol(unittest.TestCase):
     def test_insert_symbol_default_init_random(self):
         """init_vec=None falls back to a random-ish init."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pos_a = ss.insert_symbol()
-        pos_b = ss.insert_symbol()
+        ws = m.wholeSpace
+        pos_a = ws.insert_symbol()
+        pos_b = ws.insert_symbol()
         self.assertNotEqual(pos_a, pos_b,
                             "Distinct insert_symbol calls must return "
                             "distinct positions")
 
 
 class TestInsertMeta(unittest.TestCase):
-    """``insert_meta(ps_idx, ss_idx, fused_vec)`` allocates a META node."""
+    """``insert_meta(ps_idx, ws_idx, fused_vec)`` allocates a META node."""
 
     def test_insert_meta_basic_creates_taxonomy_entry(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        ps_pos = ss.insert_percept(b"meta_a")
-        ss_pos = ss.insert_symbol()
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"meta_a")
+        ws_pos = ws.insert_symbol()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
         self.assertGreater(meta_pos, 0,
                            f"insert_meta must return a positive position; "
                            f"got {meta_pos}")
-        self.assertEqual(ss._pos_kind.get(meta_pos), "meta",
+        self.assertEqual(ws._pos_kind.get(meta_pos), "meta",
                          "META position must be tagged 'meta' in _pos_kind")
-        # taxonomy_children: meta -> [ps, ss]
-        children = ss.taxonomy_children(meta_pos)
-        self.assertEqual(set(children), {ps_pos, ss_pos},
-                         f"META node children should be {{ps_pos, ss_pos}}; "
+        # taxonomy_children: meta -> [ps, ws]
+        children = ws.taxonomy_children(meta_pos)
+        self.assertEqual(set(children), {ps_pos, ws_pos},
+                         f"META node children should be {{ps_pos, ws_pos}}; "
                          f"got {children!r}")
-        # taxonomy_parent: ps -> meta, ss -> meta
-        self.assertEqual(ss.taxonomy_parent(ps_pos), meta_pos)
-        self.assertEqual(ss.taxonomy_parent(ss_pos), meta_pos)
+        # taxonomy_parent: ps -> meta, ws -> meta
+        self.assertEqual(ws.taxonomy_parent(ps_pos), meta_pos)
+        self.assertEqual(ws.taxonomy_parent(ws_pos), meta_pos)
         # is_meta predicate
-        self.assertTrue(ss.is_meta(meta_pos),
+        self.assertTrue(ws.is_meta(meta_pos),
                         "is_meta must return True for a META node")
-        self.assertFalse(ss.is_meta(ps_pos),
+        self.assertFalse(ws.is_meta(ps_pos),
                          "is_meta must return False for a PS position")
-        self.assertFalse(ss.is_meta(ss_pos),
+        self.assertFalse(ws.is_meta(ws_pos),
                          "is_meta must return False for a plain SS position")
 
     def test_insert_meta_default_fused_vec_is_average(self):
         """When fused_vec is None, the META row defaults to the average of
         the PS-row vector and SS-row vector for the bound positions."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps = m.perceptualSpace.percept_store
-        ps_pos = ss.insert_percept(b"meta_b")
-        ps_row = _ps_row_from_pos(ss, ps_pos)
+        ps_pos = ws.insert_percept(b"meta_b")
+        ps_row = _ps_row_from_pos(ws, ps_pos)
         # Pin PS row to a known value so we can predict the average.
         with torch.no_grad():
             ps.codebook.data[ps_row, :].zero_()
             ps.codebook.data[ps_row, 0] = 1.0
-        sym_init = torch.zeros(int(ss.nDim))
+        sym_init = torch.zeros(int(ws.nDim))
         sym_init[1] = 1.0
-        ss_pos = ss.insert_symbol(init_vec=sym_init)
-        ss_row_of_input = _ss_row_from_pos(ss, ss_pos)
+        ws_pos = ws.insert_symbol(init_vec=sym_init)
+        ws_row_of_input = _ws_row_from_pos(ws, ws_pos)
 
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
-        meta_row = _ss_row_from_pos(ss, meta_pos)
-        W = ss.subspace.what.getW()
-        expected = (ps.codebook[ps_row] + W[ss_row_of_input]) / 2.0
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
+        meta_row = _ws_row_from_pos(ws, meta_pos)
+        W = ws.subspace.what.getW()
+        expected = (ps.codebook[ps_row] + W[ws_row_of_input]) / 2.0
         actual = W[meta_row]
         # Tolerance handles device/dtype variation.
         self.assertTrue(
@@ -232,34 +232,34 @@ class TestInsertMeta(unittest.TestCase):
 
     def test_insert_meta_is_idempotent_with_ema_update(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        ps_pos = ss.insert_percept(b"meta_c")
-        ss_pos = ss.insert_symbol()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"meta_c")
+        ws_pos = ws.insert_symbol()
         # First insert with an explicit fused_vec.
-        fused1 = torch.zeros(int(ss.nDim))
+        fused1 = torch.zeros(int(ws.nDim))
         fused1[0] = 1.0
-        meta_pos_1 = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused1)
-        meta_row = _ss_row_from_pos(ss, meta_pos_1)
-        W = ss.subspace.what.getW()
+        meta_pos_1 = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused1)
+        meta_row = _ws_row_from_pos(ws, meta_pos_1)
+        W = ws.subspace.what.getW()
         first_stored = W[meta_row].detach().clone()
-        # Second call with the same (ps_pos, ss_pos) MUST return the same
+        # Second call with the same (ps_pos, ws_pos) MUST return the same
         # META position AND ema-update the stored vec.
-        fused2 = torch.zeros(int(ss.nDim))
+        fused2 = torch.zeros(int(ws.nDim))
         fused2[1] = 1.0
-        meta_pos_2 = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused2)
+        meta_pos_2 = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused2)
         self.assertEqual(meta_pos_1, meta_pos_2,
-                         "insert_meta on the same (ps_pos, ss_pos) pair "
+                         "insert_meta on the same (ps_pos, ws_pos) pair "
                          "must return the same meta position")
         # New stored vec is somewhere between first and fused2 (EMA).
-        second_stored = ss.subspace.what.getW()[meta_row].detach()
+        second_stored = ws.subspace.what.getW()[meta_row].detach()
         self.assertFalse(
             torch.allclose(second_stored, first_stored, atol=1e-6),
             "Second insert_meta call should EMA-update the stored vec")
         # Children list AND parent map must remain consistent.
-        self.assertEqual(set(ss.taxonomy_children(meta_pos_1)),
-                         {ps_pos, ss_pos})
-        self.assertEqual(ss.taxonomy_parent(ps_pos), meta_pos_1)
-        self.assertEqual(ss.taxonomy_parent(ss_pos), meta_pos_1)
+        self.assertEqual(set(ws.taxonomy_children(meta_pos_1)),
+                         {ps_pos, ws_pos})
+        self.assertEqual(ws.taxonomy_parent(ps_pos), meta_pos_1)
+        self.assertEqual(ws.taxonomy_parent(ws_pos), meta_pos_1)
 
 
 class TestReverseDecodeStructural(unittest.TestCase):
@@ -275,7 +275,7 @@ class TestReverseDecodeStructural(unittest.TestCase):
 
     def test_reverse_decode_walks_meta_taxonomy_to_bytes(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps = m.perceptualSpace.percept_store
         # Insert three (word, symbol, meta) bundles. Pin the META rows
         # so we can synthesize a terminal CS state that is closest to
@@ -283,17 +283,17 @@ class TestReverseDecodeStructural(unittest.TestCase):
         words = [b"alpha", b"beta", b"gamma"]
         meta_idxs = []
         for w in words:
-            pid = ss.insert_percept(w)
-            sid = ss.insert_symbol()
-            mid = ss.insert_meta(pid, sid)
+            pid = ws.insert_percept(w)
+            sid = ws.insert_symbol()
+            mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin the META rows to deterministic, well-separated vectors so
         # nearest-neighbour search is unambiguous.
-        cb = ss.subspace.what
-        D = int(ss.nDim)
+        cb = ws.subspace.what
+        D = int(ws.nDim)
         pinned = {}
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_pos(ss,mid)
+            row = _ws_row_from_pos(ws,mid)
             vec = torch.zeros(D, device=cb.getW().device, dtype=cb.getW().dtype)
             vec[i] = 1.0
             with torch.no_grad():
@@ -329,21 +329,21 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
         surface bytes.
         """
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         ps = m.perceptualSpace.percept_store
         words = [b"hello", b"world", b"foo"]
         meta_idxs = []
         for w in words:
-            pid = ss.insert_percept(w)
-            sid = ss.insert_symbol()
-            mid = ss.insert_meta(pid, sid)
+            pid = ws.insert_percept(w)
+            sid = ws.insert_symbol()
+            mid = ws.insert_meta(pid, sid)
             meta_idxs.append(mid)
         # Pin META rows to deterministic vectors.
-        cb = ss.subspace.what
+        cb = ws.subspace.what
         W = cb.getW()
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_pos(ss,mid)
+            row = _ws_row_from_pos(ws,mid)
             vec = torch.zeros(D, device=W.device, dtype=W.dtype)
             vec[i] = 1.0
             with torch.no_grad():
@@ -353,7 +353,7 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
         n_slots = len(words)
         recon = torch.zeros(1, n_slots, D, device=W.device, dtype=W.dtype)
         for i, mid in enumerate(meta_idxs):
-            row = _ss_row_from_pos(ss,mid)
+            row = _ws_row_from_pos(ws,mid)
             recon[0, i, :] = W[row].detach()
         # Originals only used for the per-row token-count clip; for the
         # decode call it's a single sentence with N tokens.
@@ -375,42 +375,42 @@ class TestStructuralReverseDecodeIntegration(unittest.TestCase):
 
 
 class TestPersistenceRoundtrip(unittest.TestCase):
-    """The taxonomy and parent dicts and the (ps,ss) -> meta lookup must
+    """The taxonomy and parent dicts and the (ps,ws) -> meta lookup must
     survive a ``vocab_extras`` save/load cycle.
     """
 
     def test_taxonomy_survives_vocab_extras_roundtrip(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Insert a few META nodes.
-        pid_a = ss.insert_percept(b"persist_a")
-        pid_b = ss.insert_percept(b"persist_b")
-        sid_a = ss.insert_symbol()
-        sid_b = ss.insert_symbol()
-        mid_a = ss.insert_meta(pid_a, sid_a)
-        mid_b = ss.insert_meta(pid_b, sid_b)
+        pid_a = ws.insert_percept(b"persist_a")
+        pid_b = ws.insert_percept(b"persist_b")
+        sid_a = ws.insert_symbol()
+        sid_b = ws.insert_symbol()
+        mid_a = ws.insert_meta(pid_a, sid_a)
+        mid_b = ws.insert_meta(pid_b, sid_b)
         # Dump.
-        extras = ss.vocab_extras()
+        extras = ws.vocab_extras()
         self.assertIn("taxonomy", extras)
         self.assertIn("taxonomy_parent", extras)
         self.assertIn("meta_pair_to_idx", extras)
         # Fresh WholeSpace, load extras.
         from Spaces import WholeSpace
         ss2 = WholeSpace(
-            list(ss.inputShape), list(ss.spaceShape), list(ss.outputShape))
+            list(ws.inputShape), list(ws.spaceShape), list(ws.outputShape))
         # Grow ss2's codebook to match capacity (needed if grow_to had to
         # extend the original).
         cb2 = ss2.subspace.what
-        cb1 = ss.subspace.what
+        cb1 = ws.subspace.what
         if cb2.nVectors < cb1.nVectors:
             cb2.grow_to(int(cb1.nVectors))
         # Restore.
         ss2.load_vocab_extras(extras)
         # taxonomy / taxonomy_parent / meta_pair_to_idx must match.
         self.assertEqual(ss2.taxonomy_children(mid_a),
-                         ss.taxonomy_children(mid_a))
+                         ws.taxonomy_children(mid_a))
         self.assertEqual(ss2.taxonomy_children(mid_b),
-                         ss.taxonomy_children(mid_b))
+                         ws.taxonomy_children(mid_b))
         self.assertEqual(ss2.taxonomy_parent(pid_a), mid_a)
         self.assertEqual(ss2.taxonomy_parent(sid_a), mid_a)
         self.assertEqual(ss2.taxonomy_parent(pid_b), mid_b)
@@ -419,7 +419,7 @@ class TestPersistenceRoundtrip(unittest.TestCase):
         # serialization bug (e.g., lost negative-number parse on
         # the stringified tuple keys) that would otherwise leave
         # the dict shaped right but mis-keyed.
-        self.assertEqual(ss2.meta_pair_to_idx, ss.meta_pair_to_idx)
+        self.assertEqual(ss2.meta_pair_to_idx, ws.meta_pair_to_idx)
         # Re-insertion proves the cache was restored correctly:
         # insert_meta on an existing pair must return the SAME
         # meta idx via the idempotency hit, not allocate a new
@@ -445,13 +445,13 @@ class TestReverseDecodeGuards(unittest.TestCase):
 
     def test_reverse_decode_raises_on_nan_input(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Ensure W has at least one row so the NaN check is reached
         # before the empty-codebook short-circuit.
-        _pid = ss.insert_percept(b"x")
-        _sid = ss.insert_symbol()
-        _mid = ss.insert_meta(_pid, _sid)
-        D = int(ss.nDim)
+        _pid = ws.insert_percept(b"x")
+        _sid = ws.insert_symbol()
+        _mid = ws.insert_meta(_pid, _sid)
+        D = int(ws.nDim)
         vec = torch.full((D,), float("nan"))
         with self.assertRaises(RuntimeError) as ctx:
             m._reverse_decode_one(vec)
@@ -459,17 +459,17 @@ class TestReverseDecodeGuards(unittest.TestCase):
 
     def test_reverse_decode_raises_on_inf_input(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        _pid = ss.insert_percept(b"y")
-        _sid = ss.insert_symbol()
-        _mid = ss.insert_meta(_pid, _sid)
-        D = int(ss.nDim)
+        ws = m.wholeSpace
+        _pid = ws.insert_percept(b"y")
+        _sid = ws.insert_symbol()
+        _mid = ws.insert_meta(_pid, _sid)
+        D = int(ws.nDim)
         vec = torch.zeros(D)
         vec[0] = float("inf")
         with self.assertRaises(RuntimeError):
             m._reverse_decode_one(vec)
 
-    def test_reverse_decode_empty_ss_codebook_returns_empty_bytes(self):
+    def test_reverse_decode_empty_ws_codebook_returns_empty_bytes(self):
         """[0, D]-shape SS codebook -> b"", not a crash.
 
         Monkeypatches ``cb.getW`` on the SS codebook instance so the
@@ -477,8 +477,8 @@ class TestReverseDecodeGuards(unittest.TestCase):
         out of the (torch.nn.Module) subspace.
         """
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        cb = ss.subspace.what
+        ws = m.wholeSpace
+        cb = ws.subspace.what
         W = cb.getW()
         D = int(W.shape[1])
         empty_W = torch.empty(0, D, device=W.device, dtype=W.dtype)
@@ -504,62 +504,62 @@ class TestInsertMetaGuards(unittest.TestCase):
 
     def test_insert_meta_rejects_negative_ema(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pid = ss.insert_percept(b"neg_ema")
-        sid = ss.insert_symbol()
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"neg_ema")
+        sid = ws.insert_symbol()
         # First insert with valid args, so the second call hits the
         # EMA-update branch.
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         v = torch.zeros(D)
-        ss.insert_meta(pid, sid, fused_vec=v)
+        ws.insert_meta(pid, sid, fused_vec=v)
         with self.assertRaises(ValueError) as ctx:
-            ss.insert_meta(pid, sid, fused_vec=v, ema=-0.1)
+            ws.insert_meta(pid, sid, fused_vec=v, ema=-0.1)
         self.assertIn("ema", str(ctx.exception).lower())
 
     def test_insert_meta_rejects_ema_above_one(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pid = ss.insert_percept(b"big_ema")
-        sid = ss.insert_symbol()
-        D = int(ss.nDim)
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"big_ema")
+        sid = ws.insert_symbol()
+        D = int(ws.nDim)
         v = torch.zeros(D)
-        ss.insert_meta(pid, sid, fused_vec=v)
+        ws.insert_meta(pid, sid, fused_vec=v)
         with self.assertRaises(ValueError):
-            ss.insert_meta(pid, sid, fused_vec=v, ema=1.5)
+            ws.insert_meta(pid, sid, fused_vec=v, ema=1.5)
 
     def test_insert_meta_rejects_nan_fused_vec_on_first_insert(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pid = ss.insert_percept(b"nan_first")
-        sid = ss.insert_symbol()
-        D = int(ss.nDim)
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"nan_first")
+        sid = ws.insert_symbol()
+        D = int(ws.nDim)
         bad = torch.full((D,), float("nan"))
         with self.assertRaises(RuntimeError) as ctx:
-            ss.insert_meta(pid, sid, fused_vec=bad)
+            ws.insert_meta(pid, sid, fused_vec=bad)
         self.assertIn("NaN/Inf", str(ctx.exception))
 
     def test_insert_meta_rejects_inf_fused_vec_on_first_insert(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pid = ss.insert_percept(b"inf_first")
-        sid = ss.insert_symbol()
-        D = int(ss.nDim)
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"inf_first")
+        sid = ws.insert_symbol()
+        D = int(ws.nDim)
         bad = torch.zeros(D)
         bad[0] = float("inf")
         with self.assertRaises(RuntimeError):
-            ss.insert_meta(pid, sid, fused_vec=bad)
+            ws.insert_meta(pid, sid, fused_vec=bad)
 
     def test_insert_meta_rejects_nan_fused_vec_on_ema_update(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pid = ss.insert_percept(b"nan_update")
-        sid = ss.insert_symbol()
-        D = int(ss.nDim)
+        ws = m.wholeSpace
+        pid = ws.insert_percept(b"nan_update")
+        sid = ws.insert_symbol()
+        D = int(ws.nDim)
         good = torch.zeros(D)
-        ss.insert_meta(pid, sid, fused_vec=good)
+        ws.insert_meta(pid, sid, fused_vec=good)
         bad = torch.full((D,), float("nan"))
         with self.assertRaises(RuntimeError) as ctx:
-            ss.insert_meta(pid, sid, fused_vec=bad, ema=0.5)
+            ws.insert_meta(pid, sid, fused_vec=bad, ema=0.5)
         self.assertIn("NaN/Inf", str(ctx.exception))
 
 

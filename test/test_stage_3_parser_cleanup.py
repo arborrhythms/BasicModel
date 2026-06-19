@@ -5,7 +5,7 @@ Plan: doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md Stage 3.
 Acceptance gates:
   * ``Chart`` class no longer exists in ``bin/Language.py`` (importing
     ``Language.Chart`` raises ``AttributeError``).
-  * ``WordSubSpace`` (the WordSpace carrier) installs ``languageLayer``
+  * ``SymbolicSubSpace`` (the SymbolicSpace carrier) installs ``languageLayer``
     as a direct ``LanguageLayer`` instance (no chart indirection).
   * ``Grammar.rule_probability`` returns floats in [0, 1] for both
     dormant defaults and learned overrides; ``_fired_bodies`` single-
@@ -57,12 +57,12 @@ def test_chart_inside_helpers_gone():
         )
 
 
-# --- Gate 2: WordSpace has self.languageLayer ---------------------------
+# --- Gate 2: SymbolicSpace has self.languageLayer ---------------------------
 
 def _bare_word_subspace_with_signal_router():
-    """Construct a minimal WordSubSpace-like with a LanguageLayer attached.
+    """Construct a minimal SymbolicSubSpace-like with a LanguageLayer attached.
 
-    Stage 3 wires ``self.languageLayer`` directly on WordSubSpace (no
+    Stage 3 wires ``self.languageLayer`` directly on SymbolicSubSpace (no
     Chart indirection). This test verifies the attribute exists.
     """
     from Language import LanguageLayer
@@ -72,17 +72,17 @@ def _bare_word_subspace_with_signal_router():
         max_depth=3, temperature=1.0,
     )
     # Bare object with the attribute, mirroring the expected post-Stage-3
-    # WordSubSpace surface.
+    # SymbolicSubSpace surface.
     class _FakeWS:
         languageLayer = layer
     return _FakeWS()
 
 
 def test_word_subspace_has_language_layer_attribute():
-    ws = _bare_word_subspace_with_signal_router()
+    ss = _bare_word_subspace_with_signal_router()
     from Language import LanguageLayer
-    assert isinstance(ws.languageLayer, LanguageLayer), (
-        "WordSpace must expose self.languageLayer as a LanguageLayer "
+    assert isinstance(ss.languageLayer, LanguageLayer), (
+        "SymbolicSpace must expose self.languageLayer as a LanguageLayer "
         "instance (Stage 3 promotion)."
     )
 
@@ -168,7 +168,7 @@ def test_binary_tiling_viterbi_callable():
 def test_retired_xml_knobs_raise_on_load(knob):
     """Legacy configs that still set retired knobs must error loudly.
 
-    The check fires when WordSubSpace is built from a config containing
+    The check fires when SymbolicSubSpace is built from a config containing
     any of the retired ``<parserBackend>`` / ``<routerKind>`` /
     ``<chartTau>`` / ``<chartTopK>`` / ``<chartNoiseEps>`` knobs.
     """
@@ -177,7 +177,7 @@ def test_retired_xml_knobs_raise_on_load(knob):
     saved = dict(TheXMLConfig._data)
     try:
         TheXMLConfig._data.clear()
-        TheXMLConfig._data.setdefault("WordSpace", {})[knob] = "1.0"
+        TheXMLConfig._data.setdefault("SymbolicSpace", {})[knob] = "1.0"
         # Importing helpers from Language so the loud check is in scope.
         import Language
         fn = getattr(Language, "_assert_retired_chart_knobs_absent", None)

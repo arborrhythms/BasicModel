@@ -62,7 +62,7 @@ RECON FINDINGS (the six areas the dispatch enumerates)
      self._peer_perceptual.vocabulary`` traversal in ``_lex_batch``
      line 6640, and the assumption that the lexer is reachable through
      ``perceptualSpace.vocabulary``.  After the migration the lexer
-     reaches the lexicon through ``symbolicSpace.codebook`` (or
+     reaches the lexicon through ``wholeSpace.codebook`` (or
      equivalent SS-side accessor).
 
 3. CURRENT MPHF INFRASTRUCTURE
@@ -201,7 +201,7 @@ A.  ``bin/Spaces.py``  --  WholeSpace
         Recommendation: use ``self.lexicon`` (the Embedding instance) on
         SS, keep ``self.vocabulary`` as the property that returns it.
         ``PartSpace`` then exposes ``self.codebook`` as the
-        *reference back to* ``symbolicSpace.lexicon`` (resolving the
+        *reference back to* ``wholeSpace.lexicon`` (resolving the
         spec's "PS.self.codebook" requirement without colliding with
         ``Space.codebook`` -- on PS the attribute is set as a direct
         ``object.__setattr__`` from Models.py, so it shadows the
@@ -258,13 +258,13 @@ A.  ``bin/Spaces.py``  --  WholeSpace
 B.  ``bin/Spaces.py``  --  InputSpace
     B1. ``InputSpace._lex_batch`` (line 6621): replace
         ``vocab = self._peer_perceptual.vocabulary`` with
-        ``vocab = self._symbolicSpace_ref.lexicon`` (new structural
+        ``vocab = self._wholeSpace_ref.lexicon`` (new structural
         ref wired in Models.py).  IS keeps the lexer step; it just
         reaches the tokenizer-bearing Embedding through SS now.
     B2. Retire ``self._peer_perceptual`` (line 6473) as the lexicon
         anchor.  PS still has lexer-side coordination (the Embedding's
         tokenizer is invoked from IS; PS doesn't own the lookup
-        target anymore).  Replace with ``self._symbolicSpace_ref``.
+        target anymore).  Replace with ``self._wholeSpace_ref``.
     B3. ``InputSpace._build_what_basis`` (line 6407) already returns
         ``None`` for embedding mode -- no change.  IS stays free of
         the lexicon.
@@ -276,9 +276,9 @@ C.  ``bin/Spaces.py``  --  PartSpace
         passthrough Tensor) for embedding mode; the Embedding lives
         on SS.
     C2. PS gains ``self.codebook`` -- a non-property attribute set
-        post-construction in Models.py to ``symbolicSpace.lexicon``.
+        post-construction in Models.py to ``wholeSpace.lexicon``.
         Set via ``object.__setattr__(ps, 'codebook',
-        symbolicSpace.lexicon)`` (the property shadow pattern --
+        wholeSpace.lexicon)`` (the property shadow pattern --
         breaks ``ps.codebook`` *as a bool* on PS only; PS uses it as
         an Embedding reference after the migration).
     C3. ``_mphf_codebook`` (line 8360): return ``self.codebook``
@@ -298,7 +298,7 @@ D.  ``bin/Models.py``
     D1. ``BasicModel._create_per_stage`` (line 3919, around 4076-4280):
         WIRE the new refs in this order:
           (a) Build IS, PS, CS, SS as today.
-          (b) After SS is built, build ``ss.lexicon`` (the Embedding)
+          (b) After SS is built, build ``ws.lexicon`` (the Embedding)
               -- this is a refactor of the eager call in
               ``PartSpace.__init__`` that today builds
               ``self.subspace.what`` Embedding.  Move that build into
@@ -310,19 +310,19 @@ D.  ``bin/Models.py``
               TheXMLConfig.space("PartSpace", ...) reads (the
               XML schema doesn't change; SS init reads from a
               different XML section).
-          (c) Wire ``object.__setattr__(inputSpace, '_symbolicSpace_ref',
-              ss)``.  ``object.__setattr__`` so it is not registered
+          (c) Wire ``object.__setattr__(inputSpace, '_wholeSpace_ref',
+              ws)``.  ``object.__setattr__`` so it is not registered
               as an nn.Module child (no double-counting params).
           (d) Wire ``object.__setattr__(perceptualSpace, 'codebook',
-              ss.lexicon)`` (note: PS.codebook is the bool property
+              ws.lexicon)`` (note: PS.codebook is the bool property
               today; this shadowing makes it the Embedding instance
               on the PS instance level).
-          (e) Wire ``object.__setattr__(ss, 'perceptualSpace_ref',
+          (e) Wire ``object.__setattr__(ws, 'perceptualSpace_ref',
               perceptualSpace)``  -- this already exists (line 4256);
               keep.  The structural pair survives -- PS owns lexer
               wiring, SS owns the lexicon.
     D2. ``BaseModel._get_embedding`` (line 921): change to read from
-        ``self.symbolicSpace.lexicon`` first, fall back to
+        ``self.wholeSpace.lexicon`` first, fall back to
         ``self.perceptualSpace.vocabulary`` for non-text models.
     D3. ``BaseModel.save_weights`` / ``_collect_vocab_extras`` (line
         1120): swap the source from
@@ -330,14 +330,14 @@ D.  ``bin/Models.py``
         no change needed beyond D2).
     D4. OutputSpace construction (line 4275): the
         ``vectors=self.perceptualSpace.vocabulary`` arg becomes
-        ``vectors=self.symbolicSpace.lexicon``.  Or, since
+        ``vectors=self.wholeSpace.lexicon``.  Or, since
         ``perceptualSpace.vocabulary`` already resolves correctly via
         the existing property chain (line 6121), this is no-op IF
         the property is updated to read through the codebook ref.
         Cleaner: update OutputSpace to read from SS directly.
     D5. ``optimize_embedding`` plumbing at lines 674-680: change
         ``self.perceptualSpace.vocabulary`` reads to
-        ``self.symbolicSpace.lexicon``.  Optimizer-rebuild paths at
+        ``self.wholeSpace.lexicon``.  Optimizer-rebuild paths at
         2422 likewise.
 
 E.  ``data/*.xml``
@@ -411,12 +411,12 @@ Step 1 (PS-side, lexer-adjacent):  PS resolves bytes -> orthographic row.
        ``ortho_idx, verified = self._mphf_gpu_layer.mphf_index(
            byte_slots, self._mphf_static_tables, return_verified=True)``
        where ``self._mphf_static_tables`` is built against
-       ``self.codebook`` (which IS ``symbolicSpace.lexicon``).  Result:
-       ``ortho_idx: [B, N]`` long, indices into ``ss.lexicon.wv``.
+       ``self.codebook`` (which IS ``wholeSpace.lexicon``).  Result:
+       ``ortho_idx: [B, N]`` long, indices into ``ws.lexicon.wv``.
 
 Step 2 (SS-side, mereological):  PS hands ortho_idx to SS for
        resolution.  ``ortho_idx`` indexes orthographic-tagged rows;
-       lookup ``meta_idx = ss.lexicon.part_parents[ortho_idx]``: the
+       lookup ``meta_idx = ws.lexicon.part_parents[ortho_idx]``: the
        meta-symbol parent row.
 
 Step 3 (intersect with "meanings" set):  for each ``meta_idx`` we
@@ -429,11 +429,11 @@ Step 3 (intersect with "meanings" set):  for each ``meta_idx`` we
        ``orthographic_to_semantic_idx: [V] long`` buffer (a one-time
        index built when the meta-symbol is constructed at insert) lets
        Step 3 collapse to ONE gather:
-       ``sem_idx = ss.orthographic_to_semantic_idx[ortho_idx]``.
+       ``sem_idx = ws.orthographic_to_semantic_idx[ortho_idx]``.
        The intersection runs once (at insert) to BUILD this index;
        runtime is O(1) per slot.
 
-Step 4 (semantic vector):  ``sem_vec = ss.lexicon.lookup(sem_idx)``
+Step 4 (semantic vector):  ``sem_vec = ws.lexicon.lookup(sem_idx)``
        -> ``[B, N, sym_D]``.
 
 Step 5 (cast to conceptual space):  the existing
@@ -443,11 +443,11 @@ Step 5 (cast to conceptual space):  the existing
        ``ConceptualSpace.stm.push`` per the Stage 1.C contract.
 
 Reverse direction (S -> C -> P -> I -> bytes):
-       Reverse uses the existing ``ss.lexicon`` API
+       Reverse uses the existing ``ws.lexicon`` API
        (``reconstruct_data``, ``reconstruct_to_buffer``,
        ``get_recovered_word``).  The reverse is non-invertible
        (nearest-row table lookup); the surface half of the table is
-       ``ss.lexicon.wv.index_to_key`` -- the ASCII-prefilled
+       ``ws.lexicon.wv.index_to_key`` -- the ASCII-prefilled
        Embedding mapping that already stores the literal surface
        string per row.  See ``MPHFGpuLayer.reverse_map_rows`` line
        7651.
@@ -458,15 +458,15 @@ BACKWARD-INCOMPATIBLE CHANGES (what existing tests will break)
 
 1. ``test/test_lexicon_ownership.py``: ~12 tests asserting the
    physical Embedding lives on PS.  Update to check
-   ``m.symbolicSpace.lexicon`` (the new owner); the
+   ``m.wholeSpace.lexicon`` (the new owner); the
    ``m.perceptualSpace.vocabulary`` property still works (it now
    reads from SS through the codebook ref) so those individual
    reads can stay -- but the OWNERSHIP semantics (which class
    "has-a") change.  Specific test changes:
      - test_embedding_lives_on_perceptual_space  -> rename and assert
-       on ``symbolicSpace.lexicon``.
+       on ``wholeSpace.lexicon``.
      - test_get_embedding_returns_perceptual     -> rename; assert
-       ``m._get_embedding() is m.symbolicSpace.lexicon``.
+       ``m._get_embedding() is m.wholeSpace.lexicon``.
 
 2. ``test/test_basicmodel.py`` lines 2050-2061: parameter-pointer
    tests on ``m.perceptualSpace.vocabulary.wv._vectors``.  These
@@ -474,7 +474,7 @@ BACKWARD-INCOMPATIBLE CHANGES (what existing tests will break)
    Embedding), but if the property is dropped the .vocabulary
    chain breaks.  RECOMMENDATION: KEEP the
    ``PartSpace.vocabulary`` property as a back-compat view of
-   ``ss.lexicon``.  Tests need no change.
+   ``ws.lexicon``.  Tests need no change.
 
 3. ``test/test_perceptual_loopback.py`` test_symbolic_perceptualSpace_ref_wired
    (line 268) -- the structural ref persists (PS still wraps the lexer
@@ -515,21 +515,21 @@ ESTIMATED IMPLEMENTATION EFFORT
 Tests to write (Phase 2, this file):
 
   TestSSOwnsLexicon (5 tests):
-    test_ss_has_lexicon_attribute
-    test_ss_lexicon_is_embedding_instance
-    test_ss_lexicon_replaces_ps_subspace_what
-    test_ss_vocabulary_property_returns_lexicon
+    test_ws_has_lexicon_attribute
+    test_ws_lexicon_is_embedding_instance
+    test_ws_lexicon_replaces_ps_subspace_what
+    test_ws_vocabulary_property_returns_lexicon
     test_ps_subspace_what_is_none_in_embedding_mode
 
   TestPSHasCodebookRef (4 tests):
     test_ps_has_codebook_attribute_post_wiring
-    test_ps_codebook_is_ss_lexicon
+    test_ps_codebook_is_ws_lexicon
     test_ps_mphf_codebook_resolves_to_ss
     test_ps_embed_paths_read_from_codebook_ref
 
   TestInputSpaceHasSSRef (3 tests):
     test_is_has_symbolicspace_ref
-    test_is_lex_batch_uses_ss_lexicon
+    test_is_lex_batch_uses_ws_lexicon
     test_is_no_peer_perceptual_lexicon_dependency
 
   TestMereologicalLookupChain (5 tests):
@@ -636,7 +636,7 @@ R5. WORD-LEARNING (Embedding.insert) IS A WRITE PATH.  The Stage-1.B
     access") suggests SS-side insert plumbing.  Today's insert path
     runs through ``PartSpace._embed`` line 7717.  Migration
     moves the insert call to an SS-side method
-    (``ss.insert_oov(word)`` or similar) called from PS.  No
+    (``ws.insert_oov(word)`` or similar) called from PS.  No
     behavioral change in this stage; just relocates the call site.
 
 R6. ``_peer_perceptual`` retirement: today ``InputSpace._lex_batch``
@@ -644,14 +644,14 @@ R6. ``_peer_perceptual`` retirement: today ``InputSpace._lex_batch``
     Post-migration the Embedding is on SS, but the tokenizer is a
     METHOD on the Embedding instance -- same code, different owner.
     No semantic change.  Confirming the rewire of one structural
-    reference (IS._peer_perceptual -> IS._symbolicSpace_ref) is in scope.
+    reference (IS._peer_perceptual -> IS._wholeSpace_ref) is in scope.
 
 R7. SYM_LEARN / KNOWLEDGE ARTIFACT: ``WholeSpace.attach_knowledge``
     (line 10234) and ``PartSpace.attach_knowledge`` (line 7583)
     both write metadata onto the lexicon.  Today they write at
     different levels (SS writes reference codebook; PS writes
     word_table.ref_ids onto wv).  Post-migration both write through
-    ``ss.lexicon``.  The change is local and additive (no breakage
+    ``ws.lexicon``.  The change is local and additive (no breakage
     expected); test_knowledge_artifact regression should be re-run.
 
 --------------------------------------------------------------------------
@@ -738,21 +738,21 @@ class TestSSCodebookPairedInsertRetired(unittest.TestCase):
 
     def test_paired_insert_api_is_gone(self):
         model = _make_plain_model()
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         self.assertFalse(
-            hasattr(ss, "insert_paired_word"),
+            hasattr(ws, "insert_paired_word"),
             "WholeSpace.insert_paired_word must be RETIRED (Step 3 of "
             "the 2026-06-10 symbolic-iteration plan).")
         self.assertFalse(
-            hasattr(ss, "mark_word_atom"),
+            hasattr(ws, "mark_word_atom"),
             "the mark_word_atom autobind fallback retires with the "
             "paired-row machinery.")
 
-    def test_lexicon_insert_leaves_ss_codebook_untouched(self):
+    def test_lexicon_insert_leaves_ws_codebook_untouched(self):
         model = _make_plain_model()
-        ss = model.symbolicSpace
+        ws = model.wholeSpace
         emb = model.perceptualSpace.vocabulary
-        cb = ss.subspace.what
+        cb = ws.subspace.what
         self.assertIsInstance(cb, Codebook)
         W_before = cb.getW().detach().clone()
         vec = torch.zeros(int(emb.wv._vectors.shape[1]))
@@ -885,7 +885,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 # is retired under the radix-mode pipeline. The replacement is structural:
 #   * a percept is inserted into PS.percept_store (PS-side bytes + vector);
 #   * an SS row is allocated for the meaning;
-#   * a META node binds (ps_idx, ss_idx) and records cross-codebook signed
+#   * a META node binds (ps_idx, ws_idx) and records cross-codebook signed
 #     references in SS.taxonomy / SS.taxonomy_parent_map.
 # These tests assert the structural shape, in addition to the legacy
 # orth-row-copy assertions which remain valid for the legacy lexicon
@@ -937,47 +937,47 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         ``PerceptStore.bytes_for(ps_row)`` where ``ps_row`` resolves
         through ``WholeSpace._ps_pos_to_row``.
         """
-        ss = self.model.symbolicSpace
+        ws = self.model.wholeSpace
         ps_store = self.model.perceptualSpace.percept_store
         # Insert PS-side bytes + SS-side meaning row; bind via META.
-        ps_pos = ss.insert_percept(b"structural_meta")
-        ss_pos = ss.insert_symbol()
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        ps_pos = ws.insert_percept(b"structural_meta")
+        ws_pos = ws.insert_symbol()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
         # All three are positive positions; kinds are tagged accordingly.
         self.assertGreater(ps_pos, 0,
                            "insert_percept must return a positive position")
-        self.assertGreater(ss_pos, 0,
+        self.assertGreater(ws_pos, 0,
                            "insert_symbol must return a positive position")
         self.assertGreater(meta_pos, 0,
                            "insert_meta must return a positive position")
-        self.assertEqual(ss._pos_kind.get(ps_pos), "ps")
-        self.assertEqual(ss._pos_kind.get(ss_pos), "ss")
-        self.assertEqual(ss._pos_kind.get(meta_pos), "meta")
+        self.assertEqual(ws._pos_kind.get(ps_pos), "ps")
+        self.assertEqual(ws._pos_kind.get(ws_pos), "ws")
+        self.assertEqual(ws._pos_kind.get(meta_pos), "meta")
         # Children list contains both PS and SS positions.
-        children = ss.taxonomy_children(meta_pos)
-        ps_children = [c for c in children if ss._pos_kind.get(c) == "ps"]
-        ss_children = [c for c in children if ss._pos_kind.get(c) == "ss"]
+        children = ws.taxonomy_children(meta_pos)
+        ps_children = [c for c in children if ws._pos_kind.get(c) == "ps"]
+        ws_children = [c for c in children if ws._pos_kind.get(c) == "ws"]
         self.assertTrue(
-            ps_children and ss_children,
+            ps_children and ws_children,
             f"META children must contain both PS- and SS-tagged "
             f"positions; got {children!r}")
         # PS-side bytes recoverable via the position -> row lookup.
-        ps_row = ss._ps_pos_to_row[ps_children[0]]
+        ps_row = ws._ps_pos_to_row[ps_children[0]]
         self.assertEqual(ps_store.bytes_for(ps_row), b"structural_meta")
 
-    def test_ss_row_not_copied_from_ps_vector(self):
+    def test_ws_row_not_copied_from_ps_vector(self):
         """The retired contract: the META node's SS row is NOT a copy of
         the PS vector. (Under the new structural binding, SS gets a fresh
         symbolic row + a separately allocated META row; neither is a
         copy of the percept_store row.)
         """
-        ss = self.model.symbolicSpace
+        ws = self.model.wholeSpace
         ps_store = self.model.perceptualSpace.percept_store
-        ps_pos = ss.insert_percept(b"distinct_storage")
-        ps_row = ss._ps_pos_to_row[ps_pos]
+        ps_pos = ws.insert_percept(b"distinct_storage")
+        ps_row = ws._ps_pos_to_row[ps_pos]
         # Pin the PS row to a known vector so we can prove the SS-side
         # rows are not duplicates of it.
-        D = int(ss.nDim)
+        D = int(ws.nDim)
         marker = torch.zeros(D)
         marker[0] = 1.0  # distinctive shape
         with torch.no_grad():
@@ -987,22 +987,22 @@ class TestStage8MetaTaxonomyStructural(unittest.TestCase):
         # fused vec also distinct from the pinned PS row.
         sym_init = torch.zeros(D)
         sym_init[1] = 1.0
-        ss_pos = ss.insert_symbol(init_vec=sym_init)
+        ws_pos = ws.insert_symbol(init_vec=sym_init)
         fused_init = torch.zeros(D)
         fused_init[2] = 1.0
-        meta_pos = ss.insert_meta(ps_pos, ss_pos, fused_vec=fused_init)
-        # SS row for ss_pos must not equal the PS row.
-        ss_row = ss._ss_pos_to_row[ss_pos]
-        W = ss.subspace.what.getW()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos, fused_vec=fused_init)
+        # SS row for ws_pos must not equal the PS row.
+        ws_row = ws._ws_pos_to_row[ws_pos]
+        W = ws.subspace.what.getW()
         ps_vec = ps_store.codebook[ps_row].detach()
-        ss_vec = W[ss_row].detach()
+        ws_vec = W[ws_row].detach()
         self.assertFalse(
-            torch.allclose(ss_vec.to(ps_vec.device, ps_vec.dtype),
+            torch.allclose(ws_vec.to(ps_vec.device, ps_vec.dtype),
                            ps_vec, atol=1e-5),
             "SS row must NOT be a copy of the PS vector under the Stage 8 "
             "structural-binding contract")
         # Same for the META row.
-        meta_row = ss._ss_pos_to_row[meta_pos]
+        meta_row = ws._ws_pos_to_row[meta_pos]
         meta_vec = W[meta_row].detach()
         self.assertFalse(
             torch.allclose(meta_vec.to(ps_vec.device, ps_vec.dtype),

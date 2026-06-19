@@ -1,6 +1,6 @@
 # Three parallel surfaces of grammar operations
 
-A signal passing through `PerceptualSpace -> ConceptualSpace -> SymbolicSpace`
+A signal passing through `PerceptualSpace -> ConceptualSpace -> WholeSpace`
 encounters **three distinct surfaces** that each implement (some of) the
 grammar's operators. Right now they coexist; tasks can ride any of the three,
 which is why the soft chart can be a passenger while the model still solves
@@ -18,7 +18,7 @@ flags. Owns its own parameters; trains end-to-end via the task loss.
 |---|---|---|---|---|
 | `PerceptualSpace` | `SigmaLayer` (P -> sub-percept, [Spaces.py:5418-5422](../../bin/Spaces.py:5418)) | `forwardSigma(x)` | `reverseSigma(y)` (when `invertible`) | VQ-VAE codebook quantize via `self.quantize`; `l1_proximal`; `valid_mask` zeroing |
 | `ConceptualSpace` | `PiLayer` (concept fold, [Spaces.py:6558-6591](../../bin/Spaces.py:6558)) | `forwardPi(x)` ([Spaces.py:6630](../../bin/Spaces.py:6630)) | `reversePi(y)` | Optional attention head; `_active` masking |
-| `SymbolicSpace` | `SigmaLayer` (C -> S fold, [Spaces.py:6792-6809](../../bin/Spaces.py:6792)) | `forwardSigma(x)` ([Spaces.py:7503](../../bin/Spaces.py:7503)) | `reverseSigma(y)` (when `invertible`) | `l1_proximal`; codebook quantize via VQ-VAE; valid_mask zeroing |
+| `WholeSpace` | `SigmaLayer` (C -> S fold, [Spaces.py:6792-6809](../../bin/Spaces.py:6792)) | `forwardSigma(x)` ([Spaces.py:7503](../../bin/Spaces.py:7503)) | `reverseSigma(y)` (when `invertible`) | `l1_proximal`; codebook quantize via VQ-VAE; valid_mask zeroing |
 
 **forward / reverse:** Both used. Forward is the always-on data-flow direction;
 reverse is invoked by the reconstruction loss path (`runBatch.reconstruction`)
@@ -41,13 +41,13 @@ Each grammar operator wrapped as an `nn.Module` subclass of `GrammarLayer`
 
 | Class | rule_name | arity | invertible | lossy | Wraps | Where instantiated | Where called |
 |---|---|---|---|---|---|---|---|
-| `NotLayer` | `not` | 1 | yes | no | (parameter-free bivector swap) | `SymbolicSpace.__init__` as `self.propositional_negation` ([Spaces.py:6820](../../bin/Spaces.py:6820)) | `SymbolicSpace.forward` mixes `act = p_neg * not(act) + (1-p_neg) * act` ([Spaces.py:7530-7533](../../bin/Spaces.py:7530)) — gated by `rule_probability("not(S)")` |
+| `NotLayer` | `not` | 1 | yes | no | (parameter-free bivector swap) | `WholeSpace.__init__` as `self.propositional_negation` ([Spaces.py:6820](../../bin/Spaces.py:6820)) | `WholeSpace.forward` mixes `act = p_neg * not(act) + (1-p_neg) * act` ([Spaces.py:7530-7533](../../bin/Spaces.py:7530)) — gated by `rule_probability("not(S)")` |
 | `NonLayer` | `non` | 1 | no | yes | (parameter-free `1 - |clamp(x,-1,1)|`) | Not currently constructed in any space | not invoked |
 | `IntersectionLayer` | `intersection` | 2 | yes | no | A `PiLayer` instance | not constructed by any space | dormant; `compose` / `decompose` defined but no external caller |
 | `UnionLayer` | `union` | 2 | yes | no | A `SigmaLayer` instance | not constructed by any space | dormant; `compose` / `decompose` defined but no external caller |
-| `ContiguousLayer` | `Contiguous` | 1 | no | yes | (parameter-free per-axis `amax`) | `SymbolicSpace.__init__` as `self._contiguous_layer` ([Spaces.py:6926](../../bin/Spaces.py:6926)) | `SymbolicSpace.forward` mixes `act = p_con * contiguous(act) + (1-p_con) * act` ([Spaces.py:7517-7522](../../bin/Spaces.py:7517)) — gated by `rule_probability("Contiguous(S)")` |
+| `ContiguousLayer` | `Contiguous` | 1 | no | yes | (parameter-free per-axis `amax`) | `WholeSpace.__init__` as `self._contiguous_layer` ([Spaces.py:6926](../../bin/Spaces.py:6926)) | `WholeSpace.forward` mixes `act = p_con * contiguous(act) + (1-p_con) * act` ([Spaces.py:7517-7522](../../bin/Spaces.py:7517)) — gated by `rule_probability("Contiguous(S)")` |
 
-**forward / reverse:** Used by NotLayer and ContiguousLayer in `SymbolicSpace.forward`
+**forward / reverse:** Used by NotLayer and ContiguousLayer in `WholeSpace.forward`
 (unary, gated by rule probability). The `IntersectionLayer` / `UnionLayer`
 `forward` exists but isn't invoked anywhere.
 
@@ -69,7 +69,7 @@ ended up calling them.
 
 ## Surface 3: SyntacticLayer (the chart and `_RULE_METHODS` dispatch)
 
-A single nn.Module owned by `WordSpace.syntacticLayer`. Holds rule-prediction
+A single nn.Module owned by `WholeSpace.syntacticLayer`. Holds rule-prediction
 MLP, depth embeddings, soft-chart parameters, and the per-rule **method
 table** mapping `rule_name` -> `*Forward` / `*Reverse` method on the layer
 itself.
@@ -101,7 +101,7 @@ provides a Basis) or fall back to plain tensor primitives (`torch.min`,
   matching inverse, calling `*Reverse` when present (unbound when the rule is
   lossy).
 - Used by:
-  - `SymbolicSpace._op_for_rule` ([Spaces.py:7345](../../bin/Spaces.py:7345)) for
+  - `WholeSpace._op_for_rule` ([Spaces.py:7345](../../bin/Spaces.py:7345)) for
     shift/reduce-style rule firing on stack entries.
   - The legacy `_compose_vector` Phase-2 cascade and `_compose_vector_chart`
     (greedy chart) paths via `_apply_rules_to_pairs` ([Language.py:1754-1768](../../bin/Language.py:1754)).
@@ -124,9 +124,9 @@ provides a Basis) or fall back to plain tensor primitives (`torch.min`,
     3. `_compose_to_target` (when `target_count` is set) — pairwise reduction.
     4. Phase-2 cascading soft-weighted composition (default, the legacy path).
 - `SyntacticLayer.decompose` is the matching inverse, called from
-  `WordSpace.decompose` ([Language.py:3939](../../bin/Language.py:3939)) on the
+  `WholeSpace.decompose` ([Language.py:3939](../../bin/Language.py:3939)) on the
   reverse pass.
-- The entire `WordSpace.composeSyntax` ([Language.py:3917-3929](../../bin/Language.py:3917))
+- The entire `WholeSpace.composeSyntax` ([Language.py:3917-3929](../../bin/Language.py:3917))
   wraps this — that is the only caller into Surface 3's chart path.
 
 ## Where the three surfaces overlap
@@ -136,11 +136,11 @@ For the operators present in MM_grammar / XOR_grammar (`not`, `intersection`,
 
 | Operator | Surface 1 (naked) | Surface 2 (GrammarLayer) | Surface 3 (SyntacticLayer) |
 |---|---|---|---|
-| `not` | `Basis.negation` (used by Surface 3 fallback) | `NotLayer.forward` invoked in `SymbolicSpace.forward` (gated mix) | `notForward` calls `Basis.negation` |
+| `not` | `Basis.negation` (used by Surface 3 fallback) | `NotLayer.forward` invoked in `WholeSpace.forward` (gated mix) | `notForward` calls `Basis.negation` |
 | `intersection` | `PiLayer.forward` (the **always-on** C->S fold) | `IntersectionLayer.compose` -> `pi.compose` (dormant) | `intersectionForward` calls `Basis.conjunction` (different parametrization than the always-on PiLayer) |
 | `union` | `SigmaLayer.forward` (the **always-on** P->C and C->S folds) | `UnionLayer.compose` -> `sigma.compose` (dormant) | `unionForward` calls `Basis.disjunction` (different parametrization than the always-on SigmaLayer) |
 | `lift`, `lower` | not present (no dedicated layers) | not present | `liftForward`/`lowerForward` call `Ops.lower`/`Ops.lift` |
-| `Contiguous` | not present | `ContiguousLayer.forward` invoked in `SymbolicSpace.forward` (gated mix) | `ContiguousForward` re-implements the same kernel |
+| `Contiguous` | not present | `ContiguousLayer.forward` invoked in `WholeSpace.forward` (gated mix) | `ContiguousForward` re-implements the same kernel |
 
 The structural problem is concentrated on `intersection` and `union`:
 **three different parameterizations of the same operator**. The always-on

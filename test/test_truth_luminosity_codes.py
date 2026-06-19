@@ -193,7 +193,7 @@ def test_mereology_delegator_routes_here():
     from Mereology import Mereology
 
     class _M(Mereology):
-        symbolicSpace = None
+        wholeSpace = None
 
     tl = fresh()
     tl.record(torch.full((D,), 0.4), degree=1.0)

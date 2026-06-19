@@ -92,7 +92,7 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <WordSpace>
+  <SymbolicSpace>
     <!-- Single-non-terminal DNF grammar with outermost negation:
             S = not(S) | union(C, C) | C
             C = intersection(C, C) | P
@@ -132,6 +132,6 @@
         <C>P</C>
       </grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
 </model>

@@ -93,7 +93,7 @@ no anonymous global residual stream.
 ## Overview
 
 BasicModel is a bidirectional neural architecture organized as a pipeline of five
-**spaces** plus a grammar host (`WordSpace`), each implementing a distinct
+**spaces** plus a grammar host (`SymbolicSpace`), each implementing a distinct
 representational transformation:
 
 ```
@@ -122,24 +122,27 @@ combined loss:
 totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
-The legacy `SubsymbolicSpace` and `SyntacticSpace` classes have been
+The legacy `SubwholeSpace` and `SyntacticSpace` classes have been
 retired. The subsymbolic role is filled by `PartSpace`; syntax /
-grammar dispatch lives on `WordSubSpace.languageLayer` (the signal router,
+grammar dispatch lives on `SymbolicSubSpace.languageLayer` (the signal router,
 which subsumes the retired `Chart`). The `MereologicalTree` sidecar that
 backed `part` / `equals` / `query` is also retired --- those operations are
 pure-geometric clipped-cosine projections over WholeSpace codebook
 activations.
 
 `PartSpace` and `WholeSpace` (renamed 2026-06-12 from `PerceptualSpace`
-/ `SymbolicSpace`) both subclass a thin shared `PerceptualSpace(Space)`
-base: both views are perceptual. At the corpus callosum, objects are
-analysed and synthesized by sending them back to PerceptualSpace —
-wholes get split, parts get chunked. In symbolic "mode" the objects
-sent back are symbols. Terminologically there are objects and
-references; a reference is a *sign* (a quantized version of the
-referent) or a *symbol* (an unrelated version of the referent, of much
-lower dimensionality). The name `SymbolicSpace` is reserved for
-re-introduction with new semantics.
+/ the original `SymbolicSpace`) both subclass a thin shared
+`PerceptualSpace(Space)` base: both views are perceptual. At the corpus
+callosum, objects are analysed and synthesized by sending them back to
+PerceptualSpace — wholes get split, parts get chunked. In symbolic
+"mode" the objects sent back are symbols. Terminologically there are
+objects and references; a reference is a *sign* (a quantized version of
+the referent) or a *symbol* (an unrelated version of the referent, of
+much lower dimensionality). The freed name `SymbolicSpace` was
+**reintroduced 2026-06-19** with new semantics — it is now the
+grammar/word tier (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
+the WholeSpace stream is now `ws`). See the full rename mapping in
+`doc/plans/2026-06-19-handoff.md`.
 
 The corpus callosum **builds a single meronomy out of the two towers**: a part
 `A` (PartSpace) and a whole `B` (WholeSpace) carry `.what` codes from different
@@ -160,7 +163,7 @@ the principled fix for the MM_20M mean-collapse. Full design:
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
 | **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~7) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
-| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForSS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
+| **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The cross-space fold contract has changed:
@@ -316,6 +319,44 @@ So: granularity is intrinsic to the folds, subsymbolic order iterates the
 subsymbolic passes (composing symbols), and symbolic order is the serial
 grammatical loop over words.
 
+> **⚠ SPECIFICATION GAP — the three order loops need a precise, separate
+> spec (2026-06-19).** The loop hierarchy is under-specified and currently
+> conflates concerns; each axis needs its own definition (semantics, bound,
+> and how the three compose). The intended division of labour is:
+>
+> - **`subsymbolicOrder`** — the **analysis/synthesis loop and the area of
+>   attention**: how many refinement passes run, whether each pass *analyses*
+>   (re-expands) or *synthesises* (chunks), and how attention scopes what is
+>   expanded/chunked. *Today:* `T` parallel CS→PS/WS iterations; the
+>   analysis-vs-synthesis choice and the attention scope are not yet
+>   first-class (see the contiguity-of-`.where` proposed refinement above).
+>   *Proposed mechanism (2026-06-19) — the area of attention is a `.where`
+>   scope on the dual-input SECOND ARGUMENT to PS/WS* (a **null-concept event
+>   carrying only a `.where`**, not content). **Default / model-driven:** a
+>   **full `.where`** lets PS/WS range over the whole input and attention then
+>   dives to a chosen location + granularity. **Override / deterministic
+>   reading:** the serial-word loop supplies **word `.where`s** as that second
+>   argument, forcing word-by-word reading. One channel, two scope sources —
+>   so `subsymbolicOrder` attention and the serial (`syntacticOrder`) reading
+>   are the SAME mechanism parameterized by which `.where` flows in. Reuses
+>   the existing dual-input arg + `.where` brackets (no radix-filter rewrite).
+> - **`symbolicOrder`** — whether the **σ/π abstractions** run (the serial /
+>   grammatical, abstraction-composing path) **or parallel processing** (the
+>   whole-slab path). *Today:* `0` = parallel, `≥1` = serial; the distinction
+>   to make precise is "does the σ/π abstraction" vs "parallel processing."
+> - **`syntacticOrder`** *(NEW — not yet implemented)* — the **depth of the
+>   parse tree**, with a guaranteed **maximum of the number of words in the
+>   sentence**. A distinct axis from the two above (composition *depth*, not
+>   refinement-pass count nor parallel-vs-serial). Needs its own knob, the
+>   word-count upper bound, and forward semantics.
+>
+> Open questions for the spec: how the three compose (e.g. serial
+> `symbolicOrder` over words × `syntacticOrder` tree depth per sentence ×
+> `subsymbolicOrder` pumps per node); the **basic-level stop** — synthesis
+> halts at **words** (word boundaries from analysis, consumed by the
+> serial-word loop), so `syntacticOrder`'s leaves are words; and whether
+> `syntacticOrder` layers over, or subsumes, the serial `symbolicOrder` loop.
+
 ### Modes of operation
 
 Two operating modes, selected by the integer `<architecture><symbolicOrder>`
@@ -426,7 +467,7 @@ end-to-end alongside the model weights.
 ## Language System
 
 The grammar dispatch runs through the **signal router** (`LanguageLayer`,
-`bin/Language.py`) — the single canonical parser. `WordSubSpace` owns it
+`bin/Language.py`) — the single canonical parser. `SymbolicSubSpace` owns it
 directly as `self.languageLayer`. The pre-substrate CKY `Chart` and STM
 shift-reduce parsers retired in Stage 3 of the substrate refactor.
 
@@ -667,7 +708,7 @@ Buffers (per row, non-persistent):
 - `_s_count` / `_e_count`: `[B]` long, fill levels (cap at p / q).
 
 `ensure_batch(B)` resizes these on cascade from
-`WordSpace.ensure_batch`; `Reset()` clears them on hard / discourse
+`SymbolicSpace.ensure_batch`; `Reset()` clears them on hard / discourse
 boundary. Default behaviour is to **not** auto-reset across document
 boundaries --- the AR lags carry information through discourse
 continuity unless the caller explicitly calls `Reset`.
@@ -712,9 +753,9 @@ codebook.
 
 | XSD knob | Section | Default | Notes |
 |---|---|---|---|
-| `<armaP>` | `<WordSpace>` | 5 | AR lag count |
-| `<armaQ>` | `<WordSpace>` | 2 | MA lag count |
-| `<armaHiddenDim>` | `<WordSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
+| `<armaP>` | `<SymbolicSpace>` | 5 | AR lag count |
+| `<armaQ>` | `<SymbolicSpace>` | 2 | MA lag count |
+| `<armaHiddenDim>` | `<SymbolicSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
 | `<armaScale>` | `<architecture><training>` | 0.1 | ARMA loss weight added to `TheError` |
 | `<sentencePrediction>` | `<architecture><training>` | false | Gates `InterSentenceLayer` construction |
 

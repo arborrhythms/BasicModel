@@ -80,7 +80,7 @@ def test_protocol_off_is_dark_when_disabled():
     m.forward(_xor_input())
     assert int(getattr(m, '_prelude_pumps', 0)) == 0
     assert getattr(m, '_last_gist', None) is None
-    for sp in (m.perceptualSpace, m.symbolicSpace):
+    for sp in (m.perceptualSpace, m.wholeSpace):
         assert getattr(sp, 'serial_pump', None) is None
         assert sp.intent_boosts() is None
 
@@ -110,14 +110,14 @@ def test_protocol_runs_pump_zero_and_sets_intent():
     assert getattr(m, '_last_gist', None) is not None
     # One intent, both towers: any tower with a codebook carries the
     # boosts (the off-state for a codebook-less tower is None).
-    boosted = [sp for sp in (m.perceptualSpace, m.symbolicSpace)
+    boosted = [sp for sp in (m.perceptualSpace, m.wholeSpace)
                if sp.intent_boosts() is not None]
     assert boosted, "the gist must prime at least one codebook tower"
     for b in (sp.intent_boosts() for sp in boosted):
         assert torch.all(b >= 1.0)
     # Sentence end: the per-pump mode is un-stamped (the §6d law falls
     # back to the legacy read between sentences).
-    for sp in (m.perceptualSpace, m.symbolicSpace):
+    for sp in (m.perceptualSpace, m.wholeSpace):
         assert getattr(sp, 'serial_pump', 'missing') is None
 
 
@@ -159,7 +159,7 @@ def test_protocol_word_learning_pumps_parallel_partition():
         # ticks: the stamp must be True right after pump zero returns.
         seen['after_prelude'] = (
             getattr(m.perceptualSpace, 'serial_pump', None),
-            getattr(m.symbolicSpace, 'serial_pump', None))
+            getattr(m.wholeSpace, 'serial_pump', None))
         return out
 
     m._sentence_prelude = spy

@@ -13,7 +13,7 @@ These tests pin three layers of the feature on the REAL default grammar
 ``is_relative_rule`` marker (Part A), the conservative
 ``_sentence_relative_mask`` detection helper (Part B), and the reduce-
 site depth-3 preservation (Part C). Only the STM *contents* and the
-compose *selection* (``wordSubSpace.current_rules``) are hand-set --
+compose *selection* (``symbolicSpace.current_rules``) are hand-set --
 exactly the boundary the plan permits -- because driving a real
 relative surface string end-to-end through the per-word forward is far
 heavier and far more fragile than directly exercising the reduce.
@@ -106,7 +106,7 @@ def _seed_stm(model, depths):
 
 
 def _set_current_rules(model, rule_id, B, per_row=True):
-    """Stub ``wordSubSpace.current_rules`` S-tier with ``rule_id``.
+    """Stub ``symbolicSpace.current_rules`` S-tier with ``rule_id``.
 
     ``per_row=True`` mirrors the full-router ``LanguageLayer.compose``
     shape (one inner list per batch row); ``per_row=False`` mirrors the
@@ -116,7 +116,7 @@ def _set_current_rules(model, rule_id, B, per_row=True):
         s_rules = [[rule_id] for _ in range(B)]
     else:
         s_rules = [[rule_id]]
-    model.wordSubSpace.current_rules = {'S': s_rules}
+    model.symbolicSpace.current_rules = {'S': s_rules}
 
 
 # --------------------------------------------------------------------------
@@ -178,7 +178,7 @@ def test_relative_mask_per_row_and_shared_shapes():
     abs_id = _forward_absolute_rule_id()
 
     # No current_rules -> all-False (default {} after construction).
-    model.wordSubSpace.current_rules = {}
+    model.symbolicSpace.current_rules = {}
     m = model._sentence_relative_mask(B)
     assert m.dtype == torch.bool and m.shape == (B,)
     assert not bool(m.any())
@@ -200,7 +200,7 @@ def test_relative_mask_per_row_and_shared_shapes():
 
     # Mixed per-row: only the rows whose inner list carries a relative
     # rule_id are flagged.
-    model.wordSubSpace.current_rules = {
+    model.symbolicSpace.current_rules = {
         'S': [[abs_id], [rel_id], [abs_id]]}
     m = model._sentence_relative_mask(B)
     assert m.tolist() == [False, True, False]
@@ -253,7 +253,7 @@ def test_absolute_sentence_still_collapses_to_depth_one():
     # default path; nothing is detected relative).
     model2 = _build_model()
     B2, _ = _seed_stm(model2, depths=[6, 3])
-    model2.wordSubSpace.current_rules = {}
+    model2.symbolicSpace.current_rules = {}
     _S2, post_depth2 = model2._stm_reduce_to_single_S()
     assert post_depth2.tolist() == [1, 1], (
         f"no-rules rows must collapse to depth 1, got {post_depth2.tolist()}")

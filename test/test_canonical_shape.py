@@ -11,9 +11,9 @@ from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
 def test_canonical_shape_table():
     # 2026-06-06 dim-convention unification (see bin/architecture.py docstring):
     # every INTERIOR tier carries the SAME (nWhere=2, nWhen=2) band so the
-    # formula nDim = nWhat + nWhere + nWhen is uniform. SS/WordSpace band slots
+    # formula nDim = nWhat + nWhere + nWhen is uniform. SS/SymbolicSpace band slots
     # ride along as inert padding -- this SUPERSEDES the earlier convention that
-    # gave SS/WordSpace (0,0) and demuxed at the CS->SS boundary. The ONLY
+    # gave SS/SymbolicSpace (0,0) and demuxed at the CS->SS boundary. The ONLY
     # principled (0,0) exception is OutputSpace: the terminal answer has no
     # .where/.when to mux.
     assert canonical_shape("InputSpace")      == (2, 2)
@@ -22,7 +22,7 @@ def test_canonical_shape_table():
     assert canonical_shape("ConceptualSpace") == (2, 2)
     assert canonical_shape("WholeSpace")   == (2, 2)
     assert canonical_shape("OutputSpace")     == (0, 0)
-    assert canonical_shape("WordSpace")       == (2, 2)
+    assert canonical_shape("SymbolicSpace")       == (2, 2)
 
 
 def test_mandatory_codebook_tiers():

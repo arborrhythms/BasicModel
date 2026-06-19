@@ -45,25 +45,25 @@ def _knob(value):
 
 
 def make_ws(batch=1, dim=D, cap=CAP):
-    """Bare WordSubSpace with idea-stack buffers (the established
+    """Bare SymbolicSubSpace with idea-stack buffers (the established
     object.__new__ fixture idiom from _stm_test_fixtures)."""
-    from Language import WordSubSpace
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws._stm_payload_dim = int(dim)
-    ws._idea_capacity = int(cap)
-    ws._idea_max_depth_host = 0
-    ws._idea_buffer = torch.zeros(batch, cap, dim)
-    ws._idea_depth = torch.zeros(batch, dtype=torch.long)
-    return ws
+    from Language import SymbolicSubSpace
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss._stm_payload_dim = int(dim)
+    ss._idea_capacity = int(cap)
+    ss._idea_max_depth_host = 0
+    ss._idea_buffer = torch.zeros(batch, cap, dim)
+    ss._idea_depth = torch.zeros(batch, dtype=torch.long)
+    return ss
 
 
-def snapshot(ws):
+def snapshot(ss):
     """(idea, constituent) state snapshot for single-writer assertions."""
-    idea = (ws._idea_buffer.clone(), ws._idea_depth.clone())
-    cb = getattr(ws, '_constituent_buffer', None)
+    idea = (ss._idea_buffer.clone(), ss._idea_depth.clone())
+    cb = getattr(ss, '_constituent_buffer', None)
     cons = (None if cb is None
-            else (cb.clone(), ws._constituent_depth.clone()))
+            else (cb.clone(), ss._constituent_depth.clone()))
     return idea, cons
 
 
@@ -88,38 +88,38 @@ def cons_changed(before, after):
 # ---------------------------------------------------------------------------
 
 def test_constituent_stack_mechanics():
-    ws = make_ws()
-    assert ws.constituent_depth_of(0) == 0, "dark until first use"
+    ss = make_ws()
+    assert ss.constituent_depth_of(0) == 0, "dark until first use"
     c1, c2 = torch.rand(D), torch.rand(D)
-    ws.constituent_push(0, c1)
-    ws.constituent_push(0, c2)
-    assert ws.constituent_depth_of(0) == 2
-    assert torch.equal(ws.constituent_peek(0, 0), c2), "newest at slot 0"
-    assert torch.equal(ws.constituent_peek(0, 1), c1)
-    top = ws.constituent_pop(0)
+    ss.constituent_push(0, c1)
+    ss.constituent_push(0, c2)
+    assert ss.constituent_depth_of(0) == 2
+    assert torch.equal(ss.constituent_peek(0, 0), c2), "newest at slot 0"
+    assert torch.equal(ss.constituent_peek(0, 1), c1)
+    top = ss.constituent_pop(0)
     assert torch.equal(top, c2)
-    assert ws.constituent_depth_of(0) == 1
-    ws.constituent_clear()
-    assert ws.constituent_depth_of(0) == 0
+    assert ss.constituent_depth_of(0) == 1
+    ss.constituent_clear()
+    assert ss.constituent_depth_of(0) == 0
 
 
 def test_constituent_capacity_is_the_miller_cap():
-    ws = make_ws()
+    ss = make_ws()
     for i in range(CAP):
-        ws.constituent_push(0, torch.rand(D))
+        ss.constituent_push(0, torch.rand(D))
     with pytest.raises(RuntimeError):
-        ws.constituent_push(0, torch.rand(D))
+        ss.constituent_push(0, torch.rand(D))
 
 
 def test_split_replaces_whole_with_parts():
-    ws = make_ws()
+    ss = make_ws()
     whole, left, right = torch.rand(D), torch.rand(D), torch.rand(D)
-    ws.constituent_push(0, whole)
-    ws.constituent_split(0, left, right)
-    assert ws.constituent_depth_of(0) == 2
-    assert torch.equal(ws.constituent_peek(0, 0), left), (
+    ss.constituent_push(0, whole)
+    ss.constituent_split(0, left, right)
+    assert ss.constituent_depth_of(0) == 2
+    assert torch.equal(ss.constituent_peek(0, 0), left), (
         "left-to-right analysis: left is newest")
-    assert torch.equal(ws.constituent_peek(0, 1), right)
+    assert torch.equal(ss.constituent_peek(0, 1), right)
 
 
 # ---------------------------------------------------------------------------
@@ -127,37 +127,37 @@ def test_split_replaces_whole_with_parts():
 # ---------------------------------------------------------------------------
 
 def _bound_ss(rows):
-    ss = WholeSpace.__new__(WholeSpace)
-    ss.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
-    return ss
+    ws = WholeSpace.__new__(WholeSpace)
+    ws.interpret_word(7, licensed=True, object_id=1)   # bind word 7 -> row 1
+    return ws
 
 
 def test_shift_pushes_the_semantic_referent():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = _bound_ss(rows)
-        d = ss.shift_word(ws, 0, 7, rows)
+        ws = _bound_ss(rows)
+        d = ws.shift_word(ss, 0, 7, rows)
         assert d['action'] == 'use'
-        assert torch.equal(ws._idea_buffer[0, 0], rows[1]), (
+        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
             "the dereferenced SEMANTIC row crosses -- the word is part "
             "of the sentence; the referent is not")
-        assert int(ws._idea_depth[0].item()) == 1
+        assert int(ss._idea_depth[0].item()) == 1
     finally:
         _knob(None)
 
 
 def test_unknown_word_shifts_ignorance_placeholder():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = WholeSpace.__new__(WholeSpace)
-        d = ss.shift_word(ws, 0, 99, rows, licensed=False)
+        ws = WholeSpace.__new__(WholeSpace)
+        d = ws.shift_word(ss, 0, 99, rows, licensed=False)
         assert d['action'] == 'placeholder'
-        assert (ws._idea_buffer[0, 0] == 0).all(), "a = 0 placeholder"
-        assert int(ws._idea_depth[0].item()) == 1, (
+        assert (ss._idea_buffer[0, 0] == 0).all(), "a = 0 placeholder"
+        assert int(ss._idea_depth[0].item()) == 1, (
             "the placeholder still occupies the word's position")
     finally:
         _knob(None)
@@ -165,36 +165,36 @@ def test_unknown_word_shifts_ignorance_placeholder():
 
 def test_marker_word_binds_router_and_shifts_nothing():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = WholeSpace.__new__(WholeSpace)
-        before = snapshot(ws)
-        d = ss.shift_word(ws, 0, 5, rows, marker=True)
-        after = snapshot(ws)
+        ws = WholeSpace.__new__(WholeSpace)
+        before = snapshot(ss)
+        d = ws.shift_word(ss, 0, 5, rows, marker=True)
+        after = snapshot(ss)
         assert d['action'] == 'marker-bind'
         assert not idea_changed(before, after), "nothing shifts"
         assert not cons_changed(before, after)
-        assert ss.gate_log[-1]['action'] == 'marker-bind', "logged"
+        assert ws.gate_log[-1]['action'] == 'marker-bind', "logged"
     finally:
         _knob(None)
 
 
 def test_mention_shifts_the_word_code_verbatim():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = WholeSpace.__new__(WholeSpace)
+        ws = WholeSpace.__new__(WholeSpace)
         # A zero-banded word code (the signature that marks form
         # content): what-part then zeroed where/when.
         code = symbol_code(7, n_what=2, n_where=1, n_when=1)
-        d = ss.shift_word(ws, 0, 7, rows, mention=True, word_vec=code)
+        d = ws.shift_word(ss, 0, 7, rows, mention=True, word_vec=code)
         assert d['action'] == 'mention-shift'
-        assert torch.equal(ws._idea_buffer[0, 0], code), (
+        assert torch.equal(ss._idea_buffer[0, 0], code), (
             "quotation: the form itself crosses, no deref")
         with pytest.raises(ValueError):
-            ss.shift_word(ws, 0, 7, rows, mention=True)   # needs the code
+            ws.shift_word(ss, 0, 7, rows, mention=True)   # needs the code
     finally:
         _knob(None)
 
@@ -205,20 +205,20 @@ def test_mention_shifts_the_word_code_verbatim():
 
 def test_one_move_one_workspace_write():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = _bound_ss(rows)
+        ws = _bound_ss(rows)
         # SPLIT writes the constituent stack only.
-        ws.constituent_push(0, torch.rand(D))
-        before = snapshot(ws)
-        ws.constituent_split(0, torch.rand(D), torch.rand(D))
-        after = snapshot(ws)
+        ss.constituent_push(0, torch.rand(D))
+        before = snapshot(ss)
+        ss.constituent_split(0, torch.rand(D), torch.rand(D))
+        after = snapshot(ss)
         assert cons_changed(before, after) and not idea_changed(before, after)
         # SHIFT writes the idea stack only.
-        before = snapshot(ws)
-        ss.shift_word(ws, 0, 7, rows)
-        after = snapshot(ws)
+        before = snapshot(ss)
+        ws.shift_word(ss, 0, 7, rows)
+        after = snapshot(ss)
         assert idea_changed(before, after) and not cons_changed(before, after)
     finally:
         _knob(None)
@@ -231,16 +231,16 @@ def test_one_move_one_workspace_write():
 
 def test_deref_round_trip_preserves_extent():
     rows = torch.rand(3, D)
-    ws = make_ws()
+    ss = make_ws()
     _knob("on")
     try:
-        ss = WholeSpace.__new__(WholeSpace)
+        ws = WholeSpace.__new__(WholeSpace)
         ext = torch.rand(D) * 0.5 + 0.2
-        ss.interpret_word(7, licensed=True, object_id=1, extent=ext)
-        ss.shift_word(ws, 0, 7, rows)
-        assert torch.equal(ws._idea_buffer[0, 0], rows[1]), (
+        ws.interpret_word(7, licensed=True, object_id=1, extent=ext)
+        ws.shift_word(ss, 0, 7, rows)
+        assert torch.equal(ss._idea_buffer[0, 0], rows[1]), (
             "deref → decode lands the bound row exactly")
-        assert torch.equal(ss.reference_table.extent_of(7), ext)
+        assert torch.equal(ws.reference_table.extent_of(7), ext)
     finally:
         _knob(None)
 
@@ -265,10 +265,10 @@ def test_serial_reduce_chain_matches_parallel_sigma_extent():
 
 
 def test_parallel_mode_leaves_serial_stacks_untouched():
-    ws = make_ws(batch=2)
+    ss = make_ws(batch=2)
     # The parallel-mode push (idea_push_step) is the whole-slab path;
     # the SS-side analysis stack must stay dark through it.
-    ws.idea_push_step(torch.rand(2, D))
-    assert getattr(ws, '_constituent_buffer', None) is None
-    assert ws.constituent_depth_of(0) == 0
-    assert ws.constituent_depth_of(1) == 0
+    ss.idea_push_step(torch.rand(2, D))
+    assert getattr(ss, '_constituent_buffer', None) is None
+    assert ss.constituent_depth_of(0) == 0
+    assert ss.constituent_depth_of(1) == 0

@@ -135,7 +135,7 @@ symbol partition geometry. Higher-order symbols write to later partitions,
 so truth grounding, consistency, and extrapolation can respect conceptual
 order.
 
-The parser backend is selected by `WordSpace.parserBackend`:
+The parser backend is selected by `SymbolicSpace.parserBackend`:
 
 | Backend | Use |
 |---------|-----|
@@ -160,12 +160,12 @@ argument/return order.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
-| `<parserBackend>` | `<WordSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
+| `<parserBackend>` | `<SymbolicSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `ltmCapacity` | `<WordSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `ltmCapacity` | `<SymbolicSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 
 The relative-vs-absolute end-state machinery, the content-aware
 learn-score gate, and the tetralemma trust 4-tuple carried on accepted

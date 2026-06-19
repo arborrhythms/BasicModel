@@ -6,20 +6,20 @@ End-to-end test for the new taxonomy keying introduced by
   * Every ``insert_*`` allocates a position via
     :meth:`WholeSpace.allocate_position`. The return is the position
     (a positive int), not a signed-int row reference.
-  * ``meta_pair_to_idx[(ps_pos, ss_pos)] -> meta_pos`` keys positive
+  * ``meta_pair_to_idx[(ps_pos, ws_pos)] -> meta_pos`` keys positive
     ints to positive ints. Idempotent on the pair.
   * ``taxonomy_children`` / ``taxonomy_parent`` consume positive ints.
-  * ``_pos_kind[pos]`` tags each position as ``"ps"``, ``"ss"``, or
+  * ``_pos_kind[pos]`` tags each position as ``"ps"``, ``"ws"``, or
     ``"meta"``. PS/SS/META each live in the unified position namespace
     but resolve to different codebook rows via the
-    ``_ps_pos_to_row`` / ``_ss_pos_to_row`` indirection.
+    ``_ps_pos_to_row`` / ``_ws_pos_to_row`` indirection.
   * ``RadixLayer.position_for(row)`` / ``row_for_position(pos)`` mirror
     the SS-side lookup tables.
   * ``vocab_extras`` persists every table; load is backwards-compatible
     with legacy signed-int blobs (rekey on load).
 
-The sign-convention helpers (``_ps_signed`` / ``_ss_signed`` /
-``_ps_row_of`` / ``_ss_row_of``) are retired in this stage; tests that
+The sign-convention helpers (``_ps_signed`` / ``_ws_signed`` /
+``_ps_row_of`` / ``_ws_row_of``) are retired in this stage; tests that
 hand-constructed signed refs migrate to positive-int positions.
 """
 
@@ -71,64 +71,64 @@ class TestInsertReturnsPositiveInt(unittest.TestCase):
 
     def test_insert_percept_returns_positive_position(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        pos = ss.insert_percept(b"alpha")
+        ws = m.wholeSpace
+        pos = ws.insert_percept(b"alpha")
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
                            "insert_percept must return a positive position "
                            f"(allocated via allocate_position); got {pos}")
         # Repeat insert of the same bytes returns the SAME position.
-        again = ss.insert_percept(b"alpha")
+        again = ws.insert_percept(b"alpha")
         self.assertEqual(again, pos,
                          "idempotent insert: same bytes -> same position")
         # _pos_kind tags this as a PS slot.
-        self.assertEqual(ss._pos_kind.get(pos), "ps",
+        self.assertEqual(ws._pos_kind.get(pos), "ps",
                          "PS-side insert should tag _pos_kind[pos]='ps'")
 
     def test_insert_symbol_returns_positive_position(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        init = torch.zeros(int(ss.nDim))
+        ws = m.wholeSpace
+        init = torch.zeros(int(ws.nDim))
         init[0] = 0.5
-        pos = ss.insert_symbol(init_vec=init)
+        pos = ws.insert_symbol(init_vec=init)
         self.assertIsInstance(pos, int)
         self.assertGreater(pos, 0,
                            f"insert_symbol must return a positive position; got {pos}")
-        self.assertEqual(ss._pos_kind.get(pos), "ss",
-                         "SS-side insert should tag _pos_kind[pos]='ss'")
+        self.assertEqual(ws._pos_kind.get(pos), "ws",
+                         "SS-side insert should tag _pos_kind[pos]='ws'")
         # The position resolves to a real SS row.
-        ss_row = ss._ss_pos_to_row[pos]
-        self.assertIsInstance(ss_row, int)
-        self.assertGreaterEqual(ss_row, 0)
+        ws_row = ws._ws_pos_to_row[pos]
+        self.assertIsInstance(ws_row, int)
+        self.assertGreaterEqual(ws_row, 0)
         # Inverse direction works too.
-        self.assertEqual(ss._ss_row_to_pos[ss_row], pos)
+        self.assertEqual(ws._ws_row_to_pos[ws_row], pos)
 
     def test_insert_meta_returns_positive_position_and_keys_pair(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        ps_pos = ss.insert_percept(b"beta")
-        ss_pos = ss.insert_symbol()
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"beta")
+        ws_pos = ws.insert_symbol()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
         self.assertIsInstance(meta_pos, int)
         self.assertGreater(meta_pos, 0,
                            f"insert_meta must return a positive position; got {meta_pos}")
-        self.assertEqual(ss._pos_kind.get(meta_pos), "meta",
+        self.assertEqual(ws._pos_kind.get(meta_pos), "meta",
                          "META insert should tag _pos_kind[pos]='meta'")
         # Idempotent on the pair.
-        again = ss.insert_meta(ps_pos, ss_pos)
+        again = ws.insert_meta(ps_pos, ws_pos)
         self.assertEqual(again, meta_pos)
-        # meta_pair_to_idx keyed by positive (ps_pos, ss_pos).
-        self.assertEqual(ss.meta_pair_to_idx[(ps_pos, ss_pos)], meta_pos)
+        # meta_pair_to_idx keyed by positive (ps_pos, ws_pos).
+        self.assertEqual(ws.meta_pair_to_idx[(ps_pos, ws_pos)], meta_pos)
 
     def test_insert_meta_rejects_zero_or_negative(self):
         """Position 0 is the anchor; negative inputs are not legal under
         the new convention."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         with self.assertRaises((ValueError, AssertionError)):
-            ss.insert_meta(0, 0)
+            ws.insert_meta(0, 0)
         with self.assertRaises((ValueError, AssertionError)):
-            ss.insert_meta(-1, -2)
+            ws.insert_meta(-1, -2)
 
 
 # ---------------------------------------------------------------------------
@@ -141,13 +141,13 @@ class TestTaxonomyStoragePositiveInt(unittest.TestCase):
 
     def test_taxonomy_children_and_parent_use_positions(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        ps_pos = ss.insert_percept(b"gamma")
-        ss_pos = ss.insert_symbol()
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"gamma")
+        ws_pos = ws.insert_symbol()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
 
-        children = ss.taxonomy_children(meta_pos)
-        self.assertCountEqual(children, [ps_pos, ss_pos],
+        children = ws.taxonomy_children(meta_pos)
+        self.assertCountEqual(children, [ps_pos, ws_pos],
                               "taxonomy_children(meta_pos) must list the "
                               "positive PS + SS child positions")
         # All children are positive.
@@ -155,11 +155,11 @@ class TestTaxonomyStoragePositiveInt(unittest.TestCase):
             self.assertGreater(c, 0,
                                f"every child position must be positive; got {c}")
 
-        self.assertEqual(ss.taxonomy_parent(ps_pos), meta_pos)
-        self.assertEqual(ss.taxonomy_parent(ss_pos), meta_pos)
-        self.assertTrue(ss.is_meta(meta_pos))
-        self.assertFalse(ss.is_meta(ps_pos))
-        self.assertFalse(ss.is_meta(ss_pos))
+        self.assertEqual(ws.taxonomy_parent(ps_pos), meta_pos)
+        self.assertEqual(ws.taxonomy_parent(ws_pos), meta_pos)
+        self.assertTrue(ws.is_meta(meta_pos))
+        self.assertFalse(ws.is_meta(ps_pos))
+        self.assertFalse(ws.is_meta(ws_pos))
 
 
 # ---------------------------------------------------------------------------
@@ -172,11 +172,11 @@ class TestVocabExtrasPositiveInt(unittest.TestCase):
 
     def test_roundtrip_preserves_positive_int_keys(self):
         m = _make_radix_model()
-        ss = m.symbolicSpace
-        ps_pos = ss.insert_percept(b"delta")
-        ss_pos = ss.insert_symbol()
-        meta_pos = ss.insert_meta(ps_pos, ss_pos)
-        blob = ss.vocab_extras()
+        ws = m.wholeSpace
+        ps_pos = ws.insert_percept(b"delta")
+        ws_pos = ws.insert_symbol()
+        meta_pos = ws.insert_meta(ps_pos, ws_pos)
+        blob = ws.vocab_extras()
 
         # Every key in the taxonomy persist blob is a positive int.
         for k in blob.get("taxonomy", {}).keys():
@@ -185,7 +185,7 @@ class TestVocabExtrasPositiveInt(unittest.TestCase):
         for k in blob.get("taxonomy_parent", {}).keys():
             self.assertGreater(int(k), 0,
                                f"taxonomy_parent keys must be positive; got {k}")
-        # meta_pair_to_idx's stringified pair is "ps_pos,ss_pos" — both positive.
+        # meta_pair_to_idx's stringified pair is "ps_pos,ws_pos" — both positive.
         for raw_key, meta_i in blob.get("meta_pair_to_idx", {}).items():
             a, b = raw_key.split(",")
             self.assertGreater(int(a), 0)
@@ -194,24 +194,24 @@ class TestVocabExtrasPositiveInt(unittest.TestCase):
 
         # Load into a fresh model and verify state restored.
         m2 = _make_radix_model()
-        ss2 = m2.symbolicSpace
+        ss2 = m2.wholeSpace
         ss2.load_vocab_extras(blob)
-        self.assertEqual(ss2.taxonomy_children(meta_pos), [ps_pos, ss_pos])
+        self.assertEqual(ss2.taxonomy_children(meta_pos), [ps_pos, ws_pos])
         self.assertEqual(ss2.taxonomy_parent(ps_pos), meta_pos)
-        self.assertEqual(ss2.meta_pair_to_idx[(ps_pos, ss_pos)], meta_pos)
+        self.assertEqual(ss2.meta_pair_to_idx[(ps_pos, ws_pos)], meta_pos)
 
     def test_legacy_signed_int_blob_migrates_on_load(self):
         """A pre-Stage-3 ``vocab_extras`` blob with signed-int keys
         rekeys to positive ints on load."""
         m = _make_radix_model()
-        ss = m.symbolicSpace
+        ws = m.wholeSpace
         # Hand-construct a legacy blob: positive PS keys, negative SS / META keys.
         legacy_blob = {
             "well_known_atoms": {},
             "paired_orth_to_sem": {},
             "paired_next_row": -1,
             # taxonomy: meta_signed (negative) -> [ps_signed (positive),
-            #                                       ss_signed (negative)]
+            #                                       ws_signed (negative)]
             "taxonomy": {
                 -3: [0, -1],  # META at signed -3 binds PS row 0 + SS row 0
             },
@@ -220,18 +220,18 @@ class TestVocabExtrasPositiveInt(unittest.TestCase):
                 -1: -3,   # SS row 0's parent is META -3
             },
             "meta_pair_to_idx": {
-                "0,-1": -3,   # (ps_row=0, ss_signed=-1) -> meta_signed=-3
+                "0,-1": -3,   # (ps_row=0, ws_signed=-1) -> meta_signed=-3
             },
         }
-        ss.load_vocab_extras(legacy_blob)
+        ws.load_vocab_extras(legacy_blob)
         # After load every taxonomy key is positive.
-        for k in ss.taxonomy.keys():
+        for k in ws.taxonomy.keys():
             self.assertGreater(k, 0,
                                f"after legacy migration, taxonomy keys "
                                f"must be positive; got {k}")
-        for k in ss.taxonomy_parent_map.keys():
+        for k in ws.taxonomy_parent_map.keys():
             self.assertGreater(k, 0)
-        for (a, b) in ss.meta_pair_to_idx.keys():
+        for (a, b) in ws.meta_pair_to_idx.keys():
             self.assertGreater(a, 0)
             self.assertGreater(b, 0)
 

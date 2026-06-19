@@ -9,20 +9,11 @@
        support this exact word-level reconstruction smoke test. -->
   <architecture>
     <modelType>embedding</modelType>
-    <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
-         dispatch via _forward_per_stage's body. -->
+    <subsymbolicOrder>3</subsymbolicOrder>
     <symbolicOrder>0</symbolicOrder>
-    <!-- Gate determinism: seeded runs only reproduce on CPU (MPS
-         kernels are nondeterministic). BASICMODEL_DEVICE overrides. -->
-    <device>cpu</device>
 
     <training>
       <numEpochs>600</numEpochs>
-      <!-- Pinned seed: gate fixture; unseeded runs are recon-flaky
-           (predictions stable at 4/4, recon 4/4 vs 2/4). Seed 1 on CPU
-           is a verified-green basin (seed 0 is not; the flakiness is
-           seed-borne). -->
-      <seed>1</seed>
       <learningRate>0.005</learningRate>
       <autoload>false</autoload>
       <trainEmbedding>JOINT</trainEmbedding>
@@ -92,5 +83,15 @@
     <nInput>8</nInput>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
+    <!-- The XOR readout is ill-conditioned (the class-FLIPPING word axis is
+         ~10x lower variance than the dominant word axis) and co-adapts with
+         the upstream features during joint training. At the full model LR the
+         readout chases the moving features and settles near the data mean
+         (~0.5: 100% accurate but mushy, MSE ~0.22). Training the readout at
+         HALF the model LR makes it a slower, stable target the faster-moving
+         features organise toward -> crisp 0/1 (MSE ~0.004). The features are
+         separable (Adam reads them out crisp in 600 steps when frozen); the
+         only issue was the two-timescale convergence. -->
+    <lrScale>0.5</lrScale>
   </OutputSpace>
 </model>

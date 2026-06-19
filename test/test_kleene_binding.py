@@ -129,7 +129,7 @@ def test_unary_variable_slot_accepts_any_order():
         assert is_rule_admissible(sig, left_cat='N', left_order=k)
 
 
-# test_resolve_lhs_order_* removed: ``WordSubSpace._resolve_lhs_order``
+# test_resolve_lhs_order_* removed: ``SymbolicSubSpace._resolve_lhs_order``
 # was retired with the signal-router parser cleanup.
 
 

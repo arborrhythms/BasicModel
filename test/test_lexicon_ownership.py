@@ -61,16 +61,16 @@ class TestLexiconOwnership(unittest.TestCase):
         PS-local.
         """
         m = _build_text_model()
-        ss = m.symbolicSpace
-        self.assertFalse(hasattr(ss, 'insert_paired_word'),
+        ws = m.wholeSpace
+        self.assertFalse(hasattr(ws, 'insert_paired_word'),
                          "WholeSpace.insert_paired_word must be "
                          "RETIRED (Step 3, symbolic-iteration plan).")
-        self.assertFalse(hasattr(ss, 'mark_word_atom'),
+        self.assertFalse(hasattr(ws, 'mark_word_atom'),
                          "the mark_word_atom autobind fallback retires "
                          "with the paired-row machinery.")
 
     def test_embedding_symbolic_back_ref_wired(self):
-        """The PS-side Embedding carries ``symbolicSpace_ref`` for the
+        """The PS-side Embedding carries ``wholeSpace_ref`` for the
         vocabulary/orthographic API delegation. (Its former role --
         triggering ``insert_paired_word`` on lexicon inserts -- retired
         with Step 3 of the symbolic-iteration plan.)
@@ -78,10 +78,10 @@ class TestLexiconOwnership(unittest.TestCase):
         m = _build_text_model()
         emb = m.perceptualSpace.vocabulary
         self.assertIsInstance(emb, Embedding)
-        peer = getattr(emb, 'symbolicSpace_ref', None)
+        peer = getattr(emb, 'wholeSpace_ref', None)
         self.assertIsNotNone(
             peer,
-            "Embedding.symbolicSpace_ref must be wired so the PS-side "
+            "Embedding.wholeSpace_ref must be wired so the PS-side "
             "OOV insert path triggers SS-side paired-row insertion.")
 
     def test_get_embedding_returns_perceptual(self):

@@ -1,7 +1,7 @@
 """STM-residual microbatch is sync-free (§6a).
 
 The brick-vectorization handoff §6a removed the ``not_fired.any().item()``
-early-out from ``WordSpace.stm_residual_microbatch``: the gate was a
+early-out from ``SymbolicSpace.stm_residual_microbatch``: the gate was a
 per-batch GPU->CPU sync that blocked CUDA-graph capture. The
 replacement always calls ``disc.predict()`` and zeros out the bias
 on already-fired rows via ``torch.where``-style multiplication.
@@ -31,8 +31,8 @@ def test_stm_residual_microbatch_has_no_item_early_out():
     The early-out was the only ``.item()`` call in the function; the
     handoff replaced it with a host-sync-free vectorized gate.
     """
-    from Language import WordSubSpace
-    src = inspect.getsource(WordSubSpace.stm_residual_microbatch)
+    from Language import SymbolicSubSpace
+    src = inspect.getsource(SymbolicSubSpace.stm_residual_microbatch)
     # The function may mention ``.item()`` in comments (e.g. the
     # "Removed: ..." marker the handoff left as a regression
     # signpost), but no live call should remain.
@@ -62,18 +62,18 @@ def test_stm_residual_microbatch_runs_when_all_fired():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    ws = model.wordSubSpace
+    ss = model.symbolicSpace
 
-    if ws is None or ws.discourse is None:
+    if ss is None or ss.discourse is None:
         pytest.skip("model has no discourse layer; STM-residual is None")
 
     # Mark every row as fired -- under the legacy gate this would
     # have early-returned; under the new gate it should compute and
     # zero the bias.
-    B = int(ws._stm_fired.shape[0])
-    ws._stm_fired.fill_(True)
+    B = int(ss._stm_fired.shape[0])
+    ss._stm_fired.fill_(True)
     K = 1
-    bias = ws.stm_residual_microbatch(B, K)
+    bias = ss.stm_residual_microbatch(B, K)
     # Either None (discourse missing) or a tensor — never an exception.
     if bias is not None:
         # All-fired rows must return zero contributions.

@@ -9,7 +9,7 @@ Tests 1-4 from the plan
   3. ``build_semantic_heat`` equals dense reference ``A_S^T r_S``.
   4. Low-rank outer product computes ``Cq`` equal to dense ``C @ q``.
 
-Tests 5-7 (Phase 2) cover ``WordSubSpace.retrieval_candidates_for_slot``
+Tests 5-7 (Phase 2) cover ``SymbolicSubSpace.retrieval_candidates_for_slot``
 (plan §Candidate generation / §Recommender changes):
 
   5. Candidate union includes content-nearest rows even when cold.
@@ -30,7 +30,7 @@ _bin = str(_project / "bin")
 if _bin not in sys.path:
     sys.path.insert(0, _bin)
 
-from Language import Taxonomy, WordSubSpace  # noqa: E402
+from Language import Taxonomy, SymbolicSubSpace  # noqa: E402
 from Layers import Ops  # noqa: E402
 from types import SimpleNamespace
 
@@ -358,7 +358,7 @@ class FakeView:
     """Duck-typed KnowledgeView for unit tests.
 
     Stores pre-built ref-id tensors per category name and per integer order.
-    Mirrors the interface ``WordSubSpace.retrieval_candidates_for_slot``
+    Mirrors the interface ``SymbolicSubSpace.retrieval_candidates_for_slot``
     requires (plan §Candidate generation).
     """
 
@@ -374,10 +374,10 @@ class FakeView:
 
 
 def _call_retrieval(stub, A, query, category, order, **kw):
-    """Invoke ``WordSubSpace.retrieval_candidates_for_slot`` via the class
-    (unbound call) so no full ``WordSubSpace`` construction is needed."""
+    """Invoke ``SymbolicSubSpace.retrieval_candidates_for_slot`` via the class
+    (unbound call) so no full ``SymbolicSubSpace`` construction is needed."""
     basis = SimpleNamespace(getW=lambda: A)
-    return WordSubSpace.retrieval_candidates_for_slot(
+    return SymbolicSubSpace.retrieval_candidates_for_slot(
         stub, query=query, basis=basis,
         category=category, order=order, **kw)
 
@@ -626,7 +626,7 @@ class TestRetrievalGracefulFallback:
         """knowledge=None -> {}."""
         stub = SimpleNamespace(knowledge=None, taxonomy=None)
         basis = self._make_basis()
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=self._make_query(), basis=basis,
             category='N', order=0)
         assert out == {}
@@ -635,7 +635,7 @@ class TestRetrievalGracefulFallback:
         """basis=None -> {}."""
         tax = Taxonomy()
         stub = SimpleNamespace(knowledge=self._make_view(), taxonomy=tax)
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=self._make_query(), basis=None,
             category='N', order=0)
         assert out == {}
@@ -645,7 +645,7 @@ class TestRetrievalGracefulFallback:
         tax = Taxonomy()
         stub = SimpleNamespace(knowledge=self._make_view(), taxonomy=tax)
         basis = SimpleNamespace(getW=lambda: None)
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=self._make_query(), basis=basis,
             category='N', order=0)
         assert out == {}
@@ -655,7 +655,7 @@ class TestRetrievalGracefulFallback:
         tax = Taxonomy()
         stub = SimpleNamespace(knowledge=self._make_view(), taxonomy=tax)
         basis = SimpleNamespace()   # no getW
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=self._make_query(), basis=basis,
             category='N', order=0)
         assert out == {}
@@ -689,7 +689,7 @@ class TestTypedOnlyFallback:
         stub = SimpleNamespace(knowledge=view, taxonomy=tax)
 
         basis = SimpleNamespace(getW=lambda: A)
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis,
             category='N', order=0,
             topk_content=0, topk_heat=0)
@@ -728,7 +728,7 @@ class TestDiagnosticsConsistency:
         stub = SimpleNamespace(knowledge=view, taxonomy=tax)
 
         basis = SimpleNamespace(getW=lambda: A)
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis,
             category='N', order=0,
             topk_content=4, topk_heat=4)
@@ -952,12 +952,12 @@ class TestHeatContentPrefersExpectedCandidate:
 # Phase 4: forward-commit heat updates (plan §Forward-path responsibilities,
 # plan tests 8 byte-identical-OFF and 11 sentence-reset).
 #
-# The forward commit site is ``WordSubSpace.push`` (word/percept commit) and
+# The forward commit site is ``SymbolicSubSpace.push`` (word/percept commit) and
 # ``LanguageLayer.reduce`` (C-tier grammar reduction). Both delegate the gated
-# heat update to ``WordSubSpace._commit_priming(b, ref_id)`` so the
+# heat update to ``SymbolicSubSpace._commit_priming(b, ref_id)`` so the
 # ``priming_enabled``-first guard lives in exactly one place. These tests
 # exercise that helper unbound on a duck-typed stub (same pattern as
-# ``_call_retrieval`` above) so no full ``WordSubSpace`` construction is needed.
+# ``_call_retrieval`` above) so no full ``SymbolicSubSpace`` construction is needed.
 # ---------------------------------------------------------------------------
 
 class AdjacencyView:
@@ -988,8 +988,8 @@ class AdjacencyView:
 
 
 def _commit(stub, b, ref_id):
-    """Invoke ``WordSubSpace._commit_priming`` unbound on a duck-typed stub."""
-    return WordSubSpace._commit_priming(stub, b, ref_id)
+    """Invoke ``SymbolicSubSpace._commit_priming`` unbound on a duck-typed stub."""
+    return SymbolicSubSpace._commit_priming(stub, b, ref_id)
 
 
 class TestSymbolicPrimingOffIsNoop:
@@ -998,7 +998,7 @@ class TestSymbolicPrimingOffIsNoop:
     Exercises the off-path of ``_commit_priming``: committing a ref when
     ``priming_enabled=False`` must NOT touch ``_priming`` — it stays at unity
     (all 1.0), so ``heat_mask`` is all-zero.  This mirrors what a production
-    WordSubSpace taxonomy looks like: ``attach_knowledge`` calls
+    SymbolicSubSpace taxonomy looks like: ``attach_knowledge`` calls
     ``configure_priming(priming_enabled=<symbolicPriming>)`` (default False),
     so priming is off unless the XML flag is set.  A bare ``Taxonomy()``
     class default is True (for the retrieval helpers), so the tests call
@@ -1138,7 +1138,7 @@ class TestConfigurePrimingFromSymbolicPriming:
         assert tax.heat_mask(batch=0)[2].item() > 0.0, "ON gate must prime"
 
     def test_missing_taxonomy_is_safe(self):
-        """The gate tolerates a WordSubSpace with no taxonomy / no buffer."""
+        """The gate tolerates a SymbolicSubSpace with no taxonomy / no buffer."""
         # No 'taxonomy' attribute at all.
         _commit(SimpleNamespace(), b=0, ref_id=2)
         # taxonomy present but priming unallocated (_priming is None).
@@ -1215,7 +1215,7 @@ class TestPrimerModeByteIdentical:
         stub, A, q, K, D, basis = self._setup()
         import torch.nn.functional as F
         alpha, beta = 1.0, 0.5
-        out = WordSubSpace.retrieval_candidates_for_slot(
+        out = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis,
             category='N', order=0,
             alpha=alpha, beta=beta,
@@ -1238,9 +1238,9 @@ class TestPrimerModeByteIdentical:
     def test_primer_equals_default_call(self):
         """Default call (no mode kwarg) is element-equal to mode='primer'."""
         stub, A, q, K, D, basis = self._setup()
-        out_default = WordSubSpace.retrieval_candidates_for_slot(
+        out_default = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0)
-        out_primer = WordSubSpace.retrieval_candidates_for_slot(
+        out_primer = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0, mode='primer')
         assert torch.equal(out_default['priming'], out_primer['priming']), (
             "Default call priming must be element-equal to mode='primer'")
@@ -1248,10 +1248,10 @@ class TestPrimerModeByteIdentical:
     def test_primer_mode_with_nonzero_gamma_delta_ignored(self):
         """mode='primer' must ignore gamma/delta even if passed (byte-identical)."""
         stub, A, q, K, D, basis = self._setup()
-        out_primer = WordSubSpace.retrieval_candidates_for_slot(
+        out_primer = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             mode='primer', gamma=5.0, delta=5.0)
-        out_default = WordSubSpace.retrieval_candidates_for_slot(
+        out_default = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0)
         # mode='primer' must clamp gamma/delta to zero internally (spec)
         assert torch.equal(out_primer['priming'], out_default['priming']), (
@@ -1298,11 +1298,11 @@ class TestLowRankCarrierMatchesDense:
         stub = SimpleNamespace(knowledge=view, taxonomy=tax)
         basis = SimpleNamespace(getW=lambda: A)
 
-        out_lr = WordSubSpace.retrieval_candidates_for_slot(
+        out_lr = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             alpha=0.0, beta=0.0,  # isolate delta contribution
             mode='low-rank', gamma=0.0, delta=1.0, outer_topk=8)
-        out_so = WordSubSpace.retrieval_candidates_for_slot(
+        out_so = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             alpha=0.0, beta=0.0,
             mode='second-order', gamma=0.0, delta=1.0, outer_topk=8)
@@ -1354,10 +1354,10 @@ class TestCarrierChangesWeight:
         stub = SimpleNamespace(knowledge=view, taxonomy=tax)
         basis = SimpleNamespace(getW=lambda: A)
 
-        out_primer = WordSubSpace.retrieval_candidates_for_slot(
+        out_primer = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             mode='primer', gamma=0.0, delta=0.0)
-        out_carrier = WordSubSpace.retrieval_candidates_for_slot(
+        out_carrier = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             mode='low-rank', gamma=2.0, delta=0.0, outer_topk=K)
 
@@ -1387,10 +1387,10 @@ class TestCarrierChangesWeight:
         stub = SimpleNamespace(knowledge=view, taxonomy=tax)
         basis = SimpleNamespace(getW=lambda: A)
 
-        out_primer = WordSubSpace.retrieval_candidates_for_slot(
+        out_primer = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             mode='primer', gamma=0.0, delta=0.0)
-        out_carrier = WordSubSpace.retrieval_candidates_for_slot(
+        out_carrier = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             mode='low-rank', gamma=0.0, delta=2.0, outer_topk=K)
 
@@ -1465,7 +1465,7 @@ class TestMillionRowNoVVSmoke:
         basis = SimpleNamespace(getW=lambda: A)
 
         # primer mode
-        out_p = WordSubSpace.retrieval_candidates_for_slot(
+        out_p = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             topk_content=64, topk_heat=64,
             mode='primer')
@@ -1475,7 +1475,7 @@ class TestMillionRowNoVVSmoke:
             f"primer: expected priming shape ({V},), got {out_p['priming'].shape}")
 
         # low-rank mode with gamma and delta
-        out_lr = WordSubSpace.retrieval_candidates_for_slot(
+        out_lr = SymbolicSubSpace.retrieval_candidates_for_slot(
             stub, query=q, basis=basis, category='N', order=0,
             topk_content=64, topk_heat=64,
             mode='low-rank', gamma=0.5, delta=0.5, outer_topk=32)

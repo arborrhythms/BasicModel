@@ -6,7 +6,7 @@ specialized path.
 
 These tests verify:
 * ``WholeSpace.empty_state`` is callable and shape-correct -- the
-  unified loop's seed for ``ss``.
+  unified loop's seed for ``ws``.
 * The j-loop runs ``subsymbolicOrder`` times (via
   ``_unified_j_iterations`` counter).
 * ``subsymbolicOrder==0`` -> zero j-iterations + a single pre-seed C->S
@@ -21,7 +21,7 @@ from Spaces import WholeSpace
 
 
 def test_symbolicspace_empty_state_is_callable():
-    """Used to seed ``ss`` in the unified loop."""
+    """Used to seed ``ws`` in the unified loop."""
     assert callable(getattr(WholeSpace, "empty_state", None))
 
 

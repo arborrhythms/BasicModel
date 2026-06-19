@@ -121,13 +121,13 @@ class TestAnalyseMigration(unittest.TestCase):
             with self.assertRaises((ValueError, KeyError)):
                 BaseModel.from_config(config_path=path)
 
-    def test_ss_analysis_knob_accepted(self):
+    def test_ws_analysis_knob_accepted(self):
         # <analysis>analyse on WholeSpace builds; mode is stashed.
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
             path = _write_xml(tmp, analysis="analyse")
             model, _cfg = BaseModel.from_config(config_path=path)
-            self.assertEqual(model.symbolicSpace.analysis_mode, "analyse")
+            self.assertEqual(model.wholeSpace.analysis_mode, "analyse")
 
     def _tokens(self, synthesis, lexer="byte"):
         import torch

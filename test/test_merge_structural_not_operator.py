@@ -31,41 +31,41 @@ _TRANSITIONAL_GRAMMAR = os.path.join(
     "transitional_pos.grammar")
 
 
-def _ss_and_grammar(grammar_file=_TRANSITIONAL_GRAMMAR):
+def _ws_and_grammar(grammar_file=_TRANSITIONAL_GRAMMAR):
     from Spaces import WholeSpace
     from Language import Grammar
-    ss = WholeSpace.__new__(WholeSpace)   # bypass full-model build
-    ss.nDim = 8
+    ws = WholeSpace.__new__(WholeSpace)   # bypass full-model build
+    ws.nDim = 8
     g = Grammar()
     g.load_from_grammar_file(grammar_file)
-    return ss, g
+    return ws, g
 
 
 def test_merge_not_inserted_as_operator():
     """The transitional grammar declares structural ``merge`` rules, but
     merge is not registered in the operator codebook / superposition
     table."""
-    ss, g = _ss_and_grammar()
+    ws, g = _ws_and_grammar()
     assert any(r.method_name == "merge" for r in g.rules), (
         "fixture sanity: the transitional grammar should contain "
         "bare-sequence 'merge' rules")
-    pos = ss.insert_operations(g)
+    pos = ws.insert_operations(g)
     assert "merge" not in pos
-    assert ss.operation_position("merge") is None
-    assert ss.operation_vector("merge") is None
+    assert ws.operation_position("merge") is None
+    assert ws.operation_vector("merge") is None
 
 
 def test_semantic_operators_still_inserted():
     """Real semantic operators (those with a GrammarLayer) ARE registered."""
-    ss, g = _ss_and_grammar()
-    ss.insert_operations(g)
+    ws, g = _ws_and_grammar()
+    ws.insert_operations(g)
     for op in ("conjunction", "disjunction", "isEqual", "lift", "exist"):
-        assert ss.operation_position(op) is not None, op
+        assert ws.operation_position(op) is not None, op
 
 
 def test_only_semantic_operators_in_codebook():
     """Every inserted operator has a concrete GrammarLayer."""
     from Language import GRAMMAR_LAYER_CLASSES
-    ss, g = _ss_and_grammar()
-    pos = ss.insert_operations(g)
+    ws, g = _ws_and_grammar()
+    pos = ws.insert_operations(g)
     assert set(pos) <= set(GRAMMAR_LAYER_CLASSES), set(pos) - set(GRAMMAR_LAYER_CLASSES)

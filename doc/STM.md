@@ -2,7 +2,7 @@
 
 > **2026-06-02 update (subsymbolic analyzer).** Operators no longer enter
 > the STM idea space. They are kept in the SS **codebook**
-> (`WholeSpace.insert_operations`, wired into `WordSubSpace.__init__`)
+> (`WholeSpace.insert_operations`, wired into `SymbolicSubSpace.__init__`)
 > and resolved as a soft superposition over the operator-prefixed parse
 > tree; the STM idea slots hold only **combined meanings** -- an operator
 > defines *how* meanings combine, contributing none of its own. See
@@ -79,12 +79,12 @@ columns only; the positional / temporal (`where` / `when`) columns are
 trimmed at the PS$\to$CS boundary so the slab the grammar dispatch runs
 over is a clean concept-dim block (`_stm_payload_dim = concept_dim`).
 
-**WordSubSpace as the data carrier.** After the 2026-05-21 STM-Layer
+**SymbolicSubSpace as the data carrier.** After the 2026-05-21 STM-Layer
 refactor the `ShortTermMemory` object is itself data-free: its `_buffer`
-/ `_depth` properties proxy to the owning `WordSubSpace`'s `_idea_*`
+/ `_depth` properties proxy to the owning `SymbolicSubSpace`'s `_idea_*`
 buffers via `attach_word_subspace`. A standalone fallback buffer exists
 for bare-construction unit tests, but in the live model the bytes live on
-WordSubSpace and `ShortTermMemory` is a thin accessor over them.
+SymbolicSubSpace and `ShortTermMemory` is a thin accessor over them.
 
 **API.** `push(b, idea)`, `pop(b)`, `peek(b, n=0)`
 (`peek(b, 0)` = most recent), `snapshot(detach=False)`, `size(b)`,
@@ -105,11 +105,11 @@ surface lookup $\to$ `PartSpace.forward` ($\pi(x) + \sigma(x)$, no
 outer $\tanh$) $\to$ `ConceptualSpace.forward`, which does the STM
 bookkeeping. The whole pass is **predict-then-perceive per word**,
 implemented in `ConceptualSpace.forward`
-([Spaces.py:11011](../bin/Spaces.py)):
+([Spaces.py:14134](../bin/Spaces.py)):
 
 1. **Snapshot + predict the free (newest) slot.** Before writing the new
    event, `_stm_predict_then_perceive_serial(idea)`
-   ([Spaces.py:10482](../bin/Spaces.py)) takes `stm.snapshot()` and runs
+   ([Spaces.py:12290](../bin/Spaces.py)) takes `stm.snapshot()` and runs
    the in-STM predictor from the **retained context** — the snapshot with
    the oldest slot dropped (`snap[:, :-1]` when depth $\ge 2$; the whole
    snapshot when depth $= 1$). The prediction is stashed on
@@ -120,7 +120,7 @@ implemented in `ConceptualSpace.forward`
    the oldest (regardless of which physical slot holds it) yields the same
    prediction.
 2. **Perceive (overwrite via `_stm_shift_and_push`).**
-   `_stm_shift_and_push(idea)` ([Spaces.py:10303](../bin/Spaces.py)) is
+   `_stm_shift_and_push(idea)` ([Spaces.py:12056](../bin/Spaces.py)) is
    the perceive step. At capacity, slots $0\ldots(\text{cap}-2)$ shift
    into $1\ldots(\text{cap}-1)$ and the new idea lands in slot $0$ (the
    newest slot); the oldest idea (the last slot $\text{cap}-1$) falls off.
@@ -140,7 +140,7 @@ implemented in `ConceptualSpace.forward`
 > "predict the free slot" step predicts slot $0$, and the retained
 > context that conditions it is `snap[:, :-1]` (everything but the
 > soon-to-be-evicted oldest slot). A named primitive
-> `_stm_shift_for_predict` ([Spaces.py:10355](../bin/Spaces.py)) exists
+> `_stm_shift_for_predict` ([Spaces.py:12121](../bin/Spaces.py)) exists
 > for the literal "rotate so the free slot is free" step, but the hot
 > serial path deliberately does **not** call it — `_stm_shift_and_push`
 > already does shift-right-then-write in one pass, and a separate physical
@@ -165,11 +165,11 @@ branch:
 
 1. **Predict $\hat{C}$ from the previous slab.**
    `_stm_predict_then_perceive_parallel(folded)`
-   ([Spaces.py:10506](../bin/Spaces.py)) snapshots the previous STM and
+   ([Spaces.py:12325](../bin/Spaces.py)) snapshots the previous STM and
    runs the predictor **per slot** (no cross-slot collapse), producing a
    `[B, prev_N, D]` slab stashed on `self._stm_predicted_slab`.
 2. **Perceive via `_stm_set_all_slots`.**
-   `_stm_set_all_slots(slab)` ([Spaces.py:10258](../bin/Spaces.py))
+   `_stm_set_all_slots(slab)` ([Spaces.py:11986](../bin/Spaces.py))
    writes all $N$ positions directly as the slot stack (no shift, no
    mean-reduction). The slab is position-ordered (position $0$ oldest,
    $N-1$ newest); under the newest-at-slot-0 convention it is **flipped**
@@ -259,10 +259,10 @@ direction, not built here.
 ## 5. Routing parser: SS-analysis vs CS-execution
 
 The grammar runs through the signal router (`LanguageLayer`,
-[Language.py:3493](../bin/Language.py)); `WordSubSpace` owns it as
+[Language.py:3493](../bin/Language.py)); `SymbolicSubSpace` owns it as
 `self.languageLayer`. Conceptually the work splits in two:
 
-- **SS-analysis** — `WordSubSpace.compose`
+- **SS-analysis** — `SymbolicSubSpace.compose`
   ([Language.py:7693](../bin/Language.py)) is the analysis stage: a soft
   superposition over the taxonymic codebook that selects, per tier, a
   **hard rule dict** `current_rules = {tier: [rule_id, ...]}`. It chooses
@@ -295,7 +295,7 @@ The grammar runs through the signal router (`LanguageLayer`,
 > documented task-5 follow-up, not a finished boundary.
 
 `_grammar_is_default_only` is computed from the configured grammar at
-`WordSubSpace.__init__` ([Language.py:6522](../bin/Language.py)) and gates
+`SymbolicSubSpace.__init__` ([Language.py:6522](../bin/Language.py)) and gates
 both `compose` and `generate`.
 
 ---
@@ -343,9 +343,9 @@ per-slot path is width-preserving and exactly invertible.
 
 **Loss.** $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ via
 `intra_loss(pred, target)`. ConceptualSpace accumulates it per step
-(`_accumulate_intra_loss`, [Spaces.py:10430](../bin/Spaces.py)) into a
+(`_accumulate_intra_loss`, [Spaces.py:12248](../bin/Spaces.py)) into a
 live grad-carrying running sum and `consume_intra_loss`
-([Spaces.py:10453](../bin/Spaces.py)) returns the per-step mean once per
+([Spaces.py:12271](../bin/Spaces.py)) returns the per-step mean once per
 batch (`runBatch` consumes it post-body / pre-backward, mirroring the
 ARMA term). The weight is `<intraLossWeight>` (default `0.1`); the term
 is gated off when grad is disabled or the weight is non-positive.
@@ -364,9 +364,9 @@ when the router fires on the serial path:
 | `both` | **(default)** per-word AND boundary both fire |
 | `off` | neither fires |
 
-The **per-word fire** runs `wordSubSpace.compose` over the current STM
+The **per-word fire** runs `symbolicSpace.compose` over the current STM
 snapshot *before* `cs.forward` for the next word, populating
-`wordSubSpace.current_rules` for the SS dispatch
+`symbolicSpace.current_rules` for the SS dispatch
 ([Models.py:6053](../bin/Models.py)). It lives in the host-side loop,
 outside the per-iteration captured graph, so even a full `languageLayer`
 path that introduces a host sync cannot break the per-word capture gate.
@@ -378,7 +378,7 @@ The **boundary fire** ([Layers.py / Models.py boundary hook]) runs iff
 > **not** a `[B, concept_dim]` tensor. `IntraSentenceLayer.forward`
 > accepts a `routing` tensor and projects it into a Sigma bias, but
 > ConceptualSpace's `_intra_routing_for_predict`
-> ([Spaces.py:10387](../bin/Spaces.py)) only forwards `routing` when it is
+> ([Spaces.py:12166](../bin/Spaces.py)) only forwards `routing` when it is
 > a CS-width tensor; given a dict it returns `None`. So the per-word fire
 > wires the SS dispatch context but does **not** yet flow a routing
 > tensor into the intra predictor — the predictor runs **without** the
@@ -472,7 +472,7 @@ absolute path stays **byte-identical** in every fall-through case.
 
 **Learn-score acceptance gate.** Codebook insertion of a learned relation
 is gated by a content-aware **learn-score**
-(`_compute_learn_score`, [Spaces.py:10787](../bin/Spaces.py)):
+(`_compute_learn_score`, [Spaces.py:13312](../bin/Spaces.py)):
 
 $$
 \text{learn\_score} = \text{children\_in\_codebook} \times
@@ -490,9 +490,9 @@ at `0` everything is.
 
 Accepted insertions carry a **tetralemma trust 4-tuple** $(t, f, b, n)$
 (TRUE / FALSE / BOTH / NEITHER, summing to $1$) computed by
-`_tetralemma_trust` ([Spaces.py:10818](../bin/Spaces.py)) from the
+`_tetralemma_trust` ([Spaces.py:13343](../bin/Spaces.py)) from the
 TruthSet posture via `assess()`, and bound onto the relation's META node
-by `insert_relation` ([Spaces.py:12559](../bin/Spaces.py)) with the
+by `insert_relation` ([Spaces.py:16033](../bin/Spaces.py)) with the
 predicate as the parent and the two ideas as its taxonomy children.
 
 > **Honesty — the learn-score factors read the GLOBAL truth layer.**
@@ -500,7 +500,7 @@ predicate as the parent and the two ideas as its taxonomy children.
 > read the **global** `truth_layer.assess()` — `support` and `conflict`
 > respectively (`_learn_score_is_truth_obvious` /
 > `_learn_score_resolves_contradiction`,
-> [Spaces.py:10754](../bin/Spaces.py)) — behind a swappable seam (each
+> [Spaces.py:13279](../bin/Spaces.py)) — behind a swappable seam (each
 > factor is an independently overridable method, the plan's required test
 > seam). A **per-relation projection** is the documented refinement; the
 > global read is a first cut, not the final formula.

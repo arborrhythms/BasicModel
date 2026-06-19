@@ -1,7 +1,7 @@
 """Gradient-bearing ``rule_probs``: the intra-sentence predictor's routing
 bias must backprop into the signal router's scorer parameters.
 
-Before this change, ``WordSubSpace._synthesize_rule_probs`` scattered unit
+Before this change, ``SymbolicSubSpace._synthesize_rule_probs`` scattered unit
 mass onto the SELECTED (hard, argmax) rule-ids -- a DETACHED distribution,
 so ``IntraSentenceLayer.routing_proj(rule_probs)`` could not train the
 router. The fix (``_synthesize_rule_probs_soft``) aggregates the router's
@@ -26,7 +26,7 @@ Proof points (the deliverable):
   4. The default-only fast path (no router; ``_last_tier_routings`` empty)
      still dispatches to the (detached) hard scatter without error.
 
-See: bin/Language.py ``WordSubSpace._synthesize_rule_probs`` /
+See: bin/Language.py ``SymbolicSubSpace._synthesize_rule_probs`` /
 ``_synthesize_rule_probs_soft`` / ``_map_op_columns``; the NaN-safe
 ``_masked_softmax_lastdim`` (fully tier-masked reduce rows).
 """
@@ -48,7 +48,7 @@ import torch
 import torch.nn as nn
 
 import Language
-from Language import LanguageLayer, WordSubSpace
+from Language import LanguageLayer, SymbolicSubSpace
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
 _ROUTER_CONFIG = os.path.join(_DATA_DIR, "MM_xor_loopback.xml")   # full router
@@ -79,15 +79,15 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         """A grad-enabled ``compose`` on the full-router grammar makes
         ``routing_state.rule_probs`` a LIVE differentiable tensor."""
         model = _build_model(_ROUTER_CONFIG)
-        ws = model.wordSubSpace
-        self.assertIsNotNone(ws, "router config must have a wordSubSpace.")
+        ss = model.symbolicSpace
+        self.assertIsNotNone(ss, "router config must have a symbolicSpace.")
         self.assertFalse(
-            ws._grammar_is_default_only,
+            ss._grammar_is_default_only,
             "MM_xor_loopback must be a FULL-ROUTER grammar (compose fires).")
-        D = ws.languageLayer.feature_dim
+        D = ss.languageLayer.feature_dim
         x = torch.randn(2, 4, D, requires_grad=True)
-        ws.compose(x)
-        rp = ws.routing_state.rule_probs
+        ss.compose(x)
+        rp = ss.routing_state.rule_probs
         self.assertTrue(torch.is_tensor(rp))
         self.assertTrue(
             rp.requires_grad,
@@ -118,8 +118,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             ``test_rule_probs_requires_grad_on_full_router``.
         """
         model = _build_model(_ROUTER_CONFIG)
-        ws = model.wordSubSpace
-        ll = ws.languageLayer
+        ss = model.symbolicSpace
+        ll = ss.languageLayer
         # Tier-free fold: the grammar collapses to a SINGLE reduction tier
         # (no hardcoded S/C/P). Resolve whichever key the unary layer was
         # registered under -- there is exactly one -- and assert the
@@ -144,8 +144,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         torch.manual_seed(0)
         D = ll.feature_dim
         x = torch.randn(2, 4, D, requires_grad=True)
-        ws.compose(x)
-        rp = ws.routing_state.rule_probs
+        ss.compose(x)
+        rp = ss.routing_state.rule_probs
         self.assertTrue(rp.requires_grad and rp.grad_fn is not None)
         # Mimic routing_proj: [n_rules] -> [concept_dim] non-uniform map.
         proj = nn.Linear(int(rp.shape[1]), 5, bias=True)
@@ -206,13 +206,13 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         router.attach_layer_ops(
             ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], tier="S")
 
-        # Bind the WordSubSpace aggregator methods to a stand-in carrying
+        # Bind the SymbolicSubSpace aggregator methods to a stand-in carrying
         # this router (the methods only need ``self.languageLayer``).
         stub = types.SimpleNamespace(languageLayer=router)
         stub._synthesize_rule_probs_soft = types.MethodType(
-            WordSubSpace._synthesize_rule_probs_soft, stub)
+            SymbolicSubSpace._synthesize_rule_probs_soft, stub)
         stub._map_op_columns = types.MethodType(
-            WordSubSpace._map_op_columns, stub)
+            SymbolicSubSpace._map_op_columns, stub)
 
         torch.manual_seed(1)
         x = torch.randn(2, 4, 4, requires_grad=True)
@@ -249,17 +249,17 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         DETACHED ``rule_probs`` without error (the fallback is preserved
         exactly)."""
         model = _build_model(_DEFAULT_CONFIG)
-        ws = model.wordSubSpace
-        self.assertIsNotNone(ws, "default config must have a wordSubSpace.")
+        ss = model.symbolicSpace
+        self.assertIsNotNone(ss, "default config must have a symbolicSpace.")
         self.assertTrue(
-            ws._grammar_is_default_only,
+            ss._grammar_is_default_only,
             "model.xml must be a default-only grammar (no router).")
         self.assertFalse(
-            bool(getattr(ws.languageLayer, "_last_tier_routings", {})),
+            bool(getattr(ss.languageLayer, "_last_tier_routings", {})),
             "default-only path must leave _last_tier_routings empty.")
-        rbt = ws._default_compose_rules()
+        rbt = ss._default_compose_rules()
         with torch.enable_grad():
-            rp = ws._synthesize_rule_probs(rbt, batch_size=2)
+            rp = ss._synthesize_rule_probs(rbt, batch_size=2)
         self.assertTrue(torch.is_tensor(rp), "hard fallback must return a tensor.")
         self.assertFalse(
             rp.requires_grad,

@@ -99,10 +99,10 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <WordSpace>
+  <SymbolicSpace>
     <language>
       <grammar>role_collapsed.grammar</grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
 </model>

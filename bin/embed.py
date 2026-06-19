@@ -1113,7 +1113,7 @@ class WordVectors(nn.Module):
     # Tied-storage API (2026-05-27)
     # ------------------------------------------------------------------
     # ``_vectors`` is a property so that reads transparently route to the
-    # tied SS codebook Parameter when the wiring is in place. The local
+    # tied WS codebook Parameter when the wiring is in place. The local
     # ``_local_vectors`` Parameter remains for back-compat with untied
     # callers (standalone WordVectors used by SBOW trainers without a
     # WholeSpace).
@@ -1124,7 +1124,7 @@ class WordVectors(nn.Module):
     # in place via ``_vectors.data[...]``.
     @property
     def _vectors(self) -> nn.Parameter:
-        """Live storage for word vectors. Tied path: returns the SS
+        """Live storage for word vectors. Tied path: returns the WS
         codebook ``W`` Parameter (single trainable storage). Untied path:
         returns the locally-owned ``_local_vectors`` Parameter.
         """
@@ -1156,7 +1156,7 @@ class WordVectors(nn.Module):
         if getter is not None and getter() is not None:
             raise RuntimeError(
                 "WordVectors._vectors cannot be reassigned while tied to "
-                "SS.codebook (single-storage invariant). Use in-place "
+                "WS.codebook (single-storage invariant). Use in-place "
                 "writes (``_vectors.data[...]``) instead, or untie first.")
         if value is None:
             # Treat None as 'clear local Parameter'. Unusual but supported.
@@ -1192,7 +1192,7 @@ class WordVectors(nn.Module):
         super().__setattr__(name, value)
 
     # Step 3 (2026-06-10 symbolic-iteration plan): ``tie_to_codebook``
-    # (retarget ``_vectors`` at the SS codebook's ``W``) is RETIRED. The
+    # (retarget ``_vectors`` at the WS codebook's ``W``) is RETIRED. The
     # lexicon keeps PS-LOCAL storage permanently; ``_tied_param_getter``
     # stays permanently None and the ``_vectors`` property always
     # resolves to ``_local_vectors`` (the property mechanics remain --

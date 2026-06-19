@@ -136,7 +136,7 @@ Rationality is the propositional logic layer, built on S-tier grammar rules
 ### Truth Statements
 
 A **truth statement** is any assertion processed through the full pipeline.
-The `TruthLayer` --- owned by `WordSpace`, reached as
+The `TruthLayer` --- owned by `SymbolicSpace`, reached as
 `self.wordSpace.truth_layer` --- stores activations **scaled by** DegreeOfTruth:
 
 $$
@@ -151,9 +151,9 @@ $$
 | -1 < d < 0 | scaled, negated | weak disperser |
 | -1 | negated activation | disperser |
 
-### TruthLayer (WordSpace.truth_layer)
+### TruthLayer (SymbolicSpace.truth_layer)
 
-`TruthLayer` is instantiated by `WordSpace.__init__`. `WholeSpace.forward`
+`TruthLayer` is instantiated by `SymbolicSpace.__init__`. `WholeSpace.forward`
 records activations into the TruthLayer governed by the single continuous
 `<truthCriterion>` bar (0 $=$ record every activation, 1 $=$ record none): a
 per-cell activation is recorded when its clamped magnitude clears

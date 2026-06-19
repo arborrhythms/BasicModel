@@ -93,24 +93,24 @@ def test_dual_views_share_values():
         "unity-view values must equal the atom-view content channel")
 
 
-def test_ss_stage0_consumes_unity():
+def test_ws_stage0_consumes_unity():
     # Phase 2 contract: with an EMPTY recurrent CS (stage 0), a provided
     # unity drives the symbolic pass -- coarse region-mean evidence in the
     # standard SS output geometry. Different unities produce different
     # stage-0 symbols; the unity buffer itself is NEVER altered (analysis
     # is non-altering).
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     seed = m._empty_seed_ss
     # None == legacy path: empty in, empty out (no evidence, no symbols).
-    out_none = ss.forward(seed, IS_concepts=None)
+    out_none = ws.forward(seed, IS_concepts=None)
     assert out_none is seed and out_none.is_empty()
     u1 = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     u1_snapshot = u1.clone()
-    out1 = ss.forward(seed, IS_concepts=u1)
+    out1 = ws.forward(seed, IS_concepts=u1)
     ev1 = out1.materialize()
     assert ev1 is not None and torch.isfinite(ev1).all()
-    assert ev1.shape == (2, int(ss.inputShape[0]), int(ss.subspace.muxedSize)), (
+    assert ev1.shape == (2, int(ws.inputShape[0]), int(ws.subspace.muxedSize)), (
         f"stage-0 evidence must land in the CS-aligned event geometry "
         f"(one narrow symbol event per concept slot), got {tuple(ev1.shape)}")
     assert float(ev1.abs().max()) > 0, "evidence must be non-trivial symbols"
@@ -118,40 +118,40 @@ def test_ss_stage0_consumes_unity():
         "analysis is NON-ALTERING: the unity buffer must be untouched")
     ev1 = ev1.detach().clone()
     u2 = (u1 + 64) % 256
-    ev2 = ss.forward(seed, IS_concepts=u2).materialize()
+    ev2 = ws.forward(seed, IS_concepts=u2).materialize()
     assert not torch.equal(ev1, ev2), (
         "stage-0 symbolic output must CHANGE when the unity changes")
 
 
-def test_ss_rejects_concepts_with_nonempty_cs():
+def test_ws_rejects_concepts_with_nonempty_cs():
     # Phase 2 contract: input is read ONCE at stage 0. Supplying IS_concepts
     # alongside a live recurrent CS is the later repeated-injection knob and
     # must fail loudly (never a silent drop).
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
-    ss.forward(m._empty_seed_ss, IS_concepts=u)   # populates ss.subspace
-    assert not ss.subspace.is_empty()
+    ws.forward(m._empty_seed_ss, IS_concepts=u)   # populates ws.subspace
+    assert not ws.subspace.is_empty()
     with pytest.raises(NotImplementedError):
-        ss.forward(ss.subspace, IS_concepts=u)
+        ws.forward(ws.subspace, IS_concepts=u)
 
 
 def test_model_forward_passes_unity_at_stage0():
     # Phase 2 wiring: the body hands the PARKED unity to SS at stage 0 only.
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
-    ss = m.symbolicSpace
-    real = ss.forward
+    ws = m.wholeSpace
+    real = ws.forward
     calls = []
     def _capture(sub, *a, **k):
         calls.append(k.get("IS_concepts", None))
         return real(sub, *a, **k)
-    ss.forward = _capture
+    ws.forward = _capture
     try:
         with torch.no_grad():
             out = m.forward(x)[2]
     finally:
-        ss.forward = real
+        ws.forward = real
     assert out is not None and torch.isfinite(out).all()
     assert len(calls) >= 1 and torch.is_tensor(calls[0]), (
         "stage 0 must receive the parked unity view")
@@ -182,33 +182,33 @@ def test_word_analysis_boundaries_shape_evidence():
     # asserted on the threaded PRE-SNAP carrier (the evidence z_e
     # before the live SS codebook snap).
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     # "hi ox" as byte codes, padded with the null sentinel.
     text = b"hi ox"
     u = torch.zeros(2, 1, 32, dtype=torch.int64)
     u[:, 0, :len(text)] = torch.tensor(list(text), dtype=torch.int64)
     u_snapshot = u.clone()
     # byte mode (default): uniform pooling.
-    ss.analysis_mode = "byte"
-    assert ss.stage_analysis_spans(u) is None
-    ss._staged_analysis_spans = None
-    ev_byte = ss.forward(m._empty_seed_ss, IS_concepts=u).materialize().clone()
+    ws.analysis_mode = "byte"
+    assert ws.stage_analysis_spans(u) is None
+    ws._staged_analysis_spans = None
+    ev_byte = ws.forward(m._empty_seed_ss, IS_concepts=u).materialize().clone()
     # word mode: parts are the whitespace-cut spans.
-    ss.analysis_mode = "word"
-    spans = ss.stage_analysis_spans(u)
+    ws.analysis_mode = "word"
+    spans = ws.stage_analysis_spans(u)
     assert spans is not None and spans.shape == (2, 2, 2), (
         f"'hi ox' must cut into TWO parts per row, got "
         f"{None if spans is None else tuple(spans.shape)}")
     assert spans[0].tolist() == [[0, 2], [3, 5]]
     assert torch.equal(u, u_snapshot), "analysis must not alter the unity"
-    ss._staged_analysis_spans = spans
+    ws._staged_analysis_spans = spans
     try:
-        ev_word = ss.forward(
+        ev_word = ws.forward(
             m._empty_seed_ss, IS_concepts=u).materialize().clone()
-        z_pre = ss._stage0_z_pre_snap.detach().clone()
+        z_pre = ws._stage0_z_pre_snap.detach().clone()
     finally:
-        ss._staged_analysis_spans = None
-        ss.analysis_mode = "byte"
+        ws._staged_analysis_spans = None
+        ws.analysis_mode = "byte"
     assert not torch.equal(ev_byte, ev_word), (
         "word-cut evidence must differ from uniform-region evidence")
     # Slot k carries part k's coarse mean on the pre-snap carrier:
@@ -224,18 +224,18 @@ def test_word_analysis_boundaries_shape_evidence():
     assert float(z_pre[0, 2:, :].abs().max()) == 0.0
 
 
-def test_parallel_ss_quantize_fires():
+def test_parallel_ws_quantize_fires():
     # Plan-1 Task 1 acceptance (asymmetric-vq sec.7 task 8, DECISION
     # 2026-06-09): the SS codebook is LIVE in the parallel path --
     # Codebook.quantize() genuinely fires during a parallel forward
     # (it was a verified 0-call no-op before).
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     # Step 2 (symbolic-iteration plan): stage 0 snaps the ANALYSIS STORE
     # (its own basis under <analysis>); the symbol codebook on
     # subspace.what belongs to the CS leg.
-    basis = ss.analysis_store
+    basis = ws.analysis_store
     real_q = basis.quantize
     calls = {"n": 0}
     def _counting(*a, **k):
@@ -251,12 +251,12 @@ def test_parallel_ss_quantize_fires():
     assert calls["n"] >= 1, (
         "the SS codebook must QUANTIZE during a parallel forward "
         "(asymmetric-vq task 8); it never fired")
-    assert ss._stage0_indices is not None, (
+    assert ws._stage0_indices is not None, (
         "the snap must thread the selected indices "
         "(the future recon-gather leg reads them)")
 
 
-def test_ss_vq_asymmetric_flags():
+def test_ws_vq_asymmetric_flags():
     # Plan-1 Task 2 (C-11/C-12): the SS VQ drops the standard crutches --
     # commitment weight 0 (STE carries the output->encoder leg) and the
     # in-forward EMA codebook update OFF (the input->codebook leg is the
@@ -267,19 +267,19 @@ def test_ss_vq_asymmetric_flags():
     # bit-stable (no EMA, no drift).
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
-    ss = m.symbolicSpace
+    ws = m.wholeSpace
     # Step 2: BOTH SS codebook families carry the asymmetric flags --
     # the symbol codebook (CS leg) and the analysis store (stage 0).
-    for fam, cb in (("symbol", ss.subspace.what),
-                    ("analysis", ss.analysis_store)):
+    for fam, cb in (("symbol", ws.subspace.what),
+                    ("analysis", ws.analysis_store)):
         vq = getattr(cb, "vq", None)
         assert vq is not None, f"MM_20M SS {fam} must carry a customVQ"
         assert vq.ema_update is False, (
             f"SS {fam} VQ EMA must be OFF (asymmetric C-11)")
         assert float(vq.commitment_weight) == 0.0, (
             f"SS {fam} VQ commitment must be 0 (STE replaces it, C-11)")
-    vq = ss.analysis_store.vq
-    sym_vq = ss.subspace.what.vq
+    vq = ws.analysis_store.vq
+    sym_vq = ws.subspace.what.vq
     m.train()
     try:
         m.forward(x)  # adoption + in-body role naming settle here
@@ -299,25 +299,25 @@ def test_ss_vq_asymmetric_flags():
         "subsymbolicOrder=1)")
 
 
-def test_ss_codebook_recon_gradient():
+def test_ws_codebook_recon_gradient():
     # The asymmetric RECON leg (input -> codebook, asymmetric-vq sec.4):
     # the stage-0 snap emits an exact-gather reconstruction term whose
     # gradient lands on the SELECTED codebook rows only (the evidence is
     # detached; the argmin blocks the encoder leg). This is the EMA
     # replacement -- exact, not a running average.
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
-    vq = ss.analysis_store.vq
+    ws = m.wholeSpace
+    vq = ws.analysis_store.vq
     assert isinstance(vq.codebook, torch.nn.Parameter), (
         "the analysis-store VQ codebook must be an nn.Parameter (it "
         "trains by the recon gradient)")
-    ss.train()
+    ws.train()
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     try:
-        ss.forward(m._empty_seed_ss, IS_concepts=u)
-        recon = ss._stage0_recon_loss
+        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        recon = ws._stage0_recon_loss
     finally:
-        ss.eval()
+        ws.eval()
     assert recon is not None and recon.requires_grad, (
         "training-mode stage 0 must thread the recon term")
     if vq.codebook.grad is not None:
@@ -327,7 +327,7 @@ def test_ss_codebook_recon_gradient():
     assert g is not None and float(g.abs().sum()) > 0, (
         "the recon gradient must land on the codebook")
     # Plain gather: the gradient support is EXACTLY the selected rows.
-    idx = ss._stage0_indices.reshape(-1)
+    idx = ws._stage0_indices.reshape(-1)
     sel = torch.zeros(g.shape[0], dtype=torch.bool)
     sel[idx] = True
     assert float(g[~sel].abs().max()) == 0.0, (
@@ -335,7 +335,7 @@ def test_ss_codebook_recon_gradient():
         "argmin blocks every other path)")
 
 
-def test_ss_recon_term_reaches_pipeline_errors():
+def test_ws_recon_term_reaches_pipeline_errors():
     # The stage-0 recon term is threaded as an SS forward-local and lifted
     # onto the pipeline-chained error container by _forward_body, so the
     # training loss actually consumes it.
@@ -347,7 +347,7 @@ def test_ss_recon_term_reaches_pipeline_errors():
     finally:
         m.eval()
     terms = getattr(m.outputSpace.subspace.errors, "_terms", {})
-    assert "ss_codebook_recon" in terms, (
+    assert "ws_codebook_recon" in terms, (
         f"the recon term must reach the pipeline error container; "
         f"got terms={list(terms)}")
 
@@ -360,11 +360,11 @@ def test_descriptor_roles_lf_coarse_tagging():
     # characterizations).
     from Spaces import Codebook
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
-    basis = ss.analysis_store
+    ws = m.wholeSpace
+    basis = ws.analysis_store
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
-    ss.forward(m._empty_seed_ss, IS_concepts=u)
-    idx = ss._stage0_indices
+    ws.forward(m._empty_seed_ss, IS_concepts=u)
+    idx = ws._stage0_indices
     assert idx is not None
     for row in idx.reshape(-1)[:8].tolist():
         assert basis.get_descriptor_role(row) == Codebook.ROLE_LF_COARSE, (
@@ -386,30 +386,30 @@ def test_semantic_arrangement_mechanism():
     # PAYOFF is deliberately not asserted -- that is D's corpus gate
     # (asymmetric-vq sec.8: XOR cannot validate the semantic side).
     m = _build("MM_20M.xml")
-    ss = m.symbolicSpace
-    vq = ss.analysis_store.vq
+    ws = m.wholeSpace
+    vq = ws.analysis_store.vq
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     # Off by default.
-    assert float(getattr(ss, "semantic_arrangement_weight", 0.0)) == 0.0
-    ss.train()
+    assert float(getattr(ws, "semantic_arrangement_weight", 0.0)) == 0.0
+    ws.train()
     try:
-        ss.forward(m._empty_seed_ss, IS_concepts=u)
-        assert ss._stage0_semantic_loss is None, (
+        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        assert ws._stage0_semantic_loss is None, (
             "semantic arrangement must be OFF by default")
         # Enable and re-run.
-        ss.semantic_arrangement_weight = 0.5
-        ss.forward(m._empty_seed_ss, IS_concepts=u)
-        sem = ss._stage0_semantic_loss
+        ws.semantic_arrangement_weight = 0.5
+        ws.forward(m._empty_seed_ss, IS_concepts=u)
+        sem = ws._stage0_semantic_loss
     finally:
-        ss.eval()
-        ss.semantic_arrangement_weight = 0.0
+        ws.eval()
+        ws.semantic_arrangement_weight = 0.0
     assert sem is not None and sem.requires_grad
     if vq.codebook.grad is not None:
         vq.codebook.grad = None
     sem.backward()
     g = vq.codebook.grad
     assert g is not None and float(g.abs().sum()) > 0
-    idx = ss._stage0_indices.reshape(-1).unique()
+    idx = ws._stage0_indices.reshape(-1).unique()
     sel = torch.zeros(g.shape[0], dtype=torch.bool)
     sel[idx] = True
     assert float(g[~sel].abs().max()) == 0.0, (

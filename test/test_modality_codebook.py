@@ -41,7 +41,7 @@ def _build(cfg):
 
 class TestCodebookTiering(unittest.TestCase):
 
-    def test_ps_subsymbolic_ss_quantized_by_default(self):
+    def test_ps_subsymbolic_ws_quantized_by_default(self):
         """MentalModel sets no <codebook> on PS/SS. PartSpace is
         subsymbolic (always resolves to "none"); WholeSpace inherits the
         "quantize" default (non-"none")."""
@@ -51,10 +51,10 @@ class TestCodebookTiering(unittest.TestCase):
         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
                          "PartSpace is subsymbolic: codebook is hardwired "
                          "to none")
-        self.assertNotEqual(model.symbolicSpace.codebook_mode, "none",
+        self.assertNotEqual(model.wholeSpace.codebook_mode, "none",
                             "WholeSpace codebook defaults to quantize")
 
-    def test_ss_codebook_none_opt_out_honored(self):
+    def test_ws_codebook_none_opt_out_honored(self):
         """data/XOR_exact.xml explicitly resolves WholeSpace to
         <codebook>none</codebook> (a full-width invertible passthrough) and
         must build without raising. PartSpace is subsymbolic regardless,
@@ -64,7 +64,7 @@ class TestCodebookTiering(unittest.TestCase):
             model = _build(os.path.join(_DATA, "XOR_exact.xml"))
         self.assertEqual(model.perceptualSpace.codebook_mode, "none",
                          "PartSpace is subsymbolic: always none")
-        self.assertEqual(model.symbolicSpace.codebook_mode, "none",
+        self.assertEqual(model.wholeSpace.codebook_mode, "none",
                          "explicit WholeSpace codebook=none should be honored")
 
 

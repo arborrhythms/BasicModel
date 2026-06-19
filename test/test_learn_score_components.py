@@ -14,7 +14,7 @@ Pin each of the three learn-score factor methods in isolation:
 The factors are the test seam the plan requires: each is a separate
 overridable method, so the gating tests can monkeypatch them. These
 tests instead exercise the REAL factor computations against a fully-
-wired radix model (``terminalSymbolicSpace_ref`` + ``wordSubSpace.
+wired radix model (``terminalSymbolicSpace_ref`` + ``symbolicSpace.
 truth_layer``).
 """
 
@@ -56,10 +56,10 @@ def _make_radix_model():
     return m
 
 
-def _seed_known_concept(ss, vec):
+def _seed_known_concept(ws, vec):
     """Insert ``vec`` as a fresh SS-codebook row so a later
     nearest-row lookup of the same vector lands distance 0."""
-    return ss.insert_symbol(init_vec=vec)
+    return ws.insert_symbol(init_vec=vec)
 
 
 class TestChildrenInCodebookFactor(unittest.TestCase):
@@ -69,15 +69,15 @@ class TestChildrenInCodebookFactor(unittest.TestCase):
     def test_known_children_score_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         D = int(cs.nDim)
         idea1 = torch.zeros(D)
         idea1[0] = 0.9
         idea2 = torch.zeros(D)
         idea2[1] = -0.7
         # Seed both ideas as known SS rows so nearest-row distance == 0.
-        _seed_known_concept(ss, idea1)
-        _seed_known_concept(ss, idea2)
+        _seed_known_concept(ws, idea1)
+        _seed_known_concept(ws, idea2)
         score = cs._learn_score_children_in_codebook(idea1, idea2)
         self.assertEqual(
             score, 1.0,
@@ -87,13 +87,13 @@ class TestChildrenInCodebookFactor(unittest.TestCase):
     def test_one_known_one_unknown_score_half(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         D = int(cs.nDim)
         # Tight threshold so a far-away idea is unambiguously "unknown".
         cs._learn_children_dist_threshold = 1e-3
         known = torch.zeros(D)
         known[0] = 0.5
-        _seed_known_concept(ss, known)
+        _seed_known_concept(ws, known)
         far = torch.full((D,), 999.0)
         score = cs._learn_score_children_in_codebook(known, far)
         self.assertEqual(
@@ -120,7 +120,7 @@ class TestIsTruthObviousFactor(unittest.TestCase):
     def test_agreeing_truthset_scores_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.wordSubSpace.truth_layer
+        tl = cs.symbolicSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # Two strongly-affirming truths -> assess()["support"] == 1.0.
@@ -137,7 +137,7 @@ class TestIsTruthObviousFactor(unittest.TestCase):
     def test_empty_truthset_scores_zero(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.wordSubSpace.truth_layer
+        tl = cs.symbolicSpace.truth_layer
         tl.clear()
         # Empty -> support 0 -> nothing to agree with.
         score = cs._learn_score_is_truth_obvious(torch.ones(int(cs.nDim)))
@@ -151,7 +151,7 @@ class TestResolvesContradictionFactor(unittest.TestCase):
     def test_contradicting_truths_score_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.wordSubSpace.truth_layer
+        tl = cs.symbolicSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # Affirm AND deny the same concept -> assess()["conflict"] == 1.0.
@@ -170,7 +170,7 @@ class TestResolvesContradictionFactor(unittest.TestCase):
     def test_consistent_truthset_scores_zero(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.wordSubSpace.truth_layer
+        tl = cs.symbolicSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # All-agreeing -> conflict 0 -> nothing to resolve.

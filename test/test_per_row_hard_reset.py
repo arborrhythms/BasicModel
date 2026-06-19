@@ -40,10 +40,10 @@ def test_dispatch_per_row_reset_skips_rows_without_hard_eos():
     no call for batch=0.
     """
     model = _model()
-    # Size WordSubSpace state to two source rows so per-row dispatch can
+    # Size SymbolicSubSpace state to two source rows so per-row dispatch can
     # write to indices [0..1] without going out of bounds.
-    if model.wordSubSpace is not None:
-        model.wordSubSpace.ensure_microbatch(2, 1)
+    if model.symbolicSpace is not None:
+        model.symbolicSpace.ensure_microbatch(2, 1)
     seen = []  # list of (space_class, batch_arg, hard_arg)
     originals = []
     for space in model.spaces:
@@ -104,29 +104,29 @@ def test_dispatch_per_row_reset_empty_or_all_false_is_noop():
 
 
 def test_per_row_hard_reset_clears_only_target_row_state():
-    """WordSpace.Reset(batch=b) clears row b's per-row state, not other rows.
+    """SymbolicSpace.Reset(batch=b) clears row b's per-row state, not other rows.
 
     Sets _stm_fired[0] and _stm_fired[1] to True, fires Reset(batch=0),
     asserts _stm_fired[0] is False but [1] is still True.
     """
     model = _model()
-    ws = model.wordSubSpace
-    if ws is None:
-        pytest.skip("model has no WordSpace")
+    ss = model.symbolicSpace
+    if ss is None:
+        pytest.skip("model has no SymbolicSpace")
     # Ensure state is sized to at least 2 rows.
-    if ws._stm_fired.shape[0] < 2:
-        ws.ensure_microbatch(2, 1)
-    ws._stm_fired[0] = True
-    ws._stm_fired[1] = True
-    ws._svo_valid[0] = True
-    ws._svo_valid[1] = True
+    if ss._stm_fired.shape[0] < 2:
+        ss.ensure_microbatch(2, 1)
+    ss._stm_fired[0] = True
+    ss._stm_fired[1] = True
+    ss._svo_valid[0] = True
+    ss._svo_valid[1] = True
 
-    ws.Reset(batch=0, hard=True)
+    ss.Reset(batch=0, hard=True)
 
-    assert ws._stm_fired[0].item() is False
-    assert ws._stm_fired[1].item() is True
-    assert ws._svo_valid[0].item() is False
-    assert ws._svo_valid[1].item() is True
+    assert ss._stm_fired[0].item() is False
+    assert ss._stm_fired[1].item() is True
+    assert ss._svo_valid[0].item() is False
+    assert ss._svo_valid[1].item() is True
 
 
 def test_runEpoch_dispatches_per_row_reset_per_batch():

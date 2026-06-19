@@ -5,7 +5,7 @@ LiftLayer and LowerLayer become elementwise-gate-then-internal-sigma/pi
 operators at the S tier.  The gate is the elementwise product of the two
 operands at the C-tier:
 
-    cb     = symbolicSpace.subspace.what
+    cb     = wholeSpace.subspace.what
     left_c  = cb.reverse(left, project=True)
     right_c = cb.reverse(right, project=True)
     gated   = left_c * right_c
@@ -81,7 +81,7 @@ class TestRawGateRetired(unittest.TestCase):
 
     def test_lift_layer_no_raw_gate(self):
         from Layers import LiftLayer
-        layer = LiftLayer(symbolicSpace=None, perceptualSpace=None)
+        layer = LiftLayer(wholeSpace=None, perceptualSpace=None)
         self.assertFalse(hasattr(layer, 'raw_gate')
                          and getattr(layer, 'raw_gate') is not None,
                          "LiftLayer.raw_gate must be retired after the "
@@ -93,7 +93,7 @@ class TestRawGateRetired(unittest.TestCase):
 
     def test_lower_layer_no_raw_gate(self):
         from Layers import LowerLayer
-        layer = LowerLayer(symbolicSpace=None, conceptualSpace=None)
+        layer = LowerLayer(wholeSpace=None, conceptualSpace=None)
         self.assertFalse(hasattr(layer, 'raw_gate')
                          and getattr(layer, 'raw_gate') is not None)
         param_names = {n for n, _ in layer.named_parameters()}
@@ -111,14 +111,14 @@ class TestSigmaSPiSRetired(unittest.TestCase):
             cls.model = _fresh_model()
 
     def test_no_sigma_S_on_symbolic_space(self):
-        for sym in self.model.symbolicSpaces:
+        for sym in self.model.wholeSpaces:
             self.assertFalse(
                 hasattr(sym, 'sigma_S') and getattr(sym, 'sigma_S') is not None,
                 f"WholeSpace must not retain `sigma_S` after the "
                 f"lift/lower refactor; found on {sym}")
 
     def test_no_pi_S_on_symbolic_space(self):
-        for sym in self.model.symbolicSpaces:
+        for sym in self.model.wholeSpaces:
             self.assertFalse(
                 hasattr(sym, 'pi_S') and getattr(sym, 'pi_S') is not None,
                 f"WholeSpace must not retain `pi_S` after the "
@@ -137,17 +137,17 @@ class TestLiftLowerFactorization(unittest.TestCase):
 
     def _make_lift(self):
         from Layers import LiftLayer
-        return LiftLayer(symbolicSpace=self.model.symbolicSpace,
+        return LiftLayer(wholeSpace=self.model.wholeSpace,
                          perceptualSpace=self.model.perceptualSpace)
 
     def _make_lower(self):
         from Layers import LowerLayer
-        return LowerLayer(symbolicSpace=self.model.symbolicSpace,
+        return LowerLayer(wholeSpace=self.model.wholeSpace,
                           conceptualSpace=self.model.conceptualSpace)
 
     def _bivec_for_test(self):
         """Build random ``[B, V_S, D]`` bivector activations matching S's shape."""
-        sym = self.model.symbolicSpace
+        sym = self.model.wholeSpace
         cb = sym.subspace.what
         V_S = int(cb.nVectors)
         D = int(cb.nDim)

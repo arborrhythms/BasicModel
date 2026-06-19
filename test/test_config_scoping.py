@@ -212,10 +212,10 @@ class TestValidateConfig(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as ctx:
             Models.BasicModelFactory.validate_config(cfg)
-        # C1 handoff invariant (2026-06): the SS<->CS dim-match check now
-        # raises on ``SS.nWhat == CS.nWhat`` (was the older ``symbol_dim``
-        # message).
-        self.assertIn("SS.nWhat == CS.nWhat", str(ctx.exception))
+        # C1 handoff invariant (2026-06): the WS<->CS dim-match check now
+        # raises on ``WS.nWhat == CS.nWhat`` (was the older ``symbol_dim``
+        # message; SS->WS terminology rename 2026-06-18).
+        self.assertIn("WS.nWhat == CS.nWhat", str(ctx.exception))
 
 
 class TestInferValidation(unittest.TestCase):

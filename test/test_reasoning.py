@@ -291,7 +291,7 @@ class TestWriteMask(unittest.TestCase):
         truth_layer = model._get_truth_layer()
         # Post 2026-05 SS no longer owns a sigma; the activation width
         # flowing through SS is its outputShape[1] (codebook D).
-        D = int(model.symbolicSpace.outputShape[1])
+        D = int(model.wholeSpace.outputShape[1])
 
         sentences = ['test sentence one', 'test sentence two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]

@@ -7,11 +7,11 @@ is now an explicit ``forward`` argument supplied by the recurrent cell:
 
   * ``PartSpace.forward(IS_subspace, CS_subspaceForPS=None)``
   * ``ConceptualSpace.forward(PS_subspace, SS_subspace=None)`` exposing
-    ``_subspaceForPS`` / ``_subspaceForSS`` for the next pass
-  * ``WholeSpace.forward(CS_subspaceForSS)``
+    ``_subspaceForPS`` / ``_subspaceForWS`` for the next pass
+  * ``WholeSpace.forward(CS_subspaceForWS)``
 
 The ``_sourced_input`` / ``_read_event`` / ``_get_active_input_sibling``
-helpers and the ``conceptualSpace_ref`` / ``symbolicSpace_ref`` /
+helpers and the ``conceptualSpace_ref`` / ``wholeSpace_ref`` /
 ConceptualSpace.``perceptualSpace_ref`` forward-input refs are deleted.
 ``WholeSpace.perceptualSpace_ref`` is KEPT (structural lexicon
 ownership) and is still covered by ``TestLexiconOnSymbolicSpace`` below.
@@ -21,10 +21,10 @@ Tests in this file:
     defaults to ``None`` (standalone single-arg callers still work).
   * The deleted helpers / forward-input refs are gone.
   * A full model forward runs the recurrent cell and the terminal
-    ConceptualSpace exposes ``_subspaceForPS`` / ``_subspaceForSS``.
+    ConceptualSpace exposes ``_subspaceForPS`` / ``_subspaceForWS``.
   * Cold start (``CS_subspaceForPS`` None / empty) degrades to the
     primary ``pi_input`` path.
-  * ``SubsymbolicSpace`` and its mode selector remain retired.
+  * ``SubwholeSpace`` and its mode selector remain retired.
   * Lexicon ownership on WholeSpace (structural ref) unchanged.
 """
 import os
@@ -63,7 +63,7 @@ class TestForwardArityContract(unittest.TestCase):
     # Post-2026-05-21 SentenceState dissolution: the per-sentence
     # ``work`` carrier was retired. Spaces forwards now take only their
     # data SubSpace argument(s); grammar / serial-processing state lives
-    # on ``subspace.wordSubSpace`` (the back-reference threaded by
+    # on ``subspace.symbolicSpace`` (the back-reference threaded by
     # ``copy_context``). The arity guards below assert the new
     # carrier-free signatures.
 
@@ -103,14 +103,14 @@ class TestForwardArityContract(unittest.TestCase):
 
     def test_symbolic_forward_arity(self):
         # Dual-input plan (rev. 2026-06-09): WholeSpace.forward gains the
-        # optional stage-0 unity input -- (CS_subspaceForSS, IS_concepts=None).
+        # optional stage-0 unity input -- (CS_subspaceForWS, IS_concepts=None).
         import inspect
         import Spaces
         sig = inspect.signature(Spaces.WholeSpace.forward)
         params = [n for n in sig.parameters if n != "self"]
-        self.assertEqual(params, ["CS_subspaceForSS", "IS_concepts"],
+        self.assertEqual(params, ["CS_subspaceForWS", "IS_concepts"],
                          f"WholeSpace.forward must be "
-                         f"(CS_subspaceForSS, IS_concepts=None); got {params}")
+                         f"(CS_subspaceForWS, IS_concepts=None); got {params}")
         self.assertNotIn("work", sig.parameters,
                          "WholeSpace.forward must not carry the "
                          "retired Phase-1 'work' carrier.")
@@ -130,7 +130,7 @@ class TestForwardArityContract(unittest.TestCase):
             "ConceptualSpace._get_active_input_sibling must be removed.")
 
     def test_forward_input_refs_removed(self):
-        """conceptualSpace_ref / symbolicSpace_ref / ConceptualSpace's
+        """conceptualSpace_ref / wholeSpace_ref / ConceptualSpace's
         perceptualSpace_ref are no longer initialised in __init__."""
         import inspect
         import Spaces
@@ -139,29 +139,29 @@ class TestForwardArityContract(unittest.TestCase):
                          "PartSpace must not init conceptualSpace_ref "
                          "(C→P feedback is now an explicit forward arg).")
         c_src = inspect.getsource(Spaces.ConceptualSpace.__init__)
-        self.assertNotIn("self.symbolicSpace_ref = None", c_src)
+        self.assertNotIn("self.wholeSpace_ref = None", c_src)
         self.assertNotIn("self.perceptualSpace_ref = None", c_src,
                          "ConceptualSpace must not init the forward-input "
                          "refs (PS/SS are explicit forward args).")
 
 
-class TestSubsymbolicSpaceRetired(unittest.TestCase):
-    """The standalone SubsymbolicSpace class and its mode selector are gone."""
+class TestSubwholeSpaceRetired(unittest.TestCase):
+    """The standalone SubwholeSpace class and its mode selector are gone."""
 
     def test_subsymbolic_space_class_removed(self):
         import Spaces
-        self.assertFalse(hasattr(Spaces, 'SubsymbolicSpace'),
-                         "SubsymbolicSpace should be removed; "
+        self.assertFalse(hasattr(Spaces, 'SubwholeSpace'),
+                         "SubwholeSpace should be removed; "
                          "PartSpace is the subsymbolic substrate "
                          "via the explicit C→P forward arg.")
 
-    def test_subsymbolicSpace_ref_not_on_conceptual(self):
+    def test_subwholeSpace_ref_not_on_conceptual(self):
         import Spaces
         import inspect
         src = inspect.getsource(Spaces.ConceptualSpace.__init__)
-        self.assertNotIn("self.subsymbolicSpace_ref = None", src,
+        self.assertNotIn("self.subwholeSpace_ref = None", src,
                          "ConceptualSpace must not retain a "
-                         "subsymbolicSpace_ref attribute.")
+                         "subwholeSpace_ref attribute.")
 
     def test_subsymbolic_widen_dim_param_removed(self):
         import Spaces
@@ -204,7 +204,7 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
     def test_terminal_conceptual_exposes_views(self):
         """Post-SentenceState-dissolution (2026-05-21): the cross-stage
         CS→PS and CS→SS feedback is exposed directly as
-        ``ConceptualSpace._subspaceForPS`` / ``._subspaceForSS`` (the
+        ``ConceptualSpace._subspaceForPS`` / ``._subspaceForWS`` (the
         persistent SubSpace objects that ``ConceptualSpace.forward``
         mutates in place). The reverse path generates its own
         reconstructed estimates and never reads these forward caches.
@@ -220,8 +220,8 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
         self.assertTrue(hasattr(cs, '_subspaceForPS'),
                         "ConceptualSpace._subspaceForPS must exist after "
                         "forward.")
-        self.assertTrue(hasattr(cs, '_subspaceForSS'),
-                        "ConceptualSpace._subspaceForSS must exist after "
+        self.assertTrue(hasattr(cs, '_subspaceForWS'),
+                        "ConceptualSpace._subspaceForWS must exist after "
                         "forward.")
 
     def test_forward_produces_percept_event(self):
@@ -268,24 +268,24 @@ class TestLexiconOnSymbolicSpace(unittest.TestCase):
             cls.model = _fresh_model()
 
     def test_symbolic_perceptualSpace_ref_wired(self):
-        sym = self.model.symbolicSpace
+        sym = self.model.wholeSpace
         self.assertIsNotNone(sym.perceptualSpace_ref,
                              "Model.__init__ must keep wiring "
-                             "symbolicSpace.perceptualSpace_ref (structural "
+                             "wholeSpace.perceptualSpace_ref (structural "
                              "lexicon ownership, NOT forward input).")
         import Spaces
         self.assertIsInstance(sym.perceptualSpace_ref,
                               Spaces.PartSpace)
 
     def test_symbolic_vocabulary_returns_lexicon(self):
-        sym = self.model.symbolicSpace
+        sym = self.model.wholeSpace
         self.assertIsNotNone(sym.vocabulary,
                              "S.vocabulary must return the Embedding from "
                              "P (text mode) or fall back to S's own .what "
                              "(numeric / non-text mode).")
 
     def test_symbolic_lexicon_methods_exist(self):
-        sym = self.model.symbolicSpace
+        sym = self.model.wholeSpace
         for name in (
             'train_embeddings', 'sbow_loss', '_snapshot_embeddings',
             'set_embedding_sigma', 'reconstruct_data',
@@ -310,7 +310,7 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
             cls.model = _fresh_model()
 
     def test_s_has_syntactic_layer(self):
-        for s in self.model.symbolicSpaces:
+        for s in self.model.wholeSpaces:
             layer = getattr(s, 'syntacticLayer', None)
             self.assertIsNotNone(
                 layer,

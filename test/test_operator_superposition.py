@@ -99,12 +99,12 @@ def test_operator_superposition_resolves_against_codebook():
     """Querying an operation's own codebook vector yields a distribution
     that peaks on that operation."""
     import Language
-    ss = _make_model().symbolicSpace
+    ws = _make_model().wholeSpace
     g = Language.TheGrammar
     ops = sorted({r.method_name for r in g.rules if r.method_name})
     target = ops[0]
-    qv = ss.operation_vector(target)
-    dist = ss.operator_superposition(qv)
+    qv = ws.operation_vector(target)
+    dist = ws.operator_superposition(qv)
     assert set(dist) == set(ops), (set(dist), set(ops))
     assert max(dist, key=dist.get) == target, (target, dist)
     assert abs(sum(dist.values()) - 1.0) < 1e-5   # a normalized distribution

@@ -1,7 +1,7 @@
 """The word/object binding table (MeronomySpec §6 rev 2026-06-11; Stage 6).
 
 The table is the lexicon-shaped organ that links the two towers: rows
-are FULL bindings ``(word: SS row id, object: PS row id)`` and nothing
+are FULL bindings ``(word: WS row id, object: PS row id)`` and nothing
 else. Symbols — the carriers of the bindings — are zero-dimensional
 atoms outside both towers' size orders (the atomicity argument: a truly
 arbitrary word↔object association cannot be mereologically coupled),
@@ -11,7 +11,7 @@ towers, never here. The table is mereologically inert.
 Design laws (spec §6, §10.8):
 
 * **Full rows only.** A row exists iff both sides are bound. There are
-  no half-bindings anywhere: an unbound word is just an SS tower code,
+  no half-bindings anywhere: an unbound word is just an WS tower code,
   a nameless concept just a PS tower code; bound-ness is never stored,
   only discovered by query (a lookup miss IS the "unknown word" state).
 * **Word-keyed — the word is the reference for the object.**
@@ -174,7 +174,7 @@ class ReferenceTable:
         return sorted(self._by_word)
 
     def bound_words(self) -> List[int]:
-        """Reference rows of the SS/intent tower: the bound word ids.
+        """Reference rows of the WS/intent tower: the bound word ids.
 
         Consumed by the §6d update law (GrammarOpsPass): references are
         shaped by the serial pass only.

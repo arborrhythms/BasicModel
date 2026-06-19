@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 from Spaces import SubSpace, WhereEncoding, WhenRangeEncoding, Codebook
 
 
-def _ss_subspace(nWhat=4, nVectors=5):
+def _ws_subspace(nWhat=4, nVectors=5):
     cb = Codebook()
     cb.create(nInput=3, nVectors=nVectors, nDim=nWhat, customVQ=True)
     return SubSpace(
@@ -39,10 +39,10 @@ def _ss_subspace(nWhat=4, nVectors=5):
 class TestWhereDecoupling(unittest.TestCase):
 
     def test_codebook_identity_is_the_active_row_index(self):
-        ss, _cb, nVectors = _ss_subspace()
+        ws, _cb, nVectors = _ws_subspace()
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
-        rows = ss.lookup(sel)                      # identity via _index selection
-        proto = ss.prototype()
+        rows = ws.lookup(sel)                      # identity via _index selection
+        proto = ws.prototype()
         self.assertTrue(torch.allclose(rows[0, 0], proto[0]))
         self.assertTrue(torch.allclose(rows[1, 0], proto[3]))
         self.assertEqual(tuple(rows.shape), (2, 3, 4))
@@ -57,7 +57,7 @@ class TestWhereDecoupling(unittest.TestCase):
         self.assertFalse(hasattr(WhereEncoding, "recover"),
                          "WhereEncoding.recover (the dead .where->int identity "
                          "inverse) must be retired")
-        _ss, cb, _n = _ss_subspace()
+        _ss, cb, _n = _ws_subspace()
         self.assertEqual(int(getattr(cb, "where_offset", 0)), 0,
                          "a Codebook must not own a global .where-space offset")
 

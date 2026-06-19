@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_ltm_consolidation_fixture: dedicated test fixture for the LTM
+       consolidation suite (test/test_ltm_consolidation.py; Alec 2026-06-18).
+       Mirrors MM_xor_fixture but turns ON <ltmConsolidation> so the unified
+       TernaryTruthStore (SymbolicSubSpace.ltm_store) is constructed in place of
+       the RelativeTruthStore, and provisions a small <truthSet> so the
+       XML->LTM append mechanism is exercised at load (provision_ltm). Do not
+       consume from production code. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <modelType>embedding</modelType>
+    <symbolicOrder>0</symbolicOrder>
+    <ltmConsolidation>true</ltmConsolidation>
+    <truthSet>
+      <truth text="cat" trust="0.9"/>
+      <truth text="fire causes smoke" trust="0.8" kind="implies"/>
+      <truth text="paw partOf cat" trust="0.7" kind="partOf"/>
+    </truthSet>
+
+    <training>
+      <numEpochs>400</numEpochs>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+    <butterfly>false</butterfly>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>word</lexer>
+    <nInput>8</nInput>
+    <nVectors>8</nVectors>
+    <nDim>14</nDim>
+    <nOutput>8</nOutput>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nVectors>1</nVectors>
+    <nOutput>1</nOutput>
+  </OutputSpace>
+
+  <SymbolicSpace>
+    <ltmCapacity>64</ltmCapacity>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+    </language>
+  </SymbolicSpace>
+
+</model>

@@ -67,9 +67,9 @@ if _cb:
 _ps_cb = os.environ.get("SWEEP_PS_CB")
 if _ps_cb:
     base = base.replace("<!-- codebook>quantize</codebook -->", f"<codebook>{_ps_cb}</codebook>")
-_ss_cb = os.environ.get("SWEEP_SS_CB")
-if _ss_cb:
-    base = base.replace("<codebook>quantize</codebook>", f"<codebook>{_ss_cb}</codebook>")
+_ws_cb = os.environ.get("SWEEP_SS_CB")
+if _ws_cb:
+    base = base.replace("<codebook>quantize</codebook>", f"<codebook>{_ws_cb}</codebook>")
 # SS commitmentBeta / l1Lambda overrides (insert into the WholeSpace block).
 _ins = ""
 _ssc = os.environ.get("SWEEP_SS_COMMIT")

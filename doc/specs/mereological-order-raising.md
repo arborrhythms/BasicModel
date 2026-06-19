@@ -18,7 +18,7 @@ them. The towers stay *in-kind*; the symbol is the *cross-tower link*:
   product/intersection fold over the unity ([Spaces.py:8530](../../bin/Spaces.py),
   [13620](../../bin/Spaces.py); WholeSpace owns `self.pi`).
 - **Symbol — the META node.** A symbol is introduced to **link an overlapping part
-  and whole**, and is associated with **both**: `insert_meta(ps_pos, ss_pos)` binds a
+  and whole**, and is associated with **both**: `insert_meta(ps_pos, ws_pos)` binds a
   PartSpace percept (a part, extension) to a WholeSpace symbol (a whole, intension)
   ([Spaces.py:14743](../../bin/Spaces.py); minted in perception by
   `_maybe_autobind_meta`, [Spaces.py:12285](../../bin/Spaces.py)).
@@ -236,6 +236,50 @@ else above is routing on top of it.
 > (`A.start ≥ B.start ∧ A.end ≤ B.end`). The remaining run-structure work is only the
 > aggregation over a *set* of constituent brackets (counting gaps between sibling
 > spans); the per-code extent/containment is built. See [doc/Spaces.md](../Spaces.md).
+
+### Top-down attention handoff: WS scopes PS via the passed-back chunk + `.where` (2026-06-19, Alec)
+
+When attention is on the **"words"** category (top-down, from WS), the actions PS
+takes on *subsequent* `subsymbolicOrder` passes are scoped by what WS passes back
+through the recursive (WS → PS) connection. **The first pass is wide-open** — PS
+ranges over the whole input (model-driven attention); later passes narrow. What is
+passed back selects the operation:
+
+| passed back to PS | meaning |
+|---|---|
+| null chunk, **no `.where`** | **no-op** — nothing to attend |
+| **null chunk + the `.where` of the nth word** | **focus on the parts of the nth word** — the scoped parse (this *is* the `.where`-scope-on-the-second-argument mechanism; see [Architecture.md](../Architecture.md)) |
+| **multiple chunks** | **chunk** — PS must analyse finer (σ refine, aspect 1) |
+| **single non-null chunk** | **return that chunk + the parts under it** — no further chunking |
+
+The serial-word override (`syntacticOrder` / `symbolicOrder ≥ 1`) drives the same
+connection deterministically — supplying the word `.where`s serially instead of
+letting attention choose (the same one mechanism, per the Architecture.md callout).
+
+**Word identity, and the higher-order trigger.** The word to identify is **unique**:
+it has a particular **union of parts** *and* a particular **union of wholes** —
+identity is those two unions converging on a single symbol. If a candidate symbol has
+**disjoint sets of wholes and parts** (its parts do not sit under its wholes — the
+discontiguous / abstraction case, aspect 2 above), it must be **higher-order**: run it
+through **σ (SigmaLayer) or π (PiLayer)** to produce a better approximation *under the
+whole*. So refine-vs-raise is keyed on **parts/wholes set-overlap** as well as `.where`
+contiguity — disjoint ⇒ raise.
+
+**Remaining work (handoff):**
+- **Pass-back dispatch** — interpret the WS→PS recursive payload by the table above
+  (no `.where` → no-op; null + word-`.where` → scoped parse; multiple chunks → σ
+  refine; single non-null chunk → return chunk + sub-parts).
+- **First-pass-wide gate** — pass 0 ignores any scope (wide-open); scoping applies
+  from pass 1 onward.
+- **Null-chunk + `.where` second argument** — the (null content, `.where`) scope on
+  the PS/WS forward (the mechanism flagged in Architecture.md), reusing the existing
+  dual-input second argument + the `.where` brackets (no radix-filter rewrite).
+- **Identity test** — `union(parts) ∩ union(wholes)` converging on one symbol;
+  **disjoint ⇒ route through σ/π** for the higher-order approximation.
+- **Substrate (blocker)** — the multi-stage carrier must survive `t>0` first: the
+  wide↔deep-emit × combine-deep-expect reconciliation (the MM_20M `sO=3` bug). Today
+  the `t>0` combine no-ops on the None return, so the recursive WS→PS connection has
+  nothing to thread — this handoff sits on top of that fix.
 
 ## Higher-order parts
 
@@ -518,10 +562,10 @@ single contiguous token. Therefore the `.where` / run-structure / containment ma
 support computation** — the shared substrate both towers' types stand on, and the defining
 feature that separates a part-type (extensional support) from a whole-type (intensional support).
 
-### How analysis/whole types integrate with the `(ps,ss)` meronomy (2026-06-16, Alec — RESOLVED)
+### How analysis/whole types integrate with the `(ps,ws)` meronomy (2026-06-16, Alec — RESOLVED)
 
 The integration question — "how do WholeSpace analysis/property wholes (which have `.where`
-regions but are not PS percepts) connect to the `(ps,ss)` meronomy?" — is answered by the
+regions but are not PS percepts) connect to the `(ps,ws)` meronomy?" — is answered by the
 type/instance/`.where` distinction:
 
 - A WholeSpace **word** whole is ONE `.what` code (the word TYPE); the several word-instances in a
@@ -531,7 +575,7 @@ type/instance/`.where` distinction:
   average to the type mean M) — the code is the stable thing.
 - **The meronomy edge is TYPE → TYPE:** "is `A` a part of *word*?" means "do we store the PS
   `A`-code as a part of the WS word-code?" — a single edge between the two TYPE codes in the
-  `(ps,ss)` taxonomy.
+  `(ps,ws)` taxonomy.
 - **`.where` is the EVIDENCE that decides the edge, not the storage:** *"sometimes we do and
   sometimes we don't, and we know by looking at the `.where` for each."* The edge holds when the
   part's `.where` nests inside the whole's `.where` (cross-tower **`contained_mask`** /
@@ -694,9 +738,24 @@ instances and checking parthood where `.where`/co-occurrence still hold → feed
 trust. **WikiOracle is stateless ⇒ LTM is PROVISIONED, not accumulated: ✗ FUTURE TODO — pre-parse
 Wikipedia into ideas (absolute) / relations (relative) + per-memory trust and load it as LTM.**
 
-**Critical path:** B1 → B2 → A4 → C → A5 → D (the perceptual mereology end-to-end). F + G (the
-symbolic/relational + memory tracks) are largely independent and proceed in parallel. The next
-concrete code step is **B1** (char-class property-tiling).
+**Critical path:** ~~B1 → B2 → A4 → C → A5 → D~~. **STATUS (2026-06-18):** **B1 ✓, B2 ✓** (char-class
+tiling + OR-union); **A4 ✓** (cross-tower `.where`-containment edges via `record_cross_tower_meronomy`,
+live in `_autobind_cross_tower`); **C ◑** (the over-collection lifecycle + σ-synthesis are built and
+live-wired — `refine_over_collected`/`synthesize_higher_order`; the π-analyse split is a deferred
+nice-to-have, its property-source `factorize_over_set` built); serial dual view (2a/2b/2c) +
+word/object/meta (A/B/C) + the §6c context prelude all landed. **The cleanly bridge-independent,
+relation-level work is essentially complete.** The REMAINING items all need the
+**symbolic↔subsymbolic / captured↔host bridge** or are new subsystems: **A3** (consume the
+compiled-forward `tightest_container`/`route_hint` into the taxonomy — captured↔host), **A5** (the
+tower-codebook σ-over-set geometric realization + prune/relink — needs a trained σ), the **π-split**
+(factorize→property→split, captured↔host), **D** (the radix-climb MM_20M mean-collapse fix —
+end-to-end, depends on everything). **F/G ✓ (authority→ideas truth encoding + reasoning + STM→LTM
+trust) BUILT 2026-06-18** as the gated `<truthIdeas>` Truth/Ideas subsystem (stages 1–5; see the
+"Handoff build stages" list below): reduce-or-describe routing into the WS-META / RelativeTruthStore
+two homes, scalar trust collapse, STM→LTM trust persistence, the `reason` modus-ponens engine, and the
+`verify_relation` mechanism. The one remaining F/G piece is the episodic SOURCE — provisioning a
+pre-parsed Wikipedia / `.events` exemplar LTM (Workstream G FUTURE TODO, no owner). A3 / A5 / π-split /
+D still warrant their own focused builds.
 
 > **Substrate (partly built).** `Codebook.property_basis` + `Codebook.materialize_property(index,
 > n_positions)` ([Spaces.py:2081](../../bin/Spaces.py)) already read rows as PROPERTIES
@@ -909,10 +968,19 @@ dark-when-forced-off / off-in-parallel); all serial configs' functional tests st
      (6 unit + 3 integration: stamps/tensors, commit-once-per-word, flag-off-no-build). The A/B/C mint
      **already fires** under the config's `mereologyRaise` gate (no gate-widen needed here). **Host
      STM-depth mirror** stays per-iteration (conservative upper bound → at worst an early-but-safe
-     reduce in long radix words; raise `stmCapacity` if needed). **Deferred to 2c:** route the per-word
-     UNITY to WS (`ss.forward(prevCS, IS_concepts=masked per-word unity)` → `_stage0_unity_forward`
-     emits the covering whole with wide `.where`) — the WS half of the dual view; and the per-pid
-     stack vs per-word STM reconstruction test.
+     reduce in long radix words; raise `stmCapacity` if needed). **2c ✓ DONE (2026-06-18, the WS half of the
+     dual view — via the prelude, not a per-word unity).** Alec: *"pass both IS and CS to both PS and
+     WS… PS/WS look at INPUT for the first step, then process subsymbolically, then symbolically."*
+     The clean realization: the §6c **prelude** IS the subsymbolic pass, and its pump 0 has the EMPTY
+     CS seed — so feeding WS the sentence **unity** (`_staged_concepts_in`) at pump 0 routes through
+     `_stage0_unity_forward` (the legal stage-0 path; **no** repeated-injection NotImplementedError,
+     and **no** per-word byte-masking needed). `_sentence_prelude` now does
+     `ws.forward(prevCS, IS_concepts=_staged_concepts_in if (serial_object_meta and pump==0) else None)`
+     — so both PS (input/atoms) and WS (unity) see the input at step 0, then subsymbolic pumps (CS),
+     then the per-word **symbolic** loop. Gated `serialObjectMeta` (other serial configs' prelude is
+     byte-identical: `IS_concepts=None`). Verified: WS runs `_stage0_unity_forward` once with the real
+     unity at pump 0. Tests: `test_serial_object_meta.py::test_ss_analyzes_unity_at_prelude_pump_zero`
+     (+ gated-off). The per-pid stack vs per-word STM reconstruction test remains a nice-to-have.
 3. **Per-word A/B/C before compose** — the eager mint **already** fires once-per-word keyed by surface
    text at `ConceptualSpace.Reset`→`_maybe_autobind_meta`→`create_word_object_meta` (a per-`p` eager
    seam inside the compiled forward is impossible; the `@torch.compiler.disable` idea was wrong — a
@@ -968,9 +1036,38 @@ delivers clean word-symbols.
 | `maybe_raise_order` | the σ-synthesis / order-increase |
 | lattice `taxonomy_parents` / `ps_children_of_whole` | the multi-valued `Wholes(S)` / `Parts(S)` views |
 
-**To build (new dynamics on top):** the **retire-on-trigger** lifecycle; the **1:1 → identity
-collapse** (sets vanish, symbol persists as the identity); the trigger driving **both**
-π-analysis (split over-subscribed wholes) and σ-synthesis (today only the raise fires).
+**To build (new dynamics on top):** ~~the **retire-on-trigger** lifecycle; the **1:1 → identity
+collapse**; the trigger driving **both** π-analysis and σ-synthesis~~ — **✓ DONE + LIVE-WIRED
+(2026-06-18, Workstream C):** `ConceptualSpace.refine_over_collected(k_parts, k_wholes)`
+([Spaces.py](../../bin/Spaces.py)) is the over-collection lifecycle pass: resolves 1:1 identities
+first (excluded), then for each over-collected symbol **APPLIES σ-synthesis** — too many PARTS →
+`synthesize_higher_order(parts)` mints a HIGHER-ORDER symbol H grouping them (`Parts(H)`=provenance,
+the relation-level analogue of `part_chain`/`maybe_raise_order`; tagged **raised** so it is never
+re-refined), request carries `'result': H` — and **retires the trigger** (retire-on-trigger). Too
+many WHOLES → `op='analyse'` request is **emitted but the π-split is deferred** (the finer-whole
+criterion is underspecified). **Live-wired:** called in `_autobind_cross_tower` right after
+`resolve_identities` (gated `<mereologyRaise>`, host-side at Reset; additive). `symbols_needing_
+processing` excludes raised symbols. Idempotent. Tests: `test_cs_symbol_table.py`
+(`refine_over_collected_*`, `synthesize_higher_order_*` — 7).
+
+**π-analyse split — property-source BUILT (2026-06-18, Alec's criterion).** Alec: *"an over-subscribed
+whole should split by ADDING A PROPERTY; in subsymbolic mode by FACTORING the PiLayer output (criterion
+open); with numerous properties, a SOFT SUPERPOSITION lets the data decide."* The property-source —
+`PiLayer.factorize_over_set(y, M)` ([Layers.py](../../bin/Layers.py)) — is now built: the **log-domain
+dual of `SigmaLayer.generate`'s balanced split** (recover the summed log-membership `lx = (log(_to_mult
+(y))-b)@W⁻¹` as `reverse` does, split equally by M, exit — where σ splits a SUM by M in the atanh
+domain, π splits a PRODUCT by M in the log-mult domain). `M=1` reduces to `reverse`; folding M equal
+factors back recovers `y` (round-trip tested, `TestPiLayer`). Factoring an over-subscribed whole's code
+exposes its constituent **properties** to split on.
+
+> **NICE-TO-HAVE (deferred 2026-06-18, Alec — "unneeded complexity for the moment").** The full
+> **π-analyse split** — wiring `factorize_over_set` → the splitting property → the relation-level split
+> of the over-subscribed whole — is **deferred**. The `op='analyse'` request is still emitted by
+> `refine_over_collected` (detect-only); applying it (especially the "few-properties" general case,
+> with the partition criterion + soft-superposition over candidates) is a future refinement. The σ
+> half (synthesis) is the live one; the property-source (`factorize_over_set`) is built and tested for
+> when the split is wired. Likewise the σ tower-codebook geometric realization
+> (`SigmaLayer.synthesize_over_set`, currently relation-level provenance only) is a nice-to-have.
 
 ### Relocation (WholeSpace → ConceptualSpace) — relation-only ⇒ mainly movement
 Because symbols are relation-only, **there is no codebook split**: move the *relational* tables
@@ -978,7 +1075,7 @@ Because symbols are relation-only, **there is no codebook split**: move the *rel
 (`insert_symbol` for metas).
 - **Moves:** the taxonomy / `Parts`-`Wholes` dicts (+ position maps, idempotency cache,
   `meta_trust`, `part_chain`, LBG accumulators) and the ~25 methods; the autobind (already on
-  CS) switches `ss.method()` → `self.method()`; persistence (`vocab_extras` / `load_vocab_extras`
+  CS) switches `ws.method()` → `self.method()`; persistence (`vocab_extras` / `load_vocab_extras`
   + `Models._collect/_restore_vocab_extras` + a one-generation checkpoint shim +
   `_migrate_signed_int_taxonomy`); Models wiring (CS built before WS; CS keeps read refs to PS +
   WS codebooks); repoint the ~18 test files.
@@ -1002,7 +1099,7 @@ points that matter**. The corrected, code-grounded picture:
    `terminalSymbolicSpace_ref` ([Spaces.py:12509](../../bin/Spaces.py); docstring: *"the META
    taxonomy is owned by the canonical (terminal) SS … growing a per-stage SS codebook would overrun
    the where-space registry"*). There are **N per-stage CS instances but ONE terminal table** — a
-   naive `ss.`→`self.` flip would **fragment the shared taxonomy into N**. The migration must target
+   naive `ws.`→`self.` flip would **fragment the shared taxonomy into N**. The migration must target
    a **single terminal CS**; do NOT pair each per-stage CS with its co-stage WS.
 3. **`ConceptualSpace(Space)` ≠ `WholeSpace(PerceptualSpace)`.** `_peer_percept_store` /
    `insert_percept` ([Spaces.py:14790/14803](../../bin/Spaces.py)) are PerceptualSpace machinery CS
@@ -1010,15 +1107,15 @@ points that matter**. The corrected, code-grounded picture:
 4. **Corrected decomposition.** CS owns the pure-dict taxonomy (`taxonomy`, `taxonomy_parent_map`,
    `meta_pair_to_idx`, `meta_trust`, `part_chain`). WS keeps the `Codebook` + a new **atomic
    `allocate_symbol_row(init_vec) → (pos, row)`** that mints the row AND binds `pos↔row` in one
-   owner; CS calls it and records the position. **One owner for `_pos_kind` / `_ss_pos_to_row` /
-   `_ss_row_to_pos`** (the `"ss"` vs `"meta"` tag desyncs if split) — keep them **with the allocator
+   owner; CS calls it and records the position. **One owner for `_pos_kind` / `_ws_pos_to_row` /
+   `_ws_row_to_pos`** (the `"ws"` vs `"meta"` tag desyncs if split) — keep them **with the allocator
    on WS**, or move the allocator too; **never split allocator from the maps it mutates**.
 5. **Persistence is wider than the taxonomy.** `vocab_extras` also serializes `well_known_atoms` /
    `_paired_orth_to_sem` / `_paired_next_row` ([Spaces.py:15917](../../bin/Spaces.py)) and Models
    reads `well_known_atoms` off WS ([Models.py:1329/1573](../../bin/Models.py)). Either keep
    `vocab_extras` on WS (serializing a CS taxonomy sub-blob) or add those three to the inventory.
 6. **RadixLayer.reverse repoint site is [Models.py:1742](../../bin/Models.py)** (the caller passing
-   `symbolic_space=ss`), not the layer body — `RadixLayer` holds no CS handle.
+   `symbolic_space=ws`), not the layer body — `RadixLayer` holds no CS handle.
 7. **vector→relation retirements are DEFERRED past S3** (need their own design + sign-off): the
    `_nearest_symbol_target` MSE quantization loss (a gradient-path training signal with no row to
    regress to under relation-only), `_snap_content` decode-by-similarity, and `RelativeTruthStore`
@@ -1103,3 +1200,279 @@ legacy vector-bearing metas are a **separate, coexisting path** — nothing must
 the relation-only model. **⇒ S3 is effectively complete** (Fix #1 ownership + A/B/C creation); the
 gradient-path change is dropped. Removing the legacy vector machinery later is optional **cleanup**,
 not a capability gate.
+
+## Truth / Ideas processing (DESIGN, approved 2026-06-18, Alec — handoff to next session)
+
+How a user's TruthSet (trusted English sentences; authority is primary for a text interface) becomes
+stored, reasoned-over truth. This is the OUTPUT of serial parsing (now built: the serial dual view +
+A/B/C + the §6c context prelude).
+
+### Map of all truth — the knowledge loci at a glance (2026-06-18, verified against code)
+
+Truth and knowledge live in **eight distinct loci**. The invariant (see "Correctness partition" below):
+**ENTITIES** (codes, ideas) are **ABSOLUTE / assumed-valid**; **LINKS** (relations) are **RELATIVE /
+trust-bearing**. Testimony writes links, never entities.
+
+| Locus | Holds | Abs / Rel | Trust | Persisted? | Gate | Read by |
+|---|---|---|---|---|---|---|
+| **User TruthSet** (authority) | trusted English sentences (text + trust) ingested to the absolute corpus | arrives RELATIVE (per-stmt trust), stored ABSOLUTE | scalar DoT ∈ [-1,1] | per-request rebuild — cleared each `store_truths` call ([Models.py:2173](../../bin/Models.py)) | `truthCriterion` (forced 0 during ingest) | `store_truths`; luminosity/falsity loss | 
+| **PS + WS codebooks** (ramsified) | assumed-valid prototype codes (PS atoms / WS properties + symbol prototypes); ramsification sidecar records the σ/π fold route → abstraction order | **ABSOLUTE** | **none** (codebook is assumed-valid) | `.W` ✔ in state_dict; ramsification table **not** persisted (rebuilt at build) | `codebook`; ramsification under `mereologyRaise` | forward σ-synthesis / π-analysis |
+| **CS symbol table** (knits parts↔wholes; A/B/C) | relation-only symbols tying PS part-codes ↔ WS whole-codes; word/object/meta (A/B/C) | **RELATIVE** (relation-only) | **none** ([Spaces.py:12871](../../bin/Spaces.py)) | transient (host dicts) | `mereologyRaise` | lifecycle (`resolve_identities`/`refine_over_collected`) |
+| **Relational hierarchy** (WS META taxonomy + `meta_trust`) | REDUCED relations (predicate=parent / two ideas=children) + autobind percept↔symbol metas | graph ABSOLUTE; relation nodes RELATIVE | **tetralemma** `(t,f,b,n)` ([Spaces.py:14638](../../bin/Spaces.py)) | ✔ `vocab_extras` | `truthCriterion` (learn) + `truthIdeas` (reducible→here) | decode / order-raising; the reduce branch of `reason` |
+| **Truth-Ideas: TruthLayer** (absolute corpus) | consistent-proposition corpus; DoT baked into activation magnitude/sign | **ABSOLUTE** | scalar DoT baked into magnitude | buffers ✔ state_dict (but cleared per `store_truths`) | `truthCriterion` | `luminosity`/`ground`/`assess`; truth-modulated loss |
+| **Truth-Ideas: RelativeTruthStore** (relations between ideas) | uncollapsed `(np1, vp, np2)` idea triples — the "explicit knowing" / **ineffable** relations | **RELATIVE** | scalar `t−f` (baked into magnitude **and** `_trusts` list) | `np1/vp/np2` buffers ✔ state_dict; **`_trusts` list ✗ (bug — see below)** | `truthIdeas` (ineffable branch) | `reason` / `consequents` / `evaluate` / `verify_relation` |
+| **STM** (`ShortTermMemory` + typed STM) | per-presentation idea stack (newest-at-slot-0, cap ≈ 8) + typed metadata (category / order / ref_id) | working IDEAS (entities), not links | **none** | transient (`persistent=False`) | always-on | per-word loop / reduce / intra-predictor |
+| **LTM** (`InterSentenceLayer` end-state chain) | per-row deque of persisted STM end-states — depth 1 = absolute idea, depth 3 = relative `[predicate, idea1, idea2]` | MIXED per row (by depth) | scalar `t−f` in the end-state slot (stage 3); `None` for absolute rows | transient (`persistent=False`, cleared on Reset) | always-on (discourse); trust slot gated `truthIdeas` | inter-sentence AR predictor |
+
+> **"LTM is persisted STM" + "LTM is provisioned, not accumulated"** name the relationship between the
+> last two columns and the source of LTM, respectively — they do **not** merge the loci (next note).
+
+### Two consolidation questions (resolved 2026-06-18)
+
+**Q: Can the Truth-Ideas (RelativeTruthStore) "just be added to the LTM"?** The code review found the two
+**as built** are two projections for disjoint consumers and recommended keep-separate. **DECISION (Alec,
+2026-06-18): CONSOLIDATE — move the RelativeTruthStore corpus INTO the LTM**, and change the LTM (and STM)
+so it becomes a suitable single reasoning home. The relative LTM end-state `[predicate, idea1, idea2]` and a
+RelativeTruthStore `(np1=idea1, vp=predicate, np2=idea2)` triple are the **same content, co-derived from the
+same STM end-state buffer**, so the duplication is real; the review's objections become the **requirements**
+the move must satisfy:
+
+- **Not root-reduced.** The LTM already *stores* the full `[depth, D]` end-state and only the AR predictor
+  reduces it to a root *on read*. Keep it that way: reasoning addresses the full relation by slot (predicate =
+  slot `depth-1`, idea1 = `depth-2`, idea2 = slot 0); root-reduction stays a predictor-local read, never a
+  storage policy.
+- **Not transient → persistent.** Today `_stm_end_states` is `persistent=False` and cleared on Reset (an AR
+  ring). As the reasoning corpus it must **persist** (state_dict / checkpoint) and survive document-boundary
+  Resets — universal relations must not age out or reset.
+- **Trust on the LTM → and therefore on the STM.** The LTM end-state already carries the scalar-trust slot.
+  Alec: *"it will pick up a trust value, but that means STM should also."* So **STM gains a per-idea trust
+  channel** — on the **live idea-stack** (`_idea_*` buffers, what `stm.push_step_masked` writes), **not** the
+  typed STM (`_category`/`_order`/`_ref_id`, which is driver-only and never written in the forward) — so trust
+  propagates STM→LTM. **Caveat (verified):** there is *no per-idea trust source in the forward today* (trust is
+  a relation/predicate property computed at the boundary via `_tetralemma_trust`), and the end-state predicate
+  slot is a *folded* reduction, so per-idea trust does not map 1:1 to the end-state trust — a source + a
+  fold/combine must be defined (see the resolution checklist below).
+- **Open items the move must also handle (from the review).** Reasoning must run on the **content-width slice**
+  (conform like `_conform_idea_vec`, not the event width — else `.where`/`.when` energy leaks into parthood);
+  the reasoning **scope** (a global flat corpus vs per-row recency-evicting deques) must be reconciled; and
+  reasoning must **filter to the relation subset** (the LTM records every end-state, absolute and reducible
+  included). Once the LTM satisfies these, `RelativeTruthStore` is **subsumed and retired**, and
+  `reason` / `consequents` / `evaluate` / `verify_relation` read the LTM. The `_trusts` persistence fix below is
+  a step toward "trust persists," consistent with this move.
+
+**LOCKED + FOUNDATION LANDED (2026-06-18, Alec).** The consolidation is a unified **ternary tensor**,
+`Layers.TernaryTruthStore` (**stage 1 BUILT** — `test/test_ternary_truth_store.py`, 15 tests; additive /
+inert until wired): rows `(NP1, VP, NP2)` of **full idea vectors** (`Null` = zero) + a per-row **timestamp**
++ a scalar **trust**; a `rel_type` tag carries `partOf` / `implies` / other; `NP··` = absolute idea,
+`NP VP·` = unary, `NP VP NP` = relation. Stored **UNSCALED** (trust a separate column — no magnitude-baking),
+all registered buffers (**persistent** → rides the state_dict). **Scope = LTM + RelativeTruthStore only**
+(Alec): TruthLayer stays for luminosity; WS-META stays the *reducible* home (reduce-or-describe survives — its
+*ineffable* branch will target this store). Timestamp = monotonic clock (XML rows earliest); new dark gate
+`ltmConsolidation`; reasoning scans `relations()`. **STAGES 2–6 DONE (2026-06-18; full suite 2648/0,
+flag-off byte-identical; `test/test_ltm_consolidation.py`, 19 tests).** (2) `<ltmConsolidation>` gate
+(model.xsd, `Models.ltm_consolidation`, `cs._ltm_consolidation`); `SymbolicSubSpace.ltm_store =
+TernaryTruthStore(muxed, content_width=symbol_dim)` built **only** when gated (RTS built only when off — the
+class stays for flag-off + the ~19 standalone-store tests); attribute-only (submodule → state_dict; out of
+`self.layers` → survives the Reset cascade). (3) the observe site appends one ternary row per batch row from
+the same `depths`/`payloads`/`tetralemmas` (depth-1 → `append_idea`; depth-3 → `append_relation` with
+NP1=idea1=payload[d-2], VP=predicate=payload[d-1], NP2=idea2=payload[0]), under the existing
+`not _exploration_trial` guard; the deque + AR predictor are **left untouched** (the deque is the AR ring; the
+store is the persistent record — observe writes both). (4) `_route_learned_relation`'s ineffable branch returns
+`('idea', -1)` without a separate write when consolidated (the row already exists from observe); reduce branch
+unchanged. (5) `reason`/`verify_relation` select the store (`_reasoning_store`) and read it via
+`_iter_relation_rows` (RTS: un-bake `np/t₁`; ternary: unscaled slots + separate trust, content-sliced);
+`verify` write-back = `set_trust` (ternary, no re-bake) / re-bake (RTS). (6) RTS retired on consolidated configs;
+`provision_ltm()` appends `<truthSet>` rows at load (earliest timestamps). **The three follow-ups are now REAL (2026-06-18; full suite green):**
+(i) **Real-parse provisioning** — `provision_ltm` runs each `<truthSet>` text through the actual forward
+(`prepInput`+`forward` under `TheData.runtime_batch`; the briefed `runEpoch(split="runtime")` path raises on its
+inference fast-path, so the working `_infer_ir`-style path is used), so the append lands a real parsed end-state
+(real encoding + real NP/VP/NP for an in-grammar relative parse); the XML `trust` + `kind`→`rel_type` are then
+stamped on the appended rows. `_encode_text_to_idea` (mean-pool) and the NP1=VP=NP2 hack are DELETED.
+Triggered lazily once at the first `runEpoch` (guard `_ltm_provisioned`; data must be loaded), not at
+`from_config`. (ii) **Conversation pushed regardless of a predictor** — the store-append was de-nested out of
+the discourse block, so it fires whenever consolidated (the single append path, reused by provisioning).
+(iii) **AR reads the store** — `InterSentenceLayer.get_stm_chain` reconstructs end-states from
+`ltm_store.recent()` (and `observe` skips the deque when consolidated); the reconstruction is **INFIX**
+`[idea1, predicate, idea2]` (the store's native order — idea1 may stand without a predicate) and the consolidated
+AR root is **idea1 (slot 0)**, kept consistent between predicted-context and observed end-state.
+**Remaining inherent limits (not placeholders):** parse fidelity is grammar/vocab-dependent (out-of-grammar text
+yields whatever the parser produces; the `kind` tag still forces `rel_type`); the AR-from-store is global-recency
+(B=1 correct; B>1 batched training shares one recency window). **Two pre-existing bugs surfaced (separate
+issues):** `Spaces._topk_priming_mask` crashes under `sentenceProtocol`+top-k-priming at small widths
+(reproduces on `MM_grammar.xml`), and `runEpoch(split="runtime")` raises on its no-`batch_override` inference
+fast-path. The checklist below is the design rationale.
+
+**Resolution checklist before building (2026-06-18, code-grounded — workflow `wf_eb4ccbf5-329`, 6 readers).**
+Beyond the three requirements above, these must be settled:
+
+*Decisions (design forks):*
+1. **Scope.** Three corpora (TruthLayer stays; WS-META stays the *reducible* home; LTM absorbs only the
+   *ineffable* `RelativeTruthStore` branch) — **recommended** — vs one corpus (fold WS-META in too; loses the
+   taxonomy/lattice/`part_chain`). Sets the blast radius; decide first.
+2. **Partitioned LTM.** One `InterSentenceLayer` with **two partitions** (transient recency ring for AR;
+   retained relations partition for reasoning) — **recommended** — vs one undifferentiated deque.
+3. **Reasoning scope:** per-row vs **global/pooled** (recommended; matches today's `reason()`).
+4. **Filter + dedup:** tag relation rows at write (`rel_mask` is in hand at the observe site,
+   [Models.py:7239](../../bin/Models.py)) + a relation-key idempotency index that EMAs trust on re-assert
+   (fixes `RelativeTruthStore`'s append-only double-count) — **recommended** — vs append-only.
+5. **STM trust SOURCE (murkiest).** No per-idea trust exists in the forward today (trust is a
+   relation/predicate property at the boundary); the end-state predicate slot is a *folded* reduction.
+   Decide: invent a real per-idea trust (idea activation sign + TruthSet) vs a seed; **feed** vs replace
+   `stm_end_state_trust`; define the fold.
+6. **Trust shape:** scalar `t−f` (recommended) vs full tetralemma.
+7. **Gating:** a **new dark gate** (`ltmConsolidation`, recommended) vs reuse `truthIdeas` — the LTM append is
+   already LIVE/ungated on the 4 `sentencePrediction` configs, so persistence/Reset changes alter `L_inter`
+   gradients and are NOT byte-identical unless gated.
+
+*Hard code invariants to change:*
+- LTM is cleared at **three** sites — doc-boundary `Reset` ([Layers.py:8268](../../bin/Layers.py), currently
+  ignores `hard` via `del hard`), epoch-start `ss.discourse.reset()` ([Models.py:4476](../../bin/Models.py)),
+  and `ensure_batch` reshape — all must become selective.
+- LTM is **not in the state_dict** (ragged per-row deques) → checkpoint **sidecar** (mirror
+  `vocab_extras`/`bpe_extras`) + collect/restore; `register_buffer` can't hold it.
+- `maxlen` FIFO **eviction** silently drops old relations → the relations partition must be non-evicting.
+- **Width:** payloads are event-width `[content|where|when]`; reasoning is content-only → slice content on read.
+- **Drop magnitude-baking:** `reason`'s `np/t₁` un-baking simplifies away (LTM stores unscaled + a separate
+  scalar trust); `verify_relation` rewrites to overwrite the scalar (deque tuples are immutable → replace the
+  entry); `consequents`/`evaluate`/`constraint_residuals` need a flat materialized `[n, content]` view over the
+  ragged deques.
+- `reason`/`consequents`/`evaluate`/`verify_relation` have **no production callers** (test-only) → re-pointing
+  breaks no live path, but retirement repoints **19 tests** (incl. a source-string assert in
+  `test_two_truth_stores.py`) and removes the `relative_store.*` state_dict keys (needs a checkpoint migration).
+
+*Recommended suite-green sequence:* (1) non-root-reduced LTM read API (additive) → (2) STM idea-stack trust
+channel (gated) → (3) LTM persistence sidecar (gated) → (4) LTM survive-Reset (gated) → (5) reasoning-over-LTM
+(port readers; keep `store=` injection) → (6) retire `RelativeTruthStore` last (hard-cut + repoint tests +
+checkpoint migration).
+
+**Q: Augment the LTM by parsing a TruthSet from XML config?** **Yes — sound and additive — but DEFERRED
+until the consolidation above lands** (provisioning should target the consolidated LTM, not the
+soon-to-be-retired RelativeTruthStore). This is the
+**provisioning** path the design calls for ("WikiOracle is stateless ⇒ LTM is PROVISIONED, not accumulated;
+the live pipeline is identical, only the source of LTM differs"), and the small-scale form of the deferred
+"pre-parse Wikipedia" TODO. **Current state (verified):** there is **no** XML/data-file truth loader today —
+user truths arrive as a **runtime JSON payload** (`serve.py` body `'truth'` → `store_truths`); XML supplies only
+the *knobs* (`truthCriterion`, `truthMaxEntries`, the luminosity/universality weights). So an XML `<truthSet>`
+(or a config-referenced truth file) parsed at model load and fed through the **same** serial parse →
+reduce-or-describe routing → LTM-observe pipeline (so each truth lands in its proper loci above:
+reducible→WS META, ineffable→RelativeTruthStore, end-state→LTM with trust) is a genuinely new, additive
+capability — recommended as the concrete next build.
+
+> **Bug surfaced by the review — FIXED 2026-06-18.** `RelativeTruthStore` kept per-triple trust in a plain
+> Python list (`_trusts`) **outside** the state_dict, while the trust-baked magnitudes (`np1/vp/np2`) were
+> registered buffers — so on checkpoint reload the per-relation trust silently reset to the `1.0` fallback in
+> `reason`/`verify_relation`. **Fixed** by making trust a registered `[max_triples]` buffer
+> (`RelativeTruthStore.trust`, [Layers.py:7348](../../bin/Layers.py)): `record_triple` writes it, `reset` zeros
+> it, and `reason`/`verify_relation` read/write it
+> ([Spaces.py:13692](../../bin/Spaces.py) / [13761](../../bin/Spaces.py)); a read-only `_trusts` property is
+> kept for back-compat. Old checkpoints load non-strict (buffer keeps its zero-init). Tests:
+> `TestRelativeTrustPersistence` (4). (The absolute `TruthLayer` has the same list-not-in-state_dict pattern
+> for `_sources`/`_trusts`, but that is clarification-surfacing metadata with separate semantics — left as-is.)
+
+### Correctness partition — ENTITIES are absolute, LINKS are relative
+- **Absolute (non-relative):** *codes and ideas, at ANY order.* Zero-order codes/ideas are absolute;
+  higher-order ones are **abstract but still absolute** (non-relative — loosely "no symbol is absolute,"
+  but these are non-relative). A higher-order code's constituents (its synthesis/definition) ride WITH
+  the code (absolute). Codebooks stay **assumed-valid** (no per-proposition trust).
+- **Relative (trust-bearing):** *relations BETWEEN codes or ideas, at any order* — the asserted links
+  (A→B, cat ⊑ animal). Testimony writes **relations**, never entities; it is never promoted into the
+  assumed-valid codebook (that would treat testimony as direct experience).
+
+### Lifecycle combine rules (the over-collection remedies)
+- **Too many parts → combine with AND** (σ-synthesis: a higher-order part is the AND/intersection of
+  its particles — narrows). Live: `ConceptualSpace.synthesize_higher_order` / `refine_over_collected`.
+- **Too many wholes → combine with OR** (π: a broader whole is the OR/union of properties — widens).
+  The dual combine — NOT a split. **Deferred ("nothing to do now; going forward we need more wholes").**
+  (`PiLayer.factorize_over_set` is built as the π inverse primitive, available for later.)
+
+### Reducibility (route a parsed predication)
+Try to reduce the parse to symbols (run-it-and-see via the σ/π compose). If it reduces → a relation
+over **codes**. If it is **ineffable** (won't reduce) → approximate with a **longer description** (a
+more-composed **idea**) → a relation over **ideas**. (Composed NPs like "bowling pins" are ideas, not
+single codes.)
+
+### Idea identity
+Ideas are compared by **shared parts and wholes** — identical *to the degree* they share them (graded,
+collection-based, like symbol retrieval). No exact-match requirement.
+
+### Reasoning (forward inference; expands the area of luminosity)
+Modus-ponens over relations. Given a relation **A→B** (trust `t₁`) and a known truth **C** (trust `t₂`):
+1. **Map C to the antecedent A by parthood** — direct match, OR raise/lower C or A to a common order to
+   test whether **C is covered by A**;
+2. if C satisfies A, **apply the consequent VP (B) to C → a NEW conceptual space (a new concept)**;
+3. the new concept's trust = **`t₁ × t₂`** (illuminated to the degree both are true);
+4. the **area of luminosity** (the illuminated / known-true region) grows.
+(Reasoning is the tier after authority; experience/episodic verification feeds trust separately.)
+
+### STM → LTM
+LTM **is persisted STM**:
+- **Serial mode:** an **absolute** truth = **1 position** (one idea/code); a **relative** truth =
+  **2 positions** (the two related entities — *parthood over extension*; 2nd position often empty for
+  absolute truths).
+- **Parallel mode:** the full **N (≈8)** STM ideas.
+- **Over time:** LTM = the **stack of STM** (keeps both verbal/serial and nonverbal/parallel memory);
+  minimally just positions 1 & 2.
+- WikiOracle is **stateless ⇒ LTM is PROVISIONED** (pre-parsed Wikipedia → ideas/relations + per-item
+  trust), not accumulated. The live pipeline is identical; only the source of LTM differs.
+
+### Pipeline
+serial parse → **reduce-or-describe** (codes if effable, longer-description idea if not) → tag **trust**
+→ store the **relation** (relative) over the **entities** (absolute) as STM positions → **persist
+STM→LTM** → **reasoning** (modus ponens + parthood-match + `t₁×t₂` + luminosity) → **verify** (episodic
+order-0 instances → trust).
+
+### Handoff build stages
+1. **✓ DONE (2026-06-18). Map** the existing `RelativeTruthStore` / `TruthLayer` /
+   `_maybe_learn_relation` / `learn_relations_from_stm` APIs. **Key finding: the two-store design
+   already EXISTS and is unwired** — `test/test_two_truth_stores.py` documents it (absolute=IDEAS in
+   `TruthLayer`; relative=RELATIONS-BETWEEN-IDEAS as uncollapsed np1/vp/np2 in `RelativeTruthStore`,
+   the latter with ZERO production callers). `RelativeTruthStore.consequents()` (Layers.py:7378) IS
+   the modus-ponens forward step; `learn_relations_from_stm` (Spaces.py:13848) is LIVE at
+   `ConceptualSpace.Reset(hard=True)` reading the depth-3 STM end-state; `InterSentenceLayer.
+   observe_stm_end_state` (Layers.py:7870) already persists STM end-states with a `tetralemmas` slot
+   parked at `None` (the trust hook). No `.events` episodic store exists. Three decisions (Alec):
+   **two homes by reducibility** ("the intuitive and explicit knowings"); **trust = full tetralemma
+   during computation, stored as a scalar `t − f` ∈ [−1,1]** (Dharmakīrti — BOTH/NEITHER are not
+   objects of knowing); **reducibility = codebook-snap** (both entity operands snap to existing rows,
+   no mint).
+2. **✓ DONE (2026-06-18; suite 2594/0, flag-off byte-identical). Store routing + trust** — gated
+   `<truthIdeas>` (parsed `Models.truth_ideas`; stamped `cs._truth_ideas`). `_maybe_learn_relation`
+   now routes via `_route_learned_relation`: REDUCIBLE (`_relation_is_reducible` = both operands snap)
+   → WS META `insert_relation` with the FULL tetralemma (the *intuitive* knowing); INEFFABLE → the
+   uncollapsed `(idea1, predicate, idea2)` triple into `RelativeTruthStore` with the scalar trust
+   `_collapse_trust` (`t − f`) (the *explicit* knowing; returns `('idea', row)`). `_conform_idea_vec`
+   reconciles the idea (content) width vs the store (event) width. Tests
+   `test/test_truth_ideas_routing.py` (9).
+3. **✓ DONE (2026-06-18). STM→LTM persistence** — the learned per-row SCALAR trust is attached to the
+   LTM end-state's `tetralemmas` slot. `ConceptualSpace.stm_end_state_trust(buf, relative_mask)`
+   computes, per relative row, `_collapse_trust(_tetralemma_trust(predicate))` (the relation at slot
+   `depth-1`); absolute rows → `None`. **Ordering finding:** the live hooks run `observe` (in the
+   forward, [Models.py:7269](../../bin/Models.py)) BEFORE `learn` (in the post-batch `dispatch_per_row_
+   reset` → `CS.Reset`), so a learn-time stash would lag by a boundary; the trust is therefore computed
+   on the CS from the SAME end-state buffer `observe` records and read there (`tetralemmas=` arg),
+   stashed on `cs._last_end_state_trust`. Gated `truthIdeas`; `None` when off (slot stays `None` →
+   byte-identical). The 1/2-position serial vs N-stack parallel persistence is the existing end-state
+   depth (1 absolute / 3 relative). The **provisioning format** (pre-parsed Wikipedia) remains a future
+   TODO (Workstream G).
+4. **✓ DONE (2026-06-18). Reasoning engine** — `ConceptualSpace.reason(query, query_trust, *,
+   parthood_threshold, max_steps, store)`: forward modus ponens over the relative store. For each
+   relation whose antecedent `A` covers the query `C` by parthood (`_idea_parthood` ≥ threshold; `A`/`B`
+   recovered UNSCALED since `record_triple` bakes trust into the magnitude), apply consequent `B` → a new
+   concept with trust `t₁×t₂`; returns `{'derived': [...], 'luminosity_gain'}` (the illuminated area).
+   `max_steps>1` forward-chains (each relation fires once). `_idea_identity` is the graded
+   shared-parts/wholes idea match. Order raise/lower reduces to the graded parthood coverage on the idea
+   vectors (a first cut; explicit order normalization is a documented extension).
+5. **✓ DONE (mechanism; 2026-06-18). Verification** — `ConceptualSpace.verify_relation(relation_idx,
+   episodes, *, store, parthood_threshold, support_weight)`: order-0 episodes (antecedent/consequent
+   idea pairs) that cover `A`/`B` by parthood nudge the stored scalar trust toward observed support
+   (`new = (1-w)·old + w·(2·support_frac − 1)`, clamped; magnitude re-baked). **The episodic SOURCE**
+   (persisted `.events` exemplar store / provisioned Wikipedia LTM) is the remaining FUTURE TODO
+   (Workstream G, no owner); this is the verification mechanism that consumes whatever episodes are
+   supplied.
+6. **(deferred nice-to-haves, unchanged)** the too-many-wholes OR-combine; the π-split (its source
+   `PiLayer.factorize_over_set` is built); the σ tower-codebook geometric realization
+   (`SigmaLayer.synthesize_over_set`). Per Alec ("unneeded complexity for the moment").
+
+All of stages 2–5 are behind `<truthIdeas>` (the reasoning/verify query methods are inert until the
+store is populated, which only the gated learn path does); flag-off is byte-identical (full suite). Tests:
+`test/test_truth_ideas_routing.py` (25).

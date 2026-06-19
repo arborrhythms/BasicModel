@@ -103,7 +103,7 @@ def test_ispart_rule_relative_by_op_name(monkeypatch, tmp_path):
     rel = g._relative_rule_id_set()
     ispart_reverse = [
         i for i, r in enumerate(g.rules)
-        if r.method_name == "isPart" and r.lhs not in g.ss_relative_starts]
+        if r.method_name == "isPart" and r.lhs not in g.ws_relative_starts]
     assert ispart_reverse, "expected an isPart rule with a non-start lhs"
     for i in ispart_reverse:
         assert i in rel, (

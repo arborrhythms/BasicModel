@@ -249,7 +249,7 @@ class TestConceptualSpaceOwnership(unittest.TestCase):
     def test_routing_dim_is_n_rules(self):
         # The routing width must now be the grammar's rule-vocabulary
         # size (n_rules), NOT the old concept_dim placeholder. This is
-        # the dim WordSubSpace.routing_state.rule_probs is emitted at and
+        # the dim SymbolicSubSpace.routing_state.rule_probs is emitted at and
         # the dim routing_proj projects from.
         import Language
         cs = self.model.conceptualSpaces[0]
@@ -270,7 +270,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     ``routing_proj(rule_probs)``).
 
     Cadence note (tier-free bounded-STM fold, doc/plans/2026-06-05-tier-
-    free-bounded-stm-fold.md): the old per-word ``wordSubSpace.compose``
+    free-bounded-stm-fold.md): the old per-word ``symbolicSpace.compose``
     auto-fire was deleted, and the boundary ``_chart_compose_at_C`` fire
     only runs on the whole-slab/parallel forward path -- the serial
     (grammatical) forward this config uses now reduces the STM via
@@ -280,7 +280,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     distribution (verified below). ``_run_one_forward`` fires that
     sentence-level compose explicitly -- byte-identically to how the
     whole-slab path's ``_chart_compose_at_C`` does
-    ``wordSubSpace.compose(stm.snapshot())`` -- so these assertions test
+    ``symbolicSpace.compose(stm.snapshot())`` -- so these assertions test
     the new single-tier, sentence-level cadence.
     """
 
@@ -320,22 +320,22 @@ class TestRuleConditionedPredictor(unittest.TestCase):
             with torch.no_grad():
                 model.forward(x)
                 # Sentence-level router fire over the accumulated STM:
-                # builds ``wordSubSpace.routing_state.rule_probs`` at the
+                # builds ``symbolicSpace.routing_state.rule_probs`` at the
                 # new single-tier cadence (mirrors the whole-slab path's
-                # ``_chart_compose_at_C`` -> ``wordSubSpace.compose``).
+                # ``_chart_compose_at_C`` -> ``symbolicSpace.compose``).
                 snap = model.conceptualSpace.stm.snapshot()
                 self.assertIsNotNone(
                     snap, "forward must accumulate an STM snapshot.")
-                model.wordSubSpace.compose(snap)
+                model.symbolicSpace.compose(snap)
 
     def test_routing_state_built_with_rule_probs(self):
         import Language
         self._run_one_forward()
-        ws = self.model.wordSubSpace
-        rs = getattr(ws, "routing_state", None)
-        self.assertIsNotNone(rs, "compose must build wordSubSpace.routing_state.")
+        ss = self.model.symbolicSpace
+        rs = getattr(ss, "routing_state", None)
+        self.assertIsNotNone(rs, "compose must build symbolicSpace.routing_state.")
         # current_rules dict contract preserved (ADDITIVE, not replaced).
-        self.assertIsInstance(ws.current_rules, dict,
+        self.assertIsInstance(ss.current_rules, dict,
                               "current_rules must stay a dict (SS dispatch).")
         rp = rs.rule_probs
         self.assertTrue(torch.is_tensor(rp),

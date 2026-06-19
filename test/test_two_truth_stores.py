@@ -210,7 +210,7 @@ def test_structural_constraint_residuals():
 
 def test_wordsubspace_owns_both_stores():
     """The sibling store rides next to the absolute store on the
-    WordSpace (created with the truth layer)."""
+    SymbolicSpace (created with the truth layer)."""
     import Language
     assert hasattr(Language, 'RelativeTruthStore') or True
     from Layers import RelativeTruthStore

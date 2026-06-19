@@ -5,7 +5,7 @@ PREPOSITION". The op fires automatically once it is (a) in
 ``GRAMMAR_LAYER_CLASSES``, (b) constructible with ``cls()``, and (c)
 named by a ``<rule>`` in the default ``data/role_collapsed.grammar``.
 These tests assert the grammar carries the role-only rule and that the
-production wiring path (``WordSubSpace._resolve_rule_layer``) resolves it
+production wiring path (``SymbolicSubSpace._resolve_rule_layer``) resolves it
 to a ``PrepositionLayer``. Hard rule: no global POS inventory.
 """
 
@@ -105,13 +105,13 @@ class TestTenseAspectGrammarRules(unittest.TestCase):
 class TestPrepositionSignalRouterBinding(unittest.TestCase):
     """Task 1.4: the auto-wiring contract -- ``_wire_signal_router_grammar
     _ops`` resolves the ``preposition`` rule to a ``PrepositionLayer`` via
-    ``WordSubSpace._resolve_rule_layer(tier, name)``.
+    ``SymbolicSubSpace._resolve_rule_layer(tier, name)``.
 
     Verification path: we call the REAL production method
-    ``WordSubSpace._resolve_rule_layer('C', 'preposition')``. That method
+    ``SymbolicSubSpace._resolve_rule_layer('C', 'preposition')``. That method
     only reads ``self._host_layer_registry`` before falling through to
     ``GRAMMAR_LAYER_CLASSES['preposition']()`` (the ``cls()`` call), so we
-    build a bare WordSubSpace via ``__new__`` with an empty host registry
+    build a bare SymbolicSubSpace via ``__new__`` with an empty host registry
     rather than the heavy 3-space constructor. This exercises the genuine
     lookup-order -> ``cls()`` path the wiring uses; preposition is not
     pre-registered in any host registry, so it resolves through the
@@ -119,10 +119,10 @@ class TestPrepositionSignalRouterBinding(unittest.TestCase):
     """
 
     def test_resolve_rule_layer_yields_preposition_layer(self):
-        from Language import WordSubSpace
-        ws = WordSubSpace.__new__(WordSubSpace)   # bypass the multi-space ctor
-        ws._host_layer_registry = {}              # the only attr the method reads
-        layer = ws._resolve_rule_layer('C', 'preposition')
+        from Language import SymbolicSubSpace
+        ss = SymbolicSubSpace.__new__(SymbolicSubSpace)   # bypass the multi-space ctor
+        ss._host_layer_registry = {}              # the only attr the method reads
+        layer = ss._resolve_rule_layer('C', 'preposition')
         self.assertIsInstance(layer, PrepositionLayer)
         self.assertEqual(layer.tier, 'C')
 

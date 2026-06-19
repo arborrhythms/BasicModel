@@ -76,15 +76,15 @@ def _stage_for_per_word(m):
     isp.Start()
     inputTensor = isp.prepInput(inp_items)
     in_sub = isp.forward(inputTensor)
-    # Per-sentence WordSubSpace state. Production initializes this in
+    # Per-sentence SymbolicSubSpace state. Production initializes this in
     # the first ``_per_word_prelude`` (sentinel
     # ``_per_sentence_initialized``); replay that here for tests that
     # call ``_per_word_body_step`` in isolation.
-    if (m.wordSubSpace is not None
-            and not getattr(m.wordSubSpace,
+    if (m.symbolicSpace is not None
+            and not getattr(m.symbolicSpace,
                             '_per_sentence_initialized', False)):
-        m.wordSubSpace.soft_reset()
-        m.wordSubSpace._per_sentence_initialized = True
+        m.symbolicSpace.soft_reset()
+        m.symbolicSpace._per_sentence_initialized = True
     # Mirror ``BasicModel._forward_body_per_word``'s prelude: STM
     # batch resize + clear, MPHF pre-warm, recur_pass reset, and
     # loop-carry SubSpace pre-seed. The capture gate calls

@@ -43,10 +43,10 @@ def bare_ss():
 # ---------------------------------------------------------------------------
 
 def test_gate_requires_the_knob():
-    ss = bare_ss()
+    ws = bare_ss()
     _knob(None)
     with pytest.raises(RuntimeError):
-        ss.interpret_word(3)
+        ws.interpret_word(3)
 
 
 # ---------------------------------------------------------------------------
@@ -54,29 +54,29 @@ def test_gate_requires_the_knob():
 # ---------------------------------------------------------------------------
 
 def test_unlicensed_miss_is_a_placeholder_never_a_row():
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
-        d = ss.interpret_word(7, licensed=False)
+        d = ws.interpret_word(7, licensed=False)
         assert d['action'] == 'placeholder' and d['a'] == 0.0
-        assert len(ss.reference_table) == 0, (
+        assert len(ws.reference_table) == 0, (
             "naming never happens on first sight")
-        assert ss.gate_log[-1] is d, "first-class loggable decision"
+        assert ws.gate_log[-1] is d, "first-class loggable decision"
     finally:
         _knob(None)
 
 
 def test_licensed_miss_mints_then_hits():
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
-        d1 = ss.interpret_word(7, licensed=True, object_id=2)
+        d1 = ws.interpret_word(7, licensed=True, object_id=2)
         assert d1['action'] == 'mint' and d1['object'] == 2
-        assert ss.reference_table.deref(7) == 2
-        d2 = ss.interpret_word(7)            # now a hit: use, no re-mint
+        assert ws.reference_table.deref(7) == 2
+        d2 = ws.interpret_word(7)            # now a hit: use, no re-mint
         assert d2['action'] == 'use' and d2['object'] == 2
-        assert len(ss.reference_table) == 1
-        assert [e['action'] for e in ss.gate_log] == ['mint', 'use']
+        assert len(ws.reference_table) == 1
+        assert [e['action'] for e in ws.gate_log] == ['mint', 'use']
     finally:
         _knob(None)
 
@@ -84,26 +84,26 @@ def test_licensed_miss_mints_then_hits():
 def test_licensed_miss_without_object_stays_placeholder():
     # The license alone cannot mint: a binding needs both sides (full
     # rows only) — reuse-evidence without a referent is still ignorance.
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
-        d = ss.interpret_word(9, licensed=True, object_id=None)
+        d = ws.interpret_word(9, licensed=True, object_id=None)
         assert d['action'] == 'placeholder'
-        assert len(ss.reference_table) == 0
+        assert len(ws.reference_table) == 0
     finally:
         _knob(None)
 
 
 def test_mint_gauge_orients_object_row():
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
         ref = torch.rand(D)
         u = -(ref / ref.norm())
-        d = ss.interpret_word(5, licensed=True, object_id=0,
+        d = ws.interpret_word(5, licensed=True, object_id=0,
                               object_row=u, referent=ref,
                               extent=torch.rand(D) * 0.5 + 0.2)
-        assert ss.reference_table.extent_of(5) is not None
+        assert ws.reference_table.extent_of(5) is not None
         # Review fix 2026-06-11: the gauge-oriented row must ride the
         # decision (the table stores ids only; the caller owns the
         # codebook write-back) -- previously it was dropped.
@@ -119,26 +119,26 @@ def test_mint_shift_pushes_the_oriented_row():
     # The immediate shift path must carry the gauge-fixed row, not the
     # un-oriented codebook representative (review fix 2026-06-11).
     import torch.nn as nn
-    from Language import WordSubSpace
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws._stm_payload_dim = D
-    ws._idea_capacity = 8
-    ws._idea_max_depth_host = 0
-    ws._idea_buffer = torch.zeros(1, 8, D)
-    ws._idea_depth = torch.zeros(1, dtype=torch.long)
+    from Language import SymbolicSubSpace
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss._stm_payload_dim = D
+    ss._idea_capacity = 8
+    ss._idea_max_depth_host = 0
+    ss._idea_buffer = torch.zeros(1, 8, D)
+    ss._idea_depth = torch.zeros(1, dtype=torch.long)
 
     rows = torch.rand(3, D)
     ref = torch.rand(D)
     u = -(ref / ref.norm())
     rows[1] = u                              # un-oriented representative
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
-        d = ss.shift_word(ws, 0, 9, rows, licensed=True, object_id=1,
+        d = ws.shift_word(ss, 0, 9, rows, licensed=True, object_id=1,
                           object_row=u, referent=ref)
         assert d['action'] == 'mint'
-        pushed = ws._idea_buffer[0, 0]
+        pushed = ss._idea_buffer[0, 0]
         assert torch.allclose(pushed, -u), (
             "the mint-shift crosses the ORIENTED row")
         assert (pushed * ref).sum() >= 0
@@ -151,11 +151,11 @@ def test_mint_shift_pushes_the_oriented_row():
 # ---------------------------------------------------------------------------
 
 def test_folds_never_create_rows():
-    ss = bare_ss()
+    ws = bare_ss()
     _knob("on")
     try:
-        ss.interpret_word(1, licensed=True, object_id=0)
-        n_before = len(ss.reference_table)
+        ws.interpret_word(1, licensed=True, object_id=0)
+        n_before = len(ws.reference_table)
         torch.manual_seed(1)
         pi = PiLayer2(2 * D, D, blocks=2)
         sig = SigmaLayer2(2 * D, D, blocks=2)
@@ -166,10 +166,10 @@ def test_folds_never_create_rows():
         pi.forward(torch.cat([A, B], dim=-1))
         ConceptualSpace.factor_percept(torch.rand(3, D),
                                        torch.rand(2, D))
-        assert len(ss.reference_table) == n_before, (
+        assert len(ws.reference_table) == n_before, (
             "a fold result is a fresh vector, not a binding — you "
             "cannot compute your way to a name")
         # Semantic use of an unbound code fails naturally: deref misses.
-        assert ss.reference_table.deref(999) is None
+        assert ws.reference_table.deref(999) is None
     finally:
         _knob(None)

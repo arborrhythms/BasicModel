@@ -44,16 +44,16 @@ def test_combine_square_roundtrip_exact():
     B, Nv, D = 2, 4, 6
     c = ConceptualCombine(content_dim=D, n_vectors=Nv,
                           naive=False, sigma_pi_mode="full")
-    ps, ss = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
-    full = c.forward(ps, ss)
+    ps, ws = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ws)
     assert full.shape == (B, c.carrier_dim)
     assert c.carrier_dim == 2 * Nv * D       # dense: no padding
     # The views are the slot-halves of the bind itself.
-    ps_v, ss_v = c.views(full)
-    assert ps_v.shape == (B, Nv, D) and ss_v.shape == (B, Nv, D)
+    ps_v, ws_v = c.views(full)
+    assert ps_v.shape == (B, Nv, D) and ws_v.shape == (B, Nv, D)
     ps2, ss2 = c.reverse(full)
     assert ps2.shape == (B, Nv, D) and ss2.shape == (B, Nv, D)
-    err = max((ps - ps2).abs().max(), (ss - ss2).abs().max())
+    err = max((ps - ps2).abs().max(), (ws - ss2).abs().max())
     assert err < 1e-3, f"2-stream slot-bind round-trip err={err:.2e}"
 
 
@@ -105,22 +105,22 @@ def test_combine_square_roundtrip_exact_butterfly():
             f"D={D}: butterfly weights still at identity (moved={moved:.2e}); "
             "test would be vacuous")
 
-        ps, ss = (
+        ps, ws = (
             torch.randn(*leading, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
-        full = c.forward(ps, ss)
+        full = c.forward(ps, ws)
         assert full.shape == (*leading, M), (
             f"the carrier must be the WHOLE bind (width M={M}), got "
             f"{tuple(full.shape)}")
         # Views are interface-shaped [.., N, D] slot-halves.
-        ps_v, ss_v = c.views(full)
+        ps_v, ws_v = c.views(full)
         assert ps_v.shape == (*leading, Nv, D)
-        assert ss_v.shape == (*leading, Nv, D)
+        assert ws_v.shape == (*leading, Nv, D)
         ps2, ss2 = c.reverse(full)
         for t in (ps2, ss2):
             assert t.shape == (*leading, Nv, D)
         with torch.no_grad():
             err = float(max((ps - ps2).abs().max(),
-                            (ss - ss2).abs().max()))
+                            (ws - ss2).abs().max()))
         assert err == err and err != float("inf"), "non-finite round-trip err"
         assert err < 1e-3, (
             f"D={D},N={Nv} leading={leading}: butterfly slot-bind "
@@ -151,15 +151,15 @@ def test_combine_square_roundtrip_exact_dense_large_leading():
     with torch.no_grad():
         c.layer.raw_L.add_(0.05 * torch.randn_like(c.layer.raw_L))
         c.layer.raw_U.add_(0.05 * torch.randn_like(c.layer.raw_U))
-    ps, ss = (torch.randn(B, T, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
-    full = c.forward(ps, ss)
+    ps, ws = (torch.randn(B, T, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ws)
     assert full.shape == (B, T, 2 * Nv * D)
     ps2, ss2 = c.reverse(full)
     for t in (ps2, ss2):
         assert t.shape == (B, T, Nv, D)
     with torch.no_grad():
         err = float(max((ps - ps2).abs().max(),
-                        (ss - ss2).abs().max()))
+                        (ws - ss2).abs().max()))
     assert err < 1e-3, f"dense large [B,T,N,D] round-trip err={err:.2e}"
 
 
@@ -185,7 +185,7 @@ def test_mm5m_forward_finite_after_combine():
 
 def test_mm5m_combine_carrier_roundtrip():
     # 2-stream bind round-trip (C-10, rev. 2026-06-09): each stage's
-    # threaded carrier is the WHOLE bind ILL([PS_t || SS_t]); reverse is an
+    # threaded carrier is the WHOLE bind ILL([PS_t || WS_t]); reverse is an
     # exact bijection with NOTHING threaded alongside (the augment machinery
     # is retired). Builds from the STOCK MM_20M.xml with no injected knob.
     import os, warnings, torch
@@ -234,19 +234,19 @@ def test_mm5m_combine_carrier_roundtrip():
         f"2*{Nv}*{D} != {M}")
     # The views are interface-shaped [B, N, D] slot-halves of the bind.
     with torch.no_grad():
-        ps_v, ss_v = combine0.views(carriers[0].detach())
+        ps_v, ws_v = combine0.views(carriers[0].detach())
     assert ps_v.shape[-2] == Nv and ps_v.shape[-1] == D
-    assert ss_v.shape[-2] == Nv and ss_v.shape[-1] == D
-    # Exact per-stage inversion: ILL^{-1}(full_t) -> (PS_t, SS_t), finite,
+    assert ws_v.shape[-2] == Nv and ws_v.shape[-1] == D
+    # Exact per-stage inversion: ILL^{-1}(full_t) -> (PS_t, WS_t), finite,
     # and the t=0 PS-stream (the encoded input leg) must be NON-trivial --
     # it is the leg that decodes back to the input (PS owns reconstruction).
     with torch.no_grad():
         for t in range(T):
-            ps_rec, ss_rec = m.conceptualSpaces[t].combine.reverse(
+            ps_rec, ws_rec = m.conceptualSpaces[t].combine.reverse(
                 carriers[t].detach())
             assert ps_rec.shape[-2:] == (Nv, D)
-            assert ss_rec.shape[-2:] == (Nv, D)
-            assert torch.isfinite(ps_rec).all() and torch.isfinite(ss_rec).all()
+            assert ws_rec.shape[-2:] == (Nv, D)
+            assert torch.isfinite(ps_rec).all() and torch.isfinite(ws_rec).all()
         ps0_rec, ss0_rec = combine0.reverse(carriers[0].detach())
         ps0_mag = float(ps0_rec.abs().max())
     assert ps0_mag > 1e-6, (
@@ -293,7 +293,7 @@ def test_no_recompile_fullgraph():
 
     Per-batch DATA must thread THROUGH the forward as tensors and never be
     persisted as accumulated state on a space/Layer. If the STM idea buffer
-    (``_idea_buffer`` when a WordSubSpace is attached, ``_fallback_buffer``
+    (``_idea_buffer`` when a SymbolicSubSpace is attached, ``_fallback_buffer``
     standalone) is mutated in-place inside the compiled forward with
     grad-bearing per-batch data, its ``requires_grad`` oscillates across
     forwards, flips a Dynamo guard, and forces a recompile every batch --
@@ -358,12 +358,12 @@ def test_callosum_glue_init_average():
                           naive=False, sigma_pi_mode="full")
     assert c.callosum.shape == (2 * Nv, Nv)
     assert c.callosum.requires_grad, "the callosum is a learned glue"
-    ps, ss = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
-    full = c.forward(ps, ss)
+    ps, ws = (torch.randn(B, Nv, D).clamp(-0.5, 0.5) for _ in range(2))
+    full = c.forward(ps, ws)
     glued = c.glue(full)
     assert glued.shape == (B, Nv, D)
-    ps_v, ss_v = c.views(full)
-    assert torch.allclose(glued, 0.5 * (ps_v + ss_v), atol=1e-6), (
+    ps_v, ws_v = c.views(full)
+    assert torch.allclose(glued, 0.5 * (ps_v + ws_v), atol=1e-6), (
         "at init the callosum must AVERAGE the two hemispheres")
 
 
@@ -398,10 +398,10 @@ def test_bind_contained_in_conceptual_space():
     with torch.no_grad():
         rec = cs0.unbind(cs0.subspace)
     assert rec is not None
-    ps_rec, ss_rec = rec
+    ps_rec, ws_rec = rec
     Nv = int(cs0.combine.n_vectors)
     D = int(cs0.combine.content_dim)
-    assert ps_rec.shape[-2:] == (Nv, D) and ss_rec.shape[-2:] == (Nv, D)
+    assert ps_rec.shape[-2:] == (Nv, D) and ws_rec.shape[-2:] == (Nv, D)
     # The head-facing event is the corpus-callosum glue of the bind
     # (+ the empty band at D == muxedSize), written by bind_streams onto
     # the FLOWING sub (the per-batch CS_sub handed downstream).
@@ -477,7 +477,7 @@ def test_intersentence_seed_used():
     # --- interSentence: warm chain -> non-empty predicted seed -------------
     m = _build_mm5m_with(prediction="interSentence", sentence_prediction=True)
     assert m.prediction_mode == "interSentence"
-    disc = m.wordSubSpace.discourse
+    disc = m.symbolicSpace.discourse
     assert disc is not None and disc._inter_predictor is not None, (
         "sentencePrediction=true must build the discourse inter-predictor")
     Models.TheData.load("xor")
@@ -532,7 +532,7 @@ def test_intersentence_seed_used():
     # --- none (default mode): empty seed, predictor never seeds -----------
     m2 = _build_mm5m_with(prediction="none", sentence_prediction=True)
     assert m2.prediction_mode == "none"
-    disc2 = m2.wordSubSpace.discourse
+    disc2 = m2.symbolicSpace.discourse
     assert disc2 is not None and disc2._inter_predictor is not None
     Models.TheData.load("xor")
     loader2 = m2.inputSpace.data.data_loader(split="train", num_streams=4)

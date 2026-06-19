@@ -50,17 +50,17 @@ def _ordered_view():
 
 
 def _word_space():
-    from Language import WordSubSpace
+    from Language import SymbolicSubSpace
     from Spaces import ConceptualSpace
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.parser_backend = 'stm'
-    ws.attach_knowledge(_ordered_view())
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.parser_backend = 'stm'
+    ss.attach_knowledge(_ordered_view())
     cs = object.__new__(ConceptualSpace)
     nn.Module.__init__(cs)
     cs._init_typed_stm(batch=1, max_depth=8, dim=4)
-    ws.conceptualSpace = cs
-    return ws
+    ss.conceptualSpace = cs
+    return ss
 
 
 def test_ordered_taxonomy_preserves_np3_np4_orders():

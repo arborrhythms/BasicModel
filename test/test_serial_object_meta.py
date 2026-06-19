@@ -164,3 +164,41 @@ def test_serial_object_meta_off_does_not_build_word_index():
         m.forward(x)
     assert m.inputSpace._word_index_N is None
     assert m.inputSpace._word_last_slot_mask is None
+
+
+def _count_unity_calls(m, x):
+    """Run a forward, counting WholeSpace._stage0_unity_forward calls with a
+    REAL unity (vs None). Returns (real, none)."""
+    import Spaces
+    calls = {"real": 0, "none": 0}
+    orig = Spaces.WholeSpace._stage0_unity_forward
+
+    def _probe(self, IS_concepts):
+        calls["real" if IS_concepts is not None else "none"] += 1
+        return orig(self, IS_concepts)
+
+    Spaces.WholeSpace._stage0_unity_forward = _probe
+    try:
+        with torch.no_grad():
+            m.forward(x)
+    finally:
+        Spaces.WholeSpace._stage0_unity_forward = orig
+    return calls["real"], calls["none"]
+
+
+def test_ss_analyzes_unity_at_prelude_pump_zero():
+    """2c dual view: under serialObjectMeta the §6c prelude feeds WS the UNITY
+    at pump 0 (CS empty -> the legal _stage0_unity_forward path, no repeated-
+    injection NotImplementedError), so WS 'looks at the input' alongside PS."""
+    m, x = _serial_model_and_batch()
+    real, _none = _count_unity_calls(m, x)
+    assert real >= 1, "WS must analyze the unity at prelude pump 0"
+
+
+def test_ss_unity_feed_is_gated_off():
+    """Flag OFF: the prelude does NOT feed WS the unity (byte-identical prelude
+    for other serial configs)."""
+    m, x = _serial_model_and_batch()
+    m.serial_object_meta = False
+    real, _none = _count_unity_calls(m, x)
+    assert real == 0, "no unity feed when serialObjectMeta is off"

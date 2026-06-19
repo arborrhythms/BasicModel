@@ -1,4 +1,4 @@
-"""Tests for Phase C wiring: WordSpace.attach_knowledge allocates the
+"""Tests for Phase C wiring: SymbolicSpace.attach_knowledge allocates the
 Taxonomy priming buffer, and ``priming_kwargs_for_slots`` builds the
 four recommender kwargs (left/right rows + left/right priming) from a
 rule's typed slot info.
@@ -6,7 +6,7 @@ rule's typed slot info.
 Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Hard
 admissibility mask + §Reverse operation flow.
 
-Uses ``object.__new__`` to bypass WordSpace's heavy __init__ (which
+Uses ``object.__new__`` to bypass SymbolicSpace's heavy __init__ (which
 needs PartSpace / ConceptualSpace / WholeSpace). We only
 need attach_knowledge + the helper, which don't depend on the full
 Space wiring.
@@ -38,14 +38,14 @@ def _tiny_view():
 
 
 def _bare_word_space(batch=1):
-    from Language import WordSubSpace, Taxonomy
+    from Language import SymbolicSubSpace, Taxonomy
     import torch.nn as nn
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
     # Minimal scaffolding needed by attach_knowledge.
-    ws.batch = int(batch)
-    ws.taxonomy = Taxonomy()
-    return ws
+    ss.batch = int(batch)
+    ss.taxonomy = Taxonomy()
+    return ss
 
 
 # -- attach_knowledge allocates priming ------------------------------------
@@ -54,10 +54,10 @@ def _bare_word_space(batch=1):
 def test_attach_allocates_priming_buffer():
     """After attach_knowledge, the taxonomy's priming buffer exists at
     [batch, V_ref_capacity] and is initialized to 1.0."""
-    ws = _bare_word_space(batch=2)
+    ss = _bare_word_space(batch=2)
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    p = ws.taxonomy._priming
+    ss.attach_knowledge(view)
+    p = ss.taxonomy._priming
     assert p is not None
     assert p.shape[0] == 2
     assert p.shape[1] == int(view._parent.shape[0])
@@ -67,32 +67,32 @@ def test_attach_allocates_priming_buffer():
 def test_attach_binds_view_for_propagation():
     """attach_knowledge wires the view onto the taxonomy so propagate
     has parent/children adjacency to walk."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    assert ws.taxonomy._priming_view is view
+    ss.attach_knowledge(view)
+    assert ss.taxonomy._priming_view is view
 
 
 def test_reattach_preserves_primed_values():
     """Re-attaching the same view (or one with same shape) preserves
     in-progress priming."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
+    ss.attach_knowledge(view)
     np3 = view._ordered_taxonomy_names['NP3']
-    ws.taxonomy.prime([np3], batch=0)
-    assert float(ws.taxonomy._priming[0, np3].item()) == 2.0
-    ws.attach_knowledge(_tiny_view())
+    ss.taxonomy.prime([np3], batch=0)
+    assert float(ss.taxonomy._priming[0, np3].item()) == 2.0
+    ss.attach_knowledge(_tiny_view())
     # Same fixture shape; in-progress priming carries forward.
-    assert float(ws.taxonomy._priming[0, np3].item()) == 2.0
+    assert float(ss.taxonomy._priming[0, np3].item()) == 2.0
 
 
 def test_attach_without_view_is_noop_on_priming():
     """When called with None (or via the path that doesn't attach a
     view), the priming buffer stays unallocated."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     # _knowledge stays None — no view to bind.
-    assert ws.taxonomy._priming is None
+    assert ss.taxonomy._priming is None
 
 
 # -- priming_kwargs_for_slots -----------------------------------------------
@@ -101,8 +101,8 @@ def test_attach_without_view_is_noop_on_priming():
 def test_kwargs_returns_empty_without_knowledge():
     """No view attached → helper returns {} (graceful fallback to
     un-typed, un-primed selection at the caller)."""
-    ws = _bare_word_space()
-    kw = ws.priming_kwargs_for_slots(
+    ss = _bare_word_space()
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     assert kw == {}
@@ -113,10 +113,10 @@ def test_kwargs_intersection_rows_for_binary_rule():
        left_rows  = refs_by_category[NP] ∩ refs_by_order[3]  = [NP3]
        right_rows = refs_by_category[VP] ∩ refs_by_order[1]  = [VP1]
     """
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    kw = ws.priming_kwargs_for_slots(
+    ss.attach_knowledge(view)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     np3 = view._ordered_taxonomy_names['NP3']
@@ -130,14 +130,14 @@ def test_kwargs_intersection_rows_for_binary_rule():
 def test_kwargs_priming_present_when_buffer_allocated():
     """left_priming / right_priming are the live slice of the priming
     buffer; both slots get the same per-batch mask."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
+    ss.attach_knowledge(view)
     # The <symbolicPriming> master switch (plan 2026-06-06-symbolic-heat-
     # retrieval) now defaults OFF, so attach_knowledge sets priming_enabled
     # False; opt in to exercise the priming-kwarg emission path.
-    ws.taxonomy.configure_priming(priming_enabled=True)
-    kw = ws.priming_kwargs_for_slots(
+    ss.taxonomy.configure_priming(priming_enabled=True)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     assert 'left_priming' in kw
@@ -151,13 +151,13 @@ def test_kwargs_priming_present_when_buffer_allocated():
 
 def test_kwargs_priming_reflects_primed_state():
     """Priming a ref shows up in the helper's output."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
+    ss.attach_knowledge(view)
+    ss.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
     np3 = view._ordered_taxonomy_names['NP3']
-    ws.taxonomy.prime([np3], batch=0)
-    kw = ws.priming_kwargs_for_slots(
+    ss.taxonomy.prime([np3], batch=0)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1,
         batch=0)
@@ -168,10 +168,10 @@ def test_kwargs_empty_intersection_returns_empty_long_tensor():
     """When the category × order intersection is empty (e.g. there's
     no NP at order 5), the recommender still gets an empty LongTensor
     rather than None — sentinels remain feasible."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    kw = ws.priming_kwargs_for_slots(
+    ss.attach_knowledge(view)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=5,
         right_category='VP', right_order=1)
     assert kw['left_rows'].numel() == 0
@@ -181,11 +181,11 @@ def test_kwargs_empty_intersection_returns_empty_long_tensor():
 def test_kwargs_unary_omits_right():
     """A unary slot (right_category=None) omits right_* from the
     kwargs."""
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
-    kw = ws.priming_kwargs_for_slots(
+    ss.attach_knowledge(view)
+    ss.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3)
     assert 'left_rows' in kw
     assert 'right_rows' not in kw
@@ -195,15 +195,15 @@ def test_kwargs_unary_omits_right():
 
 def test_kwargs_per_batch_priming():
     """Priming on batch=0 doesn't leak into batch=1's kwargs."""
-    ws = _bare_word_space(batch=2)
+    ss = _bare_word_space(batch=2)
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    ws.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
+    ss.attach_knowledge(view)
+    ss.taxonomy.configure_priming(priming_enabled=True)  # master switch (see above)
     np3 = view._ordered_taxonomy_names['NP3']
-    ws.taxonomy.prime([np3], batch=0)
-    kw_b0 = ws.priming_kwargs_for_slots(
+    ss.taxonomy.prime([np3], batch=0)
+    kw_b0 = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3, batch=0)
-    kw_b1 = ws.priming_kwargs_for_slots(
+    kw_b1 = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3, batch=1)
     assert float(kw_b0['left_priming'][np3].item()) == 2.0
     assert float(kw_b1['left_priming'][np3].item()) == 1.0
@@ -217,10 +217,10 @@ def test_helper_kwargs_drive_recommender_byte_for_byte():
     consumes them. The result must respect both the hard mask (only
     NP3 / VP1 are in the candidate set) and priming (no-op default)."""
     from Layers import Ops
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
-    kw = ws.priming_kwargs_for_slots(
+    ss.attach_knowledge(view)
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     # Use scalar-prototype-shaped W: 1-D references from the view.

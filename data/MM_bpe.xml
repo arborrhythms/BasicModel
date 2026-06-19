@@ -61,7 +61,7 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <WordSpace>
+  <SymbolicSpace>
     <language>
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
@@ -76,6 +76,6 @@
         <S>lift(S, S)</S>
       </grammar>
     </language>
-  </WordSpace>
+  </SymbolicSpace>
 
 </model>

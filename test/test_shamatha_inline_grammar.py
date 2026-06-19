@@ -8,7 +8,7 @@ The presence of those rules drives downstream wiring:
 
   - ConceptualSpace's grammar-driven DNF stack (NotLayer + Sigma
     AND-fold + Pi OR-fold) is wired by ``Language.grammar_uses``.
-  - ``DisjunctionLayer`` is constructed lazily in WordSpace's
+  - ``DisjunctionLayer`` is constructed lazily in SymbolicSpace's
     per-space SyntacticLayer when the grammar references
     ``disjunction(S, S)``.
 """
@@ -45,7 +45,7 @@ class TestShamathaInlineGrammar(unittest.TestCase):
         """The inline <grammar> block contains disjunction(S, S)
         ahead of not(S), union(C, C), and intersection(C, C)."""
         _fresh_model()
-        cfg = TheXMLConfig.get("WordSpace.language.grammar")
+        cfg = TheXMLConfig.get("SymbolicSpace.language.grammar")
         self.assertIn("S", cfg)
         s_rules = cfg["S"]
         if isinstance(s_rules, str):
@@ -61,7 +61,7 @@ class TestShamathaInlineGrammar(unittest.TestCase):
         not/union/intersection rules from the inline grammar block."""
         m = _fresh_model()
         self.assertIsInstance(
-            m.symbolicSpace.propositional_negation, Layers.NotLayer)
+            m.wholeSpace.propositional_negation, Layers.NotLayer)
 
 
 if __name__ == "__main__":

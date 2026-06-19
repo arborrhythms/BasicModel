@@ -45,27 +45,27 @@ def _tiny_view():
 
 
 def _bare_word_space(batch=1):
-    from Language import WordSubSpace, Taxonomy
+    from Language import SymbolicSubSpace, Taxonomy
     import torch.nn as nn
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.batch = int(batch)
-    ws.taxonomy = Taxonomy()
-    return ws
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.batch = int(batch)
+    ss.taxonomy = Taxonomy()
+    return ss
 
 
 def _scenario():
-    """Set up a WordSpace + KnowledgeView + competing-NP3 W codebook.
+    """Set up a SymbolicSpace + KnowledgeView + competing-NP3 W codebook.
 
-    Returns (ws, view, W, y, np3_idx, np3_alt_value).
+    Returns (ss, view, W, y, np3_idx, np3_alt_value).
 
     The 2nd NP3 row (added directly to W) has a slightly larger norm
     than the artifact's stock NP3 so it wins on un-primed argmax;
     priming the stock NP3 should flip the choice.
     """
-    ws = _bare_word_space()
+    ss = _bare_word_space()
     view = _tiny_view()
-    ws.attach_knowledge(view)
+    ss.attach_knowledge(view)
     np3 = view._ordered_taxonomy_names['NP3']
     # Build a 2-D W matching the artifact references (scalar prototypes
     # promoted to a 2-D codebook so the recommender's broadcast works).
@@ -83,7 +83,7 @@ def _scenario():
     left_rows = torch.tensor([np3, np3_alt_idx], dtype=torch.long)
     # y chosen so both rows are feasible (≤ y) for union x1.
     y = torch.tensor([[[0.50]]])
-    return ws, view, W, y, left_rows, np3, np3_alt_idx
+    return ss, view, W, y, left_rows, np3, np3_alt_idx
 
 
 # -- Without priming: larger-norm candidate wins ---------------------------
@@ -93,7 +93,7 @@ def test_unprimed_disjunction_picks_larger_norm():
     """Sanity check: without priming, union x1 (argmax norm ≤ y) picks
     the larger-norm candidate (NP3_alt)."""
     from Layers import Ops
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
     x1, _ = Ops.disjunctionReverse(
         y, y, W,
         left_rows=left_rows,
@@ -110,12 +110,12 @@ def test_primed_disjunction_picks_primed_candidate():
     effective score larger than the alt's, so it wins.
     """
     from Layers import Ops
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ws.taxonomy.prime([np3], batch=0)
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss.taxonomy.prime([np3], batch=0)
     # Build priming aligned with W's row count: artifact prefix
     # (n_refs_live) + the np3_alt row appended.
     priming = torch.ones(W.shape[0])
-    priming[:view.n_refs_live] = ws.taxonomy.priming_mask(batch=0)
+    priming[:view.n_refs_live] = ss.taxonomy.priming_mask(batch=0)
     x1, _ = Ops.disjunctionReverse(
         y, y, W, left_rows=left_rows, left_priming=priming)
     assert torch.allclose(x1[0, 0, 0], W[np3, 0])
@@ -128,11 +128,11 @@ def test_priming_disabled_matches_unprimed():
     """With priming_enabled=False, the helper omits priming kwargs;
     the result must match a direct un-primed call byte-for-byte."""
     from Layers import Ops
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ws.taxonomy.prime([np3], batch=0)        # would normally flip the choice
-    ws.taxonomy.configure_priming(priming_enabled=False)
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss.taxonomy.prime([np3], batch=0)        # would normally flip the choice
+    ss.taxonomy.configure_priming(priming_enabled=False)
     # The helper would return only left_rows / right_rows in this mode.
-    kw = ws.priming_kwargs_for_slots(
+    kw = ss.priming_kwargs_for_slots(
         left_category='NP', left_order=3,
         right_category='VP', right_order=1)
     assert 'left_priming' not in kw
@@ -152,12 +152,12 @@ def test_priming_decays_between_calls():
     """After ``decay(temporal_decay=0.9)``, the primed value moves
     toward identity but is still > 1.0 (still biases selection).
     """
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ws.taxonomy.prime([np3], batch=0)        # 2.0
-    ws.taxonomy.decay(temporal_decay=0.9)    # → 1.9
-    assert float(ws.taxonomy._priming[0, np3].item()) == pytest.approx(1.9)
-    ws.taxonomy.decay(temporal_decay=0.9)    # → 1.81
-    assert float(ws.taxonomy._priming[0, np3].item()) == pytest.approx(1.81)
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss.taxonomy.prime([np3], batch=0)        # 2.0
+    ss.taxonomy.decay(temporal_decay=0.9)    # → 1.9
+    assert float(ss.taxonomy._priming[0, np3].item()) == pytest.approx(1.9)
+    ss.taxonomy.decay(temporal_decay=0.9)    # → 1.81
+    assert float(ss.taxonomy._priming[0, np3].item()) == pytest.approx(1.81)
 
 
 # -- Sentence boundary clears priming -------------------------------------
@@ -166,12 +166,12 @@ def test_priming_decays_between_calls():
 def test_sentence_boundary_clears_priming():
     """Taxonomy.reset() at the sentence boundary returns the buffer to
     identity."""
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ws.taxonomy.prime([np3], batch=0)
-    ws.taxonomy.propagate([np3], batch=0, depth=2)
-    assert not torch.all(ws.taxonomy._priming == 1.0)
-    ws.taxonomy.reset()
-    assert torch.all(ws.taxonomy._priming == 1.0)
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss.taxonomy.prime([np3], batch=0)
+    ss.taxonomy.propagate([np3], batch=0, depth=2)
+    assert not torch.all(ss.taxonomy._priming == 1.0)
+    ss.taxonomy.reset()
+    assert torch.all(ss.taxonomy._priming == 1.0)
 
 
 # -- Hard mask still wins over priming in the integration setup -----------
@@ -180,12 +180,12 @@ def test_sentence_boundary_clears_priming():
 def test_hard_mask_excludes_primed_off_category_ref():
     """Even with maximum priming, a row outside left_rows can't win."""
     from Layers import Ops
-    ws, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
+    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
     # Prime the off-category ref (e.g. a DET ref) with huge boost.
     det = view.ref_id_for('DET')
-    ws.taxonomy.prime([det], batch=0, boost=99.0)
+    ss.taxonomy.prime([det], batch=0, boost=99.0)
     priming = torch.ones(W.shape[0])
-    priming[:view.n_refs_live] = ws.taxonomy.priming_mask(batch=0)
+    priming[:view.n_refs_live] = ss.taxonomy.priming_mask(batch=0)
     x1, _ = Ops.disjunctionReverse(
         y, y, W, left_rows=left_rows, left_priming=priming)
     # Selection must come from {⊥, W[np3], W[np3_alt_idx], ⊤}.

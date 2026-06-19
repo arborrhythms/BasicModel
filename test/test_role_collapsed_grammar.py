@@ -80,10 +80,10 @@ def test_perceptualspace_has_everything_start():
 def test_symbolicspace_owns_its_starts():
     """WholeSpace owns the operator-output starts, split by name."""
     g = _load()
-    ss_syms = {sym for pat in g.ss_start_patterns for sym in pat}
-    assert {"isEqual_O1", "isPart_O1", "exist_O1"} <= ss_syms, ss_syms
-    assert g.ss_relative_starts == frozenset({"isEqual_O1", "isPart_O1"})
-    assert "exist_O1" in g.ss_absolute_starts
+    ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
+    assert {"isEqual_O1", "isPart_O1", "exist_O1"} <= ws_syms, ws_syms
+    assert g.ws_relative_starts == frozenset({"isEqual_O1", "isPart_O1"})
+    assert "exist_O1" in g.ws_absolute_starts
 
 
 def test_no_top_level_start():

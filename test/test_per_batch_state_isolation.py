@@ -1,9 +1,9 @@
-"""B>=2 per-row isolation for WordSpace.last_svo and WordSpace._stm_fired.
+"""B>=2 per-row isolation for SymbolicSpace.last_svo and SymbolicSpace._stm_fired.
 
 Task 2 of the microbatch AR refactor (see
 basicmodel/doc/specs/2026-04-22-microbatch-ar-refactor-design.md).
 
-WordSpace cannot be constructed in isolation -- it requires real
+SymbolicSpace cannot be constructed in isolation -- it requires real
 PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by the test_partition_* tests.
@@ -53,10 +53,10 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
-    ws = Language.WordSubSpace(
+    ss = Language.SymbolicSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
-        symbolicSpace=symbolic_space,
+        wholeSpace=symbolic_space,
         nPercepts=nPercepts,
         nConcepts=nSymbols,
         nSymbols=nSymbols,
@@ -69,66 +69,66 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     # so both halves end up at ``batch`` rows -- the legacy contract these
     # tests check.  ``ensure_batch`` alone no longer touches ``_stm_fired``
     # (that wipe was the root cause of the K-change history loss bug).
-    ws.ensure_microbatch(batch, 1)
-    return ws, symbolDim
+    ss.ensure_microbatch(batch, 1)
+    return ss, symbolDim
 
 
 # -- last_svo --------------------------------------------------------------
 
 def test_last_svo_b2_isolation():
-    ws, D = _make_ws(batch=2)
+    ss, D = _make_ws(batch=2)
     s = torch.randn(D); v = torch.randn(D); o = torch.randn(D)
-    ws.set_last_svo(0, s, v, o)
-    assert ws.svo_valid(0) is True
-    assert ws.svo_valid(1) is False
-    sub, verb, obj = ws.get_last_svo(0)
+    ss.set_last_svo(0, s, v, o)
+    assert ss.svo_valid(0) is True
+    assert ss.svo_valid(1) is False
+    sub, verb, obj = ss.get_last_svo(0)
     assert torch.equal(sub, s)
     assert torch.equal(verb, v)
     assert torch.equal(obj, o)
 
 
 def test_last_svo_clear_per_row():
-    ws, D = _make_ws(batch=2)
-    ws.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
-    ws.set_last_svo(1, torch.randn(D), torch.randn(D), torch.randn(D))
-    assert ws.svo_valid(0) and ws.svo_valid(1)
-    ws.clear_last_svo(1)
-    assert ws.svo_valid(0) and not ws.svo_valid(1)
-    ws.clear_last_svo()  # all rows
-    assert not ws.svo_valid(0) and not ws.svo_valid(1)
+    ss, D = _make_ws(batch=2)
+    ss.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
+    ss.set_last_svo(1, torch.randn(D), torch.randn(D), torch.randn(D))
+    assert ss.svo_valid(0) and ss.svo_valid(1)
+    ss.clear_last_svo(1)
+    assert ss.svo_valid(0) and not ss.svo_valid(1)
+    ss.clear_last_svo()  # all rows
+    assert not ss.svo_valid(0) and not ss.svo_valid(1)
 
 
 def test_last_svo_ensure_batch_grows_clears():
-    ws, D = _make_ws(batch=1)
-    ws.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
-    assert ws.svo_valid(0)
-    ws.ensure_batch(3)
+    ss, D = _make_ws(batch=1)
+    ss.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
+    assert ss.svo_valid(0)
+    ss.ensure_batch(3)
     # ensure_batch reallocates; valid mask is zero on every row.
-    assert not ws.svo_valid(0)
-    assert not ws.svo_valid(1)
-    assert not ws.svo_valid(2)
+    assert not ss.svo_valid(0)
+    assert not ss.svo_valid(1)
+    assert not ss.svo_valid(2)
 
 
 # -- _stm_fired ------------------------------------------------------------
 
 def test_stm_fired_b2_isolation():
-    ws, _ = _make_ws(batch=2)
-    assert not ws.stm_fired(0)
-    assert not ws.stm_fired(1)
-    ws.mark_stm_fired(0)
-    assert ws.stm_fired(0)
-    assert not ws.stm_fired(1)
+    ss, _ = _make_ws(batch=2)
+    assert not ss.stm_fired(0)
+    assert not ss.stm_fired(1)
+    ss.mark_stm_fired(0)
+    assert ss.stm_fired(0)
+    assert not ss.stm_fired(1)
 
 
 def test_stm_arm_per_row():
-    ws, _ = _make_ws(batch=2)
-    ws.mark_stm_fired(0)
-    ws.mark_stm_fired(1)
-    assert ws.stm_fired(0) and ws.stm_fired(1)
-    ws.arm_stm(1)
-    assert ws.stm_fired(0) and not ws.stm_fired(1)
-    ws.arm_stm()  # all rows
-    assert not ws.stm_fired(0) and not ws.stm_fired(1)
+    ss, _ = _make_ws(batch=2)
+    ss.mark_stm_fired(0)
+    ss.mark_stm_fired(1)
+    assert ss.stm_fired(0) and ss.stm_fired(1)
+    ss.arm_stm(1)
+    assert ss.stm_fired(0) and not ss.stm_fired(1)
+    ss.arm_stm()  # all rows
+    assert not ss.stm_fired(0) and not ss.stm_fired(1)
 
 
 def test_ensure_microbatch_grows_stm_fired_to_new_B():
@@ -144,31 +144,31 @@ def test_ensure_microbatch_grows_stm_fired_to_new_B():
     no longer wipes -- regression test in
     ``test_ensure_microbatch_cascade.py``).
     """
-    ws, _ = _make_ws(batch=1)
-    ws.mark_stm_fired(0)
-    assert ws.stm_fired(0)
-    ws.ensure_microbatch(3, 1)
+    ss, _ = _make_ws(batch=1)
+    ss.mark_stm_fired(0)
+    assert ss.stm_fired(0)
+    ss.ensure_microbatch(3, 1)
     # B changed from 1 -> 3, so _stm_fired is a fresh [3] zero tensor.
-    assert not ws.stm_fired(0)
-    assert not ws.stm_fired(1)
-    assert not ws.stm_fired(2)
+    assert not ss.stm_fired(0)
+    assert not ss.stm_fired(1)
+    assert not ss.stm_fired(2)
 
 
 def test_reset_clears_both():
-    ws, D = _make_ws(batch=2)
-    ws.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
-    ws.set_last_svo(1, torch.randn(D), torch.randn(D), torch.randn(D))
-    ws.mark_stm_fired(0)
-    ws.mark_stm_fired(1)
-    ws.Reset()
-    assert not ws.svo_valid(0) and not ws.svo_valid(1)
-    assert not ws.stm_fired(0) and not ws.stm_fired(1)
+    ss, D = _make_ws(batch=2)
+    ss.set_last_svo(0, torch.randn(D), torch.randn(D), torch.randn(D))
+    ss.set_last_svo(1, torch.randn(D), torch.randn(D), torch.randn(D))
+    ss.mark_stm_fired(0)
+    ss.mark_stm_fired(1)
+    ss.Reset()
+    assert not ss.svo_valid(0) and not ss.svo_valid(1)
+    assert not ss.stm_fired(0) and not ss.stm_fired(1)
 
 
 # -- stm_residual_microbatch (per-source gating) ---------------------------
 
-def _attach_discourse(ws, n_dim, concept_dim, batch):
-    """Attach a minimal InterSentenceLayer to ws so predict()/prime()
+def _attach_discourse(ss, n_dim, concept_dim, batch):
+    """Attach a minimal InterSentenceLayer to ss so predict()/prime()
     return non-None tensors. Pre-populates the recent buffer with a
     deterministic snapshot per source row, then arms STM so the
     discourse-prediction cache (``_disc_pred`` / ``_disc_conf``) is
@@ -176,7 +176,7 @@ def _attach_discourse(ws, n_dim, concept_dim, batch):
     ``disc.predict()`` call from ``stm_residual_microbatch`` to
     ``arm_stm``; tests must arm before they can read the cache."""
     import Layers
-    n_sym = ws.subspace.outputShape[0] if hasattr(ws.subspace, 'outputShape') else 3
+    n_sym = ss.subspace.outputShape[0] if hasattr(ss.subspace, 'outputShape') else 3
     disc = Layers.InterSentenceLayer(
         n_symbols=n_sym,
         max_depth=4,
@@ -187,17 +187,17 @@ def _attach_discourse(ws, n_dim, concept_dim, batch):
         concept_dim=concept_dim,
         batch=batch,
     )
-    ws.discourse = disc
+    ss.discourse = disc
     s = torch.randn(batch, n_sym, n_dim)
     w = torch.randn(batch, 4, n_dim)
     disc.snapshot(s, w)
     # Refresh the discourse-prediction cache so stm_residual_microbatch
     # can read ``_disc_pred`` / ``_disc_conf`` without falling back to
     # None at the cache miss.
-    ws.arm_stm()
+    ss.arm_stm()
     return disc
 
 
 # test_stm_residual_microbatch_* removed: these tests reached into
-# ``WordSubSpace.subspace`` (no longer an attribute -- the SR-parser
+# ``SymbolicSubSpace.subspace`` (no longer an attribute -- the SR-parser
 # stack was retired into ConceptualSpace.stm 2026-05-20).

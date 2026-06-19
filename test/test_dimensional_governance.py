@@ -64,9 +64,9 @@ def test_mm_5m_reconstructs():
     # symbol distribution via pi.reverse.
     import torch, Models
     m = _build("MM_20M.xml"); m.eval()
-    sig = m.symbolicSpace.pi
-    n = int(m.symbolicSpace.inputShape[0])
-    d = int(getattr(m.symbolicSpace, "nOutputDim", 0) or m.symbolicSpace.nDim)
+    sig = m.wholeSpace.pi
+    n = int(m.wholeSpace.inputShape[0])
+    d = int(getattr(m.wholeSpace, "nOutputDim", 0) or m.wholeSpace.nDim)
     x = torch.randn(2, n, d).clamp(-0.5, 0.5)
     y = sig.forward(x)
     x_rec = sig.reverse(y)
@@ -148,7 +148,7 @@ def _ref_text(cfg_name):
         return fh.read()
 
 
-def test_cs_ss_input_side_handoff_mismatch_raises():
+def test_cs_ws_input_side_handoff_mismatch_raises():
     # Break the CS->SS INPUT-side handoff: MM_20M has CS.nOutputDim=1024 and
     # SS.nInputDim=1024 (equal). Force SS.nInputDim to a value that mismatches
     # CS.nOutputDim. validate_config must FAIL LOUD (the deep CS idea no longer
@@ -162,13 +162,13 @@ def test_cs_ss_input_side_handoff_mismatch_raises():
         "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>")
     assert broken != src, "fixture edit did not apply (SS block changed?)"
     with pytest.raises(ValueError) as ei:
-        _build_from_text(broken, "cs_ss_mismatch")
+        _build_from_text(broken, "cs_ws_mismatch")
     msg = str(ei.value)
-    assert "CS->SS handoff" in msg, msg
+    assert "CS->WS handoff" in msg, msg
     assert "999" in msg and "1024" in msg, msg
 
 
-def test_ss_os_flatten_handoff_mismatch_raises():
+def test_ws_os_flatten_handoff_mismatch_raises():
     # Break the SS->OS FLATTEN handoff: MM_20M's SS flattened output slab is
     # nOutput(1024)*nOutputDim(8)=8192, matched by OS.nInput(8)*nInputDim(1024)
     # =8192. Force OS.nInput=7 so the OS slab (7*1024=7168) no longer equals the
@@ -179,9 +179,9 @@ def test_ss_os_flatten_handoff_mismatch_raises():
                          "<OutputSpace>\n    <nInput>7</nInput>")
     assert broken != src, "fixture edit did not apply (OutputSpace block?)"
     with pytest.raises(ValueError) as ei:
-        _build_from_text(broken, "ss_os_mismatch")
+        _build_from_text(broken, "ws_os_mismatch")
     msg = str(ei.value)
-    assert "SS->OS handoff" in msg, msg
+    assert "WS->OS handoff" in msg, msg
     assert "8192" in msg and "7168" in msg, msg
 
 

@@ -22,16 +22,16 @@ if _BIN not in sys.path:
 import torch
 
 
-def _ss_with_ops(*op_names, nDim=8):
+def _ws_with_ops(*op_names, nDim=8):
     from Spaces import WholeSpace
-    ss = WholeSpace.__new__(WholeSpace)
-    ss.nDim = nDim
-    ss._operation_positions = {}
-    ss._operation_vectors = {}
+    ws = WholeSpace.__new__(WholeSpace)
+    ws.nDim = nDim
+    ws._operation_positions = {}
+    ws._operation_vectors = {}
     for name in op_names:
-        ss._operation_positions[name] = len(ss._operation_positions) + 1
-        ss._operation_vectors[name] = ss._seed_operator_vector(name)
-    return ss
+        ws._operation_positions[name] = len(ws._operation_positions) + 1
+        ws._operation_vectors[name] = ws._seed_operator_vector(name)
+    return ws
 
 
 def test_shape_then_recover_categorizes_by_operator_effect():
@@ -39,12 +39,12 @@ def test_shape_then_recover_categorizes_by_operator_effect():
     symbol categories from the SHAPED codebook: symbols sharing an operator
     (any position) cluster; symbols on the opposite-effect operator split."""
     from semantic_categories import recover_semantic_categories
-    ss = _ss_with_ops("conjunction", "disjunction")
+    ws = _ws_with_ops("conjunction", "disjunction")
     a = torch.tensor([[1.0], [1.0], [0.0], [0.0]])
     b = torch.tensor([[1.0], [0.0], [1.0], [0.0]])
     q_and = torch.zeros(8); q_and[0] = 1.0
     q_or = torch.zeros(8); q_or[1] = 1.0
-    ss.shape_operators(
+    ws.shape_operators(
         [(q_and, a, b, torch.minimum(a, b)),
          (q_or, a, b, torch.maximum(a, b))],
         ["conjunction", "disjunction"])
@@ -53,7 +53,7 @@ def test_shape_then_recover_categorizes_by_operator_effect():
         "n2": {("conjunction", 1)},   # same operator, other position
         "v1": {("disjunction", 0)},
     }
-    cls = recover_semantic_categories(participation, ss._operation_vectors)
+    cls = recover_semantic_categories(participation, ws._operation_vectors)
     assert cls["n1"] == cls["n2"], cls       # same operator effect
     assert cls["n1"] != cls["v1"], cls       # opposite effect
 

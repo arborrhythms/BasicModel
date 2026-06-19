@@ -147,47 +147,47 @@ class TestSSWidthGuard(unittest.TestCase):
         whenEnc = WhenRangeEncoding(64, nWhen)
         whereEnc = WhereEncoding(64, nWhere, nWhen)
         cb = _fresh_codebook(nInput=3, nVectors=nVectors, nDim=nWhat)
-        ss = SubSpace(
+        ws = SubSpace(
             whereEncoding=whereEnc,
             whenEncoding=whenEnc,
             what=cb,                       # SS-style codebook on .what (unmuxed)
             inputShape=[3, dim], outputShape=[3, dim],
         )
-        return ss, dim, nWhat, nVectors
+        return ws, dim, nWhat, nVectors
 
-    def test_ss_shape_and_codebook_slot(self):
-        ss, _dim, nWhat, nVectors = self._build_ss()
+    def test_ws_shape_and_codebook_slot(self):
+        ws, _dim, nWhat, nVectors = self._build_ss()
         # Slot identity: codebook on .what, unmuxed; no where/when carriers.
-        self.assertEqual(ss.codebook_slot, 'what')
-        self.assertFalse(ss.muxed)
-        self.assertEqual(ss.nWhere, 0)
-        self.assertEqual(ss.nWhen, 0)
-        self.assertEqual(ss.nWhat, nWhat)
-        self.assertEqual(ss.muxedSize, nWhat)          # no where/when tail
-        proto = ss.prototype()
+        self.assertEqual(ws.codebook_slot, 'what')
+        self.assertFalse(ws.muxed)
+        self.assertEqual(ws.nWhere, 0)
+        self.assertEqual(ws.nWhen, 0)
+        self.assertEqual(ws.nWhat, nWhat)
+        self.assertEqual(ws.muxedSize, nWhat)          # no where/when tail
+        proto = ws.prototype()
         self.assertIsNotNone(proto)
         self.assertEqual(tuple(proto.shape), (nVectors, nWhat))
 
-    def test_ss_content_round_trips(self):
-        ss, _dim, nWhat, nVectors = self._build_ss()
+    def test_ws_content_round_trips(self):
+        ws, _dim, nWhat, nVectors = self._build_ss()
         # Content reconstruction: a per-position selection gathers [.., nWhat]
         # prototype rows, matching the prototype matrix exactly.
         sel = torch.tensor([[0, 1, 2], [3, 4, 0]])
-        rows = ss.lookup(sel)
+        rows = ws.lookup(sel)
         self.assertEqual(tuple(rows.shape), (2, 3, nWhat))
         self.assertTrue(torch.isfinite(rows).all())
-        proto = ss.prototype()
+        proto = ws.prototype()
         self.assertTrue(torch.allclose(rows[0, 0], proto[0]))
         self.assertTrue(torch.allclose(rows[1, 0], proto[3]))
 
-    def test_ss_decode_is_content_passthrough(self):
-        ss, dim, nWhat, _nVectors = self._build_ss()
+    def test_ws_decode_is_content_passthrough(self):
+        ws, dim, nWhat, _nVectors = self._build_ss()
         B, V = 2, 3
         # With no where/when slots there is nothing to demux: decode must leave
         # the content untouched and return finite tensors.
-        content = ss.lookup(torch.tensor([[0, 1, 2], [3, 4, 0]])).clone()
+        content = ws.lookup(torch.tensor([[0, 1, 2], [3, 4, 0]])).clone()
         self.assertEqual(content.shape[-1], nWhat)     # == muxedSize == dim
-        cleaned, _space, _time = ss.decode(content.clone())
+        cleaned, _space, _time = ws.decode(content.clone())
         self.assertTrue(torch.allclose(cleaned, content, atol=1e-6),
                         "SS decode must be a content pass-through (no where/when)")
         self.assertTrue(torch.isfinite(cleaned).all())

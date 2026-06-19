@@ -2,7 +2,7 @@
 dispatcher across all reachable (``mode``, ``kind``) combinations.
 
 Task 9 (plan §6) of the STM serial/parallel modes plan: the reverse
-generation pass deletes WordSubSpace's syntactic cache and re-derives
+generation pass deletes SymbolicSubSpace's syntactic cache and re-derives
 words from the held STM idea. That round trip is only as good as the
 per-op inverses it rides on, so this file pins the two round-trip laws
 

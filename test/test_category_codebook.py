@@ -56,64 +56,64 @@ def _whole_space(d=8):
 
 
 def test_enable_allocates_codebook_and_role_table():
-    ws = _whole_space()
+    ss = _whole_space()
     g = _grammar()
     _roles, _idx, n_roles = compute_role_vocabulary(g)
-    assert not ws.category_codebook_enabled()      # off until enabled
-    ok = ws.enable_category_codebook(g)
-    assert ok and ws.category_codebook_enabled()
-    assert ws._category_n_roles == n_roles
-    assert tuple(ws._category_role.shape) == (n_roles, n_roles)   # K defaults to n_roles
+    assert not ss.category_codebook_enabled()      # off until enabled
+    ok = ss.enable_category_codebook(g)
+    assert ok and ss.category_codebook_enabled()
+    assert ss._category_n_roles == n_roles
+    assert tuple(ss._category_role.shape) == (n_roles, n_roles)   # K defaults to n_roles
     # idempotent
-    assert ws.enable_category_codebook(g) is True
+    assert ss.enable_category_codebook(g) is True
 
 
 def test_enable_noop_without_roles():
-    ws = _whole_space()
-    assert ws.enable_category_codebook(_G([])) is False
-    assert not ws.category_codebook_enabled()
+    ss = _whole_space()
+    assert ss.enable_category_codebook(_G([])) is False
+    assert not ss.category_codebook_enabled()
 
 
 def test_assign_returns_valid_centroid_indices():
-    ws = _whole_space(d=8)
-    ws.enable_category_codebook(_grammar())
-    K = ws._category_role.shape[0]
-    vecs = torch.randn(5, ws.nDim)
-    idx = ws.assign_category(vecs)
+    ss = _whole_space(d=8)
+    ss.enable_category_codebook(_grammar())
+    K = ss._category_role.shape[0]
+    vecs = torch.randn(5, ss.nDim)
+    idx = ss.assign_category(vecs)
     assert idx is not None and tuple(idx.shape) == (5,)
     assert int(idx.min()) >= 0 and int(idx.max()) < K
 
 
 def test_role_vector_ema_moves_toward_target():
-    ws = _whole_space()
-    ws.enable_category_codebook(_grammar())
-    n_roles = ws._category_n_roles
+    ss = _whole_space()
+    ss.enable_category_codebook(_grammar())
+    n_roles = ss._category_n_roles
     idx = torch.tensor([0])
-    before = ws._category_role[0].clone()
+    before = ss._category_role[0].clone()
     target = torch.ones(1, n_roles)
     for _ in range(20):
-        ws.update_category_role(idx, target, ema=0.2)
-    after = ws._category_role[0]
+        ss.update_category_role(idx, target, ema=0.2)
+    after = ss._category_role[0]
     # EMA toward all-ones: every column increased, none overshoots the target.
     assert torch.all(after > before)
     assert torch.all(after <= 1.0 + 1e-5)
 
 
 def test_category_role_of_zeroes_negative_index():
-    ws = _whole_space()
-    ws.enable_category_codebook(_grammar())
-    ws.update_category_role(torch.tensor([1]), torch.ones(1, ws._category_n_roles))
-    got = ws.category_role_of(torch.tensor([1, -1]))
-    assert got is not None and tuple(got.shape) == (2, ws._category_n_roles)
+    ss = _whole_space()
+    ss.enable_category_codebook(_grammar())
+    ss.update_category_role(torch.tensor([1]), torch.ones(1, ss._category_n_roles))
+    got = ss.category_role_of(torch.tensor([1, -1]))
+    assert got is not None and tuple(got.shape) == (2, ss._category_n_roles)
     assert torch.all(got[1] == 0.0)                 # composed/unassigned -> zero row
     assert torch.all(got[0] > 0.0)                  # assigned centroid -> its role vec
 
 
 def test_disabled_methods_are_safe_noops():
-    ws = _whole_space()
-    assert ws.assign_category(torch.randn(3, ws.nDim)) is None
-    assert ws.category_role_of(torch.tensor([0])) is None
-    ws.update_category_role(torch.tensor([0]), torch.ones(1, 4))   # no error
+    ss = _whole_space()
+    assert ss.assign_category(torch.randn(3, ss.nDim)) is None
+    assert ss.category_role_of(torch.tensor([0])) is None
+    ss.update_category_role(torch.tensor([0]), torch.ones(1, 4))   # no error
 
 
 def test_unused_centroids_decay_toward_collapse():
@@ -121,15 +121,15 @@ def test_unused_centroids_decay_toward_collapse():
     # winning while the rest receive no assignments, so their cluster_size EMA
     # decays below the bootstrap 1.0 -- the mechanism behind natural collapse.
     torch.manual_seed(0)
-    ws = _whole_space(d=8)
-    ws.enable_category_codebook(_grammar())
-    ws.train()
-    cluster = torch.zeros(1, ws.nDim)
+    ss = _whole_space(d=8)
+    ss.enable_category_codebook(_grammar())
+    ss.train()
+    cluster = torch.zeros(1, ss.nDim)
     cluster[0, 0] = 10.0                              # far-out tight cluster
     winners = set()
     for _ in range(40):
-        idx = ws.assign_category(cluster + 0.01 * torch.randn(8, ws.nDim))
+        idx = ss.assign_category(cluster + 0.01 * torch.randn(8, ss.nDim))
         winners.update(int(i) for i in idx)
-    cs = ws._category_vq.cluster_size
-    assert len(winners) < ws._category_role.shape[0]   # not all centroids used
+    cs = ss._category_vq.cluster_size
+    assert len(winners) < ss._category_role.shape[0]   # not all centroids used
     assert float(cs.min()) < 1.0                       # an unused centroid decayed

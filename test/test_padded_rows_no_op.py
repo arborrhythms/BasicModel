@@ -113,16 +113,16 @@ def test_symbolic_act_masking_zeros_invalid_cells():
     observable point.
     """
     model = _model()
-    ss = model.symbolicSpace
+    ws = model.wholeSpace
     # Make sure the subspace has valid_mask set on it as it would
     # post-stem-and-FlattenKWrapper. Build a [B*K, N, D] event with
-    # the right shape for ss.forward to process.
-    sub = ss.subspace
+    # the right shape for ws.forward to process.
+    sub = ws.subspace
     B = 2
     K = 3
     BK = B * K
-    N = ss.outputShape[0] if hasattr(ss, 'outputShape') else 1
-    D = ss.nInputDim
+    N = ws.outputShape[0] if hasattr(ws, 'outputShape') else 1
+    D = ws.nInputDim
     # Set valid_mask on the SymbolicSubSpace as if propagated via
     # copy_context. Row 0 has K=2 valid; row 1 has K=3 valid.
     sub.valid_mask = torch.tensor([

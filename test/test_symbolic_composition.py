@@ -3,7 +3,7 @@ cognitive operations", op 2).
 
 When <architecture><symbolicComposition>true</symbolicComposition> is set,
 the subsymbolicOrder CS->PS loop re-feeds the prior pass's symbolic carrier
-(cs._subspaceForSS) to PartSpace at t>0 so SigmaLayer composes higher-order
+(cs._subspaceForWS) to PartSpace at t>0 so SigmaLayer composes higher-order
 symbols. Default off re-feeds the stage-0 percept every pass (unchanged).
 
 These are smoke tests: with the flag on, a parallel multi-order forward

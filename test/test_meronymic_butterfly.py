@@ -279,11 +279,11 @@ def test_xor_exact_slots_keep_butterfly_under_meronomy():
             os.path.join(_PROJECT, "data", "XOR_exact.xml"),
             data=Models.TheData)
     assert meronomy_enabled()
-    ps, ss = m.perceptualSpace, m.symbolicSpace
+    ps, ws = m.perceptualSpace, m.wholeSpace
     assert isinstance(ps.sigma, MeronymicFoldAdapter)
     assert ps.sigma.butterfly is True and ps.butterfly_enabled is True
-    assert isinstance(ss.pi, MeronymicFoldAdapter)
-    assert ss.pi.butterfly is True and ss.butterfly_enabled is True
+    assert isinstance(ws.pi, MeronymicFoldAdapter)
+    assert ws.pi.butterfly is True and ws.butterfly_enabled is True
     # The cascade is real: cross-slot reach on the live PS slot. The
     # probe law is mild (raw 0.28: tap ~ 0.078 per node) — an
     # aggressive law saturates a 7-level cascade's memberships to the

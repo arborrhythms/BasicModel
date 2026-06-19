@@ -88,15 +88,15 @@ def test_per_row_state_clears_between_batches():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
 
-    ws = model.wordSubSpace
-    if ws is None:
-        pytest.skip("model has no WordSpace")
+    ss = model.symbolicSpace
+    if ss is None:
+        pytest.skip("model has no SymbolicSpace")
 
     # Post-epoch: Reset has fired at the last batch boundary, so
     # all per-row state should be cleared.
-    assert ws._svo_valid is None or not ws._svo_valid.any().item(), (
+    assert ss._svo_valid is None or not ss._svo_valid.any().item(), (
         "_svo_valid not cleared after batch-boundary Reset")
-    assert ws._stm_fired is None or not ws._stm_fired.any().item(), (
+    assert ss._stm_fired is None or not ss._stm_fired.any().item(), (
         "_stm_fired not cleared after batch-boundary Reset")
     # serial_cache cleared by Subspace.Reset.
     assert len(model.inputSpace.subspace.serial_cache) == 0, (

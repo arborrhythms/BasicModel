@@ -110,9 +110,9 @@ class MeronymicRouter:
 
     ``binary_tiling_viterbi`` / ``binary_tiling_soft_dp`` (bin/Language.py)
     are the direction-neutral routing core the symbolic
-    ``BinaryStructuredReductionLayer`` already uses for SS reduce / unreduce;
+    ``BinaryStructuredReductionLayer`` already uses for WS reduce / unreduce;
     the meronymic analyzer reuses the very same DP in the analysis
-    direction, so PS analysis and SS unreduce share one primitive (Phase R3,
+    direction, so PS analysis and WS unreduce share one primitive (Phase R3,
     "Factor the shared inverse routing primitive out of unreduce /
     reverse_stack").
 
@@ -232,7 +232,7 @@ class MeronymicAnalyzer:
     ``boundary`` terminal. Durable spans are written to an
     :class:`ObjectSubSpace`; :meth:`terminal_view` exposes the fixed-
     capacity terminal stream (``what`` / ``where`` / ``ids`` / ``mask`` /
-    ``len``) the PS-to-SS binding consumes. ``.where`` is the endpoint-sum
+    ``len``) the PS-to-WS binding consumes. ``.where`` is the endpoint-sum
     span key.
 
     ``percept_lookup`` (optional) maps a span's text to ``(vector, part_id)``
@@ -355,7 +355,7 @@ class MeronymicAnalyzer:
             out = torch.zeros(max(len(segs) - 1, 0))
             for i in range(len(segs) - 1):
                 s0, e1 = segs[i][0], segs[i + 1][1]
-                if any(ws <= s0 and e1 <= we for (ws, we) in known_spans):
+                if any(ss <= s0 and e1 <= we for (ss, we) in known_spans):
                     out[i] = known_bonus
             return out
 

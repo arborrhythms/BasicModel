@@ -10,11 +10,11 @@ What this pins
 (here ``union``), then calls the host layer's ``reverse(parent, basis=...)``.
 The CAPSTONE adds a GATED restriction: when the owning space's
 ``attention_mode != 'off'`` it builds typed+heat candidate ``rows`` / boosted
-``priming`` (via ``WordSubSpace.retrieval_candidates_for_slot``) and splats
+``priming`` (via ``SymbolicSubSpace.retrieval_candidates_for_slot``) and splats
 them into the recommender call so the heat steers the operand pick.
 
 Two assertions, exercising the REAL ``unreduce`` path with the REAL
-``UnionLayer`` + REAL ``WordSubSpace.retrieval_candidates_for_slot`` + REAL
+``UnionLayer`` + REAL ``SymbolicSubSpace.retrieval_candidates_for_slot`` + REAL
 ``Grammar._rule_order_signature``:
 
   * ON  (``attention_mode='primer'``): with a specific ADMISSIBLE row primed
@@ -25,7 +25,7 @@ Two assertions, exercising the REAL ``unreduce`` path with the REAL
     on the live generation path).
 
 The ``subspace`` is a thin duck-type over the small surface ``unreduce``
-needs (``materialize`` / ``set_*`` / ``what`` / ``wordSubSpace``); everything
+needs (``materialize`` / ``set_*`` / ``what`` / ``symbolicSpace``); everything
 that carries the heat semantics (the layer, the retrieval helper, the order
 signature) is the real production code.
 """
@@ -44,7 +44,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Language import (  # noqa: E402
-    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, WordSubSpace,
+    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, SymbolicSubSpace,
     Taxonomy,
 )
 
@@ -54,7 +54,7 @@ def _seed_rng():
     """Make every steering test order-independent w.r.t. the global RNG.
 
     The decisive fixtures here are hardcoded tensors and the heat steering
-    path (``WordSubSpace.retrieval_candidates_for_slot``) consumes no RNG, so
+    path (``SymbolicSubSpace.retrieval_candidates_for_slot``) consumes no RNG, so
     today these tests are deterministic regardless of suite order. This seed is
     defensive: it pins the global RNG so any future use of ``torch.randn`` in a
     fixture or helper cannot make these capstone assertions flaky under
@@ -105,7 +105,7 @@ class _StackSubSpace:
     """Thin duck-typed stack-mode SubSpace over the exact surface
     ``LanguageLayer.unreduce`` touches: ``materialize(mode)`` for
     what/where/activation, the three ``set_*`` writers, the ``.what`` Basis,
-    and the ``.wordSubSpace`` back-ref.
+    and the ``.symbolicSpace`` back-ref.
 
     Single batch row (B=1), K slots, D-wide payloads -- enough to hold one
     binary parent in the top live slot with an empty slot to its right."""
@@ -115,7 +115,7 @@ class _StackSubSpace:
         self._where = where
         self._activation = activation
         self.what = basis                 # tier-local Basis (has getW())
-        self.wordSubSpace = word_sub_space
+        self.symbolicSpace = word_sub_space
 
     def materialize(self, mode):
         return {"what": self._what,
@@ -149,33 +149,33 @@ def _grammar_with_union():
 
 def _make_ws(view, *, attention_mode, hot_ref=None, hot_boost=4.0,
              capacity=8, live=8, top_order=3):
-    """Real WordSubSpace carrying the REAL ``retrieval_candidates_for_slot``
+    """Real SymbolicSubSpace carrying the REAL ``retrieval_candidates_for_slot``
     and ``_commit_priming`` methods, wired with a real Taxonomy + the typed
     view. ``conceptualSpace`` is a stub exposing only ``attention_mode``
-    (tier='C', so ``unreduce`` reads ``ws.conceptualSpace.attention_mode``).
+    (tier='C', so ``unreduce`` reads ``ss.conceptualSpace.attention_mode``).
 
     ``hot_ref`` (optional) is primed HOT so the retrieval helper boosts it.
     ``_order`` slot 0 is set to ``top_order`` (the parent's order, which the
     order-preserving union shares with both operands)."""
-    ws = object.__new__(WordSubSpace)
-    nn.Module.__init__(ws)
-    ws.batch = 1
+    ss = object.__new__(SymbolicSubSpace)
+    nn.Module.__init__(ss)
+    ss.batch = 1
     tax = Taxonomy()
     tax.allocate_priming(batch_size=1, capacity=capacity, live=live)
     tax.configure_priming(priming_enabled=True)
     if hot_ref is not None:
         tax.prime([int(hot_ref)], batch=0, boost=hot_boost)
-    ws.taxonomy = tax
+    ss.taxonomy = tax
     # ``knowledge`` is a read-only property backed by ``_knowledge``.
-    object.__setattr__(ws, '_knowledge', view)
+    object.__setattr__(ss, '_knowledge', view)
     # Per-slot order buffer: slot 0 holds the top (parent) order.
-    ws._order = torch.zeros(1, capacity, dtype=torch.long)
-    ws._order[0, 0] = int(top_order)
+    ss._order = torch.zeros(1, capacity, dtype=torch.long)
+    ss._order[0, 0] = int(top_order)
     # Tier-'C' owning space attention mode (the gate the CAPSTONE reads).
-    object.__setattr__(ws, 'conceptualSpace',
+    object.__setattr__(ss, 'conceptualSpace',
                        SimpleNamespace(attention_mode=attention_mode))
-    object.__setattr__(ws, 'symbolicSpace', None)
-    return ws
+    object.__setattr__(ss, 'wholeSpace', None)
+    return ss
 
 
 def _build_subspace(W, parent, view, *, attention_mode, hot_ref=None,
@@ -192,10 +192,10 @@ def _build_subspace(W, parent, view, *, attention_mode, hot_ref=None,
     activation = torch.zeros(1, K)
     activation[0, 0] = 1.0                     # exactly one live slot
     basis = _Basis(W)
-    ws = _make_ws(view, attention_mode=attention_mode, hot_ref=hot_ref,
+    ss = _make_ws(view, attention_mode=attention_mode, hot_ref=hot_ref,
                   capacity=8, live=8, top_order=top_order)
-    sub = _StackSubSpace(what, where, activation, basis, ws)
-    return sub, ws
+    sub = _StackSubSpace(what, where, activation, basis, ss)
+    return sub, ss
 
 
 def _register_union_syntactic_layer():
@@ -239,7 +239,7 @@ _VIEW = _FakeView(
 
 def _run_unreduce(attention_mode, hot_ref):
     g = _grammar_with_union()
-    sub, ws = _build_subspace(
+    sub, ss = _build_subspace(
         _W, _PARENT, _VIEW, attention_mode=attention_mode, hot_ref=hot_ref,
         top_order=3)
     syn = _register_union_syntactic_layer()
@@ -247,7 +247,7 @@ def _run_unreduce(attention_mode, hot_ref):
     lang.unreduce(sub, syn, grammar=g)
     # Decoded left operand was written into the (formerly top) slot 0.
     left = sub.materialize(mode="what")[0, 0, :]
-    return left, ws
+    return left, ss
 
 
 class TestHeatReverseWiringLiveON:
@@ -295,9 +295,9 @@ class TestHeatReverseSelfPriming:
     def test_selected_left_row_is_reprimed(self):
         """The hot+typed left pick (row 0) is noted + re-primed: its
         selection telemetry bumps and its heat stays positive."""
-        left, ws = _run_unreduce(attention_mode='primer', hot_ref=0)
+        left, ss = _run_unreduce(attention_mode='primer', hot_ref=0)
         assert torch.allclose(left, _W[0], atol=1e-5)
-        total, boosted = ws.taxonomy.priming_telemetry()
+        total, boosted = ss.taxonomy.priming_telemetry()
         assert total >= 1, (
             f"reverse self-priming must record >=1 selection, got total={total}")
         # Row 0 was hot at selection time -> the boosted-selection counter
@@ -306,7 +306,7 @@ class TestHeatReverseSelfPriming:
             f"the hot selected row must count as a boosted selection, "
             f"got boosted={boosted}")
         # Row 0 remains hot after re-priming.
-        hm = ws.taxonomy.heat_mask(batch=0)
+        hm = ss.taxonomy.heat_mask(batch=0)
         assert hm is not None and float(hm[0].item()) > 0.0, (
             f"selected row 0 must stay hot after reverse self-priming, "
             f"heat_mask={None if hm is None else hm.tolist()}")
@@ -314,12 +314,12 @@ class TestHeatReverseSelfPriming:
     def test_off_path_records_no_selection(self):
         """When OFF (gate dormant), the reverse self-priming block is skipped
         entirely -- no selection telemetry, no heat mutation."""
-        _, ws = _run_unreduce(attention_mode='off', hot_ref=None)
-        total, boosted = ws.taxonomy.priming_telemetry()
+        _, ss = _run_unreduce(attention_mode='off', hot_ref=None)
+        total, boosted = ss.taxonomy.priming_telemetry()
         assert total == 0 and boosted == 0, (
             f"OFF path must not run reverse self-priming; "
             f"got total={total}, boosted={boosted}")
-        hm = ws.taxonomy.heat_mask(batch=0)
+        hm = ss.taxonomy.heat_mask(batch=0)
         assert hm is not None and hm.eq(0).all(), (
             "OFF path must leave taxonomy heat at zero")
 
@@ -376,7 +376,7 @@ def _register_intersection_syntactic_layer():
 
 def _run_unreduce_intersection(attention_mode, hot_ref):
     g = _grammar_with_intersection()
-    sub, ws = _build_subspace(
+    sub, ss = _build_subspace(
         _W_INT, _PARENT_INT, _VIEW_INT,
         attention_mode=attention_mode, hot_ref=hot_ref, top_order=3)
     syn = _register_intersection_syntactic_layer()
@@ -384,7 +384,7 @@ def _run_unreduce_intersection(attention_mode, hot_ref):
     lang.unreduce(sub, syn, grammar=g)
     # Decoded left operand was written into the (formerly top) slot 0.
     left = sub.materialize(mode="what")[0, 0, :]
-    return left, ws
+    return left, ss
 
 
 class TestHeatReverseWiringIntersectionON:

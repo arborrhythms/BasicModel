@@ -26,17 +26,17 @@ def subspace_factory():
 
 
 def test_is_empty_true_for_zero_n(subspace_factory):
-    ss = subspace_factory(n_vectors=0)
-    assert ss.is_empty() is True
+    ws = subspace_factory(n_vectors=0)
+    assert ws.is_empty() is True
 
 
 def test_is_empty_false_for_nonzero_n(subspace_factory):
-    ss = subspace_factory(n_vectors=4)
-    ss.set_muxed(torch.zeros(2, 4, ss.muxedSize))
-    assert ss.is_empty() is False
+    ws = subspace_factory(n_vectors=4)
+    ws.set_muxed(torch.zeros(2, 4, ws.muxedSize))
+    assert ws.is_empty() is False
 
 
 def test_is_empty_true_for_zero_batch(subspace_factory):
-    ss = subspace_factory(n_vectors=4)
-    ss.set_muxed(torch.zeros(0, 4, ss.muxedSize))
-    assert ss.is_empty() is True, "B=0 is 'nothing to do'"
+    ws = subspace_factory(n_vectors=4)
+    ws.set_muxed(torch.zeros(0, 4, ws.muxedSize))
+    assert ws.is_empty() is True, "B=0 is 'nothing to do'"

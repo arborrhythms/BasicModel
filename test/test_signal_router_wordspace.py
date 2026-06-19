@@ -1,8 +1,8 @@
-"""Signal-router-on-WordSubSpace tests.
+"""Signal-router-on-SymbolicSubSpace tests.
 
 Stage 3 cleanup (2026-05-27): the chart was retired; the signal router
 (``LanguageLayer``) is the canonical parser, owned directly by
-``WordSubSpace.languageLayer``. These tests exercise the LanguageLayer
+``SymbolicSubSpace.languageLayer``. These tests exercise the LanguageLayer
 in isolation, the way the chart tests used to drive ``Chart`` directly.
 """
 import os, sys
@@ -43,7 +43,7 @@ class _Stub(nn.Module):
         return left + right
 
 
-class _StubWordSpace:
+class _StubSymbolicSpace:
     def __init__(self):
         self.current_rules = {}
         self.generate_rules = {}
@@ -56,10 +56,10 @@ class _StubWordSpace:
 def test_language_layer_generate_emits_rules_dict_after_compose():
     router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[3], tier="S")
-    ws = _StubWordSpace()
+    ss = _StubSymbolicSpace()
     target = torch.randn(2, 4, 4)
-    router.compose(target, word_space=ws)
-    g = router.generate(target, word_space=ws)
+    router.compose(target, word_space=ss)
+    g = router.generate(target, word_space=ss)
     assert isinstance(g, dict)
     assert "S" in g
     rows = g["S"]
@@ -73,8 +73,8 @@ def test_language_layer_generate_emits_rules_dict_after_compose():
 def test_language_layer_compose_populates_current_rules():
     router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[7], tier="S")
-    ws = _StubWordSpace()
-    rules = router.compose(torch.randn(2, 4, 4), word_space=ws)
+    ss = _StubSymbolicSpace()
+    rules = router.compose(torch.randn(2, 4, 4), word_space=ss)
     assert isinstance(rules, dict)
     assert "S" in rules
     rows = rules["S"]

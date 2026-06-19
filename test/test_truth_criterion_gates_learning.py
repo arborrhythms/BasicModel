@@ -13,7 +13,7 @@ independent of the factor formulas:
   (b) tc == 0  -> insertion regardless of the score.
   (c) tc == 0.3 -> insertion iff learn_score >= 0.3.
 
-Insertion is observed via ``ss.taxonomy_children(predicate_pos)``: a
+Insertion is observed via ``ws.taxonomy_children(predicate_pos)``: a
 ``_maybe_learn_relation`` that accepts returns the predicate position
 and leaves the two ideas as its taxonomy children; a reject returns
 ``None`` and writes nothing.
@@ -109,7 +109,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """tc == 0: even a near-zero score is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         cs.truth_criterion = 0.0
         # learn_score = 0.0 (one factor zero) but tc=0 -> 0 >= 0 accept.
         _mock_factors(cs, 0.0, 1.0, 1.0)
@@ -117,7 +117,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(
             pred_pos, "tc=0 must accept regardless of learn-score")
-        children = ss.taxonomy_children(pred_pos)
+        children = ws.taxonomy_children(pred_pos)
         self.assertEqual(
             len(children), 2,
             f"accepted relation must leave 2 idea children; got "
@@ -127,7 +127,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """tc == 0.3: score 0.343 (>=0.3) is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         cs.truth_criterion = 0.3
         # 0.7^3 = 0.343 >= 0.3 -> accept.
         _mock_factors(cs, 0.7, 0.7, 0.7)
@@ -135,7 +135,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(
             pred_pos, "learn_score 0.343 >= tc 0.3 must accept")
-        self.assertEqual(len(ss.taxonomy_children(pred_pos)), 2)
+        self.assertEqual(len(ws.taxonomy_children(pred_pos)), 2)
 
     def test_tc_threshold_rejects_below(self):
         """tc == 0.3: score 0.125 (<0.3) is rejected."""
@@ -152,7 +152,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """>= is inclusive: a score exactly equal to tc is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ss = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolicSpace_ref
         cs.truth_criterion = 0.5
         # 0.5 * 1.0 * 1.0 = 0.5 == tc -> accept (>= boundary).
         _mock_factors(cs, 0.5, 1.0, 1.0)
@@ -160,7 +160,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(
             pred_pos, "score == tc must accept (>= is inclusive)")
-        self.assertEqual(len(ss.taxonomy_children(pred_pos)), 2)
+        self.assertEqual(len(ws.taxonomy_children(pred_pos)), 2)
 
 
 if __name__ == "__main__":
