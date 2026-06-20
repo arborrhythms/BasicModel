@@ -1,7 +1,7 @@
 # The Symbol Firewall
 
 *A governing architectural principle. Source proposal:
-[`doc/specs/symbol_firewall.md`](specs/symbol_firewall.md). This document is the
+[`doc/old/symbol_firewall.md`](old/symbol_firewall.md). This document is the
 code-anchored, normative version — it states the principle and maps each
 invariant onto the structures that already realize it (or names the gap).*
 
@@ -97,7 +97,7 @@ residual branch** (untrained ⇒ no-op ⇒ the sigma fold), and stashes an
 introspectable `purchase_v` diagnostic — a first, bounded form of the emitted
 semantic delta. Gated by `<verbEigEdit>`. Implementation: `LiftLayer.forward` /
 `_apply_verb_edit` ([Language.py](bin/Language.py)). Source proposal:
-[`doc/specs/semantic_verb_np_mask_eigenvalue_proposal.md`](specs/semantic_verb_np_mask_eigenvalue_proposal.md).
+[`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
 
 This is the firewall's verb example made real: the same NP participates in
 different computations because different operators activate different

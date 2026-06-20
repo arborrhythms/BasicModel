@@ -168,6 +168,476 @@ def asserted_dominance_loss(child, parent):
     insulated by construction, symbols being atoms.)
     """
     return torch.relu(child - parent).mean()
+
+
+class ReadingAttention(nn.Module):
+    """The learned ``.where`` producer (doc/specs/reading-attention.md
+    "(A) Reading attention"; orders.md §6 "The attention substrate").
+
+    Gated ``<readingAttention>``. At each ``t>0`` subsymbolic pass it scores
+    the staged analysis spans (the word ``.where`` brackets,
+    ``_staged_analysis_spans`` ``[B, K, 2]`` of ``[start, end)`` atom
+    indices) from a query built off the prior pass's concept (the
+    subsymbolic / mereological retrieval term) AND the active STM symbols
+    (the symbolic term), under a monotonic / coverage mask and a shift
+    bootstrap, producing:
+
+      * ``next_where`` -- the normalized ``[start, end]`` reading scope (the
+        soft ``Σ αₖ·spanₖ``) the caller writes to ``_passback_scope_where``
+        for the ``<mereologyRaise>`` top-down handoff to consume;
+      * ``ce_loss`` -- the text-mode next-word cross-entropy (penalise
+        attention that does NOT land on the next word).
+
+    **Gradient discipline (orders.md §6 "Learning").** Every input is
+    DETACHED upstream (the pooled concept / STM query, the per-span pooled
+    percept keys), so the only gradient path is the small MLP readout: the
+    loss never backprops into the EMA-only VQ codebooks (C-9/C-11). A
+    symbol's importance reaches its codebook rows indirectly (attending it
+    activates its referenced rows -> occurrence -> EMA), not by gradient.
+
+    **Shift bootstrap.** A non-learned additive bias favours the next
+    UNCONSUMED span (``k == read_idx``); the readout HEAD is zero-init, so
+    at init the logits ARE that bias -- the producer is byte-identical to
+    "advance one word per pass" (the serial reading for-loop). The loss
+    only refines it; it degrades gracefully.
+    """
+
+    _N_FEATURES = 6
+
+    def __init__(self, hidden=16, bootstrap=3.0):
+        super().__init__()
+        self.bootstrap = float(bootstrap)
+        self.scorer = nn.Sequential(
+            nn.Linear(self._N_FEATURES, int(hidden)),
+            nn.ReLU(),
+            nn.Linear(int(hidden), 1),
+        )
+        # Zero-init the readout HEAD: at init the MLP contributes 0, so the
+        # logits equal the shift-bootstrap bias exactly (the for-loop init).
+        nn.init.zeros_(self.scorer[-1].weight)
+        nn.init.zeros_(self.scorer[-1].bias)
+
+    @staticmethod
+    def _pool(sub):
+        """Detached mean-over-slots content vector ``[B, D]`` (or ``None``)
+        from a SubSpace / event tensor. Empty / shapeless -> ``None``."""
+        if sub is None:
+            return None
+        ev = sub.materialize() if hasattr(sub, "materialize") else sub
+        if ev is None or not torch.is_tensor(ev):
+            return None
+        if ev.dim() == 2:
+            ev = ev.unsqueeze(1)
+        if ev.dim() != 3 or int(ev.shape[1]) == 0:
+            return None
+        return ev.detach().mean(dim=1)                       # [B, D]
+
+    @staticmethod
+    def _cos(q, keys):
+        """Row-wise cosine of a query ``[B, Dq]`` against per-span keys
+        ``[B, K, Dk]`` -> ``[B, K]`` (sliced to the common trailing width).
+        ``None`` when either side is absent."""
+        if q is None or keys is None:
+            return None
+        d = min(int(q.shape[-1]), int(keys.shape[-1]))
+        if d == 0:
+            return None
+        # DETACH both sides: the query IS the primed symbols (derived from the
+        # codebooks) and the keys are codebook-content -- the gradient must NOT
+        # flow back into either (orders.md §6 "Learning"; C-9/C-11). Defense in
+        # depth: the caller already detaches via ``_pool`` / ``_span_keys``.
+        qn = q.detach()[..., :d]
+        kn = keys.detach()[..., :d]
+        qn = qn / qn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        kn = kn / kn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        return torch.einsum('bd,bkd->bk', qn, kn)            # [B, K]
+
+    @staticmethod
+    def _codebook_retrieval_prior(keys, codebook_rows, intent, external_boosts):
+        """The **subsymbolic** score term -- the codebook-retrieval prior, the
+        literal ``intent_boosts`` / ``selection_boost_fn`` path
+        (orders.md §6 "Attention is connectionist spreading activation").
+
+        Routes each span through the codebook: a span scores high when its
+        content snaps near a prototype the intent has primed --
+
+            ``prior_k = max_v( cos(key_k, row_v) · boost_v )``
+
+        the same ``(sim · boosts).amax`` reduction ``WholeSpace._topk_priming
+        _mask`` uses. ``boost_v`` ``[V]`` is the intent's graded similarity to
+        each codebook row (``intent_priming_weights``; ``1.0`` = neutral): the
+        externally-primed ``external_boosts`` (a ``set_intent`` already on the
+        tower) when present, else derived from the query ``intent`` (prime from
+        the current concept). Returns ``[B, K]`` (``None`` when no codebook is
+        available -> the caller falls back to the concept-content cosine).
+
+        Fully DETACHED (keys, rows, intent, boosts): the gradient never reaches
+        the EMA-only codebooks (C-9/C-11)."""
+        if (keys is None or codebook_rows is None
+                or not torch.is_tensor(codebook_rows)
+                or codebook_rows.numel() == 0):
+            return None
+        W = codebook_rows.detach()
+        # Slice to the common LEADING width (the same idiom as ``_cos`` /
+        # ``intent_priming_weights`` / ``_topk_priming_mask``). This is
+        # CONTENT-vs-CONTENT by construction: the muxed percept key carries its
+        # content first with the .where/.when columns appended at the TAIL
+        # (negative indices), while the codebook rows are content-only and
+        # NARROWER (e.g. key 1024 = 1020 content + 2 where + 2 when, W 1020), so
+        # the min-slice drops the key's where/when tail and compares prototypes
+        # to span content -- the intended semantics, not a lossy truncation.
+        d = min(int(keys.shape[-1]), int(W.shape[-1]))
+        if d == 0:
+            return None
+        # [V] intent boosts: the primed-intent state if the tower carries one,
+        # else the graded intent->rows similarity of the current concept.
+        boosts = external_boosts
+        if boosts is None and intent is not None:
+            boosts = intent_priming_weights(intent.detach(), W)
+        kn = keys.detach()[..., :d]
+        Wn = W[:, :d]
+        kn = kn / kn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        Wn = Wn / Wn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        sim = torch.einsum('bkd,vd->bkv', kn, Wn)            # [B, K, V]
+        if boosts is not None and torch.is_tensor(boosts):
+            bv = boosts.detach().to(sim.dtype)
+            V = int(Wn.shape[0])
+            if bv.shape[0] > V:                              # conform to V
+                bv = bv[:V]
+            elif bv.shape[0] < V:
+                bv = torch.cat([bv, bv.new_ones(V - bv.shape[0])])
+            sim = sim * bv
+        return sim.amax(dim=-1)                              # [B, K]
+
+    @staticmethod
+    def _span_keys(percept_ev, spans):
+        """Per-span detached pooled percept content ``[B, K, D]`` from the
+        ``[start, end)`` atom brackets ``spans`` ``[B, K, 2]``."""
+        Np = int(percept_ev.shape[1])
+        pos = torch.arange(Np, device=percept_ev.device)     # [Np]
+        s = spans[..., 0:1]                                  # [B, K, 1]
+        e = spans[..., 1:2]
+        mask = (pos.view(1, 1, Np) >= s) & (pos.view(1, 1, Np) < e)  # [B,K,Np]
+        m = mask.to(percept_ev.dtype)
+        denom = m.sum(dim=-1, keepdim=True).clamp_min(1.0)   # [B, K, 1]
+        keys = torch.einsum('bkn,bnd->bkd', m,
+                            percept_ev.detach()) / denom      # [B, K, D]
+        return keys
+
+    @staticmethod
+    def superposition_scale(temperature):
+        """The two-pass soft-superposition score scale ``1 - clamp(t, 0, 1)``
+        (mirrors ``Language.superposition_scale``; inlined to avoid a
+        Spaces->Language import). ``t=0`` -> ``1`` (sharp/exploit, pass A,
+        byte-identical); ``t=1`` -> ``0`` (uniform/explore, pass B). The
+        selection stays in the gradient path, scaled by ``1-t``."""
+        return 1.0 - min(1.0, max(0.0, float(temperature or 0.0)))
+
+    def forward(self, *, concept_q, symbol_q, percept_ev, spans, read_idx,
+                N, training, codebook_rows=None, intent_boosts=None,
+                temperature=0.0):
+        """Score the spans for a single ``t>0`` pass.
+
+        ``temperature`` is the two-pass superposition temperature (the
+        stochastic element): ``0`` (default / pass A) is sharp/exploit and
+        BYTE-IDENTICAL (``scale==1.0``); a higher value (pass B at
+        ``exploreTemperature``) flattens the distribution for exploration.
+
+        The **subsymbolic** score term is the codebook-retrieval prior over the
+        percept ``codebook_rows`` (the literal ``intent_boosts`` path,
+        :meth:`_codebook_retrieval_prior`); when no codebook is supplied it
+        falls back to the concept-content cosine. The **symbolic** term is the
+        STM-symbol-vs-span cosine.
+
+        Returns ``(next_where, ce_loss, alpha)``:
+          * ``next_where`` -- normalized ``[B, 2]`` ``[start, end]`` (soft
+            ``Σ αₖ·spanₖ``), or ``None`` when there is nothing to score;
+          * ``ce_loss`` -- the next-word CE scalar (``None`` off-training or
+            when the ``read_idx`` target span is padding for every row);
+          * ``alpha`` -- the ``[B, K]`` attention distribution (diagnostic).
+        """
+        if (spans is None or percept_ev is None
+                or not torch.is_tensor(spans) or spans.dim() != 3
+                or int(spans.shape[-1]) != 2
+                or not torch.is_tensor(percept_ev) or percept_ev.dim() != 3):
+            return None, None, None
+        B = int(percept_ev.shape[0])
+        K = int(spans.shape[1])
+        if K == 0 or B == 0:
+            return None, None, None
+        Nf = float(max(int(N), 1))
+        dtype = percept_ev.dtype
+        spans_f = spans.to(dtype)
+        start = spans_f[..., 0]                               # [B, K]
+        end = spans_f[..., 1]
+        extent = (end - start).clamp_min(0.0)
+        real = extent > 0                                    # [B, K] non-pad
+        keys = self._span_keys(percept_ev, spans)            # [B, K, D]
+        zeros_bk = start.new_zeros(B, K)
+        # Subsymbolic term: the codebook-retrieval prior (the literal
+        # intent_boosts path), with the concept-content cosine as the
+        # no-codebook fallback.
+        subsym = self._codebook_retrieval_prior(
+            keys, codebook_rows, concept_q, intent_boosts)
+        if subsym is None:
+            subsym = self._cos(concept_q, keys)
+        cos_s = self._cos(symbol_q, keys)                    # symbolic term
+        subsym = zeros_bk if subsym is None else subsym.to(dtype)
+        cos_s = zeros_bk if cos_s is None else cos_s.to(dtype)
+        k_idx = (torch.arange(K, device=spans.device, dtype=dtype)
+                 .view(1, K).expand(B, K))
+        # Signed cursor distance (normalized): a learnable position feature.
+        dist = (k_idx - float(read_idx)) / float(max(K, 1))
+        feats = torch.stack(
+            [subsym, cos_s, start / Nf, end / Nf, extent / Nf, dist],
+            dim=-1)                                          # [B, K, 6]
+        logits = self.scorer(feats).squeeze(-1)              # [B, K]
+        # Shift bootstrap (non-learned): linear-decreasing among UNCONSUMED
+        # spans so the leftmost (k == read_idx = the next word) wins at init.
+        boot = -self.bootstrap * (k_idx - float(read_idx)).clamp_min(0.0)
+        logits = logits + boot
+        # Stochastic element: scale the PREFERENCE logits by
+        # superposition_scale(t) BEFORE masking (t=0 -> *1.0 -> byte-identical;
+        # t=1 -> flat preference). Scaling before the mask keeps the -1e9 mask
+        # intact at any temperature, so coverage holds even at full explore (the
+        # flat distribution is over the LEGAL candidates, never the consumed/pad
+        # ones).
+        logits = logits * self.superposition_scale(temperature)
+        # Monotonic / coverage mask: consumed (k < read_idx) and padding
+        # (extent 0) spans cannot be (re)selected.
+        consumed = k_idx < float(read_idx)
+        neg = logits.new_full((), -1e9)
+        masked = torch.where(consumed | (~real), neg, logits)  # [B, K]
+        alpha = torch.softmax(masked, dim=-1)                # [B, K]
+        sel_start = (alpha * start).sum(dim=-1) / Nf         # [B]
+        sel_end = (alpha * end).sum(dim=-1) / Nf
+        next_where = torch.stack([sel_start, sel_end], dim=-1)  # [B, 2]
+        ce_loss = None
+        if training and 0 <= int(read_idx) < K:
+            tgt_real = real[:, int(read_idx)]                # [B]
+            if bool(tgt_real.any()):
+                logp = torch.log_softmax(masked, dim=-1)     # [B, K]
+                nll = -logp[:, int(read_idx)]                # [B]
+                w = tgt_real.to(nll.dtype)
+                ce_loss = (nll * w).sum() / w.sum().clamp_min(1.0)
+        return next_where, ce_loss, alpha
+
+
+class GlobalAttention(nn.Module):
+    """Free, content/relation-driven attention over a TYPED, addressable space
+    (doc/specs/reading-attention.md "(B) Global attention"; orders.md §6 "Two
+    kinds of `.where`").
+
+    Where reading attention (A) is *local* (next-word, monotonic, supervised),
+    global attention is *free*: it ranges over a registry of **addressable
+    spaces** -- the input window, STM, LTM, and the symbol/whole codebook (the
+    meronomy + taxonomy inventory) -- each a ``[B, M, D]`` set of candidate keys
+    with a per-candidate normalized ``[start, end]`` bracket. ONE distribution
+    competes ACROSS all spaces (no monotonic mask -- it can land anywhere,
+    including the abstract relations that have no environmental `.where`),
+    emitting a **typed** ``.where`` (which space + the bracket) and a **soft-read
+    content** ``Σ αₖ·keyₖ``. Pointing the ``.where`` at the codebook/LTM is
+    *introspection / recall*; at the input window it is *reading / search* --
+    one mechanism, the type tag says which.
+
+    The **stochastic element** (the two-pass superposition ``temperature``,
+    :meth:`ReadingAttention.superposition_scale`) flattens the distribution on
+    the explore pass so a downstream task error -- NOT a next-word target --
+    can shape where free attention lands (it has no supervised signal to break
+    symmetry by itself; orders.md §6). Gradient stops at the keys: the
+    codebook/LTM rows are EMA/persistent and DETACHED upstream, so only the
+    scorer readout trains (the soft-read is differentiable through ``α`` only).
+    Gated ``<globalAttention>``; dark by default."""
+
+    SPACE_INPUT = 0
+    SPACE_STM = 1
+    SPACE_LTM = 2
+    SPACE_CODEBOOK = 3
+    _N_SPACES = 4
+    _N_FEATURES = 4   # cos(concept), cos(symbol), codebook boost, space id
+
+    def __init__(self, hidden=16):
+        super().__init__()
+        self.scorer = nn.Sequential(
+            nn.Linear(self._N_FEATURES, int(hidden)),
+            nn.ReLU(),
+            nn.Linear(int(hidden), 1),
+        )
+        # A learned per-space prior (which address space to prefer a priori).
+        self.space_bias = nn.Parameter(torch.zeros(self._N_SPACES))
+        # The CONSUMER gate (zero-init): how much of the soft-read to inject back
+        # into the answer (the head). Zero-init -> at init the consume is a no-op
+        # residual; the answer loss trains it (and, through the read, the scorer)
+        # to retrieve content that lowers the loss. Only used when the model's
+        # <globalAttentionConsume> gate is on.
+        self.consume_gate = nn.Parameter(torch.zeros(1))
+
+    def consume(self, symbols, content):
+        """Feed the soft-read ``content`` ``[B, Dc]`` back into the head input
+        ``symbols`` (``[B, N, D]`` or ``[B, D]``) as a zero-init gated residual
+        on the common leading width: ``symbols[..., :d] += gate · content``.
+
+        This closes global attention's loop (reading-attention.md "(B)"): the
+        answer/output loss backprops through ``symbols`` → ``content``
+        (``Σ αₖ·keyₖ``) → ``α`` → the scorer (+ this gate), so retrieval that
+        helps the answer is rewarded. The keys are detached upstream, so the
+        codebook / LTM / percept stores receive no gradient. Returns ``symbols``
+        unchanged when there is nothing to read."""
+        if (content is None or not torch.is_tensor(content)
+                or symbols is None or not torch.is_tensor(symbols)):
+            return symbols
+        d = min(int(symbols.shape[-1]), int(content.shape[-1]))
+        if d == 0:
+            return symbols
+        add = self.consume_gate * content[..., :d].to(symbols.dtype)   # [B, d]
+        if symbols.dim() == 3:
+            add = add.unsqueeze(1)                                     # [B,1,d]
+        out = symbols.clone()
+        out[..., :d] = out[..., :d] + add
+        return out
+
+    @staticmethod
+    def _cos_keys(q, keys, shared):
+        """Row-wise cosine of a query ``[B, Dc]`` against ``keys`` -- ``[M, Dc]``
+        when ``shared`` (one store for the whole batch -- codebook / LTM; a
+        matmul, NO ``[B, M, Dc]`` materialization) or ``[B, M, Dc]`` per-batch
+        (input / STM). Returns ``[B, M]`` (or ``None`` when ``q`` is absent)."""
+        if q is None:
+            return None
+        qn = q / q.norm(dim=-1, keepdim=True).clamp_min(1e-12)      # [B, Dc]
+        kn = keys / keys.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        if shared:
+            return qn @ kn.t()                                     # [B, M]
+        return torch.einsum('bd,bmd->bm', qn, kn)                  # [B, M]
+
+    def forward(self, *, concept_q, symbol_q, spaces, temperature=0.0):
+        """Score and select across the addressable ``spaces``.
+
+        ``spaces`` is a list of dicts, each describing one address space:
+          * ``id``    -- the space-type id (``SPACE_INPUT`` / ``_STM`` /
+                         ``_LTM`` / ``_CODEBOOK``);
+          * ``keys``  -- candidate content, DETACHED upstream: ``[M, D]`` for a
+                         SHARED store (codebook / LTM -- matmul'd, never
+                         broadcast to ``[B, M, D]``) or ``[B, M, D]`` per-batch
+                         (input window / STM);
+          * ``where`` -- ``[B, M, 2]`` or ``[M, 2]`` normalized brackets;
+          * ``boosts``-- ``[M]`` per-row intent boosts (codebook only) or None;
+          * ``valid`` -- ``[B, M]`` / ``[M]`` bool mask of real candidates.
+
+        Returns ``None`` when no space has candidates, else a dict:
+          ``space_id`` ``[B]``, ``where`` ``[B, 2]``, ``content`` ``[B, Dc]``
+          (the soft read), ``alpha`` ``[B, Mtot]``, ``space_of`` ``[Mtot]``."""
+        if not spaces:
+            return None
+        usable = []
+        for s in spaces:
+            k = s.get("keys")
+            if (k is not None and torch.is_tensor(k) and k.dim() in (2, 3)
+                    and int(k.shape[-2]) > 0):
+                usable.append(s)
+        if not usable:
+            return None
+        # Batch size from a per-batch space, else from the query, else 1.
+        B = 1
+        for s in usable:
+            if s["keys"].dim() == 3:
+                B = int(s["keys"].shape[0]); break
+        else:
+            if concept_q is not None:
+                B = int(concept_q.shape[0])
+            elif symbol_q is not None:
+                B = int(symbol_q.shape[0])
+        # Common content width (input/STM/LTM/codebook differ, e.g. 1024 vs
+        # 1020) -- slice to the min so the per-space soft reads sum cleanly.
+        Dc = min(int(s["keys"].shape[-1]) for s in usable)
+        if concept_q is not None:
+            Dc = min(Dc, int(concept_q.shape[-1]))
+        if symbol_q is not None:
+            Dc = min(Dc, int(symbol_q.shape[-1]))
+        if Dc <= 0:
+            return None
+        cq = None if concept_q is None else concept_q.detach()[..., :Dc]
+        sq = None if symbol_q is None else symbol_q.detach()[..., :Dc]
+        dtype = usable[0]["keys"].dtype
+        dev = usable[0]["keys"].device
+        prepared, logit_parts, where_parts, valid_parts, space_ids = (
+            [], [], [], [], [])
+        for s in usable:
+            keys = s["keys"].detach()[..., :Dc]
+            shared = (keys.dim() == 2)
+            M = int(keys.shape[0] if shared else keys.shape[1])
+            sid = int(s["id"])
+            zeros_bm = torch.zeros(B, M, dtype=dtype, device=dev)
+            cos_c = self._cos_keys(cq, keys, shared)
+            cos_s = self._cos_keys(sq, keys, shared)
+            cos_c = zeros_bm if cos_c is None else cos_c.to(dtype)
+            cos_s = zeros_bm if cos_s is None else cos_s.to(dtype)
+            boosts = s.get("boosts")
+            if boosts is not None and torch.is_tensor(boosts):
+                bv = boosts.detach().to(dtype)
+                if bv.shape[0] >= M:
+                    bv = bv[:M]
+                else:
+                    bv = torch.cat([bv, bv.new_zeros(M - bv.shape[0])])
+                boost_feat = bv.view(1, M).expand(B, M)
+            else:
+                boost_feat = zeros_bm
+            sid_feat = torch.full((B, M), sid / max(self._N_SPACES - 1, 1),
+                                  dtype=dtype, device=dev)
+            feats = torch.stack([cos_c, cos_s, boost_feat, sid_feat], dim=-1)
+            logit = self.scorer(feats).squeeze(-1) + self.space_bias[sid]
+            where = s.get("where")
+            if where is None or not torch.is_tensor(where):
+                idx = torch.arange(M, device=dev, dtype=dtype)
+                where = torch.stack([idx / M, (idx + 1) / M], dim=-1)  # [M, 2]
+            where = where.to(dtype)
+            if where.dim() == 2:
+                where = where.view(1, M, 2).expand(B, M, 2)
+            valid = s.get("valid")
+            if valid is None:
+                valid = torch.ones(B, M, dtype=torch.bool, device=dev)
+            else:
+                valid = valid.to(torch.bool)
+                if valid.dim() == 1:
+                    valid = valid.view(1, M).expand(B, M)
+            prepared.append((keys, shared, M))
+            logit_parts.append(logit)
+            where_parts.append(where)
+            valid_parts.append(valid)
+            space_ids.append(torch.full((M,), sid, dtype=torch.long, device=dev))
+        logits = torch.cat(logit_parts, dim=1)               # [B, Mtot]
+        where_all = torch.cat(where_parts, dim=1)            # [B, Mtot, 2]
+        valid_all = torch.cat(valid_parts, dim=1)            # [B, Mtot]
+        space_of = torch.cat(space_ids, dim=0)               # [Mtot]
+        # Stochastic element: scale the PREFERENCE before masking (t=0 -> sharp;
+        # t=1 -> flat over the LEGAL candidates -- the explorer).
+        logits = logits * ReadingAttention.superposition_scale(temperature)
+        neg = logits.new_full((), -1e9)
+        masked = torch.where(valid_all, logits, neg)
+        alpha = torch.softmax(masked, dim=-1)                # [B, Mtot]
+        # Soft read accumulated PER SPACE (so a shared store stays [M, Dc] and
+        # is matmul'd, never broadcast to [B, M, Dc]).
+        content = torch.zeros(B, Dc, dtype=alpha.dtype, device=dev)
+        off = 0
+        for keys, shared, M in prepared:
+            a_s = alpha[:, off:off + M]                      # [B, M]
+            if shared:
+                content = content + a_s @ keys               # [B,M]@[M,Dc]
+            else:
+                content = content + torch.einsum('bm,bmd->bd', a_s, keys)
+            off += M
+        sel = alpha.argmax(dim=-1)                           # [B]
+        space_id = space_of.to(dev)[sel]                     # [B]
+        where_sel = where_all[torch.arange(B, device=dev), sel]   # [B, 2]
+        return {
+            "space_id": space_id,
+            "where": where_sel,
+            "content": content,
+            "alpha": alpha,
+            "space_of": space_of,
+        }
+
+
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, IntraSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 from workarounds import Workarounds

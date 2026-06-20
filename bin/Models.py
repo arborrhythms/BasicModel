@@ -79,6 +79,7 @@ from typing import List
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace, ShortTermMemory
+from Spaces import ReadingAttention, GlobalAttention
 # ``normalize_codebook_mode`` moved onto ``Space`` as a staticmethod
 # (2026-05-21) so the parsing logic stays namespaced; callers below
 # read it as ``Space.normalize_codebook_mode(...)``.
@@ -740,6 +741,48 @@ class BaseModel(Mereology, nn.Module):
         self.mereology_raise = bool(TheXMLConfig.get(
             "architecture.mereologyRaise", default=False))
 
+        # Reading attention (doc/specs/reading-attention.md "(A) Reading
+        # attention"). When on, a learned `.where` producer runs at each t>0
+        # subsymbolic pass and writes ``_passback_scope_where`` on the stage-0
+        # WholeSpace -- the producer of the scope the <mereologyRaise> handoff
+        # already consumes. The producer is a small dimension-agnostic MLP over
+        # detached cosine-retrieval + span-geometry features (its widths are
+        # not needed, so it is built here, AFTER ``self.create``). Registered
+        # as a submodule (rides the state_dict); its readout params are added
+        # to the optimizer in ``getOptimizer`` (the spaces walk misses it).
+        # Default off -> ``self.reading_attention`` stays None: no module, no
+        # scope, no loss (byte-identical).
+        self.reading_attention_enabled = bool(TheXMLConfig.get(
+            "architecture.readingAttention", default=False))
+        self.reading_attention = (ReadingAttention()
+                                  if self.reading_attention_enabled else None)
+
+        # Global attention (doc/specs/reading-attention.md "(B) Global
+        # attention"). When on, a free, content/relation-driven attention ranges
+        # over a TYPED addressable space -- the input window, STM, LTM, and the
+        # symbol/whole codebook -- emitting a typed `.where` + a soft-read of the
+        # addressed content (parked on ``_global_attention_obs``). It REQUIRES
+        # the stochastic element (the two-pass ``exploreTemperature``) to explore
+        # -- with no next-word target it cannot break symmetry by itself. Dark by
+        # default: no module, no obs, output unchanged (the soft-read is parked,
+        # not yet fed back -- the consumer is a later slice). Byte-identical off.
+        self.global_attention_enabled = bool(TheXMLConfig.get(
+            "architecture.globalAttention", default=False))
+        self.global_attention = (GlobalAttention()
+                                 if self.global_attention_enabled else None)
+
+        # Global-attention CONSUMER (doc/specs/reading-attention.md "(B)"; Alec:
+        # close the loop). When on, the parked soft-read is fed BACK into the
+        # head (``Finish``) as a zero-init gated residual, so the answer/output
+        # loss trains the retrieval (gradient through the read -> alpha -> the
+        # scorer). Requires <globalAttention>. Default off -> the soft-read stays
+        # parked (B unchanged) -> byte-identical. This is the retrieval-augmented
+        # answer mechanism for training-stages.md stages 4-5; the LTM address
+        # space IS the parsed TruthSet (``ltm_store``), so "reading over the
+        # TruthSet in LTM" is the SPACE_LTM read fed back here.
+        self.global_attention_consume = bool(TheXMLConfig.get(
+            "architecture.globalAttentionConsume", default=False))
+
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
         # on (serial only), the per-word body HARD-MASKS each step to the active
@@ -957,6 +1000,18 @@ class BaseModel(Mereology, nn.Module):
                 if p.data_ptr() not in seen:
                     seen.add(p.data_ptr())
                     params.append(p)
+        # Reading / global attention (doc/specs/reading-attention.md): the
+        # learned attention readouts are model-level nn.Modules (NOT Spaces), so
+        # the ``self.spaces`` walk above misses their params -- collect them
+        # explicitly (deduped). Absent / gate-off => the attr is None => no
+        # extra params => byte-identical optimizer state.
+        for _att_name in ("reading_attention", "global_attention"):
+            _att = getattr(self, _att_name, None)
+            if _att is not None:
+                for p in _att.parameters():
+                    if p.requires_grad and p.data_ptr() not in seen:
+                        seen.add(p.data_ptr())
+                        params.append(p)
         # A4 (2026-06-06 parallel-conceptual-recurrence): the per-stage
         # ConceptualCombine is HELD BY its ConceptualSpace (registered in
         # ``cs.layers`` + ``cs.params`` at build time), so the ``self.spaces``
@@ -3424,6 +3479,11 @@ class BasicModel(BaseModel):
             _ss._staged_analysis_spans = None
         self._staged_intersentence_seed = None
         self._intersentence_seed_staged = False
+        # Drop the global-attention soft-read (consume-once; the consumer in
+        # Finish read it earlier this forward) so a stale obs can never leak
+        # into the next forward's head.
+        if getattr(self, "global_attention", None) is not None:
+            self._global_attention_obs = None
         disc = (self.symbolicSpace.discourse
                 if self.symbolicSpace is not None else None)
         if disc is not None:
@@ -3585,6 +3645,11 @@ class BasicModel(BaseModel):
             layers.append(stm)
         for layer in layers:
             layer.superposition_temperature = temperature
+        # Stash model-level too so the attention selection (ReadingAttention /
+        # GlobalAttention) honours the SAME two-pass temperature as the grammar
+        # chooser: pass A (t=0/None) -> superposition_scale 1 -> sharp/exploit
+        # (byte-identical); pass B (t=exploreTemperature) -> flatter -> explore.
+        self._superposition_temperature = temperature
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
@@ -6292,6 +6357,23 @@ class BasicModel(BaseModel):
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
                 ps_t = PS_sub_stage0
+                if (getattr(self, "reading_attention", None) is not None
+                        and t > 0):
+                    # Reading attention (doc/specs/reading-attention.md
+                    # "(A) Reading attention"): the learned `.where` producer
+                    # writes ``wholeSpaces[0]._passback_scope_where`` for the
+                    # handoff below to consume + adds the next-word CE loss to
+                    # CS_sub.errors. Runs BEFORE _passback_scope_ps so the
+                    # "scoped" branch picks up the freshly-produced scope.
+                    self._reading_attention_step(
+                        t, prevCS_forSS, PS_sub_stage0, CS_sub)
+                if (getattr(self, "global_attention", None) is not None
+                        and t > 0):
+                    # Global attention (doc/specs/reading-attention.md "(B)"):
+                    # free attention over the typed addressable space (input /
+                    # STM / LTM / codebook); parks the typed `.where` + soft-read
+                    # on _global_attention_obs. Dark (parked, not fed back).
+                    self._global_attention_step(prevCS_forSS, PS_sub_stage0)
                 if (getattr(self, "mereology_raise", False)
                         and t > 0 and not prevCS_forSS.is_empty()):
                     # Top-down attention handoff (doc/specs/mereological-order-
@@ -7804,6 +7886,198 @@ class BasicModel(BaseModel):
     # generalization step now lives IN the combine (option B, on the full
     # muxed event), not in a separate content-only operator.
 
+    @torch.compiler.disable
+    def _reading_attention_step(self, t, prevCS_forSS, ps_stage0, cs_sub):
+        """Run the reading-attention producer for a ``t>0`` subsymbolic pass
+        (doc/specs/reading-attention.md "(A) Reading attention").
+
+        Writes the next reading scope to ``wholeSpaces[0]._passback_scope_where``
+        (the producer of the ``.where`` the ``<mereologyRaise>`` handoff
+        consumes) and -- in text mode (``dataType`` embedding) training -- adds
+        the next-word cross-entropy term to ``cs_sub.errors``. Teacher forcing:
+        the WRITTEN scope is the TRUE next span during training (so PartSpace
+        reads the right word while the producer learns to predict it) and the
+        producer's own soft prediction at inference (free-run). The handoff
+        collapses the batch to one span, so the write is the mean over the rows
+        whose next-word target is a real (non-pad) span.
+
+        Gated: caller only calls this when ``self.reading_attention`` is present
+        (``<readingAttention>``) and ``t>0`` (pass 0 is wide-open). Byte mode
+        stages no spans -> no-op. ``@torch.compiler.disable``'d (it materializes
+        + reads shapes host-side, like ``_ss_compose_eager``): under a compiled
+        config with reading attention on it graph-breaks cleanly at the call
+        rather than failing inside ``materialize()``; default-off configs never
+        reach it, so the compiled default path is byte-identical."""
+        ra = self.reading_attention
+        wss = getattr(self, "wholeSpaces", None)
+        ws0 = wss[0] if wss else None
+        if ra is None or ws0 is None or int(t) <= 0:
+            return
+        spans = getattr(ws0, "_staged_analysis_spans", None)
+        if spans is None or not torch.is_tensor(spans):
+            return
+        percept_ev = (ps_stage0.materialize()
+                      if ps_stage0 is not None else None)
+        if (percept_ev is None or not torch.is_tensor(percept_ev)
+                or percept_ev.dim() != 3 or int(percept_ev.shape[1]) == 0):
+            return
+        N = int(percept_ev.shape[1])
+        # query: the prior pass's concept (subsymbolic / mereological
+        # retrieval term) + the active STM symbols (the symbolic term).
+        # Both DETACHED inside ReadingAttention -- the grad stops here.
+        concept_q = ReadingAttention._pool(prevCS_forSS)
+        stm = (self.conceptualSpace.stm
+               if self.conceptualSpace is not None else None)
+        stm_snap = stm.snapshot(detach=True) if stm is not None else None
+        symbol_q = ReadingAttention._pool(stm_snap)
+        # Subsymbolic retrieval index: the PERCEPT codebook (PartSpace) -- the
+        # span content snaps to its prototypes, weighted by the intent boosts
+        # (the literal intent_boosts / selection_boost_fn path). The boosts are
+        # the tower's primed-intent state when set (e.g. by the sentence
+        # protocol), else derived from the concept inside the module. None when
+        # the space carries no codebook -> the concept-content cosine fallback.
+        cb_rows, cb_boosts = None, None
+        ps_space = getattr(self, "perceptualSpace", None)
+        ps_sub = getattr(ps_space, "subspace", None) if ps_space else None
+        cb = (ps_sub.codebook()
+              if ps_sub is not None and hasattr(ps_sub, "codebook") else None)
+        getW = getattr(cb, "getW", None) if cb is not None else None
+        if callable(getW):
+            cb_rows = getW()
+            if cb_rows is not None:
+                cb_boosts = ps_space.intent_boosts()
+        read_idx = int(t) - 1     # pass t reads word (t-1), left to right
+        # Stochastic element: the two-pass superposition temperature (None/0 on
+        # an ordinary pass -> byte-identical; exploreTemperature on pass B).
+        temp = getattr(self, "_superposition_temperature", None) or 0.0
+        next_where, ce_loss, _ = ra(
+            concept_q=concept_q, symbol_q=symbol_q, percept_ev=percept_ev,
+            spans=spans, read_idx=read_idx, N=N, training=bool(self.training),
+            codebook_rows=cb_rows, intent_boosts=cb_boosts, temperature=temp)
+        if next_where is None:
+            object.__setattr__(ws0, "_passback_scope_where", None)
+            return
+        # Scope write (consumed by the <mereologyRaise> handoff). Fresh each
+        # pass; None when the read cursor has run past the last word (no next
+        # word to scope) so the handoff falls back to its route_hint/noop.
+        K = int(spans.shape[1])
+        Nf = float(max(N, 1))
+        scope = None
+        if 0 <= read_idx < K:
+            spans_f = spans.to(percept_ev.dtype)
+            real = (spans_f[:, read_idx, 1]
+                    - spans_f[:, read_idx, 0]).clamp_min(0.0) > 0    # [B]
+            if bool(real.any()):
+                scope_bk = (spans_f[:, read_idx, :] / Nf
+                            if self.training else next_where)        # [B, 2]
+                w = real.to(scope_bk.dtype).unsqueeze(-1)            # [B, 1]
+                scope = ((scope_bk * w).sum(dim=0)
+                         / w.sum().clamp_min(1.0)).reshape(-1).detach()
+        object.__setattr__(ws0, "_passback_scope_where", scope)
+        # Text-mode (embedding) next-word CE. Trains the producer readout
+        # only (the codebooks stay EMA-only -- the loss graph touches no VQ).
+        if (ce_loss is not None and self.training
+                and getattr(self, "model_type", None) == "embedding"
+                and cs_sub is not None and hasattr(cs_sub, "errors")):
+            cs_sub.errors.add(
+                "reading_attention", ce_loss, weight=1.0,
+                space="ConceptualSpace", category="symbol")
+
+    @torch.compiler.disable
+    def _addressable_spaces(self, prevCS_forSS, ps_stage0):
+        """Gather the TYPED addressable spaces global attention ranges over
+        (doc/specs/reading-attention.md "(B)"; Alec: input window / STM / LTM /
+        symbolic codebook). Each entry is a ``GlobalAttention`` space dict with
+        DETACHED keys -- per-batch ``[B, M, D]`` (input window, STM) or shared
+        ``[M, D]`` (LTM, codebook). Absent spaces are simply omitted."""
+        GA = GlobalAttention
+        spaces = []
+        # INPUT window: the staged word brackets pooled to per-span percept
+        # content (the same keys reading uses); else the per-slot percept.
+        ws0 = (self.wholeSpaces[0]
+               if getattr(self, "wholeSpaces", None) else None)
+        percept_ev = (ps_stage0.materialize()
+                      if ps_stage0 is not None else None)
+        if (percept_ev is not None and torch.is_tensor(percept_ev)
+                and percept_ev.dim() == 3 and int(percept_ev.shape[1]) > 0):
+            N = int(percept_ev.shape[1])
+            spans = getattr(ws0, "_staged_analysis_spans", None) if ws0 else None
+            if spans is not None and torch.is_tensor(spans):
+                keys = ReadingAttention._span_keys(percept_ev, spans)  # [B,K,D]
+                spans_f = spans.to(percept_ev.dtype)
+                where = (spans_f / float(max(N, 1)))[..., :2]          # [B,K,2]
+                valid = (spans_f[..., 1] - spans_f[..., 0]).clamp_min(0.0) > 0
+                spaces.append({"id": GA.SPACE_INPUT, "keys": keys.detach(),
+                               "where": where.detach(), "valid": valid})
+            else:
+                spaces.append({"id": GA.SPACE_INPUT,
+                               "keys": percept_ev.detach()})
+        # STM: the live short-term-memory rows.
+        stm = (self.conceptualSpace.stm
+               if self.conceptualSpace is not None else None)
+        stm_snap = stm.snapshot(detach=True) if stm is not None else None
+        if (stm_snap is not None and torch.is_tensor(stm_snap)
+                and stm_snap.dim() == 3 and int(stm_snap.shape[1]) > 0):
+            spaces.append({"id": GA.SPACE_STM, "keys": stm_snap})
+        # LTM: the consolidated TernaryTruthStore rows (present only under
+        # <ltmConsolidation>); pool the three idea slots to one content key.
+        ss = getattr(self, "symbolicSpace", None)
+        ltm = getattr(ss, "ltm_store", None) if ss is not None else None
+        if ltm is not None and hasattr(ltm, "slots"):
+            cnt = int(getattr(ltm, "count", torch.tensor(0)).item()) \
+                if torch.is_tensor(getattr(ltm, "count", None)) else 0
+            if cnt > 0:
+                rows = ltm.slots[:cnt].detach().mean(dim=1)            # [M, D]
+                spaces.append({"id": GA.SPACE_LTM, "keys": rows})
+        # CODEBOOK: the symbol/whole codebook (meronomy+taxonomy) when present,
+        # else the percept codebook; boosts = the codebook-retrieval prior.
+        cb_rows, cb_boosts = None, None
+        concept_q = ReadingAttention._pool(prevCS_forSS)
+        for _sp in (ws0, getattr(self, "perceptualSpace", None)):
+            sub = getattr(_sp, "subspace", None) if _sp is not None else None
+            cb = (sub.codebook()
+                  if sub is not None and hasattr(sub, "codebook") else None)
+            getW = getattr(cb, "getW", None) if cb is not None else None
+            if callable(getW):
+                cb_rows = getW()
+                if cb_rows is not None:
+                    cb_boosts = _sp.intent_boosts()
+                    if cb_boosts is None and concept_q is not None:
+                        from Spaces import intent_priming_weights
+                        cb_boosts = intent_priming_weights(
+                            concept_q.detach(), cb_rows)
+                    break
+        if cb_rows is not None and torch.is_tensor(cb_rows):
+            spaces.append({"id": GA.SPACE_CODEBOOK, "keys": cb_rows.detach(),
+                           "boosts": cb_boosts})
+        return spaces, concept_q
+
+    @torch.compiler.disable
+    def _global_attention_step(self, prevCS_forSS, ps_stage0):
+        """Run free global attention over the typed addressable space
+        (doc/specs/reading-attention.md "(B) Global attention") and PARK the
+        result on ``self._global_attention_obs`` (a typed ``.where`` + the
+        soft-read content). Dark: the read is parked, NOT fed back into the
+        output -- the consumer is a later slice -- so the forward is
+        byte-identical with the flag on. Gated <globalAttention> (caller checks
+        the module is present). ``@torch.compiler.disable``'d (host-side gather,
+        like reading)."""
+        ga = self.global_attention
+        if ga is None:
+            return
+        spaces, concept_q = self._addressable_spaces(prevCS_forSS, ps_stage0)
+        if not spaces:
+            object.__setattr__(self, "_global_attention_obs", None)
+            return
+        stm = (self.conceptualSpace.stm
+               if self.conceptualSpace is not None else None)
+        symbol_q = ReadingAttention._pool(
+            stm.snapshot(detach=True) if stm is not None else None)
+        temp = getattr(self, "_superposition_temperature", None) or 0.0
+        obs = ga(concept_q=concept_q, symbol_q=symbol_q, spaces=spaces,
+                 temperature=temp)
+        object.__setattr__(self, "_global_attention_obs", obs)
+
     def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS):
         """Apply the WS->PS top-down pass-back to choose PartSpace's input for a
         ``t>0`` subsymbolic pass (doc/specs/mereological-order-raising.md "the
@@ -8383,8 +8657,41 @@ class BasicModel(BaseModel):
         # ``runBatch``). Chart-at-C reads ``ConceptualSpace.stm``.
         body_sub = self._forward_body(in_sub)
 
-        # Head: outputSpace -> ``[B, N, predDim]``.
-        head_sub = self._forward_head(body_sub)
+        # Global-attention CONSUMER (doc/specs/reading-attention.md "(B)"; Alec):
+        # feed the parked soft-read back into the HEAD input as a zero-init gated
+        # residual, so the answer/output loss trains the retrieval (gradient
+        # through the read -> alpha -> the scorer). Gated <globalAttentionConsume>.
+        # The head reads ``body_sub`` -- which the REVERSE also reads (it is
+        # ``_combine_last_cs_sub``) -- so apply the consume on a SWAPPED event
+        # only for the head, then restore the original so reconstruction is
+        # untouched. Off / no parked read -> body_sub unchanged (byte-identical).
+        _restore_ev = None
+        if (getattr(self, "global_attention_consume", False)
+                and getattr(self, "global_attention", None) is not None
+                and body_sub is not None and hasattr(body_sub, "materialize")):
+            obs = getattr(self, "_global_attention_obs", None)
+            ev = body_sub.materialize()
+            if (obs is not None and obs.get("content") is not None
+                    and ev is not None and torch.is_tensor(ev)):
+                consumed = self.global_attention.consume(ev, obs["content"])
+                if consumed is not ev:
+                    # ``consume`` CLONES (does not mutate ``ev``), so the
+                    # ORIGINAL muxed event is ``ev`` itself -- save it and
+                    # restore via ``set_event`` (the event lives on
+                    # ``body_sub.event.W``, not a ``_event`` attribute, so a
+                    # getattr-based snapshot would be dead code and leave the
+                    # consumed event for the reverse to read).
+                    _restore_ev = ev
+                    body_sub.set_event(consumed)
+
+        # Head: outputSpace -> ``[B, N, predDim]``. The restore is in a finally
+        # so the pre-consume carrier is ALWAYS put back for the reverse /
+        # reconstruction, even if the head raises.
+        try:
+            head_sub = self._forward_head(body_sub)
+        finally:
+            if _restore_ev is not None:
+                body_sub.set_event(_restore_ev)
         pred = head_sub.materialize() if head_sub is not None else None
         if pred is not None:
             pred = self.normalizer.denormalize(pred, which="output")

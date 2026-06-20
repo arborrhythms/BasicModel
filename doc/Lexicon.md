@@ -26,7 +26,7 @@
 >   `XOR_exact.xml` turn off the PS-side VQ snap so the butterfly
 >   cascade weights actually train. The orthographic Lexicon
 >   Embedding remains live; only the VQ snap on top is retired.
-> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 The Lexicon's narrative description and distance math have moved into
 [Spaces.md --- Lexicon (Projective Unit Ball)](Spaces.md#lexicon-projective-unit-ball),

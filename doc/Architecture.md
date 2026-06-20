@@ -71,11 +71,11 @@ no anonymous global residual stream.
 >   variance tracking; rows whose running variance exceeds a
 >   threshold split along the top-variance eigendirection.
 >
-> See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md)
+> See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md)
 > for the consolidated rationale.
 
 > **Status (2026-05-27):** the **substrate refactor** has landed end-to-end
-> ([doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md)).
+> ([doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md)).
 > PS is a single-arg input processor (pi + sigma). CS is a STM container +
 > grammatical CPU (no atomic forward fold; sigma_percept retired). SS owns
 > the unified word lexicon codebook with paired (orth, semantic) rows. The
@@ -142,7 +142,7 @@ much lower dimensionality). The freed name `SymbolicSpace` was
 **reintroduced 2026-06-19** with new semantics — it is now the
 grammar/word tier (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
 the WholeSpace stream is now `ws`). See the full rename mapping in
-`doc/plans/2026-06-19-handoff.md`.
+`doc/old/2026-06-19-handoff.md`.
 
 The corpus callosum **builds a single meronomy out of the two towers**: a part
 `A` (PartSpace) and a whole `B` (WholeSpace) carry `.what` codes from different
@@ -154,7 +154,7 @@ is bridged by a **second-order meta-object** (synthesized in PartSpace, outside
 ratio** (many-parts→one-whole = under-analysed; one-part→one-whole = over-analysed),
 which requests further σ-synthesis / π-analysis in the offending `.where` — and is
 the principled fix for the MM_20M mean-collapse. Full design:
-[doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
+[doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
 ### Spaces
 
@@ -162,7 +162,7 @@ the principled fix for the MM_20M mean-collapse. Full design:
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
-| **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~7) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~8) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -281,7 +281,7 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    perception builds a meronymic lattice over the towers and **raises
    abstraction order** as attention requires — see
    [Mereology.md → Order-raising](Mereology.md) and
-   [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
+   [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
 2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
    codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
@@ -302,7 +302,7 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    > out of `.where`/`.when`); a *zero* `.where` → null. The number of contiguous
    > runs in a whole's `.where` *is* its part/whole ratio, so the same read also
    > routes integrate-vs-disintegrate (→PartSpace σ vs →WholeSpace π). See
-   > [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md)
+   > [doc/old/mereological-order-raising.md](old/mereological-order-raising.md)
    > "The three-aspect loop". As of 2026-06-16 the contiguity read has its
    > substrate: `.where` / `.when` are **endpoint-sum brackets** `[start, end]`
    > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
@@ -319,7 +319,7 @@ So: granularity is intrinsic to the folds, subsymbolic order iterates the
 subsymbolic passes (composing symbols), and symbolic order is the serial
 grammatical loop over words.
 
-> **Spec: [doc/specs/orders.md](specs/orders.md) (resolved 2026-06-19).** The
+> **Spec: [doc/old/orders.md](old/orders.md) (resolved 2026-06-19).** The
 > three order axes now have a precise, separate spec — semantics, bound, and how
 > they compose. In brief:
 >
@@ -328,7 +328,7 @@ grammatical loop over words.
 >   *refines* (contiguous `.where`) or *raises* (discontiguous), and attention
 >   scopes via a `.where` on the dual-input SECOND ARGUMENT (the top-down WS→PS
 >   handoff, gated `<mereologyRaise>`; see
->   [mereological-order-raising.md](specs/mereological-order-raising.md)). The
+>   [mereological-order-raising.md](old/mereological-order-raising.md)). The
 >   serial-word reading supplies word `.where`s through the **same** channel.
 > - **`symbolicOrder`** — **parallel whole-slab** (`0`) vs **serial σ/π
 >   abstraction** (`≥1`). More than a parallel-vs-serial switch: the serial σ/π
@@ -349,7 +349,7 @@ grammatical loop over words.
 > leaves are words). `syntacticOrder` **layers over** the serial `symbolicOrder`
 > loop (it bounds depth; it does not replace the parallel-vs-serial switch).
 >
-> **Where this is headed ([orders.md §6](specs/orders.md), design):** the three
+> **Where this is headed ([orders.md §6](old/orders.md), design):** the three
 > orders become **pump counts** over one connectionist attention substrate — a
 > cumulative priming hierarchy (mereological entries → relations/concepts →
 > higher-order, each seeing all below) where reading is a learned `.where`

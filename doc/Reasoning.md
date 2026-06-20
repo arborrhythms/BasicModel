@@ -9,7 +9,7 @@
 > rows to walk and falls back to the lossy `(parent, parent)`
 > pseudo-inverse — degrading the reasoning loop's structural recovery
 > on multi-stage chart parses. See
-> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 Four methods on `BaseModel` for truth-aware inference, a bidirectional
 reasoning loop, and a grammar learning mode. Builds on the TruthLayer
@@ -192,7 +192,7 @@ object grammar plus spatiotemporal contiguity. Every `conjunction` /
 active percepts at once; rejects scattered object fields, not multi-percept
 fields. See
 [Language.md](Language.md) Section Shamatha Speech Mode and
-[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md).
+[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](old/2026-04-28-shamatha-speech-contiguity-handoff.md).
 
 ## Testing
 

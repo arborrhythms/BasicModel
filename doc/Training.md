@@ -18,7 +18,7 @@
 > - **Supervised output loss restored.** `bin/Models.py::train_loop`
 >   computes MSE on the supervised output in addition to the
 >   reconstruction loss (`reconstructionScale`-weighted).
-> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Overview
 
@@ -29,6 +29,49 @@ sentences.
 
 The two phases can overlap: `<trainEmbedding>` controls whether and how
 embeddings continue to evolve during network training.
+
+---
+
+## The staged objective curriculum
+
+Network training climbs five objectives, from substrate-building reconstruction
+to deliberate question answering. The order is not arbitrary — it is the
+architecture's **two learning rules** in their natural developmental order:
+
+- **EMA / occurrence** moves the codebooks: concepts form by being *seen*, with
+  no gradient and no goal. This is *prediction as substrate* — unconscious,
+  statistical, **System 1**. You cannot ask "why did the empire fall?" until
+  *empire* and *fall* are codebook rows, and those are EMA-built by exposure.
+- **Gradient on a task error** moves the attention readouts and the relation
+  store: the model learns *where to look* and *what relates to what* by being
+  *tested* — directed, credit-assigned, **System 2**.
+
+So "bootstrap with prediction, then answer questions" is just the EMA
+substrate-builder running first and the gradient deliberate-layer on top (the
+§6c sentence protocol's *prime subsymbolically from what you see, then pump
+symbolically*). Reconstruction (stages 1–2) is the **gate**: a question can only
+be *answered* once an idea can be turned back into words, so the grammar-operation
+inverses those stages need are the load-bearing prerequisite for the whole
+curriculum.
+
+| stage | objective | trains | dominant rule | status |
+|---|---|---|---|---|
+| 1 | reconstruct, **keep syntax**, fill the missing **words** | the lexical/leaf inverse + the codebook (word↔slot) | EMA (System 1) | recon loss + codebook decode exist; masking + leaf fill to build. **Needs no new grammar inverses** (the kept parse tree drives the existing reverse). |
+| 2 | reconstruct with **no syntax / no words** (from the idea alone) | the full generative inverse (deliverable C) + abstraction | mixed | reverse path exists but is parse-tree-*dependent* → must be **decoupled** to drive from the primed symbolic space (attention) instead of `generate_rules`. |
+| 3 | predict the **next sentence** | the inter-sentence (discourse AR) predictor | EMA → gradient | exists (`<prediction>interSentence`). |
+| 4 | answer a question by **reasoning** (no search) | relations, modus ponens (`consequents()`), the catuṣkoṭi/trust | gradient (System 2) | the truth stores + `consequents` exist; the QA framing + consistency loss to build. |
+| 5 | answer a question by **LTM search** | global attention (the typed `.where`) + the soft-read fed back + the explorer | gradient (System 2) | global attention (B) built/dark; the consumer (feed the read back, train by the answer) + book paging are deferred. |
+
+Plain next-token/next-sentence prediction *under-trains this architecture's*
+retrieval and relation machinery (the local window usually suffices, so the
+separate global attention gets no reward); that is why prediction is the
+**substrate** here, not the goal — stages 4–5 train the deliberate layer, and the
+stochastic exploration finally earns its keep in stage 5 (search has only a
+distal reward, so it must explore to break symmetry).
+
+> Full design (with per-stage machinery, losses, and prerequisites):
+> `doc/old/training-stages.md`. The grammar-operation inverses stages 1–2 require
+> are enumerated in `doc/old/2026-06-19-grammar-inverses-handoff.md`.
 
 ---
 

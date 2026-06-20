@@ -10,7 +10,7 @@
 > scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
 > PS/SS shorthand in older notes reads part-side/whole-side. The freed
 > name `SymbolicSpace` was **reintroduced 2026-06-19** as the grammar/word
-> tier (formerly `WordSpace`); see `doc/plans/2026-06-19-handoff.md`.
+> tier (formerly `WordSpace`); see `doc/old/2026-06-19-handoff.md`.
 >
 > **At the corpus callosum, objects are analysed and synthesized** —
 > by sending them back to PerceptualSpace: wholes get split and parts
@@ -77,7 +77,7 @@
 
 > **2026-06-09 update (analysis/synthesis orientation — supersedes the
 > ownership notes below).** The corrected orientation
-> (doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev.
+> (doc/old/2026-06-08-analysis-synthesis-dual-input.md, rev.
 > 2026-06-09; see [Philosophy.md](Philosophy.md)):
 >
 > * **InputSpace emits the DUAL VIEW**: `forward(x) -> (percepts_in,
@@ -108,7 +108,7 @@
 > symbol/idea/`.where` namespace is untouched), `resolve_ps_terminal` /
 > `null_sem` (PS-to-SS binding), and `operator_superposition`. The PS
 > meronymic analyzer lives in `bin/perceptual_analyzer.py`. See
-> [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+> [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
 
 > **Status (2026-05-27):** updated for the substrate refactor. PS is a
 > single-arg input processor (`self.pi` + `self.sigma`). CS is an STM
@@ -568,7 +568,7 @@ scaled to `[-1, 1]` via the global data min/max.
 > `model.xml` carries the per-Space defaults (`<nWhere>2</nWhere>` on
 > InputSpace / PartSpace / WholeSpace, `0` elsewhere). Per-file
 > configs no longer declare them. See
-> [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
+> [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 
 **Invertibility.** Always non-invertible; reverse is a separate reconstruction
 using the span table.
@@ -758,7 +758,7 @@ No additive mixing across tiers; no residual lift; trivially invertible
 (read-back, no inverse-Sigma needed). The `STM_k = STM_{k-1} + SS_k`
 carry-forward variant was tested and reverted — the pure clean-stack
 form is the landing point. See
-[doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+[doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 Side effect: `sigma_in` / `sigma_cs` are dead-weight on the forward
 path (no gradient). Convergence on MM_xor continues via the PiLayer
@@ -864,7 +864,7 @@ That pattern is retired in Stage 4 of the substrate refactor.
 of the two-loop pi-sigma plan; the sigma half migrated to
 `ConceptualSpace.sigma_in` per stage. The 2026-05-29 clean-stack STM
 experiment further bypasses `sigma_in` on the forward path — see
-[doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).)
+[doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).)
 
 `LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
 subclasses**, each owning its own internal sub-layer for the pairwise
@@ -981,7 +981,7 @@ accommodate paired rows (e.g., MM_5M sets `nVectors=131072 = 2 * 65536`).
 **Multi-stage SS.** In multi-stage configs, the lexicon mirror is wired
 to **`self.wholeSpaces[-1]`** (the terminal stage; `model.wholeSpace`).
 The terminal SS must be sized for paired-row capacity. See
-[doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md)
+[doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md)
 for the dispatch rationale.
 
 **Conceptual order.** `BasicModel` stores per-stage

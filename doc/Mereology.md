@@ -51,7 +51,7 @@ fundamental operation, the five mereological relations, and the
 > reverse / signal-router dispatch (`bin/Language.py::unreduce()`)
 > passes `basis=tier_basis` at the call site; no back-ref is stored
 > on the layer. See
-> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 > **Codebook IS the meronymic structure.** The standalone
 > `MereologicalTree` sidecar that formerly stored explicit parent /
@@ -232,7 +232,7 @@ XML knobs (under WholeSpace):
 ## Order-raising (building the meronymic lattice)
 
 Gated behind `<mereologyRaise>` (default off → byte-identical). Full design +
-code map: [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md).
+code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
 The two towers stay **in-kind** — `PartSpace` σ *composes parts → parts*,
 `WholeSpace` π *analyses wholes → wholes* — and the **symbol (META node) is the

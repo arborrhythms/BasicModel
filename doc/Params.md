@@ -17,7 +17,7 @@ treat that as the same thing as `nOutput`.
 > `data/model.xml` carries per-Space defaults (`<nWhere>2</nWhere>` on
 > InputSpace / PartSpace / WholeSpace, `0` elsewhere). The
 > `.where` field is the canonical positional identifier; see
-> [doc/plans/2026-05-28-where-keyed-taxonomy.md](plans/2026-05-28-where-keyed-taxonomy.md).
+> [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 >
 > 2026-06-16: `.where` and `.when` are now **endpoint-sum brackets** `[start,
 > end]` (angle = span center, magnitude = extent), the invertible
@@ -46,13 +46,13 @@ sub-elements `<training>` and `<data>` (see below).
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolicSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Independent of `neuralToolUser`. Default off → one ordinary forward (byte-identical). See [Language.md → Soft-superposition route](Language.md). |
 | `exploreTemperature` | decimal | `0.5` | Superposition temperature $t \in [0,1]$ for pass B of `learning`. `0` = the chooser's own (sharp) softmax, `1` = uniform (flat). Route scores are scaled by `1 - t`. |
-| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [NeuralToolUser.md → MLP TransformChooser](plans/NeuralToolUser.md). |
+| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [NeuralToolUser.md → MLP TransformChooser](old/NeuralToolUser.md). |
 | `symbolicComposition` | bool | `false` | Cognitive op (2): at `subsymbolicOrder > 0`, re-feed the prior pass's symbolic carrier (`cs._subspaceForWS`) to PartSpace so Sigma composes higher-order symbols. Default off is byte-identical. See [Architecture.md](Architecture.md). |
-| `neuralToolUser` | bool | `false` | Legacy hard-parse executor for the grammar's binary reduce stage (`parse_greedy` route + cross-product distributions). **Superseded by the soft-superposition route (`learning`); off the live path.** See [NeuralToolUser.md](plans/NeuralToolUser.md). |
+| `neuralToolUser` | bool | `false` | Legacy hard-parse executor for the grammar's binary reduce stage (`parse_greedy` route + cross-product distributions). **Superseded by the soft-superposition route (`learning`); off the live path.** See [NeuralToolUser.md](old/NeuralToolUser.md). |
 | `categoryCodebook` | bool | `false` | MetaSymbol participation-category codebook: a small `VectorQuantize` over the live MetaSymbol vectors, learned in perception (E/M in the autobind hook), keying each word's syntactic category to its frequency of participation across operator roles. Default off → no codebook allocated (byte-identical). See [Language.md → Participation Categories](Language.md). |
 | `chooserCategoryContext` | bool | `false` | Phase 2 of `categoryCodebook`: thread the per-slot centroid role vector into `MLPTransformChooser` as syntactic-category context (widens its first `Linear`). Meaningful only with `transformChooser=mlp` + `categoryCodebook=true`. Default off → chooser ignores category (byte-identical). |
-| `verbEigEdit` | bool | `false` | Verb sparse eigenvalue edit on `lift(NP, VP)`: the verb edits the NP through a sparse residual `x₂ = x₁ + p_class ⊙ δ_v`, masked by the NP's own eigen-signature (no learned mask), zero-init so untrained = the sigma fold. Default off → byte-identical. See [doc/specs/semantic_verb_np_mask_eigenvalue_proposal.md](specs/semantic_verb_np_mask_eigenvalue_proposal.md). |
-| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off → no table, no raising (byte-identical). See [doc/specs/mereological-order-raising.md](specs/mereological-order-raising.md). |
+| `verbEigEdit` | bool | `false` | Verb sparse eigenvalue edit on `lift(NP, VP)`: the verb edits the NP through a sparse residual `x₂ = x₁ + p_class ⊙ δ_v`, masked by the NP's own eigen-signature (no learned mask), zero-init so untrained = the sigma fold. Default off → byte-identical. See [doc/old/semantic_verb_np_mask_eigenvalue_proposal.md](old/semantic_verb_np_mask_eigenvalue_proposal.md). |
+| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off → no table, no raising (byte-identical). See [doc/old/mereological-order-raising.md](old/mereological-order-raising.md). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -248,7 +248,7 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | `hasAttention` | bool | `true` | Attention reweighting of percepts before the Pi fold. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on WholeSpace as `<analysis>analyse`. |
-| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md](plans/2026-05-26-two-loop-pi-sigma-substrate.md). |
+| `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
 | `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
 
 Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The
@@ -285,7 +285,7 @@ Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md)
 > allocated and are still invoked on the reverse path, but their
 > parameters get no gradient on forward — they're dead weight under
 > the current experiment. See
-> [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ### `<WholeSpace>`
 

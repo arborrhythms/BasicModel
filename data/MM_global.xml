@@ -1,0 +1,115 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_global: DEDICATED global-attention experiment config
+       (doc/specs/reading-attention.md "(A) Reading attention"). Derived from
+       MM_mereology (the order-0 mereology sibling) and adds, on top of the
+       gated mereologyRaise handoff that CONSUMES the reading scope:
+
+         * readingAttention=true : the learned `.where` PRODUCER. At each t>0
+           subsymbolic pass it scores the staged analysis spans (the word
+           brackets) and writes wholeSpaces[0]._passback_scope_where (the
+           normalized [start, end] reading scope) for the handoff, and in text
+           mode (dataType embedding) training adds the next-word cross-entropy
+           term. A small MLP over DETACHED features (the gradient stops at the
+           primed symbols; the EMA-only VQ codebooks are untouched), with a
+           monotonic/coverage mask plus a shift bootstrap (init selects the next
+           span = the serial reading for-loop).
+
+         * WholeSpace analysis=word : so the eager stem stages the
+           whitespace-cut word brackets (_staged_analysis_spans) the producer
+           reads as its attention KEYS (byte mode stages no spans).
+
+       With readingAttention OFF this file behaves exactly like the analysis=word
+       variant of MM_mereology; the producer is the only behavioural delta (and
+       it is dark when no consumer is wired). NEVER mutate the shared MM_20M.xml;
+       flip knobs HERE. -->
+  <architecture>
+    <!-- parallel mereology: per-stage forward, no serial grammar loop. -->
+    <symbolicOrder>0</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- The mereologyRaise handoff CONSUMES the reading scope (the 4-case
+         WS to PS pass-back; the "scoped" case focuses PartSpace to the produced
+         [start, end] bracket). -->
+    <mereologyRaise>true</mereologyRaise>
+    <!-- The reading-attention PRODUCER (the learned `.where`). Default false
+         elsewhere gives no module, no scope, no loss (byte-identical). -->
+    <readingAttention>true</readingAttention>
+    <!-- (B) free attention over the typed addressable space: input window, STM,
+         LTM, and the symbol/whole codebook. Parks a typed .where + soft-read on
+         _global_attention_obs (dark: not fed back yet). -->
+    <globalAttention>true</globalAttention>
+
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <!-- word-cut parts: stage the whitespace word brackets the reading
+         producer reads as its attention keys. -->
+    <analysis>word</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

@@ -162,6 +162,46 @@
            WholeSpace codebooks. Default false: no table allocated, no raising
            (byte-identical). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
+           attention"). When true, a learned .where producer runs at each t>0
+           subsymbolic pass and writes _passback_scope_where (the normalized
+           [start, end] reading scope) on the stage-0 WholeSpace for the
+           <mereologyRaise> top-down handoff to consume. The producer scores the
+           staged analysis spans (the word brackets) from a query built off the
+           prior pass's concept + the active STM symbols (a small learned MLP
+           over detached features; the gradient stops at the primed symbols, so
+           the EMA-only VQ codebooks are untouched), under a monotonic/coverage
+           mask + a shift bootstrap (init selects the next span = the for-loop).
+           In text mode (dataType embedding) training, a next-word cross-entropy
+           term trains the producer to land on the next word. Default false: no
+           module allocated, no scope written, no loss (byte-identical). -->
+      <xs:element name="readingAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Global attention (doc/specs/reading-attention.md "(B) Global
+           attention"). When true, a free, content/relation-driven attention
+           ranges over a TYPED addressable space - the input window, STM, LTM,
+           and the symbol/whole codebook (the meronomy+taxonomy inventory) -
+           emitting a typed .where (which space + the [start,end] bracket) and a
+           soft-read of the addressed content (parked on _global_attention_obs).
+           Unlike reading attention it has no monotonic mask and no next-word
+           target, so it REQUIRES the stochastic element (the two-pass
+           <learning>/<exploreTemperature>) to explore. The gradient stops at the
+           keys (the codebook/LTM rows are EMA/persistent, detached); only the
+           scorer readout trains. Dark by default: no module, the soft-read is
+           parked not fed back, so the forward is byte-identical (the consumer
+           that feeds the read into the task is a later slice). -->
+      <xs:element name="globalAttention" type="xs:boolean" minOccurs="0"/>
+      <!-- Global-attention CONSUMER (doc/specs/reading-attention.md "(B)").
+           When true, the parked soft-read is fed BACK into the head (the
+           "answer") as a zero-init gated residual, so the answer/output loss
+           trains the retrieval (gradient through the read, the attention
+           distribution, the scorer; the codebook/LTM stores stay detached).
+           This closes global attention's loop: the retrieval-augmented answer
+           mechanism for the question-answering stages. The LTM address space is
+           the parsed TruthSet (ltm_store), so "reading over the TruthSet stored
+           in LTM" is the SPACE_LTM read fed back here. Requires
+           globalAttention. Default false keeps the soft-read parked (B
+           unchanged), byte-identical. -->
+      <xs:element name="globalAttentionConsume" type="xs:boolean" minOccurs="0"/>
       <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
            mereological-order-raising.md "Overcomplete tiling bounded by the
            basic level"). When the part tower matches an input against its

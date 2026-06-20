@@ -4,7 +4,7 @@ This document maps the model's machinery onto three philosophical accounts
 of cognition: Kant's analysis/synthesis pair, Ramsey's treatment of
 theoretical structure, and Buddhist epistemology (pramana theory). The
 through-line is the corrected analysis/synthesis orientation
-(doc/plans/2026-06-08-analysis-synthesis-dual-input.md, rev. 2026-06-09):
+(doc/old/2026-06-08-analysis-synthesis-dual-input.md, rev. 2026-06-09):
 
 ```text
 WholeSpace (SS)                  PartSpace (PS)

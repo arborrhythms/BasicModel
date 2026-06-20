@@ -8,7 +8,7 @@ modules were retired in the 2026-05-21 / 2026-05-29 refactors; their
 functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 > **2026-06-02 deltas (subsymbolic analyzer + terminal emitter).** Plan:
-> [doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
+> [doc/old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md](old/2026-05-30-subsymbolic-analyzer-terminal-emitter.md).
 >
 > - **PS/SS grammar sections.** A `.grammar` file may nest its
 >   `<compose>`/`<generate>` under `<PartSpace>` and
@@ -76,7 +76,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 > - `MetaLayer` was renamed to `SymbolizeLayer` (no semantic change).
 > - Word-mode parse appends a `\x00` null sentinel after the words
 >   slab for explicit end-of-sequence on the forward path.
-> - See [doc/plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](plans/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
 ## Current Parser Surface
 
@@ -311,7 +311,7 @@ part operator is unified there: the grammar declares the single relative op
 $\to$ `queryPart` in a query context). The operator codebook, soft
 superposition, and participation clustering are live and tested. See the
 status blocks in
-[doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md](plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md).
+[doc/old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md](old/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md).
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
 
