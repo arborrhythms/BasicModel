@@ -3,7 +3,9 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- Step 3: Step 2 + grammar -->
   <architecture>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>

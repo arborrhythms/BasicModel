@@ -10,7 +10,9 @@
        truth activation, but it collapses per-slot content and cannot
        support this exact word-level reconstruction smoke test. -->
   <architecture>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
@@ -71,7 +73,6 @@
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <codebook>none</codebook>
     <butterfly>true</butterfly>
   </ConceptualSpace>
 
@@ -94,7 +95,6 @@
          DESIGN) and is the standing regression gate for the
          symbolic-iteration rework: 4/4 predictions AND byte-exact
          reconstruction must hold through every step. -->
-    <codebook>quantize</codebook>
     <butterfly>true</butterfly>
   </WholeSpace>
 

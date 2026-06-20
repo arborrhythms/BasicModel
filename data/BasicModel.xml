@@ -3,12 +3,12 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- BasicModel chatbot: ~80K params, masked-word prediction with reconstruction -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
     <weightsPath>BasicModel.ckpt</weightsPath>
     <data>
+      <dataType>embedding</dataType>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
     </data>

@@ -5,7 +5,9 @@
        2026-05-12; this config now matches Step 3 modulo the original flag. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>

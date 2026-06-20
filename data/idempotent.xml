@@ -47,7 +47,6 @@
            (project_reverse) path used by the idempotent test.
   -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
@@ -58,6 +57,7 @@
     <UniversalityWeight>0.0</UniversalityWeight>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>inline</dataset>
     </data>
 
@@ -118,7 +118,6 @@
          only operation training touches. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <codebook>quantize</codebook>
     <invertible>true</invertible>
     <nonlinear>false</nonlinear>
   </WholeSpace>

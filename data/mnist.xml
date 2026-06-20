@@ -3,13 +3,13 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
     <subsymbolicOrder>2</subsymbolicOrder>
-    <modelType>passthrough</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
     <weightsPath>mnist_weights.ckpt</weightsPath>
 
     <data>
+      <dataType>numeric</dataType>
       <dataset>mnist</dataset>
       <classificationMin>0</classificationMin>
       <classificationMax>9</classificationMax>

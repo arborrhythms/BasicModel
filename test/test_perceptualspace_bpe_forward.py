@@ -27,8 +27,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
-    <modelType>embedding</modelType>
-    <data><dataset>xor</dataset></data>
+    <data><dataType>embedding</dataType><dataset>xor</dataset></data>
     <training>
       <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>

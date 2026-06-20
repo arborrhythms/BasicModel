@@ -48,7 +48,7 @@ language model's next-token objective, scaled to the in-sentence working
 set.
 
 The trainable target configuration is `MentalModel.xml` (serial,
-`<modelType>embedding</modelType>`, attention on, sentence prediction
+`<data><dataType>embedding</dataType>`, attention on, sentence prediction
 on, FineWeb data); the comparison framing against a transformer LM is
 [Section 12](#12-nanochat-comparison-framing).
 
@@ -615,7 +615,7 @@ across the first `depth` STM slots as a sentence-level conditioning bias
 
 The trainable target is `MentalModel.xml`:
 `<symbolicOrder>1</symbolicOrder>`,
-`<modelType>embedding</modelType>`, `<hasAttention>true</hasAttention>`
+`<data><dataType>embedding</dataType>`, `<hasAttention>true</hasAttention>`
 (ConceptualSpace), `<sentencePrediction>true</sentencePrediction>`,
 FineWeb data (`<shardDir>data/fineweb</shardDir>`). This is the
 configuration that exercises the full STM stack — serial sequencing with

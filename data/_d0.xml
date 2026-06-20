@@ -33,7 +33,6 @@
        CARDINALITY (~5000 entries), not 1e6 small 5-dim codes. The spec's
        wide small-code SS needs the Phase-3 relaxation of that rule. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
          the serial sibling is MM_5M_grammar.xml). -->
     <symbolicOrder>0</symbolicOrder>
@@ -44,6 +43,7 @@
     <sigmaPi>butterfly</sigmaPi>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
     <training>
@@ -89,7 +89,6 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <WholeSpace>

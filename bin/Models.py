@@ -285,6 +285,11 @@ class BaseModel(Mereology, nn.Module):
     # serial symbolic loop); >= 1 = serial / GRAMMATICAL. Replaces the
     # retired ``conceptualMode`` serial|parallel enum (2026-06-13).
     symbolicOrder = 0
+    # Class-level default for ``syntacticOrder`` (doc/specs/orders.md, NEW
+    # 2026-06-19): the parse-tree DEPTH cap for the serial grammatical
+    # reduction. 0 = unbounded (the reduction runs to its single-S fixpoint;
+    # byte-identical). Overridden per instance via init_config when set.
+    syntacticOrder = 0
     # Scale applied to the DiscourseSpace contrastive loss. The
     # inter-sentence DiscourseSpace lives on ``self.symbolicSpace``
     # (``self.symbolicSpace.discourse``) rather than directly on the
@@ -518,7 +523,9 @@ class BaseModel(Mereology, nn.Module):
         self._num_workers = int(_t("numWorkers"))
 
         if model_type is None:
-            model_type = arch["modelType"]
+            # The data tier moved from architecture-level <modelType> into
+            # <data> as <dataType> (embedding | numeric) 2026-06-19.
+            model_type = TheXMLConfig.data_type()
 
         # <embeddingPath> retired (2026-05-12): embeddings now ride
         # inside the single .ckpt bundle, not a separate .kv artifact.
@@ -626,6 +633,26 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 f"<architecture><symbolicOrder> must be >= 0 (got {_so}).")
         self.symbolicOrder = _so
+
+        # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
+        # DEPTH cap for the serial grammatical reduction. 0 (default) =
+        # unbounded (the NULL-seal reduce sweep collapses to a single S, exactly
+        # as before -- byte-identical). A positive value caps the sweep to that
+        # many forced fold levels; the <= word-count bound holds structurally
+        # (a reduce micro-step no-ops once a row's depth reaches 1). Inert in
+        # parallel mode (no per-sentence parse tree to bound).
+        _syn_raw = TheXMLConfig.get(
+            "architecture.syntacticOrder", default=None)
+        try:
+            _syn = int(_syn_raw) if _syn_raw is not None else 0
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"<architecture><syntacticOrder> must be a non-negative "
+                f"integer (got {_syn_raw!r}).")
+        if _syn < 0:
+            raise ValueError(
+                f"<architecture><syntacticOrder> must be >= 0 (got {_syn}).")
+        self.syntacticOrder = _syn
 
         # GrammarOpsPass §6c sentence protocol (author sign-off
         # 2026-06-11): in serial mode, every sentence opens with an
@@ -2032,7 +2059,7 @@ class BasicModel(BaseModel):
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                subsymbolicOrder=1,
-               model_type="simple", data=None,
+               model_type="numeric", data=None,
                reconstruction_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1):
         """Build the full space hierarchy from architecture parameters.
 
@@ -2045,7 +2072,8 @@ class BasicModel(BaseModel):
             nInput/nPercepts/nConcepts/nSymbols/nOutput: object counts per space.
             nWords: object count for the SyntacticSpace.
             subsymbolicOrder: number of [Percept->Concept->Symbol] cycles.
-            model_type: "simple", "embedding", "passthrough", or "vq".
+            model_type: the data tier -- "embedding" (text/LM) or "numeric"
+                (dense slab). Was the architecture-level modelType.
         """
         return self._create_per_stage(
             nInput, nPercepts, nConcepts, nSymbols, nWords=nWords,
@@ -4999,7 +5027,7 @@ class BasicModel(BaseModel):
         return outErr, inErr, allOutput, allInput
     def _create_per_stage(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                subsymbolicOrder=1,
-               model_type="simple", data=None,
+               model_type="numeric", data=None,
                reconstruction_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
                **kwargs):
@@ -5656,6 +5684,16 @@ class BasicModel(BaseModel):
             _max_order = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
             object.__setattr__(terminal_ss, '_mereology_raise', True)
             object.__setattr__(self.perceptualSpace, '_mereology_raise', True)
+            # Stamp the STAGE-0 WholeSpace too so it computes the read-only
+            # run-structure observation (``_mereology_ratio_obs``) the top-down
+            # attention handoff dispatches on -- at sO>1 the stage-0 ws is NOT
+            # the terminal, and only the stage that runs ``_stage0_unity_forward``
+            # parks the obs. wholeSpaces[0] runs ONLY the unity branch (never the
+            # recurrent / autobind mutating path), so this enables the obs alone
+            # (byte-identical). Idempotent when stage 0 IS the terminal (sO=1).
+            _ws0 = self.wholeSpaces[0] if len(self.wholeSpaces) else None
+            if _ws0 is not None:
+                object.__setattr__(_ws0, '_mereology_raise', True)
             for _cb in (getattr(self.perceptualSpace.subspace, 'what', None),
                         getattr(terminal_ss.subspace, 'what', None)):
                 if _cb is not None and hasattr(_cb, 'enable_ramsification'):
@@ -6254,7 +6292,17 @@ class BasicModel(BaseModel):
                 # reverse, with ``carriers`` kept as a test/verification
                 # handle.
                 ps_t = PS_sub_stage0
-                if (getattr(self, "symbolic_composition", False)
+                if (getattr(self, "mereology_raise", False)
+                        and t > 0 and not prevCS_forSS.is_empty()):
+                    # Top-down attention handoff (doc/specs/mereological-order-
+                    # raising.md "the top-down attention handoff"): the stage-0
+                    # WholeSpace passes back a scoped chunk/.where that scopes
+                    # PartSpace's analysis on this t>0 pass (t==0 stays
+                    # wide-open -- the first-pass-wide gate IS this t>0 guard).
+                    # Dark unless a scope or words-category attention is engaged
+                    # -> the pass-back action is "noop" -> byte-identical.
+                    ps_t = self._passback_scope_ps(t, PS_sub_stage0, prevCS_forSS)
+                elif (getattr(self, "symbolic_composition", False)
                         and t > 0 and not prevCS_forSS.is_empty()):
                     # SymbolicComposition (Architecture.md "three cognitive
                     # operations", op 2): pass the prior pass's SYMBOLS back
@@ -6629,7 +6677,19 @@ class BasicModel(BaseModel):
             torch.full((B,), 3, dtype=depth_dtype, device=device),
             torch.full((B,), 1, dtype=depth_dtype, device=device),
         )                                                        # [B] long
-        for _ in range(max(0, cap - 1)):
+        # syntacticOrder (doc/specs/orders.md) caps the parse-tree DEPTH: a
+        # positive value runs at most that many fold levels (statically
+        # clamped to cap-1, keeping the CUDA-graph trip count static -- it
+        # never depends on the runtime word count). 0 = unbounded (the full
+        # cap-1 sweep -> collapse to a single S, byte-identical). The <= W
+        # bound holds structurally: a reduce micro-step is a no-op once a
+        # row's depth reaches 1, so capping below cap-1 simply hands on a
+        # partially-composed forest.
+        _syn = int(getattr(self, "syntacticOrder", 0) or 0)
+        _n_levels = max(0, cap - 1)
+        if _syn > 0:
+            _n_levels = min(_n_levels, _syn)
+        for _ in range(_n_levels):
             self._stm_bounded_reduce_step(protect_depth=protect_depth)
         # After cap-1 forced folds every ABSOLUTE row's stack is
         # collapsed to a single slot (slot 0, the newest accumulator):
@@ -7744,6 +7804,59 @@ class BasicModel(BaseModel):
     # generalization step now lives IN the combine (option B, on the full
     # muxed event), not in a separate content-only operator.
 
+    def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS):
+        """Apply the WS->PS top-down pass-back to choose PartSpace's input for a
+        ``t>0`` subsymbolic pass (doc/specs/mereological-order-raising.md "the
+        top-down attention handoff").
+
+        Reads the 4-case action off the STAGE-0 WholeSpace
+        (``wholeSpaces[0].passback_action``) and returns the scoped PS input:
+
+          * ``"noop"``   -> ``ps_default`` (the stage-0 percept re-fed) --
+            byte-identical; the default when no scope, no words-category
+            attention, or no parked run-structure observation;
+          * ``"refine"`` / ``"chunk"`` -> hand the prior symbols
+            (``prevCS_forSS``) back to PartSpace so its SigmaLayer (re)analyses
+            them (the wide<->deep CS-symbol regroup runs inside
+            ``PartSpace.forward``);
+          * ``"scoped"`` -> additionally thread the nth word's ``.where`` as a
+            read-only PartSpace forward-local (the
+            ``.where``-on-the-second-argument scope) before the re-feed.
+
+        Gated ``<mereologyRaise>`` (only reached under that flag). The pass-back
+        sits on the multi-stage carrier the sO=3 combine fix restored."""
+        wss = getattr(self, "wholeSpaces", None)
+        ws0 = wss[0] if wss is not None and len(wss) > 0 else None
+        if ws0 is None or not hasattr(ws0, "passback_action"):
+            return ps_default
+        action, where = ws0.passback_action(pass_idx)
+        if action in (None, "noop"):
+            return ps_default
+        if action in ("refine", "chunk"):
+            return self.perceptualSpace.forward(prevCS_forSS)
+        if action == "scoped" and where is not None:
+            # null-content + the nth word's `.where`: re-analyse the prior
+            # symbols, then FOCUS the percept to that span -- zero the slots
+            # outside the decoded normalized [start, end] bracket (the
+            # `.where`-on-the-second-argument scope). Read-only; falls back to
+            # the unfocused re-feed when the span is degenerate.
+            ps = self.perceptualSpace.forward(prevCS_forSS)
+            ev = ps.materialize() if ps is not None else None
+            if ev is not None and torch.is_tensor(ev) and ev.dim() == 3:
+                w = where.reshape(-1).to(ev.device, torch.float32)
+                if w.numel() >= 2:
+                    start = float(w[0].clamp(0.0, 1.0))
+                    end = float(w[1].clamp(0.0, 1.0))
+                    if end >= start:
+                        N = int(ev.shape[1])
+                        pos = (torch.arange(N, device=ev.device).float()
+                               + 0.5) / max(N, 1)
+                        keep = ((pos >= start) & (pos <= end)).view(1, N, 1)
+                        ps.set_event(torch.where(keep, ev,
+                                                 torch.zeros_like(ev)))
+            return ps
+        return ps_default
+
     def _reverse_body(self, sub):
         """Per-stage body reverse, mirroring ``_forward_body`` order.
 
@@ -8797,11 +8910,10 @@ TheBasicModel = BasicModel()
 class ModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
-    Dispatches to the right model class based on <architecture> flags:
-      - modelType=embedding   -> BasicModel (embedding/language model path)
-      - modelType=passthrough -> BasicModel (passthrough path)
-      - modelType=vq         -> BasicModel (vector-quantized path)
-      - Otherwise             -> SimpleModel parameterized by:
+    Dispatches to the right model class based on <data><dataType>:
+      - dataType=embedding -> BasicModel (embedding/language model path)
+      - dataType=numeric   -> BasicModel (dense-slab path; e.g. MNIST)
+      - Otherwise           -> SimpleModel parameterized by:
             ergodic, certainty, codebook, normed, reverse, invert
     """
 
@@ -8957,7 +9069,19 @@ class ModelFactory:
                 return int(fallback)
         _ws_reshapes = (_ws_dim("nInputDim", symbol_dim)
                         != _ws_dim("nOutputDim", symbol_dim))
-        if (str(arch.get("modelType", "simple")).strip().lower() != "passthrough"
+        # The data tier (was architecture-level <modelType>) now lives under
+        # <data> as <dataType> (embedding | numeric). The flat-slab
+        # WS.nWhat==CS.nWhat invariant below is embedding-only: the numeric
+        # (dense-slab) path carries no lexicon, so it may re-dimension across
+        # tiers (e.g. MNIST IS=784 -> CS=20). Read from the PASSED cfg (this
+        # validator runs on a merged dict that may not be the global config),
+        # canonical <data><dataType> first then an architecture-level dataType
+        # fallback (dict-based test overrides set it there).
+        _data_sec = arch.get("data") if isinstance(arch.get("data"), dict) else {}
+        data_type = str(_data_sec.get("dataType")
+                        or arch.get("dataType") or "numeric").strip().lower()
+        is_embedding_mode = (data_type == "embedding")
+        if (is_embedding_mode
                 and not _ws_fold_bridged and not _ws_reshapes):
             TheXMLConfig.require(
                 lambda cfg, _c=effective_concept_dim, _s=symbol_nwhat: _c == _s,
@@ -8977,18 +9101,11 @@ class ModelFactory:
         # is the precondition for the WS.codebook paired-rows contract
         # (the orth row is a copy of PS's per-word vector, sized to CS).
         #
-        # Embedding-mode only: the SimpleModel / passthrough / vq paths
-        # don't carry a lexicon, so the "PS per-word is CS-space"
-        # rationale doesn't apply -- the slab can re-dimension across
-        # tiers for those (e.g. MNIST IS=784 pixels, CS=20 features).
-        # The invariant fires only when ``modelType=embedding`` so
-        # legacy SimpleModel / numeric configs survive.
-        # Default matches model.xml defaults (modelType=simple, i.e.
-        # not embedding). The invariant fires only when an XML config
-        # explicitly opts in via <modelType>embedding</modelType>.
-        model_type_raw = arch.get("modelType", "simple")
-        is_embedding_mode = (str(model_type_raw).strip().lower()
-                             == "embedding")
+        # Embedding-mode only: the numeric (dense-slab) path doesn't carry a
+        # lexicon, so the "PS per-word is CS-space" rationale doesn't apply --
+        # the slab can re-dimension across tiers (e.g. MNIST IS=784 pixels,
+        # CS=20 features). The invariant fires only when
+        # ``<data><dataType>embedding`` (``is_embedding_mode``, resolved above).
 
         def _effective_out_dim(space_name, fallback_dim):
             """Return nOutputDim if set, else nDim, else the chained
@@ -9100,8 +9217,7 @@ class ModelFactory:
                 pass
             return int(fallback_count)
 
-        if (is_embedding_mode
-                and str(model_type_raw).strip().lower() != "passthrough"):
+        if is_embedding_mode:
             # CS->WS input-side handoff (event width). cs_dim_e is CS's
             # effective output event width resolved above.
             ws_in_dim = _effective_in_dim("WholeSpace", cs_dim_e)

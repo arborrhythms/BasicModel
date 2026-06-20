@@ -6,7 +6,6 @@
        final deep symbolic state via SymbolicSpace.reconstruct(). This is the
        plumbing fixture referenced from test_head_emission.py. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -17,6 +16,7 @@
          live tensor during chart compose. -->
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>inline</dataset>
       <input use="train">the teacher helped the student|the cat chased the mouse|the bird sang a song|the child kicked the ball|the farmer fed the dog</input>
       <input use="test">the teacher helped the student</input>

@@ -8,7 +8,9 @@
        truth activation, but it collapses per-slot content and cannot
        support this exact word-level reconstruction smoke test. -->
   <architecture>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <subsymbolicOrder>3</subsymbolicOrder>
     <symbolicOrder>0</symbolicOrder>
 
@@ -59,7 +61,6 @@
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <codebook>none</codebook>
     <butterfly>true</butterfly>
   </ConceptualSpace>
 

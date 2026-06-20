@@ -5,7 +5,9 @@
        scalar-codebook loopback on the XOR dataset. This is the surviving
        scalar replacement for the retired bivector smoke config. -->
   <architecture>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -80,7 +82,6 @@
 	    <!-- Smoke config: zero out the codebook regularizers. -->
     <l1Lambda>0.0</l1Lambda>
     <commitmentBeta>0.0</commitmentBeta>
-    <codebook>quantize</codebook>
     <nonlinear>false</nonlinear>
   </WholeSpace>
 

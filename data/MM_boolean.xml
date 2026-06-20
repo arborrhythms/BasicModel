@@ -11,7 +11,6 @@
        Surface forms in inputs: bare ("A"), 'not' prefix ("not A"), and
        'non-' prefix ("non-A"). The 0 token represents non-entity. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -23,6 +22,7 @@
     <monotonic>true</monotonic>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>inline</dataset>
       <!-- Training and validation deliberately exclude the three test
            sentences ("A B", "C", "not A") so the test split measures
@@ -84,7 +84,6 @@
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

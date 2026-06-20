@@ -1075,6 +1075,18 @@ class XMLConfig:
         """
         return self.get(f"architecture.data.{key}", default)
 
+    def data_type(self):
+        """Resolve the data tier: ``"embedding"`` (text / LM) or ``"numeric"``
+        (dense slab). Canonical home is ``<data><dataType>`` (was the retired
+        architecture-level ``<modelType>``); an architecture-level ``dataType``
+        is accepted as a fallback for dict-based test overrides (which deep-
+        merge at the architecture level and never round-trip through the XSD).
+        Default ``"numeric"``."""
+        dt = self.get("architecture.data.dataType", None)
+        if dt is None:
+            dt = self.get("architecture.dataType", "numeric")
+        return dt
+
     _MISSING = object()
 
     def space(self, space_name, key, default=_MISSING):

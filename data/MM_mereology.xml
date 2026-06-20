@@ -21,7 +21,6 @@
        end-to-end radix-climb training run on this config (the actual MM_20M
        mean-collapse fix) is deferred to S7; this file is the home for it. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- parallel mereology: per-stage forward, no serial grammar loop. -->
     <symbolicOrder>0</symbolicOrder>
     <subsymbolicOrder>3</subsymbolicOrder>
@@ -43,6 +42,7 @@
     <basicLevelMaxSize>24</basicLevelMaxSize>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
     <training>
@@ -84,7 +84,6 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <WholeSpace>

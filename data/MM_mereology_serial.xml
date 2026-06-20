@@ -20,7 +20,6 @@
        delta. The serialObjectMeta per-word object/meta path (increments 2-4)
        is gated separately so it is dark until wired + signed off. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- serial mereology: per-word body, syntax at the sentence boundary. -->
     <symbolicOrder>1</symbolicOrder>
     <subsymbolicOrder>3</subsymbolicOrder>
@@ -40,6 +39,7 @@
     <basicLevelMaxSize>24</basicLevelMaxSize>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
     <training>
@@ -78,7 +78,6 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <WholeSpace>

@@ -9,13 +9,13 @@
        never fires in-body). Used by test/test_symbolic_iteration.py;
        not a training reference. -->
   <architecture>
-    <modelType>embedding</modelType>
     <symbolicOrder>0</symbolicOrder>
     <subsymbolicOrder>2</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
     <training>
@@ -51,7 +51,6 @@
     <nOutput>8</nOutput>
     <nOutputDim>32</nOutputDim>
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <WholeSpace>
@@ -62,7 +61,6 @@
     <nOutput>32</nOutput>
     <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>
@@ -72,6 +70,5 @@
     <nDim>1</nDim>
     <nOutput>1</nOutput>
     <nOutputDim>1</nOutputDim>
-    <readout>sigmoid</readout>
   </OutputSpace>
 </model>

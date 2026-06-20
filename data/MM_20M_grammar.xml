@@ -17,7 +17,6 @@
        Phase-3 relaxation. The SS codebook is smaller than MM_20M's (serial
        grammar-op budget: small ops). -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- serial: per-word forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
     <subsymbolicOrder>3</subsymbolicOrder>
@@ -27,6 +26,7 @@
     <sigmaPi>butterfly</sigmaPi>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
 
@@ -65,7 +65,6 @@
     <nDim>1028</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
-    <codebook>none</codebook>
     <stmCapacity>8</stmCapacity>
   </ConceptualSpace>
 
@@ -89,7 +88,6 @@
     <nVectors>1000</nVectors>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

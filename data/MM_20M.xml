@@ -2,21 +2,23 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <modelType>embedding</modelType>
     <!-- parallel: per-stage forward via _forward_per_stage (no grammar;
          the serial sibling is MM_5M_grammar.xml). -->
     <symbolicOrder>0</symbolicOrder>
-    <!-- subsymbolicOrder reverted 3->1 for a green handoff: sO=3 needs the
-         multi-stage wide<->deep x combine reconciliation (the t>0 WholeSpace
-         emits the wide [1024,8] form, the combine wants deep N=8 -> bind None).
-         See the 2026-06-19 handoff doc; sO=3 is the desired target. -->
-    <subsymbolicOrder>1</subsymbolicOrder>
+    <!-- subsymbolicOrder=3: the depth that makes the readout XOR-robust. The
+         t>0 WholeSpace symbolic-iteration leg emits the WIDE [B,1020,8] form;
+         ConceptualSpace.bind_streams now regroups it wide->deep (n_vectors)
+         as a pure reshape before the bind, so the per-stage carrier survives
+         t>0 (the reconstruction round-trip is the gate; see
+         test_conceptual_recurrence.py). -->
+    <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <!-- sigmaPi=butterfly: PS.Pi and SS.Sigma use O(N log N) cross-position
          butterfly cascade (moved from per-space to architecture-level). -->
     <sigmaPi>butterfly</sigmaPi>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>xor</dataset>
     </data>
     <training>
@@ -72,7 +74,6 @@
     <nOutputDim>8</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <ConceptualSpace>
@@ -85,7 +86,6 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <OutputSpace>
@@ -97,9 +97,8 @@
     <nOutputDim>1</nOutputDim>
     <!-- nVectors==1 => unquantised REGRESSION head (Task #11): a 1-vector
          codebook can only name one prototype (collapses every XOR row to the
-         row-mean), so the head is a bare linear nInputDim->nOutputDim with a
-         sigmoid readout so the binary {0,1} XOR label is representable. -->
-    <readout>sigmoid</readout>
+         row-mean), so the head is a bare linear nInputDim->nOutputDim + a
+         learned scalar intercept (the {0,1} XOR label is regressed). -->
   </OutputSpace>
 
 </model>

@@ -39,8 +39,7 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
-    <modelType>embedding</modelType>
-    <data><dataset>xor</dataset></data>
+    <data><dataType>embedding</dataType><dataset>xor</dataset></data>
     <training>
       <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>

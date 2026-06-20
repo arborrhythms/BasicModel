@@ -8,7 +8,6 @@
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -16,6 +15,7 @@
     <amp>bf16</amp>
 
     <data>
+      <dataType>embedding</dataType>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
     </data>
@@ -70,7 +70,6 @@
     <!-- Stage 1.B paired-row contract: doubled for orth + semantic. -->
     <nVectors>2000000</nVectors>
     <nOutput>1024</nOutput>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

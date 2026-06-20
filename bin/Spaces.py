@@ -7574,17 +7574,7 @@ class InputSpace(Space):
         """
         if self.model_type == "embedding":
             return None  # owned by PartSpace.subspace.what
-        if self.model_type == "vq":
-            basis = Codebook()
-            basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
-            basis.create(
-                self.inputShape[0],
-                self.nVectors,
-                self.nDim,
-                customVQ=self.customVQ,
-            )
-            return basis
-        if self.model_type in ("passthrough", "simple"):
+        if self.model_type == "numeric":
             basis = Tensor()
             basis.create(
                 self.inputShape[0],
@@ -7592,9 +7582,9 @@ class InputSpace(Space):
                 self.nDim,
             )
             return basis
-        raise RuntimeError("Unexpected model_type")
+        raise RuntimeError(f"Unexpected dataType {self.model_type!r}")
 
-    def __init__(self, inputShape, spaceShape, outputShape, model_type="simple"):
+    def __init__(self, inputShape, spaceShape, outputShape, model_type="numeric"):
 
         """Initialize InputSpace; allocate state for the class contract.
         
@@ -8492,7 +8482,7 @@ class InputSpace(Space):
         cases:
           * ``_cached_embedding`` set -- use pre-built latent (chat-
             loop / generate_sentence stages this).
-          * ``model_type == 'embedding'`` (text) -- lex into byte buffer.
+          * ``model_type == 'embedding'`` (the data tier) -- lex into byte buffer.
           * numeric mode -- vocab codebook lookup.
         """
         if self._cached_embedding is not None:
@@ -8811,10 +8801,10 @@ class PartSpace(PerceptualSpace):
         self.nonlinear = nonlinear
 
         # Stash Embedding-construction inputs (read from config BEFORE super().__init__).
-        # Explicit `model_type=` argument wins over architecture.modelType so
-        # callers (mainly tests) can opt into "embedding" without rewriting
-        # the XML config.
-        self.model_type = model_type or TheXMLConfig.get("architecture.modelType")
+        # Explicit `model_type=` argument wins over <data><dataType> so callers
+        # (mainly tests) can opt into "embedding" without rewriting the XML
+        # config. ``model_type`` holds the data tier: "embedding" | "numeric".
+        self.model_type = model_type or TheXMLConfig.data_type()
         self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
         self.lexer = resolve_lexer()
         # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
@@ -8951,11 +8941,11 @@ class PartSpace(PerceptualSpace):
             if self.model_type != "embedding":
                 raise ValueError(
                     "PartSpace.chunking='bpe' requires "
-                    "<modelType>embedding</modelType>")
+                    "<dataType>embedding</dataType>")
         elif self.synthesis_mode == "mphf":
             # MPHF is BPE+MPHF-fast-path: in-vocab whole words via MPHF
             # gather, OOV fall back to _embed_bpe_trie. Inherits BPE's
-            # invariants (byte range seeding + Embedding modelType).
+            # invariants (byte range seeding + Embedding dataType).
             if self.nVectors < 256:
                 raise ValueError(
                     f"PartSpace.chunking='mphf' requires nVectors>=256 "
@@ -8963,7 +8953,7 @@ class PartSpace(PerceptualSpace):
             if self.model_type != "embedding":
                 raise ValueError(
                     "PartSpace.chunking='mphf' requires "
-                    "<modelType>embedding</modelType>")
+                    "<dataType>embedding</dataType>")
         elif self.synthesis_mode == "none":
             # Byte-direct mode: each byte is its own perceptual atom,
             # looked up via a 256-entry codebook (byte_value ==
@@ -8981,7 +8971,7 @@ class PartSpace(PerceptualSpace):
             if self.model_type != "embedding":
                 raise ValueError(
                     "PartSpace.chunking='none' requires "
-                    "<modelType>embedding</modelType>")
+                    "<dataType>embedding</dataType>")
         self._recovered_input = None
         # Deferred word-recovery decode (set by reverse(); see
         # _materialize_recovered_input). reverse() stashes the refs
@@ -14076,6 +14066,42 @@ class ConceptualSpace(Space):
         return content[..., :D]
 
     @staticmethod
+    def _bind_regroup(content, n_vectors):
+        """Regroup a WIDE ``[B, N_wide, D_wide]`` stream into the DEEP
+        ``[B, n_vectors, content_out]`` the per-stage combine binds, as a
+        PURE RESHAPE of the constant content slab.
+
+        The WholeSpace symbolic-iteration leg emits the WIDE symbol-table
+        form at ``t>0`` (e.g. MM_20M ``[B, 1020, 8]`` -- the forwardEnd
+        reshape of the ``[8, 1024]`` emission frame) while the per-stage
+        ConceptualCombine binds ``n_vectors`` DEEP slots (N=8). Regroup the
+        wide slab into ``n_vectors`` rows when it does not already match and
+        the flattened content divides cleanly
+        (``N_wide*D_wide % n_vectors == 0``); ``_bind_fit`` then pads the
+        regrouped width up to ``D``. The reshape is the exact mirror of the
+        deep->wide forwardEnd emission, so the bind carrier round-trips
+        (the reverse recovers the DEEP ``(n_vectors, D)`` leg the
+        reconstruction path consumes; the wide form is never needed back).
+
+        A strict NO-OP when the stream is already deep
+        (``N_wide == n_vectors``) -> byte-identical for every config whose
+        WS leg matches the slot count (the only legs reaching here before
+        this fix were already deep; the wide-WS / ``t>0`` multi-stage leg
+        used to make ``bind_streams`` return None).
+        """
+        if content is None or content.dim() != 3:
+            return content
+        n_vectors = int(n_vectors)
+        N_wide = int(content.shape[-2])
+        if n_vectors <= 0 or N_wide == n_vectors:
+            return content
+        slab = N_wide * int(content.shape[-1])
+        if slab % n_vectors != 0:
+            return content
+        return content.reshape(
+            int(content.shape[0]), n_vectors, slab // n_vectors)
+
+    @staticmethod
     def _bind_seed_slab(payload_hat, like, D):
         """Broadcast a predicted end-state ``payload_hat[depth, Dp]`` into a
         ``[B, N, D]`` content slab (Task A6, re-homed by the 2-stream bind:
@@ -14193,7 +14219,12 @@ class ConceptualSpace(Space):
         cs_content, cs_band, cs_event = self._bind_demux(CS_sub, D)
         if cs_event is None:
             return None
+        nv = int(combine.n_vectors)
         ps_content, _, _ = self._bind_demux(PS_sub, D)
+        # Regroup a wide leg (e.g. the t>0 symbolic-iteration WS emit
+        # [B, 1020, 8]) into the deep n_vectors slots the combine binds,
+        # BEFORE _bind_fit (which pads the last dim). No-op when already deep.
+        ps_content = self._bind_regroup(ps_content, nv)
         PS_t = self._bind_fit(ps_content, D, cs_content)
         if meronomy_enabled():
             # Stage 4 (spec §3): the PS leg crosses nameless and
@@ -14201,11 +14232,11 @@ class ConceptualSpace(Space):
             # untouched either way -- the knob governs what crosses it.
             PS_t = self._factor_crossing(PS_t)
         ws_content, _, _ = self._bind_demux(WS_sub, D)
+        ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
         if seed_payload is not None:
             WS_t = WS_t + self._bind_seed_slab(seed_payload, cs_content, D)
-        if (PS_t.shape[-2] != int(combine.n_vectors)
-                or WS_t.shape[-2] != int(combine.n_vectors)):
+        if (PS_t.shape[-2] != nv or WS_t.shape[-2] != nv):
             return None
         full = combine.forward(PS_t, WS_t)
         glued = combine.glue(full)
@@ -18576,6 +18607,60 @@ class WholeSpace(PerceptualSpace):
         mask.scatter_(1, topk, 1.0)
         return mask.unsqueeze(-1)
 
+    def passback_action(self, pass_idx):
+        """The 4-case WS->PS top-down pass-back dispatch
+        (doc/specs/mereological-order-raising.md "the top-down attention
+        handoff"). Returns ``(action, where)`` -- ``action`` one of
+        ``"noop" | "scoped" | "refine" | "chunk"`` -- naming what this (the
+        stage-0) WholeSpace passes back through the recursive WS->PS connection
+        to scope PartSpace's analysis on a SUBSEQUENT subsymbolic pass:
+
+          * pass 0                 -> ("noop", None)   [first-pass wide-open]
+          * an explicit scope `.where` set on this space
+            (``_passback_scope_where``, a normalized [start,end])
+                                   -> ("scoped", where) [null-content + the nth
+                                       word's `.where`: the model loop focuses
+                                       the percept to that span -- the serial /
+                                       deterministic-reading override]
+          * no words-category attention engaged (intent_boosts is None)
+                                   -> ("noop", None)
+          * route_hint 0 (no contiguous runs in the analysis `.where`)
+                                   -> ("noop", None)
+          * route_hint 1 (a single non-null chunk / one run)
+                                   -> ("chunk", None)  [return that chunk + its
+                                       parts -- no further chunking]
+          * route_hint 2 (multiple chunks / >1 run)
+                                   -> ("refine", None) [PS must analyse finer:
+                                       sigma refine]
+
+        Read-only and parameter-free. DARK by default: with no scope, no
+        words-category intent, or no parked run-structure observation it returns
+        ``("noop", None)`` -- byte-identical. The route_hint comes from the
+        ``RunStructureLayer`` observation parked at stage 0
+        (``_mereology_ratio_obs``); identity = ``union(parts) ∩ union(wholes)``
+        and the disjoint => sigma/pi raise are the route_hint==2 (RAISE) case.
+        """
+        if int(pass_idx) == 0:
+            return ("noop", None)               # first pass is wide-open
+        scope = getattr(self, "_passback_scope_where", None)
+        if scope is not None:
+            return ("scoped", scope)            # serial / word-`.where` reading
+        if self.intent_boosts() is None:
+            return ("noop", None)               # no words-category attention
+        obs = getattr(self, "_mereology_ratio_obs", None)
+        if not obs:
+            return ("noop", None)               # nothing observed at stage 0
+        rh = obs.get("route_hint")
+        if torch.is_tensor(rh):
+            hint = int(rh.reshape(-1).amax().item()) if rh.numel() else 0
+        else:
+            hint = int(rh or 0)
+        if hint <= 0:
+            return ("noop", None)               # 0 = NULL: nothing to attend
+        # 1 = REFINE (one run -> single chunk + parts); 2 = RAISE (many runs
+        # / disjoint parts+wholes -> sigma/pi refine).
+        return ("chunk", None) if hint == 1 else ("refine", None)
+
     def forward(self, CS_subspaceForWS, IS_concepts=None):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
@@ -19287,18 +19372,11 @@ class OutputSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         object.__setattr__(self, "_initial_vectors", vectors)
         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
-        # Regression-head readout (Task #11, architecture-backlog §1).
-        # identity | sigmoid; only consulted on the unquantised regression
-        # path (see ``self._regression_head`` below). Read BEFORE
-        # super().__init__() to mirror the other pre-super config reads.
-        _readout = str(
-            TheXMLConfig.space(section, "readout", default="identity")
-        ).strip().lower()
-        if _readout not in ("identity", "sigmoid"):
-            raise ValueError(
-                f"{section} <readout> got {_readout!r}; expected "
-                f"'identity' or 'sigmoid'.")
-        self._readout = _readout
+        # The unquantised regression head is a bare LINEAR map plus a learned
+        # scalar intercept (the ``_readout_bias`` below). The former
+        # ``<readout>`` enum (identity | sigmoid) was retired 2026-06-19: the
+        # head is always linear+bias (a {0,1} target like XOR is regressed,
+        # not squashed -- see the lrScale / subsymbolicOrder=3 XOR basin).
         super().__init__(inputShape, spaceShape, outputShape)
         self.data = TheData
         self._vocabulary = getattr(self, '_vocabulary', None)
@@ -19367,20 +19445,17 @@ class OutputSpace(Space):
         # The regression head's ``forwardLinear`` is BIAS-FREE (``x @ W``, no
         # intercept). Give the head its OWN learned intercept so the adaptable
         # weights can zero the ``.where``/``.when`` columns AND still shift the
-        # readout off the origin -- otherwise a regression target whose
+        # output off the origin -- otherwise a regression target whose
         # discriminating feature is small (XOR) sticks near the feature mean
-        # (~0.5) because a bias-free linear cannot offset. Allocated for BOTH
-        # readouts (was sigmoid-only): identity ADDS the bias (no squash),
-        # sigmoid adds it pre-logistic. ``sigmoid`` still squashes to (0,1) for
-        # a bounded target. Zero-init => identical to the historical head at
-        # step 0, then the intercept is learned (additive capacity).
+        # (~0.5) because a bias-free linear cannot offset. Zero-init => identical
+        # to the historical head at step 0, then the intercept is learned
+        # (additive capacity).
         #
-        # Shape [1,1,1] -- a single scalar intercept broadcast over the readout.
+        # Shape [1,1,1] -- a single scalar intercept broadcast over the output.
         # ``_apply_readout`` runs on the PRE-forwardEnd output, which is the
         # flattened ``[B, 1, nOutput*nOutputDim]``; a per-nOutputDim bias would
-        # mismatch that width whenever nOutput>1 (it only happened to match the
-        # nOutput==1 heads -- XOR, the sigmoid tests). A scalar broadcasts for
-        # any nOutput/nOutputDim and is the right intercept for a scalar/low-D
+        # mismatch that width whenever nOutput>1. A scalar broadcasts for any
+        # nOutput/nOutputDim and is the right intercept for a scalar/low-D
         # regression target.
         if self._regression_head:
             self._readout_bias = nn.Parameter(torch.zeros(1, 1, 1))
@@ -19390,33 +19465,25 @@ class OutputSpace(Space):
         self._batch_results = []
 
     def _apply_readout(self, output):
-        """Regression-head readout: add the learned bias, then squash.
+        """Regression-head readout: add the learned scalar intercept.
 
-        ``output`` is the post-linear event tensor ([B, N, nOutputDim]).
-        BOTH readouts add the head's learned intercept (the bias-free
-        ``forwardLinear`` cannot offset on its own, so an XOR/regression target
-        would otherwise stick near the feature mean); ``sigmoid`` additionally
-        squashes to (0,1) for a bounded target, ``identity`` stays unbounded.
-        No-op unless this is the unquantised regression head."""
+        ``output`` is the post-linear event tensor ([B, N, nOutputDim]). The
+        bias-free ``forwardLinear`` cannot offset on its own, so an
+        XOR/regression target would otherwise stick near the feature mean; the
+        head adds its learned intercept (the head is LINEAR -- the former
+        sigmoid squash was retired 2026-06-19, a {0,1} target is regressed, not
+        squashed). No-op unless this is the unquantised regression head."""
         if not getattr(self, "_regression_head", False):
             return output
         if self._readout_bias is not None:
             output = output + self._readout_bias
-        if self._readout == "sigmoid":
-            output = torch.sigmoid(output)
         return output
 
     def _invert_readout(self, y):
-        """Inverse of :meth:`_apply_readout` for the reverse path.
-
-        sigmoid -> logit then subtract the learned bias; identity -> subtract
-        the learned bias. The logit input is clamped off {0,1} so the reverse
-        stays finite."""
+        """Inverse of :meth:`_apply_readout` for the reverse path: subtract the
+        learned scalar intercept (linear head -- no squash to invert)."""
         if not getattr(self, "_regression_head", False):
             return y
-        if self._readout == "sigmoid":
-            y = y.clamp(epsilon, 1 - epsilon)
-            y = torch.log(y) - torch.log1p(-y)  # logit(y)
         if self._readout_bias is not None:
             y = y - self._readout_bias
         return y
@@ -19467,7 +19534,7 @@ class OutputSpace(Space):
         output = self.forwardLinear(x)
         if self._regression_head:
             # Unquantised regression head: NEVER snap (a 1-vector snap is
-            # degenerate); apply the sigmoid/identity readout instead.
+            # degenerate); apply the linear+bias readout instead.
             output = self._apply_readout(output)
         elif self.codebook:
             output = self.subspace.get_vectors().forward(output)
@@ -19499,7 +19566,7 @@ class OutputSpace(Space):
         self.subspace.denormalize("output", target="what")
         y = self.subspace.materialize()
         if self._regression_head:
-            # Undo the sigmoid/identity readout before the inverse linear so
+            # Undo the linear+bias readout before the inverse linear so
             # the symbol-space reconstruction sees the pre-squash activation.
             y = self._invert_readout(y)
         y = self.reverseLinear(y)

@@ -35,7 +35,7 @@ sub-elements `<training>` and `<data>` (see below).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `modelType` | string | `"simple"` | `simple` (feedforward), `embedding` (LM / chat with sequence processing), `passthrough` (identity bench), `vq` (codebook-only). |
+| `data/dataType` | string | `"numeric"` | The data tier (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
 | `reconstruct` | string | `"concepts"` | Reverse-pass mode: `none` disables; `symbols` reconstructs from cached output symbols; `concepts` reconstructs at the conceptual tier (default); `both` combines both reconstruction losses. (Default flipped from `symbols` to `concepts` on 2026-05-29; per-experiment XMLs no longer need to override.) |
 | `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
@@ -336,7 +336,7 @@ Maps symbols to final predictions via linear layers.
 | `invertible` | bool | `false` | Rarely set on OutputSpace. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `nonlinear` | bool | `false` | OutputSpace is linear by default; rescales via `Data.denormalize`. |
-| `readout` | string | `identity` | Regression-head readout (backlog #11, 2026-06-09): with `nVectors == 1` (or no codebook) the head is an unquantised linear `nInputDim → nOutputDim`; `identity` is byte-identical to the old bare-linear head, `sigmoid` makes a binary $\{0,1\}$ target representable (XOR / the `predicted` column). Ignored by quantised heads. |
+| *(readout — retired 2026-06-19)* | — | — | The OutputSpace regression head (backlog #11): with `nVectors == 1` (or no codebook) it is an unquantised linear `nInputDim → nOutputDim` plus a learned scalar intercept. The former `<readout>` enum (`identity` \| `sigmoid`) was retired — the head is always linear+bias (a binary $\{0,1\}$ target like XOR is regressed, not squashed; see `OutputSpace.lrScale` + `subsymbolicOrder=3`). Ignored by quantised heads. |
 
 `LinearLayer` with `(bias, temp)` support for ergodic mode.
 
@@ -404,7 +404,7 @@ factor-level noise injection.
 ```xml
 <model>
   <architecture>
-    <modelType>embedding</modelType>
+    <data><dataType>embedding</dataType></data>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -465,7 +465,7 @@ Everything not listed inherits from `data/model.xml`.
 ```xml
 <model>
   <architecture>
-    <modelType>embedding</modelType>
+    <data><dataType>embedding</dataType></data>
     <weightsPath>BasicModel.ckpt</weightsPath>
     <embeddingPath>BasicModel.kv</embeddingPath>
 
@@ -492,7 +492,7 @@ Everything not listed inherits from `data/model.xml`.
 
 Key points:
 
-- `modelType=embedding` activates the embedding-based input pipeline alongside the neural model.
+- `<data><dataType>embedding</dataType>` activates the embedding-based input pipeline alongside the neural model.
 - `trainEmbedding=BACKPROP` trains model layers with gradients flowing through the codebook.
 - XML config defines the architecture. `weightsPath` stores the neural model checkpoint.
 - `minFrequency` gates vocabulary admission; words below it are buffered until they exceed the threshold.

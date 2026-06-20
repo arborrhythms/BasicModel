@@ -5,12 +5,12 @@
        Exercises SentenceStreamDataset + _runEpoch_streaming end-to-end
        without the cost of a full BasicModel training run. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
     <weightsPath>stream_smoke.ckpt</weightsPath>
     <data>
+      <dataType>embedding</dataType>
       <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
       <maxDocs>200</maxDocs>

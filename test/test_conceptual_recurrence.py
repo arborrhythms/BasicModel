@@ -402,14 +402,19 @@ def test_bind_contained_in_conceptual_space():
     Nv = int(cs0.combine.n_vectors)
     D = int(cs0.combine.content_dim)
     assert ps_rec.shape[-2:] == (Nv, D) and ws_rec.shape[-2:] == (Nv, D)
-    # The head-facing event is the corpus-callosum glue of the bind
-    # (+ the empty band at D == muxedSize), written by bind_streams onto
-    # the FLOWING sub (the per-batch CS_sub handed downstream).
+    # The head-facing event is the corpus-callosum glue of THAT stage's
+    # bind (+ the empty band at D == muxedSize), written by bind_streams
+    # onto the FLOWING sub (the per-batch CS_sub handed downstream). At
+    # subsymbolicOrder>1 the flowing sub is the LAST stage's (MM_20M ships
+    # sO=3), so compare against the LAST stage's carrier+combine -- not
+    # stage 0's (which only coincides with the flow when T==1).
     last = m._combine_last_cs_sub
-    assert getattr(last, "_bind_carrier", None) is not None, (
+    last_carrier = getattr(last, "_bind_carrier", None)
+    assert last_carrier is not None, (
         "the flowing CS_sub must carry the bind too")
+    cs_last = m.conceptualSpaces[len(m.body_stages) - 1]
     with torch.no_grad():
-        glued = cs0.combine.glue(carrier)
+        glued = cs_last.combine.glue(last_carrier)
         ev = last.materialize()
     assert ev is not None and ev.shape[-2:] == (Nv, D)
     assert torch.allclose(ev, glued, atol=1e-4), (

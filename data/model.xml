@@ -15,9 +15,8 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <!-- Model archetype: simple (feedforward), embedding (LM/chat),
-         passthrough (identity bench), vq (VQ-only). -->
-    <modelType>simple</modelType>
+    <!-- The data tier (embedding | numeric) is set under <data> as
+         <dataType>; this defaults file uses numeric (see <data> below). -->
 
     <!-- Iteration depth of the P→C→S pipeline.  order > 1 partitions
          the symbolic codebook geometrically (see Reasoning.md). -->
@@ -154,6 +153,7 @@
 
 
     <data>
+      <dataType>numeric</dataType>
       <!-- Dataset key: xor | mnist | tomatoes | text | inline.
            Omit for inference-only models. -->
       <dataset>xor</dataset>
@@ -488,11 +488,6 @@
     <codebook>none</codebook>
     <!-- Linear (no tanh) output; OutputSpace rescales via Data.denormalize. -->
     <nonlinear>false</nonlinear>
-    <!-- Regression-head readout (identity | sigmoid). identity = bare
-         linear (historical default); sigmoid squashes to (0,1) for
-         binary/scalar targets. Only used on the unquantised regression
-         head (nVectors==1 or codebook=none). -->
-    <readout>identity</readout>
   </OutputSpace>
 
 </model>

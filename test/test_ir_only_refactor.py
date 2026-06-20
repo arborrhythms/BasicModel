@@ -45,8 +45,8 @@ from util import init_config, TheXMLConfig
 _MODEL_XML_HEADER = """<?xml version="1.0" ?>
 <model>
   <architecture>
-    <modelType>embedding</modelType>
     <data>
+      <dataType>embedding</dataType>
       <dataset>inline</dataset>
       <input use="train">a b c</input>
       <output use="train">0</output>
@@ -112,9 +112,11 @@ class TestXsdRejectsRetiredElements(unittest.TestCase):
         from util import XMLConfig
         xml = _MODEL_XML_HEADER.format(training_extra=training_extra)
         if arch_extra:
+            # Insert the extra architecture element just before <data> (both
+            # are architecture-level children).
             xml = xml.replace(
-                "<modelType>embedding</modelType>",
-                "<modelType>embedding</modelType>\n    " + arch_extra)
+                "    <data>",
+                "    " + arch_extra + "\n    <data>", 1)
         xml = xml + _MODEL_XML_FOOTER
         tmp = tempfile.NamedTemporaryFile(
             mode="w", suffix=".xml", delete=False, dir=_DATA)

@@ -25,7 +25,6 @@
          NP/VP -> N/V/AP -> word). -->
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -48,6 +47,7 @@
     <loadBalanceWeight>0.01</loadBalanceWeight>
 
     <data>
+      <dataType>embedding</dataType>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
     </data>
@@ -102,7 +102,6 @@
     <nVectors>1024</nVectors>
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

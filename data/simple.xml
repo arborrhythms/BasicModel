@@ -24,8 +24,8 @@
     <nVectors>784</nVectors>
   </PartSpace>
 
-  <!-- Stage 1.D flat-slab invariant (2026-05-27): SimpleModel (no
-       embedding modelType); validator doesn't fire. Original shape. -->
+  <!-- Stage 1.D flat-slab invariant (2026-05-27): numeric model (no
+       embedding dataType); validator doesn't fire. Original shape. -->
   <ConceptualSpace>
     <nOutput>20</nOutput>
     <nVectors>20</nVectors>

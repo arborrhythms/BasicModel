@@ -28,9 +28,9 @@
   </PartSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): the invariant fires
-       only in embedding mode; this config is SimpleModel (no
-       <modelType>embedding</modelType>) so the architectural slab
-       can re-dimension across tiers. CS shape unchanged. -->
+       only in embedding mode; this config is numeric (no
+       <dataType>embedding</dataType>, inherits the numeric default) so the
+       architectural slab can re-dimension across tiers. CS shape unchanged. -->
   <ConceptualSpace>
     <nOutput>20</nOutput>
     <nVectors>20</nVectors>

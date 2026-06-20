@@ -788,7 +788,7 @@ class TestFlatSlabInvariant(unittest.TestCase):
         cs_event = cs_dim + sum(canonical_shape("ConceptualSpace"))
         return {
             "architecture": {
-                "modelType": "embedding",
+                "dataType": "embedding",
                 "monotonic": False,
                 "naive": False,
             },

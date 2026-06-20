@@ -319,43 +319,41 @@ So: granularity is intrinsic to the folds, subsymbolic order iterates the
 subsymbolic passes (composing symbols), and symbolic order is the serial
 grammatical loop over words.
 
-> **⚠ SPECIFICATION GAP — the three order loops need a precise, separate
-> spec (2026-06-19).** The loop hierarchy is under-specified and currently
-> conflates concerns; each axis needs its own definition (semantics, bound,
-> and how the three compose). The intended division of labour is:
+> **Spec: [doc/specs/orders.md](specs/orders.md) (resolved 2026-06-19).** The
+> three order axes now have a precise, separate spec — semantics, bound, and how
+> they compose. In brief:
 >
-> - **`subsymbolicOrder`** — the **analysis/synthesis loop and the area of
->   attention**: how many refinement passes run, whether each pass *analyses*
->   (re-expands) or *synthesises* (chunks), and how attention scopes what is
->   expanded/chunked. *Today:* `T` parallel CS→PS/WS iterations; the
->   analysis-vs-synthesis choice and the attention scope are not yet
->   first-class (see the contiguity-of-`.where` proposed refinement above).
->   *Proposed mechanism (2026-06-19) — the area of attention is a `.where`
->   scope on the dual-input SECOND ARGUMENT to PS/WS* (a **null-concept event
->   carrying only a `.where`**, not content). **Default / model-driven:** a
->   **full `.where`** lets PS/WS range over the whole input and attention then
->   dives to a chosen location + granularity. **Override / deterministic
->   reading:** the serial-word loop supplies **word `.where`s** as that second
->   argument, forcing word-by-word reading. One channel, two scope sources —
->   so `subsymbolicOrder` attention and the serial (`syntacticOrder`) reading
->   are the SAME mechanism parameterized by which `.where` flows in. Reuses
->   the existing dual-input arg + `.where` brackets (no radix-filter rewrite).
-> - **`symbolicOrder`** — whether the **σ/π abstractions** run (the serial /
->   grammatical, abstraction-composing path) **or parallel processing** (the
->   whole-slab path). *Today:* `0` = parallel, `≥1` = serial; the distinction
->   to make precise is "does the σ/π abstraction" vs "parallel processing."
-> - **`syntacticOrder`** *(NEW — not yet implemented)* — the **depth of the
->   parse tree**, with a guaranteed **maximum of the number of words in the
->   sentence**. A distinct axis from the two above (composition *depth*, not
->   refinement-pass count nor parallel-vs-serial). Needs its own knob, the
->   word-count upper bound, and forward semantics.
+> - **`subsymbolicOrder`** — the **analysis/synthesis refinement-pass count and
+>   the area of attention**. `T` parallel CS→PS/WS iterations; each pass
+>   *refines* (contiguous `.where`) or *raises* (discontiguous), and attention
+>   scopes via a `.where` on the dual-input SECOND ARGUMENT (the top-down WS→PS
+>   handoff, gated `<mereologyRaise>`; see
+>   [mereological-order-raising.md](specs/mereological-order-raising.md)). The
+>   serial-word reading supplies word `.where`s through the **same** channel.
+> - **`symbolicOrder`** — **parallel whole-slab** (`0`) vs **serial σ/π
+>   abstraction** (`≥1`). More than a parallel-vs-serial switch: the serial σ/π
+>   path is the **relational pump** — it spreads activation through the relation
+>   graph to surface *higher-order* (relations-of-relations) features that have
+>   **no mereological `.where`** and so can't be primed off `.where` contiguity.
+>   `subsymbolicOrder` pumps the mereological substrate; `symbolicOrder` pumps the
+>   relational one. See orders.md §6.
+> - **`syntacticOrder`** *(NEW — implemented 2026-06-19)* — the **parse-tree
+>   composition DEPTH** per sentence, bounded by the word count. `0` = unbounded
+>   (byte-identical); a positive value caps the NULL-seal reduce sweep to that
+>   many fold levels (static `min(syntacticOrder, cap−1)`; `≤W` structural).
+>   Inert in parallel mode.
 >
-> Open questions for the spec: how the three compose (e.g. serial
-> `symbolicOrder` over words × `syntacticOrder` tree depth per sentence ×
-> `subsymbolicOrder` pumps per node); the **basic-level stop** — synthesis
-> halts at **words** (word boundaries from analysis, consumed by the
-> serial-word loop), so `syntacticOrder`'s leaves are words; and whether
-> `syntacticOrder` layers over, or subsumes, the serial `symbolicOrder` loop.
+> Composition (serial run): `symbolicOrder ≥ 1` loops words × `syntacticOrder`
+> bounds the parse-tree depth per sentence × `subsymbolicOrder` pumps per node;
+> the **basic-level stop** is shared (synthesis halts at words, so the tree's
+> leaves are words). `syntacticOrder` **layers over** the serial `symbolicOrder`
+> loop (it bounds depth; it does not replace the parallel-vs-serial switch).
+>
+> **Where this is headed ([orders.md §6](specs/orders.md), design):** the three
+> orders become **pump counts** over one connectionist attention substrate — a
+> cumulative priming hierarchy (mereological entries → relations/concepts →
+> higher-order, each seeing all below) where reading is a learned `.where`
+> attention (text-mode next-word loss) that replaces the serial for-loop.
 
 ### Modes of operation
 

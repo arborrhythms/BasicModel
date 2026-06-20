@@ -319,6 +319,34 @@ transcends a specific place/time). So its meronymic relation to its lower-order 
   walks the fold sequence in reverse — the basis for reconstructing a high-order code
   back to its constituents.
 
+### The symbol table and the priming hierarchy (design, 2026-06-19)
+
+The abstraction-order ladder above is also the **priming hierarchy** for attention —
+see [orders.md §6](orders.md) "The attention substrate" for the full account. In brief:
+
+- **first-order = mereological entries** (parts/wholes, `.where`-grounded, primed
+  bottom-up from what's seen); **second-order = relations/concepts** built on them;
+  **higher-order = relations of relations**, which see *both* the mereological features
+  *and* the lower-order relations and have **no mereological `.where`** of their own.
+  Higher-order features therefore cannot be primed off `.where` contiguity (the
+  `RunStructureLayer` route) — they enter attention only via spreading activation
+  through the relation graph. That relational pump is what `symbolicOrder ≥ 1` runs.
+- So there are **two kinds of `.where`**: the *environmental* one (a surface span, what
+  the top-down handoff scopes) and a *relational* one (a position in the symbol graph)
+  for the abstract codes, which rides on the `part_chain` / `invert_ramsified`
+  machinery above rather than on surface spans.
+- The **symbol table** that holds these relation/abstraction edges is owned by
+  **ConceptualSpace** and stores **indices, not vectors** (ownership-by-reference: the
+  PS/WS codebooks own the prototype vectors; the table owns only structure). A symbol's
+  linkage is captured from `PS.active` / `WS.active` at mint, kept as **separate
+  part-index and whole-index spaces** (each link carries a part/whole type bit the
+  σ-refine-vs-π-raise routing reads). It unifies the existing CS relation machinery
+  (`create_word_object_meta`'s A/B/C, the MetaSymbol category codebook, the
+  `RelativeTruthStore`) under one attention head. The reading/attention loss trains the
+  readout but **does not** backprop into the codebooks (preserving the EMA-only VQ
+  contract); a symbol's importance reaches its codebook rows indirectly, via use →
+  occurrence → EMA.
+
 ## Words: the SymbolTable's double duty
 
 A **word is a whole with TWO parts** — an **orthographic** part (the surface form)

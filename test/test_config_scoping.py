@@ -111,15 +111,14 @@ class TestCreateFromConfig(unittest.TestCase):
         return f.name
 
     def test_reads_space_nOutput(self):
-        # Stage 1.D flat-slab invariant: <modelType>passthrough</modelType>
+        # Stage 1.D flat-slab invariant: <dataType>numeric</dataType>
         # so the validator doesn't fire on the deliberately-mismatched
         # per-space nOutput values (the point of this test is that
         # nOutput is read per-space, not architectural correctness).
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
-    <modelType>passthrough</modelType>
-    <data><dataset>xor</dataset></data>
+    <data><dataType>numeric</dataType><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nOutput>2</nOutput><nDim>5</nDim></InputSpace>
@@ -202,6 +201,10 @@ class TestValidateConfig(unittest.TestCase):
         cfg = {
             "architecture": {
                 "reconstruct": "symbols",
+                # The WS.nWhat==CS.nWhat flat-slab handoff invariant is
+                # embedding-only (the numeric path re-dimensions freely), so
+                # declare the embedding data tier to exercise it.
+                "dataType": "embedding",
             },
             "InputSpace": {"nOutput": 8, "nDim": 4},
             "PartSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,

@@ -89,7 +89,7 @@ def test_symbolic_space_reads_discontinuity_lambda_from_config():
     <discontinuityLambda>0.25</discontinuityLambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <modelType>embedding</modelType>
+    <data><dataType>embedding</dataType></data>
   </architecture>
   <SymbolicSpace>
     <language><grammar><S>C</S><C>P</C><P>I</P></grammar></language>

@@ -7,7 +7,9 @@
        (the <useVQVAE> knob was retired 2026-05-29). -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -47,7 +49,6 @@
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

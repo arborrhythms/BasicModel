@@ -20,7 +20,9 @@
        Do not consume from production code. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <symbolicOrder>1</symbolicOrder>
     <!-- sentenceProtocol defaults ON in serial mode, but its prelude +
          top-k priming gate has a pre-existing shape mismatch with
@@ -71,7 +73,6 @@
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

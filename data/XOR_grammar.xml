@@ -25,7 +25,9 @@
          compositional commitment instead of recombining per-
          position copies via its own nonlinearity. -->
     <conceptualWidth>uniform</conceptualWidth>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -84,7 +86,6 @@
          tier, so nDim was bumped 4 -> 8 to preserve nWhat=4. -->
     <nDim>8</nDim>
     <nVectors>6</nVectors>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

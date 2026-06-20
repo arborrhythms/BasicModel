@@ -137,25 +137,37 @@ def test_ws_rejects_concepts_with_nonempty_cs():
 
 
 def test_model_forward_passes_unity_at_stage0():
-    # Phase 2 wiring: the body hands the PARKED unity to SS at stage 0 only.
+    # Phase 2 wiring: the body hands the PARKED unity to the STAGE-0
+    # WholeSpace only; later stages read the recurrent CS (input once).
+    # The per-stage WholeSpaces are DISTINCT objects (``m.wholeSpaces[t]``,
+    # ``body_stages[t]["ws"]``); the terminal ``m.wholeSpace`` is the LAST
+    # stage, so at subsymbolicOrder>1 (MM_20M ships sO=3, T=3) the capture
+    # must hook EVERY stage's ws -- hooking only the terminal would miss the
+    # stage-0 unity call entirely.
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
-    ws = m.wholeSpace
-    real = ws.forward
-    calls = []
-    def _capture(sub, *a, **k):
-        calls.append(k.get("IS_concepts", None))
-        return real(sub, *a, **k)
-    ws.forward = _capture
+    stage_ws = list(m.wholeSpaces)
+    reals = [w.forward for w in stage_ws]
+    calls = []  # (stage_idx, IS_concepts)
+    def _mk(idx, real):
+        def _capture(sub, *a, **k):
+            calls.append((idx, k.get("IS_concepts", None)))
+            return real(sub, *a, **k)
+        return _capture
+    for i, w in enumerate(stage_ws):
+        w.forward = _mk(i, reals[i])
     try:
         with torch.no_grad():
             out = m.forward(x)[2]
     finally:
-        ws.forward = real
+        for w, real in zip(stage_ws, reals):
+            w.forward = real
     assert out is not None and torch.isfinite(out).all()
-    assert len(calls) >= 1 and torch.is_tensor(calls[0]), (
+    stage0_concepts = [c for (i, c) in calls if i == 0]
+    later_concepts = [c for (i, c) in calls if i > 0]
+    assert stage0_concepts and torch.is_tensor(stage0_concepts[0]), (
         "stage 0 must receive the parked unity view")
-    assert all(c is None for c in calls[1:]), (
+    assert all(c is None for c in later_concepts), (
         "stages after 0 read only the recurrent CS (input once)")
 
 
@@ -231,7 +243,11 @@ def test_parallel_ws_quantize_fires():
     # (it was a verified 0-call no-op before).
     m = _build("MM_20M.xml")
     x = _staged_batch(m)
-    ws = m.wholeSpace
+    # The stage-0 analysis snap fires on the STAGE-0 WholeSpace
+    # (``m.wholeSpaces[0]``), not the terminal ``m.wholeSpace`` (= the last
+    # stage at sO>1; MM_20M ships sO=3). Hook the stage that actually reads
+    # the unity at t=0.
+    ws = m.wholeSpaces[0]
     # Step 2 (symbolic-iteration plan): stage 0 snaps the ANALYSIS STORE
     # (its own basis under <analysis>); the symbol codebook on
     # subspace.what belongs to the CS leg.

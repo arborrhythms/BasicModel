@@ -5,7 +5,9 @@
        slots reserved for reconstruction targets). Scalar codebook regime:
        PiLayer stays a square isomorphism inside conceptual content space. -->
   <architecture>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: non-grammar (whole-slab) config — per-stage forward
          dispatch via _forward_per_stage's body. -->
     <symbolicOrder>0</symbolicOrder>
@@ -62,7 +64,6 @@
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
     <nOutputDim>6</nOutputDim>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

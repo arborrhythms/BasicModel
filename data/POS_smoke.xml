@@ -10,7 +10,6 @@
        output/syntax_pos_smoke.xml so we can inspect what POS / rule
        the chart picked. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -22,6 +21,7 @@
     <mereologicalTreeSize>128</mereologicalTreeSize>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>inline</dataset>
       <!-- All sentences are exactly 3 content words (5 lex tokens including
            spaces).  The parser wMax=8 forces this constraint:
@@ -122,7 +122,6 @@
     <nOutput>8</nOutput>
     <nDim>20</nDim>
     <nVectors>128</nVectors>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

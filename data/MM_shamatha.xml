@@ -13,7 +13,9 @@
          P/C/S cycles. Parser dispatch is derived from the grammar block. -->
     <subsymbolicOrder>0</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 1.E: grammar config (non-substrate rules below) — per-word
          forward dispatch via _forward_body_per_word. -->
     <symbolicOrder>1</symbolicOrder>
@@ -88,7 +90,6 @@
     <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE
          path is active; the four regularizer knobs below operate on
          the codebook tensor. -->
-    <codebook>quantize</codebook>
     <discontinuityLambda>0.01</discontinuityLambda>
     <impenetrableOverlap>0.1</impenetrableOverlap>
     <impenetrableVariance>0.01</impenetrableVariance>

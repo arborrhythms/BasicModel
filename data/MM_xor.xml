@@ -6,7 +6,9 @@
        but scaled to XOR-sized dims. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
          butterfly cascade on PartSpace.pi requires the parallel
          (whole-slab) forward path so the cascade sees all N positions
@@ -66,7 +68,6 @@
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

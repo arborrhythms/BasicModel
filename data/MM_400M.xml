@@ -4,7 +4,6 @@
   <!-- MM_400M: same architecture/training parameters as MM_20M, but
        trained over the FineWeb shard dataset. -->
   <architecture>
-    <modelType>embedding</modelType>
     <!-- serial: PartSpace reduces the raw byte slab, then the body
          processes the staged percept slots one at a time. -->
     <symbolicOrder>1</symbolicOrder>
@@ -15,6 +14,7 @@
     <sigmaPi>butterfly</sigmaPi>
 
     <data>
+      <dataType>embedding</dataType>
       <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
@@ -66,7 +66,6 @@
     <nOutputDim>1024</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>none</codebook>
   </ConceptualSpace>
 
   <WholeSpace>
@@ -79,7 +78,6 @@
     <nOutputDim>8</nOutputDim>
 
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

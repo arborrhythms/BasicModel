@@ -16,7 +16,9 @@
        production code. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
-    <modelType>embedding</modelType>
+    <data>
+      <dataType>embedding</dataType>
+    </data>
     <symbolicOrder>0</symbolicOrder>
 
     <training>
@@ -62,7 +64,6 @@
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
-    <codebook>quantize</codebook>
   </WholeSpace>
 
   <OutputSpace>

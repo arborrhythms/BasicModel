@@ -263,7 +263,7 @@ class Report:
 
         Skips gracefully for:
           * IR / masked-LM text training (post-2026-05-14 default for
-            ``modelType=embedding``) — there's no per-row class label
+            ``dataType=embedding``) — there's no per-row class label
             to score against; the IR P-tier reconstruction loss is
             the live signal.
           * Empty test split (structural-scaffold configs).
