@@ -76,7 +76,7 @@ def _stage_for_per_word(m):
     isp.Start()
     inputTensor = isp.prepInput(inp_items)
     in_sub = isp.forward(inputTensor)
-    # Per-sentence SymbolicSubSpace state. Production initializes this in
+    # Per-sentence SymbolSubSpace state. Production initializes this in
     # the first ``_per_word_prelude`` (sentinel
     # ``_per_sentence_initialized``); replay that here for tests that
     # call ``_per_word_body_step`` in isolation.

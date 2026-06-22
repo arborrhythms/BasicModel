@@ -119,8 +119,8 @@ def test_mint_shift_pushes_the_oriented_row():
     # The immediate shift path must carry the gauge-fixed row, not the
     # un-oriented codebook representative (review fix 2026-06-11).
     import torch.nn as nn
-    from Language import SymbolicSubSpace
-    ss = object.__new__(SymbolicSubSpace)
+    from Language import SymbolSubSpace
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss._stm_payload_dim = D
     ss._idea_capacity = 8

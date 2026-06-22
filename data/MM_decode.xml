@@ -1,0 +1,88 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_decode: idea-decoder (D3) experiment config. SERIAL (symbolicOrder=1,
+       so the sentence reduces to a single-S [B,1,D] idea = the decoder seed) +
+       TALL WholeSpace (nOutputDim 1024, so symbol_dim==concept_dim and the
+       ideaDecode seed-swap drives instead of falling back) + <ideaDecode>.
+       Derived from MM_mereology_serial.xml + the MM_ws_tall WS/OS sizing.
+       Dataset xor = simple 2-word sentences (hello world / hello there / ...),
+       the build-up base for decode. -->
+  <architecture>
+    <symbolicOrder>1</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <serialObjectMeta>true</serialObjectMeta>
+    <symbolTower>true</symbolTower>
+    <ideaDecode>true</ideaDecode>
+
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>1024</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

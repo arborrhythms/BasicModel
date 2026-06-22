@@ -1,7 +1,7 @@
 """Per-word stem tests retired 2026-05-14.
 
 The per-word stem (``_forward_stem_per_word``) was the AR-mode stem
-that pushed one C-tier idea onto ``ConceptualSpace.stm`` per
+that pushed one C-space_role idea onto ``ConceptualSpace.stm`` per
 perceptual slot, so the body's chart-at-C had something to read.
 With the IR-only refactor (no per-cursor walk, single-shot masked-LM
 forward) the stem inlines into ``_forward_per_stage`` as

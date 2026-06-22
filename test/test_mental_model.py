@@ -49,20 +49,20 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Grammar should be initialized
         self.assertTrue(Language.TheGrammar._configured)
         # Post 2026-05-08 SyntacticLayer rename: per-space dispatchers
-        # live on the home spaces (C / S each own a SyntacticLayer).
+        # live on the home spaces (CS / SS each own a SyntacticLayer).
         # Bivector retirement (2026-05-20) made the PartSpace-
-        # tier SyntacticLayer optional — not all configs wire a
-        # ``P`` SyntacticLayer, so accept None there.
+        # space_role SyntacticLayer optional — not all configs wire a
+        # ``subsymbolic`` SyntacticLayer, so accept None there.
         for space in (model.conceptualSpace, model.wholeSpace):
             self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
                                  f"{space.name} missing per-space "
                                  f"SyntacticLayer")
-        # Post-2026-05-29 grammar-file refactor: tier comes from the
-        # layer class (per ``_reassign_tiers_from_layer_classes``), so
+        # Post-2026-05-29 grammar-file refactor: space_role comes from the
+        # layer class (per ``_reassign_space_roles_from_layer_classes``), so
         # ``s_methods`` returns only methods whose layer declares
-        # ``tier='S'``. Assertive ``isEqual`` / ``conjunction`` /
-        # ``disjunction`` / ``exist`` are S-tier; query and logical
-        # answer operations live on C-tier per their GrammarLayer
+        # ``space_role='SS'``. Assertive ``isEqual`` / ``conjunction`` /
+        # ``disjunction`` / ``exist`` are SS-space_role; query and logical
+        # answer operations live on CS-space_role per their GrammarLayer
         # subclasses. Equality questions keep method_name='isEqual'
         # with rule.query=True, but dispatch through the query layer.
         self.assertIn('isEqual', Language.TheGrammar.s_methods)
@@ -71,7 +71,7 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         self.assertIn('exist', Language.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
-        """SubSpace word lists can be cleared on all tiers."""
+        """SubSpace word lists can be cleared on all space_roles."""
         _reload_config()
         model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Should not raise
@@ -135,13 +135,13 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
         # Stage 3 (2026-05-27): the chart retired; the signal router
-        # (``SymbolicSubSpace.languageLayer``) carries the grammar reference
+        # (``SymbolSubSpace.languageLayer``) carries the grammar reference
         # for diagnostics and gating.
         self.assertIs(model.symbolSpace.languageLayer.grammar,
                       Language.TheGrammar)
         # Post-2026-05-29 grammar-file refactor: ``load_from_grammar_file``
         # injects an ``S = S`` identity rule (method_name=None, arity=1,
-        # tier='S') so the per-word cursor has a no-op transition to
+        # space_role='SS') so the per-word cursor has a no-op transition to
         # pad against. ``symbolic_transition()`` now returns that
         # rule's id rather than None.
         self.assertIsNotNone(Language.TheGrammar.symbolic_transition())

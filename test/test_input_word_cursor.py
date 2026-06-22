@@ -53,7 +53,7 @@ def _build_nongrammar_model():
     """Sibling of ``_build_gate_model`` for the non-grammar path.
 
     ``data/model.xml``'s shipped default grammar is the default-only
-    unary ``sigma``/``pi`` folds (compose + generate) at every tier --
+    unary ``sigma``/``pi`` folds (compose + generate) at every space_role --
     the one grammar shape ``_derive_use_grammar`` maps to
     ``useGrammar='none'`` (every other config, including any with an
     empty ``<grammar>``, inherits the ``not(S)`` NOOP fallback and

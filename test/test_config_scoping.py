@@ -203,7 +203,7 @@ class TestValidateConfig(unittest.TestCase):
                 "reconstruct": "symbols",
                 # The WS.nWhat==CS.nWhat flat-slab handoff invariant is
                 # embedding-only (the numeric path re-dimensions freely), so
-                # declare the embedding data tier to exercise it.
+                # declare the embedding data space_role to exercise it.
                 "dataType": "embedding",
             },
             "InputSpace": {"nOutput": 8, "nDim": 4},

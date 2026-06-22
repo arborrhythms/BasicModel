@@ -1,14 +1,14 @@
 """Phase 3 (grammar ops operate event->event) of
 doc/plans/2026-06-03-modality-architecture-plan.md.
 
-C-tier grammar ops see the muxed event [what | where | when]:
+C-space_role grammar ops see the muxed event [what | where | when]:
   - LIFT composes the .what content (binary sigma fold) AND extends the
     result's .when span > 1, advancing the center (verb-advances-future).
   - LOWER is the inverse: pi fold over content, retract the .when span back
     toward a unit point with the center retreated.
   - PREPOSITION modifies the .where block, leaving .what / .when untouched.
 Content-only operands (no where/when tail) pass through the legacy fold
-unchanged (SS-tier route stays content-only).
+unchanged (SS-space_role route stays content-only).
 """
 
 import math, os, sys, unittest
@@ -87,7 +87,7 @@ class TestLiftLowerWhen(unittest.TestCase):
 
     def test_content_only_operand_passes_through_legacy_fold(self):
         # No where/when tail: width == nInput -> legacy binary sigma fold,
-        # output is content-width (unchanged contract for the SS-tier route).
+        # output is content-width (unchanged contract for the SS-space_role route).
         lift = LiftLayer(nInput=_NWHAT)
         a = torch.randn(1, 1, _NWHAT).tanh()
         out = lift.compose(a, a)

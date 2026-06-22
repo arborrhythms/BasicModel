@@ -76,7 +76,7 @@ def test_gate_skips_generate_rebuild_when_on():
     x = _batch(m)
     m.eval()
     with torch.no_grad():
-        m.forward(x)  # populate the C-tier STM so the snapshot is non-None
+        m.forward(x)  # populate the C-space_role STM so the snapshot is non-None
 
     # OFF: the chart fire rebuilds the rules (the snapshot is non-None, so this
     # confirms the skip below is meaningful, not a vacuous empty-STM no-op).

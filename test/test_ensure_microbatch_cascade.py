@@ -47,10 +47,10 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     # Body-side state sized to B*K
     assert model.symbolSpace._last_svo.shape[0] == model.symbolSpace.batch
     assert model.symbolSpace._svo_valid.shape[0] == model.symbolSpace.batch
-    # Post-Phase-D (2026-05-21 SymbolicSubSpace/STM Layer refactor):
-    # ``SymbolicSubSpace`` IS a ``SubSpace`` subclass carrying the typed-
+    # Post-Phase-D (2026-05-21 SymbolSubSpace/STM Layer refactor):
+    # ``SymbolSubSpace`` IS a ``SubSpace`` subclass carrying the typed-
     # STM stack buffers. There is no longer a separate ``self.subspace``
-    # peer attribute on SymbolicSubSpace.
+    # peer attribute on SymbolSubSpace.
     assert model.symbolSpace.category_stack._batch == model.symbolSpace.batch
     assert model.symbolSpace.reconstruction_stack._batch == model.symbolSpace.batch
     # _stm_fired stays at B

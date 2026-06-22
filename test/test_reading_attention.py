@@ -327,8 +327,8 @@ def test_producer_writes_teacher_scope_and_registers_loss():
     cs_sub = cs0._subspaceForWS
     m._reading_attention_step(1, prev, ps, cs_sub)
     # Teacher forcing in training: the WRITTEN scope is the TRUE next span
-    # (word read_idx = t - 1 = 0 -> [0, w] / N).
-    scope = getattr(ws0, "_passback_scope_where", None)
+    # (word read_idx = t - 1 = 0 -> [0, w] / N). R2: the scope is CS-owned.
+    scope = getattr(m.conceptualSpace, "_passback_scope_where", None)
     assert scope is not None and scope.numel() == 2
     w = float(spans[0, 0, 1]) / N
     assert torch.allclose(scope.float(), torch.tensor([0.0, w]), atol=1e-4)
@@ -375,7 +375,7 @@ def test_producer_scope_clears_past_last_word():
     _stage_synthetic_spans(m, ps, K=2)    # only 2 words
     # pass t=4 -> read_idx=3 >= K=2 -> no next word -> scope cleared to None.
     m._reading_attention_step(4, prev, ps, cs0._subspaceForWS)
-    assert getattr(ws0, "_passback_scope_where", None) is None
+    assert getattr(m.conceptualSpace, "_passback_scope_where", None) is None
 
 
 def test_producer_params_reach_the_optimizer():

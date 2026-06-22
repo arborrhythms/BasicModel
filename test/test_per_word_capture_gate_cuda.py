@@ -68,7 +68,7 @@ def _build_gate_model_cuda():
 
 def _stage_for_per_word(m):
     """Run one real ``InputSpace.forward`` so ``_ar_embedded`` /
-    ``_valid_len_host`` / peer BPE state / MPHF tables / SymbolicSubSpace
+    ``_valid_len_host`` / peer BPE state / MPHF tables / SymbolSubSpace
     per-sentence state / loop-carry SubSpaces are all populated."""
     isp = m.inputSpace
     assert isp._per_word_enabled is True, (

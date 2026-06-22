@@ -5,17 +5,18 @@
 > - **Embedding unit-ball normalization.** The training loop calls
 >   `Lexicon.normalize()` (unit-ball projection on the per-row
 >   vectors) right after `optimizer.step()` in
->   `bin/Models.py::train_loop`. Keeps embedding vectors from drifting
+>   `bin/Models.py::runBatch`. Keeps embedding vectors from drifting
 >   off the unit ball under `JOINT` / `BACKPROP` modes.
 > - **Seeded retries for MM_xor tests.** `test_learns_xor_signal`
 >   and `test_convergence` in `test/test_mm_xor.py` use
 >   `for seed in (42, 123, 7): torch.manual_seed(seed); …` (the
 >   previously-dead `seed` loop variable in `test_convergence` is now
 >   actually consumed). Pass-if-any-attempt-converges semantics.
-> - **Reconstruction default.** `<reconstruct>concepts</reconstruct>`
->   is the default in `data/model.xml`; per-experiment XMLs no longer
->   override it.
-> - **Supervised output loss restored.** `bin/Models.py::train_loop`
+> - **Reconstruction is unconditional from concepts.** The `<reconstruct>`
+>   element (and `reconstructEnum`) was RETIRED (A1, 2026-06-09); there is
+>   no knob to set or override. Whenever reconstruction fires it is always
+>   concepts-seeded from the terminal `ConceptualSpace` STM snapshot.
+> - **Supervised output loss restored.** `bin/Models.py::runBatch`
 >   computes MSE on the supervised output in addition to the
 >   reconstruction loss (`reconstructionScale`-weighted).
 > - See [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
@@ -183,7 +184,7 @@ embeddings.
 
 ### Within-sentence training objective (IR-only)
 
-Within-sentence training is **always IR** (masked-LM at the P-tier).
+Within-sentence training is **always IR** (masked-LM at the subsymbolic (PS)).
 `create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
 with `NULL_PERCEPT` and snapshots the pre-mask event on
 `_ir_pre_mask_input`; `runBatch` computes
@@ -196,9 +197,9 @@ retired 2026-05-14; sentence-level AR moved to
 
 | Knob | Effect |
 |------|--------|
-| `maskRate` | Bernoulli mask probability at the P-tier (BERT default 0.15) |
+| `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
 | `reconstructionScale` | Blend weight between output and reconstruction loss; `total = (1 - r)*output + r*recon`.  Legacy `<reverseScale>` parsed with deprecation warning. |
-| `<reconstruct>` | Target tier for the optional forward-only reconstruction loss: `none` / `symbols` / `concepts` / `both`.  `output` is retired (the reverse pipeline is gone). |
+| `<reconstruct>` | RETIRED (A1, 2026-06-09; `reconstructEnum` removed).  There is no longer a target space-role knob: reconstruction is unconditionally concepts-seeded from the terminal `ConceptualSpace` STM snapshot, weighted by `reconstructionScale`. |
 
 ### `<trainEmbedding>`: Embedding Update Mode
 
@@ -281,13 +282,14 @@ For each B-wide batch:
    `_ir_mask_positions`.
 4. `_forward_body` runs T stages on B rows.
 5. `_forward_head` produces `[B, N, predDim]` (a side channel --- IR
-   loss is computed at the P-tier, not at the head).
+   loss is computed at the subsymbolic (PS), not at the head).
 6. `runBatch` computes loss via `TheError.add`:
-   - `reconstruction` (P-tier): MSE between post-body
+   - `reconstruction` (subsymbolic (PS)): MSE between post-body
      `perceptualSpace` and `_ir_pre_mask_input` at masked positions.
-   - Optionally `reconstruction_c` / `reconstruction_s` (C-tier /
-     S-tier) when `<reconstruct>` is `concepts` / `symbols` / `both`,
-     weighted by `reconstructionScale`.
+   - `reconstruction_reverse` (concepts-seeded, unconditional):
+     the reverse pass is always seeded from the terminal
+     `ConceptualSpace` STM snapshot (the `<reconstruct>` enum was
+     retired), weighted by `reconstructionScale`.
    - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
      between the ARMA(p, q) prediction and the current sentence rep,
      weighted by `armaScale`.

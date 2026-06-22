@@ -773,12 +773,12 @@ class TestFlatSlabInvariant(unittest.TestCase):
                            cs_out, cs_dim):
         """Build a minimal cfg dict the validator can chew on.
 
-        ``is_dim`` / ``ps_dim`` / ``cs_dim`` are the per-tier CONTENT
-        widths. Under "6+2+2" the (2,2) muxed tiers (IS/PS/CS) carry an
+        ``is_dim`` / ``ps_dim`` / ``cs_dim`` are the per-space_role CONTENT
+        widths. Under "6+2+2" the (2,2) muxed space_roles (IS/PS/CS) carry an
         EVENT ``nDim`` = content + .where/.when band, while the (0,0)
-        content tiers (SS/OS) carry the bare content width. Both the
+        content space_roles (SS/OS) carry the bare content width. Both the
         flat-slab invariant and the SS==CS pass-through compare CONTENT,
-        so adding the band uniformly to the muxed tiers preserves the
+        so adding the band uniformly to the muxed space_roles preserves the
         slab-match / mismatch semantics these tests exercise while keeping
         the call sites expressed in content widths.
         """

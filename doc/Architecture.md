@@ -4,7 +4,7 @@
 
 ![Three pieces: LLM vs BasicModel](diagrams/three_pieces.svg)
 
-> **Terminology (2026-06-21 convention).** One noun per tier: a **percept** is
+> **Terminology (2026-06-21 convention).** One noun per-space: a **percept** is
 > a perceptual thing (PartSpace/WholeSpace, dimensionally-embedded, extensional;
 > *part* and *whole* are its two subtypes); a **concept** is a ConceptualSpace
 > relation tying one part-percept to one whole-percept (the Concept codebook);
@@ -47,6 +47,37 @@ update law (and the codebook/meronomy ownership model generally) instances: all
 computation is composed over typed, symbol-attached units — read/write masks,
 no anonymous global residual stream.
 
+#### Addressable attention — the typed `.where`
+
+Global attention (`GlobalAttention`, `bin/Spaces.py`; gated `<globalAttention>`)
+ranges over a **typed addressable space**: one distribution competes across every
+store at once and emits a typed `.where` = `(space-id, bracket)` plus a soft-read
+`Σ αₖ·keyₖ`. Six stores (the `SPACE_*` ids):
+
+| id | store |
+|---|---|
+| `INPUT` | the staged input window (per-span percept content) |
+| `STM` | the live short-term-memory rows |
+| `LTM` | the consolidated truth store (rows + trust value) |
+| `PART` | the PartSpace codebook (part-percepts) |
+| `WHOLE` | the WholeSpace codebook (whole-percepts + meronomy/taxonomy) |
+| `SYMBOL` | the SymbolSpace codebook (symbols, 1:1 with concepts) |
+
+`PART`/`WHOLE` appear whenever their tower has a codebook; `SYMBOL` only under
+`<symbolTower>`. Pointing `.where` at a codebook/LTM store is recall; at the input
+window it is reading — one mechanism, the type tag distinguishes them. Under
+`<globalAttentionConsume>` the soft-read is fed back into the head as a zero-init
+gated residual, so the output loss trains the retrieval.
+
+The symbol codebook is a **reference**, not a learned copy: it tracks the concept
+codes so the two cannot diverge or dissociate. Its training objective is kept
+separate from reconstruction (the source concepts are shaped by their own pass),
+which is why the symbol leg detaches.
+
+These six stores are the substrate for the four foundations of mindfulness; the
+mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is in
+[Philosophy.md](Philosophy.md#the-four-foundations-of-mindfulness).
+
 > **Status (2026-05-29 update):** further architectural pivots landed
 > on top of the 2026-05-27 substrate refactor:
 >
@@ -64,7 +95,7 @@ no anonymous global residual stream.
 > - **Clean-stack STM.** `ConceptualSpace.forward` bypasses
 >   `sigma_in` / `sigma_cs` on forward — `folded = primary` at stage
 >   0, `folded = sym` at k > 0. The Stage-10 additive composition is
->   retired; per-stage tier attribution is trivially invertible.
+>   retired; per-stage space-role attribution is trivially invertible.
 > - **`basis=` kwarg for grammar reverses.** `UnionLayer.reverse(parent,
 >   basis=None)` / `IntersectionLayer.reverse(parent, basis=None)`
 >   accept a Codebook / Basis object (typically
@@ -147,7 +178,7 @@ objects and references; a reference is a *sign* (a quantized version of
 the referent) or a *symbol* (an unrelated version of the referent, of
 much lower dimensionality). The freed name `SymbolSpace` was
 **reintroduced 2026-06-19** with new semantics — it is now the
-grammar/word tier (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
+grammar/word space-role (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
 the WholeSpace stream is now `ws`). See the full rename mapping in
 `doc/old/2026-06-19-handoff.md`.
 
@@ -195,13 +226,15 @@ Dimensions (`nDim`) are read from `TheObjectEncoding`. Codebook sizes
 
 ![MM_5M Architecture](diagrams/mm5m_architecture.svg)
 
-Layer selection by `<reconstruct>` and `invertible`:
+Layer selection by `invertible` (the `<reconstruct>` element / `reconstructEnum`
+were **RETIRED** in A1, 2026-06-09; reconstruction is now seeded from concepts
+**unconditionally**, gated only by `reconstructionScale`):
 
-1. **`reconstruct=NONE`**: Non-invertible layers (`PiLayer`, `SigmaLayer`)
-   forward-only. No reverse pipeline.
-2. **`reconstruct=<any>` + `invertible`**: Single invertible layer
+1. **Non-invertible, forward-only layers** (`PiLayer`, `SigmaLayer`):
+   forward-only, no reverse pipeline.
+2. **`invertible`**: Single invertible layer
    (`PiLayer(invertible=True)`, etc.) serves both directions, sharing weights.
-3. **`reconstruct=<any>` + not `invertible`**: Two layers with separate
+3. **Not `invertible`** (but reconstructed): Two layers with separate
    weights --- `forward()` on one, `reverse()` on the other. Avoids the
    expressivity limitation where a non-invertible layer can't represent the
    inverse of another. Reverse uses matrix `pinv` (may be numerically
@@ -295,7 +328,7 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    passes (the CS→PS loop). Synthesis chunks the codes into higher-order
    percepts (fewer each pass); analysis re-expands, attention selecting what
    to expand (a top-k over the priming, applied after the WholeSpace
-   codebook lookup). With **`<SymbolicComposition>`** on, the percepts handed
+   codebook lookup). With **`<symbolicComposition>`** on, the percepts handed
    back to PartSpace are re-encoded through the **CS Concept codebook** (the
    part↔whole relation table) — the wide↔deep remap (MM_20M:
    `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma composes a high-order word
@@ -395,7 +428,7 @@ Cross-call serial-cache (`subspace.serial_cache`) for streaming /
 autoregressive contexts is preserved; gated by
 `PartSpace._recurrent_pass_idx == 0`.
 
-### Pipeline as a unit, two-tier reset
+### Pipeline as a unit, two-space-role reset
 
 `runBatch` is a pure compute brick: forward $\to$ loss $\to$ backward $\to$
 optimizer.step. It does **not** decide when to reset per-row state, does
@@ -501,7 +534,7 @@ unary (copy-side) or binary (reduce-side):
   the substrate refactor). Each owns an internal `SigmaLayer` (`LiftLayer`)
   or `PiLayer` (`LowerLayer`) for the pairwise math. No longer
   "substrate-borrowing" — fully self-contained binary grammar ops with
-  `arity=2`, `tier='C'`. Typed grammar signatures still determine result
+  `arity=2`, `space_role='C'`. Typed grammar signatures still determine result
   order (e.g., `S4 = lift(NP3, VP1)`). See [Language.md](Language.md).
 - **Butterfly mode on `GrammarLayer`** (Stage 5): all GrammarLayer
   subclasses accept `butterfly=True, N=N` for efficient cross-STM
@@ -520,7 +553,7 @@ to `Basis.equal`.
 ### Short-Term Memory on ConceptualSpace
 
 `ConceptualSpace.stm` (an instance of `ShortTermMemory`) is a per-batch
-stack of unquantized C-tier "ideas" — the working set the signal router
+stack of unquantized CS "ideas" — the working set the signal router
 dispatches grammar ops over. Capacity defaults to 7 (Miller, ±2);
 `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` overrides.
 
@@ -671,14 +704,14 @@ See [Ergodic.md](Ergodic.md).
 ## Sentence-level AR (`InterSentenceLayer`)
 
 Within-sentence training is IR-only (BERT-style masked-LM at the
-P-tier; see `doc/Spaces.md` Section "Within-sentence AR retirement"). The
+subsymbolic (PS); see `doc/Spaces.md` Section "Within-sentence AR retirement"). The
 **autoregressive** signal in this architecture lives one scale up:
 between sentences, on a per-sentence representation `s_t`. That's the
 job of `InterSentenceLayer` (alias `wordSpace.discourse`).
 
 ### Sentence representation
 
-`s_t` is the **root S-tier slot** of the body's final stage: the
+`s_t` is the **root SS slot** of the body's final stage: the
 single vector the start-symbol reduction wrote into. The chart's
 parse trace already commits to this slot at sentence end; the layer
 pools `[B, N, D] -> [B, D]` by taking row 0 (root). Width is
@@ -722,7 +755,7 @@ continuity unless the caller explicitly calls `Reset`.
 ### Wiring into the training loop
 
 1. After the body finishes (sentence end), `_forward_per_stage`
-   stashes the S-tier event on `_current_discourse_s`.
+   stashes the SS event on `_current_discourse_s`.
 2. In `runBatch`, when training, `discourse.observe(s_tensor)`:
    - Pools `s_t = sigma_S(s_tensor[:, 0, :])`.
    - Computes `s_hat_t = predictor(_s_history, _e_history)`.
@@ -748,11 +781,11 @@ continuity unless the caller explicitly calls `Reset`.
    against the perceptual codebook, producing the
    `(slot, original, predicted)` triples for the seed text's masked
    positions.
-5. Commits the produced sentence's S-tier root to the ARMA ring via
+5. Commits the produced sentence's SS root to the ARMA ring via
    `discourse.observe(s_tensor)`.
 
 The IR head plays no role at inference --- the prediction lives at the
-masked P-tier positions, decoded against the (frozen) perceptual
+masked subsymbolic (PS) positions, decoded against the (frozen) perceptual
 codebook.
 
 ### Configuration

@@ -53,7 +53,7 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
-    ss = Language.SymbolicSubSpace(
+    ss = Language.SymbolSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
         wholeSpace=symbolic_space,
@@ -199,5 +199,5 @@ def _attach_discourse(ss, n_dim, concept_dim, batch):
 
 
 # test_stm_residual_microbatch_* removed: these tests reached into
-# ``SymbolicSubSpace.subspace`` (no longer an attribute -- the SR-parser
+# ``SymbolSubSpace.subspace`` (no longer an attribute -- the SR-parser
 # stack was retired into ConceptualSpace.stm 2026-05-20).

@@ -13,7 +13,7 @@ Executable implementations of the subsymbolic and symbolic operators are the
 
 > **Terminology (2026-06-21; see
 > [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md)).**
-> One noun per tier: **percept** = a PartSpace/WholeSpace thing (dimensionally
+> One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
 > embedded, EXTENSIONAL; *part* = atom / bottom-up σ, *whole* = property/region
 > / top-down π are its two subtypes); **concept** = a ConceptualSpace relation
 > tying one part-percept ↔ one whole-percept (the Concept codebook,
@@ -37,14 +37,14 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
   withdrawal); monotonic is `relu(x - threshold)`.
 
 > **Meronomy reconciliation (2026-06-11; MeronomySpec §3 wins).** The
-> sign flip `−x` is licensed only at the REFERENCE tier — downstairs
+> sign flip `−x` is licensed only at the REFERENCE space-role — downstairs
 > the sign is occupied (form content) or nonexistent (one-sided
-> percepts); only at the reference tier is it vacant of denotational
+> percepts); only at the reference space-role is it vacant of denotational
 > duty and free to carry polarity (`a = −1` on A's row = present,
 > certain denial; never negative mass in ground space). `non()`'s
 > withdrawal reading is the prasajya move — lowering `|a|` toward 0
 > without crossing — gated, never spontaneous. RadMin/RadMax below
-> remain signed-scalar kernels at their own tier; the odds embedding
+> remain signed-scalar kernels at their own space-role; the odds embedding
 > is retired from the meronymic path (legacy `PiLayer` keeps it for
 > non-meronymic consumers).
 - **Parthood** (fundamental): `Basis.part()` --- clipped cosine projection:
@@ -141,7 +141,7 @@ Cleanly separates representation (vectors) from logic (scalars).
 
 ## 5. Rationality
 
-Rationality is the propositional logic layer, built on S-tier grammar rules
+Rationality is the propositional logic layer, built on SS grammar rules
 `part(S, S)` and `equals(S, S)`.
 
 ### Truth Statements
@@ -213,7 +213,7 @@ where $t_i = \text{activation}_i \times \text{degree}_i$. Two kinds of regions:
 
 ### Propositional Structure
 
-Both parthood and equality are S-tier operations over symbolic activations:
+Both parthood and equality are SS operations over symbolic activations:
 
 - **`part(S, S)`** --- containment by clipped-cosine projection. Grammar
   applies it as `score * B`, scaling the whole by parthood degree.
@@ -277,7 +277,7 @@ entailments. Example: `part(A, B) = +1` and `part(B, C) = +1` entail
 `part(A, C)`, but $A$ and $C$ could be geometrically distant. A symbolic
 closure layer would:
 
-1. **Extract propositions** by decomposing stored S-tier activations into
+1. **Extract propositions** by decomposing stored SS activations into
    relation + two operands.
 2. **Compute closure** via transitivity:
    - $\text{part}(A, B) \wedge \text{part}(B, C) \Rightarrow \text{part}(A, C)$

@@ -178,7 +178,7 @@ def _populate_test_config(*,
     # The *Dim args express CONTENT (.what) width. Under "6+2+2" the config
     # <nDim> is the EVENT width (content + .where/.when band), and the factory
     # carves content back out (content = nDim - band). So derive each muxed
-    # tier's config nDim = content + band, sourcing the band from canonical_shape
+    # space_role's config nDim = content + band, sourcing the band from canonical_shape
     # (not a literal +4) so this stays correct if .where widens (3D) later.
     # The *Dim args express CONTENT (.what) width; the config <nDim> is the
     # EVENT width (content + band), and the factory carves content back out.
@@ -484,7 +484,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         """BasicModel (simple path) with ergodic=False produces valid output.
 
         Stage 1.C+ architecture: the CS forward is STM bookkeeping
-        (no atomic ``sigma_percept`` lift), so the per-tier N counts
+        (no atomic ``sigma_percept`` lift), so the per-space_role N counts
         must match: nInput == nPercepts == nConcepts == nSymbols.
         The OutputSpace performs the final aggregation to nOutput.
         """
@@ -1349,7 +1349,7 @@ class TestSymbolDimZero(unittest.TestCase):
                               outputDim=1)
         self.assertEqual(Models.TheXMLConfig.space("WholeSpace", "nDim"), 0)
         # Uniform (2,2) convention (2026-06): WholeSpace carries the same
-        # (nWhere=2, nWhen=2) band as every interior tier -- the retired
+        # (nWhere=2, nWhen=2) band as every interior space_role -- the retired
         # SS=(0,0) special case is gone.
         self.assertEqual(canonical_shape("WholeSpace"), (2, 2))
 
@@ -1625,7 +1625,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # SS -> OS handoff is content-width in the converged architecture
         # (WholeSpace and OutputSpace are both (nWhere,nWhen)=(0,0)), so the
         # input event matches os_.inputShape[1] (_sdim + _obj_sym). The old
-        # tier-agnostic encodingSize() added a now-absent where/when band.
+        # space_role-agnostic encodingSize() added a now-absent where/when band.
         inEmb = _sdim + _obj_sym
         x = torch.randn(2, nInput, inEmb).to(Models.TheDevice.get())
         y = os_(_wrap_tensor(os_, x))
@@ -2169,7 +2169,7 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         The flat-slab invariant (post Stage 1.C) requires IS.nOutput
         == PS.nOutput == CS.nOutput == SS.nOutput; the XOR_exact.xml
-        ships with N=8 across these tiers, so the test fixes nSymbols
+        ships with N=8 across these space_roles, so the test fixes nSymbols
         to that value rather than the legacy ``nSymbols=3``.
         """
         m = self._create_xor_model(nSymbols=8, nOutput=1)
@@ -2737,7 +2737,7 @@ class TestSubspaceActivation(unittest.TestCase):
 
 
 class TestGrammar(unittest.TestCase):
-    """Tests for Grammar (S-tier only)."""
+    """Tests for Grammar (S-space_role only)."""
 
     def _make_grammar(self):
         g = Language.Grammar()
@@ -3417,7 +3417,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
             if isinstance(space, Models.ConceptualSpace):
                 continue
             # SymbolSpace (2026-06-21 refactor) is a grammar/symbol container
-            # whose ``.subspace`` is the SymbolicSubSpace coordinator (per-
+            # whose ``.subspace`` is the SymbolSubSpace coordinator (per-
             # sentence grammar / typed-STM state), not a data SubSpace that
             # computes a forward activation -- skip it.
             if isinstance(space, Models.SymbolSpace):

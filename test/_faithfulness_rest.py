@@ -1,7 +1,7 @@
 """Faithfulness round-trips for the REMAINING grammar ops (idea-decoder, 2026-06-20):
-Tier-A exact (non, tense, aspect, exist, sigma/pi unary, invertible-linear),
-Tier-C stubs (isEqual, isPart, part, query/queryPart/queryEqual),
-Tier-D carrier-dependent (morphology, preposition, symbolize, contextualBind),
+Space-role-A exact (non, tense, aspect, exist, sigma/pi unary, invertible-linear),
+Space-role-C stubs (isEqual, isPart, part, query/queryPart/queryEqual),
+Space-role-D carrier-dependent (morphology, preposition, symbolize, contextualBind),
 legacy (equal, true, swap, copy). Run: .venv/bin/python test/_faithfulness_rest.py
 """
 import os, sys
@@ -30,7 +30,7 @@ def is_stub(l, r, parent):
 
 def line(s): print(s)
 
-print("="*72); print("TIER A — expected EXACT (involution / rotation / identity / LDU)"); print("="*72)
+print("="*72); print("SPACE_ROLE A — expected EXACT (involution / rotation / identity / LDU)"); print("="*72)
 
 # non — pole complement involution
 try:
@@ -65,7 +65,7 @@ for nm, Cls in (("sigma", SigmaLayer), ("pi", PiLayer)):
         line(f"{nm}(unary): reverse(forward(x))==x  Δ={mx(op.reverse(op.forward(x)), x):.2e}   (exact LDU inverse)")
     except Exception as e: line(f"{nm}: ERR {e}")
 
-print(); print("="*72); print("TIER C — expected STUB: reverse = (parent,parent), forward lossy"); print("="*72)
+print(); print("="*72); print("SPACE_ROLE C — expected STUB: reverse = (parent,parent), forward lossy"); print("="*72)
 
 for nm, mk in (
     ("isEqual",   lambda: L.IsEqualLayer()),
@@ -82,7 +82,7 @@ for nm, mk in (
         line(f"{nm:10s}: reverse=(parent,parent)? {is_stub(l, r, parent)}   {drop}")
     except Exception as e: line(f"{nm}: ERR {e}")
 
-print(); print("="*72); print("TIER D — carrier-dependent (behaviour COLD, i.e. no token/context/wiring)"); print("="*72)
+print(); print("="*72); print("SPACE_ROLE D — carrier-dependent (behaviour COLD, i.e. no token/context/wiring)"); print("="*72)
 
 # morphology — cold (no token) -> passthrough (tense never realized)
 try:

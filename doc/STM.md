@@ -26,7 +26,7 @@
 ConceptualSpace is, post-substrate-refactor, an STM container plus a
 grammatical CPU — it owns no atomic forward fold (see
 [Spaces.md](Spaces.md#shorttermmemory)). The **short-term memory (STM)**
-is the structure CS manages: a per-batch stack of unquantized C-tier
+is the structure CS manages: a per-batch stack of unquantized CS
 "ideas" that the model accumulates across a sentence and reduces at the
 sentence boundary. This chapter is the single reference for what the STM
 is, how it fills, what reads it, and how its end-states chain into
@@ -63,8 +63,8 @@ tensor-map contract. ConceptualSpace builds one at construction as
 
 **Capacity.** Default `8`, set via
 `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>`
-(`DEFAULT_CAPACITY = 8`), with the legacy `<wMax>` as the fallback
-source. Eight sits inside Miller's $7 \pm 2$ band — the working-set size
+(`DEFAULT_CAPACITY = 8`); the legacy `<wMax>` alias is retired. Eight sits
+inside Miller's $7 \pm 2$ band — the working-set size
 psycholinguistics ascribes to human short-term memory. The capacity is
 the rolling-window length: at steady state the STM holds the last `cap`
 ideas and the oldest falls off as new ones arrive.
@@ -74,7 +74,7 @@ ideas and the oldest falls off as new ones arrive.
 how many slots each row has filled (saturating at `cap`). The buffer is
 a plain registered buffer with `persistent=False`: STM contents are
 runtime working state, not learned weights, and never enter the
-checkpoint. `concept_dim` is the C-tier feature width $D$ — the `what`
+checkpoint. `concept_dim` is the CS feature width $D$ — the `what`
 columns only; the positional / temporal (`where` / `when`) columns are
 trimmed at the PS$\to$CS boundary so the slab the grammar dispatch runs
 over is a clean concept-dim block (`_stm_payload_dim = concept_dim`).
@@ -203,7 +203,9 @@ slot-preserving `_stm_set_all_slots` is the fix.
 **Serial mode IS the attentional-filtering regime.** The old
 serial-vs-attention guard was **lifted**: `MentalModel.xml` runs serial
 *with* attention by design (`<symbolicOrder>1</symbolicOrder>`
-with `<hasAttention>true</hasAttention>` on ConceptualSpace). Serial
+with `<attention>primer</attention>` on ConceptualSpace; the legacy
+`<hasAttention>` boolean is deprecated and inert, superseded by the
+`<attention>` element — off/primer/second-order/low-rank). Serial
 sequencing and attentional filtering are the same regime, not mutually
 exclusive options.
 
@@ -264,13 +266,13 @@ The grammar runs through the signal router (`LanguageLayer`,
 
 - **SS-analysis** — `SymbolicSubSpace.compose`
   ([Language.py:7693](../bin/Language.py)) is the analysis stage: a soft
-  superposition over the taxonymic codebook that selects, per tier, a
-  **hard rule dict** `current_rules = {tier: [rule_id, ...]}`. It chooses
+  superposition over the taxonymic codebook that selects, per-space, a
+  **hard rule dict** `current_rules = {space-role: [rule_id, ...]}`. It chooses
   *which* reductions fire.
 - **CS-execution** — actually applying the chosen reductions (lift,
   lower, union, intersection, swap, quantize, not) to the concept tensors
   runs CS-side in `ConceptualSpace.forward` and the WholeSpace
-  stack-route path, with the per-tier `SyntacticLayer` cursors
+  stack-route path, with the per-space `SyntacticLayer` cursors
   ([Language.py:5453](../bin/Language.py)) executing the unary $\pi$ /
   $\sigma$ folds on reverse. Only lift / lower / union / intersection
   consult the codebook (inverse-recommended); swap / quantize / not are
@@ -279,13 +281,13 @@ The grammar runs through the signal router (`LanguageLayer`,
 > **Honesty — the split is a clean code boundary only on the
 > default-only path.** When the grammar is *default-only* (every rule is
 > the unary $\pi$ / $\sigma$ fold), `compose` emits `current_rules` from
-> the grammar XML and runs **no** tensor reduction, and the per-tier
+> the grammar XML and runs **no** tensor reduction, and the per-space
 > `SyntacticLayer.forward` / `reverse` cursors do the CS-side execution —
 > a genuinely clean analysis/execution separation. On the **full-router**
 > path, however, `LanguageLayer.compose` does **both**: it selects the
 > rules *and* folds the slab tensorially through the op modules
 > (`BinaryStructuredReductionLayer.forward` $\to$ `op(left, right)`),
-> caching the root state. The per-tier `SyntacticLayer` cursors are then
+> caching the root state. The per-space `SyntacticLayer` cursors are then
 > **deliberately bypassed** on that path — guarded by
 > `not _grammar_is_default_only`
 > ([Language.py:5731](../bin/Language.py)) — precisely so the reduction is
@@ -418,7 +420,7 @@ exercises this path.
 > because of **two pre-existing upstream bugs**, both out of scope here
 > and flagged as separate follow-ups:
 > - **Finding A** — on the untrained config the per-word forward fills
->   the C-tier STM with NaN: `conceptualSpace.stm.snapshot()` is
+>   the CS STM with NaN: `conceptualSpace.stm.snapshot()` is
 >   non-finite, so the reduced single-$S$ seed is already NaN before
 >   reverse runs.
 > - **Finding B** — even with a *finite* seed, the reverse perceptual leg
@@ -462,7 +464,7 @@ $\text{protect\_depth} = 3$ (stop at the depth-3 end-state).
 
 **Conservative detection.** `_sentence_relative_mask`
 ([Models.py:5387](../bin/Models.py)) decides per row from the grammar —
-it scans `current_rules`' $S$-tier for a `TheGrammar.is_relative_rule`
+it scans `current_rules`' $S$-space-role for a `TheGrammar.is_relative_rule`
 rule_id (`REL_T` LHS, or an `isEqual` / `queryPart` / `assertPart` /
 `part` op). It **defaults to collapse on any uncertainty**: a false
 positive would stop an absolute sentence's collapse and break the
@@ -623,8 +625,9 @@ across the first `depth` STM slots as a sentence-level conditioning bias
 
 The trainable target is `MentalModel.xml`:
 `<symbolicOrder>1</symbolicOrder>`,
-`<data><dataType>embedding</dataType>`, `<hasAttention>true</hasAttention>`
-(ConceptualSpace), `<sentencePrediction>true</sentencePrediction>`,
+`<data><dataType>embedding</dataType>`, `<attention>primer</attention>`
+(ConceptualSpace; the legacy `<hasAttention>` boolean is deprecated and
+inert), `<sentencePrediction>true</sentencePrediction>`,
 FineWeb data (`<shardDir>data/fineweb</shardDir>`). This is the
 configuration that exercises the full STM stack — serial sequencing with
 attentional filtering, the in-STM and inter-sentence predictors, and the
@@ -637,7 +640,7 @@ $$
 + \mathcal{L}_\text{inter},
 $$
 
-the masked-LM information-reconstruction term at the P-tier (see
+the masked-LM information-reconstruction term at the subsymbolic (PS) (see
 [Spaces.md](Spaces.md#within-sentence-ar-retirement-2026-05-14)) plus the
 in-STM next-idea term ([Section 6](#6-intrasentencelayer)) plus the
 inter-sentence next-end-state term ([Section 11](#11-inter-sentence-prediction)).

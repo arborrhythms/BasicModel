@@ -65,25 +65,25 @@ from dataclasses import dataclass, field as _dc_field
 @dataclass
 class RoutingState:
     """First-class per-sentence routing decision produced by
-    ``SymbolicSubSpace.compose``.
+    ``SymbolSubSpace.compose``.
 
     This is the ADDITIVE companion to the long-standing ``current_rules``
     dict: many consumers depend on ``current_rules`` staying exactly
-    ``dict[tier, list[list[int]]]`` (the per-row, per-step rule ids read
-    by ``SyntacticLayer._next_rule_name``, the S-tier dispatch in
+    ``dict[space_role, list[list[int]]]`` (the per-row, per-step rule ids read
+    by ``SyntacticLayer._next_rule_name``, the SS-space_role dispatch in
     ``Models``, and ``Spaces``' stack-route path), so ``RoutingState`` is
-    stored ALONGSIDE it (on ``SymbolicSubSpace.routing_state``) and never
+    stored ALONGSIDE it (on ``SymbolSubSpace.routing_state``) and never
     replaces it. It carries the same information in two extra forms the
     intra-sentence predictor needs:
 
     Fields
     ------
-    rules_by_tier : dict[tier, list[list[int]]]
+    rules_by_space_role : dict[space_role, list[list[int]]]
         The exact ``current_rules`` dict (same object), kept here so a
         single ``RoutingState`` is a self-contained snapshot.
     selected_rules : list[int]
         Flat list of the selected rule-ids for the canonical row (row 0
-        of every tier, concatenated in sorted-tier order). Row 0 is the
+        of every space_role, concatenated in sorted-space_role order). Row 0 is the
         canonical sequence convention already used by
         ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
         follow-on). Used to build ``rule_probs`` and for diagnostics.
@@ -93,14 +93,14 @@ class RoutingState:
         is the rule-conditioning signal the intra-sentence predictor
         consumes (``ConceptualSpace._intra_routing_for_predict`` ->
         ``IntraSentenceLayer.routing``). FIRST CUT (see
-        ``SymbolicSubSpace._synthesize_rule_probs``): mass is scattered onto
+        ``SymbolSubSpace._synthesize_rule_probs``): mass is scattered onto
         the SELECTED rule-ids and L1-normalized per row, so this encodes
         WHICH rules fired (not yet the gradient-bearing soft marginals
-        fragmented in ``LanguageLayer._last_tier_routings`` -- that is a
+        fragmented in ``LanguageLayer._last_space_role_routings`` -- that is a
         documented future upgrade at the ``_synthesize_rule_probs``
         seam). ``None`` when no grammar/router has fired.
     """
-    rules_by_tier: dict = _dc_field(default_factory=dict)
+    rules_by_space_role: dict = _dc_field(default_factory=dict)
     selected_rules: list = _dc_field(default_factory=list)
     rule_probs: object = None
 
@@ -127,7 +127,7 @@ def load_grammar(filename):
 
     Each rule's category (head / argument labels), arity (argument
     count), function name, and return-value count are inferred from the
-    body. Tier, invertibility, and any other class-level metadata come
+    body. Space-role, invertibility, and any other class-level metadata come
     from the rule's ``GrammarLayer`` subclass via ``GRAMMAR_LAYER_CLASSES``
     (set later in ``Grammar.load_from_grammar_file``).
 
@@ -331,16 +331,21 @@ _RETIRED_CHART_KNOBS = (
     "chartTopK",
     "chartNoiseEps",
 )
+# ``<wMax>`` (the legacy STM-capacity alias) is retired too: STM depth now
+# comes from ``<stmCapacity>`` (or the DEFAULT_CAPACITY=8 fallback), never
+# ``<wMax>``.
+_RETIRED_STM_KNOBS = ("wMax",)
 
 
 def _assert_retired_chart_knobs_absent():
-    """Raise ``ValueError`` if any retired chart / router knob lives in
-    the loaded XML config under ``<SymbolSpace>``.
+    """Raise ``ValueError`` if any retired knob lives in the loaded XML
+    config under ``<SymbolSpace>``.
 
     Stage 3 retires ``<parserBackend>``, ``<routerKind>``, ``<chartTau>``,
-    ``<chartTopK>``, ``<chartNoiseEps>`` in favour of the signal router.
-    A loud failure here catches legacy XML files that still set them.
-    Called from ``SymbolicSubSpace.__init__`` after grammar configuration.
+    ``<chartTopK>``, ``<chartNoiseEps>`` in favour of the signal router;
+    ``<wMax>`` is retired in favour of ``<stmCapacity>`` (STM depth). A loud
+    failure here catches legacy XML files that still set them. Called from
+    ``SymbolSubSpace.__init__`` after grammar configuration.
     """
     try:
         ss_section = TheXMLConfig.get("SymbolSpace", None)
@@ -348,14 +353,17 @@ def _assert_retired_chart_knobs_absent():
         ss_section = None
     if not isinstance(ss_section, dict):
         return
-    offending = [k for k in _RETIRED_CHART_KNOBS if k in ss_section]
+    offending = [k for k in (_RETIRED_CHART_KNOBS + _RETIRED_STM_KNOBS)
+                 if k in ss_section]
     if offending:
         joined = ", ".join(f"<{k}>" for k in offending)
         raise ValueError(
-            f"SymbolSpace XML config carries retired chart / router knob(s): "
-            f"{joined}. Stage 3 of the substrate refactor retires these "
-            f"in favour of the signal router (LanguageLayer); remove the "
-            f"offending element(s) from your config."
+            f"SymbolSpace XML config carries retired knob(s): {joined}. "
+            f"The chart/router knobs (parserBackend, routerKind, chartTau, "
+            f"chartTopK, chartNoiseEps) were retired in favour of the signal "
+            f"router (LanguageLayer); <wMax> was retired in favour of "
+            f"<stmCapacity> (STM depth). Remove the offending element(s) "
+            f"from your config."
         )
 
 
@@ -365,7 +373,7 @@ def grammar_uses(rule_name):
 
     Note: previously consumed by ConceptualSpace's grammar-driven wiring
     inference (DNF auto-wrap), which has been removed. NegationLayer is
-    no longer auto-wired — wire composite C-tier wrappers explicitly via
+    no longer auto-wired — wire composite CS-space_role wrappers explicitly via
     the ``layer`` kwarg on ConceptualSpace. This helper remains available
     for runtime grammar inspection.
 
@@ -394,26 +402,20 @@ def grammar_uses(rule_name):
 
 
 class Grammar:
-    """Multi-tier grammar rule catalog (P / C / S / L).
+    """Multi-space_role grammar rule catalog (subsymbolic / CS / SS).
 
-    Tiers tag each rule with the space (or pseudo-space) that
-    dispatches it:
-      - ``P`` (perceptual) -- PartSpace's SyntacticLayer.
-      - ``C`` (conceptual) -- ConceptualSpace's SyntacticLayer.
-        Bivector pre-codebook activation ``[B, V, 2]``.
-      - ``S`` (symbolic)   -- WholeSpace's SyntacticLayer.
+    Space-roles tag each rule with the space that dispatches it:
+      - ``subsymbolic`` (perceptual) -- PartSpace's SyntacticLayer.
+      - ``CS`` (conceptual) -- ConceptualSpace's SyntacticLayer.
+        Bivector pre-codebook activation ``[B, V, 2]``. The lattice
+        primitives ``intersection`` / ``union`` bind here (lattice
+        min/max on bivector activation).
+      - ``SS`` (symbolic)   -- WholeSpace's SyntacticLayer.
         Post-codebook activation: a scalar ``[B, V]`` per
-        prototype. S-tier ops (``conjunction``, ``disjunction``,
+        prototype. SS-space_role ops (``conjunction``, ``disjunction``,
         ``not``, ``lift``, ``lower``, ``part``, ``equals``,
         ``query``, ``true``, ``false``, ``swap``, ``non``) are
         monotonic functions on that scalar.
-      - ``L`` (logical)    -- pure logical primitives
-        (``intersection``, ``union``). 2026-05-05 directive: these
-        are lattice min/max on bivector activation; not owned by
-        any single space. The chart binds an L-tier op at whichever
-        space the operands live in (``intersection(C, C)`` binds at
-        C; ``intersection(S, S)`` would bind at S) -- the L tag is
-        layer-side classification, not a routing tier.
 
     Owns the rule definitions parsed from XML config. All learnable
     parameters and rule execution live on a single unified
@@ -432,7 +434,7 @@ class Grammar:
     # the root span; NP = N only at width 1).
     RuleDef = _namedtuple(
         'RuleDef',
-        ['tier', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
+        ['space_role', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
          'width_min', 'width_max', 'query'],
     )
     RuleDef.__new__.__defaults__ = (0, 0, False)
@@ -462,7 +464,7 @@ class Grammar:
         """Initialize an empty rule catalog; XML configuration happens lazily.
 
         Rules are populated on first access via ``_ensure_configured``.
-        Holds tier-tagged rule lists, the upward / downward / reverse
+        Holds space_role-tagged rule lists, the upward / downward / reverse
         derivations, and the default start symbol ``"S"``.
         """
         self.rules = []
@@ -474,7 +476,7 @@ class Grammar:
         # These are kept SEPARATE from the symbolic tables above: the
         # existing symbolic parser reads ``self.rules`` (== the WS table),
         # so adding a PS section never perturbs symbolic rule ids. PS rules
-        # carry tier 'P' and are consumed by the PS analyzer phases.
+        # carry space_role 'subsymbolic' and are consumed by the PS analyzer phases.
         self.ps_rules_upward = []
         self.ps_rules_downward = []
         self.ps_rules = []
@@ -546,9 +548,9 @@ class Grammar:
         """Return the Python method name implementing rule ``rule_id``."""
         return self.rules[rule_id].method_name
 
-    def tier(self, rule_id):
-        """Return the tier tag ('P' / 'C' / 'S' / 'L') of rule ``rule_id``."""
-        return self.rules[rule_id].tier
+    def space_role(self, rule_id):
+        """Return the space_role tag ('subsymbolic' / 'CS' / 'SS') of rule ``rule_id``."""
+        return self.rules[rule_id].space_role
 
     def binary_rules(self):
         """Return the list of rule_ids that have arity 2."""
@@ -594,15 +596,15 @@ class Grammar:
         """Return the full ``RuleDef`` for ``rule_id``."""
         return self.rules[rule_id]
 
-    def rules_for_tier(self, tier, arity=None):
-        """Return rule_ids whose ``RuleDef.tier`` matches ``tier``.
+    def rules_for_space_role(self, space_role, arity=None):
+        """Return rule_ids whose ``RuleDef.space_role`` matches ``space_role``.
 
         ``arity`` optionally filters to that arity (1 or 2).
         """
         self._ensure_configured()
         out = []
         for i, r in enumerate(self.rules):
-            if r.tier != tier:
+            if r.space_role != space_role:
                 continue
             if arity is not None and r.arity != arity:
                 continue
@@ -668,23 +670,14 @@ class Grammar:
 
     # -- Configuration from XML ----------------------------------------
 
-    # Maps the new tier-bucket section names to the RuleDef.tier
-    # field. Each space tier (PartSpace, ConceptualSpace,
-    # WholeSpace) reads its own subset by tier when filtering for
+    # Maps the new space_role-bucket section names to the RuleDef.space_role
+    # field. Each space space_role (PartSpace, ConceptualSpace,
+    # WholeSpace) reads its own subset by space_role when filtering for
     # which rules are licensed in its forward path.
-    _TIER_SECTIONS = {
-        'percepts': 'P',
-        'concepts': 'C',
-        'symbols':  'S',
-        # 'L' (logical): tier marker for ops that are pure logical
-        # primitives (lattice min/max on bivector activation), not
-        # owned by any single space. Per the 2026-05-05 directive,
-        # ``intersection`` and ``union`` carry layer.tier='L' as
-        # semantic metadata; the dispatcher still binds them at
-        # whichever space's tier the grammar rule names (e.g.
-        # ``intersection(C, C)`` binds at C, ``intersection(S, S)``
-        # at S) -- the L tag is for classification, not for routing.
-        'logical':  'L',
+    _SPACE_ROLE_SECTIONS = {
+        'percepts': 'subsymbolic',
+        'concepts': 'CS',
+        'symbols':  'SS',
     }
 
     def configure(self, grammar_dict):
@@ -694,14 +687,15 @@ class Grammar:
           (a) flat: {'S': ['not(S)'], ...}  — legacy compose-only.
           (b) named sections: {'compose': {...}, 'generate': {...}}
               with `op.forward(args)` / `op.reverse(arg)` rule bodies.
-          (c) tier-scoped sections: {'compose': {'symbols': {...},
+          (c) space_role-scoped sections: {'compose': {'symbols': {...},
                                                  'concepts': {...},
                                                  'percepts': {...}},
                                      'generate': {...same shape...}}
-              Each tier's rules carry tier='S' / 'C' / 'P' on the
+              Each space_role's rules carry space_role='SS' / 'CS' /
+              'subsymbolic' on the
               RuleDef, so each space can filter to the rules licensed
               for it. A space "can conduct any/all of the operations"
-              -- runtime gating is independent of tier tagging; the
+              -- runtime gating is independent of space_role tagging; the
               tags are an inductive-bias hint, not a hard restriction.
         """
         self.rules_upward = []
@@ -714,7 +708,7 @@ class Grammar:
         # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md):
         # a grammar may nest its <compose>/<generate> under
         # <PartSpace> and/or <WholeSpace>. PartSpace rules
-        # go to the separate ps_* tables tagged tier 'P'; WholeSpace
+        # go to the separate ps_* tables tagged space_role 'subsymbolic'; WholeSpace
         # rules go to the canonical symbolic tables (so symbolic rule ids
         # are unperturbed by the presence of a PS section). A file with
         # neither wrapper is the legacy form and loads as WholeSpace.
@@ -724,10 +718,10 @@ class Grammar:
             if isinstance(ps_block, dict):
                 self._fill_section(self.ps_rules_upward,
                                    ps_block.get('compose') or {},
-                                   default_tier='P')
+                                   default_space_role='subsymbolic')
                 self._fill_section(self.ps_rules_downward,
                                    ps_block.get('generate') or {},
-                                   default_tier='P')
+                                   default_space_role='subsymbolic')
             if isinstance(ws_block, dict):
                 self._fill_section(self.rules_upward,
                                    ws_block.get('compose') or {})
@@ -776,37 +770,37 @@ class Grammar:
         pattern = tuple(str(c).strip() for c in categories if str(c).strip())
         return pattern in set(self.start_patterns)
 
-    def _fill_section(self, target, section_dict, default_tier='S'):
-        """Read a parse / generate section, dispatching to per-tier
+    def _fill_section(self, target, section_dict, default_space_role='SS'):
+        """Read a parse / generate section, dispatching to per-space_role
         rule lists when `<symbols>` / `<concepts>` / `<percepts>`
-        sub-sections are present, or to the cross-tier reader otherwise.
+        sub-sections are present, or to the cross-space_role reader otherwise.
 
-        Tier-bucket detection is non-destructive: a section with both a
-        `<rule>` directly and tier sub-sections will read both, with the
-        direct rules tagged ``default_tier`` ('S' for a WholeSpace /
-        legacy section, 'P' for a PartSpace section).
+        Space-role-bucket detection is non-destructive: a section with both a
+        `<rule>` directly and space_role sub-sections will read both, with the
+        direct rules tagged ``default_space_role`` ('SS' for a WholeSpace /
+        legacy section, 'subsymbolic' for a PartSpace section).
         """
         if not isinstance(section_dict, dict):
             return
-        # Tier sub-sections.
-        for tier_key, tier_letter in self._TIER_SECTIONS.items():
-            tier_block = section_dict.get(tier_key)
-            if tier_block:
-                self._fill_rule_list(target, tier_block, tier=tier_letter)
-        # Direct rules (no tier wrapper) -> the section's default tier.
+        # Space-role sub-sections.
+        for space_role_key, space_role_letter in self._SPACE_ROLE_SECTIONS.items():
+            space_role_block = section_dict.get(space_role_key)
+            if space_role_block:
+                self._fill_rule_list(target, space_role_block, space_role=space_role_letter)
+        # Direct rules (no space_role wrapper) -> the section's default space_role.
         direct_keys = [k for k in section_dict.keys()
-                       if k not in self._TIER_SECTIONS]
+                       if k not in self._SPACE_ROLE_SECTIONS]
         if direct_keys:
             direct = {k: section_dict[k] for k in direct_keys}
-            self._fill_rule_list(target, direct, tier=default_tier)
+            self._fill_rule_list(target, direct, space_role=default_space_role)
 
-    def _fill_rule_list(self, target, rules_dict, tier='S'):
+    def _fill_rule_list(self, target, rules_dict, space_role='SS'):
         """Parse ``<rule>`` entries from ``rules_dict`` and append to ``target``.
 
         Handles both the canonical ``<rule>head = body</rule>`` form
         (with optional ``width="MIN..MAX"`` gate) and the legacy
         ``<S>body</S>`` form. Each parsed rule is tagged with the
-        supplied tier letter.
+        supplied space_role letter.
         """
         # New syntax: <rule>head = body</rule> — head may be a comma-
         # separated tuple of categories (for multi-output downward rules
@@ -838,7 +832,7 @@ class Grammar:
                         f"<rule> requires 'head = body' syntax, got: {text!r}")
                 lhs_raw, body = text.split('=', 1)
                 lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
-                rule = self._parse_rule(lhs, body.strip(), tier=tier)
+                rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
                 # Apply width gate if specified.
                 if width_raw is not None:
                     w_min, w_max = self._parse_width_attr(str(width_raw))
@@ -861,7 +855,7 @@ class Grammar:
                 raw = [raw]
             for rhs_text in raw:
                 rhs = rhs_text.strip()
-                target.append(self._parse_rule(lhs, rhs, tier=tier))
+                target.append(self._parse_rule(lhs, rhs, space_role=space_role))
 
     def rule_by_id(self, rule_id):
         """Return the canonical production string for a rule_id (0-based)."""
@@ -1014,21 +1008,21 @@ class Grammar:
     # distributions of operands are matched against the rule's order
     # signature dynamically.
 
-    def _parse_rule(self, lhs, rhs, tier='S'):
+    def _parse_rule(self, lhs, rhs, space_role='SS'):
         """Parse one ``lhs = rhs`` rule string into a ``RuleDef`` namedtuple.
 
         ``rhs`` can be a function call (``f(A, B)``), a bare-symbol
         sequence (``A B``), or a single category. Accepts the explicit-
         direction suffixes ``.forward`` / ``.reverse`` on the function
-        name. ``tier`` is the per-rule routing tag.
+        name. ``space_role`` is the per-rule routing tag.
         """
-        # `tier` may be 'S' (symbols, default), 'C' (concepts), or
-        # 'P' (percepts). Set by `_fill_section` from <symbols> /
+        # `space_role` may be 'SS' (symbols, default), 'CS' (concepts), or
+        # 'subsymbolic' (percepts). Set by `_fill_section` from <symbols> /
         # <concepts> / <percepts> sub-sections under <parse> /
-        # <generate>. Used by space-tier filters at runtime to gate
+        # <generate>. Used by space-space_role filters at runtime to gate
         # which rules apply in each space's forward path.
 
-        # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-tier element
+        # Legacy tolerance: ``<C>C = pi(C)</C>`` is the per-space_role element
         # form where the element NAME is the LHS and the CONTENT is the
         # RHS.  Some configs (MM_20M, LM_5M etc.) redundantly prefix the
         # content with ``LHS = `` -- strip it so the function-call parser
@@ -1036,7 +1030,7 @@ class Grammar:
         # ``pi`` (the natural-fold key) rather than ``C = pi`` (which
         # silently falls through ``_default_compose_rules``'s
         # ``_NATURAL_FOLD_METHODS`` filter and leaves the chart with no
-        # C-tier rule, breaking ConceptualSpace dispatch).
+        # CS-space_role rule, breaking ConceptualSpace dispatch).
         rhs_stripped = rhs.lstrip()
         eq_prefix = f"{lhs}="
         if (rhs_stripped.startswith(eq_prefix)
@@ -1068,13 +1062,13 @@ class Grammar:
             # said while letting `_RULE_METHODS` stay keyed on the
             # semantic names.
             canonical = f"{lhs} -> {rhs}"
-            return self.RuleDef(tier, canonical, arity, func_name,
+            return self.RuleDef(space_role, canonical, arity, func_name,
                                 lhs, tuple(args))
         if rhs == 'epsilon':
-            return self.RuleDef(tier, f"{lhs} -> epsilon", 0, None,
+            return self.RuleDef(space_role, f"{lhs} -> epsilon", 0, None,
                                 lhs, ())
         if rhs == lhs:
-            return self.RuleDef(tier, f"{lhs} -> {rhs}", 1, None,
+            return self.RuleDef(space_role, f"{lhs} -> {rhs}", 1, None,
                                 lhs, (rhs,))
         # Bare-symbol-sequence form: '<VO>V O</VO>' or '<S>S VO</S>'.
         # RHS is a whitespace-separated sequence of nonterminal / terminal
@@ -1093,7 +1087,7 @@ class Grammar:
                 method = 'emit_head'
             else:
                 method = 'merge'
-            return self.RuleDef(tier, f"{lhs} -> {rhs}", arity, method,
+            return self.RuleDef(space_role, f"{lhs} -> {rhs}", arity, method,
                                 lhs, tuple(parts))
         raise ValueError(f"Cannot parse grammar rule: {lhs} -> {rhs}")
 
@@ -1156,7 +1150,7 @@ class Grammar:
     # once a rule body has fired, ``rule_probability`` returns 0 for
     # subsequent calls on the same body until ``reset_derivation`` is
     # invoked. This prevents pathological multi-NOT or multi-OR stacks
-    # without splitting S/C into typed tiers.
+    # without splitting SS/CS into typed space_roles.
 
     def rule_probability(self, body):
         """Probability that rule with given ``body`` fires at the
@@ -1204,11 +1198,11 @@ class Grammar:
         Delegates parsing to the module-level :func:`load_grammar` (which
         returns a ``configure()``-compatible nested-dict) and then runs
         the standard ``configure()`` path. Once that's done, each
-        ``RuleDef``'s tier is overwritten with the tier declared on its
+        ``RuleDef``'s space_role is overwritten with the space_role declared on its
         rule's ``GrammarLayer`` subclass -- the .grammar file lists the
         rule body only (``<rule>S = lift(NP, VP)</rule>``); category,
         arity, function name, and return-value count come from the body
-        and tier / invertibility come from the layer class.
+        and space_role / invertibility come from the layer class.
 
         If the grammar file contains ``<start>...</start>``, it sets the
         accepted start patterns and primary start nonterminal for this
@@ -1243,7 +1237,7 @@ class Grammar:
         cfg = _expand_compact_order_sets(cfg)
         cfg = self._ensure_identity_rule(cfg)
         self.configure(cfg)
-        self._reassign_tiers_from_layer_classes()
+        self._reassign_space_roles_from_layer_classes()
 
     def _configure_starts(self, ps_start_raw, ws_start_raw):
         """Set space-scoped starts from the raw ``<start>`` blocks.
@@ -1335,16 +1329,16 @@ class Grammar:
             cfg = add_identity(dict(cfg))
         return cfg
 
-    def _reassign_tiers_from_layer_classes(self):
-        """Replace each rule's ``tier`` with the value declared on its
+    def _reassign_space_roles_from_layer_classes(self):
+        """Replace each rule's ``space_role`` with the value declared on its
         ``GrammarLayer`` subclass.
 
-        The .grammar file format leaves tier off the rule body; per the
+        The .grammar file format leaves space_role off the rule body; per the
         2026-05-29 refactor the layer class is the source of truth for
-        tier (and other class-level metadata such as ``invertible``).
+        space_role (and other class-level metadata such as ``invertible``).
         Rules whose ``method_name`` isn't registered in
-        ``GRAMMAR_LAYER_CLASSES`` keep the tier the parser inferred from
-        the section header (default 'S').
+        ``GRAMMAR_LAYER_CLASSES`` keep the space_role the parser inferred from
+        the section header (default 'SS').
         """
         registry = GRAMMAR_LAYER_CLASSES
 
@@ -1353,9 +1347,9 @@ class Grammar:
             for rule in rules:
                 cls = registry.get(_dispatch_method_name_for_rule(rule))
                 if cls is not None:
-                    new_tier = getattr(cls, 'tier', rule.tier) or rule.tier
-                    if new_tier != rule.tier:
-                        rule = rule._replace(tier=new_tier)
+                    new_space_role = getattr(cls, 'space_role', rule.space_role) or rule.space_role
+                    if new_space_role != rule.space_role:
+                        rule = rule._replace(space_role=new_space_role)
                 out.append(rule)
             return out
 
@@ -1460,29 +1454,29 @@ class Grammar:
     # -- Rule queries --------------------------------------------------
 
     def symbolic(self):
-        """Return rule_ids whose tier is 'S' (symbolic-tier rules)."""
+        """Return rule_ids whose space_role is 'SS' (symbolic-space_role rules)."""
         self._ensure_configured()
-        return [i for i, r in enumerate(self.rules) if r.tier == 'S']
+        return [i for i, r in enumerate(self.rules) if r.space_role == 'SS']
 
     def symbolic_transition(self):
-        """Return rule_id of the unary tier-S transition rule, or None.
+        """Return rule_id of the unary space_role-SS transition rule, or None.
 
         Used by the symbolic head to find the unary-transition rule
         when the grammar exposes one (typically the no-op identity).
         """
         self._ensure_configured()
         for i, r in enumerate(self.rules):
-            if r.tier == 'S' and r.method_name is None and r.arity == 1:
+            if r.space_role == 'SS' and r.method_name is None and r.arity == 1:
                 return i
         return None
 
     @property
     def s_methods(self):
-        """Set of method names available on the S (symbolic) tier.
+        """Set of method names available on the SS (symbolic) space_role.
 
         Excludes rules without a method_name (e.g. pure transitions).
         """
-        return {r.method_name for r in self.rules if r.tier == 'S' and r.method_name}
+        return {r.method_name for r in self.rules if r.space_role == 'SS' and r.method_name}
 
     @property
     def categories(self):
@@ -1505,10 +1499,10 @@ class Grammar:
         return tuple(sorted(names))
 
     def _s_rule_ids(self):
-        """Return dict of method_name -> rule_id for S-tier operational rules."""
+        """Return dict of method_name -> rule_id for SS-space_role operational rules."""
         result = {}
         for i, r in enumerate(self.rules):
-            if r.tier == 'S' and r.method_name is not None:
+            if r.space_role == 'SS' and r.method_name is not None:
                 result[r.method_name] = i
         return result
 
@@ -1725,7 +1719,7 @@ class Grammar:
         self._rule_table_packed_cache = None
         # Task 6a: the relative-rule set is derived from ``self.rules``
         # + ``start_patterns``; both can change on a rule-table bump
-        # (configure / tier-reassign / legacy load), so invalidate.
+        # (configure / space_role-reassign / legacy load), so invalidate.
         self._relative_rule_ids_cache = None
 
 TheGrammar = Grammar()
@@ -1764,7 +1758,7 @@ class NotLayer(GrammarLayer):
     rule_name  = "not"
     arity      = 1
     invertible = True
-    tier       = 'C'
+    space_role       = 'CS'
 
     def __init__(self):
         """Initialize NotLayer; allocate state for the class contract.
@@ -1816,7 +1810,7 @@ class NonLayer(GrammarLayer):
     rule_name  = "non"
     arity      = 1
     invertible = True
-    tier       = 'C'
+    space_role       = 'CS'
 
     def __init__(self):
         """Initialize NonLayer; allocate state for the class contract.
@@ -1845,15 +1839,14 @@ class NonLayer(GrammarLayer):
         return self.forward(y)
 
 class IntersectionLayer(GrammarLayer):
-    """``L -> intersection(L, L)`` -- per-pole "min toward zero" on
+    """``intersection(C, C)`` -- per-pole "min toward zero" on
     a bivector activation tensor.
 
-    Tiered ``L`` (logical) per the 2026-05-05 directive: the
-    operator is a pure logical (lattice-min) primitive, neither
-    purely conceptual nor purely symbolic. The dispatcher feeds
-    it the bivector activation -- ``[B, V, 2]`` per position,
+    Runtime ``space_role='CS'``: the operator is a lattice-min
+    primitive that binds at the conceptual space_role. The dispatcher
+    feeds it the bivector activation -- ``[B, V, 2]`` per position,
     ``[pos, neg]`` poles -- via ``reads_activation = True``. The
-    operands' upstream tier (C vs S codebook activation) is
+    operands' upstream space_role (CS vs SS codebook activation) is
     determined by the chart binding, not by this layer.
 
     Math via ``Ops.intersection`` (a public alias of
@@ -1884,7 +1877,7 @@ class IntersectionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = True
 
     def __init__(self, monotonic=False, nInput=0, nOutput=0,
@@ -2034,13 +2027,13 @@ class IntersectionLayer(GrammarLayer):
                             left_priming=left_priming, right_priming=right_priming)
 
 class UnionLayer(GrammarLayer):
-    """``L -> union(L, L)`` -- per-pole "max toward zero" (max
+    """``union(C, C)`` -- per-pole "max toward zero" (max
     magnitude, away from zero) on a bivector activation tensor.
 
-    Tiered ``L`` (logical) -- counterpart to ``IntersectionLayer``.
+    Runtime ``space_role='CS'`` -- counterpart to ``IntersectionLayer``.
     Same dispatch contract: feeds on bivector activation
     ``[B, V, 2]`` via the ``reads_activation = True`` flag. The
-    operands' upstream tier is determined by the chart binding,
+    operands' upstream space_role is determined by the chart binding,
     not by this layer.
 
     Math via ``Ops.union`` (a public alias of
@@ -2061,7 +2054,7 @@ class UnionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = True
 
     def __init__(self, monotonic=False, nInput=0, nOutput=0,
@@ -2215,17 +2208,17 @@ class UnionLayer(GrammarLayer):
 # SyntacticLayer-dispatch pattern.
 #
 # `_GrammarOpFacade._registry` is retired: the chart now consults
-# `wordSpace.host_layer(tier, rule_name)` first (Step 7) and falls
+# `wordSpace.host_layer(space_role, rule_name)` first (Step 7) and falls
 # back to a hardcoded class lookup `GRAMMAR_LAYER_CLASSES` declared
 # at module scope below.
 # =====================================================================
 
 # --- Event modality helpers (modality re-architecture, Phase 3) ----------
-# C-tier grammar ops operate on the muxed event [what | where | when]
+# CS-space_role grammar ops operate on the muxed event [what | where | when]
 # (architecture.canonical_shape("ConceptualSpace") == (2, 2)). These split /
 # reassemble the event and extend/retract the .when span. Content-only
 # operands (width == the op's .what content width) bypass these and take the
-# legacy content fold, so the WS-tier route stays content-only.
+# legacy content fold, so the WS-space_role route stays content-only.
 _EVENT_WHEN_WIDTH = 2
 
 
@@ -2315,7 +2308,7 @@ def _rotate_where(where, theta=0.6):
 
 
 class LiftLayer(GrammarLayer):
-    """``lift(idea_a, idea_b)`` -- binary C-tier grammar op (sigma-style
+    """``lift(idea_a, idea_b)`` -- binary CS-space_role grammar op (sigma-style
     synthesis over a STM pair).
 
     Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
@@ -2347,7 +2340,7 @@ class LiftLayer(GrammarLayer):
     ``nOutput`` to size the internal SigmaLayer; the back-compat
     keyword arguments ``wholeSpace`` / ``perceptualSpace`` /
     ``conceptualSpace`` are still accepted (for legacy call sites in
-    ``Language.SymbolicSubSpace._attach_per_space_syntactic_layer``) but
+    ``Language.SymbolSubSpace._attach_per_space_syntactic_layer``) but
     only their codebook dimension is consulted to determine the
     operand width when ``nInput`` is not provided.
 
@@ -2368,7 +2361,7 @@ class LiftLayer(GrammarLayer):
     rule_name  = "lift"
     arity      = 2
     invertible = True
-    tier       = 'C'
+    space_role       = 'CS'
     event_aware = True          # operates on the muxed event (extends .when)
 
     def __init__(self, nInput=None, nOutput=None, *,
@@ -2408,7 +2401,7 @@ class LiftLayer(GrammarLayer):
             nOutput = nInput
         super().__init__(int(nInput), int(nOutput),
                          butterfly=butterfly, N=N)
-        # .what content width -- splits a muxed C-tier event operand
+        # .what content width -- splits a muxed CS-space_role event operand
         # ([what | where | when]) from a content-only operand.
         object.__setattr__(self, '_content_width', int(nInput))
         # Back-references kept for back-compat with the
@@ -2688,7 +2681,7 @@ class LiftLayer(GrammarLayer):
         return self.reverse(parent, gate=gate)
 
 class LowerLayer(GrammarLayer):
-    """``lower(idea_a, idea_b)`` -- binary C-tier grammar op (pi-style
+    """``lower(idea_a, idea_b)`` -- binary CS-space_role grammar op (pi-style
     lowering over a STM pair).
 
     Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
@@ -2726,7 +2719,7 @@ class LowerLayer(GrammarLayer):
     rule_name  = "lower"
     arity      = 2
     invertible = True
-    tier       = 'C'
+    space_role       = 'CS'
     event_aware = True          # operates on the muxed event (retracts .when)
 
     def __init__(self, nInput=None, nOutput=None, *,
@@ -2860,7 +2853,7 @@ class LowerLayer(GrammarLayer):
         return self.reverse(parent, gate=gate)
 
 class PrepositionLayer(GrammarLayer):
-    """preposition(P, X) -- marker-headed phrase packaging (binary, C-tier).
+    """preposition(P, X) -- marker-headed phrase packaging (binary, CS-space_role).
 
     Packages a learned surface marker P (that / to / in / because / when)
     with a phrase X (NP / VP / S). Transparent to X's content: forward(P, X)
@@ -2877,7 +2870,7 @@ class PrepositionLayer(GrammarLayer):
     the marker side is realized by emit from the bound marker.
     """
     rule_name = "preposition"; arity = 2
-    invertible = True; lossy = False; tier = 'C'; reads_activation = False
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     event_aware = True          # operates on the muxed event (modifies .where)
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
@@ -2885,7 +2878,7 @@ class PrepositionLayer(GrammarLayer):
         object.__setattr__(self, '_content_width', int(nInput))
     def forward(self, left, right):
         # P (left) is the marker (absorbed); X (right) is the phrase. On a
-        # muxed C-tier event, PREPOSITION modifies X's .where (the spatial /
+        # muxed CS-space_role event, PREPOSITION modifies X's .where (the spatial /
         # relational extent the marker imposes), leaving .what / .when. With
         # no content-width info it stays a pass-through (legacy contract).
         cw = self._content_width
@@ -2906,7 +2899,7 @@ class PrepositionLayer(GrammarLayer):
         return self.reverse(parent)
 
 class ContextualBindLayer(GrammarLayer):
-    """bind(BIND, VP) -- contextual missing-NP marker (binary, C-tier).
+    """bind(BIND, VP) -- contextual missing-NP marker (binary, CS-space_role).
 
     Surface LIFT(BIND, VP) is reinterpreted at parse time as
     LIFT(resolved_ref, VP) (spec "Operation 2"). compose(BIND_marker, VP)
@@ -2931,7 +2924,7 @@ class ContextualBindLayer(GrammarLayer):
     BIND never invents a binding.
     """
     rule_name = "bind"; arity = 2
-    invertible = False; lossy = True; tier = 'C'; reads_activation = False
+    invertible = False; lossy = True; space_role = 'CS'; reads_activation = False
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
@@ -2982,7 +2975,7 @@ class _WhenOpMixin:
 
 class TenseLayer(_WhenOpMixin, GrammarLayer):
     """tense(X) -- move the event .when along TIME relative to ``now`` (unary,
-    C-tier; 2026-06-16 .when bracket redesign). Tense is the interval-vs-now
+    CS-space_role; 2026-06-16 .when bracket redesign). Tense is the interval-vs-now
     relation, NOT a magnitude: PRESENT is identity (event stays at its time);
     PAST shifts the event-time CENTER -step ticks (toward the past); FUTURE shifts
     it +step ticks (toward the future). The shift is an exact phase rotation that
@@ -2991,7 +2984,7 @@ class TenseLayer(_WhenOpMixin, GrammarLayer):
     applies the inverse shift (invertible round-trip, modulo the period wrap).
     Selected per-instance via set_op before dispatch."""
     rule_name = "tense"; arity = 1
-    invertible = True; lossy = False; tier = 'C'; reads_activation = False
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     # _DELTA is the TENSE step applied to the event-time CENTER (in clock ticks):
     # PRESENT = no shift, PAST = -step (toward past), FUTURE = +step (toward
     # future). step == _WHEN_TENSE_STEP (1.0 tick).
@@ -3029,7 +3022,7 @@ class AspectLayer(_WhenOpMixin, GrammarLayer):
     growth path."""
     rule_name = "aspect"; arity = 1
     # No-op: nothing is lost (identity), so it is trivially invertible.
-    invertible = True; lossy = False; tier = 'C'; reads_activation = False
+    invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     _KINDS = ("SIMPLE", "PERFECT", "PROGRESSIVE")
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
@@ -3045,7 +3038,7 @@ class AspectLayer(_WhenOpMixin, GrammarLayer):
 class MorphologyLayer(GrammarLayer):
     """morphology(X) -- decompose a surface word form into a base lemma +
     role-neutral morphological features, routing tense/aspect onto the event
-    .when (unary, C-tier).
+    .when (unary, CS-space_role).
 
     Delegates ANALYSIS to ``surface_morphology.analyze`` and the tense/aspect
     .when math to ``TenseLayer`` / ``AspectLayer`` (NOT re-derived here -- the
@@ -3059,7 +3052,7 @@ class MorphologyLayer(GrammarLayer):
     ``features`` are morphological annotations, not parts of speech.
     """
     rule_name = "morphology"; arity = 1
-    invertible = True; lossy = True; tier = 'C'; reads_activation = False
+    invertible = True; lossy = True; space_role = 'CS'; reads_activation = False
     event_aware = True          # routes the analyzed tense/aspect onto .when
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
@@ -3108,13 +3101,13 @@ class MorphologyLayer(GrammarLayer):
 
 
 class SymbolizeLayer(GrammarLayer):
-    """``symbolize(percept, symbol)`` -- binary C-tier grammar op that
+    """``symbolize(percept, symbol)`` -- binary CS-space_role grammar op that
     binds a perceptual idea to a semantic idea, creating a META node in
     the WS taxonomy.
 
     Stage 9 (2026-05-27, doc/plans/2026-05-27-perceptstore-meta-taxonomy-
     reentrancy.md): SymbolizeLayer is registered with the signal router
-    as a binary reduce op at tier 'C'. Enforced at sentence-parse
+    as a binary reduce op at space_role 'CS'. Enforced at sentence-parse
     boundaries (the parser dispatches it for every word + object pairing
     in a sentence's parse). Off-parse, it fires opportunistically when
     CS state's quantization-to-symbol pairs with the next STM slot's
@@ -3129,8 +3122,8 @@ class SymbolizeLayer(GrammarLayer):
     Semantic contract (forward):
 
         forward(left, right):
-          - left:  CS-tier vector derived from a PS percept.
-          - right: CS-tier vector derived from an WS symbol.
+          - left:  CS-space_role vector derived from a PS percept.
+          - right: CS-space_role vector derived from an WS symbol.
           1. Identify the percept_id by nearest-row search in
              ``PartSpace.percept_store.codebook``.
           2. Identify the symbol_idx by nearest-row search in
@@ -3176,7 +3169,7 @@ class SymbolizeLayer(GrammarLayer):
     rule_name  = "symbolize"
     arity      = 2
     invertible = True
-    tier       = 'C'
+    space_role       = 'CS'
 
     def __init__(self, nInput=None, nOutput=None, *,
                  wholeSpace=None, perceptualSpace=None,
@@ -3333,7 +3326,7 @@ class SymbolizeLayer(GrammarLayer):
         meta_row = int(ws._ws_pos_to_row[meta_pos])
         # LBG (Linde-Buzo-Gray) accumulation + split-trigger on the WS
         # row this binding pulls on. The pull direction is the WS
-        # operand ``right`` (a CS-tier vector derived from a WS symbol);
+        # operand ``right`` (a CS-space_role vector derived from a WS symbol);
         # accumulated displacement variance > threshold triggers a row
         # split, creating a new WS row + META binding so the codebook
         # grows organically as training reveals sub-clusters within
@@ -3428,7 +3421,7 @@ class ConjunctionLayer(GrammarLayer):
     """``S -> conjunction(S, S)`` -- monotonic min on the
     post-codebook scalar activation.
 
-    Symbolic-tier conjunction is the AND of two **codebook
+    Symbolic-space_role conjunction is the AND of two **codebook
     activation patterns**. Per the 2026-05-05 directive,
     WholeSpace's ``materialize(mode='activation')`` returns
     the **post-codebook** activation -- a ``[B, V]`` *scalar*
@@ -3445,8 +3438,8 @@ class ConjunctionLayer(GrammarLayer):
     ``Ops.intersection`` so the kernel collapses to ``torch.min``
     via ``_lower_kernel(kind='strict')``.
 
-    Distinct from ``IntersectionLayer`` (C-tier): IntersectionLayer
-    operates on a bivector ``[..., 2]`` activation (concept-tier
+    Distinct from ``IntersectionLayer`` (CS-space_role): IntersectionLayer
+    operates on a bivector ``[..., 2]`` activation (concept-space_role
     pre-codebook) and supports both RadMin and lattice-min;
     ConjunctionLayer operates on a *scalar* ``[B, V]`` post-
     codebook activation and is strictly monotonic.
@@ -3464,7 +3457,7 @@ class ConjunctionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = True
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
@@ -3528,7 +3521,7 @@ class ConjunctionLayer(GrammarLayer):
         The AND-fold is many-to-one, so ``basis is None`` (no codebook handy)
         falls back to the lossy ``(parent, parent)`` pseudo-inverse. Mirrors
         ``IntersectionLayer.reverse``; the reconstruction driver passes
-        ``basis=tier_basis`` at ``LanguageLayer.unreduce``.
+        ``basis=space_role_basis`` at ``LanguageLayer.unreduce``.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -3556,7 +3549,7 @@ class DisjunctionLayer(GrammarLayer):
     """``S -> disjunction(S, S)`` -- monotonic max on the
     post-codebook scalar activation.
 
-    Symbolic-tier disjunction is the OR of two **codebook
+    Symbolic-space_role disjunction is the OR of two **codebook
     activation patterns**: ``[B, V]`` post-codebook scalar
     activation (see ``ConjunctionLayer`` for the activation-
     semantics rationale). The natural composition kernel is the
@@ -3565,7 +3558,7 @@ class DisjunctionLayer(GrammarLayer):
     which collapses to ``torch.max`` via
     ``_lift_kernel(kind='strict')``.
 
-    Distinct from ``UnionLayer`` (C-tier): UnionLayer operates on
+    Distinct from ``UnionLayer`` (CS-space_role): UnionLayer operates on
     a bivector ``[..., 2]`` activation and supports both RadMax
     and lattice-max; DisjunctionLayer operates on a scalar
     ``[B, V]`` post-codebook activation and is strictly monotonic.
@@ -3582,7 +3575,7 @@ class DisjunctionLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = True
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
@@ -3732,11 +3725,11 @@ def _parthood_geometric(left, right):
 class IsEqualLayer(GrammarLayer):
     """``S -> isEqual(S, S)`` -- symbolic identity assertion.
 
-    S-tier identity: ``isEqual(A, B)`` asserts that A and B name the
+    SS-space_role identity: ``isEqual(A, B)`` asserts that A and B name the
     same concept by producing a single parent symbol that represents
     the wholeness of its arguments — a higher-epistemic-level
     assertion that cannot be expressed at the subsymbolic level.
-    Compare with the C-tier ``equal`` which performs the geometric
+    Compare with the CS-space_role ``equal`` which performs the geometric
     identity check on concept bivectors directly.
 
     Post-MereologicalTree retirement: equality is expressed purely
@@ -3759,7 +3752,7 @@ class IsEqualLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -3795,9 +3788,9 @@ class IsEqualLayer(GrammarLayer):
 class IsPartLayer(GrammarLayer):
     """``S -> isPart(S, S)`` -- symbolic parthood assertion.
 
-    The mereological analogue of :class:`IsEqualLayer`: an S-tier
+    The mereological analogue of :class:`IsEqualLayer`: an SS-space_role
     *assertive* relation that states "A is part of B" as a single parent
-    symbol, a higher-epistemic-level assertion than the C-tier geometric
+    symbol, a higher-epistemic-level assertion than the CS-space_role geometric
     ``part`` test. Per decision 6 of the role-collapsed grammar spec,
     ``isPart`` is one relation dispatched by ``query``: assertive here,
     answer-producing (``queryPart``) when ``query="true"`` -- folding in
@@ -3813,7 +3806,7 @@ class IsPartLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -3863,7 +3856,7 @@ class PartLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -3944,7 +3937,7 @@ class QueryLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self, tree=None):
@@ -4017,7 +4010,7 @@ class ExistLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = False
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = False
 
     def __init__(self):
@@ -4389,7 +4382,7 @@ class RuleCodebook(nn.Module):
 # =====================================================================
 # LanguageLayer -- inlined from bin/LanguageLayer.py (2026-05-11 module
 # consolidation). Stage 3 (2026-05-27): promoted to the canonical
-# parser; constructed directly on ``SymbolicSubSpace.languageLayer``. The
+# parser; constructed directly on ``SymbolSubSpace.languageLayer``. The
 # CKY chart and its ``_ensure_signal_router`` lazy bridge retired
 # alongside the chart class.
 # =====================================================================
@@ -4439,7 +4432,7 @@ def sentence_relative_mask(word_subspace, B, device=None):
         return False
 
     s_rules = None
-    for key in ('S', 's'):
+    for key in ('SS',):
         if key in current_rules:
             s_rules = current_rules[key]
             break
@@ -4465,12 +4458,12 @@ class LanguageLayer(Layer):
     """Top-level signal-routing parser. The canonical parser as of
     Stage 3 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md,
     2026-05-27). Constructed directly on
-    ``SymbolicSubSpace.languageLayer``; the CKY chart and its lazy
+    ``SymbolSubSpace.languageLayer``; the CKY chart and its lazy
     ``_ensure_signal_router`` bridge retired with the Chart class.
 
-    Multi-tier: a unary layer and/or a binary layer can be attached per
-    tier (e.g., 'P', 'C', 'S'). On compose, tiers run in sorted order;
-    within each tier, unary fires first then binary, with the soft slab
+    Multi-space_role: a unary layer and/or a binary layer can be attached per
+    space_role (e.g., 'subsymbolic', 'CS', 'SS'). On compose, space_roles run in sorted order;
+    within each space_role, unary fires first then binary, with the soft slab
     of the previous step feeding the next so gradient reaches every op.
 
     **Layer contract** (post-2026-05-20 stack-rewrite refactor):
@@ -4480,7 +4473,7 @@ class LanguageLayer(Layer):
     -- both wrap the stack-rewrite primitives (shift/reduce/unreduce)
     so call sites can treat LanguageLayer like any other Layer subclass.
 
-    ``compose`` / ``generate`` are the SymbolicSubSpace-facing entry points;
+    ``compose`` / ``generate`` are the SymbolSubSpace-facing entry points;
     they operate on a ``[B, N, D]`` slab through the attached
     ``_unary_layers`` / ``_binary_layers`` ModuleDicts and produce
     per-row rule lists. The two paths are independent: the Layer-style
@@ -4516,9 +4509,9 @@ class LanguageLayer(Layer):
         self.temperature = float(temperature)
         # Conceptual reduction order (T = subsymbolicOrder). Used as the
         # recursive-reduction round floor in ``compose`` (plan \xa76: the
-        # per-tier compose loop is collapsed into a single reduction tier,
+        # per-space_role compose loop is collapsed into a single reduction space_role,
         # so the bound is ``max(subsymbolic_order, N-1)`` rather than the
-        # number of declared tiers). Defaults to 1; the host space sets it
+        # number of declared space_roles). Defaults to 1; the host space sets it
         # when it can reach the model's subsymbolicOrder. ``max(1, N-1) ==
         # N-1`` so the default reproduces the pre-collapse round count.
         self.subsymbolic_order = 1
@@ -4544,7 +4537,7 @@ class LanguageLayer(Layer):
         # are attached (the layers size the chooser at construction). Default
         # False keeps the chooser byte-identical.
         self.chooser_category_context = False
-        # Route store (per tier): the pass-1 greedy route (detached masks)
+        # Route store (per space_role): the pass-1 greedy route (detached masks)
         # and the live per-level cross-product distributions, populated when
         # ``neural_tool_user`` is on. Pass-2 replay reads the route; the
         # distributions are the new rule_probs source.
@@ -4564,14 +4557,14 @@ class LanguageLayer(Layer):
         self._unary_layers = nn.ModuleDict()
         self._binary_layers = nn.ModuleDict()
         # Parallel arrays of global rule_ids per attached layer; keyed by
-        # tier. Local op_id (the index inside the layer's ModuleList) maps
+        # space_role. Local op_id (the index inside the layer's ModuleList) maps
         # to the corresponding global rule_id at this list position.
         self._unary_rule_ids = {}
         self._binary_rule_ids = {}
         # Per-compose cache for generate / inspection.
         self._last_input = None
         self._last_output = None
-        self._last_tier_routings = {}
+        self._last_space_role_routings = {}
 
     def _chooser_role_cats(self):
         """Phase-2 category-context width for the structured layers' MLP
@@ -4592,19 +4585,19 @@ class LanguageLayer(Layer):
             return 0
 
     def attach_unary_ops(self, *, ops, rule_ids=None, op_names=None,
-                         op_tiers=None, r_copy=1, tier="S"):
-        """Attach a unary tier; ops fire per-position with one selection.
+                         op_space_roles=None, r_copy=1, space_role="SS"):
+        """Attach a unary space_role; ops fire per-position with one selection.
 
         ``rule_ids`` parallels ``ops`` and maps local op_id to the
         grammar's global rule_id (defaults to identity range).
-        ``op_names`` and ``op_tiers`` parallel ``ops`` and carry the
-        per-rule method-name and tier letter ('C' / 'S' / ...) declared
+        ``op_names`` and ``op_space_roles`` parallel ``ops`` and carry the
+        per-rule method-name and space_role tag ('CS' / 'SS' / ...) declared
         in the .grammar file. Both are optional; they enable downstream
-        consumers (tier-gated scoring, diagnostics) to look at each op
+        consumers (space_role-gated scoring, diagnostics) to look at each op
         without crawling back through ``TheGrammar``. Mutates
-        ``self._unary_layers[tier]`` and ``self._unary_rule_ids[tier]``.
+        ``self._unary_layers[space_role]`` and ``self._unary_rule_ids[space_role]``.
         """
-        tier = str(tier)
+        space_role = str(space_role)
         layer = UnaryStructuredLayer(
             d_model=self.feature_dim,
             ops=ops, r_copy=r_copy,
@@ -4613,8 +4606,8 @@ class LanguageLayer(Layer):
             n_role_cats=self._chooser_role_cats(),
         )
         layer.op_names = list(op_names) if op_names is not None else None
-        layer.op_tiers = list(op_tiers) if op_tiers is not None else None
-        self._unary_layers[tier] = layer
+        layer.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
+        self._unary_layers[space_role] = layer
         if rule_ids is None:
             rule_ids = list(range(len(ops)))
         else:
@@ -4622,34 +4615,34 @@ class LanguageLayer(Layer):
         if len(rule_ids) != len(ops):
             raise ValueError(
                 f"attach_unary_ops: len(rule_ids)={len(rule_ids)} != "
-                f"len(ops)={len(ops)} for tier {tier!r}")
-        self._unary_rule_ids[tier] = rule_ids
+                f"len(ops)={len(ops)} for space_role {space_role!r}")
+        self._unary_rule_ids[space_role] = rule_ids
 
     def attach_layer_ops(self, *, ops, rule_ids=None, op_names=None,
-                         op_tiers=None, r_copy=1, tier="S"):
-        """Attach a binary tier; ops reduce adjacent pairs via Viterbi DP.
+                         op_space_roles=None, r_copy=1, space_role="SS"):
+        """Attach a binary space_role; ops reduce adjacent pairs via Viterbi DP.
 
         ``rule_ids`` parallels ``ops`` and maps local op_id to grammar
-        global rule_id. ``op_names`` and ``op_tiers`` carry the per-rule
-        method-name and tier letter declared in the .grammar file; when
+        global rule_id. ``op_names`` and ``op_space_roles`` carry the per-rule
+        method-name and space_role tag declared in the .grammar file; when
         supplied, the binary layer uses them to (a) gate scores so a
-        C-tier op only fires at C-tier positions and an S-tier op only
-        at S-tier positions, and (b) update each position's tier after a
-        ``lift`` (C->S) or ``lower`` (S->C) reduce. Both are optional;
+        CS-space_role op only fires at CS-space_role positions and an SS-space_role op only
+        at SS-space_role positions, and (b) update each position's space_role after a
+        ``lift`` (CS->SS) or ``lower`` (SS->CS) reduce. Both are optional;
         when omitted the layer falls back to ungated behaviour
-        (backward-compat). Mutates ``self._binary_layers[tier]`` and
-        ``self._binary_rule_ids[tier]``.
+        (backward-compat). Mutates ``self._binary_layers[space_role]`` and
+        ``self._binary_rule_ids[space_role]``.
         """
-        tier = str(tier)
+        space_role = str(space_role)
         layer = BinaryStructuredReductionLayer(
             d_model=self.feature_dim,
-            ops=ops, op_tiers=op_tiers, op_names=op_names,
+            ops=ops, op_space_roles=op_space_roles, op_names=op_names,
             r_copy=r_copy,
             temperature=self.temperature,
             chooser=getattr(self, "transform_chooser", "anchordot"),
             n_role_cats=self._chooser_role_cats(),
         )
-        self._binary_layers[tier] = layer
+        self._binary_layers[space_role] = layer
         if rule_ids is None:
             rule_ids = list(range(len(ops)))
         else:
@@ -4657,15 +4650,15 @@ class LanguageLayer(Layer):
         if len(rule_ids) != len(ops):
             raise ValueError(
                 f"attach_layer_ops: len(rule_ids)={len(rule_ids)} != "
-                f"len(ops)={len(ops)} for tier {tier!r}")
-        self._binary_rule_ids[tier] = rule_ids
+                f"len(ops)={len(ops)} for space_role {space_role!r}")
+        self._binary_rule_ids[space_role] = rule_ids
 
     def compose(self, data, word_space, subspace=None):
-        """Run tiered unary then recursive binary reductions; return rule list.
+        """Run space_roleed unary then recursive binary reductions; return rule list.
 
-        ``data`` is ``[B, N, D]``. For each tier in sorted order, unary
+        ``data`` is ``[B, N, D]``. For each space_role in sorted order, unary
         fires per position then binary reduces adjacent pairs until N
-        collapses to a single S-state. Returns ``{tier: list[list[rule_id]]}``
+        collapses to a single S-state. Returns ``{space_role: list[list[rule_id]]}``
         and caches the root state + length-N expansion on ``self``.
         """
         if not self._unary_layers and not self._binary_layers:
@@ -4674,13 +4667,13 @@ class LanguageLayer(Layer):
                 "attach_unary_ops().")
         x = data
         rules = {}
-        self._last_tier_routings = {}
-        all_tiers = sorted(set(self._unary_layers.keys())
+        self._last_space_role_routings = {}
+        all_space_roles = sorted(set(self._unary_layers.keys())
                            | set(self._binary_layers.keys()))
 
         # Phase 2 (chooser conditioning): build the per-slot category context
         # ONCE from the terminal-slot identities, threaded into the FIRST
-        # tier's scoring only -- later rounds/tiers fold composed slots whose
+        # space_role's scoring only -- later rounds/space_roles fold composed slots whose
         # MetaSymbol identity no longer maps 1:1 to a percept (their category
         # is neutral). Gated on the MLP chooser + <chooserCategoryContext> +
         # the terminal codebook being enabled. Off -> None (byte-identical).
@@ -4692,31 +4685,31 @@ class LanguageLayer(Layer):
                     and getattr(_ss, 'category_codebook_enabled', None) is not None
                     and _ss.category_codebook_enabled()):
                 cat_e = self._build_category_context(x, _ss)
-        terminal_tier = all_tiers[0] if all_tiers else None
+        terminal_space_role = all_space_roles[0] if all_space_roles else None
 
-        for tier in all_tiers:
+        for space_role in all_space_roles:
             B = x.shape[0]
-            tier_routing = {}
-            tier_rules_per_row = [[] for _ in range(B)]
+            space_role_routing = {}
+            space_role_rules_per_row = [[] for _ in range(B)]
 
-            unary_layer = self._unary_layers[tier] if tier in self._unary_layers else None
+            unary_layer = self._unary_layers[space_role] if space_role in self._unary_layers else None
             if unary_layer is not None:
                 u_hard, u_soft, u_routing = unary_layer(
-                    x, cat_ctx=(cat_e if tier == terminal_tier else None))
-                tier_routing["unary"] = u_routing
-                rid_table = self._unary_rule_ids[tier]
+                    x, cat_ctx=(cat_e if space_role == terminal_space_role else None))
+                space_role_routing["unary"] = u_routing
+                rid_table = self._unary_rule_ids[space_role]
                 kind = u_routing["action_kind"]
                 op = u_routing["action_op"]
                 for b in range(B):
                     for j in range(kind.shape[1]):
                         if int(kind[b, j].item()) == 2:
-                            tier_rules_per_row[b].append(
+                            space_role_rules_per_row[b].append(
                                 rid_table[int(op[b, j].item())])
                 # Propagate soft slab so gradient reaches unary ops at
-                # later tiers / through the binary stage of this tier.
+                # later space_roles / through the binary stage of this space_role.
                 x = u_soft
 
-            binary_layer = self._binary_layers[tier] if tier in self._binary_layers else None
+            binary_layer = self._binary_layers[space_role] if space_role in self._binary_layers else None
             if binary_layer is not None:
                 # Recursive reduction: iterate the binary layer up to
                 # (N-1) times so the slab folds down to a single S start
@@ -4727,8 +4720,8 @@ class LanguageLayer(Layer):
                 # the canonical [B, 1, D] root state is x[:, 0:1, :]
                 # after the final round.
                 #
-                rid_table = self._binary_rule_ids[tier]
-                # plan \xa76: with C and S collapsed into one reduction tier,
+                rid_table = self._binary_rule_ids[space_role]
+                # plan \xa76: with CS and SS collapsed into one reduction space_role,
                 # fold for ``max(subsymbolicOrder, N-1)`` rounds. Extra rounds
                 # on an already-folded slab are safe no-ops (the layer
                 # returns the degenerate path for N<=1).
@@ -4745,14 +4738,14 @@ class LanguageLayer(Layer):
                     # route summary (see _synthesize_rule_probs).
                     adapter = _BinaryStepperAdapter(binary_layer)
                     ntu = NeuralToolUser(max_levels=max(1, max_rounds))
-                    if (self._ntu_explore and self._ntu_route.get(tier)):
+                    if (self._ntu_explore and self._ntu_route.get(space_role)):
                         # Pass B: replay pass-A's saved route to a random
                         # divergence level, force a different op there
                         # (temperature), and re-decide. Stash the divergence
                         # info for the two-pass policy loss; the fired rules
                         # come from pass A's route (the divergence is one op).
                         _saved = RouteStats()
-                        _saved.route = self._ntu_route[tier]
+                        _saved.route = self._ntu_route[space_role]
                         _out = ntu.parse_explore(
                             x, adapter, _saved,
                             temperature=self._ntu_temperature,
@@ -4762,12 +4755,12 @@ class LanguageLayer(Layer):
                             self._ntu_explore_info = _info
                         else:
                             x, _stats_g = ntu.parse_greedy(x, adapter)
-                        route_for_rules = self._ntu_route[tier]
+                        route_for_rules = self._ntu_route[space_role]
                     else:
                         # Pass A: greedy; save the route + distributions.
                         x, stats = ntu.parse_greedy(x, adapter)
-                        self._ntu_route[tier] = stats.route
-                        self._ntu_dist[tier] = [
+                        self._ntu_route[space_role] = stats.route
+                        self._ntu_dist[space_role] = [
                             e["dist_probs"] for e in stats.route]
                         route_for_rules = stats.route
                     for lvl in route_for_rules:
@@ -4777,15 +4770,15 @@ class LanguageLayer(Layer):
                         for b in range(rm.shape[0]):
                             for p in range(rm.shape[1]):
                                 if rm[b, p].sum() > 0:
-                                    tier_rules_per_row[b].append(
+                                    space_role_rules_per_row[b].append(
                                         rid_table[int(rm[b, p].argmax())])
-                    tier_routing["neural_tool_user"] = True
-                    tier_routing["route_levels"] = len(route_for_rules)
+                    space_role_routing["neural_tool_user"] = True
+                    space_role_routing["route_levels"] = len(route_for_rules)
                 else:
                     round_routings = []
                     for _round_i in range(max_rounds):
                         b_hard, b_soft, b_routing = binary_layer(
-                            x, cat_ctx=(cat_e if (tier == terminal_tier
+                            x, cat_ctx=(cat_e if (space_role == terminal_space_role
                                                   and _round_i == 0) else None))
                         round_routings.append(b_routing)
                         kind = b_routing["action_kind"]
@@ -4796,17 +4789,17 @@ class LanguageLayer(Layer):
                             L = int(lengths[b].item())
                             for j in range(L):
                                 if int(kind[b, j].item()) == 1:
-                                    tier_rules_per_row[b].append(
+                                    space_role_rules_per_row[b].append(
                                         rid_table[int(op[b, j].item())])
                         x = b_soft
                     if round_routings:
                         # Last round's routing is the canonical "binary"
                         # diagnostic; the full sequence is in "binary_rounds".
-                        tier_routing["binary"] = round_routings[-1]
-                        tier_routing["binary_rounds"] = round_routings
+                        space_role_routing["binary"] = round_routings[-1]
+                        space_role_routing["binary_rounds"] = round_routings
 
-            self._last_tier_routings[tier] = tier_routing
-            rules[tier] = tier_rules_per_row
+            self._last_space_role_routings[space_role] = space_role_routing
+            rules[space_role] = space_role_rules_per_row
 
         # Canonical S start state: leading position of the final slab,
         # shape [B, 1, D]. Downstream consumers that want the single
@@ -4825,7 +4818,7 @@ class LanguageLayer(Layer):
         # MetaSymbol category role observation (Phase 1; doc/Language.md
         # "Participation Categories as the Chooser's Syntactic-Category
         # Context"). Gated: only when the terminal WholeSpace has the category
-        # codebook enabled. Captures the FIRST binary tier's round-0 reduces
+        # codebook enabled. Captures the FIRST binary space_role's round-0 reduces
         # (the only round whose slab positions map 1:1 to the original
         # percepts) as per-row (left_pos, right_pos, method) tuples, stashed on
         # the WS for the autobind hook (which holds pid_2d) to attribute to
@@ -4876,15 +4869,15 @@ class LanguageLayer(Layer):
         return ws.category_role_of(idx_t)
 
     def _collect_round0_role_obs(self):
-        """Round-0 reduces of the first binary tier as per-row
+        """Round-0 reduces of the first binary space_role as per-row
         ``(left_pos, right_pos, method)`` tuples for Phase-1 category learning.
 
         Only round 0 has slab positions == original percept positions, so the
         operand positions index ``pid_2d`` directly in the autobind hook.
-        Returns a list of B lists (empty when no binary tier fired). Host-side
+        Returns a list of B lists (empty when no binary space_role fired). Host-side
         bookkeeping; only runs when the category codebook is enabled."""
-        for tier in sorted(self._binary_layers.keys()):
-            tr = (self._last_tier_routings or {}).get(tier) or {}
+        for space_role in sorted(self._binary_layers.keys()):
+            tr = (self._last_space_role_routings or {}).get(space_role) or {}
             rounds = tr.get("binary_rounds")
             if not rounds:
                 continue
@@ -4895,7 +4888,7 @@ class LanguageLayer(Layer):
             sr = r0.get("src_right")
             if kind is None or op is None or sl is None or sr is None:
                 continue
-            rid_table = (getattr(self, "_binary_rule_ids", {}) or {}).get(tier) or []
+            rid_table = (getattr(self, "_binary_rule_ids", {}) or {}).get(space_role) or []
             kind_h = kind.tolist()
             op_h = op.tolist()
             sl_h = sl.tolist()
@@ -4917,86 +4910,86 @@ class LanguageLayer(Layer):
                         continue
                     obs[b].append(
                         (int(sl_h[b][j]), int(sr_h[b][j]), str(method)))
-            return obs          # first binary tier only (positions == percepts)
+            return obs          # first binary space_role only (positions == percepts)
         return []
 
     def generate(self, target, word_space, subspace=None):
         """Reverse-pass mirror: emit the compose-order rule list reversed.
 
         If compose has not yet been called for ``target``, run it now.
-        Tier order is reversed (innermost first) and each row's rule
+        Space-role order is reversed (innermost first) and each row's rule
         sequence is reversed so the inverse pass pops last-applied first.
         """
         if not self._unary_layers and not self._binary_layers:
             raise RuntimeError(
                 "LanguageLayer.generate called before attach_layer_ops() / "
                 "attach_unary_ops().")
-        if not self._last_tier_routings:
+        if not self._last_space_role_routings:
             self.compose(target, word_space, subspace=subspace)
         # Generate emits the compose-order list reversed per row, so that
-        # the inverse pass pops the last-applied rule first. Tier order is
+        # the inverse pass pops the last-applied rule first. Space-role order is
         # also reversed (innermost first).
         compose_rules = self._compose_rules_from_routings()
-        all_tiers = sorted(compose_rules.keys(), reverse=True)
-        return {tier: [row[::-1] for row in compose_rules[tier]]
-                for tier in all_tiers}
+        all_space_roles = sorted(compose_rules.keys(), reverse=True)
+        return {space_role: [row[::-1] for row in compose_rules[space_role]]
+                for space_role in all_space_roles}
 
     def _compose_rules_from_routings(self):
         """Rebuild per-row compose-order rule lists from cached routings.
 
-        Walks ``self._last_tier_routings`` and translates each routing's
+        Walks ``self._last_space_role_routings`` and translates each routing's
         ``(action_kind, action_op)`` tensors back into global rule_ids
-        via the per-tier ``_unary_rule_ids`` / ``_binary_rule_ids`` tables.
+        via the per-space_role ``_unary_rule_ids`` / ``_binary_rule_ids`` tables.
         """
         rules = {}
-        for tier, tier_routing in self._last_tier_routings.items():
-            tier_rules_per_row = None
-            if "unary" in tier_routing:
-                rid_table = self._unary_rule_ids[tier]
-                r = tier_routing["unary"]
+        for space_role, space_role_routing in self._last_space_role_routings.items():
+            space_role_rules_per_row = None
+            if "unary" in space_role_routing:
+                rid_table = self._unary_rule_ids[space_role]
+                r = space_role_routing["unary"]
                 kind = r["action_kind"]
                 op = r["action_op"]
                 B = kind.shape[0]
-                tier_rules_per_row = [[] for _ in range(B)]
+                space_role_rules_per_row = [[] for _ in range(B)]
                 for b in range(B):
                     for j in range(kind.shape[1]):
                         if int(kind[b, j].item()) == 2:
-                            tier_rules_per_row[b].append(
+                            space_role_rules_per_row[b].append(
                                 rid_table[int(op[b, j].item())])
-            if "binary" in tier_routing:
-                rid_table = self._binary_rule_ids[tier]
-                r = tier_routing["binary"]
+            if "binary" in space_role_routing:
+                rid_table = self._binary_rule_ids[space_role]
+                r = space_role_routing["binary"]
                 kind = r["action_kind"]
                 op = r["action_op"]
                 lengths = r["lengths"]
                 B = kind.shape[0]
-                if tier_rules_per_row is None:
-                    tier_rules_per_row = [[] for _ in range(B)]
+                if space_role_rules_per_row is None:
+                    space_role_rules_per_row = [[] for _ in range(B)]
                 for b in range(B):
                     L = int(lengths[b].item())
                     for j in range(L):
                         if int(kind[b, j].item()) == 1:
-                            tier_rules_per_row[b].append(
+                            space_role_rules_per_row[b].append(
                                 rid_table[int(op[b, j].item())])
-            if tier_rules_per_row is not None:
-                rules[tier] = tier_rules_per_row
+            if space_role_rules_per_row is not None:
+                rules[space_role] = space_role_rules_per_row
         return rules
 
     # -- backwards-compat shims for diagnostics / older tests -----------
     @property
     def _last_routing(self):
-        # Returns the binary routing of the highest-tier (last-run) tier
-        # that has one, mirroring the pre-multi-tier API.
-        for tier in sorted(self._last_tier_routings.keys(), reverse=True):
-            tr = self._last_tier_routings[tier]
+        # Returns the binary routing of the highest-space_role (last-run) space_role
+        # that has one, mirroring the pre-multi-space_role API.
+        for space_role in sorted(self._last_space_role_routings.keys(), reverse=True):
+            tr = self._last_space_role_routings[space_role]
             if "binary" in tr:
                 return tr["binary"]
         return None
 
     @property
     def _last_unary_routing(self):
-        for tier in sorted(self._last_tier_routings.keys(), reverse=True):
-            tr = self._last_tier_routings[tier]
+        for space_role in sorted(self._last_space_role_routings.keys(), reverse=True):
+            tr = self._last_space_role_routings[space_role]
             if "unary" in tr:
                 return tr["unary"]
         return None
@@ -5172,7 +5165,7 @@ class LanguageLayer(Layer):
 
         Args:
             subspace: stack-mode SubSpace.
-            syntactic_layer: per-tier SyntacticLayer with ``execute``
+            syntactic_layer: per-space_role SyntacticLayer with ``execute``
                 (Phase 2). Computes parent.what from child payloads.
             rule_id: grammar rule id (must be arity 2 for top-2 reduce).
             rule_codebook: optional RuleCodebook providing the .where
@@ -5207,17 +5200,17 @@ class LanguageLayer(Layer):
         i_slot = n_live - 2                                    # [B] survives
         j_slot = n_live - 1                                    # [B] consumed
 
-        # C-tier ops operate on the muxed event [what | where | when] so
+        # CS-space_role ops operate on the muxed event [what | where | when] so
         # LIFT/LOWER can alter the .when span and PREPOSITION can modify the
-        # .where (spec Section 5 / 6.4). The WS-tier stack route stays
-        # content-only (WS carries no where/when). Tier comes off the
-        # per-tier syntactic layer.
+        # .where (spec Section 5 / 6.4). The WS-space_role stack route stays
+        # content-only (WS carries no where/when). Space-role comes off the
+        # per-space_role syntactic layer.
         # Only event-aware ops (LIFT / LOWER / PREPOSITION) receive the muxed
-        # event; content-only C-tier ops (intersection / union / ...) keep the
+        # event; content-only CS-space_role ops (intersection / union / ...) keep the
         # .what operand so their content-sized folds are unaffected.
-        is_c_tier = str(getattr(syntactic_layer, 'tier', '')) == 'C'
+        is_c_space_role = str(getattr(syntactic_layer, 'space_role', '')) == 'CS'
         _op = None
-        if is_c_tier:
+        if is_c_space_role:
             _mname = TheGrammar.method_name(int(rule_id))
             _op = syntactic_layer._by_name.get(_mname) if _mname else None
         _event_op = bool(getattr(_op, 'event_aware', False))
@@ -5264,7 +5257,7 @@ class LanguageLayer(Layer):
             when_new[arange_B, j_slot, :] = 0.0
             subspace.set_when(when_new)
         subspace.set_activation(occ_new)
-        # Symbolic-priming forward-commit at the C-tier reduction
+        # Symbolic-priming forward-commit at the CS-space_role reduction
         # (plan doc/plans/2026-06-06-symbolic-heat-retrieval.md §Grammar
         # reduction) is DEFERRED here: the stack-mode ``subspace`` carries
         # only content (.what/.where/.when) at slots i_slot/j_slot — it has
@@ -5276,7 +5269,7 @@ class LanguageLayer(Layer):
         # plan explicitly permits deferring row priming for unsnapped
         # parents (update only the semantic carrier z from the idea vector).
         # When a caller does have committed child ref_ids at a reduction,
-        # ``SymbolicSubSpace._commit_priming(b, ref_id)`` is the gated API to
+        # ``SymbolSubSpace._commit_priming(b, ref_id)`` is the gated API to
         # prime them (see test_symbolic_heat_retrieval.py
         # ::TestReduceCommitPrimesChildRefs).
         return subspace
@@ -5344,7 +5337,7 @@ class LanguageLayer(Layer):
 
         Args:
             subspace: stack-mode SubSpace (mutated in place).
-            syntactic_layer: per-tier SyntacticLayer; provides the
+            syntactic_layer: per-space_role SyntacticLayer; provides the
                 host layer for the decoded rule via ``_by_name``.
             grammar: Grammar for ``decode_where``. Required when
                 ``rule_codebook`` is not supplied (or its grammar is
@@ -5400,8 +5393,8 @@ class LanguageLayer(Layer):
         layer = syntactic_layer._by_name.get(method_name)
         if layer is None:
             # Post-2026-05-29 grammar-file-refactor (\xa75): rule's class
-            # tier may differ from this syntactic_layer's tier (e.g.
-            # intersection lives in IntersectionLayer with tier='C', so it
+            # space_role may differ from this syntactic_layer's space_role (e.g.
+            # intersection lives in IntersectionLayer with space_role='CS', so it
             # binds on ConceptualSpace's syntactic layer rather than the
             # WholeSpace one). Fall back to a fresh GRAMMAR_LAYER_CLASSES
             # instance so the dispatch path still completes; the identity-
@@ -5414,7 +5407,7 @@ class LanguageLayer(Layer):
                     layer = None
         if layer is None:
             raise KeyError(
-                f"LanguageLayer.unreduce: tier={syntactic_layer.tier!r} "
+                f"LanguageLayer.unreduce: space_role={syntactic_layer.space_role!r} "
                 f"has no host layer for rule_id={rule_id} "
                 f"(method_name={method_name!r}). Registered rules: "
                 f"{sorted(syntactic_layer._by_name.keys())}"
@@ -5434,7 +5427,7 @@ class LanguageLayer(Layer):
         def _identity_stub():
             return parent if arity == 1 else (parent, parent)
 
-        # 2026-05-29: pass the tier-local Basis (codebook) as an
+        # 2026-05-29: pass the space_role-local Basis (codebook) as an
         # explicit arg so binary reverses (UnionLayer /
         # IntersectionLayer) can use the mereology-guided recommender
         # (``Ops.disjunctionReverse`` / ``Ops.conjunctionReverse``)
@@ -5445,7 +5438,7 @@ class LanguageLayer(Layer):
         # Passing the Basis (rather than its W tensor) keeps the door
         # open for richer codebook methods on reverse without changing
         # the call site.
-        tier_basis = getattr(subspace, 'what', None)
+        space_role_basis = getattr(subspace, 'what', None)
 
         # Phase 3b CAPSTONE (plan doc/plans/2026-06-06-symbolic-heat-retrieval
         # .md §Reverse-path responsibilities, §Phase 3): heat-biased candidate
@@ -5456,7 +5449,7 @@ class LanguageLayer(Layer):
         # layer is Intersection/Union (arity-2 recommender ops), AND (c) the
         # owning space's ``attention_mode != 'off'``. Every current config is
         # attention=off, so this whole block is dormant and the call below is
-        # exactly ``layer.reverse(parent, basis=tier_basis)`` as before — no
+        # exactly ``layer.reverse(parent, basis=space_role_basis)`` as before — no
         # observable change on the live generation path. The broad ``except``
         # collapses any heat-path failure back to a plain reverse so a bug
         # here can NEVER break generation. Decoding is row-0-canonical
@@ -5467,9 +5460,9 @@ class LanguageLayer(Layer):
         ss = getattr(subspace, 'symbolSpace', None)
         if (ss is not None and arity == 2
                 and isinstance(layer, (IntersectionLayer, UnionLayer))):
-            tier = str(getattr(syntactic_layer, 'tier', ''))
-            space = (getattr(ss, 'wholeSpace', None) if tier == 'S'
-                     else getattr(ss, 'conceptualSpace', None) if tier == 'C'
+            space_role = str(getattr(syntactic_layer, 'space_role', ''))
+            space = (getattr(ss, 'wholeSpace', None) if space_role == 'SS'
+                     else getattr(ss, 'conceptualSpace', None) if space_role == 'CS'
                      else None)
             mode = (str(getattr(space, 'attention_mode', 'off'))
                     if space is not None else 'off')
@@ -5491,9 +5484,9 @@ class LanguageLayer(Layer):
                             and cats[0] is not None and cats[1] is not None):
                         # Intersection/Union are order-preserving, so the
                         # operands share the parent's order. Read the parent's
-                        # per-slot order from the SymbolicSubSpace order buffer at
+                        # per-slot order from the SymbolSubSpace order buffer at
                         # the row-0 canonical top slot. Guard the second-axis
-                        # index: ``_order``'s width (the SymbolicSubSpace STM depth)
+                        # index: ``_order``'s width (the SymbolSubSpace STM depth)
                         # need not equal the language-layer stack width, so an
                         # out-of-range (or zeroed) slot yields order 0.
                         # A zeroed order can make ``refs_by_category ∩
@@ -5508,8 +5501,8 @@ class LanguageLayer(Layer):
                         # Phase 5: read retrieval scalar knobs from config
                         # (plan §Configuration).  All keys are optional; fall
                         # back to the sensible defaults below when absent.
-                        # The space section name is "WholeSpace" for tier
-                        # 'S' and "ConceptualSpace" for tier 'C'.
+                        # The space section name is "WholeSpace" for space_role
+                        # 'SS' and "ConceptualSpace" for space_role 'CS'.
                         #
                         # ROBUSTNESS (critical): a knob read must NEVER disable
                         # the heat path. ``TheXMLConfig`` is a process-wide
@@ -5531,7 +5524,7 @@ class LanguageLayer(Layer):
                                 return TheXMLConfig.space(_sec, _key, _default)
                             except Exception:
                                 return _default
-                        _cfg_sec = ('WholeSpace' if tier == 'S'
+                        _cfg_sec = ('WholeSpace' if space_role == 'SS'
                                     else 'ConceptualSpace')
                         _r_alpha = float(_cfg_knob(
                             _cfg_sec, 'retrievalAlpha', 1.0))
@@ -5566,14 +5559,14 @@ class LanguageLayer(Layer):
                             parent_order = 0
                         q = parent[0]  # row-0 canonical query
                         left = ss.retrieval_candidates_for_slot(
-                            q, tier_basis, cats[0], parent_order, batch=0,
+                            q, space_role_basis, cats[0], parent_order, batch=0,
                             topk_content=_r_topk_content,
                             topk_heat=_r_topk_heat,
                             alpha=_r_alpha, beta=_r_beta,
                             mode=mode, gamma=_r_gamma, delta=_r_delta,
                             outer_topk=_r_outer_topk)
                         right = ss.retrieval_candidates_for_slot(
-                            q, tier_basis, cats[1], parent_order, batch=0,
+                            q, space_role_basis, cats[1], parent_order, batch=0,
                             topk_content=_r_topk_content,
                             topk_heat=_r_topk_heat,
                             alpha=_r_alpha, beta=_r_beta,
@@ -5595,7 +5588,7 @@ class LanguageLayer(Layer):
                     reverse_kwargs = {}
 
         try:
-            child = layer.reverse(parent, basis=tier_basis, **reverse_kwargs)
+            child = layer.reverse(parent, basis=space_role_basis, **reverse_kwargs)
         except TypeError:
             # Backward-compat for layer reverses that don't accept the
             # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
@@ -5658,15 +5651,15 @@ class LanguageLayer(Layer):
             # break generation). The recommender returns operand VECTORS, not
             # ids, so each selected row id is recovered by matching the
             # returned vector against the candidate ``rows`` subset of
-            # ``W = tier_basis.getW()`` (a small set), row-0 canonical.
+            # ``W = space_role_basis.getW()`` (a small set), row-0 canonical.
             if reverse_kwargs:
                 try:
                     tax = getattr(ss, 'taxonomy', None)
                     if (tax is not None
                             and getattr(tax, 'priming_enabled', False)
-                            and tier_basis is not None
-                            and hasattr(tier_basis, 'getW')):
-                        W_rec = tier_basis.getW()
+                            and space_role_basis is not None
+                            and hasattr(space_role_basis, 'getW')):
+                        W_rec = space_role_basis.getW()
                         if W_rec is not None:
                             for vec, side in ((left[0], 'left_rows'),
                                               (right[0], 'right_rows')):
@@ -5754,7 +5747,7 @@ class LanguageLayer(Layer):
 
         Args:
             subspace: stack-mode SubSpace (mutated in place).
-            syntactic_layer: per-tier SyntacticLayer for REDUCE.
+            syntactic_layer: per-space_role SyntacticLayer for REDUCE.
             actions: iterable of (kind, ...) tuples.
             rule_codebook: optional, used to resolve rule .where ids
                 for REDUCE actions. Falls back to ``grammar`` when
@@ -5826,7 +5819,7 @@ class LanguageLayer(Layer):
 
         Args:
             subspace: stack-mode SubSpace (mutated in place).
-            syntactic_layer: per-tier SyntacticLayer with ``execute``.
+            syntactic_layer: per-space_role SyntacticLayer with ``execute``.
             grammar: Grammar (used for rule .where decoding when
                 ``rule_codebook`` is omitted).
             rule_codebook: optional RuleCodebook for rule .where
@@ -5869,7 +5862,7 @@ class LanguageLayer(Layer):
 
         Args:
             subspace: stack-mode SubSpace (mutated in place).
-            syntactic_layer: per-tier SyntacticLayer (provides
+            syntactic_layer: per-space_role SyntacticLayer (provides
                 ``_by_name`` for rule layer lookup).
             grammar: Grammar for ``.where`` decoding. Required when
                 ``rule_codebook`` is None.
@@ -6014,9 +6007,9 @@ def binary_tiling_soft_dp(
         reduce_marginal = copy_score.new_zeros(B, 0)
 
     # Per-(action, op) marginals: P(action fires at t) * softmax(op | action).
-    # A row can be ENTIRELY masked out (all -inf) when tier-gating forbids
+    # A row can be ENTIRELY masked out (all -inf) when space_role-gating forbids
     # every op for that position/pair (see BinaryStructuredReductionLayer's
-    # tier mask). For such a row softmax(-inf, ...) is NaN, but the row's
+    # space_role mask). For such a row softmax(-inf, ...) is NaN, but the row's
     # ACTION marginal is exactly 0 (structurally impossible), so the
     # per-op product MUST be 0 -- not NaN. Use a masked softmax that
     # yields a 0 posterior on fully-dead rows (any finite value works
@@ -6639,7 +6632,7 @@ class ComparatorMixer(nn.Module):
         """h: [B, N, D]; branches: [B, N, 4, D] in branch order
         (keep, reduce, shift, pad). Returns (y: [B, N, D], gates: [B, N, 4])."""
         # The gate MLP is sized to d_model (content .what width). A muxed
-        # C-tier event h is [B, N, muxedSize] with where/when columns beyond
+        # CS-space_role event h is [B, N, muxedSize] with where/when columns beyond
         # d_model; the routing decision reads content, so slice h to the gate's
         # input width. The branches (and the mixed output y) stay full-width,
         # so where/when ride through the mix untouched.
@@ -7171,14 +7164,14 @@ class BinaryStructuredReductionLayer(nn.Module):
         ops: sequence of binary nn.Modules; len(ops) = R_reduce. Each
              receives (left[B, N-1, D], right[B, N-1, D]) and returns
              [B, N-1, D]. The Viterbi route picks one op per reduce site.
-        op_tiers: optional list of tier letters ('C' / 'S' / ...)
+        op_space_roles: optional list of space_role tags ('CS' / 'SS' / ...)
              parallel to ``ops``. When supplied alongside ``op_names``,
-             enables per-position tier-gated scoring: a rule only scores
+             enables per-position space_role-gated scoring: a rule only scores
              at a pair whose left and right operands are both at the
-             rule's tier. ``lift`` flips the carried operand's tier from
-             C to S and ``lower`` flips S to C (plan \xa76).
+             rule's space_role. ``lift`` flips the carried operand's space_role from
+             CS to SS and ``lower`` flips SS to CS (plan \xa76).
         op_names: optional list of method names parallel to ``ops``;
-             used to identify the lift / lower ops for tier flipping.
+             used to identify the lift / lower ops for space_role flipping.
         r_copy: number of copy "ops" (typically 1; >1 lets the router
              distinguish copy specializations like typed identities).
         context_net: optional contextualizer for h. Defaults to identity.
@@ -7187,7 +7180,7 @@ class BinaryStructuredReductionLayer(nn.Module):
     """
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, op_tiers=None, op_names=None,
+                 temperature=1.0, op_space_roles=None, op_names=None,
                  chooser="anchordot", n_role_cats=0):
         """Wire ops list, per-rule anchor params, and the comparator mixer.
 
@@ -7220,14 +7213,14 @@ class BinaryStructuredReductionLayer(nn.Module):
             n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats)
         self.comparator = ComparatorMixer(
             d_model=self.d_model, temperature=temperature)
-        # Per-rule name / tier metadata retained for op identification
-        # (e.g. lift / lower). Tier-gated masking has been removed.
-        if op_tiers is not None and op_names is not None:
+        # Per-rule name / space_role metadata retained for op identification
+        # (e.g. lift / lower). Space-role-gated masking has been removed.
+        if op_space_roles is not None and op_names is not None:
             self.op_names = list(op_names)
-            self.op_tiers = list(op_tiers)
+            self.op_space_roles = list(op_space_roles)
         else:
             self.op_names = None
-            self.op_tiers = None
+            self.op_space_roles = None
 
     def _stacked_reduced(self, x):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
@@ -7269,8 +7262,8 @@ class BinaryStructuredReductionLayer(nn.Module):
 
     # CS-side execution stage: this applies the chosen reductions to the
     # concept tensors (``op(left, right)`` over self.ops in
-    # _stacked_reduced), the counterpart to SymbolicSubSpace.compose's
-    # WS-side analysis. See SymbolicSubSpace.compose docstring for the split.
+    # _stacked_reduced), the counterpart to SymbolSubSpace.compose's
+    # WS-side analysis. See SymbolSubSpace.compose docstring for the split.
     def forward(self, x, *, span_start=None, span_end=None, cat_ctx=None):
         """Score, route via Viterbi, compact; return (hard, soft, routing).
 
@@ -7315,7 +7308,7 @@ class BinaryStructuredReductionLayer(nn.Module):
         # Each rule's anchor is part of its own parameter set, so the
         # placement score is a derived quantity of the rule's own
         # computation -- one optimizer, one graph, no separate scorer.
-        # Anchors are sized to d_model (content .what width); a muxed C-tier
+        # Anchors are sized to d_model (content .what width); a muxed CS-space_role
         # event carries where/when columns beyond d_model, so score on the
         # content slice (the reduce ops above still transform the full event).
         x_score = x[..., :self.d_model] if x.shape[-1] > self.d_model else x
@@ -7354,7 +7347,7 @@ class BinaryStructuredReductionLayer(nn.Module):
         # Hardened op-selection: forward uses one-hot argmax (sparse
         # commitment to a single op per pair); backward uses the soft
         # softmax over reduce_score so the scorer still receives gradient
-        # via straight-through. A fully tier-masked pair (all -inf) gets a
+        # via straight-through. A fully space_role-masked pair (all -inf) gets a
         # 0 soft posterior (NaN-safe; see _masked_softmax_lastdim) -- its
         # reduce marginal is 0 downstream so the chosen reduction is
         # dropped from the slab, but the slab must stay FINITE (a NaN here
@@ -7514,7 +7507,7 @@ class UnaryStructuredLayer(nn.Module):
         #   copy_score[b, n, c]  = <x[b, n, :],            copy_anchor[c, :]>
         #   apply_score[b, n, a] = <applied[b, n, a, :], apply_anchor[a, :]>
         # The routing anchors are sized to d_model (= content .what width). A
-        # muxed C-tier event is [B, N, muxedSize] with where/when columns beyond
+        # muxed CS-space_role event is [B, N, muxedSize] with where/when columns beyond
         # d_model that the anchors don't score, so take the content slice for
         # the inner products. The ops above still see (and transform) the full
         # event; only the scalar routing scores read content.
@@ -7686,9 +7679,9 @@ def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
 # The soft-superposition CKY chart parser and its inside / outside
 # passes, packed rule-table machinery, load-balance bookkeeping, top-K
 # gating, and POS side-channel are gone. The signal router
-# (``LanguageLayer`` -- see above) is the canonical parser. SymbolicSubSpace
+# (``LanguageLayer`` -- see above) is the canonical parser. SymbolSubSpace
 # constructs ``self.languageLayer`` directly; rule-firing probability is
-# served by ``SymbolicSubSpace.should_run_rule`` via the grammar's
+# served by ``SymbolSubSpace.should_run_rule`` via the grammar's
 # ``rule_probability`` lookup. The retired XML knobs
 # (``parserBackend``, ``routerKind``, ``chartTau``, ``chartTopK``,
 # ``chartNoiseEps``) raise a loud ``ValueError`` at config load time --
@@ -7703,7 +7696,7 @@ def comparator_dp_kl(route_traces, lambda_dp_prior: float = 0.0):
 # Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md §4.
 #
 # Each PartSpace / ConceptualSpace / WholeSpace owns one of
-# these. Holds the parametrized GrammarLayer instances for its tier's
+# these. Holds the parametrized GrammarLayer instances for its space_role's
 # rules and dispatches `forward` / `reverse` based on the rule choice
 # the chart wrote into ``word_space.current_rules`` /
 # ``generate_rules`` (Q4 / Q10.1).
@@ -7712,16 +7705,16 @@ class SyntacticLayer(Layer):
     """Per-space dispatcher.
 
     Construction:
-        SyntacticLayer(tier='C', word_space=word_space,
+        SyntacticLayer(space_role='CS', word_space=word_space,
                             host_layers={'pi': pi_layer},
                             host_space=concept_space)
 
     Each entry in ``host_layers`` is registered with ``word_space`` at
     construction. The space's ``forward()`` and ``reverse()`` delegate
-    here; ``forward()`` reads ``word_space.current_rules[tier]``,
-    advances a per-tier cursor, and dispatches to the appropriate
+    here; ``forward()`` reads ``word_space.current_rules[space_role]``,
+    advances a per-space_role cursor, and dispatches to the appropriate
     layer's ``compose`` (binary) or ``forward`` (unary). ``reverse()``
-    mirrors via ``word_space.generate_rules[tier]`` and ``layer.generate``.
+    mirrors via ``word_space.generate_rules[space_role]`` and ``layer.generate``.
 
     The cursor resets at the start of each new ``word_space.compose()``
     / ``word_space.generate()`` call via the generation counters on
@@ -7729,21 +7722,21 @@ class SyntacticLayer(Layer):
 
     Per the 2026-05-07 rollback: there is no ``default_rule`` parameter.
     The grammar XML drives which rules fire — when the chart hasn't
-    populated rules for this tier the dispatch is a no-op.
+    populated rules for this space_role the dispatch is a no-op.
     """
 
-    def __init__(self, tier, word_space, host_layers, host_space=None):
+    def __init__(self, space_role, word_space, host_layers, host_space=None):
         """Register host layers with the SymbolSpace dispatch table.
 
         ``host_layers`` is a name -> Layer mapping; each is registered
-        under ``(tier, rule_name)`` on the SymbolSpace so the chart can
+        under ``(space_role, rule_name)`` on the SymbolSpace so the chart can
         dispatch into the right parametrized fold. SymbolSpace / host_space
         are stashed via ``object.__setattr__`` to avoid the nn.Module
         ownership cycle (SymbolSpace owns the chart -> chart references
         this layer -> this layer references SymbolSpace).
         """
         super().__init__(0, 0)
-        self.tier = str(tier)
+        self.space_role = str(space_role)
         # Stash host_layers in two parallel structures: ModuleList for
         # nn.Module bookkeeping (so optimizer scans see the parameters)
         # and a name-keyed dict for O(1) dispatch lookup.
@@ -7755,7 +7748,7 @@ class SyntacticLayer(Layer):
         # Register each host_layer with the symbolSpace's host_layer
         # registry so the chart can dispatch into them.
         for rule_name, layer in self._by_name.items():
-            word_space.register_host_layer(self.tier, rule_name, layer)
+            word_space.register_host_layer(self.space_role, rule_name, layer)
         self._cursor_compose = 0
         self._cursor_generate = 0
         self._cursor_compose_gen = -1
@@ -7765,7 +7758,7 @@ class SyntacticLayer(Layer):
         # owns the chart; chart's host_layer registry references this
         # layer's children; this layer references symbolSpace).
         object.__setattr__(self, '_word_space', word_space)
-        # ``host_space`` is the per-tier Space (Perceptual / Conceptual /
+        # ``host_space`` is the per-space_role Space (Perceptual / Conceptual /
         # Symbolic) that owns this dispatcher. When the chart fires
         # ``pi`` / ``sigma`` and the host space exposes
         # ``_pi_reverse`` / ``_sigma_reverse`` (two-pass ergodic mode
@@ -7774,17 +7767,17 @@ class SyntacticLayer(Layer):
         object.__setattr__(self, '_host_space', host_space)
 
     # -- cursor management ---------------------------------------------
-    def _tier_index(self):
-        """Map this layer's tier label to its slot in the per-sentence
-        SymbolSpace ``cursor`` tensor (shape ``[n_tiers=3]``).
+    def _space_role_index(self):
+        """Map this layer's space_role label to its slot in the per-sentence
+        SymbolSpace ``cursor`` tensor (shape ``[n_space_roles=3]``).
 
-        ``tier`` is set once at construction to one of the string
-        literals 'P' / 'C' / 'S' (Language.py
-        ``_attach_per_space_syntactic_layer`` passes ``tier='P'`` /
-        ``'C'`` / ``'S'``; ``__init__`` coerces with ``str(tier)``),
+        ``space_role`` is set once at construction to one of the string
+        literals 'subsymbolic' / 'CS' / 'SS' (Language.py
+        ``_attach_per_space_syntactic_layer`` passes ``space_role='subsymbolic'`` /
+        ``'CS'`` / ``'SS'``; ``__init__`` coerces with ``str(space_role)``),
         so this map is total over the live domain.
         """
-        return {'P': 0, 'C': 1, 'S': 2}[str(self.tier)]
+        return {'subsymbolic': 0, 'CS': 1, 'SS': 2}[str(self.space_role)]
 
     def _next_rule_name(self, *, direction):
         """Pop the next rule name for ``direction`` ('compose' or
@@ -7792,7 +7785,7 @@ class SyntacticLayer(Layer):
         generation counter for this direction.
 
         Reads ``word_space.current_rules`` / ``generate_rules`` as
-        ``dict[tier, list[list[int]]]`` (per-row, per-step). For now
+        ``dict[space_role, list[list[int]]]`` (per-row, per-step). For now
         we use row 0 as the canonical sequence; per-row dispatch (where
         rows fire different rules at the same step) is a follow-on.
 
@@ -7805,7 +7798,7 @@ class SyntacticLayer(Layer):
         if direction == 'compose':
             rules = ss.current_rules
             # ``ss.cursor`` is a host ``list[int]`` of length 3 (one per
-            # tier P/C/S). Reading via Python list indexing gives a
+            # space_role subsymbolic/CS/SS). Reading via Python list indexing gives a
             # backed Python int the trace can compare with
             # ``len(per_step)`` — an int64 tensor read via ``int(...)``
             # would yield an unbacked SymInt and crash
@@ -7813,7 +7806,7 @@ class SyntacticLayer(Layer):
             # unconditionally at the top of SymbolSpace.compose, so there
             # is NO data-dependent generation gate here (recompile
             # cause #3 eliminated).
-            ti = self._tier_index()
+            ti = self._space_role_index()
             cursor = ss.cursor[ti]
         else:
             rules = ss.generate_rules
@@ -7822,12 +7815,12 @@ class SyntacticLayer(Layer):
                 self._cursor_generate = 0
                 self._cursor_generate_gen = gen
             cursor = self._cursor_generate
-        per_tier = rules.get(self.tier) if rules else None
-        per_step = self._row_zero_rules(per_tier)
+        per_space_role = rules.get(self.space_role) if rules else None
+        per_step = self._row_zero_rules(per_space_role)
         if cursor < len(per_step):
             rule_id = per_step[cursor]
             if direction == 'compose':
-                ss.cursor[self._tier_index()] = cursor + 1
+                ss.cursor[self._space_role_index()] = cursor + 1
             else:
                 self._cursor_generate = cursor + 1
             try:
@@ -7841,20 +7834,20 @@ class SyntacticLayer(Layer):
         return None
 
     @staticmethod
-    def _row_zero_rules(per_tier):
+    def _row_zero_rules(per_space_role):
         """Extract row 0's rule sequence from a per-row container.
 
         Tolerates both legacy ``list[int]`` (flat) and the multi-row
         ``list[list[int]]`` shape so callers using either contract
         keep working during the migration window.
         """
-        if not per_tier:
+        if not per_space_role:
             return []
         # Multi-row: list of lists.
-        if isinstance(per_tier[0], list):
-            return per_tier[0]
+        if isinstance(per_space_role[0], list):
+            return per_space_role[0]
         # Flat list of ints (legacy).
-        return per_tier
+        return per_space_role
 
     # -- Phase 2 executor API (cursor-free) -----------------------------
     #
@@ -7882,10 +7875,10 @@ class SyntacticLayer(Layer):
         layer = self._by_name.get(method_name)
         if layer is None:
             # Post-2026-05-29 grammar-file-refactor (\xa75): the rule may
-            # bind at a different tier's syntactic layer than self
-            # (intersection / union / lift / lower carry the C-tier class
-            # tier so they register on ConceptualSpace rather than
-            # WholeSpace; an S-tier execute that hits one of those
+            # bind at a different space_role's syntactic layer than self
+            # (intersection / union / lift / lower carry the CS-space_role class
+            # space_role so they register on ConceptualSpace rather than
+            # WholeSpace; an SS-space_role execute that hits one of those
             # rule_ids needs the layer even though _by_name doesn't have
             # it). Fall back to a fresh GRAMMAR_LAYER_CLASSES instance for
             # the dispatch; parameterized layers that need an inner pi /
@@ -7899,7 +7892,7 @@ class SyntacticLayer(Layer):
                     layer = None
         if layer is None:
             raise KeyError(
-                f"SyntacticLayer.execute: tier={self.tier!r} has no host "
+                f"SyntacticLayer.execute: space_role={self.space_role!r} has no host "
                 f"layer for rule_id={rule_id} (method_name={method_name!r}). "
                 f"Registered rules: {sorted(self._by_name.keys())}"
             )
@@ -7958,21 +7951,21 @@ class SyntacticLayer(Layer):
     # -- forward / reverse dispatch ------------------------------------
     #
     # The per-space dispatch takes a subspace and operates on the
-    # subspace's tier-appropriate field:
-    #   * S tier: the .what content (symbol activations)
-    #   * P / C tier: the .event content (percept / concept activations)
+    # subspace's space_role-appropriate field:
+    #   * SS space_role: the .what content (symbol activations)
+    #   * subsymbolic / CS space_role: the .event content (percept / concept activations)
     #
     # Rule choices come from word_space.current_rules / generate_rules
     # (populated by the chart). Cursor advances one step per call.
     def forward(self, subspace):
         """Fire one fold step on ``subspace`` per the chart's rule choice.
 
-        Materializes the subspace's tier-appropriate field, applies
+        Materializes the subspace's space_role-appropriate field, applies
         the chosen rule's GrammarLayer.forward, writes the result back
         into the same field. Returns the (possibly-mutated) subspace.
 
         Per the 2026-05-07 rollback, when the chart hasn't written a
-        rule for this tier, dispatch is a no-op (no code-level
+        rule for this space_role, dispatch is a no-op (no code-level
         fallback).
 
         Stage 3 (chart retirement): the signal router has already
@@ -8011,7 +8004,7 @@ class SyntacticLayer(Layer):
 
     def reverse(self, subspace):
         """Inverse of ``forward``: fire one fold-reverse step on the
-        subspace's tier-appropriate field. No-op when the rule isn't
+        subspace's space_role-appropriate field. No-op when the rule isn't
         invertible.
 
         Stage 3 (chart retirement): on the signal-router path the
@@ -8038,7 +8031,7 @@ class SyntacticLayer(Layer):
         if y is None:
             return subspace
         # Two-pass ergodic adapter: when ``pi`` / ``sigma`` fires and
-        # the host space exposes a tier-specific ``_pi_reverse`` /
+        # the host space exposes a space_role-specific ``_pi_reverse`` /
         # ``_sigma_reverse`` (which routes through pi2/sigma2 in
         # two-pass ergodic mode), delegate there. Other unary rules
         # (not, etc.) keep going through ``layer.reverse``.
@@ -8052,7 +8045,7 @@ class SyntacticLayer(Layer):
         self._write_subspace(subspace, x, layer=layer)
         return subspace
 
-    # -- subspace I/O per tier ------------------------------------------
+    # -- subspace I/O per space_role ------------------------------------------
     def _read_subspace(self, subspace, layer=None):
         """Read the per-position tensor from ``subspace`` for op dispatch.
 
@@ -8071,15 +8064,15 @@ class SyntacticLayer(Layer):
         ``[B, V, 2]`` bivector activation -- because those ops
         operate on the activation poles, not the muxed event.
 
-        Tier distinction is irrelevant here: every tier's per-
-        position read goes through ``materialize()``. Tier-specific
+        Space-role distinction is irrelevant here: every space_role's per-
+        position read goes through ``materialize()``. Space-role-specific
         slicing of the muxed event (e.g. operating on the ``.what``
         bivector only) is the op's responsibility.
         """
         if subspace is None:
             return None
         # Activation-reading ops (IntersectionLayer / UnionLayer at
-        # C-tier) read the bivector activation directly.
+        # CS-space_role) read the bivector activation directly.
         if layer is not None and getattr(layer, 'reads_activation', False):
             if hasattr(subspace, 'materialize'):
                 try:
@@ -8134,7 +8127,7 @@ def _grammar_layer_classes():
         return {}
     return dict(GRAMMAR_LAYER_CLASSES)
 
-def build_space_syntactic_layer(space, word_space, *, tier,
+def build_space_syntactic_layer(space, word_space, *, space_role,
                                 builtin_layers=None):
     """Construct a per-space SyntacticLayer.
 
@@ -8145,7 +8138,7 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             host_layer registry.
         word_space: the SymbolSpace coordinator. Owns the host_layer
             registry and the chart.
-        tier: tier name ('P' / 'C' / 'S') used as the registry key.
+        space_role: space_role name ('subsymbolic' / 'CS' / 'SS') used as the registry key.
         builtin_layers: dict[rule_name -> GrammarLayer instance] for
             rules backed by an already-constructed parametrized layer
             (e.g. {'intersection': space.pi}). These instances are
@@ -8159,8 +8152,8 @@ def build_space_syntactic_layer(space, word_space, *, tier,
     host_layers = dict(builtin_layers)
     cls_registry = _grammar_layer_classes()
     for rule in TheGrammar.rules:
-        rule_tier = getattr(rule, 'tier', None)
-        if rule_tier != tier:
+        rule_space_role = getattr(rule, 'space_role', None)
+        if rule_space_role != space_role:
             continue
         mn = getattr(rule, 'method_name', None)
         if not mn or mn in host_layers:
@@ -8177,7 +8170,7 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             # in builtin_layers; if it isn't, skip rather than fail.
             continue
     layer = SyntacticLayer(
-        tier=tier, word_space=word_space,
+        space_role=space_role, word_space=word_space,
         host_layers=host_layers, host_space=space)
     space.syntacticLayer = layer
     return layer
@@ -8370,8 +8363,8 @@ class Taxonomy:
     DEFAULT_BOOST_INITIAL = 1.0
     # Class default True preserves the historical retrieval-helper gate for
     # bare Taxonomy() instances (priming_kwargs_for_slots /
-    # retrieval_candidates_for_slot).  PRODUCTION SymbolicSubSpace taxonomies are
-    # set off-by-default by SymbolicSubSpace.attach_knowledge, which calls
+    # retrieval_candidates_for_slot).  PRODUCTION SymbolSubSpace taxonomies are
+    # set off-by-default by SymbolSubSpace.attach_knowledge, which calls
     # configure_priming(priming_enabled=<symbolicPriming>) (default False)
     # right where it allocates the priming buffer — so forward heat production
     # is off (zero training-path cost) unless <symbolicPriming> is set.
@@ -8876,10 +8869,10 @@ class Taxonomy:
 
 class ObjectSubSpace(nn.Module):
     """Durable PartSpace meronymic-analysis carrier -- the PS
-    analogue of :class:`SymbolicSubSpace`.
+    analogue of :class:`SymbolSubSpace`.
 
     doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
-    ("Carrier State"): SymbolicSubSpace stores taxonomic state for symbolic
+    ("Carrier State"): SymbolSubSpace stores taxonomic state for symbolic
     parsing; ObjectSubSpace stores meronymic state for perceptual
     analysis -- spans, part ids, parent / child links, route ids /
     scores, depth, and the replay metadata ``reverse()`` needs to
@@ -8891,7 +8884,7 @@ class ObjectSubSpace(nn.Module):
 
     All tensors keep fixed physical capacity; the live count is
     ``_depth`` and :meth:`live_mask` derives which slots are active --
-    exactly as SymbolicSubSpace's typed STM does. ``push`` / ``pop`` /
+    exactly as SymbolSubSpace's typed STM does. ``push`` / ``pop`` /
     ``update`` keep every parallel buffer in sync.
 
     Durable buffers (row ``b``, slot ``d`` in ``[0, _depth[b])``)::
@@ -9095,7 +9088,7 @@ class ObjectSubSpace(nn.Module):
     def ensure_batch(self, batch):
         """Grow the row dimension to ``batch``, preserving live state in
         existing rows (fresh rows start empty). Mirrors
-        ``SymbolicSubSpace._ensure_stm_batch``."""
+        ``SymbolSubSpace._ensure_stm_batch``."""
         batch = int(batch)
         prev = self._buffer.shape[0]
         if batch <= prev:
@@ -9119,7 +9112,7 @@ class ObjectSubSpace(nn.Module):
         self._depth = grow(self._depth, 0)
 
 
-class SymbolicSubSpace(SubSpace):
+class SymbolSubSpace(SubSpace):
     """Per-sentence grammar / serial-processing carrier — the third
     argument that travels alongside the data SubSpaces through the
     pipeline (reached via ``subspace.symbolSpace`` after
@@ -9127,14 +9120,14 @@ class SymbolicSubSpace(SubSpace):
 
     Runtime-parallel to PartSpace / ConceptualSpace / WholeSpace
     but functionally a composition dispatcher rather than a pipeline
-    stage that produces data tensors. SymbolicSubSpace owns:
+    stage that produces data tensors. SymbolSubSpace owns:
 
-      * the per-tier ``SyntacticLayer`` dispatchers (registered on
+      * the per-space_role ``SyntacticLayer`` dispatchers (registered on
         each home space; reached via ``forwardSymbols`` /
         ``reverseSymbols``);
       * the CKY chart and truth store;
       * the per-sentence parser cursor (``self.cursor`` — Python ints,
-        one per tier) and PartSpace recurrent-pass index
+        one per space_role) and PartSpace recurrent-pass index
         (``self.recur_pass`` — Python int);
       * the **typed STM stack** (payload frames + per-frame category /
         order / ref_id metadata) — formerly held by ``TypedStack`` at
@@ -9145,14 +9138,14 @@ class SymbolicSubSpace(SubSpace):
         priming taxonomy).
 
     The standalone ``SentenceState`` carrier was retired (2026-05-21):
-    ``cursor`` and ``recur_pass`` now live directly on SymbolicSubSpace;
+    ``cursor`` and ``recur_pass`` now live directly on SymbolSubSpace;
     the cross-pass C→P / C→S feedback is read straight off
     ``ConceptualSpace._subspaceForPS`` / ``_subspaceForWS`` (the
-    persistent CS-tier storage that ``ConceptualSpace.forward``
+    persistent CS-space_role storage that ``ConceptualSpace.forward``
     mutates in place).
 
-    Real ``SubSpace`` subclass (2026-05-21 SymbolicSubSpace/STM Layer
-    refactor): SymbolicSubSpace IS the data carrier the STM driver acts on.
+    Real ``SubSpace`` subclass (2026-05-21 SymbolSubSpace/STM Layer
+    refactor): SymbolSubSpace IS the data carrier the STM driver acts on.
     It inherits the SubSpace slot machinery but is not a pipeline
     ``Space`` and does not produce data tensors of its own; the inherited
     ``.event`` / ``.what`` / ``.where`` / ``.when`` slots stay empty,
@@ -9166,11 +9159,11 @@ class SymbolicSubSpace(SubSpace):
     def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
                  nPercepts, nConcepts, nSymbols,
                  concept_dim, symbol_dim):
-        """Build the chart, grammar layer, truth store, per-tier dispatch,
+        """Build the chart, grammar layer, truth store, per-space_role dispatch,
         and the typed STM stack data.
 
         SymbolSpace IS a SubSpace (2026-05-21 refactor) and bypasses the
-        Space factory because its construction crosses tier boundaries
+        Space factory because its construction crosses space_role boundaries
         (it needs references to Perceptual / Conceptual / Symbolic
         spaces). Detects the default-only grammar case so compose /
         generate can skip the CKY pass entirely. Mutates ``self`` to
@@ -9188,7 +9181,7 @@ class SymbolicSubSpace(SubSpace):
                      or (nWhat + nWhere + nWhen))
 
         # 2. Initialise as a real SubSpace. The slot Bases stay empty
-        # — SymbolicSubSpace is a data carrier (typed STM stack), not a
+        # — SymbolSubSpace is a data carrier (typed STM stack), not a
         # pipeline space that produces tensors via ``.what`` / ``.event``.
         # Pass encodings sized to mirror WholeSpace's band so encoding
         # nDim == self.nWhen / self.nWhere downstream readers expect (the
@@ -9242,7 +9235,7 @@ class SymbolicSubSpace(SubSpace):
             wholeSpace.insert_operations(grammar)
 
         # 3a. Detect the default-only case (every operational rule is
-        # a unary substrate fold registered as the per-tier default).
+        # a unary substrate fold registered as the per-space_role default).
         # When true, ``compose`` / ``generate`` skip the CKY-style
         # inside / outside pass entirely; per-space SyntacticLayer
         # dispatch falls through to its registered default rule, which
@@ -9261,7 +9254,7 @@ class SymbolicSubSpace(SubSpace):
         )
 
         # 4. Space-contract fields. SubSpace.__init__ already set
-        # ``self.symbolSpace = None``; the rest are SymbolicSubSpace-specific.
+        # ``self.symbolSpace = None``; the rest are SymbolSubSpace-specific.
         self.layers = nn.ModuleList()
         self.params = []
 
@@ -9288,14 +9281,14 @@ class SymbolicSubSpace(SubSpace):
         # 4a. Chart + host-layer registry. Per the 2026-05-01 syntactic-
         # layer refactor (doc/specs/2026-05-01-syntactic-layer-refactor.md):
         # SymbolSpace owns a Chart that runs CKY inside / outside passes
-        # and writes per-(tier, step) rule selections into
+        # and writes per-(space_role, step) rule selections into
         # ``current_rules`` / ``generate_rules``. Each per-space
         # SyntacticLayer registers its parametrized layers via
         # ``register_host_layer``; the chart consults
-        # ``host_layer(tier, rule_name)`` to fire host-owned folds.
+        # ``host_layer(space_role, rule_name)`` to fire host-owned folds.
         self._host_layer_registry = {}
         # Initialize current_rules / generate_rules from the grammar
-        # XML's per-tier natural folds. Per the 2026-05-07 rollback,
+        # XML's per-space_role natural folds. Per the 2026-05-07 rollback,
         # the grammar XML is the sole source of truth -- with no
         # ``default_rule`` code-level fallback the per-stage Spaces'
         # syntacticLayer dispatch must always have rules to fire.
@@ -9313,14 +9306,14 @@ class SymbolicSubSpace(SubSpace):
         self.routing_state = self._build_routing_state(
             self.current_rules, batch_size=None)
         # Bumped on each compose / generate. Per-space SyntacticLayers
-        # compare against this to know when to reset their per-tier
+        # compare against this to know when to reset their per-space_role
         # cursor (Q10.1).
         self._compose_generation = 0
         self._generate_generation = 0
         # Per-sentence serial-parser state, owned directly by SymbolSpace
         # (no separate SentenceState carrier).
-        #   ``cursor``      — ``list[int]`` of length 3 (one per tier
-        #                     P/C/S), the per-tier rule cursor consumed
+        #   ``cursor``      — ``list[int]`` of length 3 (one per space_role
+        #                     subsymbolic/CS/SS), the per-space_role rule cursor consumed
         #                     by ``SyntacticLayer._next_rule_name``.
         #                     HOST Python ints (not a tensor) so the
         #                     read inside compiled forwards produces a
@@ -9352,7 +9345,7 @@ class SymbolicSubSpace(SubSpace):
         # the signal router (``LanguageLayer``) is the canonical parser.
         # The CKY ``Chart`` class and the STM shift-reduce path retire
         # here. ``self.languageLayer`` is constructed directly on the
-        # SymbolicSubSpace -- the chart's lazy ``_ensure_signal_router``
+        # SymbolSubSpace -- the chart's lazy ``_ensure_signal_router``
         # indirection is gone.
         _assert_retired_chart_knobs_absent()
         chart_hidden = self._resolve_hidden_dim(nSymbols)
@@ -9377,7 +9370,7 @@ class SymbolicSubSpace(SubSpace):
                 self.params.append(p)
         # Stage 3: the chart was the GrammarLayer ``_chart_authority``
         # gating per-rule firing via ``should_run_rule``. The chart is
-        # retired; SymbolicSubSpace itself now serves as the authority --
+        # retired; SymbolSubSpace itself now serves as the authority --
         # it owns the live grammar and exposes the same
         # ``register_grammar_layer`` / ``should_run_rule`` surface.
         self._registered_grammar_layers = []
@@ -9392,32 +9385,32 @@ class SymbolicSubSpace(SubSpace):
         # so they can route through the shared buffer, but only the
         # symbolic space's compose() fires the chart.
         # Post-split: grammar's canonical home is S; the
-        # SyntacticLayers at P and C are retained as backward-compat
-        # dispatchers that no-op for grammars omitting per-tier
-        # rules. They're not the architectural locus of grammar after
-        # the split (S is), but the mechanism stays in place so
+        # SyntacticLayers at the subsymbolic and CS space_roles are retained
+        # as backward-compat dispatchers that no-op for grammars omitting
+        # per-space_role rules. They're not the architectural locus of grammar
+        # after the split (SS is), but the mechanism stays in place so
         # legacy configs continue to function and so any future
-        # P/C-tier rule (e.g. for lift/lower at concept_dim) can
-        # still fire through the chart's per-tier dispatch.
+        # subsymbolic/CS-space_role rule (e.g. for lift/lower at concept_dim) can
+        # still fire through the chart's per-space_role dispatch.
         if perceptualSpace is not None:
             perceptualSpace.attach_symbolSpace(self)
-            # P-tier SyntacticLayer retired (2026-05-18 C/S split): the
+            # subsymbolic-space_role SyntacticLayer retired (2026-05-18 CS/SS split): the
             # perceptual space no longer carries a chart-dispatched
             # SyntacticLayer. ``attach_symbolSpace`` (shared-buffer
-            # back-ref) is unrelated wiring and is kept. The tier='P'
+            # back-ref) is unrelated wiring and is kept. The space_role='subsymbolic'
             # branch in ``_attach_per_space_syntactic_layer`` is now
             # unreached but left dead-safe.
         if conceptualSpace is not None:
             conceptualSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
-                conceptualSpace, tier='C')
+                conceptualSpace, space_role='CS')
         if wholeSpace is not None:
             wholeSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
-                wholeSpace, tier='S')
+                wholeSpace, space_role='SS')
 
         # 5b. Signal-router grammar wiring. The LanguageLayer needs
-        # explicit op modules attached to its per-tier scorers before
+        # explicit op modules attached to its per-space_role scorers before
         # compose() can fire. We wire from the host_layer registry
         # populated in step 5 above. Stage 3 (chart retirement): this
         # always runs -- the signal router is the canonical parser.
@@ -9546,7 +9539,7 @@ class SymbolicSubSpace(SubSpace):
         # 6d. Rule predictor -- nonlinear head over the flattened PoS stack.
         # Task 4.2: emits softmax logits over TheGrammar.rule_table, the
         # authoritative rule-id space (includes START/S/P productions);
-        # len(symbolic()) would be only the S-tier subset and would under-size
+        # len(symbolic()) would be only the SS-space_role subset and would under-size
         # the output.
         #
         # Option A (per task notes): torch.nn stdlib Sequential with a Tanh
@@ -9606,7 +9599,7 @@ class SymbolicSubSpace(SubSpace):
                 # end-state chain on the InterSentenceLayer.
                 ltm_capacity = int(TheXMLConfig.space(
                     "SymbolSpace", "ltmCapacity", default=1024) or 1024)
-                # Pre-existing minor: SymbolicSubSpace IS a SubSpace (no
+                # Pre-existing minor: SymbolSubSpace IS a SubSpace (no
                 # nested ``self.subspace``); use object.__getattribute__
                 # to avoid nn.Module.__getattr__ raising on the missing
                 # attribute, then fall through to the documented 256
@@ -9701,26 +9694,21 @@ class SymbolicSubSpace(SubSpace):
         # list (no GPU sync); resized to B by ensure_microbatch.
         self._sentence_completed = [False] * self.batch
 
-        # -- typed STM stack (Phase D of the 2026-05-21 SymbolicSubSpace /
+        # -- typed STM stack (Phase D of the 2026-05-21 SymbolSubSpace /
         # STM Layer refactor) ---------------------------------------------
         # The parallel-tensor stack carrying per-frame ``category`` /
         # ``order`` / ``ref_id`` metadata alongside the vector payload.
         # Formerly ``TypedStack`` lived at ``ConceptualSpace._stm_typed``;
-        # it is now SymbolicSubSpace's own data. The ``ShortTermMemory`` Layer
+        # it is now SymbolSubSpace's own data. The ``ShortTermMemory`` Layer
         # on ``ConceptualSpace`` (Phase E) reads / writes these buffers.
         # Capacity defaults to ConceptualSpace's stm_capacity (XML
-        # ``<stmCapacity>`` / ``<wMax>`` -- see ConceptualSpace.__init__).
+        # ``<stmCapacity>`` -- see ConceptualSpace.__init__), else 8.
         try:
             stm_capacity = int(getattr(conceptualSpace, 'stm_capacity', 0))
         except (TypeError, ValueError):
             stm_capacity = 0
         if stm_capacity <= 0:
-            try:
-                w_max_xml = TheXMLConfig.get("SymbolSpace.wMax", 0)
-                stm_capacity = (
-                    int(w_max_xml) if int(w_max_xml) > 0 else 8)
-            except Exception:
-                stm_capacity = 8
+            stm_capacity = 8
         self._stm_capacity = int(stm_capacity)
         self._stm_payload_dim = int(concept_dim)
         # TypedStack-equivalent public attributes (mirror its old API
@@ -9761,10 +9749,10 @@ class SymbolicSubSpace(SubSpace):
 
         # -- legacy idea-stack buffers (Phase E completion of doc/specs/
         # 2026-05-21-wordsubspace-stm-layer-refactor.md) --------------------
-        # The CKY-compose chart pushes unquantized C-tier activations
+        # The CKY-compose chart pushes unquantized CS-space_role activations
         # ("ideas") via the ``ShortTermMemory`` Layer; spec §"Removed
         # Public Surfaces" calls for that Layer to be data-free. The
-        # idea-stack data therefore lives on SymbolicSubSpace alongside the
+        # idea-stack data therefore lives on SymbolSubSpace alongside the
         # typed STM (separate parallel buffers; the chart's push doesn't
         # carry typed metadata so they cannot share a row). The
         # ``ShortTermMemory`` Layer proxies ``push`` / ``peek`` /
@@ -9772,7 +9760,7 @@ class SymbolicSubSpace(SubSpace):
         # ``push_step_masked`` / ``size`` / ``is_full`` / ``is_empty`` /
         # ``clear`` / ``ensure_batch`` / ``ensure_capacity`` to the
         # ``_idea_*`` methods below via the back-reference attached at
-        # ``SymbolicSubSpace.__init__`` tail.
+        # ``SymbolSubSpace.__init__`` tail.
         self._idea_capacity = cap
         self._idea_max_depth_host = 0
         self.register_buffer(
@@ -9784,7 +9772,7 @@ class SymbolicSubSpace(SubSpace):
             torch.zeros(self.batch, dtype=torch.long),
             persistent=False)
 
-        # Attach this SymbolicSubSpace to conceptualSpace.stm so the
+        # Attach this SymbolSubSpace to conceptualSpace.stm so the
         # ShortTermMemory Layer can route its data-accessor methods to
         # our idea-stack buffers (Phase E completion).
         stm_layer = getattr(conceptualSpace, 'stm', None)
@@ -9855,7 +9843,7 @@ class SymbolicSubSpace(SubSpace):
         Primes ``ref_id`` and propagates the boost along the taxonomy
         adjacency for the freshly-committed word/percept/idea. Plan
         ``doc/plans/2026-06-06-symbolic-heat-retrieval.md`` §Forward-path
-        responsibilities (word/percept commit; C-tier grammar reduction).
+        responsibilities (word/percept commit; CS-space_role grammar reduction).
 
         TRAINING-PATH ZERO-COST GUARANTEE: the ``priming_enabled`` check
         (False by default — set from ``<symbolicPriming>`` via
@@ -9890,10 +9878,10 @@ class SymbolicSubSpace(SubSpace):
         """
         if category_id is None and category_id_str is None:
             raise ValueError(
-                "SymbolicSubSpace.push: provide category_id or category_id_str")
+                "SymbolSubSpace.push: provide category_id or category_id_str")
         d = int(self._depth[b].item())
         assert d < self.max_depth, (
-            f"SymbolicSubSpace STM overflow at row {b}: "
+            f"SymbolSubSpace STM overflow at row {b}: "
             f"max_depth={self.max_depth}")
         self._buffer[b, d] = vec.to(
             device=self._buffer.device, dtype=self._buffer.dtype)
@@ -9917,7 +9905,7 @@ class SymbolicSubSpace(SubSpace):
         """
         d = int(self._depth[b].item())
         assert d > 0, (
-            f"SymbolicSubSpace STM underflow at row {b}: stack is empty")
+            f"SymbolSubSpace STM underflow at row {b}: stack is empty")
         top_slot = d - 1
         out = {
             'payload':  self._buffer[b, top_slot].clone(),
@@ -9940,7 +9928,7 @@ class SymbolicSubSpace(SubSpace):
         """
         d = int(self._depth[b].item())
         assert d >= k, (
-            f"SymbolicSubSpace.top: row {b} has {d} items, asked for k={k}")
+            f"SymbolSubSpace.top: row {b} has {d} items, asked for k={k}")
         slot = d - k
         return {
             'payload':  self._buffer[b, slot].clone(),
@@ -9990,7 +9978,7 @@ class SymbolicSubSpace(SubSpace):
         """Grow the typed-STM row dimension to ``batch``, preserving
         existing live stack state. Called from ``ensure_batch`` so the
         STM (and the parallel idea-stack buffers) stays in lockstep
-        with the rest of SymbolicSubSpace's per-row buffers.
+        with the rest of SymbolSubSpace's per-row buffers.
         """
         batch = int(batch)
         if batch <= self._buffer.shape[0]:
@@ -10055,7 +10043,7 @@ class SymbolicSubSpace(SubSpace):
         depth = int(self._idea_depth[b].item())
         if depth >= self._idea_capacity:
             raise RuntimeError(
-                f"SymbolicSubSpace.idea_push: row {b} is at capacity "
+                f"SymbolSubSpace.idea_push: row {b} is at capacity "
                 f"({self._idea_capacity}); reduce before pushing further.")
         if depth > 0:
             self._idea_buffer[b, 1:depth + 1] = self._idea_buffer[
@@ -10276,7 +10264,7 @@ class SymbolicSubSpace(SubSpace):
         cap = int(self._constituent_buffer.shape[1])
         if depth >= cap:
             raise RuntimeError(
-                f"SymbolicSubSpace.constituent_push: row {b} is at capacity "
+                f"SymbolSubSpace.constituent_push: row {b} is at capacity "
                 f"({cap}); split/shift before pushing further.")
         if depth > 0:
             self._constituent_buffer[b, 1:depth + 1] = \
@@ -10289,7 +10277,7 @@ class SymbolicSubSpace(SubSpace):
         depth = self.constituent_depth_of(b)
         if depth == 0:
             raise RuntimeError(
-                f"SymbolicSubSpace.constituent_pop: row {b} is empty")
+                f"SymbolSubSpace.constituent_pop: row {b} is empty")
         top = self._constituent_buffer[b, 0].clone()
         if depth > 1:
             self._constituent_buffer[b, 0:depth - 1] = \
@@ -11019,7 +11007,7 @@ class SymbolicSubSpace(SubSpace):
         ``self.current_rules``.
 
         Idempotent within a forward pass: each per-space SyntacticLayer
-        resets its per-tier cursor to 0 and pops one rule per fold step.
+        resets its per-space_role cursor to 0 and pops one rule per fold step.
 
         Fast paths (no router compose):
           * ``_grammar_is_default_only`` — every rule is the unary pi /
@@ -11036,12 +11024,12 @@ class SymbolicSubSpace(SubSpace):
         --------------------------------
         Conceptually this is the WS-side analysis stage: a soft
         superposition over the taxonymic codebook that selects, per
-        tier, a hard rule list (the returned ``current_rules`` dict,
-        ``{tier: [rule_id, ...]}``). The CS-side execution stage --
+        space_role, a hard rule list (the returned ``current_rules`` dict,
+        ``{space_role: [rule_id, ...]}``). The CS-side execution stage --
         actually applying the chosen reductions (lift / lower / union /
         intersection / swap / quantize / not) to the concept tensors --
         runs in ``ConceptualSpace.forward`` (and the WholeSpace
-        stack-route path) and the per-tier ``SyntacticLayer`` cursors
+        stack-route path) and the per-space_role ``SyntacticLayer`` cursors
         during reverse. Only lift / lower / union / intersection consult
         the codebook (inverse-recommended via ``Ops.disjunctionReverse``
         / ``Ops.conjunctionReverse``); swap / quantize / not are
@@ -11050,14 +11038,14 @@ class SymbolicSubSpace(SubSpace):
         Implementation caveat (read before trusting the split as a code
         boundary): on the DEFAULT-ONLY fast path the split holds
         cleanly -- ``compose`` emits ``current_rules`` from the grammar
-        XML and runs NO tensor reduction, and the per-tier
+        XML and runs NO tensor reduction, and the per-space_role
         ``SyntacticLayer.forward`` cursors execute the unary pi / sigma
         fold (CS-side). On the FULL-ROUTER path, however,
         ``LanguageLayer.compose`` currently does BOTH: it selects the
         rules AND folds the slab tensorially through the op modules
         (``BinaryStructuredReductionLayer.forward`` -> ``op(left,
         right)``), caching the [B, 1, D] root in ``_last_root_state``.
-        The per-tier ``SyntacticLayer.forward`` / ``reverse`` then
+        The per-space_role ``SyntacticLayer.forward`` / ``reverse`` then
         deliberately SKIP re-execution on that path (guarded by
         ``not _grammar_is_default_only``) precisely because re-running
         the ops would double-apply them. So in the full-router case the
@@ -11066,10 +11054,10 @@ class SymbolicSubSpace(SubSpace):
         modules named above. See plan task 5 follow-up.
         """
         # Per-compose cursor reset. The OLD semantics zeroed each
-        # per-tier SyntacticLayer cursor lazily on every compose() call
+        # per-space_role SyntacticLayer cursor lazily on every compose() call
         # (via the ``gen != _cursor_compose_gen`` branch keyed off this
         # counter). On the SymbolSpace.cursor path we reproduce that
-        # EXACTLY with an unconditional in-place reset of all tiers'
+        # EXACTLY with an unconditional in-place reset of all space_roles'
         # cursors at the top of compose -- no data-dependent Python
         # branch on a per-batch nn.Module int (recompile cause #3
         # eliminated). ``cursor`` is a host list[int] so the read in
@@ -11127,12 +11115,12 @@ class SymbolicSubSpace(SubSpace):
         return self.current_rules
 
     def _pad_S_cursor_to_target(self, rules_dict):
-        # Forward-only asymmetric padding: extend the S-tier rule cursor
+        # Forward-only asymmetric padding: extend the SS-space_role rule cursor
         # to ``self._target_cursor_length`` with ``TheGrammar.id_SS``
         # (the no-op grammatical transition).
         # See doc/plans/2026-05-20-static-per-word-loop-impl.md §1.
-        # Non-S tiers naturally return None past their end (a no-op),
-        # so only the S tier — the one that owns the per-word stem —
+        # Non-SS space_roles naturally return None past their end (a no-op),
+        # so only the SS space_role — the one that owns the per-word stem —
         # needs explicit padding.
         N = int(self._target_cursor_length)
         if N <= 0:
@@ -11140,9 +11128,9 @@ class SymbolicSubSpace(SubSpace):
         id_SS = TheGrammar.id_SS
         if id_SS is None or rules_dict is None:
             return rules_dict
-        s_rules = rules_dict.get('S')
+        s_rules = rules_dict.get('SS')
         if s_rules is None:
-            rules_dict['S'] = [id_SS] * N
+            rules_dict['SS'] = [id_SS] * N
             return rules_dict
         if s_rules and isinstance(s_rules[0], list):
             for row in s_rules:
@@ -11166,8 +11154,8 @@ class SymbolicSubSpace(SubSpace):
 
         Reverse mirror of the WS-analysis / CS-execution split (see
         ``compose``): this populates ``self.generate_rules`` (the hard
-        reverse rule list per tier). On the default-only path the
-        CS-side execution stage is the per-tier ``SyntacticLayer.reverse``
+        reverse rule list per space_role). On the default-only path the
+        CS-side execution stage is the per-space_role ``SyntacticLayer.reverse``
         cursors, which pop ``generate_rules`` last-applied-first and run
         each rule's inverse fold. On the full-router path
         ``LanguageLayer.generate`` handles the inverse routing
@@ -11182,43 +11170,45 @@ class SymbolicSubSpace(SubSpace):
             target_vectors, self, subspace=subspace) or {}
         return self.generate_rules
 
-    # Method names that count as the per-tier "natural fold". The
+    # Method names that count as the per-space_role "natural fold". The
     # default-only / useGrammar='none' fast paths fire only these from
     # the grammar XML so the per-space dispatch doesn't accidentally
     # invoke compositional operators (not, intersection, lift, ...)
     # that were authored for the chart's selection pass and are
     # disabled under useGrammar='none'. Maps the OLD ``default_rule``
-    # semantics ('pi' for C, 'sigma' for P / S) onto the grammar XML
+    # semantics ('pi' for CS, 'sigma' for subsymbolic / SS) onto the grammar XML
     # without re-introducing a code-level fallback: when the grammar
     # XML lacks ``C = pi(C)`` / ``S = sigma(S)`` / ``P = sigma(P)``
-    # entries the dispatch is correctly a no-op for that tier.
+    # entries the dispatch is correctly a no-op for that space_role.
     _NATURAL_FOLD_METHODS = ('pi', 'sigma')
 
-    # Map a rule's LHS nonterminal to a per-tier letter for dispatch
+    # Map a rule's LHS nonterminal to a per-space_role value for dispatch
     # routing. The legacy flat-format grammar parser tags every rule
-    # ``tier='S'`` regardless of LHS; the canonical's LHS is
-    # authoritative. Restrict to the three Space tiers; non-tier
+    # ``space_role='SS'`` regardless of LHS; the canonical's LHS is
+    # authoritative. Restrict to the three Space space_roles; non-space_role
     # nonterminals (NP, VP, ...) get filtered out by the caller.
-    _LHS_TIER_MAP = {'P': 'P', 'C': 'C', 'S': 'S'}
+    # KEYS are LHS nonterminal categories ('P' / 'C' / 'S'); VALUES are
+    # the space_role labels.
+    _LHS_SPACE_ROLE_MAP = {'P': 'subsymbolic', 'C': 'CS', 'S': 'SS'}
 
     # -- RoutingState construction (Task: rule-conditioned predictor) --
 
     @staticmethod
-    def _flatten_selected_rules(rules_by_tier):
-        """Flat row-0 rule-id list across tiers (sorted-tier order).
+    def _flatten_selected_rules(rules_by_space_role):
+        """Flat row-0 rule-id list across space_roles (sorted-space_role order).
 
         Row 0 is the canonical sequence convention already used by
         ``SyntacticLayer._next_rule_name`` (per-row dispatch is a
         follow-on). Tolerates both the multi-row ``list[list[int]]`` and
-        the legacy flat ``list[int]`` per-tier shapes via
+        the legacy flat ``list[int]`` per-space_role shapes via
         ``SyntacticLayer._row_zero_rules``.
         """
-        if not rules_by_tier:
+        if not rules_by_space_role:
             return []
         flat = []
-        for tier in sorted(rules_by_tier.keys()):
-            per_tier = rules_by_tier.get(tier)
-            row0 = SyntacticLayer._row_zero_rules(per_tier)
+        for space_role in sorted(rules_by_space_role.keys()):
+            per_space_role = rules_by_space_role.get(space_role)
+            row0 = SyntacticLayer._row_zero_rules(per_space_role)
             for rid in row0:
                 try:
                     flat.append(int(rid))
@@ -11226,7 +11216,7 @@ class SymbolicSubSpace(SubSpace):
                     continue
         return flat
 
-    def _synthesize_rule_probs(self, rules_by_tier, batch_size, device=None):
+    def _synthesize_rule_probs(self, rules_by_space_role, batch_size, device=None):
         """Build the dense ``[B, n_rules]`` rule distribution.
 
         ``device`` (A5 fullgraph fix): the compose operand's device,
@@ -11238,7 +11228,7 @@ class SymbolicSubSpace(SubSpace):
 
         * SOFT path (``_synthesize_rule_probs_soft``): when the signal
           router (``self.languageLayer``) ran ``compose`` and cached its
-          per-tier SOFT marginals in ``_last_tier_routings``, aggregate
+          per-space_role SOFT marginals in ``_last_space_role_routings``, aggregate
           those differentiable marginals into a global ``[B, n_rules]``
           tensor. This keeps a graph back to the router's anchor
           scorers, so the intra-sentence predictor's ``routing_proj``
@@ -11247,12 +11237,12 @@ class SymbolicSubSpace(SubSpace):
           ``apply_anchor`` / ``reduce_anchor``).
         * HARD path (``_synthesize_rule_probs_hard``): the default-only /
           ``useGrammar='none'`` fast path never calls
-          ``LanguageLayer.compose`` (so ``_last_tier_routings`` is
+          ``LanguageLayer.compose`` (so ``_last_space_role_routings`` is
           empty); there is no router to train. Fall back to the
           (detached) hard scatter -- unit mass onto the SELECTED rule-ids,
           L1-normalized per row.
 
-        Branch on whether ``self.languageLayer._last_tier_routings`` is
+        Branch on whether ``self.languageLayer._last_space_role_routings`` is
         populated.
         """
         ll = getattr(self, 'languageLayer', None)
@@ -11263,33 +11253,33 @@ class SymbolicSubSpace(SubSpace):
         # NTU route has no soft-DP marginals -- and use the hard scatter.
         if ll is not None and getattr(ll, 'neural_tool_user', False):
             return self._synthesize_rule_probs_hard(
-                rules_by_tier, batch_size, device=device)
-        tier_routings = getattr(ll, '_last_tier_routings', None) if ll is not None else None
-        if tier_routings:
+                rules_by_space_role, batch_size, device=device)
+        space_role_routings = getattr(ll, '_last_space_role_routings', None) if ll is not None else None
+        if space_role_routings:
             soft = self._synthesize_rule_probs_soft(
-                tier_routings, batch_size, device=device)
+                space_role_routings, batch_size, device=device)
             if soft is not None:
                 return soft
             # Soft aggregation declined (no usable marginals / shapes did
             # not line up): fall through to the hard scatter so the
             # predictor still gets a (detached) conditioning signal.
         return self._synthesize_rule_probs_hard(
-            rules_by_tier, batch_size, device=device)
+            rules_by_space_role, batch_size, device=device)
 
-    def _synthesize_rule_probs_soft(self, tier_routings, batch_size,
+    def _synthesize_rule_probs_soft(self, space_role_routings, batch_size,
                                     device=None):
-        """Aggregate the router's SOFT per-tier marginals into a dense,
+        """Aggregate the router's SOFT per-space_role marginals into a dense,
         GRADIENT-BEARING ``[B, n_rules]`` rule distribution.
 
-        ``tier_routings`` is ``self.languageLayer._last_tier_routings``:
-        ``{tier: {"unary": u_routing, "binary": last_round_routing,
+        ``space_role_routings`` is ``self.languageLayer._last_space_role_routings``:
+        ``{space_role: {"unary": u_routing, "binary": last_round_routing,
         "binary_rounds": [...]}}`` cached by ``LanguageLayer.compose``.
 
-        Differentiable aggregation (per tier)
+        Differentiable aggregation (per space_role)
         -------------------------------------
         * unary: ``apply_counts = action_probs[:, :, R_copy:].sum(dim=1)``
           -> ``[B, R_apply]`` expected count per APPLY op. Column ``a``
-          maps to ``_unary_rule_ids[tier][a]``. (``action_probs`` is the
+          maps to ``_unary_rule_ids[space_role][a]``. (``action_probs`` is the
           straight-through softmax -- gradient-bearing; the COPY columns
           ``[:, :, :R_copy]`` are dropped: copy ops carry no distinct
           rule_ids.)
@@ -11297,7 +11287,7 @@ class SymbolicSubSpace(SubSpace):
           ``[B, R_reduce]`` expected count per REDUCE op, SUMMED over ALL
           reduction rounds (``binary_rounds``) to match the hard
           scatter's accumulate-across-rounds semantics. Column ``r`` maps
-          to ``_binary_rule_ids[tier][r]``.
+          to ``_binary_rule_ids[space_role][r]``.
 
         The per-op count COLUMNS are scattered to their global rule_id
         via ``index_add`` (differentiable w.r.t. the source counts -- NO
@@ -11320,7 +11310,7 @@ class SymbolicSubSpace(SubSpace):
         if device is None:
             device = TheDevice.get()
         # Collect (rule_id_index_tensor, count_columns) contributions per
-        # tier, then index_add them onto a single zeros base so the graph
+        # space_role, then index_add them onto a single zeros base so the graph
         # back to action_probs / reduce_marginal_op is preserved.
         contributions = []          # list of (idx [K] long, src [B, K] float)
         B_resolved = batch_size
@@ -11328,31 +11318,31 @@ class SymbolicSubSpace(SubSpace):
         def _check_finite(name, t):
             if not torch.isfinite(t).all():
                 raise ValueError(
-                    f"SymbolicSubSpace._synthesize_rule_probs_soft: non-finite "
+                    f"SymbolSubSpace._synthesize_rule_probs_soft: non-finite "
                     f"{name} marginal (fail-loud per numerical policy).")
 
-        for tier, tier_routing in tier_routings.items():
-            if not isinstance(tier_routing, dict):
+        for space_role, space_role_routing in space_role_routings.items():
+            if not isinstance(space_role_routing, dict):
                 continue
 
             # --- Unary apply ops ---------------------------------------
-            u_routing = tier_routing.get("unary")
+            u_routing = space_role_routing.get("unary")
             if isinstance(u_routing, dict):
                 action_probs = u_routing.get("action_probs")
                 if torch.is_tensor(action_probs) and action_probs.dim() == 3:
-                    unary_layer = ll._unary_layers.get(tier) \
+                    unary_layer = ll._unary_layers.get(space_role) \
                         if hasattr(ll._unary_layers, 'get') \
-                        else (ll._unary_layers[tier]
-                              if tier in ll._unary_layers else None)
+                        else (ll._unary_layers[space_role]
+                              if space_role in ll._unary_layers else None)
                     r_copy = int(getattr(unary_layer, 'r_copy', 0)) \
                         if unary_layer is not None else 0
                     apply_slice = action_probs[:, :, r_copy:]   # [B, N, R_apply]
                     if apply_slice.shape[-1] > 0:
                         _check_finite("unary action_probs", apply_slice)
                         apply_counts = apply_slice.sum(dim=1)    # [B, R_apply]
-                        rid_table = ll._unary_rule_ids.get(tier, []) \
+                        rid_table = ll._unary_rule_ids.get(space_role, []) \
                             if hasattr(ll._unary_rule_ids, 'get') \
-                            else ll._unary_rule_ids[tier]
+                            else ll._unary_rule_ids[space_role]
                         idx, cols = self._map_op_columns(
                             apply_counts, rid_table, n_rules)
                         if idx is not None:
@@ -11360,9 +11350,9 @@ class SymbolicSubSpace(SubSpace):
                             B_resolved = B_resolved or cols.shape[0]
 
             # --- Binary reduce ops (summed over all rounds) ------------
-            rounds = tier_routing.get("binary_rounds")
+            rounds = space_role_routing.get("binary_rounds")
             if not rounds:
-                one = tier_routing.get("binary")
+                one = space_role_routing.get("binary")
                 rounds = [one] if isinstance(one, dict) else []
             reduce_total = None     # [B, R_reduce]
             for r_routing in rounds:
@@ -11378,9 +11368,9 @@ class SymbolicSubSpace(SubSpace):
                 reduce_total = (round_counts if reduce_total is None
                                 else reduce_total + round_counts)
             if reduce_total is not None:
-                rid_table = ll._binary_rule_ids.get(tier, []) \
+                rid_table = ll._binary_rule_ids.get(space_role, []) \
                     if hasattr(ll._binary_rule_ids, 'get') \
-                    else ll._binary_rule_ids[tier]
+                    else ll._binary_rule_ids[space_role]
                 idx, cols = self._map_op_columns(
                     reduce_total, rid_table, n_rules)
                 if idx is not None:
@@ -11401,7 +11391,7 @@ class SymbolicSubSpace(SubSpace):
         probs = torch.zeros(B, n_rules, device=device)
         for idx, cols in contributions:
             if int(cols.shape[0]) != B:
-                # Batch mismatch between tiers' marginals: skip the soft
+                # Batch mismatch between space_roles' marginals: skip the soft
                 # path entirely rather than fabricate an alignment.
                 return None
             probs = probs.index_add(1, idx.to(device), cols.to(device))
@@ -11416,7 +11406,7 @@ class SymbolicSubSpace(SubSpace):
 
         if not torch.isfinite(probs).all():
             raise ValueError(
-                "SymbolicSubSpace._synthesize_rule_probs_soft produced a "
+                "SymbolSubSpace._synthesize_rule_probs_soft produced a "
                 "non-finite rule_probs tensor (fail-loud per numerical "
                 "policy).")
         return probs
@@ -11425,7 +11415,7 @@ class SymbolicSubSpace(SubSpace):
         """Map per-op count columns ``counts`` ``[B, R]`` to their global
         rule_id indices for a differentiable ``index_add``.
 
-        ``rid_table`` is the per-tier ``op_id -> rule_id`` list
+        ``rid_table`` is the per-space_role ``op_id -> rule_id`` list
         (``_unary_rule_ids`` / ``_binary_rule_ids``). Returns
         ``(idx [K] long, cols [B, K] float)`` selecting only the op
         columns whose rule_id is in ``[0, n_rules)``; ``(None, None)``
@@ -11453,7 +11443,7 @@ class SymbolicSubSpace(SubSpace):
         idx = torch.tensor(keep_rids, dtype=torch.long)
         return idx, cols
 
-    def _synthesize_rule_probs_hard(self, rules_by_tier, batch_size,
+    def _synthesize_rule_probs_hard(self, rules_by_space_role, batch_size,
                                     device=None):
         """Build the dense ``[B, n_rules]`` rule distribution (HARD scatter).
 
@@ -11467,7 +11457,7 @@ class SymbolicSubSpace(SubSpace):
 
         Per-row handling
         ----------------
-        * Full-router path: ``rules_by_tier[tier]`` is ``B`` rows (one
+        * Full-router path: ``rules_by_space_role[space_role]`` is ``B`` rows (one
           per batch element, see ``LanguageLayer.compose``); each row's
           own selected ids are scattered onto that row.
         * Default-only / single-canonical-row path: a single row 0 is the
@@ -11490,14 +11480,14 @@ class SymbolicSubSpace(SubSpace):
         # Resolve B: prefer the caller's hint (the compose operand's
         # leading dim). Fall back to the rule-row count when the operand
         # batch dim was unavailable but the rows are per-row.
-        per_tier_rows = None
+        per_space_role_rows = None
         max_rows = 0
-        if rules_by_tier:
-            for tier in rules_by_tier:
-                rows = rules_by_tier[tier]
+        if rules_by_space_role:
+            for space_role in rules_by_space_role:
+                rows = rules_by_space_role[space_role]
                 if isinstance(rows, list) and rows and isinstance(rows[0], list):
                     max_rows = max(max_rows, len(rows))
-                    per_tier_rows = per_tier_rows or {}
+                    per_space_role_rows = per_space_role_rows or {}
         B = batch_size if batch_size is not None else (max_rows or None)
         if B is None or int(B) <= 0:
             return None
@@ -11510,18 +11500,18 @@ class SymbolicSubSpace(SubSpace):
         probs = torch.zeros(B, n_rules, device=device)
 
         # Per-row scatter. For each batch row, accumulate the row's own
-        # rule-ids if the per-tier container is per-row (len == B or the
+        # rule-ids if the per-space_role container is per-row (len == B or the
         # row index exists), else fall back to row 0 (broadcast canonical).
-        canonical_flat = self._flatten_selected_rules(rules_by_tier)
+        canonical_flat = self._flatten_selected_rules(rules_by_space_role)
         for b in range(B):
             row_ids = []
-            for tier in sorted(rules_by_tier.keys()) if rules_by_tier else []:
-                per_tier = rules_by_tier.get(tier)
-                if (isinstance(per_tier, list) and per_tier
-                        and isinstance(per_tier[0], list)):
+            for space_role in sorted(rules_by_space_role.keys()) if rules_by_space_role else []:
+                per_space_role = rules_by_space_role.get(space_role)
+                if (isinstance(per_space_role, list) and per_space_role
+                        and isinstance(per_space_role[0], list)):
                     # Per-row container: use this row when present, else
                     # the canonical row 0 (broadcast).
-                    row = per_tier[b] if b < len(per_tier) else per_tier[0]
+                    row = per_space_role[b] if b < len(per_space_role) else per_space_role[0]
                     for rid in row:
                         try:
                             row_ids.append(int(rid))
@@ -11529,7 +11519,7 @@ class SymbolicSubSpace(SubSpace):
                             continue
                 else:
                     # Legacy flat list: shared across rows.
-                    for rid in (per_tier or []):
+                    for rid in (per_space_role or []):
                         try:
                             row_ids.append(int(rid))
                         except (TypeError, ValueError):
@@ -11560,14 +11550,14 @@ class SymbolicSubSpace(SubSpace):
         # MODEL_DEBUG runs and via the eager finite-loss guard.
         if util.MODEL_DEBUG and not torch.isfinite(probs).all():
             raise ValueError(
-                "SymbolicSubSpace._synthesize_rule_probs produced a non-finite "
+                "SymbolSubSpace._synthesize_rule_probs produced a non-finite "
                 "rule_probs tensor (fail-loud per numerical policy).")
         return probs
 
-    def _build_routing_state(self, rules_by_tier, batch_size, device=None):
+    def _build_routing_state(self, rules_by_space_role, batch_size, device=None):
         """Assemble the ``RoutingState`` companion for ``current_rules``.
 
-        ``rules_by_tier`` is the (unchanged) ``current_rules`` dict;
+        ``rules_by_space_role`` is the (unchanged) ``current_rules`` dict;
         ``batch_size`` is the predictor's B (the compose operand's
         leading dim) or ``None``. Builds ``selected_rules`` (flat row-0
         ids) and the dense ``rule_probs`` ``[B, n_rules]`` (or ``None``).
@@ -11579,20 +11569,20 @@ class SymbolicSubSpace(SubSpace):
         ``None`` (the eager ``__init__`` seed call) falls back to
         ``TheDevice.get()``.
         """
-        rules_by_tier = rules_by_tier or {}
-        selected = self._flatten_selected_rules(rules_by_tier)
+        rules_by_space_role = rules_by_space_role or {}
+        selected = self._flatten_selected_rules(rules_by_space_role)
         rule_probs = self._synthesize_rule_probs(
-            rules_by_tier, batch_size, device=device)
+            rules_by_space_role, batch_size, device=device)
         return RoutingState(
-            rules_by_tier=rules_by_tier,
+            rules_by_space_role=rules_by_space_role,
             selected_rules=selected,
             rule_probs=rule_probs)
 
     def _default_compose_rules(self):
-        """Per-tier rule IDs for the default-only / useGrammar='none'
+        """Per-space_role rule IDs for the default-only / useGrammar='none'
         fast path (forward direction).
 
-        Returns ``dict[tier, list[list[int]]]`` listing each tier's
+        Returns ``dict[space_role, list[list[int]]]`` listing each space_role's
         forward natural-fold rule_ids from ``TheGrammar.rules``
         (``method_name`` in :data:`_NATURAL_FOLD_METHODS`,
         ``canonical`` not containing ``.reverse``). Cached after
@@ -11601,7 +11591,7 @@ class SymbolicSubSpace(SubSpace):
         cache = getattr(self, '_default_compose_rules_cache', None)
         if cache is not None:
             return cache
-        per_tier = {}
+        per_space_role = {}
         for i, r in enumerate(TheGrammar.rules):
             mn = getattr(r, 'method_name', None)
             if mn not in self._NATURAL_FOLD_METHODS:
@@ -11610,60 +11600,60 @@ class SymbolicSubSpace(SubSpace):
             if '.reverse' in canonical:
                 continue
             # The legacy flat-format parser tags every rule
-            # ``tier='S'``; the canonical's LHS nonterminal is
-            # authoritative for which Space tier should dispatch.
-            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
-            if tier is None:
+            # ``space_role='SS'``; the canonical's LHS nonterminal is
+            # authoritative for which Space space_role should dispatch.
+            space_role = self._LHS_SPACE_ROLE_MAP.get(getattr(r, 'lhs', None))
+            if space_role is None:
                 continue
-            per_tier.setdefault(tier, []).append([i])
-        merged = {tier: [[rid for row in rows for rid in row]]
-                  for tier, rows in per_tier.items()}
+            per_space_role.setdefault(space_role, []).append([i])
+        merged = {space_role: [[rid for row in rows for rid in row]]
+                  for space_role, rows in per_space_role.items()}
         self._default_compose_rules_cache = merged
         return merged
 
     def _default_generate_rules(self):
-        """Per-tier rule IDs for the default-only / useGrammar='none'
+        """Per-space_role rule IDs for the default-only / useGrammar='none'
         fast path (reverse direction).
 
-        Returns ``dict[tier, list[list[int]]]`` listing each tier's
+        Returns ``dict[space_role, list[list[int]]]`` listing each space_role's
         reverse natural-fold rule_ids (``method_name`` in
         :data:`_NATURAL_FOLD_METHODS`, ``canonical`` containing
         ``.reverse``). The dispatched ``method_name`` is shared with
         the matching forward rule so ``SyntacticLayer._by_name``
         resolves to the same parametrized layer either way.
 
-        Falls back to the per-tier forward rule_ids when no explicit
-        ``.reverse`` rules are listed for that tier. Legacy
+        Falls back to the per-space_role forward rule_ids when no explicit
+        ``.reverse`` rules are listed for that space_role. Legacy
         flat-format grammar blocks (``<S>sigma(S)</S>`` etc., without
-        a ``<generate>`` section) still get the per-tier reverse
+        a ``<generate>`` section) still get the per-space_role reverse
         dispatch because dispatch reads ``method_name`` rather than
         the canonical string.
         """
         cache = getattr(self, '_default_generate_rules_cache', None)
         if cache is not None:
             return cache
-        forward_per_tier = {}
-        reverse_per_tier = {}
+        forward_per_space_role = {}
+        reverse_per_space_role = {}
         for i, r in enumerate(TheGrammar.rules):
             mn = getattr(r, 'method_name', None)
             if mn not in self._NATURAL_FOLD_METHODS:
                 continue
-            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
-            if tier is None:
+            space_role = self._LHS_SPACE_ROLE_MAP.get(getattr(r, 'lhs', None))
+            if space_role is None:
                 continue
             canonical = getattr(r, 'canonical', '') or ''
             if '.reverse' in canonical:
-                reverse_per_tier.setdefault(tier, []).append([i])
+                reverse_per_space_role.setdefault(space_role, []).append([i])
             else:
-                forward_per_tier.setdefault(tier, []).append([i])
-        per_tier = {}
-        all_tiers = set(forward_per_tier) | set(reverse_per_tier)
-        for tier in all_tiers:
-            per_tier[tier] = (
-                reverse_per_tier.get(tier)
-                or forward_per_tier.get(tier))
-        merged = {tier: [[rid for row in rows for rid in row]]
-                  for tier, rows in per_tier.items()}
+                forward_per_space_role.setdefault(space_role, []).append([i])
+        per_space_role = {}
+        all_space_roles = set(forward_per_space_role) | set(reverse_per_space_role)
+        for space_role in all_space_roles:
+            per_space_role[space_role] = (
+                reverse_per_space_role.get(space_role)
+                or forward_per_space_role.get(space_role))
+        merged = {space_role: [[rid for row in rows for rid in row]]
+                  for space_role, rows in per_space_role.items()}
         self._default_generate_rules_cache = merged
         return merged
 
@@ -11683,7 +11673,7 @@ class SymbolicSubSpace(SubSpace):
         if lam <= 0.0:
             return None
         total = None
-        for (_tier, _name), layer in self._host_layer_registry.items():
+        for (_space_role, _name), layer in self._host_layer_registry.items():
             raw = getattr(layer, 'raw_gate', None)
             if raw is not None and torch.is_tensor(raw):
                 term = torch.tanh(raw).abs().sum()
@@ -11701,30 +11691,30 @@ class SymbolicSubSpace(SubSpace):
             return None
         return lam * total
 
-    def register_host_layer(self, tier, rule_name, layer):
+    def register_host_layer(self, space_role, rule_name, layer):
         """Register ``layer`` as the parametrized GrammarLayer for
-        ``(tier, rule_name)``. The chart's per-cell rule dispatch reads
+        ``(space_role, rule_name)``. The chart's per-cell rule dispatch reads
         the registry to fire the host space's owned fold.
 
         Per-space SyntacticLayers call this at construction.
         """
         if not rule_name:
             return
-        self._host_layer_registry[(tier, rule_name)] = layer
+        self._host_layer_registry[(space_role, rule_name)] = layer
 
-    def host_layer(self, tier, rule_name):
-        """Return the registered GrammarLayer for ``(tier, rule_name)``,
+    def host_layer(self, space_role, rule_name):
+        """Return the registered GrammarLayer for ``(space_role, rule_name)``,
         or ``None``. The chart treats ``None`` as "rule has no host
         parametrized layer", routing to the generic fallback (Ops /
         typed-GrammarLayer facade) instead.
         """
-        return self._host_layer_registry.get((tier, rule_name))
+        return self._host_layer_registry.get((space_role, rule_name))
 
     # -- Chart-authority surface (Stage 3) --
     #
     # The chart's ``register_grammar_layer`` / ``should_run_rule`` pair
     # serviced ``GrammarLayer.gated_run`` via ``_chart_authority``. The
-    # chart is retired; SymbolicSubSpace inherits the responsibility.
+    # chart is retired; SymbolSubSpace inherits the responsibility.
 
     def register_grammar_layer(self, layer):
         """Add a GrammarLayer instance to the chart-authority roster.
@@ -11753,17 +11743,17 @@ class SymbolicSubSpace(SubSpace):
 
     def _wire_signal_router_grammar_ops(self):
         """Attach grammar-rule layers to the signal router, grouped by
-        (tier, arity), driven by the loaded rule list.
+        (space_role, arity), driven by the loaded rule list.
 
         Post-2026-05-29 grammar-file-refactor (\xa75): the rule list is
-        the canonical source of (name, tier, arity) — the .grammar XML
+        the canonical source of (name, space_role, arity) — the .grammar XML
         the model config points to is decoded into ``TheGrammar.rules``
         by ``Grammar.load_from_grammar_file``; this method consumes the
         decoded list, resolves a layer for each entry, and calls
-        ``attach_unary_ops`` / ``attach_layer_ops`` per (tier, arity).
-        Per-rule tier and op-name metadata is now propagated to the
+        ``attach_unary_ops`` / ``attach_layer_ops`` per (space_role, arity).
+        Per-rule space_role and op-name metadata is now propagated to the
         attached layers so the binary reduction layer can do
-        tier-respecting position gating (plan \xa76).
+        space_role-respecting position gating (plan \xa76).
 
         Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
         their pair-wise math via ``.compose(left, right)``; unary ones
@@ -11774,7 +11764,7 @@ class SymbolicSubSpace(SubSpace):
         """
         router = self.languageLayer
 
-        # Group: (tier, arity) -> list of (rule_id, layer, rule_name)
+        # Group: (space_role, arity) -> list of (rule_id, layer, rule_name)
         #
         # Only compose rules (rules_upward) participate in the
         # forward-direction wiring: each one becomes an op the router
@@ -11785,11 +11775,11 @@ class SymbolicSubSpace(SubSpace):
         # 1 but the underlying layer is binary, so attaching it again as
         # a unary op would call ``LowerLayer.forward(x)`` with one
         # argument and trip the layer's binary kernel.
-        by_tier_arity = {}
+        by_space_role_arity = {}
         n_upward = len(TheGrammar.rules_upward)
         for rule_id in range(n_upward):
             rule = TheGrammar.rules_upward[rule_id]
-            tier = rule.tier
+            space_role = rule.space_role
             arity = int(rule.arity)
             if arity not in (1, 2):
                 continue
@@ -11797,25 +11787,25 @@ class SymbolicSubSpace(SubSpace):
             if not rule_name:
                 continue
             layer = self._resolve_rule_layer(
-                tier, _dispatch_method_name_for_rule(rule))
+                space_role, _dispatch_method_name_for_rule(rule))
             if layer is None:
                 continue
-            by_tier_arity.setdefault((tier, arity), []).append(
+            by_space_role_arity.setdefault((space_role, arity), []).append(
                 (rule_id, layer, rule_name))
 
-        # plan \xa76: collapse C and S into a single reduction tier in C.
-        # Instead of attaching one layer per (tier, arity), aggregate every
-        # entry of a given arity ACROSS tiers into a single attach call under
-        # the conceptual reduction tier 'C'. ``op_tiers`` / ``op_names`` still
+        # plan \xa76: collapse CS and SS into a single reduction space_role in CS.
+        # Instead of attaching one layer per (space_role, arity), aggregate every
+        # entry of a given arity ACROSS space_roles into a single attach call under
+        # the conceptual reduction space_role 'CS'. ``op_space_roles`` / ``op_names`` still
         # carry the .grammar-declared metadata, so the merged binary layer
-        # (BinaryStructuredReductionLayer) keeps each op's original tier
-        # letter for lift/lower (C<->S) role identification; ops, rule_ids,
-        # op_names and op_tiers are concatenated in lockstep so op order
+        # (BinaryStructuredReductionLayer) keeps each op's original space_role
+        # tag for lift/lower (CS<->SS) role identification; ops, rule_ids,
+        # op_names and op_space_roles are concatenated in lockstep so op order
         # stays aligned with rule_id order. Group by arity only, with a
-        # stable (tier, original-order) ordering for determinism.
-        REDUCE_TIER = 'C'
+        # stable (space_role, original-order) ordering for determinism.
+        REDUCE_SPACE_ROLE = 'CS'
         by_arity = {}
-        for (tier, arity), entries in sorted(by_tier_arity.items()):
+        for (space_role, arity), entries in sorted(by_space_role_arity.items()):
             for rule_id, layer, name in entries:
                 if arity == 2:
                     op = _BinaryGrammarOpAdapter(layer)
@@ -11823,14 +11813,14 @@ class SymbolicSubSpace(SubSpace):
                     op = layer
                 by_arity.setdefault(arity, {
                     "ops": [], "rule_ids": [], "op_names": [],
-                    "op_tiers": [],
+                    "op_space_roles": [],
                 })
                 bucket = by_arity[arity]
                 bucket["ops"].append(op)
                 bucket["rule_ids"].append(rule_id)
                 bucket["op_names"].append(name)
-                # preserve the op's *original* tier letter as the role label
-                bucket["op_tiers"].append(tier)
+                # preserve the op's *original* space_role letter as the role label
+                bucket["op_space_roles"].append(space_role)
         # Placement-chooser cutover (doc/plans/NeuralToolUser.md): pick the
         # chooser kind BEFORE the structured layers are built (they choose
         # at construction). ``<architecture><transformChooser>`` -- default
@@ -11847,17 +11837,17 @@ class SymbolicSubSpace(SubSpace):
             if arity == 1:
                 router.attach_unary_ops(
                     ops=bucket["ops"], rule_ids=bucket["rule_ids"],
-                    op_names=bucket["op_names"], op_tiers=bucket["op_tiers"],
-                    tier=REDUCE_TIER)
+                    op_names=bucket["op_names"], op_space_roles=bucket["op_space_roles"],
+                    space_role=REDUCE_SPACE_ROLE)
             else:
                 router.attach_layer_ops(
                     ops=bucket["ops"], rule_ids=bucket["rule_ids"],
-                    op_names=bucket["op_names"], op_tiers=bucket["op_tiers"],
-                    tier=REDUCE_TIER)
+                    op_names=bucket["op_names"], op_space_roles=bucket["op_space_roles"],
+                    space_role=REDUCE_SPACE_ROLE)
 
         # plan \xa76: plumb the conceptual-reduction round floor onto the
         # router. subsymbolicOrder lives on the model (Models.py), not on
-        # SymbolicSubSpace, and is not cleanly reachable here within ~2 attribute
+        # SymbolSubSpace, and is not cleanly reachable here within ~2 attribute
         # hops -- so leave the LanguageLayer default of 1. ``max(1, N-1) ==
         # N-1`` reproduces the pre-collapse round count, making the floor a
         # harmless no-op until/unless a host wires subsymbolicOrder through.
@@ -11870,26 +11860,26 @@ class SymbolicSubSpace(SubSpace):
         if _ntu is not None:
             router.neural_tool_user = bool(_ntu)
 
-    def _resolve_rule_layer(self, tier, rule_name):
-        """Return a Layer instance for ``(tier, rule_name)`` from the host
+    def _resolve_rule_layer(self, space_role, rule_name):
+        """Return a Layer instance for ``(space_role, rule_name)`` from the host
         registry, falling back to a fresh GRAMMAR_LAYER_CLASSES instance.
 
         Lookup order:
-          1. Exact ``(tier, rule_name)`` match in ``_host_layer_registry``
+          1. Exact ``(space_role, rule_name)`` match in ``_host_layer_registry``
              -- the canonical wiring set up when the host space (e.g.
              ConceptualSpace) constructs its parametrized fold.
-          2. Same ``rule_name`` registered under any other tier --
+          2. Same ``rule_name`` registered under any other space_role --
              IntersectionLayer's PiLayer is owned by ConceptualSpace; the
-             grammar may name it at the symbolic tier.
+             grammar may name it at the symbolic space_role.
           3. Fresh ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance --
              parameter-free ops (NotLayer, NonLayer, ...) that don't need
              a learned host module.
         Returns None if no resolution succeeds.
         """
-        layer = self._host_layer_registry.get((tier, rule_name))
+        layer = self._host_layer_registry.get((space_role, rule_name))
         if layer is not None:
             return layer
-        for (_other_tier, other_rule), other_layer in (
+        for (_other_space_role, other_rule), other_layer in (
                 self._host_layer_registry.items()):
             if other_rule == rule_name:
                 return other_layer
@@ -12011,7 +12001,7 @@ class SymbolicSubSpace(SubSpace):
             pass
         return min(256, max(64, n_slots * 4))
 
-    def _attach_per_space_syntactic_layer(self, space, *, tier):
+    def _attach_per_space_syntactic_layer(self, space, *, space_role):
         """Build the per-space SyntacticLayer for ``space`` (Step 4
         of doc/specs/2026-05-01-syntactic-layer-refactor.md).
 
@@ -12019,13 +12009,13 @@ class SymbolicSubSpace(SubSpace):
         (PiLayer / SigmaLayer / NotLayer / ContiguousLayer) and passes
         them into ``build_space_syntactic_layer`` as ``builtin_layers``
         so their existing weights stay live. Other rules the configured
-        grammar references for this tier get lazy-constructed
+        grammar references for this space_role get lazy-constructed
         GrammarLayer wrappers.
         """
         builtin_layers = {}
         # Inner instance probes: use try/except rather than getattr-with-
         # defaults per the project's no-defensive-getattr stance.
-        if tier == 'P':
+        if space_role == 'subsymbolic':
             # Phase C (2026-05-13 rebalance): PartSpace owns
             # ``pi_input`` (input_dim → percept_dim) and ``pi_concept``
             # (concept_dim → percept_dim); both fire unconditionally
@@ -12043,10 +12033,10 @@ class SymbolicSubSpace(SubSpace):
             pi_concept = getattr(space, 'pi_concept', None)
             if pi_concept is not None:
                 builtin_layers['lower'] = pi_concept
-        elif tier == 'C':
+        elif space_role == 'CS':
             # Phase B (2026-05-13 rebalance): ConceptualSpace owns
             # ``sigma_percept`` (percept_dim → concept_dim) — the
-            # canonical forward C-tier fold. Register it under the new
+            # canonical forward CS-space_role fold. Register it under the new
             # ``sigma`` rule name (per the doc/Spaces.md migration
             # table: ``C = sigma(PS)``) and the legacy ``pi`` alias so
             # old grammars ``C = pi(C)`` continue to dispatch correctly.
@@ -12056,11 +12046,11 @@ class SymbolicSubSpace(SubSpace):
                 builtin_layers['pi'] = sigma_percept  # legacy alias
             # Stage 4 (2026-05-27 doc/plans/2026-05-26-two-loop-pi-
             # sigma-substrate.md): LiftLayer / LowerLayer are binary
-            # GrammarLayer ops at the C tier (STM-pair composition).
+            # GrammarLayer ops at the CS space_role (STM-pair composition).
             # When the active grammar declares them inside <concepts>
-            # (rule.tier == 'C'), build them here so they bind at the
+            # (rule.space_role == 'CS'), build them here so they bind at the
             # ConceptualSpace SyntacticLayer and flow through to the
-            # signal router as C-tier reduce ops via
+            # signal router as CS-space_role reduce ops via
             # ``_wire_signal_router_grammar_ops``.
             #
             # Sized to the symbol codebook width via the back-reference
@@ -12068,7 +12058,7 @@ class SymbolicSubSpace(SubSpace):
             # holds post-bivector retirement; either dim works).
             grammar_C_methods = {
                 r.method_name for r in TheGrammar.rules
-                if r.tier == 'C' and r.method_name is not None}
+                if r.space_role == 'CS' and r.method_name is not None}
             wholeSpace = getattr(self, 'wholeSpace', None)
             perceptualSpace = getattr(self, 'perceptualSpace', None)
             if 'lift' in grammar_C_methods:
@@ -12081,7 +12071,7 @@ class SymbolicSubSpace(SubSpace):
                     wholeSpace=wholeSpace)
             # Stage 9 (2026-05-27 doc/plans/2026-05-27-perceptstore-meta-
             # taxonomy-reentrancy.md): SymbolizeLayer (originally
-            # MetaLayer, renamed 2026-05-28) is the binary C-tier grammar
+            # MetaLayer, renamed 2026-05-28) is the binary CS-space_role grammar
             # op that binds a perceptual idea to a semantic idea,
             # creating a META node in the WS taxonomy. Needs BOTH the
             # wholeSpace (for ``insert_meta`` + WS codebook nearest-
@@ -12092,11 +12082,11 @@ class SymbolicSubSpace(SubSpace):
                 builtin_layers['symbolize'] = SymbolizeLayer(
                     wholeSpace=wholeSpace,
                     perceptualSpace=perceptualSpace)
-        elif tier == 'S':
+        elif space_role == 'SS':
             # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
             # 2026-06-09): the WS-owned fold is ``self.pi`` (top-down
             # analysis). Register it under the new ``pi`` rule name AND the
-            # legacy ``sigma`` alias -- the same alias idiom the P/C tiers
+            # legacy ``sigma`` alias -- the same alias idiom the subsymbolic/CS space_roles
             # use above -- so existing grammars (``S = sigma(S)``,
             # model.xml's default) keep dispatching the WS fold. The
             # grammar-DSL token migration is Phase-4 (knob split) work.
@@ -12109,23 +12099,23 @@ class SymbolicSubSpace(SubSpace):
                 builtin_layers['not'] = negation
             # FusionLayer / ContiguousLayer were retired 2026-05-04:
             # the operator was a duplicate of DisjunctionLayer at
-            # S-tier. Existing XML grammars referencing
+            # SS-space_role. Existing XML grammars referencing
             # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
             # ``disjunction(S, S)``.
             # Lift / Lower wiring: per Stage 4 of doc/plans/
             # 2026-05-26-two-loop-pi-sigma-substrate.md, LiftLayer
             # and LowerLayer are first-class binary GrammarLayer ops
-            # at the C tier with their own internal SigmaLayer /
-            # PiLayer (no substrate borrow).  This S-tier branch is
+            # at the CS space_role with their own internal SigmaLayer /
+            # PiLayer (no substrate borrow).  This SS-space_role branch is
             # kept for back-compat with XML grammars that still
             # declare ``<S>lift(S, S)</S>`` / ``<S>lower(S, S)</S>``
-            # -- in that case rule.tier == 'S' and the wiring picks
-            # the layer up under the S-tier host registry.  The
-            # canonical home (post-Stage 4) is the C-tier branch
+            # -- in that case rule.space_role == 'SS' and the wiring picks
+            # the layer up under the SS-space_role host registry.  The
+            # canonical home (post-Stage 4) is the CS-space_role branch
             # above.
             grammar_S_methods = {
                 r.method_name for r in TheGrammar.rules
-                if r.tier == 'S' and r.method_name is not None}
+                if r.space_role == 'SS' and r.method_name is not None}
             # Lift / Lower stay explicit: they are parametrized ops that
             # need host wiring (``wholeSpace=space``), so the generic
             # ``cls()`` below would mis-build them. They are wired first
@@ -12139,14 +12129,14 @@ class SymbolicSubSpace(SubSpace):
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
                     wholeSpace=space)
-            # All other S-tier ops: instantiate the parameter-free ops
+            # All other SS-space_role ops: instantiate the parameter-free ops
             # generically from the module-local GRAMMAR_LAYER_CLASSES
             # registry rather than a hardcoded per-op special-case chain.
             # The registry maps every op name to its canonical class
             # (defined in THIS file), so this both (a) preserves the ops
             # the old chain wired (``isEqual`` / ``part`` / ``query``)
             # and (b) picks up any other parameter-free op a grammar
-            # declares at the symbolic tier (``queryPart`` / ``assertPart``
+            # declares at the symbolic (SS) space_role (``queryPart`` / ``assertPart``
             # / ``not`` / ``swap`` / ``copy`` / ...) that the old chain
             # silently missed.
             #
@@ -12171,13 +12161,13 @@ class SymbolicSubSpace(SubSpace):
                     builtin_layers[name] = cls()
                 except TypeError:
                     # Op needs constructor params (host-wired elsewhere,
-                    # e.g. via _resolve_rule_layer / the C-tier branch).
+                    # e.g. via _resolve_rule_layer / the CS-space_role branch).
                     # Skip rather than force; only the narrow
                     # constructor-arity TypeError is swallowed -- any
                     # other exception propagates (fail loud).
                     continue
         layer = build_space_syntactic_layer(
-            space, self, tier=tier,
+            space, self, space_role=space_role,
             builtin_layers=builtin_layers)
         # Register the new layer's parameters with the SymbolSpace param
         # list so the optimizer scan sees the lazily-constructed
@@ -12197,7 +12187,7 @@ class SymbolicSubSpace(SubSpace):
         slots (Rule #2 axis commitment side effect).
 
         Post-2026-05-12 refactor: the actual symbolic composition runs
-        on the chart at C-tier over the per-word STM buffer
+        on the chart at CS-space_role over the per-word STM buffer
         (``_chart_compose_at_C`` inside ``_forward_body``), with the
         per-space ``SyntacticLayer.forward`` dispatch consuming the
         chart's rule choices.  This helper retains the demux side
@@ -12240,8 +12230,8 @@ class SymbolicSubSpace(SubSpace):
         """Reset per-sentence state at sentence boundaries.
 
         Called by ``BasicModel`` on sentence boundary signals. The
-        legacy SR-parser SymbolicSubSpace stack was removed (2026-05-20);
-        the per-sentence cursor / recur_pass on SymbolicSubSpace are reset
+        legacy SR-parser SymbolSubSpace stack was removed (2026-05-20);
+        the per-sentence cursor / recur_pass on SymbolSubSpace are reset
         in ``soft_reset``, and the category / reconstruction stacks
         have their own ``clear`` paths — so this entry point is now a
         no-op retained for API compatibility with existing callers.
@@ -12298,7 +12288,7 @@ class SymbolicSubSpace(SubSpace):
                 mod.W = w.detach()
 
     # -- Space-contract lifecycle hooks --------------------------------
-    # SymbolicSubSpace is a plain ``nn.Module`` (not a ``Space``) but the
+    # SymbolSubSpace is a plain ``nn.Module`` (not a ``Space``) but the
     # model iterates ``self.spaces`` calling ``set_sigma`` /
     # ``paramUpdate`` / ``getParameters`` / ``Start`` / ``End`` /
     # ``Reset`` on each entry, so we provide the same surface directly.
@@ -12308,7 +12298,7 @@ class SymbolicSubSpace(SubSpace):
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to owned layers.
 
-        Mirrors ``Space.set_sigma`` (the no-basis branch — SymbolicSubSpace
+        Mirrors ``Space.set_sigma`` (the no-basis branch — SymbolSubSpace
         has no codebook basis slots; ``self.subspace`` is ``None``).
         """
         for layer in self.layers:
@@ -12350,7 +12340,7 @@ class SymbolicSubSpace(SubSpace):
         wipe of stack, SVO, STM, discourse). False is a sentence-internal
         soft reset — see ``soft_reset(batch=b)`` for the structured entry
         point. Cascades ``Reset`` to owned layers (no ``super().Reset``
-        — SymbolicSubSpace inherits from ``nn.Module``, not ``Space``).
+        — SymbolSubSpace inherits from ``nn.Module``, not ``Space``).
         """
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
@@ -12435,7 +12425,7 @@ class SymbolicSubSpace(SubSpace):
                 self.cursor[i] = 0
             self.recur_pass = 0
             # Reset every row's parse-side working state. clear_sentence
-            # zeroes the SymbolicSubSpace stack; the category and
+            # zeroes the SymbolSubSpace stack; the category and
             # reconstruction stacks fan out to the same row count.
             self.clear_sentence()
             if (hasattr(self, 'category_stack')
@@ -12548,7 +12538,7 @@ class SymbolicSubSpace(SubSpace):
         """Resize the BODY-side per-row buffers to ``batch`` (= B*K under
         the microbatch contract).
 
-        Body-side buffers owned here: the SymbolicSubSpace event, the
+        Body-side buffers owned here: the SymbolSubSpace event, the
         CategoryStack / ReconstructionStack stacks, and the per-window
         transient tensors ``_last_svo`` / ``_svo_valid``.  These reallocate
         fresh-zero on shape change -- they're per-microbatch-row state
@@ -12626,7 +12616,7 @@ class SymbolicSubSpace(SubSpace):
             self._sentence_completed = [False] * int(B)
 
 
-# Plain-attr writes that the held SymbolicSubSpace coordinator reads back
+# Plain-attr writes that the held SymbolSubSpace coordinator reads back
 # INTERNALLY must forward through ``SymbolSpace.__setattr__`` -- otherwise an
 # external ``symbolSpace.recur_pass = t`` would land on the wrapper while the
 # coordinator's own ``self.recur_pass`` read never sees it.
@@ -12640,8 +12630,8 @@ class SymbolSpace(PerceptualSpace):
     """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
     Stage 3).
 
-    OWNS the ``SymbolicSubSpace`` coordinator (the typed-STM stack + grammar
-    dispatch carrier) and is the home for the per-tier SyntacticLayers and (Stage
+    OWNS the ``SymbolSubSpace`` coordinator (the typed-STM stack + grammar
+    dispatch carrier) and is the home for the per-space_role SyntacticLayers and (Stage
     4) the symbol tables. It is a transparent CONTAINER: every ``symbolSpace.X``
     call site keeps working by FORWARDING to the held coordinator -- reads fall
     through ``__getattr__``, and the plain-attr writes the coordinator reads back
@@ -12655,7 +12645,7 @@ class SymbolSpace(PerceptualSpace):
     via ``nn.Module.__init__``, deliberately SKIPPING ``Space.__init__``'s
     object/what/where/when VQ-basis construction this coordinator must not own.
     The eight Space-contract members defined on BOTH ``Space`` and the held
-    ``SymbolicSubSpace`` (``Reset`` / ``Start`` / ``End`` / ``paramUpdate`` /
+    ``SymbolSubSpace`` (``Reset`` / ``Start`` / ``End`` / ``paramUpdate`` /
     ``set_sigma`` / ``getParameters`` / ``attach_knowledge`` / ``knowledge``) are
     EXPLICITLY overridden below to delegate to the coordinator -- the inherited
     ``Space`` versions would otherwise SHADOW it (``__getattr__`` only catches
@@ -12669,7 +12659,7 @@ class SymbolSpace(PerceptualSpace):
     def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
                  nPercepts, nConcepts, nSymbols, concept_dim, symbol_dim):
         nn.Module.__init__(self)
-        self.subspace = SymbolicSubSpace(
+        self.subspace = SymbolSubSpace(
             perceptualSpace=perceptualSpace,
             conceptualSpace=conceptualSpace,
             wholeSpace=wholeSpace,
@@ -12679,7 +12669,7 @@ class SymbolSpace(PerceptualSpace):
             concept_dim=concept_dim,
             symbol_dim=symbol_dim,
         )
-        # SymbolicSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
+        # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
         # carry contract). ``attach_symbolSpace`` uses object.__setattr__ -> no
@@ -12700,7 +12690,7 @@ class SymbolSpace(PerceptualSpace):
         # nn.Module.__getattr__ resolves registered submodules / params /
         # buffers and real instance attrs first; everything else (the
         # coordinator's API + Space-contract fields) forwards to the held
-        # SymbolicSubSpace. Guarded so a lookup before ``subspace`` is
+        # SymbolSubSpace. Guarded so a lookup before ``subspace`` is
         # registered raises cleanly instead of recursing.
         try:
             return super().__getattr__(name)
@@ -12729,7 +12719,7 @@ class SymbolSpace(PerceptualSpace):
         super().__setattr__(name, value)
 
     # -- Space-method OVERLAP: explicit overrides delegating to the subspace --
-    # These 8 members are defined on BOTH ``Space`` and the SymbolicSubSpace; the
+    # These 8 members are defined on BOTH ``Space`` and the SymbolSubSpace; the
     # inherited ``Space`` versions would shadow the subspace's (``__getattr__``
     # only catches MISSING attrs), so we override them to run the subspace's
     # implementation. (Step 2 of the decomposition migrates the grammar half UP
@@ -12761,7 +12751,7 @@ class SymbolSpace(PerceptualSpace):
 
     # -- the CS coupling interface: forward / reverse ---------------------
     # CS interacts with SymbolSpace ONLY through these (the grammar compose /
-    # generate dispatch over a C-tier STM snapshot CS provides). Default-only
+    # generate dispatch over a CS-space_role STM snapshot CS provides). Default-only
     # grammars run inline (traceable under fullgraph=True); full-router grammars
     # run in a @torch.compiler.disable eager island (their per-row rule-id
     # bookkeeping is data-dependent host control flow dynamo cannot guard on; the
@@ -12794,7 +12784,7 @@ class SymbolSpace(PerceptualSpace):
         self.generate(snap)
 
 
-# The historical ``SymbolSpace = SymbolicSubSpace`` alias (retired Phase G of
+# The historical ``SymbolSpace = SymbolSubSpace`` alias (retired Phase G of
 # doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md) is now a REAL
-# container Space (``SymbolSpace`` above) that OWNS the SymbolicSubSpace. The XML
+# container Space (``SymbolSpace`` above) that OWNS the SymbolSubSpace. The XML
 # config section name ``<SymbolSpace>`` is preserved unchanged.

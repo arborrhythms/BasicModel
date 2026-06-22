@@ -538,6 +538,8 @@ class Data():
             self.loadMNist()
         if dataset == "xor":
             self.loadXOR()
+        if dataset == "phrases":
+            self.loadPhrases()
         if dataset == "tomatoes":
             self.loadTomatoes()
         if dataset == "text":
@@ -773,6 +775,30 @@ class Data():
         self.test_input       = data["test"]["text"]
         self.test_output       = data["test"]["label"]
         self.processLM(data)
+    def loadPhrases(self):
+        """Tiny DET+noun / ADJ+noun phrase set for the idea-decoder round-trip
+        (doc/old/2026-06-20-idea-decoder.md). Two-word phrases with shared
+        vocabulary (DET the/a, ADJ black/red, nouns cat/dog/world) so the
+        codebook learns the words and the grammar learns the DET/ADJ roles --
+        the constituency the default xor 'sentences' (2 independent XOR
+        features) lack. Label = DET-phrase 0 / ADJ-phrase 1 (incidental; the
+        reconstruction loss is what drives the decode round-trip)."""
+        phrases = ["the cat", "the dog", "the world", "a cat", "a dog",
+                   "black cat", "black dog", "red cat"]
+        labels = [[0], [0], [0], [0], [0], [1], [1], [1]]
+        data = {
+            "train":      {"text": phrases, "label": labels},
+            "validation": {"text": phrases, "label": labels},
+            "test":       {"text": phrases, "label": labels},
+        }
+        self.train_input       = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input  = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input        = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+
     def loadInline(self, dat):
         """Load dataset from inline XML ``<input use="...">`` / ``<output use="...">`` elements.
 

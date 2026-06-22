@@ -21,8 +21,8 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", tier='S'),
-        g._parse_rule("NP3", "lower(DET, NP4)", tier='S'),
+        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True
     return g
@@ -36,9 +36,9 @@ def _tiny_view():
 def _bare_word_space():
     """A SymbolSpace instance with __init__ bypassed — just enough for
     attach_knowledge tests."""
-    from Language import SymbolicSubSpace
+    from Language import SymbolSubSpace
     import torch.nn as nn
-    ss = object.__new__(SymbolicSubSpace)
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     return ss
 

@@ -7,7 +7,7 @@ Semantics under test (parallel leg, t>0, <codebook>quantize</codebook>):
 
   * THE CODEBOOK REPLACES PI: the snap stands in for the Pi transform on
     the CS leg (selection-by-exclusion replaces computed intersection);
-    the parallel fold AND the S-tier syntactic dispatch are bypassed.
+    the parallel fold AND the S-space_role syntactic dispatch are bypassed.
   * ONE SYMBOL AT A TIME, APOHA: the emission frame carries the selected
     symbol's code in exactly ONE slot; the copart is ZEROS EVERYWHERE
     (anyapoha -- the universal appears through the exclusion of the
@@ -124,7 +124,7 @@ def _craft_event(view, W, slot_codes):
 def test_csleg_pi_bypassed_under_quantize():
     # THE CODEBOOK REPLACES PI: under quantize the CS-leg forward must
     # not apply the pi transform -- the snap IS this iteration's
-    # analysis. (The S-tier syntactic dispatch is bypassed by the same
+    # analysis. (The S-space_role syntactic dispatch is bypassed by the same
     # predicate; the fold is the directly patchable surface.)
     m = _build("MM_20M.xml")
     ws = m.wholeSpace
@@ -312,7 +312,7 @@ def test_csleg_naming_indices_thread_full_frame():
            "band included) and the REVERSE that keys the codebook by the "
            "ID to recreate the full concept representation are not built "
            "yet; the forward currently emits the value reshape of the "
-           "apoha frame and the reverse re-applies the S-tier transform "
+           "apoha frame and the reverse re-applies the S-space_role transform "
            "instead of keying.",
     strict=False)
 def test_mm20m_second_order_reverse_keys_codebook():

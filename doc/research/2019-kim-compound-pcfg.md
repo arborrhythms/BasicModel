@@ -79,7 +79,7 @@ constraint that makes the lower spaces additive-only.
 
 Two open design choices follow:
 1. Whether the chart's per-rule `marker_mask` (or a similar gating mechanism)
-   should encode depth/space-tier eligibility, blocking `not` from firing
+   should encode depth/space-space-role eligibility, blocking `not` from firing
    below the `S` cell.
 2. Whether two orders of composition (one for `and`+`or` at the inner spaces,
    one for `not` at the symbolic boundary) need separate chart passes, or

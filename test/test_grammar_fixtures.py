@@ -78,7 +78,7 @@ def _slab(*rows):
 def _intersect_np(a, b):
     """Stand-in for NP1 = INTERSECT(a, b): a vector PROVABLY distinct from
     either bare operand. We do not run the live IntersectionLayer (it operates
-    on bivector [B, V, 2] poles via RadMin and needs tier/activation plumbing
+    on bivector [B, V, 2] poles via RadMin and needs space_role/activation plumbing
     irrelevant to what fixture 3 asserts); fixture 3 only needs the bind target
     to differ from the bare ``Alice`` symbol. A normalized half-sum of two
     distinct one-hot rows is non-zero on two channels, so it is allclose to

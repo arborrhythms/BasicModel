@@ -35,8 +35,8 @@ sub-elements `<training>` and `<data>` (see below).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `data/dataType` | string | `"numeric"` | The data tier (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
-| `reconstruct` | string | `"concepts"` | Reverse-pass mode: `none` disables; `symbols` reconstructs from cached output symbols; `concepts` reconstructs at the conceptual tier (default); `both` combines both reconstruction losses. (Default flipped from `symbols` to `concepts` on 2026-05-29; per-experiment XMLs no longer need to override.) |
+| `data/dataType` | string | `"numeric"` | The data space-role (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
+| `reconstruct` | — | — | RETIRED (A1, 2026-06-09): the `reconstructEnum` / `<reconstruct>` element no longer exists. The ConceptualCombine now unconditionally integrates all three streams (PS + SS + CS), so reconstruction is always concepts-seeded from the conceptual space-role — there is no longer a selectable mode (`none` / `symbols` / `both` are gone). |
 | `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
@@ -63,7 +63,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `allowExcludedMiddle` | int | `1` | Catuskoti policy: `1` permits NEITHER, `-1` enforces classical LEM. |
 | `allowContradiction` | int | `0` | Catuskoti policy: `0` forbids BOTH (non-contradiction), `1` permits paraconsistent BOTH. |
 | `gateL1Lambda` | float | `0.0` | L1 sparsity penalty on lift / lower gates. `0` disables. |
-| `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Active only when `SymbolSpace.chartTopK > 0`. |
+| `loadBalanceWeight` | float | `0.0` | Sparse-MoE load-balance loss weight. Currently **inert / no-op**: the knob is read (`Models.py`) but has no consumer — the chart's sparse-MoE load-balance bookkeeping was retired with the chart itself, and the knob stands by for any future signal-router rule load-balancing. (`chartTopK` is itself retired.) |
 | `l1Lambda` | decimal | `0.0` | Architecture-wide L1 penalty hook. Most configs leave this at `0` and use `WholeSpace.l1Lambda` instead. |
 | `discontinuityLambda` | decimal | `0.0` | Architecture-wide discontinuity penalty hook (legacy). |
 | `conceptualWidth` | string | `"tapered"` | Symbol-partition geometry for `subsymbolicOrder > 1`. `tapered` = geometrically narrowing slices; `uniform` = equal-width slices. |
@@ -180,7 +180,7 @@ The two configurations that train the full P$\to$C$\to$S pipeline:
 </training>
 ```
 
-The grammar section of `MentalModel.xml` declares `lift` as an S-tier
+The grammar section of `MentalModel.xml` declares `lift` as an SS
 binary rule:
 
 ```xml
@@ -245,7 +245,7 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nVectors` | int | sentinel | Codebook size. When `> nOutput`, enables vector quantization with top-k selection of `nOutput` from `nVectors`. |
 | `invertible` | bool | `false` | `true`: one `PiLayer(invertible=True)` handles both directions; `false`: separate `pi1` (forward) and `pi2` (reverse). |
-| `hasAttention` | bool | `true` | Attention reweighting of percepts before the Pi fold. |
+| `hasAttention` | bool | `true` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on WholeSpace as `<analysis>analyse`. |
 | `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
@@ -268,11 +268,11 @@ Transforms perceptual features into abstract concepts via Sigma layers
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nVectors` | int | sentinel | Codebook size. |
 | `invertible` | bool | `false` | `true`: `SigmaLayer(invertible=True)` (exact inversion via `atanh` + $W^{-1}$); `false`: separate `sigma1` / `sigma2`. |
-| `hasAttention` | bool | `false` | Attention in conceptual processing. Violates position locality required by `serial_mode`. |
+| `hasAttention` | bool | `false` | DEPRECATED and INERT: no longer constructs an attention pass in conceptual processing; kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `butterfly` | bool | `false` | Butterfly cascade on CS's PiLayer (same machinery as PartSpace). Required by `MM_xor.xml`. |
-| `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band; also the `wMax` fallback). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
+| `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
 `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`.
@@ -280,7 +280,7 @@ Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md)
 > 2026-05-29 (clean-stack STM): `ConceptualSpace.forward` no longer
 > applies `sigma_in` / `sigma_cs` on the forward path. The Stage-10
 > additive composition `sigma_in(combined) + sigma_cs(prev)` is
-> replaced with per-stage tier attribution (`folded = primary` at
+> replaced with per-stage space-role attribution (`folded = primary` at
 > stage 0, `folded = sym` at k > 0). The sigma layers remain
 > allocated and are still invoked on the reverse path, but their
 > parameters get no gradient on forward — they're dead weight under
@@ -352,23 +352,23 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
 | `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
 | `ltmCapacity` | int | `1024` | Long-term-memory (LTM) chain capacity on `InterSentenceLayer`: the per-row bounded `deque` of STM end-states (the AR sequence feeding inter-sentence prediction) is capped at this many entries. Separate from `truthMaxEntries`. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
-| `parserBackend` | string | `"chart"` | Parser backend: `chart`, `stm`, or `parallel`. STM requires an attached knowledge artifact. |
-| `routerKind` | string | `"chart"` | Chart-backend router: `chart` or `signal`. |
-| `chartCollapse` | string | `"root"` | Soft-superposition chart output: `root` (single root sentence node, other positions zero) or `broadcast` (replicate root across all positions). |
-| `chartTau` | float | `1.0` | Temperature for the chart rule-score softmax. |
-| `wMax` | int | `8` | Max span width considered by the parser chart path and default STM capacity fallback. |
-| `chartTopK` | int | `0` | Sparse-MoE rule gating: keep top-K rules per (cell, split). `0` disables. |
-| `chartNoiseEps` | float | `0.0` | Gaussian noise epsilon for `chartTopK` gating. |
+| `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
+| `routerKind` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): there is no longer a selectable router; the signal router is fixed. Rejected with a loud `ValueError` if present in a config. |
+| `chartCollapse` | string | `"root"` | Soft-superposition output collapse mode, preserved for the signal router's root-state writeback contract: `root` (single root sentence node, other positions zero) or `broadcast` (replicate root across all positions). |
+| `chartTau` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
+| `wMax` | — | — | RETIRED: the legacy STM-capacity alias is no longer read. STM depth comes from `<stmCapacity>` (or the `DEFAULT_CAPACITY = 8` fallback). A config that still sets `<SymbolSpace><wMax>` now raises a loud `ValueError`. |
+| `chartTopK` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
+| `chartNoiseEps` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27) alongside the chart. Rejected with a loud `ValueError` if present in a config. |
 | `iterationsPerWord` | int | `1` | P->C iterations per word in the per-word stem path. |
 | `downwardGeneration` | bool | `false` | Emit a codebook head via `SymbolSpace.reconstruct()` and stash on `self._predicted_head`. |
 | `language.interpretation` | float | `0.5` | Soft-interpolation weight between forward and generation directions. |
 
-The `<language><grammar>` block contains tier-scoped rules in
+The `<language><grammar>` block contains space-role-scoped rules in
 `<compose>` and `<generate>` sections, each holding `<percepts>` /
 `<concepts>` / `<symbols>` sub-blocks of `<rule>` elements. Per the
 2026-05-07 rollback, the grammar XML is the sole source of truth for
-which rule fires at each tier (no code-level `default_rule` fallback).
-Legacy bare-tier elements like `<P>P = sigma(P)</P>` directly under
+which rule fires at each space-role (no code-level `default_rule` fallback).
+Legacy bare-space-role elements like `<P>P = sigma(P)</P>` directly under
 `<grammar>` are still accepted.
 
 ---

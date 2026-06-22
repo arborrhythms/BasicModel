@@ -140,11 +140,11 @@ def test_subspace_copy_context_preserves_downstream_writes():
     assert "downstream" in names
 
 
-# ---------- Task 4: SymbolicSubSpace.last_svo and STM-residual ----------
+# ---------- Task 4: SymbolSubSpace.last_svo and STM-residual ----------
 
 def test_wordspace_last_svo_default_invalid(model):
     ss = model.symbolSpace
-    # Microbatch refactor (Task 2): SymbolicSubSpace.last_svo is per-row.
+    # Microbatch refactor (Task 2): SymbolSubSpace.last_svo is per-row.
     # Default state has the valid-mask cleared on every row.
     assert not ss.svo_valid(0)
 
@@ -231,7 +231,7 @@ def _run_one_forward(m):
 def test_input_space_has_symbolSpace_after_set(model):
     # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
     # retired the per-SubSpace ``symbolSpace`` back-pointer; the
-    # SymbolicSubSpace reference now lives on the owning Space.
+    # SymbolSubSpace reference now lives on the owning Space.
     assert model.inputSpace.symbolSpace is model.symbolSpace
 
 
@@ -241,7 +241,7 @@ def test_output_space_carries_symbolSpace(model):
 
 
 def test_pipeline_spaces_carry_symbolSpace(model):
-    """Every pipeline Space holds a routing pointer to the model's SymbolicSubSpace."""
+    """Every pipeline Space holds a routing pointer to the model's SymbolSubSpace."""
     _run_one_forward(model)
     assert model.perceptualSpace.symbolSpace is model.symbolSpace
     assert model.conceptualSpace.symbolSpace is model.symbolSpace

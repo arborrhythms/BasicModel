@@ -142,17 +142,17 @@ def test_torus_snap_unaffected_by_knob():
         on = cb._snap_content(content.clone(), weight=rows, nWhat=D)
     finally:
         _knob(None)
-    assert torch.equal(off, on), "token-tier snap ignores the knob"
+    assert torch.equal(off, on), "token-space_role snap ignores the knob"
 
 
 # ---------------------------------------------------------------------------
 # The knob-gated sphere snap: aligned (pole-quotient) lookup at the
-# reference tier; legacy cosine with the knob off.
+# reference space_role; legacy cosine with the knob off.
 # ---------------------------------------------------------------------------
 
 def _sphere_codebook():
     cb = Codebook()
-    cb.use_dot_product = True                # sphere (reference tier)
+    cb.use_dot_product = True                # sphere (reference space_role)
     cb.monotonic = False
     return cb
 

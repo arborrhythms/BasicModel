@@ -1,7 +1,7 @@
-"""PartSpace / WholeSpace codebook tiering (asymmetric VQ).
+"""PartSpace / WholeSpace codebook space_roleing (asymmetric VQ).
 
 2026-06-09 (asymmetric-VQ plan §7 task 7) made the ``<codebook>`` knob
-asymmetric per tier:
+asymmetric per space_role:
 
   * PartSpace is SUBSYMBOLIC: its ``<codebook>`` element was retired
     from the schema entirely. PS is hardwired to ``"none"`` -- a continuous

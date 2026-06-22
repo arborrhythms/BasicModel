@@ -50,9 +50,9 @@ def _write_xml(tmpdir, *, synthesis="lexicon", lexer="byte", analysis=None,
     </training>
   </architecture>
   <InputSpace>
-    <!-- Uniform (2,2): IS/PS/CS/SS are muxed tiers, so nDim is the EVENT
+    <!-- Uniform (2,2): IS/PS/CS/SS are muxed space_roles, so nDim is the EVENT
          width = content(4) + .where/.when band(4) = 8. OS is the only
-         (0,0) tier and keeps the bare content width (1). -->
+         (0,0) space_role and keeps the bare content width (1). -->
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nOutput>32</nOutput>

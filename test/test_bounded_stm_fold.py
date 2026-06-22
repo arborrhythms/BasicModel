@@ -48,13 +48,13 @@ def test_sentence_end_reduces_toward_root():
     assert torch.isfinite(S).all(), "root state must be finite"
 
 
-def test_binary_reducer_is_tier_free():
+def test_binary_reducer_is_space_role_free():
     import inspect, Language
     src = inspect.getsource(Language.BinaryStructuredReductionLayer)
-    assert "op_tier_idx" not in src and "position_tier" not in src, "tier machinery must be gone"
+    assert "op_space_role_idx" not in src and "position_space_role" not in src, "space_role machinery must be gone"
 
 
-def test_compose_single_reduction_tier():
+def test_compose_single_reduction_space_role():
     m = _model()
     lang = None
     for mod in m.modules():
@@ -62,23 +62,23 @@ def test_compose_single_reduction_tier():
             lang = mod; break
     assert lang is not None, "no configured LanguageLayer found"
     assert len(lang._binary_layers) == 1, (
-        f"expected a single reduction tier, got binary tiers {list(lang._binary_layers.keys())}")
-    # all reduce ops now live in the one tier
+        f"expected a single reduction space_role, got binary space_roles {list(lang._binary_layers.keys())}")
+    # all reduce ops now live in the one space_role
     only = next(iter(lang._binary_layers.values()))
-    assert only.r_reduce >= 8, f"merged tier should hold all reduce ops, got r_reduce={only.r_reduce}"
+    assert only.r_reduce >= 8, f"merged space_role should hold all reduce ops, got r_reduce={only.r_reduce}"
 
 
 def test_lift_lower_stay_invertible_cs_ops():
     """Task 7 (per user directive, 2026-06-05): lift/lower remain ordinary
-    C-tier (CS-internal) invertible sigma/pi ops returning non-quantized
+    CS-space_role (CS-internal) invertible sigma/pi ops returning non-quantized
     results -- they are NOT re-expressed as SS codebook round-trips (which
     would be lossy and break invertibility; codebook queries to SS are
-    always quantized, but lift/lower must not be). The C/S tier delta was
+    always quantized, but lift/lower must not be). The CS/SS space_role delta was
     already removed in Task 5; the only remaining lift/lower delta is the
-    conceptual-ORDER signature, not a tier move.
+    conceptual-ORDER signature, not a space_role move.
     """
     for cls in (Language.LiftLayer, Language.LowerLayer):
-        assert cls.tier == 'C', f"{cls.__name__} must stay an ordinary C-tier op"
+        assert cls.space_role == 'CS', f"{cls.__name__} must stay an ordinary CS-space_role op"
         assert cls.invertible is True, (
             f"{cls.__name__} must stay invertible (non-quantized result)")
 

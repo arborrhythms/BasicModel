@@ -184,7 +184,7 @@ def test_grammar_registry_surface_exists():
     """Phase 1: registry accessors are present on Grammar."""
     from Language import Grammar
     g = Grammar()
-    for name in ("num_rules", "rule", "rules_for_tier",
+    for name in ("num_rules", "rule", "rules_for_space_role",
                  "where_id_for_rule", "where_id_for_symbol"):
         assert callable(getattr(g, name, None)), (
             f"Grammar missing registry accessor: {name}"
@@ -217,7 +217,7 @@ def test_grammar_registry_where_id_namespaces_do_not_collide():
 
 
 def test_grammar_registry_accessors_on_configured_grammar():
-    """num_rules / rule / rules_for_tier work on a real configured Grammar."""
+    """num_rules / rule / rules_for_space_role work on a real configured Grammar."""
     from Language import Grammar
     g = Grammar()
     g.configure({
@@ -231,18 +231,18 @@ def test_grammar_registry_accessors_on_configured_grammar():
 
     # rule(rule_id) returns a RuleDef with the expected fields.
     r0 = g.rule(0)
-    assert r0.tier in ('S', 'C')
+    assert r0.space_role in ('SS', 'CS')
     assert r0.arity in (1, 2)
     assert isinstance(r0.method_name, str)
 
-    s_ids = g.rules_for_tier('S')
-    c_ids = g.rules_for_tier('C')
+    s_ids = g.rules_for_space_role('SS')
+    c_ids = g.rules_for_space_role('CS')
     assert len(s_ids) == 2 and len(c_ids) == 1
     assert set(s_ids).isdisjoint(set(c_ids))
 
     # Arity filter narrows by arity.
-    s_binary = g.rules_for_tier('S', arity=2)
-    s_unary = g.rules_for_tier('S', arity=1)
+    s_binary = g.rules_for_space_role('SS', arity=2)
+    s_unary = g.rules_for_space_role('SS', arity=1)
     assert len(s_binary) == 1 and len(s_unary) == 1
     assert s_binary[0] != s_unary[0]
 
@@ -251,7 +251,7 @@ def test_grammar_registry_accessors_on_configured_grammar():
 # Contract E: SyntacticLayer executor API (Phase 2)
 # ---------------------------------------------------------------------------
 
-def _make_syntactic_layer_with(host_layers, tier='S'):
+def _make_syntactic_layer_with(host_layers, space_role='SS'):
     """Build a minimal SyntacticLayer for executor tests.
 
     Bypasses build_space_syntactic_layer (which depends on TheGrammar
@@ -264,10 +264,10 @@ def _make_syntactic_layer_with(host_layers, tier='S'):
     class _StubSymbolSpace:
         def __init__(self):
             self.calls = []
-        def register_host_layer(self, tier, rule_name, layer):
-            self.calls.append((tier, rule_name))
+        def register_host_layer(self, space_role, rule_name, layer):
+            self.calls.append((space_role, rule_name))
 
-    return SyntacticLayer(tier=tier, word_space=_StubSymbolSpace(),
+    return SyntacticLayer(space_role=space_role, word_space=_StubSymbolSpace(),
                           host_layers=host_layers)
 
 
@@ -531,7 +531,7 @@ def _make_minimal_signal_router(D=8):
                         feature_dim=D, max_depth=8)
 
 
-def _make_syntactic_layer_for_stack(host_layers, tier='S'):
+def _make_syntactic_layer_for_stack(host_layers, space_role='SS'):
     """SyntacticLayer wrapper that doesn't require a real SymbolSpace."""
     from Language import SyntacticLayer
 
@@ -539,7 +539,7 @@ def _make_syntactic_layer_for_stack(host_layers, tier='S'):
         def register_host_layer(self, *args, **kw):
             pass
 
-    return SyntacticLayer(tier=tier, word_space=_StubSymbolSpace(),
+    return SyntacticLayer(space_role=space_role, word_space=_StubSymbolSpace(),
                           host_layers=host_layers)
 
 
@@ -694,7 +694,7 @@ def test_reduce_gradient_flows_to_child_payloads_and_op_params():
         """Tiny test op: parent = scale * (left * right). Arity 2."""
         rule_name = 'conjunction'
         arity = 2
-        tier = 'S'
+        space_role = 'SS'
 
         def __init__(self):
             super().__init__(0, 0)
@@ -837,7 +837,7 @@ def test_stack_route_forward_runs_and_writes_subspace_what(_xor_model):
 
 def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
     """With use_stack_router=True, the forward must NOT read or write
-    SymbolicSubSpace.current_rules / generate_rules.
+    SymbolSubSpace.current_rules / generate_rules.
 
     Plan §"Phase 6: Retire Active SymbolSpace Parser State" -- "bypass"
     leg: the new path skips the cursor-driven current_rules surface
@@ -854,7 +854,7 @@ def test_stack_router_does_not_touch_word_space_current_rules(_xor_model):
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
     # Stamp sentinel values so we can detect any write.
-    sentinel = {'S': [['SENTINEL_NOT_TOUCHED']]}
+    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
     ss.current_rules = dict(sentinel)
     ss.generate_rules = dict(sentinel)
     pre_compose_gen = ss._compose_generation
@@ -971,9 +971,9 @@ def test_stack_router_dispatches_via_syntactic_layer_execute(_xor_model):
             f"{cursor_calls['n']} times; expected 0"
         )
         # Execute fires once per REDUCE when a binary rule was wired
-        # (>= 0 because a config without an S-tier binary rule will
+        # (>= 0 because a config without an SS-space_role binary rule will
         # skip reductions entirely).
-        # If N >= 2 AND a binary S-tier rule is registered, execute
+        # If N >= 2 AND a binary SS-space_role rule is registered, execute
         # should have fired at least once.
         # We only assert the negative for the cursor path; the positive
         # (>=1 execute call) is asserted in the smoke test above.
@@ -1327,7 +1327,7 @@ def test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable():
         """
         rule_name = 'conjunction'
         arity = 2
-        tier = 'S'
+        space_role = 'SS'
 
         def __init__(self):
             super().__init__(0, 0)
@@ -1656,7 +1656,7 @@ def test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules(_xor_model
     in_sub.symbolSpace = ss
     in_sub.valid_mask = torch.ones(n, dtype=torch.bool)
 
-    sentinel = {'S': [['SENTINEL_NOT_TOUCHED']]}
+    sentinel = {'SS': [['SENTINEL_NOT_TOUCHED']]}
     ss.generate_rules = dict(sentinel)
     pre_generate_gen = ss._generate_generation
 

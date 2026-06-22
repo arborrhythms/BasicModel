@@ -37,9 +37,9 @@ def _grammar_with_lift_lower_and_ordinary():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", tier='S'),
-        g._parse_rule("NP3", "lower(DET, NP4)", tier='S'),
-        g._parse_rule("S3", "not(S3)", tier='S'),
+        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
+        g._parse_rule("S3", "not(S3)", space_role='SS'),
     ]
     g._configured = True
     return g
@@ -63,7 +63,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     each Space sees the expected fields."""
     from embed import (save_artifact, build_knowledge_section,
                        load_knowledge_view, KnowledgeView)
-    from Language import SymbolicSubSpace
+    from Language import SymbolSubSpace
     from Spaces import PartSpace, WholeSpace
     import torch
     import torch.nn as nn
@@ -82,7 +82,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     assert view.n_refs_live == 10
 
     # 4: Attach to three Spaces (all bare instances)
-    ss = object.__new__(SymbolicSubSpace); nn.Module.__init__(ss)
+    ss = object.__new__(SymbolSubSpace); nn.Module.__init__(ss)
     ps = _bare_space(PartSpace)
     ws = _bare_space(WholeSpace)
     ps.wv = wv
@@ -91,7 +91,7 @@ def test_phase2_end_to_end_round_trip(tmp_path):
     ps.attach_knowledge(view)
     ws.attach_knowledge(view)
 
-    # 5a: SymbolicSubSpace exposes the view
+    # 5a: SymbolSubSpace exposes the view
     assert ss.knowledge is view
     assert ss.knowledge.ref_id_for('NP') is not None
 

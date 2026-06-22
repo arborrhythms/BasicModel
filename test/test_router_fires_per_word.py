@@ -5,8 +5,8 @@ serial per-word loop (``BasicModel._forward_body_per_word``) fired
 ``symbolSpace.compose`` over the STM snapshot ONCE PER WORD, so the in-STM
 predictor's conditioning context was repopulated mid-sentence.
 
-SUPERSEDED by the tier-free bounded-STM grammar fold
-(doc/plans/2026-06-05-tier-free-bounded-stm-fold.md, Phase 1 / Task 3):
+SUPERSEDED by the space_role-free bounded-STM grammar fold
+(doc/plans/2026-06-05-space_role-free-bounded-stm-fold.md, Phase 1 / Task 3):
 
   * **Task 3 DELETED the per-word ``symbolSpace.compose(_snap)`` fire** in
     ``_forward_body_per_word`` (the $\\approx 89\\%$-cost full re-parse).
@@ -17,7 +17,7 @@ SUPERSEDED by the tier-free bounded-STM grammar fold
         ``_per_word_body_step`` whenever the STM hits ``capacity``,
       - the sentence-end sweep: ``_stm_reduce_to_single_S`` collapses the
         accumulated STM to a single root idea S at the NULL seal.
-  * **There is no grammar tier anymore.** The old S/C/P-tier compose loop
+  * **There is no grammar space_role anymore.** The old S/C/P-space_role compose loop
     is gone. ``<routerWireSerial>`` is consequently a **no-op for any
     per-word ``compose`` fire on the serial forward** — ``compose`` fires
     ZERO times per serial forward in EVERY mode (``both``, ``per-word``,
@@ -227,8 +227,8 @@ def test_default_router_wire_serial_is_both():
 
 
 def test_per_word_compose_is_not_fired_in_serial_mode():
-    """NEW contract (tier-free bounded-STM fold, Task 3): the per-word
-    ``symbolSpace.compose`` fire is DELETED — there is no grammar tier and
+    """NEW contract (space_role-free bounded-STM fold, Task 3): the per-word
+    ``symbolSpace.compose`` fire is DELETED — there is no grammar space_role and
     no per-word re-parse anymore.
 
     A serial forward in the default (``both``) mode therefore fires
@@ -312,7 +312,7 @@ def test_router_wire_serial_boundary_no_serial_forward_compose():
     (the *parallel* per-stage body); the serial forward boundary instead
     runs ``_stm_reduce_to_single_S``. The per-word ``compose`` fire that
     used to live on the serial forward was DELETED in Task 3 (no grammar
-    tier / no per-word re-parse anymore). So under ``boundary`` a serial
+    space_role / no per-word re-parse anymore). So under ``boundary`` a serial
     forward fires ``compose`` ZERO times: there is no per-word leg, and the
     boundary leg has no serial-forward call site. (The boundary ``compose``
     / ``generate`` fires live on the parallel forward and the reverse path,

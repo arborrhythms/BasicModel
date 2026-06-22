@@ -2200,7 +2200,7 @@ class GrammarLayer(Layer):
         invertible:  True if reverse() recovers the input exactly.
         lossy:       True if forward() loses information (no exact
                      reverse possible).
-        tier:        which space the operator runs in:
+        space_role:        which space the operator runs in:
                        'S' -- symbols (default; most ops live here)
                        'C' -- concepts (intersection / union)
                        'P' -- percepts (rare)
@@ -2218,7 +2218,7 @@ class GrammarLayer(Layer):
     arity            = 1
     invertible       = False
     lossy            = False
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = False
 
     # Surface-realization template (SurfaceSchema, above). T4 BINARY_
@@ -3384,13 +3384,13 @@ class NegationLayer(Layer):
 class EqualLayer(GrammarLayer):
     """``C -> equal(C, C)`` -- geometric identity on concept bivectors.
 
-    C-tier identity: ``equal(A, B)`` returns the mutual-parthood
+    C-space_role identity: ``equal(A, B)`` returns the mutual-parthood
     score ``part(A, B) * part(B, A)`` on bivector activations,
     yielding 1 where A and B are co-located on the bivector cone
-    and 0 where they are disjoint. Acts directly on the concept-tier
+    and 0 where they are disjoint. Acts directly on the concept-space_role
     bivector activation; no codebook lookup is required.
 
-    Compare with the S-tier ``isEqual`` which produces a single
+    Compare with the S-space_role ``isEqual`` which produces a single
     parent symbol asserting identity — a higher-epistemic-level
     wholeness operation that cannot be expressed at the subsymbolic
     level.
@@ -3401,7 +3401,7 @@ class EqualLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = True
 
     def __init__(self):
@@ -3446,7 +3446,7 @@ class TrueLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3493,7 +3493,7 @@ class FalseLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3543,7 +3543,7 @@ class SwapLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3598,7 +3598,7 @@ class CopyLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3706,7 +3706,7 @@ class AreaLayer(GrammarLayer):
     arity            = 1
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3731,7 +3731,7 @@ class LuminosityLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'C'
+    space_role             = 'CS'
     reads_activation = False
 
     def __init__(self):
@@ -3756,7 +3756,7 @@ class IsaPartLayer(GrammarLayer):
     arity            = 2
     invertible       = False
     lossy            = True
-    tier             = 'S'
+    space_role             = 'SS'
     reads_activation = False
 
     def __init__(self):
@@ -5493,7 +5493,7 @@ class SparsityRegLayer(Layer):
     """Soft-threshold L1 proximal operator.
 
     Shared by PartSpace, ConceptualSpace, and WholeSpace so a
-    single sparsity implementation is reused across tiers. Extracted from
+    single sparsity implementation is reused across space_roles. Extracted from
     ``WholeSpace.l1_proximal``.
 
     Acts as identity when disabled or when ``l1_lambda <= 0``. Otherwise
@@ -5799,7 +5799,7 @@ class TruthLayer(Layer):
     vectors, positive-DoT truths attract and negative-DoT truths repel
     without needing a separate degree buffer.
 
-    Propositional structure is defined by the S-tier grammar:
+    Propositional structure is defined by the S-space_role grammar:
       - ``part(S, S)`` -- parthood / containment
       - ``equals(S, S)`` -- identity / equivalence
     """
@@ -6843,7 +6843,7 @@ class TruthLayer(Layer):
 
         Computed directly over the stored codes — no pullback to the
         mereological ground: the §4 weight law puts the parthood
-        geometry on the codes themselves, so code-tier areas are a
+        geometry on the codes themselves, so code-space_role areas are a
         registration-maintained approximation of ground areas (§5;
         exact at mint, degrading conservatively under mixing). The
         previous implementation decoded every row through
@@ -7644,7 +7644,7 @@ class InterSentenceLayer(Layer):
     **What it is.** Sentence-level autoregression lives here, not in
     the within-sentence body (which is now IR-only / masked-LM).  Each
     sentence is summarised into a flat ``[B, sentence_dim]`` rep
-    ``s_t`` (the body's S-tier root slot pooled per row); the
+    ``s_t`` (the body's S-space_role root slot pooled per row); the
     predictor consumes the last ``p`` sentence reps plus the last
     ``q`` prediction errors and produces ``s_hat_{t+1}``.
 
@@ -7700,7 +7700,7 @@ class InterSentenceLayer(Layer):
         by the predictor); ``q`` = MA lag count (past residuals).
         ``hidden_dim`` defaults to ``2 * sentence_dim``.
         ``concept_dim`` is the target dim for the optional priming
-        cast that lifts ``s_hat_{t+1}`` into C-tier for the chat-
+        cast that lifts ``s_hat_{t+1}`` into C-space_role for the chat-
         loop's ``_c_prior`` injection.
 
         ``ltm_capacity`` bounds the long-term-memory (LTM) chain of
@@ -7717,7 +7717,7 @@ class InterSentenceLayer(Layer):
         n_symbols = int(n_symbols)
         n_dim = int(n_dim)
         # Sentence-rep pooling: the per-sentence rep ``s_t`` is the
-        # **root S-tier slot** (row 0 of the body's final-stage S-tier
+        # **root S-space_role slot** (row 0 of the body's final-stage S-space_role
         # event), not the full ``[n_symbols, n_dim]`` flatten.  The
         # root is what the start-symbol reduction wrote -- it carries
         # the sentence-level signal; the other slots are intermediate
@@ -7812,7 +7812,7 @@ class InterSentenceLayer(Layer):
 
         # Optional priming cast for the chat-loop's c_prior injection
         # (Phase 4 of the IR-only refactor).  When concept_dim is set
-        # the cast lifts s_hat_{t+1} into C-tier so it can be added
+        # the cast lifts s_hat_{t+1} into C-space_role so it can be added
         # as a bias before the body's sigma-pi loop.
         self.cast = None
         if self.concept_dim is not None and self.sentence_dim > 0:
@@ -7916,11 +7916,11 @@ class InterSentenceLayer(Layer):
 
     # -- sentence-rep pooling -----------------------------------------
     def _pool_sentence_rep(self, s_tensor):
-        """Pool an S-tier event into a per-row ``[B, sentence_dim]``
+        """Pool an S-space_role event into a per-row ``[B, sentence_dim]``
         sentence rep.
 
         Accepts:
-          * ``[B, N, D]`` (microbatch S-tier event) -- take row 0
+          * ``[B, N, D]`` (microbatch S-space_role event) -- take row 0
             (the root slot the start-symbol reduction wrote into).
           * ``[N, D]`` (B=1 legacy) -- same: take row 0.
           * ``[B, D]`` (already-pooled).
@@ -7937,7 +7937,7 @@ class InterSentenceLayer(Layer):
             x = x.unsqueeze(0)                # [N, D] -> [1, N, D]
         if x.ndim != 3:
             return None
-        # Take the root S-tier slot (row 0) per batch row.
+        # Take the root S-space_role slot (row 0) per batch row.
         rooted = x[:, 0, :]                   # [B, D]
         cur = rooted.shape[-1]
         if cur == self.sentence_dim:
@@ -8625,7 +8625,7 @@ class InterSentenceLayer(Layer):
         """Legacy alias for ``observe`` (ignores ``w_tensor``).
 
         The pre-ARMA discourse layer pooled an ``[S | W]`` row; ARMA
-        consumes only the S-tier sentence rep so ``w_tensor`` is
+        consumes only the S-space_role sentence rep so ``w_tensor`` is
         dropped.  Returns the ARMA loss the same way ``observe``
         does so callers that already wrote ``layer.snapshot(...)`` for
         side-effects only still work.
@@ -8649,7 +8649,7 @@ class InterSentenceLayer(Layer):
         return None
 
     def prime(self, predicted, confidence, scale):
-        """Lift a predicted sentence rep into C-tier for the chat-
+        """Lift a predicted sentence rep into C-space_role for the chat-
         loop's ``_c_prior`` injection.
 
         Returns ``cast(predicted) * scale`` (``confidence`` accepted
@@ -8670,7 +8670,7 @@ class IntraSentenceLayer(Layer):
     """In-STM autoregressive predictor: STM[1:end] -> predicted STM[0]
     (serial) / STM_prev[0:end] -> predicted STM_new[0:end] (parallel).
     Combined PI-then-Sigma, no intermediate tanh; the routing
-    distribution from SymbolicSubSpace.current_rules conditions the
+    distribution from SymbolSubSpace.current_rules conditions the
     Sigma collapse (rule-aware predictor).
 
     Architecture (PI first, per the design note):
@@ -8717,7 +8717,7 @@ class IntraSentenceLayer(Layer):
                  stable=True, monotonic=False, batch=1):
         """Build the combined PI-then-Sigma in-STM predictor.
 
-        ``concept_dim``: per-slot C-tier feature width D (the input and
+        ``concept_dim``: per-slot C-space_role feature width D (the input and
         output width of the predictor).
         ``stm_capacity``: STM slot count; the default fan-out ``k`` for
         the serial ``reverse`` (``k = stm_capacity - 1``: the predictor
@@ -8731,7 +8731,7 @@ class IntraSentenceLayer(Layer):
         inverse).
 
         ``naive`` / ``ergodic`` / ``stable`` / ``monotonic`` follow the
-        C-tier substrate pi/sigma construction convention (see
+        C-space_role substrate pi/sigma construction convention (see
         ``ConceptualSpace.sigma_in`` / ``sigma_cs``).
         """
         concept_dim = int(concept_dim)
@@ -11184,7 +11184,7 @@ class _RuleScorer(nn.Module):
     """Small MLP scoring rules from top-of-stack payloads.
 
     Private to ``ShortTermMemory``; replaces the standalone
-    ``stm_driver.RuleScorer`` (2026-05-21 SymbolicSubSpace/STM Layer
+    ``stm_driver.RuleScorer`` (2026-05-21 SymbolSubSpace/STM Layer
     refactor). Input: top operand payload(s) — ``left`` (required) and
     ``right`` (optional, ``None`` for unary REDUCE). Concatenates and
     projects to a per-rule logit vector. Architecturally minimal -- one
@@ -11217,7 +11217,7 @@ class _RuleScorer(nn.Module):
 class ShortTermMemory(Layer):
     """Short-term memory (STM) on ConceptualSpace.
 
-    Carries two roles after the 2026-05-21 SymbolicSubSpace/STM Layer refactor:
+    Carries two roles after the 2026-05-21 SymbolSubSpace/STM Layer refactor:
 
     1. **Per-batch idea stack** (legacy chart consumer surface). A
        ``[B, capacity, concept_dim]`` payload buffer that the chart's
@@ -11261,20 +11261,20 @@ class ShortTermMemory(Layer):
         # Phase E completion of doc/specs/2026-05-21-wordsubspace-stm-
         # layer-refactor.md: the Layer is data-free. ``_init_capacity``
         # / ``_init_concept_dim`` are the constructor's record of the
-        # requested sizes — used only to seed SymbolicSubSpace's
-        # ``_idea_buffer`` if a standalone (no-SymbolicSubSpace) test
+        # requested sizes — used only to seed SymbolSubSpace's
+        # ``_idea_buffer`` if a standalone (no-SymbolSubSpace) test
         # constructs a ShortTermMemory directly. Once
         # ``attach_word_subspace`` is called the data lives on
-        # SymbolicSubSpace's ``_idea_*`` buffers and the proxy properties /
+        # SymbolSubSpace's ``_idea_*`` buffers and the proxy properties /
         # methods below route there.
         self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
         self._init_concept_dim = int(concept_dim)
         self._init_batch = int(batch)
-        # Standalone fallback: when no SymbolicSubSpace has been attached
+        # Standalone fallback: when no SymbolSubSpace has been attached
         # yet (e.g. test_conceptual_stm.py constructs ShortTermMemory
         # bare), we allocate a local idea-stack so the legacy push /
         # peek / snapshot surface keeps working. ``attach_word_subspace``
-        # later switches the proxy onto the SymbolicSubSpace's buffers and
+        # later switches the proxy onto the SymbolSubSpace's buffers and
         # drops the local allocation.
         self._word_subspace = None
         # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
@@ -11309,18 +11309,18 @@ class ShortTermMemory(Layer):
         object.__setattr__(self, 'rule_signatures', None)
 
     def attach_word_subspace(self, word_subspace):
-        """Wire a ``SymbolicSubSpace`` so the Layer's data-accessor methods
+        """Wire a ``SymbolSubSpace`` so the Layer's data-accessor methods
         route to its ``_idea_*`` buffers. Stored via
         ``object.__setattr__`` to bypass nn.Module's submodule
-        registration (the SymbolicSubSpace owns the back-reference; this is
+        registration (the SymbolSubSpace owns the back-reference; this is
         a non-owning routing pointer).
 
-        Called from ``SymbolicSubSpace.__init__`` (Phase E completion of the
+        Called from ``SymbolSubSpace.__init__`` (Phase E completion of the
         2026-05-21 refactor). Once attached, the local ``_fallback_*``
         buffers are dropped.
         """
         object.__setattr__(self, '_word_subspace', word_subspace)
-        # If the SymbolicSubSpace's idea-stack capacity is smaller than the
+        # If the SymbolSubSpace's idea-stack capacity is smaller than the
         # one this ShortTermMemory was constructed for, grow it now so
         # we honour the constructor's sizing contract.
         if hasattr(word_subspace, 'idea_ensure_capacity'):
@@ -11334,7 +11334,7 @@ class ShortTermMemory(Layer):
     # re-creates ``_live_buffer`` fresh inside the traced forward each pass,
     # making it a graph intermediate -- so the in-place STM writes mutate the
     # intermediate (legal) instead of a persisted, output-aliased input.
-    # When a SymbolicSubSpace is attached the buffer is still data-free in the
+    # When a SymbolSubSpace is attached the buffer is still data-free in the
     # nn.Module sense (the live data is not a registered buffer); the
     # ``capacity`` proxy honours ``ss._idea_capacity`` so a caller that grows
     # the attached idea-stack capacity (e.g. test_bounded_stm_fold) still
@@ -11406,7 +11406,7 @@ class ShortTermMemory(Layer):
         identity.
 
         Routed through the ``_buffer`` / ``_depth`` setters so it works for
-        both the SymbolicSubSpace-attached proxy and the standalone fallback.
+        both the SymbolSubSpace-attached proxy and the standalone fallback.
         """
         batch = int(batch)
         cap = int(self.capacity)
@@ -11427,7 +11427,7 @@ class ShortTermMemory(Layer):
     #
     # A5: all operations act on the single live store (the ``_buffer`` /
     # ``_depth`` / ``_max_depth_host`` properties -> the ``_live_*`` plain
-    # attributes). The former ``ss is None`` branch (SymbolicSubSpace-attached
+    # attributes). The former ``ss is None`` branch (SymbolSubSpace-attached
     # vs standalone ``_fallback_*``) is gone -- the live data is no longer a
     # registered buffer on either, so the compiled forward never sees it as a
     # graph input. ``capacity`` still proxies to ``ss._idea_capacity`` when
@@ -11597,7 +11597,7 @@ class ShortTermMemory(Layer):
 
     def init_scorer(self, rule_signatures, payload_dim, hidden_dim=None):
         """Allocate the rule scorer for the STM driver path. Called by
-        ``SymbolicSubSpace._init_stm_driver`` once the knowledge artifact's
+        ``SymbolSubSpace._init_stm_driver`` once the knowledge artifact's
         rule signature list is known. Idempotent — re-calling with the
         same shape is a no-op; a shape change replaces the scorer.
         """
@@ -11616,7 +11616,7 @@ class ShortTermMemory(Layer):
         """SHIFT one token onto ``word_subspace``'s typed STM at row ``b``.
 
         Mirrors the old ``STMDriver.shift``; the operand state now lives
-        on the SymbolicSubSpace's typed buffers (Phase D of the refactor).
+        on the SymbolSubSpace's typed buffers (Phase D of the refactor).
         """
         word_subspace.push(
             b, payload,
@@ -12438,7 +12438,7 @@ class Ops:
         """Non-affirming negation -- the 'indeterminate' commitment.
 
         Bitonic (default): triangular residual 1 - |clamp(x, -1, 1)|.
-            Completes the S-tier trinity partition of unity:
+            Completes the S-space_role trinity partition of unity:
             true(x) + false(x) + non(x) = 1.
         Monotonic: ReLU(x - threshold) if threshold given, else 0."""
         if monotonic:
@@ -13262,7 +13262,7 @@ class ModelLoss(Loss):
         self.where_scale = float(where_scale or 0.2)
         self.when_scale = float(when_scale or 0.1)
         self.embedding_scale = float(embedding_scale or 0.1)
-        # Loss operates on the OUTPUT tier, which carries no where/when in the
+        # Loss operates on the OUTPUT space_role, which carries no where/when in the
         # converged modality architecture; source the what/where/when split
         # widths from canonical_shape("OutputSpace"). An explicit positive arg
         # still wins (e.g. for unit tests that drive the where/when loss terms).

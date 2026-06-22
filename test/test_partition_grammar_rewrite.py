@@ -1,8 +1,8 @@
 """Golden tests that lock in grammar semantics after the S-only rewrite.
 
-The rewrite (Task 1.2, 2026-04-19) collapsed the C tier into S: all
+The rewrite (Task 1.2, 2026-04-19) collapsed the CS space_role into SS: all
 compositional operations (not, part, intersection, union, lift, lower)
-are now S-tier productions.  This file records the post-rewrite snapshot.
+are now SS-space_role productions.  This file records the post-rewrite snapshot.
 
 API used: ``Grammar().configure(dict)`` — the real loader/parser entry point.
 We bypass the XML-loading path and configure a fresh ``Grammar`` instance
@@ -42,11 +42,11 @@ _POST_REWRITE_GRAMMAR = {
         'lower(S, S)',
         'lift(S, S)',
     ],
-    # Phase-A note: the previous P-tier entries have been removed from this
+    # Phase-A note: the previous subsymbolic-space_role entries have been removed from this
     # fixture. They were originally included to verify the old "silently
     # ignore non-S keys" rejection policy. After 2026-04-20 multi-LHS
     # configure, any non-S key is parsed as a typed production, so the
-    # fixture now ships only the 17 S-tier productions it's locking in.
+    # fixture now ships only the 17 SS-space_role productions it's locking in.
 }
 
 
@@ -65,8 +65,8 @@ def grammar():
 # ---------------------------------------------------------------------------
 # Golden cases: canonical production string for each rule, in order.
 #
-# 17 S-tier rules. P-tier was deleted (2026-04-19) and Grammar now parses
-# S-tier productions only.
+# 17 SS-space_role rules. subsymbolic-space_role was deleted (2026-04-19) and Grammar now parses
+# SS-space_role productions only.
 # ---------------------------------------------------------------------------
 
 GOLDEN_CANONICALS = [
@@ -98,7 +98,7 @@ def test_grammar_golden(grammar, rule_id, expected_canonical):
     """Post-rewrite: canonical production string for each rule index.
 
     Locks in the S-only production set after the Task 1.2 XML rewrite
-    and the P-tier deletion (2026-04-19). 17 S-tier rules total.
+    and the subsymbolic-space_role deletion (2026-04-19). 17 SS-space_role rules total.
     """
     assert len(grammar.rules) == len(GOLDEN_CANONICALS), (
         f"Rule count changed: got {len(grammar.rules)}, expected {len(GOLDEN_CANONICALS)}"

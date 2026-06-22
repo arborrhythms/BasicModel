@@ -79,9 +79,9 @@ def _tiny_forward(model):
     return out
 
 
-def _assert_tier_shapes(tc, model, name):
+def _assert_space_role_shapes(tc, model, name):
     # Per the 2026-06-06 dim-convention unification (canonical_shape returns
-    # (2, 2) for every tier), this asserts each tier reports the canonical
+    # (2, 2) for every space_role), this asserts each space_role reports the canonical
     # band instead of duplicating the table. Was: SS/OS hardcoded to (0, 0).
     from architecture import canonical_shape as _cs
     def cs(section):
@@ -94,14 +94,14 @@ def _assert_tier_shapes(tc, model, name):
         ("wholeSpace", getattr(model, "wholeSpace", None), *cs("WholeSpace")),
         ("outputSpace", getattr(model, "outputSpace", None), *cs("OutputSpace")),
     ]
-    for tier, space, ew, en in checks:
+    for space_role, space, ew, en in checks:
         sub = getattr(space, "subspace", None) if space is not None else None
         if sub is None:
             continue
         tc.assertEqual(getattr(sub, "nWhere", None), ew,
-                       f"{name}:{tier} nWhere")
+                       f"{name}:{space_role} nWhere")
         tc.assertEqual(getattr(sub, "nWhen", None), en,
-                       f"{name}:{tier} nWhen")
+                       f"{name}:{space_role} nWhen")
     # No encoding-width drift anywhere; nWhen in {0, 2}.
     for n, m in model.named_modules():
         we = getattr(m, "whenEncoding", None)
@@ -117,7 +117,7 @@ _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 class TestModalityConfigsBuildAndForward(unittest.TestCase):
     """Substrate safety net: every live config BUILDS with the canonical
-    per-tier shapes. Forward-finiteness is best-effort here (the generic
+    per-space_role shapes. Forward-finiteness is best-effort here (the generic
     text/numeric driver below cannot match every config's bespoke input
     pipeline); per-config forward validation lives in the Phase 6 regression
     gate, which drives each config with its own proper input."""
@@ -131,9 +131,9 @@ class TestModalityConfigsBuildAndForward(unittest.TestCase):
             with self.subTest(config=name):
                 with warnings.catch_warnings():
                     warnings.filterwarnings("ignore")
-                    # BUILD + per-tier canonical shape are the strict gate.
+                    # BUILD + per-space_role canonical shape are the strict gate.
                     model = _build(cfg)
-                    _assert_tier_shapes(self, model, name)
+                    _assert_space_role_shapes(self, model, name)
                     # Forward is best-effort: a generic driver can't match
                     # every config's input pipeline. Assert finiteness only
                     # when the forward actually runs.

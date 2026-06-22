@@ -48,7 +48,7 @@ def test_syntactic_layer_execute_short_circuits_identity():
     assert id_SS is not None
     layer = SyntacticLayer.__new__(SyntacticLayer)
     layer._by_name = {}
-    layer.tier = "S"
+    layer.space_role = "SS"
     operand = torch.randn(2, 4)
     out = layer.execute(id_SS, operand)
     assert torch.equal(out, operand), (

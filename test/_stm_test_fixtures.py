@@ -1,11 +1,11 @@
-"""Shared fixtures for STM-related tests after the 2026-05-21 SymbolicSubSpace
+"""Shared fixtures for STM-related tests after the 2026-05-21 SymbolSubSpace
 / STM Layer refactor.
 
 Provides factory functions that produce the post-refactor equivalents of
 the retired `typed_stack.TypedStack` + `stm_driver.STMDriver` +
 `stm_driver.RuleScorer` combinations:
 
-  * ``make_typed_stack(batch, max_depth, dim)`` -> a bare ``SymbolicSubSpace``
+  * ``make_typed_stack(batch, max_depth, dim)`` -> a bare ``SymbolSubSpace``
     with manually-allocated typed-STM buffers (same surface as the
     retired ``TypedStack``: ``_buffer`` / ``_category`` / ``_order`` /
     ``_ref_id`` / ``_depth``, plus ``push`` / ``pop`` / ``top`` /
@@ -14,7 +14,7 @@ the retired `typed_stack.TypedStack` + `stm_driver.STMDriver` +
   * ``make_driver(typed_stack, rule_signatures, payload_dim)`` -> a
     ``ShortTermMemory`` Layer with the scorer initialised. Exposes
     ``shift`` / ``reduce_step`` / ``reduce_step_soft`` /
-    ``train_scorer_step`` / ``_score_reduce`` taking a SymbolicSubSpace
+    ``train_scorer_step`` / ``_score_reduce`` taking a SymbolSubSpace
     (the ``typed_stack`` arg). Mirrors the retired ``STMDriver`` API
     where the driver was constructed once and methods looked up the
     typed stack from ``self.typed_stack``; here we hold the
@@ -37,9 +37,9 @@ sys.path.insert(0, str(_project / "bin"))
 
 
 def make_typed_stack(batch=1, max_depth=8, dim=4):
-    """Bare SymbolicSubSpace with manually-allocated typed-STM buffers."""
-    from Language import SymbolicSubSpace
-    ss = object.__new__(SymbolicSubSpace)
+    """Bare SymbolSubSpace with manually-allocated typed-STM buffers."""
+    from Language import SymbolSubSpace
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss.batch = int(batch)
     ss._stm_capacity = int(max_depth)
@@ -127,7 +127,7 @@ class _DriverWrapper:
 
 def make_driver(typed_stack, rule_signatures, payload_dim=None):
     """ShortTermMemory + initialised scorer wrapped in a backward-compat
-    object that pins the SymbolicSubSpace reference (mirrors the retired
+    object that pins the SymbolSubSpace reference (mirrors the retired
     ``STMDriver(typed_stack, rule_signatures, scorer)`` constructor).
     """
     from Layers import ShortTermMemory

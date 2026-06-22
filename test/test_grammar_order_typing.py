@@ -148,7 +148,7 @@ def test_lift_rule_has_order_delta_plus_one():
     explicit constant order annotations on every category."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S4", "lift(NP3, VP1)", tier='S')
+    rule = g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.order_delta == 1
     assert sig.lhs_category == "S"
@@ -168,7 +168,7 @@ def test_lower_rule_has_order_delta_minus_one():
     individual). NP3 is the contiguous floor — there is no NP2."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("NP3", "lower(DET, NP4)", tier='S')
+    rule = g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.order_delta == -1
     assert sig.lhs_category == "NP"
@@ -187,7 +187,7 @@ def test_ordinary_rule_is_order_preserving():
     """Non-lift / non-lower rules have ``order_delta == 0``."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("NP", "conjunction(DET, N)", tier='S')
+    rule = g._parse_rule("NP", "conjunction(DET, N)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.order_delta == 0
     assert sig.op_name == "conjunction"
@@ -197,7 +197,7 @@ def test_unary_rule_order_signature():
     """Unary rule (e.g. ``S = not(S)``) has one RHS slot."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S", "not(S)", tier='S')
+    rule = g._parse_rule("S", "not(S)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.order_delta == 0
     assert sig.lhs_category == "S"
@@ -210,7 +210,7 @@ def test_lhs_order_captured():
     """LHS order annotations are captured (e.g. ``S0 = ...``)."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S0", "not(S)", tier='S')
+    rule = g._parse_rule("S0", "not(S)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.lhs_category == "S"
     assert sig.lhs_order_expr.kind == "constant"
@@ -232,7 +232,7 @@ def test_modal_sentence_lift():
     sentence-level modal embedding, not just NP/VP construction."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S5", "lift(S4, MP1)", tier='S')
+    rule = g._parse_rule("S5", "lift(S4, MP1)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.lhs_category == "S"
     assert sig.lhs_order_expr.delta == 5
@@ -313,7 +313,7 @@ def test_signatures_capture_explicit_orders_for_runtime_use():
     # signature-extractable. Whether it fires at runtime depends on
     # the operand soft category distributions, not on the loader.
     sig = g._rule_order_signature(
-        g._parse_rule("NP3", "conjunction(DET, N3)", tier='S'))
+        g._parse_rule("NP3", "conjunction(DET, N3)", space_role='SS'))
     assert sig.lhs_category == "NP"
     assert sig.lhs_order_expr.delta == 3
     assert sig.rhs_categories == ("DET", "N")

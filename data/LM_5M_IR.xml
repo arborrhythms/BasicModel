@@ -105,7 +105,7 @@
   </OutputSpace>
 
   <SymbolSpace>
-    <!-- Stage 3 cleanup: parserBackend, chartTau, wMax, chartTopK,
+    <!-- Stage 3 cleanup: parserBackend, chartTau, chartTopK,
          chartNoiseEps retired alongside the chart. The signal router
          (LanguageLayer) is the canonical parser. -->
     <downwardGeneration>false</downwardGeneration>

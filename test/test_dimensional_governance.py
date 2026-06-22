@@ -102,7 +102,7 @@ def test_converted_grammars_load_role_collapsed():
 # (doc/specs/2026-06-05-dimensional-governance.md sec.4/sec.6;
 #  doc/plans/2026-06-06-dimensional-governance-completion.md)
 #
-# validate_config (bin/Models.py) asserts adjacent-tier handoff consistency on
+# validate_config (bin/Models.py) asserts adjacent-space_role handoff consistency on
 # the flattened content slab / input side, consistent with the three existing
 # relaxations (passthrough / serial fold / SS reshape):
 #   PS->CS : pure reshape          (ps_slab == cs_slab, pre-existing)

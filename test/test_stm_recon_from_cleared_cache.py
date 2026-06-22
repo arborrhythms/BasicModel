@@ -1,8 +1,8 @@
 """Full integration: reconstruct words from the held STM idea ALONE,
-after deleting SymbolicSubSpace's syntactic cache.
+after deleting SymbolSubSpace's syntactic cache.
 
 Task 9 (plan §6) of the STM serial/parallel modes plan. The deliverable
-goal (verbatim): *"deleting SymbolicSubSpace's syntactic cache and running
+goal (verbatim): *"deleting SymbolSubSpace's syntactic cache and running
 reverse should reconstruct the words that best match the held STM idea.
 ... assert top-k recovered words at each position overlap with input
 above the existing atol=2e-1 closeness threshold."*
@@ -10,14 +10,14 @@ above the existing atol=2e-1 closeness threshold."*
 Harness (mirrors ``test/test_router_fires_per_word.py``):
   * Build the cheap serial-grammar model from ``data/MM_xor_loopback.xml``
     (``<symbolicOrder>1</symbolicOrder>``), load the ``xor`` data.
-  * Run ONE real per-word ``model.forward`` -- this fills the C-tier STM,
+  * Run ONE real per-word ``model.forward`` -- this fills the C-space_role STM,
     populates ``symbolSpace.current_rules`` / ``generate_rules``, and
     reduces the STM to the single sentence idea ``S = model._stm_single_S``
     (``[B, D_c]``).
   * Snapshot ``S`` and the per-position forward word indices
     (``perceptualSpace.subspace._index[:, :, 0]`` -- the frozen-lexicon
     MPHF index the forward placed at each slot).
-  * DELETE the SymbolicSubSpace syntactic cache (``current_rules`` -> {} ,
+  * DELETE the SymbolSubSpace syntactic cache (``current_rules`` -> {} ,
     ``generate_rules`` -> {} , ``recur_pass`` -> 0).
   * Drive the reverse-from-STM legs and decode the top-``k`` nearest
     words per position against the perceptual MPHF codebook, asserting
@@ -32,7 +32,7 @@ turned out to be the SAME root cause -- the ``nonlinear=False`` PiLayer
 fold took ``log`` of a value that can be ``<= 0``:
 
 FINDING A (FIXED) -- forward left the STM (and ``_stm_single_S``) as NaN.
-  The per-word forward filled the C-tier STM with NaN because
+  The per-word forward filled the C-space_role STM with NaN because
   ``PiLayer._to_mult`` (``(1+x)/(1-x)``, which then feeds ``log``) clamped
   its input to ``(-1, 1)`` ONLY when ``nonlinear=True``. A percept landing
   outside [-1, 1] (legitimate -- percept normalization runs AFTER
@@ -190,7 +190,7 @@ def _run_forward(model):
 
 
 def _clear_word_cache(ss):
-    """Delete SymbolicSubSpace's syntactic cache (the §6 cache fields)."""
+    """Delete SymbolSubSpace's syntactic cache (the §6 cache fields)."""
     ss.current_rules = {}
     ss.generate_rules = {}
     ss.recur_pass = 0
@@ -334,7 +334,7 @@ def test_forward_stm_idea_is_finite():
     held STM idea, deterministically (verified across random inits).
 
     On the untrained MM_xor_loopback serial config the forward USED TO
-    fill the C-tier STM with NaN -- an unguarded PiLayer log-domain fold:
+    fill the C-space_role STM with NaN -- an unguarded PiLayer log-domain fold:
     ``PiLayer._to_mult`` clamped its input ONLY when ``nonlinear=True``,
     so a percept landing outside [-1, 1] (legitimate -- percept
     normalization runs AFTER ``pi.forward``) drove ``(1+x)/(1-x) <= 0``

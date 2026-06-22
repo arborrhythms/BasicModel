@@ -10,11 +10,11 @@ What this pins
 (here ``union``), then calls the host layer's ``reverse(parent, basis=...)``.
 The CAPSTONE adds a GATED restriction: when the owning space's
 ``attention_mode != 'off'`` it builds typed+heat candidate ``rows`` / boosted
-``priming`` (via ``SymbolicSubSpace.retrieval_candidates_for_slot``) and splats
+``priming`` (via ``SymbolSubSpace.retrieval_candidates_for_slot``) and splats
 them into the recommender call so the heat steers the operand pick.
 
 Two assertions, exercising the REAL ``unreduce`` path with the REAL
-``UnionLayer`` + REAL ``SymbolicSubSpace.retrieval_candidates_for_slot`` + REAL
+``UnionLayer`` + REAL ``SymbolSubSpace.retrieval_candidates_for_slot`` + REAL
 ``Grammar._rule_order_signature``:
 
   * ON  (``attention_mode='primer'``): with a specific ADMISSIBLE row primed
@@ -44,7 +44,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Language import (  # noqa: E402
-    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, SymbolicSubSpace,
+    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, SymbolSubSpace,
     Taxonomy,
 )
 
@@ -54,7 +54,7 @@ def _seed_rng():
     """Make every steering test order-independent w.r.t. the global RNG.
 
     The decisive fixtures here are hardcoded tensors and the heat steering
-    path (``SymbolicSubSpace.retrieval_candidates_for_slot``) consumes no RNG, so
+    path (``SymbolSubSpace.retrieval_candidates_for_slot``) consumes no RNG, so
     today these tests are deterministic regardless of suite order. This seed is
     defensive: it pins the global RNG so any future use of ``torch.randn`` in a
     fixture or helper cannot make these capstone assertions flaky under
@@ -89,7 +89,7 @@ class _FakeView:
 
 
 class _Basis:
-    """Minimal tier-local Basis: ``getW()`` returns the symbol codebook
+    """Minimal space_role-local Basis: ``getW()`` returns the symbol codebook
     ``W`` ([K, D]); ``unreduce`` passes the whole Basis (not its W) to the
     layer's ``reverse`` and to the retrieval helper, both of which call
     ``getW()``."""
@@ -114,7 +114,7 @@ class _StackSubSpace:
         self._what = what
         self._where = where
         self._activation = activation
-        self.what = basis                 # tier-local Basis (has getW())
+        self.what = basis                 # space_role-local Basis (has getW())
         self.symbolSpace = word_sub_space
 
     def materialize(self, mode):
@@ -140,7 +140,7 @@ def _grammar_with_union():
     encoding ``where_id_for_rule(0) = symbol_vocab_size + 1 + 0`` decodes
     back to ('rule', 0)."""
     g = Grammar()
-    g.rules = [g._parse_rule("LP", "union(NP3, VP1)", tier='C')]
+    g.rules = [g._parse_rule("LP", "union(NP3, VP1)", space_role='CS')]
     g.rule_table = {0: g.rules[0].canonical}
     g.symbol_vocab_size = 4          # arbitrary; only the offset matters
     g._configured = True
@@ -149,15 +149,15 @@ def _grammar_with_union():
 
 def _make_ws(view, *, attention_mode, hot_ref=None, hot_boost=4.0,
              capacity=8, live=8, top_order=3):
-    """Real SymbolicSubSpace carrying the REAL ``retrieval_candidates_for_slot``
+    """Real SymbolSubSpace carrying the REAL ``retrieval_candidates_for_slot``
     and ``_commit_priming`` methods, wired with a real Taxonomy + the typed
     view. ``conceptualSpace`` is a stub exposing only ``attention_mode``
-    (tier='C', so ``unreduce`` reads ``ss.conceptualSpace.attention_mode``).
+    (space_role='CS', so ``unreduce`` reads ``ss.conceptualSpace.attention_mode``).
 
     ``hot_ref`` (optional) is primed HOT so the retrieval helper boosts it.
     ``_order`` slot 0 is set to ``top_order`` (the parent's order, which the
     order-preserving union shares with both operands)."""
-    ss = object.__new__(SymbolicSubSpace)
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss.batch = 1
     tax = Taxonomy()
@@ -171,7 +171,7 @@ def _make_ws(view, *, attention_mode, hot_ref=None, hot_boost=4.0,
     # Per-slot order buffer: slot 0 holds the top (parent) order.
     ss._order = torch.zeros(1, capacity, dtype=torch.long)
     ss._order[0, 0] = int(top_order)
-    # Tier-'C' owning space attention mode (the gate the CAPSTONE reads).
+    # Space-role-'CS' owning space attention mode (the gate the CAPSTONE reads).
     object.__setattr__(ss, 'conceptualSpace',
                        SimpleNamespace(attention_mode=attention_mode))
     object.__setattr__(ss, 'wholeSpace', None)
@@ -199,10 +199,10 @@ def _build_subspace(W, parent, view, *, attention_mode, hot_ref=None,
 
 
 def _register_union_syntactic_layer():
-    """Duck-typed SyntacticLayer: tier 'C' (so the gate reads
+    """Duck-typed SyntacticLayer: space_role 'CS' (so the gate reads
     ``conceptualSpace.attention_mode``) with the REAL UnionLayer bound to the
     decoded ``method_name`` ('union')."""
-    return SimpleNamespace(tier='C', _by_name={'union': UnionLayer()})
+    return SimpleNamespace(space_role='CS', _by_name={'union': UnionLayer()})
 
 
 # ---------------------------------------------------------------------------
@@ -362,7 +362,7 @@ _VIEW_INT = _FakeView(
 def _grammar_with_intersection():
     """Real Grammar holding exactly one binary rule ``LP = intersection(NP3, VP1)``."""
     g = Grammar()
-    g.rules = [g._parse_rule("LP", "intersection(NP3, VP1)", tier='C')]
+    g.rules = [g._parse_rule("LP", "intersection(NP3, VP1)", space_role='CS')]
     g.rule_table = {0: g.rules[0].canonical}
     g.symbol_vocab_size = 4
     g._configured = True
@@ -371,7 +371,7 @@ def _grammar_with_intersection():
 
 def _register_intersection_syntactic_layer():
     """Duck-typed SyntacticLayer with REAL IntersectionLayer."""
-    return SimpleNamespace(tier='C', _by_name={'intersection': IntersectionLayer()})
+    return SimpleNamespace(space_role='CS', _by_name={'intersection': IntersectionLayer()})
 
 
 def _run_unreduce_intersection(attention_mode, hot_ref):

@@ -297,9 +297,9 @@ class TestLexiconOnSymbolSpace(unittest.TestCase):
 
 
 class TestSubsymbolicSymbolicSplit(unittest.TestCase):
-    """Post-2026-05-12 split: grammar's canonical home is S. The per-tier
-    SyntacticLayer dispatchers at P and C are retained as backward-compat
-    no-ops for grammars that omit P/C rules.
+    """Post-2026-05-12 split: grammar's canonical home is SS. The per-space_role
+    SyntacticLayer dispatchers at subsymbolic and CS are retained as backward-compat
+    no-ops for grammars that omit subsymbolic/CS rules.
     """
 
     @classmethod
@@ -317,20 +317,20 @@ class TestSubsymbolicSymbolicSplit(unittest.TestCase):
                 f"WholeSpace must retain its SyntacticLayer "
                 f"(the grammar's canonical dispatch host); missing on {s}")
 
-    def test_no_p_tier_rules_in_grammar(self):
+    def test_no_p_space_role_rules_in_grammar(self):
         import Language
         p_rules = [r for r in Language.TheGrammar.rules
-                   if getattr(r, 'tier', None) == 'P']
+                   if getattr(r, 'space_role', None) == 'subsymbolic']
         self.assertEqual(len(p_rules), 0,
-                         f"Production grammar must list no P-tier "
+                         f"Production grammar must list no subsymbolic-space_role "
                          f"rules; found {p_rules}")
 
-    def test_no_c_tier_rules_in_grammar(self):
+    def test_no_c_space_role_rules_in_grammar(self):
         import Language
         c_rules = [r for r in Language.TheGrammar.rules
-                   if getattr(r, 'tier', None) == 'C']
+                   if getattr(r, 'space_role', None) == 'CS']
         self.assertEqual(len(c_rules), 0,
-                         f"Production grammar must list no C-tier "
+                         f"Production grammar must list no CS-space_role "
                          f"rules; found {c_rules}")
 
 

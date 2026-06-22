@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_ws_tall: R3 (2026-06-22). WholeSpace emits TALL whole-percepts
+       (nOutputDim 8 to 1024) instead of the compact symbol_dim=8 banding. The
+       symbol has migrated to the SymbolSpace tower, so WholeSpace no longer
+       needs the compact symbol emission. Derived from MM_symbol_attention.
+       OutputSpace nInput is resized in lockstep so the WS to OS flatten contract
+       holds: prod(WS.nOutput * WS.nOutputDim) == prod(OS.nInput * OS.nInputDim)
+       = 1024 * 1024 = 1048576. Dedicated config; checkpoints regenerate (the
+       WS output width changes from 8 to 1024). -->
+  <architecture>
+    <symbolicOrder>0</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <symbolTower>true</symbolTower>
+
+    <learning>true</learning>
+    <exploreTemperature>0.5</exploreTemperature>
+    <globalAttention>true</globalAttention>
+    <globalAttentionConsume>true</globalAttentionConsume>
+
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>1024</nOutputDim>   <!-- R3: TALL (was 8) -->
+
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>1024</nInput>          <!-- R3: 1024*1024 = WS slab 1048576 (was 8) -->
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

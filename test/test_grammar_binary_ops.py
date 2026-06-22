@@ -64,7 +64,7 @@ class TestUnaryGrammarLayers(unittest.TestCase):
         self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
 
     # FusionLayer / ContiguousLayer were retired 2026-05-04. The
-    # operator was a duplicate of DisjunctionLayer at S-tier --
+    # operator was a duplicate of DisjunctionLayer at SS-space_role --
     # migrate to ``disjunction(S, S)`` (post-codebook scalar max).
 
 
@@ -147,23 +147,23 @@ class TestSigmaLayerBinary(unittest.TestCase):
 
 
 class TestIntersectionUnionBinary(unittest.TestCase):
-    """IntersectionLayer / UnionLayer are C-tier (conceptual) binary
+    """IntersectionLayer / UnionLayer are CS-space_role (conceptual) binary
     lattice min/max on bivector activation. They share kernels
-    with ConjunctionLayer / DisjunctionLayer (S-tier counterparts
-    on post-codebook scalar activation); the C-vs-S distinction is
+    with ConjunctionLayer / DisjunctionLayer (SS-space_role counterparts
+    on post-codebook scalar activation); the CS-vs-SS distinction is
     operand domain (bivector vs scalar), not which space holds them.
     """
 
     def setUp(self):
         pass
 
-    def test_intersection_layer_is_C_tier(self):
+    def test_intersection_layer_is_CS_space_role(self):
         layer = IntersectionLayer()
-        self.assertEqual(layer.tier, 'C')
+        self.assertEqual(layer.space_role, 'CS')
 
-    def test_union_layer_is_C_tier(self):
+    def test_union_layer_is_CS_space_role(self):
         layer = UnionLayer()
-        self.assertEqual(layer.tier, 'C')
+        self.assertEqual(layer.space_role, 'CS')
 
     def test_intersection_compose_is_min_kernel(self):
         from Layers import Ops
@@ -171,7 +171,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # C-tier intersection is LSE-smoothed RadMin (2026-05-29):
+        # CS-space_role intersection is LSE-smoothed RadMin (2026-05-29):
         # same-sign min magnitude, but smoothed via log-sum-exp so
         # gradient flows to both operands per cell. Bit-exact match
         # with Ops.intersection (both go through _soft_radmin).
@@ -205,7 +205,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # C-tier union is LSE-smoothed RadMax (2026-05-29): same-sign
+        # CS-space_role union is LSE-smoothed RadMax (2026-05-29): same-sign
         # max magnitude with zero passthrough, smoothed via LSE so
         # gradient flows to both operands per cell.
         self.assertTrue(torch.allclose(y, Ops.union(left, right), atol=1e-6))

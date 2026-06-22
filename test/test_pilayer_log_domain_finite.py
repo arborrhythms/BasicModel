@@ -10,7 +10,7 @@ value that must be strictly positive:
     clamped its input ONLY when ``nonlinear=True``, so a percept outside
     ``[-1, 1]`` (legitimate -- percept normalization runs AFTER
     ``pi.forward``) drove the ratio ``<= 0`` and injected ``log(<=0) =
-    NaN``. (Surfaced as "Finding A": the forward left the C-tier STM /
+    NaN``. (Surfaced as "Finding A": the forward left the C-space_role STM /
     ``_stm_single_S`` NON-FINITE.)
 
   * REVERSE: the ``nonlinear=False`` branch did a BARE ``log(y)`` on the

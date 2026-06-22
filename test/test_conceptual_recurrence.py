@@ -293,7 +293,7 @@ def test_no_recompile_fullgraph():
 
     Per-batch DATA must thread THROUGH the forward as tensors and never be
     persisted as accumulated state on a space/Layer. If the STM idea buffer
-    (``_idea_buffer`` when a SymbolicSubSpace is attached, ``_fallback_buffer``
+    (``_idea_buffer`` when a SymbolSubSpace is attached, ``_fallback_buffer``
     standalone) is mutated in-place inside the compiled forward with
     grad-bearing per-batch data, its ``requires_grad`` oscillates across
     forwards, flips a Dynamo guard, and forces a recompile every batch --

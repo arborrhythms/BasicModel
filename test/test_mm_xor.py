@@ -284,7 +284,7 @@ class TestMMXorConvergence(unittest.TestCase):
         hierarchical pair-merge halves gradient magnitude per level,
         making SGD (batchSize=1) too noisy to converge reliably.
 
-        Threshold relaxed from 0.15 -> 0.20 after the SS-tier sigma layer
+        Threshold relaxed from 0.15 -> 0.20 after the SS-space_role sigma layer
         was removed: the cascade now has T learned PiLayers (CS only)
         instead of 2T (CS + SS), so 200 epochs reaches a higher floor on
         this synthetic task.

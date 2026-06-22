@@ -7,9 +7,9 @@ Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
   * ``LiftLayer`` and ``LowerLayer`` are proper binary GrammarLayer
     subclasses:
       - ``LiftLayer.arity == 2``, ``LiftLayer.rule_name == "lift"``,
-        ``LiftLayer.tier == 'C'``.
+        ``LiftLayer.space_role == 'CS'``.
       - ``LowerLayer.arity == 2``, ``LowerLayer.rule_name == "lower"``,
-        ``LowerLayer.tier == 'C'``.
+        ``LowerLayer.space_role == 'CS'``.
       - Both inherit from ``GrammarLayer``.
 
   * ``forward(a, b)`` accepts two operands and returns a single result
@@ -27,11 +27,11 @@ Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
     ``ConceptualSpace.pi`` from inside the layer -- the substrate
     folds are no longer borrowed by Lift / Lower.
 
-  * Registration with the signal router (``SymbolicSubSpace.languageLayer``):
-    after a SymbolicSubSpace is constructed, LiftLayer and LowerLayer
-    attach as C-tier reduce ops on the LanguageLayer.
+  * Registration with the signal router (``SymbolSubSpace.languageLayer``):
+    after a SymbolSubSpace is constructed, LiftLayer and LowerLayer
+    attach as CS-space_role reduce ops on the LanguageLayer.
 
-The pre-Stage-4 contract (``tier='S'``, internal ``_sigma`` /
+The pre-Stage-4 contract (``space_role='SS'``, internal ``_sigma`` /
 ``_pi``, fallback to ``Ops._lower_kernel`` / ``Ops._lift_kernel``)
 is retired by this stage; the existing
 ``test/test_lift_lower_factorization.py`` is no longer authoritative
@@ -89,17 +89,17 @@ class TestLiftLowerClassAttributes(unittest.TestCase):
         """LowerLayer's canonical rule_name is 'lower'."""
         self.assertEqual(LowerLayer.rule_name, "lower")
 
-    def test_lift_tier_is_C(self):
-        """LiftLayer operates at the C tier (STM-pair composition)."""
+    def test_lift_space_role_is_CS(self):
+        """LiftLayer operates at the CS space_role (STM-pair composition)."""
         self.assertEqual(
-            LiftLayer.tier, 'C',
-            "LiftLayer.tier must be 'C' (Stage 4 §Files modified).")
+            LiftLayer.space_role, 'CS',
+            "LiftLayer.space_role must be 'CS' (Stage 4 §Files modified).")
 
-    def test_lower_tier_is_C(self):
-        """LowerLayer operates at the C tier (STM-pair composition)."""
+    def test_lower_space_role_is_CS(self):
+        """LowerLayer operates at the CS space_role (STM-pair composition)."""
         self.assertEqual(
-            LowerLayer.tier, 'C',
-            "LowerLayer.tier must be 'C' (Stage 4 §Files modified).")
+            LowerLayer.space_role, 'CS',
+            "LowerLayer.space_role must be 'CS' (Stage 4 §Files modified).")
 
 
 class TestLiftLowerForwardReverseShape(unittest.TestCase):
@@ -369,20 +369,20 @@ class TestLiftLowerHasInternalSubstrate(unittest.TestCase):
 
 
 class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
-    """Stage 4 acceptance gate: when a SymbolicSubSpace is constructed,
-    LiftLayer and LowerLayer attach to the C-tier of its
+    """Stage 4 acceptance gate: when a SymbolSubSpace is constructed,
+    LiftLayer and LowerLayer attach to the CS-space_role of its
     ``languageLayer`` as binary reduce ops.
 
-    Path: SymbolicSubSpace.__init__ -> ``_wire_signal_router_grammar_ops``
+    Path: SymbolSubSpace.__init__ -> ``_wire_signal_router_grammar_ops``
     walks ``TheGrammar.rules`` and calls
-    ``router.attach_layer_ops(ops=..., rule_ids=..., tier='C')``
-    for every binary C-tier rule. The ``ops`` list is wrapped per-op
+    ``router.attach_layer_ops(ops=..., rule_ids=..., space_role='CS')``
+    for every binary CS-space_role rule. The ``ops`` list is wrapped per-op
     in ``_BinaryGrammarOpAdapter`` so the binary scorer can call
     ``op(left, right)`` and dispatch through ``gl.compose``.
     """
 
     def test_lift_and_lower_registered_with_word_subspace_authority(self):
-        """When a SymbolicSubSpace is the chart authority,
+        """When a SymbolSubSpace is the chart authority,
         ``register_grammar_layer`` adds any newly-built LiftLayer /
         LowerLayer to its roster."""
         import Language

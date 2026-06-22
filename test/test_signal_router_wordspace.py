@@ -1,8 +1,8 @@
-"""Signal-router-on-SymbolicSubSpace tests.
+"""Signal-router-on-SymbolSubSpace tests.
 
 Stage 3 cleanup (2026-05-27): the chart was retired; the signal router
 (``LanguageLayer``) is the canonical parser, owned directly by
-``SymbolicSubSpace.languageLayer``. These tests exercise the LanguageLayer
+``SymbolSubSpace.languageLayer``. These tests exercise the LanguageLayer
 in isolation, the way the chart tests used to drive ``Chart`` directly.
 """
 import os, sys
@@ -49,20 +49,20 @@ class _StubSymbolSpace:
         self.generate_rules = {}
         self._compose_generation = 0
 
-    def host_layer(self, tier, rule_name):
+    def host_layer(self, space_role, rule_name):
         return None
 
 
 def test_language_layer_generate_emits_rules_dict_after_compose():
     router = _make_signal_router()
-    router.attach_layer_ops(ops=[_Stub()], rule_ids=[3], tier="S")
+    router.attach_layer_ops(ops=[_Stub()], rule_ids=[3], space_role="SS")
     ss = _StubSymbolSpace()
     target = torch.randn(2, 4, 4)
     router.compose(target, word_space=ss)
     g = router.generate(target, word_space=ss)
     assert isinstance(g, dict)
-    assert "S" in g
-    rows = g["S"]
+    assert "SS" in g
+    rows = g["SS"]
     assert len(rows) == 2
     for row in rows:
         assert isinstance(row, list)
@@ -72,12 +72,12 @@ def test_language_layer_generate_emits_rules_dict_after_compose():
 
 def test_language_layer_compose_populates_current_rules():
     router = _make_signal_router()
-    router.attach_layer_ops(ops=[_Stub()], rule_ids=[7], tier="S")
+    router.attach_layer_ops(ops=[_Stub()], rule_ids=[7], space_role="SS")
     ss = _StubSymbolSpace()
     rules = router.compose(torch.randn(2, 4, 4), word_space=ss)
     assert isinstance(rules, dict)
-    assert "S" in rules
-    rows = rules["S"]
+    assert "SS" in rules
+    rows = rules["SS"]
     assert len(rows) == 2
     for row in rows:
         assert isinstance(row, list)

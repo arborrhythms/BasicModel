@@ -1,7 +1,7 @@
 """PREPOSITION grammar op (Phase 1).
 
 doc/plans/2026-06-03-contextual-bind-preposition-when.md "Operation 1:
-PREPOSITION". A parameter-free, content-transparent binary C-tier
+PREPOSITION". A parameter-free, content-transparent binary CS-space_role
 operator that packages a learned surface marker P (that / to / in /
 because / when) with a phrase X (NP / VP / S). PREPOSITION does NOT
 decide the final relation; that is learned from how the marker-headed
@@ -23,7 +23,7 @@ class TestPrepositionLayer(unittest.TestCase):
     def test_class_contract(self):
         self.assertEqual(PrepositionLayer.rule_name, "preposition")
         self.assertEqual(PrepositionLayer.arity, 2)
-        self.assertEqual(PrepositionLayer.tier, "C")
+        self.assertEqual(PrepositionLayer.space_role, "CS")
 
     def test_parameter_free_construction(self):
         self.assertIsInstance(PrepositionLayer(), PrepositionLayer)  # _resolve_rule_layer uses cls()

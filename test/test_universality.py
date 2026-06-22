@@ -261,7 +261,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
     def _get_svo_and_luminosity(self, sentence):
         """Run forward, extract confident SVO, compute universality score.
 
-        LearnedSVO path: SVO lives on the unified S-tier
+        LearnedSVO path: SVO lives on the unified S-space_role
         ``chart.last_svo`` (grammar-derived from the chart-compose
         derivation trace), and the universality score computed during
         ``BasicModel.forward`` lands on ``model._universality_score``.

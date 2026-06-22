@@ -40,7 +40,7 @@ def test_dispatch_per_row_reset_skips_rows_without_hard_eos():
     no call for batch=0.
     """
     model = _model()
-    # Size SymbolicSubSpace state to two source rows so per-row dispatch can
+    # Size SymbolSubSpace state to two source rows so per-row dispatch can
     # write to indices [0..1] without going out of bounds.
     if model.symbolSpace is not None:
         model.symbolSpace.ensure_microbatch(2, 1)

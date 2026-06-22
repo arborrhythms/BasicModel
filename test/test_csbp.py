@@ -13,7 +13,7 @@ Two layers of coverage:
    through the cached SVD pseudo-inverse.
 
 Spec: doc/plans/2026-05-08-bivector-activation-conceptual-loopback-design.md
-(Stage 4 acceptance: round-trip MSE on the C-tier alone < 1e-3 from
+(Stage 4 acceptance: round-trip MSE on the C-space_role alone < 1e-3 from
 fresh SVD-orthogonal init).
 """
 import sys

@@ -32,7 +32,7 @@ from datetime import datetime
 import util
 from util import TheDevice, TheMessage
 from Optimizer import Adam
-from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
+from architecture import canonical_shape, MANDATORY_CODEBOOK_SPACE_ROLES
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import (
@@ -430,8 +430,9 @@ class GlobalAttention(nn.Module):
 
     Where reading attention (A) is *local* (next-word, monotonic, supervised),
     global attention is *free*: it ranges over a registry of **addressable
-    spaces** -- the input window, STM, LTM, and the symbol/whole codebook (the
-    meronomy + taxonomy inventory) -- each a ``[B, M, D]`` set of candidate keys
+    spaces** -- the input window, STM, LTM, and the THREE tower codebooks
+    (PartSpace part-percepts / WholeSpace whole-percepts + meronomy + taxonomy /
+    SymbolSpace symbols) -- each a ``[B, M, D]`` set of candidate keys
     with a per-candidate normalized ``[start, end]`` bracket. ONE distribution
     competes ACROSS all spaces (no monotonic mask -- it can land anywhere,
     including the abstract relations that have no environmental `.where`),
@@ -452,8 +453,14 @@ class GlobalAttention(nn.Module):
     SPACE_INPUT = 0
     SPACE_STM = 1
     SPACE_LTM = 2
-    SPACE_CODEBOOK = 3
-    _N_SPACES = 4
+    # The three tower codebooks, each a distinct address space. SPACE_PART /
+    # SPACE_WHOLE appear whenever their tower exposes a codebook; SPACE_SYMBOL
+    # only under <symbolTower> (the SS ``.what`` is an empty Basis otherwise).
+    # Address-space model: doc/Architecture.md "Addressable attention".
+    SPACE_PART = 3      # PartSpace codebook
+    SPACE_WHOLE = 4     # WholeSpace codebook
+    SPACE_SYMBOL = 5    # SymbolSpace symbol codebook (SS.subspace.what)
+    _N_SPACES = 6
     _N_FEATURES = 4   # cos(concept), cos(symbol), codebook boost, space id
 
     def __init__(self, hidden=16):
@@ -1406,12 +1413,12 @@ class EventEncoding(Encoding):
         This is the SINGLE source of the ``[ .what | .where | .when ]``
         decomposition. The event vector's total width is the configured dim
         (``outputShape[1]``); the ``.where``/``.when`` band is an architectural
-        constant per tier (``canonical_shape(section)``); ``nWhat`` is the
+        constant per space_role (``canonical_shape(section)``); ``nWhat`` is the
         remaining content. ``SubSpace`` and ``Space`` both READ
         ``nWhat``/``nWhere``/``nWhen``/``muxedSize`` from here rather than
         re-deriving the split, so widening ``.where`` (e.g. 3D) only changes
         ``canonical_shape``. ``section=None`` (standalone / test SubSpaces with
-        no tier) means a zero band: ``nWhat == total``.
+        no space_role) means a zero band: ``nWhat == total``.
         """
         super().__init__([], 0)
         self.inputShape = inputShape
@@ -1841,7 +1848,7 @@ class Basis(nn.Module):
         # sync that broke the brick CUDA-graph-capture contract
         # (test_brick_no_sync).
         if self.unit_ball:
-            # Torus / token-tier lookup: full-vector wrapped MSE. NO
+            # Torus / token-space_role lookup: full-vector wrapped MSE. NO
             # NEG-quotient here -- ``word`` and ``-word`` are distinct
             # entries whose sign is form content (MeronomySpec §3;
             # Stage 5 audit).
@@ -1858,7 +1865,7 @@ class Basis(nn.Module):
                 dim=2,
             )
             if meronomy_enabled() and not self.monotonic:
-                # Stage 5 (spec §3, §10.3): the reference-tier lookup
+                # Stage 5 (spec §3, §10.3): the reference-space_role lookup
                 # law. Stored sign is gauge, so identity is the
                 # quotient ``argmax |q·v|`` and polarity is
                 # ``sign(q·v)``, riding the activation: the snap is
@@ -4835,7 +4842,7 @@ class Embedding(Basis):
         # Tokens are ``(text, offset)`` 2-tuples; "not" / "non-" surface
         # forms are NOT collapsed into separate codebook rows — they
         # tokenize like any other word, and the symbolic / grammar
-        # layers handle negation at the appropriate tier.
+        # layers handle negation at the appropriate space_role.
         all_streams = []
         oov_words = []
         oov_seen = set()
@@ -5483,7 +5490,7 @@ class SubSpace(nn.Module):
         #
         # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
         # retired the per-SubSpace ``symbolSpace`` back-pointer; the
-        # SymbolicSubSpace is now reached via the owning ``Space.symbolSpace``
+        # SymbolSubSpace is now reached via the owning ``Space.symbolSpace``
         # routing pointer (set by ``BasicModel`` at construction) or passed
         # explicitly to functions that need it (e.g.
         # ``ConceptualSpace.forward(subspace, word_subspace)``).
@@ -5527,7 +5534,7 @@ class SubSpace(nn.Module):
 
         Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
         removed the ``symbolSpace`` back-pointer from SubSpace; the
-        SymbolicSubSpace reference is reached via the owning ``Space``
+        SymbolSubSpace reference is reached via the owning ``Space``
         instance (``space.symbolSpace``) or passed explicitly to
         functions that need it.
         """
@@ -5942,8 +5949,8 @@ class SubSpace(nn.Module):
         """Split a muxed [B, N, D] tensor along the canonical [what|where|when]
         column layout and store each block in the corresponding modality slot.
 
-        Used at the C -> S tier boundary (Rule #2): C stays muxed as exploratory
-        soup; S-tier commitment requires axis-separated what/where/when blocks
+        Used at the C -> S space_role boundary (Rule #2): C stays muxed as exploratory
+        soup; S-space_role commitment requires axis-separated what/where/when blocks
         so the grammar can make axis-restricted commitments (and so verbs can
         operate as prepositions when fed axis-restricted arguments).
 
@@ -7246,7 +7253,7 @@ class Space(nn.Module):
         self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         # Asymmetric VQ (2026-06-09 plan §7 task 7): the <codebook> knob is
-        # now per-tier, not uniform.
+        # now per-space_role, not uniform.
         #   * PartSpace is SUBSYMBOLIC: its <codebook> element was retired
         #     from the schema. PS is hardwired to "none" (continuous .event
         #     passthrough; percept prototypes live on the .what Embedding, see
@@ -7255,7 +7262,7 @@ class Space(nn.Module):
         #   * WholeSpace is SYMBOLIC: a symbol qua symbol quantizes onto a
         #     codebook, so its <codebook> DEFAULTS to "quantize" when a config
         #     omits it.
-        #   * Other tiers keep the strict read (model.xml supplies the value).
+        #   * Other space_roles keep the strict read (model.xml supplies the value).
         if section == "PartSpace":
             self._codebook = "none"
         elif section == "WholeSpace":
@@ -7276,13 +7283,13 @@ class Space(nn.Module):
                                                 default="quantize")
         else:
             self._codebook = TheXMLConfig.space(section, "codebook")
-        # Mandatory codebook tiers (modality re-architecture): a symbol qua
+        # Mandatory codebook space_roles (modality re-architecture): a symbol qua
         # symbol must quantize onto a codebook. The model.xml default for the
-        # symbolic tier is <codebook>quantize</codebook>; a config that
-        # explicitly resolves a mandatory tier to "none" is a loud build error,
+        # symbolic space_role is <codebook>quantize</codebook>; a config that
+        # explicitly resolves a mandatory space_role to "none" is a loud build error,
         # not a silent passthrough. (PartSpace is no longer mandatory --
         # it is subsymbolic and hardwired to "none" above.)
-        if section in MANDATORY_CODEBOOK_TIERS:
+        if section in MANDATORY_CODEBOOK_SPACE_ROLES:
             if Space.normalize_codebook_mode(self._codebook) == "none":
                 raise ValueError(
                     f"{section}: codebook is mandatory in the converged "
@@ -7290,14 +7297,14 @@ class Space(nn.Module):
                     f"allowed (use quantize or project).")
         # .where/.when widths are architectural constants (modality re-
         # architecture), not per-config <nWhere>/<nWhen> tags: source them from
-        # canonical_shape so each tier's muxed event width is fixed by section.
+        # canonical_shape so each space_role's muxed event width is fixed by section.
         _nWhere, _nWhen = canonical_shape(section)
         self.nWhere = _nWhere
         self.nWhen = _nWhen
         self.customVQ  = customVQ
         # The event-vector modality split (nWhat / nWhere / nWhen / muxedSize)
         # is owned by the EventEncoding (single source): it carves nWhat out of
-        # the total dim (outputShape[1]) using this tier's canonical .where/.when
+        # the total dim (outputShape[1]) using this space_role's canonical .where/.when
         # band. Space and SubSpace READ the split from it (Space.nWhat /
         # .muxedSize are set from the subspace below) rather than re-deriving it,
         # so widening .where (e.g. 3D) only changes canonical_shape.
@@ -7878,7 +7885,7 @@ class Space(nn.Module):
         """Propagate exploration meta-parameters to all layers and Basis slots.
 
         ``self.subspace`` may be ``None`` (DiscourseSpace) or a non-SubSpace
-        buffer without Basis objects (SymbolSpace's ``SymbolicSubSpace``). In those
+        buffer without Basis objects (SymbolSpace's ``SymbolSubSpace``). In those
         cases we only walk ``self.layers`` -- no basis slots exist to update.
         """
         for l in self.layers:
@@ -8239,7 +8246,7 @@ class InputSpace(Space):
         self._model_symbolSpace = ss
         # Stamp the routing pointer on this InputSpace too so consumers
         # can read ``inputSpace.symbolSpace`` without going through the
-        # Model. (SymbolicSubSpace.__init__ also calls
+        # Model. (SymbolSubSpace.__init__ also calls
         # ``perceptualSpace.attach_symbolSpace(self)`` for PCS spaces,
         # but InputSpace and OutputSpace are wired here.)
         self.attach_symbolSpace(ss)
@@ -8556,7 +8563,7 @@ class InputSpace(Space):
 
         AR cursor unfold + ARIR runtime branch retired 2026-05-14
         alongside ``<maskedPrediction>``; within-sentence training is
-        purely masked-LM at the P-tier (BERT-style IR).
+        purely masked-LM at the P-space_role (BERT-style IR).
         """
         if inputData is None:
             return self._empty_like_subspace(), None
@@ -8952,7 +8959,7 @@ class InputSpace(Space):
         cases:
           * ``_cached_embedding`` set -- use pre-built latent (chat-
             loop / generate_sentence stages this).
-          * ``model_type == 'embedding'`` (the data tier) -- lex into byte buffer.
+          * ``model_type == 'embedding'`` (the data space_role) -- lex into byte buffer.
           * numeric mode -- vocab codebook lookup.
         """
         if self._cached_embedding is not None:
@@ -9273,7 +9280,7 @@ class PartSpace(PerceptualSpace):
         # Stash Embedding-construction inputs (read from config BEFORE super().__init__).
         # Explicit `model_type=` argument wins over <data><dataType> so callers
         # (mainly tests) can opt into "embedding" without rewriting the XML
-        # config. ``model_type`` holds the data tier: "embedding" | "numeric".
+        # config. ``model_type`` holds the data space_role: "embedding" | "numeric".
         self.model_type = model_type or TheXMLConfig.data_type()
         self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
         self.lexer = resolve_lexer()
@@ -9291,7 +9298,7 @@ class PartSpace(PerceptualSpace):
         # (``CS_subspaceForPS``) supplied by the recurrent cell, not a
         # post-construction sibling ref.
         # Recurrent-pass index. The post-SentenceState design (2026-05-21)
-        # publishes this on ``SymbolicSubSpace.recur_pass`` (written by
+        # publishes this on ``SymbolSubSpace.recur_pass`` (written by
         # ``_forward_body`` each pass, read in ``forward`` via the
         # ``self.subspace.symbolSpace`` back-reference); this attribute
         # remains as the eager fallback for standalone ``forward`` calls
@@ -11514,7 +11521,7 @@ class PartSpace(PerceptualSpace):
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
         # ``recur_pass`` lives on SymbolSpace as the per-sentence recurrent-
-        # pass index. Post-Phase-G the SymbolicSubSpace is reached via the
+        # pass index. Post-Phase-G the SymbolSubSpace is reached via the
         # owning Space's routing pointer (``self.symbolSpace`` —
         # ``object.__setattr__`` keeps it out of nn.Module's child
         # registration); if it's missing (standalone PartSpace
@@ -12066,13 +12073,13 @@ class ModalSpace(Space):
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
 class ConceptualSpace(Space):
-    """STM bookkeeping (shift / push) + grammatical CPU on the C tier.
+    """STM bookkeeping (shift / push) + grammatical CPU on the C space_role.
 
     In the forward data flow: PartSpace -> **ConceptualSpace** -> WholeSpace.
 
     Post Stage 1.C of the two-loop pi/sigma substrate refactor
     (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the atomic
-    forward C-tier fold ``sigma_percept`` is RETIRED. The C tier no
+    forward C-space_role fold ``sigma_percept`` is RETIRED. The C space_role no
     longer holds a parameterised percept→concept fold at the
     substrate level. ``forward(PS_subspace, WS_subspace)`` performs
     STM bookkeeping only: shift the per-batch idea stack one slot
@@ -12160,7 +12167,7 @@ class ConceptualSpace(Space):
         # loop) from explicit ``forward(PS_subspace, WS_subspace)``
         # arguments supplied by the recurrent cell -- no post-construction
         # sibling refs.
-        # Optional C-tier prior for chat-loop generation: the inference
+        # Optional C-space_role prior for chat-loop generation: the inference
         # loop (BasicModel.generate_sentence) lifts the ARMA-predicted
         # next sentence rep through InterSentenceLayer.cast into
         # concept_dim and stages it here. When set under Stage 1.C, the
@@ -12192,7 +12199,7 @@ class ConceptualSpace(Space):
         # (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
         # ``self.sigma_percept`` (and the paired ``sigma_percept_1`` /
         # ``sigma_percept_2`` ergodic variants and the
-        # ``_sigma_percept_reverse`` helper) are RETIRED. The C tier no
+        # ``_sigma_percept_reverse`` helper) are RETIRED. The C space_role no
         # longer holds an atomic percept→concept fold operator at the
         # substrate level under the substrate-refactor baseline.
         #
@@ -12227,25 +12234,19 @@ class ConceptualSpace(Space):
             enabled=bool(getattr(self, "codebook", False)),
         )
 
-        # Short-term memory: per-batch stack of unquantized C-tier
+        # Short-term memory: per-batch stack of unquantized C-space_role
         # "ideas" produced by the per-word subsymbolic round trip in
-        # the stem. Capacity is the chart's sentence-length bound
-        # (``<SymbolSpace><wMax>``) so each word can fill its own slot
-        # before the chart runs at C-tier in the body; the 7±2 working
-        # memory cap would truncate longer sentences. Subsymbolic
-        # operation can still override via ``<stmCapacity>``.
+        # the stem. Capacity is the sentence-length bound so each word can
+        # fill its own slot before the chart runs at C-space_role in the
+        # body; the 7±2 working memory cap would truncate longer sentences.
+        # Subsymbolic operation can set it via ``<stmCapacity>`` (else 8).
         try:
             stm_capacity_xml = TheXMLConfig.space(section, "stmCapacity")
             stm_capacity = int(stm_capacity_xml) if stm_capacity_xml else None
         except (KeyError, TypeError, ValueError):
             stm_capacity = None
         if stm_capacity is None:
-            try:
-                w_max_xml = TheXMLConfig.get("SymbolSpace.wMax", 0)
-                w_max = int(w_max_xml) if int(w_max_xml) > 0 else 8
-            except Exception:
-                w_max = 8
-            stm_capacity = int(w_max)
+            stm_capacity = 8
         # The STM buffer width is the full CS output width ``outputShape[1]``
         # so the forward<->reverse roundtrip is loss-free even when the CS
         # carries positional/temporal columns (nWhere/nWhen > 0, e.g.
@@ -12258,10 +12259,10 @@ class ConceptualSpace(Space):
         # reverse expects back.
         concept_dim = int(outputShape[1])
         # ``stm_capacity`` / ``concept_dim`` published as attributes so
-        # SymbolicSubSpace.__init__ can size its typed-STM buffers to match
+        # SymbolSubSpace.__init__ can size its typed-STM buffers to match
         # (Phase D of doc/specs/2026-05-21-wordsubspace-stm-layer-
         # refactor.md). The typed-metadata stack formerly allocated here
-        # via ``_init_typed_stm`` now lives directly on SymbolicSubSpace; the
+        # via ``_init_typed_stm`` now lives directly on SymbolSubSpace; the
         # ``ShortTermMemory`` Layer reads / writes those buffers.
         self.stm_capacity = int(stm_capacity)
         self.concept_dim = int(concept_dim)
@@ -12293,7 +12294,7 @@ class ConceptualSpace(Space):
         #
         # ``routing_dim`` is the grammar's rule-vocabulary width: the
         # per-word router emits a dense ``[B, n_rules]`` ``rule_probs``
-        # (``SymbolicSubSpace.routing_state``) and ``routing_proj`` projects
+        # (``SymbolSubSpace.routing_state``) and ``routing_proj`` projects
         # it ``[B, n_rules] -> [B, concept_dim]`` to bias the predicted
         # idea. ``n_rules == len(TheGrammar.rule_table)`` (== num_rules();
         # == len(TheGrammar.rules) -- verified equal). The grammar is
@@ -12403,7 +12404,7 @@ class ConceptualSpace(Space):
         # promotion policy. Off by default; enabled via
         # ``<architecture><symbolLearning enabled="true"/>``. Owned by
         # ``ConceptualSpace`` because the QE / PMI hook points fire at
-        # the C-tier snap and the C-tier REDUCE; placed in
+        # the C-space_role snap and the C-space_role REDUCE; placed in
         # ``self.layers`` so the Layer cascade reaches it. Promotion is
         # at explicit flush boundaries only (see ``flush_symbol_learning``);
         # never inside autograd ``forward``.
@@ -12522,13 +12523,13 @@ class ConceptualSpace(Space):
         ``idea`` is the per-batch payload tensor of shape ``[B, D]`` —
         the materialised PS+WS combination ConceptualSpace.forward
         produces. Routes through the underlying buffer + depth
-        primitives on ``self.stm`` (which proxies to SymbolicSubSpace when
+        primitives on ``self.stm`` (which proxies to SymbolSubSpace when
         attached, or its own fallback buffer otherwise).
 
         Newest-at-slot-0 convention: the newest idea always lands at slot
         0 and the occupied window grows / rolls toward the high slots. Per
         the Miller cap (default 8, within the 7±2 band, via
-        ``<stmCapacity>`` / ``<wMax>``), the OLDEST idea (the last
+        ``<stmCapacity>``), the OLDEST idea (the last
         occupied slot, ``cap - 1`` at capacity) drops out when
         overflowing — the STM is a rolling window. This is the
         substrate-level analogue of the chart's reduce-then-push when the
@@ -12542,7 +12543,7 @@ class ConceptualSpace(Space):
         if cap <= 0:
             return
         # Resolve buffer / depth refs through the STM proxy (handles
-        # both the SymbolicSubSpace-attached and fallback paths uniformly).
+        # both the SymbolSubSpace-attached and fallback paths uniformly).
         buf = stm._buffer
         depth = stm._depth
         # Row-by-row: rows at capacity get a right-shift of the slots
@@ -12628,7 +12629,7 @@ class ConceptualSpace(Space):
         predictor, or ``None``.
 
         Reads the first-class ``routing_state.rule_probs`` off the owning
-        ``symbolSpace`` (built in ``SymbolicSubSpace.compose``, ADDITIVE to
+        ``symbolSpace`` (built in ``SymbolSubSpace.compose``, ADDITIVE to
         the unchanged ``current_rules`` dict). Returns it ONLY when it is
         a tensor whose last dim matches ``self._intra_routing_dim``
         (``n_rules`` -- the width ``IntraSentenceLayer.routing_proj``
@@ -13325,7 +13326,7 @@ class ConceptualSpace(Space):
                     wp = int(percept_where[b, n])
                     if s <= wp < e:               # percept `.where` in the span
                         if loc_sym is None:
-                            loc_sym = self.new_symbol()
+                            loc_sym = self.new_concept()
                         self.add_part(loc_sym, pid)
                 if loc_sym is not None:
                     self.add_whole(loc_sym, _WORD_CLASS)
@@ -13346,105 +13347,105 @@ class ConceptualSpace(Space):
     # onto it in a later stage.
     # ------------------------------------------------------------------
 
-    def _sym_tables(self):
+    def _concept_tables(self):
         """Lazy-init the relation-only symbol tables. Returns ``(parts,
-        wholes)``; also sets ``_sym_next`` (id allocator, 0 reserved) and
-        ``_sym_relate_idx`` ((part, whole) -> symbol idempotency cache)."""
-        parts = getattr(self, "_sym_parts", None)
+        wholes)``; also sets ``_concept_next`` (id allocator, 0 reserved) and
+        ``_concept_relate_idx`` ((part, whole) -> symbol idempotency cache)."""
+        parts = getattr(self, "_concept_parts", None)
         if parts is None:
             parts = {}
-            object.__setattr__(self, "_sym_parts", parts)
-            object.__setattr__(self, "_sym_wholes", {})
-            object.__setattr__(self, "_sym_next", 1)
-            object.__setattr__(self, "_sym_relate_idx", {})
-        return self._sym_parts, self._sym_wholes
+            object.__setattr__(self, "_concept_parts", parts)
+            object.__setattr__(self, "_concept_wholes", {})
+            object.__setattr__(self, "_concept_next", 1)
+            object.__setattr__(self, "_concept_relate_idx", {})
+        return self._concept_parts, self._concept_wholes
 
-    def new_symbol(self):
+    def new_concept(self):
         """Allocate a fresh relation-only symbol id (a stable handle, no
         vector). Parts(S) / Wholes(S) start empty."""
-        self._sym_tables()
-        sid = int(self._sym_next)
-        object.__setattr__(self, "_sym_next", sid + 1)
-        self._sym_parts[sid] = set()
-        self._sym_wholes[sid] = set()
+        self._concept_tables()
+        sid = int(self._concept_next)
+        object.__setattr__(self, "_concept_next", sid + 1)
+        self._concept_parts[sid] = set()
+        self._concept_wholes[sid] = set()
         return sid
 
     def add_part(self, sym, part):
         """Add ``part`` (a part-code or a sub-symbol ref) to Parts(sym)."""
-        self._sym_tables()
-        self._sym_parts.setdefault(int(sym), set()).add(part)
+        self._concept_tables()
+        self._concept_parts.setdefault(int(sym), set()).add(part)
 
     def add_whole(self, sym, whole):
         """Add ``whole`` (a whole-code or a super-symbol ref) to Wholes(sym)."""
-        self._sym_tables()
-        self._sym_wholes.setdefault(int(sym), set()).add(whole)
+        self._concept_tables()
+        self._concept_wholes.setdefault(int(sym), set()).add(whole)
 
-    def symbol_parts(self, sym):
+    def concept_parts(self, sym):
         """Parts(sym) as a deterministically-ordered list (may mix part-codes
         and ``('sym', id)`` sub-symbol refs)."""
-        self._sym_tables()
-        return sorted(self._sym_parts.get(int(sym), ()), key=repr)
+        self._concept_tables()
+        return sorted(self._concept_parts.get(int(sym), ()), key=repr)
 
-    def symbol_wholes(self, sym):
+    def concept_wholes(self, sym):
         """Wholes(sym) as a deterministically-ordered list."""
-        self._sym_tables()
-        return sorted(self._sym_wholes.get(int(sym), ()), key=repr)
+        self._concept_tables()
+        return sorted(self._concept_wholes.get(int(sym), ()), key=repr)
 
     def relate(self, part, whole):
         """The per-location symbol tying ``part`` to ``whole`` -- minted once
         (idempotent per ``(part, whole)``). The symbol accumulates more parts /
         wholes as it evolves (use :meth:`add_part` / :meth:`add_whole`)."""
-        self._sym_tables()
+        self._concept_tables()
         key = (part, whole)
-        existing = self._sym_relate_idx.get(key)
+        existing = self._concept_relate_idx.get(key)
         if existing is not None:
             return int(existing)
-        sid = self.new_symbol()
-        self._sym_parts[sid].add(part)
-        self._sym_wholes[sid].add(whole)
-        self._sym_relate_idx[key] = sid
+        sid = self.new_concept()
+        self._concept_parts[sid].add(part)
+        self._concept_wholes[sid].add(whole)
+        self._concept_relate_idx[key] = sid
         return sid
 
-    def reify_relation(self, a_sym, b_sym):
+    def reify_concept(self, a_sym, b_sym):
         """Reify ``a <= b`` between two symbols as a new symbol C with
         Parts(C)={a}, Wholes(C)={b} -- the taxonomy edge (word<->object META is
         the special case). Sub-symbol refs are tagged ``('sym', id)`` so they
         never collide with raw part/whole codes."""
         return self.relate(("sym", int(a_sym)), ("sym", int(b_sym)))
 
-    def symbol_is_identity(self, sym):
+    def concept_is_identity(self, sym):
         """True iff Parts(sym) and Wholes(sym) have each collapsed to exactly
         ONE element -- the id-of-indiscernibles identity tie (σ-up meets π-down
         at the object); the sets' role is then subsumed by the codebooks."""
-        self._sym_tables()
+        self._concept_tables()
         s = int(sym)
-        return (len(self._sym_parts.get(s, ())) == 1
-                and len(self._sym_wholes.get(s, ())) == 1)
+        return (len(self._concept_parts.get(s, ())) == 1
+                and len(self._concept_wholes.get(s, ())) == 1)
 
-    def symbol_over_collected(self, sym, *, k_parts=None, k_wholes=None):
+    def concept_over_collected(self, sym, *, k_parts=None, k_wholes=None):
         """True iff ``sym`` has TOO MANY parts or wholes -- actionable, i.e. it
         should trigger refinement (more-parts-per-symbol via σ-synthesis;
         fewer-wholes-per-symbol via π-analysis / splitting an over-subscribed
-        whole). Thresholds default to ``_sym_k_many`` (4)."""
-        self._sym_tables()
+        whole). Thresholds default to ``_concept_k_many`` (4)."""
+        self._concept_tables()
         kp = int(k_parts if k_parts is not None
-                 else getattr(self, "_sym_k_many", 4))
+                 else getattr(self, "_concept_k_many", 4))
         kw = int(k_wholes if k_wholes is not None
-                 else getattr(self, "_sym_k_many", 4))
+                 else getattr(self, "_concept_k_many", 4))
         s = int(sym)
-        return (len(self._sym_parts.get(s, ())) > kp
-                or len(self._sym_wholes.get(s, ())) > kw)
+        return (len(self._concept_parts.get(s, ())) > kp
+                or len(self._concept_wholes.get(s, ())) > kw)
 
-    def retire_symbol(self, sym):
+    def retire_concept(self, sym):
         """Retire a TRANSIENT symbol that has triggered refinement -- the
         restructuring it signaled supersedes it. Idempotent; drops its
         Parts / Wholes sets and any idempotency-cache entries pointing at it."""
-        self._sym_tables()
+        self._concept_tables()
         s = int(sym)
-        self._sym_parts.pop(s, None)
-        self._sym_wholes.pop(s, None)
-        for k in [k for k, v in self._sym_relate_idx.items() if int(v) == s]:
-            self._sym_relate_idx.pop(k, None)
+        self._concept_parts.pop(s, None)
+        self._concept_wholes.pop(s, None)
+        for k in [k for k, v in self._concept_relate_idx.items() if int(v) == s]:
+            self._concept_relate_idx.pop(k, None)
 
     def resolve_identities(self):
         """ZERO OUT the 1:1 mappings — the main over-collection deliverable
@@ -13452,16 +13453,16 @@ class ConceptualSpace(Space):
         towers"). A symbol with exactly ONE part + ONE whole is the
         id-of-indiscernibles IDENTITY tie (σ-up meets π-down at the object); its
         role is subsumed by the part / whole codebooks, so it needs **no further
-        processing**. Record the ``(part, whole)`` identity on ``_sym_identity``
+        processing**. Record the ``(part, whole)`` identity on ``_concept_identity``
         and CLEAR its Parts / Wholes sets (they vanish), removing it from the
         active processing set. Returns the newly-resolved symbol ids. The
         per-code refinement of the still-active symbols is the existing
         subsymbolic loop's job (over ``subsymbolicOrder`` iterations)."""
-        parts, wholes = self._sym_tables()
-        ident = getattr(self, "_sym_identity", None)
+        parts, wholes = self._concept_tables()
+        ident = getattr(self, "_concept_identity", None)
         if ident is None:
             ident = {}
-            object.__setattr__(self, "_sym_identity", ident)
+            object.__setattr__(self, "_concept_identity", ident)
         resolved = []
         for sym in list(parts.keys()):
             if len(parts.get(sym, ())) == 1 and len(wholes.get(sym, ())) == 1:
@@ -13485,7 +13486,7 @@ class ConceptualSpace(Space):
         """The ``(part, whole)`` identity a resolved 1:1 symbol established (via
         :meth:`resolve_identities`), or ``None`` if the symbol is not a resolved
         identity."""
-        ident = getattr(self, "_sym_identity", None)
+        ident = getattr(self, "_concept_identity", None)
         return None if ident is None else ident.get(int(sym))
 
     def symbols_needing_processing(self):
@@ -13494,20 +13495,20 @@ class ConceptualSpace(Space):
         zeroed-out 1:1 identities are excluded — they are done; RAISED
         higher-order symbols are excluded too (their constituents are their
         definition, not a refinement backlog)."""
-        parts, wholes = self._sym_tables()
-        raised = getattr(self, "_sym_raised", None) or set()
+        parts, wholes = self._concept_tables()
+        raised = getattr(self, "_concept_raised", None) or set()
         return sorted(s for s in parts
                       if (parts.get(s) or wholes.get(s)) and s not in raised)
 
-    def _sym_raise_set(self):
+    def _concept_raise_set(self):
         """Lazy set of HIGHER-ORDER symbols minted by σ-synthesis (idempotency:
         a raised symbol's many constituents are its DEFINITION, not over-
         collection, so it is never re-refined). Mirrors WholeSpace's
         ``_mereology_raised`` for the legacy raise."""
-        s = getattr(self, "_sym_raised", None)
+        s = getattr(self, "_concept_raised", None)
         if s is None:
             s = set()
-            object.__setattr__(self, "_sym_raised", s)
+            object.__setattr__(self, "_concept_raised", s)
         return s
 
     def synthesize_higher_order(self, part_codes):
@@ -13519,15 +13520,15 @@ class ConceptualSpace(Space):
         realization). H is tagged RAISED so the lifecycle never re-refines it.
         Returns H. Idempotent per identical ``part_codes`` set."""
         key = ("raise", frozenset(part_codes))
-        self._sym_tables()
-        idx = self._sym_relate_idx.get(key)
+        self._concept_tables()
+        idx = self._concept_relate_idx.get(key)
         if idx is not None:
             return int(idx)
-        H = self.new_symbol()
+        H = self.new_concept()
         for c in part_codes:
             self.add_part(H, c)
-        self._sym_raise_set().add(H)
-        self._sym_relate_idx[key] = H
+        self._concept_raise_set().add(H)
+        self._concept_relate_idx[key] = H
         return H
 
     def conceptualize_chain(self, concept_ids):
@@ -13540,11 +13541,11 @@ class ConceptualSpace(Space):
         (a different order is a different chain). Host-side (eager island)."""
         if not concept_ids:
             return None
-        self._sym_tables()
-        chains = getattr(self, '_sym_chain_idx', None)
+        self._concept_tables()
+        chains = getattr(self, '_concept_chain_idx', None)
         if chains is None:
             chains = {}
-            object.__setattr__(self, '_sym_chain_idx', chains)
+            object.__setattr__(self, '_concept_chain_idx', chains)
         ids = [int(c) for c in concept_ids]
         key = ("chain", tuple(ids))
         cached = chains.get(key)
@@ -13557,7 +13558,7 @@ class ConceptualSpace(Space):
         # earlier concept becomes the whole over the accumulated rest (the part).
         rest = ids[-1]
         for i in range(len(ids) - 2, -1, -1):
-            rest = self.reify_relation(rest, ids[i])  # Parts={rest}, Wholes={ids[i]}
+            rest = self.reify_concept(rest, ids[i])  # Parts={rest}, Wholes={ids[i]}
         chains[key] = int(rest)
         return int(rest)
 
@@ -13580,14 +13581,14 @@ class ConceptualSpace(Space):
         definition) are skipped — no re-refinement. A symbol over-collected on
         BOTH sides synthesizes AND emits the analyse request. Returns a list of
         ``{'sym', 'op', 'codes', ['result']}``. Idempotent. Thresholds default
-        to ``_sym_k_many`` (4)."""
+        to ``_concept_k_many`` (4)."""
         self.resolve_identities()
-        parts, wholes = self._sym_tables()
-        raised = self._sym_raise_set()
+        parts, wholes = self._concept_tables()
+        raised = self._concept_raise_set()
         kp = int(k_parts if k_parts is not None
-                 else getattr(self, "_sym_k_many", 4))
+                 else getattr(self, "_concept_k_many", 4))
         kw = int(k_wholes if k_wholes is not None
-                 else getattr(self, "_sym_k_many", 4))
+                 else getattr(self, "_concept_k_many", 4))
         requests = []
         for sym in list(parts.keys()):
             if sym in raised:
@@ -13597,14 +13598,14 @@ class ConceptualSpace(Space):
             if n_p <= kp and n_w <= kw:
                 continue                              # not over-collected
             if n_p > kp:
-                codes = self.symbol_parts(sym)
+                codes = self.concept_parts(sym)
                 H = self.synthesize_higher_order(codes)   # σ: APPLIED
                 requests.append({"sym": sym, "op": "synthesize",
                                  "codes": codes, "result": H})
             if n_w > kw:
                 requests.append({"sym": sym, "op": "analyse",
-                                 "codes": self.symbol_wholes(sym)})
-            self.retire_symbol(sym)                   # retire-on-trigger
+                                 "codes": self.concept_wholes(sym)})
+            self.retire_concept(sym)                   # retire-on-trigger
         return requests
 
     def create_word_object_meta(self, word_parts, word_whole, key=None):
@@ -13621,7 +13622,7 @@ class ConceptualSpace(Space):
                               and is SUCCESSIVELY REFINED (σ synthesizes the
                               atoms into higher-order parts; π splits the
                               universe into finer wholes — the lifecycle loop).
-          C = META          — ``reify_relation(A, B)``: Parts(C)={('sym',A)},
+          C = META          — ``reify_concept(A, B)``: Parts(C)={('sym',A)},
                               Wholes(C)={('sym',B)}. The word≡object binding.
 
         Relation-only: no vectors, no codebook rows — the parts/wholes are
@@ -13639,15 +13640,15 @@ class ConceptualSpace(Space):
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
             return A, B, C
-        A = self.new_symbol()                     # the WORD-symbol
+        A = self.new_concept()                     # the WORD-symbol
         for p in word_parts:
             self.add_part(A, int(p))
         if word_whole is not None:
             self.add_whole(A, int(word_whole))
-        B = self.new_symbol()                     # the OBJECT-symbol
+        B = self.new_concept()                     # the OBJECT-symbol
         self.add_part(B, _ATOM)                   # bottom pole — to be refined
         self.add_whole(B, _UNIVERSE)              # top pole — to be refined
-        C = self.reify_relation(A, B)             # the word≡object META (A ≤ B)
+        C = self.reify_concept(A, B)             # the word≡object META (A ≤ B)
         if key is not None:
             wom[key] = (A, B, C)
         return A, B, C
@@ -14671,7 +14672,7 @@ class ConceptualSpace(Space):
 
         Epistemic scalars enter membership folds only through the
         evaluation chart (spec §3 -- evaluation, not injection). This
-        is the single sanctioned conversion site on the C tier; callers
+        is the single sanctioned conversion site on the C space_role; callers
         must not pre- or re-chart (§10.6: applied exactly once per
         cash-out). Out-of-range beliefs are clamped to the K3 wire
         domain ``[-1, 1]`` first.
@@ -14709,16 +14710,20 @@ class ConceptualSpace(Space):
     def _build_symbol_leg(self, ctx_sub):
         """CS-mediated SS (symbol) bind leg -- replaces SymbolSpace.forward_symbol.
 
-        The DUALITY: CS sees all three towers in its forward, so it -- not
-        SymbolSpace -- reads the higher-order 'meta' codes that order-raising
-        minted into the WholeSpace codebook (via ``_relation_store()``), SYNCS
-        them into the symbol codebook on ``SS.subspace.what`` (Alec 2026-06-21:
-        symbols live there, 1:1 with concepts), and builds the ``[B, N, D]``
-        symbol leg FROM it -- the same frame as the PS/WS percept legs. Detached
-        (the symbol is a reference; gradient stops at the codebook). Returns None
-        (-> the bind fills a zero leg) when there are no raised symbols / empty
-        ctx. Host-side dict iteration -> ``@torch.compiler.disable`` eager island
-        (tolerated under the symbol_tower fullgraph relax).
+        Reads the higher-order 'meta' codes order-raising minted into the
+        WholeSpace codebook (via ``_relation_store()``) and copies each, under
+        ``no_grad``, into its STABLE concept-indexed row of ``SS.subspace.what``
+        (1:1 concept<->symbol; ``_concept_ss_row`` maps each meta position to a
+        fixed row, first-seen), then builds the ``[B, N, D]`` symbol leg with
+        each symbol placed at its row (same frame as the PS/WS percept legs).
+        The leg is detached, so no gradient reaches the symbol codebook. Returns
+        None (-> the bind fills a zero leg) when there are no raised symbols /
+        empty ctx. Host-side dict iteration -> ``@torch.compiler.disable`` eager
+        island (tolerated under the symbol_tower fullgraph relax).
+
+        The symbol codebook is a reference to the concept codes, not a learned
+        copy; see doc/Architecture.md "Addressable attention" for why it stays a
+        reference and why its shaping is kept off the reconstruction path.
         """
         ws = self._relation_store()
         if ws is None or ctx_sub is None or ctx_sub.is_empty():
@@ -14730,26 +14735,27 @@ class ConceptualSpace(Space):
         if not pos_kind or not pos_to_row or W_ws is None:
             return None
         Vw = int(W_ws.shape[0])
-        rows = [int(pos_to_row[p]) for p, k in pos_kind.items()
-                if k == "meta" and p in pos_to_row
-                and 0 <= int(pos_to_row[p]) < Vw]
-        if not rows:
+        metas = sorted(int(p) for p, k in pos_kind.items()
+                       if k == "meta" and p in pos_to_row
+                       and 0 <= int(pos_to_row[p]) < Vw)
+        if not metas:
             return None
-        codes = W_ws[rows].detach()
-        # Sync the higher-order codes INTO SS.subspace.what (the symbol codebook).
+        # Stable concept->symbol-row map: each meta position keeps a fixed row
+        # (first-seen allocation), so the symbol's (SPACE_SYMBOL, row) address is
+        # its identity across forwards. Rebuilt per run; the codebook rows
+        # persist as the Parameter, the map re-derives from the meta positions.
+        cmap = getattr(self, '_concept_ss_row', None)
+        if cmap is None:
+            cmap = {}
+            object.__setattr__(self, '_concept_ss_row', cmap)
+        for p in metas:
+            if p not in cmap:
+                cmap[p] = len(cmap)
         ss = getattr(self, '_model_symbolSpace', None)
         ss_cb = (getattr(getattr(ss, 'subspace', None), 'what', None)
                  if ss is not None else None)
         W_ss = ss_cb.getW() if (ss_cb is not None
                                 and hasattr(ss_cb, 'getW')) else None
-        if W_ss is not None:
-            ns = min(len(rows), int(W_ss.shape[0]))
-            cws = min(int(codes.shape[-1]), int(W_ss.shape[-1]))
-            with torch.no_grad():
-                W_ss[:ns, :cws] = codes[:ns, :cws].to(W_ss.device, W_ss.dtype)
-            src, nsrc = W_ss, ns          # build the leg FROM SS.subspace.what
-        else:
-            src, nsrc = codes, len(rows)
         sample = ctx_sub.materialize()
         if sample is None or sample.dim() < 1:
             return None
@@ -14758,9 +14764,30 @@ class ConceptualSpace(Space):
         N = int(ws.outputShape[0])
         D = int(ws.subspace.muxedSize)
         slab = torch.zeros(N, D, device=dev, dtype=dt)
-        n = min(nsrc, N)
-        cw = min(int(src.shape[-1]), D)
-        slab[:n, :cw] = src[:n, :cw].detach().to(device=dev, dtype=dt)
+        if W_ss is not None:
+            need = max(cmap[p] for p in metas) + 1
+            if need > int(W_ss.shape[0]) and hasattr(ss_cb, 'grow_to'):
+                ss_cb.grow_to(need)
+                W_ss = ss_cb.getW()
+            cws = min(int(W_ws.shape[-1]), int(W_ss.shape[-1]))
+            with torch.no_grad():
+                for p in metas:
+                    r = cmap[p]
+                    if 0 <= r < int(W_ss.shape[0]):
+                        W_ss[r, :cws] = W_ws[int(pos_to_row[p]), :cws].to(
+                            W_ss.device, W_ss.dtype)
+            cw = min(int(W_ss.shape[-1]), D)
+            for p in metas:
+                r = cmap[p]
+                if 0 <= r < N:
+                    slab[r, :cw] = W_ss[r, :cw].detach().to(device=dev, dtype=dt)
+        else:
+            cw = min(int(W_ws.shape[-1]), D)
+            for p in metas:
+                r = cmap[p]
+                if 0 <= r < N:
+                    slab[r, :cw] = W_ws[int(pos_to_row[p]), :cw].detach().to(
+                        device=dev, dtype=dt)
         event = slab.unsqueeze(0).expand(B, N, D).contiguous()
         sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
                        nInputDim=D, nOutputDim=D)
@@ -14884,7 +14911,7 @@ class ConceptualSpace(Space):
 
         Post Stage 1.C of the two-loop pi/sigma substrate refactor
         (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md): the
-        atomic forward C-tier fold ``sigma_percept`` is retired. This
+        atomic forward C-space_role fold ``sigma_percept`` is retired. This
         method no longer applies a parameterised percept→concept
         operator; it only does STM bookkeeping. The signal-router
         grammar dispatch that consumes STM contents is Stage 3.
@@ -14942,7 +14969,7 @@ class ConceptualSpace(Space):
             # the carrier e.g. wide [B,1024,8] -> [B,1024,1024]). Gated to the
             # wide->deep handoff (nInput != nOutput) where the incoming band-
             # stripped content slab divides the deep concept width; the
-            # legacy trim/pad still runs for same-N tiers and content-only
+            # legacy trim/pad still runs for same-N space_roles and content-only
             # events. where/when ride along: the deep rows carry _stm_dim of
             # the regrouped content, the band is re-applied per deep position.
             _wide_deep = (int(self.inputShape[0]) != int(self.outputShape[0]))
@@ -14985,13 +15012,13 @@ class ConceptualSpace(Space):
                     sym = F.pad(sym, (0, _stm_dim - sym.shape[-1]))
         # 2026-05-29 EXPERIMENT (per user direction): clean-stack STM.
         # Replace the Stage-10 ``sigma_in(combined) + sigma_cs(prev)``
-        # additive composition with per-stage tier attribution:
+        # additive composition with per-stage space_role attribution:
         #
         #     stage 0      STM = PS event (the incoming `primary`)
         #     stage k > 0  STM = WS event (the WS contribution `sym`)
         #
-        # No additive mixing across tiers; no residual lift; each
-        # stage's STM is exactly the tier-specific contribution at
+        # No additive mixing across space_roles; no residual lift; each
+        # stage's STM is exactly the space_role-specific contribution at
         # that stage. Trivially invertible (read-back).
         #
         # When the WS contribution is missing or shape-mismatched at a
@@ -15109,7 +15136,7 @@ class ConceptualSpace(Space):
         subspace.set_event(event_for_carrier)
         # ``clear_last_svo`` was an end-of-CS-forward bookkeeping hook
         # in the prior fold-and-snap design; retained here because the
-        # SymbolicSubSpace consumers still expect the SVO slot cleared at
+        # SymbolSubSpace consumers still expect the SVO slot cleared at
         # the cycle boundary.
         ss = getattr(self, 'symbolSpace', None)
         if ss is not None:
@@ -15225,7 +15252,7 @@ class WholeSpace(PerceptualSpace):
     shift/reduce loop. Each entry has what (codebook index), where (position),
     and when (derivation order).
 
-    S-tier operations (swap) operate on whereEncodings of node children.
+    S-space_role operations (swap) operate on whereEncodings of node children.
     The top-level `true()` evaluates the full stack activation -> scalar.
 
     -----------------------------------------------------------------------
@@ -15493,7 +15520,7 @@ class WholeSpace(PerceptualSpace):
         #     ``S = sigma(S)`` rule -- ``_attach_per_space_syntactic_layer``
         #     (Language.py) reads ``getattr(space, 'pi')`` and registers it
         #     under BOTH the 'pi' rule name and the legacy 'sigma' alias
-        #     (the P/C-tier alias idiom), so existing grammars keep
+        #     (the P/C-space_role alias idiom), so existing grammars keep
         #     dispatching the WS fold. (History: when WS owned no fold this
         #     hook silently bound nothing and the rule was a no-op -- the
         #     root cause of the XOR_exact non-convergence.)
@@ -15592,7 +15619,7 @@ class WholeSpace(PerceptualSpace):
         # view (D == ``_sigma_dim``, N == ``inputShape[0]``) instead of a
         # per-slot square fold. XOR (and any function that must COMBINE
         # information across slot positions) needs this at the symbolic
-        # tier exactly as PS.pi needs it at the percept tier -- a square
+        # space_role exactly as PS.pi needs it at the percept space_role -- a square
         # per-slot sigma cannot mix the two word slots. ``N`` is the total
         # flattened element count; the cascade pads to the next power of
         # two internally and the per-pair LDU keeps it exactly invertible
@@ -15894,7 +15921,7 @@ class WholeSpace(PerceptualSpace):
         self._impenetrable = self._build_impenetrable_layer()
         # FusionLayer / ContiguousLayer eager construction was retired
         # 2026-05-04: the operator was a duplicate of DisjunctionLayer
-        # at S-tier (same kernel ``Ops.union`` on the codebook
+        # at S-space_role (same kernel ``Ops.union`` on the codebook
         # activation bivector). Grammars that fired ``Fusion(S, S)`` /
         # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``,
         # which the chart's lazy-build path resolves via the
@@ -16232,7 +16259,7 @@ class WholeSpace(PerceptualSpace):
         doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md
         (Phase 2, amended 2026-06-02): the operator's identity lives in a
         codebook so the soft-superposition over the operator-prefixed parse
-        tree (held deterministically in SymbolicSubSpace / ObjectSubSpace) can
+        tree (held deterministically in SymbolSubSpace / ObjectSubSpace) can
         resolve it by lookup. An operator defines HOW meanings combine and
         contributes no meaning of its own, so it is NOT a meaning-bearing
         symbol and is NEVER written into the STM idea space.
@@ -18035,7 +18062,7 @@ class WholeSpace(PerceptualSpace):
     def _op_for_rule(self, rule_id, symbolSpace=None):
         """Return a callable ``(self_sub, inc_sub) -> new_what`` for ``rule_id``.
 
-        Dispatches through the ``symbolSpace.host_layer(tier, rule_name)``
+        Dispatches through the ``symbolSpace.host_layer(space_role, rule_name)``
         registry (the same path SymbolSpace's grammar applies during chart
         compose). When ``symbolSpace`` is missing, no host layer is
         registered for the rule, or the rule_id is out of range, returns
@@ -18062,28 +18089,28 @@ class WholeSpace(PerceptualSpace):
             except (IndexError, AttributeError, ValueError, TypeError):
                 method_name = None
             if method_name is not None:
-                # Tier routing (see doc/Language.md):
+                # Space-role routing (see doc/Language.md):
                 #   * Subsymbolic ops (lift / lower / union /
                 #     intersection) live on PartSpace /
                 #     ConceptualSpace's PiLayer + SigmaLayer instances;
-                #     dispatch via tier='C' so the lattice composition
-                #     fires on the concept-tier representation.
+                #     dispatch via space_role='CS' so the lattice composition
+                #     fires on the concept-space_role representation.
                 #   * Symbolic ops (not / non / true / false / what /
                 #     where / when / query / equals / part / swap /
                 #     conjunction / disjunction / ...) live on
                 #     WholeSpace's SyntacticLayer registry; dispatch
-                #     via tier='S'.
+                #     via space_role='SS'.
                 _SUBSYMBOLIC = {'lift', 'lower', 'union', 'intersection'}
-                tier = 'C' if method_name in _SUBSYMBOLIC else 'S'
+                space_role = 'CS' if method_name in _SUBSYMBOLIC else 'SS'
                 try:
-                    host = symbolSpace.host_layer(tier, method_name)
+                    host = symbolSpace.host_layer(space_role, method_name)
                 except Exception:
                     host = None
-                # Fallback: some grammar configs only register one tier
-                # for a rule. Try the other tier so the dispatch still
+                # Fallback: some grammar configs only register one space_role
+                # for a rule. Try the other space_role so the dispatch still
                 # finds a layer in mixed configurations.
                 if host is None:
-                    fallback = 'S' if tier == 'C' else 'C'
+                    fallback = 'SS' if space_role == 'CS' else 'CS'
                     try:
                         host = symbolSpace.host_layer(fallback, method_name)
                     except Exception:
@@ -18316,13 +18343,13 @@ class WholeSpace(PerceptualSpace):
     def _pick_default_reduce_rule(self):
         """Pick a default arity-2 rule for hard reduction.
 
-        First-patch policy: the lowest-id arity-2 rule (S-tier preferred,
-        then C-tier, then any tier) that's either (a) registered on
+        First-patch policy: the lowest-id arity-2 rule (S-space_role preferred,
+        then C-space_role, then any space_role) that's either (a) registered on
         ``self.syntacticLayer._by_name`` or (b) instantiable from
         ``GRAMMAR_LAYER_CLASSES``. The lookup widened in the 2026-05-29
         grammar-file-refactor (\xa75): rules can now bind at any host
         space's syntacticLayer (intersection / union / lift / lower
-        moved to ``tier='C'`` per their layer class, so they no longer
+        moved to ``space_role='CS'`` per their layer class, so they no longer
         appear on the WholeSpace syntactic layer). The reverse path's
         rule pick should still find them because LanguageLayer dispatch
         knows how to route any GRAMMAR_LAYER_CLASSES-resolved op.
@@ -18334,9 +18361,9 @@ class WholeSpace(PerceptualSpace):
         if getattr(self, 'syntacticLayer', None) is None:
             return None
         registered = self.syntacticLayer._by_name
-        for tier in ('S', 'C', 'P', 'L'):
+        for space_role in ('SS', 'CS', 'subsymbolic'):
             try:
-                candidates = TheGrammar.rules_for_tier(tier, arity=2)
+                candidates = TheGrammar.rules_for_space_role(space_role, arity=2)
             except Exception:
                 continue
             for rid in candidates:
@@ -18361,7 +18388,7 @@ class WholeSpace(PerceptualSpace):
             return self.subspace
         B, N, D = act_pre.shape
 
-        # "6+2+2": WholeSpace is a (0,0) content tier, so the CS->WS
+        # "6+2+2": WholeSpace is a (0,0) content space_role, so the CS->WS
         # handoff demuxes the muxed CS event (content + .where/.when band)
         # down to the bare .what content width the terminal codebook is
         # dimensioned on. ``materialize`` returns the event width (e.g. 14);
@@ -18555,6 +18582,13 @@ class WholeSpace(PerceptualSpace):
         vals = u.detach().to("cpu").long()
         B, N = int(vals.shape[0]), int(vals.shape[1])
         _ws = (0, 9, 10, 13, 32)
+        # ASCII punctuation (Layers.char_class PUNCT ranges): a word boundary
+        # like whitespace, but -- unlike whitespace, which is discarded -- each
+        # punctuation char becomes its OWN one-char span so the grammar can see
+        # it (Alec 2026-06-22: the word analyzer splits on punctuation as well
+        # as spaces). Punct-free input (xor / phrases) is unchanged.
+        _punct = frozenset(range(33, 48)) | frozenset(range(58, 65)) \
+            | frozenset(range(91, 97)) | frozenset(range(123, 127))
         all_spans = []
         K = 1
         for b in range(B):
@@ -18566,6 +18600,11 @@ class WholeSpace(PerceptualSpace):
                     if start is not None:
                         parts.append((start, i))
                         start = None
+                elif v in _punct:
+                    if start is not None:
+                        parts.append((start, i))
+                        start = None
+                    parts.append((i, i + 1))   # punctuation: its own token
                 else:
                     if start is None:
                         start = i
@@ -19209,7 +19248,7 @@ class WholeSpace(PerceptualSpace):
         mask.scatter_(1, topk, 1.0)
         return mask.unsqueeze(-1)
 
-    def passback_action(self, pass_idx):
+    def passback_action(self, pass_idx, scope=None):
         """The 4-case WS->PS top-down pass-back dispatch
         (doc/specs/mereological-order-raising.md "the top-down attention
         handoff"). Returns ``(action, where)`` -- ``action`` one of
@@ -19244,7 +19283,11 @@ class WholeSpace(PerceptualSpace):
         """
         if int(pass_idx) == 0:
             return ("noop", None)               # first pass is wide-open
-        scope = getattr(self, "_passback_scope_where", None)
+        # The scope is CS-owned (R2: CS is the home of the .where-producer) and
+        # passed in by the model orchestrator; fall back to a self-parked scope
+        # for standalone callers (unit tests).
+        if scope is None:
+            scope = getattr(self, "_passback_scope_where", None)
         if scope is not None:
             return ("scoped", scope)            # serial / word-`.where` reading
         if self.intent_boosts() is None:
@@ -19348,7 +19391,7 @@ class WholeSpace(PerceptualSpace):
         # standalone space without the stamp keeps today's dispatch.
         # Geometry guards keep legacy-geometry legs on today's path:
         # a snap cannot consume a view narrower than the codebook row
-        # (e.g. MM_xor's t=1 view hands 5-wide muxed atoms; the S-tier
+        # (e.g. MM_xor's t=1 view hands 5-wide muxed atoms; the S-space_role
         # dispatch does the width lift there), and the emission frame
         # [N, nDim] must reshape cleanly into the narrow output
         # [*, nOutputDim] (tapered multi-stage configs carry stages
@@ -19379,15 +19422,15 @@ class WholeSpace(PerceptualSpace):
             act_pre = act_pre[..., :_trim_w]
         # SyntacticLayer is unconditional: per the grammar XML, the
         # chart populates ``current_rules`` with one or more rules per
-        # tier (e.g. ``S = sigma(S)`` from model.xml's default
-        # grammar). When no chart rule fires for this tier, the
+        # space_role (e.g. ``S = sigma(S)`` from model.xml's default
+        # grammar). When no chart rule fires for this space_role, the
         # dispatch is a no-op (post-2026-05-07 rollback removed the
         # ``default_rule`` code-level fallback — grammar XML is the
         # sole source of truth).
         if _symbolic_iter:
             # THE CODEBOOK REPLACES PI (plan Step 1): on a symbolic
             # iteration the snap below IS the analysis -- the pi
-            # transform (the parallel fold AND the S-tier syntactic
+            # transform (the parallel fold AND the S-space_role syntactic
             # dispatch alike) is bypassed, not resized or retired
             # (`none` mode and the serial leg keep theirs). Thought is
             # top-down, serial, and can only be acted on by Sigma:
@@ -19399,8 +19442,8 @@ class WholeSpace(PerceptualSpace):
             # 2026-06-09) the fold is ``self.pi`` -- the top-down ANALYSIS
             # (product/intersection) operator. It is the cross-slot symbolic
             # mix that XOR -- and any function that must combine information
-            # across slot positions -- requires at the S tier, exactly as
-            # PS.sigma provides it at the P tier (a square per-slot fold
+            # across slot positions -- requires at the S space_role, exactly as
+            # PS.sigma provides it at the P space_role (a square per-slot fold
             # cannot mix the word slots; see __init__). The 2026-05-29
             # clean-stack read-back turned this into a pass-through
             # (``act = act_pre``), removing the only per-stage nonlinearity
@@ -19451,14 +19494,14 @@ class WholeSpace(PerceptualSpace):
                     act = act_pre
         else:
             # ---- Eager cursor path: WholeSpace is the single site
-            # that drives S-tier op application. The per-tier rule list
-            # comes straight from ``symbolSpace.current_rules.get('S')``
+            # that drives S-space_role op application. The per-space_role rule list
+            # comes straight from ``symbolSpace.current_rules.get('SS')``
             # (the live ``list[list[int]]`` populated by
             # ``SymbolSpace.compose``). The legacy Phase-2B tensor-driven
             # op_sel branch was retired with the SentenceState carrier
             # (op_sel was never populated in production); the cursor
             # loop below is the one and only S-executor.
-            chart_rules_S = (symbolSpace.current_rules.get('S')
+            chart_rules_S = (symbolSpace.current_rules.get('SS')
                              if symbolSpace is not None
                              and symbolSpace.current_rules is not None
                              else None)
@@ -19870,7 +19913,7 @@ class WholeSpace(PerceptualSpace):
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
         # SyntacticLayer dispatches whatever the grammar XML specifies
-        # for S-tier reverse (e.g. ``S = sigma.reverse(S)`` from
+        # for S-space_role reverse (e.g. ``S = sigma.reverse(S)`` from
         # model.xml). When no chart rule fires, the dispatch is a
         # no-op (post-2026-05-07 rollback removed the ``default_rule``
         # code-level fallback).
@@ -19880,7 +19923,7 @@ class WholeSpace(PerceptualSpace):
             pass
         else:
             gen_rules_S = (
-                symbolSpace.generate_rules.get('S')
+                symbolSpace.generate_rules.get('SS')
                 if (symbolSpace is not None
                     and getattr(symbolSpace, 'generate_rules', None))
                 else None)

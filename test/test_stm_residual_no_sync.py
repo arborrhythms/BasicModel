@@ -31,8 +31,8 @@ def test_stm_residual_microbatch_has_no_item_early_out():
     The early-out was the only ``.item()`` call in the function; the
     handoff replaced it with a host-sync-free vectorized gate.
     """
-    from Language import SymbolicSubSpace
-    src = inspect.getsource(SymbolicSubSpace.stm_residual_microbatch)
+    from Language import SymbolSubSpace
+    src = inspect.getsource(SymbolSubSpace.stm_residual_microbatch)
     # The function may mention ``.item()`` in comments (e.g. the
     # "Removed: ..." marker the handoff left as a regression
     # signpost), but no live call should remain.

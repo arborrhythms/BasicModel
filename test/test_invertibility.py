@@ -511,7 +511,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "objectSize": objSize, "nObjects": nObjects,
             "nWhere": nWhere, "nWhen": nWhen,
             # Isolated Space tests stage pre-built tensors directly and
-            # never invoke the Embedding lexer; force the data tier to a
+            # never invoke the Embedding lexer; force the data space_role to a
             # non-embedding value so PartSpace does not build an Embedding
             # basis if a prior test left dataType="embedding".
             "dataType": "numeric",
@@ -570,7 +570,7 @@ class TestPiLayerInvertibleTrained(unittest.TestCase):
 
 
 # TestConceptualSpaceInvertible removed 2026-05-28: depended on
-# ConceptualSpace.sigma_percept which Stage 1.C retired (the C-tier
+# ConceptualSpace.sigma_percept which Stage 1.C retired (the C-space_role
 # fold is now a single STM push of upstream PS output).
 
 
@@ -866,7 +866,7 @@ class TestProjectionBasisInvertibility(unittest.TestCase):
         """V_basis < D forces a rank-V_basis projection -> reverse
         cannot recover the dropped dimensions.
         """
-        D, V_basis = 10, 8  # MM_5M_bivector's C-tier shape today
+        D, V_basis = 10, 8  # MM_5M_bivector's C-space_role shape today
         basis = self._basis(V_in=1, V_basis=V_basis, D=D, seed=1)
         x = torch.randn(self.BATCH, 1, D) * 0.3
         bivec = basis.forward(x)

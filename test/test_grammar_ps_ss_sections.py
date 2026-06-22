@@ -76,12 +76,12 @@ def test_grammar_loads_ps_and_ws_sections(monkeypatch, tmp_path):
     ws_methods = {r.method_name for r in g.ws_rules if r.method_name}
     assert "conjunction" in ws_methods
 
-    # PS section -> a separate ps_rules table, tagged tier 'P'.
+    # PS section -> a separate ps_rules table, tagged space_role 'subsymbolic'.
     assert len(g.ps_rules) > 0
     ps_methods = {r.method_name for r in g.ps_rules if r.method_name}
     assert "boundary" in ps_methods
-    assert all(r.tier == 'P' for r in g.ps_rules), (
-        [(r.method_name, r.tier) for r in g.ps_rules])
+    assert all(r.space_role == 'subsymbolic' for r in g.ps_rules), (
+        [(r.method_name, r.space_role) for r in g.ps_rules])
 
     # The two tables are disjoint: no PS rule leaks into the SS table.
     assert "boundary" not in ws_methods

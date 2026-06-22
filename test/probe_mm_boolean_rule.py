@@ -1,7 +1,7 @@
 """Linguistic readout: what rule did the trained MM_boolean model learn?
 
 Trains a model briefly, then probes:
-  1. Per-literal C-tier concept activations (what each pure input
+  1. Per-literal C-space_role concept activations (what each pure input
      produces just before the DNF wrapper).
   2. Per-AND-term firing strengths for each pure literal — identifies
      which AND-terms learned A, B, C, ¬A, ¬B, ¬C, non-A patterns.

@@ -330,7 +330,7 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         self._seed_relative_stm(m, B)
         # Per-row current_rules: rows 0 and 2 relative, row 1 absolute
         # (empty inner list -> not relative).
-        m.symbolSpace.current_rules = {"S": [[rel_id], [], [rel_id]]}
+        m.symbolSpace.current_rules = {"SS": [[rel_id], [], [rel_id]]}
 
         rel_mask = m._sentence_relative_mask(B)
         self.assertEqual(rel_mask.tolist(), [True, False, True],
@@ -362,7 +362,7 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         _accept_all(cs)
         B = 2
         self._seed_relative_stm(m, B)
-        m.symbolSpace.current_rules = {"S": [[], []]}
+        m.symbolSpace.current_rules = {"SS": [[], []]}
         rel_mask = m._sentence_relative_mask(B)
         self.assertFalse(bool(rel_mask.any()))
         tax_before = dict(ws.taxonomy)

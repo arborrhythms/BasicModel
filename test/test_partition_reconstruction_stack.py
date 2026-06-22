@@ -73,10 +73,10 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
-    # Reset grammar so SymbolicSubSpace.__init__ can (re)configure it cleanly.
+    # Reset grammar so SymbolSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ss = Language.SymbolicSubSpace(
+    ss = Language.SymbolSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
         wholeSpace=symbolic_space,
@@ -117,7 +117,7 @@ def test_reconstruction_stack_roundtrip():
 # ---------------------------------------------------------------------------
 
 def test_sentence_prediction_uses_root_slot_only():
-    """Discourse predictor consumes the root S-tier slot, not the full
+    """Discourse predictor consumes the root S-space_role slot, not the full
     [S | W] snapshot.
 
     Pre-2026-05-14 the contrastive layer flattened ``n_symbols * n_dim``
@@ -144,7 +144,7 @@ def test_sentence_prediction_uses_root_slot_only():
     )
     assert discourse.predictor is not None
     assert discourse.sentence_dim == n_dim, (
-        "Sentence rep is the root S-tier slot of width n_dim, not the "
+        "Sentence rep is the root S-space_role slot of width n_dim, not the "
         "full n_symbols * n_dim flatten.")
     in_dim = discourse.predictor[0].in_features
     assert in_dim == (p + q) * n_dim, (

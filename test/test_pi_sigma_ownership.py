@@ -50,7 +50,7 @@ from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, 'data')
 # Switched from MentalModel.xml to MM_xor_loopback.xml because the
-# former is broken on ``main`` (SymbolicSubSpace.__init__ reads
+# former is broken on ``main`` (SymbolSubSpace.__init__ reads
 # ``self.subspace`` which doesn't exist for that config path).
 # MM_xor_loopback.xml exercises the same PS/CS/SS ownership rules
 # and is what ``test_perceptual_loopback.py`` already uses cleanly.
@@ -102,7 +102,7 @@ class TestOwnership(unittest.TestCase):
 
     def test_conceptual_no_sigma_percept(self):
         # Post-Stage-1.C: CS no longer owns sigma_percept. The atomic
-        # forward C-tier fold is retired; CS.forward is STM bookkeeping
+        # forward C-space_role fold is retired; CS.forward is STM bookkeeping
         # (see test_cs_stm_bookkeeping.py for the positive contract).
         model = _make_plain_model()
         self.assertFalse(
@@ -113,7 +113,7 @@ class TestOwnership(unittest.TestCase):
     def test_symbolic_owns_pi(self):
         # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
         # WholeSpace OWNS the pi (the top-down analysis/intersection
-        # operator; the binding target for the S-tier fold rule -- bound
+        # operator; the binding target for the S-space_role fold rule -- bound
         # under BOTH the 'pi' rule name and the legacy 'sigma' alias).
         model = _make_plain_model()
         # Stage 9 cutover (2026-06-11): with <meronomy>on (the model.xml default) the meronymic slot binds the membership kernel via MeronymicFoldAdapter; the OWNERSHIP contract is unchanged.
@@ -140,7 +140,7 @@ class TestOwnership(unittest.TestCase):
         model = _make_plain_model()
         self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
                          "ConceptualSpace must NOT own a bare ``sigma`` "
-                         "attribute; the atomic C-tier fold is retired "
+                         "attribute; the atomic C-space_role fold is retired "
                          "by Stage 1.C. Stage 10's sigma_in / sigma_cs "
                          "are differently named.")
 
@@ -200,7 +200,7 @@ class TestForwardReverseAliases(unittest.TestCase):
     def test_conceptual_no_sigma_percept_forward(self):
         # Post-Stage-1.C: the ``sigma_percept`` SigmaLayer (and the
         # ``_sigma_percept_reverse`` two-pass ergodic helper) are
-        # retired with the atomic C-tier fold. CS.forward is now STM
+        # retired with the atomic C-space_role fold. CS.forward is now STM
         # bookkeeping (see test_cs_stm_bookkeeping.py).
         model = _make_plain_model()
         cs = model.conceptualSpace

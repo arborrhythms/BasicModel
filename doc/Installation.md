@@ -4,7 +4,7 @@
 
 - **Python 3.12** with a virtual environment at `.venv/`
 - **PyTorch** with MPS (Apple Silicon) or CUDA
-- **pandoc** (optional, for PDF generation via `make doc_pdf`)
+- **pandoc** (optional, for PDF generation via `make doc`)
 
 ## Setup
 
@@ -24,14 +24,14 @@ activation is required.
 | Target | Description |
 |---|---|
 | `make train` | Full training (Phase 1 embeddings + Phase 2 model), logged to `output/logs/` |
-| `make train_micro` | Small run: 500 docs, 1 random shard, logged |
+| `make train_micro` | Small run: max 1,000,000 docs across 10 random shards, logged |
 
 ### Models
 
 | Target | Description |
 |---|---|
-| `make run` | Run `BasicModel.py` with the config in `XML1` |
-| `make xor` | `data/XOR_exact.xml` |
+| `make run` | Run `Models.py` with the config in `XML1` |
+| `make xor` | `data/MM_xor.xml` |
 | `make simple` | `data/simple.xml` |
 | `make ergodic` | `data/ergodic.xml` |
 | `make tomatoes` | `data/tomatoes.xml` |
@@ -45,11 +45,12 @@ activation is required.
 |---|---|
 | `make test` | Unit tests (forces `BASICMODEL_DEVICE=cpu`) |
 | `make bench` | Training benchmarks (baseline) |
-| `make doc_pdf` | Generate `BasicModel.pdf` via pandoc |
+| `make doc` | Generate `BasicModel.pdf` via pandoc |
 
-PDF chapters in order: `README.md`, `doc/Architecture.md`, `doc/BasicModel.md`,
-`doc/Spaces.md`, `doc/Language.md`, `doc/Logic.md`, `doc/Ergodic.md`,
-`doc/Training.md`, `doc/MachineMinds.md`, `doc/Params.md`, `doc/Installation.md`.
+PDF chapters in order: `README.md`, `doc/Installation.md`, `doc/Architecture.md`,
+`doc/BasicModel.md`, `doc/Spaces.md`, `doc/STM.md`, `doc/Language.md`,
+`doc/Mereology.md`, `doc/Logic.md`, `doc/Reasoning.md`, `doc/Training.md`,
+`doc/Ergodic.md`, `doc/MachineMinds.md`, `doc/Params.md`.
 
 ### Utilities
 

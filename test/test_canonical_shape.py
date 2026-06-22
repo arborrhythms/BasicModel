@@ -5,12 +5,12 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from architecture import canonical_shape, MANDATORY_CODEBOOK_TIERS
+from architecture import canonical_shape, MANDATORY_CODEBOOK_SPACE_ROLES
 
 
 def test_canonical_shape_table():
     # 2026-06-06 dim-convention unification (see bin/architecture.py docstring):
-    # every INTERIOR tier carries the SAME (nWhere=2, nWhen=2) band so the
+    # every INTERIOR space_role carries the SAME (nWhere=2, nWhen=2) band so the
     # formula nDim = nWhat + nWhere + nWhen is uniform. SS/SymbolSpace band slots
     # ride along as inert padding -- this SUPERSEDES the earlier convention that
     # gave SS/SymbolSpace (0,0) and demuxed at the CS->SS boundary. The ONLY
@@ -25,15 +25,15 @@ def test_canonical_shape_table():
     assert canonical_shape("SymbolSpace")       == (2, 2)
 
 
-def test_mandatory_codebook_tiers():
+def test_mandatory_codebook_space_roles():
     # 2026-06-04: the mandatory-codebook constraint was reverted. XOR_exact
     # (and other invertible-passthrough fixtures) need <codebook>none</codebook>
     # on PartSpace / WholeSpace -- a full-width invertible passthrough
     # with no VQ snap, so the forward<->reverse chain round-trips exactly and
-    # the butterfly pi/sigma compute XOR with cross-slot reach. No tier is
+    # the butterfly pi/sigma compute XOR with cross-slot reach. No space_role is
     # mandatory now; a config opts into a codebook explicitly via
     # <codebook>quantize</codebook>.
-    assert MANDATORY_CODEBOOK_TIERS == set()
+    assert MANDATORY_CODEBOOK_SPACE_ROLES == set()
 
 
 def test_unknown_section_raises():

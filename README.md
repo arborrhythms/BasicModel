@@ -32,11 +32,10 @@ Model configurations are specified in XML. See [doc/Architecture.md](doc/Archite
 
 | File | Description |
 |------|-------------|
-| [bin/BasicModel.py](bin/BasicModel.py) | Main entry point: model factory, training loop, comparison plots, HTML report |
-| [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
-| [bin/Space.py](bin/Space.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, Grammar |
+| [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare` mode, HTML report |
+| [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
+| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, Grammar |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
-| [bin/SigmaPi.py](bin/SigmaPi.py) | Standalone demo of the SigmaPi network solving XOR |
 | [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
 | [doc/Params.md](doc/Params.md) | Full XML parameter reference |
@@ -62,7 +61,7 @@ make compare XML1=data/simple.xml XML2=data/ergodic.xml
 make test
 
 # Generate PDF documentation
-make doc_pdf
+make doc
 ```
 
 ## XML Configuration
@@ -72,14 +71,12 @@ Models are configured via XML files in `data/`. Training and data parameters liv
 ```xml
 <model>
   <architecture>
-    <modelType>simple</modelType>   <!-- simple | lm | embedding -->
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <reconstruct>NONE</reconstruct>  <!-- NONE | symbols | output | both -->
-    <maskedPrediction>NONE</maskedPrediction>
 
     <data>
-      <dataset>xor</dataset>        <!-- xor | mnist | text | ... -->
+      <dataset>xor</dataset>        <!-- xor | phrases | mnist | tomatoes | text | inline -->
+      <dataType>numeric</dataType>  <!-- embedding | numeric -->
     </data>
 
     <training>

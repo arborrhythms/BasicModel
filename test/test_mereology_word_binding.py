@@ -57,10 +57,10 @@ def _cs_stub(ss):
         Spaces.ConceptualSpace._autobind_cross_tower, stub)
     # The cross-tower path also populates the relation-only CS symbol table,
     # and the orchestrator mints the per-word A/B/C symbols.
-    for _m in ("_populate_cs_symbols", "_sym_tables", "new_symbol",
+    for _m in ("_populate_cs_symbols", "_concept_tables", "new_concept",
                "add_part", "add_whole", "resolve_identities",
-               "relate", "reify_relation", "create_word_object_meta",
-               "symbol_parts", "symbol_wholes"):
+               "relate", "reify_concept", "create_word_object_meta",
+               "concept_parts", "concept_wholes"):
         setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 
@@ -167,13 +167,13 @@ def test_gate_on_creates_word_object_meta():
     assert "abc" in wom
     A, B, C = wom["abc"]
     # A = word-symbol: parts = the word-parts, whole = the WS word-whole.
-    assert set(stub.symbol_parts(A)) == {10, 11, 12}
-    assert stub.symbol_wholes(A) == [ss._word_whole_ss["abc"]]
+    assert set(stub.concept_parts(A)) == {10, 11, 12}
+    assert stub.concept_wholes(A) == [ss._word_whole_ss["abc"]]
     # B = object-symbol: maximally unspecified poles, awaiting refinement.
-    assert stub.symbol_parts(B) == [ATOM] and stub.symbol_wholes(B) == [UNIVERSE]
+    assert stub.concept_parts(B) == [ATOM] and stub.concept_wholes(B) == [UNIVERSE]
     # C = META: reify A ⊑ B (word≡object).
-    assert stub.symbol_parts(C) == [("sym", A)]
-    assert stub.symbol_wholes(C) == [("sym", B)]
+    assert stub.concept_parts(C) == [("sym", A)]
+    assert stub.concept_wholes(C) == [("sym", B)]
 
 
 def test_cs_owns_relation_taxonomy_by_reference():

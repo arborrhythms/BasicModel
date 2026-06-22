@@ -1,7 +1,7 @@
 """Contextual BIND (Phase 2).
 
 doc/plans/2026-06-03-contextual-bind-preposition-when.md "Operation 2:
-contextual BIND". A binary C-tier marker op that, at parse time, resolves
+contextual BIND". A binary CS-space_role marker op that, at parse time, resolves
 LIFT(BIND, VP) into LIFT(resolved_ref, VP): the missing NP is filled from
 an accessible participant already built in the current parse. Resolution
 is (1) constructional licensing (want => subject-control, persuade =>
@@ -92,7 +92,7 @@ def test_clear_bind_context_reverts_to_passthrough():
 
 def test_class_contract():
     assert (ContextualBindLayer.rule_name == "bind" and ContextualBindLayer.arity == 2
-            and ContextualBindLayer.tier == "C")
+            and ContextualBindLayer.space_role == "CS")
 
 
 # --- Task 2.4: live-fold stash --------------------------------------------

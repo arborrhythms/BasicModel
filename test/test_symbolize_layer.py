@@ -3,7 +3,7 @@
 Tests the new ``SymbolizeLayer`` class:
 
   * Class-level attributes: ``rule_name == "symbolize"``, ``arity == 2``,
-    ``tier == 'C'``, ``invertible == True``.
+    ``space_role == 'CS'``, ``invertible == True``.
   * ``forward(left, right)`` identifies a percept_id and a symbol_idx
     (by nearest-row match in PS.percept_store / SS.codebook), then
     delegates to ``WholeSpace.insert_meta(ps_idx, ws_idx,
@@ -15,7 +15,7 @@ Tests the new ``SymbolizeLayer`` class:
     must return the same META idx (no new META row allocated; EMA
     update of the stored fused vec).
   * Signal-router dispatch: a grammar declaring ``symbolize(C, C)`` at the
-    C tier causes ``SymbolizeLayer`` to bind to the signal router via
+    CS space_role causes ``SymbolizeLayer`` to bind to the signal router via
     ``_attach_per_space_syntactic_layer``.
   * No-PerceptStore fallback: when ``PartSpace`` lacks a
     ``percept_store`` (legacy lexicon mode), ``forward`` falls back to
@@ -108,11 +108,11 @@ class TestSymbolizeLayerClassAttributes(unittest.TestCase):
         from Layers import SymbolizeLayer
         self.assertEqual(SymbolizeLayer.rule_name, "symbolize")
 
-    def test_meta_tier_is_C(self):
+    def test_meta_space_role_is_CS(self):
         from Layers import SymbolizeLayer
         self.assertEqual(
-            SymbolizeLayer.tier, 'C',
-            "SymbolizeLayer.tier must be 'C'.")
+            SymbolizeLayer.space_role, 'CS',
+            "SymbolizeLayer.space_role must be 'CS'.")
 
     def test_meta_invertible(self):
         """SymbolizeLayer is invertible (reverse recovers the discrete pair).
@@ -379,11 +379,11 @@ class TestSymbolizeLayerSignalRouterRegistration(unittest.TestCase):
 
 
 class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
-    """When the active grammar declares ``meta`` at the C tier,
+    """When the active grammar declares ``meta`` at the CS space_role,
     ``_attach_per_space_syntactic_layer`` must build a SymbolizeLayer and
-    pass it through as a builtin layer for the C-tier SyntacticLayer.
+    pass it through as a builtin layer for the CS-space_role SyntacticLayer.
 
-    The hook point is ``builtin_layers['symbolize']`` in the C-tier branch
+    The hook point is ``builtin_layers['symbolize']`` in the CS-space_role branch
     (mirrors the existing ``builtin_layers['lift']`` / ``['lower']``
     registration).
     """
@@ -391,37 +391,37 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
     def test_attach_per_space_registers_meta_when_grammar_uses_it(self):
         from Layers import SymbolizeLayer
         import Language
-        # Stub out TheGrammar.rules so it contains a C-tier 'symbolize' rule.
+        # Stub out TheGrammar.rules so it contains a CS-space_role 'symbolize' rule.
         # Use a minimal namedtuple-shaped object.
         from collections import namedtuple
         FakeRule = namedtuple(
             'FakeRule',
-            ['tier', 'canonical', 'arity', 'method_name', 'lhs',
+            ['space_role', 'canonical', 'arity', 'method_name', 'lhs',
              'rhs_symbols'])
         fake_rules = [
             FakeRule(
-                tier='C', canonical='C -> symbolize(C, C)', arity=2,
+                space_role='CS', canonical='C -> symbolize(C, C)', arity=2,
                 method_name='symbolize', lhs='C', rhs_symbols=('C', 'C')),
         ]
         prev_rules = Language.TheGrammar.rules
         try:
             Language.TheGrammar.rules = fake_rules
             # Re-do the rule iteration as in _attach_per_space_syntactic_
-            # layer's tier=='C' branch to confirm 'symbolize' is detected.
+            # layer's space_role=='CS' branch to confirm 'symbolize' is detected.
             grammar_C_methods = {
                 r.method_name for r in Language.TheGrammar.rules
-                if r.tier == 'C' and r.method_name is not None}
+                if r.space_role == 'CS' and r.method_name is not None}
             self.assertIn('symbolize', grammar_C_methods)
         finally:
             Language.TheGrammar.rules = prev_rules
 
-    def test_attach_per_space_builds_meta_layer_for_c_tier(self):
-        """End-to-end: a model whose grammar carries C-tier 'symbolize(C, C)'
+    def test_attach_per_space_builds_meta_layer_for_cs_space_role(self):
+        """End-to-end: a model whose grammar carries CS-space_role 'symbolize(C, C)'
         produces a SyntacticLayer with a registered SymbolizeLayer instance.
 
         We mutate the live grammar AFTER construction (the XML doesn't
         carry meta(...)) by monkey-patching ``TheGrammar.rules`` to
-        inject a fake C-tier 'symbolize' rule, then exercise the wiring
+        inject a fake CS-space_role 'symbolize' rule, then exercise the wiring
         branch in ``_attach_per_space_syntactic_layer`` to verify a
         SymbolizeLayer instance is built and registered as the 'symbolize'
         builtin.
@@ -433,18 +433,18 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language
         from collections import namedtuple
         m = _make_radix_model()
-        # SymbolicSubSpace lives on perceptualSpace.symbolSpace
+        # SymbolSubSpace lives on perceptualSpace.symbolSpace
         # (set by Space.attach_symbolSpace).
         ss = getattr(m.perceptualSpace, 'symbolSpace', None)
         if ss is None:
-            self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
+            self.skipTest("No SymbolSubSpace constructed; cannot test wiring.")
         FakeRule = namedtuple(
             'FakeRule',
-            ['tier', 'canonical', 'arity', 'method_name', 'lhs',
+            ['space_role', 'canonical', 'arity', 'method_name', 'lhs',
              'rhs_symbols'])
         prev_rules = list(Language.TheGrammar.rules)
         synthetic_meta = FakeRule(
-            tier='C', canonical='C -> symbolize(C, C)', arity=2,
+            space_role='CS', canonical='C -> symbolize(C, C)', arity=2,
             method_name='symbolize', lhs='C', rhs_symbols=('C', 'C'))
         # Capture the builtin_layers dict that
         # _attach_per_space_syntactic_layer builds. The function then
@@ -455,29 +455,29 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language as _Lang
         orig_builder = _Lang.build_space_syntactic_layer
 
-        def _capture_builder(space, ss, *, tier, builtin_layers):
-            captured.setdefault(tier, dict(builtin_layers))
+        def _capture_builder(space, ss, *, space_role, builtin_layers):
+            captured.setdefault(space_role, dict(builtin_layers))
             return orig_builder(space, ss,
-                                tier=tier,
+                                space_role=space_role,
                                 builtin_layers=builtin_layers)
         try:
             Language.TheGrammar.rules = prev_rules + [synthetic_meta]
             _Lang.build_space_syntactic_layer = _capture_builder
-            # Re-attach the C-tier layer; the wiring branch should
+            # Re-attach the CS-space_role layer; the wiring branch should
             # build a SymbolizeLayer under builtin_layers['symbolize'].
             cs = getattr(m, 'conceptualSpace', None)
             if cs is None:
-                self.skipTest("No conceptualSpace; cannot test C-tier wiring.")
-            ss._attach_per_space_syntactic_layer(cs, tier='C')
+                self.skipTest("No conceptualSpace; cannot test CS-space_role wiring.")
+            ss._attach_per_space_syntactic_layer(cs, space_role='CS')
         finally:
             Language.TheGrammar.rules = prev_rules
             _Lang.build_space_syntactic_layer = orig_builder
-        self.assertIn('C', captured,
-                      "C-tier _attach_per_space did not run.")
-        meta_layer = captured['C'].get('symbolize')
+        self.assertIn('CS', captured,
+                      "CS-space_role _attach_per_space did not run.")
+        meta_layer = captured['CS'].get('symbolize')
         self.assertIsNotNone(
             meta_layer,
-            "When the grammar carries 'symbolize' at the C tier, "
+            "When the grammar carries 'symbolize' at the CS space_role, "
             "_attach_per_space_syntactic_layer must wire a SymbolizeLayer "
             "into builtin_layers['symbolize'].")
         self.assertIsInstance(meta_layer, SymbolizeLayer)
@@ -892,13 +892,13 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
 class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
     """Stage 9 acceptance: the per-space SyntacticLayer wiring path
     registers the SymbolizeLayer instance against ``symbolSpace.host_layer
-    ('C', 'symbolize')``; when the chart / signal router fires a 'symbolize'
-    rule at the C tier it dispatches through ``SymbolizeLayer.compose``.
+    ('CS', 'symbolize')``; when the chart / signal router fires a 'symbolize'
+    rule at the CS space_role it dispatches through ``SymbolizeLayer.compose``.
 
     Two-pronged check:
       1. After ``_attach_per_space_syntactic_layer`` runs on the
-         ConceptualSpace with a 'symbolize' C-tier rule in TheGrammar,
-         ``SymbolicSubSpace.host_layer('C', 'symbolize')`` returns a SymbolizeLayer.
+         ConceptualSpace with a 'symbolize' CS-space_role rule in TheGrammar,
+         ``SymbolSubSpace.host_layer('CS', 'symbolize')`` returns a SymbolizeLayer.
       2. Invoking ``compose(left, right)`` on the registered layer
          routes through ``SymbolizeLayer.forward`` (verified by monkey-
          patching the bound method).
@@ -913,10 +913,10 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
     to ``gl.compose(...)``.
     """
 
-    def _wire_meta_into_c_tier(self, m):
-        """Helper: monkey-patch TheGrammar.rules to inject a C-tier
-        ``symbolize(C, C)`` rule, then re-attach the C-tier per-space
-        SyntacticLayer so ``host_layer('C', 'symbolize')`` registers the
+    def _wire_meta_into_cs_space_role(self, m):
+        """Helper: monkey-patch TheGrammar.rules to inject a CS-space_role
+        ``symbolize(C, C)`` rule, then re-attach the CS-space_role per-space
+        SyntacticLayer so ``host_layer('CS', 'symbolize')`` registers the
         SymbolizeLayer. Returns ``(ss, cs, prev_rules)`` for the caller
         to restore on teardown.
         """
@@ -924,45 +924,45 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         from collections import namedtuple
         ss = getattr(m.perceptualSpace, 'symbolSpace', None)
         if ss is None:
-            self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
+            self.skipTest("No SymbolSubSpace constructed; cannot test wiring.")
         cs = getattr(m, 'conceptualSpace', None)
         if cs is None:
             self.skipTest(
-                "No conceptualSpace; cannot test C-tier wiring.")
+                "No conceptualSpace; cannot test CS-space_role wiring.")
         FakeRule = namedtuple(
             'FakeRule',
-            ['tier', 'canonical', 'arity', 'method_name', 'lhs',
+            ['space_role', 'canonical', 'arity', 'method_name', 'lhs',
              'rhs_symbols'])
         synthetic_meta = FakeRule(
-            tier='C', canonical='C -> symbolize(C, C)', arity=2,
+            space_role='CS', canonical='C -> symbolize(C, C)', arity=2,
             method_name='symbolize', lhs='C', rhs_symbols=('C', 'C'))
         prev_rules = list(Language.TheGrammar.rules)
         Language.TheGrammar.rules = prev_rules + [synthetic_meta]
-        # Re-attach C-tier; SyntacticLayer.__init__ calls
-        # ss.register_host_layer('C', 'symbolize', meta_layer).
-        ss._attach_per_space_syntactic_layer(cs, tier='C')
+        # Re-attach CS-space_role; SyntacticLayer.__init__ calls
+        # ss.register_host_layer('CS', 'symbolize', meta_layer).
+        ss._attach_per_space_syntactic_layer(cs, space_role='CS')
         return ss, cs, prev_rules
 
     def test_host_layer_registry_resolves_meta_after_attach(self):
-        """After the C-tier SyntacticLayer is rebuilt with a 'symbolize' rule
-        in the grammar, ``SymbolicSubSpace.host_layer('C', 'symbolize')`` returns
+        """After the CS-space_role SyntacticLayer is rebuilt with a 'symbolize' rule
+        in the grammar, ``SymbolSubSpace.host_layer('CS', 'symbolize')`` returns
         a registered SymbolizeLayer instance (NOT just a class entry --
         the actual instance the chart will dispatch to).
         """
         import Language
         from Layers import SymbolizeLayer
         m = _make_radix_model()
-        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
+        ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
         try:
-            registered = ss.host_layer('C', 'symbolize')
+            registered = ss.host_layer('CS', 'symbolize')
             self.assertIsNotNone(
                 registered,
-                "symbolSpace.host_layer('C', 'symbolize') must return the "
+                "symbolSpace.host_layer('CS', 'symbolize') must return the "
                 "registered SymbolizeLayer after _attach_per_space_syntactic_"
-                "layer runs with 'symbolize' in the C-tier grammar.")
+                "layer runs with 'symbolize' in the CS-space_role grammar.")
             self.assertIsInstance(
                 registered, SymbolizeLayer,
-                f"Registered ('C', 'symbolize') layer must be a SymbolizeLayer; "
+                f"Registered ('CS', 'symbolize') layer must be a SymbolizeLayer; "
                 f"got {type(registered).__name__}.")
             # Sanity: BOTH back-references are set (forward needs them
             # to dispatch through PS / SS codebook nearest-match).
@@ -1010,9 +1010,9 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
-        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
+        ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
         try:
-            registered = ss.host_layer('C', 'symbolize')
+            registered = ss.host_layer('CS', 'symbolize')
             self.assertIsInstance(registered, SymbolizeLayer)
             # Monkey-patch the bound forward to record calls + delegate.
             calls = []
@@ -1074,9 +1074,9 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         with torch.no_grad():
             ps_store.codebook.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
-        ss, cs, prev_rules = self._wire_meta_into_c_tier(m)
+        ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
         try:
-            registered = ss.host_layer('C', 'symbolize')
+            registered = ss.host_layer('CS', 'symbolize')
             self.assertIsInstance(registered, SymbolizeLayer)
             calls = []
             orig_forward = registered.forward

@@ -76,8 +76,8 @@ def test_symbolic_references_parameter_attached_via_knowledge():
 
     g = Grammar()
     g.rules = [
-        g._parse_rule("NP", "conjunction(DET, N)", tier='S'),
-        g._parse_rule("S", "disjunction(NP, VP)", tier='S'),
+        g._parse_rule("NP", "conjunction(DET, N)", space_role='SS'),
+        g._parse_rule("S", "disjunction(NP, VP)", space_role='SS'),
     ]
     g._configured = True
     view = KnowledgeView(build_knowledge_section(g))

@@ -1,6 +1,6 @@
 """End-to-end acceptance: stack NOT (unary) in front of AND/OR (binary)
 inside one LanguageLayer and confirm the dispatch produces sensible
-per-tier rule selections plus full-graph gradient flow.
+per-space_role rule selections plus full-graph gradient flow.
 
 The ops here are minimal float-tensor proxies for AND / OR / NOT;
 plugging in real GRAMMAR_LAYER_CLASSES instances is a follow-up plan
@@ -28,7 +28,7 @@ class _StubSymbolSpace:
         self.current_rules = {}
         self.generate_rules = {}
         self._compose_generation = 0
-    def host_layer(self, tier, rule_name):
+    def host_layer(self, space_role, rule_name):
         return None
 
 
@@ -51,16 +51,16 @@ class _NotOp(nn.Module):
         return -x
 
 
-def test_xor_router_emits_per_tier_rule_dict():
+def test_xor_router_emits_per_space_role_rule_dict():
     router = _make_router()
-    # Single tier "S": unary NOT (rule_id 0) and binary AND/OR (rule_ids 1, 2).
-    router.attach_unary_ops(ops=[_NotOp()], rule_ids=[0], tier="S")
-    router.attach_layer_ops(ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], tier="S")
+    # Single space_role "SS": unary NOT (rule_id 0) and binary AND/OR (rule_ids 1, 2).
+    router.attach_unary_ops(ops=[_NotOp()], rule_ids=[0], space_role="SS")
+    router.attach_layer_ops(ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], space_role="SS")
     ss = _StubSymbolSpace()
     rules = router.compose(torch.randn(2, 4, 4), word_space=ss)
-    # One key per tier; unary + binary rule_ids merged in route order.
-    assert list(rules.keys()) == ["S"]
-    for row in rules["S"]:
+    # One key per space_role; unary + binary rule_ids merged in route order.
+    assert list(rules.keys()) == ["SS"]
+    for row in rules["SS"]:
         for rid in row:
             assert rid in (0, 1, 2), f"unexpected rule_id {rid}"
 
@@ -83,8 +83,8 @@ def test_xor_router_gradients_reach_all_three_ops():
     pnot = _ParamApply(D, _NotOp(), 1)
     pand = _ParamApply(D, _AndOp(), 2)
     por = _ParamApply(D, _OrOp(), 2)
-    router.attach_unary_ops(ops=[pnot], rule_ids=[0], tier="S")
-    router.attach_layer_ops(ops=[pand, por], rule_ids=[1, 2], tier="S")
+    router.attach_unary_ops(ops=[pnot], rule_ids=[0], space_role="SS")
+    router.attach_layer_ops(ops=[pand, por], rule_ids=[1, 2], space_role="SS")
 
     ss = _StubSymbolSpace()
     x = torch.randn(2, 4, D, requires_grad=True)

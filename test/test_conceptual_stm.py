@@ -1,6 +1,6 @@
 """ShortTermMemory on ConceptualSpace -- acceptance tests.
 
-The STM is a per-batch stack of unquantized C-tier "ideas". The
+The STM is a per-batch stack of unquantized C-space_role "ideas". The
 serial / shift-reduce parser (deferred work) will push and pop
 here as it reduces concepts into ideas. The current batched-CKY
 chart doesn't consume the STM yet -- this is the structural slot.
@@ -49,7 +49,7 @@ class TestShortTermMemoryUnit(unittest.TestCase):
         stm = self.STM(batch=1, capacity=None, concept_dim=4)
         self.assertEqual(stm.capacity, 8,
                          "Default STM capacity sits within the 7±2 "
-                         "linguistic limit and matches wMax fallback.")
+                         "linguistic limit (DEFAULT_CAPACITY = 8).")
 
     def test_custom_capacity(self):
         stm = self.STM(batch=1, capacity=64, concept_dim=4)

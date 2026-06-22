@@ -5,7 +5,7 @@ Post-Stage-1.C contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
   * ``ConceptualSpace`` retires the atomic-fold ``sigma_percept``
     (and ``sigma_percept_1`` / ``sigma_percept_2`` variants). The
     SigmaLayer that previously did the percept→concept lift is gone;
-    the C tier no longer holds a parameterised fold operator.
+    the C space_role no longer holds a parameterised fold operator.
 
   * ``ConceptualSpace.forward(PS_subspace, SS_subspace=None)`` performs
     **STM bookkeeping only**: under the newest-at-slot-0 convention it

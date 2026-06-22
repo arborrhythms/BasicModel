@@ -13,7 +13,7 @@
          * grammar block          (full English grammar instead of the
                                    trivial S=intersection/union pair)
          (Stage 3 cleanup: parserBackend, chartTau, chartTopK,
-          chartNoiseEps, and wMax retired when the chart was retired
+          chartNoiseEps retired when the chart was retired
           in favour of the signal router.)
        Distinct ckpt/kv paths so LM_5M and MM_20M training can coexist.
        Server port also distinct so both can serve in parallel.
@@ -111,7 +111,7 @@
   </OutputSpace>
 
   <SymbolSpace>
-    <!-- Stage 3 cleanup: parserBackend, chartTau, wMax, chartTopK,
+    <!-- Stage 3 cleanup: parserBackend, chartTau, chartTopK,
          chartNoiseEps retired alongside the chart. The signal router
          (LanguageLayer) is the canonical parser. -->
     <language>

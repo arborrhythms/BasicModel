@@ -1,4 +1,53 @@
 
+============================ Remaining work (audited 2026-06-22) ============================
+
+### Grammar operators / forward-reverse — the decode round-trip (top priority; debug via MM_20M & MM_20M_grammar)
+* sigma & pi binary generate are partition-BLIND: they recover the atanh/log sum exactly but then set L==R, so two distinct operands cannot be recovered. Make them partition-AWARE inverses. (Core decode blocker — "the cat" → "t t".)
+* lift & lower inherit sigma/pi's blind .what split (their .where/.when channels already invert exactly). Give them real content-inverses so "the cat" → S → lower.reverse() reconstitutes both constituents.
+* Bare sigma/pi default to invertible=False (plain LinearLayer, no reverse) — build them invertible for the decode peel.
+* Thread basis=WholeSpace.subspace.what through intersection/union/conjunction/disjunction reverses (real codebook recommender only when basis is passed; lossy (parent,parent) otherwise).
+* Lossy-by-design ops — decide handling for decode: isEqual (max-fold), isPart (drops the left operand), preposition (drops the marker), bind (non-invertible contextual).
+* aspect is an identity stub (duration retired in the bracket redesign) — confirm intended.
+* Word analyzer stages a degenerate [0,0] span in serial+radix (word-bracket staging broken) — needed for PS/WS word codetermination.
+* Compact-symbol configs (WS nOutputDim=8) need a learned symbol_dim→concept_dim expander (or move to tall WS) — else the decode consumer falls back to no-op. Most configs are still WS=8 (Stage 6 not global).
+* Already-faithful inverses (reference, no work): not, non, tense, exist, symbolize.
+
+### Reasoning (D2)
+* Wire reasoning into a live forward/train path: reason() / consequents() / verify_relation() are built + tested (~70 tests) but have ZERO production callers. Needs QA framing + answer losses + a consumer to train it (the global-attention consumer it would use already landed).
+* PI-then-Sigma predictor routing conditioning is built but unpopulated.
+* Subsymbolic STM round-trip primitive not wired into the live forward.
+* PartSpace per-word ground-truth cursor (next_word) is inert / unwired.
+
+### MM_20M infra
+* Apply the verified MPS r0_0 inductor codegen monkeypatch (pop().root.cache_clear() in MetalKernel.codegen_body, as a util.py monkeypatch) so compiled-MPS trains; currently MPS falls back to eager only. (Combine-cap + butterfly=false fix IS applied.)
+* MM_20M blank reconstruction: synthesis=bpe never stashes _forward_input → empty ws row map → blanks. Fix = synthesis=radix OR an empty-taxonomy → PS-table fallback in _reverse_decode_one.
+* MM_20M XOR-supervision: lexer=byte discards the XOR labels (diagnosed; config-only fix not applied to MM_20M).
+
+### Dark features never turned live (lights-on pivot incomplete — wire live + verify, or remove)
+* truthIdeas, categoryCodebook, chooserCategoryContext, symbolicComposition, verbSpectrum, adverbEigEdit — all have 0 live configs.
+
+### Truth / Ideas tail
+* Workstream G: episodic .events exemplar store (persisted CS .events / PS .what+.where+.when) for truth grounding — no owner yet.
+* Stage 6 truth/ideas geometric realization (OR-combine / pi-split / sigma-over-set).
+* Mereology.Peaceful() raises NotImplementedError.
+* Higher-order INTENSIONAL composition (correlation loss) is plan-only.
+
+### Checkpoint migration
+* load_weights only bridges the container move (symbolSpace.* → symbolSpace.subspace.*). Bridge the SyntacticLayer re-home, the WS-tall reshape, and the _concept_* / space_role renames — else old checkpoints can't load (regenerate or migrate).
+
+### Cleanup / loose ends
+* Remove the legacy NeuralToolUser executor (pending confirmation).
+* Fix 2 pre-existing bugs surfaced by this work: topk_priming_mask crash; runEpoch runtime-split raise.
+* conceptualize / conceptualize_chain defined but never called from a live path (R6 invocation wiring).
+* WholeSpace stack-route uses an eager Python SHIFT loop + a hardcoded reduce rule instead of the router's learned scoring.
+* symbolicOrder > 1 is plumbed but silently behaves as 1.
+* Cosmetic: residual 'tier' mentions (mm5m SVG diagram), frozen doc/old archives.
+
+=========================================================================================
+
+* queries and reasoning
+
+
 * Compile is failing for python bin/Models.py data/MM_20M.xml
 
 * WholeSpace property mechanism — I made a scoping call worth confirming. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.

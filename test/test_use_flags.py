@@ -38,7 +38,7 @@ def _load(cfg_name):
 # (``_derive_use_grammar``): ``"none"`` when every operational rule is
 # a unary substrate fold (``pi`` / ``sigma``), ``"all"`` when any other
 # operator (``intersection`` / ``union`` / ``not`` / ``lift`` / …) appears.
-# The configs below all carry such operators at S-tier (XOR's
+# The configs below all carry such operators at S-space_role (XOR's
 # not/intersection/union, MentalModel's full Boolean grammar, etc.),
 # so the derived value is ``"all"`` for every entry.
 # (MM_xor.xml dropped 2026-06-04: it deliberately sets PartSpace

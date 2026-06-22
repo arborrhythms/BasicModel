@@ -9,7 +9,7 @@ Exercises:
   - ChartCompose fires on the post-PartSpace subspace (the
     "data is None" failure mode that hid the wiring failure earlier
     must stay fixed).
-  - WholeSpace's per-tier SyntacticLayer is a no-op on the signal
+  - WholeSpace's per-space_role SyntacticLayer is a no-op on the signal
     path (would otherwise crash on truly-binary ConjunctionLayer /
     DisjunctionLayer that don't expose a unary forward).
 """
@@ -70,7 +70,7 @@ def _restore_global_state(snap):
 
 class TestXORGrammarConfigParsing(unittest.TestCase):
     """Verify the XML carries the signal-router flag and the grammar's
-    three Boolean primitive rules at the symbolic tier."""
+    three Boolean primitive rules at the symbolic space_role."""
 
     @classmethod
     def setUpClass(cls):
@@ -135,11 +135,11 @@ class TestXORGrammarRouterWiring(unittest.TestCase):
         self.assertEqual(by_name["conjunction"].arity, 2)
         self.assertEqual(by_name["disjunction"].arity, 2)
 
-    def test_grammar_rules_at_symbolic_tier(self):
+    def test_grammar_rules_at_symbolic_space_role(self):
         for r in self.grammar_rules:
             if r.method_name in ("not", "conjunction", "disjunction"):
-                self.assertEqual(r.tier, "S",
-                    f"Rule {r.method_name} expected at tier 'S', got {r.tier!r}")
+                self.assertEqual(r.space_role, "SS",
+                    f"Rule {r.method_name} expected at space_role 'SS', got {r.space_role!r}")
 
 
 class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
@@ -191,7 +191,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
 
     def test_chart_router_kind_is_signal(self):
         """Stage 3: chart retired; the canonical parser is the signal
-        router (LanguageLayer) directly on SymbolicSubSpace."""
+        router (LanguageLayer) directly on SymbolSubSpace."""
         ss = self.model.symbolSpace
         self.assertIsNotNone(ss, "SymbolSpace must be built")
         self.assertIsNotNone(ss.languageLayer)
@@ -201,8 +201,8 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         self.assertIsInstance(ss.languageLayer, LanguageLayer)
 
     def test_signal_router_has_grammar_ops_attached(self):
-        # Tier-free contract: grammar rules collapse to a single reduction
-        # tier, so do NOT assume a "S" (or "C") key. Search across ALL
+        # Space-role-free contract: grammar rules collapse to a single reduction
+        # space_role, so do NOT assume a "SS" (or "CS") key. Search across ALL
         # attached unary / binary layers and assert the grammar's ops are
         # present by op-class.
         from Language import NotLayer, ConjunctionLayer, DisjunctionLayer
@@ -212,10 +212,10 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             router, "LanguageLayer must be built")
         self.assertTrue(
             len(router._unary_layers) > 0,
-            "Expected at least one unary tier attached")
+            "Expected at least one unary space_role attached")
         self.assertTrue(
             len(router._binary_layers) > 0,
-            "Expected at least one binary tier attached")
+            "Expected at least one binary space_role attached")
 
         # Binary ops are wrapped in _BinaryGrammarOpAdapter; unwrap via
         # `.gl` (the codebase's own unwrap idiom) to reach the real
@@ -228,13 +228,13 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
                       for op in layer.ops]
         self.assertTrue(
             any(isinstance(op, NotLayer) for op in unary_ops),
-            "Expected a NotLayer attached to some unary tier")
+            "Expected a NotLayer attached to some unary space_role")
         self.assertTrue(
             any(isinstance(op, ConjunctionLayer) for op in binary_ops),
-            "Expected a ConjunctionLayer attached to some binary tier")
+            "Expected a ConjunctionLayer attached to some binary space_role")
         self.assertTrue(
             any(isinstance(op, DisjunctionLayer) for op in binary_ops),
-            "Expected a DisjunctionLayer attached to some binary tier")
+            "Expected a DisjunctionLayer attached to some binary space_role")
 
     def test_signal_router_rule_ids_match_grammar(self):
         ss = self.model.symbolSpace
@@ -246,9 +246,9 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
                        if r.method_name == "conjunction")
         disj_id = next(i for i, r in enumerate(TheGrammar.rules)
                        if r.method_name == "disjunction")
-        # Tier-free contract: rule_ids are keyed by the single collapsed
-        # reduction tier, so do NOT index by "S"/"C". Assert the grammar's
-        # rule_ids appear in the union of ALL attached tiers' rule_ids.
+        # Space-role-free contract: rule_ids are keyed by the single collapsed
+        # reduction space_role, so do NOT index by "SS"/"CS". Assert the grammar's
+        # rule_ids appear in the union of ALL attached space_roles' rule_ids.
         all_unary_rule_ids = set()
         for rids in router._unary_rule_ids.values():
             all_unary_rule_ids.update(rids)
@@ -256,11 +256,11 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         for rids in router._binary_rule_ids.values():
             all_binary_rule_ids.update(rids)
         self.assertIn(not_id, all_unary_rule_ids,
-            "Grammar 'not' rule_id must be attached to some unary tier")
+            "Grammar 'not' rule_id must be attached to some unary space_role")
         self.assertLessEqual(
             {conj_id, disj_id}, all_binary_rule_ids,
             "Grammar 'conjunction'/'disjunction' rule_ids must be "
-            "attached to some binary tier")
+            "attached to some binary space_role")
 
     def test_chart_compose_fires_on_forward_pass(self):
         """Retired 2026-05-14: subsymbolicOrder=2 + useGrammar='all' shape contract no longer matches IR-only forward; chart-compose wiring covered by test/test_compose_chart.py."""

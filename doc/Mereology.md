@@ -49,7 +49,7 @@ fundamental operation, the five mereological relations, and the
 > and extract `W = basis.getW()` internally before dispatching to
 > `Ops.disjunctionReverse` / `Ops.conjunctionReverse`. The chart
 > reverse / signal-router dispatch (`bin/Language.py::unreduce()`)
-> passes `basis=tier_basis` at the call site; no back-ref is stored
+> passes `basis=space_role_basis` at the call site; no back-ref is stored
 > on the layer. See
 > [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 

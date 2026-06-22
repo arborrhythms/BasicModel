@@ -5,7 +5,7 @@ Plan: doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md Stage 3.
 Acceptance gates:
   * ``Chart`` class no longer exists in ``bin/Language.py`` (importing
     ``Language.Chart`` raises ``AttributeError``).
-  * ``SymbolicSubSpace`` (the SymbolSpace carrier) installs ``languageLayer``
+  * ``SymbolSubSpace`` (the SymbolSpace carrier) installs ``languageLayer``
     as a direct ``LanguageLayer`` instance (no chart indirection).
   * ``Grammar.rule_probability`` returns floats in [0, 1] for both
     dormant defaults and learned overrides; ``_fired_bodies`` single-
@@ -60,9 +60,9 @@ def test_chart_inside_helpers_gone():
 # --- Gate 2: SymbolSpace has self.languageLayer ---------------------------
 
 def _bare_word_subspace_with_signal_router():
-    """Construct a minimal SymbolicSubSpace-like with a LanguageLayer attached.
+    """Construct a minimal SymbolSubSpace-like with a LanguageLayer attached.
 
-    Stage 3 wires ``self.languageLayer`` directly on SymbolicSubSpace (no
+    Stage 3 wires ``self.languageLayer`` directly on SymbolSubSpace (no
     Chart indirection). This test verifies the attribute exists.
     """
     from Language import LanguageLayer
@@ -72,7 +72,7 @@ def _bare_word_subspace_with_signal_router():
         max_depth=3, temperature=1.0,
     )
     # Bare object with the attribute, mirroring the expected post-Stage-3
-    # SymbolicSubSpace surface.
+    # SymbolSubSpace surface.
     class _FakeWS:
         languageLayer = layer
     return _FakeWS()
@@ -164,11 +164,12 @@ def test_binary_tiling_viterbi_callable():
     "chartTau",
     "chartTopK",
     "chartNoiseEps",
+    "wMax",
 ])
 def test_retired_xml_knobs_raise_on_load(knob):
     """Legacy configs that still set retired knobs must error loudly.
 
-    The check fires when SymbolicSubSpace is built from a config containing
+    The check fires when SymbolSubSpace is built from a config containing
     any of the retired ``<parserBackend>`` / ``<routerKind>`` /
     ``<chartTau>`` / ``<chartTopK>`` / ``<chartNoiseEps>`` knobs.
     """

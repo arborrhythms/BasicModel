@@ -73,7 +73,7 @@ def _router_with_ops(neural_tool_user):
     router = LanguageLayer(
         n_input=4, n_output=4, hidden_dim=16, feature_dim=4,
         max_depth=3, temperature=1.0)
-    router.attach_layer_ops(ops=[_AddOp(), _MulOp()], rule_ids=[1, 2], tier="S")
+    router.attach_layer_ops(ops=[_AddOp(), _MulOp()], rule_ids=[1, 2], space_role="SS")
     router.neural_tool_user = neural_tool_user
     return router
 
@@ -82,13 +82,13 @@ def test_compose_flag_on_populates_route_store():
     router = _router_with_ops(neural_tool_user=True)
     x = torch.randn(2, 5, 4)
     router.compose(x, word_space=None)
-    # The route store has an entry for the reduction tier.
+    # The route store has an entry for the reduction space_role.
     assert len(router._ntu_route) >= 1
-    tier, route = next(iter(router._ntu_route.items()))
+    space_role, route = next(iter(router._ntu_route.items()))
     assert len(route) >= 1
     assert "reduce_mask" in route[0] and "dist_probs" in route[0]
-    # The matching tier routing is flagged neural_tool_user.
-    assert router._last_tier_routings[tier].get("neural_tool_user") is True
+    # The matching space_role routing is flagged neural_tool_user.
+    assert router._last_space_role_routings[space_role].get("neural_tool_user") is True
 
 
 def test_real_layer_chooser_receives_policy_gradient():
@@ -142,6 +142,6 @@ def test_compose_flag_off_uses_soft_loop_and_empty_store():
     router.compose(x, word_space=None)
     assert router._ntu_route == {}                          # executor not run
     # The soft-DP path records binary_rounds, not the NTU flag.
-    tr = next(iter(router._last_tier_routings.values()))
+    tr = next(iter(router._last_space_role_routings.values()))
     assert "binary_rounds" in tr
     assert not tr.get("neural_tool_user", False)

@@ -206,6 +206,12 @@
            globalAttention. Default false keeps the soft-read parked (B
            unchanged), byte-identical. -->
       <xs:element name="globalAttentionConsume" type="xs:boolean" minOccurs="0"/>
+      <!-- Idea decoding (doc/old/2026-06-20-idea-decoder.md): generation as the
+           dual of comprehension. When true, the reverse pass drives the seed
+           from the grammar <generate> decode of the idea (idea -> symbol ->
+           concept) and skips the chart rule rebuild. Default false -> the
+           rule-driven reverse is unchanged (byte-identical). -->
+      <xs:element name="ideaDecode" type="xs:boolean" minOccurs="0"/>
       <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
            mereological-order-raising.md "Overcomplete tiling bounded by the
            basic level"). When the part tower matches an input against its
@@ -397,7 +403,10 @@
       <xs:element name="device" type="xs:string" minOccurs="0"/>
       <!-- L1 penalty on lift / lower gates. 0 disables. -->
       <xs:element name="gateL1Lambda" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Sparse-MoE load-balance loss weight (active when chartTopK > 0). -->
+      <!-- Sparse-MoE load-balance loss weight. Currently inert: the
+           load-balance bookkeeping retired with the chart and this knob
+           has no consumer yet; it stands by for future signal-router
+           rule load-balancing. -->
       <xs:element name="loadBalanceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Symbol-partition geometry for subsymbolicOrder > 1:
            tapered = geometrically narrowing slices (default);
@@ -585,6 +594,7 @@
   <xs:simpleType name="datasetEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="xor"/>
+      <xs:enumeration value="phrases"/>
       <xs:enumeration value="mnist"/>
       <xs:enumeration value="tomatoes"/>
       <xs:enumeration value="text"/>
@@ -1094,7 +1104,7 @@
            capacity). Default 1024. -->
       <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,
-           chartTau, wMax, chartTopK, chartNoiseEps retired alongside
+           chartTau, chartTopK, chartNoiseEps retired alongside
            the chart. The signal router (LanguageLayer) is the
            canonical parser. The retired elements raise loud
            ValueError at config load time; see

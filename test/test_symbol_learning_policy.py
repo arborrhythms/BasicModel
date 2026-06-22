@@ -21,7 +21,7 @@ candidates via MDL-flavored criteria:
 call ``extend_artifact`` if there are candidates.
 
 Migrated from the retired ``symbol_learning`` module to
-``Layers.SymbolLearningLayer`` (2026-05-21 SymbolicSubSpace / STM Layer
+``Layers.SymbolLearningLayer`` (2026-05-21 SymbolSubSpace / STM Layer
 refactor).
 """
 import sys
@@ -229,8 +229,8 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", tier='S'),
-        g._parse_rule("NP3", "lower(DET, NP4)", tier='S'),
+        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True
     return g

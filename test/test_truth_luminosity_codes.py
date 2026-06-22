@@ -13,7 +13,7 @@ codes themselves:
 — total area weighted by sign, minus the regions where the sign differs
 (contradictory evidence; the catuṣkoṭi B corner). No pullback to the
 mereological ground: the §4 weight law puts the parthood geometry on
-the codes, so the code-tier measure is the (registration-maintained)
+the codes, so the code-space_role measure is the (registration-maintained)
 approximation, and ``sym`` is accepted but never used.
 """
 import itertools

@@ -894,7 +894,7 @@ class XMLConfig:
     #
     # Currently a single entry: ``SymbolSpace.language.grammar``. A model
     # XML that defines its own <grammar> block fully owns the rule set;
-    # the model.xml defaults' tier-scoped grammar does not leak in.
+    # the model.xml defaults' space_role-scoped grammar does not leak in.
     _NON_MERGING_PATHS = (
         ('SymbolSpace', 'language', 'grammar'),
     )
@@ -1090,7 +1090,7 @@ class XMLConfig:
         return self.get(f"architecture.data.{key}", default)
 
     def data_type(self):
-        """Resolve the data tier: ``"embedding"`` (text / LM) or ``"numeric"``
+        """Resolve the data space_role: ``"embedding"`` (text / LM) or ``"numeric"``
         (dense slab). Canonical home is ``<data><dataType>`` (was the retired
         architecture-level ``<modelType>``); an architecture-level ``dataType``
         is accepted as a fallback for dict-based test overrides (which deep-

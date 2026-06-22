@@ -203,7 +203,7 @@ def test_symbol_codebook_quantizes_activation_not_what():
     # Feed identical concept vectors (zeros) for both symbol slots so the
     # PiLayer produces identical symbol-dim outputs.  The event is the full
     # muxed EVENT width (conceptDim=6 = content 2 + (2,2) band) so the
-    # PiLayer matmul / event reshape succeeds under the uniform-(2,2) tier.
+    # PiLayer matmul / event reshape succeeds under the uniform-(2,2) space_role.
     from architecture import canonical_shape as _cs
     _cdim = 2 + sum(_cs("ConceptualSpace"))   # content(2) + band(4) = 6
     concept_input = torch.zeros(1, 2, _cdim)   # [B=1, N=2, concept_event]

@@ -67,7 +67,7 @@ class TestMMBoolean(unittest.TestCase):
         return  # AR-specific behaviour; covered elsewhere or no longer applicable
 
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
-    @unittest.expectedFailure  # convergence under bare-PiLayer C-tier pending; revisit after explicit wrapper lands
+    @unittest.expectedFailure  # convergence under bare-PiLayer C-space_role pending; revisit after explicit wrapper lands
     def test_explicit_test_sentences(self):
         """After training, the three held-out sentences classify per formula.
 

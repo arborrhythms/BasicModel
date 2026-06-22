@@ -48,7 +48,7 @@ replicated "Ramsified across conceptual orders") descends from the **Ramsey
 sentence**: replace a theory's theoretical terms with existentially bound
 variables, so the theory's content lives in the *roles its structure
 realizes* rather than in privileged names. In the model, the per-order
-conceptual/symbolic spaces are exactly such role-realizations — what a tier
+conceptual/symbolic spaces are exactly such role-realizations — what a space-role
 *is* is exhausted by its position in the recurrent loop, not by an intrinsic
 label; the same structural theory is instantiated at each conceptual order.
 
@@ -329,6 +329,40 @@ In WikiOracle:
 - Canonical examples: poetry, greetings, hedged claims, subjective expressions.
 
 This preserves the tetralemma without logical explosion.
+
+### Trust-sign as hedonic tone --- luminosity as joy
+
+The same $\pm$1 scalar the Truth Lattice reads epistemically (*asti* / *nasti*)
+can be read **hedonically** as vedana: the sign of a stored truth's trust value
+in long-term memory is its felt tone --- $+1$ *sukha* (welcome), $-1$ *duhkha*
+(unwelcome). One number, two readings; which is in force is a matter of
+attention, not storage.
+
+Under the hedonic reading, **luminosity** --- the catuskoti coverage of a region
+of the lattice (how fully its four corners are determined) --- reads as **joy**
+rather than truth: illumination weighted by trust-sign measures how *welcome* the
+determined content is, not merely how *settled* it is. The epistemic and
+contemplative luminosities coincide in magnitude and differ only in the
+sign-weighting.
+
+## The Four Foundations of Mindfulness
+
+Awareness must range over more than sense input. The four foundations of
+mindfulness (*satipatthana*) name what attention can take as its object; each
+maps onto one addressable store of
+[global attention](Architecture.md#addressable-attention--the-typed-where):
+
+| Foundation | Sanskrit | Attention store |
+| --- | --- | --- |
+| Body | *kaya* | the input window + the percept codebooks (PART / WHOLE) |
+| Feeling-tone | *vedana* | the sign of the LTM trust value ($\pm$1) |
+| Mind | *citta* | short-term memory (STM) |
+| Mental objects | *dhamma* | the symbol codebook (SYMBOL) |
+
+One mechanism serves all four: pointing the typed `.where` at a codebook is
+recall, at the input window is perception. Without addressable symbolic content
+there is no fourth foundation --- the typed address space is what makes
+*dhammanupassana* (mindfulness of mental objects) possible for the model.
 
 ## Implicit Existence and Svabhava
 

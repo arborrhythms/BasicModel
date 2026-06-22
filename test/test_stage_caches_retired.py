@@ -12,7 +12,7 @@ Post-Stage-1.F contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
 
   * The remaining live consumer of ``_cs_cache[-1]`` — the reverse-pass
     input-reconstruction loss path at ``bin/Models.py:2925`` — migrates
-    to reading the terminal C-tier idea from
+    to reading the terminal C-space_role idea from
     ``self.conceptualSpace.stm`` (the canonical ConceptualSpace
     ShortTermMemory instance already populated by the forward).
 
@@ -129,7 +129,7 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
 
     def test_terminal_stm_snapshot_available_after_forward(self):
         """The migration's public contract — "get the most recently
-        pushed C-tier idea from STM" — must be addressable: a forward
+        pushed C-space_role idea from STM" — must be addressable: a forward
         pass leaves ``self.conceptualSpace.stm.snapshot()`` non-None
         and indexable at the terminal depth axis."""
         model = _make_plain_model()
@@ -144,7 +144,7 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
             snap,
             "Terminal STM snapshot must be non-None after a forward "
             "(the per-word loop pushed at least one idea).")
-        # The most-recent C-tier idea is the last position along the
+        # The most-recent C-space_role idea is the last position along the
         # depth axis. The migration target uses this as the seed for
         # the reverse pipeline (instead of ``_cs_cache[-1]``).
         self.assertGreaterEqual(
@@ -167,7 +167,7 @@ class TestReverseRoundtripStillCompletes(unittest.TestCase):
                 stm = model.conceptualSpace.stm
                 snap = stm.snapshot()
                 self.assertIsNotNone(snap)
-                # Stamp the most-recent C-tier idea (the terminal
+                # Stamp the most-recent C-space_role idea (the terminal
                 # idea built up over the sentence) onto the CS
                 # subspace as the reverse-path seed. Matches the
                 # shape contract the retired ``_cs_cache[-1]`` held

@@ -38,7 +38,7 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512, synthesis="bpe"):
     </training>
   </architecture>
   <InputSpace>
-    <!-- 2026-06-06 uniform-band convention: EVERY tier is (2,2), so
+    <!-- 2026-06-06 uniform-band convention: EVERY space_role is (2,2), so
          nDim = nWhat + .where(2) + .when(2). nWhat=4 everywhere => nDim=8
          on IS/PS/CS AND SS (was SS nDim=4 under the old (0,0) convention).
          OS nWhat=1 => nDim=5. -->
@@ -172,10 +172,10 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
             ps_event = captured.get("active")
             self.assertIsNotNone(ps_event, "PartSpace.forward must emit a percept")
             self.assertEqual(ps_event.shape[0], 1)
-            # "6+2+2": PartSpace is a (2,2) muxed tier, so the
+            # "6+2+2": PartSpace is a (2,2) muxed space_role, so the
             # materialized event is the full EVENT width = content(4) +
             # .where(2) + .when(2) = 8, matching <PartSpace><nDim>8
-            # in the fixture above (was 4 before the muxed-tier migration).
+            # in the fixture above (was 4 before the muxed-space_role migration).
             self.assertEqual(ps_event.shape[-1], 8)
             non_zero_rows = (ps_event[0].abs().sum(dim=-1) > 0).sum().item()
             self.assertGreaterEqual(non_zero_rows, 1,

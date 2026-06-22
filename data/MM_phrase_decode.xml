@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_phrase_decode: idea-decoder (D3) on a REAL grammar + REAL phrases.
+       Unlike MM_decode (default sigma/pi grammar = partition-blind reverse),
+       this uses role_collapsed.grammar (lift/lower/intersection with real
+       reverses) so a DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ)
+       to a single S, and lower.reverse can reconstitute both constituents
+       (Alec's flow). SERIAL (single-S idea at slot 0) + TALL WS
+       (symbol_dim==concept_dim so the ideaDecode seed-swap drives) +
+       <ideaDecode>. dataset=phrases ("the cat"/"black cat"/...). -->
+  <architecture>
+    <symbolicOrder>1</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <serialObjectMeta>true</serialObjectMeta>
+    <symbolTower>true</symbolTower>
+    <ideaDecode>true</ideaDecode>
+
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>phrases</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <grammar>role_collapsed.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <!-- Word analyzer: WS splits the surface on whitespace/punctuation into
+         word brackets (_staged_analysis_spans), codetermining the words with
+         the PS radix spell-out (Alec 2026-06-22: radix in PS is only good if
+         words are codetermined PS<->WS by a word analyzer). Without it the
+         serial loop is byte-grained (8 per-percept ideas, not 2 word-objects). -->
+    <analysis>word</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>1024</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

@@ -277,7 +277,7 @@
     <!-- Stage 3 cleanup (2026-05-27): the chart and STM shift-reduce
          parsers retired in favour of the signal router (LanguageLayer).
          The retired knobs (parserBackend, routerKind, chartTau,
-         wMax, chartTopK, chartNoiseEps) raise a loud ValueError at
+         chartTopK, chartNoiseEps) raise a loud ValueError at
          config load time. See
          Language._assert_retired_chart_knobs_absent. -->
 

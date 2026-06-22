@@ -40,7 +40,7 @@ def _spaces(B=2, D=16, big_codebook=False):
         {"id": GA.SPACE_INPUT, "keys": torch.randn(B, 5, D)},      # per-batch
         {"id": GA.SPACE_STM, "keys": torch.randn(B, 3, D)},        # per-batch
         {"id": GA.SPACE_LTM, "keys": torch.randn(7, D)},           # shared
-        {"id": GA.SPACE_CODEBOOK, "keys": torch.randn(V, D),       # shared
+        {"id": GA.SPACE_WHOLE, "keys": torch.randn(V, D),       # shared
          "boosts": torch.ones(V)},
     ]
 
@@ -58,7 +58,7 @@ def test_ranges_over_all_addressable_spaces():
     assert out is not None
     assert out["alpha"].shape[1] == 5 + 3 + 7 + 11, "Mtot = sum of space sizes"
     assert sorted(set(out["space_of"].tolist())) == [
-        GA.SPACE_INPUT, GA.SPACE_STM, GA.SPACE_LTM, GA.SPACE_CODEBOOK]
+        GA.SPACE_INPUT, GA.SPACE_STM, GA.SPACE_LTM, GA.SPACE_WHOLE]
 
 
 def test_typed_where_and_soft_read_shapes():
@@ -98,7 +98,7 @@ def test_gradient_stops_at_keys():
     cb = torch.randn(11, D, requires_grad=True)
     cq = torch.randn(B, D, requires_grad=True)
     sp = [{"id": GA.SPACE_INPUT, "keys": inp},
-          {"id": GA.SPACE_CODEBOOK, "keys": cb, "boosts": torch.ones(11)}]
+          {"id": GA.SPACE_WHOLE, "keys": cb, "boosts": torch.ones(11)}]
     out = ga(concept_q=cq, symbol_q=None, spaces=sp, temperature=0.0)
     out["content"].pow(2).sum().backward()
     assert inp.grad is None and cb.grad is None and cq.grad is None
@@ -111,7 +111,7 @@ def test_temperature_flattens_peaked_distribution():
     # temperature raises entropy and bleeds mass off the preferred space.
     from Spaces import GlobalAttention as GA
     ga = GA()
-    ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0])  # prefer INPUT
+    ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])  # prefer INPUT
     sp = _spaces(B=2, D=16)
     cq, sq = torch.randn(2, 16), torch.randn(2, 16)
     e0 = _entropy(ga(concept_q=cq, symbol_q=sq, spaces=sp, temperature=0.0)["alpha"])
@@ -122,7 +122,7 @@ def test_temperature_flattens_peaked_distribution():
 def test_temperature_zero_is_sharpest():
     from Spaces import GlobalAttention as GA
     ga = GA()
-    ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0])
+    ga.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])
     sp = _spaces(B=2, D=16)
     cq, sq = torch.randn(2, 16), torch.randn(2, 16)
     a0 = ga(concept_q=cq, symbol_q=sq, spaces=sp, temperature=0.0)["alpha"]
@@ -191,9 +191,11 @@ def test_forward_parks_typed_obs_over_spaces():
     assert torch.equal(out1, out2), "dark global attention stays deterministic"
     obs = getattr(m, "_global_attention_obs", None)
     assert obs is not None
-    # input window + STM + codebook are present (LTM only under ltmConsolidation)
+    # input window + STM + codebook are present (LTM only under ltmConsolidation).
+    # MM_global's WholeSpace is <codebook>none</codebook>, so the codebook
+    # foundation that appears is the PartSpace one (SPACE_PART).
     seen = set(obs["space_of"].tolist())
-    assert GA.SPACE_INPUT in seen and GA.SPACE_CODEBOOK in seen
+    assert GA.SPACE_INPUT in seen and GA.SPACE_PART in seen
     assert tuple(obs["where"].shape)[1] == 2
     assert torch.isfinite(obs["content"]).all()
 
@@ -211,7 +213,9 @@ def test_addressable_spaces_gathers_input_stm_codebook():
     spaces, _ = m._addressable_spaces(prev, ps)
     ids = {s["id"] for s in spaces}
     assert GA.SPACE_INPUT in ids
-    assert GA.SPACE_CODEBOOK in ids
+    # MM_global WholeSpace is <codebook>none</codebook> -> the available
+    # codebook foundation is PartSpace's (SPACE_PART), not SPACE_WHOLE.
+    assert GA.SPACE_PART in ids
 
 
 def test_ltm_space_appears_when_store_present():
@@ -264,7 +268,7 @@ def test_superposition_temperature_threads_to_global():
     m = _build("MM_global.xml")
     # Non-zero preference so the temperature has something to scale (an
     # untrained scorer emits ~0 logits -> uniform regardless of temperature).
-    m.global_attention.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0])
+    m.global_attention.space_bias.data = torch.tensor([3.0, -3.0, -3.0, -3.0, -3.0, -3.0])
     x = _batch(m)
     m.eval()
     with torch.no_grad():

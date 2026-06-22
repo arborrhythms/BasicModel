@@ -1,4 +1,4 @@
-"""SymbolicSubSpace.conceptualize() -- the unified concept-formation API
+"""SymbolSubSpace.conceptualize() -- the unified concept-formation API
 (Alec 2026-06-21; doc/old/2026-06-21-higher-order-symbolic-composition.md
 sections 2b/4b/4c). A concept is a flexible combination of two percepts;
 conceptualize() dispatches the three orders to the ConceptualSpace symbol
@@ -35,8 +35,8 @@ def test_conceptualize_dispatch():
     c0 = ss.conceptualize(0, part=5, whole=7)
     assert isinstance(c0, int)
     assert ss.conceptualize(0, part=5, whole=7) == c0           # idempotent
-    assert sorted(cs._sym_parts.get(c0, ())) == [5]
-    assert sorted(cs._sym_wholes.get(c0, ())) == [7]
+    assert sorted(cs._concept_parts.get(c0, ())) == [5]
+    assert sorted(cs._concept_wholes.get(c0, ())) == [7]
 
     # order 1: [object isa word] meta -> (A=word, B=object, C=meta).
     c1 = ss.conceptualize(1, word_parts=[1, 2], word_whole=9, key="cat")
@@ -69,4 +69,4 @@ def test_conceptualize_chain():
     assert ss.conceptualize(3, concept_ids=[a]) == a              # singleton
     assert ss.conceptualize(3, concept_ids=[]) is None            # empty
     # head's whole is the first concept (the part carries the rest-chain).
-    assert ("sym", a) in cs._sym_wholes.get(head, set())
+    assert ("sym", a) in cs._concept_wholes.get(head, set())

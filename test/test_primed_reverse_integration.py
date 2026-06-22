@@ -32,8 +32,8 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", tier='S'),
-        g._parse_rule("NP3", "lower(DET, NP4)", tier='S'),
+        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True
     return g
@@ -45,9 +45,9 @@ def _tiny_view():
 
 
 def _bare_word_space(batch=1):
-    from Language import SymbolicSubSpace, Taxonomy
+    from Language import SymbolSubSpace, Taxonomy
     import torch.nn as nn
-    ss = object.__new__(SymbolicSubSpace)
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss.batch = int(batch)
     ss.taxonomy = Taxonomy()

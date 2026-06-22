@@ -1,11 +1,11 @@
 """Gradient-bearing ``rule_probs``: the intra-sentence predictor's routing
 bias must backprop into the signal router's scorer parameters.
 
-Before this change, ``SymbolicSubSpace._synthesize_rule_probs`` scattered unit
+Before this change, ``SymbolSubSpace._synthesize_rule_probs`` scattered unit
 mass onto the SELECTED (hard, argmax) rule-ids -- a DETACHED distribution,
 so ``IntraSentenceLayer.routing_proj(rule_probs)`` could not train the
 router. The fix (``_synthesize_rule_probs_soft``) aggregates the router's
-SOFT per-tier marginals cached in ``LanguageLayer._last_tier_routings``
+SOFT per-space_role marginals cached in ``LanguageLayer._last_space_role_routings``
 (``unary action_probs`` apply columns + ``binary reduce_marginal_op``
 summed over all reduction rounds) into a global ``[B, n_rules]`` tensor
 that keeps a graph back to the router's anchor scorers
@@ -19,16 +19,16 @@ Proof points (the deliverable):
   2. A loss through a non-uniform projection of ``rule_probs`` (the shape
      of the predictor's ``routing_proj`` bias) backprops NON-ZERO grad
      into the router's unary scorer anchors.
-  3. A bare router with no tier mask (so the binary reduce path actually
+  3. A bare router with no space_role mask (so the binary reduce path actually
      carries mass) backprops NON-ZERO grad into BOTH the unary
      ``apply_anchor`` AND the binary ``reduce_anchor`` -- the complete
      unary+binary marginal -> rule_probs -> router-scorer path.
-  4. The default-only fast path (no router; ``_last_tier_routings`` empty)
+  4. The default-only fast path (no router; ``_last_space_role_routings`` empty)
      still dispatches to the (detached) hard scatter without error.
 
-See: bin/Language.py ``SymbolicSubSpace._synthesize_rule_probs`` /
+See: bin/Language.py ``SymbolSubSpace._synthesize_rule_probs`` /
 ``_synthesize_rule_probs_soft`` / ``_map_op_columns``; the NaN-safe
-``_masked_softmax_lastdim`` (fully tier-masked reduce rows).
+``_masked_softmax_lastdim`` (fully space_role-masked reduce rows).
 """
 import os
 import sys
@@ -48,7 +48,7 @@ import torch
 import torch.nn as nn
 
 import Language
-from Language import LanguageLayer, SymbolicSubSpace
+from Language import LanguageLayer, SymbolSubSpace
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
 _ROUTER_CONFIG = os.path.join(_DATA_DIR, "MM_xor_loopback.xml")   # full router
@@ -120,14 +120,14 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         model = _build_model(_ROUTER_CONFIG)
         ss = model.symbolSpace
         ll = ss.languageLayer
-        # Tier-free fold: the grammar collapses to a SINGLE reduction tier
+        # Space-role-free fold: the grammar collapses to a SINGLE reduction space_role
         # (no hardcoded S/C/P). Resolve whichever key the unary layer was
         # registered under -- there is exactly one -- and assert the
         # router exposes the APPLY/COPY anchor scorers on it.
         unary_keys = list(ll._unary_layers.keys())
         self.assertEqual(
             len(unary_keys), 1,
-            f"tier-free fold expects one unary reduction tier; "
+            f"space_role-free fold expects one unary reduction space_role; "
             f"got {unary_keys}.")
         ul = ll._unary_layers[unary_keys[0]]
         self.assertTrue(
@@ -160,12 +160,12 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             "APPLY scorer) through rule_probs.")
 
     def test_grad_reaches_unary_and_binary_anchors_bare_router(self):
-        """On a bare router with NO tier mask, both the unary
+        """On a bare router with NO space_role mask, both the unary
         ``apply_anchor`` and the binary ``reduce_anchor`` receive non-zero
         grad -- the complete unary + binary marginal -> rule_probs ->
-        router-scorer path. (The MM_xor_loopback grammar tier-masks its
-        S-tier reduce ops against the C-initialized position tier, so the
-        reduce column is structurally zero there; an untier-masked router
+        router-scorer path. (The MM_xor_loopback grammar space_role-masks its
+        SS-space_role reduce ops against the CS-initialized position space_role, so the
+        reduce column is structurally zero there; an unspace_role-masked router
         exercises the binary path.)"""
         # rule_table must be populated for n_rules > 0; init the grammar
         # via the router config (3 rules: not / intersection / union).
@@ -201,33 +201,33 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             def forward(self, a, b):
                 return (self.p(a) + self.p(b)).clamp(-1.0, 1.0)
 
-        # NO op_tiers -> no tier mask -> the reduce path carries mass.
-        router.attach_unary_ops(ops=[_NotOp()], rule_ids=[0], tier="S")
+        # NO op_space_roles -> no space_role mask -> the reduce path carries mass.
+        router.attach_unary_ops(ops=[_NotOp()], rule_ids=[0], space_role="SS")
         router.attach_layer_ops(
-            ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], tier="S")
+            ops=[_AndOp(), _OrOp()], rule_ids=[1, 2], space_role="SS")
 
-        # Bind the SymbolicSubSpace aggregator methods to a stand-in carrying
+        # Bind the SymbolSubSpace aggregator methods to a stand-in carrying
         # this router (the methods only need ``self.languageLayer``).
         stub = types.SimpleNamespace(languageLayer=router)
         stub._synthesize_rule_probs_soft = types.MethodType(
-            SymbolicSubSpace._synthesize_rule_probs_soft, stub)
+            SymbolSubSpace._synthesize_rule_probs_soft, stub)
         stub._map_op_columns = types.MethodType(
-            SymbolicSubSpace._map_op_columns, stub)
+            SymbolSubSpace._map_op_columns, stub)
 
         torch.manual_seed(1)
         x = torch.randn(2, 4, 4, requires_grad=True)
         router.compose(x, word_space=None)
-        rp = stub._synthesize_rule_probs_soft(router._last_tier_routings, 2)
+        rp = stub._synthesize_rule_probs_soft(router._last_space_role_routings, 2)
         self.assertTrue(torch.is_tensor(rp) and rp.requires_grad)
         self.assertTrue(torch.isfinite(rp).all())
-        # All three rules should carry mass here (no tier mask).
+        # All three rules should carry mass here (no space_role mask).
         col_mass = rp.sum(dim=0)
         self.assertGreater(
             float(col_mass[1] + col_mass[2]), 0.0,
-            "binary reduce ops must carry mass in the untier-masked router.")
+            "binary reduce ops must carry mass in the unspace_role-masked router.")
 
-        ul = router._unary_layers["S"]
-        bl = router._binary_layers["S"]
+        ul = router._unary_layers["SS"]
+        bl = router._binary_layers["SS"]
         for p in (ul.apply_anchor, bl.reduce_anchor):
             p.grad = None
         proj = nn.Linear(int(rp.shape[1]), 5, bias=True)
@@ -244,7 +244,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             "scorer) through the reduce_marginal_op aggregation.")
 
     def test_default_only_fallback_is_detached(self):
-        """The default-only fast path (no router; ``_last_tier_routings``
+        """The default-only fast path (no router; ``_last_space_role_routings``
         empty) dispatches to the HARD scatter and returns a finite,
         DETACHED ``rule_probs`` without error (the fallback is preserved
         exactly)."""
@@ -255,8 +255,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             ss._grammar_is_default_only,
             "model.xml must be a default-only grammar (no router).")
         self.assertFalse(
-            bool(getattr(ss.languageLayer, "_last_tier_routings", {})),
-            "default-only path must leave _last_tier_routings empty.")
+            bool(getattr(ss.languageLayer, "_last_space_role_routings", {})),
+            "default-only path must leave _last_space_role_routings empty.")
         rbt = ss._default_compose_rules()
         with torch.enable_grad():
             rp = ss._synthesize_rule_probs(rbt, batch_size=2)

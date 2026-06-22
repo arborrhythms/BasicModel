@@ -4,7 +4,7 @@ consolidation questions"; Alec 2026-06-18).
 
 The discourse LTM (InterSentenceLayer end-state chain) and the
 RelativeTruthStore are COMBINED into ONE ``Layers.TernaryTruthStore`` on
-SymbolicSubSpace (``ltm_store``) behind the dark gate ``<ltmConsolidation>``
+SymbolSubSpace (``ltm_store``) behind the dark gate ``<ltmConsolidation>``
 (default OFF -> the legacy two-store path, byte-identical):
 
   * CONSTRUCTION: gate ON -> ltm_store present, relative_store absent; gate OFF
@@ -389,7 +389,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         n0 = len(store)
         self.assertGreater(n0, 0)
         m.symbolSpace.Reset(hard=True)
-        self.assertEqual(len(store), n0, "SymbolicSubSpace.Reset must not clear")
+        self.assertEqual(len(store), n0, "SymbolSubSpace.Reset must not clear")
         m.symbolSpace.soft_reset()
         self.assertEqual(len(store), n0, "soft_reset must not clear")
         m.conceptualSpace.Reset(hard=True)

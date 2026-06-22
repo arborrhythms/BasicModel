@@ -1,8 +1,8 @@
 # Reasoning System
 
 > **2026-05-29 delta:** the chart / signal-router reverse path now
-> passes the tier-local Basis (`subspace.what`) to binary GrammarLayer
-> reverses as `basis=tier_basis`. The mereology-guided recommender
+> passes the space-role-local Basis (`subspace.what`) to binary GrammarLayer
+> reverses as `basis=space_role_basis`. The mereology-guided recommender
 > (`Ops._binary_op_recommend`) walks the Codebook's `W` rows to find
 > operand pairs $(x_1, x_2)$ such that $\mathrm{op}(x_1, x_2) \approx \mathit{parent}$. Under
 > `<codebook>none</codebook>` on WholeSpace the recommender has no
@@ -19,7 +19,7 @@ infrastructure ([Logic.md](Logic.md)) and grammar composition
 ## Partitioned Symbol Space
 
 > **Terminology (percept / concept / symbol).** Throughout this doc
-> "symbol"/"symbolic" denotes the genuine SymbolSpace tier — the 0-D,
+> "symbol"/"symbolic" denotes the genuine SymbolSpace space-role — the 0-D,
 > non-dimensionally-embedded references emitted as `symbolSum` — not the
 > ConceptualSpace part↔whole relation table (those are *concepts*) and not
 > the dimensionally-embedded perceptual content of PartSpace/WholeSpace
@@ -64,7 +64,7 @@ Finds the minimal subset of the TruthSet entailing a query activation. Uses
 Grounds a proposition and returns a scalar Degree of Truth in [-1, 1].
 Positive = true, negative = false, zero = unknown. Delegates to `ground()`.
 
-### `extrapolate(grammar, seed_indices, max_new, attenuation) -> dict`
+### `extrapolate(seed_indices, max_new, attenuation) -> dict`
 
 Generalizes `TruthLayer.derive()` to all two-argument grammar methods (union,
 intersection, equals, part). For each pair of stored truths, applies every
@@ -143,13 +143,13 @@ symbol partition geometry. Higher-order symbols write to later partitions,
 so truth grounding, consistency, and extrapolation can respect conceptual
 order.
 
-The parser backend is selected by `SymbolSpace.parserBackend`:
-
-| Backend | Use |
-|---------|-----|
-| `chart` | Default compatibility path. |
-| `stm` | Shift/reduce over typed STM with admissibility masks from grammar signatures. |
-| `parallel` | Migration bridge: initializes STM while chart remains authoritative. |
+The parser backend is no longer selectable. Stage 3 of the substrate
+refactor (2026-05-27) retired the CKY chart and STM shift-reduce parsers;
+the signal router (`LanguageLayer`) is the single canonical parser. The
+former `SymbolSpace.parserBackend` / `routerKind` knobs (along with
+`chartTau`, `chartTopK`, `chartNoiseEps`) are RETIRED — setting any of them
+in a config raises a loud `ValueError` at load time (see
+`Language._assert_retired_chart_knobs_absent`).
 
 Explicit ordered grammar is preferred:
 
@@ -168,7 +168,7 @@ argument/return order.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
-| `<parserBackend>` | `<SymbolSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
+| `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
@@ -182,9 +182,12 @@ relative META edges are documented in
 
 ## Contemplative Awareness Methods
 
-Four stubs on `BaseModel` characterizing stages of contemplative awareness
-as spatial/computational properties. Each raises `NotImplementedError` ---
-they define the target characterization, not implementation.
+Four methods on `BaseModel` characterizing stages of contemplative awareness
+as spatial/computational properties. `Contiguous()` and `Continuous()` are
+implemented (each returns a measure in `[-1, +1]` over the back-projected
+leaf geometry; see `bin/Mereology.py`). `Peaceful()` and `Done()` remain
+stubs that raise `NotImplementedError` --- they define the target
+characterization, not the implementation.
 
 | Method | Stage | Characterization |
 |--------|-------|------------------|

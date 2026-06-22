@@ -72,10 +72,10 @@ def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercep
     concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
-    # Reset grammar so SymbolicSubSpace.__init__ can (re)configure it cleanly.
+    # Reset grammar so SymbolSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ss = Language.SymbolicSubSpace(
+    ss = Language.SymbolSubSpace(
         perceptualSpace=percept_space,
         conceptualSpace=concept_space,
         wholeSpace=symbolic_space,

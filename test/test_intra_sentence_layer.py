@@ -249,7 +249,7 @@ class TestConceptualSpaceOwnership(unittest.TestCase):
     def test_routing_dim_is_n_rules(self):
         # The routing width must now be the grammar's rule-vocabulary
         # size (n_rules), NOT the old concept_dim placeholder. This is
-        # the dim SymbolicSubSpace.routing_state.rule_probs is emitted at and
+        # the dim SymbolSubSpace.routing_state.rule_probs is emitted at and
         # the dim routing_proj projects from.
         import Language
         cs = self.model.conceptualSpaces[0]
@@ -269,7 +269,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     genuinely rule-conditioned (the bias fires by exactly
     ``routing_proj(rule_probs)``).
 
-    Cadence note (tier-free bounded-STM fold, doc/plans/2026-06-05-tier-
+    Cadence note (space_role-free bounded-STM fold, doc/plans/2026-06-05-space_role-
     free-bounded-stm-fold.md): the old per-word ``symbolSpace.compose``
     auto-fire was deleted, and the boundary ``_chart_compose_at_C`` fire
     only runs on the whole-slab/parallel forward path -- the serial
@@ -281,7 +281,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     sentence-level compose explicitly -- byte-identically to how the
     whole-slab path's ``_chart_compose_at_C`` does
     ``symbolSpace.compose(stm.snapshot())`` -- so these assertions test
-    the new single-tier, sentence-level cadence.
+    the new single-space_role, sentence-level cadence.
     """
 
     @classmethod
@@ -303,7 +303,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
         over the accumulated STM so ``routing_state.rule_probs`` is built.
 
         The forward accumulates the per-word concepts onto
-        ``conceptualSpace.stm``; the tier-free fold's sentence-level
+        ``conceptualSpace.stm``; the space_role-free fold's sentence-level
         router fire is the single ``compose`` over that STM snapshot
         (the same call ``_chart_compose_at_C`` makes on the whole-slab
         path). The serial forward path no longer auto-fires it (the
@@ -321,7 +321,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
                 model.forward(x)
                 # Sentence-level router fire over the accumulated STM:
                 # builds ``symbolSpace.routing_state.rule_probs`` at the
-                # new single-tier cadence (mirrors the whole-slab path's
+                # new single-space_role cadence (mirrors the whole-slab path's
                 # ``_chart_compose_at_C`` -> ``symbolSpace.compose``).
                 snap = model.conceptualSpace.stm.snapshot()
                 self.assertIsNotNone(

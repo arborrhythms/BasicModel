@@ -23,8 +23,8 @@ def _ordered_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", tier='S'),
-        g._parse_rule("S5", "lift(NP4, MP1)", tier='S'),
+        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S5", "lift(NP4, MP1)", space_role='SS'),
     ]
     g._configured = True
     Language.TheGrammar = g
@@ -50,9 +50,9 @@ def _ordered_view():
 
 
 def _word_space():
-    from Language import SymbolicSubSpace
+    from Language import SymbolSubSpace
     from Spaces import ConceptualSpace
-    ss = object.__new__(SymbolicSubSpace)
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss.parser_backend = 'stm'
     ss.attach_knowledge(_ordered_view())

@@ -1,10 +1,10 @@
-"""Tests for the typed-STM stack carried on ``SymbolicSubSpace``.
+"""Tests for the typed-STM stack carried on ``SymbolSubSpace``.
 
 Plan: doc/plans/2026-05-21-wordsubspace-stm-layer-refactor.md §Phase D.
 
 The typed-metadata stack that formerly lived at
 ``ConceptualSpace._stm_typed`` (allocated via ``_init_typed_stm``) now
-lives directly on ``SymbolicSubSpace`` as registered buffers, with public
+lives directly on ``SymbolSubSpace`` as registered buffers, with public
 methods ``push`` / ``pop`` / ``top`` / ``reduce_admissibility`` /
 ``_ensure_stm_batch`` mirroring the former ``TypedStack`` surface.
 """
@@ -20,16 +20,16 @@ sys.path.insert(0, str(_project / "bin"))
 
 
 def _bare_word_subspace(max_depth=8, dim=4):
-    """Construct a bare SymbolicSubSpace with manually-allocated STM buffers.
+    """Construct a bare SymbolSubSpace with manually-allocated STM buffers.
 
     The real ``__init__`` constructs the full pipeline (chart, layers,
     etc.); these tests only exercise the typed-STM data surface, so we
     bypass it and stamp the buffers directly. Mirrors the bare-instance
     style of the rest of the STM substrate tests.
     """
-    from Language import SymbolicSubSpace
+    from Language import SymbolSubSpace
     import torch.nn as nn
-    ss = object.__new__(SymbolicSubSpace)
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss.batch = 1
     ss._stm_capacity = int(max_depth)
@@ -72,7 +72,7 @@ def _bare_word_subspace(max_depth=8, dim=4):
 
 
 def test_typed_stm_buffers_allocated_on_wordsubspace():
-    """The typed STM lives on SymbolicSubSpace as registered buffers."""
+    """The typed STM lives on SymbolSubSpace as registered buffers."""
     ss = _bare_word_subspace(max_depth=8, dim=4)
     assert ss._buffer.shape == (1, 8, 4)
     assert ss._category.shape == (1, 8)

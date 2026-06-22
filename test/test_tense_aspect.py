@@ -2,7 +2,7 @@
 
 doc/plans/2026-06-03-contextual-bind-preposition-when.md "Operation 3:
 tense / aspect". Task 4.1 covers the pure surface normalizer
-(``bin/surface_tense.py``); Tasks 4.2 cover the two unary C-tier ops
+(``bin/surface_tense.py``); Tasks 4.2 cover the two unary CS-space_role ops
 (``TenseLayer`` / ``AspectLayer``) that rewrite the ``.when`` tail of a
 materialized muxed event. Hard rule: no global POS inventory.
 """
@@ -42,8 +42,8 @@ def _event_with_present_when(B=2, V=3, nhead=6, t=0):  # nhead = nWhat+nWhere; +
 
 
 def test_class_contracts():
-    assert TenseLayer.tier == 'C' and TenseLayer.arity == 1
-    assert AspectLayer.tier == 'C' and AspectLayer.arity == 1
+    assert TenseLayer.space_role == 'CS' and TenseLayer.arity == 1
+    assert AspectLayer.space_role == 'CS' and AspectLayer.arity == 1
 
 
 def test_past_moves_event_time_back():

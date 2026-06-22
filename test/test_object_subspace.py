@@ -1,7 +1,7 @@
 """ObjectSubSpace -- durable PartSpace meronymic-analysis carrier.
 
 doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md ("Carrier
-State" + "Absorb/Emit/Swap codification"): the PS analogue of SymbolicSubSpace.
+State" + "Absorb/Emit/Swap codification"): the PS analogue of SymbolSubSpace.
 It holds spans, part ids, parent/child links, route ids/scores, depth, and
 the marker-route replay metadata (_marker_ps_id / _marker_span / _order_bit
 / _marker_position). All parallel buffers stay in sync under push / pop /

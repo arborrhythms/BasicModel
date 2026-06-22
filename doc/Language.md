@@ -13,7 +13,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 > - **PS/SS grammar sections.** A `.grammar` file may nest its
 >   `<compose>`/`<generate>` under `<PartSpace>` and
 >   `<WholeSpace>`. `Grammar.configure` parses them into separate rule
->   tables: `ps_rules` (tier `P`, read by the PS analyzer) and the
+>   tables: `ps_rules` (space-role `P`, read by the PS analyzer) and the
 >   canonical symbolic `rules` (`ws_rules`). A bare `<compose>`/`<generate>`
 >   file loads as `<WholeSpace>` (backward-compat). The legacy `.cfg`
 >   loader is gone.
@@ -32,13 +32,13 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   operation in a dedicated operator codebook on WholeSpace
 >   (`_operation_vectors` / `_operation_positions`), separate from the
 >   `subspace.what` whole-percept codebook so the percept / idea / `.where` position
->   namespace is untouched; it is wired into `SymbolicSubSpace.__init__` so every
+>   namespace is untouched; it is wired into `SymbolSubSpace.__init__` so every
 >   built model's operator-prefixed parse-tree nodes are codebook-resolvable. The STM idea space holds only combined meanings --
 >   the operator says *how* meanings combine, contributing none of its own.
 >   The rule-id stays in `.where` (its presence marks a slot as a *computed*
 >   idea, which is by definition not a codebook vector).
 > - **ObjectSubSpace** (`bin/Language.py`) -- the PS-meronymic carrier
->   analogue of `SymbolicSubSpace`: span buffers + parent/child links + route
+>   analogue of `SymbolSubSpace`: span buffers + parent/child links + route
 >   ids/scores + the marker-route replay fields
 >   (`_marker_ps_id`/`_marker_span`/`_order_bit`/`_marker_position`).
 > - **Perceptual analyzer** (`bin/perceptual_analyzer.py`). `EndpointSumWhere`
@@ -59,8 +59,8 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 > **2026-05-29 deltas:**
 >
-> - `unreduce()` passes the tier-local Basis (Codebook) to binary
->   GrammarLayer reverses as `basis=tier_basis` (replacing the prior
+> - `unreduce()` passes the space-role-local Basis (Codebook) to binary
+>   GrammarLayer reverses as `basis=space_role_basis` (replacing the prior
 >   raw-`W` form). `UnionLayer.reverse` / `IntersectionLayer.reverse`
 >   **and now `ConjunctionLayer.reverse` / `DisjunctionLayer.reverse`**
 >   extract `W = basis.getW()` internally and dispatch to
@@ -81,25 +81,20 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 ## Current Parser Surface
 
 `SymbolSpace.compose()` and `SymbolSpace.generate()` are the public parser
-entry points. `SymbolSpace.parser_backend` selects the implementation:
+entry points. There is no longer a backend selector: the signal router
+(`LanguageLayer`) is the single canonical parser.
 
-| backend | status | notes |
-|---|---|---|
-| `chart` | default | Compatibility path. Runs the existing chart / Viterbi machinery. |
-| `stm` | active | Shift/reduce over `ConceptualSpace.stm_typed`; requires an attached `KnowledgeView`. |
-| `parallel` | bridge | Builds the STM driver, then runs the chart path authoritatively. |
+The `<parserBackend>` knob is RETIRED (Stage 3, 2026-05-27). The CKY chart
+and the STM shift/reduce parsers it used to select have been deleted in
+favour of the signal router. The retired `parserBackend` values
+(`chart` / `stm` / `parallel`) no longer exist.
 
-`SymbolSpace.routerKind` is separate from `parserBackend` and only affects
-the chart backend:
-
-| routerKind | status |
-|---|---|
-| `chart` | Default chart scorer / inside pass. |
-| `signal` | Signal-router grammar path used by configs such as `XOR_grammar.xml`. |
-
-The chart parser has not been deleted. It remains the default because
-legacy configs can instantiate without a knowledge artifact, while STM
-cannot.
+`<routerKind>` is also RETIRED alongside the chart; the `signal` behaviour
+it once selected is now unconditional. The retired
+`<parserBackend>`, `<routerKind>`, `<chartTau>`, `<chartTopK>`, and
+`<chartNoiseEps>` elements raise a loud `ValueError` at config load if a
+`<SymbolSpace>` config still sets them
+(`Language._assert_retired_chart_knobs_absent`); see `data/model.xsd`.
 
 ## Retired XML Knobs
 
@@ -115,15 +110,15 @@ Grammar mode is derived from the loaded grammar: default-only unary
 `pi` / `sigma` rules derive `useGrammar == "none"` internally; any
 non-default operator rule derives `useGrammar == "all"`.
 
-> **SS-analysis vs CS-execution.** `SymbolicSubSpace.compose` is the
-> SS-side *analysis* stage (it selects the per-tier hard rule dict
+> **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
+> SS-side *analysis* stage (it selects the per-space hard rule dict
 > `current_rules`); the CS-side *execution* (applying lift / lower /
 > union / intersection / swap / quantize / not to the concept tensors)
-> runs in `ConceptualSpace.forward` and the per-tier `SyntacticLayer`
+> runs in `ConceptualSpace.forward` and the per-space `SyntacticLayer`
 > cursors. This split is a clean code boundary **only on the
 > default-only path**: on the full-router path
 > `LanguageLayer.compose` does both selection and tensor reduction, and
-> the per-tier cursors are deliberately bypassed
+> the per-space cursors are deliberately bypassed
 > (`not _grammar_is_default_only`). See
 > [STM.md Section 5](STM.md#5-routing-parser-ws-analysis-vs-cs-execution)
 > for the accurate, audited account.
@@ -135,7 +130,7 @@ XML `<SymbolSpace><language><grammar>` blocks or from a configured grammar
 CFG. A `RuleDef` stores:
 
 ```text
-(tier, canonical, arity, method_name, lhs, rhs_symbols)
+(space_role, canonical, arity, method_name, lhs, rhs_symbols)
 ```
 
 The grammar accepts explicit conceptual-order suffixes:
@@ -394,7 +389,7 @@ PENDING).** Phase 1 is wired and byte-identical when off:
 it is requested at build and **lazily enabled on the first perception forward**
 (the grammar's role rules are not configured at build, so a build-time enable
 sees 0 roles). `LanguageLayer._collect_round0_role_obs` stashes the first binary
-tier's round-0 reduces (`op_I1`/`op_I2` per operand) on the SS, and the autobind
+space-role's round-0 reduces (`op_I1`/`op_I2` per operand) on the SS, and the autobind
 hook (`_maybe_autobind_meta`) runs the E/M: assign each MetaSymbol to a centroid
 (`assign_category`, + the VQ's free recentroid) and EMA the centroid's role
 vector (`update_category_role`). The codebook mechanics (assign / role-EMA /
@@ -403,7 +398,7 @@ gather / decay-collapse) are unit-tested; the off path is verified byte-identica
 `role_collapsed.grammar` + tiny-dataset fixture — XOR has 0 operator roles,
 MentalModel needs the fineweb corpus), and **Phase 2** (thread the per-slot
 centroid role vector into `MLPTransformChooser.feat`; the layer forwards carry no
-per-slot symbol identity today). The current round-0/first-tier observation is
+per-slot symbol identity today). The current round-0/first-space-role observation is
 parallel-mode-correct; serial (`symbolicOrder>=1`) attribution is approximate.
 The old `WholeSpace.category_codebook` was retired 2026-05-20 and is gone; the
 dormant declared-POS tables (`category_embedding`, `category_logits`/

@@ -5,8 +5,8 @@ decision 6 + §6: ``isEqual`` and ``isPart`` are each a *single* grammar
 relation; ``query="true"`` selects answer-producing semantics,
 ``query="false"`` selects assertive semantics. This folds in (replaces)
 the separate ``queryPart`` / ``assertPart`` operators. ``isPart`` is the
-S-tier assertive parthood relation -- the mereological analogue of the
-S-tier assertive ``isEqual`` -- and dispatches to the existing
+SS-space_role assertive parthood relation -- the mereological analogue of the
+SS-space_role assertive ``isEqual`` -- and dispatches to the existing
 parthood-truth ``queryPart`` layer when interrogative.
 """
 
@@ -53,18 +53,18 @@ def _load(text, monkeypatch, tmp_path):
 
 
 def test_ispart_layer_registered():
-    """``isPart`` is in the layer registry as an arity-2, S-tier relation."""
+    """``isPart`` is in the layer registry as an arity-2, SS-space_role relation."""
     from Language import GRAMMAR_LAYER_CLASSES
     assert "isPart" in GRAMMAR_LAYER_CLASSES
     cls = GRAMMAR_LAYER_CLASSES["isPart"]
     assert cls.rule_name == "isPart"
     assert cls.arity == 2
-    assert cls.tier == "S", "isPart is the S-tier assertive relative-truth relation"
+    assert cls.space_role == "SS", "isPart is the SS-space_role assertive relative-truth relation"
 
 
 def test_ispart_assertive_forward_passes_parent():
     """Assertive ``isPart(A, B)`` yields the encompassing parent ``B`` (like
-    the C-tier ``part``), with the lossy ``(parent, parent)`` pseudo-inverse."""
+    the CS-space_role ``part``), with the lossy ``(parent, parent)`` pseudo-inverse."""
     from Language import GRAMMAR_LAYER_CLASSES
     layer = GRAMMAR_LAYER_CLASSES["isPart"]()
     left = torch.randn(2, 4)

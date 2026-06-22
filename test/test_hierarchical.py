@@ -154,7 +154,7 @@ class TestPerLevelLayers(unittest.TestCase):
     def test_symbolic_spaces_own_pi_not_sigma(self):
         """Pi/Sigma swap (analysis/synthesis plan Phase 3, rev.
         2026-06-09): each WholeSpace OWNS the pi (the top-down
-        analysis operator + the S-tier fold-rule binding target) but NO
+        analysis operator + the SS-space_role fold-rule binding target) but NO
         sigma -- Sigma (synthesis) lives on PartSpace."""
         from Layers import PiLayer, MeronymicFoldAdapter
         model = _make_model('RamsifiedModel.xml')

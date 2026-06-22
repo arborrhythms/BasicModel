@@ -105,7 +105,7 @@ def test_operations_inserted_into_ws_codebook():
 
 def test_build_auto_inserts_operations():
     """Building a model auto-inserts the grammar operations into the SS
-    codebook (wired in SymbolicSubSpace.__init__) -- the operator-prefixed
+    codebook (wired in SymbolSubSpace.__init__) -- the operator-prefixed
     tree's operation nodes are codebook-resolvable without a manual call."""
     import Language
     m = _make_model()

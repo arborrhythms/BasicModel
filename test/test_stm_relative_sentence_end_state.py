@@ -106,7 +106,7 @@ def _seed_stm(model, depths):
 
 
 def _set_current_rules(model, rule_id, B, per_row=True):
-    """Stub ``symbolSpace.current_rules`` S-tier with ``rule_id``.
+    """Stub ``symbolSpace.current_rules`` SS-space_role with ``rule_id``.
 
     ``per_row=True`` mirrors the full-router ``LanguageLayer.compose``
     shape (one inner list per batch row); ``per_row=False`` mirrors the
@@ -116,7 +116,7 @@ def _set_current_rules(model, rule_id, B, per_row=True):
         s_rules = [[rule_id] for _ in range(B)]
     else:
         s_rules = [[rule_id]]
-    model.symbolSpace.current_rules = {'S': s_rules}
+    model.symbolSpace.current_rules = {'SS': s_rules}
 
 
 # --------------------------------------------------------------------------
@@ -201,7 +201,7 @@ def test_relative_mask_per_row_and_shared_shapes():
     # Mixed per-row: only the rows whose inner list carries a relative
     # rule_id are flagged.
     model.symbolSpace.current_rules = {
-        'S': [[abs_id], [rel_id], [abs_id]]}
+        'SS': [[abs_id], [rel_id], [abs_id]]}
     m = model._sentence_relative_mask(B)
     assert m.tolist() == [False, True, False]
 

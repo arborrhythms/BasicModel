@@ -81,7 +81,7 @@ class TestArmaUnit(_DiscourseTestBase):
         )
 
     def test_sentence_dim_equals_n_dim(self):
-        """Sentence rep is the root S-tier slot -- dim is just n_dim,
+        """Sentence rep is the root S-space_role slot -- dim is just n_dim,
         not n_symbols * n_dim.  Without this the predictor's Linear
         would balloon to V_S * n_dim and OOM the allocator on
         MM_5M_bivector-scale configs.

@@ -240,7 +240,7 @@ class TestOrderConvention:
 # ─────────────────────────── Group 6: Taxonomy ──────────────────────────────
 
 class TestTaxonomy:
-    """Explicit parent→children order hierarchy on the SymbolicSubSpace
+    """Explicit parent→children order hierarchy on the SymbolSubSpace
     singleton (distinct from the codebook-implicit Meronomy)."""
 
     def _model(self):
@@ -261,7 +261,7 @@ class TestTaxonomy:
     def test_wordspace_hosts_taxonomy(self):
         m = self._model()
         assert hasattr(m.symbolSpace, "taxonomy"), \
-            "SymbolicSubSpace singleton must host the Taxonomy"
+            "SymbolSubSpace singleton must host the Taxonomy"
 
     def test_taxonomy_add_and_walk_by_order(self):
         m = self._model()

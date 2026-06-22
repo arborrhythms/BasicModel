@@ -24,7 +24,7 @@
       <dataType>embedding</dataType>
       <dataset>inline</dataset>
       <!-- All sentences are exactly 3 content words (5 lex tokens including
-           spaces).  The parser wMax=8 forces this constraint:
+           spaces).  The STM capacity of 8 (stmCapacity) forces this constraint:
            sentences longer than 7 tokens never reach the root S category,
            leaving the derivation trace empty.
 
@@ -51,9 +51,9 @@
   </architecture>
 
   <SymbolSpace>
-    <!-- Stage 3 cleanup: chartTau and wMax retired alongside the
-         chart. The signal router (LanguageLayer) is the canonical
-         parser. -->
+    <!-- Stage 3 cleanup: parserBackend, chartTau, chartTopK,
+         chartNoiseEps retired alongside the chart. The signal router
+         (LanguageLayer) is the canonical parser. -->
     <language>
       <start>S</start>
       <grammar>

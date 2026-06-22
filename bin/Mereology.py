@@ -40,22 +40,22 @@ from util import TheXMLConfig
 
 @dataclass(frozen=True)
 class RuleSpec:
-    """One node in the derivation path: rule_name + arity + tier.
+    """One node in the derivation path: rule_name + arity + space_role.
 
     Immutable record consumed by ``Mereology.hoc_shape`` when walking
-    the reverse derivation. Tier is one of 'P' / 'C' / 'S' / 'L';
-    arity is 1 for unary ops and 2 for binary fold operators.
+    the reverse derivation. Space-role is one of 'subsymbolic' / 'CS' /
+    'SS'; arity is 1 for unary ops and 2 for binary fold operators.
     """
     rule_name: str
     arity:     int
-    tier:      str
+    space_role:      str
 
 
 @dataclass(frozen=True)
 class StepInfo:
     """One layer-level reverse executed during the hoc_shape walk.
 
-    Captures the rule that fired (rule_name, arity, tier), whether
+    Captures the rule that fired (rule_name, arity, space_role), whether
     its reverse preserves contiguity (per
     ``Layers.CONTIGUITY_PRESERVING_OPS``), the binary-fanout branch
     (``''`` for unary, ``'left'`` / ``'right'`` for binary), and the
@@ -64,7 +64,7 @@ class StepInfo:
     """
     rule_name:      str
     arity:          int
-    tier:           str
+    space_role:           str
     contiguous:     bool
     branch:         str
     active_indices: 'torch.Tensor'   # [B, K_cap] long
@@ -313,7 +313,7 @@ class Mereology:
               * ``per_step``: list of ``StepInfo``, one per layer-
                 level reverse executed during the walk, in
                 outer-to-inner traversal order. Each StepInfo
-                records ``(rule_name, arity, tier, contiguous,
+                records ``(rule_name, arity, space_role, contiguous,
                 branch, active_indices, active_count, K_cap)``.
 
             Empty leaves list when no position is active.
@@ -364,15 +364,15 @@ class Mereology:
         """Build the outer-to-inner rule sequence for hoc_shape.
 
         Default-only mode: synthesize a fixed alternating
-        ``[sigma(S), pi(C)] * subsymbolicOrder`` path -- no chart was
+        ``[sigma(SS), pi(CS)] * subsymbolicOrder`` path -- no chart was
         consulted (Phase 1.5 fast-path bypass keeps current_rules
-        empty), so every position followed the per-tier default
+        empty), so every position followed the per-space_role default
         unary rule.
 
         Chart-driven mode: read row 0 of
-        ``self.symbolSpace.generate_rules`` per tier (S then C then P
-        in pipeline-reverse order) and concatenate. Same canonical-
-        path convention as ``_row_zero_rules`` at Language.py:2247.
+        ``self.symbolSpace.generate_rules`` per space_role (SS then CS then
+        subsymbolic in pipeline-reverse order) and concatenate. Same
+        canonical-path convention as ``_row_zero_rules`` at Language.py:2247.
         """
         n_stages = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         path = []
@@ -384,23 +384,23 @@ class Mereology:
         ) if isinstance(gen_rules, dict) else False
 
         if not chart_populated:
-            # Default-only path: ['sigma' (S), 'pi' (C)] * n_stages.
+            # Default-only path: ['sigma' (SS), 'pi' (CS)] * n_stages.
             for _ in range(n_stages):
-                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
-                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
+                path.append(RuleSpec(rule_name='sigma', arity=1, space_role='SS'))
+                path.append(RuleSpec(rule_name='pi',    arity=1, space_role='CS'))
             return path
 
-        # Chart-driven: walk S-tier rules then C-tier rules in
+        # Chart-driven: walk SS-space_role rules then CS-space_role rules in
         # reverse-pipeline order. Use row 0 as canonical.
         try:
             from Language import TheGrammar
-            for tier in ('S', 'C', 'P'):
-                per_tier = gen_rules.get(tier) if gen_rules else None
-                if not per_tier:
+            for space_role in ('SS', 'CS', 'subsymbolic'):
+                per_space_role = gen_rules.get(space_role) if gen_rules else None
+                if not per_space_role:
                     continue
-                row_zero = (per_tier[0]
-                            if per_tier and isinstance(per_tier[0], list)
-                            else per_tier)
+                row_zero = (per_space_role[0]
+                            if per_space_role and isinstance(per_space_role[0], list)
+                            else per_space_role)
                 for rule_id in row_zero:
                     try:
                         rd = TheGrammar.rules[int(rule_id)]
@@ -409,7 +409,7 @@ class Mereology:
                         path.append(RuleSpec(
                             rule_name=rd.method_name,
                             arity=int(rd.arity),
-                            tier=str(tier)))
+                            space_role=str(space_role)))
                     except (IndexError, AttributeError, ValueError, TypeError):
                         continue
         except Exception:
@@ -418,8 +418,8 @@ class Mereology:
         if not path:
             # Fallback: default-only synthesis if chart parsing failed.
             for _ in range(n_stages):
-                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
-                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
+                path.append(RuleSpec(rule_name='sigma', arity=1, space_role='SS'))
+                path.append(RuleSpec(rule_name='pi',    arity=1, space_role='CS'))
         return path
 
     def _walk_reverse(self, parent_tensor, path, K_cap, threshold):
@@ -438,7 +438,7 @@ class Mereology:
         head = path[0]
         rest = path[1:]
         contig = head.rule_name in CONTIGUITY_PRESERVING_OPS
-        layer = self._lookup_host_layer(head.tier, head.rule_name)
+        layer = self._lookup_host_layer(head.space_role, head.rule_name)
 
         if layer is None:
             # No host layer wired -- skip this rule (treat as identity).
@@ -532,8 +532,8 @@ class Mereology:
                 return out
         return None
 
-    def _lookup_host_layer(self, tier, rule_name):
-        """Resolve a (tier, rule_name) to a layer instance.
+    def _lookup_host_layer(self, space_role, rule_name):
+        """Resolve a (space_role, rule_name) to a layer instance.
 
         Tries ``symbolSpace.host_layer`` first (chart-registered host
         layers, including WholeSpace.sigma / ConceptualSpace.pi /
@@ -545,7 +545,7 @@ class Mereology:
         ss = getattr(self, 'symbolSpace', None)
         if ss is not None and hasattr(ss, 'host_layer'):
             try:
-                lyr = ss.host_layer(tier, rule_name)
+                lyr = ss.host_layer(space_role, rule_name)
                 if lyr is not None:
                     return lyr
             except Exception:
@@ -571,7 +571,7 @@ class Mereology:
             empty = torch.zeros(0, dtype=torch.long, device=tensor.device)
             return StepInfo(
                 rule_name=head.rule_name, arity=int(head.arity),
-                tier=str(head.tier), contiguous=bool(contig),
+                space_role=str(head.space_role), contiguous=bool(contig),
                 branch=str(branch),
                 active_indices=empty.unsqueeze(0),
                 active_count=torch.zeros(1, dtype=torch.long, device=tensor.device),
@@ -586,7 +586,7 @@ class Mereology:
             cnt = torch.zeros(B, dtype=torch.long, device=tensor.device)
             return StepInfo(
                 rule_name=head.rule_name, arity=int(head.arity),
-                tier=str(head.tier), contiguous=bool(contig),
+                space_role=str(head.space_role), contiguous=bool(contig),
                 branch=str(branch),
                 active_indices=empty, active_count=cnt, K_cap=int(K_cap))
         topk = torch.topk(norms, K_eff, dim=-1)
@@ -596,7 +596,7 @@ class Mereology:
         count = above.sum(dim=-1)            # [B]
         return StepInfo(
             rule_name=head.rule_name, arity=int(head.arity),
-            tier=str(head.tier), contiguous=bool(contig),
+            space_role=str(head.space_role), contiguous=bool(contig),
             branch=str(branch),
             active_indices=idx, active_count=count, K_cap=int(K_cap))
 

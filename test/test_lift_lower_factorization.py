@@ -2,8 +2,8 @@
 
 Phase 3 design (doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7):
 LiftLayer and LowerLayer become elementwise-gate-then-internal-sigma/pi
-operators at the S tier.  The gate is the elementwise product of the two
-operands at the C-tier:
+operators at the S space_role.  The gate is the elementwise product of the two
+operands at the C-space_role:
 
     cb     = wholeSpace.subspace.what
     left_c  = cb.reverse(left, project=True)

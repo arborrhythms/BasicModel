@@ -142,7 +142,7 @@ def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     monotone-equivalent to projective distance argmin under the
     ``+/-`` quotient.
 
-    **Use only at bivector / symbol-tier lookup sites.** PartSpace
+    **Use only at bivector / symbol-space_role lookup sites.** PartSpace
     and WholeSpace token codebooks treat each entry as an
     independent vector -- ``word`` and ``-word`` are *different*
     entries, not NEG-quotient partners. Replacing ``_wrapped_mse_score``
@@ -2844,7 +2844,7 @@ def embed_pretrain(config_path, shard_paths, num_epochs: int = 1,
                    max_docs: int = 200,
                    window: int = 5,
                    learning_rate: float = 0.001):
-    """Pretrain a model's BPE codebook + lexicon + C-tier transform
+    """Pretrain a model's BPE codebook + lexicon + C-space_role transform
     weights through the per-word stem with a CBOW-over-STM loss.
 
     Sets ``PartSpace.wordLearning=1`` so the ChunkLayer grows
@@ -3086,7 +3086,7 @@ if __name__ == '__main__':
     # --- pretrain subcommand (post 2026-05-12 unified path) ---
     pretrain_p = sub.add_parser(
         "pretrain",
-        help="Pretrain BPE codebook + lexicon + C-tier weights by "
+        help="Pretrain BPE codebook + lexicon + C-space_role weights by "
              "driving the model's forward pass over text shards.")
     pretrain_p.add_argument('--config', required=True,
                             help='XML config path (e.g. data/POS_smoke.xml).')

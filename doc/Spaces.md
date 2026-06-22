@@ -1,6 +1,6 @@
 # Spaces
 
-> **2026-06-21 terminology note (one noun per tier).** This doc follows the
+> **2026-06-21 terminology note (one noun per-space).** This doc follows the
 > percept / concept / symbol convention
 > (`doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`): a **percept**
 > is a PartSpace/WholeSpace thing (dimensionally-embedded, extensional; the two
@@ -23,7 +23,7 @@
 > scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
 > PS/SS shorthand in older notes reads part-side/whole-side. The freed
 > name `SymbolSpace` was **reintroduced 2026-06-19** as the grammar/word
-> tier (formerly `WordSpace`); see `doc/old/2026-06-19-handoff.md`.
+> space-role (formerly `WordSpace`); see `doc/old/2026-06-19-handoff.md`.
 >
 > **At the corpus callosum, objects are analysed and synthesized** —
 > by sending them back to PerceptualSpace: wholes get split and parts
@@ -172,7 +172,9 @@ All spaces inherit from `Space`, which manages:
   candidate vectors; top-k selection gives the bottleneck.
 - **Reshape flag.** When in/out object counts differ, the `[B, nObj, nDim]`
   tensor is flattened before the next space and restored on the way back.
-- **Attention.** Optional `hasAttention=true` reweights objects.
+- **Attention.** The legacy boolean `hasAttention` is deprecated and inert
+  (kept only as a backward-compat alias); use the `<attention>` element
+  instead (`off` | `primer` | `second-order` | `low-rank`).
 - **`set_sigma` propagation.** Ergodic-mode noise level cascades from the
   top-level model down through every child layer.
 
@@ -251,10 +253,10 @@ is retired entirely.
 shared substrate." They are first-class binary `GrammarLayer`
 subclasses (Stage 4 of the substrate refactor):
 
-- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `tier='C'`.
+- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `space_role='C'`.
   Owns an internal `self._sigma: SigmaLayer` for the pairwise additive
   (sigma-style) math. `forward(left, right)` delegates to `_sigma.compose`.
-- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `tier='C'`.
+- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `space_role='C'`.
   Owns an internal `self._pi: PiLayer` for the pairwise multiplicative
   (pi-style) log-domain math. `forward(left, right)` delegates to
   `_pi.compose`.
@@ -262,7 +264,7 @@ subclasses (Stage 4 of the substrate refactor):
 Both reverse cleanly via their internal layer's reverse. Both gain
 butterfly mode for free via `GrammarLayer` base inheritance (Stage 5).
 
-The signal router dispatches them as binary reduce ops at the C tier,
+The signal router dispatches them as binary reduce ops at the CS,
 weighted by `Grammar.rule_probability` (the per-position copy/reduce
 score head).
 
@@ -421,15 +423,20 @@ spatial representation. This connects to the ramsified order hierarchy in
 
 ## Codebook Uniqueness Contract
 
-Every codebook entry must be **unique under both `WhereEncoding` and
-`WhatEncoding`**:
+Every codebook entry is identified by its **row index** and must carry
+**distinct `.what` (`WhatEncoding`) content**; the old `.where`-keyed
+uniqueness scheme is retired:
 
-- **`.where` --- globally unique positional key.** Enforced structurally via
-  the class-level **codebook offset registry** on `WhereEncoding`
-  ([`Spaces.py:223-276`](../bin/Spaces.py)). Each codebook calls
-  `allocate_codebook_slice(n_vectors)` and gets a contiguous integer offset;
-  all codebooks share $\mathrm{div\_term} = 2\pi / \mathrm{total\_allocated}$. Each codebook's
-  entries live in disjoint `.where` slices.
+- **`.where` --- positional / spatial-extent key (no longer a codebook
+  row key).** The cross-codebook **`.where` slice registry was RETIRED**
+  (modality re-architecture, 2026-06-04; `WhereEncoding`,
+  [`Spaces.py`](../bin/Spaces.py)). `allocate_codebook_slice` /
+  `global_max_val` / `reset_codebook_registry` were removed: there is no
+  shared where-space to allocate disjoint slices in. Codebook identity is
+  now the **row index** (the `_index` selection), `.where` keeps only its
+  positional / spatial-extent role, and CS→WS reverse decode is
+  **content-match** (nearest row). Cross-codebook taxonomy is row/position-keyed
+  via WholeSpace's explicit dicts (`category_ids`, `part_parents`).
 - **`.what` --- distinct prototype content.** Identical `.what` collapses to the
   same parthood identity (`equal(A, A) = 1`) --- a redundant pair the network
   can't distinguish.
@@ -443,9 +450,11 @@ Current enforcement:
 | PartSpace Lexicon | Cosine-margin pode/antipode SBOW training | Active for trained Lexicons |
 | InputSpace vocabulary | Shares PartSpace's Lexicon | Inherited (text); manual (raw) |
 
-`.where` uniqueness is **structural** (enforced at construction); `.what`
+`.where` is now a positional / spatial-extent carrier (the slice registry is
+retired — see above); codebook identity is the **row index**. `.what`
 uniqueness is **learned** (encouraged by `ImpenetrableLayer` + antipodal
-quotient). Together they guarantee the parthood lattice is well-formed.
+quotient) and, together with the distinct row indices, keeps the parthood
+lattice well-formed.
 
 ---
 
@@ -641,18 +650,21 @@ emits `[B, N, D]` (left-aligned, right-padded to N) and
 3. **Body**: T stages on B rows (no per-cursor walk, no causal
    mask).
 4. **Head**: `outputSpace` $\to$ `[B, N, predDim]`. The head is a side
-   channel --- IR loss is computed at the P-tier, not at the head.
+   channel --- IR loss is computed at the subsymbolic (PS), not at the head.
 
 `runBatch` reads `_ir_mask_positions` and `_ir_pre_mask_input` and
 computes `MSE(perceptualSpace.subspace at masked positions,
 _ir_pre_mask_input at masked positions)`. The
-`<reconstruct>concepts|symbols|both</...>` knob adds optional
-C-tier / S-tier reconstruction terms (target derived by lifting
-`_ir_pre_mask_input` through `sigma_percept`; see Plan Section 
-"Reconstruction-loss target shape" Option B).
+`<reconstruct>` element (and its `reconstructEnum`) is RETIRED
+(A1, 2026-06-09): the ConceptualCombine now unconditionally
+integrates all three streams (PS + SS + CS), so reconstruction
+is unconditionally from concepts — the former `concepts|symbols|both`
+selection (target derived by lifting `_ir_pre_mask_input` through
+`sigma_percept`; see Plan Section "Reconstruction-loss target shape"
+Option B) is no longer a knob.
 
-`<maskedPrediction>` is retired; `<reconstruct>output</...>` is
-retired (it was the only path that fired the reverse pipeline);
+`<maskedPrediction>` is retired; `<reconstruct>` is
+retired (the `output` mode was the only path that fired the reverse pipeline);
 `<reverseScale>` is renamed to `<reconstructionScale>` (the legacy
 name remains parseable with a one-shot deprecation warning).
 
@@ -722,14 +734,18 @@ the analysis fold; see the orientation banner.)
 through `object_basis.reverse` and (in radix mode) the
 `RadixLayer.reverse` chunk-id → bytes decode.
 
-**Butterfly mode (Stage 5):** when
-`<PartSpace><butterfly>true</butterfly><butterflyN>N</butterflyN>`,
-`self.pi` is constructed with `butterfly=True, N=N`. Internal storage
-becomes a packed `nn.Parameter[n_levels, N//2, 2D, 2D]` cascade with
-bit-reversal permutations. Closes the XOR convergence target. Note:
-butterfly weight gradient flow requires bypassing the muxed codebook
-snap (`<codebook>none</codebook>` on PS in `MM_xor.xml`); STE-through-snap
-variant is a known follow-up.
+**Butterfly mode (Stage 5):** when `<PartSpace><butterfly>true</butterfly>`,
+the fold is constructed with `butterfly=True`. The cascade length `N` is
+auto-derived from the space shape (`nInput * nInputDim`, internally padded
+to the next power of two); there is no `<butterflyN>` knob (it was retired
+2026-06-05). `<butterfly>` itself is a deprecated alias for the
+architecture-level `<sigmaPi>` (new configs should use that). Internal
+storage becomes a packed `nn.Parameter[n_levels, N//2, 2D, 2D]` cascade
+with bit-reversal permutations. Closes the XOR convergence target. PartSpace
+is subsymbolic and takes no `<codebook>` element (it was retired; PS is
+fixed to `none`); butterfly weight gradient flow therefore flows through the
+continuous `.event` passthrough on PS. STE-through-snap (for spaces that do
+quantize) is a known follow-up.
 
 **Range.** Vectors live in `[-1, 1]^d` (tanh-bounded). No negation
 operator — percepts represent feature magnitudes with sign indicating
@@ -748,12 +764,16 @@ space.
 $[-1, +1]$ encodes belief certainty with sign. No antipodal identification ---
 sign matters.
 
-**Owned layer (2026-05-13 rebalance, revised 2026-05-29 clean-stack).**
+**Owned layer (2026-05-13 rebalance → 2026-05-29 clean-stack → RETIRED).**
+ConceptualSpace owns **no parameterised fold layer**. The historical
+`self.sigma_in` / `self.sigma_cs` SigmaLayers below were RETIRED — they are
+no longer constructed, and `CS.reverse` no longer applies them (see the
+**Reverse** note). The table records the pre-retirement Stage-10 design:
 
-| Layer | Direction | Math | Notes |
+| Layer (RETIRED) | Direction | Math | Notes |
 |-------|-----------|------|-------|
-| `self.sigma_in` | incoming-contribution fold | per-stage SigmaLayer (Ramsified across stages) | Stage 10 (2026-05-27 plan). **Bypassed on forward under clean-stack STM (2026-05-29)** — `folded = primary` at stage 0, `folded = sym` at k > 0. Reverse path still calls `sigma_in.reverse`. |
-| `self.sigma_cs` | residual-CS iteration kernel for stages k > 0 | per-stage SigmaLayer | Same Stage 10 / clean-stack story as `sigma_in`. |
+| `self.sigma_in` | incoming-contribution fold | per-stage SigmaLayer (Ramsified across stages) | Stage 10 (2026-05-27 plan). **Bypassed on forward under clean-stack STM (2026-05-29)** — `folded = primary` at stage 0, `folded = sym` at k > 0; then removed entirely. |
+| `self.sigma_cs` | residual-CS iteration kernel for stages k > 0 | per-stage SigmaLayer | Same Stage 10 / clean-stack story as `sigma_in`; removed entirely. |
 
 **Clean-stack STM (2026-05-29 experiment).** The Stage-10 additive
 composition
@@ -762,23 +782,29 @@ composition
 folded = sigma_in(combined) + sigma_cs(prev)
 ```
 
-is replaced with per-stage tier attribution:
+is replaced with per-stage space-role attribution:
 
 ```
 stage 0      folded = primary    (PS event from subspace.materialize())
 stage k > 0  folded = sym        (SS event from word_subspace.materialize())
 ```
 
-No additive mixing across tiers; no residual lift; trivially invertible
+No additive mixing across space-roles; no residual lift; trivially invertible
 (read-back, no inverse-Sigma needed). The `STM_k = STM_{k-1} + SS_k`
 carry-forward variant was tested and reverted — the pure clean-stack
 form is the landing point. See
 [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
-Side effect: `sigma_in` / `sigma_cs` are dead-weight on the forward
-path (no gradient). Convergence on MM_xor continues via the PiLayer
-butterfly cascade. A forward / reverse semantic mismatch (reverse
-inverts a fold forward never applied) is a documented follow-up.
+Because `sigma_in` / `sigma_cs` were dead-weight on the forward path (no
+gradient — they never fired) while `CS.reverse` applied `sigma_in.reverse`
+unconditionally, the round-trip carried an UNMATCHED inverse fold (the
+source of garbage XOR_exact recon tokens). That forward / reverse semantic
+mismatch was RESOLVED by retiring the layers entirely: CS is now a pure
+bookkeeping carrier (forward push / reverse read-back) with no fold to
+invert, and the symbolic generalization operator moved to WholeSpace
+(inverted upstream of `CS.reverse` on the reconstruction path, in
+`BasicModel._reverse_body`). Convergence on MM_xor continues via the
+PiLayer butterfly cascade.
 
 **Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
 invert). The reverse chain operates on the terminal STM contents; per
@@ -837,13 +863,13 @@ relaxes the strict gate to enumerate any remaining breaks;
 ### ShortTermMemory
 
 ConceptualSpace owns `self.stm` — a `ShortTermMemory` instance, a
-per-batch stack of unquantized C-tier "ideas." Post-substrate-refactor,
+per-batch stack of unquantized CS "ideas." Post-substrate-refactor,
 this is **the primary structure CS manages** — `CS.forward` is STM
 bookkeeping (shift + push), with no atomic fold layer.
 
 | Property | Default | Configurable via |
 |---|---|---|
-| Capacity | 8 (within Miller's $7 \pm 2$ band; matches `wMax` fallback) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
+| Capacity | 8 (within Miller's $7 \pm 2$ band) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
 | Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
 | Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
 
@@ -875,10 +901,13 @@ chain of end-states — is in the dedicated [STM.md](STM.md) chapter.
 (Pre-2026-05-27, Lift / Lower were "substrate-borrowing" — they reached
 into `PartSpace.sigma` and `ConceptualSpace.pi` for their math.
 That pattern is retired in Stage 4 of the substrate refactor.
-`PartSpace.sigma` itself was subsequently retired in Stage 5 / 10
-of the two-loop pi-sigma plan; the sigma half migrated to
-`ConceptualSpace.sigma_in` per stage. The 2026-05-29 clean-stack STM
-experiment further bypasses `sigma_in` on the forward path — see
+`PartSpace.sigma` itself remains LIVE — PartSpace owns and uses a single
+`SigmaLayer` (`self.sigma`), allocated in `__init__` and applied in its
+forward fold (the Pi/Sigma swap, rev. 2026-06-09, put Sigma/synthesis on
+PartSpace). The per-stage `ConceptualSpace.sigma_in` that once carried the
+two-loop pi-sigma additive math on CS has since been RETIRED (the 2026-05-29
+clean-stack STM experiment bypassed it on the forward path; it was later
+removed entirely — CS owns no fold). See
 [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).)
 
 `LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
@@ -889,7 +918,7 @@ math:
 class LiftLayer(GrammarLayer):
     arity = 2
     rule_name = "lift"
-    tier = 'C'
+    space_role = 'C'
     # Internal substrate: self._sigma = SigmaLayer(...)
     def forward(self, left, right):
         return self._sigma.compose(left, right)
@@ -899,7 +928,7 @@ class LiftLayer(GrammarLayer):
 class LowerLayer(GrammarLayer):
     arity = 2
     rule_name = "lower"
-    tier = 'C'
+    space_role = 'C'
     # Internal substrate: self._pi = PiLayer(...)
     def forward(self, left, right):
         return self._pi.compose(left, right)
@@ -908,7 +937,7 @@ class LowerLayer(GrammarLayer):
 ```
 
 Both register with the signal router (`SymbolicSubSpace.languageLayer`) as
-C-tier reduce ops via the existing host-layer registry path. Both
+CS reduce ops via the existing host-layer registry path. Both
 inherit `GrammarLayer` butterfly mode (Stage 5) — set
 `butterfly=True, N=N` at construction to enable cross-position cascade.
 

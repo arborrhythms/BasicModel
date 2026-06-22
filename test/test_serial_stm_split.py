@@ -45,10 +45,10 @@ def _knob(value):
 
 
 def make_ws(batch=1, dim=D, cap=CAP):
-    """Bare SymbolicSubSpace with idea-stack buffers (the established
+    """Bare SymbolSubSpace with idea-stack buffers (the established
     object.__new__ fixture idiom from _stm_test_fixtures)."""
-    from Language import SymbolicSubSpace
-    ss = object.__new__(SymbolicSubSpace)
+    from Language import SymbolSubSpace
+    ss = object.__new__(SymbolSubSpace)
     nn.Module.__init__(ss)
     ss._stm_payload_dim = int(dim)
     ss._idea_capacity = int(cap)

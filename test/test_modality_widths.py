@@ -1,8 +1,8 @@
 """Width guards for the modality re-architecture (Phase 1, Task 1.2 of
 doc/plans/2026-06-03-modality-architecture-plan.md).
 
-Re-guards the REVISED per-tier shapes (supersedes test_convergence_widths.py,
-whose tier shapes were the SS-promotion convergence target):
+Re-guards the REVISED per-space_role shapes (supersedes test_convergence_widths.py,
+whose space_role shapes were the SS-promotion convergence target):
 
   - CS (ConceptualSpace) is the muxed event carrier: ``where=2, when=2`` with
     a codebook on ``.event`` (``codebook_slot == 'event'``, ``muxed == True``)

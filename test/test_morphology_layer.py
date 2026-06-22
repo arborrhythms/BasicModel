@@ -1,7 +1,7 @@
 """Phase 7 / Task 7.2: MorphologyLayer (lemma + feature routing over the
 converged substrate). doc/plans/2026-06-03-modality-architecture-plan.md.
 
-MorphologyLayer is a parameter-free unary C-tier GrammarLayer that decomposes a
+MorphologyLayer is a parameter-free unary CS-space_role GrammarLayer that decomposes a
 surface token (via surface_morphology.analyze) and routes the tense/aspect
 features onto the event .when by DELEGATING to TenseLayer / AspectLayer (the
 .when math is reused, not re-derived). The "morphology" rule loads from
@@ -35,7 +35,7 @@ def _event(t=0):
 def test_layer_identity_and_registration():
     m = MorphologyLayer()                       # parameter-free
     assert m.rule_name == "morphology"
-    assert m.tier == 'C'
+    assert m.space_role == 'CS'
     assert int(m.arity) == 1
     assert GRAMMAR_LAYER_CLASSES["morphology"] is MorphologyLayer
 
