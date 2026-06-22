@@ -71,7 +71,14 @@ fundamental operation, the five mereological relations, and the
 Parthood is the single fundamental operation. Every other mereological
 relation is defined in terms of it.
 
-For two concepts $A, B \in \mathbb{R}^D$:
+> **Terminology (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`).**
+> Below, $A, B$ are **percept** vectors (dimensionally-embedded codes in the
+> `PartSpace`/`WholeSpace` codebooks); `part`/`whole`/`equal` are geometric
+> relations over those percepts. "concept" is reserved for a `ConceptualSpace`
+> relation tying one part-percept to one whole-percept (by reference), and
+> "symbol" for a 0-D `SymbolSpace` reference to a concept.
+
+For two percept vectors $A, B \in \mathbb{R}^D$:
 
 $$
 \mathrm{part}(A, B) = \frac{\max(0,\ A \cdot B)}{|A|\,|B|}
@@ -161,7 +168,7 @@ leading-bivector / paired-index layout caveat.
 
 ## ImpenetrableLayer: Five-Relations Regularizer
 
-`ImpenetrableLayer` regularizes the WholeSpace symbol codebook. It
+`ImpenetrableLayer` regularizes the WholeSpace whole-percept codebook. It
 classifies each ordered pair of codebook rows $(i, j)$ into one of the five
 mereological relations (using `Basis.part`), and penalizes partial overlap
 when paired with a trust mismatch. The learned half of the [Codebook
@@ -234,18 +241,26 @@ XML knobs (under WholeSpace):
 Gated behind `<mereologyRaise>` (default off → byte-identical). Full design +
 code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
+> **Terminology note.** The cross-tower link that ties one part-percept to one
+> whole-percept by reference is a **concept** (a `ConceptualSpace` relation); the
+> `_sym_*`/`insert_meta` "META node" tables that hold these links are the
+> **Concept codebook**. Prose below uses "concept" for that relation; the
+> code identifiers (`insert_meta`, `_sym_*`) are left as-is pending the
+> code-identifier pass.
+
 The two towers stay **in-kind** — `PartSpace` σ *composes parts → parts*,
-`WholeSpace` π *analyses wholes → wholes* — and the **symbol (META node) is the
-cross-tower link**, associated with both an overlapping part and whole
-(`insert_meta(ps_pos, ss_pos)`). An object's identity is **isomorphic**: σ-up
-meets π-down at the object. At init there are only **atoms** (PartSpace) and the
-**universe** (WholeSpace); objects emerge from attention.
+`WholeSpace` π *analyses wholes → wholes* — and the **concept (META node) is the
+cross-tower link**, associated with both an overlapping part-percept and
+whole-percept (`insert_meta(ps_pos, ss_pos)`). An object's identity is
+**isomorphic**: σ-up meets π-down at the object. At init there are only **atoms**
+(part-percepts in PartSpace) and the **universe** (the top whole-percept in
+WholeSpace); objects emerge from attention.
 
 Three balancing forces keep a single coherent lattice and converge it:
 
-1. **Link the tightest relation** — the largest part ↔ the smallest whole (via
-   `.where` extent); skip a link a bigger-part/smaller-whole already subsumes;
-   drop useless symbols.
+1. **Link the tightest relation** — the largest part-percept ↔ the smallest
+   whole-percept (via `.where` extent); skip a link a bigger-part/smaller-whole
+   already subsumes; drop useless concepts.
 2. **Too many parts → synthesize a higher-order part** (`maybe_raise_order`):
    when a whole accumulates more than `K_many` parts, mint a higher-order PART
    that subsumes them, with **abstraction order** one above its constituents
@@ -262,20 +277,20 @@ code is synthesized by `SigmaLayer.synthesize_over_set` (the M-way generalizatio
 of the binary atanh-sum fold) — or, in the "subsymbolic first" phase, the
 mean-combine of constituents, with `part_chain` as the source of truth. (First
 pass: the raise fires correctly when a whole has many parts; the live pid-keyed
-autobind binds 1 percept→1 symbol, so similarity-based many-to-one binding + the
+autobind binds 1 percept→1 concept, so similarity-based many-to-one binding + the
 prune-and-rebind of moot edges are noted follow-ups.)
 
 ### The corpus callosum links the towers (part `isa` whole)
 
 The full mechanism (see the spec): the **corpus callosum** in ConceptualSpace (the
 learned `[2N,N]` `self.callosum` glue) is what joins the towers into one meronomy. A
-part `A` (PartSpace) and a whole `B` (WholeSpace) have `.what` codes from *different*
-codebooks (incomparable), but their **`.where` is comparable** — so the callosum
-asks `WhereEncoding` whether `A.where` is *part of* `B.where`; when it is (and no
-greater part / lesser whole intervenes, per codebook activation) it links **`A isa
-B`** (token `isa` type; the type *names* the token). Co-occurrence at the same
-`.where`/`.when` drives the link, weakening when they dissociate — a **Hebbian**
-coupling between codebooks.
+part-percept `A` (PartSpace) and a whole-percept `B` (WholeSpace) have `.what`
+codes from *different* codebooks (incomparable), but their **`.where` is
+comparable** — so the callosum asks `WhereEncoding` whether `A.where` is *part of*
+`B.where`; when it is (and no greater part / lesser whole intervenes, per codebook
+activation) it forms the **concept `A isa B`** (token `isa` type; the type *names*
+the token). Co-occurrence at the same `.where`/`.when` drives the link, weakening
+when they dissociate — a **Hebbian** coupling between codebooks.
 
 Since the 2026-06-16 redesign `.where` (and `.when`) is an **endpoint-sum bracket**
 `[start, end]` (angle = span center, magnitude = extent), so this *part-of* test is
@@ -287,12 +302,12 @@ extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.)
 Word ↔ object cannot be linked this way (too unlike; no convex set is specific
 enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
 `.where`/`.when`**, fusing the word-code and object-code into the symbol used in
-serial communication (the MetaSymbol). Because symbols are outliers, part↔whole
-associations live in a **two-code LUT** and the symbolic taxonomy is **relations
-over symbol indices** — which are the TruthLayer's **absolute truths** (propositions)
-and **relative truths** (`RelativeTruthStore`), to be integrated. Taxonomy relations
-are also learned **explicitly from trusted language** ("cats are furry" → `[cats] <=
-[furry]`).
+serial communication (the MetaSymbol). Because symbols are outliers, the
+part↔whole **concepts** live in a **two-code LUT** and the symbolic taxonomy is
+**relations over symbol indices** — which are the TruthLayer's **absolute truths**
+(propositions) and **relative truths** (`RelativeTruthStore`), to be integrated.
+Taxonomy relations are also learned **explicitly from trusted language** ("cats are
+furry" → `[cats] <= [furry]`).
 
 **Granularity / the part-whole ratio** is the correctness signal (and the MM_20M
 mean-collapse fix): *many parts → one whole* = under-analysed; *one part → one whole*
@@ -300,6 +315,57 @@ mean-collapse fix): *many parts → one whole* = under-analysed; *one part → o
 (σ, e.g. radix) or analysis (π, property tiling) within the problematic `.where`** —
 until words emerge as parts. MM_20M collapses because its byte chunker never climbs
 and its analyser never descends, so no word-granularity parts exist for XOR.
+
+### Explicit concepts ⟷ implicit subsymbolic representations (dual-coded, 2026-06-21)
+
+> **Terminology note.** This section formerly called the explicit part↔whole
+> relation entry a "symbol." Per the convention, that relation — one part-percept
+> tied to one whole-percept by reference, held in the `_sym_*` tables — is a
+> **concept** (the Concept codebook). The 0-D `SymbolSpace` **symbol** is a
+> separate, intensional reference *to* such a concept and is not what the `_sym_*`
+> entries are. Prose below says "concept"; the `_sym_*` code identifiers are left
+> as-is pending the code-identifier pass.
+
+The architecture carries **two coordinating structures** for the same content — an
+**explicit relational** tower (the concepts) and an **implicit subsymbolic** one —
+and order-raising is what keeps them in correspondence. We have *both*, not one or
+the other.
+
+- **Explicit (concepts).** A concept is **built directly** (not folded): an
+  index-value relation entry tying a `PartSpace` part-percept code to a `WholeSpace`
+  whole-percept code, with self-reference (`('sym', id)` members) so concepts nest
+  into the taxonomy. Concepts associate part-percepts and whole-percepts **in virtue
+  of a common whole**, and **identity on insertion is same-part-OR-same-whole** (the
+  same concept is reinforced, not duplicated). `.where` **varies trial-to-trial** and
+  is *not* the identity or trigger key — it keeps only its spatial/meronomy role
+  (extent, containment). The discrete `_sym_*` tables (the Concept codebook) are this
+  structure. (This refines the earlier `.where`/co-occurrence framing above: the
+  *trigger* to abstract is **many constituents under a common concept**, not a shared
+  `.where`.)
+- **Implicit (subsymbolic).** Each concept has a corresponding **learned vector**.
+  For a higher-order concept that vector is produced by **σ then quantize**: σ is
+  invertible, so it *cannot* merge many → one — it only pulls the discontiguous
+  constituent vectors into a **proximal / contiguous cluster**; **quantization** does
+  the many → one collapse, snapping the cluster onto **one code in the higher-order
+  codebook** (the codebook *is* the mereological structure, so the snap aligns the
+  vector with it). Training pulls the σ-synthesis of the many toward the higher-order
+  code (VQ commitment / codebook loss); the abstraction loss is localized at the
+  quantizer — correct, since abstraction should discard constituent detail.
+
+**Coordination.** Order-raising is the coupling between the two. When the explicit
+tower raises a higher-order part-percept/whole-percept (built directly, inserted on
+the **over-collected side** of the higher-order table — too-many-parts → higher-order
+part, too-many-wholes → higher-order whole), it **creates the corresponding implicit
+subsymbolic higher-order representation** via the σ+quantize path above. The explicit
+concept **indexes / names** the implicit vector; the implicit vector is the concept's
+**subsymbolic content**. The two co-evolve and must agree: a directly-built
+concept-index paired with a quantized vector that is a valid point in the higher-order
+mereological codebook. Direct index + quantized representation are the two
+complementary halves of one concept.
+
+This is the dual-coded (neuro-symbolic) core: discrete concept **relations over
+indices** in lock-step with continuous **quantized representations** — neither alone,
+but the two coordinating.
 
 ---
 
@@ -332,8 +398,9 @@ and its analyser never descends, so no word-granularity parts exist for XOR.
 
 ## Meronymic Analyzer (PartSpace)
 
-Parthood is not only the symbolic relation of the previous sections; it
-is also how `PartSpace` *analyzes* a surface into structure. The
+Parthood is not only the mereological relation over percepts of the
+previous sections; it is also how `PartSpace` *analyzes* a surface into
+structure. The
 default perceptual chunking mode is `analyse`
 (`<PartSpace><chunking>analyse</chunking>`), which routes the input
 through the meronymic analyzer rather than a fixed lexicon or BPE table.

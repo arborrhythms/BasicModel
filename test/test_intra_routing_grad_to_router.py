@@ -79,8 +79,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         """A grad-enabled ``compose`` on the full-router grammar makes
         ``routing_state.rule_probs`` a LIVE differentiable tensor."""
         model = _build_model(_ROUTER_CONFIG)
-        ss = model.symbolicSpace
-        self.assertIsNotNone(ss, "router config must have a symbolicSpace.")
+        ss = model.symbolSpace
+        self.assertIsNotNone(ss, "router config must have a symbolSpace.")
         self.assertFalse(
             ss._grammar_is_default_only,
             "MM_xor_loopback must be a FULL-ROUTER grammar (compose fires).")
@@ -118,7 +118,7 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
             ``test_rule_probs_requires_grad_on_full_router``.
         """
         model = _build_model(_ROUTER_CONFIG)
-        ss = model.symbolicSpace
+        ss = model.symbolSpace
         ll = ss.languageLayer
         # Tier-free fold: the grammar collapses to a SINGLE reduction tier
         # (no hardcoded S/C/P). Resolve whichever key the unary layer was
@@ -249,8 +249,8 @@ class TestSoftRuleProbsGradReachesRouter(unittest.TestCase):
         DETACHED ``rule_probs`` without error (the fallback is preserved
         exactly)."""
         model = _build_model(_DEFAULT_CONFIG)
-        ss = model.symbolicSpace
-        self.assertIsNotNone(ss, "default config must have a symbolicSpace.")
+        ss = model.symbolSpace
+        self.assertIsNotNone(ss, "default config must have a symbolSpace.")
         self.assertTrue(
             ss._grammar_is_default_only,
             "model.xml must be a default-only grammar (no router).")

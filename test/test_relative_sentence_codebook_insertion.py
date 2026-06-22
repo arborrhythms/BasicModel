@@ -70,7 +70,7 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
     def test_accepted_relation_taxonomy_and_trust(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.3
         _accept_all(cs)
         D = int(cs.nDim)
@@ -113,7 +113,7 @@ class TestMaybeLearnRelationInsertion(unittest.TestCase):
     def test_rejected_relation_writes_nothing(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.5
         # Product 0.0 < 0.5 -> reject.
         cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
@@ -274,7 +274,7 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         not all collapsing onto one nearest row. Slots 0/1/2 of row b map
         to codebook rows ``3b, 3b+1, 3b+2`` plus a tiny jitter."""
         stm = m.conceptualSpace.stm
-        ws = m.conceptualSpace.terminalSymbolicSpace_ref
+        ws = m.conceptualSpace.terminalSymbolSpace_ref
         W = ws.subspace.what.getW()
         dim = int(stm.concept_dim)
         stm.ensure_batch(B)
@@ -330,13 +330,13 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         self._seed_relative_stm(m, B)
         # Per-row current_rules: rows 0 and 2 relative, row 1 absolute
         # (empty inner list -> not relative).
-        m.symbolicSpace.current_rules = {"S": [[rel_id], [], [rel_id]]}
+        m.symbolSpace.current_rules = {"S": [[rel_id], [], [rel_id]]}
 
         rel_mask = m._sentence_relative_mask(B)
         self.assertEqual(rel_mask.tolist(), [True, False, True],
                          f"expected rows 0,2 relative; got {rel_mask.tolist()}")
 
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         accepted = cs.learn_relations_from_stm(rel_mask)
         # Two relative rows -> two inserted predicate METAs.
         self.assertEqual(
@@ -358,11 +358,11 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
         taxonomy mutation."""
         m = self._build_mentalmodel()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         _accept_all(cs)
         B = 2
         self._seed_relative_stm(m, B)
-        m.symbolicSpace.current_rules = {"S": [[], []]}
+        m.symbolSpace.current_rules = {"S": [[], []]}
         rel_mask = m._sentence_relative_mask(B)
         self.assertFalse(bool(rel_mask.any()))
         tax_before = dict(ws.taxonomy)

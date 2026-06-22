@@ -581,4 +581,4 @@ replacement design optimized for faster exact lookup over large vocabularies.
 - [`bin/embed.py`](../bin/embed.py) — embedding training loop.
 - [`bin/Spaces.py`](../bin/Spaces.py) — codebook lookup paths.
 - [Spaces.md](Spaces.md) — how the Lexicon is used by PerceptualSpace and
-  SymbolicSpace.
+  SymbolSpace.

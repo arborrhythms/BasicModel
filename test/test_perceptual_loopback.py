@@ -14,7 +14,7 @@ The ``_sourced_input`` / ``_read_event`` / ``_get_active_input_sibling``
 helpers and the ``conceptualSpace_ref`` / ``wholeSpace_ref`` /
 ConceptualSpace.``perceptualSpace_ref`` forward-input refs are deleted.
 ``WholeSpace.perceptualSpace_ref`` is KEPT (structural lexicon
-ownership) and is still covered by ``TestLexiconOnSymbolicSpace`` below.
+ownership) and is still covered by ``TestLexiconOnSymbolSpace`` below.
 
 Tests in this file:
   * The new explicit ``forward`` arities; the optional second arg
@@ -63,7 +63,7 @@ class TestForwardArityContract(unittest.TestCase):
     # Post-2026-05-21 SentenceState dissolution: the per-sentence
     # ``work`` carrier was retired. Spaces forwards now take only their
     # data SubSpace argument(s); grammar / serial-processing state lives
-    # on ``subspace.symbolicSpace`` (the back-reference threaded by
+    # on ``subspace.symbolSpace`` (the back-reference threaded by
     # ``copy_context``). The arity guards below assert the new
     # carrier-free signatures.
 
@@ -251,7 +251,7 @@ class TestRecurrentCellAndOutputViews(unittest.TestCase):
                          "events of the same shape.")
 
 
-class TestLexiconOnSymbolicSpace(unittest.TestCase):
+class TestLexiconOnSymbolSpace(unittest.TestCase):
     """WholeSpace is the logical owner of the orthographic Lexicon.
 
     Post-lexicon-migration: ``S.vocabulary`` returns the Embedding, and

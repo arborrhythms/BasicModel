@@ -88,9 +88,9 @@ def test_per_row_state_clears_between_batches():
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
 
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     if ss is None:
-        pytest.skip("model has no SymbolicSpace")
+        pytest.skip("model has no SymbolSpace")
 
     # Post-epoch: Reset has fired at the last batch boundary, so
     # all per-row state should be cleared.

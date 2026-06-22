@@ -270,7 +270,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     ``routing_proj(rule_probs)``).
 
     Cadence note (tier-free bounded-STM fold, doc/plans/2026-06-05-tier-
-    free-bounded-stm-fold.md): the old per-word ``symbolicSpace.compose``
+    free-bounded-stm-fold.md): the old per-word ``symbolSpace.compose``
     auto-fire was deleted, and the boundary ``_chart_compose_at_C`` fire
     only runs on the whole-slab/parallel forward path -- the serial
     (grammatical) forward this config uses now reduces the STM via
@@ -280,7 +280,7 @@ class TestRuleConditionedPredictor(unittest.TestCase):
     distribution (verified below). ``_run_one_forward`` fires that
     sentence-level compose explicitly -- byte-identically to how the
     whole-slab path's ``_chart_compose_at_C`` does
-    ``symbolicSpace.compose(stm.snapshot())`` -- so these assertions test
+    ``symbolSpace.compose(stm.snapshot())`` -- so these assertions test
     the new single-tier, sentence-level cadence.
     """
 
@@ -320,20 +320,20 @@ class TestRuleConditionedPredictor(unittest.TestCase):
             with torch.no_grad():
                 model.forward(x)
                 # Sentence-level router fire over the accumulated STM:
-                # builds ``symbolicSpace.routing_state.rule_probs`` at the
+                # builds ``symbolSpace.routing_state.rule_probs`` at the
                 # new single-tier cadence (mirrors the whole-slab path's
-                # ``_chart_compose_at_C`` -> ``symbolicSpace.compose``).
+                # ``_chart_compose_at_C`` -> ``symbolSpace.compose``).
                 snap = model.conceptualSpace.stm.snapshot()
                 self.assertIsNotNone(
                     snap, "forward must accumulate an STM snapshot.")
-                model.symbolicSpace.compose(snap)
+                model.symbolSpace.compose(snap)
 
     def test_routing_state_built_with_rule_probs(self):
         import Language
         self._run_one_forward()
-        ss = self.model.symbolicSpace
+        ss = self.model.symbolSpace
         rs = getattr(ss, "routing_state", None)
-        self.assertIsNotNone(rs, "compose must build symbolicSpace.routing_state.")
+        self.assertIsNotNone(rs, "compose must build symbolSpace.routing_state.")
         # current_rules dict contract preserved (ADDITIVE, not replaced).
         self.assertIsInstance(ss.current_rules, dict,
                               "current_rules must stay a dict (SS dispatch).")

@@ -2,10 +2,10 @@
 canonical XOR fixture.
 
 Exercises:
-  - SymbolicSpace.routerKind == "signal" reaches the chart from XML.
+  - SymbolSpace.routerKind == "signal" reaches the chart from XML.
   - Grammar wiring: NOT (unary), conjunction / disjunction (binary)
     from GRAMMAR_LAYER_CLASSES are attached to the LanguageLayer at
-    SymbolicSpace construction time, with global rule_ids preserved.
+    SymbolSpace construction time, with global rule_ids preserved.
   - ChartCompose fires on the post-PartSpace subspace (the
     "data is None" failure mode that hid the wiring failure earlier
     must stay fixed).
@@ -37,7 +37,7 @@ if _TEST not in sys.path:
 def _snapshot_global_state():
     """Capture the process-global config + grammar singletons.
 
-    ``init_config(XOR_grammar.xml)`` overlays ``SymbolicSpace.routerKind=signal``
+    ``init_config(XOR_grammar.xml)`` overlays ``SymbolSpace.routerKind=signal``
     onto ``util.TheXMLConfig._data``; ``TheGrammar`` is a module-level
     singleton too. With no restore, that leaks into every later test --
     e.g. ``test_chart_wordspace_wiring`` then builds a ``Chart`` whose
@@ -79,17 +79,17 @@ class TestXORGrammarConfigParsing(unittest.TestCase):
 
     def test_config_loads(self):
         self.assertIn("architecture", self.cfg)
-        self.assertIn("SymbolicSpace", self.cfg)
+        self.assertIn("SymbolSpace", self.cfg)
 
     def test_router_kind_is_signal(self):
         """Stage 3: routerKind retired -- the signal router is the
         canonical (and only) parser. The XML no longer carries the
         knob; this test verifies the absence."""
-        ss_cfg = self.cfg["SymbolicSpace"]
+        ss_cfg = self.cfg["SymbolSpace"]
         self.assertNotIn("routerKind", ss_cfg)
 
     def test_grammar_has_not_conjunction_disjunction(self):
-        ss_cfg = self.cfg["SymbolicSpace"]
+        ss_cfg = self.cfg["SymbolSpace"]
         grammar = ss_cfg["language"]["grammar"]
         compose = grammar["compose"]
         symbols = compose["symbols"]
@@ -192,8 +192,8 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
     def test_chart_router_kind_is_signal(self):
         """Stage 3: chart retired; the canonical parser is the signal
         router (LanguageLayer) directly on SymbolicSubSpace."""
-        ss = self.model.symbolicSpace
-        self.assertIsNotNone(ss, "SymbolicSpace must be built")
+        ss = self.model.symbolSpace
+        self.assertIsNotNone(ss, "SymbolSpace must be built")
         self.assertIsNotNone(ss.languageLayer)
         # router_kind is no longer a meaningful attribute (the chart
         # vs. signal dispatch is gone), but the languageLayer is.
@@ -206,7 +206,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
         # attached unary / binary layers and assert the grammar's ops are
         # present by op-class.
         from Language import NotLayer, ConjunctionLayer, DisjunctionLayer
-        ss = self.model.symbolicSpace
+        ss = self.model.symbolSpace
         router = ss.languageLayer
         self.assertIsNotNone(
             router, "LanguageLayer must be built")
@@ -237,7 +237,7 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             "Expected a DisjunctionLayer attached to some binary tier")
 
     def test_signal_router_rule_ids_match_grammar(self):
-        ss = self.model.symbolicSpace
+        ss = self.model.symbolSpace
         router = ss.languageLayer
         TheGrammar = self._Language.TheGrammar
         not_id = next(i for i, r in enumerate(TheGrammar.rules)

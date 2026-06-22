@@ -11,7 +11,7 @@ After Task G the cross-space PS<->SS allocation that previously lived on
   * PartSpace no longer defines ``_maybe_autobind_meta``.
   * ConceptualSpace defines ``_maybe_autobind_meta``.
   * Each per-stage ConceptualSpace has a ``perceptualSpace_ref`` and a
-    ``terminalSymbolicSpace_ref`` after BasicModel construction.
+    ``terminalSymbolSpace_ref`` after BasicModel construction.
   * The autobind on CS at stage 0 fires when invoked with a synthetic
     pid grid + matching vec tensor.
 """
@@ -96,12 +96,12 @@ class TestAutobindMovedFromPSToCS(unittest.TestCase):
                           f"ConceptualSpace[{i}].perceptualSpace_ref "
                           f"must point at the canonical PartSpace")
             self.assertTrue(
-                hasattr(cs, 'terminalSymbolicSpace_ref'),
+                hasattr(cs, 'terminalSymbolSpace_ref'),
                 f"ConceptualSpace[{i}] missing "
-                f"terminalSymbolicSpace_ref")
+                f"terminalSymbolSpace_ref")
             self.assertIs(
-                cs.terminalSymbolicSpace_ref, terminal_ss,
-                f"ConceptualSpace[{i}].terminalSymbolicSpace_ref must "
+                cs.terminalSymbolSpace_ref, terminal_ss,
+                f"ConceptualSpace[{i}].terminalSymbolSpace_ref must "
                 f"point at the terminal WholeSpace "
                 f"(wholeSpaces[-1])",
             )

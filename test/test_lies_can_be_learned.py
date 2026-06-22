@@ -74,7 +74,7 @@ class TestLowTruthObviousDoesNotBlockAlone(unittest.TestCase):
     def test_low_obvious_high_others_still_learns(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.3
         # is_truth_obvious = 0.4 (low-ish, a contested / partly-false
         # claim), children = 1.0, resolves = 1.0 -> product 0.4 >= 0.3.
@@ -115,8 +115,8 @@ class TestLieCarriesBothTrust(unittest.TestCase):
     def test_contested_relation_learned_with_high_both(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
-        tl = cs.symbolicSpace.truth_layer
+        ws = cs.terminalSymbolSpace_ref
+        tl = cs.symbolSpace.truth_layer
         cs.truth_criterion = 0.3
         D = int(cs.nDim)
 

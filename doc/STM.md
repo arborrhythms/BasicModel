@@ -364,9 +364,9 @@ when the router fires on the serial path:
 | `both` | **(default)** per-word AND boundary both fire |
 | `off` | neither fires |
 
-The **per-word fire** runs `symbolicSpace.compose` over the current STM
+The **per-word fire** runs `symbolSpace.compose` over the current STM
 snapshot *before* `cs.forward` for the next word, populating
-`symbolicSpace.current_rules` for the SS dispatch
+`symbolSpace.current_rules` for the SS dispatch
 ([Models.py:6053](../bin/Models.py)). It lives in the host-side loop,
 outside the per-iteration captured graph, so even a full `languageLayer`
 path that introduces a host sync cannot break the per-word capture gate.
@@ -470,9 +470,17 @@ dominant path and the IR loss, so missing / empty rules, a grammar with
 no relative rule, or any ambiguous shape all return all-False. The
 absolute path stays **byte-identical** in every fall-through case.
 
-**Learn-score acceptance gate.** Codebook insertion of a learned relation
-is gated by a content-aware **learn-score**
+**Learn-score acceptance gate.** Concept-codebook insertion of a learned
+relation is gated by a content-aware **learn-score**
 (`_compute_learn_score`, [Spaces.py:13312](../bin/Spaces.py)):
+
+> **Terminology (2026-06-21 convention).** The CS part↔whole relation
+> table is the **Concept codebook** — each entry is a *concept* tying one
+> part-percept to one whole-percept by reference. Earlier text called this
+> the "symbol table"; the de-overloaded name is *concept* (a *symbol* is
+> the 0-D SymbolSpace reference *to* a concept, not the relation itself).
+> The taxonymic / perceptual codebooks consulted for lift/lower operands
+> (Sections 4, 8) are distinct and keep their names.
 
 $$
 \text{learn\_score} = \text{children\_in\_codebook} \times
@@ -544,8 +552,8 @@ chain is transient host-side state (`persistent=False` semantics, not in
 `observe_stm_end_state(depths, payloads, tetralemmas=None)`
 ([Layers.py:6162](../bin/Layers.py)) records **every** sentence's
 end-state — it is **not** gated by `truthCriterion`. The distinction is
-load-bearing: `truthCriterion` gates only the separate codebook insertion
-of *learned relations* (Section 9), whereas LTM is the AR sequence the
+load-bearing: `truthCriterion` gates only the separate Concept-codebook
+insertion of *learned relations* (Section 9), whereas LTM is the AR sequence the
 inter-sentence predictor consumes and must see the full history. A
 non-finite payload **raises** (fail-loud on numerical divergence); the
 deque `maxlen` evicts the oldest entry once full.
@@ -554,8 +562,8 @@ the last $n$ (or all) end-states for a row, oldest-first.
 
 LTM is the **full chain**; the **TruthSet** is the accepted-belief subset
 (the relations that cleared the learn-score gate and were inserted into
-the codebook). LTM keeps everything that happened; the TruthSet keeps
-what was believed.
+the Concept codebook). LTM keeps everything that happened; the TruthSet
+keeps what was believed.
 
 ---
 

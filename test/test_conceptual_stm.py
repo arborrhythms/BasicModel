@@ -5,7 +5,7 @@ serial / shift-reduce parser (deferred work) will push and pop
 here as it reduces concepts into ideas. The current batched-CKY
 chart doesn't consume the STM yet -- this is the structural slot.
 
-Distinct from ``SymbolicSpace._stm_fired`` (a once-per-sentence
+Distinct from ``SymbolSpace._stm_fired`` (a once-per-sentence
 discourse-priming flag, not a working-memory buffer).
 """
 import os

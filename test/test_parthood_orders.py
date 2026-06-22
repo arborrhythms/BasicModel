@@ -13,7 +13,7 @@ Green now: parthood invariants, monotone-map preservation, the
 ``validate_config`` rule, and the order-convention walks (order 0 =
 identity, order k = k subsymbolic ``sigma(pi(.))`` loops; inlined per
 test method, no module-level helper). Documented-pending (xfail,
-strict=False → auto-flips to xpass when Phase 2 lands): the SymbolicSpace
+strict=False → auto-flips to xpass when Phase 2 lands): the SymbolSpace
 ``Taxonomy`` (explicit parent→children order hierarchy; the Meronomy
 stays codebook-per-order-implicit).
 """
@@ -260,12 +260,12 @@ class TestTaxonomy:
 
     def test_wordspace_hosts_taxonomy(self):
         m = self._model()
-        assert hasattr(m.symbolicSpace, "taxonomy"), \
+        assert hasattr(m.symbolSpace, "taxonomy"), \
             "SymbolicSubSpace singleton must host the Taxonomy"
 
     def test_taxonomy_add_and_walk_by_order(self):
         m = self._model()
-        tax = m.symbolicSpace.taxonomy
+        tax = m.symbolSpace.taxonomy
         root = tax.add(order=0)
         child = tax.add(order=1, parent=root)
         assert child in tax.children(root)
@@ -273,7 +273,7 @@ class TestTaxonomy:
 
     def test_taxonomy_flat_enumeration_across_orders(self):
         m = self._model()
-        tax = m.symbolicSpace.taxonomy
+        tax = m.symbolSpace.taxonomy
         tax.add(order=0)
         tax.add(order=1)
         tax.add(order=2)

@@ -150,7 +150,7 @@ def test_configure_priming_none_args_leave_unchanged():
 
 
 def test_priming_disabled_omits_kwargs_from_helper():
-    """When priming_enabled=False, the SymbolicSpace helper omits the
+    """When priming_enabled=False, the SymbolSpace helper omits the
     left_priming / right_priming kwargs entirely (typed-only mode)."""
     ss = _bare_word_space()
     view = _tiny_view()

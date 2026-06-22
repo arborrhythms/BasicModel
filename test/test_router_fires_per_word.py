@@ -2,13 +2,13 @@
 
 ORIGINAL TASK (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4): the
 serial per-word loop (``BasicModel._forward_body_per_word``) fired
-``symbolicSpace.compose`` over the STM snapshot ONCE PER WORD, so the in-STM
+``symbolSpace.compose`` over the STM snapshot ONCE PER WORD, so the in-STM
 predictor's conditioning context was repopulated mid-sentence.
 
 SUPERSEDED by the tier-free bounded-STM grammar fold
 (doc/plans/2026-06-05-tier-free-bounded-stm-fold.md, Phase 1 / Task 3):
 
-  * **Task 3 DELETED the per-word ``symbolicSpace.compose(_snap)`` fire** in
+  * **Task 3 DELETED the per-word ``symbolSpace.compose(_snap)`` fire** in
     ``_forward_body_per_word`` (the $\\approx 89\\%$-cost full re-parse).
     The grammar fold no longer happens per word. The per-word loop now only
     ingests each word (PS->CS->SS + ``stm.push_step_masked``) and folds via
@@ -31,7 +31,7 @@ NEW contract: ``compose`` is not fired per word in serial mode, and the
 bounded-STM fold (back-pressure + end sweep) still forms the root within
 capacity. The remaining tests pin ``<routerWireSerial>`` gating where it is
 still live — the *reverse-path* boundary fire (``_chart_generate_from_stm``
--> ``symbolicSpace.generate``), which still gates on ``{both, boundary}`` vs
+-> ``symbolSpace.generate``), which still gates on ``{both, boundary}`` vs
 ``{off, per-word}`` (``test_boundary_generate_gated_by_router_wire_serial``).
 
 Harness mirrors ``test/test_two_mode_dispatch.py`` (the
@@ -132,10 +132,10 @@ def _one_input(model):
 
 
 def _count_compose_calls(model):
-    """Spy on ``symbolicSpace.compose`` and run one forward; return the
+    """Spy on ``symbolSpace.compose`` and run one forward; return the
     call count and the post-forward ``current_rules``."""
-    ss = model.symbolicSpace
-    assert ss is not None, "serial grammar config must have a symbolicSpace"
+    ss = model.symbolSpace
+    assert ss is not None, "serial grammar config must have a symbolSpace"
     orig = ss.compose
     state = {"n": 0}
 
@@ -159,7 +159,7 @@ def _run_forward_spying_fold(model):
     """Run one serial forward while spying on the bounded-STM fold
     primitives. Returns a dict with:
 
-      * ``compose``       — ``symbolicSpace.compose`` call count,
+      * ``compose``       — ``symbolSpace.compose`` call count,
       * ``sweep``         — ``_stm_reduce_to_single_S`` (sentence-end)
                             call count,
       * ``reduce``        — ``_stm_bounded_reduce_step`` (back-pressure +
@@ -169,7 +169,7 @@ def _run_forward_spying_fold(model):
       * ``single_S``      — the collapsed root idea tensor (or ``None``),
       * ``post_sweep_depth_max`` — max ``_stm_post_depth`` (or ``None``).
     """
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     stm = model.conceptualSpace.stm
     counts = {"compose": 0, "sweep": 0, "reduce": 0}
     orig_compose = ss.compose
@@ -228,11 +228,11 @@ def test_default_router_wire_serial_is_both():
 
 def test_per_word_compose_is_not_fired_in_serial_mode():
     """NEW contract (tier-free bounded-STM fold, Task 3): the per-word
-    ``symbolicSpace.compose`` fire is DELETED — there is no grammar tier and
+    ``symbolSpace.compose`` fire is DELETED — there is no grammar tier and
     no per-word re-parse anymore.
 
     A serial forward in the default (``both``) mode therefore fires
-    ``symbolicSpace.compose`` ZERO times: the only surviving ``compose`` call
+    ``symbolSpace.compose`` ZERO times: the only surviving ``compose`` call
     site (the boundary ``_chart_compose_at_C``) is not on the serial forward
     path. Instead the fold is carried by the bounded-STM primitives, which
     we assert below are exercised and collapse the STM to a single root S
@@ -244,7 +244,7 @@ def test_per_word_compose_is_not_fired_in_serial_mode():
     # 1) The per-word re-parse is gone: compose is NOT fired per word
     #    (nor at all, on the serial forward).
     assert probe["compose"] == 0, (
-        f"Task 3 deleted the per-word symbolicSpace.compose fire; a serial "
+        f"Task 3 deleted the per-word symbolSpace.compose fire; a serial "
         f"forward must fire compose 0 times (the boundary _chart_compose_"
         f"at_C is not on the serial forward path). Got {probe['compose']}.")
 
@@ -341,7 +341,7 @@ def test_router_wire_serial_off_no_serial_forward_compose():
 
 def test_boundary_generate_gated_by_router_wire_serial():
     """The reverse-path boundary fire (``_chart_generate_from_stm`` ->
-    ``symbolicSpace.generate``) is gated by ``<routerWireSerial>``:
+    ``symbolSpace.generate``) is gated by ``<routerWireSerial>``:
 
       * ``both`` / ``boundary`` -> the boundary generate fires,
       * ``off`` / ``per-word``  -> the boundary generate is suppressed.
@@ -351,7 +351,7 @@ def test_boundary_generate_gated_by_router_wire_serial():
     """
     def _generate_fires(mode):
         model = _make_serial_model(router_wire_serial=mode)
-        ss = model.symbolicSpace
+        ss = model.symbolSpace
         # Populate STM so snapshot() is non-None (run one forward).
         x = _one_input(model)
         with warnings.catch_warnings():

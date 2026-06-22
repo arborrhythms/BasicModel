@@ -5,7 +5,7 @@ Plan: doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md Stage 3.
 Acceptance gates:
   * ``Chart`` class no longer exists in ``bin/Language.py`` (importing
     ``Language.Chart`` raises ``AttributeError``).
-  * ``SymbolicSubSpace`` (the SymbolicSpace carrier) installs ``languageLayer``
+  * ``SymbolicSubSpace`` (the SymbolSpace carrier) installs ``languageLayer``
     as a direct ``LanguageLayer`` instance (no chart indirection).
   * ``Grammar.rule_probability`` returns floats in [0, 1] for both
     dormant defaults and learned overrides; ``_fired_bodies`` single-
@@ -57,7 +57,7 @@ def test_chart_inside_helpers_gone():
         )
 
 
-# --- Gate 2: SymbolicSpace has self.languageLayer ---------------------------
+# --- Gate 2: SymbolSpace has self.languageLayer ---------------------------
 
 def _bare_word_subspace_with_signal_router():
     """Construct a minimal SymbolicSubSpace-like with a LanguageLayer attached.
@@ -82,7 +82,7 @@ def test_word_subspace_has_language_layer_attribute():
     ss = _bare_word_subspace_with_signal_router()
     from Language import LanguageLayer
     assert isinstance(ss.languageLayer, LanguageLayer), (
-        "SymbolicSpace must expose self.languageLayer as a LanguageLayer "
+        "SymbolSpace must expose self.languageLayer as a LanguageLayer "
         "instance (Stage 3 promotion)."
     )
 
@@ -177,7 +177,7 @@ def test_retired_xml_knobs_raise_on_load(knob):
     saved = dict(TheXMLConfig._data)
     try:
         TheXMLConfig._data.clear()
-        TheXMLConfig._data.setdefault("SymbolicSpace", {})[knob] = "1.0"
+        TheXMLConfig._data.setdefault("SymbolSpace", {})[knob] = "1.0"
         # Importing helpers from Language so the loud check is in scope.
         import Language
         fn = getattr(Language, "_assert_retired_chart_knobs_absent", None)

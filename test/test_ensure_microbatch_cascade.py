@@ -20,16 +20,16 @@ import torch
 
 
 def test_inputspace_forward_triggers_ensure_microbatch():
-    """InputSpace.forward in AR mode calls ensure_microbatch(B, K) on symbolicSpace."""
+    """InputSpace.forward in AR mode calls ensure_microbatch(B, K) on symbolSpace."""
     from data import TheData
     from Models import BaseModel
     config = str(_PROJECT / "data" / "MM_xor.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.symbolicSpace is None:
+    if model.symbolSpace is None:
         import pytest
-        pytest.skip("Model has no SymbolicSpace; cascade is a no-op")
+        pytest.skip("Model has no SymbolSpace; cascade is a no-op")
 
     inp = torch.tensor(
         [[0.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
@@ -38,24 +38,24 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     with torch.no_grad():
         model.forward(inp)
     # XOR text input lexes to outputShape[0] tokens; AR training sets K=T
-    # so symbolicSpace.batch must be a multiple of B=3.
+    # so symbolSpace.batch must be a multiple of B=3.
     B = 3
-    assert model.symbolicSpace.batch % B == 0, (
-        f"symbolicSpace.batch={model.symbolicSpace.batch} not a multiple of B={B}")
-    assert model.symbolicSpace.batch >= B, (
-        f"symbolicSpace.batch={model.symbolicSpace.batch} < B={B}")
+    assert model.symbolSpace.batch % B == 0, (
+        f"symbolSpace.batch={model.symbolSpace.batch} not a multiple of B={B}")
+    assert model.symbolSpace.batch >= B, (
+        f"symbolSpace.batch={model.symbolSpace.batch} < B={B}")
     # Body-side state sized to B*K
-    assert model.symbolicSpace._last_svo.shape[0] == model.symbolicSpace.batch
-    assert model.symbolicSpace._svo_valid.shape[0] == model.symbolicSpace.batch
+    assert model.symbolSpace._last_svo.shape[0] == model.symbolSpace.batch
+    assert model.symbolSpace._svo_valid.shape[0] == model.symbolSpace.batch
     # Post-Phase-D (2026-05-21 SymbolicSubSpace/STM Layer refactor):
     # ``SymbolicSubSpace`` IS a ``SubSpace`` subclass carrying the typed-
     # STM stack buffers. There is no longer a separate ``self.subspace``
     # peer attribute on SymbolicSubSpace.
-    assert model.symbolicSpace.category_stack._batch == model.symbolicSpace.batch
-    assert model.symbolicSpace.reconstruction_stack._batch == model.symbolicSpace.batch
+    assert model.symbolSpace.category_stack._batch == model.symbolSpace.batch
+    assert model.symbolSpace.reconstruction_stack._batch == model.symbolSpace.batch
     # _stm_fired stays at B
-    assert model.symbolicSpace._stm_fired.shape == (B,), (
-        f"_stm_fired must stay at B={B}, got {model.symbolicSpace._stm_fired.shape}")
+    assert model.symbolSpace._stm_fired.shape == (B,), (
+        f"_stm_fired must stay at B={B}, got {model.symbolSpace._stm_fired.shape}")
 
 
 def test_ensure_microbatch_cascades_to_discourse():
@@ -79,7 +79,7 @@ def test_ensure_microbatch_cascades_to_discourse():
 
 
 def test_ensure_microbatch_method_explicit_BK():
-    """SymbolicSpace.ensure_microbatch(B, K) sizes body to B*K, _stm_fired to B,
+    """SymbolSpace.ensure_microbatch(B, K) sizes body to B*K, _stm_fired to B,
     discourse to B."""
     from data import TheData
     from Models import BaseModel
@@ -87,17 +87,17 @@ def test_ensure_microbatch_method_explicit_BK():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.symbolicSpace is None:
+    if model.symbolSpace is None:
         import pytest
-        pytest.skip("Model has no SymbolicSpace")
+        pytest.skip("Model has no SymbolSpace")
 
-    model.symbolicSpace.ensure_microbatch(B=2, K=5)
-    assert model.symbolicSpace.batch == 10
-    assert model.symbolicSpace._stm_fired.shape == (2,)
-    assert model.symbolicSpace._last_svo.shape[0] == 10
-    if model.symbolicSpace.discourse is not None:
-        assert model.symbolicSpace.discourse._batch == 2, (
-            f"discourse must stay at B=2, got {model.symbolicSpace.discourse._batch}")
+    model.symbolSpace.ensure_microbatch(B=2, K=5)
+    assert model.symbolSpace.batch == 10
+    assert model.symbolSpace._stm_fired.shape == (2,)
+    assert model.symbolSpace._last_svo.shape[0] == 10
+    if model.symbolSpace.discourse is not None:
+        assert model.symbolSpace.discourse._batch == 2, (
+            f"discourse must stay at B=2, got {model.symbolSpace.discourse._batch}")
 
 
 def test_stm_fired_survives_K_change():
@@ -116,10 +116,10 @@ def test_stm_fired_survives_K_change():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    if model.symbolicSpace is None:
+    if model.symbolSpace is None:
         import pytest
-        pytest.skip("Model has no SymbolicSpace")
-    ss = model.symbolicSpace
+        pytest.skip("Model has no SymbolSpace")
+    ss = model.symbolSpace
     B = 3
 
     # Initial sizing at (B=3, K=4)  ->  BK=12.

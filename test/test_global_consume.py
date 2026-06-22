@@ -113,7 +113,7 @@ def test_qa_config_builds_with_consumer_and_ltm():
     assert m.global_attention_consume and m.global_attention is not None
     assert m.ltm_consolidation
     # the LTM store (the "book") exists for the SPACE_LTM read to range over
-    assert getattr(m.symbolicSpace, "ltm_store", None) is not None
+    assert getattr(m.symbolSpace, "ltm_store", None) is not None
     x = _batch(m)
     m.eval()
     with torch.no_grad():
@@ -196,8 +196,8 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     from Spaces import GlobalAttention as GA
     from Layers import TernaryTruthStore
     m = _build("MM_qa.xml")
-    if getattr(m, "symbolicSpace", None) is None:
-        pytest.skip("no symbolicSpace")
+    if getattr(m, "symbolSpace", None) is None:
+        pytest.skip("no symbolSpace")
     x = _batch(m)
     m.train()
     with torch.no_grad():
@@ -208,7 +208,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     store = TernaryTruthStore(D, capacity=8)
     store.slots[:3] = torch.randn(3, 3, D)
     store.count = torch.tensor(3)
-    object.__setattr__(m.symbolicSpace, "ltm_store", store)
+    object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = m.conceptualSpaces[0]._subspaceForWS
     spaces, _ = m._addressable_spaces(prev, ps)
     assert any(s["id"] == GA.SPACE_LTM for s in spaces), "the TruthSet must be addressable"

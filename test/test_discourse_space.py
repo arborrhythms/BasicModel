@@ -14,7 +14,7 @@ Covers:
      keep their pre-ARMA signatures so existing call sites in
      ``runBatch`` still work during the transition.
   4. Integration: building a BasicModel under ``<sentencePrediction>``
-     wires an ``InterSentenceLayer`` on ``symbolicSpace.discourse`` and
+     wires an ``InterSentenceLayer`` on ``symbolSpace.discourse`` and
      forward() populates ``_current_discourse_s`` for the runBatch
      observe call.
 """
@@ -258,11 +258,11 @@ class TestModelIntegration(_DiscourseTestBase):
         try:
             model, _ = Models.BasicModel.from_config(
                 os.path.join(_DATA_DIR, 'MentalModel.xml'))
-            self.assertIsNotNone(model.symbolicSpace.discourse)
+            self.assertIsNotNone(model.symbolSpace.discourse)
             self.assertIsInstance(
-                model.symbolicSpace.discourse, Layers.InterSentenceLayer)
-            self.assertEqual(model.symbolicSpace.discourse.p, 5)
-            self.assertEqual(model.symbolicSpace.discourse.q, 2)
+                model.symbolSpace.discourse, Layers.InterSentenceLayer)
+            self.assertEqual(model.symbolSpace.discourse.p, 5)
+            self.assertEqual(model.symbolSpace.discourse.q, 2)
             self.model = model
         finally:
             TheXMLConfig.set(
@@ -279,5 +279,5 @@ class TestModelIntegration(_DiscourseTestBase):
         TheXMLConfig.set("architecture.training.sentencePrediction", False)
         model, _ = Models.BasicModel.from_config(
             os.path.join(_DATA_DIR, 'MM_xor.xml'))
-        self.assertIsNone(model.symbolicSpace.discourse)
+        self.assertIsNone(model.symbolSpace.discourse)
         self.model = model

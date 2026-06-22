@@ -125,7 +125,7 @@ def _get_lift_confidence(model, grammar):
     averaged over the batch.  Returns 0.0 if composition didn't run or
     if the ternary lift rule is not among the composable rules.
     """
-    chart = model.symbolicSpace.chart
+    chart = model.symbolSpace.chart
     probs = chart.last_rule_probs          # [B, depths, n_composable] or None
     rules = chart.last_composable_rules    # list of global rule IDs or None
     if probs is None or rules is None:
@@ -180,7 +180,7 @@ class TestSVOIdentification(unittest.TestCase):
         conf = _get_lift_confidence(self.model, self.grammar)
         if conf < LIFT_CONFIDENCE_THRESHOLD:
             self.skipTest(f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD}")
-        ss = self.model.symbolicSpace
+        ss = self.model.symbolSpace
         svo = ss.get_last_svo(0) if ss.svo_valid(0) else None
         if svo is None:
             self.skipTest("ternary lift did not fire")
@@ -237,7 +237,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
         self.model = _make_model()
         self.grammar = Language.TheGrammar
         # Seed the truth store so luminosity is non-trivial
-        truth_layer = self.model.symbolicSpace.truth_layer
+        truth_layer = self.model.symbolSpace.truth_layer
         with torch.no_grad():
             for _ in range(5):
                 v = torch.randn(truth_layer.nDim)
@@ -252,7 +252,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
             self.skipTest(
                 f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD} "
                 f"for: {sentence!r}")
-        ss = self.model.symbolicSpace
+        ss = self.model.symbolSpace
         svo = ss.get_last_svo(0) if ss.svo_valid(0) else None
         if svo is None:
             self.skipTest(f"SVO is None despite confidence for: {sentence!r}")
@@ -270,8 +270,8 @@ class TestLuminosityOfKindness(unittest.TestCase):
         S -> S VO / VO -> V O path.
         """
         _run_forward(self.model, [sentence])
-        chart = (self.model.symbolicSpace.chart
-                 if self.model.symbolicSpace is not None else None)
+        chart = (self.model.symbolSpace.chart
+                 if self.model.symbolSpace is not None else None)
         svo = chart.last_svo if chart is not None else None
         score = getattr(self.model, '_universality_score', None)
         return svo, score

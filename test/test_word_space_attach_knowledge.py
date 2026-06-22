@@ -1,10 +1,10 @@
-"""Tests for SymbolicSpace.attach_knowledge — wiring a loaded KnowledgeView
-into the runtime SymbolicSpace.
+"""Tests for SymbolSpace.attach_knowledge — wiring a loaded KnowledgeView
+into the runtime SymbolSpace.
 
 Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
 §Phase 2 — Loaders.
 
-Uses ``object.__new__`` to bypass SymbolicSpace's heavy __init__ (which
+Uses ``object.__new__`` to bypass SymbolSpace's heavy __init__ (which
 requires PartSpace / ConceptualSpace / WholeSpace). We only
 need to verify the attach mechanics, not the full Space wiring.
 """
@@ -34,7 +34,7 @@ def _tiny_view():
 
 
 def _bare_word_space():
-    """A SymbolicSpace instance with __init__ bypassed — just enough for
+    """A SymbolSpace instance with __init__ bypassed — just enough for
     attach_knowledge tests."""
     from Language import SymbolicSubSpace
     import torch.nn as nn

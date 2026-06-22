@@ -11,7 +11,7 @@ Harness (mirrors ``test/test_router_fires_per_word.py``):
   * Build the cheap serial-grammar model from ``data/MM_xor_loopback.xml``
     (``<symbolicOrder>1</symbolicOrder>``), load the ``xor`` data.
   * Run ONE real per-word ``model.forward`` -- this fills the C-tier STM,
-    populates ``symbolicSpace.current_rules`` / ``generate_rules``, and
+    populates ``symbolSpace.current_rules`` / ``generate_rules``, and
     reduces the STM to the single sentence idea ``S = model._stm_single_S``
     (``[B, D_c]``).
   * Snapshot ``S`` and the per-position forward word indices
@@ -71,7 +71,7 @@ The NON-xfail assertions below pin everything that DOES hold today: the
 forward produces a usable ``S`` shape, finite per-position targets, and a
 FINITE held idea; clearing the cache works and the
 ``_chart_generate_from_stm`` re-derive site re-fires
-``symbolicSpace.generate`` from the STM snapshot ALONE (rebuilding
+``symbolSpace.generate`` from the STM snapshot ALONE (rebuilding
 ``generate_rules``); the ``_reverse_from_S`` leg is drivable from the
 cleared-cache state and returns a finite, decodable-width surface; and
 both the body AND perceptual reverse legs preserve finiteness. When the
@@ -252,13 +252,13 @@ def test_forward_produces_single_S_and_targets():
 
 def test_cache_clears_and_chart_generate_rederives_from_stm():
     """Clearing the syntactic cache works, and the cache RE-DERIVE site
-    (``_chart_generate_from_stm``) re-fires ``symbolicSpace.generate`` from
+    (``_chart_generate_from_stm``) re-fires ``symbolSpace.generate`` from
     the STM snapshot ALONE -- repopulating ``generate_rules`` -- which is
     exactly the reverse-leg behavior §6 relies on after the cache is
     deleted."""
     model = _make_serial_model()
     _run_forward(model)
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     assert ss is not None
     _clear_word_cache(ss)
     assert ss.current_rules == {} and ss.generate_rules == {} \
@@ -280,7 +280,7 @@ def test_cache_clears_and_chart_generate_rederives_from_stm():
 
     assert fired["n"] >= 1, (
         "the reverse-leg cache re-derive (_chart_generate_from_stm) must "
-        "re-fire symbolicSpace.generate over the STM snapshot.")
+        "re-fire symbolSpace.generate over the STM snapshot.")
     # generate_rules must have been rebuilt from the snapshot alone.
     assert isinstance(ss.generate_rules, dict) and len(ss.generate_rules) > 0, (
         f"generate must repopulate generate_rules from the STM snapshot; "
@@ -295,7 +295,7 @@ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
     of the recovered words is the xfail below (Findings A/B)."""
     model = _make_serial_model()
     S, _ = _run_forward(model)
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     _clear_word_cache(ss)
     with torch.no_grad():
         recon = model._reverse_from_S(S)
@@ -423,7 +423,7 @@ def test_topk_recovered_words_overlap_input():
     the remaining real gap rather than passing vacuously."""
     model = _make_serial_model()
     S, fwd_idx = _run_forward(model)
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     _clear_word_cache(ss)
     with torch.no_grad():
         recon = model._reverse_from_S(S)

@@ -25,7 +25,7 @@ Two assertions, exercising the REAL ``unreduce`` path with the REAL
     on the live generation path).
 
 The ``subspace`` is a thin duck-type over the small surface ``unreduce``
-needs (``materialize`` / ``set_*`` / ``what`` / ``symbolicSpace``); everything
+needs (``materialize`` / ``set_*`` / ``what`` / ``symbolSpace``); everything
 that carries the heat semantics (the layer, the retrieval helper, the order
 signature) is the real production code.
 """
@@ -105,7 +105,7 @@ class _StackSubSpace:
     """Thin duck-typed stack-mode SubSpace over the exact surface
     ``LanguageLayer.unreduce`` touches: ``materialize(mode)`` for
     what/where/activation, the three ``set_*`` writers, the ``.what`` Basis,
-    and the ``.symbolicSpace`` back-ref.
+    and the ``.symbolSpace`` back-ref.
 
     Single batch row (B=1), K slots, D-wide payloads -- enough to hold one
     binary parent in the top live slot with an empty slot to its right."""
@@ -115,7 +115,7 @@ class _StackSubSpace:
         self._where = where
         self._activation = activation
         self.what = basis                 # tier-local Basis (has getW())
-        self.symbolicSpace = word_sub_space
+        self.symbolSpace = word_sub_space
 
     def materialize(self, mode):
         return {"what": self._what,

@@ -21,7 +21,7 @@
              NEITHER corner [0, 0] for every prototype.
 
        This config exercises that primitive through a full WholeSpace
-       in the default-only unary sigma/pi substrate grammar; see the SymbolicSpace
+       in the default-only unary sigma/pi substrate grammar; see the SymbolSpace
        grammar block below for why an empty block would NOT be
        non-grammatical). The C to S codebook snap that CREATES symbols
        is a subsymbolic substrate op and runs unconditionally regardless
@@ -127,7 +127,7 @@
     <nOutput>1</nOutput>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <start>S</start>
       <grammar>
@@ -177,6 +177,6 @@
         </generate>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

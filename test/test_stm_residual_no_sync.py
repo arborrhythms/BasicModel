@@ -1,7 +1,7 @@
 """STM-residual microbatch is sync-free (§6a).
 
 The brick-vectorization handoff §6a removed the ``not_fired.any().item()``
-early-out from ``SymbolicSpace.stm_residual_microbatch``: the gate was a
+early-out from ``SymbolSpace.stm_residual_microbatch``: the gate was a
 per-batch GPU->CPU sync that blocked CUDA-graph capture. The
 replacement always calls ``disc.predict()`` and zeros out the bias
 on already-fired rows via ``torch.where``-style multiplication.
@@ -62,7 +62,7 @@ def test_stm_residual_microbatch_runs_when_all_fired():
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
 
     if ss is None or ss.discourse is None:
         pytest.skip("model has no discourse layer; STM-residual is None")

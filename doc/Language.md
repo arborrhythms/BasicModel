@@ -31,7 +31,7 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 >   decision #2). `WholeSpace.insert_operations(grammar)` registers each
 >   operation in a dedicated operator codebook on WholeSpace
 >   (`_operation_vectors` / `_operation_positions`), separate from the
->   `subspace.what` symbol codebook so the symbol / idea / `.where` position
+>   `subspace.what` whole-percept codebook so the percept / idea / `.where` position
 >   namespace is untouched; it is wired into `SymbolicSubSpace.__init__` so every
 >   built model's operator-prefixed parse-tree nodes are codebook-resolvable. The STM idea space holds only combined meanings --
 >   the operator says *how* meanings combine, contributing none of its own.
@@ -80,8 +80,8 @@ functionality folded into `bin/Layers.py` and `bin/Language.py`.)
 
 ## Current Parser Surface
 
-`SymbolicSpace.compose()` and `SymbolicSpace.generate()` are the public parser
-entry points. `SymbolicSpace.parser_backend` selects the implementation:
+`SymbolSpace.compose()` and `SymbolSpace.generate()` are the public parser
+entry points. `SymbolSpace.parser_backend` selects the implementation:
 
 | backend | status | notes |
 |---|---|---|
@@ -89,7 +89,7 @@ entry points. `SymbolicSpace.parser_backend` selects the implementation:
 | `stm` | active | Shift/reduce over `ConceptualSpace.stm_typed`; requires an attached `KnowledgeView`. |
 | `parallel` | bridge | Builds the STM driver, then runs the chart path authoritatively. |
 
-`SymbolicSpace.routerKind` is separate from `parserBackend` and only affects
+`SymbolSpace.routerKind` is separate from `parserBackend` and only affects
 the chart backend:
 
 | routerKind | status |
@@ -106,9 +106,9 @@ cannot.
 These XML fields are no longer read by the runtime and should not appear
 in `data/*.xml`:
 
-- `SymbolicSpace.useGrammar`
-- `SymbolicSpace.chartCompose`
-- `SymbolicSpace.softChartCompose`
+- `SymbolSpace.useGrammar`
+- `SymbolSpace.chartCompose`
+- `SymbolSpace.softChartCompose`
 - `bivectorOutput`
 
 Grammar mode is derived from the loaded grammar: default-only unary
@@ -131,7 +131,7 @@ non-default operator rule derives `useGrammar == "all"`.
 ## Grammar
 
 `TheGrammar` is the singleton `Grammar` instance. Rules are loaded from
-XML `<SymbolicSpace><language><grammar>` blocks or from a configured grammar
+XML `<SymbolSpace><language><grammar>` blocks or from a configured grammar
 CFG. A `RuleDef` stores:
 
 ```text
@@ -186,11 +186,11 @@ NP
 (`NP`), while `KnowledgeView.order_of_ref(ref_id)` returns the
 conceptual order (`3`, `4`, etc.).
 
-`SymbolicSpace.category_codebook` has been retired. The live category
+`SymbolSpace.category_codebook` has been retired. The live category
 embedding is:
 
 ```python
-SymbolicSpace.category_embedding: nn.Embedding
+SymbolSpace.category_embedding: nn.Embedding
 ```
 
 ## STM Shift/Reduce
@@ -259,7 +259,7 @@ Starts are scoped per space (`_configure_starts`):
   what an operator can *produce*.
 
 The **operator codebook** is a second codebook on `WholeSpace`,
-separate from the symbol codebook:
+separate from the whole-percept codebook:
 
 - `_operation_vectors`: operator name $\to$ identity vector.
 - `_operation_positions`: operator name $\to$ codebook position.
@@ -321,6 +321,12 @@ superposition, participation clustering — is live and tested, and the
 (below). Learning a category codebook over it from perception, and threading
 it into the placement chooser, is PLANNED. See status at the end.)*
 
+> **Terminology note** (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`):
+> the CS part↔whole relation table is the **Concept codebook** (concepts), not a
+> "symbol table"; WholeSpace holds **whole-percepts**; only `SymbolSpace` / `MetaSymbol`
+> things are **symbols**. Code identifiers (e.g. `subspace.what`, `_sym_*`) are
+> unchanged here — that is a separate code pass.
+
 A word's grammatical **category is its frequency of participation across the
 operator roles** above (`<op>_I<n>` inputs / `<op>_O1` output), **learned from
 perception** (analysis of input), not from generation. No part-of-speech label
@@ -343,7 +349,7 @@ only the candidate operator's own output. The design realizes this as a small
 perception:
 
 - **The MetaSymbol unifies word and object (it already exists, live).** The
-  symbol table stores `symbol → code`; a **MetaSymbol** is the exception — one
+  Concept codebook stores `concept → code`; a **MetaSymbol** is the exception — one
   symbol that holds *two* codes, the **word code and the object code**, a
   deliberate equivalence class asserting *this word ≡ this object*. This is the
   live **META node** in the WholeSpace taxonomy: `WholeSpace.insert_meta`

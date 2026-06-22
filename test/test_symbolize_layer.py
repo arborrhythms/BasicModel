@@ -433,9 +433,9 @@ class TestSymbolizeLayerWiredIntoAttachPerSpace(unittest.TestCase):
         import Language
         from collections import namedtuple
         m = _make_radix_model()
-        # SymbolicSubSpace lives on perceptualSpace.symbolicSpace
-        # (set by Space.attach_symbolicSpace).
-        ss = getattr(m.perceptualSpace, 'symbolicSpace', None)
+        # SymbolicSubSpace lives on perceptualSpace.symbolSpace
+        # (set by Space.attach_symbolSpace).
+        ss = getattr(m.perceptualSpace, 'symbolSpace', None)
         if ss is None:
             self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
         FakeRule = namedtuple(
@@ -891,7 +891,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
 
 class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
     """Stage 9 acceptance: the per-space SyntacticLayer wiring path
-    registers the SymbolizeLayer instance against ``symbolicSpace.host_layer
+    registers the SymbolizeLayer instance against ``symbolSpace.host_layer
     ('C', 'symbolize')``; when the chart / signal router fires a 'symbolize'
     rule at the C tier it dispatches through ``SymbolizeLayer.compose``.
 
@@ -922,7 +922,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         """
         import Language
         from collections import namedtuple
-        ss = getattr(m.perceptualSpace, 'symbolicSpace', None)
+        ss = getattr(m.perceptualSpace, 'symbolSpace', None)
         if ss is None:
             self.skipTest("No SymbolicSubSpace constructed; cannot test wiring.")
         cs = getattr(m, 'conceptualSpace', None)
@@ -957,7 +957,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
             registered = ss.host_layer('C', 'symbolize')
             self.assertIsNotNone(
                 registered,
-                "symbolicSpace.host_layer('C', 'symbolize') must return the "
+                "symbolSpace.host_layer('C', 'symbolize') must return the "
                 "registered SymbolizeLayer after _attach_per_space_syntactic_"
                 "layer runs with 'symbolize' in the C-tier grammar.")
             self.assertIsInstance(

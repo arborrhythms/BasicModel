@@ -43,7 +43,7 @@
 
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
          per-word router-fire gating for serial mode.
-           per-word  = fire symbolicSpace.compose once per word in the
+           per-word  = fire symbolSpace.compose once per word in the
                        serial per-word loop (the intra-predictor's
                        routing context); boundary fire OFF.
            boundary  = fire only at the sentence boundary
@@ -118,7 +118,7 @@
     <gateL1Lambda>0.0</gateL1Lambda>
 
     <!-- Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
-         Originally active only when SymbolicSpace.chartTopK > 0; chart
+         Originally active only when SymbolSpace.chartTopK > 0; chart
          retired Stage 3 and the knob now stands by for any future
          signal-router rule load-balancing. -->
     <loadBalanceWeight>0.0</loadBalanceWeight>
@@ -222,7 +222,7 @@
 
       <!-- Inter-sentence ARMA(p, q) next-sentence prediction
            (InterSentenceLayer).  The layer's AR/MA orders + hidden
-           dim live under <SymbolicSpace> (armaP/armaQ/armaHiddenDim);
+           dim live under <SymbolSpace> (armaP/armaQ/armaHiddenDim);
            this scale is the loss weight applied on top of the
            per-batch ARMA MSE.  Off by default. -->
       <sentencePrediction>false</sentencePrediction>
@@ -261,11 +261,11 @@
 
   </architecture>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
     <syntacticHiddenDim>64</syntacticHiddenDim>
 
-    <!-- Truth memory capacity (TruthLayer is owned by SymbolicSpace). -->
+    <!-- Truth memory capacity (TruthLayer is owned by SymbolSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
 
     <!-- Long-term-memory (LTM) chain capacity (InterSentenceLayer):
@@ -288,7 +288,7 @@
     <!-- Per-word P->C loop count before parser/body composition. -->
     <iterationsPerWord>1</iterationsPerWord>
 
-    <!-- Phase D: emit a codebook head via SymbolicSpace.reconstruct().
+    <!-- Phase D: emit a codebook head via SymbolSpace.reconstruct().
          false = forward() does not populate ``_predicted_head``. -->
     <downwardGeneration>false</downwardGeneration>
 
@@ -301,12 +301,12 @@
              (percepts / symbols) respectively.
 
              A grammar containing only these unary rules is the
-             "default-only" case: SymbolicSpace.compose detects it and
+             "default-only" case: SymbolSpace.compose detects it and
              skips parser selection entirely.
 
              Per the 2026-05-07 rollback, the grammar XML is the sole
              source of truth for which rule fires at each tier.  There
-             is no ``default_rule`` code-level fallback.  SymbolicSpace
+             is no ``default_rule`` code-level fallback.  SymbolSpace
              populates ``current_rules`` / ``generate_rules`` from the
              rules listed below in the default-only fast path so per-space SyntacticLayer
              dispatch resolves to the PiLayer / SigmaLayer registered
@@ -347,7 +347,7 @@
       <!-- Soft-interpolation weight between forward and generation. -->
       <interpretation>0.5</interpretation>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 
   <InputSpace>

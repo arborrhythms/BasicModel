@@ -1,9 +1,9 @@
-"""B>=2 per-row isolation for SymbolicSpace.last_svo and SymbolicSpace._stm_fired.
+"""B>=2 per-row isolation for SymbolSpace.last_svo and SymbolSpace._stm_fired.
 
 Task 2 of the microbatch AR refactor (see
 basicmodel/doc/specs/2026-04-22-microbatch-ar-refactor-design.md).
 
-SymbolicSpace cannot be constructed in isolation -- it requires real
+SymbolSpace cannot be constructed in isolation -- it requires real
 PartSpace, ConceptualSpace, and WholeSpace objects.  We build the
 minimal chain using _populate_test_config + direct Space constructors, the
 same pattern used by the test_partition_* tests.

@@ -64,7 +64,7 @@ path; `_SoftCompose` is removed from the vector path.
 
 ## Project-specific structural concern (post-refactor open question)
 
-`NegationLayer` lives only in `SymbolicSpace` in this codebase, on the
+`NegationLayer` lives only in `SymbolSpace` in this codebase, on the
 hypothesis that lower spaces represent a "mind without negation in harmony
 with the world." A grammar of the canonical XNF shape
 

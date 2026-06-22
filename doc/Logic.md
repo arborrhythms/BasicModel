@@ -11,6 +11,17 @@ This document defines the logic system at three levels:
 Executable implementations of the subsymbolic and symbolic operators are the
 `Method` subclasses in Language.md.
 
+> **Terminology (2026-06-21; see
+> [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md)).**
+> One noun per tier: **percept** = a PartSpace/WholeSpace thing (dimensionally
+> embedded, EXTENSIONAL; *part* = atom / bottom-up σ, *whole* = property/region
+> / top-down π are its two subtypes); **concept** = a ConceptualSpace relation
+> tying one part-percept ↔ one whole-percept (the Concept codebook,
+> diachronic); **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
+> concept; the symbol codebook). The Section 2 scalar emission is the *symbol*
+> that migrates to SymbolSpace, while WholeSpace itself holds whole-percepts.
+> Code identifiers below are unchanged (a separate code pass renames them).
+
 ---
 
 ## 1. Subsymbolic Layer
@@ -136,7 +147,7 @@ Rationality is the propositional logic layer, built on S-tier grammar rules
 ### Truth Statements
 
 A **truth statement** is any assertion processed through the full pipeline.
-The `TruthLayer` --- owned by `SymbolicSpace`, reached as
+The `TruthLayer` --- owned by `SymbolSpace`, reached as
 `self.wordSpace.truth_layer` --- stores activations **scaled by** DegreeOfTruth:
 
 $$
@@ -151,14 +162,15 @@ $$
 | -1 < d < 0 | scaled, negated | weak disperser |
 | -1 | negated activation | disperser |
 
-### TruthLayer (SymbolicSpace.truth_layer)
+### TruthLayer (SymbolSpace.truth_layer)
 
-`TruthLayer` is instantiated by `SymbolicSpace.__init__`. `WholeSpace.forward`
+`TruthLayer` is instantiated by `SymbolSpace.__init__`. `WholeSpace.forward`
 records activations into the TruthLayer governed by the single continuous
 `<truthCriterion>` bar (0 $=$ record every activation, 1 $=$ record none): a
 per-cell activation is recorded when its clamped magnitude clears
-`truthCriterion`. The same knob also gates learned-relation acceptance in
-`ConceptualSpace`, so one continuous knob governs all truth learning. The
+`truthCriterion`. The same knob also gates learned-concept acceptance in
+`ConceptualSpace` (relations admitted into the Concept codebook), so one
+continuous knob governs all truth learning. The
 binary `<accumulateTruth>` / `<truthMinMagnitude>` switches are **retired**.
 Recording now fires wherever `WholeSpace.forward` runs — both normal
 training and the `store_truths` gold-ingestion epoch (which drops
@@ -175,11 +187,12 @@ it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
 > The absolute truth set (propositions, e.g. `cat <= [animal() & orange() &
 > object()]`) and the `RelativeTruthStore` (relations between two ideas, e.g.
 > `[cats] <= [furry]`) are **the same two structures** the corpus callosum needs for
-> the symbol-relation meronomy: a two-code part↔whole LUT (absolute) plus relations
-> over symbol indices (relative). These are to be **integrated** — the part↔whole LUT
-> *is* the absolute table; the symbol-taxonomy relations *are* the relative table.
-> Taxonomy relations are also learned **explicitly from trusted language** ("cats are
-> furry" → the relation `[cats] <= [furry]`, admitted when trusted).
+> the concept-relation meronomy: a two-code part↔whole LUT (absolute) plus relations
+> over concept indices (relative) — both live in the Concept codebook. These are to
+> be **integrated** — the part↔whole LUT *is* the absolute table; the concept-taxonomy
+> relations *are* the relative table. Taxonomy relations are also learned
+> **explicitly from trusted language** ("cats are furry" → the relation
+> `[cats] <= [furry]`, admitted when trusted).
 
 ### Truth Field
 

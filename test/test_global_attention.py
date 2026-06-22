@@ -215,14 +215,14 @@ def test_addressable_spaces_gathers_input_stm_codebook():
 
 
 def test_ltm_space_appears_when_store_present():
-    # The LTM address space is gathered from symbolicSpace.ltm_store; stage a
+    # The LTM address space is gathered from symbolSpace.ltm_store; stage a
     # synthetic TernaryTruthStore so the path is exercised without
     # <ltmConsolidation>.
     from Spaces import GlobalAttention as GA
     from Layers import TernaryTruthStore
     m = _build("MM_global.xml")
-    if getattr(m, "symbolicSpace", None) is None:
-        pytest.skip("no symbolicSpace on this config")
+    if getattr(m, "symbolSpace", None) is None:
+        pytest.skip("no symbolSpace on this config")
     x = _batch(m)
     m.train()
     with torch.no_grad():
@@ -233,7 +233,7 @@ def test_ltm_space_appears_when_store_present():
     store = TernaryTruthStore(D, capacity=8)
     store.slots[:3] = torch.randn(3, 3, D)
     store.count = torch.tensor(3)
-    object.__setattr__(m.symbolicSpace, "ltm_store", store)
+    object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = m.conceptualSpaces[0]._subspaceForWS
     spaces, _ = m._addressable_spaces(prev, ps)
     ltm = [s for s in spaces if s["id"] == GA.SPACE_LTM]

@@ -50,7 +50,7 @@
     </training>
   </architecture>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <!-- Stage 3 cleanup: chartTau and wMax retired alongside the
          chart. The signal router (LanguageLayer) is the canonical
          parser. -->
@@ -96,7 +96,7 @@
         </compose>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
   <InputSpace>
     <nOutput>8</nOutput>

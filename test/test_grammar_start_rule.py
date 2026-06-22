@@ -52,7 +52,7 @@ def test_start_symbol_parsed_from_inline_xml(reset_grammar):
     xml = textwrap.dedent("""\
         <?xml version="1.0" ?>
         <model>
-          <SymbolicSpace>
+          <SymbolSpace>
             <language>
               <start>S</start>
               <grammar>
@@ -60,7 +60,7 @@ def test_start_symbol_parsed_from_inline_xml(reset_grammar):
                 <S>union(S, S)</S>
               </grammar>
             </language>
-          </SymbolicSpace>
+          </SymbolSpace>
         </model>
     """)
     grammar = _load_inline_xml(xml)
@@ -72,13 +72,13 @@ def test_start_symbol_default_without_xml_tag(reset_grammar):
     xml = textwrap.dedent("""\
         <?xml version="1.0" ?>
         <model>
-          <SymbolicSpace>
+          <SymbolSpace>
             <language>
               <grammar>
                 <S>not(S)</S>
               </grammar>
             </language>
-          </SymbolicSpace>
+          </SymbolSpace>
         </model>
     """)
     grammar = _load_inline_xml(xml)
@@ -92,14 +92,14 @@ def test_start_symbol_alternate_root(reset_grammar):
     xml = textwrap.dedent("""\
         <?xml version="1.0" ?>
         <model>
-          <SymbolicSpace>
+          <SymbolSpace>
             <language>
               <start>ROOT</start>
               <grammar>
                 <ROOT>not(ROOT)</ROOT>
               </grammar>
             </language>
-          </SymbolicSpace>
+          </SymbolSpace>
         </model>
     """)
     grammar = _load_inline_xml(xml)
@@ -111,7 +111,7 @@ def test_multiple_start_patterns_with_compact_order_set(reset_grammar):
     xml = textwrap.dedent("""\
         <?xml version="1.0" ?>
         <model>
-          <SymbolicSpace>
+          <SymbolSpace>
             <language>
               <start>S45</start>
               <start>S45 REL S45</start>
@@ -120,7 +120,7 @@ def test_multiple_start_patterns_with_compact_order_set(reset_grammar):
                 <S5>not(S5)</S5>
               </grammar>
             </language>
-          </SymbolicSpace>
+          </SymbolSpace>
         </model>
     """)
     grammar = _load_inline_xml(xml)
@@ -141,14 +141,14 @@ def test_start_symbol_persists_across_ensure_configured(reset_grammar):
     xml = textwrap.dedent("""\
         <?xml version="1.0" ?>
         <model>
-          <SymbolicSpace>
+          <SymbolSpace>
             <language>
               <start>S</start>
               <grammar>
                 <S>not(S)</S>
               </grammar>
             </language>
-          </SymbolicSpace>
+          </SymbolSpace>
         </model>
     """)
     grammar = _load_inline_xml(xml)

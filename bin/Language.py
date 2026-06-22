@@ -51,7 +51,7 @@ from Layers import (
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
+from Spaces import SubSpace, Space, PerceptualSpace, InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace
 
 import xml.etree.ElementTree as _ET
 from pathlib import Path as _Path
@@ -335,7 +335,7 @@ _RETIRED_CHART_KNOBS = (
 
 def _assert_retired_chart_knobs_absent():
     """Raise ``ValueError`` if any retired chart / router knob lives in
-    the loaded XML config under ``<SymbolicSpace>``.
+    the loaded XML config under ``<SymbolSpace>``.
 
     Stage 3 retires ``<parserBackend>``, ``<routerKind>``, ``<chartTau>``,
     ``<chartTopK>``, ``<chartNoiseEps>`` in favour of the signal router.
@@ -343,7 +343,7 @@ def _assert_retired_chart_knobs_absent():
     Called from ``SymbolicSubSpace.__init__`` after grammar configuration.
     """
     try:
-        ss_section = TheXMLConfig.get("SymbolicSpace", None)
+        ss_section = TheXMLConfig.get("SymbolSpace", None)
     except (KeyError, AttributeError):
         ss_section = None
     if not isinstance(ss_section, dict):
@@ -352,7 +352,7 @@ def _assert_retired_chart_knobs_absent():
     if offending:
         joined = ", ".join(f"<{k}>" for k in offending)
         raise ValueError(
-            f"SymbolicSpace XML config carries retired chart / router knob(s): "
+            f"SymbolSpace XML config carries retired chart / router knob(s): "
             f"{joined}. Stage 3 of the substrate refactor retires these "
             f"in favour of the signal router (LanguageLayer); remove the "
             f"offending element(s) from your config."
@@ -369,13 +369,13 @@ def grammar_uses(rule_name):
     the ``layer`` kwarg on ConceptualSpace. This helper remains available
     for runtime grammar inspection.
 
-    Reads the parsed XML grammar at SymbolicSpace.language.grammar; scans
+    Reads the parsed XML grammar at SymbolSpace.language.grammar; scans
     rule bodies (string leaves) for the substring ``rule_name(``.
     Returns False on any read error or when no grammar is configured.
     """
     needle = f"{rule_name}("
     try:
-        cfg = TheXMLConfig.get("SymbolicSpace.language.grammar")
+        cfg = TheXMLConfig.get("SymbolSpace.language.grammar")
     except (KeyError, AttributeError):
         cfg = None
 
@@ -417,7 +417,7 @@ class Grammar:
 
     Owns the rule definitions parsed from XML config. All learnable
     parameters and rule execution live on a single unified
-    ``SyntacticLayer`` instance owned by ``SymbolicSpace``.
+    ``SyntacticLayer`` instance owned by ``SymbolSpace``.
     """
 
     # lhs:          nonterminal this rule reduces to ('S', 'VO', 'NP', 'VP', ...).
@@ -1379,11 +1379,11 @@ class Grammar:
         """
         if self._configured:
             return
-        # <start>...</start> in SymbolicSpace.language: accepted completed
+        # <start>...</start> in SymbolSpace.language: accepted completed
         # derivation shapes. The primary single-category start is kept
         # in ``start_symbol`` for legacy identity/reset code.
         try:
-            start_raw = TheXMLConfig.get("SymbolicSpace.language.start")
+            start_raw = TheXMLConfig.get("SymbolSpace.language.start")
             self.start_patterns = _start_patterns_from_raw(
                 start_raw, default="S")
             self.start_symbol = _primary_start_symbol(
@@ -1409,7 +1409,7 @@ class Grammar:
         # sits in the XML (the knob was retired 2026-05-13 but configs
         # that survived from before that may still carry it).
         try:
-            legacy_use = TheXMLConfig.get("SymbolicSpace.language.useGrammar")
+            legacy_use = TheXMLConfig.get("SymbolSpace.language.useGrammar")
             if legacy_use is not None:
                 warnings.warn(
                     "<useGrammar> is deprecated; use "
@@ -1419,7 +1419,7 @@ class Grammar:
                 self.load_from_grammar_file("default.grammar")
                 try:
                     interp = TheXMLConfig.get(
-                        "SymbolicSpace.language.interpretation")
+                        "SymbolSpace.language.interpretation")
                     self.interpretation = float(interp)
                 except (KeyError, AttributeError, TypeError, ValueError):
                     pass
@@ -1429,7 +1429,7 @@ class Grammar:
 
         candidate = None
         try:
-            candidate = TheXMLConfig.get("SymbolicSpace.language.grammar")
+            candidate = TheXMLConfig.get("SymbolSpace.language.grammar")
         except (KeyError, AttributeError):
             candidate = None
 
@@ -1441,7 +1441,7 @@ class Grammar:
                 self.load_from_grammar_file(name)
                 try:
                     interp = TheXMLConfig.get(
-                        "SymbolicSpace.language.interpretation")
+                        "SymbolSpace.language.interpretation")
                     self.interpretation = float(interp)
                 except (KeyError, AttributeError, TypeError, ValueError):
                     pass
@@ -1452,7 +1452,7 @@ class Grammar:
             cfg = self._NOOP_GRAMMAR
         self.configure(cfg)
         try:
-            interp = TheXMLConfig.get("SymbolicSpace.language.interpretation")
+            interp = TheXMLConfig.get("SymbolSpace.language.interpretation")
             self.interpretation = float(interp)
         except (KeyError, AttributeError, TypeError, ValueError):
             pass
@@ -1490,7 +1490,7 @@ class Grammar:
 
         Derived from both ``lhs`` (including comma-split multi-output
         heads) and ``rhs_symbols``. Used to size the category codebook
-        on ``SymbolicSpace``, so every label has its own learned embedding.
+        on ``SymbolSpace``, so every label has its own learned embedding.
         """
         self._ensure_configured()
         names = set()
@@ -1599,7 +1599,7 @@ class Grammar:
 
     # ---- Soft-superposition chart: packed-rule-table machinery -----
     #
-    # `softChartCompose=true` on SymbolicSpace activates a CKY-style inside
+    # `softChartCompose=true` on SymbolSpace activates a CKY-style inside
     # pass in `SyntacticLayer._compose_chart_cky`. That path needs the
     # rule catalog as flat tensors rather than a Python list of RuleDef
     # so per-(span, rule) candidates can be enumerated as one bmm-shape
@@ -2283,8 +2283,8 @@ def _make_lex_gate(n_in, rank, seed, bias=1.4722):
     init (small weight, bias at atanh(0.9): near-identity gates that
     already differ per word) comes from a LOCAL generator.
 
-    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The verb
-    eigenvalue edit (``LiftLayer._lex_edit``) passes ``bias=0.0`` so an
+    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The adverb
+    eigenvalue edit (``LiftLayer._adv_edit``) passes ``bias=0.0`` so an
     untrained edit is ``tanh(0) ~= 0`` -- the residual barely perturbs the
     sigma fold until training shapes it.
     """
@@ -2439,39 +2439,57 @@ class LiftLayer(GrammarLayer):
             # must not shift the seeded draws of fixtures built after it.
             self._lex_gate = _make_lex_gate(
                 int(nInput), min(int(nInput), int(nOutput)), seed=0x11F7)
-            # Verb sparse eigenvalue edit (doc/specs/
-            # semantic_verb_np_mask_eigenvalue_proposal.md). When
-            # <verbEigEdit> is on, lift applies the verb as a sparse
-            # eigenvalue edit of the NP, masked by the noun class (read from
-            # the NP's own eigen-signature -- no learned mask parameter). The
-            # ONLY per-verb parameter is this edit projection δ_v(VP_code).
-            # Built ONLY when on so flag-off is byte-identical (no extra
-            # Parameter in the state_dict). Zero bias -> an untrained edit is
-            # ~0 (the residual barely perturbs the fold until trained).
-            self._verb_eig_edit = bool(
-                TheXMLConfig.get("architecture.verbEigEdit", default=False))
-            if self._verb_eig_edit:
-                # Zero-init residual branch (cf. LoRA-B / zero-init adapters):
-                # weight AND bias start at 0 so an UNTRAINED edit is exactly 0
-                # (delta_v = tanh(0) = 0) -> flag-on-untrained reproduces the
-                # sigma fold; training shapes the edit from there. The skip_init
-                # + bias=0.0 path keeps it global-RNG-neutral.
-                self._lex_edit = _make_lex_gate(
+            # Eigen mechanisms (both eig-based, confirmed 2026-06-20): the VERB is
+            # the eig-spectrum OPERATOR (<verbSpectrum>, below); the ADVERB is the
+            # eigenmodifier (<adverbEigEdit>). What was removed is the verbEigEdit
+            # RESIDUAL (a sparse edit on top of the symmetric sigma fold) -- it is
+            # now the adverb.
+            #
+            # ADVERB sparse eigenvalue edit. When <adverbEigEdit> is on, an adverb
+            # modifies a composed VP through a sparse eigenvalue edit of the verb,
+            # masked by the VP's OWN eigen-signature (no learned mask). The only
+            # per-adverb parameter is the edit projection δ_adv(ADV_code). Built
+            # ONLY when on so flag-off is byte-identical. Zero-init -> edit ~0.
+            self._adverb_eig_edit = bool(
+                TheXMLConfig.get("architecture.adverbEigEdit", default=False))
+            if self._adverb_eig_edit:
+                self._adv_edit = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
                 with torch.no_grad():
-                    self._lex_edit.weight.zero_()
+                    self._adv_edit.weight.zero_()
             else:
-                self._lex_edit = None
-            # Per-call verb-purchase diagnostic (the firewall "delta"); host
-            # bookkeeping only, no autograd / state_dict footprint.
-            self._verb_purchase = None
+                self._adv_edit = None
+            self._adverb_purchase = None
+
+            # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
+            # decoder.md "VP parameterization"). When <verbSpectrum> is on, the
+            # verb acts on the NP as Q·diag(e^w)·Qᵀ -- here the first increment is
+            # the exp-diagonal (Q = I) in atanh-space: VP(NP) = tanh(e^{w_v} ⊙
+            # atanh(NP)), with w_v the verb's SPARSE log-eigenvalues from the verb
+            # code (soft-thresholded, zero-init). INVERTIBLE by construction
+            # (e^w>0): unapply applies e^{-w_v}. Sparse -> most eigs are identity
+            # (w=0 -> e^0=1), so the verb is a non-destructive spectral reshaping.
+            # (Follow-ons: NP-conditional Q via Householder-from-NP; verb
+            # identification on reverse.) Built ONLY when on -> flag-off
+            # byte-identical.
+            self._verb_spectrum = bool(
+                TheXMLConfig.get("architecture.verbSpectrum", default=False))
+            if self._verb_spectrum:
+                self._verb_spec = _make_lex_gate(
+                    int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
+                with torch.no_grad():
+                    self._verb_spec.weight.zero_()
+            else:
+                self._verb_spec = None
         else:
             # Zero-width construction (parameter-free harness probe).
             self._sigma = None
             self._lex_gate = None
-            self._verb_eig_edit = False
-            self._lex_edit = None
-            self._verb_purchase = None
+            self._adverb_eig_edit = False
+            self._adv_edit = None
+            self._adverb_purchase = None
+            self._verb_spectrum = False
+            self._verb_spec = None
 
     # -- Butterfly per-pair op delegation (Stage 5) -----------------
     def _butterfly_pair_op(self, x_pair, W_node):
@@ -2562,47 +2580,76 @@ class LiftLayer(GrammarLayer):
             # result's .when span > 1 with the center advanced.
             l_what, l_where, _l_when = _split_event(left, cw)
             r_what, _r_where, r_when = _split_event(right, cw)
+            # The verb is the lift operator itself; no eig-edit is applied here
+            # (the eig-based VERB edit was removed). An ADVERB, when present,
+            # modifies this composed VP via ``apply_adverb``.
             content = self._sigma.compose(l_what, r_what, gate=gate)
-            content = self._apply_verb_edit(content, l_what, r_what)
             return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
-        content = self._sigma.compose(left, right, gate=gate)
-        return self._apply_verb_edit(content, left, right)
+        return self._sigma.compose(left, right, gate=gate)
 
-    def _apply_verb_edit(self, content, np_what, vp_what):
-        """Verb sparse eigenvalue edit on the lift result (doc/specs/
-        semantic_verb_np_mask_eigenvalue_proposal.md).
+    def apply_adverb(self, vp_content, adv_what):
+        """ADVERB eigenmodifier: an adverb modifies a VP by a sparse eigenvalue
+        edit of the verb. (The eig-based VERB edit was removed -- the verb is the
+        lift operator; the ADVERB is the eigenmodifier: "ADV modifies the eigs of
+        VP.") Invoked by the adverb operator over a composed VP; NOT called by
+        ``lift.forward`` (the verb no longer eig-edits).
 
-        No-op (returns ``content`` unchanged) unless ``<verbEigEdit>`` built the
-        edit projection -- so flag-off is byte-identical. When on:
+        No-op (returns ``vp_content`` unchanged) unless ``<adverbEigEdit>`` built
+        the edit projection -- flag-off is byte-identical. When on:
 
-        * ``δ_v`` -- the verb's per-eigenfeature edit from the VP code, made
-          SPARSE by soft-thresholding (the verb touches few eigs);
-        * ``p_class`` -- the noun-class mask, read from the NP's OWN
-          eigen-signature (its activated eigenfeatures), NOT a learned
-          parameter: the class the verb applies to is already an object in the
-          taxonomy, so membership *is* the mask. Where the NP lacks a feature
-          (out of class) ``p_class ~= 0`` and that feature is preserved;
-        * the edit is the masked residual ``a2 = atanh(content) + p_class ⊙ δ_v``
-          (the spec's identity-preserving form). ``purchase_v`` is stashed for
-          introspection (the firewall "delta")."""
-        if not getattr(self, '_verb_eig_edit', False) or self._lex_edit is None:
-            return content
-        a = torch.atanh(content.clamp(-1 + epsilon, 1 - epsilon))
-        # δ_v from the VP code, soft-thresholded for sparsity (few eigs).
-        delta = torch.tanh(self._lex_edit(vp_what.to(self._lex_edit.weight.dtype)))
+        * ``δ_adv`` -- the adverb's per-eigenfeature edit from the ADV code, made
+          SPARSE by soft-thresholding (an adverb touches few eigs);
+        * ``p_vp`` -- the mask = the VP's OWN normalized eigen-signature (its
+          active eigenfeatures); the adverb edits the eigenvalues the verb
+          actually uses and preserves the rest;
+        * the edit is the masked residual ``a2 = atanh(vp) + p_vp ⊙ δ_adv``.
+          ``adverb_purchase`` is stashed for introspection (the firewall delta)."""
+        if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+            return vp_content
+        a = torch.atanh(vp_content.clamp(-1 + epsilon, 1 - epsilon))
+        # δ_adv from the ADV code, soft-thresholded for sparsity (few eigs).
+        delta = torch.tanh(self._adv_edit(adv_what.to(self._adv_edit.weight.dtype)))
         tau = 0.1
         delta = torch.sign(delta) * torch.clamp(delta.abs() - tau, min=0.0)
-        # p_class: the noun-class mask = the NP's normalized eigen-signature
-        # (in [0, 1]); no learned parameter.
-        a_np = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
-        amax = a_np.abs().amax(dim=-1, keepdim=True)
-        p_class = a_np.abs() / (amax + epsilon)
-        # purchase_v(x) = ||p_class ⊙ a_np|| / ||a_np|| (spec §8.1).
+        # p_vp: the VP-eigen mask = the verb's normalized eigen-signature in
+        # [0, 1]; no learned parameter (the adverb edits the verb's active eigs).
+        amax = a.abs().amax(dim=-1, keepdim=True)
+        p_vp = a.abs() / (amax + epsilon)
         with torch.no_grad():
-            num = (p_class * a_np).norm(dim=-1)
-            den = a_np.norm(dim=-1) + epsilon
-            self._verb_purchase = (num / den).detach()
-        return torch.tanh(a + p_class * delta)
+            num = (p_vp * a).norm(dim=-1)
+            den = a.norm(dim=-1) + epsilon
+            self._adverb_purchase = (num / den).detach()
+        return torch.tanh(a + p_vp * delta)
+
+    def _verb_spectrum_w(self, verb_what):
+        """The verb's SPARSE log-eigenvalues w_v from the verb code,
+        soft-thresholded so most eigs are 0 (-> e^0 = 1 -> identity)."""
+        w = self._verb_spec(verb_what.to(self._verb_spec.weight.dtype))
+        tau = 0.1
+        return torch.sign(w) * torch.clamp(w.abs() - tau, min=0.0)
+
+    def apply_verb(self, np_what, verb_what):
+        """VERB eig-spectrum OPERATOR (Stage 1): act on the NP as the verb's
+        diagonal spectrum in atanh-space -- VP(NP) = tanh(e^{w_v} ⊙ atanh(NP)),
+        with w_v the verb's SPARSE log-eigenvalues (first increment: Q = I).
+        INVERTIBLE by construction (e^w > 0; see ``unapply_verb``). Most eigs are
+        identity (w=0 -> e^0=1), so the verb is a non-destructive spectral
+        reshaping along the few eigs it touches. No-op unless ``<verbSpectrum>``
+        built the projection -> flag-off byte-identical."""
+        if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+            return np_what
+        a = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
+        return torch.tanh(torch.exp(self._verb_spectrum_w(verb_what)) * a)
+
+    def unapply_verb(self, vp_what, verb_what):
+        """Inverse of ``apply_verb`` GIVEN the verb: NP = tanh(e^{-w_v} ⊙
+        atanh(VP)). Exact round-trip with ``apply_verb`` for the same verb code.
+        (Recovering the verb from the result alone -- the operator-identification
+        reverse -- is a follow-on increment.)"""
+        if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
+            return vp_what
+        a = torch.atanh(vp_what.clamp(-1 + epsilon, 1 - epsilon))
+        return torch.tanh(torch.exp(-self._verb_spectrum_w(verb_what)) * a)
 
     def reverse(self, parent, gate=None):
         """Split ``parent`` back into a ``(left, right)`` pair.
@@ -5405,7 +5452,7 @@ class LanguageLayer(Layer):
         # restriction for the binary recommender (Intersection / Union only).
         #
         # GATED + DEFAULT-OFF BYTE-IDENTITY: ``reverse_kwargs`` stays EMPTY
-        # unless ALL of (a) ``subspace.symbolicSpace`` exists, (b) the host
+        # unless ALL of (a) ``subspace.symbolSpace`` exists, (b) the host
         # layer is Intersection/Union (arity-2 recommender ops), AND (c) the
         # owning space's ``attention_mode != 'off'``. Every current config is
         # attention=off, so this whole block is dormant and the call below is
@@ -5417,7 +5464,7 @@ class LanguageLayer(Layer):
         # row 0 to match. Lift/Lower use the algebraic inverse, not the
         # recommender, so they are intentionally NOT wired here.
         reverse_kwargs = {}
-        ss = getattr(subspace, 'symbolicSpace', None)
+        ss = getattr(subspace, 'symbolSpace', None)
         if (ss is not None and arity == 2
                 and isinstance(layer, (IntersectionLayer, UnionLayer))):
             tier = str(getattr(syntactic_layer, 'tier', ''))
@@ -5684,8 +5731,8 @@ class LanguageLayer(Layer):
             # Dissipate priming between reverse calls (Phase 3b).
             # No-op today: the priming buffer is unallocated or all-1.0
             # until forward heat updates land in Phase 4.  Guard ensures
-            # a missing symbolicSpace / taxonomy is silently skipped.
-            ss = getattr(subspace, 'symbolicSpace', None)
+            # a missing symbolSpace / taxonomy is silently skipped.
+            ss = getattr(subspace, 'symbolSpace', None)
             tax = getattr(ss, 'taxonomy', None) if ss is not None else None
             if tax is not None:
                 tax.decay(temporal_decay=getattr(tax, 'temporal_decay', 0.9))
@@ -6213,7 +6260,7 @@ class RouteStats:
 
     Per doc/plans/NeuralToolUser.md only ``log_prob_sum`` / ``entropy_sum``
     / ``step_count`` need to survive a parse -- the full route is not
-    stored for the loss (the route IS saved separately in SymbolicSpace for
+    stored for the loss (the route IS saved separately in SymbolSpace for
     pass-2 replay, but detached). ``log_prob_sum`` / ``entropy_sum`` are
     LIVE graph tensors so the policy advantage backprops into the chooser.
     """
@@ -6865,6 +6912,11 @@ class AnchorDotTransformChooser(TransformChooser):
         scorer is stateless and basin-pinned; only the MLP chooser conditions
         on it.
         """
+        # Device safety (MPS): the anchors are the owning layer's Parameters; if
+        # a device move missed them (e.g. choosers built lazily after the model's
+        # .to(device)), align to the input's device. No-op when co-located.
+        copy_anchor = copy_anchor.to(x_score.device)
+        apply_anchor = apply_anchor.to(x_score.device)
         copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
         r_apply = int(apply_anchor.shape[0])
         if r_apply > 0 and applied_score.shape[2] > 0:
@@ -6884,6 +6936,10 @@ class AnchorDotTransformChooser(TransformChooser):
 
         ``cat_ctx`` (Phase 2 category context) is ignored (stateless scorer).
         """
+        # Device safety (MPS): align the owning layer's anchor Parameters to the
+        # input's device in case a device move missed them. No-op when co-located.
+        copy_anchor = copy_anchor.to(x_score.device)
+        reduce_anchor = reduce_anchor.to(x_score.device)
         copy_score = torch.einsum('bnd,cd->bnc', x_score, copy_anchor)
         r_reduce = int(reduce_anchor.shape[0])
         if reduced_score.shape[1] > 0 and r_reduce > 0:
@@ -7669,7 +7725,7 @@ class SyntacticLayer(Layer):
 
     The cursor resets at the start of each new ``word_space.compose()``
     / ``word_space.generate()`` call via the generation counters on
-    SymbolicSpace (Q10.1).
+    SymbolSpace (Q10.1).
 
     Per the 2026-05-07 rollback: there is no ``default_rule`` parameter.
     The grammar XML drives which rules fire — when the chart hasn't
@@ -7677,14 +7733,14 @@ class SyntacticLayer(Layer):
     """
 
     def __init__(self, tier, word_space, host_layers, host_space=None):
-        """Register host layers with the SymbolicSpace dispatch table.
+        """Register host layers with the SymbolSpace dispatch table.
 
         ``host_layers`` is a name -> Layer mapping; each is registered
-        under ``(tier, rule_name)`` on the SymbolicSpace so the chart can
-        dispatch into the right parametrized fold. SymbolicSpace / host_space
+        under ``(tier, rule_name)`` on the SymbolSpace so the chart can
+        dispatch into the right parametrized fold. SymbolSpace / host_space
         are stashed via ``object.__setattr__`` to avoid the nn.Module
-        ownership cycle (SymbolicSpace owns the chart -> chart references
-        this layer -> this layer references SymbolicSpace).
+        ownership cycle (SymbolSpace owns the chart -> chart references
+        this layer -> this layer references SymbolSpace).
         """
         super().__init__(0, 0)
         self.tier = str(tier)
@@ -7696,7 +7752,7 @@ class SyntacticLayer(Layer):
         self.layers = nn.ModuleList(layers_list)
         self._by_name = {name: layer for name, layer in host_layers.items()
                          if layer is not None}
-        # Register each host_layer with the symbolicSpace's host_layer
+        # Register each host_layer with the symbolSpace's host_layer
         # registry so the chart can dispatch into them.
         for rule_name, layer in self._by_name.items():
             word_space.register_host_layer(self.tier, rule_name, layer)
@@ -7704,10 +7760,10 @@ class SyntacticLayer(Layer):
         self._cursor_generate = 0
         self._cursor_compose_gen = -1
         self._cursor_generate_gen = -1
-        # Stash the symbolicSpace and host_space as non-Module attributes
-        # to avoid the circular nn.Module ownership trap (symbolicSpace
+        # Stash the symbolSpace and host_space as non-Module attributes
+        # to avoid the circular nn.Module ownership trap (symbolSpace
         # owns the chart; chart's host_layer registry references this
-        # layer's children; this layer references symbolicSpace).
+        # layer's children; this layer references symbolSpace).
         object.__setattr__(self, '_word_space', word_space)
         # ``host_space`` is the per-tier Space (Perceptual / Conceptual /
         # Symbolic) that owns this dispatcher. When the chart fires
@@ -7720,7 +7776,7 @@ class SyntacticLayer(Layer):
     # -- cursor management ---------------------------------------------
     def _tier_index(self):
         """Map this layer's tier label to its slot in the per-sentence
-        SymbolicSpace ``cursor`` tensor (shape ``[n_tiers=3]``).
+        SymbolSpace ``cursor`` tensor (shape ``[n_tiers=3]``).
 
         ``tier`` is set once at construction to one of the string
         literals 'P' / 'C' / 'S' (Language.py
@@ -7732,7 +7788,7 @@ class SyntacticLayer(Layer):
 
     def _next_rule_name(self, *, direction):
         """Pop the next rule name for ``direction`` ('compose' or
-        'generate'). Resets the cursor when symbolicSpace has bumped its
+        'generate'). Resets the cursor when symbolSpace has bumped its
         generation counter for this direction.
 
         Reads ``word_space.current_rules`` / ``generate_rules`` as
@@ -7754,7 +7810,7 @@ class SyntacticLayer(Layer):
             # ``len(per_step)`` — an int64 tensor read via ``int(...)``
             # would yield an unbacked SymInt and crash
             # ``fullgraph=True``. The per-compose reset happens
-            # unconditionally at the top of SymbolicSpace.compose, so there
+            # unconditionally at the top of SymbolSpace.compose, so there
             # is NO data-dependent generation gate here (recompile
             # cause #3 eliminated).
             ti = self._tier_index()
@@ -7805,7 +7861,7 @@ class SyntacticLayer(Layer):
     # See doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md
     # §"Phase 2: SyntacticLayer Executor API". The LanguageLayer calls
     # these directly with a rule_id it has already selected; no
-    # SymbolicSpace.current_rules indirection.
+    # SymbolSpace.current_rules indirection.
 
     def execute(self, rule_id, left, right=None):
         """Run the grammar op for ``rule_id`` on ``(left[, right])``.
@@ -7813,7 +7869,7 @@ class SyntacticLayer(Layer):
         Resolves ``rule_id`` to a host layer via ``TheGrammar`` and
         ``self._by_name`` and calls ``layer.compose`` with the right
         number of operands for the rule's arity. Returns the parent
-        tensor. No cursor; no SymbolicSpace state read.
+        tensor. No cursor; no SymbolSpace state read.
 
         Identity rule (``method_name is None``, ``rhs == lhs``):
         returns ``left`` unchanged. No layer lookup, no parameter touch
@@ -8085,9 +8141,9 @@ def build_space_syntactic_layer(space, word_space, *, tier,
     Args:
         space: the host Space (PartSpace / ConceptualSpace /
             WholeSpace). The constructed layer is stored on
-            ``space.syntacticLayer`` and registered in the symbolicSpace's
+            ``space.syntacticLayer`` and registered in the symbolSpace's
             host_layer registry.
-        word_space: the SymbolicSpace coordinator. Owns the host_layer
+        word_space: the SymbolSpace coordinator. Owns the host_layer
             registry and the chart.
         tier: tier name ('P' / 'C' / 'S') used as the registry key.
         builtin_layers: dict[rule_name -> GrammarLayer instance] for
@@ -8294,14 +8350,14 @@ class Taxonomy:
     unchanged). The Taxonomy is the explicit hierarchy organizing
     symbols by order (0 = proper / specific; higher = more general).
     Pure-Python bookkeeping: no parameters, not an ``nn.Module``;
-    hosted on the SymbolicSpace singleton.
+    hosted on the SymbolSpace singleton.
 
     Also hosts the **priming buffer** for reverse-generation working-
     memory state (plan doc/plans/2026-05-20-primed-reverse-generation.md).
     The buffer lives on the Taxonomy because propagation walks
     parent/children adjacency; co-locating the state with the graph
     avoids indirection. The legacy in-process dicts
-    (``_parent``/``_children``) are unused on the SymbolicSpace's instance
+    (``_parent``/``_children``) are unused on the SymbolSpace's instance
     — propagation queries the attached ``embed.KnowledgeView`` instead.
     """
 
@@ -9066,7 +9122,7 @@ class ObjectSubSpace(nn.Module):
 class SymbolicSubSpace(SubSpace):
     """Per-sentence grammar / serial-processing carrier — the third
     argument that travels alongside the data SubSpaces through the
-    pipeline (reached via ``subspace.symbolicSpace`` after
+    pipeline (reached via ``subspace.symbolSpace`` after
     ``copy_context`` stamps the back-reference).
 
     Runtime-parallel to PartSpace / ConceptualSpace / WholeSpace
@@ -9105,7 +9161,7 @@ class SymbolicSubSpace(SubSpace):
     """
 
     name = "Words"
-    config_section = "SymbolicSpace"
+    config_section = "SymbolSpace"
 
     def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
                  nPercepts, nConcepts, nSymbols,
@@ -9113,7 +9169,7 @@ class SymbolicSubSpace(SubSpace):
         """Build the chart, grammar layer, truth store, per-tier dispatch,
         and the typed STM stack data.
 
-        SymbolicSpace IS a SubSpace (2026-05-21 refactor) and bypasses the
+        SymbolSpace IS a SubSpace (2026-05-21 refactor) and bypasses the
         Space factory because its construction crosses tier boundaries
         (it needs references to Perceptual / Conceptual / Symbolic
         spaces). Detects the default-only grammar case so compose /
@@ -9122,7 +9178,7 @@ class SymbolicSubSpace(SubSpace):
         host_layer registry, per-row buffers, and the typed STM stack.
         """
         # 1. Mirror WholeSpace's column layout for the Space-contract
-        # fields that downstream callers occasionally read off SymbolicSpace
+        # fields that downstream callers occasionally read off SymbolSpace
         # (``nDim`` / ``nWhat`` / ``nWhere`` / ``nWhen`` / ``muxedSize``).
         sub = wholeSpace.subspace
         nWhere = int(getattr(sub, 'nWhere', 0) or 0)
@@ -9205,16 +9261,33 @@ class SymbolicSubSpace(SubSpace):
         )
 
         # 4. Space-contract fields. SubSpace.__init__ already set
-        # ``self.symbolicSpace = None``; the rest are SymbolicSubSpace-specific.
+        # ``self.symbolSpace = None``; the rest are SymbolicSubSpace-specific.
         self.layers = nn.ModuleList()
         self.params = []
 
+        # Slice B / conceptualize (Alec 2026-06-21): the SYMBOL CODEBOOK on this
+        # carrier's ``.what``. When symbol_tower is on, ``SS.subspace.what`` holds
+        # the symbol codebook (symbols 1:1 with concepts); CS reads it as the SS
+        # bind leg (tower-symmetric with PS/WS ``.what``). The other slot Bases
+        # stay empty -- this object is also the grammar/STM stack, which rides on
+        # ``.event``, not ``.what``, so the codebook does not disturb it. Default
+        # off -> ``.what`` stays empty -> byte-identical.
+        if bool(TheXMLConfig.get("architecture.symbolTower", default=False)):
+            from Spaces import Codebook as _Codebook
+            _sym_cb = _Codebook()
+            _sym_cb.use_dot_product = False
+            _sym_cb.create(1, int(nSymbols), int(symbol_dim), customVQ=True)
+            self.what = _sym_cb
+            for _p in _sym_cb.parameters():
+                if all(_p is not _q for _q in self.params):
+                    self.params.append(_p)
+
         # 4. Per-space SyntacticLayer dispatch lives on each space
-        # (``space.syntacticLayer``); SymbolicSpace itself no longer owns a
+        # (``space.syntacticLayer``); SymbolSpace itself no longer owns a
         # central SyntacticLayer instance.
         # 4a. Chart + host-layer registry. Per the 2026-05-01 syntactic-
         # layer refactor (doc/specs/2026-05-01-syntactic-layer-refactor.md):
-        # SymbolicSpace owns a Chart that runs CKY inside / outside passes
+        # SymbolSpace owns a Chart that runs CKY inside / outside passes
         # and writes per-(tier, step) rule selections into
         # ``current_rules`` / ``generate_rules``. Each per-space
         # SyntacticLayer registers its parametrized layers via
@@ -9244,7 +9317,7 @@ class SymbolicSubSpace(SubSpace):
         # cursor (Q10.1).
         self._compose_generation = 0
         self._generate_generation = 0
-        # Per-sentence serial-parser state, owned directly by SymbolicSpace
+        # Per-sentence serial-parser state, owned directly by SymbolSpace
         # (no separate SentenceState carrier).
         #   ``cursor``      — ``list[int]`` of length 3 (one per tier
         #                     P/C/S), the per-tier rule cursor consumed
@@ -9285,7 +9358,7 @@ class SymbolicSubSpace(SubSpace):
         chart_hidden = self._resolve_hidden_dim(nSymbols)
         try:
             _signal_temperature = float(TheXMLConfig.get(
-                "SymbolicSpace.signal.temperature", 1.0))
+                "SymbolSpace.signal.temperature", 1.0))
         except Exception:
             _signal_temperature = 1.0
         self.languageLayer = LanguageLayer(
@@ -9315,7 +9388,7 @@ class SymbolicSubSpace(SubSpace):
             pass
 
         # 5. Per-space SyntacticLayer attachment. The perceptual
-        # and conceptual spaces also get a ``symbolicSpace`` back-reference
+        # and conceptual spaces also get a ``symbolSpace`` back-reference
         # so they can route through the shared buffer, but only the
         # symbolic space's compose() fires the chart.
         # Post-split: grammar's canonical home is S; the
@@ -9327,19 +9400,19 @@ class SymbolicSubSpace(SubSpace):
         # P/C-tier rule (e.g. for lift/lower at concept_dim) can
         # still fire through the chart's per-tier dispatch.
         if perceptualSpace is not None:
-            perceptualSpace.attach_symbolicSpace(self)
+            perceptualSpace.attach_symbolSpace(self)
             # P-tier SyntacticLayer retired (2026-05-18 C/S split): the
             # perceptual space no longer carries a chart-dispatched
-            # SyntacticLayer. ``attach_symbolicSpace`` (shared-buffer
+            # SyntacticLayer. ``attach_symbolSpace`` (shared-buffer
             # back-ref) is unrelated wiring and is kept. The tier='P'
             # branch in ``_attach_per_space_syntactic_layer`` is now
             # unreached but left dead-safe.
         if conceptualSpace is not None:
-            conceptualSpace.attach_symbolicSpace(self)
+            conceptualSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
                 conceptualSpace, tier='C')
         if wholeSpace is not None:
-            wholeSpace.attach_symbolicSpace(self)
+            wholeSpace.attach_symbolSpace(self)
             self._attach_per_space_syntactic_layer(
                 wholeSpace, tier='S')
 
@@ -9351,10 +9424,10 @@ class SymbolicSubSpace(SubSpace):
         self._wire_signal_router_grammar_ops()
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
-        # Lives on SymbolicSpace so WholeSpace doesn't have to carry it
+        # Lives on SymbolSpace so WholeSpace doesn't have to carry it
         # alongside its already heavy pi/sort/codebook machinery.
         try:
-            max_truths = int(TheXMLConfig.get("SymbolicSpace.truthMaxEntries"))
+            max_truths = int(TheXMLConfig.get("SymbolSpace.truthMaxEntries"))
         except (KeyError, TypeError, ValueError):
             max_truths = 1024
         self.truth_layer = TruthLayer(symbol_dim, max_truths=max_truths)
@@ -9388,7 +9461,7 @@ class SymbolicSubSpace(SubSpace):
         # InterSentenceLayer reads), falling back to the TruthLayer cap so a
         # config that sets neither still gets a sensible bound.
         _ltm_cap = int(TheXMLConfig.space(
-            "SymbolicSpace", "ltmCapacity", default=max_truths) or max_truths)
+            "SymbolSpace", "ltmCapacity", default=max_truths) or max_truths)
         self.relative_store = None
         self.ltm_store = None
         if _ltm_on:
@@ -9418,7 +9491,7 @@ class SymbolicSubSpace(SubSpace):
         # DEF, HAS plus the closed-class terminals) cannot overflow the
         # per-label slot reservation.  Legacy XML grammars stay at 64
         # since their category set is small.
-        # Category / part-of-speech codebook.  This is the SymbolicSpace's
+        # Category / part-of-speech codebook.  This is the SymbolSpace's
         # ONLY codebook -- distinct from WholeSpace's symbol-prototype
         # codebook on ``WholeSpace.subspace.what.W``.
         #
@@ -9459,8 +9532,8 @@ class SymbolicSubSpace(SubSpace):
         # Taxonomy: explicit parent->children order hierarchy for the
         # ramsified symbol space (Meronomy/parthood stays codebook-
         # per-order implicit, unchanged). Pure-Python; hosted here on
-        # the SymbolicSpace singleton, reached at runtime via
-        # ``vspace.symbolicSpace.taxonomy``.
+        # the SymbolSpace singleton, reached at runtime via
+        # ``vspace.symbolSpace.taxonomy``.
         self.taxonomy = Taxonomy()
         # 6c. Category stack -- push/pop store for category-embedding
         # vectors during parsing. One frame per reduction step.
@@ -9478,7 +9551,7 @@ class SymbolicSubSpace(SubSpace):
         #
         # Option A (per task notes): torch.nn stdlib Sequential with a Tanh
         # nonlinearity -- no new layer type added to Layers.py. Stash
-        # in_features on the SymbolicSpace because Sequential has no such attr.
+        # in_features on the SymbolSpace because Sequential has no such attr.
         n_rules = len(TheGrammar.rule_table)
         self.n_rules = n_rules
         max_depth = int(nPercepts)
@@ -9510,7 +9583,7 @@ class SymbolicSubSpace(SubSpace):
         # 7. InterSentenceLayer -- optional ARMA(p, q) next-sentence
         # predictor.  Gated on <architecture><training><sentencePrediction>;
         # tasks without inter-sentence structure (XOR, MNIST) leave
-        # it off.  Shape knobs live under <SymbolicSpace> (armaP, armaQ,
+        # it off.  Shape knobs live under <SymbolSpace> (armaP, armaQ,
         # armaHiddenDim); the loss weight lives under
         # <architecture><training><armaScale> and is read by runBatch.
         # Contrastive cosine machinery retired 2026-05-14 alongside
@@ -9523,16 +9596,16 @@ class SymbolicSubSpace(SubSpace):
                 n_sym_rows = int(getattr(wholeSpace, 'nVectors', 0) or 0)
             if n_sym_rows > 0 and muxed > 0:
                 arma_p = int(TheXMLConfig.space(
-                    "SymbolicSpace", "armaP", default=5) or 5)
+                    "SymbolSpace", "armaP", default=5) or 5)
                 arma_q = int(TheXMLConfig.space(
-                    "SymbolicSpace", "armaQ", default=2) or 2)
+                    "SymbolSpace", "armaQ", default=2) or 2)
                 arma_hidden = TheXMLConfig.space(
-                    "SymbolicSpace", "armaHiddenDim", default=None)
+                    "SymbolSpace", "armaHiddenDim", default=None)
                 # LTM chain capacity (Task 7, plan §8) — same read
                 # pattern as armaP/armaQ; bounds the per-row STM
                 # end-state chain on the InterSentenceLayer.
                 ltm_capacity = int(TheXMLConfig.space(
-                    "SymbolicSpace", "ltmCapacity", default=1024) or 1024)
+                    "SymbolSpace", "ltmCapacity", default=1024) or 1024)
                 # Pre-existing minor: SymbolicSubSpace IS a SubSpace (no
                 # nested ``self.subspace``); use object.__getattribute__
                 # to avoid nn.Module.__getattr__ raising on the missing
@@ -9643,7 +9716,7 @@ class SymbolicSubSpace(SubSpace):
             stm_capacity = 0
         if stm_capacity <= 0:
             try:
-                w_max_xml = TheXMLConfig.get("SymbolicSpace.wMax", 0)
+                w_max_xml = TheXMLConfig.get("SymbolSpace.wMax", 0)
                 stm_capacity = (
                     int(w_max_xml) if int(w_max_xml) > 0 else 8)
             except Exception:
@@ -9724,6 +9797,57 @@ class SymbolicSubSpace(SubSpace):
     # buffers stay in sync. The ``ShortTermMemory`` Layer on
     # ``ConceptualSpace`` invokes these via
     # ``ss.push(...)`` / ``ss.pop(b)`` / ``ss.top(b)`` etc.
+
+    def conceptualize(self, order, part=None, whole=None,
+                      word_parts=None, word_whole=None, key=None, parts=None,
+                      concept_ids=None):
+        """Form a concept on the ConceptualSpace symbol tables (Alec 2026-06-21).
+
+        A concept is a FLEXIBLE combination of two percepts; this is the unified
+        dispatch over the three orders (doc/old/2026-06-21-higher-order-symbolic-
+        composition.md sections 2b / 4b / 4c). The SS subspace owns this method;
+        the CS owns the ``_sym_*`` relation tables it mutates -- the duality
+        (``CS.forward`` processes ``SS.subspace``). Host-side; the caller runs it
+        in the eager island (``symbol_tower`` relaxes fullgraph).
+
+          order 0 -> ``[part, whole]``      : ``relate(part, whole)`` -- one
+                     part-percept tied to one whole-percept (constituents carry
+                     ``.where`` / ``.when``).
+          order 1 -> ``[object isa word]``  : ``create_word_object_meta(word_parts,
+                     word_whole, key)`` -> ``(A=word, B=object, C=meta)``; the
+                     constituents' ``.where`` / ``.when`` = 0 (abstract).
+          order 2 -> higher-order object    : ``synthesize_higher_order(parts)`` --
+                     collapse the over-collected many into one superset.
+          order 3 -> sequence chain         : ``conceptualize_chain(concept_ids)`` --
+                     a tail-recursive ``[whole, part]`` list (Gallistel unitization
+                     of behavior) for learning indefinitely long sequences.
+
+        Constituents are stored BY REFERENCE (codebook index, or ``('sym', id)``
+        for sub-symbols) -- never duplicate codes (section 4c). Letters/bytes are
+        snapped to the percept codebook by the caller; other data is referenced by
+        its ``.where`` boundary, unsnapped. Returns the concept id (order 0/2) or
+        the ``(A, B, C)`` triple (order 1), or ``None`` on missing inputs.
+        """
+        cs = getattr(self, 'conceptualSpace', None)
+        if cs is None:
+            return None
+        if order == 0:
+            if part is None or whole is None:
+                return None
+            return cs.relate(part, whole)
+        if order == 1:
+            if word_parts is None or word_whole is None:
+                return None
+            return cs.create_word_object_meta(word_parts, word_whole, key=key)
+        if order == 2:
+            if not parts:
+                return None
+            return cs.synthesize_higher_order(parts)
+        if order >= 3:
+            if not concept_ids:
+                return None
+            return cs.conceptualize_chain(concept_ids)
+        return None
 
     def _commit_priming(self, b, ref_id):
         """Gated forward-commit heat update for a single committed ref.
@@ -10196,7 +10320,7 @@ class SymbolicSubSpace(SubSpace):
     # -- knowledge-artifact attach -----------------------------------------
     # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
     # §Phase 2 — Loaders. ``attach_knowledge(view)`` wires a loaded
-    # ``embed.KnowledgeView`` into the SymbolicSpace so downstream consumers
+    # ``embed.KnowledgeView`` into the SymbolSpace so downstream consumers
     # (chart POS scorer, rule predictor, lift/lower restricted-candidate
     # inverse, STM REDUCE typed admissibility) consult it instead of the
     # legacy ``Taxonomy()`` scaffold; ``category_codebook`` was retired
@@ -10241,7 +10365,7 @@ class SymbolicSubSpace(SubSpace):
     @property
     def knowledge(self):
         """The attached :class:`embed.KnowledgeView`, or ``None`` when
-        ``attach_knowledge`` has not been called for this SymbolicSpace
+        ``attach_knowledge`` has not been called for this SymbolSpace
         instance."""
         return getattr(self, '_knowledge', None)
 
@@ -10844,7 +10968,7 @@ class SymbolicSubSpace(SubSpace):
         ``torch.softmax`` / CE loss.
         """
         assert self.rule_predictor[-1].out_features == len(TheGrammar.rule_table), (
-            "Grammar reconfigured after SymbolicSpace construction; rule_predictor stale"
+            "Grammar reconfigured after SymbolSpace construction; rule_predictor stale"
         )
         flat = self.category_stack.flatten(b)
         target_len = self._rule_predictor_in_features
@@ -10944,7 +11068,7 @@ class SymbolicSubSpace(SubSpace):
         # Per-compose cursor reset. The OLD semantics zeroed each
         # per-tier SyntacticLayer cursor lazily on every compose() call
         # (via the ``gen != _cursor_compose_gen`` branch keyed off this
-        # counter). On the SymbolicSpace.cursor path we reproduce that
+        # counter). On the SymbolSpace.cursor path we reproduce that
         # EXACTLY with an unconditional in-place reset of all tiers'
         # cursors at the top of compose -- no data-dependent Python
         # branch on a per-batch nn.Module int (recompile cause #3
@@ -10969,7 +11093,7 @@ class SymbolicSubSpace(SubSpace):
         #     router runs its compose pass to select per-position
         #     copy / reduce ops.
         #
-        # The retired ``<SymbolicSpace><useGrammar>`` XML knob used to
+        # The retired ``<SymbolSpace><useGrammar>`` XML knob used to
         # also gate this; the grammar XML is now the sole driver.
         # Batch size for the dense ``rule_probs``: the per-word /
         # boundary fire passes the STM snapshot ``[B, N, D]`` as
@@ -11545,7 +11669,7 @@ class SymbolicSubSpace(SubSpace):
 
     def gate_l1_loss(self, lam=0.0):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
-        this SymbolicSpace's per-space SyntacticLayers.
+        this SymbolSpace's per-space SyntacticLayers.
 
         Post-2026-05-12: LiftLayer and LowerLayer no longer carry a
         learnable ``raw_gate`` -- VP's codebook activation now supplies
@@ -11564,15 +11688,14 @@ class SymbolicSubSpace(SubSpace):
             if raw is not None and torch.is_tensor(raw):
                 term = torch.tanh(raw).abs().sum()
                 total = term if total is None else total + term
-            # Verb eigenvalue edit (doc/specs/semantic_verb_np_mask_
-            # eigenvalue_proposal.md): an L1 pull on the per-verb edit
+            # Adverb eigenvalue edit: an L1 pull on the per-adverb edit
             # projection encourages a sparse expression over the eigs (the
             # primary sparsity is the in-forward soft-threshold; this is the
-            # additional training pressure). Only present when <verbEigEdit>
+            # additional training pressure). Only present when <adverbEigEdit>
             # built it, so this is naturally gated.
-            lex_edit = getattr(layer, '_lex_edit', None)
-            if lex_edit is not None and hasattr(lex_edit, 'weight'):
-                term = torch.tanh(lex_edit.weight).abs().sum()
+            adv_edit = getattr(layer, '_adv_edit', None)
+            if adv_edit is not None and hasattr(adv_edit, 'weight'):
+                term = torch.tanh(adv_edit.weight).abs().sum()
                 total = term if total is None else total + term
         if total is None:
             return None
@@ -11787,7 +11910,7 @@ class SymbolicSubSpace(SubSpace):
                              allow_contradiction=0,
                              balance_weight=0.1,
                              model=None):
-        """Apply the SymbolicSpace-owned TruthLayer modulation to a loss.
+        """Apply the SymbolSpace-owned TruthLayer modulation to a loss.
 
         The transform has two parts:
 
@@ -11815,9 +11938,9 @@ class SymbolicSubSpace(SubSpace):
         yet).  The caller is responsible for only invoking this in
         train mode -- the method itself has no ``train`` flag.
 
-        All inputs that reach outside SymbolicSpace (``symbolic_space``,
+        All inputs that reach outside SymbolSpace (``symbolic_space``,
         ``symbol_acts``, ``universality_score``, the three weights)
-        are passed explicitly so SymbolicSpace never needs a back-
+        are passed explicitly so SymbolSpace never needs a back-
         reference to the model.
         """
         if self.truth_layer is None or self.truth_layer.is_empty():
@@ -11881,7 +12004,7 @@ class SymbolicSubSpace(SubSpace):
     # -- private factory helper: build + wire the SyntacticLayer -----
     def _resolve_hidden_dim(self, n_slots):
         try:
-            configured = int(TheXMLConfig.get("SymbolicSpace.syntacticHiddenDim"))
+            configured = int(TheXMLConfig.get("SymbolSpace.syntacticHiddenDim"))
             if configured > 0:
                 return configured
         except (KeyError, TypeError, ValueError):
@@ -12056,7 +12179,7 @@ class SymbolicSubSpace(SubSpace):
         layer = build_space_syntactic_layer(
             space, self, tier=tier,
             builtin_layers=builtin_layers)
-        # Register the new layer's parameters with the SymbolicSpace param
+        # Register the new layer's parameters with the SymbolSpace param
         # list so the optimizer scan sees the lazily-constructed
         # GrammarLayer instances. The space already owns the built-in
         # parametrized fold layers (PiLayer / SigmaLayer / NotLayer /
@@ -12407,7 +12530,7 @@ class SymbolicSubSpace(SubSpace):
         """Return-and-clear the per-row sentence-completed signal.
 
         Outer loop pattern (post-runBatch):
-          ``for b in symbolicSpace.drain_sentence_completed(): soft_reset(b)``
+          ``for b in symbolSpace.drain_sentence_completed(): soft_reset(b)``
 
         Returns a ``list[int]`` of source-row indices whose derivation
         completed during the last compose; the underlying buffer is then
@@ -12443,7 +12566,7 @@ class SymbolicSubSpace(SubSpace):
         batch = int(batch)
         if batch == self.batch:
             # Cascade still runs in case callers grew their own state
-            # without going through the SymbolicSpace.batch counter.
+            # without going through the SymbolSpace.batch counter.
             self.category_stack.ensure_batch(batch)
             self.reconstruction_stack.ensure_batch(batch)
             self._ensure_stm_batch(batch)
@@ -12503,7 +12626,175 @@ class SymbolicSubSpace(SubSpace):
             self._sentence_completed = [False] * int(B)
 
 
-# The ``SymbolicSpace = SymbolicSubSpace`` alias was retired with Phase G of
-# doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md: all call
-# sites have been migrated to ``SymbolicSubSpace`` directly. The XML
-# config section name ``<SymbolicSpace>`` is preserved unchanged.
+# Plain-attr writes that the held SymbolicSubSpace coordinator reads back
+# INTERNALLY must forward through ``SymbolSpace.__setattr__`` -- otherwise an
+# external ``symbolSpace.recur_pass = t`` would land on the wrapper while the
+# coordinator's own ``self.recur_pass`` read never sees it.
+_SYMBOLSPACE_FORWARD_WRITES = {
+    'recur_pass', 'serial_mode', 'normalizer',
+    '_per_sentence_initialized', '_target_cursor_length',
+}
+
+
+class SymbolSpace(PerceptualSpace):
+    """The unified grammar/symbol container (2026-06-21 SymbolSpace refactor,
+    Stage 3).
+
+    OWNS the ``SymbolicSubSpace`` coordinator (the typed-STM stack + grammar
+    dispatch carrier) and is the home for the per-tier SyntacticLayers and (Stage
+    4) the symbol tables. It is a transparent CONTAINER: every ``symbolSpace.X``
+    call site keeps working by FORWARDING to the held coordinator -- reads fall
+    through ``__getattr__``, and the plain-attr writes the coordinator reads back
+    internally (``_SYMBOLSPACE_FORWARD_WRITES`` + anything it already owns)
+    forward through ``__setattr__``. Registered submodules / parameters stay on
+    SymbolSpace.
+
+    It SUBCLASSES ``PerceptualSpace`` (so ``isinstance(symbolSpace,
+    PerceptualSpace)`` holds -- SS is a peer perceptual tower alongside
+    PartSpace/WholeSpace, the third ``.what``/``.where`` carrier) but constructs
+    via ``nn.Module.__init__``, deliberately SKIPPING ``Space.__init__``'s
+    object/what/where/when VQ-basis construction this coordinator must not own.
+    The eight Space-contract members defined on BOTH ``Space`` and the held
+    ``SymbolicSubSpace`` (``Reset`` / ``Start`` / ``End`` / ``paramUpdate`` /
+    ``set_sigma`` / ``getParameters`` / ``attach_knowledge`` / ``knowledge``) are
+    EXPLICITLY overridden below to delegate to the coordinator -- the inherited
+    ``Space`` versions would otherwise SHADOW it (``__getattr__`` only catches
+    *missing* attrs), breaking e.g. ``ss.Reset()``'s STM re-arm. Transparent
+    forwarding is byte-identical to the pre-refactor behaviour where
+    ``m.symbolSpace`` *was* the coordinator.
+    """
+
+    config_section = "SymbolSpace"
+
+    def __init__(self, perceptualSpace, conceptualSpace, wholeSpace,
+                 nPercepts, nConcepts, nSymbols, concept_dim, symbol_dim):
+        nn.Module.__init__(self)
+        self.subspace = SymbolicSubSpace(
+            perceptualSpace=perceptualSpace,
+            conceptualSpace=conceptualSpace,
+            wholeSpace=wholeSpace,
+            nPercepts=nPercepts,
+            nConcepts=nConcepts,
+            nSymbols=nSymbols,
+            concept_dim=concept_dim,
+            symbol_dim=symbol_dim,
+        )
+        # SymbolicSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
+        # back-ref at ITSELF (the coordinator); re-point them at THIS container so
+        # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline
+        # carry contract). ``attach_symbolSpace`` uses object.__setattr__ -> no
+        # nn.Module cycle.
+        for _sp in (perceptualSpace, conceptualSpace, wholeSpace):
+            if _sp is not None and hasattr(_sp, 'attach_symbolSpace'):
+                _sp.attach_symbolSpace(self)
+
+    # ``forward_symbol`` (the SymbolSpace->WholeSpace reach for the SS bind leg)
+    # was RETIRED 2026-06-21: the leg is now CS-MEDIATED. ConceptualSpace.
+    # _build_symbol_leg reads the order-raising codes and syncs them onto
+    # SS.subspace.what, so SymbolSpace no longer reaches WholeSpace -- CS, which
+    # sees all three towers in its forward, does it. See Spaces.py
+    # ConceptualSpace._build_symbol_leg + bind_streams.
+
+    # -- attribute forwarding to the held coordinator --------------------
+    def __getattr__(self, name):
+        # nn.Module.__getattr__ resolves registered submodules / params /
+        # buffers and real instance attrs first; everything else (the
+        # coordinator's API + Space-contract fields) forwards to the held
+        # SymbolicSubSpace. Guarded so a lookup before ``subspace`` is
+        # registered raises cleanly instead of recursing.
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            sub = self.__dict__.get('_modules', {}).get('subspace')
+            if sub is not None:
+                return getattr(sub, name)
+            raise
+
+    def __setattr__(self, name, value):
+        # Submodules / parameters register on SymbolSpace. Plain-attr writes the
+        # coordinator already owns (or in the explicit forward set) forward to it
+        # so the coordinator's internal reads observe the external write.
+        if not isinstance(value, (nn.Module, nn.Parameter)):
+            sub = self.__dict__.get('_modules', {}).get('subspace')
+            if (sub is not None and name != 'subspace'
+                    and (name in _SYMBOLSPACE_FORWARD_WRITES
+                         or (hasattr(sub, name)
+                             and not hasattr(type(self), name)))):
+                # Forward DATA writes the subspace owns -- but NOT assignments to
+                # names SymbolSpace itself defines (its override methods /
+                # properties), so e.g. a test spying ``ss.Reset = fn`` replaces
+                # SymbolSpace's Reset rather than looping through the subspace.
+                setattr(sub, name, value)
+                return
+        super().__setattr__(name, value)
+
+    # -- Space-method OVERLAP: explicit overrides delegating to the subspace --
+    # These 8 members are defined on BOTH ``Space`` and the SymbolicSubSpace; the
+    # inherited ``Space`` versions would shadow the subspace's (``__getattr__``
+    # only catches MISSING attrs), so we override them to run the subspace's
+    # implementation. (Step 2 of the decomposition migrates the grammar half UP
+    # into this Space; these delegations shrink as that lands.)
+    def Reset(self, *a, **k):
+        return self.subspace.Reset(*a, **k)
+
+    def Start(self, *a, **k):
+        return self.subspace.Start(*a, **k)
+
+    def End(self, *a, **k):
+        return self.subspace.End(*a, **k)
+
+    def paramUpdate(self, *a, **k):
+        return self.subspace.paramUpdate(*a, **k)
+
+    def set_sigma(self, *a, **k):
+        return self.subspace.set_sigma(*a, **k)
+
+    def getParameters(self, *a, **k):
+        return self.subspace.getParameters(*a, **k)
+
+    def attach_knowledge(self, *a, **k):
+        return self.subspace.attach_knowledge(*a, **k)
+
+    @property
+    def knowledge(self):
+        return self.subspace.knowledge
+
+    # -- the CS coupling interface: forward / reverse ---------------------
+    # CS interacts with SymbolSpace ONLY through these (the grammar compose /
+    # generate dispatch over a C-tier STM snapshot CS provides). Default-only
+    # grammars run inline (traceable under fullgraph=True); full-router grammars
+    # run in a @torch.compiler.disable eager island (their per-row rule-id
+    # bookkeeping is data-dependent host control flow dynamo cannot guard on; the
+    # products are host dicts read before captured regions, so the island changes
+    # no numerics). Moved here from Models._chart_compose_at_C / _ss_*_eager.
+    def forward(self, snap):
+        """Grammar COMPOSE over the STM snapshot (populates current_rules)."""
+        if snap is None:
+            return
+        if getattr(self, '_grammar_is_default_only', True):
+            self.compose(snap)
+        else:
+            self._compose_eager(snap)
+
+    def reverse(self, snap):
+        """Grammar GENERATE over the STM snapshot (populates generate_rules)."""
+        if snap is None:
+            return
+        if getattr(self, '_grammar_is_default_only', True):
+            self.generate(snap)
+        else:
+            self._generate_eager(snap)
+
+    @torch.compiler.disable
+    def _compose_eager(self, snap):
+        self.compose(snap)
+
+    @torch.compiler.disable
+    def _generate_eager(self, snap):
+        self.generate(snap)
+
+
+# The historical ``SymbolSpace = SymbolicSubSpace`` alias (retired Phase G of
+# doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md) is now a REAL
+# container Space (``SymbolSpace`` above) that OWNS the SymbolicSubSpace. The XML
+# config section name ``<SymbolSpace>`` is preserved unchanged.

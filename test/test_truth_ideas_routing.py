@@ -130,8 +130,8 @@ class TestRoutingFlagOff(unittest.TestCase):
     def test_flag_off_never_uses_relative_store(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
-        store = m.symbolicSpace.relative_store
+        ws = cs.terminalSymbolSpace_ref
+        store = m.symbolSpace.relative_store
         self.assertFalse(getattr(cs, "_truth_ideas", False),
                          "fixture must default truthIdeas OFF")
         cs.truth_criterion = 0.3
@@ -159,8 +159,8 @@ class TestRoutingReducible(unittest.TestCase):
     def test_reducible_routes_to_ss_meta(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
-        store = m.symbolicSpace.relative_store
+        ws = cs.terminalSymbolSpace_ref
+        store = m.symbolSpace.relative_store
         cs._truth_ideas = True
         cs.truth_criterion = 0.3
         _accept_all(cs)               # children == 1.0 -> reducible
@@ -190,8 +190,8 @@ class TestRoutingIneffable(unittest.TestCase):
     def test_ineffable_routes_to_relative_store(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
-        store = m.symbolicSpace.relative_store
+        ws = cs.terminalSymbolSpace_ref
+        store = m.symbolSpace.relative_store
         cs._truth_ideas = True
         _accept_but_ineffable(cs)
         # Pin the tetralemma so the collapsed degree is a known non-zero.
@@ -234,7 +234,7 @@ class TestRoutingIneffable(unittest.TestCase):
         path so the relation is never silently dropped."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs._truth_ideas = True
         _accept_but_ineffable(cs)
         cs._relative_store_for_learning = lambda: None

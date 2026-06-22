@@ -3416,10 +3416,12 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
                 continue
             if isinstance(space, Models.ConceptualSpace):
                 continue
-            # SymbolicSubSpace carries the per-sentence grammar / serial-
-            # processing state, not a data SubSpace; ``space.subspace``
-            # is ``None`` by design (the SR-parser stack was retired
-            # into ConceptualSpace.stm 2026-05-20).
+            # SymbolSpace (2026-06-21 refactor) is a grammar/symbol container
+            # whose ``.subspace`` is the SymbolicSubSpace coordinator (per-
+            # sentence grammar / typed-STM state), not a data SubSpace that
+            # computes a forward activation -- skip it.
+            if isinstance(space, Models.SymbolSpace):
+                continue
             sub = getattr(space, 'subspace', None)
             if sub is None:
                 continue

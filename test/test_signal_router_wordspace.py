@@ -43,7 +43,7 @@ class _Stub(nn.Module):
         return left + right
 
 
-class _StubSymbolicSpace:
+class _StubSymbolSpace:
     def __init__(self):
         self.current_rules = {}
         self.generate_rules = {}
@@ -56,7 +56,7 @@ class _StubSymbolicSpace:
 def test_language_layer_generate_emits_rules_dict_after_compose():
     router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[3], tier="S")
-    ss = _StubSymbolicSpace()
+    ss = _StubSymbolSpace()
     target = torch.randn(2, 4, 4)
     router.compose(target, word_space=ss)
     g = router.generate(target, word_space=ss)
@@ -73,7 +73,7 @@ def test_language_layer_generate_emits_rules_dict_after_compose():
 def test_language_layer_compose_populates_current_rules():
     router = _make_signal_router()
     router.attach_layer_ops(ops=[_Stub()], rule_ids=[7], tier="S")
-    ss = _StubSymbolicSpace()
+    ss = _StubSymbolSpace()
     rules = router.compose(torch.randn(2, 4, 4), word_space=ss)
     assert isinstance(rules, dict)
     assert "S" in rules

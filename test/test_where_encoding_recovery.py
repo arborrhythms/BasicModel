@@ -70,7 +70,7 @@ def _make_radix_model():
 # ---------------------------------------------------------------------------
 
 
-class TestSymbolicSpaceAllocatePosition(unittest.TestCase):
+class TestSymbolSpaceAllocatePosition(unittest.TestCase):
     """Monotonic position counter on WholeSpace; position 0 reserved."""
 
     def test_allocate_starts_at_one(self):

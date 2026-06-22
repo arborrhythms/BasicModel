@@ -184,7 +184,7 @@ def static_architecture_diagram() -> Path:
         "symtab": (1345, 460, 1705, 580, "13. CS Symbol Table", "reference rows\nwide/deep remap", FILL_GOLD),
         "stm": (1345, 610, 1705, 730, "14. STM", "working set\nsentence root", FILL_GOLD),
 
-        "word": (1785, 130, 2265, 255, "15. SymbolicSpace", "grammar CPU\ntruth/discourse host", FILL_BLUE),
+        "word": (1785, 130, 2265, 255, "15. SymbolSpace", "grammar CPU\ntruth/discourse host", FILL_BLUE),
         "attn": (1785, 285, 2265, 405, "16. Semantic Attention", "single intent primes\nall codebooks", FILL_BLUE),
         "router": (1785, 435, 2265, 555, "17. LanguageLayer", "signal router\ncopy/reduce", FILL_BLUE),
         "grammar": (1785, 585, 2265, 705, "18. Grammar", "rules, signatures\nprobabilities", FILL_BLUE),
@@ -457,7 +457,7 @@ def build_docx(images: dict[str, Path]) -> None:
     add_figure(
         doc,
         images["static"],
-        "Figure 1. Static decomposition: entrypoints, model factory/runtime, five-space body, SymbolicSpace grammar/truth host, codebook towers, and training runtime.",
+        "Figure 1. Static decomposition: entrypoints, model factory/runtime, five-space body, SymbolSpace grammar/truth host, codebook towers, and training runtime.",
     )
 
     p = para(
@@ -469,7 +469,7 @@ def build_docx(images: dict[str, Path]) -> None:
         set_font(run)
     para(
         doc,
-        "The SymbolicSpace/SymbolicSubSpace sidecar owns the grammar CPU, semantic attention, truth admission, taxonomy, and discourse prediction that act on the STM and codebook towers."
+        "The SymbolSpace/SymbolicSubSpace sidecar owns the grammar CPU, semantic attention, truth admission, taxonomy, and discourse prediction that act on the STM and codebook towers."
     )
 
     doc.add_heading("2. Modules and Responsibilities", level=1)
@@ -481,7 +481,7 @@ def build_docx(images: dict[str, Path]) -> None:
             "PartSpace: bottom-up synthesis tower. It owns Sigma, surface-keyed lexicon/MPHF front ends, and the extent/object codebook used for extension learning.",
             "ConceptualSpace: working conceptual interface. It hosts STM, corpus-callosum mixing, and the symbol-table/re-reference machinery that lets nameless percepts cross into reference-bearing symbols.",
             "WholeSpace: top-down analysis tower. It owns Pi, the unified word/symbol codebook, paired orthographic/semantic rows, and codebook-write grammar operations.",
-            "SymbolicSpace: grammar and truth host. LanguageLayer scores copy/reduce routes over STM; Grammar provides rules and signatures; GrammarLayer ops perform logic, mereology, lift/lower, and grammatical transformations.",
+            "SymbolSpace: grammar and truth host. LanguageLayer scores copy/reduce routes over STM; Grammar provides rules and signatures; GrammarLayer ops perform logic, mereology, lift/lower, and grammatical transformations.",
             "Attention: a single intent code, produced by the parallel parse, primes all relevant codebooks. It biases recognition and retrieval over PS/SS towers without changing grammar-rule dispatch.",
             "Truth and Taxonomy: TruthLayer checks propositions for consistency before admission. AbsoluteTruth is encoded as symbolic truth; RelativeTruth is stored as a taxonomic relation and reflected geometrically as part/whole structure over symbols.",
             "Training runtime: runBatch/runEpoch implement the compute brick, losses, optimizer step, checkpointing, and optional compiled-step path.",
@@ -696,14 +696,14 @@ def build_pdf(images: dict[str, Path]) -> None:
     story.extend(
         pdf_figure(
             images["static"],
-            "Figure 1. Static decomposition: entrypoints, model factory/runtime, five-space body, SymbolicSpace grammar/truth host, codebook towers, and training runtime.",
+            "Figure 1. Static decomposition: entrypoints, model factory/runtime, five-space body, SymbolSpace grammar/truth host, codebook towers, and training runtime.",
             styles,
         )
     )
     story.append(
         pdf_p(
             "Pipeline. InputSpace -> PartSpace -> ConceptualSpace -> WholeSpace -> OutputSpace. "
-            "The SymbolicSpace/SymbolicSubSpace sidecar owns the grammar CPU, semantic attention, truth "
+            "The SymbolSpace/SymbolicSubSpace sidecar owns the grammar CPU, semantic attention, truth "
             "admission, taxonomy, and discourse prediction that act on the STM and codebook towers.",
             styles["Body"],
         )
@@ -718,7 +718,7 @@ def build_pdf(images: dict[str, Path]) -> None:
                 "PartSpace: bottom-up synthesis tower. It owns Sigma, surface-keyed lexicon/MPHF front ends, and the extent/object codebook used for extension learning.",
                 "ConceptualSpace: working conceptual interface. It hosts STM, corpus-callosum mixing, and the symbol-table/re-reference machinery that lets nameless percepts cross into reference-bearing symbols.",
                 "WholeSpace: top-down analysis tower. It owns Pi, the unified word/symbol codebook, paired orthographic/semantic rows, and codebook-write grammar operations.",
-                "SymbolicSpace: grammar and truth host. LanguageLayer scores copy/reduce routes over STM; Grammar provides rules and signatures; GrammarLayer ops perform logic, mereology, lift/lower, and grammatical transformations.",
+                "SymbolSpace: grammar and truth host. LanguageLayer scores copy/reduce routes over STM; Grammar provides rules and signatures; GrammarLayer ops perform logic, mereology, lift/lower, and grammatical transformations.",
                 "Attention: a single intent code, produced by the parallel parse, primes all relevant codebooks. It biases recognition and retrieval over PS/SS towers without changing grammar-rule dispatch.",
                 "Truth and Taxonomy: TruthLayer checks propositions for consistency before admission. AbsoluteTruth is encoded as symbolic truth; RelativeTruth is stored as a taxonomic relation and reflected geometrically as part/whole structure over symbols.",
                 "Training runtime: runBatch/runEpoch implement the compute brick, losses, optimizer step, checkpointing, and optional compiled-step path.",

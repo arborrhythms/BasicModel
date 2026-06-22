@@ -57,7 +57,7 @@ def test_model_attaches_normalizer_to_every_space():
     model, _ = BaseModel.from_config(config_path, data=TheData)
 
     # Collect every space from self.spaces (covers all spaces in both
-    # BasicModel and BasicModel, including symbolicSpace when present).
+    # BasicModel and BasicModel, including symbolSpace when present).
     spaces_to_check = list(enumerate(model.spaces))
 
     assert spaces_to_check, "model.spaces is empty — no spaces to check"

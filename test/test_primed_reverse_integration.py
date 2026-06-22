@@ -55,7 +55,7 @@ def _bare_word_space(batch=1):
 
 
 def _scenario():
-    """Set up a SymbolicSpace + KnowledgeView + competing-NP3 W codebook.
+    """Set up a SymbolSpace + KnowledgeView + competing-NP3 W codebook.
 
     Returns (ss, view, W, y, np3_idx, np3_alt_value).
 

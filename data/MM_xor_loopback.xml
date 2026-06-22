@@ -95,7 +95,7 @@
     <nOutput>1</nOutput>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <start>S</start>
       <grammar>
@@ -104,6 +104,6 @@
         <S>S = union(S, S)</S>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

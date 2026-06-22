@@ -1,11 +1,5 @@
 
-* Grammar-inverse handoff — doc/plans/2026-06-19-grammar-inverses-handoff.md
-The headline finding (mapped + adversarially verified over 19 operations):
-
-Goal 1 (keep syntax, fill words) needs no new inverses. The kept parse tree means generate_rules drives the existing, complete reverse path; the work is masking + leaf-fill wiring.
-Goal 2 (parse-tree-deleted) is a decoupling, not a re-derivation. Every structural-math inverse (ConceptualCombine, Lift/Lower, Sigma/Pi, PartSpace.reverse, Embedding.decode_reverse_meta) is already complete and parse-independent. What's missing is the driver: today the decode reads which category to emit from the chart; goal 2 must read it from the primed symbolic space. Six spots to change behind a parseFree mode — stub _chart_generate_from_stm/_chart_compose_at_C, swap SyntacticLayer.reverse and LanguageLayer.reverse_stack to attention-driven selection, make the STM relative-mask symbol-driven, stub SymbolicSpace.generate.
-And this session's attention work is the substrate: ReadingAttention/GlobalAttention are the "primed symbolic space" that replaces generate_rules as the decode driver. So (A)+(B) feed directly into goal 2 / deliverable (C).
-
+* Compile is failing for python bin/Models.py data/MM_20M.xml
 
 * WholeSpace property mechanism — I made a scoping call worth confirming. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
 

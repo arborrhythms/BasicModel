@@ -94,9 +94,11 @@ eigenbasis (the LDU diagonal is the eigenvalue-like component,
 [Layers.py:1109](bin/Layers.py:1109)), made sparse by an in-forward
 soft-threshold plus the L1 hook `gate_l1_loss`. The edit is a **zero-init
 residual branch** (untrained ⇒ no-op ⇒ the sigma fold), and stashes an
-introspectable `purchase_v` diagnostic — a first, bounded form of the emitted
-semantic delta. Gated by `<verbEigEdit>`. Implementation: `LiftLayer.forward` /
-`_apply_verb_edit` ([Language.py](bin/Language.py)). Source proposal:
+introspectable `adverb_purchase` diagnostic — a first, bounded form of the emitted
+semantic delta. NOTE (2026-06-20): the eig-based *verb* edit was removed (the verb
+is the lift operator itself); this mechanism is now the **adverb** eigenmodifier.
+Gated by `<adverbEigEdit>`. Implementation: `LiftLayer.apply_adverb`
+([Language.py](bin/Language.py)). Source proposal:
 [`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
 
 This is the firewall's verb example made real: the same NP participates in

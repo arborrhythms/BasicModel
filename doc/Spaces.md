@@ -1,7 +1,20 @@
 # Spaces
 
+> **2026-06-21 terminology note (one noun per tier).** This doc follows the
+> percept / concept / symbol convention
+> (`doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`): a **percept**
+> is a PartSpace/WholeSpace thing (dimensionally-embedded, extensional; the two
+> subtypes are **part-percepts** = atoms, σ, and **whole-percepts** =
+> properties/regions, π); a **concept** is a ConceptualSpace relation tying one
+> part-percept ↔ one whole-percept (the Concept codebook); a **symbol** is a
+> SymbolSpace 0-D reference to a concept (the symbol codebook). The prose below
+> reserves "symbol" for genuine SymbolSpace things; WholeSpace content is
+> whole-percepts, and its compact `[0,1]` emission is the symbol that migrates to
+> SymbolSpace. Code identifiers (e.g. `get_symbols`, `subspace.what`) are
+> unchanged — those get a separate code pass.
+
 > **2026-06-12 update (part/whole rename — the perceptual split).**
-> `PerceptualSpace` → **`PartSpace`** and `SymbolicSpace` →
+> `PerceptualSpace` → **`PartSpace`** and `SymbolSpace` →
 > **`WholeSpace`**; both now subclass a thin shared
 > `PerceptualSpace(Space)` base (no parameters, no submodules —
 > state-dict keys unchanged). Both views are *perceptual*: PartSpace
@@ -9,7 +22,7 @@
 > top-down over unity (Pi). XML config sections and grammar-file
 > scopes are renamed to `<PartSpace>` / `<WholeSpace>` to match. The
 > PS/SS shorthand in older notes reads part-side/whole-side. The freed
-> name `SymbolicSpace` was **reintroduced 2026-06-19** as the grammar/word
+> name `SymbolSpace` was **reintroduced 2026-06-19** as the grammar/word
 > tier (formerly `WordSpace`); see `doc/old/2026-06-19-handoff.md`.
 >
 > **At the corpus callosum, objects are analysed and synthesized** —
@@ -22,7 +35,7 @@
 > *sign* is a quantized version of the referent (same space, snapped
 > to a codebook row). A *symbol* is an unrelated version of the
 > referent — an arbitrary code of much lower dimensionality (cf. the
-> zero-banded symbol codes below: wholes of symbols carry
+> zero-banded symbol codes below: whole-percepts of symbols carry
 > `.where = .when = 0`).
 >
 > **`subspace.what`: atoms vs properties.** On `PartSpace` the `.what`
@@ -73,7 +86,8 @@
 >   (`References.ReferenceTable`) hosted on WholeSpace
 >   (search-then-mint gate; `adopt_stage0_evidence` stays ground-half
 >   memory, not naming). Symbols are atomic, zero-banded codes —
->   wholes of symbols carry `.where = .when = 0` (the Mind marker).
+>   whole-percepts of symbols carry `.where = .when = 0` (the Mind
+>   marker).
 
 > **2026-06-09 update (analysis/synthesis orientation — supersedes the
 > ownership notes below).** The corrected orientation
@@ -124,7 +138,7 @@
 ## Overview
 
 BasicModel is a pipeline of five **spaces** plus a grammar host
-(`SymbolicSpace`), each performing a distinct representational
+(`SymbolSpace`), each performing a distinct representational
 transformation. Data flows forward from raw input to task output; the
 reverse pass reconstructs the original input from the symbolic
 representation. The legacy `SubwholeSpace` and `SyntacticSpace`
@@ -284,11 +298,11 @@ mode (default butterfly). Closes the XOR convergence target
 | InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` |
 | PartSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors. No negation operator | Signed hypercube `[-1,1]^d` |
 | ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude (tanh-bounded). Event norm on `subspace.activation` | `[-1,1]` per element (tanh) |
-| WholeSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time | `[0,1]` presence |
+| WholeSpace | Whole-percepts (`[0,1]` presence). The compact emission is the symbol that references a concept; one symbol encoded at a time | `[0,1]` presence |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
 `SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
-Grammar / chart machinery lives on `SymbolicSpace` and is attached to
+Grammar / chart machinery lives on `SymbolSpace` and is attached to
 `WholeSpace` (the canonical grammar host).
 
 **Data scaling.** `Data` computes global `input_min`/`input_max` and
@@ -296,9 +310,10 @@ Grammar / chart machinery lives on `SymbolicSpace` and is attached to
 "input")` to scale to `[-1, 1]`; OutputSpace uses `Data.denormalize(x,
 "output")` to restore the original output range.
 
-**Symbols as percepts.** Symbols live in `[0, 1]`; since conceptual activations
-range `[-1, 1]`, the mapping is `symbol = (activation + 1) / 2`.
-`SubSpace.get_symbols()` / `set_symbols()` perform the conversion.
+**Whole-percept presence.** Whole-percepts live in `[0, 1]`; since conceptual
+activations range `[-1, 1]`, the mapping is `presence = (activation + 1) / 2`.
+`SubSpace.get_symbols()` / `set_symbols()` (code identifiers unchanged) perform
+the conversion.
 
 **Demuxed mode.** When `InputSpace.demuxed=true`, what/where/when components
 are stored independently in the SubSpace rather than concatenated. ModalSpace
@@ -314,10 +329,10 @@ see an identical muxed tensor via `materialize()`.
 | Space | Codebook geometry | Stored | Metric | Retrieval |
 |-------|------------------|--------|--------|-----------|
 | PartSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| WholeSpace | $[-1, +1]^d$ hypercube | Symbol *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
+| WholeSpace | $[-1, +1]^d$ hypercube | Whole-percept *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
 | ConceptualSpace | Unit L2-norm directions (named directions) | Concept *directions*; input magnitude in $[-1, +1]$ encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ |
 
-### Euclidean (Perceptual / Symbolic)
+### Euclidean (Perceptual — Part / Whole)
 
 These codebooks store *what something looks like* --- $0.5 \cdot v$ carries half as
 much "of feature v" as $1.0 \cdot v$, so the right notion is coordinate-wise
@@ -437,7 +452,7 @@ quotient). Together they guarantee the parthood lattice is well-formed.
 ## Lexicon (Projective Unit Ball)
 
 The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) backs PartSpace
-word embeddings and WholeSpace symbol prototypes. Each row is a vector
+word embeddings and WholeSpace whole-percept prototypes. Each row is a vector
 $w_i$ in the **projective unit ball** --- the closed ball $B^D = \{x : \|x\|_2
 \le 1\}$ with the **negation identification** $w \sim -w$ realizing real
 projective space $\mathbb{RP}^D$.
@@ -919,8 +934,8 @@ access. The information bottleneck for word identity.
 
 **Owned state.**
 
-- `self.subspace.what`: a `Codebook` carrying symbol prototypes at width
-  `nDim`. Includes per-row meronomy storage (`category_ids`,
+- `self.subspace.what`: a `Codebook` carrying whole-percept prototypes at
+  width `nDim`. Includes per-row meronomy storage (`category_ids`,
   `part_parents`, `category_logits`). When the configured codebook is
   `<codebook>quantize</codebook>`, the codebook is a trainable
   `nn.Parameter` updated under Gray (1990) EMA with **LBG-style
@@ -957,8 +972,10 @@ or directly via `insert_paired_word` at write time. Symbol-side grammar
 math lives on the GrammarLayer subclasses (intersection, union,
 lift, lower, etc.), not on SS itself.
 
-**Symbols are percepts.** Each symbol represents presence (`1`) or
-absence (`0`) of a named entity. Mapping: `symbol = (activation + 1) / 2`.
+**Whole-percept presence.** Each whole-percept represents presence (`1`) or
+absence (`0`) of a named entity (the compact emission migrating to SymbolSpace
+is the symbol; WholeSpace itself holds whole-percepts). Mapping:
+`presence = (activation + 1) / 2`.
 
 **Lookup chain (surface → meaning):**
 
@@ -967,7 +984,7 @@ absence (`0`) of a named entity. Mapping: `symbol = (activation + 1) / 2`.
    Embedding).
 3. The PS Lexicon vector (CS-space-dimensioned) flows through
    `PS.forward` → CS via STM push.
-4. When CS-state activations need to match a symbol, they quantize
+4. When CS-state activations need to match a whole-percept, they quantize
    against `SS.subspace.what` (the codebook).
 5. Quantization can resolve to an orth row; `get_semantic_row(orth_idx)`
    returns the parented semantic row → the meaning.
@@ -1030,7 +1047,7 @@ and [Philosophy.md](Philosophy.md).
 ## SyntacticSpace --- retired
 
 The standalone `SyntacticSpace` class has been retired. Grammar /
-parser / derivation-tree machinery now lives on `SymbolicSpace`, which
+parser / derivation-tree machinery now lives on `SymbolSpace`, which
 attaches a `SyntacticLayer` to `WholeSpace` (the canonical grammar
 host). The binary-derivation behavior previously documented here
 is preserved by `WholeSpace.compose`; words are still

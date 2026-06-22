@@ -151,7 +151,7 @@ def test_space_forward_arities():
     Post-2026-05-21 SentenceState dissolution: the per-sentence ``work``
     carrier was retired. Grammar / serial-processing state lives directly
     on ``SymbolicSubSpace`` (cursor, recur_pass) and is reached via
-    ``subspace.symbolicSpace``. Forwards take ONLY data SubSpaces.
+    ``subspace.symbolSpace``. Forwards take ONLY data SubSpaces.
     """
     import inspect
     from Spaces import (InputSpace, PartSpace, ModalSpace,

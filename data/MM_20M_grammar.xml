@@ -76,6 +76,16 @@
        codebook is small (serial grammar-op budget). -->
   <WholeSpace>
     <lexer>byte</lexer>
+    <!-- Per-space sigmaPi override: "last" (per-slot square fold) instead of
+         the architecture-global "butterfly". The serial grammar path sizes
+         the WS.pi butterfly cascade at next_pow2(inputShape[0] * nInputDim)
+         where inputShape[0] is the WIDE pre-merge slot count nPercepts>>t
+         (1024/512/256) -> a 2^20/2^21 cascade (~150M params, the bulk of the
+         ~114s build) over the wide grid. "last" gives a per-slot square fold
+         (nInputDim x nInputDim ~ 1M params/stage), keeping the symbolic tier
+         small; cross-slot reach at the symbolic tier is still provided by the
+         per-stage ConceptualCombine bind. -->
+    <butterfly>false</butterfly>
     <nInput>8</nInput>
     <nInputDim>1028</nInputDim>
     <nDim>8</nDim>
@@ -97,10 +107,10 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <grammar>role_collapsed.grammar</grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

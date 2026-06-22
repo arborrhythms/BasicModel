@@ -14,7 +14,7 @@ Pin each of the three learn-score factor methods in isolation:
 The factors are the test seam the plan requires: each is a separate
 overridable method, so the gating tests can monkeypatch them. These
 tests instead exercise the REAL factor computations against a fully-
-wired radix model (``terminalSymbolicSpace_ref`` + ``symbolicSpace.
+wired radix model (``terminalSymbolSpace_ref`` + ``symbolSpace.
 truth_layer``).
 """
 
@@ -69,7 +69,7 @@ class TestChildrenInCodebookFactor(unittest.TestCase):
     def test_known_children_score_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         D = int(cs.nDim)
         idea1 = torch.zeros(D)
         idea1[0] = 0.9
@@ -87,7 +87,7 @@ class TestChildrenInCodebookFactor(unittest.TestCase):
     def test_one_known_one_unknown_score_half(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         D = int(cs.nDim)
         # Tight threshold so a far-away idea is unambiguously "unknown".
         cs._learn_children_dist_threshold = 1e-3
@@ -120,7 +120,7 @@ class TestIsTruthObviousFactor(unittest.TestCase):
     def test_agreeing_truthset_scores_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.symbolicSpace.truth_layer
+        tl = cs.symbolSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # Two strongly-affirming truths -> assess()["support"] == 1.0.
@@ -137,7 +137,7 @@ class TestIsTruthObviousFactor(unittest.TestCase):
     def test_empty_truthset_scores_zero(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.symbolicSpace.truth_layer
+        tl = cs.symbolSpace.truth_layer
         tl.clear()
         # Empty -> support 0 -> nothing to agree with.
         score = cs._learn_score_is_truth_obvious(torch.ones(int(cs.nDim)))
@@ -151,7 +151,7 @@ class TestResolvesContradictionFactor(unittest.TestCase):
     def test_contradicting_truths_score_one(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.symbolicSpace.truth_layer
+        tl = cs.symbolSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # Affirm AND deny the same concept -> assess()["conflict"] == 1.0.
@@ -170,7 +170,7 @@ class TestResolvesContradictionFactor(unittest.TestCase):
     def test_consistent_truthset_scores_zero(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        tl = cs.symbolicSpace.truth_layer
+        tl = cs.symbolSpace.truth_layer
         tl.clear()
         D = int(tl.truths.shape[-1])
         # All-agreeing -> conflict 0 -> nothing to resolve.

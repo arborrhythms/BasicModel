@@ -70,7 +70,7 @@
     <nOutput>1</nOutput>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <ltmCapacity>64</ltmCapacity>
     <language>
       <start>S</start>
@@ -80,6 +80,6 @@
         <S>S = union(S, S)</S>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

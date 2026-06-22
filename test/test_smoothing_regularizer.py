@@ -91,9 +91,9 @@ def test_symbolic_space_reads_discontinuity_lambda_from_config():
     <nWhen>2</nWhen>
     <data><dataType>embedding</dataType></data>
   </architecture>
-  <SymbolicSpace>
+  <SymbolSpace>
     <language><grammar><S>C</S><C>P</C><P>I</P></grammar></language>
-  </SymbolicSpace>
+  </SymbolSpace>
   <InputSpace><nDim>8</nDim><nVectors>4</nVectors><nOutput>4</nOutput><nWhere>2</nWhere><nWhen>2</nWhen><codebook>true</codebook></InputSpace>
   <PartSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors><hasAttention>false</hasAttention><invertible>false</invertible></PartSpace>
   <ConceptualSpace><nOutput>4</nOutput><nDim>8</nDim><nVectors>4</nVectors><hasAttention>false</hasAttention><invertible>true</invertible><codebook>false</codebook></ConceptualSpace>

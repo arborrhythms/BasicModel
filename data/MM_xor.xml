@@ -77,11 +77,11 @@
     <nOutput>1</nOutput>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <start>S</start>
       <grammar>xor.grammar</grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

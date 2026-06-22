@@ -1,8 +1,8 @@
-"""Tests for the PoS codebook and PoS stack on SymbolicSpace.
+"""Tests for the PoS codebook and PoS stack on SymbolSpace.
 
 Tasks 3.2 and 3.4 (TDD harness) + Tasks 3.3 and 3.5 (implementation).
 
-SymbolicSpace cannot be constructed in isolation -- it requires real
+SymbolSpace cannot be constructed in isolation -- it requires real
 PartSpace, ConceptualSpace, and WholeSpace objects (it calls
 attach_wordSpace() on each home space and grammar.symbolic() etc.).
 We build the minimal chain using _populate_test_config + direct Space
@@ -38,12 +38,12 @@ from test_basicmodel import _populate_test_config
 # ---------------------------------------------------------------------------
 
 def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
-    """Construct the minimal SymbolicSpace via TheXMLConfig + direct constructors.
+    """Construct the minimal SymbolSpace via TheXMLConfig + direct constructors.
 
     Builds the full PartSpace -> ConceptualSpace -> WholeSpace chain
-    required by SymbolicSpace.__init__, then constructs SymbolicSpace from it.
+    required by SymbolSpace.__init__, then constructs SymbolSpace from it.
 
-    SymbolicSpace is NOT an isolated object: it back-wires all three home spaces
+    SymbolSpace is NOT an isolated object: it back-wires all three home spaces
     via attach_wordSpace(), configures TheGrammar, and reads TheXMLConfig for
     TruthLayer capacity and discourse gating.  The minimal chain is therefore
     required -- there is no lighter-weight path.

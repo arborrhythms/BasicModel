@@ -1,4 +1,4 @@
-"""Pipeline-carried SubSpace context: symbolicSpace, errors, serial_cache.
+"""Pipeline-carried SubSpace context: symbolSpace, errors, serial_cache.
 
 Covers Tasks 2, 3, 5, 8, 11 of the Pipeline Feed-Forward Architecture Plan
 (2026-04-22-pipeline-ff-architecture.md).
@@ -23,7 +23,7 @@ _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 @pytest.fixture
 def model():
-    """A BasicModel built from MM_xor.xml (has SymbolicSpace + discourse)."""
+    """A BasicModel built from MM_xor.xml (has SymbolSpace + discourse)."""
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
@@ -97,7 +97,7 @@ def _mk_subspace(n=8, d=10):
 
 def test_subspace_has_context_fields():
     # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
-    # retired the per-SubSpace ``symbolicSpace`` back-pointer; only the
+    # retired the per-SubSpace ``symbolSpace`` back-pointer; only the
     # ``errors`` and ``serial_cache`` pipeline carriers remain on SubSpace.
     ws = _mk_subspace()
     assert isinstance(ws.errors, Error)
@@ -143,14 +143,14 @@ def test_subspace_copy_context_preserves_downstream_writes():
 # ---------- Task 4: SymbolicSubSpace.last_svo and STM-residual ----------
 
 def test_wordspace_last_svo_default_invalid(model):
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     # Microbatch refactor (Task 2): SymbolicSubSpace.last_svo is per-row.
     # Default state has the valid-mask cleared on every row.
     assert not ss.svo_valid(0)
 
 
 def test_wordspace_stm_residual_none_when_no_discourse(model):
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     # Disable discourse for this test; stm_residual should pass through None.
     ss.discourse = None
     ss.arm_stm()
@@ -159,7 +159,7 @@ def test_wordspace_stm_residual_none_when_no_discourse(model):
 
 def test_wordspace_stm_residual_fires_once_per_sentence(model):
     """stm_residual fires once, then no-ops until Reset re-arms."""
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
 
     class _FakeDiscourse:
         def __init__(self):
@@ -189,7 +189,7 @@ def test_wordspace_stm_residual_fires_once_per_sentence(model):
 
 
 def test_wordspace_reset_clears_last_svo(model):
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     D = ss.svo_dim
     ss.set_last_svo(0, torch.zeros(D), torch.zeros(D), torch.zeros(D))
     assert ss.svo_valid(0)
@@ -198,10 +198,10 @@ def test_wordspace_reset_clears_last_svo(model):
 
 
 def test_last_svo_lives_on_wordspace_not_conceptualspace(model):
-    """last_svo moved to symbolicSpace; ConceptualSpace no longer owns it."""
+    """last_svo moved to symbolSpace; ConceptualSpace no longer owns it."""
     # Microbatch refactor (Task 2): per-row API is the contract.
-    assert hasattr(model.symbolicSpace, "set_last_svo")
-    assert hasattr(model.symbolicSpace, "svo_valid")
+    assert hasattr(model.symbolSpace, "set_last_svo")
+    assert hasattr(model.symbolSpace, "svo_valid")
     assert not hasattr(model.conceptualSpace, "_last_svo")
     assert not hasattr(model.conceptualSpace, "last_svo")
 
@@ -213,7 +213,7 @@ def test_codebook_reference_is_immutable(model):
         model.wholeSpace.codebook = None
 
 
-# ---------- Tasks 5 & 6: end-to-end symbolicSpace carry through pipeline ----------
+# ---------- Tasks 5 & 6: end-to-end symbolSpace carry through pipeline ----------
 
 def _run_one_forward(m):
     """Drive a single forward with a real XOR batch."""
@@ -228,25 +228,25 @@ def _run_one_forward(m):
             m.forward(inp)
 
 
-def test_input_space_has_symbolicSpace_after_set(model):
+def test_input_space_has_symbolSpace_after_set(model):
     # Phase G of doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md
-    # retired the per-SubSpace ``symbolicSpace`` back-pointer; the
+    # retired the per-SubSpace ``symbolSpace`` back-pointer; the
     # SymbolicSubSpace reference now lives on the owning Space.
-    assert model.inputSpace.symbolicSpace is model.symbolicSpace
+    assert model.inputSpace.symbolSpace is model.symbolSpace
 
 
-def test_output_space_carries_symbolicSpace(model):
+def test_output_space_carries_symbolSpace(model):
     _run_one_forward(model)
-    assert model.outputSpace.symbolicSpace is model.symbolicSpace
+    assert model.outputSpace.symbolSpace is model.symbolSpace
 
 
-def test_pipeline_spaces_carry_symbolicSpace(model):
+def test_pipeline_spaces_carry_symbolSpace(model):
     """Every pipeline Space holds a routing pointer to the model's SymbolicSubSpace."""
     _run_one_forward(model)
-    assert model.perceptualSpace.symbolicSpace is model.symbolicSpace
-    assert model.conceptualSpace.symbolicSpace is model.symbolicSpace
-    assert model.wholeSpace.symbolicSpace is model.symbolicSpace
-    assert model.outputSpace.symbolicSpace is model.symbolicSpace
+    assert model.perceptualSpace.symbolSpace is model.symbolSpace
+    assert model.conceptualSpace.symbolSpace is model.symbolSpace
+    assert model.wholeSpace.symbolSpace is model.symbolSpace
+    assert model.outputSpace.symbolSpace is model.symbolSpace
 
 
 # 2026-05-29: removed test_stm_residual_flows_through_conceptualspace.

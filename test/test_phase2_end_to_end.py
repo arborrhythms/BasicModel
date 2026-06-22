@@ -9,7 +9,7 @@ Verifies the Phase-2 primitives compose into a working pipeline:
   3. Load it back via ``load_knowledge_view``.
   4. Attach the loaded ``KnowledgeView`` to three Space subclasses.
   5. Each Space exposes its expected knowledge-derived fields:
-       - SymbolicSpace.knowledge       (view)
+       - SymbolSpace.knowledge       (view)
        - WholeSpace.references  (Parameter)
        - WholeSpace.order       (buffer)
        - PartSpace.wv.ref_ids (long)

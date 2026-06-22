@@ -17,7 +17,7 @@
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
         <xs:element name="WholeSpace" type="wholeSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
-        <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
+        <xs:element name="SymbolSpace" type="symbolSpaceType" minOccurs="0"/>
         <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
@@ -143,15 +143,14 @@
            widens its input (a fresh-basin extension of the MLP chooser).
            Default false: the chooser ignores category (byte-identical). -->
       <xs:element name="chooserCategoryContext" type="xs:boolean" minOccurs="0"/>
-      <!-- Verb sparse eigenvalue edit on lift(NP, VP) (doc/specs/
-           semantic_verb_np_mask_eigenvalue_proposal.md). When true, lift
-           applies the verb as a SPARSE eigenvalue edit of the NP, masked by
-           the noun CLASS the verb selects (class membership read from the NP's
-           own eigen-signature; no learned mask parameter), preserving the
-           NP complement: x2 = x1 + p_class (.) delta_v. The only per-verb
-           parameter is the sparse edit delta_v (built only when on). Default
-           false leaves lift's sigma fold byte-identical. -->
-      <xs:element name="verbEigEdit" type="xs:boolean" minOccurs="0"/>
+      <!-- Adverb sparse eigenvalue edit. The eig-based VERB edit was removed
+           (the verb is the lift operator); this is the ADVERB eigenmodifier:
+           when true, an adverb modifies a composed VP as a SPARSE eigenvalue
+           edit of the verb, masked by the VP's own eigen-signature (no learned
+           mask), preserving the rest: a2 = atanh(vp) + p_vp (.) delta_adv. The
+           only per-adverb parameter is the sparse edit delta_adv (built only
+           when on). Default false leaves lift's sigma fold byte-identical. -->
+      <xs:element name="adverbEigEdit" type="xs:boolean" minOccurs="0"/>
       <!-- Mereological order-raising (doc/specs/mereological-order-raising.md).
            When true, perception's autobind hook builds a meronymic lattice over
            the two towers: it mints objects at abstraction order 0 and raises
@@ -162,6 +161,11 @@
            WholeSpace codebooks. Default false: no table allocated, no raising
            (byte-identical). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
+           terminal ConceptualCombine is built with n_streams=3 and bind_streams
+           routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
+           false -> the 2-stream (PS, WS) bind -> byte-identical. -->
+      <xs:element name="symbolTower" type="xs:boolean" minOccurs="0"/>
       <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
            attention"). When true, a learned .where producer runs at each t>0
            subsymbolic pass and writes _passback_scope_where (the normalized
@@ -296,7 +300,7 @@
       <xs:element name="sentenceProtocol" type="xs:boolean" minOccurs="0"/>
       <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
            per-word router-fire gating for serial mode.
-             per-word  = fire symbolicSpace.compose once per word in the
+             per-word  = fire symbolSpace.compose once per word in the
                          serial per-word loop (intra-predictor routing
                          context); boundary fire OFF.
              boundary  = fire only at the sentence boundary
@@ -697,7 +701,7 @@
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <!-- Inter-sentence ARMA(p, q) next-sentence prediction
            (InterSentenceLayer). The layer's AR/MA orders and hidden
-           dim live under <SymbolicSpace> (armaP/armaQ/armaHiddenDim);
+           dim live under <SymbolSpace> (armaP/armaQ/armaHiddenDim);
            this scale is the loss weight applied on top of the
            per-batch ARMA MSE. -->
       <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
@@ -1058,7 +1062,7 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       SymbolicSpace section — unified container for grammar infrastructure
+       SymbolSpace section — unified container for grammar infrastructure
        (SyntacticLayers, TruthLayer) and the per-batch inter-sentence
        ARMA(p, q) predictor (InterSentenceLayer). Sentence-level AR
        lives here, not in the within-sentence body — the body is now
@@ -1068,7 +1072,7 @@
        (armaP / armaQ / armaHiddenDim); the loss weight lives under
        <architecture><training> as <armaScale>.
        ═══════════════════════════════════════════════════════════════════ -->
-  <xs:complexType name="symbolicSpaceType">
+  <xs:complexType name="symbolSpaceType">
     <xs:all>
       <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
@@ -1106,7 +1110,7 @@
       <!-- Number of P->C iterations per word in the per-word stem path. -->
       <xs:element name="iterationsPerWord" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Downward generation: when true, MentalModel.forward() emits a
-           codebook head via SymbolicSpace.reconstruct() and stashes it on
+           codebook head via SymbolSpace.reconstruct() and stashes it on
            self._predicted_head for downstream (e.g. loss) consumption. -->
       <xs:element name="downwardGeneration" type="xs:boolean" minOccurs="0"/>
       <xs:element name="language" type="languageType" minOccurs="0"/>
@@ -1125,7 +1129,7 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Language section (inside <SymbolicSpace>)
+       Language section (inside <SymbolSpace>)
        ═══════════════════════════════════════════════════════════════════ -->
   <!-- ``start`` may repeat: multiple ``<start>`` tags define accepted
        unreduced forms / start patterns (see test_grammar_start_rule), so

@@ -597,7 +597,7 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
     def test_objsize_4(self):  self._check(4)
 
 
-# TestSymbolicSpacePassthrough was removed in Stage 1 along with passThrough.
+# TestSymbolSpacePassthrough was removed in Stage 1 along with passThrough.
 
 
 class TestOutputSpaceReversePass(unittest.TestCase):

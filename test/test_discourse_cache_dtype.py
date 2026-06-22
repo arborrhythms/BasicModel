@@ -44,9 +44,9 @@ def test_staged_prediction_cast_to_amp_dtype(mode, dtype):
     _util.MODEL_AMP = mode
     try:
         m = _build_gate_model()
-        if m.symbolicSpace is None or m.symbolicSpace.discourse is None:
+        if m.symbolSpace is None or m.symbolSpace.discourse is None:
             pytest.skip("model has no discourse layer")
-        disc = m.symbolicSpace.discourse
+        disc = m.symbolSpace.discourse
         disc._staged_prediction = (
             torch.randn(1, 4, dtype=torch.float32),
             torch.ones(1, dtype=torch.float32))

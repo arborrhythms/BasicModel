@@ -44,11 +44,11 @@
 
   </architecture>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <grammar>role_collapsed.grammar</grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
   <InputSpace>
     <nDim>104</nDim>

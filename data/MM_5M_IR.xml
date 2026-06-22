@@ -85,7 +85,7 @@
   </OutputSpace>
 
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <!-- Start nonterminal: SyntacticLayer.compose marks a soft sentence
            boundary when row b's parse stack reduces to a single live leaf
@@ -97,6 +97,6 @@
         <S>S = union(S, S)</S>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

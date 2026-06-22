@@ -69,3 +69,76 @@ def analyze(token):
 
     # 3. Plain / unknown token -- role-neutral passthrough.
     return (token, {})
+
+
+# --------------------------------------------------------------------------
+# Generation direction (rewrite() Stage D2, doc/old/2026-06-20-idea-decoder.md
+# "rewrite()"): realize(lemma, features) -> surface form. The INVERSE of
+# ``analyze``, so the two together are the bidirectional surface realizer (many
+# surface forms <-> one lexeme). DUAL ROUTE ("words and rules"):
+#   1. a small IRREGULAR lookup (canonical closed-class forms) -- memorized;
+#   2. the regular -s / -ed / -ing rules (with CVC doubling / e-drop) -- productive.
+# Pure Python, table-driven; reuses surface_tense's irregular/tense knowledge.
+# (The productive route is rule-based here; a learned char-seq2seq is the upgrade
+# per the SIGMORPHON evidence -- inflection is string transduction.)
+# --------------------------------------------------------------------------
+
+# Canonical irregular GENERATION table: (lemma, tense, aspect_key) -> surface.
+# aspect_key is "PROGRESSIVE" (V-ing) or "SIMPLE". Person/number is not in the
+# feature bundle, so a canonical form is chosen (be+PRESENT -> "is").
+_IRREGULAR_GEN = {
+    ("run", "PRESENT", "SIMPLE"): "run", ("run", "PAST", "SIMPLE"): "ran",
+    ("run", "PRESENT", "PROGRESSIVE"): "running",
+    ("be", "PRESENT", "SIMPLE"): "is", ("be", "PAST", "SIMPLE"): "was",
+    ("be", "PRESENT", "PROGRESSIVE"): "being",
+    ("have", "PRESENT", "SIMPLE"): "has", ("have", "PAST", "SIMPLE"): "had",
+    ("do", "PRESENT", "SIMPLE"): "does", ("do", "PAST", "SIMPLE"): "did",
+    ("will", "FUTURE", "SIMPLE"): "will",
+}
+
+
+def _double_final(stem):
+    """Inverse of ``_strip_doubled``: double a final CVC consonant before a
+    vocalic suffix (``run`` -> ``runn``, ``stop`` -> ``stopp``). Skips w/x/y
+    and non-CVC endings."""
+    if (len(stem) >= 3
+            and stem[-1] not in _st._VOWELS and stem[-1] not in "wxy"
+            and stem[-2] in _st._VOWELS and stem[-3] not in _st._VOWELS):
+        return stem + stem[-1]
+    return stem
+
+
+def _regular_ing(lemma):
+    if lemma.endswith("e") and not lemma.endswith("ee") and len(lemma) > 2:
+        return lemma[:-1] + "ing"            # make -> making
+    return _double_final(lemma) + "ing"      # run -> running, walk -> walking
+
+
+def _regular_ed(lemma):
+    if lemma.endswith("e"):
+        return lemma + "d"                   # like -> liked
+    return _double_final(lemma) + "ed"       # stop -> stopped, walk -> walked
+
+
+def realize(lemma, features=None):
+    """``(lemma, features) -> surface form`` -- the inverse of ``analyze``.
+
+    ``features`` = ``{"tense": ..., "aspect": [...]}`` (as ``analyze`` returns).
+    Irregular lookup wins; otherwise the regular rule for the tense/aspect fires.
+    Unknown/empty features -> the lemma (PRESENT simple)."""
+    if not isinstance(lemma, str) or not lemma:
+        return lemma
+    features = features or {}
+    tense = features.get("tense", _st._DEFAULT_TENSE)
+    aspect = features.get("aspect", []) or []
+    ak = "PROGRESSIVE" if "PROGRESSIVE" in aspect else "SIMPLE"
+    surf = _IRREGULAR_GEN.get((lemma, tense, ak))
+    if surf is not None:
+        return surf
+    if ak == "PROGRESSIVE":
+        return _regular_ing(lemma)
+    if tense == "PAST":
+        return _regular_ed(lemma)
+    if tense == "FUTURE":
+        return "will " + lemma               # periphrastic future
+    return lemma                             # PRESENT simple

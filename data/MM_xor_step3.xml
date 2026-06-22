@@ -21,7 +21,7 @@
 
   </architecture>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <language>
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
@@ -36,7 +36,7 @@
         <S>lift(S, S)</S>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
   <InputSpace>
     <nOutput>6</nOutput>

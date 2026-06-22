@@ -4,20 +4,27 @@
 
 ![Three pieces: LLM vs BasicModel](diagrams/three_pieces.svg)
 
+> **Terminology (2026-06-21 convention).** One noun per tier: a **percept** is
+> a perceptual thing (PartSpace/WholeSpace, dimensionally-embedded, extensional;
+> *part* and *whole* are its two subtypes); a **concept** is a ConceptualSpace
+> relation tying one part-percept to one whole-percept (the Concept codebook);
+> a **symbol** is a SymbolSpace 0-D reference to a concept. The CS "symbol
+> table" is therefore the **Concept codebook** below.
+
 The architecture decomposes into three pieces; the first two run in
 parallel, the third is serial:
 
-1. **The mereological towers (and the symbol table).** In an LLM the
+1. **The mereological towers (and the Concept codebook).** In an LLM the
    mereology is completely subsymbolic — implicit in the weights,
    never surfaced. In BasicModel it is percept-based and symbolic: two
-   towers — the σ tower ascending bottom-up (extents, the PS codebook)
-   and the π tower descending top-down (intents, the SS codebook) —
-   linked by the word/object symbol table (`bin/References.py`), whose
-   rows are the references.
+   towers — the σ tower ascending bottom-up (part-percept extents, the PS
+   codebook) and the π tower descending top-down (whole-percept intents, the
+   SS codebook) — linked by the word/object Concept codebook
+   (`bin/References.py`), whose rows are the concepts (part↔whole references).
 2. **Attention.** In an LLM, attention is QKV per subsymbolic layer.
    In BasicModel, attention is quadratic over all three structures —
-   both towers and the table — realized as priming (boost weights over
-   codebook rows; the single intent of GrammarOpsPass §5).
+   both towers and the Concept codebook — realized as priming (boost weights
+   over codebook rows; the single intent of GrammarOpsPass §5).
 3. **Thought.** In an LLM, thought is the computation of priors for
    autoregressive word prediction. In BasicModel, thought is a
    **subsequent isolation of attention over that space, enabled by
@@ -93,7 +100,7 @@ no anonymous global residual stream.
 ## Overview
 
 BasicModel is a bidirectional neural architecture organized as a pipeline of five
-**spaces** plus a grammar host (`SymbolicSpace`), each implementing a distinct
+**spaces** plus a symbol host (`SymbolSpace`), each implementing a distinct
 representational transformation:
 
 ```
@@ -131,14 +138,14 @@ pure-geometric clipped-cosine projections over WholeSpace codebook
 activations.
 
 `PartSpace` and `WholeSpace` (renamed 2026-06-12 from `PerceptualSpace`
-/ the original `SymbolicSpace`) both subclass a thin shared
+/ the original `SymbolSpace`) both subclass a thin shared
 `PerceptualSpace(Space)` base: both views are perceptual. At the corpus
 callosum, objects are analysed and synthesized by sending them back to
 PerceptualSpace — wholes get split, parts get chunked. In symbolic
 "mode" the objects sent back are symbols. Terminologically there are
 objects and references; a reference is a *sign* (a quantized version of
 the referent) or a *symbol* (an unrelated version of the referent, of
-much lower dimensionality). The freed name `SymbolicSpace` was
+much lower dimensionality). The freed name `SymbolSpace` was
 **reintroduced 2026-06-19** with new semantics — it is now the
 grammar/word tier (formerly `WordSpace` / `WordSubSpace`, abbrev `ss`;
 the WholeSpace stream is now `ws`). See the full rename mapping in
@@ -286,13 +293,14 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
 2. **Subsymbolic order** (`<subsymbolicOrder>`) — *iterating* the folds:
    codes are passed back to PartSpace / WholeSpace across `subsymbolicOrder`
    passes (the CS→PS loop). Synthesis chunks the codes into higher-order
-   symbols (fewer each pass); analysis re-expands, attention selecting what
+   percepts (fewer each pass); analysis re-expands, attention selecting what
    to expand (a top-k over the priming, applied after the WholeSpace
-   codebook lookup). With **`<SymbolicComposition>`** on, the symbols handed
-   back to PartSpace are re-encoded through the **CS symbol table** — the
-   wide↔deep remap (MM_20M: `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma
-   composes a high-order word out of several lower-order words; the inverse
-   decode runs on the reverse leg of the loop.
+   codebook lookup). With **`<SymbolicComposition>`** on, the percepts handed
+   back to PartSpace are re-encoded through the **CS Concept codebook** (the
+   part↔whole relation table) — the wide↔deep remap (MM_20M:
+   `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma composes a high-order word
+   out of several lower-order words; the inverse decode runs on the reverse
+   leg of the loop.
 
    > **Proposed refinement (mereological-order-raising spec).** This single
    > subsymbolic loop is really **two** moves CS should choose between *per
@@ -316,8 +324,8 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    the grammar composes.
 
 So: granularity is intrinsic to the folds, subsymbolic order iterates the
-subsymbolic passes (composing symbols), and symbolic order is the serial
-grammatical loop over words.
+subsymbolic passes (composing higher-order percepts), and symbolic order is the
+serial grammatical loop over words.
 
 > **Spec: [doc/old/orders.md](old/orders.md) (resolved 2026-06-19).** The
 > three order axes now have a precise, separate spec — semantics, bound, and how
@@ -706,7 +714,7 @@ Buffers (per row, non-persistent):
 - `_s_count` / `_e_count`: `[B]` long, fill levels (cap at p / q).
 
 `ensure_batch(B)` resizes these on cascade from
-`SymbolicSpace.ensure_batch`; `Reset()` clears them on hard / discourse
+`SymbolSpace.ensure_batch`; `Reset()` clears them on hard / discourse
 boundary. Default behaviour is to **not** auto-reset across document
 boundaries --- the AR lags carry information through discourse
 continuity unless the caller explicitly calls `Reset`.
@@ -751,9 +759,9 @@ codebook.
 
 | XSD knob | Section | Default | Notes |
 |---|---|---|---|
-| `<armaP>` | `<SymbolicSpace>` | 5 | AR lag count |
-| `<armaQ>` | `<SymbolicSpace>` | 2 | MA lag count |
-| `<armaHiddenDim>` | `<SymbolicSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
+| `<armaP>` | `<SymbolSpace>` | 5 | AR lag count |
+| `<armaQ>` | `<SymbolSpace>` | 2 | MA lag count |
+| `<armaHiddenDim>` | `<SymbolSpace>` | `2*sentence_dim` (cap 1024) | predictor hidden width |
 | `<armaScale>` | `<architecture><training>` | 0.1 | ARMA loss weight added to `TheError` |
 | `<sentencePrediction>` | `<architecture><training>` | false | Gates `InterSentenceLayer` construction |
 

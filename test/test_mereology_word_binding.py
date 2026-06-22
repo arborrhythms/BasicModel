@@ -43,11 +43,11 @@ def _whole_space(nS=128):
 
 def _cs_stub(ss):
     """A minimal ConceptualSpace-method host: the autobind methods use only
-    ``self.terminalSymbolicSpace_ref`` (+ ``self._autobound_percept_ids`` on
+    ``self.terminalSymbolSpace_ref`` (+ ``self._autobound_percept_ids`` on
     the flag-off path), so a stub with the bound methods exercises the real
     code without standing up a full model."""
     stub = types.SimpleNamespace()
-    stub.terminalSymbolicSpace_ref = ss
+    stub.terminalSymbolSpace_ref = ss
     stub.wholeSpace_ref = None
     stub._maybe_autobind_meta = types.MethodType(
         Spaces.ConceptualSpace._maybe_autobind_meta, stub)
@@ -191,9 +191,9 @@ def test_cs_owns_relation_taxonomy_by_reference():
         None, pid_2d, vec_tensor, word_groups, tokens, ss)
     whole = ss._word_whole_ss["abc"]
     # a CS host wired to the terminal WS as its relation store (mirrors the
-    # Models terminalSymbolicSpace_ref / terminalConceptualSpace_ref fan-out).
+    # Models terminalSymbolSpace_ref / terminalConceptualSpace_ref fan-out).
     cs = types.SimpleNamespace()
-    cs.terminalSymbolicSpace_ref = ss
+    cs.terminalSymbolSpace_ref = ss
     cs.wholeSpace_ref = None
     for _m in ("_relation_store", "taxonomy_children", "taxonomy_parent",
                "taxonomy_parents", "is_meta", "ps_children_of_whole"):
@@ -210,7 +210,7 @@ def test_cs_owns_relation_taxonomy_by_reference():
     assert cs.is_meta(meta) is True and ss.is_meta(meta) is True
     assert cs.taxonomy_children(meta) == ss.taxonomy_children(meta)
     # unwired CS -> safe empty/false defaults (no crash).
-    bare = types.SimpleNamespace(terminalSymbolicSpace_ref=None,
+    bare = types.SimpleNamespace(terminalSymbolSpace_ref=None,
                                  wholeSpace_ref=None)
     for _m in ("_relation_store", "taxonomy_children", "is_meta"):
         setattr(bare, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), bare))

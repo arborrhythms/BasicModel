@@ -11,7 +11,7 @@ Consumers ported:
   * ``pos_lookup(active_symbols)`` — activation-similarity snap
   * ``SyntacticLayer._resetChart`` defensive seed (Language.py)
 
-The ``category_codebook`` attribute no longer exists on SymbolicSpace.
+The ``category_codebook`` attribute no longer exists on SymbolSpace.
 """
 import os
 import sys

@@ -7,7 +7,7 @@ the SAME (nWhere=2, nWhen=2) band so the dimensional formula is uniform:
 ``nDim = nWhat + nWhere + nWhen``. The only difference between interior tiers
 is whether the band slots are actively muxed (carry per-event where/when
 values) or ride along as inert padding — the bookkeeping is identical. This
-SUPERSEDES the earlier convention that gave WS/SymbolicSpace ``(0, 0)`` and
+SUPERSEDES the earlier convention that gave WS/SymbolSpace ``(0, 0)`` and
 demuxed at the CS->WS boundary (now a no-op identity reshape), which
 simplifies the constructor chain and makes ``space[i].nOutputDim ==
 space[i+1].nInputDim`` directly comparable for handoff validation.
@@ -29,7 +29,7 @@ _CANONICAL_SHAPE = {
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "SymbolicSpace":       (2, 2),
+    "SymbolSpace":       (2, 2),
 }
 # 2026-06-04: no tier's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any tier may resolve to

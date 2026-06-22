@@ -1,5 +1,5 @@
 """Verify the perf-critical paths in MM_20M's forward are bypassed:
-  1. SymbolicSpace.compose returns immediately on useGrammar='none'.
+  1. SymbolSpace.compose returns immediately on useGrammar='none'.
   2. Chart._chart_inside is never invoked.
   3. No MereologicalTree is constructed.
   4. _apply_codebook_pos_seed never runs.
@@ -33,8 +33,8 @@ TheData.load(dat.get("dataset"), num_shards=1, max_docs=10,
 
 m, _ = BaseModel.from_config(CONFIG_PATH, data=TheData)
 
-ss = getattr(m, 'symbolicSpace', None)
-print(f"symbolicSpace: {type(ss).__name__ if ss else None}")
+ss = getattr(m, 'symbolSpace', None)
+print(f"symbolSpace: {type(ss).__name__ if ss else None}")
 print(f"useGrammar: {m.useGrammar}")
 print(f"mereological_tree: {getattr(ss, 'mereological_tree', None)}")
 print(f"_grammar_is_default_only: {getattr(ss, '_grammar_is_default_only', None)}")

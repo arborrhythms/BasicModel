@@ -137,7 +137,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         # Stage 3 (2026-05-27): the chart retired; the signal router
         # (``SymbolicSubSpace.languageLayer``) carries the grammar reference
         # for diagnostics and gating.
-        self.assertIs(model.symbolicSpace.languageLayer.grammar,
+        self.assertIs(model.symbolSpace.languageLayer.grammar,
                       Language.TheGrammar)
         # Post-2026-05-29 grammar-file refactor: ``load_from_grammar_file``
         # injects an ``S = S`` identity rule (method_name=None, arity=1,

@@ -3,7 +3,7 @@
 Task 1 of the microbatch AR refactor (see
 basicmodel/doc/specs/2026-04-22-microbatch-ar-refactor-design.md).
 
-These tests run with stacks constructed directly (no full SymbolicSpace), since
+These tests run with stacks constructed directly (no full SymbolSpace), since
 the stacks themselves are simple data structures whose batched semantics can
 be tested in isolation.
 """

@@ -1,4 +1,4 @@
-"""Tests for Phase C wiring: SymbolicSpace.attach_knowledge allocates the
+"""Tests for Phase C wiring: SymbolSpace.attach_knowledge allocates the
 Taxonomy priming buffer, and ``priming_kwargs_for_slots`` builds the
 four recommender kwargs (left/right rows + left/right priming) from a
 rule's typed slot info.
@@ -6,7 +6,7 @@ rule's typed slot info.
 Plan: doc/plans/2026-05-20-primed-reverse-generation.md §Hard
 admissibility mask + §Reverse operation flow.
 
-Uses ``object.__new__`` to bypass SymbolicSpace's heavy __init__ (which
+Uses ``object.__new__`` to bypass SymbolSpace's heavy __init__ (which
 needs PartSpace / ConceptualSpace / WholeSpace). We only
 need attach_knowledge + the helper, which don't depend on the full
 Space wiring.

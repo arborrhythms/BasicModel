@@ -110,7 +110,7 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <!-- Stage 3 cleanup: parserBackend, chartTau, wMax, chartTopK,
          chartNoiseEps retired alongside the chart. The signal router
          (LanguageLayer) is the canonical parser. -->
@@ -162,6 +162,6 @@
         </compose>
       </grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

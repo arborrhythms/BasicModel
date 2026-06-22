@@ -1600,7 +1600,8 @@ class ConceptualCombine(Layer):
     """
 
     def __init__(self, content_dim, n_vectors=1, naive=False,
-                 sigma_pi_mode="full", hasBias=True, ergodic=False):
+                 sigma_pi_mode="full", hasBias=True, ergodic=False,
+                 n_streams=2):
         """Build the per-stage square 2-stream slot bind.
 
         Args:
@@ -1630,11 +1631,16 @@ class ConceptualCombine(Layer):
             raise ValueError(
                 f"ConceptualCombine: content_dim and n_vectors must be "
                 f">= 1; got D={D}, N={Nv}")
-        N = 2 * Nv * D
+        S = int(n_streams)
+        if S < 2:
+            raise ValueError(
+                f"ConceptualCombine: n_streams must be >= 2; got {S}")
+        N = S * Nv * D
         super().__init__(N, N)
         self.content_dim = D
         self.n_vectors = Nv
-        self.combine_dim = N  # the flattened 2N*D stack [ps-slots ; ws-slots]
+        self.n_streams = S
+        self.combine_dim = N  # flattened S*N*D stack [stream0-slots ; stream1 ; ...]
 
         # Normalise the <sigmaPi> span the same way the spaces do; a lazy
         # import keeps Layers.py free of a Spaces import cycle (Spaces
@@ -1708,26 +1714,24 @@ class ConceptualCombine(Layer):
         # (0.5 * [I_N ; I_N]) so the glue starts as the balanced mix of the
         # two hemispheres and learns its own routing from there. Tiny
         # parameter cost (2N*N scalars; 128 for the production 16x8).
-        _cal = torch.zeros(2 * Nv, Nv)
+        _cal = torch.zeros(S * Nv, Nv)
         _eye = torch.eye(Nv)
-        _cal[:Nv, :] = 0.5 * _eye
-        _cal[Nv:, :] = 0.5 * _eye
+        for _s in range(S):                       # averaging init: (1/S) I per stream
+            _cal[_s * Nv:(_s + 1) * Nv, :] = (1.0 / S) * _eye
         self.callosum = nn.Parameter(_cal)
 
-    def _combine(self, ps, ws):
-        """Stack the two ``[..., N, D]`` streams along the VECTOR axis into
-        ``[..., 2N, D]``.
-
-        Internal order: ``[ps-slots ; ws-slots]``.  The wrapped layer's
-        identity init therefore maps vectors ``0..N-1`` to ``ps_in`` and
-        vectors ``N..2N-1`` to ``ws_in``.
-        """
-        return torch.cat([ps, ws], dim=-2)
+    def _combine(self, *streams):
+        """Stack the ``n_streams`` ``[..., N, D]`` streams along the VECTOR axis
+        into ``[..., S*N, D]`` (order: stream 0, 1, ...; the 2-stream case is
+        ``[ps-slots ; ws-slots]``)."""
+        return torch.cat(streams, dim=-2)
 
     def _split_streams(self, x):
-        """Split ``[..., 2N, D]`` back into ``(ps, ws)`` each ``[..., N, D]``."""
+        """Split ``[..., S*N, D]`` into ``n_streams`` slices each ``[..., N, D]``
+        (2-stream case returns ``(ps, ws)``)."""
         Nv = self.n_vectors
-        return x[..., :Nv, :], x[..., Nv:2 * Nv, :]
+        return tuple(x[..., s * Nv:(s + 1) * Nv, :]
+                     for s in range(self.n_streams))
 
     def views(self, carrier):
         """The PS / WS views of a bind: its slot-halves.
@@ -1741,9 +1745,8 @@ class ConceptualCombine(Layer):
         """
         leading = tuple(carrier.shape[:-1])
         body = carrier[..., :self.combine_dim].reshape(
-            *leading, 2 * self.n_vectors, self.content_dim)
-        ps_v, ws_v = self._split_streams(body)
-        return ps_v.contiguous(), ws_v.contiguous()
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        return tuple(v.contiguous() for v in self._split_streams(body))
 
     def glue(self, carrier):
         """The corpus-callosum glue: the STACKED views reduced to N vectors.
@@ -1757,8 +1760,8 @@ class ConceptualCombine(Layer):
         """
         leading = tuple(carrier.shape[:-1])
         stack = carrier[..., :self.combine_dim].reshape(
-            *leading, 2 * self.n_vectors, self.content_dim)
-        # [..., 2N, D] x [2N, N] -> [..., N, D] over the slot axis.
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        # [..., S*N, D] x [S*N, N] -> [..., N, D] over the slot axis.
         glued = torch.einsum("...kd,kn->...nd", stack, self.callosum)
         return glued.contiguous()
 
@@ -1780,13 +1783,13 @@ class ConceptualCombine(Layer):
         """Inverse of :meth:`_flatten_leading`: ``[B', W] -> [*leading, W]``."""
         return x.reshape(*leading, x.shape[-1])
 
-    def forward(self, ps, ws):
-        """The bind: ``CS = layer(flatten(stack[ps ; ws]))``.
+    def forward(self, *streams):
+        """The bind: ``CS = layer(flatten(stack[stream0 ; stream1 ; ...]))``.
 
-        Stacks the two ``[..., N, D]`` streams along the vector axis into
-        ``[..., 2N, D]``, flattens the trailing ``(2N, D)`` into ``2N*D``
+        Stacks the ``n_streams`` ``[..., N, D]`` streams along the vector axis
+        into ``[..., S*N, D]``, flattens the trailing ``(S*N, D)`` into ``S*N*D``
         (and all leading dims to a single batch dim), zero-pads
-        ``2N*D -> M`` (the operating width; empty for the production
+        ``S*N*D -> M`` (the operating width; empty for the production
         ``16*1024 = 2^14`` case), applies the wrapped invertible layer, and
         restores the leading dims.
 
@@ -1796,9 +1799,9 @@ class ConceptualCombine(Layer):
         with nothing threaded alongside. Use :meth:`views` for the
         ``[..., N, D]`` PS / WS slot-half windows.
         """
-        x = self._combine(ps, ws)                  # [..., 2N, D]
+        x = self._combine(*streams)                # [..., S*N, D]
         leading = tuple(x.shape[:-2])
-        flat = x.reshape(-1, self.combine_dim)     # [B', 2N*D]
+        flat = x.reshape(-1, self.combine_dim)     # [B', S*N*D]
         if self.combine_padded > self.combine_dim:
             pad = flat.new_zeros(
                 flat.shape[0], self.combine_padded - self.combine_dim)
@@ -1825,9 +1828,8 @@ class ConceptualCombine(Layer):
         flat, leading = self._flatten_leading(carrier)  # [B', M]
         x = self.layer.reverse(flat)                    # [B', M]
         body = x[..., :self.combine_dim].reshape(
-            *leading, 2 * self.n_vectors, self.content_dim)
-        ps_v, ws_v = self._split_streams(body)
-        return ps_v.contiguous(), ws_v.contiguous()
+            *leading, self.n_streams * self.n_vectors, self.content_dim)
+        return tuple(v.contiguous() for v in self._split_streams(body))
 
 
 class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
@@ -5845,7 +5847,7 @@ class TruthLayer(Layer):
 
         # Host-side emptiness flag. ``len(self)`` reads ``count.item()``
         # (a GPU->host sync); the only in-brick consumer
-        # (SymbolicSpace.truth_modulated_loss) needs *emptiness*, not the
+        # (SymbolSpace.truth_modulated_loss) needs *emptiness*, not the
         # count. This bool mirrors ``count > 0`` and is maintained
         # co-located with every ``count`` write from an already-host-side
         # value, so it never adds a sync and cannot drift. Read via
@@ -7166,7 +7168,7 @@ class TruthLayer(Layer):
 
         Mirror of ``len(self) == 0`` that reads the host-side
         ``_nonempty`` flag instead of ``count.item()``, so the in-brick
-        consumer (``SymbolicSpace.truth_modulated_loss``) does not force a
+        consumer (``SymbolSpace.truth_modulated_loss``) does not force a
         GPU->host sync (CUDA-graph-capture contract; see
         doc/BrickHostSyncStatus.md residual F).
         """
@@ -7669,8 +7671,8 @@ class InterSentenceLayer(Layer):
 
     **Subclass.** ``Layer`` rather than ``Space``: no SubSpace, no
     forward/reverse tensor-map contract.  Lives inside
-    ``SymbolicSpace.layers`` so the Layer ergodic walk reaches the MLP
-    predictor's parameters via ``SymbolicSpace.params``.
+    ``SymbolSpace.layers`` so the Layer ergodic walk reaches the MLP
+    predictor's parameters via ``SymbolSpace.params``.
 
     Replaces the pre-2026-05-14 contrastive cosine machinery
     (``context_window`` recent buffer, ``centroid_history`` repulsive
@@ -7692,7 +7694,7 @@ class InterSentenceLayer(Layer):
         ``[S | W]`` snapshot layout the caller used to hand in; under
         ARMA we only need the flat ``sentence_dim`` (defaults to
         ``n_symbols * n_dim``) but keep the constructor signature for
-        smooth migration of the SymbolicSpace instantiation site.
+        smooth migration of the SymbolSpace instantiation site.
 
         ``p`` = AR lag count (number of past sentence reps consumed
         by the predictor); ``q`` = MA lag count (past residuals).
@@ -7879,7 +7881,7 @@ class InterSentenceLayer(Layer):
     # -- per-batch resize ---------------------------------------------
     def ensure_batch(self, batch):
         """Resize per-row substrate to a new batch size.  Cascaded
-        from ``SymbolicSpace.ensure_batch`` so the body's per-B state is
+        from ``SymbolSpace.ensure_batch`` so the body's per-B state is
         sized correctly.  Zeroes the rings.
         """
         batch = int(batch)
@@ -7901,7 +7903,7 @@ class InterSentenceLayer(Layer):
         # Resize the per-row LTM chains to match. Reallocate fresh
         # deques: the ARMA rings above zero on resize, so the LTM chain
         # follows the same "new batch -> clean per-row state" semantic
-        # (cascaded from ``SymbolicSpace.ensure_batch`` at the start of a
+        # (cascaded from ``SymbolSpace.ensure_batch`` at the start of a
         # microbatch; the old document's chain does not survive a batch
         # reshape any more than ``_s_history`` does).
         self._stm_end_states = [
@@ -8567,7 +8569,7 @@ class InterSentenceLayer(Layer):
         Returns ``(prediction, confidence)`` where confidence is a
         scalar / per-row tensor fixed at 1.0 — the legacy attention-
         entropy confidence had no analog in the MLP predictor, but
-        downstream callers (``SymbolicSpace.stm_residual_microbatch``)
+        downstream callers (``SymbolSpace.stm_residual_microbatch``)
         gate the priming bias on ``conf is None`` so we emit a
         placeholder rather than break that wiring.  Real cold-start
         gating happens via ``_s_count``: rows whose ring is empty
@@ -8575,7 +8577,7 @@ class InterSentenceLayer(Layer):
 
         Compiled path: ``predict()`` is called from two traced sites
         (``BasicModel._forward_per_stage`` and
-        ``SymbolicSpace.stm_residual_microbatch``), always with ``b is
+        ``SymbolSpace.stm_residual_microbatch``), always with ``b is
         None``.  When ``stage_prediction()`` has parked a tuple, return
         it directly — the live body calls ``predict_next`` (which is
         ``@torch.compiler.disable``'d → graph break) and reads
@@ -11220,7 +11222,7 @@ class ShortTermMemory(Layer):
     1. **Per-batch idea stack** (legacy chart consumer surface). A
        ``[B, capacity, concept_dim]`` payload buffer that the chart's
        CKY compose path pushes "ideas" (continuous compositions) onto.
-       Distinct from ``SymbolicSpace._stm_fired`` (once-per-sentence
+       Distinct from ``SymbolSpace._stm_fired`` (once-per-sentence
        discourse-priming flag). Spec §"Removed Public Surfaces" calls
        for ``ShortTermMemory`` to become data-free; the legacy push /
        peek / snapshot surface is retained transitionally for the
@@ -13459,7 +13461,7 @@ class Error:
 
     Why a registry? There are currently 12+ loss terms accumulated across
     four different call sites (``ModelLoss``, ``BasicModel.runBatch``,
-    ``WholeSpace.accumulate_symbol_objective``, ``SymbolicSpace.truth_modulated_loss``).
+    ``WholeSpace.accumulate_symbol_objective``, ``SymbolSpace.truth_modulated_loss``).
     Debugging convergence problems used to require grepping each site to
     answer "what fraction of today's gradient came from which term?".
     The registry makes that a one-call breakdown, and supports:

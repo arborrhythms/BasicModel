@@ -164,7 +164,7 @@ def _build_model(kind):
 
 
 def _router_choosers(m):
-    ll = m.symbolicSpace.languageLayer
+    ll = m.symbolSpace.languageLayer
     layers = list(ll._unary_layers.values()) + list(ll._binary_layers.values())
     assert layers, "no structured layers attached"
     return [type(l.chooser).__name__ for l in layers]

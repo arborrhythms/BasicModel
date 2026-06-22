@@ -42,8 +42,8 @@ def test_dispatch_per_row_reset_skips_rows_without_hard_eos():
     model = _model()
     # Size SymbolicSubSpace state to two source rows so per-row dispatch can
     # write to indices [0..1] without going out of bounds.
-    if model.symbolicSpace is not None:
-        model.symbolicSpace.ensure_microbatch(2, 1)
+    if model.symbolSpace is not None:
+        model.symbolSpace.ensure_microbatch(2, 1)
     seen = []  # list of (space_class, batch_arg, hard_arg)
     originals = []
     for space in model.spaces:
@@ -104,15 +104,15 @@ def test_dispatch_per_row_reset_empty_or_all_false_is_noop():
 
 
 def test_per_row_hard_reset_clears_only_target_row_state():
-    """SymbolicSpace.Reset(batch=b) clears row b's per-row state, not other rows.
+    """SymbolSpace.Reset(batch=b) clears row b's per-row state, not other rows.
 
     Sets _stm_fired[0] and _stm_fired[1] to True, fires Reset(batch=0),
     asserts _stm_fired[0] is False but [1] is still True.
     """
     model = _model()
-    ss = model.symbolicSpace
+    ss = model.symbolSpace
     if ss is None:
-        pytest.skip("model has no SymbolicSpace")
+        pytest.skip("model has no SymbolSpace")
     # Ensure state is sized to at least 2 rows.
     if ss._stm_fired.shape[0] < 2:
         ss.ensure_microbatch(2, 1)

@@ -100,10 +100,10 @@ def _run_forwards(model, n=15):
 
 
 def _terminal_ss(model):
-    """The WholeSpace the autobind hook targets (terminalSymbolicSpace_ref when
+    """The WholeSpace the autobind hook targets (terminalSymbolSpace_ref when
     wired, else the model's wholeSpace)."""
     cs = getattr(model, "conceptualSpace", None)
-    ws = getattr(cs, "terminalSymbolicSpace_ref", None) if cs is not None else None
+    ws = getattr(cs, "terminalSymbolSpace_ref", None) if cs is not None else None
     return ws if ws is not None else getattr(model, "wholeSpace", None)
 
 
@@ -141,7 +141,7 @@ def test_phase2_chooser_sized_and_context_built():
         assert n_roles > 0
         # The router's structured-layer MLP choosers were sized with the
         # category context block (width == role count).
-        router = model.symbolicSpace.languageLayer
+        router = model.symbolSpace.languageLayer
         sized = []
         for layers in (router._unary_layers, router._binary_layers):
             for layer in layers.values():

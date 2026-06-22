@@ -12,7 +12,7 @@ measures that share it:
 
 The mixin is pure (no `__init__`, no state of its own); it accesses
 model-owned attributes (`self.wholeSpace`, `self.conceptualSpace`,
-`self.symbolicSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
+`self.symbolSpace`, `self.subsymbolicOrder`) via ``self``.  Mix in by
 inheriting *first*: ``class BaseModel(Mereology, nn.Module): ...``.
 
 See ``doc/research/three-surfaces.md`` and the
@@ -107,7 +107,7 @@ class Mereology:
       * ``self.conceptualSpace`` (and optionally ``self.wholeSpaces`` /
         ``self.conceptualSpaces`` for staged models) -- back-projection
         targets.
-      * ``self.symbolicSpace``      -- chart / grammar host for
+      * ``self.symbolSpace``      -- chart / grammar host for
         ``host_layer`` lookups in ``_lookup_host_layer``.
       * ``self.subsymbolicOrder`` -- number of stages for the default
         derivation path.
@@ -370,14 +370,14 @@ class Mereology:
         unary rule.
 
         Chart-driven mode: read row 0 of
-        ``self.symbolicSpace.generate_rules`` per tier (S then C then P
+        ``self.symbolSpace.generate_rules`` per tier (S then C then P
         in pipeline-reverse order) and concatenate. Same canonical-
         path convention as ``_row_zero_rules`` at Language.py:2247.
         """
         n_stages = max(1, int(getattr(self, 'subsymbolicOrder', 1) or 1))
         path = []
 
-        ss = getattr(self, 'symbolicSpace', None)
+        ss = getattr(self, 'symbolSpace', None)
         gen_rules = getattr(ss, 'generate_rules', None) if ss is not None else None
         chart_populated = bool(gen_rules) and any(
             v for v in gen_rules.values() if v
@@ -535,14 +535,14 @@ class Mereology:
     def _lookup_host_layer(self, tier, rule_name):
         """Resolve a (tier, rule_name) to a layer instance.
 
-        Tries ``symbolicSpace.host_layer`` first (chart-registered host
+        Tries ``symbolSpace.host_layer`` first (chart-registered host
         layers, including WholeSpace.sigma / ConceptualSpace.pi /
         LiftLayer / LowerLayer). Falls back to the parameter-free
         ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
         aren't on the host registry (e.g. NotLayer when it isn't
         attached as a builtin).
         """
-        ss = getattr(self, 'symbolicSpace', None)
+        ss = getattr(self, 'symbolSpace', None)
         if ss is not None and hasattr(ss, 'host_layer'):
             try:
                 lyr = ss.host_layer(tier, rule_name)

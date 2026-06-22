@@ -482,7 +482,7 @@ def test_intersentence_seed_used():
     # --- interSentence: warm chain -> non-empty predicted seed -------------
     m = _build_mm5m_with(prediction="interSentence", sentence_prediction=True)
     assert m.prediction_mode == "interSentence"
-    disc = m.symbolicSpace.discourse
+    disc = m.symbolSpace.discourse
     assert disc is not None and disc._inter_predictor is not None, (
         "sentencePrediction=true must build the discourse inter-predictor")
     Models.TheData.load("xor")
@@ -537,7 +537,7 @@ def test_intersentence_seed_used():
     # --- none (default mode): empty seed, predictor never seeds -----------
     m2 = _build_mm5m_with(prediction="none", sentence_prediction=True)
     assert m2.prediction_mode == "none"
-    disc2 = m2.symbolicSpace.discourse
+    disc2 = m2.symbolSpace.discourse
     assert disc2 is not None and disc2._inter_predictor is not None
     Models.TheData.load("xor")
     loader2 = m2.inputSpace.data.data_loader(split="train", num_streams=4)

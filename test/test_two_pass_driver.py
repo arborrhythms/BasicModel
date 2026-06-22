@@ -79,7 +79,7 @@ def test_learning_flags_parsed():
 def test_set_superposition_temperature_reaches_structured_layers():
     m = _build("<learning>true</learning>")
     m._set_superposition_temperature(0.0)
-    ll = m.symbolicSpace.languageLayer
+    ll = m.symbolSpace.languageLayer
     layers = list(ll._unary_layers.values()) + list(ll._binary_layers.values())
     assert layers, "no structured layers attached"
     assert all(l.superposition_temperature == 0.0 for l in layers)
@@ -97,7 +97,7 @@ def test_runbatch_soft_superposition_step_runs():
         warnings.filterwarnings("ignore")
         m.runBatch(train=True, batchSize=4, optimizer=opt,
                    batch_override=batch, superposition_temperature=0.0)
-    ll = m.symbolicSpace.languageLayer
+    ll = m.symbolSpace.languageLayer
     layers = list(ll._unary_layers.values()) + list(ll._binary_layers.values())
     assert all(l.superposition_temperature is None for l in layers)  # reset
 

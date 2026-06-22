@@ -11,7 +11,7 @@ before adding features"):
   * The typed STM stack is part of an ``nn.Module`` (now SymbolicSubSpace
     itself, inherited from SubSpace) with the parallel tensors
     registered as buffers so ``.to(device)`` moves them together.
-  * ``category_embedding`` parameters land in ``SymbolicSpace.params`` (the
+  * ``category_embedding`` parameters land in ``SymbolSpace.params`` (the
     manual optimizer-feed list, not just ``parameters()``).
 """
 import os
@@ -88,7 +88,7 @@ def test_typed_stack_to_moves_all_tensors():
 
 
 def test_word_space_params_include_category_embedding():
-    """``SymbolicSpace.params`` contains the ``category_embedding`` weight
+    """``SymbolSpace.params`` contains the ``category_embedding`` weight
     so the optimizer-feed list (used by ``getParameters``) reflects
     every gradient-flowing tensor."""
     from test_partition_pos_codebook import _make_word_space

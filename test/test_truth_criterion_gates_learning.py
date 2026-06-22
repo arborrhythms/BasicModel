@@ -109,7 +109,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """tc == 0: even a near-zero score is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.0
         # learn_score = 0.0 (one factor zero) but tc=0 -> 0 >= 0 accept.
         _mock_factors(cs, 0.0, 1.0, 1.0)
@@ -127,7 +127,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """tc == 0.3: score 0.343 (>=0.3) is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.3
         # 0.7^3 = 0.343 >= 0.3 -> accept.
         _mock_factors(cs, 0.7, 0.7, 0.7)
@@ -152,7 +152,7 @@ class TestTruthCriterionGate(unittest.TestCase):
         """>= is inclusive: a score exactly equal to tc is accepted."""
         m = _make_radix_model()
         cs = m.conceptualSpace
-        ws = cs.terminalSymbolicSpace_ref
+        ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.5
         # 0.5 * 1.0 * 1.0 = 0.5 == tc -> accept (>= boundary).
         _mock_factors(cs, 0.5, 1.0, 1.0)

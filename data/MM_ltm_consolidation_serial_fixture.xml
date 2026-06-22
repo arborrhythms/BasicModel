@@ -9,7 +9,7 @@
        the store API + observe-write contract directly, no parsing forward)
        this fixture turns ON BOTH:
          * a DISCOURSE via training/sentencePrediction=true (builds
-           symbolicSpace.discourse, the InterSentenceLayer AR predictor), and
+           symbolSpace.discourse, the InterSentenceLayer AR predictor), and
          * ltmConsolidation=true (the unified TernaryTruthStore).
        With symbolicOrder=1 the per-word serial forward
        (_forward_body_per_word) runs, so the observe-site conversation push
@@ -80,11 +80,11 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <SymbolicSpace>
+  <SymbolSpace>
     <ltmCapacity>64</ltmCapacity>
     <language>
       <grammar>default.grammar</grammar>
     </language>
-  </SymbolicSpace>
+  </SymbolSpace>
 
 </model>

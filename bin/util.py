@@ -364,6 +364,20 @@ def auto_compile_backend():
     """
     override = os.environ.get("MODEL_COMPILE", "").strip().lower()
     if not override:
+        # Default backend by device. The inductor -> Metal (MPS) backend has an
+        # upstream codegen bug: a multi-dim reduction emits an undeclared
+        # ``r0_0`` index, so MM_20M / MM_xor hard-fail to compile on MPS
+        # (program_source: "use of undeclared identifier 'r0_0'"). Use the GPU
+        # EAGERLY there (torch.compile backend='eager' -- dynamo, no inductor)
+        # until PyTorch fixes inductor-MPS. CUDA / CPU keep the inductor "auto"
+        # path. Override explicitly with MODEL_COMPILE=inductor to force it.
+        try:
+            _dev = str(resolve_device(
+                os.environ.get("BASICMODEL_DEVICE", "").strip().lower() or "gpu"))
+        except Exception:
+            _dev = "cpu"
+        if _dev.startswith("mps"):
+            return "eager"
         return "auto"
     if override in _COMPILE_OFF:
         return "none"
@@ -878,11 +892,11 @@ class XMLConfig:
     # signals that the overlay XML takes full ownership of that
     # sub-tree -- the defaults' contents are dropped, not merged in.
     #
-    # Currently a single entry: ``SymbolicSpace.language.grammar``. A model
+    # Currently a single entry: ``SymbolSpace.language.grammar``. A model
     # XML that defines its own <grammar> block fully owns the rule set;
     # the model.xml defaults' tier-scoped grammar does not leak in.
     _NON_MERGING_PATHS = (
-        ('SymbolicSpace', 'language', 'grammar'),
+        ('SymbolSpace', 'language', 'grammar'),
     )
 
     def overlay(self, path):

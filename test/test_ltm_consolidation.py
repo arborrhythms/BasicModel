@@ -83,7 +83,7 @@ def _make_model_provisioned(config):
 class TestConstruction(unittest.TestCase):
     def test_gate_off_builds_relative_store_only(self):
         m = _make_model(_OFF_CONFIG)
-        ss = m.symbolicSpace
+        ss = m.symbolSpace
         self.assertFalse(m.ltm_consolidation)
         self.assertIsNotNone(ss.relative_store,
                              "gate OFF -> the legacy RelativeTruthStore")
@@ -95,7 +95,7 @@ class TestConstruction(unittest.TestCase):
     def test_gate_on_builds_ltm_store_only(self):
         from Layers import TernaryTruthStore
         m = _make_model(_ON_CONFIG)
-        ss = m.symbolicSpace
+        ss = m.symbolSpace
         self.assertTrue(m.ltm_consolidation)
         self.assertIsInstance(ss.ltm_store, TernaryTruthStore)
         self.assertIsNone(ss.relative_store,
@@ -105,15 +105,15 @@ class TestConstruction(unittest.TestCase):
 
     def test_ltm_store_widths(self):
         m = _make_model(_ON_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         # nDim is the FULL idea/event width (muxed); content_width is the
         # content/symbol width reasoning slices to.
-        self.assertEqual(int(store.nDim), int(m.symbolicSpace.muxedSize))
+        self.assertEqual(int(store.nDim), int(m.symbolSpace.muxedSize))
         self.assertGreater(int(store.content_width), 0)
 
     def test_ltm_store_registers_as_submodule_not_in_layers(self):
         m = _make_model(_ON_CONFIG)
-        ss = m.symbolicSpace
+        ss = m.symbolSpace
         store = ss.ltm_store
         # NOT in self.layers (keeps it OUT of the Reset cascade) ...
         self.assertNotIn(store, list(ss.layers))
@@ -135,13 +135,13 @@ class TestProvisioning(unittest.TestCase):
         # Real-parse provisioning needs loaded data, so it no longer runs at
         # construction: the store is EMPTY until provision_ltm / first epoch.
         m = _make_model(_SERIAL_CONFIG)
-        self.assertEqual(len(m.symbolicSpace.ltm_store), 0)
+        self.assertEqual(len(m.symbolSpace.ltm_store), 0)
         self.assertFalse(m._ltm_provisioned)
 
     def test_truthset_rows_land_via_real_forward(self):
         from Layers import TernaryTruthStore as T
         m = _make_model_provisioned(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         # The fixture provisions 3 truths: one absolute idea ("cat"), one
         # implies ("fire causes smoke"), one partOf ("paw partOf cat"). Each
         # lands exactly one real parsed end-state row, in order.
@@ -155,7 +155,7 @@ class TestProvisioning(unittest.TestCase):
 
     def test_provisioned_trust_and_earliest_timestamps(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         # Each row's trust is OVERWRITTEN with the XML trust.
         self.assertAlmostEqual(store.row(0)["trust"], 0.9, places=5)
         self.assertAlmostEqual(store.row(1)["trust"], 0.8, places=5)
@@ -169,7 +169,7 @@ class TestProvisioning(unittest.TestCase):
 
     def test_provisioned_rows_are_real_encodings(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         # The REAL parse lands a non-zero NP1 for every row (no all-zero row,
         # and no mean-pool placeholder -- it is the actual parsed end-state).
         for i in range(len(store)):
@@ -179,7 +179,7 @@ class TestProvisioning(unittest.TestCase):
         # The lazy trigger at first runEpoch provisions exactly once (the
         # _ltm_provisioned guard), then conversation appends continue past it.
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         self.assertEqual(len(store), 0)
         opt = m.getOptimizer(lr=0.01)
         with warnings.catch_warnings():
@@ -207,7 +207,7 @@ class TestObserveWrites(unittest.TestCase):
         forward needs sentencePrediction + relative end-states; this isolates
         the write contract under test."""
         from Layers import TernaryTruthStore as T
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         for b in range(len(payloads)):
             payload = payloads[b]
             if payload is None or payload.shape[0] < 1:
@@ -226,8 +226,8 @@ class TestObserveWrites(unittest.TestCase):
     def test_absolute_depth1_appends_idea(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
-        m.symbolicSpace.ltm_store.reset()
-        D = m.symbolicSpace.ltm_store.nDim
+        m.symbolSpace.ltm_store.reset()
+        D = m.symbolSpace.ltm_store.nDim
         p = torch.zeros(1, D)
         p[0, 0] = 3.0
         store = self._drive_observe(m, [1], [p], [0.5])
@@ -240,8 +240,8 @@ class TestObserveWrites(unittest.TestCase):
     def test_relative_depth3_slot_mapping(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
-        m.symbolicSpace.ltm_store.reset()
-        D = m.symbolicSpace.ltm_store.nDim
+        m.symbolSpace.ltm_store.reset()
+        D = m.symbolSpace.ltm_store.nDim
         # newest-at-slot-0: slot0=idea2, slot1=idea1, slot2=predicate.
         p = torch.zeros(3, D)
         p[0, 0] = 1.0   # idea2 (newest)
@@ -259,8 +259,8 @@ class TestObserveWrites(unittest.TestCase):
 
     def test_none_tet_defaults_zero_trust(self):
         m = _make_model(_ON_CONFIG)
-        m.symbolicSpace.ltm_store.reset()
-        D = m.symbolicSpace.ltm_store.nDim
+        m.symbolSpace.ltm_store.reset()
+        D = m.symbolSpace.ltm_store.nDim
         p = torch.zeros(1, D)
         p[0, 0] = 1.0
         store = self._drive_observe(m, [1], [p], None)
@@ -287,7 +287,7 @@ class TestRouting(unittest.TestCase):
         predicate = torch.zeros(D); predicate[0] = 1.0
         idea1 = torch.zeros(D); idea1[1] = 1.0
         idea2 = torch.zeros(D); idea2[2] = 1.0
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         n_before = len(store)
         out = cs._maybe_learn_relation(predicate, idea1, idea2)
         # ('idea', -1): the explicit-knowing home is the unified ltm_store; the
@@ -306,7 +306,7 @@ class TestReasonOverLtm(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
         cw = min(int(store.content_width), D)
@@ -327,7 +327,7 @@ class TestReasonOverLtm(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
         cw = min(int(store.content_width), D)
@@ -343,7 +343,7 @@ class TestReasonOverLtm(unittest.TestCase):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
         cw = min(int(store.content_width), D)
@@ -365,7 +365,7 @@ class TestReasonOverLtm(unittest.TestCase):
     def test_verify_absolute_row_is_noop(self):
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
         idea = torch.zeros(D); idea[0] = 1.0
@@ -380,7 +380,7 @@ class TestReasonOverLtm(unittest.TestCase):
 class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_survives_every_reset(self):
         m = _make_model(_ON_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         # Provisioning is lazy now, so seed a couple of rows directly to have
         # something the Reset cascade could (wrongly) clear.
         store.append_idea(torch.ones(store.nDim), trust=0.5)
@@ -388,16 +388,16 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
                               torch.ones(store.nDim), trust=0.3)
         n0 = len(store)
         self.assertGreater(n0, 0)
-        m.symbolicSpace.Reset(hard=True)
+        m.symbolSpace.Reset(hard=True)
         self.assertEqual(len(store), n0, "SymbolicSubSpace.Reset must not clear")
-        m.symbolicSpace.soft_reset()
+        m.symbolSpace.soft_reset()
         self.assertEqual(len(store), n0, "soft_reset must not clear")
         m.conceptualSpace.Reset(hard=True)
         self.assertEqual(len(store), n0, "CS.Reset must not clear")
         m.dispatch_per_row_reset([True])
         self.assertEqual(len(store), n0, "per-row reset cascade must not clear")
-        if m.symbolicSpace.discourse is not None:
-            m.symbolicSpace.discourse.reset()
+        if m.symbolSpace.discourse is not None:
+            m.symbolSpace.discourse.reset()
             self.assertEqual(len(store), n0, "discourse.reset must not clear")
 
     def test_state_dict_keys_present(self):
@@ -405,13 +405,14 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         sd = m.state_dict()
         for suffix in ("slots", "rel_type", "timestamp", "trust", "count",
                        "_next_ts"):
-            self.assertIn(f"symbolicSpace.ltm_store.{suffix}", sd,
-                          f"ltm_store.{suffix} must ride the state_dict")
+            self.assertIn(
+                f"symbolSpace.subspace.ltm_store.{suffix}", sd,
+                f"ltm_store.{suffix} must ride the state_dict")
 
     def test_save_load_roundtrip(self):
         from Layers import TernaryTruthStore as T
         m = _make_model(_ON_CONFIG)
-        store = m.symbolicSpace.ltm_store
+        store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
         A = torch.zeros(D); A[0] = 1.0
@@ -421,7 +422,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
         # Build a fresh model with the same config and load.
         m2 = _make_model(_ON_CONFIG)
         m2.load_state_dict(sd, strict=False)
-        s2 = m2.symbolicSpace.ltm_store
+        s2 = m2.symbolSpace.ltm_store
         self.assertEqual(len(s2), 2)
         self.assertEqual(s2.row(0)["rel_type"], T.REL_NONE)
         self.assertAlmostEqual(s2.row(0)["trust"], 0.3, places=5)
@@ -437,17 +438,17 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
 
 class TestDiscourseConsolidationWiring(unittest.TestCase):
     def test_discourse_is_built(self):
-        # sentencePrediction builds symbolicSpace.discourse.
+        # sentencePrediction builds symbolSpace.discourse.
         m = _make_model(_SERIAL_CONFIG)
-        self.assertIsNotNone(m.symbolicSpace.discourse,
+        self.assertIsNotNone(m.symbolSpace.discourse,
                              "sentencePrediction must build the discourse")
 
     def test_discourse_wired_to_store_when_consolidated(self):
         # FU3 (Change 2): the discourse AR predictor is wired to read the
         # unified store (not its deque) when consolidated.
         m = _make_model(_SERIAL_CONFIG)
-        disc = m.symbolicSpace.discourse
-        self.assertIs(disc._ltm_store, m.symbolicSpace.ltm_store)
+        disc = m.symbolSpace.discourse
+        self.assertIs(disc._ltm_store, m.symbolSpace.ltm_store)
         self.assertTrue(disc._ltm_consolidation)
 
     def test_off_path_discourse_uses_deque(self):
@@ -469,8 +470,8 @@ class TestStoreBackedChain(unittest.TestCase):
         # OLDEST-FIRST time order (recent() is descending timestamp).
         from Layers import TernaryTruthStore as T
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
-        disc = m.symbolicSpace.discourse
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.discourse
         store.reset()
         D = store.nDim
         a = torch.zeros(D); a[0] = 1.0           # oldest (ts 0)
@@ -494,8 +495,8 @@ class TestStoreBackedChain(unittest.TestCase):
         # Alec 2026-06-18 -- idea1 may be present without a predicate).
         from Layers import TernaryTruthStore as T
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
-        disc = m.symbolicSpace.discourse
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.discourse
         store.reset()
         D = store.nDim
         np1 = torch.zeros(D); np1[0] = 1.0       # idea1
@@ -515,8 +516,8 @@ class TestStoreBackedChain(unittest.TestCase):
 
     def test_get_stm_chain_respects_n_window(self):
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
-        disc = m.symbolicSpace.discourse
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.discourse
         store.reset()
         D = store.nDim
         for i in range(5):
@@ -535,8 +536,8 @@ class TestObserveSkipsDequeWhenConsolidated(unittest.TestCase):
         # per-row deque (the store-append is the source), but STILL runs the
         # predict/observe L_inter cycle.
         m = _make_model_provisioned(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
-        disc = m.symbolicSpace.discourse
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.discourse
         self.assertGreater(len(store), 0)
         deque_before = [len(dq) for dq in disc._stm_end_states]
         D = store.nDim
@@ -561,8 +562,8 @@ class TestSerialForwardAppendsStore(unittest.TestCase):
         # store and leaves the deque empty, running the predict->observe cycle
         # without error.
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolicSpace.ltm_store
-        disc = m.symbolicSpace.discourse
+        store = m.symbolSpace.ltm_store
+        disc = m.symbolSpace.discourse
         opt = m.getOptimizer(lr=0.01)
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")

@@ -411,10 +411,10 @@ class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
         # have non-empty rule_names, so both register with the
         # authority.
         self.assertIn(lift, auth.registered,
-                      "LiftLayer must auto-register with the SymbolicSpace "
+                      "LiftLayer must auto-register with the SymbolSpace "
                       "chart authority (Stage 4 wiring).")
         self.assertIn(lower, auth.registered,
-                      "LowerLayer must auto-register with the SymbolicSpace "
+                      "LowerLayer must auto-register with the SymbolSpace "
                       "chart authority (Stage 4 wiring).")
 
 

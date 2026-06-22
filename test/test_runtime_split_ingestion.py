@@ -85,7 +85,7 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         # Bug 2: the WS event-width activation size-mismatched the
         # content-width TruthLayer; store_truths now records end-to-end.
         m, Models = _model()
-        tl = m.symbolicSpace.truth_layer
+        tl = m.symbolSpace.truth_layer
         m.store_truths([{"content": "hello world", "trust": 0.9},
                         {"content": "loving there", "trust": 0.4}])
         self.assertGreater(int(tl.count.item()), 0)
@@ -93,7 +93,7 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
     def test_store_truths_idempotent_clear_then_record(self):
         # store_truths clears + repopulates; a second call is independent.
         m, Models = _model()
-        tl = m.symbolicSpace.truth_layer
+        tl = m.symbolSpace.truth_layer
         m.store_truths([{"content": "hello world", "trust": 0.8}])
         first = int(tl.count.item())
         m.store_truths([{"content": "loving world", "trust": 0.6}])

@@ -16,9 +16,17 @@ reasoning loop, and a grammar learning mode. Builds on the TruthLayer
 infrastructure ([Logic.md](Logic.md)) and grammar composition
 ([Language.md](Language.md)).
 
-## Partitioned Symbolic Space
+## Partitioned Symbol Space
 
-The symbolic dimension is statically partitioned across conceptual orders
+> **Terminology (percept / concept / symbol).** Throughout this doc
+> "symbol"/"symbolic" denotes the genuine SymbolSpace tier — the 0-D,
+> non-dimensionally-embedded references emitted as `symbolSum` — not the
+> ConceptualSpace part↔whole relation table (those are *concepts*) and not
+> the dimensionally-embedded perceptual content of PartSpace/WholeSpace
+> (those are *percepts*: part-percepts and whole-percepts). See
+> [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md).
+
+The symbol dimension is statically partitioned across conceptual orders
 using geometric decay. Each order writes only to its slice of `symbolSum`,
 while reading the full vector as feedback.
 
@@ -30,7 +38,7 @@ order 2:  [3D//4,  7D//8)      <- 1/8
 last order: remainder of D
 ```
 
-Makes the symbolic space **self-describing**: position reveals conceptual
+Makes the symbol partition **self-describing**: position reveals conceptual
 order. Truth methods use `_activation_order()` to determine a query's order
 by finding the partition with the highest energy. Partition boundaries are
 precomputed once at model creation via `BasicModel._order_partitions`.
@@ -135,7 +143,7 @@ symbol partition geometry. Higher-order symbols write to later partitions,
 so truth grounding, consistency, and extrapolation can respect conceptual
 order.
 
-The parser backend is selected by `SymbolicSpace.parserBackend`:
+The parser backend is selected by `SymbolSpace.parserBackend`:
 
 | Backend | Use |
 |---------|-----|
@@ -160,12 +168,12 @@ argument/return order.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
-| `<parserBackend>` | `<SymbolicSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
+| `<parserBackend>` | `<SymbolSpace>` | chart | Parser backend: `chart`, `stm`, or `parallel` |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |
 | `interLossWeight` | `<training>` | 0.1 | Inter-sentence next-end-state loss $\mathcal{L}_\text{inter}$ weight. See [STM.md Section 11](STM.md#11-inter-sentence-prediction). |
 | `routerWireSerial` | `<architecture>` | both | Per-word router-fire gating on the serial path (`per-word` / `boundary` / `both` / `off`). See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `ltmCapacity` | `<SymbolicSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `ltmCapacity` | `<SymbolSpace>` | 1024 | LTM chain capacity (`InterSentenceLayer` deque of STM end-states). See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
 
 The relative-vs-absolute end-state machinery, the content-aware
 learn-score gate, and the tetralemma trust 4-tuple carried on accepted
