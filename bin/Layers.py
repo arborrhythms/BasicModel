@@ -8090,14 +8090,12 @@ class InterSentenceLayer(Layer):
             ``[depth_b, D]`` tensor of the end-state slots for row ``b``
             (since depths differ per row a ragged list is natural, not a
             single padded tensor).
-          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The
-            per-row tetralemma trust tuple; ``None`` (the default) parks
-            ``None`` in every row's tuple — the field exists for Task 8 /
-            future consumers and this task does NOT couple itself to
-            computing a tetralemma for every sentence.
+          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The per-row
+            scalar trust to store with the end-state; ``None`` (the default)
+            parks ``None`` in every row's trust slot.
 
         Stored per row as a time-ordered tuple
-        ``(depth:int, payload:[depth,D] tensor, tetralemma:tuple|None)``.
+        ``(depth:int, payload:[depth,D] tensor, trust:float|None)``.
         Bounded at ``ltm_capacity`` (deque ``maxlen``): the oldest
         end-state is evicted once the chain is full.
 
@@ -8256,7 +8254,7 @@ class InterSentenceLayer(Layer):
 
         Returns a python ``list`` of time-ordered tuples (oldest first,
         most-recent last), each ``(depth:int, payload:[depth,D] tensor,
-        tetralemma:tuple|None)``. Returns ``[]`` for an out-of-range row
+        trust:float|None)``. Returns ``[]`` for an out-of-range row
         or an empty chain.
 
         LTM consolidation FU3 (Change 2): when wired to the unified store
@@ -14241,6 +14239,7 @@ class VectorQuantize(nn.Module):
         eps=1e-5,
         codebook_retire=False,
         learnable_codebook=False,
+        ema_update=True,
         **kwargs,
     ):
         """Initialize VectorQuantize; allocate state for the class contract.
@@ -14268,13 +14267,13 @@ class VectorQuantize(nn.Module):
         # Conceptual/Symbolic codebooks (single-writer invariant).
         self.learnable_codebook = bool(learnable_codebook)
         # Asymmetric VQ (asymmetric-vq plan sec.3, rev. 2026-06-09): master
-        # gate for the in-forward EMA codebook update. Default True (the
-        # standard VQ-VAE behavior). The WholeSpace VQ sets this False --
-        # EMA is a single-objective crutch replaced by the reconstruction
-        # gradient on the codebook (the input->codebook leg of the
-        # asymmetric routing). Distinct from ``learnable_codebook`` (which
-        # also flips the in-forward gradient estimator).
-        self.ema_update = True
+        # gate for the in-forward EMA codebook update. Constructor parameter,
+        # default True (the standard VQ-VAE behavior). The WholeSpace and
+        # category VQs pass False -- EMA is a single-objective crutch replaced
+        # by the reconstruction gradient on the codebook (the input->codebook
+        # leg of the asymmetric routing). Distinct from ``learnable_codebook``
+        # (which also flips the in-forward gradient estimator).
+        self.ema_update = bool(ema_update)
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.
@@ -14936,6 +14935,8 @@ _MOVED_TO_LANGUAGE = frozenset({
     'IntersectionLayer',
     'UnionLayer',
     'LiftLayer',
+    'VerbLayer',
+    'AdverbLayer',
     'LowerLayer',
     'SymbolizeLayer',
     'ConjunctionLayer',

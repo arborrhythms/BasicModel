@@ -2,8 +2,8 @@
 doc/specs/mereological-order-raising.md "Truth / Ideas processing"; Alec
 2026-06-18).
 
-Stage 2: a learned relative relation is ROUTED by reducibility behind the
-``truthIdeas`` gate ("the intuitive and explicit knowings"):
+Stage 2: a learned relative relation is ROUTED by reducibility ("the
+intuitive and explicit knowings"):
 
   * REDUCIBLE -- both ENTITY operands snap to existing WS codebook rows (no
     mint) -> stays the WS-META "intuitive knowing" (the legacy reduce path),
@@ -13,9 +13,8 @@ Stage 2: a learned relative relation is ROUTED by reducibility behind the
     with a SCALAR trust collapsed from the tetralemma (t - f; "inconsistency
     is not a valid object of knowing").
 
-Flag-off is the legacy always-reduce path (byte-identical). The routing is
-exercised directly on ``_maybe_learn_relation`` (the factor methods mocked so
-the gate is guaranteed to accept), mirroring
+The routing is exercised directly on ``_maybe_learn_relation`` (the factor
+methods mocked so the gate is guaranteed to accept), mirroring
 ``test_relative_sentence_codebook_insertion``.
 """
 
@@ -121,47 +120,15 @@ class TestReducibility(unittest.TestCase):
         self.assertFalse(cs._relation_is_reducible(idea1, idea2))
 
 
-# -- routing (the new behaviour) -------------------------------------------
-
-class TestRoutingFlagOff(unittest.TestCase):
-    """Flag OFF -> the legacy always-reduce path; the relative store is
-    never touched even for an ineffable relation (byte-identical)."""
-
-    def test_flag_off_never_uses_relative_store(self):
-        m = _make_radix_model()
-        cs = m.conceptualSpace
-        ws = cs.terminalSymbolSpace_ref
-        store = m.symbolSpace.relative_store
-        self.assertFalse(getattr(cs, "_truth_ideas", False),
-                         "fixture must default truthIdeas OFF")
-        cs.truth_criterion = 0.3
-        # Even an 'ineffable' (children=0) relation reduces when the flag is
-        # off -- mint a fresh row, never the relative store.
-        cs._learn_score_children_in_codebook = lambda i1, i2: 0.0
-        cs._learn_score_is_truth_obvious = lambda rel: 1.0
-        cs._learn_score_resolves_contradiction = lambda rel: 1.0
-        cs.truth_criterion = 0.0
-        D = int(cs.nDim)
-        predicate, idea1, idea2 = _three_ideas(D)
-        n_before = len(store)
-        out = cs._maybe_learn_relation(predicate, idea1, idea2)
-        self.assertIsInstance(out, int, "flag-off reduce path returns an int")
-        self.assertGreater(out, 0)
-        self.assertTrue(ws.is_meta(out))
-        self.assertEqual(len(store), n_before,
-                         "flag-off must NOT write the relative store")
-
-
 class TestRoutingReducible(unittest.TestCase):
-    """Flag ON + reducible -> WS META ("intuitive knowing"); relative store
-    untouched; full tetralemma stored on the META node."""
+    """Reducible -> WS META ("intuitive knowing"); relative store untouched;
+    full tetralemma stored on the META node."""
 
     def test_reducible_routes_to_ss_meta(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
         ws = cs.terminalSymbolSpace_ref
         store = m.symbolSpace.relative_store
-        cs._truth_ideas = True
         cs.truth_criterion = 0.3
         _accept_all(cs)               # children == 1.0 -> reducible
         D = int(cs.nDim)
@@ -183,16 +150,14 @@ class TestRoutingReducible(unittest.TestCase):
 
 
 class TestRoutingIneffable(unittest.TestCase):
-    """Flag ON + ineffable -> RelativeTruthStore ("explicit knowing"); the
-    uncollapsed (idea1, predicate, idea2) triple stored with a scalar trust;
-    WS taxonomy untouched."""
+    """Ineffable -> RelativeTruthStore ("explicit knowing"); the uncollapsed
+    (idea1, predicate, idea2) triple stored with scalar trust; WS untouched."""
 
     def test_ineffable_routes_to_relative_store(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
         ws = cs.terminalSymbolSpace_ref
         store = m.symbolSpace.relative_store
-        cs._truth_ideas = True
         _accept_but_ineffable(cs)
         # Pin the tetralemma so the collapsed degree is a known non-zero.
         cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
@@ -235,7 +200,6 @@ class TestRoutingIneffable(unittest.TestCase):
         m = _make_radix_model()
         cs = m.conceptualSpace
         ws = cs.terminalSymbolSpace_ref
-        cs._truth_ideas = True
         _accept_but_ineffable(cs)
         cs._relative_store_for_learning = lambda: None
         D = int(cs.nDim)
@@ -248,33 +212,37 @@ class TestRoutingIneffable(unittest.TestCase):
 
 # -- config -> stamp wiring ------------------------------------------------
 
-class TestFlagStamp(unittest.TestCase):
-    """The ``truthIdeas`` config element flows XSD -> parse -> CS stamp."""
+class TestTrustStamp(unittest.TestCase):
+    """The ``trust`` config element flows XSD -> parse -> CS stamp."""
 
-    def test_default_off(self):
+    def test_default_one(self):
         m = _make_radix_model()
-        self.assertFalse(m.truth_ideas)
-        self.assertFalse(getattr(m.conceptualSpace, "_truth_ideas", False))
+        self.assertAlmostEqual(m.trust, 1.0, places=6)
+        self.assertAlmostEqual(
+            getattr(m.conceptualSpace, "_trust", 1.0), 1.0, places=6)
+        self.assertAlmostEqual(
+            m._effective_incoming_trust(0.8), 0.8, places=6)
 
-    def test_config_on_stamps_cs(self):
-        # Inject <truthIdeas>true</truthIdeas> into a copy of the fixture
-        # (after <symbolicOrder> to honour the XSD sequence) in the data dir
-        # so its relative data references still resolve.
+    def test_config_trust_stamps_cs_and_scales_incoming(self):
         with open(_CONFIG, "r", encoding="utf-8") as fh:
             src = fh.read()
         self.assertIn("<symbolicOrder>0</symbolicOrder>", src)
         on = src.replace(
             "<symbolicOrder>0</symbolicOrder>",
             "<symbolicOrder>0</symbolicOrder>\n    "
-            "<truthIdeas>true</truthIdeas>")
-        tmp = os.path.join(_DATA_DIR, "_tmp_truthideas_on.xml")
+            "<trust>0.25</trust>")
+        tmp = os.path.join(_DATA_DIR, "_tmp_trust_scale.xml")
         with open(tmp, "w", encoding="utf-8") as fh:
             fh.write(on)
         try:
             m = _make_radix_model(config=tmp)
-            self.assertTrue(m.truth_ideas, "config truthIdeas=true -> parsed")
-            self.assertTrue(getattr(m.conceptualSpace, "_truth_ideas", False),
-                            "config truthIdeas=true -> stamped on CS")
+            self.assertAlmostEqual(m.trust, 0.25, places=6)
+            self.assertAlmostEqual(
+                getattr(m.conceptualSpace, "_trust", 1.0), 0.25, places=6)
+            self.assertAlmostEqual(
+                m._effective_incoming_trust(0.8), 0.2, places=6)
+            self.assertAlmostEqual(
+                m._effective_incoming_trust(-0.8), -0.2, places=6)
         finally:
             os.remove(tmp)
 
@@ -282,13 +250,12 @@ class TestFlagStamp(unittest.TestCase):
 # -- stage 3: STM -> LTM trust persistence ---------------------------------
 
 class TestStmLtmTrust(unittest.TestCase):
-    """``stm_end_state_trust`` collapses each relative end-state's relation
-    tetralemma to the stored scalar; the LTM slot persists it."""
+    """``stm_end_state_trust`` stores event trust for absolute rows and
+    relation trust for relative rows; the LTM slot persists it."""
 
-    def test_relative_rows_get_scalar_absolute_none(self):
+    def test_relative_rows_get_scalar_absolute_gets_event_trust(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        cs._truth_ideas = True
         cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
         D = int(cs.nDim)
         buf = torch.zeros(2, 3, D)
@@ -298,21 +265,25 @@ class TestStmLtmTrust(unittest.TestCase):
         out = cs.stm_end_state_trust(buf, torch.tensor([True, False]))
         self.assertIsNotNone(out)
         self.assertAlmostEqual(out[0], 0.7, places=6)   # relative -> t - f
-        self.assertIsNone(out[1], "absolute row carries no relation trust")
+        self.assertAlmostEqual(
+            out[1], 1.0, places=6,
+            msg="absolute row carries trust that the event description refers")
         # The CS stash mirrors the returned trusts (read at observe).
         self.assertEqual(cs._last_end_state_trust, out)
 
-    def test_flag_off_returns_none(self):
+    def test_model_trust_scales_relative_and_absolute_rows(self):
         m = _make_radix_model()
         cs = m.conceptualSpace
-        self.assertFalse(getattr(cs, "_truth_ideas", False))
+        cs._trust = 0.5
+        cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
         D = int(cs.nDim)
-        buf = torch.zeros(1, 3, D)
+        buf = torch.zeros(2, 3, D)
+        buf[0, 2, 0] = 1.0
         cs.stm._buffer = buf
-        cs.stm._depth = torch.tensor([3], dtype=torch.long)
-        self.assertIsNone(
-            cs.stm_end_state_trust(buf, torch.tensor([True])),
-            "flag off -> no trust -> LTM slot stays None (byte-identical)")
+        cs.stm._depth = torch.tensor([3, 1], dtype=torch.long)
+        out = cs.stm_end_state_trust(buf, torch.tensor([True, False]))
+        self.assertAlmostEqual(out[0], 0.35, places=6)
+        self.assertAlmostEqual(out[1], 0.5, places=6)
 
     def test_ltm_slot_persists_scalar_trust(self):
         from Layers import InterSentenceLayer

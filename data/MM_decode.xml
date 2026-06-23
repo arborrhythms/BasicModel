@@ -1,10 +1,11 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_decode: idea-decoder (D3) experiment config. SERIAL (symbolicOrder=1,
-       so the sentence reduces to a single-S [B,1,D] idea = the decoder seed) +
-       TALL WholeSpace (nOutputDim 1024, so symbol_dim==concept_dim and the
-       ideaDecode seed-swap drives instead of falling back) + <ideaDecode>.
+  <!-- MM_decode: idea-decoder (D3) experiment config. SERIAL via legacy
+       symbolicOrder=1 derivation, so the sentence reduces to a single-S
+       [B,1,D] idea = the decoder seed; TALL WholeSpace (nOutputDim 1024), so
+       symbol_dim==concept_dim and the ideaDecode seed-swap drives instead of
+       falling back; plus <ideaDecode>.
        Derived from MM_mereology_serial.xml + the MM_ws_tall WS/OS sizing.
        Dataset xor = simple 2-word sentences (hello world / hello there / ...),
        the build-up base for decode. -->

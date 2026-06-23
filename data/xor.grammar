@@ -1,10 +1,7 @@
 <?xml version="1.0"?>
 <!--
-  XOR grammar, role-collapsed format (doc/plans/2026-06-02-unified-
-  subsymbolic-analyzer-and-role-collapsed-grammar.md Section 4; see
-  data/role_collapsed.grammar for the full description). Declares ONLY
-  operator roles: each operand's input role (op_I[n]) and the operator's
-  output role (op_O1). Forward maps inputs to output
+  XOR grammar, role-only format. Declares ONLY operator roles: each operand's
+  input role (op_I[n]) and the operator's output role (op_O1). Forward maps inputs to output
   (O1 = op.forward(I1, I2)); reverse maps output back to inputs
   (I1, I2 = op.reverse(O1)).
 -->

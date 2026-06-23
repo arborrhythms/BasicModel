@@ -13100,16 +13100,14 @@ class ConceptualSpace(Space):
                         ws.maybe_raise_order(int(_pm))
 
         # --------------------------------------------------------------
-        # MetaSymbol Category codebook E/M (Phase 1; opt-in via
-        # <categoryCodebook>). The route's round-0 role observations
-        # (stashed on the WS by LanguageLayer.compose) say which operator
-        # INPUT role each percept filled this sentence. Attribute them to the
-        # percept's MetaSymbol, assign it to the nearest category centroid
-        # (E-step; the VQ's in-forward EMA is the free centroid M-step), and
-        # EMA the centroid's role vector toward the observed roles (the role
-        # M-step). No-op unless the codebook is enabled AND observations were
-        # stashed. The stash is consumed so a later non-compose forward does
-        # not re-apply stale observations.
+        # MetaSymbol Category learning (opt-in via <categoryCodebook>). The
+        # route's round-0 role observations (stashed on the WS by
+        # LanguageLayer.compose) say which operator INPUT role each percept
+        # filled this sentence. Attribute them to the percept's MetaSymbol and
+        # hand the observed role vector to Language.MetaSymbolCategoryLearner:
+        # pending words accumulate sparse role evidence; stable words commit
+        # to one role-space VQ category. The stash is consumed so a later
+        # non-compose forward does not re-apply stale observations.
         if (getattr(ws, 'category_codebook_enabled', None) is not None
                 and ws.category_codebook_enabled()):
             # Phase 2 (chooser conditioning): stash this perception's per-
@@ -13122,9 +13120,7 @@ class ConceptualSpace(Space):
             role_obs = getattr(ws, '_category_role_obs', None)
             role_index = getattr(ws, '_category_role_index', None) or {}
             n_roles = int(getattr(ws, '_category_n_roles', 0) or 0)
-            cb = getattr(ws.subspace, 'what', None)
-            W = cb.getW() if cb is not None else None
-            if role_obs and n_roles > 0 and W is not None:
+            if role_obs and n_roles > 0:
                 for b in range(min(len(role_obs), B)):
                     # Accumulate this row's per-position role vector: each
                     # round-0 reduce gives its left operand op_I1 and right
@@ -13150,20 +13146,9 @@ class ConceptualSpace(Space):
                         meta_pos = ws.taxonomy_parent(ps_pos)
                         if meta_pos is None:
                             continue
-                        meta_row = ws._ws_pos_to_row.get(int(meta_pos))
-                        if meta_row is None or int(meta_row) >= int(W.shape[0]):
-                            continue
-                        idx = ws.assign_category(W[int(meta_row)].detach().unsqueeze(0))
-                        if idx is None:
-                            continue
-                        # Phase 2: record the MetaSymbol -> centroid assignment
-                        # so compose can read the centroid (a pure dict read)
-                        # without re-running the E-step at score time.
-                        ca = getattr(ws, '_category_assign', None)
-                        if ca is not None:
-                            ca[int(meta_pos)] = int(idx.reshape(-1)[0])
-                        ws.update_category_role(
-                            idx, torch.tensor([vec], dtype=torch.float32))
+                        ws.observe_category_roles(
+                            int(meta_pos),
+                            torch.tensor([vec], dtype=torch.float32))
             if hasattr(ws, '_category_role_obs'):
                 ws._category_role_obs = None
 
@@ -13954,9 +13939,8 @@ class ConceptualSpace(Space):
             "(empty/unbuilt non-growable codebook).")
 
     # -- Truth / Ideas reduce-or-describe routing (Workstreams F+G) --------
-    # Gated by ``truthIdeas`` (stamped ``self._truth_ideas``). These run only
-    # on the flag-on path; the flag-off learn path never reaches them, so the
-    # whole subsystem is byte-identical when the gate is off.
+    # Accepted relations always route structurally: reducible relations become
+    # WS META taxonomy; ineffable composed-idea relations stay explicit.
 
     def _relative_store_for_learning(self):
         """Return the sibling relations-between-ideas store
@@ -14064,10 +14048,46 @@ class ConceptualSpace(Space):
         f = float(trust4[1]) if len(trust4) > 1 else 0.0
         return max(-1.0, min(1.0, t - f))
 
+    def _incoming_trust_multiplier(self):
+        """Model-level trust in incoming descriptions/testimony."""
+        try:
+            trust = float(getattr(self, '_trust', 1.0))
+        except (TypeError, ValueError):
+            trust = 1.0
+        if not math.isfinite(trust):
+            trust = 1.0
+        return max(0.0, min(1.0, trust))
+
+    def _scale_scalar_trust(self, trust):
+        """Apply model testimony trust to a signed scalar DoT."""
+        try:
+            raw = float(trust)
+        except (TypeError, ValueError):
+            raw = 0.0
+        if not math.isfinite(raw):
+            raw = 0.0
+        return max(-1.0, min(1.0, raw * self._incoming_trust_multiplier()))
+
+    def _scale_tetralemma_trust(self, trust4):
+        """Attenuate a tetralemma by testimony trust, moving withheld mass to
+        NEITHER rather than renormalizing away the loss of confidence."""
+        vals = list(trust4) if trust4 is not None else []
+        vals = vals + [0.0] * max(0, 4 - len(vals))
+        try:
+            t, f, b, n = (float(vals[0]), float(vals[1]),
+                          float(vals[2]), float(vals[3]))
+        except (TypeError, ValueError):
+            t, f, b, n = 0.0, 0.0, 0.0, 1.0
+        scale = self._incoming_trust_multiplier()
+        scaled = (scale * t, scale * f, scale * b, (1.0 - scale) + scale * n)
+        ws = self._terminal_ws_for_learning()
+        if ws is not None and hasattr(ws, "_normalize_trust_tuple"):
+            return ws._normalize_trust_tuple(scaled)
+        return WholeSpace._normalize_trust_tuple(scaled)
+
     def _route_learned_relation(self, ws, predicate, idea1, idea2,
                                 truth_set=None):
-        """Route an accepted relation to its home by reducibility (the
-        ``truthIdeas`` reduce-or-describe step).
+        """Route an accepted relation to its home by reducibility.
 
         * REDUCIBLE (both entity operands snap to existing codebook rows) ->
           the INTUITIVE knowing: resolve to WS positions and
@@ -14082,7 +14102,8 @@ class ConceptualSpace(Space):
 
         Falls back to the reduce path when no relative store is reachable
         (graceful degrade -- the relation is still learned, never dropped)."""
-        trust4 = self._tetralemma_trust(predicate, truth_set=truth_set)
+        trust4 = self._scale_tetralemma_trust(
+            self._tetralemma_trust(predicate, truth_set=truth_set))
         if self._relation_is_reducible(idea1, idea2):
             pred_pos = self._resolve_idea_to_ws_position(predicate)
             idea1_pos = self._resolve_idea_to_ws_position(idea1)
@@ -14141,22 +14162,22 @@ class ConceptualSpace(Space):
 
         For each RELATIVE row, the relation's full tetralemma is computed
         (``_tetralemma_trust`` on the predicate, slot ``depth-1`` of the
-        end-state) and collapsed to the stored scalar ``t - f``
-        (``_collapse_trust``; Dharmakirti -- BOTH/NEITHER are not stored).
-        ABSOLUTE rows carry ``None`` (trust attaches to RELATIONS; an absolute
-        idea has no relation trust here -- a first cut).
+        end-state), attenuated by model-level testimony trust, and collapsed
+        to the stored scalar ``t - f`` (``_collapse_trust``; Dharmakirti --
+        BOTH/NEITHER are not stored).
 
-        Returns a ``list[B]`` of ``float | None``, or ``None`` (the LTM slot
-        stays ``None`` -> byte-identical) when ``truthIdeas`` is off or no
-        buffer / mask is available. The trust LOGIC lives on the CS and is
-        read at the ``observe_stm_end_state`` boundary from the SAME end-state
-        buffer it records (so the trust aligns with the LTM row -- the
-        boundary hooks ``observe`` (in the forward) and ``learn`` (in the
-        post-batch Reset) run in that order, so a learn-time stash would lag
-        the end-state by one boundary)."""
+        Absolute rows carry the model's trust that the description refers to
+        an actual event; relative rows carry that same testimony trust applied
+        to the relation's ``t - f`` scalar.
+
+        Returns a ``list[B]`` of floats, or ``None`` when no buffer / mask is
+        available. The trust LOGIC lives on the CS and is read at the
+        ``observe_stm_end_state`` boundary from the SAME end-state buffer it
+        records (so the trust aligns with the LTM row -- the boundary hooks
+        ``observe`` (in the forward) and ``learn`` (in the post-batch Reset)
+        run in that order, so a learn-time stash would lag the end-state by
+        one boundary)."""
         if buf is None or relative_mask is None:
-            return None
-        if not getattr(self, '_truth_ideas', False):
             return None
         if not torch.is_tensor(buf) or buf.dim() != 3:
             return None
@@ -14167,8 +14188,10 @@ class ConceptualSpace(Space):
         stm = getattr(self, 'stm', None)
         depth_t = getattr(stm, '_depth', None) if stm is not None else None
         out = [None] * B
-        for b in range(min(B, len(mask))):
-            if not bool(mask[b]):
+        for b in range(B):
+            is_relative = bool(mask[b]) if b < len(mask) else False
+            if not is_relative:
+                out[b] = self._incoming_trust_multiplier()
                 continue
             if depth_t is not None:
                 d = int(depth_t[b].item())
@@ -14176,7 +14199,8 @@ class ConceptualSpace(Space):
                 d = int(buf.shape[1])
             d = max(1, min(d, int(buf.shape[1])))
             predicate = buf[b, d - 1, :]
-            trust4 = self._tetralemma_trust(predicate)
+            trust4 = self._scale_tetralemma_trust(
+                self._tetralemma_trust(predicate))
             out[b] = self._collapse_trust(trust4)
         # Stash on the CS (Alec 2026-06-18) so the LTM observe hook reads a
         # CS-owned trust; recomputed each boundary, so it never goes stale.
@@ -14410,13 +14434,13 @@ class ConceptualSpace(Space):
                               truth_set=None):
         """Gate + insert a learned relative relation.
 
-        Computes the learn-score; if ``>= self.truth_criterion``,
-        resolves ``(predicate, idea1, idea2)`` vectors to WS positions,
-        inserts the predicate-parent / two-children META via
-        :meth:`WholeSpace.insert_relation` carrying the tetralemma
-        trust 4-tuple, and returns the predicate META position. Returns
-        ``None`` (a legitimate ACCEPT/REJECT decision, NOT an error) when
-        the score is below the criterion.
+        Computes the learn-score; if ``>= self.truth_criterion``, routes
+        ``(predicate, idea1, idea2)`` by reducibility. Reducible relations
+        become predicate-parent / two-children WS META rows carrying the full
+        tetralemma trust tuple; ineffable composed-idea relations are stored
+        explicitly with scalar trust. Returns ``None`` (a legitimate
+        ACCEPT/REJECT decision, NOT an error) when the score is below the
+        criterion.
 
         At ``truth_criterion == 1`` nothing is learned; at ``0``
         everything is. This is the unit the Task 6c tests exercise
@@ -14441,20 +14465,11 @@ class ConceptualSpace(Space):
                 "ConceptualSpace._maybe_learn_relation: relation cleared "
                 "the learn-score gate but no terminal WholeSpace is "
                 "wired to insert it. Wire terminalSymbolSpace_ref.")
-        # Truth / Ideas reduce-or-describe routing (gated ``truthIdeas``;
-        # flag-off falls through to the legacy always-reduce path below,
-        # byte-identical). A reducible relation (both entity operands snap
-        # to existing codebook rows) stays the WS-META "intuitive knowing";
-        # an ineffable one becomes a RelativeTruthStore "explicit knowing".
-        if getattr(self, '_truth_ideas', False):
-            return self._route_learned_relation(
-                ws, predicate, idea1, idea2, truth_set=truth_set)
-        pred_pos = self._resolve_idea_to_ws_position(predicate)
-        idea1_pos = self._resolve_idea_to_ws_position(idea1)
-        idea2_pos = self._resolve_idea_to_ws_position(idea2)
-        trust = self._tetralemma_trust(predicate, truth_set=truth_set)
-        ws.insert_relation(pred_pos, idea1_pos, idea2_pos, trust=trust)
-        return pred_pos
+        # A reducible relation (both entity operands snap to existing codebook
+        # rows) stays the WS-META "intuitive knowing"; an ineffable one becomes
+        # a RelativeTruthStore/TernaryTruthStore "explicit knowing".
+        return self._route_learned_relation(
+            ws, predicate, idea1, idea2, truth_set=truth_set)
 
     @torch.no_grad()
     def learn_relations_from_stm(self, relative_mask):
@@ -14477,11 +14492,10 @@ class ConceptualSpace(Space):
         learned (absolute rows collapse to a single S and carry no
         binary predicate). Returns the list of accepted relations
         (``None`` entries elided) for verification / probing. Each entry is
-        an ``int`` predicate META position for a REDUCED relation; under the
-        ``truthIdeas`` gate an INEFFABLE relation routed to the
-        RelativeTruthStore instead yields an ``('idea', row)`` tuple (so a
-        consumer that expects pure positions must filter by type). With the
-        gate off every entry is an ``int`` (the legacy reduce path).
+        an ``int`` predicate META position for a REDUCED relation; an
+        INEFFABLE relation routed to explicit idea storage yields an
+        ``('idea', row)`` tuple (so a consumer that expects pure positions
+        must filter by type).
 
         Pure host-side bookkeeping (codebook-row allocation + taxonomy
         dict mutation); runs under ``no_grad`` and only when a terminal
@@ -16319,31 +16333,28 @@ class WholeSpace(PerceptualSpace):
             int(self.nDim), generator=gen, dtype=torch.float32, device='cpu')
 
     # ------------------------------------------------------------------
-    # MetaSymbol role-participation Category codebook (Phase 1; opt-in via
+    # MetaSymbol role-participation Category codebook (opt-in via
     # <categoryCodebook>). doc/Language.md "Participation Categories as the
-    # Chooser's Syntactic-Category Context". A small VectorQuantize over the
-    # live MetaSymbol vectors (dim = nDim) into K centroids; each centroid
-    # carries an uncollapsed role vector ``_category_role[K, n_roles]`` whose
-    # columns are the operator roles (<op>_I<n> inputs + <op>_O1 outputs).
-    # The VQ's in-forward EMA is the centroid M-step (and, with
-    # codebook_retire=False, unused centroids decay -> natural collapse); the
-    # role-vector M-step is ``update_category_role``. Allocated ONLY when the
-    # model enables it at build, so the default forward never sees it
-    # (byte-identical).
+    # Chooser's Syntactic-Category Context". A small VectorQuantize over
+    # role-participation vectors (dim = n_roles) into K centroids; each
+    # centroid carries the uncollapsed role prototype ``_category_role[K,
+    # n_roles]``. Words do not keep permanent role tables: the learner holds
+    # bounded pending rows and commits ``MetaSymbol -> category_id`` once the
+    # role evidence is stable.
     # ------------------------------------------------------------------
     def enable_category_codebook(self, grammar, k=None, decay=0.9, device=None):
         """Allocate the MetaSymbol Category codebook (idempotent).
 
         Enumerates the operator roles from ``grammar`` (the fixed column
-        layout of each centroid's role vector), builds a ``VectorQuantize``
-        over the MetaSymbol vectors with ``codebook_retire=False``, and
-        allocates the per-centroid ``_category_role`` buffer. ``k`` defaults
-        to ``n_roles``. Returns True on success, False when the grammar
-        declares no roles (nothing to learn -- e.g. the grammar is not yet
-        configured at build, hence the lazy enable from the autobind hook).
+        layout of each role-participation profile), builds a
+        ``VectorQuantize`` in that role space with ``codebook_retire=False``,
+        and allocates the per-centroid ``_category_role`` prototype buffer.
+        ``k`` defaults to ``n_roles``: one initial prototype per labelled
+        grammar role, free to collapse as usage pulls centroids together.
+        Returns True on success, False when the grammar declares no roles.
         ``device`` places the new VQ + buffer (the lazy caller passes the
         live codebook device)."""
-        from Language import compute_role_vocabulary
+        from Language import compute_role_vocabulary, MetaSymbolCategoryLearner
         if getattr(self, "_category_vq", None) is not None:
             return True
         roles, role_index, n_roles = compute_role_vocabulary(grammar)
@@ -16353,36 +16364,56 @@ class WholeSpace(PerceptualSpace):
         self._category_roles = roles
         self._category_role_index = role_index
         self._category_n_roles = int(n_roles)
+        # The category codebook is written ONLY by update_category_role (the
+        # explicit role-vector M-step), so disable the in-forward EMA at
+        # CONSTRUCTION: assign_category (the E-step read) is then a pure
+        # lookup and there is a SINGLE writer -- otherwise the EMA and the
+        # M-step mutate the same rows by different laws and the assign/score
+        # tables drift apart.
         vq = VectorQuantize(
-            dim=int(self.nDim), codebook_size=K, decay=float(decay),
-            use_cosine_sim=False, codebook_retire=False)
+            dim=int(n_roles), codebook_size=K, decay=float(decay),
+            use_cosine_sim=False, codebook_retire=False, ema_update=False)
         if device is not None:
             vq = vq.to(device)
+        init = torch.zeros(K, n_roles, dtype=torch.float32, device=device)
+        for i in range(min(K, n_roles)):
+            init[i, i] = 1.0
+        with torch.no_grad():
+            # The codebook setter already resets embed_avg and _b_norms_sq to
+            # match; only cluster_size needs a non-zero bootstrap.
+            vq.codebook = init
+            vq.cluster_size.fill_(1.0)
         self.add_module("_category_vq", vq)
         self.register_buffer(
             "_category_role",
-            torch.zeros(K, n_roles, dtype=torch.float32, device=device))
-        # MetaSymbol position -> assigned centroid index (E-step result),
-        # populated by the autobind hook (Phase 1 wiring).
+            init.detach().clone())
+        # Learned long-term category: MetaSymbol position -> centroid index.
+        # Pending role evidence lives in Language.MetaSymbolCategoryLearner.
         self._category_assign = {}
+        self._category_learner = MetaSymbolCategoryLearner(n_roles)
         return True
 
     def category_codebook_enabled(self):
         """True once :meth:`enable_category_codebook` has allocated the VQ."""
         return getattr(self, "_category_vq", None) is not None
 
-    def assign_category(self, meta_vecs):
-        """E-step (+ free centroid M-step): assign MetaSymbol vectors to the
-        nearest centroid and EMA-recentroid (the VQ's own in-forward update,
-        active in training mode). ``meta_vecs``: ``[M, nDim]`` (or ``[nDim]``).
-        Returns the ``[M]`` long centroid indices, or None when the codebook
-        is disabled. Pure bookkeeping -- no autograd."""
+    def assign_category(self, role_vecs):
+        """Assign role-participation profiles to the nearest category.
+
+        This is the VQ E-step in role space. ``role_vecs`` is ``[M,
+        n_roles]`` (or ``[n_roles]``), typically a normalized pending
+        MetaSymbol role profile. Returns ``[M]`` centroid indices, or None
+        when the codebook is disabled or the width is not ``n_roles``.
+        """
         vq = getattr(self, "_category_vq", None)
-        if vq is None or meta_vecs is None or not torch.is_tensor(meta_vecs):
+        if vq is None or role_vecs is None or not torch.is_tensor(role_vecs):
             return None
-        x = meta_vecs.detach().to(dtype=torch.float32)
+        x = role_vecs.detach().to(dtype=torch.float32)
         if x.dim() == 1:
             x = x.unsqueeze(0)
+        if x.shape[-1] != int(getattr(self, "_category_n_roles", 0) or 0):
+            return None
+        x = x.to(device=vq.codebook.device)
         with torch.no_grad():
             _q, indices, _loss = vq(x)
         return indices.reshape(-1)
@@ -16414,6 +16445,49 @@ class WholeSpace(PerceptualSpace):
             old = cr.index_select(0, idx)
             new = (1.0 - float(ema)) * old + float(ema) * rv
             cr.index_copy_(0, idx, new)
+            vq = getattr(self, "_category_vq", None)
+            if vq is not None:
+                new_vq = new.to(device=vq.codebook.device,
+                                dtype=vq.codebook.dtype)
+                idx_vq = idx.to(vq.codebook.device)
+                vq.codebook.data.index_copy_(0, idx_vq, new_vq)
+                if hasattr(vq, "embed_avg"):
+                    vq.embed_avg.index_copy_(
+                        0, idx_vq, new_vq.to(dtype=vq.embed_avg.dtype))
+                if hasattr(vq, "_b_norms_sq"):
+                    norms = (vq.codebook.detach() ** 2).sum(dim=-1)
+                    vq._b_norms_sq.copy_(norms)
+
+    def observe_category_roles(self, meta_pos, role_vec):
+        """Feed one MetaSymbol's observed role vector to the category learner."""
+        learner = getattr(self, "_category_learner", None)
+        if learner is None:
+            return None
+        return learner.observe(self, int(meta_pos), role_vec)
+
+    def category_role_for_meta(self, meta_pos, *, device=None, dtype=None):
+        """Return committed or pending role context for one MetaSymbol."""
+        n_roles = int(getattr(self, "_category_n_roles", 0) or 0)
+        if n_roles <= 0:
+            return None
+        if dtype is None:
+            dtype = torch.float32
+        assign = getattr(self, "_category_assign", None) or {}
+        ci = assign.get(int(meta_pos))
+        if ci is not None:
+            cr = getattr(self, "_category_role", None)
+            dev = device if device is not None else (cr.device if cr is not None else None)
+            idx = torch.tensor([int(ci)], dtype=torch.long, device=dev)
+            role = self.category_role_of(idx)
+            if role is not None:
+                return role.reshape(-1).to(device=device, dtype=dtype)
+        learner = getattr(self, "_category_learner", None)
+        if learner is not None:
+            pending = learner.pending_role(
+                int(meta_pos), device=device, dtype=dtype)
+            if pending is not None:
+                return pending
+        return torch.zeros(n_roles, dtype=dtype, device=device)
 
     def category_role_of(self, centroid_idx):
         """Gather the ``[..., n_roles]`` role vectors for centroid indices --
@@ -18982,10 +19056,12 @@ class WholeSpace(PerceptualSpace):
         if cs_view is None or not self.training:
             return
         # The serial/grammar leg keeps its legacy coupling -- adoption is
-        # a symbolic-iteration (parallel-leg) mechanism. Order test, not
+        # a symbolic-iteration (parallel-leg) mechanism. Mode test, not
         # SyntacticLayer presence: the layer is attached unconditionally.
-        # ``_symbolic_order`` 0 = parallel; >= 1 = serial.
-        if int(getattr(self, '_symbolic_order', 0) or 0) != 0:
+        _serial = getattr(self, '_serial', None)
+        if _serial is None:
+            _serial = int(getattr(self, '_symbolic_order', 0) or 0) != 0
+        if bool(_serial):
             return
         basis = self.subspace.what
         if not (self.codebook and isinstance(basis, Codebook)):
@@ -19383,12 +19459,12 @@ class WholeSpace(PerceptualSpace):
         # symbol is discrete and given, composable only by Sigma
         # downstream. Gates the transform bypass, the snap-width trim,
         # and the one-symbol apoha emission below. The leg test is the
-        # MODEL'S ``symbolicOrder`` (mirrored onto the space as
-        # ``_symbolic_order`` at create_from_config; 0 = parallel) -- the
-        # SyntacticLayer is attached unconditionally (model.xml default
-        # grammar), so layer presence cannot distinguish parallel from
-        # serial. Serial/grammar and stage-0 unity paths are untouched; a
-        # standalone space without the stamp keeps today's dispatch.
+        # MODEL'S ``serial`` flag (mirrored onto the space as ``_serial`` at
+        # create_from_config) -- the SyntacticLayer is attached
+        # unconditionally (model.xml default grammar), so layer presence
+        # cannot distinguish parallel from serial. Serial/grammar and
+        # stage-0 unity paths are untouched; a standalone space without
+        # the stamp keeps today's dispatch via ``_symbolic_order``.
         # Geometry guards keep legacy-geometry legs on today's path:
         # a snap cannot consume a view narrower than the codebook row
         # (e.g. MM_xor's t=1 view hands 5-wide muxed atoms; the S-space_role
@@ -19396,8 +19472,11 @@ class WholeSpace(PerceptualSpace):
         # [N, nDim] must reshape cleanly into the narrow output
         # [*, nOutputDim] (tapered multi-stage configs carry stages
         # where it cannot).
+        _serial = getattr(self, '_serial', None)
+        if _serial is None:
+            _serial = int(getattr(self, '_symbolic_order', 0) or 0) != 0
         _symbolic_iter = (bool(self.codebook)
-                          and int(getattr(self, '_symbolic_order', 0) or 0) == 0
+                          and not bool(_serial)
                           and isinstance(self.subspace.what, Codebook)
                           and act_pre is not None
                           and act_pre.dim() == 3
@@ -19672,12 +19751,17 @@ class WholeSpace(PerceptualSpace):
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             vspace = self.forwardEnd(self.subspace)
-            # The serial/grammar leg keeps the legacy nearest-target
-            # coupling; a SYMBOLIC ITERATION (parallel + quantize) takes
-            # the emission branch below regardless of the (always-
-            # attached) SyntacticLayer.
-            _serial = (getattr(self, 'syntacticLayer', None) is not None
-                       and not _symbolic_iter)
+            # Gate purely on ``serial`` (consistent with the two earlier
+            # _serial resolution sites): the serial/grammar leg keeps the
+            # legacy nearest-target coupling; a parallel leg takes the
+            # symbolic-emission branch below. ``_symbolic_iter`` (the
+            # parallel-quantize snap predicate) already implies ``not
+            # serial``, so it added nothing to THIS decision -- the snap
+            # geometry it guards is re-checked inside the emission branch.
+            _serial = getattr(self, '_serial', None)
+            if _serial is None:
+                _serial = int(getattr(self, '_symbolic_order', 0) or 0) != 0
+            _serial = bool(_serial)
             if _serial:
                 # SERIAL/grammar leg -- TRANSITIONAL: the legacy
                 # nearest-target coupling stays until the serial path

@@ -3,12 +3,16 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_phrase_decode: idea-decoder (D3) on a REAL grammar + REAL phrases.
        Unlike MM_decode (default sigma/pi grammar = partition-blind reverse),
-       this uses role_collapsed.grammar (lift/lower/intersection with real
-       reverses) so a DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ)
-       to a single S, and lower.reverse can reconstitute both constituents
-       (Alec's flow). SERIAL (single-S idea at slot 0) + TALL WS
-       (symbol_dim==concept_dim so the ideaDecode seed-swap drives) +
-       <ideaDecode>. dataset=phrases ("the cat"/"black cat"/...). -->
+       this uses complete.grammar, whose composition ops include lower
+       (DET/ADJ), intersection, and verb/adverb (the VP ops that replaced
+       lift). A DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ) to a
+       single S, and lower.reverse reconstitutes both constituents -- the
+       decode path this fixture exercises. Note: not every op is invertible
+       (verb needs its operand to invert; adverb is lossy), so the round-trip
+       relies on the lower/intersection reverses, not the VP ops. SERIAL
+       (single-S idea at slot 0) + TALL WS (symbol_dim==concept_dim so the
+       ideaDecode seed-swap drives) + <ideaDecode>. dataset=phrases
+       ("the cat"/"black cat"/...). -->
   <architecture>
     <symbolicOrder>1</symbolicOrder>
     <subsymbolicOrder>3</subsymbolicOrder>
@@ -36,7 +40,7 @@
 
   <SymbolSpace>
     <language>
-      <grammar>role_collapsed.grammar</grammar>
+      <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>
 

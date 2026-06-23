@@ -1,26 +1,26 @@
-"""Stage 1.E substrate refactor: explicit forward-dispatch depth.
+"""Stage 1.E substrate refactor: explicit forward-dispatch mode.
 
 Post-Stage-1.E contract (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md),
-updated 2026-06-13 (conceptualMode enum -> symbolicOrder integer):
+updated 2026-06-22 (serial mode split from symbolicOrder):
 
-  * ``BasicModel`` reads ``<architecture><symbolicOrder>`` from XML at
-    construction time and stores it on ``self.symbolicOrder`` (an int).
+  * ``BasicModel`` reads ``<architecture><serial>`` and
+    ``<architecture><symbolicOrder>`` from XML at construction time.
 
-  * ``0`` = PARALLEL (the per-stage body via :meth:`_forward_per_stage`);
-    ``>= 1`` = SERIAL / GRAMMATICAL (the per-word body via
-    :meth:`_forward_body_per_word`). The substrate-level SERIAL /
-    GRAMMATICAL collapse is the spec's design decision — at the substrate
-    level serial is one mode; grammar dispatch is a chart / rule-catalog
-    config, not a substrate mode. Values > 1 are plumbed but behave as 1.
+  * ``serial`` selects traversal: ``False`` = PARALLEL (the per-stage body
+    via :meth:`_forward_per_stage`); ``True`` = SERIAL / GRAMMATICAL (the
+    per-word body via :meth:`_forward_body_per_word`).
 
-  * Negative / non-integer values raise loudly at config load time (per
-    the project's fail-loud rule).
+  * ``symbolicOrder`` is a non-negative symbolic / relational loop budget.
+    Values above 1 are accepted and must not by themselves force serial
+    traversal when ``serial`` is explicit.
 
-  * ``BasicModel._forward_body`` dispatches based on ``self.symbolicOrder``
-    directly — no longer indirectly via ``InputSpace._per_word_enabled``.
-    The ``_per_word_enabled`` boolean is preserved for back-compat (set
-    from the new knob during construction so existing readers — e.g. the
-    per-word AR cursor in ``InputSpace.next_word`` — see the same value).
+  * Negative / non-integer ``symbolicOrder`` values raise loudly at config
+    load time (per the project's fail-loud rule).
+
+  * Back-compat: if ``<serial>`` is omitted, serial mode derives from
+    ``symbolicOrder > 0`` so existing configs keep their old behavior.
+    The ``_per_word_enabled`` boolean is preserved for existing readers and
+    mirrors ``self.serial``.
 
 This file is the targeted TDD gate for Stage 1.E. It uses the same
 ``MM_xor_loopback.xml`` config as the sibling Stage 1.A / 1.C / 1.D /
@@ -56,25 +56,30 @@ _NONGRAMMAR_CONFIG = os.path.join(_DATA_DIR, "MM_xor.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _write_config_with_order_override(base_config_path, override_order):
-    """Materialize a temporary XML file that sets
-    ``<symbolicOrder>override_order</symbolicOrder>`` on
-    ``base_config_path``.
+def _write_config_with_arch_overrides(
+        base_config_path, override_order=None, serial=None):
+    """Materialize a temporary XML file that overlays architecture knobs.
 
     Because ``BasicModel.from_config`` re-loads ``TheXMLConfig`` from
     disk (clobbering any in-memory ``set()`` we'd do), exercising the
-    XML read path requires actually writing the override to a file.
-    Strip any existing ``<symbolicOrder>`` element first so the overlay
-    does not produce a list value, then inject inside ``<architecture>``
-    (creating the block when missing).
+    XML read path requires actually writing the override to a file. Strip
+    any existing ``<serial>`` / ``<symbolicOrder>`` elements first so the
+    overlay does not produce list values, then inject inside
+    ``<architecture>`` (creating the block when missing).
     """
     with open(base_config_path, "r") as f:
         text = f.read()
-    # Strip any pre-existing <symbolicOrder>...</symbolicOrder>
-    text = re.sub(
-        r"\s*<symbolicOrder>[^<]*</symbolicOrder>\s*\n",
-        "\n", text)
-    inject = f"<symbolicOrder>{override_order}</symbolicOrder>"
+    for tag in ("serial", "symbolicOrder"):
+        text = re.sub(
+            rf"\s*<{tag}>[^<]*</{tag}>\s*\n",
+            "\n", text)
+    entries = []
+    if serial is not None:
+        serial_text = "true" if serial else "false"
+        entries.append(f"<serial>{serial_text}</serial>")
+    if override_order is not None:
+        entries.append(f"<symbolicOrder>{override_order}</symbolicOrder>")
+    inject = "\n    ".join(entries)
     if "<architecture>" in text:
         text = text.replace(
             "<architecture>", f"<architecture>\n    {inject}", 1)
@@ -82,7 +87,8 @@ def _write_config_with_order_override(base_config_path, override_order):
         # Insert architecture block just after <model>
         text = re.sub(
             r"<model[^>]*>",
-            lambda m: m.group(0) + f"\n  <architecture>{inject}</architecture>",
+            lambda m: (
+                m.group(0) + f"\n  <architecture>{inject}</architecture>"),
             text, count=1)
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False,
@@ -92,15 +98,15 @@ def _write_config_with_order_override(base_config_path, override_order):
     return tmp.name
 
 
-def _make_model(config_path, override_order=None):
+def _make_model(config_path, override_order=None, serial=None):
     """Build a fresh BasicModel from ``config_path``. If
-    ``override_order`` is set, write a sibling XML file with
-    ``<architecture><symbolicOrder>override_order</symbolicOrder>``
-    overlaid so the constructor reads it from disk.
+    ``override_order`` or ``serial`` is set, write a sibling XML file with
+    those architecture overrides so the constructor reads them from disk.
     """
-    if override_order is not None:
-        config_path = _write_config_with_order_override(
-            config_path, override_order)
+    wrote_tmp = override_order is not None or serial is not None
+    if wrote_tmp:
+        config_path = _write_config_with_arch_overrides(
+            config_path, override_order=override_order, serial=serial)
     try:
         init_config(path=config_path, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
@@ -111,7 +117,7 @@ def _make_model(config_path, override_order=None):
         model.eval()
         return model
     finally:
-        if override_order is not None:
+        if wrote_tmp:
             try:
                 os.unlink(config_path)
             except OSError:
@@ -170,6 +176,14 @@ class TestSymbolicOrderXMLRead(unittest.TestCase):
             "Explicit <symbolicOrder>0</symbolicOrder> must be read into "
             "self.symbolicOrder at construction.")
 
+    def test_order_above_one_sticks(self):
+        model = _make_model(
+            _GRAMMAR_CONFIG, override_order=2, serial=False)
+        self.assertEqual(
+            model.symbolicOrder, 2,
+            "Explicit <symbolicOrder>2</symbolicOrder> must be accepted as "
+            "a symbolic loop budget.")
+
 
 class TestSymbolicOrderInvalidRaisesLoud(unittest.TestCase):
     """Invalid ``<symbolicOrder>`` values raise loudly at config load
@@ -189,13 +203,29 @@ class TestSymbolicOrderInvalidRaisesLoud(unittest.TestCase):
             _make_model(_GRAMMAR_CONFIG, override_order="not_an_int")
 
 
-class TestForwardBodyDispatchesOnSymbolicOrder(unittest.TestCase):
-    """The ``_forward_body`` dispatch is governed by
-    ``self.symbolicOrder``, NOT by ``InputSpace._per_word_enabled``.
-    Setting ``symbolicOrder`` flips which body fires."""
+class TestSerialAttribute(unittest.TestCase):
+    """``BasicModel.serial`` is the traversal mode switch."""
 
-    def test_serial_mode_dispatches_to_per_word_body(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
+    def test_serial_attribute_exists(self):
+        model = _make_model(_GRAMMAR_CONFIG)
+        self.assertTrue(
+            hasattr(model, "serial"),
+            "BasicModel must expose ``self.serial`` after construction.")
+
+    def test_serial_attribute_is_bool(self):
+        model = _make_model(_GRAMMAR_CONFIG)
+        self.assertIsInstance(
+            model.serial, bool,
+            f"self.serial must be a bool "
+            f"(got {type(model.serial).__name__}).")
+
+
+class TestForwardBodyDispatchesOnSerial(unittest.TestCase):
+    """The ``_forward_body`` dispatch is governed by ``self.serial``."""
+
+    def test_explicit_serial_true_dispatches_to_per_word_body(self):
+        model = _make_model(
+            _GRAMMAR_CONFIG, override_order=0, serial=True)
         x = _one_input(model)
         with mock.patch.object(
                 model, "_forward_body_per_word",
@@ -206,10 +236,12 @@ class TestForwardBodyDispatchesOnSymbolicOrder(unittest.TestCase):
                     model.forward(x)
         self.assertTrue(
             per_word_spy.called,
-            "symbolicOrder>=1 must dispatch to _forward_body_per_word.")
+            "<serial>true</serial> must dispatch to "
+            "_forward_body_per_word.")
 
-    def test_parallel_mode_skips_per_word_body(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
+    def test_explicit_serial_false_skips_per_word_body(self):
+        model = _make_model(
+            _GRAMMAR_CONFIG, override_order=2, serial=False)
         x = _one_input(model)
         with mock.patch.object(
                 model, "_forward_body_per_word",
@@ -220,47 +252,77 @@ class TestForwardBodyDispatchesOnSymbolicOrder(unittest.TestCase):
                     model.forward(x)
         self.assertFalse(
             per_word_spy.called,
-            "symbolicOrder=0 must NOT dispatch to _forward_body_per_word; "
-            "the per-stage body owns the loop.")
+            "<serial>false</serial> must NOT dispatch to "
+            "_forward_body_per_word, even when symbolicOrder > 1.")
 
 
-class TestPerWordEnabledBackrefFromOrder(unittest.TestCase):
+class TestPerWordEnabledBackrefFromSerial(unittest.TestCase):
     """The legacy ``InputSpace._per_word_enabled`` boolean is preserved
     for back-compat (existing readers — the AR cursor in
     ``InputSpace.next_word`` and a handful of late-stage loops — must
-    keep seeing it). After Stage 1.E it MUST mirror the new
-    ``symbolicOrder`` knob (``>= 1`` => True; ``0`` => False)."""
+    keep seeing it). It mirrors ``self.serial``."""
 
     def test_serial_mode_implies_per_word_enabled_true(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
+        model = _make_model(
+            _GRAMMAR_CONFIG, override_order=0, serial=True)
         isp = model.inputSpace
         self.assertTrue(
             getattr(isp, "_per_word_enabled", False),
-            "symbolicOrder>=1 must imply "
+            "serial=True must imply "
             "InputSpace._per_word_enabled=True for back-compat.")
 
     def test_parallel_mode_implies_per_word_enabled_false(self):
-        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
+        model = _make_model(
+            _GRAMMAR_CONFIG, override_order=2, serial=False)
         isp = model.inputSpace
         self.assertFalse(
             getattr(isp, "_per_word_enabled", True),
-            "symbolicOrder=0 must imply "
+            "serial=False must imply "
             "InputSpace._per_word_enabled=False for back-compat.")
 
 
+class TestLegacySerialDerivation(unittest.TestCase):
+    """When ``<serial>`` is omitted, legacy ``symbolicOrder`` mode
+    derivation is preserved."""
+
+    def test_order_one_defaults_serial(self):
+        model = _make_model(_GRAMMAR_CONFIG, override_order=1)
+        self.assertTrue(
+            model.serial,
+            "With <serial> omitted, symbolicOrder=1 must preserve the "
+            "legacy serial mode.")
+        self.assertEqual(
+            model.symbolicOrder, 1,
+            "The symbolic order budget should still be stored as 1.")
+
+    def test_order_zero_defaults_parallel(self):
+        model = _make_model(_GRAMMAR_CONFIG, override_order=0)
+        self.assertFalse(
+            model.serial,
+            "With <serial> omitted, symbolicOrder=0 must preserve the "
+            "legacy parallel mode.")
+
+    def test_order_two_defaults_serial_for_legacy_configs(self):
+        model = _make_model(_GRAMMAR_CONFIG, override_order=2)
+        self.assertTrue(
+            model.serial,
+            "With <serial> omitted, symbolicOrder > 0 must preserve the "
+            "legacy serial derivation.")
+
+
 class TestConfigsHaveExplicitOrder(unittest.TestCase):
-    """The repo configs in ``data/*.xml`` set ``<symbolicOrder>``
+    """The repo configs in ``data/*.xml`` still set ``<symbolicOrder>``
     explicitly post-Stage-1.E."""
 
-    def test_grammar_config_default_is_serial(self):
-        """Grammar configs (the existing ``_per_word_enabled=True``
-        configs) default to serial (``symbolicOrder >= 1``)."""
+    def test_grammar_config_default_derives_serial(self):
+        """Grammar configs preserve serial behavior when ``<serial>`` is
+        omitted."""
         model = _make_model(_GRAMMAR_CONFIG)
-        self.assertGreaterEqual(
-            model.symbolicOrder, 1,
+        self.assertTrue(
+            model.serial,
             f"{os.path.basename(_GRAMMAR_CONFIG)} (grammar config) must "
-            f"have symbolicOrder>=1 (serial) "
-            f"(got {model.symbolicOrder!r}).")
+            f"derive serial=True from symbolicOrder "
+            f"(got {model.serial!r}).")
 
 
 if __name__ == "__main__":

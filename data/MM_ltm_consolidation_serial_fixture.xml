@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_ltm_consolidation_serial_fixture: SERIAL (symbolicOrder>=1) test
+  <!-- MM_ltm_consolidation_serial_fixture: SERIAL test
        fixture for the LTM-consolidation FOLLOW-UPS (Change 2 / FU3 and the
        real-parse provisioning of Change 3; Alec 2026-06-18).
 
-       Unlike MM_ltm_consolidation_fixture (symbolicOrder=0, which exercises
-       the store API + observe-write contract directly, no parsing forward)
+       Unlike MM_ltm_consolidation_fixture (parallel, which exercises the
+       store API + observe-write contract directly, no parsing forward)
        this fixture turns ON BOTH:
          * a DISCOURSE via training/sentencePrediction=true (builds
            symbolSpace.discourse, the InterSentenceLayer AR predictor), and
          * ltmConsolidation=true (the unified TernaryTruthStore).
-       With symbolicOrder=1 the per-word serial forward
+       With legacy serial derivation from symbolicOrder=1, the per-word forward
        (_forward_body_per_word) runs, so the observe-site conversation push
        (the SINGLE store-append, Change 1) fires per sentence. That is what
        provision_ltm now uses to land REAL parsed end-state rows (no mean-pool

@@ -8,8 +8,7 @@ must instead STOP at the depth-3 end-state ``[predicate, idea1, idea2]``
 so the binary predicate survives the boundary.
 
 These tests pin three layers of the feature on the REAL default grammar
-(``role_collapsed.grammar`` via MentalModel.xml since 2026-06-03;
-``complete.grammar`` before that; no grammar stubbing): the grammar
+(``complete.grammar`` via MentalModel.xml; no grammar stubbing): the grammar
 ``is_relative_rule`` marker (Part A), the conservative
 ``_sentence_relative_mask`` detection helper (Part B), and the reduce-
 site depth-3 preservation (Part C). Only the STM *contents* and the
@@ -40,7 +39,7 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 
 def _reload_config():
-    """Reload defaults + MentalModel.xml (loads role_collapsed.grammar)."""
+    """Reload defaults + MentalModel.xml (loads complete.grammar)."""
     init_config(
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),

@@ -111,7 +111,7 @@ try:
     line(f"contextualBind: reverse=(parent,parent)? {is_stub(l, r, parent)}   (binding irrecoverable; needs parse context)")
 except Exception as e: line(f"contextualBind: ERR {e}")
 
-print(); print("="*72); print("LEGACY (Layers.py, dormant — not in role_collapsed.grammar)"); print("="*72)
+print(); print("="*72); print("LEGACY (Layers.py, dormant — not in complete.grammar)"); print("="*72)
 try:
     from Layers import EqualLayer, TrueLayer, SwapLayer, CopyLayer
     a, b = ev(), ev()

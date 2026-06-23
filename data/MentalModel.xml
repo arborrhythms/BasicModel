@@ -46,7 +46,7 @@
 
   <SymbolSpace>
     <language>
-      <grammar>role_collapsed.grammar</grammar>
+      <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>
 

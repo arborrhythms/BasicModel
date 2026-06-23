@@ -23,22 +23,16 @@
     <subsymbolicOrder>1</subsymbolicOrder>
 
     <!-- Stage 1.E (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-         explicit forward-dispatch depth (integer; replaces the retired
-         conceptualMode serial|parallel enum, 2026-06-13).
-           0     = PARALLEL: per-stage body via _forward_per_stage
-                   (T iterations from <subsymbolicOrder>). Non-grammar
-                   (whole-slab) configs default here.
-           >= 1  = SERIAL / GRAMMATICAL: per-word body via
-                   _forward_body_per_word (one IS_t per word, push to STM
-                   per word). Grammar configs default here. Serial LOOPS
-                   the modules (it does not build stages like
-                   subsymbolicOrder), so a serial mind still takes its
-                   subsymbolicOrder subsymbolic pumps.
-         The default is OMITTED here so each config inherits via the
-         grammar-derived default: ``1`` when the XML enables a
-         non-substrate rule (``useGrammar != 'none'``), else ``0``.
-         Concrete configs should set this explicitly so the mode is
-         documented at the config level. -->
+         <serial> selects the per-word grammatical body. It is omitted here
+         so legacy configs keep deriving the mode from symbolicOrder > 0.
+         New configs should set <serial>true|false</serial> explicitly. -->
+    <!-- <serial>false</serial> -->
+
+    <!-- symbolicOrder is the symbolic / relational loop budget, not the
+         primary mode selector. Omitted here so legacy configs inherit the
+         grammar-derived default: 1 when the XML enables a non-substrate rule
+         (useGrammar != 'none'), else 0. Concrete configs should set this
+         explicitly when they need a symbolic loop limit. -->
     <!-- <symbolicOrder>0</symbolicOrder> -->
 
     <!-- Task 4 (doc/plans/2026-05-29-stm-serial-parallel-modes.md §4):
@@ -57,6 +51,11 @@
          behaviour. -->
     <routerWireSerial>both</routerWireSerial>
 
+    <!-- Reverse from the idea rather than replaying the forward grammar trace.
+         When true, reverse() clears current_rules/generate_rules and the
+         router's last route, then asks SymbolSpace.generate() to infer a fresh
+         reverse rule path from the supplied idea snapshot. -->
+    <reconstructFromIdea>false</reconstructFromIdea>
 
     <!-- Apply extra symbolic processing steps after Sigma. -->
     <processSymbols>false</processSymbols>
@@ -133,6 +132,10 @@
          uniform = equal-width slices. -->
     <conceptualWidth>tapered</conceptualWidth>
     <maxActivePerLayer>8</maxActivePerLayer>
+    <!-- Role-participation category codebook for the role-collapsed grammar.
+         Unsettled MetaSymbols accumulate bounded temporary role evidence, then
+         commit to one role-space category id used by all transform choosers. -->
+    <categoryCodebook>true</categoryCodebook>
     <codebookRetire>false</codebookRetire>
 
     <!-- Single continuous truth bar in [0, 1] (read onto BOTH
@@ -145,6 +148,10 @@
          switches. Default 1.0: truth-learning is OFF by default (opt-in by
          lowering toward 0). -->
     <truthCriterion>1.0</truthCriterion>
+    <!-- Model-level trust multiplier for incoming assertions/testimony.
+         Effective signed DoT = <trust> * incoming trust. Default 1.0 keeps
+         configured/runtime trust values literal. -->
+    <trust>1.0</trust>
 
     <!-- Runtime symbol-learning hooks. Disabled by default. -->
     <symbolLearning>
