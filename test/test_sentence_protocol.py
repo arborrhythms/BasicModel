@@ -62,9 +62,9 @@ def _xor_input():
 
 
 def test_protocol_on_by_default_in_serial():
-    """DEFAULT CUTOVER (2026-06-18): the serial fixture (symbolicOrder>=1)
-    now has the protocol ON by default — pump zero runs and sets the gist
-    WITHOUT any explicit ``<sentenceProtocol>`` in the config."""
+    """DEFAULT CUTOVER (2026-06-18): the legacy serial fixture now has the
+    protocol ON by default — pump zero runs and sets the gist WITHOUT any
+    explicit ``<sentenceProtocol>`` in the config."""
     m = _make_model()
     assert m.sentence_protocol is True               # serial default = ON
     m.forward(_xor_input())

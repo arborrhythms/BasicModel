@@ -3,8 +3,8 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_phrase_decode: idea-decoder (D3) on a REAL grammar + REAL phrases.
        Unlike MM_decode (default sigma/pi grammar = partition-blind reverse),
-       this uses role_collapsed.grammar (lift/lower/intersection with real
-       reverses) so a DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ)
+       this uses complete.grammar (lift/lower/intersection with real reverses)
+       so a DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ)
        to a single S, and lower.reverse can reconstitute both constituents
        (Alec's flow). SERIAL (single-S idea at slot 0) + TALL WS
        (symbol_dim==concept_dim so the ideaDecode seed-swap drives) +
@@ -36,7 +36,7 @@
 
   <SymbolSpace>
     <language>
-      <grammar>role_collapsed.grammar</grammar>
+      <grammar>complete.grammar</grammar>
     </language>
   </SymbolSpace>
 

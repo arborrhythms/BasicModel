@@ -13,10 +13,10 @@ independent of the factor formulas:
   (b) tc == 0  -> insertion regardless of the score.
   (c) tc == 0.3 -> insertion iff learn_score >= 0.3.
 
-Insertion is observed via ``ws.taxonomy_children(predicate_pos)``: a
-``_maybe_learn_relation`` that accepts returns the predicate position
-and leaves the two ideas as its taxonomy children; a reject returns
-``None`` and writes nothing.
+For accepted cases that assert WS taxonomy shape, the mocked children factor
+is kept at 1.0 so the relation is reducible: ``_maybe_learn_relation`` returns
+the predicate position and leaves the two ideas as its taxonomy children. A
+reject returns ``None`` and writes nothing.
 """
 
 from __future__ import annotations
@@ -112,7 +112,9 @@ class TestTruthCriterionGate(unittest.TestCase):
         ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.0
         # learn_score = 0.0 (one factor zero) but tc=0 -> 0 >= 0 accept.
-        _mock_factors(cs, 0.0, 1.0, 1.0)
+        # Keep children=1.0 so the accepted relation is still reducible and
+        # lands in the WS taxonomy this test observes.
+        _mock_factors(cs, 1.0, 0.0, 1.0)
         pred, a, b = _ideas(cs)
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(
@@ -129,8 +131,9 @@ class TestTruthCriterionGate(unittest.TestCase):
         cs = m.conceptualSpace
         ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.3
-        # 0.7^3 = 0.343 >= 0.3 -> accept.
-        _mock_factors(cs, 0.7, 0.7, 0.7)
+        # 1.0 * 0.7 * 0.49 = 0.343 >= 0.3 -> accept. Keep children=1.0 so
+        # the accepted relation is reducible and lands in the WS taxonomy.
+        _mock_factors(cs, 1.0, 0.7, 0.49)
         pred, a, b = _ideas(cs)
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(
@@ -154,8 +157,9 @@ class TestTruthCriterionGate(unittest.TestCase):
         cs = m.conceptualSpace
         ws = cs.terminalSymbolSpace_ref
         cs.truth_criterion = 0.5
-        # 0.5 * 1.0 * 1.0 = 0.5 == tc -> accept (>= boundary).
-        _mock_factors(cs, 0.5, 1.0, 1.0)
+        # 1.0 * 0.5 * 1.0 = 0.5 == tc -> accept (>= boundary). Keep
+        # children=1.0 so the accepted relation is reducible.
+        _mock_factors(cs, 1.0, 0.5, 1.0)
         pred, a, b = _ideas(cs)
         pred_pos = cs._maybe_learn_relation(pred, a, b)
         self.assertIsNotNone(

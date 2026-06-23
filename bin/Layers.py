@@ -8090,14 +8090,12 @@ class InterSentenceLayer(Layer):
             ``[depth_b, D]`` tensor of the end-state slots for row ``b``
             (since depths differ per row a ragged list is natural, not a
             single padded tensor).
-          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The
-            per-row tetralemma trust tuple; ``None`` (the default) parks
-            ``None`` in every row's tuple — the field exists for Task 8 /
-            future consumers and this task does NOT couple itself to
-            computing a tetralemma for every sentence.
+          tetralemmas: OPTIONAL list (length ``B``) / ``None``. The per-row
+            scalar trust to store with the end-state; ``None`` (the default)
+            parks ``None`` in every row's trust slot.
 
         Stored per row as a time-ordered tuple
-        ``(depth:int, payload:[depth,D] tensor, tetralemma:tuple|None)``.
+        ``(depth:int, payload:[depth,D] tensor, trust:float|None)``.
         Bounded at ``ltm_capacity`` (deque ``maxlen``): the oldest
         end-state is evicted once the chain is full.
 
@@ -8256,7 +8254,7 @@ class InterSentenceLayer(Layer):
 
         Returns a python ``list`` of time-ordered tuples (oldest first,
         most-recent last), each ``(depth:int, payload:[depth,D] tensor,
-        tetralemma:tuple|None)``. Returns ``[]`` for an out-of-range row
+        trust:float|None)``. Returns ``[]`` for an out-of-range row
         or an empty chain.
 
         LTM consolidation FU3 (Change 2): when wired to the unified store
@@ -14936,6 +14934,8 @@ _MOVED_TO_LANGUAGE = frozenset({
     'IntersectionLayer',
     'UnionLayer',
     'LiftLayer',
+    'VerbLayer',
+    'AdverbLayer',
     'LowerLayer',
     'SymbolizeLayer',
     'ConjunctionLayer',

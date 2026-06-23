@@ -122,7 +122,7 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
         _reload_config()
         model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
-        # grammar comes from MentalModel.xml (role_collapsed.grammar, the
+        # grammar comes from MentalModel.xml (complete.grammar, the
         # default since 2026-06-03); structural invariants (the rule predictor
         # sees every dispatchable op) matter, not the exact rule list.
         method_names = {rule.method_name

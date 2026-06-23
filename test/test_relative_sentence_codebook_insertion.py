@@ -244,7 +244,7 @@ class TestBoundaryHookForwardWiring(unittest.TestCase):
     """The sentence-boundary hook ``learn_relations_from_stm`` reads the
     depth-3 relative end-state from STM slots 0/1/2 and routes each
     relative row through the gate. Exercised on the REAL relative grammar
-    (``role_collapsed.grammar`` via MentalModel.xml), mirroring the Task 6a
+    (``complete.grammar`` via MentalModel.xml), mirroring the Task 6a
     relative-end-state test's STM + current_rules seeding.
     """
 

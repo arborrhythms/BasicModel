@@ -1,12 +1,11 @@
-"""MLPTransformChooser -- the contextual cutover chooser
-(doc/plans/NeuralToolUser.md "MLP TransformChooser").
+"""MLPTransformChooser -- the contextual routing chooser.
 
 A learned MLP over per-candidate context (slot/pair state, candidate
 output, tool embedding, position) that produces the same per-(op, location)
-logit shapes as the anchor-dot scorer, so it drops into the layers, the
-cross-product distribution and the executor. UNLIKE anchor-dot it owns
-parameters -> selecting it changes the state_dict (a deliberate new basin),
-behind <transformChooser>mlp (default anchordot).
+logit shapes as the anchor-dot scorer, so it drops into the live structured
+grammar layers. UNLIKE anchor-dot it owns parameters -> selecting it changes
+the state_dict (a deliberate new basin), behind <transformChooser>mlp
+(default anchordot).
 """
 
 import os
@@ -26,8 +25,8 @@ import torch.nn as nn
 
 from Language import (
     TransformChooser, AnchorDotTransformChooser, MLPTransformChooser,
-    make_transform_chooser, cross_product_action_dist,
-    UnaryStructuredLayer, BinaryStructuredReductionLayer,
+    make_transform_chooser, UnaryStructuredLayer,
+    BinaryStructuredReductionLayer,
 )
 
 
@@ -66,14 +65,23 @@ def test_owns_params_and_scores_are_differentiable():
     assert any(p.grad is not None for p in ch.mlp.parameters())
 
 
-def test_feeds_the_cross_product_distribution():
-    B, N, D = 1, 5, 4
-    ch = MLPTransformChooser(d_model=D, n_copy=1, n_op=3)
-    x = torch.randn(B, N, D)
-    reduced = torch.randn(B, N - 1, 3, D)
-    cs, rs = ch.score_binary(x, reduced, None, None)
-    dist = cross_product_action_dist(cs, rs)
-    assert torch.allclose(dist["probs"].sum(-1), torch.ones(B), atol=1e-5)
+def test_feeds_the_binary_router_layer():
+    class _AddOp(nn.Module):
+        def forward(self, left, right):
+            return left + right
+
+    layer = BinaryStructuredReductionLayer(
+        d_model=4,
+        ops=[_AddOp(), _AddOp(), _AddOp()],
+        r_copy=1,
+        chooser="mlp",
+    )
+    x = torch.randn(1, 5, 4)
+    hard, soft, routing = layer(x)
+    assert hard.shape == x.shape
+    assert soft.shape == x.shape
+    assert routing["reduce_score"].shape == (1, 4, 3)
+    assert torch.isfinite(routing["reduce_score"]).all()
 
 
 def test_degenerate_shapes():

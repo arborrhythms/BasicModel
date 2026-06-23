@@ -635,11 +635,12 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
 
 
 def test_mm5m_grammar_builds_and_forwards():
-    # Phase B (B1): the SERIAL sibling (symbolicOrder>=1, role-collapsed
-    # grammar) must build + forward FINITE under the new dims and A5's threaded
-    # STM, with the bounded STM staying within capacity. A5 preserved serial
-    # accumulation (the per-word fold threads through begin_forward's live
-    # buffer), so no serial-fold reconciliation was needed -- this gate pins it.
+    # Phase B (B1): the SERIAL sibling (legacy serial derivation,
+    # role-collapsed grammar) must build + forward FINITE under the new dims
+    # and A5's threaded STM, with the bounded STM staying within capacity.
+    # A5 preserved serial accumulation (the per-word fold threads through
+    # begin_forward's live buffer), so no serial-fold reconciliation was
+    # needed -- this gate pins it.
     import torch, Models
     m = _build("MM_20M_grammar.xml"); Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)

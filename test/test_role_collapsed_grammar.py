@@ -1,14 +1,11 @@
-"""Role-collapsed grammar variant validation (Phase R2).
+"""Role-only grammar format validation (Phase R2).
 
 doc/plans/2026-06-02-unified-subsymbolic-analyzer-and-role-collapsed-grammar.md
-§4 + §10. ``data/role_collapsed.grammar`` declares ONLY operator roles
-(``op_I<n>`` inputs, ``op_O1`` output) -- no parts of speech, no surface
-markers, no category-rename projection rules. The D1 gate is met (the
-participation learner drives a parser-recovering collapse, R4 /
-``test_d1_pos_recovery_gate.py``), so this is now the DEFAULT mental-model
-grammar (``MentalModel.xml``); the transitional ``complete.grammar`` is
-retained as the compatibility baseline (and is what the D1 collapse is
-measured on). These tests validate the role-collapsed contract.
+§4 + §10. Live grammars declare ONLY operator roles (``op_I<n>`` inputs,
+``op_O1`` output) -- no parts of speech, no surface markers, no
+category-rename projection rules. The retired standalone role-collapse file
+was absorbed into ``complete.grammar``; these tests validate that contract on
+the broad live grammar and sweep the remaining data grammars.
 """
 
 import os
@@ -24,7 +21,8 @@ _DATA = os.path.join(_ROOT, "data")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-_GRAMMAR_FILE = os.path.join(_DATA, "role_collapsed.grammar")
+_GRAMMAR_NAME = "complete.grammar"
+_GRAMMAR_FILE = os.path.join(_DATA, _GRAMMAR_NAME)
 
 # POS / category / transitional-role state names that MUST NOT survive
 # the role collapse (Section 4.2).
@@ -41,14 +39,15 @@ _FORBIDDEN_STATE_TOKENS = {
 _REQUIRED_OPS = {
     "exist", "isEqual", "isPart", "not", "non",
     "conjunction", "disjunction", "intersection", "union",
-    "lift", "lower",
+    "lift", "verb", "adverb", "lower",
+    "preposition", "bind", "tense", "morphology",
 }
 
 
 def _load():
     from Language import Grammar
     g = Grammar()
-    g.load_from_grammar_file("role_collapsed.grammar")
+    g.load_from_grammar_file(_GRAMMAR_NAME)
     return g
 
 
@@ -60,7 +59,7 @@ def _rule_tokens(rule):
 
 
 def test_grammar_loads():
-    """The variant loads through the standard grammar path."""
+    """The broad role-only grammar loads through the standard grammar path."""
     g = _load()
     assert len(g.rules) > 0
     assert len(g.ps_rules) > 0
@@ -91,7 +90,7 @@ def test_no_top_level_start():
     nested under PartSpace / WholeSpace only."""
     root = ET.parse(_GRAMMAR_FILE).getroot()
     assert root.find("start") is None, (
-        "role-collapsed grammar must not declare a top-level <start>")
+        "role-only grammars must not declare a top-level <start>")
 
 
 def test_no_query_part_or_assert_part():
@@ -148,7 +147,7 @@ def test_operator_coverage():
     g = _load()
     methods = {r.method_name for r in g.rules if r.method_name}
     missing = _REQUIRED_OPS - methods
-    assert not missing, f"role-collapsed grammar missing ops: {missing}"
+    assert not missing, f"{_GRAMMAR_NAME} missing ops: {missing}"
 
 
 def test_forward_reverse_pairing():
@@ -180,7 +179,7 @@ def test_transitional_baseline_archived_as_fixture():
 
 # -- Per-grammar-file format conformance (GrammarOpsPass §1) --------------
 #
-# Every LIVE grammar under data/ conforms to the role-collapsed format.
+# Every LIVE grammar under data/ conforms to the role-only format.
 # The transitional POS-categoried baseline lives under test/fixtures/
 # (test data for the D1 / participation measurements), not under data/.
 
@@ -202,8 +201,8 @@ _RELATION_DOTTED = ("isEqual.", "isPart.", "part.")
 def test_sweep_covers_data_grammars():
     """The sweep sees the live grammar set (complete.grammar included)."""
     assert "complete.grammar" in _ALL_GRAMMAR_FILES
-    assert "role_collapsed.grammar" in _ALL_GRAMMAR_FILES
-    assert len(_ALL_GRAMMAR_FILES) >= 5, _ALL_GRAMMAR_FILES
+    assert "role_collapsed.grammar" not in _ALL_GRAMMAR_FILES
+    assert len(_ALL_GRAMMAR_FILES) >= 4, _ALL_GRAMMAR_FILES
 
 
 @pytest.mark.parametrize("fname", _ALL_GRAMMAR_FILES)

@@ -1,7 +1,7 @@
-"""TransformChooser parity (NeuralToolUser migration, step 1-3).
+"""TransformChooser parity for the structured grammar layers.
 
-doc/plans/NeuralToolUser.md: the structured layers delegate placement
-scoring to a TransformChooser. The first chooser
+The structured layers delegate placement scoring to a TransformChooser. The
+first chooser
 (AnchorDotTransformChooser) must reproduce the original inline anchor-dot
 scoring EXACTLY -- this is the behavior-preserving foundation before any
 more expressive (MLP) chooser. These tests pin that parity: the chooser's
@@ -23,6 +23,7 @@ if _BIN not in sys.path:
 import torch
 import torch.nn as nn
 
+import Language
 from Language import (
     TransformChooser, AnchorDotTransformChooser,
     UnaryStructuredLayer, BinaryStructuredReductionLayer,
@@ -110,3 +111,58 @@ def test_layers_use_a_stateless_chooser_no_state_dict_keys():
             f"chooser must not add state_dict keys (got {keys})")
         # the anchors remain owned by the layer
         assert any("anchor" in k for k in keys), keys
+
+
+def test_anchordot_unary_uses_category_role_prior(monkeypatch):
+    monkeypatch.setattr(
+        Language, "compute_role_vocabulary",
+        lambda _grammar: (["negate_I1"], {"negate_I1": 0}, 1))
+
+    class _Neg(nn.Module):
+        def forward(self, x):
+            return x
+
+    layer = UnaryStructuredLayer(
+        d_model=2, ops=[_Neg()], r_copy=1,
+        chooser="anchordot", op_names=["negate"])
+    with torch.no_grad():
+        layer.copy_anchor.zero_()
+        layer.apply_anchor.zero_()
+    x = torch.zeros(1, 2, 2)
+    cat_ctx = torch.tensor([[[4.0], [0.0]]])
+    _hard, _soft, routing = layer(x, cat_ctx=cat_ctx)
+    expected = torch.tensor([[[0.0, 4.0], [0.0, 0.0]]],
+                            dtype=routing["action_logits"].dtype)
+    assert torch.equal(
+        routing["action_logits"], expected)
+
+
+def test_anchordot_binary_uses_labelled_left_right_category_prior(monkeypatch):
+    monkeypatch.setattr(
+        Language, "compute_role_vocabulary",
+        lambda _grammar: (
+            ["lift_I1", "lift_I2"],
+            {"lift_I1": 0, "lift_I2": 1},
+            2,
+        ))
+
+    class _Add(nn.Module):
+        def forward(self, left, right):
+            return left + right
+
+    layer = BinaryStructuredReductionLayer(
+        d_model=2, ops=[_Add(), _Add()], r_copy=1,
+        chooser="anchordot", op_names=["lift", "other"])
+    with torch.no_grad():
+        layer.copy_anchor.zero_()
+        layer.reduce_anchor.zero_()
+    x = torch.zeros(1, 3, 2)
+    cat_ctx = torch.tensor([[
+        [2.0, 0.0],
+        [0.0, 4.0],
+        [0.0, 0.0],
+    ]])
+    _hard, _soft, routing = layer(x, cat_ctx=cat_ctx)
+    expected = torch.tensor([[[3.0, 0.0], [0.0, 0.0]]],
+                            dtype=routing["reduce_score"].dtype)
+    assert torch.equal(routing["reduce_score"], expected)

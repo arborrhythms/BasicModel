@@ -74,10 +74,9 @@ small `VectorQuantize` codebook keyed by the **MetaSymbol** (the equivalence
 class uniting a word with its object). The latent category is therefore *owned*
 by an addressable symbol — not floating in a residual stream — and recurrent
 role profiles are *promoted* into stable centroids that decay when unused
-(`codebook_retire=False`). The chooser conditions its routing on this typed
-category context (`<categoryCodebook>` + `<chooserCategoryContext>`). Design:
-[Language.md](Language.md) "Participation Categories as the Chooser's
-Syntactic-Category Context".
+(`codebook_retire=False`). The structured grammar layers condition routing on
+this typed category context through `<categoryCodebook>` for all transform
+choosers. Design: [Language.md](Language.md) "Participation Categories".
 
 ### B. Verb application as a masked, sparse semantic edit (invariants #4, #5)
 
@@ -97,8 +96,10 @@ residual branch** (untrained ⇒ no-op ⇒ the sigma fold), and stashes an
 introspectable `adverb_purchase` diagnostic — a first, bounded form of the emitted
 semantic delta. NOTE (2026-06-20): the eig-based *verb* edit was removed (the verb
 is the lift operator itself); this mechanism is now the **adverb** eigenmodifier.
-Gated by `<adverbEigEdit>`. Implementation: `LiftLayer.apply_adverb`
-([Language.py](bin/Language.py)). Source proposal:
+The live grammar path is `adverb`, implemented by `AdverbLayer`, which
+force-builds the zero-init projection and calls `LiftLayer.apply_adverb`
+([Language.py](bin/Language.py)). `<adverbEigEdit>` remains only as the legacy
+direct-`LiftLayer` helper flag. Source proposal:
 [`doc/old/semantic_verb_np_mask_eigenvalue_proposal.md`](old/semantic_verb_np_mask_eigenvalue_proposal.md).
 
 This is the firewall's verb example made real: the same NP participates in

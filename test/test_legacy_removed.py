@@ -24,6 +24,7 @@ _FORBIDDEN = (
     ("Models._run_subsymbolic_order",  lambda: "_run_subsymbolic_order"  in _file_text(Models)),
     ("Models._run_forward_pipeline",  lambda: "_run_forward_pipeline"  in _file_text(Models)),
     ("Models._start_ar_forward",   lambda: "_start_ar_forward"   in _file_text(Models)),
+    ("Models.symbolic_composition", lambda: "symbolic_composition" in _file_text(Models)),
     ("Spaces._forward_legacy",    lambda: "_forward_legacy"    in _file_text(Spaces)),
     ("Spaces._reverse_legacy",    lambda: "_reverse_legacy"    in _file_text(Spaces)),
     ("Spaces._forward_dispatch",  lambda: "_forward_dispatch"  in _file_text(Spaces)),

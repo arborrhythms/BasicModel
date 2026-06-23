@@ -5,7 +5,7 @@ MorphologyLayer is a parameter-free unary CS-space_role GrammarLayer that decomp
 surface token (via surface_morphology.analyze) and routes the tense/aspect
 features onto the event .when by DELEGATING to TenseLayer / AspectLayer (the
 .when math is reused, not re-derived). The "morphology" rule loads from
-role_collapsed.grammar in both directions.
+complete.grammar in both directions.
 """
 
 import math, os, sys
@@ -84,7 +84,7 @@ def test_reverse_runs_and_recovers_tense():
 
 def test_morphology_rule_loads_in_both_directions():
     g = Grammar()
-    g.load_from_grammar_file("role_collapsed.grammar")
+    g.load_from_grammar_file("complete.grammar")
     methods = {r.method_name for r in g.rules if r.method_name}
     assert "morphology" in methods, "morphology rule missing from grammar"
     up = {r.method_name for r in g.rules_upward if r.method_name}

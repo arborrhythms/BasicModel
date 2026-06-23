@@ -248,7 +248,7 @@ def dynamic_loops_diagram() -> Path:
     arrow(d, (1915, 405), (760, 405), color="#4D8F68")
     label(d, (1060, 415), "loopback: attention biases recognition/retrieval, not rule dispatch", FONT_TINY)
 
-    draw_box(d, (535, 560, 2220, 900), "B. Symbolic order loop", "<symbolicOrder>: serial/grammatical processing over words in STM.", FILL_BLUE)
+    draw_box(d, (535, 560, 2220, 900), "B. Serial symbolic loop", "<serial>: per-word traversal; <symbolicOrder>: SS loop budget.", FILL_BLUE)
     draw_box(d, (620, 690, 900, 830), "STM push", "word/root\nenters memory", FILL_GOLD)
     draw_box(d, (990, 690, 1270, 830), "LanguageLayer", "score copy/reduce\nroutes", FILL_BLUE)
     draw_box(d, (1360, 690, 1640, 830), "Ops", "grammar +\nmereology", FILL_BLUE)
@@ -315,7 +315,7 @@ def class_inventory() -> dict[str, list[str]]:
             name
             for name in extract_classes(BIN_DIR / "Language.py")
             if name.endswith("Layer")
-            or name in {"Grammar", "RuleCodebook", "LanguageLayer", "Taxonomy", "ObjectSubSpace", "SymbolicSubSpace", "NeuralToolUser"}
+            or name in {"Grammar", "RuleCodebook", "LanguageLayer", "Taxonomy", "ObjectSubSpace", "SymbolicSubSpace"}
         ],
         "perceptual_analyzer.py": extract_classes(BIN_DIR / "perceptual_analyzer.py"),
     }
@@ -492,13 +492,13 @@ def build_docx(images: dict[str, Path]) -> None:
     add_figure(
         doc,
         images["dynamic"],
-        "Figure 2. Dynamic loops: subsymbolic order refines the towers, symbolic order routes grammar over STM, and inter-sentence prediction feeds a future C-prior.",
+        "Figure 2. Dynamic loops: subsymbolic order refines the towers, serial traversal routes grammar over STM, symbolic order budgets SS loops, and inter-sentence prediction feeds a future C-prior.",
     )
     add_numbered(
         doc,
         [
             "Subsymbolic order repeats PS -> CS -> WS refinement. The parallel parse produces an intent representation that primes codebook attention across both meronymic towers.",
-            "Symbolic order is the serial/grammatical loop. Each word or symbol enters STM, LanguageLayer scores copy/reduce routes, and GrammarLayer operators transform or write symbolic structure.",
+            "Serial traversal is the grammatical loop. Each word or symbol enters STM, LanguageLayer scores copy/reduce routes, and GrammarLayer operators transform or write symbolic structure. Symbolic order budgets the SS loop.",
             "Corpus callosum mixing is ConceptualSpace-side: percepts cross nameless and factored. Parallel mode uses the explicit 2N -> N mixer; serial mode folds fusion into STM shift/write behavior.",
             "InterSentenceLayer predicts the next STM end-state/root from the LTM chain, stages a C-prior for the next sentence, and contributes L_inter when the prediction is observed.",
             "Training combines output, reconstruction/infill, truth, intra-sentence, inter-sentence, and regularization terms through ModelLoss/Error before the optimizer step.",
@@ -740,7 +740,7 @@ def build_pdf(images: dict[str, Path]) -> None:
         pdf_bullets(
             [
                 "Subsymbolic order repeats PS -> CS -> WS refinement. The parallel parse produces an intent representation that primes codebook attention across both meronymic towers.",
-                "Symbolic order is the serial/grammatical loop. Each word or symbol enters STM, LanguageLayer scores copy/reduce routes, and GrammarLayer operators transform or write symbolic structure.",
+                "Serial traversal is the grammatical loop. Each word or symbol enters STM, LanguageLayer scores copy/reduce routes, and GrammarLayer operators transform or write symbolic structure. Symbolic order budgets the SS loop.",
                 "Corpus callosum mixing is ConceptualSpace-side: percepts cross nameless and factored. Parallel mode uses the explicit 2N -> N mixer; serial mode folds fusion into STM shift/write behavior.",
                 "InterSentenceLayer predicts the next STM end-state/root from the LTM chain, stages a C-prior for the next sentence, and contributes L_inter when the prediction is observed.",
                 "Training combines output, reconstruction/infill, truth, intra-sentence, inter-sentence, and regularization terms through ModelLoss/Error before the optimizer step.",

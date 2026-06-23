@@ -279,18 +279,25 @@ class BaseModel(Mereology, nn.Module):
     # on the same sentence -- B trains the chooser but must not advance the
     # sequence state pass A already committed. See runBatch(exploration_trial).
     _exploration_trial = False
-    # Class-level default for ``symbolicOrder`` so that BasicModel()
+    # Class-level defaults for ``serial`` / ``symbolicOrder`` so that
+    # BasicModel()
     # constructed directly (without going through ``init_config``)
-    # still answers ``self.symbolicOrder``. ``init_config`` overrides
-    # this via instance attribute when XML is loaded. 0 = parallel (no
-    # serial symbolic loop); >= 1 = serial / GRAMMATICAL. Replaces the
-    # retired ``conceptualMode`` serial|parallel enum (2026-06-13).
+    # still answers both attributes. ``init_config`` overrides these
+    # via instance attributes when XML is loaded. ``serial`` selects the
+    # per-word grammatical path; ``symbolicOrder`` is an order / loop
+    # budget for symbolic processing. The split replaces the retired
+    # ``conceptualMode`` serial|parallel enum (2026-06-13).
+    serial = False
     symbolicOrder = 0
     # Class-level default for ``syntacticOrder`` (doc/specs/orders.md, NEW
     # 2026-06-19): the parse-tree DEPTH cap for the serial grammatical
     # reduction. 0 = unbounded (the reduction runs to its single-S fixpoint;
     # byte-identical). Overridden per instance via init_config when set.
     syntacticOrder = 0
+    # Model-level trust in incoming assertions/testimony. It scales
+    # per-truth DegreeOfTruth values before they enter TruthLayer/LTM and
+    # attenuates persisted STM description trust.
+    trust = 1.0
     # Scale applied to the DiscourseSpace contrastive loss. The
     # inter-sentence DiscourseSpace lives on ``self.symbolSpace``
     # (``self.symbolSpace.discourse``) rather than directly on the
@@ -318,6 +325,28 @@ class BaseModel(Mereology, nn.Module):
         if config_path is None:
             config_path = os.path.join(ProjectPaths.PROJECT_DIR, "model.xml")
         return XMLConfig._parse_xml(config_path)
+
+    @staticmethod
+    def _unit_interval(value, default=1.0):
+        """Coerce ``value`` into ``[0, 1]``; non-finite/malformed -> default."""
+        try:
+            out = float(value)
+        except (TypeError, ValueError):
+            out = float(default)
+        if not math.isfinite(out):
+            out = float(default)
+        return max(0.0, min(1.0, out))
+
+    def _effective_incoming_trust(self, trust):
+        """Signed incoming DoT scaled by the model's testimony trust."""
+        try:
+            raw = float(trust)
+        except (TypeError, ValueError):
+            raw = 0.0
+        if not math.isfinite(raw):
+            raw = 0.0
+        scale = self._unit_interval(getattr(self, 'trust', 1.0), default=1.0)
+        return max(-1.0, min(1.0, raw * scale))
 
     @staticmethod
     def _resolve_dim(section, prev_dim):
@@ -599,26 +628,13 @@ class BaseModel(Mereology, nn.Module):
         if getattr(self, 'symbolSpace', None) is not None:
             self.symbolSpace.serial_mode = False
 
-        # Stage 1.E: explicit two-mode forward dispatch, now keyed on the
-        # integer ``<architecture><symbolicOrder>`` (replaces the retired
-        # ``conceptualMode`` serial|parallel enum, 2026-06-13):
-        #   * ``0`` (= PARALLEL) -- per-stage body via ``_forward_per_stage``
-        #     (T iterations from ``<subsymbolicOrder>``); the legacy
-        #     whole-slab path, no serial symbolic loop.
-        #   * ``>= 1`` (= SERIAL / GRAMMATICAL) -- per-word body via
-        #     ``_forward_body_per_word`` (one IS_t per word, push to STM
-        #     per word). Unlike subsymbolicOrder, serial LOOPS the same
-        #     modules rather than pre-building stages, so even a thinking
-        #     (serial) mind still takes its subsymbolicOrder subsymbolic
-        #     pumps. Values > 1 (multiple serial passes) are plumbed but
-        #     currently behave as 1; that behavior is deferred.
-        # The substrate-level SERIAL / GRAMMATICAL collapse is the
-        # spec's design decision: grammar dispatch is a chart /
-        # rule-catalog config, not a substrate mode.
+        # ``symbolicOrder`` is a non-negative symbolic / relational loop
+        # budget. ``serial`` is the independent mode selector that decides
+        # whether the forward body reads the input one word at a time.
         #
-        # Default: a non-substrate grammar opens serial (``1``) for
-        # back-compat, else parallel (``0``). Explicit ``<symbolicOrder>``
-        # in the XML overrides.
+        # Back-compat: old configs encoded the mode as symbolicOrder 0/1.
+        # When ``<serial>`` is omitted, derive it from ``symbolicOrder > 0``;
+        # new configs should set ``<serial>`` explicitly.
         _grammar_default_order = (
             1 if getattr(self, 'useGrammar', 'none') != 'none' else 0)
         _so_raw = TheXMLConfig.get(
@@ -634,6 +650,23 @@ class BaseModel(Mereology, nn.Module):
             raise ValueError(
                 f"<architecture><symbolicOrder> must be >= 0 (got {_so}).")
         self.symbolicOrder = _so
+
+        _serial_raw = TheXMLConfig.get("architecture.serial", default=None)
+        if _serial_raw is None:
+            _serial = (_so > 0)
+        elif isinstance(_serial_raw, bool):
+            _serial = _serial_raw
+        else:
+            _serial_text = str(_serial_raw).strip().lower()
+            if _serial_text in ("true", "1", "yes", "on"):
+                _serial = True
+            elif _serial_text in ("false", "0", "no", "off"):
+                _serial = False
+            else:
+                raise ValueError(
+                    f"<architecture><serial> must be boolean "
+                    f"(got {_serial_raw!r}).")
+        self.serial = bool(_serial)
 
         # syntacticOrder (doc/specs/orders.md, NEW 2026-06-19): the parse-tree
         # DEPTH cap for the serial grammatical reduction. 0 (default) =
@@ -666,69 +699,35 @@ class BaseModel(Mereology, nn.Module):
         # <sentenceProtocol>`` — default OFF until the author's cutover
         # (the meronomy pattern: land dark, cut over deliberately).
         # §6c default cutover (2026-06-18, Alec): ON by default in SERIAL mode
-        # (``symbolicOrder >= 1``) so the whole-sentence gist (the initial
+        # (``serial == True``) so the whole-sentence gist (the initial
         # subsymbolic-order prelude pass) CONDITIONS each word's parts/wholes —
         # the context the per-word hard mask drops re-enters via the gist/intent.
         # OFF in parallel (the prelude is only invoked from the serial
         # ``_forward_body_per_word``, so parallel never runs it regardless).
         # Explicit ``<sentenceProtocol>`` in the XML overrides either way.
-        _sp_default = (self.symbolicOrder >= 1)
+        _sp_default = self.serial
         self.sentence_protocol = bool(TheXMLConfig.get(
             "architecture.sentenceProtocol", default=_sp_default))
 
-        # NeuralToolUser cutover (doc/plans/NeuralToolUser.md): when
-        # ``<architecture><neuralToolUser>`` is true, LanguageLayer.compose's
-        # binary stage runs the greedy hard-parse executor and records the
-        # route + cross-product distribution. Default false keeps the
-        # soft-DP fold (state_dict / basin unchanged). Set directly on the
-        # signal router (the host setter for subsymbolic_order is, by its
-        # own admission, not reachable; the flag is too small to thread the
-        # same way), so this is the live wire.
-        self.neural_tool_user = bool(TheXMLConfig.get(
-            "architecture.neuralToolUser", default=False))
-        _ws = getattr(self, 'symbolSpace', None)
-        _ll = getattr(_ws, 'languageLayer', None) if _ws is not None else None
-        if _ll is not None:
-            _ll.neural_tool_user = self.neural_tool_user
-
-        # SymbolicComposition (Architecture.md "three cognitive operations",
-        # op 2). When true, the subsymbolicOrder CS->PS loop re-encodes the
-        # symbols handed back to PartSpace through the CS symbol table (the
-        # wide<->deep remap) so SigmaLayer composes high-order words from
-        # lower-order words; inverse decode on the reverse leg. Default false
-        # re-feeds the stage-0 percept every pass (state_dict / basin
-        # unchanged). Read on the model; the per-stage body consults it.
-        self.symbolic_composition = bool(TheXMLConfig.get(
-            "architecture.symbolicComposition", default=False))
-
-        # TransformChooser kind (doc/plans/NeuralToolUser.md). Mirrors the
-        # router-side read in LanguageLayer._wire_signal_router_grammar_ops
-        # so the cutover reaches the model-built structured layers too (the
-        # STM reducer). Default "anchordot" -> stateless, basin unchanged.
+        # TransformChooser kind. Mirrors the router-side read in
+        # LanguageLayer._wire_signal_router_grammar_ops so the cutover reaches
+        # the model-built structured layers too (the STM reducer). Default
+        # "anchordot" -> stateless, basin unchanged.
         self.transform_chooser = str(TheXMLConfig.get(
             "architecture.transformChooser", default="anchordot"))
 
         # MetaSymbol role-participation Category codebook (doc/Language.md
-        # "Participation Categories as the Chooser's Syntactic-Category
-        # Context"). Phase 1 (``category_codebook``): learn a small VQ codebook
-        # over the live MetaSymbol vectors during perception (E/M in the
-        # WholeSpace autobind hook). Phase 2 (``chooser_category_context``):
-        # feed the per-slot object's centroid role vector to the MLP chooser.
-        # Both default off -> no codebook allocated, chooser ignores category
-        # (byte-identical). Phase 2 is meaningful only with the MLP chooser.
+        # "Participation Categories"). Learn a small role-space VQ during
+        # perception: pending MetaSymbols accumulate role evidence, then
+        # commit to a single category centroid. The structured grammar layers
+        # use that role context for every transform chooser.
         self.category_codebook = bool(TheXMLConfig.get(
-            "architecture.categoryCodebook", default=False))
-        self.chooser_category_context = bool(TheXMLConfig.get(
-            "architecture.chooserCategoryContext", default=False))
+            "architecture.categoryCodebook", default=True))
 
-        # Verb sparse eigenvalue edit on lift(NP, VP) (doc/specs/
-        # semantic_verb_np_mask_eigenvalue_proposal.md). The eig-based VERB edit
-        # was removed (the verb is the lift operator); this is now the ADVERB
-        # eigenmodifier: when on, an adverb modifies a composed VP via a sparse
-        # eigenvalue edit of the verb, masked by the VP's own eigen-signature
-        # (no learned mask). LiftLayer reads this same flag at construction
-        # (order-safe); mirrored here for introspection. Default off -> sigma
-        # fold unchanged (byte-identical).
+        # Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
+        # grammar op force-builds the same zero-init eigenmodifier; this knob
+        # only affects ordinary LiftLayer instances and is mirrored here for
+        # introspection. Default off -> plain LiftLayer sigma fold unchanged.
         self.adverb_eig_edit = bool(TheXMLConfig.get(
             "architecture.adverbEigEdit", default=False))
 
@@ -807,6 +806,14 @@ class BaseModel(Mereology, nn.Module):
         self.idea_decode = bool(TheXMLConfig.get(
             "architecture.ideaDecode", default=False))
 
+        # Reconstruction from an idea with the forward derivation erased.
+        # When on, reverse() clears the grammar/routing traces built during
+        # comprehension, then asks SymbolSpace.generate to infer the reverse
+        # rule path from the supplied idea snapshot. This differs from
+        # <ideaDecode>, which deliberately skips the chart/router rebuild.
+        self.reconstruct_from_idea = bool(TheXMLConfig.get(
+            "architecture.reconstructFromIdea", default=False))
+
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
         # on (serial only), the per-word body HARD-MASKS each step to the active
@@ -817,15 +824,13 @@ class BaseModel(Mereology, nn.Module):
         self.serial_object_meta = bool(TheXMLConfig.get(
             "architecture.serialObjectMeta", default=False))
 
-        # Truth / Ideas processing (doc/specs/mereological-order-raising.md
-        # "Truth / Ideas processing"; Workstreams F+G). When true, a learned
-        # relative relation is ROUTED by reducibility: both entity operands
-        # snap to existing WS codebook rows -> reduce to codes (WS META, the
-        # "intuitive knowing"); else store the uncollapsed (idea1, predicate,
-        # idea2) triple in the sibling RelativeTruthStore (the "explicit
-        # knowing"). Off -> the legacy always-reduce path (byte-identical).
-        self.truth_ideas = bool(TheXMLConfig.get(
-            "architecture.truthIdeas", default=False))
+        # Model-level trust in incoming assertions/testimony. Personal
+        # experience remains the model's own evidence; third-party words enter
+        # TruthLayer/LTM with their supplied DegreeOfTruth multiplied by this
+        # scalar before the existing ``truthCriterion`` gate/factors read them.
+        self.trust = self._unit_interval(
+            TheXMLConfig.get("architecture.trust", default=1.0),
+            default=1.0)
 
         # LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
         # Ideas processing"; Alec 2026-06-18). When true, the discourse LTM
@@ -837,7 +842,9 @@ class BaseModel(Mereology, nn.Module):
         # end-state, ``_route_learned_relation`` appends ineffable relations,
         # and reason/verify_relation read it on the content slice. RTS is
         # constructed only when this gate is OFF. Off -> the legacy two-store
-        # path (byte-identical). Independent of ``truthIdeas``.
+        # path (byte-identical). Row trust values are still scaled by the
+        # incoming ``trust`` multiplier when descriptions/testimony are
+        # persisted.
         self.ltm_consolidation = bool(TheXMLConfig.get(
             "architecture.ltmConsolidation", default=False))
 
@@ -847,7 +854,7 @@ class BaseModel(Mereology, nn.Module):
         # at superposition temperature 0 (sharp, recorded) and pass B at
         # ``<exploreTemperature>`` (flatter exploration, trimmed from the
         # batch error). The chooser is in the gradient path directly; there
-        # is no advantage/policy term and NO coupling to ``<neuralToolUser>``.
+        # is no advantage/policy term.
         # Default off -> the normal single forward (byte-identical). The
         # explore temperature is the [0, 1] sharp->uniform knob.
         self.two_pass_learning = bool(TheXMLConfig.get(
@@ -855,28 +862,28 @@ class BaseModel(Mereology, nn.Module):
         self.explore_temperature = float(TheXMLConfig.get(
             "architecture.exploreTemperature", default=0.5))
 
-        # Step 1 (2026-06-10 symbolic-iteration plan): mirror the order
-        # onto each WholeSpace. The WS forward dispatches SYMBOLIC
-        # ITERATIONS (quantize + parallel leg, t>0) on it -- the
-        # SyntacticLayer is attached unconditionally (model.xml default
-        # grammar), so layer presence cannot distinguish the legs.
+        # Step 1 (2026-06-10 symbolic-iteration plan): mirror the symbolic
+        # order and the independent serial mode onto each WholeSpace. The
+        # WS forward dispatches SYMBOLIC ITERATIONS (quantize + parallel leg)
+        # from the serial flag -- the SyntacticLayer is attached
+        # unconditionally (model.xml default grammar), so layer presence
+        # cannot distinguish the legs.
         # Space construction (``self.create`` above) runs before this
-        # knob is parsed, hence the post-hoc stamp. ``_symbolic_order``
-        # int: 0 = parallel, >= 1 = serial.
+        # knob is parsed, hence the post-hoc stamp.
         for _ss in (getattr(self, 'wholeSpaces', None) or []):
             object.__setattr__(_ss, '_symbolic_order', self.symbolicOrder)
+            object.__setattr__(_ss, '_serial', self.serial)
 
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors
-        # ``self.symbolicOrder`` (the new explicit knob: serial iff >= 1).
+        # ``self.serial``.
         # Kept as a back-ref attribute on InputSpace because
         # ``InputSpace.next_word`` and a handful of late-stage per-word
         # loops still consult it; Stage 3 (signal-router parser cleanup)
         # is the appropriate site
         # to retire the boolean entirely.
         if getattr(self, 'inputSpace', None) is not None:
-            self.inputSpace._per_word_enabled = bool(
-                self.symbolicOrder >= 1)
+            self.inputSpace._per_word_enabled = bool(self.serial)
             # serialObjectMeta must reach InputSpace.finalize_stem (it builds the
             # capturable word-index / per-word commit tensors only when on).
             object.__setattr__(self.inputSpace, '_serial_object_meta',
@@ -908,7 +915,7 @@ class BaseModel(Mereology, nn.Module):
         #     preserves the pre-existing boundary-fire behaviour.
         #   * ``off`` — neither fires.
         # Read with the same accessor idiom as the sibling
-        # ``architecture.symbolicOrder`` knob two reads above (the
+        # ``architecture.serial`` knob above (the
         # ``<routerWireSerial>`` element is a direct child of
         # ``<architecture>``, not under ``<training>``).
         _rws_raw = TheXMLConfig.get(
@@ -2325,8 +2332,8 @@ class BasicModel(BaseModel):
         during which WholeSpace.forward() records the gold activations
         into the TruthLayer (``self.symbolSpace.truth_layer``), then
         restores it. After the epoch completes, each stored activation is
-        scaled by its
-        DegreeOfTruth.
+        scaled by its effective DegreeOfTruth (incoming DoT multiplied by
+        model-level ``<trust>``).
 
         Args:
             entries: list of dicts with 'content' and 'trust' keys.
@@ -2345,7 +2352,7 @@ class BasicModel(BaseModel):
             if trust is None:
                 continue
             texts.append(text)
-            trusts.append(float(trust))
+            trusts.append(self._effective_incoming_trust(trust))
         if not texts:
             return
 
@@ -2425,7 +2432,8 @@ class BasicModel(BaseModel):
         conversation push) fires DURING each forward, appending one REAL
         parsed end-state row per truth, in submission order. After all texts
         the rows ``[n_before : len(store)]`` are exactly the provisioned
-        truths: each gets its XML ``trust`` overwritten (``set_trust``) and,
+        truths: each gets its effective XML ``trust`` overwritten
+        (``set_trust``; XML DoT multiplied by model-level ``<trust>``) and,
         when the entry carries a ``kind`` (``partOf`` / ``implies`` /
         ``other``), its ``rel_type`` overridden to the tagged relation.
 
@@ -2471,7 +2479,8 @@ class BasicModel(BaseModel):
             if not text:
                 continue
             try:
-                trust = float(ent.get('trust', 0.0) or 0.0)
+                trust = self._effective_incoming_trust(
+                    ent.get('trust', 0.0) or 0.0)
             except (TypeError, ValueError):
                 trust = 0.0
             kind = str(ent.get('kind', '') or '').strip().lower()
@@ -4071,7 +4080,7 @@ class BasicModel(BaseModel):
                     snap = stm.snapshot() if stm is not None else None
                     if (snap is not None and torch.is_tensor(snap)
                             and snap.dim() == 3 and snap.shape[1] >= 1):
-                        if int(getattr(self, 'symbolicOrder', 0) or 0) == 0:
+                        if not bool(getattr(self, 'serial', False)):
                             terminal_idea = snap         # [B, N, D]
                         else:
                             terminal_idea = snap[:, :1, :]   # slot 0 = single S
@@ -5669,12 +5678,11 @@ class BasicModel(BaseModel):
             # order-safety idiom as the mereologyRaise request below).
             object.__setattr__(cs, '_serial_object_meta', bool(
                 TheXMLConfig.get("architecture.serialObjectMeta", default=False)))
-            # truthIdeas reaches CS here too (same NEW stamp site as above;
-            # _maybe_learn_relation reads it off self to route reduce-or-
-            # describe). Read the live config directly (order-safe during
-            # construction, before self.truth_ideas is parsed).
-            object.__setattr__(cs, '_truth_ideas', bool(
-                TheXMLConfig.get("architecture.truthIdeas", default=False)))
+            # Model-level incoming assertion trust reaches CS here too for
+            # probes/tests that need the architecture value during construction.
+            object.__setattr__(cs, '_trust', self._unit_interval(
+                TheXMLConfig.get("architecture.trust", default=1.0),
+                default=1.0))
             # ltmConsolidation reaches CS here too (same NEW stamp site). When
             # on, _route_learned_relation's ineffable branch appends to the
             # unified ltm_store instead of the (retired) RelativeTruthStore, and
@@ -5763,20 +5771,19 @@ class BasicModel(BaseModel):
             symbol_dim=symbol_dim + obj_symbol,
         )
 
-        # MetaSymbol Category codebook (Phase 1; doc/Language.md
-        # "Participation Categories as the Chooser's Syntactic-Category
-        # Context"). Opt-in via <categoryCodebook>: allocate a small VQ over
-        # the live MetaSymbol vectors on the TERMINAL WholeSpace (which owns
-        # the META taxonomy); the role columns are enumerated from the
-        # now-configured grammar (SymbolSubSpace.__init__ ran _ensure_configured
-        # above). Default off -> not allocated -> byte-identical.
+        # MetaSymbol Category codebook (doc/Language.md
+        # "Participation Categories"). Enabled by default via
+        # <categoryCodebook>: allocate a small role-space VQ on the TERMINAL
+        # WholeSpace (which owns the META taxonomy); the role columns are
+        # enumerated from the now-configured grammar (SymbolSubSpace.__init__
+        # ran _ensure_configured above).
         # Read the flag from config HERE (not self.category_codebook): the
         # architecture flags are assigned in create_from_config AFTER the
         # spaces are built, so self.category_codebook is not yet set when
         # _create_per_stage runs -- reading the live config is the order-safe
         # source (the config is loaded before any space is created).
         _category_codebook = bool(TheXMLConfig.get(
-            "architecture.categoryCodebook", default=False))
+            "architecture.categoryCodebook", default=True))
         if _category_codebook and terminal_ss is not None:
             # REQUEST allocation; the actual enable runs LAZILY from the
             # autobind hook on the first perception forward, when TheGrammar is
@@ -6239,11 +6246,10 @@ class BasicModel(BaseModel):
         the head and the loss is stashed on ``self._loss_head_loss``.
         """
         # Stage 1.E: explicit two-mode dispatch on
-        # ``self.symbolicOrder`` (XML knob
-        # ``<architecture><symbolicOrder>``, parsed in
+        # ``self.serial`` (XML knob ``<architecture><serial>``, parsed in
         # ``create_from_config``).
         #
-        #   * ``>= 1`` (= SERIAL / GRAMMATICAL) -- per-word IR-reconstruction
+        #   * ``True`` (= SERIAL / GRAMMATICAL) -- per-word IR-reconstruction
         #     loop via :meth:`_forward_body_per_word`. ONE forward = ONE
         #     sentence: each ground-truth word ``[B,1,D]`` is pumped
         #     through the SAME per-stage PS->CS->WS computation and the
@@ -6253,17 +6259,17 @@ class BasicModel(BaseModel):
         #     compose-to-S / chart / head / reverse() / IR-loss TAIL
         #     entirely unchanged.
         #
-        #   * ``0`` (= PARALLEL) -- T iterations of the per-stage body
+        #   * ``False`` (= PARALLEL) -- T iterations of the per-stage body
         #     (whole-slab path, T = ``<subsymbolicOrder>``), the legacy
         #     non-grammar path. Falls through to the loop below.
         #
         # Pre-Stage-1.E this dispatch was implicit (driven by the
         # InputSpace-side ``_per_word_enabled`` boolean derived from
         # ``useGrammar``); ``_per_word_enabled`` is now a back-ref
-        # mirrored from ``self.symbolicOrder`` (see
+        # mirrored from ``self.serial`` (see
         # ``create_from_config``) and retained for the remaining InputSpace
         # / per-word-loop late-stage consumers.
-        if self.symbolicOrder >= 1:
+        if self.serial:
             return self._forward_body_per_word(in_sub)
 
         # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
@@ -6472,18 +6478,6 @@ class BasicModel(BaseModel):
                     # Dark unless a scope or words-category attention is engaged
                     # -> the pass-back action is "noop" -> byte-identical.
                     ps_t = self._passback_scope_ps(t, PS_sub_stage0, prevCS_forSS)
-                elif (getattr(self, "symbolic_composition", False)
-                        and t > 0 and not prevCS_forSS.is_empty()):
-                    # SymbolicComposition (Architecture.md "three cognitive
-                    # operations", op 2): pass the prior pass's SYMBOLS back
-                    # to PartSpace so SigmaLayer composes them into a
-                    # higher-order symbol (chunking). ``prevCS_forSS`` here
-                    # is the previous stage's ``cs._subspaceForWS`` (set at
-                    # the end of the last iteration); PartSpace.forward's own
-                    # input handling performs the wide<->deep regroup of the
-                    # CS symbol table. Default-off (flag) keeps the stage-0
-                    # percept re-fed every pass (basin unchanged).
-                    ps_t = self.perceptualSpace.forward(prevCS_forSS)
                 # Slice C: the SS (symbol) bind leg is CS-MEDIATED -- when the
                 # combine is 3-stream (symbol_tower on), cs.bind_streams builds
                 # it itself from the order-raising codes synced onto
@@ -7699,16 +7693,12 @@ class BasicModel(BaseModel):
                 # is the root/predicate. ``_reduce_end_state_to_root``
                 # reads that last slot to recover the root.
                 payloads = [cs_buf[b, :depths[b], :] for b in range(B)]
-                # Truth / Ideas stage 3 (gated ``truthIdeas``): attach the
-                # per-row SCALAR trust (t - f) of the relation in each
-                # relative end-state to the LTM row ("LTM is persisted STM").
-                # Computed on the CS from THIS end-state buffer so it aligns
-                # with the row being recorded; ``None`` when the gate is off
-                # (the field stays None -> byte-identical).
-                tetralemmas = None
-                if getattr(self.conceptualSpace, '_truth_ideas', False):
-                    tetralemmas = self.conceptualSpace.stm_end_state_trust(
-                        cs_buf, rel_mask)
+                # Attach per-row scalar trust to the LTM row ("LTM is
+                # persisted STM"). Absolute rows carry the model's trust that
+                # the description refers to an actual event; relative rows
+                # carry that trust applied to the relation's t - f scalar.
+                tetralemmas = self.conceptualSpace.stm_end_state_trust(
+                    cs_buf, rel_mask)
                 # Skip on the explore trial (pass B): both sinks append the
                 # sentence's end-state. Pass A already committed this
                 # sentence; a second append would duplicate it (in the AR
@@ -7824,7 +7814,23 @@ class BasicModel(BaseModel):
         # eager-island handling now live on SymbolSpace; 2026-06-21 refactor).
         self.symbolSpace.forward(snap)
 
-    def _chart_generate_from_stm(self):
+    def _reverse_seed_snapshot(self, seed):
+        """Return a ``[B, N, D]`` idea snapshot from reverse's seed, if any."""
+        if seed is None:
+            return None
+        try:
+            snap = seed.materialize() if hasattr(seed, "materialize") else seed
+        except Exception:
+            return None
+        if not torch.is_tensor(snap):
+            return None
+        if snap.dim() == 2:
+            return snap.unsqueeze(1)
+        if snap.dim() == 3:
+            return snap
+        return None
+
+    def _chart_generate_from_stm(self, seed=None):
         """Fire ``symbolSpace.generate`` over the C-space_role STM snapshot.
 
         Reverse-path mirror of ``_chart_compose_at_C`` (full-router
@@ -7849,13 +7855,16 @@ class BasicModel(BaseModel):
         deliverable and is retained (gated identically to the forward
         boundary fire).
 
-        IDEA-DECODE (``<ideaDecode>``, Goal 2 step 1): when on, the parse tree
-        is DELETED -- so there is no ``generate_rules`` to rebuild here. Skip
-        the chart fire entirely; the reverse path then runs with an empty rule
-        set, driven by the primed symbolic space rather than the chart. Default
-        off -> this guard is inert (byte-identical).
+        IDEA-DECODE (``<ideaDecode>``, Goal 2 step 1): when on by itself, the
+        parse tree is DELETED -- so there is no ``generate_rules`` to rebuild
+        here. Skip the chart fire entirely; the reverse path then runs with an
+        empty rule set, driven by the primed symbolic space rather than the
+        chart. ``<reconstructFromIdea>`` is the opposite experiment: erase the
+        old derivation, then rebuild ``generate_rules`` from the supplied idea
+        seed (falling back to STM when no seed is usable).
         """
-        if getattr(self, 'idea_decode', False):
+        from_idea = bool(getattr(self, 'reconstruct_from_idea', False))
+        if getattr(self, 'idea_decode', False) and not from_idea:
             return
         if getattr(self, 'router_wire_serial', 'both') not in (
                 'boundary', 'both'):
@@ -7863,10 +7872,14 @@ class BasicModel(BaseModel):
         ss = self.symbolSpace
         if ss is None:
             return
+        if from_idea and hasattr(ss, "clear_grammar_cache"):
+            ss.clear_grammar_cache()
         stm = self.conceptualSpace.stm
         if stm is None:
             return
-        snap = stm.snapshot()
+        snap = self._reverse_seed_snapshot(seed) if from_idea else None
+        if snap is None:
+            snap = stm.snapshot()
         if snap is None:
             return
         ss.reverse(snap)
@@ -8433,7 +8446,7 @@ class BasicModel(BaseModel):
         """
         if x is None:
             return None
-        self._chart_generate_from_stm()
+        self._chart_generate_from_stm(x)
         # Idea-decode (Stage D3 CONSUMER, doc/old/2026-06-20-idea-decoder.md):
         # when <ideaDecode> is on, RUN the grammar <generate> reverse on the
         # syntactic WholeSpace (idea -> symbol expansion -> concept) and DRIVE the
@@ -9573,11 +9586,19 @@ class ModelFactory:
         # the deep CS idea), so ``symbol_dim == concept_dim`` is RELAXED for
         # serial configs -- the fold reconciles the widths. Parallel configs
         # (square Pi/Sigma over the constant slab) still require the match.
-        try:
-            _sym_order = int(arch.get("symbolicOrder", 0) or 0)
-        except (TypeError, ValueError):
-            _sym_order = 0
-        _ws_fold_bridged = (_sym_order >= 1)
+        _serial_raw = arch.get("serial", None)
+        if _serial_raw is None:
+            try:
+                _sym_order = int(arch.get("symbolicOrder", 0) or 0)
+            except (TypeError, ValueError):
+                _sym_order = 0
+            _ws_fold_bridged = (_sym_order > 0)
+        elif isinstance(_serial_raw, bool):
+            _ws_fold_bridged = _serial_raw
+        else:
+            _ws_fold_bridged = (
+                str(_serial_raw).strip().lower()
+                in ("true", "1", "yes", "on"))
         # The check is a PASS-THROUGH assumption: it only holds when WS keeps
         # the CS-idea width on its output. When WS RESHAPES the deep CS idea
         # into wide symbols (nInputDim != nOutputDim, e.g. [8,1024] -> [1024,8]

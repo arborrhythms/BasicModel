@@ -235,8 +235,8 @@ separate semantic category.
 
 ## Role-Collapsed Grammar and the Operator Codebook
 
-The role-collapsed grammar (`data/role_collapsed.grammar`) replaces
-part-of-speech categories with *operator roles*. Instead of a fixed
+The live role-only grammars replace part-of-speech categories with
+*operator roles*. Instead of a fixed
 `NP` / `VP` / `S` taxonomy, each operator contributes its own argument
 and result roles, named `<op>_I1`, `<op>_I2` (inputs) and `<op>_O1`
 (output). The rule `isEqual` therefore exposes `isEqual_I1`,
@@ -298,10 +298,9 @@ with zero parser conflicts (`test/test_d1_pos_recovery_gate.py`). The exact
 substitutability congruence is trivial there (every symbol is
 context-unique), so "recovers the grammar" means the parser's rule
 decisions survive the collapse, not exact rule regeneration. With the gate
-met, `role_collapsed.grammar` is now the **default** mental-model grammar
-(`MentalModel.xml`, 2026-06-03); `complete.grammar` is retained as the
-compatibility baseline (and is what the D1 collapse is measured on). The
-part operator is unified there: the grammar declares the single relative op
+met, the former standalone role-collapse file has been absorbed into
+`complete.grammar`, which is the broad live role-only grammar used by
+`MentalModel.xml`. The part operator is unified there: the grammar declares the single relative op
 `isPart` and the query/assert split is recovered by dispatch (`isPart`
 $\to$ `queryPart` in a query context). The operator codebook, soft
 superposition, and participation clustering are live and tested. See the
@@ -310,11 +309,9 @@ status blocks in
 
 ### Participation Categories as the Chooser's Syntactic-Category Context
 
-*(Design direction. The category SOURCE — operator codebook, soft
-superposition, participation clustering — is live and tested, and the
-**MetaSymbol** the category attaches to already exists in the live forward
-(below). Learning a category codebook over it from perception, and threading
-it into the placement chooser, is PLANNED. See status at the end.)*
+*(Live path. The category source is learned from role participation during
+perception, attached to the **MetaSymbol**, and threaded into the placement
+chooser as grammatical context.)*
 
 > **Terminology note** (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`):
 > the CS part↔whole relation table is the **Concept codebook** (concepts), not a
@@ -354,27 +351,27 @@ perception:
   boundary). Because the category attaches to the MetaSymbol, the syntactic
   signal learned from the *word's* role participation directly shapes the
   *object's* category, and vice versa.
-- **A small Category codebook, not a per-word count table.** Each MetaSymbol
-  already carries a learned ND vector (its `subspace.what` row, EMA-updated on
-  revisit); that vector VQ-assigns to the nearest of `K ≈ n_roles (~30)`
-  **category centroids**, and each centroid carries the uncollapsed `~30`-D role
-  vector (`<op>_I<n>` inputs + `<op>_O1` output). Reuses the live
-  `VectorQuantize` machinery; the role vector is a sidecar mirroring the
-  `category_logits` EMA lifecycle.
-- **E/M learned from perception, with emergent collapse.** *E-step*: assign each
-  MetaSymbol's vector to its nearest centroid. *M-step*: EMA the centroid's role
-  vector toward the roles the object filled **during analysis** (read off the
-  parse route — `op_I<n>` for the operands a reduction consumes, `op_O1` for its
-  result), and EMA-recentroid (the VQ's own update). Starting from `K ≈ 30` and
-  letting unused centroids decay, **effective K shrinks as words pull centroids
-  together** — the online realization of `participation.learned_collapse`, where
-  "noun" emerges without a label.
+- **A small Category codebook, not a permanent per-word count table.** The VQ
+  lives directly in role-participation space: `K ≈ n_roles (~30)` initial
+  centroids, one seeded from each labelled role (`<op>_I<n>` inputs +
+  `<op>_O1` outputs). Unlearned MetaSymbols have only a bounded temporary row in
+  `MetaSymbolCategoryLearner`; learned MetaSymbols keep just
+  `MetaSymbol -> category_id`.
+- **E/M learned from perception, with emergent collapse.** Each analysis route
+  contributes a sparse role vector to the MetaSymbol that occupied the terminal
+  position. The pending row accumulates that evidence until mass, confidence,
+  margin, and short-term stability thresholds are met. Then the MetaSymbol
+  commits to one VQ centroid and the pending row is discarded. Starting from one
+  centroid per role and letting unused centroids decay, **effective K shrinks as
+  role-use profiles pull centroids together** — the online realization of
+  `participation.learned_collapse`, where "noun" emerges without a label.
 - **Feeds the per-slot category to the chooser.** The chooser conditions each
-  slot on the **role vector of the centroid its object maps to** — gathered, at
-  the terminal layer, via `percept id → taxonomy parent (MetaSymbol) → centroid
-  → role vector` and concatenated into `feat` (`MLPTransformChooser`). The
-  default anchor-dot chooser ignores it, so the addition is opt-in and
-  basin-preserving.
+  slot on the **role vector of the committed centroid**; while a word is still
+  unsettled, the pending row supplies a temporary role context. The gather path
+  is `percept id → taxonomy parent (MetaSymbol) → committed category or pending
+  evidence → role vector`. `MLPTransformChooser` receives the vector as a
+  feature block; anchor-dot/default routing uses the same vector as a
+  labelled-role score prior.
 
 This splits into two phases: **(1)** learn the category codebook from perception
 in the autobind hook (no change to the layer forwards — reads the stashed
@@ -382,24 +379,19 @@ analysis route); **(2)** thread the per-slot category through `compose` /
 `score_binary` / `score_unary` into the chooser `feat` (the larger change — the
 layer forwards carry only `[B,N,D]` today, with no per-slot symbol identity).
 
-**Status (Phase 1 IMPLEMENTED, gated dark by `<categoryCodebook>`; Phase 2
-PENDING).** Phase 1 is wired and byte-identical when off:
-`WholeSpace.enable_category_codebook` builds the VQ (`codebook_retire=False`)
-+ a `_category_role[K, n_roles]` sidecar, enumerated from `compute_role_vocabulary`;
-it is requested at build and **lazily enabled on the first perception forward**
-(the grammar's role rules are not configured at build, so a build-time enable
-sees 0 roles). `LanguageLayer._collect_round0_role_obs` stashes the first binary
-space-role's round-0 reduces (`op_I1`/`op_I2` per operand) on the SS, and the autobind
-hook (`_maybe_autobind_meta`) runs the E/M: assign each MetaSymbol to a centroid
-(`assign_category`, + the VQ's free recentroid) and EMA the centroid's role
-vector (`update_category_role`). The codebook mechanics (assign / role-EMA /
-gather / decay-collapse) are unit-tested; the off path is verified byte-identical
-(full suite green). NOT yet done: a live end-to-end E/M smoke (needs a small
-`role_collapsed.grammar` + tiny-dataset fixture — XOR has 0 operator roles,
-MentalModel needs the fineweb corpus), and **Phase 2** (thread the per-slot
-centroid role vector into `MLPTransformChooser.feat`; the layer forwards carry no
-per-slot symbol identity today). The current round-0/first-space-role observation is
-parallel-mode-correct; serial (`symbolicOrder>=1`) attribution is approximate.
+**Status (implemented behind `<categoryCodebook>`, default true).**
+`WholeSpace.enable_category_codebook` builds the role-space VQ
+(`codebook_retire=False`) + `_category_role[K, n_roles]`, enumerated from
+`compute_role_vocabulary`; it is requested at build and **lazily enabled on the
+first perception forward**. `LanguageLayer._collect_round0_role_obs` stashes the
+first binary space-role's round-0 reduces (`op_I1`/`op_I2` per operand), and the
+autobind hook (`_maybe_autobind_meta`) feeds those observations to
+`MetaSymbolCategoryLearner`. The learner owns the pending per-MetaSymbol role
+rows, commits stable symbols into `WholeSpace._category_assign`, and drops the
+pending row. Structured grammar layers use the resulting role context for all
+transform choosers: MLP as an input feature, anchor-dot/default as a
+labelled-role score prior. The current round-0/first-space-role observation is
+parallel-mode-correct; serial (`<serial>true</serial>`) attribution is approximate.
 The old `WholeSpace.category_codebook` was retired 2026-05-20 and is gone; the
 dormant declared-POS tables (`category_embedding`, `category_logits`/
 `category_ids`, the order-taxonomy admissibility gate) are superseded and slated

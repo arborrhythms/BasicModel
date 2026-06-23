@@ -3,7 +3,7 @@
 doc/plans/2026-06-03-contextual-bind-preposition-when.md "Operation 1:
 PREPOSITION". The op fires automatically once it is (a) in
 ``GRAMMAR_LAYER_CLASSES``, (b) constructible with ``cls()``, and (c)
-named by a ``<rule>`` in the default ``data/role_collapsed.grammar``.
+named by a ``<rule>`` in ``data/complete.grammar``.
 These tests assert the grammar carries the role-only rule and that the
 production wiring path (``SymbolSubSpace._resolve_rule_layer``) resolves it
 to a ``PrepositionLayer``. Hard rule: no global POS inventory.
@@ -19,30 +19,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 from Language import PrepositionLayer
 
 
-def _load_role_collapsed():
-    """Load the default role-collapsed grammar via the standard path.
-
-    Mirrors the load idiom in test/test_role_collapsed_grammar.py:
-    ``Grammar().load_from_grammar_file("role_collapsed.grammar")`` (the
-    loader resolves the bare name against ``data/``).
-    """
+def _load_complete():
+    """Load the broad role-only grammar via the standard path."""
     from Language import Grammar
     g = Grammar()
-    g.load_from_grammar_file("role_collapsed.grammar")
+    g.load_from_grammar_file("complete.grammar")
     return g
 
 
 class TestPrepositionGrammarRules(unittest.TestCase):
     def test_preposition_rule_present(self):
-        """The role-collapsed grammar declares a ``preposition`` rule."""
-        g = _load_role_collapsed()
+        """The broad role-only grammar declares a ``preposition`` rule."""
+        g = _load_complete()
         names = {r.method_name for r in g.rules_upward if r.method_name}
         self.assertIn("preposition", names)
 
     def test_preposition_forward_reverse_pairing(self):
         """``preposition`` has both a compose (upward) and a generate
         (downward) rule on the collapsed I/O roles."""
-        g = _load_role_collapsed()
+        g = _load_complete()
         up = [r for r in g.rules_upward if r.method_name == "preposition"]
         dn = [r for r in g.rules_downward if r.method_name == "preposition"]
         self.assertTrue(up, "no forward preposition rule")
@@ -53,17 +48,17 @@ class TestPrepositionGrammarRules(unittest.TestCase):
 
 
 class TestBindGrammarRules(unittest.TestCase):
-    """Phase 2, Task 2.3: the role-collapsed grammar declares a ``bind`` rule
+    """Phase 2, Task 2.3: the broad role-only grammar declares a ``bind`` rule
     (contextual missing-NP marker). Same auto-fire contract as preposition:
     registered class + ``cls()`` + a ``<rule>`` naming it. Role-only (no POS)."""
 
     def test_bind_rule_present(self):
-        g = _load_role_collapsed()
+        g = _load_complete()
         names = {r.method_name for r in g.rules_upward if r.method_name}
         self.assertIn("bind", names)
 
     def test_bind_forward_reverse_pairing(self):
-        g = _load_role_collapsed()
+        g = _load_complete()
         up = [r for r in g.rules_upward if r.method_name == "bind"]
         dn = [r for r in g.rules_downward if r.method_name == "bind"]
         self.assertTrue(up, "no forward bind rule")
@@ -72,35 +67,28 @@ class TestBindGrammarRules(unittest.TestCase):
         self.assertEqual(up[0].rhs_symbols, ("bind_I1", "bind_I2"))
 
 
-class TestTenseAspectGrammarRules(unittest.TestCase):
-    """Phase 4, Task 4.3: the role-collapsed grammar declares unary ``tense``
-    and ``aspect`` rules (the .when ops). Same auto-fire contract: registered
-    class + ``cls()`` + a ``<rule>`` naming it. Role-only (no POS)."""
+class TestTenseGrammarRules(unittest.TestCase):
+    """The broad role-only grammar declares unary ``tense`` as a live .when op.
 
-    def test_tense_aspect_rules_present(self):
-        g = _load_role_collapsed()
+    ``aspect`` remains a code-level helper for morphology, but is no longer a
+    standalone grammar rule; the complete grammar reserves that slot for a
+    future rewrite path.
+    """
+
+    def test_tense_rule_present_and_aspect_not_live(self):
+        g = _load_complete()
         names = {r.method_name for r in g.rules_upward if r.method_name}
         self.assertIn("tense", names)
-        self.assertIn("aspect", names)
+        self.assertNotIn("aspect", names)
 
     def test_tense_forward_reverse_pairing(self):
-        g = _load_role_collapsed()
+        g = _load_complete()
         up = [r for r in g.rules_upward if r.method_name == "tense"]
         dn = [r for r in g.rules_downward if r.method_name == "tense"]
         self.assertTrue(up, "no forward tense rule")
         self.assertTrue(dn, "no reverse tense rule")
         self.assertEqual(up[0].lhs, "tense_O1")
         self.assertEqual(up[0].rhs_symbols, ("tense_I1",))   # UNARY: one input
-
-    def test_aspect_forward_reverse_pairing(self):
-        g = _load_role_collapsed()
-        up = [r for r in g.rules_upward if r.method_name == "aspect"]
-        dn = [r for r in g.rules_downward if r.method_name == "aspect"]
-        self.assertTrue(up, "no forward aspect rule")
-        self.assertTrue(dn, "no reverse aspect rule")
-        self.assertEqual(up[0].lhs, "aspect_O1")
-        self.assertEqual(up[0].rhs_symbols, ("aspect_I1",))  # UNARY: one input
-
 
 class TestPrepositionSignalRouterBinding(unittest.TestCase):
     """Task 1.4: the auto-wiring contract -- ``_wire_signal_router_grammar

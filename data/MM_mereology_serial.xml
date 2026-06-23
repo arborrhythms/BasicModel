@@ -3,11 +3,12 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_mereology_serial: the SERIAL (word-at-a-time) sibling of
        MM_mereology.xml (doc/specs/mereological-order-raising.md "Serial-mode
-       word-at-a-time loop"). Identical to MM_mereology EXCEPT symbolicOrder=1
-       (serial / grammatical: the per-word body via _forward_body_per_word,
-       one idea pushed to STM per word, syntax fired at the sentence boundary).
+       word-at-a-time loop"). Identical to MM_mereology EXCEPT it relies on
+       legacy serial derivation from symbolicOrder=1 (per-word body via
+       _forward_body_per_word, one idea pushed to STM per word, syntax fired
+       at the sentence boundary).
 
-       WHY this file exists: no committed config combined symbolicOrder>=1 with
+       WHY this file exists: no committed config combined serial mode with
        synthesis=radix; the serial+radix path was UNEXERCISED end-to-end. This
        is the home for the Option-A build (Alec, 2026-06-17): force PartSpace +
        WholeSpace to process the ACTIVE WORD ONLY (hard mask: PS parts inside

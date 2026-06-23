@@ -47,7 +47,7 @@ if _BIN not in sys.path:
 _DATA_DIR = os.path.join(_PROJECT, "data")
 _OFF_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
 _ON_CONFIG = os.path.join(_DATA_DIR, "MM_ltm_consolidation_fixture.xml")
-# SERIAL fixture (symbolicOrder>=1) for the FOLLOW-UPS: real-parse
+# SERIAL fixture for the FOLLOW-UPS: real-parse
 # provisioning (Change 3) needs the per-word serial forward to fire the
 # observe-site store-append, and FU3 (Change 2) needs a discourse. Turns ON
 # BOTH <ltmConsolidation> AND <training><sentencePrediction>.
@@ -279,7 +279,6 @@ class TestRouting(unittest.TestCase):
     def test_ineffable_returns_marker_no_store_write(self):
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
-        cs._truth_ideas = True
         self.assertTrue(getattr(cs, "_ltm_consolidation", False))
         self._accept_but_ineffable(cs)
         cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
@@ -432,9 +431,9 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
 
 # -- Change 1 + Change 2 (FU3): discourse + consolidation, store-backed AR --
 #
-# These use the SERIAL fixture (symbolicOrder>=1, sentencePrediction on,
-# ltmConsolidation on) so a discourse IS built and the per-word serial forward
-# fires the observe-site store-append.
+# These use the SERIAL fixture (sentencePrediction on, ltmConsolidation on) so
+# a discourse IS built and the per-word serial forward fires the observe-site
+# store-append.
 
 class TestDiscourseConsolidationWiring(unittest.TestCase):
     def test_discourse_is_built(self):

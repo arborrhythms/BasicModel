@@ -7,7 +7,7 @@
 * Bare sigma/pi default to invertible=False (plain LinearLayer, no reverse) — build them invertible for the decode peel.
 * Thread basis=WholeSpace.subspace.what through intersection/union/conjunction/disjunction reverses (real codebook recommender only when basis is passed; lossy (parent,parent) otherwise).
 * Lossy-by-design ops — decide handling for decode: isEqual (max-fold), isPart (drops the left operand), preposition (drops the marker), bind (non-invertible contextual).
-* aspect is an identity stub (duration retired in the bracket redesign) — confirm intended.
+* aspect is an identity helper retained for morphology, but no longer a live standalone grammar rule; confirm whether the class should stay until rewrite() lands.
 * Word analyzer stages a degenerate [0,0] span in serial+radix (word-bracket staging broken) — needed for PS/WS word codetermination.
 * Compact-symbol configs (WS nOutputDim=8) need a learned symbol_dim→concept_dim expander (or move to tall WS) — else the decode consumer falls back to no-op. Most configs are still WS=8 (Stage 6 not global).
 * Already-faithful inverses (reference, no work): not, non, tense, exist, symbolize.
@@ -23,8 +23,8 @@
 * MM_20M blank reconstruction: synthesis=bpe never stashes _forward_input → empty ws row map → blanks. Fix = synthesis=radix OR an empty-taxonomy → PS-table fallback in _reverse_decode_one.
 * MM_20M XOR-supervision: lexer=byte discards the XOR labels (diagnosed; config-only fix not applied to MM_20M).
 
-### Dark features never turned live (lights-on pivot incomplete — wire live + verify, or remove)
-* truthIdeas, categoryCodebook, chooserCategoryContext, symbolicComposition, verbSpectrum, adverbEigEdit — all have 0 live configs.
+### Recently resolved
+* DONE 2026-06-23: verbSpectrum/adverbEigEdit are live through grammar ops. `verb` forces the sparse spectral operator, `adverb` forces the eigenmodifier, default/complete include both, and shamatha excludes both.
 
 ### Truth / Ideas tail
 * Workstream G: episodic .events exemplar store (persisted CS .events / PS .what+.where+.when) for truth grounding — no owner yet.
@@ -36,11 +36,11 @@
 * load_weights only bridges the container move (symbolSpace.* → symbolSpace.subspace.*). Bridge the SyntacticLayer re-home, the WS-tall reshape, and the _concept_* / space_role renames — else old checkpoints can't load (regenerate or migrate).
 
 ### Cleanup / loose ends
-* Remove the legacy NeuralToolUser executor (pending confirmation).
-* Fix 2 pre-existing bugs surfaced by this work: topk_priming_mask crash; runEpoch runtime-split raise.
-* conceptualize / conceptualize_chain defined but never called from a live path (R6 invocation wiring).
+* DONE 2026-06-22: removed the legacy NeuralToolUser hard-parse executor; the signal-router soft-superposition path remains live.
+* DONE 2026-06-22: topk_priming_mask crash and runEpoch runtime-split raise are covered by regression tests (`test_topk_priming_codebook_growth.py`, `test_runtime_split_ingestion.py`).
+* DONE 2026-06-22: `<reconstructFromIdea>` clears the forward grammar/routing trace and rebuilds reverse rules from the idea snapshot; `conceptualize` remains the relation-table constructor, not the vector decoder.
 * WholeSpace stack-route uses an eager Python SHIFT loop + a hardcoded reduce rule instead of the router's learned scoring.
-* symbolicOrder > 1 is plumbed but silently behaves as 1.
+* DONE 2026-06-22: `<serial>` now governs serial traversal; `symbolicOrder > 1` is accepted as a symbolic / relational loop budget instead of silently behaving as 1.
 * Cosmetic: residual 'tier' mentions (mm5m SVG diagram), frozen doc/old archives.
 
 =========================================================================================
@@ -52,7 +52,7 @@
 
 * WholeSpace property mechanism — I made a scoping call worth confirming. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
 
-* Genuinely future (engine built/tested but not wired into training): the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option. Flag-on paths (neuralToolUser, symbolicComposition, intent-driven top-k) run but their semantics are yours to validate via training.
+* Genuinely future (engine built/tested but not wired into training): the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option. Flag-on paths (intent-driven top-k) run but their semantics are yours to validate via training.
 * Subsymbolic: learning higher-order words
 
 * We should also include the TruthLayer, which ascertains the truth of all propositions before encoding them over symbols if they are consistent. In other words, besides the subsymbolic system that we have already built to lear the extension of words, we may learn a taxonomy that defines words in virtue of their intension. So, learning the syntax of a RelativeTruth is different than learning the syntax of an AbsoluteTruth because it encodes a relation over propositions which should be stored in a Taxonomy (e.g. "men" < "mortal"). That can be encoded as a part/whole relationship over symbols (the symbol for mortal is a part of the symbol for mortal: this can be stored in the representation (i.e. geometrically), and what it means is that the equivalence class of one is a subset of the equivalence class of the other). In terms of tokens that are assigned to types, such as socrates, if socrates is categorized as mortal, he should be promoted to a token of the type man (tokens define their nearest containing symbolic wholes).   
@@ -129,4 +129,3 @@ with specifically-characterized information (concrete details)
   Which two-argument methods on `SyntacticLayer` are valid for `extrapolate()`? A registry of eligible methods and their approximate invertibility status would help. Currently hardcoded to `['union', 'intersection', 'equals', 'part']`.
 * TruthSet scale
   `max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.
-

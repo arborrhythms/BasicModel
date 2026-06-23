@@ -105,6 +105,176 @@ class RoutingState:
     rule_probs: object = None
 
 
+class MetaSymbolCategoryLearner:
+    """Pending role-evidence table for MetaSymbol category learning.
+
+    Long-term state stays compact: a learned MetaSymbol keeps only its
+    committed ``meta_pos -> category_id`` assignment on ``WholeSpace``. While
+    the assignment is still unstable, this learner holds a bounded sparse row
+    of accumulated grammatical role evidence for that MetaSymbol. Category
+    centroids live in role-participation space, not MetaSymbol embedding space.
+    """
+
+    def __init__(self, n_roles, *, max_pending=4096, min_mass=4.0,
+                 min_confidence=0.70, min_margin=0.10, stable_updates=2,
+                 evidence_decay=1.0, prototype_ema=0.10):
+        self.n_roles = int(n_roles)
+        self.max_pending = int(max_pending)
+        self.min_mass = float(min_mass)
+        self.min_confidence = float(min_confidence)
+        self.min_margin = float(min_margin)
+        self.stable_updates = int(stable_updates)
+        self.evidence_decay = float(evidence_decay)
+        self.prototype_ema = float(prototype_ema)
+        self.pending = {}
+        self.step = 0
+
+    def _role_tensor(self, role_vec):
+        if not torch.is_tensor(role_vec):
+            role_vec = torch.tensor(role_vec, dtype=torch.float32)
+        vec = role_vec.detach().float().reshape(-1).cpu()
+        if vec.numel() != self.n_roles:
+            return None
+        return vec
+
+    @staticmethod
+    def _profile(evidence):
+        mass = float(evidence.sum().item())
+        if mass <= 0.0:
+            return evidence.clone(), 0.0
+        return evidence / mass, mass
+
+    def _evict_if_needed(self):
+        if self.max_pending <= 0:
+            self.pending.clear()
+            return
+        if len(self.pending) < self.max_pending:
+            return
+        victim, _row = min(
+            self.pending.items(),
+            key=lambda kv: (float(kv[1].get("mass", 0.0)),
+                            int(kv[1].get("last", 0))))
+        self.pending.pop(victim, None)
+
+    def pending_role(self, meta_pos, *, device=None, dtype=None):
+        row = self.pending.get(int(meta_pos))
+        if row is None:
+            return None
+        profile, mass = self._profile(row["evidence"])
+        if mass <= 0.0:
+            return None
+        if dtype is None:
+            dtype = torch.float32
+        return profile.to(device=device, dtype=dtype)
+
+    def score_assignment(self, ws, profile):
+        """Return ``(best, confidence, margin)`` for a role-space profile."""
+        role_table = getattr(ws, "_category_role", None)
+        vq = getattr(ws, "_category_vq", None)
+        codebook = role_table
+        if codebook is None and vq is not None:
+            codebook = getattr(vq, "codebook", None)
+        if codebook is None or not torch.is_tensor(codebook):
+            return None, 0.0, 0.0
+        cb = codebook.detach().float().cpu()
+        if cb.dim() != 2 or cb.shape[1] != profile.numel() or cb.shape[0] == 0:
+            return None, 0.0, 0.0
+        dist = ((cb - profile.reshape(1, -1)) ** 2).sum(dim=-1)
+        best = int(torch.argmin(dist).item())
+        best_dist = float(dist[best].item())
+        confidence = 1.0 / (1.0 + best_dist)
+        if dist.numel() == 1:
+            margin = float("inf")
+        else:
+            ordered = torch.sort(dist).values
+            margin = float((ordered[1] - ordered[0]).item())
+        return best, confidence, margin
+
+    def _assign_profile(self, ws, profile):
+        idx = ws.assign_category(profile.reshape(1, -1))
+        if idx is None:
+            return None
+        cat_id = int(idx.reshape(-1)[0])
+        ws.update_category_role(
+            torch.tensor([cat_id], dtype=torch.long),
+            profile.reshape(1, -1),
+            ema=self.prototype_ema)
+        return cat_id
+
+    def _commit(self, ws, meta_pos, category_id):
+        assign = getattr(ws, "_category_assign", None)
+        if assign is None:
+            assign = {}
+            object.__setattr__(ws, "_category_assign", assign)
+        assign[int(meta_pos)] = int(category_id)
+        self.pending.pop(int(meta_pos), None)
+        return int(category_id)
+
+    def observe(self, ws, meta_pos, role_vec):
+        """Update category evidence for one MetaSymbol.
+
+        Returns the committed category id when the symbol is already learned
+        or becomes learned on this observation. Returns ``None`` while the
+        symbol remains in the pending table.
+        """
+        vec = self._role_tensor(role_vec)
+        if vec is None or vec.sum().item() <= 0.0:
+            return None
+        meta_pos = int(meta_pos)
+        self.step += 1
+
+        assign = getattr(ws, "_category_assign", None) or {}
+        committed = assign.get(meta_pos)
+        if committed is not None:
+            profile, _mass = self._profile(vec)
+            ws.update_category_role(
+                torch.tensor([int(committed)], dtype=torch.long),
+                profile.reshape(1, -1),
+                ema=self.prototype_ema)
+            return int(committed)
+
+        row = self.pending.get(meta_pos)
+        if row is None:
+            if self.max_pending <= 0:
+                return None
+            self._evict_if_needed()
+            row = {
+                "evidence": torch.zeros(self.n_roles, dtype=torch.float32),
+                "mass": 0.0,
+                "best": None,
+                "stable": 0,
+                "last": self.step,
+            }
+            self.pending[meta_pos] = row
+
+        if self.evidence_decay < 1.0:
+            row["evidence"].mul_(max(0.0, self.evidence_decay))
+        row["evidence"].add_(vec)
+        profile, mass = self._profile(row["evidence"])
+        row["mass"] = mass
+        row["last"] = self.step
+
+        best = self._assign_profile(ws, profile)
+        scored_best, confidence, margin = self.score_assignment(ws, profile)
+        if scored_best is not None:
+            best = scored_best
+        if best is None:
+            return None
+
+        if row["best"] == int(best):
+            row["stable"] = int(row.get("stable", 0)) + 1
+        else:
+            row["best"] = int(best)
+            row["stable"] = 1
+
+        if (mass >= self.min_mass
+                and confidence >= self.min_confidence
+                and margin >= self.min_margin
+                and int(row["stable"]) >= self.stable_updates):
+            return self._commit(ws, meta_pos, int(best))
+        return None
+
+
 def load_grammar(filename):
     """Load a ``.grammar`` XML file from ``data/`` and return a
     ``Grammar.configure()``-compatible dict.
@@ -2368,7 +2538,9 @@ class LiftLayer(GrammarLayer):
                  wholeSpace=None, perceptualSpace=None,
                  conceptualSpace=None,
                  invertible=True, nonlinear=True,
-                 butterfly=False, N=None):
+                 butterfly=False, N=None,
+                 force_verb_spectrum=False,
+                 force_adverb_eig_edit=False):
         """Initialize LiftLayer.
 
         ``nInput`` / ``nOutput`` size the internal SigmaLayer; both
@@ -2438,13 +2610,17 @@ class LiftLayer(GrammarLayer):
             # RESIDUAL (a sparse edit on top of the symmetric sigma fold) -- it is
             # now the adverb.
             #
-            # ADVERB sparse eigenvalue edit. When <adverbEigEdit> is on, an adverb
-            # modifies a composed VP through a sparse eigenvalue edit of the verb,
-            # masked by the VP's OWN eigen-signature (no learned mask). The only
-            # per-adverb parameter is the edit projection δ_adv(ADV_code). Built
-            # ONLY when on so flag-off is byte-identical. Zero-init -> edit ~0.
-            self._adverb_eig_edit = bool(
-                TheXMLConfig.get("architecture.adverbEigEdit", default=False))
+            # ADVERB sparse eigenvalue edit. When <adverbEigEdit> is on, or
+            # AdverbLayer forces this helper, an adverb modifies a composed VP
+            # through a sparse eigenvalue edit of the verb, masked by the VP's
+            # OWN eigen-signature (no learned mask). The only per-adverb
+            # parameter is the edit projection δ_adv(ADV_code). Plain LiftLayer
+            # still builds it ONLY when flagged so flag-off is byte-identical.
+            # Zero-init -> edit ~0.
+            self._adverb_eig_edit = (
+                bool(force_adverb_eig_edit)
+                or bool(TheXMLConfig.get(
+                    "architecture.adverbEigEdit", default=False)))
             if self._adverb_eig_edit:
                 self._adv_edit = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
@@ -2463,10 +2639,13 @@ class LiftLayer(GrammarLayer):
             # (e^w>0): unapply applies e^{-w_v}. Sparse -> most eigs are identity
             # (w=0 -> e^0=1), so the verb is a non-destructive spectral reshaping.
             # (Follow-ons: NP-conditional Q via Householder-from-NP; verb
-            # identification on reverse.) Built ONLY when on -> flag-off
+            # identification on reverse.) Built ONLY when flagged, or when
+            # VerbLayer forces this helper, so plain LiftLayer stays flag-off
             # byte-identical.
-            self._verb_spectrum = bool(
-                TheXMLConfig.get("architecture.verbSpectrum", default=False))
+            self._verb_spectrum = (
+                bool(force_verb_spectrum)
+                or bool(TheXMLConfig.get(
+                    "architecture.verbSpectrum", default=False)))
             if self._verb_spectrum:
                 self._verb_spec = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5B17, bias=0.0)
@@ -2587,8 +2766,8 @@ class LiftLayer(GrammarLayer):
         VP.") Invoked by the adverb operator over a composed VP; NOT called by
         ``lift.forward`` (the verb no longer eig-edits).
 
-        No-op (returns ``vp_content`` unchanged) unless ``<adverbEigEdit>`` built
-        the edit projection -- flag-off is byte-identical. When on:
+        No-op (returns ``vp_content`` unchanged) unless ``<adverbEigEdit>`` or
+        ``AdverbLayer`` built the edit projection. When on:
 
         * ``δ_adv`` -- the adverb's per-eigenfeature edit from the ADV code, made
           SPARSE by soft-thresholding (an adverb touches few eigs);
@@ -2628,7 +2807,7 @@ class LiftLayer(GrammarLayer):
         INVERTIBLE by construction (e^w > 0; see ``unapply_verb``). Most eigs are
         identity (w=0 -> e^0=1), so the verb is a non-destructive spectral
         reshaping along the few eigs it touches. No-op unless ``<verbSpectrum>``
-        built the projection -> flag-off byte-identical."""
+        or ``VerbLayer`` built the projection."""
         if not getattr(self, '_verb_spectrum', False) or self._verb_spec is None:
             return np_what
         a = torch.atanh(np_what.clamp(-1 + epsilon, 1 - epsilon))
@@ -2679,6 +2858,96 @@ class LiftLayer(GrammarLayer):
     def generate(self, parent, gate=None):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
         return self.reverse(parent, gate=gate)
+
+
+class VerbLayer(LiftLayer):
+    """``verb(np, verb)`` -- sparse verb-conditioned spectral operator.
+
+    The operator applies the verb's log-eigenvalue spectrum to the NP in
+    atanh-space via :meth:`LiftLayer.apply_verb`. It forces the spectrum
+    projection on even when the legacy ``<verbSpectrum>`` helper flag is off,
+    so the grammar rule is live by construction. Zero-init means an untrained
+    verb is the identity.
+    """
+    rule_name = "verb"
+    arity = 2
+    invertible = True
+    space_role = 'CS'
+    event_aware = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("force_verb_spectrum", True)
+        super().__init__(*args, **kwargs)
+
+    def forward(self, left, right, gate=None):
+        if self._sigma is None:
+            raise RuntimeError(
+                "VerbLayer was constructed without operand-width "
+                "information; cannot run forward.")
+        cw = self._content_width
+        if cw and left.shape[-1] > cw:
+            l_what, l_where, _l_when = _split_event(left, cw)
+            r_what, _r_where, r_when = _split_event(right, cw)
+            content = self.apply_verb(l_what, r_what)
+            return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
+        return self.apply_verb(left, right)
+
+    def reverse(self, parent, verb_what=None, gate=None):
+        """Exact inverse when ``verb_what`` is supplied; otherwise pseudo-split."""
+        if self._sigma is None:
+            raise RuntimeError(
+                "VerbLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        cw = self._content_width
+        if verb_what is not None:
+            return self.unapply_verb(parent, verb_what), verb_what
+        if cw and parent.shape[-1] > cw:
+            p_what, p_where, p_when = _split_event(parent, cw)
+            back = _lower_when(p_when)
+            left = torch.cat([p_what, p_where, back], dim=-1)
+            return left, left
+        return parent, parent
+
+
+class AdverbLayer(LiftLayer):
+    """``adverb(vp, adv)`` -- sparse adverb eigenmodifier.
+
+    The operator applies :meth:`LiftLayer.apply_adverb` to a VP and an adverb
+    code. It forces the adverb edit projection on, independent of the legacy
+    ``<adverbEigEdit>`` helper flag. Zero-init means an untrained adverb is a
+    no-op.
+    """
+    rule_name = "adverb"
+    arity = 2
+    invertible = False
+    lossy = True
+    space_role = 'CS'
+    event_aware = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("force_adverb_eig_edit", True)
+        super().__init__(*args, **kwargs)
+
+    def forward(self, left, right, gate=None):
+        if self._sigma is None:
+            raise RuntimeError(
+                "AdverbLayer was constructed without operand-width "
+                "information; cannot run forward.")
+        cw = self._content_width
+        if cw and left.shape[-1] > cw:
+            l_what, l_where, l_when = _split_event(left, cw)
+            r_what, _r_where, _r_when = _split_event(right, cw)
+            content = self.apply_adverb(l_what, r_what)
+            return torch.cat([content, l_where, l_when], dim=-1)
+        return self.apply_adverb(left, right)
+
+    def reverse(self, parent, gate=None):
+        if self._sigma is None:
+            raise RuntimeError(
+                "AdverbLayer was constructed without operand-width "
+                "information; cannot run reverse.")
+        return parent, parent
+
 
 class LowerLayer(GrammarLayer):
     """``lower(idea_a, idea_b)`` -- binary CS-space_role grammar op (pi-style
@@ -4117,6 +4386,8 @@ GRAMMAR_LAYER_CLASSES = {
     'intersection': IntersectionLayer,
     'union':        UnionLayer,
     'lift':         LiftLayer,
+    'verb':         VerbLayer,
+    'adverb':       AdverbLayer,
     'lower':        LowerLayer,
     'preposition':  PrepositionLayer,
     'bind':         ContextualBindLayer,
@@ -4243,9 +4514,11 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'part':         T3_BINARY_DIRECTIONAL,
     'queryPart':    T3_BINARY_DIRECTIONAL,
     'assertPart':   T3_BINARY_DIRECTIONAL,
-    # lift / lower: T3/T4 -- DET/MP/ADV/PP modifier marker or bare; the
+    # lift / lower / verb / adverb: T3/T4 -- modifier marker or bare; the
     # bare (T4) default is kept so they round-trip without a marker.
     'lift':         T4_BINARY_JUXTAPOSE,
+    'verb':         T4_BINARY_JUXTAPOSE,
+    'adverb':       T4_BINARY_JUXTAPOSE,
     'lower':        T4_BINARY_JUXTAPOSE,
     # PREPOSITION (T3): a learned PRE marker (that / to / in / because /
     # when) heads the phrase; the marker does NOT select the op (it is
@@ -4515,13 +4788,6 @@ class LanguageLayer(Layer):
         # when it can reach the model's subsymbolicOrder. ``max(1, N-1) ==
         # N-1`` so the default reproduces the pre-collapse round count.
         self.subsymbolic_order = 1
-        # NeuralToolUser cutover (doc/plans/NeuralToolUser.md). When True,
-        # the binary stage of ``compose`` runs the greedy hard-parse
-        # executor and records the route + cross-product distribution on
-        # the route store below. Default False -> the legacy soft-DP fold
-        # loop (state_dict / basin unchanged). The host space sets it from
-        # ``<architecture><neuralToolUser>`` (mirrors subsymbolic_order).
-        self.neural_tool_user = False
         # Placement-chooser kind for the structured layers built by
         # ``attach_unary_ops`` / ``attach_layer_ops``. "anchordot" (default)
         # = the stateless behavior-preserving scorer (no params); "mlp" =
@@ -4529,31 +4795,6 @@ class LanguageLayer(Layer):
         # host sets it from ``<architecture><transformChooser>`` BEFORE the
         # ops are attached (the layers pick the chooser at construction).
         self.transform_chooser = "anchordot"
-        # Phase 2 (MetaSymbol Category codebook): when True AND the MLP chooser
-        # is selected, the structured layers' MLP choosers are sized with a
-        # per-slot syntactic-category context block (width = the grammar's role
-        # count) and ``compose`` threads the per-slot role vector in. The host
-        # sets it from ``<architecture><chooserCategoryContext>`` BEFORE the ops
-        # are attached (the layers size the chooser at construction). Default
-        # False keeps the chooser byte-identical.
-        self.chooser_category_context = False
-        # Route store (per space_role): the pass-1 greedy route (detached masks)
-        # and the live per-level cross-product distributions, populated when
-        # ``neural_tool_user`` is on. Pass-2 replay reads the route; the
-        # distributions are the new rule_probs source.
-        self._ntu_route = {}
-        self._ntu_dist = {}
-        # Legacy hard-executor two-pass state (superseded by the soft-
-        # superposition two-pass; retained only by the obsolete executor path).
-        # ``_ntu_explore`` toggles compose's executor between pass A (greedy,
-        # saves the route) and pass B (replay the saved route + diverge with
-        # ``_ntu_temperature``); ``_ntu_explore_info`` receives the divergence
-        # info (logp_a / logp_b / entropy@L) the driver reads for the policy
-        # loss. Default off -> pass-A greedy only (the live cutover today).
-        self._ntu_explore = False
-        self._ntu_temperature = 0.5
-        self._ntu_generator = None
-        self._ntu_explore_info = None
         self._unary_layers = nn.ModuleDict()
         self._binary_layers = nn.ModuleDict()
         # Parallel arrays of global rule_ids per attached layer; keyed by
@@ -4567,17 +4808,18 @@ class LanguageLayer(Layer):
         self._last_space_role_routings = {}
 
     def _chooser_role_cats(self):
-        """Phase-2 category-context width for the structured layers' MLP
-        chooser: the grammar's operator-role count when
-        ``chooser_category_context`` is on AND the MLP chooser is selected,
-        else 0 (chooser byte-identical). The role count comes from the same
-        :func:`compute_role_vocabulary` the WholeSpace category codebook uses,
-        so the chooser's context block and the codebook's role vectors share a
-        width. Returns 0 if the grammar declares no roles (the feature is then
-        inert)."""
-        if not getattr(self, "chooser_category_context", False):
-            return 0
+        """Category-context width for structured-layer MLP choosers.
+
+        The role count comes from the same :func:`compute_role_vocabulary` the
+        WholeSpace category codebook uses, so the chooser's context block and
+        the codebook's role vectors share a width. Anchor-dot also uses the
+        category vector, but as a layer-level score prior, so it needs no MLP
+        input widening.
+        """
         if str(getattr(self, "transform_chooser", "anchordot")) != "mlp":
+            return 0
+        if not bool(TheXMLConfig.get("architecture.categoryCodebook",
+                                     default=True)):
             return 0
         try:
             return int(compute_role_vocabulary(TheGrammar)[2])
@@ -4604,6 +4846,7 @@ class LanguageLayer(Layer):
             temperature=self.temperature,
             chooser=getattr(self, "transform_chooser", "anchordot"),
             n_role_cats=self._chooser_role_cats(),
+            op_names=op_names,
         )
         layer.op_names = list(op_names) if op_names is not None else None
         layer.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
@@ -4671,20 +4914,17 @@ class LanguageLayer(Layer):
         all_space_roles = sorted(set(self._unary_layers.keys())
                            | set(self._binary_layers.keys()))
 
-        # Phase 2 (chooser conditioning): build the per-slot category context
-        # ONCE from the terminal-slot identities, threaded into the FIRST
-        # space_role's scoring only -- later rounds/space_roles fold composed slots whose
-        # MetaSymbol identity no longer maps 1:1 to a percept (their category
-        # is neutral). Gated on the MLP chooser + <chooserCategoryContext> +
-        # the terminal codebook being enabled. Off -> None (byte-identical).
+        # Category conditioning: build the per-slot category context ONCE from
+        # terminal-slot identities and thread it into the FIRST space_role's
+        # scoring only. Later rounds/space_roles fold composed slots whose
+        # MetaSymbol identity no longer maps 1:1 to a percept, so their
+        # category is neutral.
         cat_e = None
-        if (getattr(self, 'chooser_category_context', False)
-                and str(getattr(self, 'transform_chooser', 'anchordot')) == 'mlp'):
-            _ss = getattr(word_space, 'wholeSpace', None)
-            if (_ss is not None
-                    and getattr(_ss, 'category_codebook_enabled', None) is not None
-                    and _ss.category_codebook_enabled()):
-                cat_e = self._build_category_context(x, _ss)
+        _ss = getattr(word_space, 'wholeSpace', None)
+        if (_ss is not None
+                and getattr(_ss, 'category_codebook_enabled', None) is not None
+                and _ss.category_codebook_enabled()):
+            cat_e = self._build_category_context(x, _ss)
         terminal_space_role = all_space_roles[0] if all_space_roles else None
 
         for space_role in all_space_roles:
@@ -4726,77 +4966,28 @@ class LanguageLayer(Layer):
                 # on an already-folded slab are safe no-ops (the layer
                 # returns the degenerate path for N<=1).
                 max_rounds = max(self.subsymbolic_order, x.shape[1] - 1)
-                if self.neural_tool_user:
-                    # NeuralToolUser cutover: replace the soft-DP fold loop
-                    # with the greedy hard-parse executor (pass 1). It folds
-                    # the slab via per-level Viterbi tilings, records the
-                    # route + per-level cross-product distribution on the
-                    # route store, and the fired rule-ids come from the
-                    # route's reduce masks. The two-hard-parse policy
-                    # training runs at the model/train level (the chooser is
-                    # not trained here); rule_probs becomes the detached
-                    # route summary (see _synthesize_rule_probs).
-                    adapter = _BinaryStepperAdapter(binary_layer)
-                    ntu = NeuralToolUser(max_levels=max(1, max_rounds))
-                    if (self._ntu_explore and self._ntu_route.get(space_role)):
-                        # Pass B: replay pass-A's saved route to a random
-                        # divergence level, force a different op there
-                        # (temperature), and re-decide. Stash the divergence
-                        # info for the two-pass policy loss; the fired rules
-                        # come from pass A's route (the divergence is one op).
-                        _saved = RouteStats()
-                        _saved.route = self._ntu_route[space_role]
-                        _out = ntu.parse_explore(
-                            x, adapter, _saved,
-                            temperature=self._ntu_temperature,
-                            generator=self._ntu_generator)
-                        if _out is not None:
-                            x, _stats_b, _info = _out
-                            self._ntu_explore_info = _info
-                        else:
-                            x, _stats_g = ntu.parse_greedy(x, adapter)
-                        route_for_rules = self._ntu_route[space_role]
-                    else:
-                        # Pass A: greedy; save the route + distributions.
-                        x, stats = ntu.parse_greedy(x, adapter)
-                        self._ntu_route[space_role] = stats.route
-                        self._ntu_dist[space_role] = [
-                            e["dist_probs"] for e in stats.route]
-                        route_for_rules = stats.route
-                    for lvl in route_for_rules:
-                        rm = lvl["reduce_mask"]
-                        if rm.numel() == 0:
-                            continue
-                        for b in range(rm.shape[0]):
-                            for p in range(rm.shape[1]):
-                                if rm[b, p].sum() > 0:
-                                    space_role_rules_per_row[b].append(
-                                        rid_table[int(rm[b, p].argmax())])
-                    space_role_routing["neural_tool_user"] = True
-                    space_role_routing["route_levels"] = len(route_for_rules)
-                else:
-                    round_routings = []
-                    for _round_i in range(max_rounds):
-                        b_hard, b_soft, b_routing = binary_layer(
-                            x, cat_ctx=(cat_e if (space_role == terminal_space_role
-                                                  and _round_i == 0) else None))
-                        round_routings.append(b_routing)
-                        kind = b_routing["action_kind"]
-                        op = b_routing["action_op"]
-                        lengths = b_routing["lengths"]
-                        B_now = kind.shape[0]
-                        for b in range(B_now):
-                            L = int(lengths[b].item())
-                            for j in range(L):
-                                if int(kind[b, j].item()) == 1:
-                                    space_role_rules_per_row[b].append(
-                                        rid_table[int(op[b, j].item())])
-                        x = b_soft
-                    if round_routings:
-                        # Last round's routing is the canonical "binary"
-                        # diagnostic; the full sequence is in "binary_rounds".
-                        space_role_routing["binary"] = round_routings[-1]
-                        space_role_routing["binary_rounds"] = round_routings
+                round_routings = []
+                for _round_i in range(max_rounds):
+                    b_hard, b_soft, b_routing = binary_layer(
+                        x, cat_ctx=(cat_e if (space_role == terminal_space_role
+                                              and _round_i == 0) else None))
+                    round_routings.append(b_routing)
+                    kind = b_routing["action_kind"]
+                    op = b_routing["action_op"]
+                    lengths = b_routing["lengths"]
+                    B_now = kind.shape[0]
+                    for b in range(B_now):
+                        L = int(lengths[b].item())
+                        for j in range(L):
+                            if int(kind[b, j].item()) == 1:
+                                space_role_rules_per_row[b].append(
+                                    rid_table[int(op[b, j].item())])
+                    x = b_soft
+                if round_routings:
+                    # Last round's routing is the canonical "binary"
+                    # diagnostic; the full sequence is in "binary_rounds".
+                    space_role_routing["binary"] = round_routings[-1]
+                    space_role_routing["binary_rounds"] = round_routings
 
             self._last_space_role_routings[space_role] = space_role_routing
             rules[space_role] = space_role_rules_per_row
@@ -4832,8 +5023,8 @@ class LanguageLayer(Layer):
         return rules
 
     def _build_category_context(self, x, ws):
-        """Phase 2: per-slot category role vector ``[B, N, n_roles]`` for the
-        MLP chooser, or ``None`` when unavailable.
+        """Per-slot category role vector ``[B, N, n_roles]`` for grammar
+        routing, or ``None`` when unavailable.
 
         Pure reads only (no E-step at score time): each terminal slot position
         -> percept id (stashed by the autobind hook earlier this step) -> PS
@@ -4847,9 +5038,8 @@ class LanguageLayer(Layer):
         row_to_pos = getattr(ws, '_ps_row_to_pos', None)
         if not last_pid or n_roles == 0 or row_to_pos is None:
             return None
-        assign = getattr(ws, '_category_assign', None) or {}
         B, N = int(x.shape[0]), int(x.shape[1])
-        centroids = [[-1] * N for _ in range(B)]
+        ctx = x.new_zeros(B, N, n_roles)
         for b in range(min(B, len(last_pid))):
             prow = last_pid[b]
             for n in range(min(N, len(prow))):
@@ -4862,11 +5052,11 @@ class LanguageLayer(Layer):
                 meta_pos = ws.taxonomy_parent(ps_pos)
                 if meta_pos is None:
                     continue
-                ci = assign.get(int(meta_pos))
-                if ci is not None:
-                    centroids[b][n] = int(ci)
-        idx_t = torch.tensor(centroids, dtype=torch.long, device=x.device)
-        return ws.category_role_of(idx_t)
+                role = ws.category_role_for_meta(
+                    int(meta_pos), device=x.device, dtype=x.dtype)
+                if role is not None:
+                    ctx[b, n, :] = role.reshape(-1)[:n_roles]
+        return ctx
 
     def _collect_round0_role_obs(self):
         """Round-0 reduces of the first binary space_role as per-row
@@ -6170,427 +6360,6 @@ def binary_tiling_viterbi(
     }
 
 
-def cross_product_action_dist(copy_score, reduce_score, temperature=1.0):
-    """Joint softmax over the per-level (operation x location) cross-product.
-
-    The structured layers score every candidate action separately -- COPY
-    op ``c`` at position ``t``, REDUCE op ``r`` at adjacent pair
-    ``(t, t+1)``. The neural tool user (doc/plans/NeuralToolUser.md)
-    normalizes them JOINTLY: one softmax over the whole cross-product of
-    (op x location) choices, so the chooser's probability is comparable
-    across rules AND positions (the user's Q5 answer). The selected route
-    is still a valid non-overlapping tiling (``binary_tiling_viterbi``,
-    which already fires several compatible reduces per level); this is the
-    distribution the route's log-prob / entropy are read from for the
-    two-pass policy update.
-
-    The flattened action axis is the copy block (``N * R_copy``, position-
-    major) followed by the reduce block (``(N-1) * R_reduce``).
-
-    Args:
-        copy_score:   ``[B, N, R_copy]``   per-(position, copy-op) logits.
-        reduce_score: ``[B, N-1, R_reduce]`` per-(pair, reduce-op) logits.
-        temperature:  policy-softmax divisor (default 1.0). Distinct from
-            the pass-2 exploration knob (0=greedy .. 1=uniform), which is a
-            SAMPLING mechanism, not this normalizer.
-
-    Returns dict: ``probs`` ``[B, A]``, ``logits`` ``[B, A]``,
-    ``entropy`` ``[B]``, and ``layout`` (N, R_copy, R_reduce, n_copy, Nm1)
-    for decoding an action index back to (kind, position, op).
-    """
-    B, N, R_copy = copy_score.shape
-    R_reduce = reduce_score.shape[-1] if reduce_score.numel() > 0 else 0
-    Nm1 = (reduce_score.shape[1]
-           if (reduce_score.numel() > 0 and reduce_score.dim() == 3)
-           else max(N - 1, 0))
-    n_copy = N * R_copy
-    copy_flat = copy_score.reshape(B, n_copy)
-    reduce_flat = (reduce_score.reshape(B, Nm1 * R_reduce)
-                   if R_reduce > 0 and Nm1 > 0
-                   else copy_score.new_zeros(B, 0))
-    logits = torch.cat([copy_flat, reduce_flat], dim=1)        # [B, A]
-    layout = {"N": N, "R_copy": R_copy, "R_reduce": R_reduce,
-              "n_copy": n_copy, "Nm1": Nm1}
-    if logits.shape[1] == 0:
-        z = copy_score.new_zeros(B)
-        return {"probs": copy_score.new_zeros(B, 0), "logits": logits,
-                "entropy": z, "layout": layout}
-    logp = F.log_softmax(logits / temperature, dim=-1)         # [B, A]
-    probs = logp.exp()
-    entropy = -(probs * logp).sum(dim=-1)                      # [B]
-    return {"probs": probs, "logits": logits,
-            "entropy": entropy, "layout": layout}
-
-
-def cross_product_route_logprob(dist, copy_mask, reduce_mask):
-    """Log-prob of a selected tiling route under the joint distribution.
-
-    ``copy_mask`` ``[B, N, R_copy]`` / ``reduce_mask`` ``[B, N-1, R_reduce]``
-    are the one-hot route masks (``binary_tiling_viterbi`` output). The
-    route log-prob is the sum of ``log P`` over its selected actions -- the
-    live policy log-prob the two-pass advantage multiplies. Must be
-    recomputed from the LIVE distribution each pass (not read from a saved
-    detached buffer) so it carries gradient into the chooser.
-    """
-    probs = dist["probs"]
-    layout = dist["layout"]
-    B = probs.shape[0]
-    if probs.shape[1] == 0:
-        return probs.new_zeros(B)
-    N, R_copy = layout["N"], layout["R_copy"]
-    Nm1, R_reduce = layout["Nm1"], layout["R_reduce"]
-    logp = torch.log(probs.clamp_min(1e-30))                   # [B, A]
-    copy_sel = (copy_mask.reshape(B, N * R_copy)
-                if N * R_copy > 0 else probs.new_zeros(B, 0))
-    reduce_sel = (reduce_mask.reshape(B, Nm1 * R_reduce)
-                  if Nm1 * R_reduce > 0 else probs.new_zeros(B, 0))
-    sel = torch.cat([copy_sel, reduce_sel], dim=1).to(logp.dtype)   # [B, A]
-    return (sel * logp).sum(dim=-1)                            # [B]
-
-
-class RouteStats:
-    """Accumulated policy stats for ONE hard parse (no full route log).
-
-    Per doc/plans/NeuralToolUser.md only ``log_prob_sum`` / ``entropy_sum``
-    / ``step_count`` need to survive a parse -- the full route is not
-    stored for the loss (the route IS saved separately in SymbolSpace for
-    pass-2 replay, but detached). ``log_prob_sum`` / ``entropy_sum`` are
-    LIVE graph tensors so the policy advantage backprops into the chooser.
-    """
-
-    def __init__(self):
-        self.log_prob_sum = None     # [B] live tensor, or None until first add
-        self.entropy_sum = None      # [B] live tensor
-        self.step_count = 0
-        # The detached per-level route (copy_mask, reduce_mask) saved on
-        # pass 1 for pass-2 replay; never feeds the loss.
-        self.route = []
-        # The divergence level chosen on an explore parse (None on pass 1).
-        self.diverge_level = None
-
-    def add(self, log_prob, entropy):
-        """Accumulate one level's live log-prob and entropy ([B] each)."""
-        self.log_prob_sum = (log_prob if self.log_prob_sum is None
-                             else self.log_prob_sum + log_prob)
-        self.entropy_sum = (entropy if self.entropy_sum is None
-                            else self.entropy_sum + entropy)
-        self.step_count += 1
-
-
-def _substitute_op_at_location(copy_mask, reduce_mask, copy_score, reduce_score,
-                               temperature, rng_choice):
-    """Force a DIFFERENT operation at ONE fired location of a saved route.
-
-    Pass-2 divergence (the user's design): keep the saved tiling SHAPE
-    (same fired locations) but swap the operation at one of them for a
-    different one. Same location + same action-kind => the tiling stays
-    valid by construction; the routes differ by exactly one op-choice, so
-    ``loss_B - loss_A`` is cleanly attributable to that single decision.
-
-    ``temperature`` is the [0, 1] exploration knob. The new op is drawn
-    from the per-location op distribution with the OLD op excluded and the
-    rest renormalized, so a genuine divergence is GUARANTEED in one draw
-    whenever >= 2 ops are legal (this subsumes the escalate-on-collision
-    rule -- there are no collisions to escalate past). Temperature shapes
-    WHICH alternative: 0 = the best alternative (second-best op), 1 =
-    uniform among the non-winner ops.
-
-    ``rng_choice(probs_row)`` -> int sampled from the given probabilities.
-    Returns ``(new_copy_mask, new_reduce_mask, kind, loc, old_op, new_op)``
-    for the (single, batch-0) substituted action, or ``None`` when no fired
-    location has >= 2 legal ops (caller picks another level).
-    """
-    # Operate per batch row 0 for the standalone executor's single-stream
-    # parse; the live integration batches this. Collect fired locations.
-    cm = copy_mask.clone()
-    rm = reduce_mask.clone()
-    B = cm.shape[0]
-    # Build the candidate fired locations: (kind, pos) where a one-hot fired.
-    fired = []
-    if cm.numel() > 0:
-        for pos in range(cm.shape[1]):
-            if cm[0, pos].sum() > 0 and cm.shape[2] >= 2:
-                fired.append((0, pos))     # kind 0 = copy
-    if rm.numel() > 0:
-        for pos in range(rm.shape[1]):
-            if rm[0, pos].sum() > 0 and rm.shape[2] >= 2:
-                fired.append((1, pos))     # kind 1 = reduce
-    if not fired:
-        return None
-    # Pick one fired location uniformly.
-    loc_idx = int(rng_choice(
-        [1.0 / len(fired)] * len(fired)))
-    kind, pos = fired[loc_idx]
-    mask = cm if kind == 0 else rm
-    score = copy_score if kind == 0 else reduce_score
-    R = mask.shape[2]
-    old_op = int(mask[0, pos].argmax())
-    # Per-location op distribution: temperature interpolates argmax->uniform.
-    # Sampling is a non-differentiable selection -- detach (the gradient
-    # rides only the live log-prob computed by the caller, not this draw).
-    row = score[0, pos].detach()              # [R]
-    sharp = torch.softmax(row, dim=-1)
-    uniform = torch.full_like(sharp, 1.0 / R)
-    t = float(max(0.0, min(1.0, temperature)))
-    op_probs = (1.0 - t) * sharp + t * uniform
-    # Exclude the saved op so the draw always diverges; renormalize.
-    op_probs = op_probs.clone()
-    op_probs[old_op] = 0.0
-    total = float(op_probs.sum())
-    if total <= 0:
-        op_probs = uniform.clone()
-        op_probs[old_op] = 0.0
-    new_op = int(rng_choice(op_probs.tolist()))
-    mask[0, pos] = 0
-    mask[0, pos, new_op] = 1
-    return cm, rm, kind, pos, old_op, new_op
-
-
-class NeuralToolUser(nn.Module):
-    """Hard-parse executor over reduction LEVELS (NeuralToolUser plan).
-
-    Drives a ``stepper`` through reduction levels (mirroring
-    ``LanguageLayer.compose``'s binary rounds). The stepper exposes:
-
-      * ``score(x) -> (copy_score, reduce_score)`` -- per-level candidate
-        logits (``[B, N, R_copy]``, ``[B, N-1, R_reduce]``);
-      * ``apply(x, copy_mask, reduce_mask) -> next_x`` -- execute the
-        selected route's ops, producing the next slab;
-      * ``done(x) -> bool`` -- stop when the slab has folded.
-
-    **Pass 1 (greedy, ``parse_greedy``).** Per level: the Viterbi tiling
-    (``binary_tiling_viterbi``) is the winning route; its live cross-product
-    log-prob / entropy accumulate into a :class:`RouteStats`; the detached
-    route + scores are saved per level for replay; ``apply`` advances.
-
-    **Pass 2 (explore, ``parse_explore``).** Pick a divergence level ``L``
-    among saved levels that have a fired location with >= 2 legal ops;
-    replay the saved routes for levels ``< L``; at ``L`` substitute a
-    DIFFERENT op at one fired location (temperature 0..1 greedy->uniform,
-    escalated until the draw differs -- guaranteeing route B != route A);
-    then re-decide greedily for levels ``> L`` on the diverged slab.
-
-    **Loss (the driver, not here).** Both parses execute and incur a task
-    loss. The chooser is trained by the single-point advantage at ``L``::
-
-        baseline = 0.5 * (loss_A.detach() + loss_B.detach())
-        adv_A = loss_A.detach() - baseline   # route A's op at L
-        adv_B = loss_B.detach() - baseline   # route B's op at L
-        loss_choose = adv_A * logp_a + adv_B * logp_b      # both off ONE live dist@L
-        loss = loss_A + loss_B + lam_choose*loss_choose - lam_entropy*entropy@L
-
-    ``logp_a`` / ``logp_b`` are the log-probs of the two competing ops at
-    ``L`` read from the SAME live cross-product distribution, so the
-    advantage trains exactly the one decision that differs.
-    """
-
-    def __init__(self, max_levels=64):
-        super().__init__()
-        self.max_levels = int(max_levels)
-
-    @staticmethod
-    def _has_multi_op_fired(entry):
-        cm, rm = entry["copy_mask"], entry["reduce_mask"]
-        if cm.numel() > 0 and cm.shape[2] >= 2 and cm[0].sum() > 0:
-            return True
-        if rm.numel() > 0 and rm.shape[2] >= 2 and rm[0].sum() > 0:
-            return True
-        return False
-
-    def parse_greedy(self, x, stepper):
-        """Pass 1: greedy Viterbi route per level; save route + stats."""
-        stats = RouteStats()
-        for _ in range(self.max_levels):
-            if stepper.done(x):
-                break
-            cs, rs = stepper.score(x)
-            route = binary_tiling_viterbi(cs, rs)
-            dist = cross_product_action_dist(cs, rs)
-            lp = cross_product_route_logprob(
-                dist, route["copy_mask"], route["reduce_mask"])
-            stats.add(lp, dist["entropy"])
-            stats.route.append({
-                "copy_mask": route["copy_mask"].detach(),
-                "reduce_mask": route["reduce_mask"].detach(),
-                "copy_score": cs.detach(),
-                "reduce_score": rs.detach(),
-                "dist_probs": dist["probs"].detach(),
-            })
-            x = stepper.apply(x, route["copy_mask"], route["reduce_mask"])
-        return x, stats
-
-    def parse_explore(self, x, stepper, saved, temperature=0.1,
-                      temperature_step=0.2, generator=None):
-        """Pass 2: replay to a random divergence level L, force a different
-        op there, re-decide after. Returns ``(final_x, stats, info)`` or
-        ``None`` when no level admits a divergence (caller trains tools on
-        route A only). ``info`` carries ``L``, ``logp_a``, ``logp_b`` (both
-        off the live dist at L) for the single-point advantage.
-        """
-        def rng_choice(probs_list):
-            p = torch.as_tensor(probs_list, dtype=torch.float32)
-            p = p.clamp_min(0)
-            if float(p.sum()) <= 0:
-                p = torch.ones_like(p)
-            return int(torch.multinomial(p, 1, generator=generator).item())
-
-        candidates = [i for i, e in enumerate(saved.route)
-                      if self._has_multi_op_fired(e)]
-        if not candidates:
-            return None
-        L = candidates[rng_choice([1.0] * len(candidates))]
-
-        # Replay saved routes for levels < L (no re-score; deterministic).
-        for i in range(L):
-            e = saved.route[i]
-            x = stepper.apply(x, e["copy_mask"], e["reduce_mask"])
-
-        # Live distribution at L (carries gradient into the chooser).
-        cs, rs = stepper.score(x)
-        dist = cross_product_action_dist(cs, rs)
-        cmA = saved.route[L]["copy_mask"]
-        rmA = saved.route[L]["reduce_mask"]
-
-        # Force a different op at one fired location; escalate temperature
-        # to 1 (uniform) until the draw genuinely differs.
-        sub = None
-        t = float(temperature)
-        while sub is None and t <= 1.0 + 1e-9:
-            sub = _substitute_op_at_location(cmA, rmA, cs, rs, t, rng_choice)
-            if sub is None:
-                if t >= 1.0:
-                    break
-                t = min(1.0, t + temperature_step)
-        if sub is None:
-            return None
-        cmB, rmB, kind, pos, old_op, new_op = sub
-
-        logp_a = cross_product_route_logprob(dist, cmA, rmA)
-        logp_b = cross_product_route_logprob(dist, cmB, rmB)
-
-        x = stepper.apply(x, cmB, rmB)
-        stats = RouteStats()
-        stats.diverge_level = L
-        stats.add(logp_b, dist["entropy"])
-
-        # Re-decide greedily after the divergence.
-        for _ in range(self.max_levels):
-            if stepper.done(x):
-                break
-            cs2, rs2 = stepper.score(x)
-            route2 = binary_tiling_viterbi(cs2, rs2)
-            x = stepper.apply(x, route2["copy_mask"], route2["reduce_mask"])
-
-        info = {"L": L, "logp_a": logp_a, "logp_b": logp_b,
-                "kind": kind, "pos": pos, "old_op": old_op, "new_op": new_op,
-                "entropy_at_L": dist["entropy"]}
-        return x, stats, info
-
-    @staticmethod
-    def binary_layer_stepper(layer):
-        """Adapt a ``BinaryStructuredReductionLayer`` to the executor's
-        stepper protocol (``score`` / ``apply`` / ``done``), reusing the
-        layer's own ``_stacked_reduced`` / ``chooser`` / ``_selected_reduced``
-        and ``compact_hard`` so the scored logits and applied ops are
-        identical to the layer's forward."""
-        return _BinaryStepperAdapter(layer)
-
-    def two_pass_loss(self, x, stepper, task_loss_fn, *, lam_choose=1.0,
-                      lam_entropy=0.0, temperature=0.1, generator=None):
-        """One two-hard-parse training step -> ``(loss, diagnostics)``.
-
-        ``task_loss_fn(final_x) -> [B]`` is the ordinary differentiable task
-        loss of an executed parse. The execution loss trains the tools (it
-        flows through the applied ops); the single-point advantage at the
-        divergence level ``L`` trains the chooser::
-
-            baseline = 0.5 * (loss_A.detach() + loss_B.detach())
-            adv_A = loss_A.detach() - baseline      # route A's op at L
-            adv_B = loss_B.detach() - baseline      # route B's op at L
-            loss_choose = mean(adv_A*logp_a + adv_B*logp_b)
-            loss = mean(loss_A + loss_B)
-                   + lam_choose*loss_choose
-                   - lam_entropy*mean(entropy@L)
-
-        Because ``loss`` is minimized and ``loss_choose`` is linear in the
-        log-probs with detached advantages, a route with below-baseline loss
-        (negative advantage) has its op's log-prob pushed UP -- the doc's
-        central credit-assignment rule. When no divergence is possible the
-        step trains the tools on route A alone (no chooser update).
-        """
-        final_a, saved = self.parse_greedy(x, stepper)
-        loss_a = task_loss_fn(final_a)
-        out = self.parse_explore(x, stepper, saved, temperature=temperature,
-                                 generator=generator)
-        if out is None:
-            loss = loss_a.mean()
-            return loss, {"diverged": False, "loss_a": loss_a.detach()}
-        final_b, stats_b, info = out
-        loss_b = task_loss_fn(final_b)
-        baseline = 0.5 * (loss_a.detach() + loss_b.detach())
-        adv_a = loss_a.detach() - baseline
-        adv_b = loss_b.detach() - baseline
-        loss_choose = (adv_a * info["logp_a"] + adv_b * info["logp_b"]).mean()
-        entropy = info["entropy_at_L"].mean()
-        loss = (loss_a.mean() + loss_b.mean()
-                + lam_choose * loss_choose - lam_entropy * entropy)
-        diagnostics = {
-            "diverged": True, "L": info["L"],
-            "loss_a": loss_a.detach(), "loss_b": loss_b.detach(),
-            "adv_a": adv_a, "adv_b": adv_b,
-            "logp_a": info["logp_a"], "logp_b": info["logp_b"],
-            "loss_choose": loss_choose.detach(), "entropy": entropy.detach(),
-            "old_op": info["old_op"], "new_op": info["new_op"],
-        }
-        return loss, diagnostics
-
-
-class _BinaryStepperAdapter:
-    """Bridge a ``BinaryStructuredReductionLayer`` to the ``NeuralToolUser``
-    stepper protocol. ``score`` reproduces the layer forward's scoring
-    preamble (bind-context, ``_stacked_reduced``, d_model slice,
-    ``chooser.score_binary``); ``apply`` gathers the chosen reduce ops and
-    compacts the slab exactly as the forward does. The scored logits and
-    the applied ops are therefore identical to the layer's own forward."""
-
-    def __init__(self, layer):
-        self.layer = layer
-
-    def _stacked(self, x):
-        L = self.layer
-        for _op in L.ops:
-            _gl = getattr(_op, 'gl', _op)
-            if hasattr(_gl, 'set_bind_context'):
-                _gl.set_bind_context(slab=x)
-        return L._stacked_reduced(x)
-
-    def score(self, x):
-        L = self.layer
-        stacked = self._stacked(x)
-        x_score = x[..., :L.d_model] if x.shape[-1] > L.d_model else x
-        sr_score = (stacked[..., :L.d_model]
-                    if stacked.shape[-1] > L.d_model else stacked)
-        return L.chooser.score_binary(
-            x_score, sr_score, L.copy_anchor, L.reduce_anchor)
-
-    def apply(self, x, copy_mask, reduce_mask):
-        L = self.layer
-        stacked = self._stacked(x)
-        if reduce_mask.numel() > 0:
-            reduce_op = reduce_mask.argmax(-1)               # [B, N-1]
-        else:
-            reduce_op = torch.zeros(x.shape[0], 0, dtype=torch.long,
-                                    device=x.device)
-        chosen = L._selected_reduced(stacked, reduce_op)
-        hard_slab, _meta = compact_hard(
-            x=x, reduced=chosen, copy_mask=copy_mask, reduce_mask=reduce_mask,
-            span_start=None, span_end=None)
-        return hard_slab
-
-    def done(self, x):
-        return x.shape[1] <= 1
-
-
 # BinaryPlacementScorer was removed in favor of anchor-based scoring on
 # the rule's own output. See BinaryStructuredReductionLayer.copy_anchor /
 # reduce_anchor and the einsum-based scoring in its forward(). Same goes
@@ -6854,7 +6623,7 @@ class _IdentityContext(nn.Module):
 
 class TransformChooser(nn.Module):
     """Routing policy: scores tool/location candidates for a structured
-    layer (doc/plans/NeuralToolUser.md).
+    layer.
 
     The plan separates the transform/tool IMPLEMENTATION (the
     ``GrammarLayer`` ops) from the CHOICE POLICY (which op to apply,
@@ -6862,11 +6631,10 @@ class TransformChooser(nn.Module):
     delegate their placement scoring here; the soft-DP / Viterbi route and
     the op execution stay on the layer.
 
-    Step 1 of the migration is behavior-preserving: the default chooser
-    (:class:`AnchorDotTransformChooser`) reproduces the layers' inline
-    anchor-dot scoring exactly. A future ``MLPTransformChooser`` swaps in a
-    contextual network behind a config flag once parity holds. Subclasses
-    implement ``score_unary`` / ``score_binary``.
+    The default chooser (:class:`AnchorDotTransformChooser`) reproduces the
+    layers' inline anchor-dot scoring exactly. ``MLPTransformChooser`` swaps
+    in a contextual network behind a config flag. Subclasses implement
+    ``score_unary`` / ``score_binary``.
     """
 
     def score_unary(self, x_score, applied_score, copy_anchor, apply_anchor,
@@ -6901,9 +6669,8 @@ class AnchorDotTransformChooser(TransformChooser):
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
         ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
 
-        ``cat_ctx`` (Phase 2 category context) is ignored -- the anchor-dot
-        scorer is stateless and basin-pinned; only the MLP chooser conditions
-        on it.
+        ``cat_ctx`` is handled as a layer-level labelled-role prior so the
+        anchor-dot scorer remains stateless and basin-pinned.
         """
         # Device safety (MPS): the anchors are the owning layer's Parameters; if
         # a device move missed them (e.g. choosers built lazily after the model's
@@ -6927,7 +6694,8 @@ class AnchorDotTransformChooser(TransformChooser):
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
         ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
 
-        ``cat_ctx`` (Phase 2 category context) is ignored (stateless scorer).
+        ``cat_ctx`` is handled as a layer-level labelled-role prior so the
+        anchor-dot scorer remains stateless and basin-pinned.
         """
         # Device safety (MPS): align the owning layer's anchor Parameters to the
         # input's device in case a device move missed them. No-op when co-located.
@@ -6945,8 +6713,7 @@ class AnchorDotTransformChooser(TransformChooser):
 
 
 class MLPTransformChooser(TransformChooser):
-    """Contextual MLP placement scorer -- the expressive cutover chooser
-    (doc/plans/NeuralToolUser.md "MLP TransformChooser").
+    """Contextual MLP placement scorer -- the expressive cutover chooser.
 
     Replaces the anchor-dot single inner product with a learned MLP over
     per-candidate CONTEXT: the slot / pair state, the candidate op's output,
@@ -6954,7 +6721,7 @@ class MLPTransformChooser(TransformChooser):
     It produces the same per-(op, location) logit shapes as
     ``AnchorDotTransformChooser`` -- ``copy_score`` / ``apply_score`` (unary)
     and ``copy_score`` / ``reduce_score`` (binary) -- so it is a drop-in for
-    the layers, the cross-product distribution, and the hard-parse executor.
+    the structured grammar layers.
 
     UNLIKE the anchor-dot chooser this OWNS parameters (the tool embeddings
     + the MLP), so enabling it CHANGES the state_dict and starts a fresh
@@ -6974,12 +6741,11 @@ class MLPTransformChooser(TransformChooser):
         self.n_op = int(n_op)
         self.embed_dim = int(embed_dim)
         self.pos_dim = int(pos_dim)
-        # Phase 2 (MetaSymbol Category codebook): per-slot syntactic-category
-        # context width fed alongside the slot/cand/tool/pos features. 0
-        # (default) = the category context is OFF, in_dim and the first Linear
-        # are byte-identical to the pre-Phase-2 chooser. >0 widens the first
-        # Linear by ``n_role_cats``; ``_score`` then concatenates the per-slot
-        # role vector (zeros when no ``cat_ctx`` is supplied at call time).
+        # MetaSymbol Category codebook: per-slot syntactic-category context
+        # width fed alongside the slot/cand/tool/pos features. 0 = no MLP input
+        # widening. >0 widens the first Linear by ``n_role_cats``; ``_score``
+        # then concatenates the per-slot role vector (zeros when no
+        # ``cat_ctx`` is supplied at call time).
         self.n_role_cats = int(n_role_cats)
         hidden = int(hidden) if hidden is not None else max(8, self.d_model)
         self.tool_embedding = nn.Parameter(
@@ -7012,10 +6778,10 @@ class MLPTransformChooser(TransformChooser):
 
         ``slot`` / ``cand``: ``[B, Npos, D]`` (broadcast over R) or ``cand``
         ``[B, Npos, R, D]``; ``tool_rows``: ``[R, embed_dim]``; ``pos``:
-        ``[Npos, pos_dim]``. ``cat_ctx`` (Phase 2): optional per-slot category
+        ``[Npos, pos_dim]``. ``cat_ctx``: optional per-slot category
         role vector ``[B, Npos, n_role_cats]`` broadcast over R; ``None`` (or
-        ``n_role_cats == 0``) feeds a zero block / no block (byte-identical to
-        the pre-Phase-2 feature concat). Returns ``[B, Npos, R]``.
+        ``n_role_cats == 0``) feeds a zero block / no block. Returns
+        ``[B, Npos, R]``.
         """
         B, Npos = slot.shape[0], slot.shape[1]
         R = int(tool_rows.shape[0])
@@ -7073,8 +6839,8 @@ class MLPTransformChooser(TransformChooser):
                 and reduced_score.shape[1] > 0 and reduced_score.shape[2] > 0):
             pair_slot = 0.5 * (x_score[:, :-1] + x_score[:, 1:])       # [B,N-1,D]
             # Pair the operands' category rows the same way the slot is paired
-            # (the spec's left/right operand reduction; avg here). None stays
-            # None so the pre-Phase-2 path is byte-identical.
+            # (the spec's left/right operand reduction; avg here). None keeps
+            # the feature block neutral.
             pair_cat = (0.5 * (cat_ctx[:, :-1] + cat_ctx[:, 1:])
                         if cat_ctx is not None else None)
             pos_pair = self._pos_emb(N - 1, x_score.device, x_score.dtype)
@@ -7103,9 +6869,9 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op, n_role_cats=0):
     :class:`MLPTransformChooser` (owns params; a deliberate new-basin
     cutover behind ``<transformChooser>``).
 
-    ``n_role_cats`` (Phase 2): the MetaSymbol category-context width fed to the
-    MLP chooser; 0 (default) leaves the MLP byte-identical and is ignored by the
-    anchor-dot scorer (which has no context input).
+    ``n_role_cats``: the MetaSymbol category-context width fed to the MLP
+    chooser; 0 leaves the MLP feature set unchanged. Anchor-dot uses category
+    context via the structured layer's labelled-role prior.
     """
     k = str(kind or "anchordot").strip().lower()
     if k == "mlp":
@@ -7156,6 +6922,19 @@ def compute_role_vocabulary(grammar):
     role_index = {name: i for i, name in enumerate(roles)}
     return roles, role_index, len(roles)
 
+
+def _role_index_for_categories():
+    try:
+        return compute_role_vocabulary(TheGrammar)[1]
+    except Exception:
+        return {}
+
+
+def _role_column(role_index, method, suffix):
+    if not method:
+        return None
+    return role_index.get(f"{method}_{suffix}")
+
 class BinaryStructuredReductionLayer(nn.Module):
     """One layer: contextualize, score, route, compact (hard + soft).
 
@@ -7202,12 +6981,12 @@ class BinaryStructuredReductionLayer(nn.Module):
         # separate scorer MLP / second-optimizer pathology.
         self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
         self.reduce_anchor = nn.Parameter(torch.randn(self.r_reduce, self.d_model) * 0.02)
-        # Placement scoring delegated to the TransformChooser
-        # (doc/plans/NeuralToolUser.md). ``chooser="anchordot"`` (default)
-        # is the stateless scorer that keeps the anchors owned here
-        # (state_dict unchanged, byte-identical); ``"mlp"`` builds the
-        # contextual MLPTransformChooser (owns params -> new basin), sized
-        # to this layer's r_copy copy ops + r_reduce reduce ops.
+        # Placement scoring delegated to the TransformChooser.
+        # ``chooser="anchordot"`` (default) is the stateless scorer that
+        # keeps the anchors owned here (state_dict unchanged,
+        # byte-identical); ``"mlp"`` builds the contextual
+        # MLPTransformChooser (owns params -> new basin), sized to this
+        # layer's r_copy copy ops + r_reduce reduce ops.
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
             n_copy=self.r_copy, n_op=self.r_reduce, n_role_cats=n_role_cats)
@@ -7215,12 +6994,32 @@ class BinaryStructuredReductionLayer(nn.Module):
             d_model=self.d_model, temperature=temperature)
         # Per-rule name / space_role metadata retained for op identification
         # (e.g. lift / lower). Space-role-gated masking has been removed.
-        if op_space_roles is not None and op_names is not None:
-            self.op_names = list(op_names)
-            self.op_space_roles = list(op_space_roles)
-        else:
-            self.op_names = None
-            self.op_space_roles = None
+        self.op_names = list(op_names) if op_names is not None else None
+        self.op_space_roles = (
+            list(op_space_roles) if op_space_roles is not None else None)
+
+    def _category_reduce_prior(self, cat_ctx):
+        """Role-frequency prior for binary ops from labelled operand slots."""
+        if cat_ctx is None or self.op_names is None or cat_ctx.shape[1] < 2:
+            return None
+        role_index = _role_index_for_categories()
+        if not role_index:
+            return None
+        left = cat_ctx[:, :-1, :]
+        right = cat_ctx[:, 1:, :]
+        priors = []
+        for name in self.op_names:
+            c1 = _role_column(role_index, name, "I1")
+            c2 = _role_column(role_index, name, "I2")
+            score = left.new_zeros(left.shape[0], left.shape[1])
+            if c1 is not None and c1 < left.shape[-1]:
+                score = score + left[..., c1]
+            if c2 is not None and c2 < right.shape[-1]:
+                score = score + right[..., c2]
+            priors.append(0.5 * score)
+        if not priors:
+            return None
+        return torch.stack(priors, dim=-1)
 
     def _stacked_reduced(self, x):
         """[B, N-1, R_reduce, D] candidate ops applied to each adjacent pair."""
@@ -7274,9 +7073,9 @@ class BinaryStructuredReductionLayer(nn.Module):
                        optionally ``span_start`` / ``span_end``.
         Degenerate N<=1 returns the input twice with a stub routing.
 
-        ``cat_ctx`` (Phase 2): optional per-slot category role vector
-        ``[B, N, n_role_cats]`` forwarded to the MLP chooser; ``None`` (the
-        default, and always for the anchor-dot chooser) is byte-identical.
+        ``cat_ctx``: optional per-slot category role vector ``[B, N,
+        n_role_cats]``. It feeds the chooser where supported and always
+        contributes the layer-level labelled-role prior.
         """
         B, N, D = x.shape
         if N <= 1:
@@ -7318,6 +7117,10 @@ class BinaryStructuredReductionLayer(nn.Module):
         copy_score, reduce_score = self.chooser.score_binary(
             x_score, sr_score, self.copy_anchor, self.reduce_anchor,
             cat_ctx=cat_ctx)
+        cat_prior = self._category_reduce_prior(cat_ctx)
+        if cat_prior is not None and cat_prior.shape == reduce_score.shape:
+            reduce_score = reduce_score + cat_prior.to(
+                device=reduce_score.device, dtype=reduce_score.dtype)
 
         # Soft-superposition temperature (the parser's differentiable route
         # under <learning>; doc/Language.md "weighted deduction"). When set,
@@ -7453,7 +7256,8 @@ class UnaryStructuredLayer(nn.Module):
     """
 
     def __init__(self, *, d_model, ops, r_copy=1, context_net=None,
-                 temperature=1.0, chooser="anchordot", n_role_cats=0):
+                 temperature=1.0, chooser="anchordot", n_role_cats=0,
+                 op_names=None):
         """Wire ops list and per-(copy/apply) anchor params.
 
         Action space is ``R_copy + R_apply`` choices per position with
@@ -7471,14 +7275,33 @@ class UnaryStructuredLayer(nn.Module):
         # is the inner product of the candidate output with the anchor.
         self.copy_anchor = nn.Parameter(torch.randn(self.r_copy, self.d_model) * 0.02)
         self.apply_anchor = nn.Parameter(torch.randn(self.r_apply, self.d_model) * 0.02)
-        # Placement scoring delegated to the TransformChooser
-        # (doc/plans/NeuralToolUser.md). ``chooser="anchordot"`` (default)
-        # is the stateless scorer (anchors owned here, state_dict
-        # unchanged); ``"mlp"`` builds the contextual MLPTransformChooser
-        # (owns params -> new basin), sized to r_copy copy + r_apply ops.
+        # Placement scoring delegated to the TransformChooser.
+        # ``chooser="anchordot"`` (default) is the stateless scorer
+        # (anchors owned here, state_dict unchanged); ``"mlp"`` builds the
+        # contextual MLPTransformChooser (owns params -> new basin), sized
+        # to r_copy copy + r_apply ops.
         self.chooser = make_transform_chooser(
             chooser, d_model=self.d_model,
             n_copy=self.r_copy, n_op=self.r_apply, n_role_cats=n_role_cats)
+        self.op_names = list(op_names) if op_names is not None else None
+
+    def _category_apply_prior(self, cat_ctx):
+        """Role-frequency prior for unary ops from the labelled input slot."""
+        if cat_ctx is None or self.op_names is None:
+            return None
+        role_index = _role_index_for_categories()
+        if not role_index:
+            return None
+        priors = []
+        for name in self.op_names:
+            col = _role_column(role_index, name, "I1")
+            if col is None or col >= cat_ctx.shape[-1]:
+                priors.append(cat_ctx.new_zeros(cat_ctx.shape[0], cat_ctx.shape[1]))
+            else:
+                priors.append(cat_ctx[..., col])
+        if not priors:
+            return None
+        return torch.stack(priors, dim=-1)
 
     def _stacked_applied(self, x):
         """[B, N, R_apply, D] each unary op applied to every position."""
@@ -7495,9 +7318,9 @@ class UnaryStructuredLayer(nn.Module):
         the softmax-weighted blend over (copy_branch + applied_ops).
         Straight-through gradient connects the hard-forward / soft-backward.
 
-        ``cat_ctx`` (Phase 2): optional per-position category role vector
-        ``[B, N, n_role_cats]`` forwarded to the MLP chooser; ``None`` (default,
-        and always for anchor-dot) is byte-identical.
+        ``cat_ctx``: optional per-position category role vector ``[B, N,
+        n_role_cats]``. It feeds the chooser where supported and always
+        contributes the layer-level labelled-role prior.
         """
         B, N, D = x.shape
         h = self.context_net(x)
@@ -7517,6 +7340,10 @@ class UnaryStructuredLayer(nn.Module):
         copy_score, apply_score = self.chooser.score_unary(
             x_score, applied_score, self.copy_anchor, self.apply_anchor,
             cat_ctx=cat_ctx)
+        cat_prior = self._category_apply_prior(cat_ctx)
+        if cat_prior is not None and cat_prior.shape == apply_score.shape:
+            apply_score = apply_score + cat_prior.to(
+                device=apply_score.device, dtype=apply_score.dtype)
         # Soft-superposition temperature (the differentiable route under
         # <learning>; same contract as the binary layer). When set, the
         # forward is the pure softmax superposition at this temperature
@@ -11246,14 +11073,6 @@ class SymbolSubSpace(SubSpace):
         populated.
         """
         ll = getattr(self, 'languageLayer', None)
-        # NeuralToolUser cutover: the chooser is trained by the two-hard-parse
-        # policy loss (model/train level), NOT through rule_probs, so here
-        # rule_probs is the detached downstream summary of the SELECTED route
-        # (the user's Q5 answer). Skip the soft-marginal aggregation -- the
-        # NTU route has no soft-DP marginals -- and use the hard scatter.
-        if ll is not None and getattr(ll, 'neural_tool_user', False):
-            return self._synthesize_rule_probs_hard(
-                rules_by_space_role, batch_size, device=device)
         space_role_routings = getattr(ll, '_last_space_role_routings', None) if ll is not None else None
         if space_role_routings:
             soft = self._synthesize_rule_probs_soft(
@@ -11657,6 +11476,26 @@ class SymbolSubSpace(SubSpace):
         self._default_generate_rules_cache = merged
         return merged
 
+    def clear_grammar_cache(self):
+        """Erase forward-derived grammar/routing traces before idea reverse.
+
+        ``reconstructFromIdea`` uses this to avoid replaying the parse tree
+        that comprehension left behind. The next ``generate`` call must infer a
+        fresh reverse rule path from its target idea snapshot.
+        """
+        self.current_rules = {}
+        self.generate_rules = {}
+        self.recur_pass = 0
+        for i in range(len(self.cursor)):
+            self.cursor[i] = 0
+        self.routing_state = self._build_routing_state(
+            {}, batch_size=None)
+        ll = getattr(self, 'languageLayer', None)
+        if ll is not None:
+            ll._last_space_role_routings = {}
+            ll._last_output = None
+            ll._last_root_state = None
+
     def gate_l1_loss(self, lam=0.0):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
         this SymbolSpace's per-space SyntacticLayers.
@@ -11821,18 +11660,13 @@ class SymbolSubSpace(SubSpace):
                 bucket["op_names"].append(name)
                 # preserve the op's *original* space_role letter as the role label
                 bucket["op_space_roles"].append(space_role)
-        # Placement-chooser cutover (doc/plans/NeuralToolUser.md): pick the
-        # chooser kind BEFORE the structured layers are built (they choose
-        # at construction). ``<architecture><transformChooser>`` -- default
-        # "anchordot" (stateless, basin unchanged); "mlp" builds the
-        # contextual MLPTransformChooser (owns params, deliberate new basin).
+        # Placement-chooser cutover: pick the chooser kind BEFORE the
+        # structured layers are built (they choose at construction).
+        # ``<architecture><transformChooser>`` -- default "anchordot"
+        # (stateless, basin unchanged); "mlp" builds the contextual
+        # MLPTransformChooser (owns params, deliberate new basin).
         router.transform_chooser = str(TheXMLConfig.get(
             "architecture.transformChooser", default="anchordot"))
-        # Phase 2: mirror the category-context flag onto the router BEFORE the
-        # structured layers are attached (they size the MLP chooser's context
-        # block at construction). Default False -> chooser byte-identical.
-        router.chooser_category_context = bool(TheXMLConfig.get(
-            "architecture.chooserCategoryContext", default=False))
         for arity, bucket in sorted(by_arity.items()):
             if arity == 1:
                 router.attach_unary_ops(
@@ -11854,11 +11688,6 @@ class SymbolSubSpace(SubSpace):
         _co = getattr(self, 'subsymbolicOrder', None)
         if _co is not None:
             router.subsymbolic_order = int(_co)
-        # Mirror the NeuralToolUser cutover flag onto the router (same
-        # reachability caveat as subsymbolic_order; default stays False).
-        _ntu = getattr(self, 'neuralToolUser', None)
-        if _ntu is not None:
-            router.neural_tool_user = bool(_ntu)
 
     def _resolve_rule_layer(self, space_role, rule_name):
         """Return a Layer instance for ``(space_role, rule_name)`` from the host
@@ -12065,6 +11894,12 @@ class SymbolSubSpace(SubSpace):
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
                     wholeSpace=wholeSpace)
+            if 'verb' in grammar_C_methods:
+                builtin_layers['verb'] = VerbLayer(
+                    wholeSpace=wholeSpace)
+            if 'adverb' in grammar_C_methods:
+                builtin_layers['adverb'] = AdverbLayer(
+                    wholeSpace=wholeSpace)
             if 'lower' in grammar_C_methods:
                 from Layers import LowerLayer
                 builtin_layers['lower'] = LowerLayer(
@@ -12124,6 +11959,12 @@ class SymbolSubSpace(SubSpace):
             if 'lift' in grammar_S_methods:
                 from Layers import LiftLayer
                 builtin_layers['lift'] = LiftLayer(
+                    wholeSpace=space)
+            if 'verb' in grammar_S_methods:
+                builtin_layers['verb'] = VerbLayer(
+                    wholeSpace=space)
+            if 'adverb' in grammar_S_methods:
+                builtin_layers['adverb'] = AdverbLayer(
                     wholeSpace=space)
             if 'lower' in grammar_S_methods:
                 from Layers import LowerLayer

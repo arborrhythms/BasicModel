@@ -8,13 +8,14 @@ category codebook enabled, runs a handful of perception+compose forwards, and
 asserts the chain actually fires end-to-end:
 
   * the codebook lazily enables (roles > 0) from the autobind hook;
-  * the autobind stashes per-position percept ids (_category_last_pid) and
-    records MetaSymbol -> centroid assignments (_category_assign);
-  * centroid role vectors populate (the role M-step ran).
+  * the autobind stashes per-position percept ids (_category_last_pid);
+  * role observations enter the pending MetaSymbol learner and/or commit into
+    MetaSymbol -> centroid assignments (_category_assign);
+  * centroid role prototypes populate (the role M-step ran).
 
-Phase 2 (chooser conditioning): with transformChooser=mlp +
-chooserCategoryContext, the structured layers' MLP chooser is sized with the
-role-count context block and compose builds a [B, N, n_roles] context.
+Chooser conditioning: with transformChooser=mlp, the structured layers' MLP
+chooser is sized with the role-count context block; all transform choosers use
+the same category role vector through the layer-level labelled-role prior.
 """
 
 import os
@@ -42,25 +43,27 @@ _BASE_CONFIG = os.path.join(_DATA, "POS_smoke.xml")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 
-def _write_category_config(*, mlp=False, chooser_ctx=False):
+def _write_category_config(*, mlp=False):
     """Write a temp config = POS_smoke.xml + the category flags, injected in
-    xsd-sequence order right after <symbolicOrder>. Forces PARALLEL mode
-    (symbolicOrder=0): the round-0 role observation that drives the E/M is
-    parallel-mode-correct (serial per-word attribution is approximate -- the
-    handoff §3.3 caveat). Written into data/ at runtime (invisible to the
-    import-time data/*.xml sweeps) and unlinked by the caller."""
+    the architecture block. Forces PARALLEL mode
+    (serial=false, symbolicOrder=0): the round-0 role observation that drives
+    the E/M is parallel-mode-correct (serial per-word attribution is
+    approximate -- the handoff §3.3 caveat). Written into data/ at runtime
+    (invisible to the import-time data/*.xml sweeps) and unlinked by the
+    caller."""
     with open(_BASE_CONFIG) as fh:
         text = fh.read()
     flags = "    <categoryCodebook>true</categoryCodebook>\n"
     if mlp:
         # transformChooser precedes categoryCodebook in the xsd sequence.
         flags = "    <transformChooser>mlp</transformChooser>\n" + flags
-    if chooser_ctx:
-        flags = flags + "    <chooserCategoryContext>true</chooserCategoryContext>\n"
     needle = "<symbolicOrder>1</symbolicOrder>"
     assert needle in text, "POS_smoke.xml shape changed"
     text = text.replace(
-        needle, "<symbolicOrder>0</symbolicOrder>\n" + flags, 1)
+        needle,
+        "<serial>false</serial>\n"
+        "    <symbolicOrder>0</symbolicOrder>\n" + flags,
+        1)
     tmp = tempfile.NamedTemporaryFile(
         mode="w", suffix=".xml", delete=False, dir=_DATA)
     tmp.write(text)
@@ -133,8 +136,8 @@ def test_codebook_enables_and_em_populates_on_real_model():
         os.unlink(path)
 
 
-def test_phase2_chooser_sized_and_context_built():
-    path = _write_category_config(mlp=True, chooser_ctx=True)
+def test_mlp_chooser_sized_and_context_built():
+    path = _write_category_config(mlp=True)
     try:
         model = _build(path)
         _r, _i, n_roles = compute_role_vocabulary(Language.TheGrammar)

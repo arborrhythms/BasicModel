@@ -1,10 +1,8 @@
 <?xml version="1.0"?>
 <!--
-  shamatha grammar, role-collapsed format (doc/plans/2026-06-02-unified-
-  subsymbolic-analyzer-and-role-collapsed-grammar.md Section 4; see
-  data/role_collapsed.grammar). Same C / S operator set as default.grammar
-  plus the unary ``query`` operator. Declares ONLY operator roles
-  (op_I[n] inputs, op_O1 output).
+  shamatha grammar, role-only format. Same C / S operator set as
+  default.grammar plus the unary ``query`` operator. Declares ONLY
+  operator roles (op_I[n] inputs, op_O1 output).
 -->
 <grammar name="shamatha">
 

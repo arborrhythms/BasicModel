@@ -122,11 +122,11 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 > binary `GrammarLayer` subclasses with internal Sigma / Pi (no longer
 > borrowing substrate folds). `GrammarLayer` gains an optional butterfly
 > cascade mode for cross-position mixing — closes the XOR convergence
-> target. Two operating modes: **SERIAL/GRAMMATICAL** (per-word PS with
+> target. Two operating modes selected by `<serial>`: **SERIAL/GRAMMATICAL** (per-word PS with
 > grammar dispatch over STM) and **PARALLEL** (T = `<subsymbolicOrder>`
 > iterations of PS over CS). The `<parserBackend>`, `<routerKind>`,
 > `<chartTau>`, `<chartTopK>`, `<chartNoiseEps>` XML knobs are retired;
-> `<symbolicOrder>` is the new dispatch knob.
+> `<symbolicOrder>` is now the symbolic / relational loop budget.
 
 ## Overview
 
@@ -328,12 +328,10 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    passes (the CS→PS loop). Synthesis chunks the codes into higher-order
    percepts (fewer each pass); analysis re-expands, attention selecting what
    to expand (a top-k over the priming, applied after the WholeSpace
-   codebook lookup). With **`<symbolicComposition>`** on, the percepts handed
-   back to PartSpace are re-encoded through the **CS Concept codebook** (the
-   part↔whole relation table) — the wide↔deep remap (MM_20M:
-   `[8, 1020+2+2]` ↔ `[1024, 4+2+2]`) — so Sigma composes a high-order word
-   out of several lower-order words; the inverse decode runs on the reverse
-   leg of the loop.
+   codebook lookup). Symbolic composition is no longer a separate CS→PS
+   passback flag: the recurrent symbolic leg always flows through
+   `WholeSpace.forward(prevCS_forSS)`, and the symbolic-iteration codebook
+   handles higher-order symbolic composition on the CS→SS path.
 
    > **Proposed refinement (mereological-order-raising spec).** This single
    > subsymbolic loop is really **two** moves CS should choose between *per
@@ -349,20 +347,21 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
    > code (a zero-extent instant vs a span); see [doc/Spaces.md](Spaces.md).
 
-3. **Symbolic order** (`<symbolicOrder>`) — the serial / grammatical stages:
-   words are read **one at a time** from WholeSpace (reading isolated words
-   to ConceptualSpace *is* attention) and processed grammatically in
-   ConceptualSpace's STM and on the PartSpace side. `symbolicOrder ≥ 1`
-   loops the same modules (no pre-built stages); each word enters STM and
-   the grammar composes.
+3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
+   budget. In serial mode (`<serial>true</serial>`), words are read **one at a
+   time** from WholeSpace (reading isolated words to ConceptualSpace *is*
+   attention) and processed grammatically in ConceptualSpace's STM and on the
+   PartSpace side. `symbolicOrder` limits how many symbolic / SS loops may run;
+   `<serial>` selects whether the per-word traversal is active.
 
 So: granularity is intrinsic to the folds, subsymbolic order iterates the
-subsymbolic passes (composing higher-order percepts), and symbolic order is the
-serial grammatical loop over words.
+subsymbolic passes (composing higher-order percepts), symbolic order budgets
+the relational pump, and `serial` selects the serial grammatical loop over
+words.
 
-> **Spec: [doc/old/orders.md](old/orders.md) (resolved 2026-06-19).** The
-> three order axes now have a precise, separate spec — semantics, bound, and how
-> they compose. In brief:
+> **Current order semantics.** This section supersedes the older mode-selector
+> wording in [doc/old/orders.md](old/orders.md). The three order axes now have
+> separate semantics, bounds, and composition rules:
 >
 > - **`subsymbolicOrder`** — the **analysis/synthesis refinement-pass count and
 >   the area of attention**. `T` parallel CS→PS/WS iterations; each pass
@@ -371,26 +370,25 @@ serial grammatical loop over words.
 >   handoff, gated `<mereologyRaise>`; see
 >   [mereological-order-raising.md](old/mereological-order-raising.md)). The
 >   serial-word reading supplies word `.where`s through the **same** channel.
-> - **`symbolicOrder`** — **parallel whole-slab** (`0`) vs **serial σ/π
->   abstraction** (`≥1`). More than a parallel-vs-serial switch: the serial σ/π
->   path is the **relational pump** — it spreads activation through the relation
+> - **`symbolicOrder`** — the **relational pump** budget. It spreads activation through the relation
 >   graph to surface *higher-order* (relations-of-relations) features that have
 >   **no mereological `.where`** and so can't be primed off `.where` contiguity.
 >   `subsymbolicOrder` pumps the mereological substrate; `symbolicOrder` pumps the
->   relational one. See orders.md §6.
+>   relational one. `<serial>` separately selects whether traversal is per-word
+>   serial or whole-slab parallel.
 > - **`syntacticOrder`** *(NEW — implemented 2026-06-19)* — the **parse-tree
 >   composition DEPTH** per sentence, bounded by the word count. `0` = unbounded
 >   (byte-identical); a positive value caps the NULL-seal reduce sweep to that
 >   many fold levels (static `min(syntacticOrder, cap−1)`; `≤W` structural).
 >   Inert in parallel mode.
 >
-> Composition (serial run): `symbolicOrder ≥ 1` loops words × `syntacticOrder`
+> Composition (serial run): `<serial>true</serial>` loops words × `syntacticOrder`
 > bounds the parse-tree depth per sentence × `subsymbolicOrder` pumps per node;
 > the **basic-level stop** is shared (synthesis halts at words, so the tree's
-> leaves are words). `syntacticOrder` **layers over** the serial `symbolicOrder`
+> leaves are words). `syntacticOrder` **layers over** the serial traversal
 > loop (it bounds depth; it does not replace the parallel-vs-serial switch).
 >
-> **Where this is headed ([orders.md §6](old/orders.md), design):** the three
+> **Where this is headed (historical design note in [orders.md §6](old/orders.md)):** the three
 > orders become **pump counts** over one connectionist attention substrate — a
 > cumulative priming hierarchy (mereological entries → relations/concepts →
 > higher-order, each seeing all below) where reading is a learned `.where`
@@ -398,13 +396,14 @@ serial grammatical loop over words.
 
 ### Modes of operation
 
-Two operating modes, selected by the integer `<architecture><symbolicOrder>`
-(0 = parallel, >= 1 = serial; replaced the `conceptualMode` enum 2026-06-13):
+Two operating modes, selected by `<architecture><serial>` (replaced the
+`conceptualMode` enum; legacy configs that omit `serial` derive the mode from
+`symbolicOrder > 0`):
 
 | Mode | Trigger | PS.forward argument | Iterations | STM behavior |
 |---|---|---|---|---|
-| **SERIAL / GRAMMATICAL** | `<symbolicOrder>1</symbolicOrder>` (default when `useGrammar != "none"`) | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (oldest dropped, newest at slot 7); signal router dispatches over STM contents per word or at sentence boundary |
-| **PARALLEL** | `<symbolicOrder>0</symbolicOrder>` (default otherwise) | `IS` once, then `CS` for T-1 iterations | T = `<subsymbolicOrder>` | parallel write of T slots; signal router dispatches after STM population |
+| **SERIAL / GRAMMATICAL** | `<serial>true</serial>` | `IS_t` per word | one per word; PS pushes one idea per word | shift-and-push (oldest dropped, newest at slot 7); signal router dispatches over STM contents per word or at sentence boundary |
+| **PARALLEL** | `<serial>false</serial>` | `IS` once, then `CS` for T-1 iterations | T = `<subsymbolicOrder>` | parallel write of T slots; signal router dispatches after STM population |
 
 SERIAL and GRAMMATICAL are not architecturally distinguished — grammar
 dispatch is a chart / rule-catalog config, not a substrate mode. PS.forward
