@@ -2874,6 +2874,10 @@ class VerbLayer(LiftLayer):
     invertible = True
     space_role = 'CS'
     event_aware = True
+    # The unreduce dispatcher must supply the verb operand to invert
+    # apply_verb; without it there is no faithful inverse, so it skips this
+    # op's reverse rather than fabricating a split (see reverse()).
+    reverse_required_kwargs = ('verb_what',)
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("force_verb_spectrum", True)
@@ -2892,21 +2896,25 @@ class VerbLayer(LiftLayer):
             return torch.cat([content, l_where, _lift_when(r_when)], dim=-1)
         return self.apply_verb(left, right)
 
-    def reverse(self, parent, verb_what=None, gate=None):
-        """Exact inverse when ``verb_what`` is supplied; otherwise pseudo-split."""
+    def reverse(self, parent, verb_what=None, basis=None, gate=None, **kwargs):
+        """Exact inverse of :meth:`forward` -- REQUIRES the verb operand.
+
+        ``unapply_verb`` strips the verb's log-eigenvalue spectrum from the
+        parent to recover the NP. Without ``verb_what`` there is no faithful
+        reconstruction, so this RAISES rather than fabricating a split (the
+        old ``(left, left)`` pseudo-split was a placeholder). Callers that
+        cannot supply the operand must not invoke reverse -- the unreduce
+        dispatcher gates on ``reverse_required_kwargs``.
+        """
         if self._sigma is None:
             raise RuntimeError(
                 "VerbLayer was constructed without operand-width "
                 "information; cannot run reverse.")
-        cw = self._content_width
-        if verb_what is not None:
-            return self.unapply_verb(parent, verb_what), verb_what
-        if cw and parent.shape[-1] > cw:
-            p_what, p_where, p_when = _split_event(parent, cw)
-            back = _lower_when(p_when)
-            left = torch.cat([p_what, p_where, back], dim=-1)
-            return left, left
-        return parent, parent
+        if verb_what is None:
+            raise RuntimeError(
+                "VerbLayer.reverse requires the verb operand (verb_what) to "
+                "invert apply_verb; refusing to fabricate a split.")
+        return self.unapply_verb(parent, verb_what), verb_what
 
 
 class AdverbLayer(LiftLayer):
@@ -2923,6 +2931,9 @@ class AdverbLayer(LiftLayer):
     lossy = True
     space_role = 'CS'
     event_aware = True
+    # No faithful inverse exists; the unreduce dispatcher skips this op's
+    # reverse entirely rather than calling it (which would raise).
+    reverse_dispatchable = False
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("force_adverb_eig_edit", True)
@@ -2941,12 +2952,15 @@ class AdverbLayer(LiftLayer):
             return torch.cat([content, l_where, l_when], dim=-1)
         return self.apply_adverb(left, right)
 
-    def reverse(self, parent, gate=None):
-        if self._sigma is None:
-            raise RuntimeError(
-                "AdverbLayer was constructed without operand-width "
-                "information; cannot run reverse.")
-        return parent, parent
+    def reverse(self, parent, basis=None, gate=None, **kwargs):
+        """Adverb editing is lossy (``invertible = False``) -- there is no
+        faithful inverse, so reverse RAISES rather than fabricating one (the
+        old ``(parent, parent)`` was a placeholder). The unreduce dispatcher
+        gates on ``reverse_dispatchable = False`` and must not invoke this.
+        """
+        raise NotImplementedError(
+            "AdverbLayer is lossy (invertible=False); apply_adverb has no "
+            "exact inverse, so reverse is unavailable.")
 
 
 class LowerLayer(GrammarLayer):
@@ -5777,29 +5791,44 @@ class LanguageLayer(Layer):
                     # Any failure -> plain reverse (never break generation).
                     reverse_kwargs = {}
 
-        try:
-            child = layer.reverse(parent, basis=space_role_basis, **reverse_kwargs)
-        except TypeError:
-            # Backward-compat for layer reverses that don't accept the
-            # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
-            # ...). The retry call must also be guarded: subclasses of
-            # the base GrammarLayer that don't override .reverse inherit
-            # ``raise NotImplementedError`` from the Layer base (when
-            # ``self.butterfly`` is False), which must degrade to the
-            # identity stub, not propagate.
-            try:
-                child = layer.reverse(parent)
-            except Exception:
-                child = _identity_stub()
-        except Exception:
+        # Reverse only when a FAITHFUL inverse is available. Two ways an op
+        # opts out: (1) it declares ``reverse_dispatchable = False`` because
+        # no inverse exists at all (a lossy op, e.g. AdverbLayer); (2) it
+        # declares ``reverse_required_kwargs`` naming operands the reverse
+        # path could not recover (VerbLayer needs ``verb_what``). In either
+        # case do NOT invoke reverse -- fabricating a split would corrupt the
+        # reconstruction. Fall back to the identity stub (the sanctioned
+        # "no inverse" pass-through; generation must never break).
+        _required = getattr(layer, 'reverse_required_kwargs', ())
+        _can_reverse = (getattr(layer, 'reverse_dispatchable', True)
+                        and all(k in reverse_kwargs for k in _required))
+        if not _can_reverse:
             child = _identity_stub()
         else:
-            if arity == 2 and (not isinstance(child, tuple)
-                                or len(child) != 2):
-                # Arity-2 rules must return (left, right); the base
-                # Layer.reverse returns a single tensor -- treat as
-                # identity-stub.
+            try:
+                child = layer.reverse(parent, basis=space_role_basis,
+                                      **reverse_kwargs)
+            except TypeError:
+                # Backward-compat for layer reverses that don't accept the
+                # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
+                # ...). The retry call must also be guarded: subclasses of
+                # the base GrammarLayer that don't override .reverse inherit
+                # ``raise NotImplementedError`` from the Layer base (when
+                # ``self.butterfly`` is False), which must degrade to the
+                # identity stub, not propagate.
+                try:
+                    child = layer.reverse(parent)
+                except Exception:
+                    child = _identity_stub()
+            except Exception:
                 child = _identity_stub()
+            else:
+                if arity == 2 and (not isinstance(child, tuple)
+                                    or len(child) != 2):
+                    # Arity-2 rules must return (left, right); the base
+                    # Layer.reverse returns a single tensor -- treat as
+                    # identity-stub.
+                    child = _identity_stub()
 
         what_new = what.clone()
         where_new = where.clone()
@@ -6647,11 +6676,15 @@ class TransformChooser(nn.Module):
 
 
 class AnchorDotTransformChooser(TransformChooser):
-    """Anchor-dot placement scorer -- the behavior-preserving default.
+    """Anchor-dot placement scorer -- the scorer-level byte-identical default.
 
     Reproduces the original inline scoring (Stern et al. 2017 /
     Vaswani et al. 2017 style): the placement score is the inner product
-    between a candidate's output and a per-rule learnable anchor.
+    between a candidate's output and a per-rule learnable anchor. The scorer
+    ignores ``cat_ctx``; the category-role prior is applied by the owning
+    layer after scoring, so with ``categoryCodebook`` enabled (now the
+    default) the END-TO-END route is no longer byte-identical even though
+    this scorer is.
 
     Deliberately STATELESS: the ``copy_anchor`` / ``apply_anchor`` /
     ``reduce_anchor`` Parameters stay OWNED BY THE LAYER and are passed in
@@ -6669,8 +6702,12 @@ class AnchorDotTransformChooser(TransformChooser):
         ``copy_score[b,n,c]  = <x_score[b,n,:],       copy_anchor[c,:]>``
         ``apply_score[b,n,a] = <applied_score[b,n,a,:], apply_anchor[a,:]>``
 
-        ``cat_ctx`` is handled as a layer-level labelled-role prior so the
-        anchor-dot scorer remains stateless and basin-pinned.
+        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
+        stateless. The labelled-role category prior is added by the OWNING
+        layer AFTER scoring (``_category_apply_prior``). Because
+        ``categoryCodebook`` now defaults ON, that prior shifts routing by
+        default, so the END-TO-END route is no longer byte-identical to the
+        bare anchor-dot for category-bearing grammars (this scorer still is).
         """
         # Device safety (MPS): the anchors are the owning layer's Parameters; if
         # a device move missed them (e.g. choosers built lazily after the model's
@@ -6694,8 +6731,12 @@ class AnchorDotTransformChooser(TransformChooser):
         ``copy_score[b,n,c]   = <x_score[b,n,:],            copy_anchor[c,:]>``
         ``reduce_score[b,p,r] = <reduced_score[b,p,r,:], reduce_anchor[r,:]>``
 
-        ``cat_ctx`` is handled as a layer-level labelled-role prior so the
-        anchor-dot scorer remains stateless and basin-pinned.
+        ``cat_ctx`` is NOT consumed here -- the anchor-dot scorer stays
+        stateless. The labelled-role category prior is added by the OWNING
+        layer AFTER scoring (``_category_reduce_prior``). Because
+        ``categoryCodebook`` now defaults ON, that prior shifts routing by
+        default, so the END-TO-END route is no longer byte-identical to the
+        bare anchor-dot for category-bearing grammars (this scorer still is).
         """
         # Device safety (MPS): align the owning layer's anchor Parameters to the
         # input's device in case a device move missed them. No-op when co-located.

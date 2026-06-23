@@ -147,20 +147,26 @@ def test_pending_meta_symbol_commits_to_single_category():
     assert committed_role is not None and float(committed_role[col]) > 0.9
 
 
-def test_unused_centroids_decay_toward_collapse():
-    # Feeding a single tight cluster repeatedly: the nearest centroid keeps
-    # winning while the rest receive no assignments, so their cluster_size EMA
-    # decays below the bootstrap 1.0 -- the mechanism behind natural collapse.
+def test_category_vq_assign_is_pure_lookup():
+    # The category VQ has the in-forward EMA disabled (ema_update=False), so
+    # update_category_role (the role-vector M-step) is the SOLE writer.
+    # assign_category (the E-step read) must therefore be a pure lookup: it
+    # still routes a tight cluster to its nearest centroid, but it does NOT
+    # mutate the codebook or the cluster_size buffer (no EMA drift).
     torch.manual_seed(0)
     ss = _whole_space(d=8)
     ss.enable_category_codebook(_grammar())
     ss.train()
+    assert ss._category_vq.ema_update is False
+    cb_before = ss._category_vq.codebook.detach().clone()
+    cs_before = ss._category_vq.cluster_size.detach().clone()
     cluster = torch.zeros(1, ss._category_n_roles)
     cluster[0, 0] = 10.0                              # far-out tight cluster
     winners = set()
     for _ in range(40):
         idx = ss.assign_category(cluster + 0.01 * torch.randn(8, ss.nDim))
         winners.update(int(i) for i in idx)
-    cs = ss._category_vq.cluster_size
     assert len(winners) < ss._category_role.shape[0]   # not all centroids used
-    assert float(cs.min()) < 1.0                       # an unused centroid decayed
+    # The repeated lookup left the codebook and EMA buffers untouched.
+    torch.testing.assert_close(ss._category_vq.codebook.detach(), cb_before)
+    torch.testing.assert_close(ss._category_vq.cluster_size.detach(), cs_before)

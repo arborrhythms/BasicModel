@@ -14239,6 +14239,7 @@ class VectorQuantize(nn.Module):
         eps=1e-5,
         codebook_retire=False,
         learnable_codebook=False,
+        ema_update=True,
         **kwargs,
     ):
         """Initialize VectorQuantize; allocate state for the class contract.
@@ -14266,13 +14267,13 @@ class VectorQuantize(nn.Module):
         # Conceptual/Symbolic codebooks (single-writer invariant).
         self.learnable_codebook = bool(learnable_codebook)
         # Asymmetric VQ (asymmetric-vq plan sec.3, rev. 2026-06-09): master
-        # gate for the in-forward EMA codebook update. Default True (the
-        # standard VQ-VAE behavior). The WholeSpace VQ sets this False --
-        # EMA is a single-objective crutch replaced by the reconstruction
-        # gradient on the codebook (the input->codebook leg of the
-        # asymmetric routing). Distinct from ``learnable_codebook`` (which
-        # also flips the in-forward gradient estimator).
-        self.ema_update = True
+        # gate for the in-forward EMA codebook update. Constructor parameter,
+        # default True (the standard VQ-VAE behavior). The WholeSpace and
+        # category VQs pass False -- EMA is a single-objective crutch replaced
+        # by the reconstruction gradient on the codebook (the input->codebook
+        # leg of the asymmetric routing). Distinct from ``learnable_codebook``
+        # (which also flips the in-forward gradient estimator).
+        self.ema_update = bool(ema_update)
         # Gate for the dead-code replacement path. Off by default because
         # reseeding expired rows with fresh samples can blow up the effective
         # number of distinct codes on non-stationary data.

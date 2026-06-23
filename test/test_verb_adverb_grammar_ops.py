@@ -11,6 +11,7 @@ _BIN = os.path.join(_ROOT, "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
+import pytest
 import torch
 
 from Language import (
@@ -86,6 +87,32 @@ def test_adverb_layer_forces_edit_and_is_zero_init_noop():
     layer = _strong_adverb(AdverbLayer(nInput=_D, nOutput=_D))
     edited = layer.forward(vp, adv)
     assert float((edited - vp).abs().max()) > 0.1
+
+
+def test_verb_reverse_without_operand_raises():
+    # The old (left, left) pseudo-split was a placeholder; with no verb
+    # operand to invert apply_verb, reverse must error rather than fabricate.
+    layer = _strong_spectrum(VerbLayer(nInput=_D, nOutput=_D))
+    np_, verb = _np_and_word()
+    vp = layer.forward(np_, verb)
+    with pytest.raises(RuntimeError):
+        layer.reverse(vp)
+    # The dispatcher passes basis=; that must not turn the refusal into a
+    # silent (left, left) split -- it still raises.
+    with pytest.raises(RuntimeError):
+        layer.reverse(vp, basis=None)
+
+
+def test_adverb_reverse_always_raises():
+    # Adverb editing is lossy (invertible=False); reverse has no faithful
+    # inverse and must error rather than return the old (parent, parent).
+    layer = _strong_adverb(AdverbLayer(nInput=_D, nOutput=_D))
+    vp, adv = _np_and_word()
+    edited = layer.forward(vp, adv)
+    with pytest.raises(NotImplementedError):
+        layer.reverse(edited)
+    with pytest.raises(NotImplementedError):
+        layer.reverse(edited, basis=None)
 
 
 def test_default_and_complete_have_verb_adverb_not_shamatha():

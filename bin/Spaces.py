@@ -16364,20 +16364,25 @@ class WholeSpace(PerceptualSpace):
         self._category_roles = roles
         self._category_role_index = role_index
         self._category_n_roles = int(n_roles)
+        # The category codebook is written ONLY by update_category_role (the
+        # explicit role-vector M-step), so disable the in-forward EMA at
+        # CONSTRUCTION: assign_category (the E-step read) is then a pure
+        # lookup and there is a SINGLE writer -- otherwise the EMA and the
+        # M-step mutate the same rows by different laws and the assign/score
+        # tables drift apart.
         vq = VectorQuantize(
             dim=int(n_roles), codebook_size=K, decay=float(decay),
-            use_cosine_sim=False, codebook_retire=False)
+            use_cosine_sim=False, codebook_retire=False, ema_update=False)
         if device is not None:
             vq = vq.to(device)
         init = torch.zeros(K, n_roles, dtype=torch.float32, device=device)
         for i in range(min(K, n_roles)):
             init[i, i] = 1.0
         with torch.no_grad():
+            # The codebook setter already resets embed_avg and _b_norms_sq to
+            # match; only cluster_size needs a non-zero bootstrap.
             vq.codebook = init
             vq.cluster_size.fill_(1.0)
-            vq.embed_avg.copy_(init)
-            if hasattr(vq, "_b_norms_sq"):
-                vq._b_norms_sq.copy_((init ** 2).sum(dim=-1))
         self.add_module("_category_vq", vq)
         self.register_buffer(
             "_category_role",
@@ -19746,15 +19751,17 @@ class WholeSpace(PerceptualSpace):
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             vspace = self.forwardEnd(self.subspace)
-            # The serial/grammar leg keeps the legacy nearest-target
-            # coupling; a SYMBOLIC ITERATION (parallel + quantize) takes
-            # the emission branch below regardless of the (always-
-            # attached) SyntacticLayer.
+            # Gate purely on ``serial`` (consistent with the two earlier
+            # _serial resolution sites): the serial/grammar leg keeps the
+            # legacy nearest-target coupling; a parallel leg takes the
+            # symbolic-emission branch below. ``_symbolic_iter`` (the
+            # parallel-quantize snap predicate) already implies ``not
+            # serial``, so it added nothing to THIS decision -- the snap
+            # geometry it guards is re-checked inside the emission branch.
             _serial = getattr(self, '_serial', None)
             if _serial is None:
-                _serial = (getattr(self, 'syntacticLayer', None) is not None
-                           and not _symbolic_iter)
-            _serial = bool(_serial) and not _symbolic_iter
+                _serial = int(getattr(self, '_symbolic_order', 0) or 0) != 0
+            _serial = bool(_serial)
             if _serial:
                 # SERIAL/grammar leg -- TRANSITIONAL: the legacy
                 # nearest-target coupling stays until the serial path
