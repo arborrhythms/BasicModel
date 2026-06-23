@@ -872,32 +872,51 @@ class Grammar:
         self.rules_downward = []
         self.ps_rules_upward = []
         self.ps_rules_downward = []
+        # Introspection query ops declared in the grammar's <Queries>/<queries>
+        # section (parse-NOPs: they build no structure). Registered here so the
+        # model can reason over what it knows; the truth-grounded reasoner
+        # (bin/reasoning.py) implements them as exist / equal / part / query /
+        # quantize / wholes / parts.
+        self.query_ops = []
         self._configured = True
 
-        # New PS/WS-sectioned form (Phase 8b,
+        # PS / Symbolic-sectioned form (Phase 8b,
         # doc/plans/2026-05-30-subsymbolic-analyzer-terminal-emitter.md):
-        # a grammar may nest its <compose>/<generate> under
-        # <PartSpace> and/or <WholeSpace>. PartSpace rules
-        # go to the separate ps_* tables tagged space_role 'subsymbolic'; WholeSpace
-        # rules go to the canonical symbolic tables (so symbolic rule ids
-        # are unperturbed by the presence of a PS section). A file with
-        # neither wrapper is the legacy form and loads as WholeSpace.
+        # a grammar nests <Synthesize>/<Analyze> under <PartSpace> and
+        # <compose>/<generate> under <Symbolic>. PartSpace rules go to the
+        # separate ps_* tables tagged space_role 'subsymbolic'; Symbolic rules
+        # go to the canonical symbolic tables (so symbolic rule ids are
+        # unperturbed by the presence of a PS section). A file with neither
+        # wrapper is the legacy form and loads as the symbolic table.
+        #
+        # Section vocabulary: <PartSpace> nests <Synthesize> (parts -> whole)
+        # and <Analyze> (whole -> parts) -- the mereological framing; <Symbolic>
+        # nests <compose> / <generate> (the symbolic rules); a top-level
+        # <Queries> declares the introspection ops.
         ps_block = grammar_dict.get('PartSpace')
-        ws_block = grammar_dict.get('WholeSpace')
+        ws_block = grammar_dict.get('Symbolic')
         if ps_block is not None or ws_block is not None:
             if isinstance(ps_block, dict):
                 self._fill_section(self.ps_rules_upward,
-                                   ps_block.get('compose') or {},
+                                   ps_block.get('Synthesize') or {},
                                    default_space_role='subsymbolic')
                 self._fill_section(self.ps_rules_downward,
-                                   ps_block.get('generate') or {},
+                                   ps_block.get('Analyze') or {},
                                    default_space_role='subsymbolic')
             if isinstance(ws_block, dict):
                 self._fill_section(self.rules_upward,
                                    ws_block.get('compose') or {})
                 self._fill_section(self.rules_downward,
                                    ws_block.get('generate') or {})
-        else:
+        # Parse the top-level <Queries> section into op signatures.
+        q_block = grammar_dict.get('Queries')
+        if isinstance(q_block, dict):
+            q = q_block.get('query')
+            if isinstance(q, str):
+                q = [q]
+            if isinstance(q, list):
+                self.query_ops = [str(x).strip() for x in q if str(x).strip()]
+        if ps_block is None and ws_block is None:
             has_named = any(k in grammar_dict
                             for k in ('compose', 'generate'))
             if has_named:
@@ -1384,12 +1403,12 @@ class Grammar:
         cfg = load_grammar(filename)
         if isinstance(cfg, dict):
             # Space-scoped starts: <start> nested under <PartSpace>
-            # configures the analyzer root; nested under <WholeSpace>
+            # configures the analyzer root; nested under <Symbolic>
             # configures the symbolic parse. A top-level <start> (legacy /
             # unsectioned form) configures the symbolic start unless the
-            # WholeSpace section declares its own.
+            # Symbolic section declares its own.
             ps_block = cfg.get('PartSpace')
-            ws_block = cfg.get('WholeSpace')
+            ws_block = cfg.get('Symbolic')
             ps_start_raw = (ps_block.get('start')
                             if isinstance(ps_block, dict) else None)
             ws_start_raw = (ws_block.get('start')
@@ -1476,12 +1495,12 @@ class Grammar:
         if not isinstance(cfg, dict):
             cfg = {'compose': {'rule': [identity_body]}}
             return cfg
-        # PS/WS-sectioned form: the identity rule is a symbolic no-op
-        # transition, so it belongs in WholeSpace's compose section.
-        if 'PartSpace' in cfg or 'WholeSpace' in cfg:
-            ws = cfg.get('WholeSpace')
+        # PS/Symbolic-sectioned form: the identity rule is a symbolic no-op
+        # transition, so it belongs in the Symbolic compose section.
+        if 'PartSpace' in cfg or 'Symbolic' in cfg:
+            ws = cfg.get('Symbolic')
             ws = dict(ws) if isinstance(ws, dict) else {}
-            cfg['WholeSpace'] = ws
+            cfg['Symbolic'] = ws
             compose = ws.get('compose')
             if compose is None:
                 ws['compose'] = {'rule': [identity_body]}

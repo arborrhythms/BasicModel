@@ -155,26 +155,6 @@ class ReverseAdapter(nn.Module):
         return target.reverse(subspace)
 
 
-class CachePoint(nn.Module):
-    """Identity module that caches the last subspace it saw.
-
-    Retained for backwards-compat (tests reference it); the live
-    BasicModel midpoint cache is now a plain attribute populated
-    inside ``_run_pipeline_rt``.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.last = None
-
-    def forward(self, subspace):
-        self.last = subspace
-        return subspace
-
-    def reverse(self, subspace):
-        return subspace
-
-
 class GrammarMergeGlue(nn.Module):
     """Progressive-bottleneck glue for ``useGrammar == 'all'``.
 
@@ -813,6 +793,15 @@ class BaseModel(Mereology, nn.Module):
         # <ideaDecode>, which deliberately skips the chart/router rebuild.
         self.reconstruct_from_idea = bool(TheXMLConfig.get(
             "architecture.reconstructFromIdea", default=False))
+
+        # Truth-grounded reasoning consumer (doc/plans/2026-06-23-truth-
+        # grounded-reasoning.md). When on, a query is routed to the
+        # TruthGroundedReasoner (reduce to hard isTrue/isPart tools, run the
+        # candidate-limited chain search, emit a posture) instead of the
+        # generative infer(). Dark until the Phase-5 consumer reads it; default
+        # off -> queries are ordinary generative prompts (byte-identical).
+        self.query_reasoning = bool(TheXMLConfig.get(
+            "architecture.queryReasoning", default=False))
 
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
@@ -5255,6 +5244,11 @@ class BasicModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
+        # Truth-grounded reasoning answer (policy) loss weight (Phase 5; dark
+        # until the <queryReasoning> consumer trains the soft route). Default
+        # 0.0 -> no answer-loss term (byte-identical).
+        self.answer_loss_weight = float(
+            TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0)
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
         # set in the model XML (under <architecture>), BasicModel.forward

@@ -6,8 +6,8 @@
        this uses complete.grammar, whose composition ops include lower
        (DET/ADJ), intersection, and verb/adverb (the VP ops that replaced
        lift). A DET+noun / ADJ+noun phrase reduces via lower (DET/ADJ) to a
-       single S, and lower.reverse reconstitutes both constituents -- the
-       decode path this fixture exercises. Note: not every op is invertible
+       single S, and lower.reverse reconstitutes both constituents (the
+       decode path this fixture exercises). Note: not every op is invertible
        (verb needs its operand to invert; adverb is lossy), so the round-trip
        relies on the lower/intersection reverses, not the VP ops. SERIAL
        (single-S idea at slot 0) + TALL WS (symbol_dim==concept_dim so the

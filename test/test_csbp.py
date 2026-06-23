@@ -66,33 +66,6 @@ class TestSVDOrthogonalInit(unittest.TestCase):
                         f">= 1e-3")
 
 
-class TestRandomInitAmplification(unittest.TestCase):
-    """Retired 2026-05-13: ``svdOrthogonal`` flag no longer applies to
-    ProjectionBasis (the LDU init is deterministic and always well-
-    conditioned).  This class is retained as a placeholder; its
-    historical purpose was to compare svdOrthogonal=True vs random
-    init for the legacy Codebook.project_reverse path."""
-
-    @unittest.skip("Retired: svdOrthogonal flag does not apply to "
-                   "ProjectionBasis (LDU is structurally well-conditioned).")
-    def test_orthogonal_beats_random_on_average(self):
-        pass
-
-    def _unused_legacy_body(self):  # pragma: no cover -- kept for diff context
-        D, V_S, V_in, B = 8, 6, 4, 3
-        coeffs = torch.randn(B, V_in, V_S)
-
-        def round_trip_mse(svdOrthogonal):
-            return 0.0
-
-        mse_ortho = round_trip_mse(True)
-        # Repeat the random-init case across seeds to characterize the
-        # distribution; we just assert ortho is at most as bad.
-
-        mse_random = round_trip_mse(False)
-        self.assertLessEqual(mse_ortho, max(mse_random, 1e-3) + 1e-6,
-                             f"orthogonal mse={mse_ortho:.3e} "
-                             f"random mse={mse_random:.3e}")
 
 
 if __name__ == "__main__":

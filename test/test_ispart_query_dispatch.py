@@ -29,7 +29,7 @@ def _ispart_grammar(query_attr):
     return textwrap.dedent("""\
         <?xml version="1.0"?>
         <grammar name="ispart_probe">
-          <WholeSpace>
+          <Symbolic>
             <start name="relative_truth">isPart_O1</start>
             <compose>
               <rule query="%s">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
@@ -37,7 +37,7 @@ def _ispart_grammar(query_attr):
             <generate>
               <rule query="%s">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
             </generate>
-          </WholeSpace>
+          </Symbolic>
         </grammar>
     """ % (query_attr, query_attr))
 

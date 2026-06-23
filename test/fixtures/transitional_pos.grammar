@@ -16,20 +16,20 @@
          (prefix / suffix / compound / coordination / quote_or_bracket)
          are added with the routing PS analyzer. These rules carry tier
          'P' and are read by the PS analyzer, never by the symbolic
-         parser (which reads the <WholeSpace> table only). -->
-    <compose>
+         parser (which reads the <Symbolic> table only). -->
+    <Synthesize>
       <rule>SURF = stop.forward(SURF)</rule>
       <rule>SURF = boundary.forward(SURF, SURF)</rule>
       <rule>SURF = uniform.forward(SURF, SURF)</rule>
-    </compose>
-    <generate>
+    </Synthesize>
+    <Analyze>
       <rule>SURF = stop.reverse(SURF)</rule>
       <rule>SURF, SURF = boundary.reverse(SURF)</rule>
       <rule>SURF, SURF = uniform.reverse(SURF)</rule>
-    </generate>
+    </Analyze>
   </PartSpace>
 
-  <WholeSpace>
+  <Symbolic>
     <compose>
       <!-- Relative Truth. -->
       <rule query="true">REL_T = isEqual.forward(QLEFT_NP3, QRIGHT_AP)</rule>
@@ -115,14 +115,6 @@
       <rule>S45 = union.forward(S45, S45)</rule>
     </compose>
 
-    <queries>
-      <query>exist(X)</query>
-      <query>quantize(X)</query>
-      <query>wholes(X)</query>
-      <query>parts(X)</query>
-      <query>isomorphs(X)</query>
-    </queries>
-
     <generate>
       <!-- Relative Truth. -->
       <rule query="true">QLEFT_NP3, QRIGHT_AP = isEqual.reverse(REL_T)</rule>
@@ -192,5 +184,12 @@
       <rule>S45, S45 = intersection.reverse(S45)</rule>
       <rule>S45, S45 = union.reverse(S45)</rule>
     </generate>
-  </WholeSpace>
+  </Symbolic>
+
+  <Queries>
+    <query>exist(X)</query>
+    <query>quantize(X)</query>
+    <query>wholes(X)</query>
+    <query>parts(X)</query>
+  </Queries>
 </grammar>

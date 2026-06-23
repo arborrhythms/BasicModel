@@ -7141,16 +7141,8 @@ class SubSpace(nn.Module):
 # Models.py import site.
 from Layers import ShortTermMemory as _ShortTermMemory_relocated
 ShortTermMemory = _ShortTermMemory_relocated
-class _ShortTermMemory_PlaceholderRemoved:
-    """Sentinel — the ShortTermMemory class body that lived here is now
-    in :mod:`Layers`. This stub exists only so the surrounding lines
-    keep their offsets while the file is intermediate-state during the
-    refactor; ignore at runtime.
-    """
-    def __init__(self, batch=1, capacity=None, concept_dim=0):
-        raise NotImplementedError(
-            "Use Layers.ShortTermMemory (re-exported as "
-            "Spaces.ShortTermMemory).")
+
+
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
 
@@ -11895,10 +11887,7 @@ class PartSpace(PerceptualSpace):
         if hasattr(emb, 'set_sigma'):
             emb.set_sigma(sigma)
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        pass
+
 class ModalSpace(Space):
     """Composite space routing what/where/when through independent PartSpaces.
 
@@ -13984,7 +13973,8 @@ class ConceptualSpace(Space):
         from Layers import TernaryTruthStore as _T
         return isinstance(store, _T)
 
-    def _iter_relation_rows(self, store):
+    @staticmethod
+    def _iter_relation_rows(store, rel_type=None):
         """Yield ``(idx, np1, vp, np2, t1)`` per RELATION row of ``store`` at
         CONTENT width, abstracting the two store types (Truth/Ideas stages
         4-5):
@@ -13992,18 +13982,22 @@ class ConceptualSpace(Space):
         * RelativeTruthStore: every row is a relation; the magnitudes are
           TRUST-BAKED, so np1/np2 are UN-BAKED by the scalar trust ``t1`` (the
           existing :meth:`reason` behaviour); ``vp`` is returned as-stored.
+          (Untagged, so ``rel_type`` is ignored.)
         * TernaryTruthStore: only RELATION rows (``relations()``); vectors are
           stored UNSCALED and the trust is a SEPARATE column, so NO un-baking.
           Each slot is sliced to the content band (the leading ``content_width``
           components -- reasoning runs on content, not the event width, so
-          .where/.when energy never leaks into parthood).
+          .where/.when energy never leaks into parthood). ``rel_type`` (e.g.
+          ``REL_PARTOF``) restricts to one relation kind; ``None`` = all.
         """
         if store is None:
             return
-        if self._store_is_ternary(store):
+        if ConceptualSpace._store_is_ternary(store):
             cw = int(getattr(store, 'content_width', store.nDim))
             cw = max(1, min(cw, int(store.nDim)))
-            for idx in store.relations().tolist():
+            rel_idxs = (store.relations() if rel_type is None
+                        else store.relations(rel_type))
+            for idx in rel_idxs.tolist():
                 row = store.row(int(idx))
                 t1 = float(row['trust'])
                 yield (int(idx), row['np1'][:cw], row['vp'][:cw],
@@ -14020,6 +14014,81 @@ class ConceptualSpace(Space):
                     # would divide by ~0. Skip -- no net knowing to read.
                     continue
                 yield (int(idx), np1 / t1, vp, np2 / t1, t1)
+
+    # -- Canonical parthood-climb primitives (shared by reason() and the
+    #    truth-grounded reasoner; doc/plans/2026-06-23-truth-grounded-
+    #    reasoning.md). wholes/parts ARE the grammar <queries> ops.
+    @staticmethod
+    def wholes(X, store, *, theta=0.7, trust_threshold=0.0, rel_type=None):
+        """``wholes(X)``: the proximal containing wholes of X -- ``{np2}`` of the
+        stored relation rows whose antecedent covers X (``_idea_parthood(X, np1)
+        >= theta``), each with its row trust. One hop of the parthood climb; the
+        transitive closure is reached by chaining. ``rel_type`` (REL_PARTOF)
+        restricts to parthood on a tagged store. Returns ``[{idea, trust, row}]``.
+        """
+        out = []
+        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
+                store, rel_type):
+            if (t1 > float(trust_threshold)
+                    and ConceptualSpace._idea_parthood(X, np1) >= float(theta)):
+                out.append({'idea': np2, 'trust': float(t1), 'row': int(idx)})
+        return out
+
+    @staticmethod
+    def parts(X, store, *, theta=0.7, trust_threshold=0.0, rel_type=None):
+        """``parts(X)``: the proximal contained parts of X -- ``{np1}`` of the
+        stored relation rows whose consequent is within X (``_idea_parthood(np2,
+        X) >= theta``). Inverse of :meth:`wholes`. Returns ``[{idea, trust,
+        row}]``."""
+        out = []
+        for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
+                store, rel_type):
+            if (t1 > float(trust_threshold)
+                    and ConceptualSpace._idea_parthood(np2, X) >= float(theta)):
+                out.append({'idea': np1, 'trust': float(t1), 'row': int(idx)})
+        return out
+
+    @staticmethod
+    def _chain_to_target(query, target, store, *, parthood_threshold=0.7,
+                         max_steps=8, beam=8, trust_combine='min',
+                         rel_type=None, trust_threshold=0.0):
+        """The single canonical chain search: a beam-limited, depth-bounded
+        climb from ``query`` toward ``target`` via :meth:`wholes`. Succeeds when
+        a whole reaches the target (``_idea_parthood(whole, target) >= thr``).
+        Each row fires at most once per chain; the frontier is pruned to the
+        top-``beam`` running scores each step; a chain's score combines hop
+        trusts by ``trust_combine`` ('min' = weakest hop; 'product'). Returns
+        ranked ``[{score, chain:[(row, trust)], trust, steps, idea}]``.
+        """
+        q = ConceptualSpace._as_idea_vec(query)
+        B = ConceptualSpace._as_idea_vec(target)
+        thr = float(parthood_threshold)
+        results = []
+        frontier = [(q, 1.0, [])]
+        for step in range(int(max_steps)):
+            nxt = []
+            for cur, ctrust, path in frontier:
+                used = {p[0] for p in path}
+                for w in ConceptualSpace.wholes(
+                        cur, store, theta=thr,
+                        trust_threshold=trust_threshold, rel_type=rel_type):
+                    if w['row'] in used:
+                        continue
+                    nt = (min(ctrust, w['trust']) if trust_combine == 'min'
+                          else ctrust * w['trust'])
+                    npath = path + [(w['row'], w['trust'])]
+                    if ConceptualSpace._idea_parthood(w['idea'], B) >= thr:
+                        results.append({'score': nt, 'chain': npath,
+                                        'trust': nt, 'steps': step + 1,
+                                        'idea': w['idea']})
+                    else:
+                        nxt.append((w['idea'], nt, npath))
+            nxt.sort(key=lambda e: -e[1])
+            frontier = nxt[:int(beam)]
+            if not frontier:
+                break
+        results.sort(key=lambda r: -r['score'])
+        return results[:int(beam)]
 
     def _relation_is_reducible(self, idea1, idea2):
         """True iff the relation REDUCES to codes: both ENTITY operands snap
@@ -14253,7 +14322,8 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def reason(self, query, query_trust=1.0, *, parthood_threshold=0.7,
-               max_steps=1, store=None):
+               max_steps=1, store=None, target=None, beam=None,
+               trust_combine='product', rel_type=None):
         """Forward modus-ponens inference over the relative store (Truth /
         Ideas stage 4; expands the area of luminosity).
 
@@ -14279,7 +14349,15 @@ class ConceptualSpace(Space):
         Returns ``{'derived': [...], 'luminosity_gain': float}`` where each
         derived entry is ``{'concept', 'trust', 'source', 'parthood', 'step'}``
         sorted by descending ``|trust|``, and ``luminosity_gain`` is the
-        illuminated (positive-trust) area the inference adds."""
+        illuminated (positive-trust) area the inference adds.
+
+        ``target`` switches to the canonical TARGETED chain search
+        (:meth:`_chain_to_target`): a beam-limited (``beam``) climb toward the
+        target via :meth:`wholes`, also returning ranked ``chains``.
+        ``trust_combine`` ('product' default, or 'min' = weakest hop) sets how
+        hop trusts compose; ``rel_type`` (e.g. REL_PARTOF) restricts the
+        relations climbed. At the defaults this is byte-identical to the
+        original open product expansion."""
         # Store selection (LTM consolidation): explicit store= wins; else the
         # unified ltm_store when ltmConsolidation is on; else the RTS.
         store = self._reasoning_store(store)
@@ -14297,16 +14375,30 @@ class ConceptualSpace(Space):
         else:
             sd = int(getattr(store, 'nDim', self._as_idea_vec(query).numel()))
         thr = float(parthood_threshold)
-        # Materialise the per-RELATION-row (idx, A, B, t1) view ONCE -- the
-        # iterator abstracts the two store types (un-baked RTS magnitudes vs
-        # unscaled ternary slots + separate trust) and filters to relation
-        # rows. ``A``/``B`` are the antecedent/consequent at content width.
+        qc0 = self._conform_idea_vec(query, sd)
+        # Targeted mode: the single canonical chain search toward `target`
+        # (shared with the truth-grounded reasoner's isPart climb).
+        if target is not None:
+            chains = ConceptualSpace._chain_to_target(
+                qc0, target, store, parthood_threshold=thr,
+                max_steps=max(1, int(max_steps)),
+                beam=(int(beam) if beam else 8),
+                trust_combine=trust_combine, rel_type=rel_type)
+            derived = [{'concept': c['idea'], 'trust': c['score'],
+                        'source': (c['chain'][-1][0] if c['chain'] else -1),
+                        'parthood': 1.0, 'step': c['steps']} for c in chains]
+            gain = sum(max(0.0, c['score']) for c in chains)
+            return {'derived': derived, 'luminosity_gain': gain,
+                    'chains': chains}
+        # Open expansion (default): each relation fires at most once across the
+        # whole search. ``A``/``B`` are the antecedent/consequent at content
+        # width (the iterator abstracts the two store types).
         rows = [(idx, np1, np2, t1)
                 for (idx, np1, _vp, np2, t1)
-                in self._iter_relation_rows(store)]
+                in ConceptualSpace._iter_relation_rows(store, rel_type)]
         derived = []
         used = set()
-        frontier = [(self._conform_idea_vec(query, sd), float(query_trust))]
+        frontier = [(qc0, float(query_trust))]
         steps = max(1, int(max_steps))
         for step in range(steps):
             next_frontier = []
@@ -14321,7 +14413,8 @@ class ConceptualSpace(Space):
                         continue
                     used.add(idx)
                     b_unscaled = b_row.clone()
-                    new_trust = t1 * t2
+                    new_trust = (t1 * t2 if trust_combine == 'product'
+                                 else min(t1, t2))
                     derived.append({
                         'concept': b_unscaled, 'trust': new_trust,
                         'source': idx, 'parthood': cover, 'step': step})
@@ -15254,10 +15347,7 @@ class ConceptualSpace(Space):
             vspace.normalize("percepts", target="where")
         return vspace
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        pass
+
 class WholeSpace(PerceptualSpace):
     """Codebook-backed symbol stack with swap operations.
 
@@ -20050,10 +20140,7 @@ class WholeSpace(PerceptualSpace):
             return act
         return true_cls().forward(act)
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        pass
+
 class OutputSpace(Space):
     """Maps symbolic vectors to task targets (classification logits, regression values).
 

@@ -1,4 +1,4 @@
-"""Unit tests for Phase 2 Pipeline primitives: ReverseAdapter, CachePoint."""
+"""Unit tests for Phase 2 Pipeline primitives: ReverseAdapter, GrammarMergeGlue."""
 import sys
 from pathlib import Path
 
@@ -12,7 +12,7 @@ sys.path.insert(0, str(_project / "bin"))
 
 import torch
 
-from Models import ReverseAdapter, CachePoint
+from Models import ReverseAdapter
 
 
 # --- Test helpers ---
@@ -65,24 +65,6 @@ def test_reverse_adapter_no_own_parameters():
     # The only parameters should be inner's.
     own = [p for n, p in adapter.named_parameters() if not n.startswith("wrapped.")]
     assert own == [], "ReverseAdapter must not introduce new learnable parameters"
-
-
-# --- CachePoint ---
-
-def test_cache_point_stashes_and_returns_identity():
-    cp = CachePoint()
-    x = torch.tensor([1.0, 2.0, 3.0])
-    out = cp(x)
-    assert out is x
-    assert cp.last is x
-
-
-def test_cache_point_updates_on_each_call():
-    cp = CachePoint()
-    a, b = torch.tensor([1.0]), torch.tensor([2.0])
-    cp(a)
-    cp(b)
-    assert cp.last is b
 
 
 from Models import GrammarMergeGlue  # noqa: E402

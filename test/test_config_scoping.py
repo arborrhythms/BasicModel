@@ -186,14 +186,6 @@ class TestValidateConfig(unittest.TestCase):
         # Should not raise
         Models.BasicModelFactory.validate_config(cfg)
 
-    def test_arir_requires_reconstruction_retired(self):
-        """Retired 2026-05-14: ``<maskedPrediction>`` is gone, so the
-        ARIR/reconstruct coupling validation is gone too.  Within-
-        sentence training is IR-only; ``<reconstruct>`` is now an
-        independent forward-only loss selector.
-        """
-        return  # retired check; see plan §1
-
     def test_symbol_dim_must_match_concept_dim(self):
         """Post 2026-05 ownership rule: WholeSpace owns no SigmaLayer,
         so symbol_dim must match the ConceptualSpace effective output dim.

@@ -24,21 +24,21 @@ _PS_SS_GRAMMAR = textwrap.dedent("""\
     <grammar name="ps_ws_probe">
       <start>S</start>
       <PartSpace>
-        <compose>
+        <Synthesize>
           <rule>WORD = boundary.forward(WORD, WORD)</rule>
-        </compose>
-        <generate>
+        </Synthesize>
+        <Analyze>
           <rule>WORD, WORD = boundary.reverse(WORD)</rule>
-        </generate>
+        </Analyze>
       </PartSpace>
-      <WholeSpace>
+      <Symbolic>
         <compose>
           <rule>S = conjunction.forward(CONJ_L, CONJ_R)</rule>
         </compose>
         <generate>
           <rule>CONJ_L, CONJ_R = conjunction.reverse(S)</rule>
         </generate>
-      </WholeSpace>
+      </Symbolic>
     </grammar>
 """)
 

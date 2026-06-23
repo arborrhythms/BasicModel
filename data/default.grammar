@@ -11,19 +11,19 @@
          uniform). compose = parts to whole (PS reverse); generate = whole
          to parts (PS forward). -->
     <start name="everything">U</start>
-    <compose>
+    <Synthesize>
       <rule>U = stop.forward(U)</rule>
       <rule>U = boundary.forward(U, U)</rule>
       <rule>U = uniform.forward(U, U)</rule>
-    </compose>
-    <generate>
+    </Synthesize>
+    <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
-    </generate>
+    </Analyze>
   </PartSpace>
 
-  <WholeSpace>
+  <Symbolic>
     <!-- The truth-producing relations are the start states; the connective
          / composition outputs are intermediate ideas. -->
     <start name="relative_truth">isEqual_O1</start>
@@ -67,6 +67,6 @@
       <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
       <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
     </generate>
-  </WholeSpace>
+  </Symbolic>
 
 </grammar>

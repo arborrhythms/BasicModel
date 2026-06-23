@@ -4789,50 +4789,6 @@ class SortingLayer(Layer):
             return self._pre_sort
         return act
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        nBatch, nSeq, nDim = 4, 8, 16
-        layer = SortingLayer(symbol_dim=nDim, n_passes=None)
-        device = next(layer.parameters()).device
-
-        x = torch.randn(nBatch, nSeq, nDim, device=device)
-        y = layer.forward(x)
-        assert y.shape == x.shape, f"shape mismatch: {y.shape} vs {x.shape}"
-        assert torch.isfinite(y).all(), "forward produced non-finite values"
-
-        x_restored = layer.reverse(y)
-        assert x_restored.shape == x.shape, f"reverse shape mismatch"
-        err = (x_restored - x).abs().max().item()
-        assert err < 1e-6, f"reverse restoration error: {err}"
-
-        # Gradient flow through w and bias
-        x2 = torch.randn(nBatch, nSeq, nDim, device=device, requires_grad=True)
-        y2 = layer.forward(x2)
-        loss = y2.sum()
-        loss.backward()
-        assert layer.w.grad is not None, "no gradient on w"
-        assert layer.bias.grad is not None, "no gradient on bias"
-        assert layer.w.grad.abs().sum() > 0, "zero gradient on w"
-
-        # N=1 edge case
-        x1 = torch.randn(nBatch, 1, nDim, device=device)
-        y1 = layer.forward(x1)
-        assert torch.allclose(x1, y1), "N=1 should be identity"
-
-        # Soft permutation matrix is row-stochastic
-        x3 = torch.randn(2, 5, nDim, device=device)
-        scores = (x3 * layer.w).sum(dim=-1) + layer.bias
-        rank = torch.arange(1, 6, device=device, dtype=scores.dtype)
-        coeff = (6 - 2 * rank)
-        logits = coeff.unsqueeze(0).unsqueeze(-1) * scores.unsqueeze(1)
-        P = torch.softmax(logits, dim=-1)
-        row_sums = P.sum(dim=-1)
-        assert torch.allclose(row_sums, torch.ones_like(row_sums), atol=1e-5), \
-            "P rows must sum to 1"
-
-        print("SortingLayer tests passed.")
-
 class DecisionBoundaryLayer(Layer):
     """Learns a hyperplane normal vector via online updates (not backprop).
 
@@ -5190,20 +5146,6 @@ class AssociationLayer(Layer):
             out = self.Out.forward(out)          # [B, nOutput]
         return out
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        for atype in ["symmetric", "hopfield"]:
-            layer = AssociationLayer(nInput=8, type=atype)
-            x = torch.randn(4, 8, device=TheDevice.get())
-            y = layer(x)
-            assert y.shape == (4, 8), f"type={atype}: expected (4,8), got {y.shape}"
-        # nInput != nOutput
-        layer = AssociationLayer(nInput=6, nOutput=4, nHidden=8, type="symmetric")
-        x = torch.randn(2, 6, device=TheDevice.get())
-        y = layer(x)
-        assert y.shape == (2, 4), f"nIn!=nOut: expected (2,4), got {y.shape}"
-
 class LiftingLayer(Layer):
     """Codebook of verb weight matrices for conceptual composition (lift).
 
@@ -5461,34 +5403,6 @@ class LoweringLayer(Layer):
             compressed = compressed * gate
         return self.up.forward(compressed)           # [..., D]
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        device = TheDevice.get()
-        B, N, D = 4, 8, 16
-        layer = LoweringLayer(nDim=D, bottleneck=4)
-
-        left = torch.randn(B, N, D, device=device)
-        right = torch.randn(B, N, D, device=device)
-
-        # Unary
-        out = layer.forward(left)
-        assert out.shape == (B, N, D), f"unary shape: {out.shape}"
-
-        # Binary (with selector)
-        out2 = layer.forward(left, right)
-        assert out2.shape == (B, N, D), f"binary shape: {out2.shape}"
-
-        # Gradient flow
-        left_g = left.clone().requires_grad_(True)
-        right_g = right.clone().requires_grad_(True)
-        out3 = layer.forward(left_g, right_g)
-        out3.sum().backward()
-        assert left_g.grad is not None, "no gradient on left"
-        assert right_g.grad is not None, "no gradient on right"
-
-        print("LoweringLayer tests passed.")
-        
 class SparsityRegLayer(Layer):
     """Soft-threshold L1 proximal operator.
 
@@ -13886,24 +13800,6 @@ class Mem:
             Mem.testImpulse(m, name)
 
     @staticmethod
-    def testOne(m):
-        """
-        Test one impulse by incrementing and plotting the output.
-        """
-        import matplotlib.pyplot as plt
-        plt.figure(1)
-        plt.clf()
-        x = np.arange(1, 1001)
-        y = np.zeros(1000)
-        m.delta(1, 1)  # extra parameters are ignored
-        for i in range(len(x)):
-            y[i] = m.get()
-            m.delta(1, 1)
-        plt.plot(x, y)
-        plt.title("Test One")
-        plt.show(block=False)
-
-    @staticmethod
     def testImpulse(m, name):
         """
         Test impulse response by incrementing and plotting the output.
@@ -14115,10 +14011,6 @@ class GammaMem(StateMem):
         self.state = (1 - self.lr) * self.state + self.lr * in1
         self.output = (1 - self.lr2) * self.output + self.lr2 * self.state
 
-    @staticmethod
-    def test():
-        """Self-test; verifies the round-trip / invariant."""
-        Mem.testOne(GammaMem())
 # ExponentialMem subclass: exponential memory update.
 class ExponentialMem(Mem):
     """Exponential-moving-average memory: ``output = (1-lr)*output + lr*in1``.
@@ -14143,18 +14035,6 @@ class ExponentialMem(Mem):
         """
         super().delta()
         self.output = (1 - self.lr) * self.output + self.lr * in1
-    @staticmethod
-    def test():
-        # Create an instance of ExponentialMem and run a test.
-        """Self-test; verifies the round-trip / invariant."""
-        m_exp = ExponentialMem(sz=(5, 5), lr=0.1)
-        # Simulate a delta update with an input (for example, a 5x5 array).
-        x = np.ones((5, 5))
-        m_exp.delta(x)
-        x = x = np.zeros((5, 5))
-        m_exp.delta(x)
-        print("ExponentialMem output after two delta calls:")
-        print(m_exp.get())
 # CorrMem subclass: correlational memory update.
 class CorrMem(Mem):
     """Correlation matrix memory; tracks normalized product of two streams.

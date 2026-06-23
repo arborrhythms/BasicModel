@@ -62,10 +62,6 @@ def _fresh_model(config_path=_CONFIG):
 class TestMMBoolean(unittest.TestCase):
     """End-to-end BasicModel runs of MM_boolean.xml."""
 
-    def test_implicit_classification(self):
-        """Retired 2026-05-14: old training-loop smoke test pre-dating K-axis retirement; autograd graph not detached between IR-only forward calls."""
-        return  # AR-specific behaviour; covered elsewhere or no longer applicable
-
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     @unittest.expectedFailure  # convergence under bare-PiLayer C-space_role pending; revisit after explicit wrapper lands
     def test_explicit_test_sentences(self):

@@ -6,14 +6,14 @@
        MM_20M.xml for mereology experiments (it is a reference config pinned by
        ~19 test files); flip knobs HERE instead.
 
-       Derived from _d0.xml (the radix-synthesis sibling of MM_20M): PartSpace
+       A radix-synthesis sibling of MM_20M: PartSpace
        <synthesis>radix</synthesis> drives the PerceptStore spell-out, so an
        unfamiliar word emits a RUN of byte/prefix percepts (the order-0 PARTS
        of the word-as-WHOLE). <mereologyRaise>true</mereologyRaise> turns on the
        gated, order-0 word-whole binding (a lexer token's spell-out pids bind to
        ONE shared whole, keyed by surface text) so the whole accumulates > 1
        part and maybe_raise_order fires (S3). With the flag OFF this file would
-       behave exactly like _d0.xml (byte-identical), so the gate is the only
+       behave exactly like the un-gated radix baseline (byte-identical), so the gate is the only
        behavioural delta.
 
        STATUS: S3 (the live many-to-one binding + raise) is exercised by

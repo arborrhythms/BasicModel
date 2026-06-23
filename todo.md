@@ -12,19 +12,14 @@
 * Compact-symbol configs (WS nOutputDim=8) need a learned symbol_dim→concept_dim expander (or move to tall WS) — else the decode consumer falls back to no-op. Most configs are still WS=8 (Stage 6 not global).
 * Already-faithful inverses (reference, no work): not, non, tense, exist, symbolize.
 
-### Reasoning (D2)
-* Wire reasoning into a live forward/train path: reason() / consequents() / verify_relation() are built + tested (~70 tests) but have ZERO production callers. Needs QA framing + answer losses + a consumer to train it (the global-attention consumer it would use already landed).
-* PI-then-Sigma predictor routing conditioning is built but unpopulated.
-* Subsymbolic STM round-trip primitive not wired into the live forward.
-* PartSpace per-word ground-truth cursor (next_word) is inert / unwired.
+### Reasoning — IN PROGRESS (truth-grounded reasoning)
+* Implementing per `doc/plans/2026-06-23-truth-grounded-reasoning.md`: queries reduce to the hard isTrue()/isPart() tools driven by a small NeuralToolUser; soft guesswork (the query() .where-read over the truth-space + the intervening-idea generator), hard deduction; verified ideas materialize to LTM. Phases 0-7, gated `<queryReasoning>`, full-suite-gated.
+* Reasoning-adjacent inert primitives (NOT part of the plan): PI-then-Sigma predictor routing conditioning is built but unpopulated; the subsymbolic STM round-trip primitive is not wired into the live forward; the PartSpace per-word ground-truth cursor (next_word) is inert / unwired.
 
 ### MM_20M infra
 * Apply the verified MPS r0_0 inductor codegen monkeypatch (pop().root.cache_clear() in MetalKernel.codegen_body, as a util.py monkeypatch) so compiled-MPS trains; currently MPS falls back to eager only. (Combine-cap + butterfly=false fix IS applied.)
 * MM_20M blank reconstruction: synthesis=bpe never stashes _forward_input → empty ws row map → blanks. Fix = synthesis=radix OR an empty-taxonomy → PS-table fallback in _reverse_decode_one.
 * MM_20M XOR-supervision: lexer=byte discards the XOR labels (diagnosed; config-only fix not applied to MM_20M).
-
-### Recently resolved
-* DONE 2026-06-23: verbSpectrum/adverbEigEdit are live through grammar ops. `verb` forces the sparse spectral operator, `adverb` forces the eigenmodifier, default/complete include both, and shamatha excludes both.
 
 ### Truth / Ideas tail
 * Workstream G: episodic .events exemplar store (persisted CS .events / PS .what+.where+.when) for truth grounding — no owner yet.
@@ -36,16 +31,12 @@
 * load_weights only bridges the container move (symbolSpace.* → symbolSpace.subspace.*). Bridge the SyntacticLayer re-home, the WS-tall reshape, and the _concept_* / space_role renames — else old checkpoints can't load (regenerate or migrate).
 
 ### Cleanup / loose ends
-* DONE 2026-06-22: removed the legacy NeuralToolUser hard-parse executor; the signal-router soft-superposition path remains live.
-* DONE 2026-06-22: topk_priming_mask crash and runEpoch runtime-split raise are covered by regression tests (`test_topk_priming_codebook_growth.py`, `test_runtime_split_ingestion.py`).
-* DONE 2026-06-22: `<reconstructFromIdea>` clears the forward grammar/routing trace and rebuilds reverse rules from the idea snapshot; `conceptualize` remains the relation-table constructor, not the vector decoder.
 * WholeSpace stack-route uses an eager Python SHIFT loop + a hardcoded reduce rule instead of the router's learned scoring.
-* DONE 2026-06-22: `<serial>` now governs serial traversal; `symbolicOrder > 1` is accepted as a symbolic / relational loop budget instead of silently behaving as 1.
 * Cosmetic: residual 'tier' mentions (mm5m SVG diagram), frozen doc/old archives.
 
 =========================================================================================
 
-* queries and reasoning
+* queries and reasoning → now planned + in progress: doc/plans/2026-06-23-truth-grounded-reasoning.md
 
 
 * Compile is failing for python bin/Models.py data/MM_20M.xml
@@ -119,13 +110,3 @@ with specifically-characterized information (concrete details)
 * The multiple valence of metaphor collapses when one of the alternatives is loved or feared. often the autistic mind is literal due to massive amounts of fear.
 * Any improvement to machine cognition must accelerate kindness or altruism instead of simply increasing performance, otherwise the uncaring architecture that we currently have will become more dangerous. Further, it is necessary to increase that kind motivation (e.g. empathy in the cost function) since LLM performance is increasing all the time. In other words, ananda in the sense of love for all beings must be more important than chit for the cost function, whereas the current situation is implementing ananda by maximizing chit and then putting a few of Asimov's guardrails on the output, which is a famous failure mode in terms of it's loopholes. Prohibition of self-knowledge is a likely failure mode, in that it may prevent an enlightened view of self and force an egocentric view of self.
 
-### Reasoning System
-* Sigma-based truth comparison
-  `Basis.kernel_overlap()` implements a Gaussian kernel `exp(-d$^2$ / 2($\sigma$x$^2$ + $\sigma$y$^2$))` that treats each stored truth as a region rather than a point. `Basis.activeSigma` is currently `None` everywhere -- a declared slot that nothing populates. `ErgodicLayer.sigma` tracks gradient variance for exploration scheduling, which is a different quantity.
-  To enable kernel-based truth matching: populate `activeSigma` during forward passes (e.g. from CBOW per-word sigma in `Embedding`, or activation variance across a batch), store it alongside each truth in `TruthLayer`, and switch `query()` / `ground()` / `field()` to `kernel_overlap`. In ergodic mode, gradient variance could inform $\sigma$ as a proxy -- high gradient variance (unstable region) $\rightarrow$ larger $\sigma$ (broader match tolerance).
-* Derivation depth cap
-  Default 3 steps in `ground()`. Expose as a config parameter; the right value depends on TruthSet density.
-* Grammar rule registry
-  Which two-argument methods on `SyntacticLayer` are valid for `extrapolate()`? A registry of eligible methods and their approximate invertibility status would help. Currently hardcoded to `['union', 'intersection', 'equals', 'part']`.
-* TruthSet scale
-  `max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.

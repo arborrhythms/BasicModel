@@ -29,14 +29,14 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
     <grammar name="scoped_starts_probe">
       <PartSpace>
         <start name="everything">U</start>
-        <compose>
+        <Synthesize>
           <rule>U = boundary.forward(U, U)</rule>
-        </compose>
-        <generate>
+        </Synthesize>
+        <Analyze>
           <rule>U, U = boundary.reverse(U)</rule>
-        </generate>
+        </Analyze>
       </PartSpace>
-      <WholeSpace>
+      <Symbolic>
         <start name="relative_truth">isEqual_O1</start>
         <start name="absolute_truth">exist_O1</start>
         <compose>
@@ -47,7 +47,7 @@ _SCOPED_STARTS_GRAMMAR = textwrap.dedent("""\
           <rule>isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
           <rule>exist_I1 = exist.reverse(exist_O1)</rule>
         </generate>
-      </WholeSpace>
+      </Symbolic>
     </grammar>
 """)
 
@@ -56,14 +56,14 @@ _TOP_LEVEL_START_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="top_start_probe">
       <start>S</start>
-      <WholeSpace>
+      <Symbolic>
         <compose>
           <rule>S = conjunction.forward(S, S)</rule>
         </compose>
         <generate>
           <rule>S, S = conjunction.reverse(S)</rule>
         </generate>
-      </WholeSpace>
+      </Symbolic>
     </grammar>
 """)
 

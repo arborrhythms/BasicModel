@@ -186,6 +186,15 @@
            idea snapshot to infer which reverse operations should run. Default
            false preserves the ordinary cached-derivation reverse path. -->
       <xs:element name="reconstructFromIdea" type="xs:boolean" minOccurs="0"/>
+      <!-- Truth-grounded reasoning consumer (doc/plans/2026-06-23-truth-
+           grounded-reasoning.md). When true, a query (a query="true" rule)
+           is routed to the TruthGroundedReasoner / NeuralToolUser, which
+           reduces it to the hard isTrue(A) / isPart(A,B) tools, runs the
+           candidate-limited chain search, and emits a posture
+           (TRUE/FALSE/UNKNOWN/BOTH) + chain instead of the generative infer().
+           Default false -> queries are treated as ordinary generative prompts
+           (byte-identical). -->
+      <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
       <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
            mereological-order-raising.md "Overcomplete tiling bounded by the
            basic level"). When the part tower matches an input against its
@@ -673,6 +682,13 @@
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Weight of the truth-grounded reasoning answer (policy) loss
+           (doc/plans/2026-06-23-truth-grounded-reasoning.md, Phase 5): NLL on
+           the [0,1] proof-success score vs the gold answer, backpropagated
+           through the SOFT route (the intervening-idea generator's query head +
+           the attention alpha) only, never the hard deduction. Default 0.0 =
+           off (no answer loss term). Requires <queryReasoning>. -->
+      <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>

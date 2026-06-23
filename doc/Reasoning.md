@@ -183,11 +183,13 @@ relative META edges are documented in
 ## Contemplative Awareness Methods
 
 Four methods on `BaseModel` characterizing stages of contemplative awareness
-as spatial/computational properties. `Contiguous()` and `Continuous()` are
-implemented (each returns a measure in `[-1, +1]` over the back-projected
-leaf geometry; see `bin/Mereology.py`). `Peaceful()` and `Done()` remain
-stubs that raise `NotImplementedError` --- they define the target
-characterization, not the implementation.
+as spatial/computational properties. `Contiguous()`, `Continuous()`, and
+`Peaceful()` are implemented (each returns a measure in `[-1, +1]`; see
+`bin/Mereology.py`). `Peaceful()` reads the TruthLayer and returns
+`valence-symmetry × luminosity-uniformity` (balanced affirming/denying pole
+masses × uniformly-held per-proposition magnitude; `0.0` when no truths are
+stored). `Done()` remains a stub that raises `NotImplementedError` --- it
+defines the target characterization, not the implementation.
 
 | Method | Stage | Characterization |
 |--------|-------|------------------|

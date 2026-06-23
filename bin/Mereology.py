@@ -6,7 +6,7 @@ measures that share it:
 
 * `Contiguous()` -- one-pointedness via `Ops.corner_overlap`.
 * `Continuous()` -- empirical ε-δ continuity via `Ops.epsilon_delta`.
-* `Peaceful()`   -- TruthLayer-luminosity uniformity (placeholder).
+* `Peaceful()`   -- valence symmetry x TruthLayer-luminosity uniformity.
 * `Area()`       -- sum of leaf hyperrectangle volumes.
 * `Luminosity()` -- totalArea − pairwise(overlap × DoT_disagreement).
 
@@ -1154,9 +1154,58 @@ class Mereology:
             negative valence -- no bias toward pleasant or unpleasant
             content in the gradient signal.
 
-        Computationally, Peaceful() should measure the balance between
-        dissonance and consonance across the TruthLayer and verify that
-        the model does not preferentially attend to or avoid any
-        particular valence.
+        Computationally, Peaceful() measures the balance between dissonance
+        and consonance across the TruthLayer and verifies that the model does
+        not preferentially attend to or avoid any particular valence.
+
+        Returns a measure in ``[-1, +1]`` (matching :meth:`Contiguous` /
+        :meth:`Continuous`): the product of two factors, mapped from ``[0, 1]``
+        to ``[-1, 1]``:
+
+          * ``symmetry``   -- valence balance ``1 - |aP - aN| / (aP + aN)``,
+                              the affirming / denying pole masses held
+                              equanimously (no bias toward pleasant /
+                              unpleasant content). Equanimity holds BOTH
+                              valences -- it does not remove feelings (the
+                              nihilist's mistake), it balances them.
+          * ``uniformity`` -- ``1 - std/mean`` of the per-proposition
+                              magnitudes: luminosity uniformly high across
+                              stored propositions (One Taste).
+
+        (Genuine self-contradiction is NOT measured by
+        :meth:`TruthLayer.assess`'s aggregate ``conflict``, which over-counts
+        a set that merely holds both positive AND negative INDEPENDENT truths;
+        such a set is equanimous, not conflicted, so conflict is excluded.)
+
+        ``+1`` = peaceful (balanced valence, uniform luminosity); ``-1`` =
+        agitated (valence-biased or wildly uneven); ``0.0`` = unknown (no
+        stored truths to decide on).
         """
-        raise NotImplementedError
+        truth_layer = self._peaceful_truth_layer()
+        if truth_layer is None:
+            return 0.0
+        count = getattr(truth_layer, 'count', None)
+        n = int(count.item()) if torch.is_tensor(count) else int(count or 0)
+        truths = getattr(truth_layer, 'truths', None)
+        if n <= 0 or not torch.is_tensor(truths):
+            return 0.0
+        s = truths[:n].mean(dim=-1)                       # per-truth signed DoT
+        aP = float(torch.relu(s).mean().item())           # affirming pole mass
+        aN = float(torch.relu(-s).mean().item())          # denying pole mass
+        mag = s.abs()
+        mean_mag = float(mag.mean().item())
+        if mean_mag <= 1e-9:
+            return 0.0                                    # silent -> unknown
+        symmetry = 1.0 - abs(aP - aN) / (aP + aN + 1e-9)
+        cv = float(mag.std(unbiased=False).item()) / (mean_mag + 1e-9)
+        uniformity = max(0.0, 1.0 - cv)
+        return max(-1.0, min(1.0, 2.0 * symmetry * uniformity - 1.0))
+
+    def _peaceful_truth_layer(self):
+        """The TruthLayer this contemplative measure reads (on WholeSpace),
+        or ``None`` when none is reachable."""
+        ws = getattr(self, 'wholeSpace', None)
+        tl = getattr(ws, 'truth_layer', None) if ws is not None else None
+        if tl is None:
+            tl = getattr(self, 'truth_layer', None)
+        return tl

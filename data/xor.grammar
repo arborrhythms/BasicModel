@@ -15,19 +15,19 @@
          (PS reverse / synthesis); generate = whole to parts (PS forward
          / analysis). -->
     <start name="everything">U</start>
-    <compose>
+    <Synthesize>
       <rule>U = stop.forward(U)</rule>
       <rule>U = boundary.forward(U, U)</rule>
       <rule>U = uniform.forward(U, U)</rule>
-    </compose>
-    <generate>
+    </Synthesize>
+    <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
-    </generate>
+    </Analyze>
   </PartSpace>
 
-  <WholeSpace>
+  <Symbolic>
     <!-- Minimal XOR symbolic grammar: each connective declares its input
          roles (op_I[n]) and output role (op_O1); the operator outputs are
          the start states. Tier / arity / invertibility derive from each
@@ -48,6 +48,6 @@
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
       <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
     </generate>
-  </WholeSpace>
+  </Symbolic>
 
 </grammar>

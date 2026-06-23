@@ -262,9 +262,6 @@ class TestXORGrammarLanguageLayerIntegration(unittest.TestCase):
             "Grammar 'conjunction'/'disjunction' rule_ids must be "
             "attached to some binary space_role")
 
-    def test_chart_compose_fires_on_forward_pass(self):
-        """Retired 2026-05-14: subsymbolicOrder=2 + useGrammar='all' shape contract no longer matches IR-only forward; chart-compose wiring covered by test/test_compose_chart.py."""
-        return  # AR-specific behaviour; covered elsewhere or no longer applicable
 
 
 if __name__ == "__main__":

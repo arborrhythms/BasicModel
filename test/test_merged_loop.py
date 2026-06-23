@@ -77,11 +77,3 @@ def _run_single_batch(model):
             model.forward(x)
 
 
-def test_unified_loop_runs_conceptualorder_iterations():
-    """Retired 2026-05-14: depends on pipeline RT set_sigma path retired with AR mode."""
-    return  # AR-specific behaviour; covered elsewhere or no longer applicable
-
-
-def test_unified_loop_conceptualorder_zero_pre_seed_only():
-    """Retired 2026-05-14: depends on pipeline RT set_sigma path retired with AR mode."""
-    return  # AR-specific behaviour; covered elsewhere or no longer applicable

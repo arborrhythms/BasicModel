@@ -11,19 +11,19 @@
          meronymic ops are added when doc/plans/2026-04-28-shamatha-speech-
          contiguity-handoff.md is implemented. -->
     <start name="everything">U</start>
-    <compose>
+    <Synthesize>
       <rule>U = stop.forward(U)</rule>
       <rule>U = boundary.forward(U, U)</rule>
       <rule>U = uniform.forward(U, U)</rule>
-    </compose>
-    <generate>
+    </Synthesize>
+    <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
-    </generate>
+    </Analyze>
   </PartSpace>
 
-  <WholeSpace>
+  <Symbolic>
     <start name="relative_truth">isEqual_O1</start>
     <start name="relative_truth">part_O1</start>
 
@@ -57,6 +57,6 @@
       <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
       <rule>query_I1 = query.reverse(query_O1)</rule>
     </generate>
-  </WholeSpace>
+  </Symbolic>
 
 </grammar>

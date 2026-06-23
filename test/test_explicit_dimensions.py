@@ -17,7 +17,6 @@ when we replace ``-1`` with explicit widths these must all keep passing
 elsewhere)::
 
     data/BasicModel.xml      data/MM_400M.xml
-    data/MM_xor_step1.xml    data/MM_xor_step2.xml
     data/MM_xor_step3.xml    data/MM_xor_step4.xml
     data/XOR_exact.xml       data/XOR_spaces.xml
     data/XOR_recon.xml       data/XOR_pos.xml

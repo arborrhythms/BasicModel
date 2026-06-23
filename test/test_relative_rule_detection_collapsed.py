@@ -26,7 +26,7 @@ if _BIN not in sys.path:
 _COLLAPSED_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="rel_collapse_probe">
-      <WholeSpace>
+      <Symbolic>
         <start name="relative_truth">isEqual_O1</start>
         <start name="relative_truth">isPart_O1</start>
         <start name="absolute_truth">exist_O1</start>
@@ -40,7 +40,7 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
           <rule query="false">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
           <rule>exist_I1 = exist.reverse(exist_O1)</rule>
         </generate>
-      </WholeSpace>
+      </Symbolic>
     </grammar>
 """)
 
@@ -49,7 +49,7 @@ _COLLAPSED_GRAMMAR = textwrap.dedent("""\
 _REL_T_NO_NAME_GRAMMAR = textwrap.dedent("""\
     <?xml version="1.0"?>
     <grammar name="rel_t_probe">
-      <WholeSpace>
+      <Symbolic>
         <start>REL_T</start>
         <compose>
           <rule>REL_T = isEqual.forward(NP_A, NP_B)</rule>
@@ -57,7 +57,7 @@ _REL_T_NO_NAME_GRAMMAR = textwrap.dedent("""\
         <generate>
           <rule>NP_A, NP_B = isEqual.reverse(REL_T)</rule>
         </generate>
-      </WholeSpace>
+      </Symbolic>
     </grammar>
 """)
 

@@ -275,5 +275,60 @@ class TestGaussianKernelOverlap(unittest.TestCase):
         self.assertLessEqual(_DEFAULT_SUBSYMBOLIC_SIGMA, 1.0)
 
 
+# ---------------------------------------------------------------------------
+# Peaceful() -- valence symmetry x luminosity uniformity over the TruthLayer
+# ---------------------------------------------------------------------------
+
+class TestPeaceful(unittest.TestCase):
+    @staticmethod
+    def _model(rows, with_ws=True):
+        """A Mereology instance (constructed via __new__ to skip __init__)
+        exposing wholeSpace.truth_layer with `rows` recorded -- truths hand-set
+        for deterministic control of the per-truth signed DoT."""
+        import types
+        from Layers import TruthLayer
+
+        class _M(Mereology):
+            pass
+        m = _M.__new__(_M)
+        if not with_ws:
+            m.wholeSpace = None
+            return m
+        tl = TruthLayer(nDim=4, max_truths=16)
+        for i, vec in enumerate(rows):
+            tl.truths[i] = torch.tensor(vec, dtype=torch.float32)
+        tl.count.fill_(len(rows))
+        m.wholeSpace = types.SimpleNamespace(truth_layer=tl)
+        return m
+
+    def test_empty_truthset_is_unknown(self):
+        self.assertEqual(self._model([]).Peaceful(), 0.0)
+
+    def test_balanced_uniform_is_peaceful(self):
+        # Balanced valence (+/-), uniform magnitude -> +1 (One Taste).
+        m = self._model([[0.6] * 4, [-0.6] * 4, [0.6] * 4, [-0.6] * 4])
+        self.assertAlmostEqual(m.Peaceful(), 1.0, places=5)
+
+    def test_valence_bias_is_not_peaceful(self):
+        # All-positive valence -> symmetry 0 -> -1 (preferential attention).
+        self.assertAlmostEqual(self._model([[0.6] * 4] * 4).Peaceful(),
+                               -1.0, places=5)
+
+    def test_uneven_luminosity_lowers_peace(self):
+        balanced = self._model([[0.6] * 4, [-0.6] * 4]).Peaceful()
+        uneven = self._model([[0.9] * 4, [-0.1] * 4]).Peaceful()
+        self.assertLess(uneven, balanced)
+
+    def test_in_range(self):
+        for rows in ([[0.6] * 4, [-0.6] * 4], [[0.6] * 4] * 3,
+                     [[0.9] * 4, [-0.1] * 4, [0.2] * 4]):
+            v = self._model(rows).Peaceful()
+            self.assertGreaterEqual(v, -1.0)
+            self.assertLessEqual(v, 1.0)
+
+    def test_no_truth_layer_is_unknown(self):
+        self.assertEqual(self._model([], with_ws=False).Peaceful(), 0.0)
+
+
 if __name__ == '__main__':
     unittest.main()
