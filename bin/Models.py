@@ -294,6 +294,10 @@ class BaseModel(Mereology, nn.Module):
     # ``InterSentenceLayer.consume_inter_loss`` returns a per-sentence-mean
     # MSE which ``runBatch`` weights by this before adding to ``TheError``.
     inter_loss_weight = 0.1
+    # The InfoNCE next-idea contrastive term weight + the prediction-trial
+    # fraction; both default 0.0 -> the feature is off -> byte-identical.
+    inter_contrastive_weight = 0.0
+    prediction_trial_ratio = 0.0
 
     @staticmethod
     def load_config(config_path=None):
@@ -794,14 +798,26 @@ class BaseModel(Mereology, nn.Module):
         self.reconstruct_from_idea = bool(TheXMLConfig.get(
             "architecture.reconstructFromIdea", default=False))
 
-        # Truth-grounded reasoning consumer (doc/plans/2026-06-23-truth-
-        # grounded-reasoning.md). When on, a query is routed to the
-        # TruthGroundedReasoner (reduce to hard isTrue/isPart tools, run the
-        # candidate-limited chain search, emit a posture) instead of the
-        # generative infer(). Dark until the Phase-5 consumer reads it; default
-        # off -> queries are ordinary generative prompts (byte-identical).
-        self.query_reasoning = bool(TheXMLConfig.get(
-            "architecture.queryReasoning", default=False))
+        # Truth-grounded reasoning, N-step (doc/plans/2026-06-23-reasoning-
+        # live-wiring.md). reasoning_iterations N is the chain depth: N>0 routes
+        # a query to the recurrent tool-use loop (the soft policy over the hard
+        # isTrue/isPart tools) instead of the generative infer(). Step 3: the
+        # default is now 1 (reasoning ON, depth-1, by default) -- a query routes
+        # to the reasoner at depth 1 on every config; set
+        # <reasoningIterations>0</reasoningIterations> for the old (off) behavior.
+        # This is LOSS-identical for training (the answer/predict-next loss
+        # weights default 0.0), not behavior-identical (it changes inference/
+        # serve-time query routing). The deprecated <queryReasoning> alias: true
+        # ⇒ depth 10.
+        _ri = TheXMLConfig.get("architecture.reasoningIterations", default=None)
+        if _ri is None:
+            self.reasoning_iterations = (
+                10 if bool(TheXMLConfig.get("architecture.queryReasoning",
+                                            default=False)) else 1)
+        else:
+            self.reasoning_iterations = max(0, int(_ri))
+        # Back-compat: code/tests that gate on the boolean still work.
+        self.query_reasoning = self.reasoning_iterations > 0
 
         # Serial word-at-a-time object/meta (doc/specs/mereological-order-
         # raising.md "Serial-mode word-at-a-time loop"; Alec 2026-06-17). When
@@ -930,6 +946,18 @@ class BaseModel(Mereology, nn.Module):
         # layer is present (``<training><sentencePrediction>`` true).
         self.inter_loss_weight = float(
             TheXMLConfig.training("interLossWeight", 0.1) or 0.1)
+        # InfoNCE next-idea contrastive term weight + temperature (the discourse
+        # layer accumulates it; runBatch consumes + weights it). 0.0 -> MSE-only.
+        self.inter_contrastive_weight = float(
+            TheXMLConfig.training("interContrastiveWeight", 0.0) or 0.0)
+        self.inter_contrastive_temp = float(
+            TheXMLConfig.training("interContrastiveTemp", 0.1) or 0.1)
+        # Trial-split predictive training: fraction of training BATCHES run as
+        # PURE next-idea prediction (recon terms zeroed). 0.0 -> every trial is
+        # reconstruct -> byte-identical.
+        self.prediction_trial_ratio = float(
+            TheXMLConfig.get("architecture.predictionTrialRatio",
+                             default=0.0) or 0.0)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -992,6 +1020,19 @@ class BaseModel(Mereology, nn.Module):
         # stays callable explicitly (tests / serve) after data is loaded.
         self._ltm_provisioned = False
 
+        # Phase C / Step 2: when reasoning trains under the answer-policy loss OR
+        # the next-idea-prediction loss, build the InterveningIdeaGenerator +
+        # GlobalAttention + NextIdeaScorer NOW -- before getOptimizer runs at
+        # train start -- so their params join the optimizer and learn. Guarded:
+        # both weights 0 builds nothing (no new params, byte-identical).
+        if (float(getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0
+                or float(getattr(self, "predict_next_loss_weight", 0.0)
+                         or 0.0) > 0.0):
+            try:
+                self._reasoning_tooluser(self._reasoning_spaces())
+            except Exception:
+                pass
+
         return cfg
 
     def create(self, **kwargs):
@@ -1025,7 +1066,14 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("reading_attention", "global_attention"):
+        # ``_intervening_generator`` (the reasoning query head) + ``_reasoning_ga``
+        # are likewise model-level nn.Modules (Phase C); they must be optimized so
+        # the answer-policy loss can actually train the soft route. The data_ptr
+        # dedup handles ``_reasoning_ga`` aliasing ``global_attention``; gate-off
+        # => the attrs are unset => no extra params (byte-identical).
+        for _att_name in ("reading_attention", "global_attention",
+                          "_intervening_generator", "_reasoning_ga",
+                          "_predict_next_scorer"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -3703,7 +3751,8 @@ class BasicModel(BaseModel):
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None, progress=None,
-                 superposition_temperature=None, exploration_trial=False):
+                 superposition_temperature=None, exploration_trial=False,
+                 trial_mode="reconstruct"):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         ``superposition_temperature`` (two-pass learning): when not None, the
@@ -4169,6 +4218,28 @@ class BasicModel(BaseModel):
             # absent (absolute-only no-op), eval-time, weight off, or no
             # scored sentence this batch.
             inter_loss = self._discourse_inter_loss() if train else None
+            # InfoNCE next-idea contrastive term (the discourse layer's second
+            # accumulator; populated during the forward boundary observe).
+            inter_contrastive = None
+            if train and self.symbolSpace is not None:
+                _disc = getattr(self.symbolSpace, "discourse", None)
+                if _disc is not None and hasattr(
+                        _disc, "consume_inter_contrastive_loss"):
+                    inter_contrastive = _disc.consume_inter_contrastive_loss()
+
+            # Trial-split: on a PURE next-idea PREDICTION trial, zero the
+            # reconstruction + auxiliary terms so the next-idea signal (inter
+            # MSE + InfoNCE contrastive) is the SOLE gradient. prediction_trial_
+            # ratio == 0 -> trial_mode is always "reconstruct" -> this never
+            # fires -> byte-identical. Done post-forward so the forward stays
+            # mode-independent (no Dynamo recompiles).
+            if train and trial_mode == "predict":
+                _z = torch.zeros((), device=TheDevice.get())
+                lossOut, lossIn = _z, _z
+                sbow = None
+                lossRev = None
+                arma_loss = None
+                intra_loss = None
 
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
             if lossRev is not None:
@@ -4199,6 +4270,14 @@ class BasicModel(BaseModel):
                     weight=self.inter_loss_weight,
                     space="DiscourseSpace", category="inter",
                 )
+            if inter_contrastive is not None:
+                totalLoss = (totalLoss
+                             + self.inter_contrastive_weight * inter_contrastive)
+                TheError.add(
+                    "inter_contrastive", inter_contrastive,
+                    weight=self.inter_contrastive_weight,
+                    space="DiscourseSpace", category="inter",
+                )
             # Phase 3: every stage's WholeSpace.forward wrote its
             # auxiliary terms to ``vspace.errors``; ``copy_context`` shares
             # a single Error instance through the pipeline, so the terminal
@@ -4212,6 +4291,42 @@ class BasicModel(BaseModel):
                         TheError.add(name, tensor, weight=weight,
                                      space=space, category=category)
                 pipeline_errors.clear()
+
+            # Phase C: truth-grounded answer-policy loss -- trains the soft
+            # reasoning route (the InterveningIdeaGenerator query head + the
+            # GlobalAttention scorer) against store-derived (A, B, gold)
+            # examples. The hard deduction is never differentiated (the bridge
+            # mask is detached). Default weight 0.0 -> skipped -> byte-identical;
+            # also a no-op when the generator/store is absent.
+            if train and float(
+                    getattr(self, "answer_loss_weight", 0.0) or 0.0) > 0.0:
+                try:
+                    a_loss = self._answer_policy_loss()
+                except Exception:
+                    a_loss = None          # a reasoning hiccup must not abort training
+                if a_loss is not None:
+                    totalLoss = totalLoss + self.answer_loss_weight * a_loss
+                    TheError.add(
+                        "answer", a_loss,
+                        weight=self.answer_loss_weight,
+                        space="SymbolSpace", category="policy")
+
+            # Step 2: the next-idea POLICY loss -- trains the {arma, retrieval,
+            # deduction} blend to predict the observed next end-state root.
+            # Default weight 0.0 -> skipped -> byte-identical; no-op without a
+            # >=2-entry discourse chain.
+            if train and float(
+                    getattr(self, "predict_next_loss_weight", 0.0) or 0.0) > 0.0:
+                try:
+                    pn_loss = self._predict_next_loss()
+                except Exception:
+                    pn_loss = None
+                if pn_loss is not None:
+                    totalLoss = totalLoss + self.predict_next_loss_weight * pn_loss
+                    TheError.add(
+                        "predict_next", pn_loss,
+                        weight=self.predict_next_loss_weight,
+                        space="SymbolSpace", category="policy")
 
             # Truth-modulated loss: delegated to SymbolSpace since the
             # TruthLayer lives there.  SymbolSpace handles the empty-store
@@ -5034,6 +5149,16 @@ class BasicModel(BaseModel):
                 # one ordinary pass (superposition_temperature=None).
                 _two_pass = bool(training
                                  and getattr(self, 'two_pass_learning', False))
+                # Trial-split: a deterministic fraction of TRAINING batches run
+                # as pure next-idea PREDICTION trials (recon terms zeroed); the
+                # rest reconstruct. Bresenham-style ratio (no RNG -> no test
+                # flakiness); ratio 0 -> always "reconstruct" -> byte-identical.
+                # Decided ONCE per sentence so both two-pass passes agree.
+                _ptr = float(getattr(self, 'prediction_trial_ratio', 0.0) or 0.0)
+                _trial_mode = ("predict"
+                               if (training and _ptr > 0.0
+                                   and int((step + 1) * _ptr) != int(step * _ptr))
+                               else "reconstruct")
                 result, _ = self.runBatch(
                     train=training, batchNum=step,
                     batchSize=B_step, split=split,
@@ -5041,6 +5166,7 @@ class BasicModel(BaseModel):
                     batch_override=(inputTensor, outputTensor),
                     progress=progress_frac,
                     superposition_temperature=(0.0 if _two_pass else None),
+                    trial_mode=_trial_mode,
                 )
                 if result is not None:
                     record(result)
@@ -5060,6 +5186,7 @@ class BasicModel(BaseModel):
                         superposition_temperature=float(
                             getattr(self, 'explore_temperature', 0.5)),
                         exploration_trial=True,
+                        trial_mode=_trial_mode,
                     )
                 # Tail dispatch: word-buffer flush (§6c Path B), per-row
                 # hard reset, soft reset, then the truth-layer compact
@@ -5249,6 +5376,10 @@ class BasicModel(BaseModel):
         # 0.0 -> no answer-loss term (byte-identical).
         self.answer_loss_weight = float(
             TheXMLConfig.training("answerLossWeight", default=0.0) or 0.0)
+        # Step 2: the next-idea POLICY loss weight (trains the {arma, retrieval,
+        # deduction} blend). 0.0 -> no term -> byte-identical.
+        self.predict_next_loss_weight = float(
+            TheXMLConfig.training("predictNextLossWeight", default=0.0) or 0.0)
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
         # set in the model XML (under <architecture>), BasicModel.forward
@@ -8205,6 +8336,288 @@ class BasicModel(BaseModel):
         obs = ga(concept_q=concept_q, symbol_q=symbol_q, spaces=spaces,
                  temperature=temp)
         object.__setattr__(self, "_global_attention_obs", obs)
+
+    @torch.compiler.disable
+    def _reasoning_spaces(self):
+        """Gather the typed truth-space the reasoner ranges over -- STM, LTM, and
+        the PART/WHOLE/SYMBOL codebooks -- via the SAME registry the forward's
+        global attention uses (``_addressable_spaces``), minus the live input
+        window. Built from PERSISTENT state, so it is callable outside a forward
+        pass (at query/serve time)."""
+        try:
+            spaces, _ = self._addressable_spaces(None, None)
+        except Exception:
+            spaces = []
+        return spaces or []
+
+    def _reasoning_tooluser(self, spaces):
+        """Lazily build + cache the reasoning policy's soft components: the
+        InterveningIdeaGenerator (an MLP query head) + a GlobalAttention, sized
+        to the truth-space content width. Registered as submodules so they ride
+        the state_dict and train under the answer loss (Phase C). Returns
+        ``(generator, ga)`` -- ``(None, None)`` when the truth-space is empty."""
+        gen = getattr(self, "_intervening_generator", None)
+        if gen is not None:
+            return gen, getattr(self, "_reasoning_ga", None)
+        Dc = None
+        for s in (spaces or []):
+            k = s.get("keys")
+            if k is not None and torch.is_tensor(k) and k.dim() in (2, 3):
+                w = int(k.shape[-1])
+                Dc = w if Dc is None else min(Dc, w)
+        if not Dc:
+            return None, None
+        # Place the soft components on the model device (the spaces' keys carry
+        # it) so answer-loss training does not hit a CPU/MPS/CUDA mismatch.
+        dev = None
+        for s in (spaces or []):
+            k = s.get("keys")
+            if k is not None and torch.is_tensor(k):
+                dev = k.device
+                break
+        from reasoning import InterveningIdeaGenerator, NextIdeaScorer
+        gen = InterveningIdeaGenerator(dim=int(Dc))
+        self._intervening_generator = gen if dev is None else gen.to(dev)
+        if self.global_attention is not None:
+            self._reasoning_ga = self.global_attention
+        else:
+            ga = GlobalAttention()
+            self._reasoning_ga = ga if dev is None else ga.to(dev)
+        # Step 2: the next-idea blend scorer (the learned per-tool prior over
+        # {arma, retrieval, deduction}); built alongside the generator so it
+        # joins the optimizer + state_dict.
+        sc = NextIdeaScorer(dim=int(Dc))
+        self._predict_next_scorer = sc if dev is None else sc.to(dev)
+        return self._intervening_generator, self._reasoning_ga
+
+    @torch.no_grad()
+    def reason_about(self, query_spec, *, spaces=None, beam=8):
+        """Run the N-step truth-grounded reasoning policy on a ``QuerySpec``
+        (doc/plans/2026-06-23-reasoning-live-wiring.md). N = reasoning_iterations
+        -- the chain depth = the number of intervening ideas. Returns a
+        ``ReasoningResult`` (posture + N relevance-ranked ideas + chain), or
+        ``None`` when reasoning is off (N == 0), so the caller falls back to the
+        ordinary generative path (byte-identical). Inference-only; the Phase-C
+        answer-loss training drives the soft route through its own hook."""
+        N = int(getattr(self, "reasoning_iterations", 0) or 0)
+        if N <= 0:
+            return None
+        from reasoning import TruthGroundedReasoner, NeuralToolUser
+        reasoner = TruthGroundedReasoner(self)
+        if spaces is None:
+            spaces = self._reasoning_spaces()
+        gen, ga = self._reasoning_tooluser(spaces)
+        tool = NeuralToolUser(
+            reasoner, generator=gen, ga=ga, spaces=spaces, iterations=N,
+            beam=beam,
+            materialize=bool(getattr(self, "_ltm_consolidation", False)))
+        return tool.run(query_spec)
+
+    def reason_predict_next(self, state_idea, *, spaces=None):
+        """Step 2: the differentiable next-idea blend over {arma, retrieval,
+        deduction}. Returns ``(e_hat, weights)`` or ``None`` when reasoning is
+        off (reasoning_iterations == 0). Grad-enabled (NOT @no_grad): the
+        training hook calls this so the generator query head + the blend scorer
+        learn which tool predicts the next idea."""
+        N = int(getattr(self, "reasoning_iterations", 0) or 0)
+        if N <= 0:
+            return None
+        from reasoning import TruthGroundedReasoner, NeuralToolUser
+        reasoner = TruthGroundedReasoner(self)
+        if spaces is None:
+            spaces = self._reasoning_spaces()
+        gen, ga = self._reasoning_tooluser(spaces)
+        if gen is None:
+            return None
+        tool = NeuralToolUser(reasoner, generator=gen, ga=ga, spaces=spaces,
+                              iterations=N, beam=8)
+        return tool.reason_predict_next(
+            state_idea, spaces=spaces,
+            scorer=getattr(self, "_predict_next_scorer", None))
+
+    def _predict_next_loss(self):
+        """Step 2: train the next-idea POLICY. ``e_gold`` = the observed next
+        end-state root (the SAME chain ``arma`` reads, DETACHED); the state = the
+        prior root. ``L = 1 - cos(e_hat, e_gold)``. ``None`` when there is no
+        >=2-entry chain / reasoning off / no predictor -- so the caller adds
+        nothing (byte-identical). Gated by ``predict_next_loss_weight > 0``."""
+        if int(getattr(self, "reasoning_iterations", 0) or 0) <= 0:
+            return None
+        disc = getattr(getattr(self, "symbolSpace", None), "discourse", None)
+        if disc is None or getattr(disc, "_inter_predictor", None) is None:
+            return None
+        chain = disc.get_stm_chain(n=2, b=0)
+        if len(chain) < 2:
+            return None
+        state = disc._reduce_end_state_to_root(chain[-2][1]).detach().reshape(-1)
+        e_gold = disc._reduce_end_state_to_root(chain[-1][1]).detach().reshape(-1)
+        out = self.reason_predict_next(state)
+        if out is None or out[0] is None:
+            return None
+        from reasoning import _fit_dim
+        e_hat = _fit_dim(out[0], int(e_gold.numel()))
+        eh = e_hat / e_hat.norm().clamp_min(1e-12)
+        eg = e_gold / e_gold.norm().clamp_min(1e-12)
+        return 1.0 - (eh * eg).sum()        # 1 - cosine; grad via the blend
+
+    def _answer_policy_loss(self):
+        """Phase C: the differentiable answer-policy loss. Trains the soft
+        reasoning route (the InterveningIdeaGenerator query head + the
+        GlobalAttention scorer) on (A, B, gold) examples derived from the
+        reasoning store; the hard deduction (the bridge mask) is detached, so
+        gradient never flows through a verdict (§0). ``None`` when the generator
+        is not built / no store / no chains -- so the caller adds nothing
+        (byte-identical). Gated by ``answer_loss_weight > 0`` at the call site."""
+        gen = getattr(self, "_intervening_generator", None)
+        if gen is None:
+            return None
+        from reasoning import (TruthGroundedReasoner,
+                               policy_examples_from_store, policy_answer_loss)
+        reasoner = TruthGroundedReasoner(self)
+        examples = policy_examples_from_store(reasoner)
+        if not examples:
+            return None
+        return policy_answer_loss(gen, self._reasoning_spaces(),
+                                  reasoner, examples)
+
+    def _realize_vec(self, vec):
+        """Tier-1 realize (Phase D): snap an idea vector to its nearest lexicon
+        word via the PERCEPTUAL codebook -- the same nearest-codebook path
+        ``_infer_ir`` uses. Returns '' on a zero-norm vector or a codebook miss.
+        Tier-2 (the grammatical ``decode_to_concept``) is inert on compact
+        configs (identity unless symbol_dim == concept_dim) and is deliberately
+        NOT used here -- a silent identity passthrough must not masquerade as a
+        decode (it lands once the decode round-trip ships on a tall-WS config)."""
+        sub = getattr(self.perceptualSpace, "subspace", None)
+        cb = getattr(sub, "what", None) if sub is not None else None
+        if cb is None or not hasattr(cb, "wv"):
+            return ""
+        v = vec.detach().reshape(-1).float()
+        if float(v.norm()) == 0.0:
+            return ""
+        try:
+            D = cb.wv.vector_size
+            nbrs = cb.wv.most_similar(v[:D], topn=1)
+        except Exception:
+            return ""
+        return str(nbrs[0][0]) if nbrs else ""
+
+    def _realize_idea(self, idea):
+        """Realize ONE reasoning idea dict to a surface string: the intervening
+        idea is a bridge concept vector, realized to its nearest lexicon word.
+        (Multi-word 'np1 vp np2' relation rendering lands once an idea carries a
+        stored-relation ``row`` -- the chain hops in ``result.chain`` do; the
+        ``result.ideas`` the N-sentence output draws from are bare concepts.)"""
+        vec = idea.get("idea")
+        if vec is None or not torch.is_tensor(vec):
+            return ""
+        return self._realize_vec(vec)
+
+    def _realize_ideas(self, result, *, n=None):
+        """Phase D: render ``result.ideas`` (already relevance-sorted + N-capped
+        in ``NeuralToolUser.run``) to surface sentences, top-``n`` by relevance,
+        dropping empties. Empty for isTrue/isEqual leaves (no intervening ideas)
+        -- the caller falls back to posture + trace."""
+        ideas = getattr(result, "ideas", None) or []
+        if n is not None:
+            ideas = ideas[:int(n)]
+        out = []
+        for idea in ideas:
+            s = self._realize_idea(idea)
+            if s:
+                out.append(s)
+        return out
+
+    def _detect_query(self, user_msg):
+        """Phase E: detect that ``user_msg`` is a query and extract its operands.
+        Two-part signal (no live is_query flag exists): (1) the grammar declares
+        a query rule; (2) the surface is interrogative. Operands are resolved to
+        VECTORS via the perceptual codebook (QuerySpec wants tensors). Returns
+        ``(surface_name, A_vec, B_vec)`` or ``(None, None, None)``."""
+        try:
+            from Language import TheGrammar
+            if hasattr(TheGrammar, "_ensure_configured"):
+                TheGrammar._ensure_configured()
+            has_query = any(getattr(r, "query", False)
+                            for r in getattr(TheGrammar, "rules", []))
+        except Exception:
+            has_query = False
+        if not has_query:
+            return None, None, None
+        text = (user_msg or "").strip().lower()
+        if not (text.endswith("?")
+                or text.startswith(("is ", "are ", "does ", "do "))):
+            return None, None, None
+        sub = getattr(self.perceptualSpace, "subspace", None)
+        cb = getattr(sub, "what", None) if sub is not None else None
+
+        def lookup(tok):
+            if cb is None or not hasattr(cb, "wv"):
+                return None
+            try:
+                return cb.wv[tok]
+            except Exception:
+                return None
+
+        toks = [t.strip("?.,") for t in text.split() if t.strip("?.,")]
+        surface, A, B = "queryPart", None, None
+        if "part" in toks:
+            i = toks.index("part")
+            left = [t for t in toks[:i] if t not in ("is", "are")]
+            right = [t for t in toks[i + 1:] if t != "of"]
+            if left:
+                A = lookup(left[-1])
+            if right:
+                B = lookup(right[-1])
+        else:
+            content = [t for t in toks if t not in
+                       ("is", "are", "does", "do", "a", "the", "of")]
+            if content and content[-1] in ("exist", "exists"):
+                content = content[:-1]               # "does X exist?" -> isTrue(X)
+                if content:
+                    surface, A = "exist", lookup(content[0])
+            elif len(content) >= 2:
+                A, B = lookup(content[0]), lookup(content[-1])
+            elif len(content) == 1:
+                surface, A = "exist", lookup(content[0])
+        if A is None:
+            return None, None, None
+        A = torch.as_tensor(A, dtype=torch.float32)
+        if B is not None:
+            B = torch.as_tensor(B, dtype=torch.float32)
+        return surface, A, B
+
+    def answer_query(self, user_msg, *, beam=8):
+        """Phase E: when reasoning is on AND ``user_msg`` is a query, run the
+        truth-grounded reasoner and return a payload dict (posture + the N
+        relevance-ranked sentences + trace); else ``None`` so the caller falls
+        back to the generative ``infer()``. Byte-identical off: returns ``None``
+        immediately when ``reasoning_iterations == 0``, before any detection."""
+        if int(getattr(self, "reasoning_iterations", 0) or 0) <= 0:
+            return None
+        surface, A, B = self._detect_query(user_msg)
+        if surface is None:
+            return None
+        from reasoning import QuerySpec, KIND_IS_TRUE
+        try:
+            spec = QuerySpec.from_surface(surface, A, B)
+        except ValueError:
+            return None
+        # isPart/isEqual need BOTH operands; a missing/OOV right operand cannot
+        # form a binary query -> fall back to the generative path.
+        if spec.predicate != KIND_IS_TRUE and spec.right is None:
+            return None
+        result = self.reason_about(spec, beam=beam)
+        if result is None:
+            return None
+        return {
+            "posture": result.posture,
+            "confidence": float(result.confidence),
+            "support_true": float(result.support_true),
+            "support_false": float(result.support_false),
+            "sentences": self._realize_ideas(result, n=self.reasoning_iterations),
+            "trace": result.trace,
+        }
 
     def _passback_scope_ps(self, pass_idx, ps_default, prevCS_forSS):
         """Apply the WS->PS top-down pass-back to choose PartSpace's input for a

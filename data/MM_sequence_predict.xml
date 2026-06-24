@@ -1,0 +1,101 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_sequence_predict: validation vehicle for the trial-split next-idea
+       predictor (doc/plans/2026-06-23-reasoning-live-wiring.md Step 1).
+
+       Multi-sentence documents (the sequences dataset) over the BYTE cursor
+       so the InterSentenceLayer end-state chain SPANS sentences (a trial
+       cursor resets the chain every tick, so the contrastive term would never
+       see two or more chain entries; load-bearing: lexer MUST be byte).
+       symbolicOrder=1 gives the serial per-word forward + the boundary observe.
+       sentencePrediction builds the discourse layer; interLossWeight (MSE) +
+       interContrastiveWeight (InfoNCE) train the next-idea predictor; a
+       predictionTrialRatio of 0.5 runs half the batches as pure prediction
+       trials (reconstruction terms zeroed). All three new knobs default 0 so a
+       config that omits them is byte-identical to an ordinary LM. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <symbolicOrder>1</symbolicOrder>
+
+    <!-- Step 1: half the training batches are pure next-idea prediction. -->
+    <predictionTrialRatio>0.5</predictionTrialRatio>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>sequences</dataset>
+    </data>
+
+    <training>
+      <numEpochs>2</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <sentencePrediction>true</sentencePrediction>
+      <interLossWeight>0.1</interLossWeight>
+      <!-- the InfoNCE next-idea contrastive term -->
+      <interContrastiveWeight>0.5</interContrastiveWeight>
+      <interContrastiveTemp>0.1</interContrastiveTemp>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>10</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>1024</nInput>
+    <nVectors>4096</nVectors>
+    <nDim>10</nDim>
+    <nOutput>1024</nOutput>
+    <synthesis>bpe</synthesis>
+    <wordLearning>0</wordLearning>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nOutput>1024</nOutput>
+    <nDim>10</nDim>
+    <nVectors>1024</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>byte</lexer>
+    <nInput>1024</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>1024</nVectors>
+    <nDim>10</nDim>
+    <nOutput>1024</nOutput>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <language>
+      <start>S</start>
+      <grammar>
+        <compose>
+          <symbols>
+            <rule width="1..">S = NP</rule>
+            <rule width="3..">S = lift(NP, VP)</rule>
+            <rule width="1..1">NP = N</rule>
+            <rule width="1..1">VP = V</rule>
+            <rule width="2..">VP = intersection(V, O)</rule>
+            <rule width="1..">O = NP</rule>
+            <rule width="2..">AP = lower(DET, NP)</rule>
+            <rule width="2..">NP = AP</rule>
+          </symbols>
+        </compose>
+      </grammar>
+    </language>
+  </SymbolSpace>
+
+</model>

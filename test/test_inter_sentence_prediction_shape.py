@@ -514,5 +514,60 @@ class TestCPriorSlotStack(_Base):
         self.assertTrue(torch.all(out[1] == 2.0))
 
 
+class TestInterContrastive(_Base):
+    """InfoNCE next-idea contrastive accumulation (Step 1): ranks the actual
+    next root above the chain's past roots; trains the predictor; gradient never
+    touches the detached targets; off (weight 0) -> no accumulation."""
+
+    def setUp(self):
+        self.D = 4
+        self.layer = _make_layer(D=self.D)
+        self.layer.set_inter_loss_weight(0.0)         # isolate the contrastive
+        self.layer.set_inter_contrastive(0.5, temp=0.1)
+
+    def _prime_and_score(self):
+        # >=2 prior end-states so the scoring observe has negatives to rank.
+        self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+        self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+        with torch.enable_grad():
+            self.layer.predict_next_end_state()
+            self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+
+    def test_contrastive_accumulates_live_loss(self):
+        self._prime_and_score()
+        loss = self.layer.consume_inter_contrastive_loss()
+        self.assertIsNotNone(loss)
+        self.assertTrue(loss.requires_grad,
+                        "InfoNCE term must be a live grad tensor")
+        self.assertTrue(torch.isfinite(loss).all())
+        # consume resets.
+        self.assertIsNone(self.layer.consume_inter_contrastive_loss())
+
+    def test_contrastive_trains_predictor(self):
+        self._prime_and_score()
+        loss = self.layer.consume_inter_contrastive_loss()
+        self.assertIsNotNone(loss)
+        loss.backward()
+        grads = [p.grad for p in self.layer._inter_predictor.parameters()
+                 if p.grad is not None]
+        self.assertTrue(len(grads) > 0,
+                        "InfoNCE backward must populate predictor grads")
+        self.assertTrue(any(torch.any(g != 0.0) for g in grads),
+                        "at least one predictor grad must be non-zero")
+
+    def test_weight_off_disables_contrastive(self):
+        self.layer.set_inter_contrastive(0.0)
+        self._prime_and_score()
+        self.assertIsNone(self.layer.consume_inter_contrastive_loss())
+
+    def test_no_accumulation_under_no_grad(self):
+        self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+        self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+        with torch.no_grad():
+            self.layer.predict_next_end_state()
+            self.layer.observe_stm_end_state([1], [torch.randn(1, self.D)])
+        self.assertIsNone(self.layer.consume_inter_contrastive_loss())
+
+
 if __name__ == "__main__":
     unittest.main()

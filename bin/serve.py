@@ -248,6 +248,18 @@ def chat_completions():
         if thought_free:
             TheGrammar.thought_free = True
 
+        # Phase E: truth-grounded reasoning for QUERY inputs. Off
+        # (reasoning_iterations == 0) -> answer_query returns None before any
+        # detection, so the serve path is byte-identical. A reasoner error
+        # degrades to the generative path (do not 500).
+        reasoning_payload = None
+        if getattr(_model, "reasoning_iterations", 0) > 0:
+            try:
+                reasoning_payload = _model.answer_query(user_msg)
+            except Exception as exc:
+                logger.warning("Reasoning path failed, falling back: %s", exc)
+                reasoning_payload = None
+
         # IR inference returns (slot, original, predicted) triples.
         predictions = _model.infer(user_msg, max_length=gen_budget)
         response_text = _response_text_from_infer(predictions)
@@ -260,6 +272,16 @@ def chat_completions():
                 }
             }]
         }
+        # Phase E: attach the reasoning answer as a sibling field (NOT
+        # _last_truth_assessment, which is the TruthSet consistency report), and
+        # surface the posture + sentences in the standard content slot.
+        if reasoning_payload is not None:
+            response["reasoning"] = reasoning_payload
+            if reasoning_payload.get("sentences"):
+                answer = "; ".join(reasoning_payload["sentences"])
+                response["choices"][0]["message"]["content"] = (
+                    f"<reasoning posture=\"{reasoning_payload['posture']}\">"
+                    f"{answer}</reasoning>")
         clarifications = getattr(_model, "_last_clarifications", None)
         if clarifications:
             response["clarifications"] = list(clarifications)

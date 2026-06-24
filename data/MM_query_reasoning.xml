@@ -1,0 +1,126 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_query_reasoning: the reasoning live-wiring validation config
+       (doc/plans/2026-06-23-reasoning-live-wiring.md, Phases C/D/E). Derived
+       from MM_qa (the retrieval-QA sibling: globalAttention + globalAttention-
+       Consume + ltmConsolidation + a TruthSet in LTM) and adds:
+
+         * reasoningIterations=10 : turns reasoning ON. A query is routed to the
+           NeuralToolUser, which runs a 10-step soft-propose / hard-verify chain
+           and realizes the N intervening ideas to N sentences (Phase E/D).
+         * answerLossWeight>0       : trains the soft route (the generator query
+           head + the GlobalAttention scorer) under the answer-policy loss,
+           self-supervised from the truthSet store (Phase C).
+         * complete.grammar         : declares the query="true" isPart/isEqual
+           rules _detect_query keys on.
+         * a parthood syllogism in the TruthSet (socrates <= human <= mortal) the
+           reasoner can chain, plus the `queries` QA set for serve validation.
+
+       Codebooks are shrunk (512 rows) so the typed truth-space the reasoner
+       ranges over stays idea-scale and tractable. With reasoningIterations
+       absent and answerLossWeight 0 this file behaves like MM_qa. -->
+  <architecture>
+    <symbolicOrder>0</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <mereologyRaise>true</mereologyRaise>
+    <readingAttention>true</readingAttention>
+    <!-- (B) free attention over the typed truth-space; parks the soft read. -->
+    <globalAttention>true</globalAttention>
+    <!-- close the loop: the answer/policy loss trains the retrieval via the
+         consume residual + the GlobalAttention scorer. -->
+    <globalAttentionConsume>true</globalAttentionConsume>
+    <!-- the LTM "book": the TruthSet (the syllogism) parsed into ltm_store. -->
+    <ltmConsolidation>true</ltmConsolidation>
+
+    <!-- Reasoning ON: N=10 intervening ideas / a 10-step chain to the answer. -->
+    <reasoningIterations>10</reasoningIterations>
+
+    <!-- A parthood syllogism the reasoner can chain extensionally:
+         socrates <= human <= mortal. -->
+    <truthSet>
+      <truth text="socrates partOf human" trust="0.9" kind="partOf"/>
+      <truth text="human partOf mortal" trust="0.9" kind="partOf"/>
+    </truthSet>
+
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>queries</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>6</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <!-- Phase C: train the soft reasoning route under the answer-policy loss. -->
+      <answerLossWeight>0.1</answerLossWeight>
+    </training>
+  </architecture>
+
+  <SymbolSpace>
+    <language>
+      <!-- complete.grammar declares the query="true" isPart/isEqual rules the
+           serve detector keys on (data/complete.grammar:87,89). -->
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>512</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <lexer>raw</lexer>
+    <analysis>word</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>512</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <codebook>none</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

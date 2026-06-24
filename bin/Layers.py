@@ -7776,6 +7776,14 @@ class InterSentenceLayer(Layer):
         self._inter_loss_count = 0
         self._inter_last_pred_root = [None] * self._batch
         self._inter_loss_weight = 0.1
+        # Second accumulator: the InfoNCE next-idea CONTRASTIVE term -- ranks the
+        # actual next root above the chain's past roots under cosine(pred, .).
+        # Off (weight 0) -> the layer carries only the legacy MSE L_inter
+        # (byte-identical). Set by the host from <interContrastiveWeight>.
+        self._inter_contrastive_accum = None
+        self._inter_contrastive_count = 0
+        self._inter_contrastive_weight = 0.0
+        self._inter_contrastive_temp = 0.1
 
         # LTM consolidation FU3 (Change 2, 2026-06-18): when wired to the
         # unified ``TernaryTruthStore`` (``_ltm_store`` set by the host at
@@ -8080,6 +8088,26 @@ class InterSentenceLayer(Layer):
                         actual_root = actual_root.to(
                             device=pred_root.device, dtype=pred_root.dtype)
                         self._accumulate_inter_loss(pred_root, actual_root)
+                        # InfoNCE: rank the actual next root above the chain's
+                        # PAST roots (negatives) under cosine(pred, .). Best-
+                        # effort -- a short/odd chain just yields fewer
+                        # negatives (the accumulator no-ops with none; the MSE
+                        # term above still runs). Gated by the contrastive weight.
+                        if float(getattr(self, "_inter_contrastive_weight",
+                                         0.0)) > 0.0:
+                            negs = []
+                            try:
+                                for (_d, _pl, _t) in self.get_stm_chain(
+                                        n=8, b=b):
+                                    _rt = self._reduce_end_state_to_root(_pl)
+                                    if _rt is not None and torch.is_tensor(_rt):
+                                        negs.append(_rt.detach().to(
+                                            device=pred_root.device,
+                                            dtype=pred_root.dtype))
+                            except Exception:
+                                negs = []
+                            self._accumulate_inter_contrastive(
+                                pred_root, actual_root.detach(), negs)
                 # Detach + clone so the stored end-state is a stable
                 # snapshot decoupled from the live STM buffer (which the
                 # next sentence overwrites in place) and carries no
@@ -8412,6 +8440,58 @@ class InterSentenceLayer(Layer):
         ``interLossWeight`` knob by the host at construction)."""
         self._inter_loss_weight = float(weight)
 
+    def set_inter_contrastive(self, weight, temp=0.1):
+        """Set the InfoNCE next-idea contrastive gate + softmax temperature
+        (read from ``interContrastiveWeight`` / ``interContrastiveTemp``)."""
+        self._inter_contrastive_weight = float(weight)
+        self._inter_contrastive_temp = max(1e-4, float(temp))
+
+    def _accumulate_inter_contrastive(self, pred_root, pos_root, neg_roots):
+        """Accumulate one InfoNCE step: rank ``pos_root`` (the actual next root)
+        above ``neg_roots`` (the chain's past roots) under
+        ``cosine(pred_root, .)/temp``. ``pred_root`` ``[D]`` is grad-bearing (the
+        staged prediction into ``_inter_predictor``); ``pos_root`` + ``neg_roots``
+        are DETACHED, so the gradient trains the predictor, never the targets.
+        No-op under no-grad / weight<=0 / no negatives (the caller's MSE term
+        still runs). Fail-loud on NaN."""
+        if not torch.is_grad_enabled():
+            return
+        if float(self._inter_contrastive_weight) <= 0.0:
+            return
+        if pred_root is None or pos_root is None or not neg_roots:
+            return
+        q = pred_root.reshape(-1)
+        q = q / q.norm().clamp_min(1e-12)
+        cand = torch.stack([pos_root.reshape(-1)]
+                           + [n.reshape(-1) for n in neg_roots], dim=0)  # [1+N,D]
+        cn = cand / cand.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        logits = (cn @ q) / float(self._inter_contrastive_temp)          # [1+N]
+        step = F.cross_entropy(
+            logits.unsqueeze(0),
+            torch.zeros(1, dtype=torch.long, device=logits.device))
+        if not torch.isfinite(step).all():
+            raise FloatingPointError(
+                "InterSentenceLayer._accumulate_inter_contrastive: InfoNCE "
+                "step is NaN/Inf. Refusing to accumulate a corrupt loss term.")
+        if self._inter_contrastive_accum is None:
+            self._inter_contrastive_accum = step
+        else:
+            self._inter_contrastive_accum = self._inter_contrastive_accum + step
+        self._inter_contrastive_count += 1
+
+    def consume_inter_contrastive_loss(self):
+        """Per-sentence MEAN of the accumulated InfoNCE next-idea loss; resets.
+        ``None`` when nothing accumulated (eval / weight off / no warm chain).
+        Mirrors :meth:`consume_inter_loss`; ``runBatch`` consumes it once,
+        post-body / pre-backward."""
+        if self._inter_contrastive_accum is None:
+            self._inter_contrastive_count = 0
+            return None
+        mean = self._inter_contrastive_accum / max(1, self._inter_contrastive_count)
+        self._inter_contrastive_accum = None
+        self._inter_contrastive_count = 0
+        return mean
+
     # -- lifecycle ----------------------------------------------------
     def Reset(self, batch=None, hard=False):
         """Clear AR/MA rings on hard discourse boundary.
@@ -8440,6 +8520,8 @@ class InterSentenceLayer(Layer):
             self._inter_last_pred_root = [None] * self._batch
             self._inter_loss_accum = None
             self._inter_loss_count = 0
+            self._inter_contrastive_accum = None
+            self._inter_contrastive_count = 0
         else:
             bi = int(batch)
             self._s_history[bi].zero_()

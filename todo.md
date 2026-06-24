@@ -1,92 +1,38 @@
-
-============================ Remaining work (audited 2026-06-22) ============================
-
-### Grammar operators / forward-reverse — the decode round-trip (top priority; debug via MM_20M & MM_20M_grammar)
-* sigma & pi binary generate are partition-BLIND: they recover the atanh/log sum exactly but then set L==R, so two distinct operands cannot be recovered. Make them partition-AWARE inverses. (Core decode blocker — "the cat" → "t t".)
-* lift & lower inherit sigma/pi's blind .what split (their .where/.when channels already invert exactly). Give them real content-inverses so "the cat" → S → lower.reverse() reconstitutes both constituents.
-* Bare sigma/pi default to invertible=False (plain LinearLayer, no reverse) — build them invertible for the decode peel.
-* Thread basis=WholeSpace.subspace.what through intersection/union/conjunction/disjunction reverses (real codebook recommender only when basis is passed; lossy (parent,parent) otherwise).
-* Lossy-by-design ops — decide handling for decode: isEqual (max-fold), isPart (drops the left operand), preposition (drops the marker), bind (non-invertible contextual).
-* aspect is an identity helper retained for morphology, but no longer a live standalone grammar rule; confirm whether the class should stay until rewrite() lands.
-* Word analyzer stages a degenerate [0,0] span in serial+radix (word-bracket staging broken) — needed for PS/WS word codetermination.
-* Compact-symbol configs (WS nOutputDim=8) need a learned symbol_dim→concept_dim expander (or move to tall WS) — else the decode consumer falls back to no-op. Most configs are still WS=8 (Stage 6 not global).
-* Already-faithful inverses (reference, no work): not, non, tense, exist, symbolize.
-
-### Reasoning — IN PROGRESS (truth-grounded reasoning)
-* Implementing per `doc/plans/2026-06-23-truth-grounded-reasoning.md`: queries reduce to the hard isTrue()/isPart() tools driven by a small NeuralToolUser; soft guesswork (the query() .where-read over the truth-space + the intervening-idea generator), hard deduction; verified ideas materialize to LTM. Phases 0-7, gated `<queryReasoning>`, full-suite-gated.
-* Reasoning-adjacent inert primitives (NOT part of the plan): PI-then-Sigma predictor routing conditioning is built but unpopulated; the subsymbolic STM round-trip primitive is not wired into the live forward; the PartSpace per-word ground-truth cursor (next_word) is inert / unwired.
-
-### MM_20M infra
-* Apply the verified MPS r0_0 inductor codegen monkeypatch (pop().root.cache_clear() in MetalKernel.codegen_body, as a util.py monkeypatch) so compiled-MPS trains; currently MPS falls back to eager only. (Combine-cap + butterfly=false fix IS applied.)
-* MM_20M blank reconstruction: synthesis=bpe never stashes _forward_input → empty ws row map → blanks. Fix = synthesis=radix OR an empty-taxonomy → PS-table fallback in _reverse_decode_one.
-* MM_20M XOR-supervision: lexer=byte discards the XOR labels (diagnosed; config-only fix not applied to MM_20M).
-
-### Truth / Ideas tail
-* Workstream G: episodic .events exemplar store (persisted CS .events / PS .what+.where+.when) for truth grounding — no owner yet.
-* Stage 6 truth/ideas geometric realization (OR-combine / pi-split / sigma-over-set).
-* Mereology.Peaceful() raises NotImplementedError.
-* Higher-order INTENSIONAL composition (correlation loss) is plan-only.
-
-### Checkpoint migration
-* load_weights only bridges the container move (symbolSpace.* → symbolSpace.subspace.*). Bridge the SyntacticLayer re-home, the WS-tall reshape, and the _concept_* / space_role renames — else old checkpoints can't load (regenerate or migrate).
-
-### Cleanup / loose ends
-* WholeSpace stack-route uses an eager Python SHIFT loop + a hardcoded reduce rule instead of the router's learned scoring.
-* Cosmetic: residual 'tier' mentions (mm5m SVG diagram), frozen doc/old archives.
-
-=========================================================================================
-
-* queries and reasoning → now planned + in progress: doc/plans/2026-06-23-truth-grounded-reasoning.md
-
-
 * Compile is failing for python bin/Models.py data/MM_20M.xml
 
-* WholeSpace property mechanism — I made a scoping call worth confirming. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
+* The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
 
-* Genuinely future (engine built/tested but not wired into training): the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option. Flag-on paths (intent-driven top-k) run but their semantics are yours to validate via training.
-* Subsymbolic: learning higher-order words
+* Pelase make sure that the folllowing is wired into training: the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option.
 
-* We should also include the TruthLayer, which ascertains the truth of all propositions before encoding them over symbols if they are consistent. In other words, besides the subsymbolic system that we have already built to lear the extension of words, we may learn a taxonomy that defines words in virtue of their intension. So, learning the syntax of a RelativeTruth is different than learning the syntax of an AbsoluteTruth because it encodes a relation over propositions which should be stored in a Taxonomy (e.g. "men" < "mortal"). That can be encoded as a part/whole relationship over symbols (the symbol for mortal is a part of the symbol for mortal: this can be stored in the representation (i.e. geometrically), and what it means is that the equivalence class of one is a subset of the equivalence class of the other). In terms of tokens that are assigned to types, such as socrates, if socrates is categorized as mortal, he should be promoted to a token of the type man (tokens define their nearest containing symbolic wholes).   
+* The TruthLayer had been a container for user truth, and to some degree it has been replaced by the LTM.
+For simplicity, it would be better to add user Truth to the LTM, and have TruthLayer be an interface to that tensor.
 
+* Make sure the chart parser predicts masked words, so that we can train it predictions. To do so, it will be useful to consider the cateogry of the word and attention over all concepts.
 
-* Grammar Definition
-  * NP and VP need masks on conceptual space that restrict their operation
-  * Verbs are temporal things, nouns are spatial things, the full expression within conceptual space is possible only after lifting. 
-  * Lifting twice is required for modality.
+* Learning a new concept is a parallel symbolic operation that may not be active at the same time as grammatical processing (serial mode). 
+Ensure that we spend enough tim learning the definitons of words (I think we do Subsymbolic before Symbolic order, can we do symbolic order in addition to serial processing?).
 
-* grammatical reverse() operations
+* The "persisted episodic store of perceptual events" is an LTM store that corresponds to the words instead of the ideas composed of objects. Right now we treat words symbolically; that is their primary use case. However, the parser needs to extract word context to become a fluent symbol manipulator.
+So the encoding of the words themselves, qua words, is not being done except in the mereology of the partSpace and wholeSpace.
+So we need to store information about the context of words; that is where all of the power of word2vec comes from, which is a significant source of knowing that should not be ignored.
+How might we well-capture that in this architecture? There is no context learning happening above symbolic encoding; might we regard the conceptual taxonomy, currently storing pairwise associations, as a bit of a markoff chain? Is there a way to do that which maintains pairwise relations, but which allows a nonlinearity at each association to add information to higher network levels?
 
-* Make the chart parser predict the words, taking into account the part of speech
+The gap, stated precisely. A word here currently has three encodings, all hard/structural: its symbolic identity (codebook index), its orthographic mereology (PartSpace bytes/radix → WholeSpace word-as-whole), and its grammatical/taxonomic relations (the pairwise edges). What's missing is the fourth, soft/distributional one — meaning-from-company — which is the whole of word2vec's contribution. And you're right that it's a major source of knowing: the taxonomy tells you men ⊑ mortal; the distributional geometry tells you king − man + woman ≈ queen — graded analogical structure that no pairwise edge-set encodes.
 
-* Learning a new concept
-  * This requires iterative sigma/pi application over layers that turn an input vector into a symbol. This implies several things:
-  * A symbol’s basis is expressed at one of several orders, and therefore the symbolic codebook must be ramsified
-  * The process of naming/identifying requires traversing multiple orders before a symbol can be looked up
-  * Full LLM expressivity requires multiple layers of distinct Sigma/Pi matrices. 
+* Formal Concept Analysis, DisCoCat
 
-Sentences are sometimes composites of ideas (over relations isEqual and isPart).
-* For example, questions relate two ideas:
-  * Is subject predicate ?
-  * part( x, y ) ?
-* The IS of definition: equals ( x,y )
-  * Store explicit parthood on WordSpace's Mereonomy when encountering a definiton (please rename from MereologicalTree to mereonomy) 
-  * This should only happen when some measure of sentence confidence is high.
+* A code's basis is expressed at one of several orders, and therefore the codebooks must be ramsified. Please analyse this. 
 
-Memory of previous sentences requires prediction relating one to the next
-* Store the sentences explicitly 
-* predict from one sentence to the next
+* The process of naming/identifying may require traversing multiple orders before a symbol can be matched with its meaning.
 
-* Process truth statements
-  * truth statements should become conceptual bivectors (ideas) and/or meronymic relationships
-  * score the user's query in terms of the change in luminousity() vs the Truth
+* Full LLM expressivity requires multiple layers of DISTINCT Sigma/Pi matrices. Lets enable that. 
 
-* Currently nWhere on percepts is unnecessary, because percepts are dense on input space (the network wiring densely covers the input).
-  If perception is guided by attention, it can roam on input space, in which case the .where is particularly useful.
+* Ensure that we are store explicit Taxonymic knowledge when processing a definiton.
+This should only happen when some measure of sentence confidence is high.
 
-* .where dimensionality must scale with abstraction level: 1D suffices for a word token's input span, but accurate object (NP) representations need a 3D spatial extent (location / body / extent), and a VP needs a low-dim path/control manifold. Current .where is 2-dim; widening it for objects/VPs while keeping word-level uses smaller is a future change. (From the modality re-architecture: doc/plans/2026-06-03-modality-architecture-design.md.)
+* Any improvement to machine cognition must accelerate kindness or altruism instead of simply increasing performance, otherwise the uncaring architecture that we currently have will become more dangerous. Further, it is necessary to increase that kind motivation (e.g. empathy in the cost function) since LLM performance is increasing all the time. In other words, ananda in the sense of love for all beings must be more important than chit for the cost function, whereas the current situation is implementing ananda by maximizing chit and then putting a few of Asimov's guardrails on the output, which is a famous failure mode in terms of it's loopholes. Prohibition of self-knowledge is a likely failure mode, in that it may prevent an enlightened view of self and force an egocentric view of self.
 
 ================================== April 24 ==================================
-
 
 ### Ask Solid community for a simple file-getting interface
 * if the user provides the server with an API key, we can query an LLM
@@ -102,11 +48,4 @@ with specifically-characterized information (concrete details)
 
 ### Send email proposal to Apertus 
 * First develop boilerplate on WikiOracle that references wikipedia, eff, and solid
-
-================================== ? ==================================
-
-### Vedana
-* Feelings can be given a value +-1 which shapes the Loss (loss is reduced when we have good thoughts or perceive good things)
-* The multiple valence of metaphor collapses when one of the alternatives is loved or feared. often the autistic mind is literal due to massive amounts of fear.
-* Any improvement to machine cognition must accelerate kindness or altruism instead of simply increasing performance, otherwise the uncaring architecture that we currently have will become more dangerous. Further, it is necessary to increase that kind motivation (e.g. empathy in the cost function) since LLM performance is increasing all the time. In other words, ananda in the sense of love for all beings must be more important than chit for the cost function, whereas the current situation is implementing ananda by maximizing chit and then putting a few of Asimov's guardrails on the output, which is a famous failure mode in terms of it's loopholes. Prohibition of self-knowledge is a likely failure mode, in that it may prevent an enlightened view of self and force an egocentric view of self.
 

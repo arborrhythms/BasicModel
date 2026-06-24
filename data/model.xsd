@@ -186,14 +186,19 @@
            idea snapshot to infer which reverse operations should run. Default
            false preserves the ordinary cached-derivation reverse path. -->
       <xs:element name="reconstructFromIdea" type="xs:boolean" minOccurs="0"/>
-      <!-- Truth-grounded reasoning consumer (doc/plans/2026-06-23-truth-
-           grounded-reasoning.md). When true, a query (a query="true" rule)
-           is routed to the TruthGroundedReasoner / NeuralToolUser, which
-           reduces it to the hard isTrue(A) / isPart(A,B) tools, runs the
-           candidate-limited chain search, and emits a posture
-           (TRUE/FALSE/UNKNOWN/BOTH) + chain instead of the generative infer().
-           Default false -> queries are treated as ordinary generative prompts
-           (byte-identical). -->
+      <!-- Truth-grounded reasoning, N-step (doc/plans/2026-06-23-reasoning-
+           live-wiring.md). N = the number of intervening-idea iterations = the
+           reasoning steps = the max chain depth leading to the answer. The
+           recurrent tool-use loop proposes N ideas (the soft policy over the
+           hard isTrue/isPart tools), verifies each hop, and realizes the chain
+           to N sentences ranked by subsymbolic (attention) relevancy. This knob
+           is the on/off SWITCH: absent ⇒ reasoning off (byte-identical); a
+           positive value (10 recommended) turns it on with that chain depth;
+           0 is explicitly off. -->
+      <xs:element name="reasoningIterations" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- DEPRECATED alias for reasoningIterations (the prior boolean gate).
+           When true it enables reasoning at the default depth (10); prefer
+           <reasoningIterations>. Default false. -->
       <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
       <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
            mereological-order-raising.md "Overcomplete tiling bounded by the
@@ -334,6 +339,10 @@
       <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
       <xs:element name="prediction" type="predictionEnum" minOccurs="0"/>
+      <!-- Trial-split: fraction of training batches run as pure next-idea
+           prediction trials (reconstruction terms zeroed). 0.0 -> off ->
+           byte-identical. -->
+      <xs:element name="predictionTrialRatio" type="unitInterval" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
@@ -576,6 +585,8 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="xor"/>
       <xs:enumeration value="phrases"/>
+      <xs:enumeration value="queries"/>
+      <xs:enumeration value="sequences"/>
       <xs:enumeration value="mnist"/>
       <xs:enumeration value="tomatoes"/>
       <xs:enumeration value="text"/>
@@ -689,6 +700,11 @@
            the attention alpha) only, never the hard deduction. Default 0.0 =
            off (no answer loss term). Requires <queryReasoning>. -->
       <xs:element name="answerLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Step 2: the next-idea POLICY loss weight. Trains the reasoner's
+           {arma, retrieval, deduction} blend to predict the observed next
+           end-state root (gradient through the blend weights + scorer only,
+           not the detached candidates). 0.0 = off (byte-identical). -->
+      <xs:element name="predictNextLossWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -716,6 +732,12 @@
            observed root), summed over the discourse window. Mirrors
            intraLossWeight. -->
       <xs:element name="interLossWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- InfoNCE next-idea contrastive term: weight + softmax temperature.
+           Reuses the InterSentenceLayer end-state chain (positive next root
+           ranked above the chain's past roots). 0.0 weight -> MSE-only
+           (byte-identical). -->
+      <xs:element name="interContrastiveWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="interContrastiveTemp" type="positiveFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

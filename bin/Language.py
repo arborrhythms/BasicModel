@@ -2842,33 +2842,45 @@ class LiftLayer(GrammarLayer):
         a = torch.atanh(vp_what.clamp(-1 + epsilon, 1 - epsilon))
         return torch.tanh(torch.exp(-self._verb_spectrum_w(verb_what)) * a)
 
-    def reverse(self, parent, gate=None):
+    def reverse(self, parent, gate=None, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
         """Split ``parent`` back into a ``(left, right)`` pair.
 
-        Delegates to ``SigmaLayer.generate`` which inverts the inner
-        LDU transform and returns the balanced split
-        ``tanh(s/2), tanh(s/2)`` where ``s = atanh(left) + atanh(right)``.
-
-        The split is approximate in the sense that the original
-        ``(left, right)`` cannot be uniquely recovered from their
-        atanh-sum alone -- but ``forward(*reverse(parent)) == parent``
-        round-trip-consistently when the internal sigma is invertible.
-
-        ``gate``: the same gate that was passed to ``forward``; the
+        The ``.what`` content is recovered by the mereology-guided NEAREST-
+        PROTOTYPE recommender (``Ops.liftReverseAll`` -> ``disjunctionReverse``
+        -> ``_binary_op_recommend``) when a ``basis`` codebook ``W`` is present:
+        it returns REAL stored constituents drawn from the codebook, so two
+        distinct operands are recovered by recognition (non-destructive prototype
+        match, storing no partition). With no basis it falls back to
+        ``SigmaLayer.generate`` -- the partition-blind balanced split
+        ``tanh(s/2), tanh(s/2)`` -- which stays the inverse for default-only /
+        XOR grammars that carry no codebook. ``.where`` is copied to both
+        children and ``.when`` retracted (exact). ``gate``: the forward gate; the
         LDU inverse uses ``1/(d * gate)`` automatically.
         """
         if self._sigma is None:
             raise RuntimeError(
                 "LiftLayer was constructed without operand-width "
                 "information; cannot run reverse.")
+        W = basis.getW() if (basis is not None
+                             and hasattr(basis, 'getW')) else None
+
+        def _split_what(p_what):
+            if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
+                return Ops.liftReverseAll(
+                    p_what, W=W, left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
+            return self._sigma.generate(p_what, gate=gate)
+
         cw = self._content_width
         if cw and parent.shape[-1] > cw:
             p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = self._sigma.generate(p_what, gate=gate)
+            lc, rc = _split_what(p_what)
             back = _lower_when(p_when)
             return (torch.cat([lc, p_where, back], dim=-1),
                     torch.cat([rc, p_where, back], dim=-1))
-        return self._sigma.generate(parent, gate=gate)
+        return _split_what(parent)
 
     def compose(self, left, right, gate=None):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
@@ -3126,25 +3138,42 @@ class LowerLayer(GrammarLayer):
             return torch.cat([content, l_where, _lower_when(r_when)], dim=-1)
         return self._pi.compose(left, right, gate=gate)
 
-    def reverse(self, parent, gate=None):
-        """Split ``parent`` back into a ``(left, right)`` pair via the
-        balanced log-mult-domain split (``PiLayer.generate``).
+    def reverse(self, parent, gate=None, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """Split ``parent`` back into a ``(left, right)`` pair.
 
-        ``gate``: the same gate that was passed to ``forward``; the
-        LDU inverse uses ``1/(d * gate)`` automatically.
+        The ``.what`` content is recovered by the mereology-guided NEAREST-
+        PROTOTYPE recommender (``Ops.lowerReverseAll`` -> ``conjunctionReverse``
+        -> ``_binary_op_recommend``) when a ``basis`` codebook ``W`` is present
+        (real stored constituents, non-destructive prototype match); with no
+        basis it falls back to the partition-blind balanced log-mult split
+        (``PiLayer.generate``). ``.where`` is copied to both children and
+        ``.when`` lifted (exact). ``gate``: the forward gate; the LDU inverse
+        uses ``1/(d * gate)`` automatically.
         """
         if self._pi is None:
             raise RuntimeError(
                 "LowerLayer was constructed without operand-width "
                 "information; cannot run reverse.")
+        W = basis.getW() if (basis is not None
+                             and hasattr(basis, 'getW')) else None
+
+        def _split_what(p_what):
+            if W is not None and hasattr(W, 'shape') and int(W.shape[0]) > 0:
+                return Ops.lowerReverseAll(
+                    p_what, W=W, left_rows=left_rows, right_rows=right_rows,
+                    left_priming=left_priming, right_priming=right_priming)
+            return self._pi.generate(p_what, gate=gate)
+
         cw = self._content_width
         if cw and parent.shape[-1] > cw:
             p_what, p_where, p_when = _split_event(parent, cw)
-            lc, rc = self._pi.generate(p_what, gate=gate)
+            lc, rc = _split_what(p_what)
             back = _lift_when(p_when)
             return (torch.cat([lc, p_where, back], dim=-1),
                     torch.cat([rc, p_where, back], dim=-1))
-        return self._pi.generate(parent, gate=gate)
+        return _split_what(parent)
 
     def compose(self, left, right, gate=None):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
@@ -9511,6 +9540,13 @@ class SymbolSubSpace(SubSpace):
                 _inter_w = float(
                     TheXMLConfig.training("interLossWeight", 0.1) or 0.1)
                 self.discourse.set_inter_loss_weight(_inter_w)
+                # InfoNCE next-idea contrastive term (<interContrastiveWeight> /
+                # <interContrastiveTemp>). 0.0 weight -> MSE-only (byte-identical).
+                self.discourse.set_inter_contrastive(
+                    float(TheXMLConfig.training("interContrastiveWeight", 0.0)
+                          or 0.0),
+                    float(TheXMLConfig.training("interContrastiveTemp", 0.1)
+                          or 0.1))
                 self.layers.append(self.discourse)
                 # ``self.discourse.parameters()`` now also enumerates the
                 # inter-level ``_inter_predictor`` (registered as a submodule

@@ -45,7 +45,7 @@ def test_all_shipped_grammars_load_with_rules():
 def test_query_ops_from_top_level_queries():
     G = _fresh('complete.grammar')
     assert {'exist(X)', 'equal(X, Y)', 'part(X, Y)', 'query(X, Y)',
-            'quantize(X)', 'wholes(X)', 'parts(X)'} == set(G.query_ops)
+            'quantize(X)', 'wholes(X)', 'parts(X)', 'arma(X)'} == set(G.query_ops)
     assert not any('isomorph' in q for q in G.query_ops)
 
 

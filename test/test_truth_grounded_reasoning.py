@@ -447,6 +447,182 @@ class TestSoftGenerator(unittest.TestCase):
         self.assertTrue(grads)
 
 
+class TestNeuralToolUser(unittest.TestCase):
+    """Phase B: the recurrent tool-use driver (soft propose / hard verify)."""
+
+    def _spaces(self, *ideas):
+        from Spaces import GlobalAttention as GA
+        keys = torch.stack(list(ideas)).detach()
+        return [{"id": GA.SPACE_WHOLE, "keys": keys,
+                 "boosts": torch.ones(keys.shape[0])}]
+
+    def _tooluser(self, store, spaces, *, iterations=10):
+        from Spaces import GlobalAttention
+        reasoner = TruthGroundedReasoner(store=store)
+        gen = InterveningIdeaGenerator(dim=8)
+        return reasoning.NeuralToolUser(
+            reasoner, generator=gen, ga=GlobalAttention(), spaces=spaces,
+            iterations=iterations)
+
+    def test_leaf_istrue_delegates(self):
+        # A leaf judgment needs no chain loop -> evaluate(), iterations 0.
+        store = _store(rows_ideas=[(IDEA_A, 0.9)])
+        tool = self._tooluser(store, self._spaces(IDEA_A, IDEA_C))
+        res = tool.run(QuerySpec(KIND_IS_TRUE, left=IDEA_A))
+        self.assertEqual(res.posture, TRUE)
+        self.assertEqual(res.iterations, 0)
+        self.assertEqual(res.ideas, [])
+
+    def test_stored_chain_without_generator(self):
+        # No soft half -> the stored hard chain alone still proves the syllogism.
+        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
+        tool = reasoning.NeuralToolUser(
+            TruthGroundedReasoner(store=store), iterations=10)
+        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        self.assertEqual(res.posture, TRUE)
+        self.assertTrue(res.chain)
+        self.assertEqual(res.ideas, [])
+        self.assertEqual(res.iterations, 0)
+
+    def test_generator_surfaces_verified_intermediate(self):
+        # MAN bridges Socrates->mortal; the soft loop must surface + hard-verify
+        # it above the distractors.
+        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
+        tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C))
+        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        self.assertEqual(res.posture, TRUE)
+        verified = [it for it in res.ideas if it["verified"]]
+        self.assertTrue(verified)
+        best = max(verified, key=lambda it: it["trust"])
+        self.assertGreaterEqual(
+            TruthGroundedReasoner.equal(best["idea"], MAN), 0.99)
+        self.assertAlmostEqual(best["trust"], 0.8, places=5)   # MIN(0.9, 0.8)
+
+    def test_ideas_ranked_by_relevance(self):
+        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
+        tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C))
+        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        rels = [it["relevance"] for it in res.ideas]
+        self.assertEqual(rels, sorted(rels, reverse=True))
+
+    def test_iterations_capped_and_terminates(self):
+        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
+        tool = self._tooluser(store, self._spaces(MAN, ANIMAL, IDEA_C),
+                              iterations=3)
+        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        self.assertGreaterEqual(res.iterations, 1)
+        self.assertLessEqual(res.iterations, 3)        # bounded by N
+        self.assertLessEqual(len(res.ideas), 3)        # N-capped output
+
+    def test_inert_without_spaces_falls_back(self):
+        store = _store(rows_partof=[(SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)])
+        from Spaces import GlobalAttention
+        tool = reasoning.NeuralToolUser(
+            TruthGroundedReasoner(store=store),
+            generator=InterveningIdeaGenerator(dim=8),
+            ga=GlobalAttention(), spaces=None, iterations=10)
+        res = tool.run(QuerySpec(KIND_IS_PART, left=SOCRATES, right=MORTAL))
+        self.assertEqual(res.posture, TRUE)            # stored chain still works
+        self.assertEqual(res.ideas, [])                # soft half inert
+
+
+class TestReasonPredictNext(unittest.TestCase):
+    """Step 2: the differentiable next-idea blend over {arma, retrieval,
+    deduction}; arma earns its weight, absent tools get exactly 0."""
+
+    def _spaces(self, *ideas):
+        from Spaces import GlobalAttention as GA
+        keys = torch.stack(list(ideas)).detach()
+        return [{"id": GA.SPACE_WHOLE, "keys": keys}]
+
+    def test_blend_differentiable_masks_absent_arma(self):
+        from Spaces import GlobalAttention
+        # store gives a 'wholes' deduction candidate; no model -> arma is absent.
+        reasoner = TruthGroundedReasoner(store=_store(
+            rows_partof=[(SOCRATES, MAN, 0.9)]))
+        gen = InterveningIdeaGenerator(dim=8)
+        tool = reasoning.NeuralToolUser(
+            reasoner, generator=gen, ga=GlobalAttention(),
+            spaces=self._spaces(MAN, MORTAL, IDEA_C))
+        e_hat, weights = tool.reason_predict_next(SOCRATES)
+        self.assertIsNotNone(e_hat)
+        self.assertEqual(int(weights.numel()), 3)
+        self.assertAlmostEqual(float(weights.sum()), 1.0, places=5)
+        # arma (index 0) absent (no discourse) -> exactly 0 weight.
+        self.assertAlmostEqual(float(weights[0]), 0.0, places=6)
+        # differentiable through the generator query head.
+        self.assertTrue(e_hat.requires_grad)
+        e_hat.sum().backward()
+        g = gen.head[0].weight.grad
+        self.assertIsNotNone(g)
+        self.assertTrue(torch.isfinite(g).all())
+
+    def test_none_without_generator(self):
+        reasoner = TruthGroundedReasoner(store=_store(
+            rows_partof=[(SOCRATES, MAN, 0.9)]))
+        tool = reasoning.NeuralToolUser(reasoner)      # no generator
+        self.assertEqual(tool.reason_predict_next(SOCRATES), (None, None))
+
+
+class TestAnswerPolicyLoss(unittest.TestCase):
+    """Phase C: the differentiable answer-policy loss + store-derived examples."""
+
+    def _spaces(self, *ideas):
+        from Spaces import GlobalAttention as GA
+        keys = torch.stack(list(ideas)).detach()
+        return [{"id": GA.SPACE_WHOLE, "keys": keys}]
+
+    def test_examples_from_store_builds_transitive_pairs(self):
+        r = TruthGroundedReasoner(store=_store(rows_partof=[
+            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
+        ex = reasoning.policy_examples_from_store(r)
+        # the 2-hop (socrates -> mortal) is a positive; its reverse is negative.
+        pos = [(a, b, g) for (a, b, g) in ex if g == 1.0]
+        self.assertTrue(any(
+            TruthGroundedReasoner.equal(a, SOCRATES) >= 0.99
+            and TruthGroundedReasoner.equal(b, MORTAL) >= 0.99 for a, b, g in pos))
+        self.assertTrue(any(g == 0.0 for _, _, g in ex))   # a negative present
+
+    def test_policy_loss_trains_generator_head(self):
+        # The bridge (MAN) is present in the truth-space -> the positive example
+        # produces a real gradient on the generator query head (the soft route).
+        r = TruthGroundedReasoner(store=_store(rows_partof=[
+            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
+        gen = InterveningIdeaGenerator(dim=8)
+        spaces = self._spaces(MAN, ANIMAL, IDEA_C)
+        ex = reasoning.policy_examples_from_store(r)
+        loss = reasoning.policy_answer_loss(gen, spaces, r, ex)
+        self.assertIsNotNone(loss)
+        self.assertTrue(loss.requires_grad)
+        loss.backward()
+        g = gen.head[0].weight.grad
+        self.assertIsNotNone(g)
+        self.assertTrue(torch.isfinite(g).all())
+        self.assertGreater(float(g.norm()), 0.0)           # the head actually trained
+
+    def test_policy_loss_none_without_examples_or_spaces(self):
+        r = TruthGroundedReasoner(store=_store(rows_partof=[(SOCRATES, MAN, 0.9)]))
+        gen = InterveningIdeaGenerator(dim=8)
+        # no 2-hop chain -> no examples -> None
+        self.assertEqual(reasoning.policy_examples_from_store(r), [])
+        self.assertIsNone(reasoning.policy_answer_loss(
+            gen, self._spaces(MAN), r, []))                 # empty examples
+        ex = [(SOCRATES, MORTAL, 1.0)]
+        self.assertIsNone(reasoning.policy_answer_loss(gen, [], r, ex))  # no spaces
+
+    def test_policy_loss_skips_oversized_space(self):
+        # A percept-scale codebook (> max_keys rows) is skipped; with only that
+        # space present, the loss is None (no idea-scale keys).
+        r = TruthGroundedReasoner(store=_store(rows_partof=[
+            (SOCRATES, MAN, 0.9), (MAN, MORTAL, 0.8)]))
+        gen = InterveningIdeaGenerator(dim=8)
+        from Spaces import GlobalAttention as GA
+        big = [{"id": GA.SPACE_PART, "keys": torch.zeros(600, 8)}]
+        ex = reasoning.policy_examples_from_store(r)
+        self.assertIsNone(reasoning.policy_answer_loss(
+            gen, big, r, ex, max_keys=512))
+
+
 class TestAnswerLoss(unittest.TestCase):
     """Phase 5: the policy (answer) loss primitive."""
 

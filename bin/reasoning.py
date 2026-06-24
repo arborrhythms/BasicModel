@@ -18,6 +18,11 @@ Grammar ``<queries>`` op  ->  tool method here:
     wholes(X)       -> wholes(X)       : the proximal containing wholes of X
                                          (transitivity gives the rest).
     parts(X)        -> parts(X)        : the proximal contained parts of X.
+    arma(X)         -> arma(X)         : the ARMA next-step prediction in
+                                         conceptual space (the statistical
+                                         discourse trajectory; the policy learns
+                                         when this momentum is the relevant
+                                         signal for the next idea).
 
 A chain of parthood reasoning is just repeated ``wholes()`` toward the goal --
 the same modus-ponens climb ``ConceptualSpace.reason`` performs, expressed via
@@ -266,6 +271,37 @@ class TruthGroundedReasoner:
         reachable. (A model codebook is the richer basis; Phase 3.)"""
         hit = self.query(X)
         return hit["idea"] if hit is not None else _as_vec(X)
+
+    def arma(self, X=None):
+        """``arma(X)``: the ARMA next-step prediction in conceptual space -- the
+        ``InterSentenceLayer``'s predicted next idea (the statistical discourse
+        trajectory). ``X`` is the current trajectory point (nominal; the ARMA
+        reads its OWN observed end-state chain, the autoregressive history).
+        Returns the predicted next-idea vector, or ``None`` when no warm
+        discourse predictor is configured (no model / no ``_inter_predictor`` /
+        a cold AR ring). A tool the reasoner can fold into a chain alongside the
+        hard deduction -- the policy learns when the trajectory momentum, vs
+        truth-space retrieval/deduction, is the relevant signal for the next
+        idea (this is the soft/hard split applied to next-sentence prediction)."""
+        m = self.model
+        disc = (getattr(getattr(m, "symbolSpace", None), "discourse", None)
+                if m is not None else None)
+        if disc is None or getattr(disc, "_inter_predictor", None) is None:
+            return None
+        if not (hasattr(disc, "predict_next_end_state")
+                and hasattr(disc, "get_stm_chain") and disc.get_stm_chain(n=1)):
+            return None                    # cold AR ring -> no real prediction
+        try:
+            shape = disc.predict_next_end_state()
+        except Exception:
+            return None
+        if shape is None:
+            return None
+        _depth, payload = shape
+        if (payload is None or not torch.is_tensor(payload)
+                or payload.numel() == 0 or not torch.isfinite(payload).all()):
+            return None
+        return payload.reshape(-1, int(payload.shape[-1]))[0]   # predicted root idea
 
     # == soft .where-read over the FULL truth-space (Phase 3) ============
 
@@ -555,6 +591,23 @@ class InterveningIdeaGenerator(nn.Module):
 
 # -- Answer (policy) loss (Phase 5) ------------------------------------------
 
+class NextIdeaScorer(nn.Module):
+    """Per-candidate logit head for the next-idea blend (Step 2): scores
+    ``[q ; cand_detached] -> scalar``, ADDED to the cosine logit so a learned
+    per-tool prior can ride the state_dict. Optional (cosine-only also works)."""
+
+    def __init__(self, dim, hidden=None):
+        super().__init__()
+        self.dim = int(dim)
+        h = int(hidden) if hidden else max(8, self.dim)
+        self.head = nn.Sequential(
+            nn.Linear(2 * self.dim, h), nn.ReLU(), nn.Linear(h, 1))
+
+    def logit(self, q, cand_detached):
+        x = torch.cat([_fit_dim(q, self.dim), _fit_dim(cand_detached, self.dim)])
+        return self.head(x).reshape(())
+
+
 def proof_score(signed_trust):
     """Map a signed trust / DoT in [-1,1] to a [0,1] proof-success score via the
     documented monotonic map ``(t+1)/2`` -- so a negative (refuting) score does
@@ -575,3 +628,303 @@ def answer_loss(predicted_signed, gold_label):
     p01 = proof_score(p.float()).clamp(1e-6, 1.0 - 1e-6)
     y = torch.as_tensor(float(gold_label))
     return -(y * torch.log(p01) + (1.0 - y) * torch.log(1.0 - p01))
+
+
+# -- The NeuralToolUser: the recurrent policy over the hard tools (Phase B) ---
+
+@dataclass
+class ReasoningResult:
+    """The output of one reasoning run (doc/plans/2026-06-23-reasoning-live-
+    wiring.md). ``ideas`` are the N candidate intervening ideas surfaced across
+    the loop, ranked by subsymbolic relevance (the attention α) -- the material
+    the N-sentence decode (Phase D) realizes. ``chain`` is the ranked list of
+    candidate proof chains (best first). ``iterations`` is how many loop steps
+    actually ran (early-exit on reaching the goal)."""
+
+    posture: str
+    confidence: float
+    support_true: float
+    support_false: float
+    ideas: list
+    chain: list
+    trace: Optional[str] = None
+    iterations: int = 0
+
+
+class NeuralToolUser:
+    """A policy that sequences the hard truth tools, driven by the soft
+    intervening-idea generator, to evaluate a ``QuerySpec`` and return a chain.
+
+    One step of the loop (§4.3a): the soft generator proposes a beam of
+    candidate intervening ideas (grounded reads over the typed truth-space,
+    ranked by the attention α = subsymbolic relevance); the hard
+    ``is_part_direct`` tool VERIFIES each candidate as a parthood hop; a verified
+    candidate that also reaches the goal closes a bridge, otherwise the
+    highest-relevance covered candidate advances the frontier. The soft read
+    recurs as ``prev_r`` so the next step queries a truth-space conditioned on
+    the last recalled idea. The deduction stays exact -- gradient (Phase C) only
+    rides the generator's query head + α; a verdict is never differentiated (§0).
+
+    Without a ``generator``/``ga``/``spaces`` the loop is inert and the result is
+    the stored-relation hard chain alone (``TruthGroundedReasoner.is_part``), so
+    the policy only ever ADDS candidate bridges -- it never changes a verdict the
+    hard tools would not also support.
+    """
+
+    def __init__(self, reasoner, *, generator=None, ga=None, spaces=None,
+                 iterations: int = 10, beam: int = 8, top_k: int = 8,
+                 materialize: bool = False):
+        self.reasoner = reasoner
+        self.generator = generator
+        self.ga = ga
+        self.spaces = spaces
+        self.iterations = int(iterations)
+        self.beam = int(beam)
+        self.top_k = int(top_k)
+        self.materialize = bool(materialize)
+
+    def run(self, q: QuerySpec, *, spaces=None) -> ReasoningResult:
+        """Evaluate ``q`` to a posture + the N ideas + the chain."""
+        spaces = self.spaces if spaces is None else spaces
+        r = self.reasoner
+        N = max(0, self.iterations)
+        # Leaf judgments need no chain -- delegate to the exact evaluate().
+        if q.predicate in (KIND_IS_TRUE, KIND_IS_EQUAL):
+            res = r.evaluate(q, max_steps=max(1, N), beam=self.beam)
+            return ReasoningResult(
+                posture=res["posture"], confidence=res["confidence"],
+                support_true=res["support_true"],
+                support_false=res["support_false"],
+                ideas=[], chain=res.get("candidates", []),
+                trace=res.get("trace"), iterations=0)
+        # isPart: the stored hard chain, AUGMENTED by the soft generator climb.
+        A = _as_vec(q.left)
+        B = _as_vec(q.right)
+        chains = list(r.is_part(A, B, max_steps=max(1, N), beam=self.beam,
+                                materialize=self.materialize))
+        ideas, steps = self._generate_chain(A, B, spaces, N)
+        for it in ideas:
+            if it["verified"]:
+                chains.append({"score": it["trust"], "how": "generated",
+                               "chain": [], "trust": it["trust"],
+                               "steps": it["step"] + 1, "idea": it["idea"]})
+        chains.sort(key=lambda c: -c["score"])
+        chains = chains[:self.beam]
+        score = chains[0]["score"] if chains else 0.0
+        refute = r._refuting_direct(A, B)
+        post = r._posture(score, refute, r.theta)
+        # The N ideas, ranked by subsymbolic relevance (the N-sentence material).
+        ideas.sort(key=lambda i: -i["relevance"])
+        ideas = ideas[:max(1, N)]
+        trace = r.render_chain(chains[0]) if chains else None
+        return ReasoningResult(
+            posture=post["posture"], confidence=post["confidence"],
+            support_true=post["support_true"],
+            support_false=post["support_false"],
+            ideas=ideas, chain=chains, trace=trace, iterations=steps)
+
+    def _generate_chain(self, A, B, spaces, N):
+        """The recurrent soft-propose / hard-verify loop. Returns
+        ``(ideas, steps)``: ``ideas`` are the candidate intervening ideas
+        surfaced across the steps (each ``{idea, relevance, space_id, cov_in,
+        cov_out, verified, trust, step}``); ``steps`` is how many iterations ran
+        (early-exit when a candidate bridges to ``B``). Inert (``[], 0``) when
+        the soft half is absent."""
+        ideas = []
+        if (self.generator is None or self.ga is None or not spaces or N <= 0):
+            return ideas, 0
+        r = self.reasoner
+        cur = A
+        prev_r = None
+        steps = 0
+        for t in range(N):
+            out = self.generator.propose(cur, B, spaces, ga=self.ga,
+                                         prev_r=prev_r, top_k=self.top_k)
+            if out is None:
+                break
+            steps = t + 1
+            prev_r = out["idea"]                       # recur the soft read
+            best_adv, best_adv_rel = None, -1.0
+            reached = False
+            for cand in out.get("candidates", []):
+                M = cand["idea"]
+                rel = float(cand.get("alpha", 0.0))
+                in_ok = r.is_part_direct(cur, M)       # cur ⊑ M ?
+                out_ok = r.is_part_direct(M, B)        # M ⊑ B ?
+                verified = in_ok is not None and out_ok is not None
+                trust = (min(in_ok[0], out_ok[0]) if verified else 0.0)
+                ideas.append({
+                    "idea": M, "relevance": rel,
+                    "space_id": cand.get("space"),
+                    "cov_in": None if in_ok is None else float(in_ok[0]),
+                    "cov_out": None if out_ok is None else float(out_ok[0]),
+                    "verified": verified, "trust": float(trust), "step": t})
+                if verified:
+                    if self.materialize:
+                        r.materialize(A, B, trust)
+                    reached = True
+                elif in_ok is not None and rel > best_adv_rel:
+                    best_adv, best_adv_rel = M, rel
+            if reached:
+                break
+            if best_adv is not None:
+                cur = best_adv                         # advance the frontier
+        return ideas, steps
+
+    def reason_predict_next(self, state_idea, *, spaces=None, scorer=None):
+        """Blend ``{arma, retrieval, deduction}`` into ONE differentiable
+        next-idea ``e_hat`` (Step 2). The candidate next-ideas are DETACHED
+        (hard/grounded); the gradient rides ONLY the generator query head (+ the
+        optional scorer) through the softmax blend weights -- the same in-graph
+        cosine-softmax pattern as ``policy_answer_loss`` (NOT ``GlobalAttention``,
+        which detaches its query). Tool order ``[arma, retrieval, deduction]``;
+        an absent tool gets a ``-inf`` logit so its weight is exactly 0. Returns
+        ``(e_hat [D], weights [C])``, or ``(None, None)`` when no candidate or no
+        generator."""
+        if self.generator is None:
+            return None, None
+        spaces = self.spaces if spaces is None else spaces
+        r = self.reasoner
+        D = int(self.generator.dim)
+        s = _fit_dim(state_idea, D)
+        zeros = torch.zeros(D, device=s.device, dtype=s.dtype)
+
+        cands, present = [], []
+        # (1) arma -- the statistical trajectory (a single [D] or None).
+        av = r.arma(s)
+        if av is not None and torch.is_tensor(av) and torch.isfinite(av).all():
+            cands.append(_fit_dim(av, D).detach())
+            present.append(True)
+        else:
+            cands.append(zeros)
+            present.append(False)
+        # (2) retrieval -- the soft .where read (GA already detaches keys+query).
+        rv = None
+        if self.ga is not None and spaces:
+            out = r.where_read(self.generator.concept_q(s, zeros, None),
+                               spaces, ga=self.ga, top_k=self.top_k)
+            rv = None if out is None else out.get("idea")
+        if rv is not None and torch.is_tensor(rv) and torch.isfinite(rv).all():
+            cands.append(_fit_dim(rv, D).detach())
+            present.append(True)
+        else:
+            cands.append(zeros)
+            present.append(False)
+        # (3) deduction -- the top containing whole (a stored, detached idea).
+        ws = r.wholes(s)
+        dv = ws[0]["idea"] if ws else None
+        if dv is not None and torch.isfinite(_as_vec(dv)).all():
+            cands.append(_fit_dim(dv, D).detach())
+            present.append(True)
+        else:
+            cands.append(zeros)
+            present.append(False)
+
+        if not any(present):
+            return None, None
+        C = torch.stack(cands, dim=0)                  # [3, D] detached
+        Cn = C / C.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+        q = self.generator.concept_q(s, zeros, None)   # [D] grad-bearing
+        qn = q / q.norm().clamp_min(1e-12)
+        logits = Cn @ qn                               # [3] grad via q
+        if scorer is not None:
+            logits = logits + torch.stack(
+                [scorer.logit(q, C[i]) for i in range(int(C.shape[0]))])
+        # Absent tools -> -inf so the softmax assigns them exactly 0 weight.
+        mask = torch.tensor([0.0 if p else float("-inf") for p in present],
+                            device=logits.device, dtype=logits.dtype)
+        weights = torch.softmax(logits + mask, dim=0)  # [3]
+        e_hat = (weights.unsqueeze(-1) * C).sum(0)      # [D] grad via weights
+        return e_hat, weights
+
+
+# -- The answer (policy) loss: train the soft route (Phase C) -----------------
+
+def policy_examples_from_store(reasoner, *, max_examples: int = 8) -> list:
+    """Build ``(A, B, gold)`` training examples from the reasoning store,
+    self-supervised from the provisioned truthSet -- no labelled QA set needed.
+    Each stored 2-hop transitive parthood ``a ⊑ b ⊑ c`` yields a POSITIVE
+    ``(a, c, 1.0)`` whose bridge is ``b``; its reverse ``(c, a, 0.0)`` is a
+    NEGATIVE. The positives carry the gradient (the policy learns to attend to a
+    real bridge); negatives have an empty bridge mask, so they only assert the
+    no-hallucination floor. Returns ``[]`` when no store / no 2-hop chains."""
+    store = reasoner.reasoning_store()
+    if store is None:
+        return []
+    edges = []
+    for (idx, np1, vp, np2, t1) in ConceptualSpace._iter_relation_rows(
+            store, _REL_PARTOF):
+        if t1 > reasoner.trust_threshold:
+            edges.append((_as_vec(np1), _as_vec(np2)))
+    examples = []
+    for (a, b) in edges:
+        for (b2, c) in edges:
+            if (reasoner.equal(b, b2) >= reasoner.tau_id
+                    and reasoner.equal(a, c) < reasoner.tau_id):
+                examples.append((a, c, 1.0))          # a ⊑ b ⊑ c  (true)
+                examples.append((c, a, 0.0))          # reversed   (false)
+                if len(examples) >= int(max_examples):
+                    return examples
+    return examples
+
+
+def _fit_keys(block, d):
+    """Pad/truncate a key matrix ``[M, W]`` to width ``d``."""
+    M, W = int(block.shape[0]), int(block.shape[1])
+    if W == d:
+        return block
+    out = block.new_zeros(M, d)
+    k = min(d, W)
+    out[:, :k] = block[:, :k]
+    return out
+
+
+def policy_answer_loss(generator, spaces, reasoner, examples, *,
+                       max_keys: int = 512):
+    """The differentiable answer-policy loss (Phase C). For each ``(A, B, gold)``
+    the generator's query head produces a query whose cosine-softmax attention
+    ``α`` over the typed truth-space is gated by a DETACHED hard bridge mask (the
+    exact ``is_part_direct`` tool decides WHICH keys bridge ``A → key → B``); the
+    bridge-attention mass maps to a signed proof score that is NLL'd against
+    gold. The attention is computed HERE (not via ``GlobalAttention``, which
+    detaches the query for its forward-retrieval use) so the gradient flows
+    through the query head + ``α`` -- the keys and the mask (the deduction) are
+    detached (§0). Oversized spaces (a percept codebook with > ``max_keys`` rows)
+    are skipped so the mask stays tractable; reasoning ranges over idea-scale
+    spaces (LTM / codebooks / STM). Returns a scalar loss tensor, or ``None``."""
+    if generator is None or not spaces or not examples:
+        return None
+    D = int(generator.dim)
+    blocks = []
+    for s in spaces:
+        k = s.get("keys")
+        if not (k is not None and torch.is_tensor(k) and k.dim() in (2, 3)
+                and int(k.shape[-2]) > 0):
+            continue
+        block = (k if k.dim() == 2 else k[0])
+        if int(block.shape[0]) > int(max_keys):
+            continue                                  # skip a huge percept codebook
+        blocks.append(_fit_keys(block.detach().float(), D))
+    if not blocks:
+        return None
+    K = torch.cat(blocks, dim=0)                       # [Mtot, D], detached
+    Kn = K / K.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+    losses = []
+    for (A, B, gold) in examples:
+        Av = _fit_dim(A, D)
+        Bv = _fit_dim(B, D)
+        q = generator.concept_q(Av, Bv)               # [D], grad-bearing
+        qn = q / q.norm().clamp_min(1e-12)
+        alpha = torch.softmax(Kn @ qn, dim=0)         # [Mtot], grad through q
+        mask = torch.zeros(int(K.shape[0]))
+        for m in range(int(K.shape[0])):
+            key = K[m]
+            if (reasoner.is_part_direct(Av, key) is not None
+                    and reasoner.is_part_direct(key, Bv) is not None):
+                mask[m] = 1.0
+        support = (alpha * mask.detach()).sum()        # bridge-attention mass (grad)
+        predicted_signed = torch.tanh(support)         # (-1,1) via α; mask detached
+        losses.append(answer_loss(predicted_signed, gold))
+    if not losses:
+        return None
+    return torch.stack(losses).mean()

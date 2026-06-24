@@ -540,6 +540,10 @@ class Data():
             self.loadXOR()
         if dataset == "phrases":
             self.loadPhrases()
+        if dataset == "queries":
+            self.loadQueries()
+        if dataset == "sequences":
+            self.loadSequences()
         if dataset == "tomatoes":
             self.loadTomatoes()
         if dataset == "text":
@@ -790,6 +794,66 @@ class Data():
             "train":      {"text": phrases, "label": labels},
             "validation": {"text": phrases, "label": labels},
             "test":       {"text": phrases, "label": labels},
+        }
+        self.train_input       = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input  = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input        = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+
+    def loadQueries(self):
+        """Tiny yes/no parthood QA set for reasoning Phase C/E validation. Each
+        item is an interrogative; label = 1 if the parthood holds under the
+        MM_query_reasoning truthSet (socrates ⊑ human ⊑ mortal), else 0. The
+        answer-policy loss (Phase C) is self-supervised from the truthSet store,
+        not these labels -- this set drives the codebook to learn the words and
+        is the serve/infer (Phase E) validation corpus."""
+        texts = [
+            "is socrates part of human",    # direct  -> true
+            "is socrates part of mortal",   # 2-hop   -> true
+            "is human part of mortal",      # direct  -> true
+            "is mortal part of socrates",   # reversed -> false
+            "is human part of socrates",    # reversed -> false
+            "is socrates part of stone",    # no chain -> false
+        ]
+        labels = [[1], [1], [1], [0], [0], [0]]
+        data = {
+            "train":      {"text": texts, "label": labels},
+            "validation": {"text": texts, "label": labels},
+            "test":       {"text": texts, "label": labels},
+        }
+        self.train_input       = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input  = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input        = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+
+    def loadSequences(self):
+        """Multi-sentence DOCUMENTS for inter-sentence prediction (the L_inter
+        MSE + InfoNCE contrastive next-idea terms). Each row is ONE LONG document
+        of '. '-delimited sentences over a shared vocab. Two preconditions for
+        the discourse end-state chain to span sentences (so the next-idea loss
+        fires): (1) the BYTE cursor (this config sets <lexer>byte</lexer>) keeps
+        the document in one stream -- a trial cursor resets the chain every tick;
+        (2) each document must EXCEED the byte slab width (InputSpace nObj, ~1024)
+        so it is walked over MULTIPLE ticks -- one end-state per tick, the chain
+        accumulating to >=2 before the document-boundary reset. A short document
+        collapses to a single tick / single end-state and never trains the
+        predictor. So each base pattern is repeated to ~1600 bytes."""
+        bases = ["the cat sat. the dog ran. ",
+                 "the dog sat. the cat ran. ",
+                 "the cat ran. the dog sat. ",
+                 "the dog ran. the cat sat. "]
+        docs = [(b * 64).strip() for b in bases]   # ~1600 bytes each (> slab)
+        labels = [[0], [0], [0], [0]]
+        data = {
+            "train":      {"text": docs, "label": labels},
+            "validation": {"text": docs, "label": labels},
+            "test":       {"text": docs, "label": labels},
         }
         self.train_input       = data["train"]["text"]
         self.train_output      = data["train"]["label"]
