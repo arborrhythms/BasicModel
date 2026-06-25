@@ -988,6 +988,8 @@ class BaseModel(Mereology, nn.Module):
             emb_params = _emb_legacy.embedding_parameters()
             self.perceptualSpace.params = self.perceptualSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
+        self.loss.conceptual_similarity_scale = float(
+            _t("conceptualSimilarityScale", 0.0) or 0.0)
         if _emb_legacy is not None:
             _emb_legacy.optimize_embedding = self.optimize_embedding
             object.__setattr__(_emb_legacy, "_model", self)
@@ -3305,6 +3307,49 @@ class BasicModel(BaseModel):
             return None
         return torch.stack(terms).mean()
 
+    def conceptual_sbow_loss(self):
+        """Rotation SBOW (CBOW-NS) over the per-concept similarity codebook.
+
+        Snaps each parked all-siblings concept-slab position to its nearest
+        similarity-codebook row by cosine (no grad -- self-supplied concept
+        identity), gathers those rows as the SBOW window, and situates them via
+        ``embed.conceptual_sbow_loss_codes``. The gather is grad-bearing, so the
+        rotation gradient (tangential, radius-preserving) trains the codebook
+        rows as the per-concept located codes. Returns a scalar tensor, or
+        ``None`` when the codebook / parked slab is unavailable or serial.
+
+        NOTE (2026-06-24): the ConceptualSpace has NO forward codebook -- its
+        ``.what`` is a *computed* Tensor from the percept binding, and
+        ``subspace.codebook()`` is ``None``.  So this similarity_codebook is
+        forward-disconnected: situating it cannot differentiate the (computed,
+        collinear) conceptual representation.  Real co-location needs the
+        percept->concept binding to differentiate upstream (or a commitment
+        loss training that binding), not a codebook to situate.  See
+        memory/conceptual-similarity-space.md.
+        """
+        cs = getattr(self, "conceptualSpace", None)
+        cb = getattr(cs, "similarity_codebook", None) if cs is not None else None
+        slab = getattr(self, "_cs_parallel_slab", None)
+        object.__setattr__(self, "_cs_parallel_slab", None)  # consume-once
+        if cb is None or slab is None or self.serial:
+            return None
+        if not torch.is_tensor(slab) or slab.dim() != 3 or slab.shape[1] < 2:
+            return None
+        rows = cb.prototype()
+        if rows is None or not torch.is_tensor(rows) or rows.shape[0] < 1:
+            return None
+        eps = 1e-8
+        D = min(int(slab.shape[-1]), int(rows.shape[-1]))
+        slab = slab[..., :D]
+        rows = rows[..., :D]
+        with torch.no_grad():
+            s = slab / slab.norm(dim=-1, keepdim=True).clamp_min(eps)
+            r = rows / rows.norm(dim=-1, keepdim=True).clamp_min(eps)
+            assign = torch.einsum('bnd,vd->bnv', s, r).argmax(dim=-1)   # [B, N]
+        window = rows[assign]                                           # [B, N, D]
+        from embed import conceptual_sbow_loss_codes
+        return conceptual_sbow_loss_codes(window, pool=rows, scale=1.0)
+
     def accumulate_output_symbol_residual(self, outputTensor, outputDataPred):
         """Use supervised output targets to form a symbol-space residual.
 
@@ -4242,6 +4287,16 @@ class BasicModel(BaseModel):
                 intra_loss = None
 
             totalLoss = self.loss.total(lossOut, lossIn, sbow)
+            _cscale = float(getattr(
+                self.loss, "conceptual_similarity_scale", 0.0) or 0.0)
+            if train and not self.serial and _cscale > 0.0:
+                csbow = self.conceptual_sbow_loss()
+                if csbow is not None:
+                    totalLoss = totalLoss + _cscale * csbow
+                    TheError.add(
+                        "conceptual_sbow", csbow, weight=_cscale,
+                        space="ConceptualSpace", category="embedding",
+                    )
             if lossRev is not None:
                 totalLoss = totalLoss + (
                     float(getattr(self.loss, 'reconstruction_scale', 0.0)
@@ -6505,6 +6560,16 @@ class BasicModel(BaseModel):
             # (STM bookkeeping, no parameterised fold). PRESERVED intact --
             # the combine only replaces the CONTENT advance below.
             CS_sub = cs.forward(contribution, WS_sub)
+            # Park the all-siblings concept slab at the parallel pass (stage 0)
+            # for the post-forward conceptual SBOW. Used only for the (no-grad)
+            # nearest-row assignment, so a detached materialize suffices. Gated
+            # on conceptualSimilarityScale > 0 so a config that does not train
+            # the similarity codebook keeps a byte-identical forward.
+            if (t == 0 and not self.serial
+                    and float(getattr(getattr(self, "loss", None),
+                                      "conceptual_similarity_scale", 0.0) or 0.0) > 0.0):
+                object.__setattr__(
+                    self, "_cs_parallel_slab", CS_sub.materialize().detach())
             if t == 0:
                 # Asymmetric recon leg (input -> codebook): lift the
                 # stage-0 WS codebook reconstruction term -- threaded by

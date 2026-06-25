@@ -1,20 +1,15 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
-       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
-       but scaled to XOR-sized dims. -->
+  <!-- MM_concept_sim: MM_xor + the LIVE conceptual similarity codebook on
+       ConceptualSpace (doc/plans/2026-06-23-conceptual-similarity-space.md).
+       Parallel pass (symbolicOrder=0) so the all-siblings concept slab is
+       produced and the rotation SBOW can situate it. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
     <data>
       <dataType>embedding</dataType>
     </data>
-    <!-- Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-         butterfly cascade on PartSpace.pi requires the parallel
-         (whole-slab) forward path so the cascade sees all N positions
-         at once. Serial / per-word mode iterates the cascade with a
-         single position per call (the cascade then passes through as
-         a no-op). -->
     <symbolicOrder>0</symbolicOrder>
 
     <training>
@@ -23,14 +18,13 @@
       <reconstructionScale>0.1</reconstructionScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
+      <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
       <autoload>false</autoload>
     </training>
 
   </architecture>
 
   <InputSpace>
-    <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
-         not inherit the raw default (which targets analyse). -->
     <nVectors>8</nVectors>
     <nDim>14</nDim>
     <nOutput>8</nOutput>

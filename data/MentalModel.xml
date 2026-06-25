@@ -74,7 +74,7 @@
   </ConceptualSpace>
 
   <WholeSpace>
-    <lexer>sentence</lexer>
+    <analysis>sentence</analysis>
     <nOutput>128</nOutput>
     <nDim>104</nDim>
     <nVectors>128</nVectors>

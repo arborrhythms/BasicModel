@@ -224,11 +224,24 @@ def run(cmd, **kwargs):
 
 
 def _find_lexer(root):
-    """Return the XML lexer knob from WholeSpace or legacy InputSpace."""
+    """Return the XML lexer knob from WholeSpace or legacy InputSpace.
+
+    Mirrors Spaces.resolve_lexer: <analysis> is the unified WholeSpace knob
+    (its lexer-valued options raw/byte/word/sentence ARE the lexer;
+    grammatical/meronomy leave it at raw); <analyzer>/<lexer> are the
+    deprecated spellings, kept with precedence.
+    """
     ws = root.find(".//WholeSpace")
-    lexer = ws.findtext("lexer") if ws is not None else None
-    if lexer:
-        return lexer
+    if ws is not None:
+        for _key in ("analyzer", "lexer"):
+            v = ws.findtext(_key)
+            if v:
+                return v
+        a = ws.findtext("analysis")
+        if a in ("raw", "byte", "word", "sentence"):
+            return a
+        if a in ("grammatical", "meronomy"):
+            return "raw"
     inp = root.find(".//InputSpace")
     legacy = inp.findtext("lexer") if inp is not None else None
     if legacy:
@@ -267,8 +280,9 @@ def read_xml_config(xml_path):
                 lexer = _find_lexer(ET.parse(defaults_path).getroot())
             except ET.ParseError:
                 lexer = None
-    if lexer:
-        result["lexer"] = lexer
+    # Default raw (formerly the data/model.xml <lexer>raw> default, now removed
+    # since <analysis> is authoritative; raw is the unanalyzed surface).
+    result["lexer"] = lexer or "raw"
     # PartSpace.nDim is the lexicon vector size; SBOW must train at
     # this dim or downstream codebook lookups blow up at load time.
     perc = root.find(".//PartSpace")

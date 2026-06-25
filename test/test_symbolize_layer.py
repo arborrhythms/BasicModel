@@ -155,7 +155,7 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Construct SymbolizeLayer with Space refs.
         meta = SymbolizeLayer(
@@ -200,7 +200,7 @@ class TestSymbolizeLayerForward(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[3] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Pre-register the META node directly.
         explicit_fused = torch.zeros(D)
@@ -255,7 +255,7 @@ class TestSymbolizeLayerReverse(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 0.8
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Register a META node and pin its row to a deterministic vec
         # so the nearest-match snaps to it.
@@ -315,7 +315,7 @@ class TestSymbolizeLayerIdempotency(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[6] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
             wholeSpace=ws,
@@ -610,7 +610,7 @@ class TestSymbolizeLayerComposeGenerate(unittest.TestCase):
         b = torch.zeros(D)
         b[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = a
+            ps_store._basis.W.data[ps_row, :] = a
             ws.subspace.what.getW().data[ws_row, :] = b
         meta = SymbolizeLayer(
             wholeSpace=ws,
@@ -726,7 +726,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
             wholeSpace=ws,
@@ -801,7 +801,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         meta = SymbolizeLayer(
             wholeSpace=ws,
@@ -848,7 +848,7 @@ class TestSymbolizeLayerGradient(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[3] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         # Pre-register the META node so the second forward call hits
         # the idempotent existing-META branch.
@@ -1008,7 +1008,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
         try:
@@ -1072,7 +1072,7 @@ class TestSymbolizeLayerSignalRouterDispatch(unittest.TestCase):
         ws_vec = torch.zeros(D)
         ws_vec[1] = 1.0
         with torch.no_grad():
-            ps_store.codebook.data[ps_row, :] = ps_vec
+            ps_store._basis.W.data[ps_row, :] = ps_vec
             ws.subspace.what.getW().data[ws_row, :] = ws_vec
         ss, cs, prev_rules = self._wire_meta_into_cs_space_role(m)
         try:

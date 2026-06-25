@@ -3273,14 +3273,16 @@ class TestDataScaling(unittest.TestCase):
         """Data.normalize and Data.denormalize are inverses."""
         Models.TheData.input_min = -5.0
         Models.TheData.input_max = 5.0
+        Models.TheData.input_presence = True   # presence data -> [0,1]
         Models.TheData.output_min = -5.0
         Models.TheData.output_max = 5.0
         x = torch.tensor([[-5.0, 0.0, 5.0]])
         scaled = Models.TheData.normalize(x, which="input")
-        self.assertTrue(torch.allclose(scaled, torch.tensor([[-1.0, 0.0, 1.0]])))
+        # presence input maps to the [0,1] percept hypercube (was [-1,1]).
+        self.assertTrue(torch.allclose(scaled, torch.tensor([[0.0, 0.5, 1.0]])))
         roundtrip = Models.TheData.denormalize(scaled, which="input")
         self.assertTrue(torch.allclose(roundtrip, x))
-        # denormalize(output): [-1,1] -> [min,max]
+        # denormalize(output): [-1,1] -> [min,max] (output range unchanged)
         act = torch.tensor([[-1.0, 0.0, 1.0]])
         rescaled = Models.TheData.denormalize(act, which="output")
         self.assertTrue(torch.allclose(rescaled, torch.tensor([[-5.0, 0.0, 5.0]])))

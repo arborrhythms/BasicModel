@@ -121,6 +121,45 @@ def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return 1.0 - 2.0 * mse
 
 
+def _presence_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Presence similarity on the percept cube [0,1]^D: un-wrapped MSE
+    remapped to ``1 - 2*mse`` (1 = identical, -1 = complement at the
+    corners).
+
+    Same range / argmax contract as :func:`_wrapped_mse_score` (drop-in at
+    the percept-store decode sites) but with NO torus wrap -- the cube is
+    non-periodic. On rows already in [0,1] it ranks identically to the
+    wrapped form (the wrap is an identity there); re-homing the codebook
+    rows onto the cube is what makes the distinction load-bearing.
+    See doc/percept-hypercube.md s2 for the [0,1] / complement geometry.
+    """
+    d = min(a.shape[-1], b.shape[-1])
+    delta = a[..., :d] - b[..., :d]
+    mse = delta.square().mean(dim=-1)
+    return 1.0 - 2.0 * mse
+
+
+def _unorm_ste(x: torch.Tensor) -> torch.Tensor:
+    """Re-home a float master parameter onto the percept cube [0,1]^D.
+
+    UNORM clamp with a straight-through estimator (doc/percept-hypercube.md
+    s7): the forward VALUE is ``clamp(x, 0, 1)`` (so every READER sees a
+    coordinate on the positive unit cube), but the gradient passes straight
+    through to the unclamped master ``x``. Without the STE, JOINT backprop
+    would push the codes back off the cube (task fact #1); with it, the
+    optimizer keeps a float master while every read is on [0,1].
+
+    Identity on rows already inside [0,1]; the ``.detach()`` term makes the
+    saturation gradient-transparent (``d/dx == 1`` everywhere). The upper
+    bound is ``1.0 - eps`` so a saturated coordinate never lands on the
+    torus-cell boundary where ``_wrap_unit_ball`` would alias ``1.0 -> -1.0``
+    (the percept normalize wrap, embed._wrap_unit_ball).
+    """
+    hi = 1.0 - torch.finfo(x.dtype).eps
+    clamped = x.clamp(0.0, hi)
+    return x + (clamped - x).detach()
+
+
 def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """Negation-aware matmul similarity for **bivector-encoded**
     lookup (NEG <-> negation, where ``-x`` is the bivector pair-swap
@@ -1684,6 +1723,82 @@ class PretrainModel:
 
     # -- export ----------------------------------------------------------------
 
+
+
+def conceptual_sbow_loss_codes(window, pool=None, *, sigma=None, neg_k=None,
+                               scale=1.0, gaussian=False, beta=10.0, eps=1e-8):
+    """Plain-unit-ball SBOW over continuous concept codes (differentiable, joint).
+
+    ``window`` is a ``[N, D]`` or ``[B, N, D]`` tensor of per-position concept
+    codes (one row per co-present sibling). Returns a scalar loss tensor, or
+    ``None`` when fewer than 2 siblings are present.
+
+    Two cosine (rotation) attractions, each ``-logsigmoid(beta * cos)``:
+      - in-group: every code's unit direction is pulled toward ``pode_dir`` =
+        ``normalize`` of the position-weighted leave-one-out centroid of the
+        window. ``gaussian=False`` uses the uniform leave-one-out centroid;
+        ``gaussian=True`` with ``sigma`` uses an exp(-d^2/2sigma^2) kernel.
+      - out-group (word2vec SGNS): each code is REPELLED from ``neg_k`` random
+        negative codes sampled from ``pool`` (push their pairwise cosine down) --
+        NOT pulled toward ``-pode_dir``. Concepts have negation, so ``-pode`` is
+        a concept's negation; attracting the out-group to it collapses every code
+        onto the +pode/-pode axis. Pairwise repulsion spreads them instead.
+
+    SBOW situates CONCEPTS only -- the conceptual similarity layer, where codes
+    are free to float by substitutability. PERCEPTS are deliberately NOT
+    SBOW-situated: a percept's position is anchored by the perceptual metric
+    (sensory similarity) and carries the mereological encoding (the sigma/pi
+    part/whole fold algebra is a geometric relation between part- and
+    whole-vectors), which moving individual vectors would corrupt. See
+    doc/percept-hypercube.md.
+
+    Operating on unit directions makes the gradient tangential, so a code's
+    magnitude is left untouched and only its angle rotates; ``beta`` is the
+    cosine sharpness. See doc/plans/2026-06-23-conceptual-similarity-space.md.
+    """
+    if window is None:
+        return None
+    if window.dim() == 2:
+        window = window.unsqueeze(0)                       # [1, N, D]
+    if window.dim() != 3:
+        return None
+    B, N, D = window.shape
+    if N < 2:
+        return None
+    dev, dt = window.device, window.dtype
+
+    def _unit(x):
+        return x / x.norm(dim=-1, keepdim=True).clamp_min(eps)
+
+    pos = torch.arange(N, device=dev, dtype=dt)
+    if gaussian and sigma:
+        Wk = torch.exp(-((pos[:, None] - pos[None, :]) ** 2)
+                       / (2.0 * float(sigma) ** 2))
+    else:
+        Wk = torch.ones(N, N, device=dev, dtype=dt)        # uniform leave-one-out
+    Wk.fill_diagonal_(0.0)
+    Wk = Wk / Wk.sum(dim=1, keepdim=True).clamp_min(eps)   # row-normalized [N, N]
+
+    # Detach the context direction so it is a fixed per-step target: gradient
+    # then flows only through unit(window)/unit(out), i.e. purely tangential,
+    # leaving each code's magnitude (its radius) untouched (rotation only).
+    pode_dir = _unit(torch.einsum('ij,bjd->bid', Wk, window)).detach()
+    in_sim = (_unit(window) * pode_dir).sum(-1)                 # cosine [B, N]
+
+    src = pool if pool is not None else window.reshape(-1, D)
+    K = int(neg_k) if neg_k else max(1, N - 1)
+    out = src[torch.randint(0, src.shape[0], (B, N, K), device=dev)]   # [B,N,K,D] negatives
+    # word2vec SGNS: repel each code from random NEGATIVE codes (the absent
+    # concepts), NOT toward the single ``-pode``. Concepts have negation, so the
+    # ``-pode`` antipode IS a concept's negation; pulling the out-group to it
+    # collapses every code onto the +pode/-pode (present/absent) axis
+    # (raw cosine ~1, then the snap funnels to one row). Pairwise
+    # code-vs-negative repulsion spreads them across the sphere instead, and
+    # every code is trained each round (present -> pode, absent -> pushed).
+    out_sim = (_unit(window).unsqueeze(2) * _unit(out)).sum(-1)        # [B,N,K] code . negative
+
+    return scale * (-F.logsigmoid(beta * in_sim).mean()
+                    - F.logsigmoid(-beta * out_sim).mean())            # push code AWAY from negatives
 
 
 class _CBOWModule(nn.Module):

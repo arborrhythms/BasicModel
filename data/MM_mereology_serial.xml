@@ -82,7 +82,7 @@
   </ConceptualSpace>
 
   <WholeSpace>
-    <lexer>raw</lexer>
+    <analysis>raw</analysis>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
     <nVectors>65536</nVectors>

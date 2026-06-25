@@ -121,12 +121,12 @@ class TestAnalyseMigration(unittest.TestCase):
                 BaseModel.from_config(config_path=path)
 
     def test_ws_analysis_knob_accepted(self):
-        # <analysis>analyse on WholeSpace builds; mode is stashed.
+        # <analysis>grammatical on WholeSpace builds; mode is stashed.
         from Models import BaseModel
         with tempfile.TemporaryDirectory() as tmp:
-            path = _write_xml(tmp, analysis="analyse")
+            path = _write_xml(tmp, analysis="grammatical")
             model, _cfg = BaseModel.from_config(config_path=path)
-            self.assertEqual(model.wholeSpace.analysis_mode, "analyse")
+            self.assertEqual(model.wholeSpace.analysis_mode, "grammatical")
 
     def _tokens(self, synthesis, lexer="byte"):
         import torch

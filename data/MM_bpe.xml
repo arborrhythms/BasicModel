@@ -51,7 +51,7 @@
   </ConceptualSpace>
 
   <WholeSpace>
-    <lexer>byte</lexer>
+    <analysis>byte</analysis>
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>8</nVectors>

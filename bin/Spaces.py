@@ -38,13 +38,15 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import (
     WordVectors, PretrainModel,
     _wrap_unit_ball, _wrapped_mse_score, _pole_aligned_score,
-    _random_unit_ball,
-) 
+    _random_unit_ball, _presence_mse_score, _unorm_ste,
+)
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
 from Layers import UNIVERSE as _UNIVERSE, ATOM as _ATOM  # relation-only lattice poles (word/object/meta)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
+# NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
+# Layers lazy attrs -> Language -> Spaces, a cycle at module-load time).
 from Layers import GrammarLayer
 # NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
@@ -1530,6 +1532,13 @@ class Basis(nn.Module):
         self.nDim = 0
         self.monotonic = True
         self.ergodic = False
+        # [0,1] percept-presence marker. Default False; set True ONLY on the
+        # radix percept Codebook (rows on the positive unit cube), never on the
+        # signed lexicon Embedding nor the concept/symbol sphere. `unit_ball`
+        # alone can't discriminate (True for percept Codebook AND lexicon
+        # Embedding), so the [0,1] decode at _snap_content / _nearest_idx /
+        # codebookDistance keys on this. See doc/percept-hypercube.md s2,s9.
+        self.is_percept_store = False
 
     @property
     def unit_ball(self) -> bool:
@@ -1852,10 +1861,19 @@ class Basis(nn.Module):
             # NEG-quotient here -- ``word`` and ``-word`` are distinct
             # entries whose sign is form content (MeronomySpec §3;
             # Stage 5 audit).
-            scores = _wrapped_mse_score(
-                flat[nonzero].unsqueeze(1),
-                weight[:, :nWhat].unsqueeze(0),
-            )
+            if meronomy_enabled() and getattr(self, "is_percept_store", False):
+                # [0,1] percept presence: complement-aware, no torus wrap
+                # (doc/percept-hypercube.md s2). Scoped to the radix percept
+                # Codebook; lexicon/concept decode is the verbatim else.
+                scores = _presence_mse_score(
+                    flat[nonzero].unsqueeze(1),
+                    weight[:, :nWhat].unsqueeze(0),
+                )
+            else:
+                scores = _wrapped_mse_score(
+                    flat[nonzero].unsqueeze(1),
+                    weight[:, :nWhat].unsqueeze(0),
+                )
             idx = scores.argmax(dim=1)
             flat[nonzero] = weight[idx, :nWhat]
         else:
@@ -2082,6 +2100,13 @@ class Basis(nn.Module):
         weight = self._prototype_weight(context="codebookDistance")
         vec = weight[:, :self.nDim].to(TheDevice.get())
         if self.unit_ball:
+            if meronomy_enabled() and getattr(self, "is_percept_store", False):
+                # [0,1] percept presence (doc/percept-hypercube.md s2); keeps
+                # forward-snap on the same metric as _snap_content/_nearest_idx.
+                return _presence_mse_score(
+                    x[..., :self.nDim].unsqueeze(-2),
+                    vec,
+                )
             return _wrapped_mse_score(
                 x[..., :self.nDim].unsqueeze(-2),
                 vec,
@@ -2461,7 +2486,23 @@ class Codebook(Basis):
 
     def getW(self):
         """Return the codebook prototype matrix ``[V, D]`` (or ``None``
-        when the codebook hasn't been built yet)."""
+        when the codebook hasn't been built yet).
+
+        On the radix percept Codebook (``is_percept_store``) under
+        ``meronomy_enabled()`` the read is re-homed onto the positive unit
+        cube ``[0,1]^D`` via a UNORM straight-through clamp
+        (doc/percept-hypercube.md s7): every reader -- the forward gather
+        (PartSpace._embed_radix), the forward VQ snap, and the reverse
+        nearest-row decode -- then sees [0,1] codes, while the master
+        Parameter stays a float that JOINT backprop trains through the STE.
+        Every other Codebook (the signed concept/symbol sphere, the
+        unmarked stores) and meronomy-OFF return ``self.W`` verbatim, so
+        those paths are byte-identical.
+        """
+        if (self.W is not None
+                and getattr(self, "is_percept_store", False)
+                and meronomy_enabled()):
+            return _unorm_ste(self.W)
         return self.W
 
     def setW(self, value):
@@ -4814,8 +4855,24 @@ class Embedding(Basis):
         # 4 vs codebook 6 with positional dims); we match on the shared
         # prefix rather than raising on the width mismatch.
         d = min(vec.shape[0], codebook.shape[1])
-        scores = _wrapped_mse_score(
-            vec[:d].unsqueeze(0), codebook[:, :d])
+        if meronomy_enabled() and getattr(self, "is_percept_store", False):
+            scores = _presence_mse_score(
+                vec[:d].unsqueeze(0), codebook[:, :d])
+        else:
+            scores = _wrapped_mse_score(
+                vec[:d].unsqueeze(0), codebook[:, :d])
+        # The null / padding percept is never a valid reconstruction output --
+        # mask it out of the nearest-row search so a reverse-decoded vector that
+        # lands closest to the null slot resolves to the nearest REAL percept
+        # instead of "__NULL_PERCEPT__". Guarded to the full codebook (the
+        # restricted-subset decode passes its own row map, where this index
+        # does not apply).
+        null_idx = getattr(self, 'null_percept_idx', None)
+        full_w = self.getW()
+        if (null_idx is not None and torch.is_tensor(full_w)
+                and codebook.shape[0] == full_w.shape[0]
+                and 0 <= int(null_idx) < scores.shape[-1]):
+            scores[..., int(null_idx)] = float('-inf')
         return scores.argmax().item()
 
     def forward(self, input, return_meta=False):
@@ -7402,6 +7459,26 @@ class Space(nn.Module):
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
 
+    @property
+    def percept_store(self):
+        """Radix percept operator/vocabulary, stored on ``self.subspace``
+        (the state container the Space carries), not as a bare Space
+        attribute -- subspaces are the data threaded through forward. Returns
+        None when the subspace has none (non-radix spaces, or pre-build)."""
+        sub = getattr(self, "subspace", None)
+        return getattr(sub, "percept_store", None) if sub is not None else None
+
+    def __setattr__(self, name, value):
+        # ``percept_store`` is held on the subspace (the state container);
+        # route writes there so ``space.percept_store = X`` stays transparent
+        # while the state lives with the subspace, not bare on the Space.
+        # (A property setter can't do this: nn.Module.__setattr__ intercepts
+        # Module values before the descriptor runs.)
+        if name == "percept_store" and getattr(self, "subspace", None) is not None:
+            self.subspace.percept_store = value
+            return
+        super().__setattr__(name, value)
+
     def _build_what_basis(self):
         return None
 
@@ -7976,10 +8053,32 @@ def resolve_lexer():
             "analytic cutting -- analysis/synthesis dual-input plan Phase "
             f"4b, rev. 2026-06-09). Move <lexer>{_legacy}</lexer> into the "
             "<WholeSpace> section.")
+    # <analyzer> REPLACES <lexer> (doc/mereological.md): prefer the new spelling,
+    # fall back to the deprecated <lexer>.
+    for _key in ("analyzer", "lexer"):
+        try:
+            _v = TheXMLConfig.space("WholeSpace", _key)
+        except (KeyError, TypeError, ValueError):
+            _v = None
+        if _v:
+            return _v
+    # <analysis> is the UNIFIED WholeSpace knob (it absorbs the lexer options);
+    # <analyzer>/<lexer> are the deprecated spellings, kept as overrides above so
+    # existing configs are byte-identical. Its lexer-valued options
+    # (raw/byte/word/sentence) ARE the lexer; the analysis-only values
+    # (grammatical/meronomy) leave the lexer at raw -- the analyzer cuts the raw
+    # surface, the synthesizer makes the wholes.
     try:
-        return TheXMLConfig.space("WholeSpace", "lexer")
+        _a = TheXMLConfig.space("WholeSpace", "analysis")
     except (KeyError, TypeError, ValueError):
-        return None
+        _a = None
+    if _a in ("raw", "byte", "word", "sentence"):
+        return _a
+    if _a in ("grammatical", "meronomy"):
+        return "raw"
+    # Nothing set -> raw (the unanalyzed surface; formerly the model.xml default
+    # <lexer>raw>, now the resolver's own default so <analysis> is authoritative).
+    return "raw"
 
 
 class InputSpace(Space):
@@ -8852,7 +8951,12 @@ class InputSpace(Space):
                 # commit. The per-word STM push / A/B/C fire on this gate.
                 _sentinel = torch.full_like(widx[:, :1], -1)
                 _shifted = torch.cat([widx[:, 1:], _sentinel], dim=1)
-                self._word_last_slot_mask = (widx != _shifted) & _wam
+                # Only a real word's last content slot is a commit boundary.
+                # Meronomy tags separators -1; excluding word id < 0 keeps those
+                # from firing a spurious per-word commit. Byte-identical for
+                # non-meronomy configs (their active slots are always >= 0).
+                self._word_last_slot_mask = (
+                    (widx != _shifted) & _wam & (widx >= 0))
         ps._bpe_word_mask_flat = bpe_mask_N
         if len(self._end_of_stream) != B:
             self._end_of_stream = [False] * B
@@ -9362,13 +9466,32 @@ class PartSpace(PerceptualSpace):
             # canonical spelling; ``none`` is the legacy alias the
             # dispatch sites still use internally.
             self.synthesis_mode = "none"
+        # ``mereological`` (doc/mereological.md): the canonical synthesizer.
+        # It routes through the radix store for chunking; the ``_mereological``
+        # flag marks it for the dominating join-from-bottom seed + the
+        # substring/.where isotonic projection (the redistribution). Aliasing to
+        # ``radix`` keeps every existing radix dispatch site unchanged; the flag
+        # is the only behavioural difference, and it is off for plain radix.
+        # ``meronomy`` (doc/mereological.md): the canonical synthesizer. It
+        # combines parts into a DOMINATING whole (join-from-bottom + .where
+        # isotonic projection -- ``_mereological``, inert until wired) AND
+        # isolates words (``_meronomy_words``: _embed_radix tags each percept by
+        # its WORD via Meronomy.word_spans over the raw surface, so word_groups
+        # is one agreed WORD grid for PS/WS/CS). Capture the flag BEFORE the
+        # radix alias (else the second read would see ``radix``). Aliases to
+        # radix; the flags are the only behavioural difference, off for radix.
+        self._meronomy = (self.synthesis_mode == "meronomy")
+        self._mereological = self._meronomy
+        self._meronomy_words = self._meronomy
+        if self._meronomy:
+            self.synthesis_mode = "radix"
         if self.synthesis_mode == "analyse":
             # Phase 4b hard cut (rev. 2026-06-09): the meronymic analyzer
             # is top-down ANALYSIS and lives on WholeSpace.
             raise ValueError(
                 "PartSpace <synthesis>analyse</synthesis> was removed "
                 "(Phase 4b): the meronymic analyzer is ANALYSIS and lives "
-                "on WholeSpace as <analysis>analyse</analysis>. Pick a "
+                "on WholeSpace as <analysis>grammatical</analysis>. Pick a "
                 "synthesis mode for PS (lexicon is the closest surviving "
                 "word-resolution mode).")
         if self.synthesis_mode not in (
@@ -9651,7 +9774,7 @@ class PartSpace(PerceptualSpace):
             # for vector storage -- one shared percept codebook, no
             # duplicate Parameter table, and the SubSpace owns the
             # prototypes (enabling lazy .index materialization).
-            self.percept_store = _PerceptStore(
+            self.subspace.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 1),
                 promotion_threshold=self.chunk_promotion_threshold,
@@ -9678,7 +9801,7 @@ class PartSpace(PerceptualSpace):
             # its vocab at ``n_vectors`` (>= 256 asserted for bpe), so
             # the store never grows past it -- id alignment is safe by
             # construction.
-            self.percept_store = _PerceptStore(
+            self.subspace.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 256),
                 promotion_threshold=self.chunk_promotion_threshold,
@@ -9692,7 +9815,7 @@ class PartSpace(PerceptualSpace):
             elif not isinstance(_sw, nn.Parameter):
                 _sb.setW(nn.Parameter(_sw.detach().clone()))
         else:
-            self.percept_store = None
+            self.subspace.percept_store = None
         # Opt-in/opt-out: the frozen-vocab GPU BPE tokenizer
         # (``_embed_bpe_gpu``) is bit-identical to the trie path
         # (test/bpe_gpu_equiv.py) but is NOT the production default --
@@ -9871,7 +9994,10 @@ class PartSpace(PerceptualSpace):
             _synthesis = TheXMLConfig.space(self.config_section, "synthesis")
         except (KeyError, TypeError, ValueError):
             _synthesis = None
-        if _synthesis == "radix":
+        # ``meronomy`` routes through the radix percept codebook (it aliases
+        # to radix in the main reader; this raw read runs earlier in
+        # super().__init__, before the alias, so accept it here too).
+        if _synthesis in ("radix", "meronomy"):
             cb = Codebook()
             cb.use_dot_product = bool(getattr(self, "use_dot_product", False))
             cb.create(1, self.nVectors, self.nDim, customVQ=False)
@@ -9894,6 +10020,11 @@ class PartSpace(PerceptualSpace):
                     torch.zeros(int(self.nVectors), int(self.nDim))))
             elif not isinstance(_w, nn.Parameter):
                 cb.setW(nn.Parameter(_w.detach().clone()))
+            # Mark the radix percept Codebook as a [0,1] presence store so the
+            # complement-aware decode keys here and ONLY here. The lexicon
+            # Embedding returned below stays unmarked (signed; sign = form
+            # content). See doc/percept-hypercube.md s2,s9.
+            cb.is_percept_store = True
             return cb
         basis = Embedding()
         basis.ergodic = self.ergodic
@@ -10321,6 +10452,9 @@ class PartSpace(PerceptualSpace):
         # inside a WS whole `.where`. Token-start granularity (coarse, sufficient
         # for word-level containment); -1 pad.
         offset_2d: list = []
+        # Per-row word surfaces (meronomy word-isolation): word index -> string,
+        # parked for the autobind META key; None per row off the flag.
+        word_texts_2d: list = []
         for b, row in enumerate(batch_tokens):
             # Pass 1 -- frequency observation for EVERY chunk in the row,
             # independent of the nObj emission budget below. ``observe_chunk``
@@ -10344,6 +10478,22 @@ class PartSpace(PerceptualSpace):
             row_groups: list = []
             row_offsets: list = []
             byte_off = 0
+            # Meronomy word-isolation: cut the raw row surface into words ONCE;
+            # each percept is then tagged by the word its byte-offset falls in
+            # (the single source of word identity for PS/WS/CS). None off-flag,
+            # so the legacy chunk-index tagging below stays byte-identical.
+            _wspans = None
+            if self._meronomy_words:
+                import Meronomy  # local: avoids the module-load import cycle
+                _raw = b"".join(
+                    (t.encode("utf-8") if isinstance(t, str) else bytes(t))
+                    for t in row if t is not None)
+                _wspans = Meronomy.word_spans(_raw)
+                # word surfaces (index -> string) for the autobind META key.
+                word_texts_2d.append(
+                    [_raw[s:e].decode("latin1") for (s, e) in _wspans])
+            else:
+                word_texts_2d.append(None)
             for n in range(len(row)):
                 text = row[n]
                 if text is None:
@@ -10354,12 +10504,27 @@ class PartSpace(PerceptualSpace):
                 byte_off += len(chunk)            # surface byte position
                 if len(chunk) == 0:
                     continue
+                # Under meronomy the group is the WORD index each percept's own
+                # byte offset falls in (-1 = separator) -- the token may span
+                # several words (the raw surface is one token), so advance the
+                # offset per pid by its byte length. Else the radix chunk idx n.
+                byte_pos = tok_start
                 for pid in ps.spell_out(chunk):
                     if len(row_pids) >= nObj:
                         break
+                    if _wspans is not None:
+                        grp = -1
+                        for _wi, (_ws, _we) in enumerate(_wspans):
+                            if _ws <= byte_pos < _we:
+                                grp = _wi
+                                break
+                        _pb = ps.bytes_for(int(pid))
+                        byte_pos += len(_pb) if _pb else 1
+                    else:
+                        grp = int(n)
                     row_pids.append(int(pid))
-                    row_groups.append(int(n))     # this pid is a part of token n
-                    row_offsets.append(int(tok_start))  # the pid's byte .where
+                    row_groups.append(grp)        # word (meronomy) or token idx
+                    row_offsets.append(int(tok_start))  # token-start .where
                 if len(row_pids) >= nObj:
                     break
             while len(row_pids) < nObj:
@@ -10410,6 +10575,7 @@ class PartSpace(PerceptualSpace):
         self._forward_input = {
             'tokens': batch_tokens, 'indices': pid_grid,
             'percept_store': ps, 'word_groups': word_group_grid,
+            'word_texts': word_texts_2d,
         }
         return self.subspace
 
@@ -11204,7 +11370,7 @@ class PartSpace(PerceptualSpace):
 
     # ``_embed_analyse`` REMOVED (Phase 4b, analysis/synthesis dual-input
     # plan rev. 2026-06-09): the meronymic analyzer is top-down ANALYSIS
-    # and lives on WholeSpace (``<analysis>analyse``, consuming the
+    # and lives on WholeSpace (``<analysis>grammatical``, consuming the
     # unity view). The standalone machinery -- ``chunk_static`` /
     # ``learn_merges`` / ``_analyse_chunk`` -- stays here as knob-free
     # analyzer plumbing until the deeper WS analyzer integration
@@ -12402,6 +12568,31 @@ class ConceptualSpace(Space):
             enabled=_SymbolLearningLayer.enabled_from_config())
         self.layers.append(self.symbolLearningLayer)
 
+        # Conceptual similarity codebook -- a standard, always-built component of
+        # ConceptualSpace. Held as a plain attribute, NOT handed to SubSpace(...),
+        # so ``codebook_slot`` stays None and the .event STM/bind forward is
+        # unchanged. ``use_dot_product`` gives unit-norm/EMA cosine rows: the
+        # rotation SBOW situates the angle (meaning); the activation magnitude
+        # carries certainty. Width == outputShape[1] (the concept content dim) so
+        # the SBOW window slab and the codebook pool share the last axis. Whether
+        # the SBOW trains it is governed by <conceptualSimilarityScale>.
+        # Construct RNG-neutral: save/restore the global RNG around create() so
+        # that adding this always-built codebook does not shift the random
+        # initialization of any downstream parameter (otherwise every config's
+        # init changes, which e.g. tips XOR_exact's init-sensitive two-timescale
+        # readout convergence). The codebook still gets a valid random init.
+        _rng_state = torch.get_rng_state()
+        _sim_cb = Codebook()
+        _sim_cb.use_dot_product = True
+        _sim_cb.create(
+            self.inputShape[0], self.nVectors, int(self.outputShape[1]),
+            customVQ=getattr(self, "customVQ", True),
+            monotonic=True, category=False, STE=False, invertible=False)
+        torch.set_rng_state(_rng_state)
+        self.similarity_codebook = _sim_cb
+        self.layers.append(_sim_cb)
+        self.params = self.params + list(_sim_cb.parameters())
+
     def _build_what_basis(self):
         """Bivector regime: build a ``ProjectionBasis`` on ``.what`` so
         ``forward(input)`` returns the per-prototype catuskoti bivector
@@ -12552,9 +12743,25 @@ class ConceptualSpace(Space):
         # rows the shuffled tail lies beyond ``depth`` (the occupied
         # window) so it is don't-care; ``_depth`` saturates at cap. Mirrors
         # the tensorized backtrace in ``Language.binary_tiling_viterbi``.
+        #
+        # OUT-OF-PLACE (reassign, do NOT mutate ``buf`` in place): the shift
+        # is built as a fresh tensor and assigned to ``stm._buffer``, mirroring
+        # ``ShortTermMemory.push_step_masked``'s clone-and-reassign. An in-place
+        # ``buf[...] = ...`` write corrupts the compiled backward under
+        # torch.compile: the per-word forward body graph-breaks (a host
+        # ``.item()`` sync in the truth-store ``conflict_profile`` /
+        # ``preemption_signal`` path), so this serial push runs in a downstream
+        # region while ``buf`` is a tensor an UPSTREAM compiled subgraph already
+        # captured for backward. Mutating it bumps its version and
+        # ``totalLoss.backward()`` raises "a variable needed for gradient
+        # computation has been modified by an inplace operation". Reassignment
+        # leaves the captured tensor untouched (an in-graph push would be
+        # functionalized and safe -- the hazard is only the eager-island write).
         if cap > 1:
-            buf[:, 1:cap] = buf[:, 0 : cap - 1].clone()
-        buf[:, 0] = idea
+            stm._buffer = torch.cat(
+                [idea.unsqueeze(1), buf[:, 0 : cap - 1, :]], dim=1)
+        else:
+            stm._buffer = idea.unsqueeze(1)
         # depth_b -> min(depth_b + 1, cap): clamp reproduces the old
         # per-row ``new_depth[b] = d + 1`` (below cap) / ``d`` (at cap).
         stm._depth = torch.clamp(depth + 1, max=cap)
@@ -12948,10 +13155,11 @@ class ConceptualSpace(Space):
                 pid_2d, seed_event,
                 word_groups=ps_fwd.get('word_groups'),
                 tokens=ps_fwd.get('tokens'),
+                word_texts=ps_fwd.get('word_texts'),
                 percept_where=percept_where)
 
     def _maybe_autobind_meta(self, pid_2d, vec_tensor, word_groups=None,
-                             tokens=None, percept_where=None):
+                             tokens=None, word_texts=None, percept_where=None):
         """Auto-bind PS percepts to fresh WS symbols + META edges.
 
         Task G relocation: moved here from ``PartSpace`` so the
@@ -13016,7 +13224,7 @@ class ConceptualSpace(Space):
                 and torch.is_tensor(word_groups)
                 and tuple(word_groups.shape) == tuple(pid_2d.shape)):
             word_bindings = self._autobind_word_wholes(
-                pid_2d, vec_tensor, word_groups, tokens, ws)
+                pid_2d, vec_tensor, word_groups, tokens, ws, word_texts)
             # Cross-tower `.where`-gated binding (A4): percept-TYPE ⊑ generic
             # word-TYPE when the percept `.where` (subspace.where) nests inside a
             # WS whole `.where` (the staged analysis spans). The LATTICE
@@ -13141,7 +13349,8 @@ class ConceptualSpace(Space):
             if hasattr(ws, '_category_role_obs'):
                 ws._category_role_obs = None
 
-    def _autobind_word_wholes(self, pid_2d, vec_tensor, word_groups, tokens, ws):
+    def _autobind_word_wholes(self, pid_2d, vec_tensor, word_groups, tokens, ws,
+                              word_texts=None):
         """Order-0 mereology word-whole binding (gated ``<mereologyRaise>``;
         doc/specs/mereological-order-raising.md "order-0 MEREOLOGY").
 
@@ -13190,7 +13399,13 @@ class ConceptualSpace(Space):
                 # Whole identity = the token's surface text when available (a
                 # stable, content-keyed whole), else a presentation-local key.
                 key = None
-                if (tokens is not None and b < len(tokens)
+                # Meronomy: g is a WORD index -> key on the word surface string
+                # (the lexer ``tokens`` are chunk-indexed / empty in raw mode).
+                if (word_texts is not None and b < len(word_texts)
+                        and word_texts[b] is not None
+                        and g < len(word_texts[b])):
+                    key = word_texts[b][g]
+                if (key is None and tokens is not None and b < len(tokens)
                         and g < len(tokens[b]) and tokens[b][g] is not None):
                     key = str(tokens[b][g])
                 if key is None:
@@ -15650,9 +15865,11 @@ class WholeSpace(PerceptualSpace):
                 TheXMLConfig.space(section, "analysis") or "byte")
         except KeyError:
             self.analysis_mode = "byte"
-        if self.analysis_mode not in ("byte", "word", "analyse"):
+        if self.analysis_mode not in (
+                "byte", "word", "grammatical", "raw", "sentence", "meronomy"):
             raise ValueError(
-                f"WholeSpace.analysis must be byte|word|analyse, "
+                f"WholeSpace.analysis must be "
+                f"byte|word|raw|sentence|grammatical|meronomy, "
                 f"got {self.analysis_mode!r}")
         self._staged_analysis_spans = None
         # Step 2 (2026-06-10 symbolic-iteration plan): the ANALYSIS
@@ -18738,7 +18955,9 @@ class WholeSpace(PerceptualSpace):
         the word cut; the learned bottom-up merge integration follows
         with the deeper WS analyzer work (Phases 5-6)."""
         mode = getattr(self, "analysis_mode", "byte")
-        if mode == "byte" or IS_concepts is None:
+        # byte/raw/sentence = NO division (the analyzer stages no spans);
+        # word/grammatical/meronomy stage the boundary spans below.
+        if mode in ("byte", "raw", "sentence") or IS_concepts is None:
             return None
         u = IS_concepts
         if u.dim() == 3:

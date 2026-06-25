@@ -96,7 +96,7 @@
   </ConceptualSpace>
 
   <WholeSpace>
-    <lexer>byte</lexer>
+    <analysis>byte</analysis>
     <nInput>1024</nInput>
     <nInputDim>10</nInputDim>
     <nVectors>1024</nVectors>

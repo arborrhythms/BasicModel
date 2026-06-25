@@ -10005,10 +10005,16 @@ class RadixLayer(Layer):
         # Grow the codebook if the new ID would overflow.
         if new_id >= self._capacity:
             self._grow_to(max(new_id + 1, self._capacity * 2))
-        # Seed the new row.
+        # Seed the new row. Write the MASTER parameter (self._basis.W), NOT
+        # self.codebook: under the [0,1] percept-store STE, ``self.codebook``
+        # -> ``_basis.getW()`` returns a non-leaf clamped tensor that does NOT
+        # share storage with the master, so a ``.data`` seed there is silently
+        # discarded (the row keeps its build-time prefill). Off the percept
+        # store getW() == self.W -> same storage, byte-identical.
+        master = self._basis.W
         with torch.no_grad():
             if init_vector is None:
-                self.codebook.data[new_id, :].normal_(
+                master.data[new_id, :].normal_(
                     mean=0.0, std=0.02)
             else:
                 if not torch.is_tensor(init_vector):
@@ -10019,9 +10025,9 @@ class RadixLayer(Layer):
                     raise ValueError(
                         f"RadixLayer.insert: init_vector shape "
                         f"{tuple(init_vector.shape)} != ({self.dim},)")
-                self.codebook.data[new_id, :].copy_(
+                master.data[new_id, :].copy_(
                     init_vector.detach().to(
-                        self.codebook.device, self.codebook.dtype))
+                        master.device, master.dtype))
         # Update the auxiliary structures.
         self.radix_trie.insert(chunk_b, new_id)
         self.hash_map[chunk_b] = new_id

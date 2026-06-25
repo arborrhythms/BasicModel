@@ -477,6 +477,10 @@ class Data():
         self.input_max  = None
         self.output_min = None
         self.output_max = None
+        # True  => measured presence features -> [0,1] percept hypercube.
+        # False => signed embedding vectors (text) -> keep [-1,1].
+        # Set per-dataset by _compute_ranges (doc/percept-hypercube.md sec 8).
+        self.input_presence = True
         # ``_runtime_mode`` retired 2026-05-14 alongside ARIR; runtime
         # callers no longer pass a mode token.  Field kept on the class
         # at None so legacy ``getattr(data, '_runtime_mode', None)``
@@ -540,6 +544,8 @@ class Data():
             self.loadXOR()
         if dataset == "phrases":
             self.loadPhrases()
+        if dataset == "substitution":
+            self.loadSubstitution()
         if dataset == "queries":
             self.loadQueries()
         if dataset == "sequences":
@@ -600,10 +606,17 @@ class Data():
         if isinstance(self.train_input, torch.Tensor):
             self.input_min = self.train_input.min().item()
             self.input_max = self.train_input.max().item()
+            self.input_presence = True   # measured features -> [0,1] presence
         else:
-            # Text data: embedded, L2-normalized -> elements in [-1, 1]
+            # Text data: embedded, L2-normalized -> elements in [-1, 1]. These
+            # are SIGNED embedding vectors (concept-ish), not one-sided
+            # presence, so they keep the signed [-1,1] canonical range until
+            # the percept lexicon itself moves to [0,1]
+            # (doc/percept-hypercube.md sec 8 -- the half-done move breaks the
+            # invertible embedding reconstruction chain, e.g. XOR_exact).
             self.input_min = -1.0
             self.input_max = 1.0
+            self.input_presence = False
         if isinstance(self.train_output, torch.Tensor):
             self.output_min = self.train_output.min().item()
             self.output_max = self.train_output.max().item()
@@ -618,13 +631,21 @@ class Data():
 
         Args:
             x: tensor to normalize.
-            which: "input" scales [input_min, input_max] -> [-1, 1].
+            which: "input" scales [input_min, input_max] -> [0, 1] when
+                   ``input_presence`` (measured presence on the positive unit
+                   hypercube: 0 = absent / nothing, 1 = present / everything;
+                   one-sided, the percept antipode is the complement 1-x -- see
+                   doc/percept-hypercube.md). Restores the [0,1] target the
+                   _compute_ranges docstring always declared. Signed text
+                   embeddings (``input_presence`` False) keep the [-1,1] map
+                   (the prior ``* 2 - 1``) until the lexicon moves to [0,1].
                    "output" scales [output_min, output_max] -> [-1, 1].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
                 return x
-            return (x - self.input_min) / (self.input_max - self.input_min) * 2 - 1
+            u = (x - self.input_min) / (self.input_max - self.input_min)   # -> [0,1]
+            return u if getattr(self, "input_presence", True) else u * 2 - 1
         else:
             if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
                 return x
@@ -635,13 +656,16 @@ class Data():
 
         Args:
             x: tensor to denormalize.
-            which: "input" scales [-1, 1] -> [input_min, input_max].
+            which: "input" inverts the input normalize above -- [0,1] ->
+                   [input_min, input_max] for presence data, [-1,1] -> range
+                   for signed embeddings.
                    "output" scales [-1, 1] -> [output_min, output_max].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
                 return x
-            return (x + 1) / 2 * (self.input_max - self.input_min) + self.input_min
+            u = x if getattr(self, "input_presence", True) else (x + 1) / 2
+            return u * (self.input_max - self.input_min) + self.input_min
         else:
             if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
                 return x
@@ -794,6 +818,32 @@ class Data():
             "train":      {"text": phrases, "label": labels},
             "validation": {"text": phrases, "label": labels},
             "test":       {"text": phrases, "label": labels},
+        }
+        self.train_input       = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input  = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input        = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+
+    def loadSubstitution(self):
+        """Substitutability grid for the conceptual SBOW (word2vec) demonstration
+        (doc/mereological.md / the conceptual-similarity layer): a FULL noun×verb
+        grid, so every noun shares all verb-contexts and every verb shares all
+        noun-contexts -- the distributional structure SBOW situates. After
+        training, substitutable concepts should CO-LOCATE in similarity_codebook:
+        nouns {cat,dog,bird} cluster, verbs {runs,eats,sleeps} cluster, and
+        within-class cosine > cross-class cosine. Labels are incidental (the
+        conceptual SBOW loss drives co-location, not the labels)."""
+        nouns = ["cat", "dog", "bird"]
+        verbs = ["runs", "eats", "sleeps"]
+        texts = ["%s %s" % (n, v) for n in nouns for v in verbs]
+        labels = [[i % 2] for i in range(len(texts))]
+        data = {
+            "train":      {"text": texts, "label": labels},
+            "validation": {"text": texts, "label": labels},
+            "test":       {"text": texts, "label": labels},
         }
         self.train_input       = data["train"]["text"]
         self.train_output      = data["train"]["label"]

@@ -75,7 +75,7 @@
        (the symbol_dim==concept pass-through requirement is relaxed). The
        codebook is small (serial grammar-op budget). -->
   <WholeSpace>
-    <lexer>byte</lexer>
+    <analysis>byte</analysis>
     <!-- Per-space sigmaPi override: "last" (per-slot square fold) instead of
          the architecture-global "butterfly". The serial grammar path sizes
          the WS.pi butterfly cascade at next_pow2(inputShape[0] * nInputDim)

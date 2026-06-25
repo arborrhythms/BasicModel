@@ -32,6 +32,143 @@ from util import TheXMLConfig
 
 
 # ---------------------------------------------------------------------------
+# The mereological algorithm (doc/mereological.md): one synthesizer
+# (parts -> wholes, join from all-0) and one analyzer (wholes -> parts, the
+# 1-x mirror, meet from all-1), each monotone, building part/whole codes that
+# carry a partial order by construction. The order itself is `.where` byte-span
+# containment; the codes are projected onto it (isotonic regression on the
+# containment DAG) so a whole dominates ALL its parts -- including cross-boundary
+# parts the local build never sees. Distinct from the SigmaLayer/PiLayer
+# butterfly folds (those are the downstream abstraction operators).
+# ---------------------------------------------------------------------------
+
+def where_containment_edges(spans):
+    """Part/whole edges from `.where` byte-spans: the meronymic partial order.
+
+    ``spans``: list of ``(start, end)`` brackets, one per code. Returns the
+    list of ``(w, p)`` index pairs with ``span(p) subseteq span(w)`` and
+    ``p != w`` -- i.e. ``whole w`` strictly contains ``part p``. This is the
+    FULL contiguous part spec, including cross-boundary parts (``bc`` inside
+    ``abcd``), so it is exactly what :func:`project_monotone` needs.
+    """
+    edges = []
+    n = len(spans)
+    for w in range(n):
+        ws, we = spans[w]
+        for p in range(n):
+            if p == w:
+                continue
+            ps, pe = spans[p]
+            # span(p) subseteq span(w), and not the identical span (else both
+            # directions fire and the pair is mutually-constrained to equal).
+            if ws <= ps and pe <= we and (ps, pe) != (ws, we):
+                edges.append((w, p))
+    return edges
+
+
+def join_from_bottom(part_codes, eps=1e-6):
+    """Synthesizer seed: join (soft-OR from all-0) of ``[K, D]`` part codes -> ``[D]``.
+
+    ``whole = tanh(sum_k atanh(part_k))`` on ``[0,1]`` presence -- the
+    supremum-like fold that dominates each build part before the
+    `.where`-projection redistributes for the cross-boundary parts. A
+    coordinate absent in every part stays 0; presence accumulates toward 1
+    (so a sparse grounding at bounded depth stays off the all-1 corner).
+    """
+    a = torch.atanh(part_codes.clamp(0.0, 1.0 - eps))
+    return torch.tanh(a.sum(dim=0))
+
+
+def meet_from_top(part_codes, eps=1e-6):
+    """Analyzer seed: meet (from all-1), the ``1-x`` De Morgan mirror of the join."""
+    return 1.0 - join_from_bottom(1.0 - part_codes, eps=eps)
+
+
+def project_monotone(codes, edges, iters=200, tol=1e-6):
+    """Redistribute ``codes`` onto the monotone cone {code(w) >= code(p), every edge}.
+
+    Per-coordinate isotonic regression on the `.where` containment DAG, by
+    cyclic projection (POCS) onto each ``w >= p`` half-space: where ``code(w) <
+    code(p)`` on a coordinate, both are pulled to their midpoint (the nearest
+    point with ``w == p`` there). The constraint decouples per coordinate, so
+    this is ``D`` independent isotonic regressions; it is minimum-norm (moves
+    only violated coordinates) and converges to a feasible point. Returns the
+    redistributed codes, clamped to ``[0,1]``.
+
+    ``codes``: ``[N, D]`` in ``[0,1]``. ``edges``: ``(w, p)`` index pairs from
+    :func:`where_containment_edges`.
+    """
+    C = codes.clone()
+    for _ in range(int(iters)):
+        moved = 0.0
+        for (w, p) in edges:
+            viol = C[w] < C[p]
+            if bool(viol.any()):
+                mid = 0.5 * (C[w] + C[p])
+                nw = torch.where(viol, mid, C[w])
+                npp = torch.where(viol, mid, C[p])
+                moved += float((C[w] - nw).abs().sum() + (C[p] - npp).abs().sum())
+                C[w], C[p] = nw, npp
+        if moved < tol:
+            break
+    return C.clamp(0.0, 1.0)
+
+
+def mereological_synthesize(seed_codes, spans, iters=200):
+    """The mereological synthesizer: build (join-from-0 seed) then PROJECT.
+
+    ``seed_codes`` ``[N, D]`` in ``[0,1]`` are the per-code seeds (e.g. each
+    whole joined from its build parts via :func:`join_from_bottom`); ``spans``
+    are their `.where` brackets. Projects onto the containment order so every
+    whole dominates ALL its parts (cross-boundary included) -- the
+    redistribution. See doc/mereological.md sec.4-5.
+    """
+    return project_monotone(seed_codes, where_containment_edges(spans), iters=iters)
+
+
+def mereological_analyze(seed_codes, spans, iters=200):
+    """The mereological analyzer: the ``1-x`` mirror of :func:`mereological_synthesize`.
+
+    ``analyzer = complement . synthesizer . complement`` -- producing subordinate
+    parts (``part subset whole``) is the same projection on the complemented codes.
+    """
+    return 1.0 - mereological_synthesize(1.0 - seed_codes, spans, iters=iters)
+
+
+def substring_containment_edges(strings):
+    """Part/whole edges for a CODEBOOK of canonical strings: ``(w, p)`` iff
+    ``strings[p]`` is a PROPER contiguous SUBSTRING of ``strings[w]``.
+
+    The codebook analog of :func:`where_containment_edges`. The live radix
+    codebook holds promoted byte-chunks as separate entries, so parthood there
+    is substring containment (``"bc"`` is a part of ``"abcd"``) -- the same
+    cross-boundary order, derived from ``RadixLayer.inverse_table``. ``strings``
+    is an iterable of ``bytes`` (or ``str``).
+    """
+    S = [bytes(s) if isinstance(s, (bytes, bytearray)) else
+         (s.encode() if isinstance(s, str) else s) for s in strings]
+    edges = []
+    n = len(S)
+    for w in range(n):
+        for p in range(n):
+            if p != w and len(S[p]) < len(S[w]) and S[p] in S[w]:
+                edges.append((w, p))
+    return edges
+
+
+def project_codebook(codes, strings, iters=200):
+    """Redistribute a codebook ``[N, D]`` (in ``[0,1]``) onto its substring
+    containment order: a whole-string code dominates every sub-string code.
+
+    Convenience wrapper -- :func:`project_monotone` over
+    :func:`substring_containment_edges`. Assumes the codes are ``[0,1]``
+    presence (the mereological codebook); a signed lexicon must move to
+    ``[0,1]`` first (the percept-hypercube lexicon migration).
+    """
+    return project_monotone(codes, substring_containment_edges(strings), iters=iters)
+
+
+# ---------------------------------------------------------------------------
 # Higher-order-concept shape descriptors -- consumed by hoc_shape /
 # Contiguous / Continuous (see basicmodel/doc/research/three-surfaces.md
 # and the 2026-05-04 spec at plans/.../sparkling-peach.md). These are

@@ -585,6 +585,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="xor"/>
       <xs:enumeration value="phrases"/>
+      <xs:enumeration value="substitution"/>
       <xs:enumeration value="queries"/>
       <xs:enumeration value="sequences"/>
       <xs:enumeration value="mnist"/>
@@ -602,6 +603,11 @@
       <!-- raw: InputSpace emits the unanalyzed [B,1,N] byte buffer; the
            meronymic analyzer (chunking="analyse") owns all tokenization. -->
       <xs:enumeration value="raw"/>
+      <!-- ``meronomy`` (doc/mereological.md): the canonical analyzer;
+           meet-from-top (all-1), the 1-x mirror of the meronomy synthesizer,
+           cutting a whole into subordinate parts by boundary properties
+           (first approximation: OR(space, punct) word split). -->
+      <xs:enumeration value="meronomy"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -708,6 +714,11 @@
       <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Weight of the conceptual-similarity SBOW loss (the rotation SBOW that
+           situates ConceptualSpace.similarity_codebook, which is always built).
+           Default 0.0 = the SBOW does not fire and the forward is byte-identical;
+           > 0 trains the codebook in the parallel (symbolicOrder=0) forward. -->
+      <xs:element name="conceptualSimilarityScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
       <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -856,11 +867,20 @@
                  the surface-form authoritative store; opt in with
                  ``<synthesis>radix</synthesis>``. -->
             <xs:enumeration value="radix"/>
-            <!-- ``analyse`` was REMOVED (Phase 4b, rev. 2026-06-09):
-                 the meronymic analyzer is top-down ANALYSIS and lives
-                 on WholeSpace as <analysis>analyse. Configs that
-                 ran PS analyse migrate to <synthesis>lexicon (the
-                 closest surviving word-resolution mode). -->
+            <!-- ``meronomy`` (doc/mereological.md): the canonical synthesizer.
+                 Combines parts into a DOMINATING whole (join-from-bottom +
+                 isotonic .where projection = the concept lattice, inert until
+                 wired) AND isolates words (tags each percept by its WORD via
+                 Meronomy.word_spans over the raw surface, so word_groups is one
+                 agreed WORD grid for PS/WS/CS; the serial per-word commit +
+                 autobind mint one word/object/meta per word). Paired with the
+                 WholeSpace <analysis>meronomy</analysis>. -->
+            <xs:enumeration value="meronomy"/>
+            <!-- the PartSpace ``analyse`` synthesis was REMOVED (Phase 4b, rev.
+                 2026-06-09): the meronymic analyzer is top-down ANALYSIS and
+                 lives on WholeSpace as <analysis>grammatical. Configs that ran
+                 PS analyse migrate to <synthesis>lexicon (the closest surviving
+                 word-resolution mode). -->
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
@@ -971,6 +991,11 @@
                        today; the bottom-up merge integration follows with
                        the deeper SS analyzer work, Phases 5-6). -->
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+      <!-- <analyzer> REPLACES <lexer> (doc/mereological.md): tokenization is
+           analytic cutting, owned by the analysis side (the meet-from-top
+           mereological analyzer). <lexer> is the deprecated spelling; the
+           config reader accepts both, preferring <analyzer>. -->
+      <xs:element name="analyzer" type="lexerEnum" minOccurs="0"/>
       <!-- Task 5 (C-13, asymmetric-vq sec.6): the post-sentence semantic
            arrangement weight over SS heat (pode attraction + antipode
            repulsion on the activated codebook rows). Default 0 = OFF:
@@ -980,9 +1005,22 @@
       <xs:element name="analysis" minOccurs="0">
         <xs:simpleType>
           <xs:restriction base="xs:string">
+            <!-- <analysis> is the UNIFIED WholeSpace knob; it absorbs the lexer
+                 options (raw/byte/word/sentence; <lexer>/<analyzer> are the
+                 deprecated spellings) PLUS the analysis-only modes. The
+                 lexer-valued options set the surface lexer; the analysis-only
+                 values (grammatical/meronomy) leave the lexer at raw and select
+                 the division. -->
             <xs:enumeration value="byte"/>
             <xs:enumeration value="word"/>
-            <xs:enumeration value="analyse"/>
+            <xs:enumeration value="raw"/>
+            <xs:enumeration value="sentence"/>
+            <!-- ``grammatical`` (formerly ``analyse``): the property/boundary
+                 analysis that cuts a whole into grammatical parts. -->
+            <xs:enumeration value="grammatical"/>
+            <!-- ``meronomy``: the meronymic word-isolation cut (1-x dual of the
+                 meronomy synthesizer), paired with <synthesis>meronomy. -->
+            <xs:enumeration value="meronomy"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:element>

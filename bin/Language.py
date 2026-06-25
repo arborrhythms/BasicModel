@@ -239,7 +239,12 @@ class MetaSymbolCategoryLearner:
                 return None
             self._evict_if_needed()
             row = {
-                "evidence": torch.zeros(self.n_roles, dtype=torch.float32),
+                # On vec's device: vec is the model-device role tensor, and the
+                # in-place ``row["evidence"].add_(vec)`` below would otherwise
+                # mismatch (default-device zeros vs vec on mps/cuda). The
+                # CPU-pinned test suite never exercised this.
+                "evidence": torch.zeros(self.n_roles, dtype=torch.float32,
+                                        device=vec.device),
                 "mass": 0.0,
                 "best": None,
                 "stable": 0,

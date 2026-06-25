@@ -398,11 +398,11 @@
          (2026-06-09, asymmetric-VQ plan §7 task 7). PS is hardwired to "none"
          (continuous .event passthrough; percept prototypes live on the .what
          Embedding). Only WholeSpace carries a <codebook>. -->
-    <!-- Synthesis (bottom-up union) strategy: lexicon | bpe | mphf | byte/none | radix.
+    <!-- Synthesis (bottom-up union) strategy: lexicon | bpe | mphf | byte/none | radix | meronomy.
          Phase 4b default: lexicon (word resolution through the word
          codebook - the closest surviving mode to the retired PS analyse;
          the meronymic analyzer is ANALYSIS and lives on WholeSpace as
-         <analysis>analyse). -->
+         <analysis>meronomy). -->
     <synthesis>lexicon</synthesis>
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
@@ -444,7 +444,8 @@
   </ConceptualSpace>
 
   <WholeSpace>
-    <lexer>raw</lexer>
+    <!-- The WholeSpace cut is <analysis> (the unified knob; raw is the
+         resolve_lexer default when unset). <lexer>/<analyzer> are deprecated. -->
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- symbol_dim must equal concept_dim under the ownership rule

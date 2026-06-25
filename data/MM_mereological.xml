@@ -7,7 +7,7 @@
        ~19 test files); flip knobs HERE instead.
 
        A radix-synthesis sibling of MM_20M: PartSpace
-       <synthesis>radix</synthesis> drives the PerceptStore spell-out, so an
+       <synthesis>meronomy</synthesis> drives the PerceptStore spell-out, so an
        unfamiliar word emits a RUN of byte/prefix percepts (the order-0 PARTS
        of the word-as-WHOLE). <mereologyRaise>true</mereologyRaise> turns on the
        gated, order-0 word-whole binding (a lexer token's spell-out pids bind to
@@ -29,16 +29,7 @@
     <!-- S3: opt-in order-0 mereology word-whole binding + order-raising.
          Read by Models (architecture.mereologyRaise); stamps _mereology_raise
          onto PartSpace + the terminal WholeSpace. Default false elsewhere. -->
-    <!-- ON for the higher-order symbol: order-raising (maybe_raise_order) is the
-         SOURCE of the 1:1 symbols that <symbolTower>'s forward_symbol emits. With
-         it off, forward_symbol finds no higher-order codes -> zero (dark) leg. -->
     <mereologyRaise>true</mereologyRaise>
-    <!-- Slice B (2026-06-21): the 3-STREAM peer bind (PS/WS percepts + SS
-         symbols). Builds the terminal ConceptualCombine with n_streams=3 and
-         routes a third (symbol) leg through bind_streams. forward_symbol emits
-         the higher-order ORDER-RAISING codes (the collapsed 1:1 symbols) as the
-         SS leg. Default false everywhere else -> byte-identical 2-stream bind. -->
-    <symbolTower>true</symbolTower>
 
     <!-- Basic-level bounds for the overcomplete part-tiling (Eleanor Rosch's
          "basic level"). "Size in .what" for a TEXT model = count of letters,
@@ -80,7 +71,7 @@
     <!-- radix = the PerceptStore (radix trie + promotion): unfamiliar words
          spell out into byte/prefix percepts (the parts); promoted words come
          back as ONE percept (the singleton, post-climb). -->
-    <synthesis>radix</synthesis>
+    <synthesis>meronomy</synthesis>
   </PartSpace>
 
   <ConceptualSpace>
@@ -105,10 +96,7 @@
     <nOutputDim>8</nOutputDim>
 
     <invertible>true</invertible>
-    <!-- quantize (not none): the autobind (_commit_autobind_from_stash) requires
-         the terminal WS subspace.what to be a Codebook to mint symbols/META +
-         fire order-raising. With <codebook>none</codebook> it silently no-ops. -->
-    <codebook>quantize</codebook>
+    <codebook>none</codebook>
   </WholeSpace>
 
   <OutputSpace>

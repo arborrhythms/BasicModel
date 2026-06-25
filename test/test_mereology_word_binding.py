@@ -176,6 +176,31 @@ def test_gate_on_creates_word_object_meta():
     assert stub.concept_wholes(C) == [("sym", B)]
 
 
+def test_meronomy_two_words_keyed_by_surface():
+    """Meronomy word grid (Spaces _embed_radix under <synthesis>meronomy>):
+    word_groups is a WORD grid ([the=0, sep=-1, cat=1]) and the META key comes
+    from the word SURFACE (``word_texts``), not the lexer ``tokens`` (which are
+    chunk-indexed / empty in raw serial mode). One A/B/C per word -> 'the','cat'.
+    """
+    ss = _whole_space()
+    ss.subspace.what.enable_ramsification(2)
+    ss._mereology_raise = True
+    ss._mereology_k_many = 2
+    stub = _cs_stub(ss)
+    # "the cat": the=pids 10,11,12 (word 0); sep slot -1; cat=20,21,22 (word 1).
+    pid_2d = torch.tensor([[10, 11, 12, 0, 20, 21, 22, 0]], dtype=torch.long)
+    word_groups = torch.tensor([[0, 0, 0, -1, 1, 1, 1, -1]], dtype=torch.long)
+    vec_tensor = torch.randn(1, 8, _D)
+    # raw mode: tokens empty -> the key MUST be sourced from word_texts.
+    stub._maybe_autobind_meta(
+        pid_2d, vec_tensor, word_groups=word_groups, tokens=None,
+        word_texts=[["the", "cat"]])
+    wom = getattr(stub, "_word_obj_meta", {})
+    assert set(wom.keys()) == {"the", "cat"}
+    assert set(stub.concept_parts(wom["the"][0])) == {10, 11, 12}
+    assert set(stub.concept_parts(wom["cat"][0])) == {20, 21, 22}
+
+
 def test_cs_owns_relation_taxonomy_by_reference():
     """S3 relocation (Fix #1; doc/specs "relation-only completion"): CS owns the
     relation taxonomy BY REFERENCE -- its forwarding accessors return the
