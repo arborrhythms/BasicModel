@@ -14289,6 +14289,52 @@ class ConceptualSpace(Space):
         content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
         return content, a_list
 
+    def _subspace_presence(self, sub):
+        """Non-negative per-code PRESENCE ``[V, B]`` of a passed-in source
+        subspace -- its materialized event read against its OWN ``.what``
+        codebook (both ride the subspace through ``forward``; no cross-space
+        reach -- the dataflow rule). ``None`` when unavailable."""
+        if sub is None or not hasattr(sub, "is_empty") or sub.is_empty():
+            return None
+        event = sub.materialize()
+        cb = getattr(sub, "what", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if event is None or W is None or not torch.is_tensor(W):
+            return None
+        return self.source_code_activation(event, W, nonneg=True)
+
+    def _sparse_concept_forward(self, folded, subspace, word_subspace):
+        """Live forward: replace the concept content with the ramsified
+        per-order sparse transform (:meth:`cs_forward_content`) when the sparse
+        transform is active and the weight tables are populated. PS/WS presences
+        are read ``.forward()``-safely from the passed-in subspaces; the concept
+        atoms are the CS-owned dictionary (``similarity_codebook``). Returns
+        ``folded`` UNCHANGED (byte-identical) when inactive, unpopulated, or the
+        shapes are unusable."""
+        if not self._sparse_active():
+            return folded
+        if not getattr(self, "_csw_store", None):        # no weights -> fallback
+            return folded
+        if not (torch.is_tensor(folded) and folded.dim() == 3):
+            return folded
+        cb = getattr(self, "similarity_codebook", None)
+        dict_W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if (dict_W is None or not torch.is_tensor(dict_W)
+                or int(dict_W.shape[0]) != int(self.nVectors)):
+            return folded
+        ps_act = self._subspace_presence(subspace)
+        ws_act = self._subspace_presence(word_subspace)
+        if ps_act is None or ws_act is None:
+            return folded
+        content, _ = self.cs_forward_content(ps_act, ws_act, dict_W)
+        N, D = int(folded.shape[1]), int(folded.shape[2])
+        if int(content.shape[1]) != N:                   # slot/inventory mismatch
+            return folded
+        Dc = int(content.shape[2])
+        if Dc == D:
+            return content
+        return content[..., :D] if Dc > D else F.pad(content, (0, D - Dc))
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
@@ -15833,18 +15879,17 @@ class ConceptualSpace(Space):
                 folded = sym
             else:
                 folded = primary
-        # Sparse-coding concept production (Phase 3): when the sparse transform
-        # is active (symbolicOrder > 0, parallel) AND the COO edge table is
-        # populated, the concept content for each edged concept is the
-        # differentiable scatter-add over the CS-owned ``similarity_codebook``
-        # INVENTORY (D1) -- ``concept = sum_e Weight[e] * basis[SymbolIndex[e]]``
-        # (D2: the sparse code feeds the concept content). This is the
-        # forward-connected transform: the gradient reaches the concept code AND
-        # the learnable edge ``Weight`` AND the basis through it (dissolving the
-        # old Stage-0 forward-disconnect). The edged concepts' codes land in the
-        # leading STM slots; non-edged slots keep the percept event. NO-OP (and
-        # byte-identical) when inactive or the edge table is empty.
-        folded = self._maybe_sparse_concept_content(folded)
+        # Sparse-coding concept production: when the sparse transform is active
+        # (symbolicOrder > 0, parallel) AND the per-order weight tables are
+        # populated, the concept content is the ramsified per-order sparse
+        # transform -- an encoder (signed sparse weight matrices over the
+        # non-negative PS/WS presences + the lower orders' signed concept
+        # activations as the 1-D SS inputs, via torch.sparse.mm) plus a
+        # dictionary decoder (each concept activation scales its strictly-
+        # positive ConceptDim atom). Forward-connected: the gradient reaches the
+        # concept code, the learnable sparse weights, and the dictionary. NO-OP
+        # (byte-identical) when inactive or the tables are empty.
+        folded = self._sparse_concept_forward(folded, subspace, word_subspace)
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
         #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the
