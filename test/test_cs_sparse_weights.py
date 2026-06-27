@@ -186,3 +186,67 @@ def test_encode_then_decode_is_differentiable_end_to_end():
     assert what.grad is not None and what.grad.abs().sum() > 0
     assert act.grad is not None and act.grad.abs().sum() > 0
     assert cs._csw_vals[0].grad is not None and cs._csw_vals[0].grad.abs().sum() > 0
+
+
+# -- ramsified per-order forward-content assembly -----------------------------
+
+def test_cs_source_layout_ps_ws_ss_blocks():
+    cs = _cs(nS=64, order=3)                            # caps [32,16,8,8]
+    off, total = cs.cs_source_layout(0, n_ps=10, n_ws=5)
+    assert off == {"ps": 0, "ws": 10} and total == 15   # order 0: PS|WS only
+    off, total = cs.cs_source_layout(2, n_ps=10, n_ws=5)
+    # order 2 adds SS_0 (cap 32) then SS_1 (cap 16): offsets 15, 47; total 63
+    assert off == {"ps": 0, "ws": 10, 0: 15, 1: 47}
+    assert total == 15 + 32 + 16
+
+
+def test_forward_content_shape_and_stacking():
+    cs = _cs(nS=16, order=1)                            # caps [8, 8]
+    B = 2
+    ps = torch.rand(4, B)                              # non-negative presences
+    ws = torch.rand(3, B)
+    what = torch.randn(16, _D)
+    # order 0: 2 concepts active off PS/WS; order 1: 1 concept off an SS_0 source
+    cs.add_concept_weight(0, 0, 0, weight=1.0)         # concept0 <- ps0
+    cs.add_concept_weight(0, 1, 4, weight=1.0)         # concept1 <- ws0 (idx 4)
+    # order 1 source layout: [PS(4)|WS(3)|SS_0(8)]; SS_0 offset = 7
+    cs.add_concept_weight(1, 0, 7 + 0, weight=2.0)     # order1 c0 <- a_order0[0]
+    content, a = cs.cs_forward_content(ps, ws, what)
+    assert content.shape == (B, 16, _D)               # stacked [B, N, CDim]
+    assert len(a) == 2 and a[0].shape == (8, B) and a[1].shape == (8, B)
+    # order-1 concept 0 activation = 2.0 * softplus-atom-free a_order0[0]
+    # (a_order0[0] = ps0 since weight 1.0); so a[1][0] == 2.0 * a[0][0]
+    assert torch.allclose(a[1][0], 2.0 * a[0][0], atol=1e-5)
+
+
+def test_forward_content_positive_atoms_and_signed_activation():
+    cs = _cs(nS=8, order=0)                             # one order, caps [8]
+    B = 1
+    ps = torch.rand(3, B)
+    ws = torch.rand(2, B)
+    what = torch.randn(8, _D)                          # has negative entries
+    cs.add_concept_weight(0, 0, 0, weight=-1.0)        # NEGATIVE weight
+    content, a = cs.cs_forward_content(ps, ws, what)
+    # concept 0 activation is negative (negative weight * positive presence)
+    assert a[0][0, 0] <= 0
+    # the atom used is softplus(what[0]) -> strictly positive
+    import torch.nn.functional as F
+    atom = F.softplus(what[0])
+    assert (atom > 0).all()
+    # code row 0 = a_0 * positive_atom -> points opposite the atom (anti-present)
+    assert torch.allclose(content[0, 0], a[0][0, 0] * atom, atol=1e-5)
+
+
+def test_forward_content_differentiable():
+    cs = _cs(nS=16, order=1)
+    cs.add_concept_weight(0, 0, 0, weight=0.5)
+    cs.add_concept_weight(1, 0, 7, weight=1.0)
+    ps = torch.rand(4, 2, requires_grad=True)
+    ws = torch.rand(3, 2, requires_grad=True)
+    what = torch.randn(16, _D, requires_grad=True)
+    content, _ = cs.cs_forward_content(ps, ws, what)
+    content.sum().backward()
+    assert what.grad is not None and what.grad.abs().sum() > 0
+    assert ps.grad is not None
+    assert cs._csw_vals[0].grad is not None and cs._csw_vals[0].grad.abs().sum() > 0
+    assert cs._csw_vals[1].grad is not None and cs._csw_vals[1].grad.abs().sum() > 0

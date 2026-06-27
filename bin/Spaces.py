@@ -14240,6 +14240,55 @@ class ConceptualSpace(Space):
         a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
         return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
 
+    def cs_source_layout(self, order, n_ps, n_ws):
+        """The source index layout for ramsified ``order``: the concatenation
+        ``[PS | WS | SS_0 | ... | SS_{order-1}]``. Returns ``(offsets, total)``
+        where ``offsets`` is ``{'ps': 0, 'ws': n_ps, 0: off_ss0, 1: off_ss1, ...}``
+        (integer keys are the SS sub-order offsets) and ``total`` is the source
+        count. The SS_i block size is the dyadic capacity of concept order ``i``
+        (symbols ARE concepts of the previous order)."""
+        caps = self._order_caps()
+        offsets = {"ps": 0, "ws": int(n_ps)}
+        off = int(n_ps) + int(n_ws)
+        for i in range(int(order)):
+            offsets[i] = off
+            off += int(caps[i])
+        return offsets, off
+
+    def cs_forward_content(self, ps_act, ws_act, dictionary):
+        """Run the ramsified per-order sparse encode/decode and assemble the
+        stacked CS content event (the heart of the forward transform).
+
+        ``ps_act`` / ``ws_act`` are the NON-NEGATIVE source PRESENCES
+        ``[V_ps, B]`` / ``[V_ws, B]``; ``dictionary`` is the concept-atom
+        codebook ``[nVectors, ConceptDim]`` -- positivity ("CS vectors map to
+        strictly positive mereological features") is enforced via ``softplus``.
+        For each ramsified order ``k`` the source vector is
+        ``[PS | WS | a_0 | ... | a_{k-1}]``: the lower orders' SIGNED concept
+        activations threaded up as the SS inputs (the symbolic space is 1-D, so
+        an SS source is just its signed scalar activation). The sparse weight
+        matrix produces the signed concept activation
+        ``a_k = W_k @ source_k`` (``torch.sparse.mm``); the concept code is that
+        activation scaling the positive atom (radial: magnitude = certainty,
+        sign = present vs anti-present). Returns
+        ``(content[B, N, ConceptDim], [a_0, ..., a_S])`` -- the stacked content
+        and the per-order signed activations (the SS feed / situate handle)."""
+        caps = self._order_caps()
+        atoms = F.softplus(dictionary)               # strictly-positive atoms
+        n_ps = int(ps_act.shape[0])
+        n_ws = int(ws_act.shape[0])
+        a_list = []
+        slabs = []
+        for k in range(len(caps)):
+            blocks = [ps_act, ws_act] + a_list[:k]   # PS, WS, then SS_0..SS_{k-1}
+            source = torch.cat(blocks, dim=0)        # [n_src_k, B]
+            a_k = self.cs_sparse_encode(
+                k, caps[k], int(source.shape[0]), source)   # [n_c_k, B] signed
+            a_list.append(a_k)
+            slabs.append(self.cs_decode(k, a_k, atoms))     # [B, n_c_k, CDim]
+        content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
+        return content, a_list
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
