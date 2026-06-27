@@ -14027,6 +14027,180 @@ class ConceptualSpace(Space):
             r = self._inventory_row(("c", int(sid)))
             self.add_edge(c_row, r)
 
+    # ====================================================================
+    # Ramsified per-order sparse weight tables (PS/WS/SS -> CS)
+    #
+    # A concept is a high-dimensional atom stored on ``CS.subspace.what``
+    # (ConceptDim). It is linked to its sources -- PS, WS, and the symbols
+    # SS_0..SS_{k-1} of all LOWER ramsified orders -- by a sparse WEIGHT MATRIX
+    # whose entries ``(concept, source, weight)`` give the signed contribution
+    # of each active source code to that concept's activation. The forward is an
+    # encoder + dictionary decoder:
+    #
+    #     concept_activation = W_order @ source_activation        (torch.sparse.mm)
+    #     concept_code[c]    = concept_activation[c] * what[c]    (dictionary atom)
+    #
+    # so percepts (PerceptDim) and concepts (ConceptDim) never share a vector
+    # space -- the matrix lives in index/activation space, dimension-agnostic.
+    # One table PER ramsified ORDER (Delta 1): order k's sources are
+    # ``[PS | WS | SS_0 | ... | SS_{k-1}]``. Capacity is DYADIC by order (more
+    # low-level than high-level concepts): the N concept rows split
+    # N/2, N/4, ..., N/2^S, N/2^S (last two equal so the blocks sum to N),
+    # stacked contiguously; the same allocation is used for SS.
+    # ====================================================================
+
+    @staticmethod
+    def order_capacities(total, symbolic_order):
+        """Dyadic per-order capacities over ``total`` rows for orders
+        ``0..symbolic_order``: order ``o`` gets ``floor(total / 2^(o+1))`` and
+        the LAST order takes the remainder, so the blocks sum to EXACTLY
+        ``total`` (e.g. ``total=N, S=3 -> [N/2, N/4, N/8, N/8]``). With
+        ``symbolic_order=0`` it is ``[total]`` (one order). Always returns
+        ``symbolic_order + 1`` positive sizes (clamped to >=1 each when
+        ``total`` is small)."""
+        total = int(total)
+        S = max(0, int(symbolic_order))
+        if S == 0:
+            return [max(1, total)]
+        caps = []
+        remaining = total
+        for o in range(S):                       # orders 0 .. S-1
+            # leave at least 1 row for each of the remaining (S - o) orders.
+            c = max(1, total // (2 ** (o + 1)))
+            c = min(c, remaining - (S - o))
+            c = max(1, c)
+            caps.append(c)
+            remaining -= c
+        caps.append(max(1, remaining))           # order S = the remainder
+        return caps
+
+    def _order_caps(self):
+        """Cached dyadic capacities for THIS CS's ``nVectors`` rows across
+        ``_symbolic_order + 1`` orders. Recomputed when either changes."""
+        N = int(self.nVectors)
+        S = int(getattr(self, "_symbolic_order", 0) or 0)
+        key = (N, S)
+        cache = getattr(self, "_order_caps_cache", None)
+        if cache is None or cache[0] != key:
+            caps = self.order_capacities(N, S)
+            object.__setattr__(self, "_order_caps_cache", (key, caps))
+        return self._order_caps_cache[1]
+
+    def order_slice(self, order):
+        """The ``(start, end)`` row range of ramsified ``order`` in the stacked
+        ``nVectors``-row concept inventory (``CS.subspace.what`` / SS)."""
+        caps = self._order_caps()
+        o = max(0, min(int(order), len(caps) - 1))
+        start = sum(caps[:o])
+        return start, start + caps[o]
+
+    def _csw_tables(self):
+        """Lazy-init the per-order sparse-weight COO store: a dict
+        ``order -> [rows, cols, vals]`` (concept-LOCAL row within the order
+        block, source-GLOBAL col within ``[PS|WS|SS_0..SS_{k-1}]``, weight) plus
+        a ``(order, concept, source) -> idx`` dedup map and a per-order dirty
+        set. Mirrors the relation tables; empty => the forward falls back."""
+        store = getattr(self, "_csw_store", None)
+        if store is None:
+            store = {}
+            object.__setattr__(self, "_csw_store", store)
+            object.__setattr__(self, "_csw_index", {})
+            object.__setattr__(self, "_csw_dirty", set())
+            object.__setattr__(self, "_csw_csr", {})        # order -> built CSR
+            object.__setattr__(self, "_csw_vals", {})       # order -> Parameter
+        return self._csw_store
+
+    def add_concept_weight(self, order, concept_local, source_global, weight=1.0):
+        """Append a sparse weight edge ``concept_local <- weight * source_global``
+        for ramsified ``order`` (``concept_local`` indexes within the order's
+        concept block; ``source_global`` indexes within
+        ``[PS|WS|SS_0..SS_{order-1}]``). IDEMPOTENT per
+        ``(order, concept_local, source_global)``; marks the order dirty so the
+        next CSR build re-materializes. Returns the COO row index."""
+        self._csw_tables()
+        o = int(order)
+        key = (o, int(concept_local), int(source_global))
+        existing = self._csw_index.get(key)
+        if existing is not None:
+            return int(existing)
+        cols = self._csw_store.setdefault(o, [[], [], []])
+        row = len(cols[0])
+        cols[0].append(int(concept_local))
+        cols[1].append(int(source_global))
+        cols[2].append(float(weight))
+        self._csw_index[key] = row
+        self._csw_dirty.add(o)
+        return row
+
+    def concept_weights(self, order, concept_local):
+        """The ``(source_global, weight)`` entries of ``concept_local`` at
+        ``order``, deterministically ordered by source. Empty when none."""
+        self._csw_tables()
+        cols = self._csw_store.get(int(order))
+        if not cols:
+            return []
+        c = int(concept_local)
+        out = [(cols[1][i], cols[2][i]) for i in range(len(cols[0]))
+               if cols[0][i] == c]
+        return sorted(out, key=lambda sw: sw[0])
+
+    def _build_csw(self, order, n_concepts, n_sources):
+        """Materialize ramsified ``order``'s COO weights into a
+        ``torch.sparse_csr_tensor`` ``[n_concepts, n_sources]`` backed by a
+        learnable values ``Parameter`` (rebuild-on-dirty; cached otherwise).
+        Returns the CSR tensor, or ``None`` when the order has no weights."""
+        self._csw_tables()
+        o = int(order)
+        cols = self._csw_store.get(o)
+        if not cols or not cols[0]:
+            return None
+        cached = self._csw_csr.get(o)
+        if o not in self._csw_dirty and cached is not None:
+            shp = cached.shape
+            if int(shp[0]) == int(n_concepts) and int(shp[1]) == int(n_sources):
+                return cached
+        dev = self._edge_device() if hasattr(self, "_edge_device") else \
+            (next((p.device for p in self.parameters()), torch.device("cpu")))
+        rows = torch.tensor(cols[0], dtype=torch.long, device=dev)
+        scols = torch.tensor(cols[1], dtype=torch.long, device=dev)
+        # tail-preserving learnable values: keep trained weights for existing
+        # rows, init the new tail from the host list.
+        host_vals = torch.tensor(cols[2], dtype=torch.float32, device=dev)
+        prev = self._csw_vals.get(o)
+        if prev is not None:
+            keep = min(int(prev.shape[0]), int(host_vals.shape[0]))
+            if keep > 0:
+                with torch.no_grad():
+                    host_vals[:keep] = prev.detach()[:keep].to(dev)
+        vals = nn.Parameter(host_vals)
+        self._csw_vals[o] = vals
+        # COO -> CSR (coalesced) carrying the grad-bearing values.
+        coo = torch.sparse_coo_tensor(
+            torch.stack([rows, scols]), vals,
+            (int(n_concepts), int(n_sources))).coalesce()
+        csr = coo.to_sparse_csr()
+        self._csw_csr[o] = csr
+        self._csw_dirty.discard(o)
+        return csr
+
+    def cs_sparse_encode(self, order, n_concepts, n_sources, activation):
+        """Encode the per-order concept ACTIVATIONS from the source
+        ``activation`` (``[n_sources, B]`` or ``[n_sources]``) via the sparse
+        weight matrix: ``concept_activation = W_order @ activation`` using
+        ``torch.sparse.mm`` (GPU-native SpMM; differentiable in both the
+        weights and the activation). Returns ``[n_concepts, B]`` (or
+        ``[n_concepts]``), or zeros when the order has no weights."""
+        W = self._build_csw(order, n_concepts, n_sources)
+        squeeze = False
+        if activation.dim() == 1:
+            activation = activation.unsqueeze(-1)
+            squeeze = True
+        if W is None:
+            out = activation.new_zeros((int(n_concepts), int(activation.shape[-1])))
+        else:
+            out = torch.sparse.mm(W, activation)
+        return out.squeeze(-1) if squeeze else out
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
