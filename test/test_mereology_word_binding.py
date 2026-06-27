@@ -62,9 +62,9 @@ def _cs_stub(ss):
                "relate", "reify_concept", "create_word_object_meta",
                "concept_parts", "concept_wholes",
                # create_word_object_meta now also decomposes the minted symbols
-               # into the sparse-coding edge store; these short-circuit to a
+               # into the per-order sparse weight store; these short-circuit to a
                # no-op on the stub (not sparse-active -> no _symbolic_order).
-               "_populate_concept_edges", "_sparse_active"):
+               "_populate_concept_weights", "_sparse_active"):
         setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 

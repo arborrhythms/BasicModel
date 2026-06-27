@@ -1,10 +1,8 @@
-"""Phases 3 + 6: the sparse-coding concept transform, end to end.
+"""End-to-end: the ramsified per-order sparse concept transform.
 
-The scatter-add feeds the concept content in ConceptualSpace.forward (D2) over
-the CS-owned similarity_codebook inventory (D1), gated on the symbolic order. A
-driver config (MM_sparse_concept.xml) builds and runs the parallel symbolic
-loop; the concept code is forward-connected, so the gradient reaches the
-learnable edge Weight. With the transform inactive the forward is byte-identical.
+Population (at mint, keyed by ramsified order) builds per-order torch.sparse
+weight tables; the forward (gated on symbolicOrder>0 + parallel) replaces the
+concept content with the encoder + dictionary decoder. Byte-identical when off.
 """
 import os
 import sys
@@ -23,6 +21,7 @@ import torch
 
 import Spaces
 import Language
+from Layers import WORD
 from test_basicmodel import _populate_test_config
 
 _DATA = os.path.join(os.path.dirname(_BIN), "data")
@@ -30,7 +29,7 @@ _DEFAULTS = os.path.join(_DATA, "model.xml")
 _D = 8
 
 
-def _cs_active(nS=64):
+def _cs_active(nS=64, order=3, n_ps=8, n_ws=8):
     nP = 4
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -39,8 +38,10 @@ def _cs_active(nS=64):
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
     cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
-    object.__setattr__(cs, "_symbolic_order", 1)
+    object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
+    object.__setattr__(cs, "_n_ps_codes", n_ps)
+    object.__setattr__(cs, "_n_ws_codes", n_ws)
     return cs
 
 
@@ -56,54 +57,82 @@ def _build(name):
     return m
 
 
-# -- Phase 3: the forward injection in isolation ------------------------------
+# -- population at mint, keyed by ramsified order -----------------------------
 
-def test_maybe_sparse_is_noop_when_inactive():
+def test_word_symbol_populates_order0_ps_ws():
+    cs = _cs_active(n_ps=8, n_ws=256)               # WORD (=100) is a WS feature
+    A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
+    # A (word) is order 0: parts are PS codes (block offset 0), whole is the WS
+    # code WORD (block offset n_ps=8). _csw rows are local within order 0.
+    assert cs._concept_source_order(A) == 0
+    a_row = cs._csw_concept_row(0, A)
+    srcs = [s for (s, _w) in cs.concept_weights(0, a_row)]
+    assert 1 in srcs and 2 in srcs                  # PS parts at offsets 1, 2
+    assert (8 + int(WORD)) in srcs                  # WS whole at offset n_ps+WORD
+
+
+def test_meta_is_higher_order_over_subsymbols():
+    cs = _cs_active(n_ps=8, n_ws=8)
+    A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
+    # C (meta) refs the sub-symbols A (order 0) and B; it is order 1.
+    assert cs._concept_source_order(C) == 1
+    c_row = cs._csw_concept_row(1, C)
+    # its weights live in order 1's table, sourced from the SS_0 block.
+    assert len(cs.concept_weights(1, c_row)) >= 1
+    offsets, _ = cs.cs_source_layout(1, 8, 8)
+    ss0 = offsets[0]
+    assert all(s >= ss0 for (s, _w) in cs.concept_weights(1, c_row))
+
+
+def test_population_inactive_is_noop():
     nP = 4
     _populate_test_config(
-        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
-        wordDim=_D, outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64,
-        nSymbols=64, nWords=64, nOutput=64, nWhere=0, nWhen=0)
+        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
+        outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
+        nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
-    folded = torch.randn(2, 8, _D)
-    out = cs._maybe_sparse_concept_content(folded)
-    assert out is folded                          # untouched -> byte-identical
+    cs.create_word_object_meta([1, 2], WORD, key="cat")
+    assert getattr(cs, "_csw_store", None) is None    # nothing populated
 
 
-def test_maybe_sparse_is_noop_with_empty_edges():
+def test_order_block_overflow_is_safe():
+    cs = _cs_active(nS=8, order=3, n_ps=8, n_ws=8)     # order 0 cap = 4
+    rows = [cs._csw_concept_row(0, c) for c in range(6)]
+    assert rows[:4] == [0, 1, 2, 3]                    # fills the block
+    assert rows[4] is None and rows[5] is None         # overflow -> None (safe)
+
+
+# -- the forward glue ---------------------------------------------------------
+
+def test_sparse_concept_forward_noop_when_unpopulated():
     cs = _cs_active()
-    folded = torch.randn(2, 8, _D)
-    out = cs._maybe_sparse_concept_content(folded)
-    assert torch.equal(out, folded)               # no edges -> unchanged
+    folded = torch.randn(2, 64, _D)
+    # similarity_codebook rows != folded slots here, and no weights -> fallback
+    out = cs._sparse_concept_forward(folded, None, None)
+    assert out is folded
 
 
-def test_maybe_sparse_injects_and_is_differentiable():
+def test_align_rows_pads_and_trims():
     cs = _cs_active()
-    # populate a couple of concepts' edges
-    cs.create_word_object_meta([1, 2], 7, key="cat")
-    cs.create_word_object_meta([3, 4], 7, key="dog")
-    folded = torch.randn(2, 8, _D)
-    out = cs._maybe_sparse_concept_content(folded)
-    assert out.shape == folded.shape
-    assert not torch.equal(out, folded)           # the edged slots changed
-    # forward-connected: the gradient reaches the learnable edge Weight.
-    _, _, w = cs._rebuild_edge_pools()
-    out.sum().backward()
-    assert w.grad is not None and w.grad.abs().sum() > 0
+    t = torch.randn(3, 2)
+    assert cs._align_rows(t, 5).shape == (5, 2)        # pad
+    assert cs._align_rows(t, 2).shape == (2, 2)        # trim
+    assert cs._align_rows(t, 0) is t                   # unset -> no-op
 
 
-# -- Phase 6: the driver config builds + runs, grad reaches the edge Weight ---
+# -- driver config ------------------------------------------------------------
 
-def test_sparse_concept_config_builds_parallel():
+def test_sparse_concept_config_builds_and_stamps():
     m = _build("MM_sparse_concept.xml")
-    assert m.serial is False and m.symbolicOrder == 1
-    assert m.symbol_tower is True
+    assert m.serial is False and m.symbolicOrder == 1 and m.symbol_tower is True
+    css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
+    assert css
+    cs = css[-1]
+    assert int(getattr(cs, "_n_ps_codes", 0)) > 0
+    assert int(getattr(cs, "_n_ws_codes", 0)) > 0
 
 
 def test_sparse_concept_forward_smoke():
-    """The parallel symbolic loop runs end to end without error (the byte-
-    identical-off path stays valid; the gated scatter is a no-op until edges
-    exist)."""
     import Models
     from util import TheXMLConfig
     m = _build("MM_sparse_concept.xml")
@@ -112,24 +141,5 @@ def test_sparse_concept_forward_smoke():
     items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(items)
     m.train()
-    out = m.forward(x)
+    out = m.forward(x)                                 # runs the parallel loop
     assert out is not None
-
-
-def test_sparse_concept_config_activates_transform_on_cs():
-    """The config's stamp marks the ConceptualSpaces sparse-active, so a mint on
-    the model's own CS populates edges and the scatter injects a grad-bearing
-    concept content (the forward-connection the plan delivers)."""
-    m = _build("MM_sparse_concept.xml")
-    css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
-    assert css, "the config stamp should mark a ConceptualSpace sparse-active"
-    cs = css[-1]                                 # the terminal CS
-    cs.create_word_object_meta([1, 2], 7, key="cat")
-    cs.create_word_object_meta([3, 4], 7, key="dog")
-    D = int(cs.outputShape[1])
-    folded = torch.randn(2, int(cs.outputShape[0]), D)
-    out = cs._maybe_sparse_concept_content(folded)
-    assert not torch.equal(out, folded)          # the edged slots took the code
-    _, _, w = cs._rebuild_edge_pools()
-    out.sum().backward()
-    assert w.grad is not None and w.grad.abs().sum() > 0

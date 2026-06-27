@@ -13635,7 +13635,6 @@ class ConceptualSpace(Space):
         self._concept_wholes.pop(s, None)
         for k in [k for k, v in self._concept_relate_idx.items() if int(v) == s]:
             self._concept_relate_idx.pop(k, None)
-        self._drop_concept_edges(s)               # sparse decomposition vanishes
 
     def resolve_identities(self):
         """ZERO OUT the 1:1 mappings — the main over-collection deliverable
@@ -13719,7 +13718,7 @@ class ConceptualSpace(Space):
             self.add_part(H, c)
         self._concept_raise_set().add(H)
         self._concept_relate_idx[key] = H
-        self._populate_concept_edges(H)            # sparse decomposition of H
+        self._populate_concept_weights(H)          # per-order sparse decomposition
         return H
 
     def conceptualize_chain(self, concept_ids):
@@ -13753,279 +13752,14 @@ class ConceptualSpace(Space):
         chains[key] = int(rest)
         return int(rest)
 
-    # -- sparse-coding edge store (Concept = sparse weighted combo of symbols) --
-    #
-    # A concept is a sparse, weighted linear combination over a basis of
-    # symbols (symbols are concepts from the previous ramsified order -- one
-    # self-referential map). The decomposition is stored as a three-column COO
-    # table (ConceptIndex, SymbolIndex, Weight): space-optimal over a
-    # million-row inventory (exactly the nonzeros, never a dense [N x V]
-    # matrix), extensible by appending. ``Weight`` is a learnable Parameter,
-    # default uniform 1.0, normalized by per-concept degree at scatter so
-    # uniform == mean. The columns live host-side as plain lists (appended at
-    # mint); ``_rebuild_edge_pools`` materializes them on demand. Mirrors the
-    # relation tables above. Empty table => the forward falls back bit-for-bit
-    # (the byte-identical contract at symbolicOrder=0).
-
-    def _edge_tables(self):
-        """Lazy-init the three COO columns of the sparse concept->symbol edge
-        store + a ``(concept, symbol) -> row`` dedup dict + the ``_edge_dirty``
-        rebuild flag. Returns ``(concept_col, symbol_col, weight_col)``.
-        Mirrors :meth:`_concept_tables`."""
-        cols = getattr(self, "_edge_concept", None)
-        if cols is None:
-            object.__setattr__(self, "_edge_concept", [])
-            object.__setattr__(self, "_edge_symbol", [])
-            object.__setattr__(self, "_edge_weight", [])
-            object.__setattr__(self, "_edge_index", {})   # (concept,symbol)->row
-            object.__setattr__(self, "_edge_dirty", False)
-        return self._edge_concept, self._edge_symbol, self._edge_weight
-
-    def add_edge(self, concept, symbol, *, weight=1.0):
-        """Append a COO edge ``concept <- weight * symbol`` (default uniform
-        weight 1.0). IDEMPOTENT per ``(concept, symbol)``: a repeat is a no-op
-        and returns the existing COO row. Sets ``_edge_dirty`` so the next
-        :meth:`_rebuild_edge_pools` re-materializes. Returns the COO row."""
-        self._edge_tables()
-        key = (int(concept), int(symbol))
-        existing = self._edge_index.get(key)
-        if existing is not None:
-            return int(existing)
-        row = len(self._edge_concept)
-        self._edge_concept.append(int(concept))
-        self._edge_symbol.append(int(symbol))
-        self._edge_weight.append(float(weight))
-        self._edge_index[key] = row
-        object.__setattr__(self, "_edge_dirty", True)
-        return row
-
-    def concept_edges(self, concept):
-        """The ``(symbol, weight)`` constituents of ``concept``, deterministically
-        ordered by symbol. Empty list when ``concept`` has no edges. The host-
-        side ``_edge_weight`` list is the source of truth here (the trained
-        pool, if materialized, is read at scatter time, not here)."""
-        self._edge_tables()
-        c = int(concept)
-        out = [(self._edge_symbol[r], self._edge_weight[r])
-               for r in range(len(self._edge_concept))
-               if self._edge_concept[r] == c]
-        return sorted(out, key=lambda sw: sw[0])
-
-    def _drop_concept_edges(self, concept):
-        """Remove every edge whose ``ConceptIndex == concept`` (lifecycle: a
-        retired concept's decomposition vanishes). Rebuilds the COO columns +
-        dedup index without them and sets ``_edge_dirty``. PURE NO-OP when the
-        edge store was never built => byte-identical at symbolicOrder=0."""
-        if getattr(self, "_edge_concept", None) is None:
-            return
-        c = int(concept)
-        keep = [r for r in range(len(self._edge_concept))
-                if self._edge_concept[r] != c]
-        if len(keep) == len(self._edge_concept):
-            return
-        new_concept = [self._edge_concept[r] for r in keep]
-        new_symbol = [self._edge_symbol[r] for r in keep]
-        new_weight = [self._edge_weight[r] for r in keep]
-        object.__setattr__(self, "_edge_concept", new_concept)
-        object.__setattr__(self, "_edge_symbol", new_symbol)
-        object.__setattr__(self, "_edge_weight", new_weight)
-        object.__setattr__(self, "_edge_index",
-                           {(new_concept[r], new_symbol[r]): r
-                            for r in range(len(new_concept))})
-        object.__setattr__(self, "_edge_dirty", True)
-
-    def _edge_device(self):
-        """The device the edge pools live on -- inherit from an existing
-        parameter (the codebooks), else CPU (bare host-side tests)."""
-        for p in self.parameters():
-            return p.device
-        return torch.device("cpu")
-
-    def _rebuild_edge_pools(self):
-        """Materialize the host-side COO columns into the long index tensors
-        + the learnable ``_edge_weight_pool`` Parameter, REBUILD-ON-DIRTY only
-        (cached otherwise; never call per-forward without the dirty guard).
-        Growth is TAIL-PRESERVING (like :meth:`grow_to`): rows that already
-        existed keep their -- possibly trained -- pool weight; only the
-        newly-appended tail takes its initial weight from the host
-        ``_edge_weight`` list. Returns ``(concept_idx, symbol_idx, weight)``
-        (long, long, Parameter)."""
-        self._edge_tables()
-        n = len(self._edge_concept)
-        pool = getattr(self, "_edge_weight_pool", None)
-        if (not self._edge_dirty and pool is not None
-                and int(pool.shape[0]) == n):
-            return (self._edge_concept_pool, self._edge_symbol_pool, pool)
-        dev = self._edge_device()
-        concept_idx = torch.tensor(self._edge_concept, dtype=torch.long,
-                                   device=dev)
-        symbol_idx = torch.tensor(self._edge_symbol, dtype=torch.long,
-                                  device=dev)
-        new_w = torch.tensor(self._edge_weight, dtype=torch.float32, device=dev)
-        if pool is not None:
-            keep = min(int(pool.shape[0]), n)
-            if keep > 0:
-                with torch.no_grad():
-                    new_w[:keep] = pool.detach()[:keep].to(dev)
-        # Register as a real Parameter (mirrors grow_to's self.W reassign): at
-        # symbolicOrder=0 the table is empty and this is never reached, so no
-        # Parameter is added and state_dict stays byte-identical.
-        self._edge_concept_pool = concept_idx
-        self._edge_symbol_pool = symbol_idx
-        self._edge_weight_pool = nn.Parameter(new_w)
-        object.__setattr__(self, "_edge_dirty", False)
-        return (concept_idx, symbol_idx, self._edge_weight_pool)
-
-    def scatter_concept_event(self, n_concepts, basis, *, normalize=True):
-        """The differentiable scatter-add SpMM that realizes each concept as a
-        sparse weighted combination over ``basis`` (the symbol / constituent
-        codebook rows, ``[V, D]``)::
-
-            concept[c] = sum_{e: ConceptIndex[e]=c} Weight[e] * basis[SymbolIndex[e]]
-
-        realized as ``index_add(index_select(basis, 0, sym) * w, concept)`` --
-        NO ``torch.sparse`` (MLX / executorch export safety). Differentiable in
-        BOTH ``Weight`` and ``basis``, so the concept code is forward-connected
-        by construction. With ``normalize=True`` the per-concept sum is divided
-        by its edge DEGREE (count), so uniform weights give the MEAN of the
-        constituents (uniform == mean). Returns ``[n_concepts, D]`` (expand to
-        ``[B, N, D]`` at the call site)."""
-        concept_idx, symbol_idx, weight = self._rebuild_edge_pools()
-        D = int(basis.shape[-1])
-        n_c = int(n_concepts)
-        out = basis.new_zeros((n_c, D))
-        if symbol_idx.numel() == 0:
-            return out
-        contrib = basis.index_select(0, symbol_idx) * weight.unsqueeze(-1)
-        out = out.index_add(0, concept_idx, contrib)
-        if normalize:
-            deg = out.new_zeros((n_c,)).index_add(
-                0, concept_idx, torch.ones_like(weight))
-            out = out / deg.clamp(min=1.0).unsqueeze(-1)
-        return out
-
-    def _maybe_sparse_concept_content(self, folded):
-        """Phase 3: put the differentiable scatter-add concept codes into the
-        leading STM slots of ``folded`` for the populated (edged) concepts (D2:
-        the sparse code feeds the concept content). The basis is the CS-owned
-        ``similarity_codebook`` INVENTORY (D1) -- gathering from the codebook
-        this Space owns, never a cross-space reach. Forward-connected: the
-        returned content depends on the edge ``Weight`` and the basis, so the
-        backward reaches both (the structural goal -- the concept code is no
-        longer forward-disconnected). Returns ``folded`` UNCHANGED (byte-
-        identical) when the sparse transform is inactive, the edge table is
-        empty, or the shapes are unusable."""
-        if not self._sparse_active():
-            return folded
-        if getattr(self, "_edge_concept", None) is None or not self._edge_concept:
-            return folded
-        if not (torch.is_tensor(folded) and folded.dim() == 3):
-            return folded
-        cb = getattr(self, "similarity_codebook", None)
-        basis = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if basis is None or not torch.is_tensor(basis) or int(basis.shape[0]) == 0:
-            return folded
-        N = int(folded.shape[1])
-        D = int(folded.shape[2])
-        concept_idx, _, _ = self._rebuild_edge_pools()
-        V = int(basis.shape[0])
-        edged = torch.unique(concept_idx)
-        edged = edged[edged < V]                    # in-range inventory rows
-        if edged.numel() == 0:
-            return folded
-        sel = edged[:N]                             # leading concepts -> slots
-        codes = self.scatter_concept_event(V, basis, normalize=True)  # [V, Dc]
-        Dc = min(D, int(codes.shape[-1]))
-        rows = int(sel.numel())
-        new = folded.clone()
-        new[:, :rows, :Dc] = codes.index_select(0, sel)[:, :Dc].unsqueeze(0)
-        return new
-
-    # -- inventory row map + edge population at mint (Phase 5) -----------------
-    #
-    # The CS-owned ``similarity_codebook`` IS the row-aligned located-code
-    # INVENTORY (D1): the muxed concept view, and -- via its ``.what`` slice --
-    # the unmuxed symbol view. A COO edge's ``ConceptIndex`` / ``SymbolIndex``
-    # are both inventory rows. ``_inventory_row`` first-seen-allocates a row for
-    # a concept or a constituent token (growing the codebook when it outruns
-    # ``nVectors``), so the scatter basis is exactly ``similarity_codebook``.
-    #
-    # Population is DECOUPLED from ``<mereologyRaise>`` but GATED on the
-    # symbolic mode (``_symbolic_order > 0`` and parallel): at symbolicOrder=0
-    # it is a pure no-op (no rows allocated, no codebook growth, empty edge
-    # table) so every existing config stays byte-identical.
-
     def _sparse_active(self):
-        """True iff the sparse-coding concept transform is active here: the
-        symbolic order is > 0 AND we are in parallel mode. Mirrors the forward
-        gate, so edge population and the scatter activate together; both are
-        no-ops (byte-identical) otherwise."""
+        """True iff the ramsified sparse concept transform is active here:
+        the symbolic order is > 0 AND we are in parallel mode. Mirrors the
+        forward gate, so the per-order weight population and the forward
+        transform activate together; both are no-ops (byte-identical)
+        otherwise."""
         return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
                 and not bool(getattr(self, "_serial", True)))
-
-    def _inventory_row(self, token):
-        """First-seen inventory (basis) row for ``token`` -- a concept ref
-        ``("c", id)``, a part code ``("p", code)``, a whole code ``("w", code)``
-        or a sub-symbol ``("sym", id)``. The ``similarity_codebook`` is the
-        row-aligned inventory; it is grown when the allocator outruns
-        ``nVectors`` (tail-preserving, like any codebook growth). Stable across
-        a run."""
-        self._edge_tables()
-        m = getattr(self, "_inventory_rows", None)
-        if m is None:
-            m = {}
-            object.__setattr__(self, "_inventory_rows", m)
-        r = m.get(token)
-        if r is None:
-            r = len(m)
-            m[token] = r
-            cb = getattr(self, "similarity_codebook", None)
-            if (cb is not None and hasattr(cb, "grow_to")
-                    and r >= int(getattr(cb, "nVectors", 0) or 0)):
-                cb.grow_to(r + 1)
-        return int(r)
-
-    def _populate_concept_edges(self, concept_id):
-        """Build the sparse COO decomposition of ``concept_id`` from its
-        relation-table Parts / Wholes (the mint-site hook, Phase 5). MIN-SUPPORT
-        invariant: a concept is eligible for the scatter only with >= 1 part AND
-        >= 1 whole, or >= 2 constituents total (a sparse combo needs >= 2 basis
-        vectors); else no edges and the forward falls back to the current
-        content. The maximally-unspecified pole pair (ATOM / UNIVERSE) is a
-        placeholder, not a decomposition -> skipped. Each constituent maps to an
-        inventory row via :meth:`_inventory_row`; the concept maps to its own
-        row; every ``SymbolIndex`` is asserted in range. Idempotent (``add_edge``
-        dedups). NO-OP unless the sparse transform is active -> byte-identical."""
-        if not self._sparse_active():
-            return
-        parts = self.concept_parts(concept_id)
-        wholes = self.concept_wholes(concept_id)
-
-        def _is_sym(x):
-            return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
-        raw_parts = [p for p in parts
-                     if not _is_sym(p) and p not in (_ATOM, _UNIVERSE)]
-        raw_wholes = [w for w in wholes
-                      if not _is_sym(w) and w not in (_ATOM, _UNIVERSE)]
-        sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
-        n_constituents = len(raw_parts) + len(raw_wholes) + len(sym_refs)
-        eligible = ((len(raw_parts) >= 1 and len(raw_wholes) >= 1)
-                    or n_constituents >= 2)
-        if not eligible:
-            return
-        c_row = self._inventory_row(("c", int(concept_id)))
-        cb = getattr(self, "similarity_codebook", None)
-        V = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
-        for p in raw_parts:
-            r = self._inventory_row(("p", int(p)))
-            assert V == 0 or r < int(self.similarity_codebook.nVectors)
-            self.add_edge(c_row, r)
-        for w in raw_wholes:
-            r = self._inventory_row(("w", int(w)))
-            self.add_edge(c_row, r)
-        for (_, sid) in sym_refs:
-            r = self._inventory_row(("c", int(sid)))
-            self.add_edge(c_row, r)
 
     # ====================================================================
     # Ramsified per-order sparse weight tables (PS/WS/SS -> CS)
@@ -14289,6 +14023,101 @@ class ConceptualSpace(Space):
         content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
         return content, a_list
 
+    @staticmethod
+    def _align_rows(t, n):
+        """Pad/trim the first axis of ``[V, B]`` to exactly ``n`` rows (no-op
+        when ``n`` is 0/unset). Keeps the source-presence width fixed to the
+        configured block size so the forward layout matches the population."""
+        n = int(n or 0)
+        if n <= 0 or t is None or int(t.shape[0]) == n:
+            return t
+        if int(t.shape[0]) > n:
+            return t[:n]
+        return F.pad(t, (0, 0, 0, n - int(t.shape[0])))
+
+    # -- per-order weight population at mint (abstraction_order-keyed) ---------
+
+    def _concept_source_order(self, concept_id, _seen=None):
+        """Ramsified order of a concept: 0 when its constituents are all raw
+        PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents,
+        capped at the configured symbolic order. (Symbols ARE concepts of the
+        previous order -- this is the ramsified recursion.) Cycle-guarded."""
+        cid = int(concept_id)
+        _seen = _seen if _seen is not None else set()
+        if cid in _seen:
+            return 0
+        _seen.add(cid)
+        S = len(self._order_caps()) - 1
+        sub_orders = []
+        for x in self.concept_parts(cid) + self.concept_wholes(cid):
+            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
+                sub_orders.append(self._concept_source_order(x[1], _seen))
+        return 0 if not sub_orders else min(S, 1 + max(sub_orders))
+
+    def _csw_concept_row(self, order, concept_id):
+        """First-seen LOCAL row of ``concept_id`` within ramsified ``order``'s
+        dyadic block (``0 .. caps[order]-1``). Returns ``None`` when the block
+        is full (capacity overflow -- the concept gets no weights, falling back
+        to the current content)."""
+        self._csw_tables()
+        rows = getattr(self, "_csw_rows", None)
+        if rows is None:
+            rows = {}
+            object.__setattr__(self, "_csw_rows", rows)
+            object.__setattr__(self, "_csw_row_next", {})
+        key = (int(order), int(concept_id))
+        r = rows.get(key)
+        if r is None:
+            nxt = self._csw_row_next.get(int(order), 0)
+            if nxt >= int(self._order_caps()[int(order)]):
+                return None
+            self._csw_row_next[int(order)] = nxt + 1
+            rows[key] = nxt
+            r = nxt
+        return int(r)
+
+    def _populate_concept_weights(self, concept_id):
+        """Decompose ``concept_id`` into per-order sparse weight edges
+        ``add_concept_weight(order, concept_local, source_global)``: PS parts
+        and WS wholes map to the ``[PS|WS]`` blocks; sub-symbol constituents map
+        to the SS block of their (lower) order. MIN-SUPPORT: >= 2 constituents
+        (the ATOM/UNIVERSE pole pair is skipped). Keyed by the ramsified order
+        (:meth:`_concept_source_order`). NO-OP unless the sparse transform is
+        active -> byte-identical."""
+        if not self._sparse_active():
+            return
+
+        def _is_sym(x):
+            return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
+        parts = self.concept_parts(concept_id)
+        wholes = self.concept_wholes(concept_id)
+        raw_parts = [p for p in parts
+                     if not _is_sym(p) and p not in (_ATOM, _UNIVERSE)]
+        raw_wholes = [w for w in wholes
+                      if not _is_sym(w) and w not in (_ATOM, _UNIVERSE)]
+        sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
+        if len(raw_parts) + len(raw_wholes) + len(sym_refs) < 2:
+            return
+        order = self._concept_source_order(concept_id)
+        c_local = self._csw_concept_row(order, concept_id)
+        if c_local is None:
+            return                                   # order block full
+        n_ps = int(getattr(self, "_n_ps_codes", 0) or 0)
+        n_ws = int(getattr(self, "_n_ws_codes", 0) or 0)
+        offsets, _total = self.cs_source_layout(order, n_ps, n_ws)
+        for p in raw_parts:
+            if 0 <= int(p) < (n_ps or (int(p) + 1)):
+                self.add_concept_weight(order, c_local, offsets["ps"] + int(p))
+        for w in raw_wholes:
+            if 0 <= int(w) < (n_ws or (int(w) + 1)):
+                self.add_concept_weight(order, c_local, offsets["ws"] + int(w))
+        for (_tag, sid) in sym_refs:
+            so = self._concept_source_order(sid)
+            if so < order and so in offsets:
+                sl = self._csw_concept_row(so, sid)
+                if sl is not None:
+                    self.add_concept_weight(order, c_local, offsets[so] + sl)
+
     def _subspace_presence(self, sub):
         """Non-negative per-code PRESENCE ``[V, B]`` of a passed-in source
         subspace -- its materialized event read against its OWN ``.what``
@@ -14326,6 +14155,10 @@ class ConceptualSpace(Space):
         ws_act = self._subspace_presence(word_subspace)
         if ps_act is None or ws_act is None:
             return folded
+        # Align to the configured PS/WS block sizes so the forward source layout
+        # matches the population's offsets (codebook growth-stable).
+        ps_act = self._align_rows(ps_act, getattr(self, "_n_ps_codes", 0))
+        ws_act = self._align_rows(ws_act, getattr(self, "_n_ws_codes", 0))
         content, _ = self.cs_forward_content(ps_act, ws_act, dict_W)
         N, D = int(folded.shape[1]), int(folded.shape[2])
         if int(content.shape[1]) != N:                   # slot/inventory mismatch
@@ -14373,12 +14206,8 @@ class ConceptualSpace(Space):
             if n_p > kp:
                 codes = self.concept_parts(sym)
                 H = self.synthesize_higher_order(codes)   # σ: APPLIED
-                # H supersedes sym: it INHERITS the union of sym's sparse edges
-                # (the decomposition rides up to the higher-order symbol). No-op
-                # when the edge store was never built (byte-identical).
-                if getattr(self, "_edge_concept", None) is not None:
-                    for s_, w_ in self.concept_edges(sym):
-                        self.add_edge(H, s_, weight=w_)
+                # synthesize_higher_order already populates H's per-order sparse
+                # weights from its constituents (gated; byte-identical when off).
                 requests.append({"sym": sym, "op": "synthesize",
                                  "codes": codes, "result": H})
             if n_w > kw:
@@ -14418,7 +14247,7 @@ class ConceptualSpace(Space):
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
-            self._populate_concept_edges(A)        # re-decompose A (parts grew)
+            self._populate_concept_weights(A)      # re-decompose A (parts grew)
             return A, B, C
         A = self.new_concept()                     # the WORD-symbol
         for p in word_parts:
@@ -14433,8 +14262,8 @@ class ConceptualSpace(Space):
             wom[key] = (A, B, C)
         # Sparse decomposition of the word-symbol A (word-parts <- word-whole)
         # and the META C (A, B). B is the unspecified pole pair -> not eligible.
-        self._populate_concept_edges(A)
-        self._populate_concept_edges(C)
+        self._populate_concept_weights(A)
+        self._populate_concept_weights(C)
         return A, B, C
 
     # ------------------------------------------------------------------
