@@ -131,3 +131,48 @@ def test_encoder_uses_torch_sparse():
     src += inspect.getsource(Spaces.ConceptualSpace._build_csw)
     assert "torch.sparse.mm" in src
     assert "to_sparse_csr" in src
+
+
+# -- source activation (encoder input) + dictionary decoder -------------------
+
+def test_source_code_activation_matches_dotproduct():
+    cs = _cs()
+    B, N, V = 2, 3, 5
+    event = torch.randn(B, N, _D)
+    W = torch.randn(V, _D)
+    act = cs.source_code_activation(event, W)
+    assert act.shape == (V, B)
+    ref = torch.einsum('bnd,vd->vb', event, W)        # sum over slots of <e,W>
+    assert torch.allclose(act, ref, atol=1e-5)
+
+
+def test_cs_decode_scales_dictionary_atoms():
+    cs = _cs(nS=64, order=3)                           # caps [32,16,8,8]
+    what = torch.randn(64, _D)
+    # order 1 occupies rows [32:48); pick its first 2 concepts active
+    n_o = 16
+    a = torch.zeros(n_o, 2)                            # [n_concepts_o, B]
+    a[0, 0] = 2.0
+    a[1, 1] = -1.0
+    code = cs.cs_decode(1, a, what)
+    assert code.shape == (2, n_o, _D)
+    # batch 0, concept 0 = 2.0 * what[32]
+    assert torch.allclose(code[0, 0], 2.0 * what[32], atol=1e-5)
+    # batch 1, concept 1 = -1.0 * what[33]
+    assert torch.allclose(code[1, 1], -1.0 * what[33], atol=1e-5)
+    # inactive concept -> zero
+    assert torch.allclose(code[0, 5], torch.zeros(_D), atol=1e-6)
+
+
+def test_encode_then_decode_is_differentiable_end_to_end():
+    cs = _cs(nS=16, order=1)                           # caps [8,8]
+    cs.add_concept_weight(0, 0, 0, weight=0.5)
+    cs.add_concept_weight(0, 1, 2, weight=1.0)
+    what = torch.randn(16, _D, requires_grad=True)
+    act = torch.randn(4, 2, requires_grad=True)        # [n_sources=4, B=2]
+    ca = cs.cs_sparse_encode(0, 8, 4, act)             # [8, 2]
+    code = cs.cs_decode(0, ca, what)                   # [2, 8, _D]
+    code.sum().backward()
+    assert what.grad is not None and what.grad.abs().sum() > 0
+    assert act.grad is not None and act.grad.abs().sum() > 0
+    assert cs._csw_vals[0].grad is not None and cs._csw_vals[0].grad.abs().sum() > 0

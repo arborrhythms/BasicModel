@@ -14201,6 +14201,39 @@ class ConceptualSpace(Space):
             out = torch.sparse.mm(W, activation)
         return out.squeeze(-1) if squeeze else out
 
+    @staticmethod
+    def source_code_activation(event, codebook_W):
+        """Per-code soft activation of a source space from its materialized
+        ``event`` (``[B, N, D]``) against its codebook rows ``codebook_W``
+        (``[V, D]``): ``activation[v, b] = sum_n <event[b, n], W[v]>`` -- how
+        strongly each source code fires across the slots (a differentiable
+        dot-product readout; this is the ENCODER INPUT the sparse weight matrix
+        consumes). Returns ``[V, B]``. Widths are clipped to the common dim so a
+        muxed event (content+band) reads against a what-only codebook."""
+        if event is None or codebook_W is None:
+            return None
+        if event.dim() == 2:
+            event = event.unsqueeze(1)               # [B, 1, D]
+        D = min(int(event.shape[-1]), int(codebook_W.shape[-1]))
+        ev = event[..., :D]                          # [B, N, D]
+        W = codebook_W[:, :D]                        # [V, D]
+        sim = torch.matmul(ev, W.t())                # [B, N, V]
+        return sim.sum(dim=1).t()                    # [V, B]
+
+    def cs_decode(self, order, concept_activation, what_W):
+        """Dictionary decoder: scale each concept's stored ConceptDim atom by
+        its signed activation. ``concept_activation`` is ``[n_concepts_o, B]``
+        (the sparse encoder output for ``order``); ``what_W`` is the FULL
+        ``CS.subspace.what`` codebook (``[nVectors, ConceptDim]``). The order's
+        concepts occupy the stacked slice ``order_slice(order)``. Returns the
+        per-concept code slab ``[B, n_concepts_o, ConceptDim]`` -- concept
+        ``c``'s row is ``activation[c] * what[slice_start + c]`` (so percepts in
+        PerceptDim and concepts in ConceptDim never share a vector space)."""
+        start, end = self.order_slice(order)
+        atoms = what_W[start:end]                    # [n_concepts_o, ConceptDim]
+        a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
+        return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
