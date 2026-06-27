@@ -12620,12 +12620,17 @@ class SymbolSpace(PerceptualSpace):
             if _sp is not None and hasattr(_sp, 'attach_symbolSpace'):
                 _sp.attach_symbolSpace(self)
 
-    # ``forward_symbol`` (the SymbolSpace->WholeSpace reach for the SS bind leg)
-    # was RETIRED 2026-06-21: the leg is now CS-MEDIATED. ConceptualSpace.
-    # _build_symbol_leg reads the order-raising codes and syncs them onto
-    # SS.subspace.what, so SymbolSpace no longer reaches WholeSpace -- CS, which
-    # sees all three towers in its forward, does it. See Spaces.py
-    # ConceptualSpace._build_symbol_leg + bind_streams.
+    # The SS (symbol) bind leg is produced by ``forward_concept_to_symbol``
+    # below: the concept arrives THROUGH ``forward`` and the row-aligned symbol
+    # view is built from the concept's OWN codes (writing only the codebook this
+    # Space owns). The earlier reaches are both retired: ``forward_symbol`` (the
+    # SymbolSpace->WholeSpace reach) AND the later CS-mediated
+    # ``ConceptualSpace._build_symbol_leg`` (which dereferenced a stashed
+    # ``_model_symbolSpace`` and copied WholeSpace meta rows). The parallel body
+    # (``Models._forward_body``) computes ``SS_sub =
+    # symbolSpace.forward_concept_to_symbol(CS_sub)`` and hands it to
+    # ``cs.bind_streams(..., SS_sub=SS_sub)``; ``bind_streams`` no longer builds
+    # the leg.
 
     # -- attribute forwarding to the held coordinator --------------------
     def __getattr__(self, name):

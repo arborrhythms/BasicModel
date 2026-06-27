@@ -200,7 +200,7 @@ the principled fix for the MM_20M mean-collapse. Full design:
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
-| **ConceptualSpace** | STM container + main grammatical CPU | STM (`ShortTermMemory`, depth ~8) | No atomic forward fold (`sigma_percept` retired). `forward(new_idea_subspace)` does STM shift / push. Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) ramsified per-order sparse concept transform | STM (`ShortTermMemory`, depth ~8); per-order sparse concept-weight tables (`_csw_vals`) + concept dictionary (`similarity_codebook`) when sparse-active | `forward(subspace, word_subspace=None)`: when `_sparse_active()` (`symbolicOrder>0`, parallel), runs the per-order sparse encode/decode (`_sparse_concept_forward`) before the STM shift / push; otherwise STM bookkeeping only (`sigma_percept` fold retired). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -208,8 +208,11 @@ The cross-space fold contract has changed:
 
 ```
 PS.forward(x):  return self.pi(x.materialize()) + self.sigma(x.materialize())
-CS.forward(new_idea):  STM[0..6] = STM[1..7];  STM[7] = new_idea  (mode-dispatched)
+CS.forward(subspace, word_subspace):
+    folded = _sparse_concept_forward(folded, subspace, word_subspace)   # when _sparse_active(): ramsified per-order sparse encode/decode
+    STM[0..6] = STM[1..7];  STM[7] = folded                             # then the STM shift/push (mode-dispatched)
 SS:  no atomic forward operator; hosts insert_paired_word + write-required grammar ops
+     (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
 ```
 
 The legacy composition `C = sigma_percept(pi_input(IS) + pi_concept(C_prev))`
@@ -556,10 +559,13 @@ stack of unquantized CS "ideas" — the working set the signal router
 dispatches grammar ops over. Capacity defaults to 7 (Miller, ±2);
 `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` overrides.
 
-Post-substrate-refactor, `CS.forward(new_idea_subspace)` is **STM
-bookkeeping** — shift slots left, push the new idea onto slot 7. The
-legacy atomic forward fold (`sigma_percept`) is retired; CS no longer
-holds a Layer that transforms its input. The mode dispatch:
+Post-substrate-refactor, `CS.forward(subspace, word_subspace=None)` is **STM
+bookkeeping** when the sparse transform is off — shift slots left, push the new
+idea onto slot 7. The legacy atomic forward fold (`sigma_percept`) is retired.
+(When the ramsified sparse transform is active — `symbolicOrder>0`, parallel —
+`forward` first runs `_sparse_concept_forward` to produce the concept content
+from the per-order sparse weight matrices + dictionary, then does the STM push;
+see Spaces.md → ConceptualSpace.) The mode dispatch:
 
 - **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (oldest
   dropped from slot 0). Grammar ops dispatched per word or at sentence

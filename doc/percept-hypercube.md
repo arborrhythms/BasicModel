@@ -129,14 +129,21 @@ Whether you may map one onto the other depends on a single modeling question —
   The percept never emits a negative coordinate; the concept space develops its
   own negative half.
 
-Consequence for the architecture: the **percept→concept seam is a straight
-injection** (`[0,1] → positive orthant`), which is exactly what
-`factor_percept` already is (one-sided evidence `a ∈ [0,+1]`). There is **no
-re-center at that seam**. The sanctioned signed↔membership bridge —
-`χ(a) = (1+a)/2` and `χ⁻¹(m) = 2m-1`
-(`Ops.eval_chart` / `eval_chart_inv`, [bin/Layers.py](../bin/Layers.py)) — stays
-where it belongs: the **truth/catuskoti** boundary (signed epistemic scalar ↔
-membership), not the percept seam.
+Consequence for the architecture: the **percept→concept seam is presence-
+preserving and one-sided** — percept presences `a ∈ [0,+1]` (`factor_percept`)
+enter non-negative, and there is **no re-center at that seam**. NB: this is NOT
+a vector *injection* of percepts into the concept space. `PerceptDim` and
+`ConceptDim` are **decoupled** (a concept is a distinct-dimensional atom, never
+a sum/map of percept vectors). Concretely (the ramsified sparse CS transform,
+`cs_forward_content`), the non-negative PS/WS **presences** are the *input
+activations* to a per-order signed **sparse weight matrix** that produces the
+concept activation; the concept's negative half is **grown by the signed
+weights** (a negative weight = a feature's presence anti-correlates with the
+concept) and signed activations, exactly the "negativity is a concept
+operation, not the percept map" principle above. The sanctioned signed↔membership
+bridge — `χ(a) = (1+a)/2` and `χ⁻¹(m) = 2m-1` (`Ops.eval_chart` /
+`eval_chart_inv`, [bin/Layers.py](../bin/Layers.py)) — stays where it belongs:
+the **truth/catuskoti** boundary, not the percept seam.
 
 ---
 
@@ -151,6 +158,14 @@ membership), not the percept seam.
 | metric | per-axis membership; cosine after centering at `½` | cosine on the sphere |
 | magnitude | *is* the presence, per axis (set by observation) | a separate scalar = certainty |
 | antipode is | a complement *operation* | a stored direction |
+
+> **Realization note (ramsified sparse CS).** In code the concept "direction"
+> is a **strictly-positive** `ConceptDim` atom (`softplus(atom)` — a positive
+> mereological-feature signature, not a signed sphere vector), and the
+> **sign + magnitude** ("signed sphere / radius = certainty") live in the
+> **scalar activation** that scales it: `concept_code = signed_activation ×
+> softplus(atom)`. So the "signed sphere" describes the activation's role; the
+> stored atom itself is positive. Sign comes from the signed sparse weights.
 
 ---
 
