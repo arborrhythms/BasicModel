@@ -6685,7 +6685,8 @@ class BasicModel(BaseModel):
                 # None, so ``bind_streams`` never enters the SS branch ->
                 # byte-identical.
                 SS_sub = (self.symbolSpace.forward_concept_to_symbol(CS_sub)
-                          if (self.symbol_tower and not self.serial
+                          if (getattr(self, "symbol_tower", False)
+                              and not self.serial
                               and self.symbolSpace is not None)
                           else None)
                 full_t = cs.bind_streams(
