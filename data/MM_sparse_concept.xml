@@ -4,20 +4,29 @@
   <!-- MM_sparse_concept: the sparse-coding Conceptual Space driver
        (doc/plans/2026-06-27-sparse-coding-cs-plan.md).
 
-       A concept is a sparse, weighted linear combination over a basis of
-       symbols (symbols are concepts from the previous ramsified order) — a
-       three-column COO edge table (ConceptIndex, SymbolIndex, Weight) realized
-       as a differentiable scatter-add over the CS-owned similarity_codebook
-       inventory. The concept code is forward-connected by construction: the
-       gradient reaches the edge Weight and the basis through the transform.
+       A concept is a high-dimensional atom stored on CS.subspace.what
+       (ConceptDim), linked to its sources by a sparse WEIGHT MATRIX. There is
+       one table per RAMSIFIED ORDER: order k's sources are
+       [PS | WS | SS_0 ... SS_{k-1}] (symbols are concepts of the previous
+       order). The forward is an encoder + dictionary decoder:
+       concept_activation = W_order @ source_activation (torch.sparse.mm over
+       per-order torch.sparse_csr matrices), concept_code[c] =
+       concept_activation[c] * softplus(what[c]). PS/WS sources are non-negative
+       PRESENCES; SS sources are the lower orders' SIGNED activations threaded
+       up (the symbolic space is 1-D). Weights are SIGNED (a negative weight =
+       the feature's presence anti-correlates with the concept); the atoms are
+       strictly-positive mereological-feature signatures. Capacity is DYADIC by
+       order (N/2, N/4, ..., stacked). Forward-connected by construction: the
+       gradient reaches the sparse weights, the activations, and the dictionary.
 
        Activation is by symbolicOrder (not a config gate): symbolicOrder>=1 with
        <serial>false</serial> (the explicit override of the back-compat
        serial = symbolicOrder>0 default) runs the PARALLEL symbolic loop, so the
-       edge population (at mint) and the scatter (in ConceptualSpace.forward)
-       fire together. <symbolTower>true</symbolTower> routes the CS->SS leg
-       through SymbolSpace.forward_concept_to_symbol. A sibling of
-       MM_symbol_tower.xml; runs on the xor smoke dataset. -->
+       per-order weight population (at mint, keyed by abstraction order) and the
+       forward transform (in ConceptualSpace.forward) fire together.
+       <symbolTower>true</symbolTower> routes the CS->SS leg through
+       SymbolSpace.forward_concept_to_symbol. A sibling of MM_symbol_tower.xml;
+       runs on the xor smoke dataset. -->
   <architecture>
     <subsymbolicOrder>3</subsymbolicOrder>
     <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
@@ -26,8 +35,8 @@
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- mint the word/object/meta symbols whose decomposition populates the
-         COO edge table (decoupled from the scatter; gated only on the symbolic
-         order). -->
+         per-order sparse weight tables (decoupled from the transform; gated
+         only on the symbolic order). -->
     <mereologyRaise>true</mereologyRaise>
     <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
          forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
@@ -45,7 +54,7 @@
       <learningRate>0.01</learningRate>
       <reconstructionScale>0.1</reconstructionScale>
       <!-- the substitutability SITUATING signal on the grad-bearing concept
-           codes (the scatter-add output). -->
+           codes (the sparse encoder + dictionary decoder output). -->
       <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
     </training>
   </architecture>
