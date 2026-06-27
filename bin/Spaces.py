@@ -14202,14 +14202,19 @@ class ConceptualSpace(Space):
         return out.squeeze(-1) if squeeze else out
 
     @staticmethod
-    def source_code_activation(event, codebook_W):
-        """Per-code soft activation of a source space from its materialized
+    def source_code_activation(event, codebook_W, nonneg=True):
+        """Per-code PRESENCE activation of a source space from its materialized
         ``event`` (``[B, N, D]``) against its codebook rows ``codebook_W``
         (``[V, D]``): ``activation[v, b] = sum_n <event[b, n], W[v]>`` -- how
-        strongly each source code fires across the slots (a differentiable
-        dot-product readout; this is the ENCODER INPUT the sparse weight matrix
-        consumes). Returns ``[V, B]``. Widths are clipped to the common dim so a
-        muxed event (content+band) reads against a what-only codebook."""
+        strongly each source code FIRES across the slots (a differentiable
+        readout; this is the ENCODER INPUT the sparse weight matrix consumes).
+        Mereological features are strictly-positive PRESENCES, so by default the
+        readout is rectified to be NON-NEGATIVE (``nonneg=True``); a feature is
+        present (>0) or absent (0), never negative -- the SIGN of the resulting
+        concept activation comes from the signed weights (a negative weight =
+        the feature's presence is anti-correlated with the concept), not from
+        the features. Returns ``[V, B]``. Widths are clipped to the common dim
+        so a muxed event (content+band) reads against a what-only codebook."""
         if event is None or codebook_W is None:
             return None
         if event.dim() == 2:
@@ -14218,7 +14223,8 @@ class ConceptualSpace(Space):
         ev = event[..., :D]                          # [B, N, D]
         W = codebook_W[:, :D]                        # [V, D]
         sim = torch.matmul(ev, W.t())                # [B, N, V]
-        return sim.sum(dim=1).t()                    # [V, B]
+        act = sim.sum(dim=1).t()                     # [V, B]
+        return act.clamp(min=0.0) if nonneg else act
 
     def cs_decode(self, order, concept_activation, what_W):
         """Dictionary decoder: scale each concept's stored ConceptDim atom by

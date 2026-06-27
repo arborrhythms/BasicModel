@@ -140,9 +140,19 @@ def test_source_code_activation_matches_dotproduct():
     B, N, V = 2, 3, 5
     event = torch.randn(B, N, _D)
     W = torch.randn(V, _D)
-    act = cs.source_code_activation(event, W)
+    act = cs.source_code_activation(event, W, nonneg=False)
     assert act.shape == (V, B)
     ref = torch.einsum('bnd,vd->vb', event, W)        # sum over slots of <e,W>
+    assert torch.allclose(act, ref, atol=1e-5)
+
+
+def test_source_code_activation_is_nonneg_presence_by_default():
+    cs = _cs()
+    event = torch.randn(2, 3, _D)
+    W = torch.randn(5, _D)
+    act = cs.source_code_activation(event, W)          # default nonneg=True
+    assert (act >= 0).all()                            # features are presences
+    ref = torch.einsum('bnd,vd->vb', event, W).clamp(min=0.0)
     assert torch.allclose(act, ref, atol=1e-5)
 
 
