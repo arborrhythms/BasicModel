@@ -13832,25 +13832,53 @@ class ConceptualSpace(Space):
         """Lazy-init the per-order sparse-weight COO store: a dict
         ``order -> [rows, cols, vals]`` (concept-LOCAL row within the order
         block, source-GLOBAL col within ``[PS|WS|SS_0..SS_{k-1}]``, weight) plus
-        a ``(order, concept, source) -> idx`` dedup map and a per-order dirty
-        set. Mirrors the relation tables; empty => the forward falls back."""
+        a ``(order, concept, source) -> idx`` dedup map and the per-order
+        learnable values ``Parameter``s (``_csw_vals``, grown HOST-SIDE as edges
+        are added so the optimizer can pick them up). Mirrors the relation
+        tables; empty => the forward falls back."""
         store = getattr(self, "_csw_store", None)
         if store is None:
             store = {}
             object.__setattr__(self, "_csw_store", store)
             object.__setattr__(self, "_csw_index", {})
-            object.__setattr__(self, "_csw_dirty", set())
-            object.__setattr__(self, "_csw_csr", {})        # order -> built CSR
             object.__setattr__(self, "_csw_vals", {})       # order -> Parameter
         return self._csw_store
+
+    def _csw_device(self):
+        for p in self.parameters():
+            return p.device
+        return torch.device("cpu")
+
+    def _grow_csw_values(self, order):
+        """Grow ramsified ``order``'s learnable values ``Parameter`` to match
+        its COO edge count, TAIL-PRESERVING (trained values kept for existing
+        edges; the new tail initialised from the host weight list). Host-side,
+        so the Parameter exists BEFORE the optimizer is (re)built."""
+        self._csw_tables()
+        o = int(order)
+        cols = self._csw_store.get(o)
+        n = len(cols[0]) if cols else 0
+        if n == 0:
+            return
+        prev = self._csw_vals.get(o)
+        if prev is not None and int(prev.shape[0]) == n:
+            return
+        dev = self._csw_device()
+        new = torch.tensor(cols[2], dtype=torch.float32, device=dev)
+        if prev is not None:
+            keep = min(int(prev.shape[0]), n)
+            if keep > 0:
+                with torch.no_grad():
+                    new[:keep] = prev.detach()[:keep].to(dev)
+        self._csw_vals[o] = nn.Parameter(new)
 
     def add_concept_weight(self, order, concept_local, source_global, weight=1.0):
         """Append a sparse weight edge ``concept_local <- weight * source_global``
         for ramsified ``order`` (``concept_local`` indexes within the order's
         concept block; ``source_global`` indexes within
         ``[PS|WS|SS_0..SS_{order-1}]``). IDEMPOTENT per
-        ``(order, concept_local, source_global)``; marks the order dirty so the
-        next CSR build re-materializes. Returns the COO row index."""
+        ``(order, concept_local, source_global)``; grows the learnable values
+        Parameter host-side. Returns the COO row index."""
         self._csw_tables()
         o = int(order)
         key = (o, int(concept_local), int(source_global))
@@ -13863,7 +13891,7 @@ class ConceptualSpace(Space):
         cols[1].append(int(source_global))
         cols[2].append(float(weight))
         self._csw_index[key] = row
-        self._csw_dirty.add(o)
+        self._grow_csw_values(o)                  # grow the learnable Parameter
         return row
 
     def concept_weights(self, order, concept_local):
@@ -13879,43 +13907,57 @@ class ConceptualSpace(Space):
         return sorted(out, key=lambda sw: sw[0])
 
     def _build_csw(self, order, n_concepts, n_sources):
-        """Materialize ramsified ``order``'s COO weights into a
-        ``torch.sparse_csr_tensor`` ``[n_concepts, n_sources]`` backed by a
-        learnable values ``Parameter`` (rebuild-on-dirty; cached otherwise).
-        Returns the CSR tensor, or ``None`` when the order has no weights."""
+        """Build ramsified ``order``'s ``torch.sparse_csr_tensor``
+        ``[n_concepts, n_sources]`` from the COO indices + the LIVE learnable
+        values ``Parameter`` -- rebuilt EVERY call so trained value updates are
+        reflected (the structure is sparse, so this is cheap). Returns the CSR
+        tensor, or ``None`` when the order has no weights."""
         self._csw_tables()
         o = int(order)
         cols = self._csw_store.get(o)
         if not cols or not cols[0]:
             return None
-        cached = self._csw_csr.get(o)
-        if o not in self._csw_dirty and cached is not None:
-            shp = cached.shape
-            if int(shp[0]) == int(n_concepts) and int(shp[1]) == int(n_sources):
-                return cached
-        dev = self._edge_device() if hasattr(self, "_edge_device") else \
-            (next((p.device for p in self.parameters()), torch.device("cpu")))
+        vals = self._csw_vals.get(o)
+        if vals is None or int(vals.shape[0]) != len(cols[0]):
+            self._grow_csw_values(o)
+            vals = self._csw_vals[o]
+        dev = vals.device
         rows = torch.tensor(cols[0], dtype=torch.long, device=dev)
         scols = torch.tensor(cols[1], dtype=torch.long, device=dev)
-        # tail-preserving learnable values: keep trained weights for existing
-        # rows, init the new tail from the host list.
-        host_vals = torch.tensor(cols[2], dtype=torch.float32, device=dev)
-        prev = self._csw_vals.get(o)
-        if prev is not None:
-            keep = min(int(prev.shape[0]), int(host_vals.shape[0]))
-            if keep > 0:
-                with torch.no_grad():
-                    host_vals[:keep] = prev.detach()[:keep].to(dev)
-        vals = nn.Parameter(host_vals)
-        self._csw_vals[o] = vals
-        # COO -> CSR (coalesced) carrying the grad-bearing values.
         coo = torch.sparse_coo_tensor(
             torch.stack([rows, scols]), vals,
             (int(n_concepts), int(n_sources))).coalesce()
-        csr = coo.to_sparse_csr()
-        self._csw_csr[o] = csr
-        self._csw_dirty.discard(o)
-        return csr
+        return coo.to_sparse_csr()
+
+    def getParameters(self):
+        """Optimizable parameters: the inherited set PLUS the per-order sparse
+        weight values (created host-side as the per-order tables are populated,
+        so the optimizer trains them). With the sparse transform off (no weight
+        tables) this is exactly the inherited set -> byte-identical optimizer
+        state. (The model rebuilds its optimizer when new weights appear; see
+        :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
+        base = list(self.params)
+        csw = getattr(self, "_csw_vals", None)
+        if csw:
+            base = base + [v for v in csw.values() if v is not None]
+        return base
+
+    def _maybe_rebuild_optimizer_for_csw(self):
+        """Ask the model to rebuild its optimizer when new per-order sparse
+        weight Parameters have appeared, so they become trainable (mirrors the
+        codebook-growth rebuild). Debounced on the total weight count; a no-op
+        without a model back-ref / live optimizer."""
+        model = getattr(self, "_model", None)
+        if model is None or getattr(model, "_optimizer", None) is None:
+            return
+        csw = getattr(self, "_csw_vals", None) or {}
+        n = sum(int(v.shape[0]) for v in csw.values() if v is not None)
+        if n != int(getattr(self, "_csw_registered_count", -1)):
+            object.__setattr__(self, "_csw_registered_count", n)
+            try:
+                model.rebuild_optimizer()
+            except Exception:
+                pass
 
     def cs_sparse_encode(self, order, n_concepts, n_sources, activation):
         """Encode the per-order concept ACTIVATIONS from the source
@@ -14117,6 +14159,9 @@ class ConceptualSpace(Space):
                 sl = self._csw_concept_row(so, sid)
                 if sl is not None:
                     self.add_concept_weight(order, c_local, offsets[so] + sl)
+        # Make the freshly-grown sparse weights trainable (rebuilds the model
+        # optimizer when the weight count changed; no-op pre-training).
+        self._maybe_rebuild_optimizer_for_csw()
 
     def _subspace_presence(self, sub):
         """Non-negative per-code PRESENCE ``[V, B]`` of a passed-in source

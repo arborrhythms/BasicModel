@@ -893,6 +893,9 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, '_serial', self.serial)
             object.__setattr__(_cs, '_n_ps_codes', _n_ps)
             object.__setattr__(_cs, '_n_ws_codes', _n_ws)
+            # Back-ref to the model so the CS can rebuild the optimizer when its
+            # per-order sparse weight Parameters grow (mirrors codebook growth).
+            object.__setattr__(_cs, '_model', self)
 
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors

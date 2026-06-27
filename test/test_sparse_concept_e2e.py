@@ -143,3 +143,59 @@ def test_sparse_concept_forward_smoke():
     m.train()
     out = m.forward(x)                                 # runs the parallel loop
     assert out is not None
+
+
+# -- follow-up 2: sparse weights are trainable (in the optimizer) -------------
+
+def test_getparameters_includes_csw_after_population():
+    cs = _cs_active(n_ps=8, n_ws=256)
+    base = set(id(p) for p in cs.getParameters())
+    cs.create_word_object_meta([1, 2], WORD, key="cat")     # populates weights
+    after = cs.getParameters()
+    csw = [v for v in cs._csw_vals.values() if v is not None]
+    assert csw                                              # weights exist
+    after_ids = set(id(p) for p in after)
+    assert all(id(p) in after_ids for p in csw)             # all included
+    assert len(after) >= len(base)
+
+
+def test_getparameters_byte_identical_when_inactive():
+    nP = 4
+    _populate_test_config(
+        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D, wordDim=_D,
+        outputDim=_D, nInput=nP, nPercepts=nP, nConcepts=64, nSymbols=64,
+        nWords=64, nOutput=64, nWhere=0, nWhen=0)
+    cs = Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D])   # NOT active
+    cs.create_word_object_meta([1, 2], WORD, key="cat")
+    assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
+
+
+def test_model_optimizer_picks_up_csw_weights():
+    m = _build("MM_sparse_concept.xml")
+    cs = [c for c in m.conceptualSpaces if c._sparse_active()][-1]
+    # populate per-order weights on the model's own CS, then ask for the optimizer
+    cs.create_word_object_meta([1, 2], WORD, key="cat")
+    cs.create_word_object_meta([3, 4], WORD, key="dog")
+    csw_ptrs = {p.data_ptr() for p in cs._csw_vals.values() if p is not None}
+    assert csw_ptrs
+    opt = m.getOptimizer(lr=0.01)
+    opt_ptrs = {p.data_ptr()
+                for g in opt.param_groups for p in g["params"]}
+    assert csw_ptrs <= opt_ptrs                            # all weights optimized
+
+
+def test_csw_weights_update_under_optimizer_step():
+    cs = _cs_active(nS=16, order=1, n_ps=8, n_ws=8)
+    cs.add_concept_weight(0, 0, 0, weight=0.5)
+    cs.add_concept_weight(0, 1, 2, weight=1.0)
+    what = torch.randn(16, _D)
+    ps = torch.rand(8, 2)
+    ws = torch.rand(8, 2)
+    vals = cs._csw_vals[0]
+    before = vals.detach().clone()
+    opt = torch.optim.SGD([vals], lr=1.0)
+    content, _ = cs.cs_forward_content(ps, ws, what)
+    opt.zero_grad()
+    content.sum().backward()
+    opt.step()
+    assert not torch.allclose(cs._csw_vals[0].detach(), before)   # trained
