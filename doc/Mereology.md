@@ -341,23 +341,32 @@ the other.
   (extent, containment). The discrete `_sym_*` tables (the Concept codebook) are this
   structure. (This refines the earlier `.where`/co-occurrence framing above: the
   *trigger* to abstract is **many constituents under a common concept**, not a shared
-  `.where`.)
-- **Implicit (subsymbolic).** Each concept has a corresponding **learned vector**.
-  For a higher-order concept that vector is produced by **σ then quantize**: σ is
-  invertible, so it *cannot* merge many → one — it only pulls the discontiguous
-  constituent vectors into a **proximal / contiguous cluster**; **quantization** does
-  the many → one collapse, snapping the cluster onto **one code in the higher-order
-  codebook** (the codebook *is* the mereological structure, so the snap aligns the
-  vector with it). Training pulls the σ-synthesis of the many toward the higher-order
-  code (VQ commitment / codebook loss); the abstraction loss is localized at the
-  quantizer — correct, since abstraction should discard constituent detail.
+  `.where`.) These `_sym_*` relations are the INDEX side; the concept's subsymbolic
+  content (the `ConceptDim` atom + its per-order sparse weight decomposition,
+  populated at mint by `_populate_concept_weights`) is the representational side —
+  see the next bullet.
+- **Implicit (subsymbolic).** Each concept has a corresponding **learned vector** —
+  a strictly-positive `ConceptDim` **atom** (a feature signature) stored in the CS
+  concept dictionary (`similarity_codebook`, softplus-rectified). For a higher-order
+  concept the *production* is no longer "σ then quantize"; it is the **ramsified
+  per-order sparse transform** (`cs_forward_content`, bin/Spaces.py): a per-order
+  signed **sparse weight matrix** maps the concept's source activations
+  `[PS | WS | SS_0..SS_{k-1}]` to a signed concept activation
+  `a_k = W_k @ source_k` (`torch.sparse.mm`), and the concept code is that activation
+  scaling its positive atom (`a_k · softplus(atom)`; radial: magnitude = certainty,
+  sign = present vs anti-present). The many→one abstraction is carried by the sparse
+  WEIGHTS (which sources contribute, with what sign), not by a σ-fold + VQ snap; the
+  gradient reaches the weights, the source activations, and the dictionary
+  (forward-connected). `PerceptDim` and `ConceptDim` are decoupled — a concept is in a
+  different vector space than its percepts, never a sum of percept vectors.
 
 **Coordination.** Order-raising is the coupling between the two. When the explicit
 tower raises a higher-order part-percept/whole-percept (built directly, inserted on
 the **over-collected side** of the higher-order table — too-many-parts → higher-order
 part, too-many-wholes → higher-order whole), it **creates the corresponding implicit
-subsymbolic higher-order representation** via the σ+quantize path above. The explicit
-concept **indexes / names** the implicit vector; the implicit vector is the concept's
+subsymbolic higher-order representation** via the per-order sparse transform above (a
+new order-`k` table over `[PS | WS | SS_0..SS_{k-1}]`). The explicit concept
+**indexes / names** the implicit vector; the implicit vector is the concept's
 **subsymbolic content**. The two co-evolve and must agree: a directly-built
 concept-index paired with a quantized vector that is a valid point in the higher-order
 mereological codebook. Direct index + quantized representation are the two

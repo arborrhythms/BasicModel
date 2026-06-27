@@ -15,3 +15,6 @@ data/*.ckpt
 data/*.kv
 *\ 2.*
 *\ 2
+
+# transient local test/verification artifacts
+scratch_*

@@ -60,7 +60,11 @@ def _cs_stub(ss):
     for _m in ("_populate_cs_symbols", "_concept_tables", "new_concept",
                "add_part", "add_whole", "resolve_identities",
                "relate", "reify_concept", "create_word_object_meta",
-               "concept_parts", "concept_wholes"):
+               "concept_parts", "concept_wholes",
+               # create_word_object_meta now also decomposes the minted symbols
+               # into the per-order sparse weight store; these short-circuit to a
+               # no-op on the stub (not sparse-active -> no _symbolic_order).
+               "_populate_concept_weights", "_sparse_active"):
         setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 

@@ -13718,6 +13718,7 @@ class ConceptualSpace(Space):
             self.add_part(H, c)
         self._concept_raise_set().add(H)
         self._concept_relate_idx[key] = H
+        self._populate_concept_weights(H)          # per-order sparse decomposition
         return H
 
     def conceptualize_chain(self, concept_ids):
@@ -13750,6 +13751,467 @@ class ConceptualSpace(Space):
             rest = self.reify_concept(rest, ids[i])  # Parts={rest}, Wholes={ids[i]}
         chains[key] = int(rest)
         return int(rest)
+
+    def _sparse_active(self):
+        """True iff the ramsified sparse concept transform is active here:
+        the symbolic order is > 0 AND we are in parallel mode. Mirrors the
+        forward gate, so the per-order weight population and the forward
+        transform activate together; both are no-ops (byte-identical)
+        otherwise."""
+        return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
+                and not bool(getattr(self, "_serial", True)))
+
+    # ====================================================================
+    # Ramsified per-order sparse weight tables (PS/WS/SS -> CS)
+    #
+    # A concept is a high-dimensional atom stored on ``CS.subspace.what``
+    # (ConceptDim). It is linked to its sources -- PS, WS, and the symbols
+    # SS_0..SS_{k-1} of all LOWER ramsified orders -- by a sparse WEIGHT MATRIX
+    # whose entries ``(concept, source, weight)`` give the signed contribution
+    # of each active source code to that concept's activation. The forward is an
+    # encoder + dictionary decoder:
+    #
+    #     concept_activation = W_order @ source_activation        (torch.sparse.mm)
+    #     concept_code[c]    = concept_activation[c] * what[c]    (dictionary atom)
+    #
+    # so percepts (PerceptDim) and concepts (ConceptDim) never share a vector
+    # space -- the matrix lives in index/activation space, dimension-agnostic.
+    # One table PER ramsified ORDER (Delta 1): order k's sources are
+    # ``[PS | WS | SS_0 | ... | SS_{k-1}]``. Capacity is DYADIC by order (more
+    # low-level than high-level concepts): the N concept rows split
+    # N/2, N/4, ..., N/2^S, N/2^S (last two equal so the blocks sum to N),
+    # stacked contiguously; the same allocation is used for SS.
+    # ====================================================================
+
+    @staticmethod
+    def order_capacities(total, symbolic_order):
+        """Dyadic per-order capacities over ``total`` rows for orders
+        ``0..symbolic_order``: order ``o`` gets ``floor(total / 2^(o+1))`` and
+        the LAST order takes the remainder, so the blocks sum to EXACTLY
+        ``total`` (e.g. ``total=N, S=3 -> [N/2, N/4, N/8, N/8]``). With
+        ``symbolic_order=0`` it is ``[total]`` (one order). Always returns
+        ``symbolic_order + 1`` positive sizes (clamped to >=1 each when
+        ``total`` is small)."""
+        total = int(total)
+        S = max(0, int(symbolic_order))
+        if S == 0:
+            return [max(1, total)]
+        caps = []
+        remaining = total
+        for o in range(S):                       # orders 0 .. S-1
+            # leave at least 1 row for each of the remaining (S - o) orders.
+            c = max(1, total // (2 ** (o + 1)))
+            c = min(c, remaining - (S - o))
+            c = max(1, c)
+            caps.append(c)
+            remaining -= c
+        caps.append(max(1, remaining))           # order S = the remainder
+        return caps
+
+    def _order_caps(self):
+        """Cached dyadic capacities for THIS CS's ``nVectors`` rows across
+        ``_symbolic_order + 1`` orders. Recomputed when either changes."""
+        N = int(self.nVectors)
+        S = int(getattr(self, "_symbolic_order", 0) or 0)
+        key = (N, S)
+        cache = getattr(self, "_order_caps_cache", None)
+        if cache is None or cache[0] != key:
+            caps = self.order_capacities(N, S)
+            object.__setattr__(self, "_order_caps_cache", (key, caps))
+        return self._order_caps_cache[1]
+
+    def order_slice(self, order):
+        """The ``(start, end)`` row range of ramsified ``order`` in the stacked
+        ``nVectors``-row concept inventory (``CS.subspace.what`` / SS)."""
+        caps = self._order_caps()
+        o = max(0, min(int(order), len(caps) - 1))
+        start = sum(caps[:o])
+        return start, start + caps[o]
+
+    def _csw_tables(self):
+        """Lazy-init the per-order sparse-weight COO store: a dict
+        ``order -> [rows, cols, vals]`` (concept-LOCAL row within the order
+        block, source-GLOBAL col within ``[PS|WS|SS_0..SS_{k-1}]``, weight) plus
+        a ``(order, concept, source) -> idx`` dedup map and the per-order
+        learnable values ``Parameter``s (``_csw_vals``, grown HOST-SIDE as edges
+        are added so the optimizer can pick them up). Mirrors the relation
+        tables; empty => the forward falls back."""
+        store = getattr(self, "_csw_store", None)
+        if store is None:
+            store = {}
+            object.__setattr__(self, "_csw_store", store)
+            object.__setattr__(self, "_csw_index", {})
+            object.__setattr__(self, "_csw_vals", {})       # order -> Parameter
+        return self._csw_store
+
+    def _csw_device(self):
+        for p in self.parameters():
+            return p.device
+        return torch.device("cpu")
+
+    def _grow_csw_values(self, order):
+        """Grow ramsified ``order``'s learnable values ``Parameter`` to match
+        its COO edge count, TAIL-PRESERVING (trained values kept for existing
+        edges; the new tail initialised from the host weight list). Host-side,
+        so the Parameter exists BEFORE the optimizer is (re)built."""
+        self._csw_tables()
+        o = int(order)
+        cols = self._csw_store.get(o)
+        n = len(cols[0]) if cols else 0
+        if n == 0:
+            return
+        prev = self._csw_vals.get(o)
+        if prev is not None and int(prev.shape[0]) == n:
+            return
+        dev = self._csw_device()
+        new = torch.tensor(cols[2], dtype=torch.float32, device=dev)
+        if prev is not None:
+            keep = min(int(prev.shape[0]), n)
+            if keep > 0:
+                with torch.no_grad():
+                    new[:keep] = prev.detach()[:keep].to(dev)
+        self._csw_vals[o] = nn.Parameter(new)
+
+    def add_concept_weight(self, order, concept_local, source_global, weight=1.0):
+        """Append a sparse weight edge ``concept_local <- weight * source_global``
+        for ramsified ``order`` (``concept_local`` indexes within the order's
+        concept block; ``source_global`` indexes within
+        ``[PS|WS|SS_0..SS_{order-1}]``). IDEMPOTENT per
+        ``(order, concept_local, source_global)``; grows the learnable values
+        Parameter host-side. Returns the COO row index."""
+        self._csw_tables()
+        o = int(order)
+        key = (o, int(concept_local), int(source_global))
+        existing = self._csw_index.get(key)
+        if existing is not None:
+            return int(existing)
+        cols = self._csw_store.setdefault(o, [[], [], []])
+        row = len(cols[0])
+        cols[0].append(int(concept_local))
+        cols[1].append(int(source_global))
+        cols[2].append(float(weight))
+        self._csw_index[key] = row
+        self._grow_csw_values(o)                  # grow the learnable Parameter
+        return row
+
+    def concept_weights(self, order, concept_local):
+        """The ``(source_global, weight)`` entries of ``concept_local`` at
+        ``order``, deterministically ordered by source. Empty when none."""
+        self._csw_tables()
+        cols = self._csw_store.get(int(order))
+        if not cols:
+            return []
+        c = int(concept_local)
+        out = [(cols[1][i], cols[2][i]) for i in range(len(cols[0]))
+               if cols[0][i] == c]
+        return sorted(out, key=lambda sw: sw[0])
+
+    def _build_csw(self, order, n_concepts, n_sources):
+        """Build ramsified ``order``'s ``torch.sparse_csr_tensor``
+        ``[n_concepts, n_sources]`` from the COO indices + the LIVE learnable
+        values ``Parameter`` -- rebuilt EVERY call so trained value updates are
+        reflected (the structure is sparse, so this is cheap). Returns the CSR
+        tensor, or ``None`` when the order has no weights."""
+        self._csw_tables()
+        o = int(order)
+        cols = self._csw_store.get(o)
+        if not cols or not cols[0]:
+            return None
+        vals = self._csw_vals.get(o)
+        if vals is None or int(vals.shape[0]) != len(cols[0]):
+            self._grow_csw_values(o)
+            vals = self._csw_vals[o]
+        dev = vals.device
+        rows = torch.tensor(cols[0], dtype=torch.long, device=dev)
+        scols = torch.tensor(cols[1], dtype=torch.long, device=dev)
+        coo = torch.sparse_coo_tensor(
+            torch.stack([rows, scols]), vals,
+            (int(n_concepts), int(n_sources))).coalesce()
+        return coo.to_sparse_csr()
+
+    def getParameters(self):
+        """Optimizable parameters: the inherited set PLUS the per-order sparse
+        weight values (created host-side as the per-order tables are populated,
+        so the optimizer trains them). With the sparse transform off (no weight
+        tables) this is exactly the inherited set -> byte-identical optimizer
+        state. (The model rebuilds its optimizer when new weights appear; see
+        :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
+        base = list(self.params)
+        csw = getattr(self, "_csw_vals", None)
+        if csw:
+            base = base + [v for v in csw.values() if v is not None]
+        return base
+
+    def _maybe_rebuild_optimizer_for_csw(self):
+        """Ask the model to rebuild its optimizer when new per-order sparse
+        weight Parameters have appeared, so they become trainable (mirrors the
+        codebook-growth rebuild). Debounced on the total weight count; a no-op
+        without a model back-ref / live optimizer."""
+        model = getattr(self, "_model", None)
+        if model is None or getattr(model, "_optimizer", None) is None:
+            return
+        csw = getattr(self, "_csw_vals", None) or {}
+        n = sum(int(v.shape[0]) for v in csw.values() if v is not None)
+        if n != int(getattr(self, "_csw_registered_count", -1)):
+            object.__setattr__(self, "_csw_registered_count", n)
+            try:
+                model.rebuild_optimizer()
+            except Exception:
+                pass
+
+    def cs_sparse_encode(self, order, n_concepts, n_sources, activation):
+        """Encode the per-order concept ACTIVATIONS from the source
+        ``activation`` (``[n_sources, B]`` or ``[n_sources]``) via the sparse
+        weight matrix: ``concept_activation = W_order @ activation`` using
+        ``torch.sparse.mm`` (GPU-native SpMM; differentiable in both the
+        weights and the activation). Returns ``[n_concepts, B]`` (or
+        ``[n_concepts]``), or zeros when the order has no weights."""
+        W = self._build_csw(order, n_concepts, n_sources)
+        squeeze = False
+        if activation.dim() == 1:
+            activation = activation.unsqueeze(-1)
+            squeeze = True
+        if W is None:
+            out = activation.new_zeros((int(n_concepts), int(activation.shape[-1])))
+        else:
+            out = torch.sparse.mm(W, activation)
+        return out.squeeze(-1) if squeeze else out
+
+    @staticmethod
+    def source_code_activation(event, codebook_W, nonneg=True):
+        """Per-code PRESENCE activation of a source space from its materialized
+        ``event`` (``[B, N, D]``) against its codebook rows ``codebook_W``
+        (``[V, D]``): ``activation[v, b] = sum_n <event[b, n], W[v]>`` -- how
+        strongly each source code FIRES across the slots (a differentiable
+        readout; this is the ENCODER INPUT the sparse weight matrix consumes).
+        Mereological features are strictly-positive PRESENCES, so by default the
+        readout is rectified to be NON-NEGATIVE (``nonneg=True``); a feature is
+        present (>0) or absent (0), never negative -- the SIGN of the resulting
+        concept activation comes from the signed weights (a negative weight =
+        the feature's presence is anti-correlated with the concept), not from
+        the features. Returns ``[V, B]``. Widths are clipped to the common dim
+        so a muxed event (content+band) reads against a what-only codebook."""
+        if event is None or codebook_W is None:
+            return None
+        if event.dim() == 2:
+            event = event.unsqueeze(1)               # [B, 1, D]
+        D = min(int(event.shape[-1]), int(codebook_W.shape[-1]))
+        ev = event[..., :D]                          # [B, N, D]
+        W = codebook_W[:, :D]                        # [V, D]
+        sim = torch.matmul(ev, W.t())                # [B, N, V]
+        act = sim.sum(dim=1).t()                     # [V, B]
+        return act.clamp(min=0.0) if nonneg else act
+
+    def cs_decode(self, order, concept_activation, what_W):
+        """Dictionary decoder: scale each concept's stored ConceptDim atom by
+        its signed activation. ``concept_activation`` is ``[n_concepts_o, B]``
+        (the sparse encoder output for ``order``); ``what_W`` is the FULL
+        ``CS.subspace.what`` codebook (``[nVectors, ConceptDim]``). The order's
+        concepts occupy the stacked slice ``order_slice(order)``. Returns the
+        per-concept code slab ``[B, n_concepts_o, ConceptDim]`` -- concept
+        ``c``'s row is ``activation[c] * what[slice_start + c]`` (so percepts in
+        PerceptDim and concepts in ConceptDim never share a vector space)."""
+        start, end = self.order_slice(order)
+        atoms = what_W[start:end]                    # [n_concepts_o, ConceptDim]
+        a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
+        return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
+
+    def cs_source_layout(self, order, n_ps, n_ws):
+        """The source index layout for ramsified ``order``: the concatenation
+        ``[PS | WS | SS_0 | ... | SS_{order-1}]``. Returns ``(offsets, total)``
+        where ``offsets`` is ``{'ps': 0, 'ws': n_ps, 0: off_ss0, 1: off_ss1, ...}``
+        (integer keys are the SS sub-order offsets) and ``total`` is the source
+        count. The SS_i block size is the dyadic capacity of concept order ``i``
+        (symbols ARE concepts of the previous order)."""
+        caps = self._order_caps()
+        offsets = {"ps": 0, "ws": int(n_ps)}
+        off = int(n_ps) + int(n_ws)
+        for i in range(int(order)):
+            offsets[i] = off
+            off += int(caps[i])
+        return offsets, off
+
+    def cs_forward_content(self, ps_act, ws_act, dictionary):
+        """Run the ramsified per-order sparse encode/decode and assemble the
+        stacked CS content event (the heart of the forward transform).
+
+        ``ps_act`` / ``ws_act`` are the NON-NEGATIVE source PRESENCES
+        ``[V_ps, B]`` / ``[V_ws, B]``; ``dictionary`` is the concept-atom
+        codebook ``[nVectors, ConceptDim]`` -- positivity ("CS vectors map to
+        strictly positive mereological features") is enforced via ``softplus``.
+        For each ramsified order ``k`` the source vector is
+        ``[PS | WS | a_0 | ... | a_{k-1}]``: the lower orders' SIGNED concept
+        activations threaded up as the SS inputs (the symbolic space is 1-D, so
+        an SS source is just its signed scalar activation). The sparse weight
+        matrix produces the signed concept activation
+        ``a_k = W_k @ source_k`` (``torch.sparse.mm``); the concept code is that
+        activation scaling the positive atom (radial: magnitude = certainty,
+        sign = present vs anti-present). Returns
+        ``(content[B, N, ConceptDim], [a_0, ..., a_S])`` -- the stacked content
+        and the per-order signed activations (the SS feed / situate handle)."""
+        caps = self._order_caps()
+        atoms = F.softplus(dictionary)               # strictly-positive atoms
+        n_ps = int(ps_act.shape[0])
+        n_ws = int(ws_act.shape[0])
+        a_list = []
+        slabs = []
+        for k in range(len(caps)):
+            blocks = [ps_act, ws_act] + a_list[:k]   # PS, WS, then SS_0..SS_{k-1}
+            source = torch.cat(blocks, dim=0)        # [n_src_k, B]
+            a_k = self.cs_sparse_encode(
+                k, caps[k], int(source.shape[0]), source)   # [n_c_k, B] signed
+            a_list.append(a_k)
+            slabs.append(self.cs_decode(k, a_k, atoms))     # [B, n_c_k, CDim]
+        content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
+        return content, a_list
+
+    @staticmethod
+    def _align_rows(t, n):
+        """Pad/trim the first axis of ``[V, B]`` to exactly ``n`` rows (no-op
+        when ``n`` is 0/unset). Keeps the source-presence width fixed to the
+        configured block size so the forward layout matches the population."""
+        n = int(n or 0)
+        if n <= 0 or t is None or int(t.shape[0]) == n:
+            return t
+        if int(t.shape[0]) > n:
+            return t[:n]
+        return F.pad(t, (0, 0, 0, n - int(t.shape[0])))
+
+    # -- per-order weight population at mint (abstraction_order-keyed) ---------
+
+    def _concept_source_order(self, concept_id, _seen=None):
+        """Ramsified order of a concept: 0 when its constituents are all raw
+        PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents,
+        capped at the configured symbolic order. (Symbols ARE concepts of the
+        previous order -- this is the ramsified recursion.) Cycle-guarded."""
+        cid = int(concept_id)
+        _seen = _seen if _seen is not None else set()
+        if cid in _seen:
+            return 0
+        _seen.add(cid)
+        S = len(self._order_caps()) - 1
+        sub_orders = []
+        for x in self.concept_parts(cid) + self.concept_wholes(cid):
+            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
+                sub_orders.append(self._concept_source_order(x[1], _seen))
+        return 0 if not sub_orders else min(S, 1 + max(sub_orders))
+
+    def _csw_concept_row(self, order, concept_id):
+        """First-seen LOCAL row of ``concept_id`` within ramsified ``order``'s
+        dyadic block (``0 .. caps[order]-1``). Returns ``None`` when the block
+        is full (capacity overflow -- the concept gets no weights, falling back
+        to the current content)."""
+        self._csw_tables()
+        rows = getattr(self, "_csw_rows", None)
+        if rows is None:
+            rows = {}
+            object.__setattr__(self, "_csw_rows", rows)
+            object.__setattr__(self, "_csw_row_next", {})
+        key = (int(order), int(concept_id))
+        r = rows.get(key)
+        if r is None:
+            nxt = self._csw_row_next.get(int(order), 0)
+            if nxt >= int(self._order_caps()[int(order)]):
+                return None
+            self._csw_row_next[int(order)] = nxt + 1
+            rows[key] = nxt
+            r = nxt
+        return int(r)
+
+    def _populate_concept_weights(self, concept_id):
+        """Decompose ``concept_id`` into per-order sparse weight edges
+        ``add_concept_weight(order, concept_local, source_global)``: PS parts
+        and WS wholes map to the ``[PS|WS]`` blocks; sub-symbol constituents map
+        to the SS block of their (lower) order. MIN-SUPPORT: >= 2 constituents
+        (the ATOM/UNIVERSE pole pair is skipped). Keyed by the ramsified order
+        (:meth:`_concept_source_order`). NO-OP unless the sparse transform is
+        active -> byte-identical."""
+        if not self._sparse_active():
+            return
+
+        def _is_sym(x):
+            return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
+        parts = self.concept_parts(concept_id)
+        wholes = self.concept_wholes(concept_id)
+        raw_parts = [p for p in parts
+                     if not _is_sym(p) and p not in (_ATOM, _UNIVERSE)]
+        raw_wholes = [w for w in wholes
+                      if not _is_sym(w) and w not in (_ATOM, _UNIVERSE)]
+        sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
+        if len(raw_parts) + len(raw_wholes) + len(sym_refs) < 2:
+            return
+        order = self._concept_source_order(concept_id)
+        c_local = self._csw_concept_row(order, concept_id)
+        if c_local is None:
+            return                                   # order block full
+        n_ps = int(getattr(self, "_n_ps_codes", 0) or 0)
+        n_ws = int(getattr(self, "_n_ws_codes", 0) or 0)
+        offsets, _total = self.cs_source_layout(order, n_ps, n_ws)
+        for p in raw_parts:
+            if 0 <= int(p) < (n_ps or (int(p) + 1)):
+                self.add_concept_weight(order, c_local, offsets["ps"] + int(p))
+        for w in raw_wholes:
+            if 0 <= int(w) < (n_ws or (int(w) + 1)):
+                self.add_concept_weight(order, c_local, offsets["ws"] + int(w))
+        for (_tag, sid) in sym_refs:
+            so = self._concept_source_order(sid)
+            if so < order and so in offsets:
+                sl = self._csw_concept_row(so, sid)
+                if sl is not None:
+                    self.add_concept_weight(order, c_local, offsets[so] + sl)
+        # Make the freshly-grown sparse weights trainable (rebuilds the model
+        # optimizer when the weight count changed; no-op pre-training).
+        self._maybe_rebuild_optimizer_for_csw()
+
+    def _subspace_presence(self, sub):
+        """Non-negative per-code PRESENCE ``[V, B]`` of a passed-in source
+        subspace -- its materialized event read against its OWN ``.what``
+        codebook (both ride the subspace through ``forward``; no cross-space
+        reach -- the dataflow rule). ``None`` when unavailable."""
+        if sub is None or not hasattr(sub, "is_empty") or sub.is_empty():
+            return None
+        event = sub.materialize()
+        cb = getattr(sub, "what", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if event is None or W is None or not torch.is_tensor(W):
+            return None
+        return self.source_code_activation(event, W, nonneg=True)
+
+    def _sparse_concept_forward(self, folded, subspace, word_subspace):
+        """Live forward: replace the concept content with the ramsified
+        per-order sparse transform (:meth:`cs_forward_content`) when the sparse
+        transform is active and the weight tables are populated. PS/WS presences
+        are read ``.forward()``-safely from the passed-in subspaces; the concept
+        atoms are the CS-owned dictionary (``similarity_codebook``). Returns
+        ``folded`` UNCHANGED (byte-identical) when inactive, unpopulated, or the
+        shapes are unusable."""
+        if not self._sparse_active():
+            return folded
+        if not getattr(self, "_csw_store", None):        # no weights -> fallback
+            return folded
+        if not (torch.is_tensor(folded) and folded.dim() == 3):
+            return folded
+        cb = getattr(self, "similarity_codebook", None)
+        dict_W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if (dict_W is None or not torch.is_tensor(dict_W)
+                or int(dict_W.shape[0]) != int(self.nVectors)):
+            return folded
+        ps_act = self._subspace_presence(subspace)
+        ws_act = self._subspace_presence(word_subspace)
+        if ps_act is None or ws_act is None:
+            return folded
+        # Align to the configured PS/WS block sizes so the forward source layout
+        # matches the population's offsets (codebook growth-stable).
+        ps_act = self._align_rows(ps_act, getattr(self, "_n_ps_codes", 0))
+        ws_act = self._align_rows(ws_act, getattr(self, "_n_ws_codes", 0))
+        content, _ = self.cs_forward_content(ps_act, ws_act, dict_W)
+        N, D = int(folded.shape[1]), int(folded.shape[2])
+        if int(content.shape[1]) != N:                   # slot/inventory mismatch
+            return folded
+        Dc = int(content.shape[2])
+        if Dc == D:
+            return content
+        return content[..., :D] if Dc > D else F.pad(content, (0, D - Dc))
 
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
@@ -13789,6 +14251,8 @@ class ConceptualSpace(Space):
             if n_p > kp:
                 codes = self.concept_parts(sym)
                 H = self.synthesize_higher_order(codes)   # σ: APPLIED
+                # synthesize_higher_order already populates H's per-order sparse
+                # weights from its constituents (gated; byte-identical when off).
                 requests.append({"sym": sym, "op": "synthesize",
                                  "codes": codes, "result": H})
             if n_w > kw:
@@ -13828,6 +14292,7 @@ class ConceptualSpace(Space):
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
+            self._populate_concept_weights(A)      # re-decompose A (parts grew)
             return A, B, C
         A = self.new_concept()                     # the WORD-symbol
         for p in word_parts:
@@ -13840,6 +14305,10 @@ class ConceptualSpace(Space):
         C = self.reify_concept(A, B)             # the word≡object META (A ≤ B)
         if key is not None:
             wom[key] = (A, B, C)
+        # Sparse decomposition of the word-symbol A (word-parts <- word-whole)
+        # and the META C (A, B). B is the unspecified pole pair -> not eligible.
+        self._populate_concept_weights(A)
+        self._populate_concept_weights(C)
         return A, B, C
 
     # ------------------------------------------------------------------
@@ -15029,93 +15498,17 @@ class ConceptualSpace(Space):
         return a.unsqueeze(-1) * rows[idx]
 
     @torch.compiler.disable
-    def _build_symbol_leg(self, ctx_sub):
-        """CS-mediated SS (symbol) bind leg -- replaces SymbolSpace.forward_symbol.
-
-        Reads the higher-order 'meta' codes order-raising minted into the
-        WholeSpace codebook (via ``_relation_store()``) and copies each, under
-        ``no_grad``, into its STABLE concept-indexed row of ``SS.subspace.what``
-        (1:1 concept<->symbol; ``_concept_ss_row`` maps each meta position to a
-        fixed row, first-seen), then builds the ``[B, N, D]`` symbol leg with
-        each symbol placed at its row (same frame as the PS/WS percept legs).
-        The leg is detached, so no gradient reaches the symbol codebook. Returns
-        None (-> the bind fills a zero leg) when there are no raised symbols /
-        empty ctx. Host-side dict iteration -> ``@torch.compiler.disable`` eager
-        island (tolerated under the symbol_tower fullgraph relax).
-
-        The symbol codebook is a reference to the concept codes, not a learned
-        copy; see doc/Architecture.md "Addressable attention" for why it stays a
-        reference and why its shaping is kept off the reconstruction path.
-        """
-        ws = self._relation_store()
-        if ws is None or ctx_sub is None or ctx_sub.is_empty():
-            return None
-        pos_kind = getattr(ws, '_pos_kind', None)
-        pos_to_row = getattr(ws, '_ws_pos_to_row', None)
-        ws_cb = getattr(getattr(ws, 'subspace', None), 'what', None)
-        W_ws = ws_cb.getW() if ws_cb is not None else None
-        if not pos_kind or not pos_to_row or W_ws is None:
-            return None
-        Vw = int(W_ws.shape[0])
-        metas = sorted(int(p) for p, k in pos_kind.items()
-                       if k == "meta" and p in pos_to_row
-                       and 0 <= int(pos_to_row[p]) < Vw)
-        if not metas:
-            return None
-        # Stable concept->symbol-row map: each meta position keeps a fixed row
-        # (first-seen allocation), so the symbol's (SPACE_SYMBOL, row) address is
-        # its identity across forwards. Rebuilt per run; the codebook rows
-        # persist as the Parameter, the map re-derives from the meta positions.
-        cmap = getattr(self, '_concept_ss_row', None)
-        if cmap is None:
-            cmap = {}
-            object.__setattr__(self, '_concept_ss_row', cmap)
-        for p in metas:
-            if p not in cmap:
-                cmap[p] = len(cmap)
-        ss = getattr(self, '_model_symbolSpace', None)
-        ss_cb = (getattr(getattr(ss, 'subspace', None), 'what', None)
-                 if ss is not None else None)
-        W_ss = ss_cb.getW() if (ss_cb is not None
-                                and hasattr(ss_cb, 'getW')) else None
-        sample = ctx_sub.materialize()
-        if sample is None or sample.dim() < 1:
-            return None
-        B = int(sample.shape[0])
-        dev, dt = sample.device, sample.dtype
-        N = int(ws.outputShape[0])
-        D = int(ws.subspace.muxedSize)
-        slab = torch.zeros(N, D, device=dev, dtype=dt)
-        if W_ss is not None:
-            need = max(cmap[p] for p in metas) + 1
-            if need > int(W_ss.shape[0]) and hasattr(ss_cb, 'grow_to'):
-                ss_cb.grow_to(need)
-                W_ss = ss_cb.getW()
-            cws = min(int(W_ws.shape[-1]), int(W_ss.shape[-1]))
-            with torch.no_grad():
-                for p in metas:
-                    r = cmap[p]
-                    if 0 <= r < int(W_ss.shape[0]):
-                        W_ss[r, :cws] = W_ws[int(pos_to_row[p]), :cws].to(
-                            W_ss.device, W_ss.dtype)
-            cw = min(int(W_ss.shape[-1]), D)
-            for p in metas:
-                r = cmap[p]
-                if 0 <= r < N:
-                    slab[r, :cw] = W_ss[r, :cw].detach().to(device=dev, dtype=dt)
-        else:
-            cw = min(int(W_ws.shape[-1]), D)
-            for p in metas:
-                r = cmap[p]
-                if 0 <= r < N:
-                    slab[r, :cw] = W_ws[int(pos_to_row[p]), :cw].detach().to(
-                        device=dev, dtype=dt)
-        event = slab.unsqueeze(0).expand(B, N, D).contiguous()
-        sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
-                       nInputDim=D, nOutputDim=D)
-        sub.copy_context(ctx_sub)
-        sub.set_event(event)
-        return sub
+    # ``_build_symbol_leg`` (the CS-mediated SS bind leg) was RETIRED with the
+    # sparse-coding CS work. It dereferenced a stashed ``_model_symbolSpace``
+    # pointer and sourced the symbol rows from the WholeSpace meta codebook --
+    # exactly the cross-space reach the dataflow rule forbids (a Space may
+    # gather only from the codebook it owns or a subspace passed through
+    # ``forward``). The symbol leg is now produced by
+    # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the concept arrives
+    # through ``forward``, and SymbolSpace builds the row-aligned symbol view
+    # from the concept's own codes (writing only the codebook it owns). The
+    # caller (the parallel body in ``Models._forward_body``) hands the leg to
+    # ``bind_streams`` as ``SS_sub``; ``bind_streams`` no longer builds it.
 
     def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None,
                      seed_payload=None):
@@ -15172,11 +15565,13 @@ class ConceptualSpace(Space):
         # it stays byte-identical.
         SS_t = None
         if int(getattr(combine, "n_streams", 2)) >= 3:
-            # CS-mediated: when the caller didn't hand in an SS leg, CS builds it
-            # itself from the order-raising codes synced onto SS.subspace.what
-            # (forward_symbol retired). None -> _bind_fit zero leg.
-            if SS_sub is None:
-                SS_sub = self._build_symbol_leg(CS_sub)
+            # The SS (symbol) leg is handed in by the caller via
+            # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
+            # ``.forward()``-mediated CS->SS transform (the dataflow rule:
+            # cross-space interaction goes ONLY through ``forward``). The
+            # ConceptualSpace-resident ``_build_symbol_leg`` reach into the
+            # WholeSpace meta codebook + the stashed ``_model_symbolSpace``
+            # pointer is RETIRED. ``SS_sub is None`` -> ``_bind_fit`` zero leg.
             ss_content = None
             if SS_sub is not None:
                 ss_content, _, _ = self._bind_demux(SS_sub, D)
@@ -15358,6 +15753,17 @@ class ConceptualSpace(Space):
                 folded = sym
             else:
                 folded = primary
+        # Sparse-coding concept production: when the sparse transform is active
+        # (symbolicOrder > 0, parallel) AND the per-order weight tables are
+        # populated, the concept content is the ramsified per-order sparse
+        # transform -- an encoder (signed sparse weight matrices over the
+        # non-negative PS/WS presences + the lower orders' signed concept
+        # activations as the 1-D SS inputs, via torch.sparse.mm) plus a
+        # dictionary decoder (each concept activation scales its strictly-
+        # positive ConceptDim atom). Forward-connected: the gradient reaches the
+        # concept code, the learnable sparse weights, and the dictionary. NO-OP
+        # (byte-identical) when inactive or the tables are empty.
+        folded = self._sparse_concept_forward(folded, subspace, word_subspace)
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
         #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the

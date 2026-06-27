@@ -878,6 +878,24 @@ class BaseModel(Mereology, nn.Module):
         for _ss in (getattr(self, 'wholeSpaces', None) or []):
             object.__setattr__(_ss, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_ss, '_serial', self.serial)
+        # The ConceptualSpaces need the same stamp so the sparse-coding edge
+        # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
+        # activate together. A plain host-attribute stamp -- byte-identical.
+        # PS/WS codebook sizes (configured max -- stable across codebook growth)
+        # so the sparse population and the forward agree on the source layout
+        # offsets [PS | WS | SS_0..]. Plain host-attribute stamp -- byte-identical.
+        _ps = getattr(self, 'perceptualSpace', None)
+        _ws_list = getattr(self, 'wholeSpaces', None) or []
+        _n_ps = int(getattr(_ps, 'nVectors', 0) or 0) if _ps is not None else 0
+        _n_ws = int(getattr(_ws_list[-1], 'nVectors', 0) or 0) if _ws_list else 0
+        for _cs in (getattr(self, 'conceptualSpaces', None) or []):
+            object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
+            object.__setattr__(_cs, '_serial', self.serial)
+            object.__setattr__(_cs, '_n_ps_codes', _n_ps)
+            object.__setattr__(_cs, '_n_ws_codes', _n_ws)
+            # Back-ref to the model so the CS can rebuild the optimizer when its
+            # per-order sparse weight Parameters grow (mirrors codebook growth).
+            object.__setattr__(_cs, '_model', self)
 
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors
@@ -6668,14 +6686,23 @@ class BasicModel(BaseModel):
                     # Dark unless a scope or words-category attention is engaged
                     # -> the pass-back action is "noop" -> byte-identical.
                     ps_t = self._passback_scope_ps(t, PS_sub_stage0, prevCS_forSS)
-                # Slice C: the SS (symbol) bind leg is CS-MEDIATED -- when the
-                # combine is 3-stream (symbol_tower on), cs.bind_streams builds
-                # it itself from the order-raising codes synced onto
-                # SS.subspace.what (SymbolSpace.forward_symbol retired; SymbolSpace
-                # no longer reaches WholeSpace -- CS, which sees all three towers,
-                # does it). Off-path (2-stream) never enters -> byte-identical.
+                # Slice C: the SS (symbol) bind leg comes from
+                # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
+                # ``.forward()``-mediated CS->SS transform (the dataflow rule:
+                # cross-space interaction goes ONLY through ``forward``; the old
+                # CS-mediated ``_build_symbol_leg`` reach into WholeSpace +
+                # ``_model_symbolSpace`` is retired). Computed only under the
+                # symbol tower in parallel mode -- the leg the 3-stream bind
+                # consumes. Off-path (2-stream / symbol tower off) leaves it
+                # None, so ``bind_streams`` never enters the SS branch ->
+                # byte-identical.
+                SS_sub = (self.symbolSpace.forward_concept_to_symbol(CS_sub)
+                          if (getattr(self, "symbol_tower", False)
+                              and not self.serial
+                              and self.symbolSpace is not None)
+                          else None)
                 full_t = cs.bind_streams(
-                    ps_t, WS_sub, CS_sub,
+                    ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
                     seed_payload=(seed_payload if t == 0 else None))
                 if full_t is not None and t == 0:
                     # Snapshot the stage-0 bind so round-trip tests can

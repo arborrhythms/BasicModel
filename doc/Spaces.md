@@ -218,7 +218,7 @@ internal Sigma / Pi (no substrate-borrowing).
 | Space | Owns | Forward signature |
 |---|---|---|
 | **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) | `CS.forward(new_idea_subspace, SS_subspace=None)` — STM bookkeeping (shift slots, push to top slot). No atomic forward fold; `sigma_percept` retired. Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) per-order sparse concept-weight tables (`_csw_vals`) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — when `_sparse_active()`, applies the ramsified per-order sparse concept transform (`_sparse_concept_forward`) before the STM write; otherwise STM bookkeeping only (`sigma_percept` fold retired). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
@@ -332,7 +332,7 @@ see an identical muxed tensor via `materialize()`.
 |-------|------------------|--------|--------|-----------|
 | PartSpace | $[-1, +1]^d$ hypercube | Feature *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
 | WholeSpace | $[-1, +1]^d$ hypercube | Whole-percept *patterns* | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ |
-| ConceptualSpace | Unit L2-norm directions (named directions) | Concept *directions*; input magnitude in $[-1, +1]$ encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ |
+| ConceptualSpace | `similarity_codebook` rows (`use_dot_product`) — the concept dictionary / SBOW-situating metric, NOT the forward concept-production path | Concept atoms; input magnitude encodes belief certainty | Dot product | $\arg\max_i (x \cdot c_i)$ (situating/SBOW only) |
 
 ### Euclidean (Perceptual — Part / Whole)
 
@@ -360,6 +360,15 @@ One matmul + one broadcast subtract + one argmax. Skips the `sqrt`, the per-row
 $\|x\|^2$ add, and the cdist autograd plumbing.
 
 ### Dot product (Conceptual)
+
+> **Note.** This dot-product metric is the `similarity_codebook`'s retrieval
+> metric (used by the substitutability / SBOW *situating* signal), NOT the
+> forward concept-production path. When the ramsified sparse transform is
+> active, a concept code is produced by the sparse encode/decode
+> (`a_k = W_k @ source_k`, then `a_k · softplus(atom)`) — there is no
+> `argmax_i (x · c_i)` concept retrieval on the forward path, and the atoms
+> are softplus-positive rather than maintained unit-norm by EMA. See
+> **ConceptualSpace → Sparse-coding concept transform**.
 
 ConceptualSpace concepts are *named directions* in belief space. $x \cdot
 c_i$ gives the *signed strength of belief that $x$ affirms concept $i$*:
@@ -755,14 +764,28 @@ direction.
 
 ## ConceptualSpace
 
-**Role.** Transforms perceptual vectors into abstract concepts via additive
-linear operations. Models conceptual hyperplanes that partition perceptual
-space.
+**Role.** Forms concepts from perceptual/symbolic *sources*. When the
+ramsified sparse transform is active (`symbolicOrder > 0` in parallel mode,
+`_sparse_active()`), a concept is a high-dimensional atom in **ConceptDim**
+(stored in the CS concept dictionary, the `similarity_codebook`) whose signed
+activation is produced by a **per-order sparse weight matrix** over its sources
+— `concept_activation = W_order @ source_activation` (`cs_sparse_encode`,
+`torch.sparse.mm`) — then scaled onto the atom (`cs_decode`). `PerceptDim` and
+`ConceptDim` are **decoupled** (the matrix lives in index/activation space); a
+concept is NOT an additive linear map over percept vectors and there are no
+"conceptual hyperplanes partitioning perceptual space." With the transform off
+the forward is STM bookkeeping only (byte-identical). See **Sparse-coding
+concept transform** below.
 
-**Geometry contrast with the Lexicon.** ConceptualSpace's codebook stores
-**named directions** (unit-norm $c_i \in S^{D-1}$); input magnitude in
-$[-1, +1]$ encodes belief certainty with sign. No antipodal identification ---
-sign matters.
+**Geometry.** A concept code is `signed_activation × softplus(atom)`: the
+dictionary atom is a **strictly-positive** ConceptDim feature signature
+(`F.softplus`), and the **sign / magnitude** live in the signed scalar
+activation — magnitude = certainty, sign = present vs anti-present, low
+magnitude = chosen radially but uncertain. The sign comes from the signed
+sparse **weights** (a negative weight = a feature's presence anti-correlates
+with the concept), not from a stored signed unit direction. (The legacy
+"named unit-norm direction + `argmax` retrieval" view is retired on the
+forward path.)
 
 **Owned layer (2026-05-13 rebalance → 2026-05-29 clean-stack → RETIRED).**
 ConceptualSpace owns **no parameterised fold layer**. The historical
@@ -799,16 +822,47 @@ Because `sigma_in` / `sigma_cs` were dead-weight on the forward path (no
 gradient — they never fired) while `CS.reverse` applied `sigma_in.reverse`
 unconditionally, the round-trip carried an UNMATCHED inverse fold (the
 source of garbage XOR_exact recon tokens). That forward / reverse semantic
-mismatch was RESOLVED by retiring the layers entirely: CS is now a pure
-bookkeeping carrier (forward push / reverse read-back) with no fold to
-invert, and the symbolic generalization operator moved to WholeSpace
-(inverted upstream of `CS.reverse` on the reconstruction path, in
-`BasicModel._reverse_body`). Convergence on MM_xor continues via the
-PiLayer butterfly cascade.
+mismatch was RESOLVED by retiring the layers entirely: with the sparse
+transform OFF, CS is a pure bookkeeping carrier (forward push / reverse
+read-back) with no fold to invert, and the symbolic generalization operator
+moved to WholeSpace (inverted upstream of `CS.reverse` on the reconstruction
+path, in `BasicModel._reverse_body`). Convergence on MM_xor continues via the
+PiLayer butterfly cascade. (When the ramsified sparse transform is ON, CS DOES
+own a parameterised forward transform — the per-order sparse weight matrices
+and the concept dictionary — see **Sparse-coding concept transform** below.)
 
 **Reverse.** `CS.reverse` is a thin pass-through (no fold layer to
 invert). The reverse chain operates on the terminal STM contents; per
-the master plan, no per-stage caches.
+the master plan, no per-stage caches. The sparse-coding reconstruction is
+referential — the per-order weight tables ARE the concept's decomposition —
+rather than an inverse fold.
+
+**Sparse-coding concept transform (ramsified per-order, torch.sparse).**
+When `_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`)
+and the per-order weight tables are populated, `forward` interposes
+`folded = self._sparse_concept_forward(folded, subspace, word_subspace)`
+*before* the STM write. A concept is a ConceptDim atom; it is linked to its
+sources by a sparse WEIGHT MATRIX — one `torch.sparse_csr` table per
+RAMSIFIED ORDER, order $k$'s sources being `[PS | WS | SS_0 … SS_{k-1}]`
+(symbols are concepts of the previous order). The forward is an encoder +
+dictionary decoder:
+
+```
+concept_activation = W_order @ source_activation     # cs_sparse_encode (torch.sparse.mm)
+concept_code[c]    = concept_activation[c] * softplus(atom[c])   # cs_decode
+```
+
+PS/WS source activations are non-negative **presences**
+(`source_code_activation(nonneg=True)`); SS sources are the lower orders'
+**signed** concept activations threaded up (the symbolic space is 1-D). The
+weights are **signed** and learnable (`_csw_vals`, grown host-side in
+`add_concept_weight`, exposed via `getParameters()` and registered into the
+optimizer via `_maybe_rebuild_optimizer_for_csw`). Capacity is **dyadic** by
+order ($N/2, N/4, …$, stacked; `order_capacities` / `order_slice`). Population
+is at mint, keyed by abstraction order (`_populate_concept_weights`,
+`_concept_source_order`). Forward-connected: the gradient reaches the sparse
+weights, the source activations, and the dictionary. Off-path
+(`symbolicOrder = 0`) → no weights → byte-identical.
 
 **Activation carrier.** `subspace.activation` is the scalar/presence
 activation used by the Space pipeline. Paired `[pos, neg]` tensors still
@@ -864,8 +918,11 @@ relaxes the strict gate to enumerate any remaining breaks;
 
 ConceptualSpace owns `self.stm` — a `ShortTermMemory` instance, a
 per-batch stack of unquantized CS "ideas." Post-substrate-refactor,
-this is **the primary structure CS manages** — `CS.forward` is STM
-bookkeeping (shift + push), with no atomic fold layer.
+this is the primary structure CS manages when the sparse transform is off —
+`CS.forward` is then STM bookkeeping (shift + push), with no atomic fold
+layer. (When the ramsified sparse transform is active, `forward` first runs
+`_sparse_concept_forward` to produce the concept content, then does the STM
+write — see **Sparse-coding concept transform**.)
 
 | Property | Default | Configurable via |
 |---|---|---|
