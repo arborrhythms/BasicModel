@@ -13635,6 +13635,7 @@ class ConceptualSpace(Space):
         self._concept_wholes.pop(s, None)
         for k in [k for k, v in self._concept_relate_idx.items() if int(v) == s]:
             self._concept_relate_idx.pop(k, None)
+        self._drop_concept_edges(s)               # sparse decomposition vanishes
 
     def resolve_identities(self):
         """ZERO OUT the 1:1 mappings — the main over-collection deliverable
@@ -13751,6 +13752,157 @@ class ConceptualSpace(Space):
         chains[key] = int(rest)
         return int(rest)
 
+    # -- sparse-coding edge store (Concept = sparse weighted combo of symbols) --
+    #
+    # A concept is a sparse, weighted linear combination over a basis of
+    # symbols (symbols are concepts from the previous ramsified order -- one
+    # self-referential map). The decomposition is stored as a three-column COO
+    # table (ConceptIndex, SymbolIndex, Weight): space-optimal over a
+    # million-row inventory (exactly the nonzeros, never a dense [N x V]
+    # matrix), extensible by appending. ``Weight`` is a learnable Parameter,
+    # default uniform 1.0, normalized by per-concept degree at scatter so
+    # uniform == mean. The columns live host-side as plain lists (appended at
+    # mint); ``_rebuild_edge_pools`` materializes them on demand. Mirrors the
+    # relation tables above. Empty table => the forward falls back bit-for-bit
+    # (the byte-identical contract at symbolicOrder=0).
+
+    def _edge_tables(self):
+        """Lazy-init the three COO columns of the sparse concept->symbol edge
+        store + a ``(concept, symbol) -> row`` dedup dict + the ``_edge_dirty``
+        rebuild flag. Returns ``(concept_col, symbol_col, weight_col)``.
+        Mirrors :meth:`_concept_tables`."""
+        cols = getattr(self, "_edge_concept", None)
+        if cols is None:
+            object.__setattr__(self, "_edge_concept", [])
+            object.__setattr__(self, "_edge_symbol", [])
+            object.__setattr__(self, "_edge_weight", [])
+            object.__setattr__(self, "_edge_index", {})   # (concept,symbol)->row
+            object.__setattr__(self, "_edge_dirty", False)
+        return self._edge_concept, self._edge_symbol, self._edge_weight
+
+    def add_edge(self, concept, symbol, *, weight=1.0):
+        """Append a COO edge ``concept <- weight * symbol`` (default uniform
+        weight 1.0). IDEMPOTENT per ``(concept, symbol)``: a repeat is a no-op
+        and returns the existing COO row. Sets ``_edge_dirty`` so the next
+        :meth:`_rebuild_edge_pools` re-materializes. Returns the COO row."""
+        self._edge_tables()
+        key = (int(concept), int(symbol))
+        existing = self._edge_index.get(key)
+        if existing is not None:
+            return int(existing)
+        row = len(self._edge_concept)
+        self._edge_concept.append(int(concept))
+        self._edge_symbol.append(int(symbol))
+        self._edge_weight.append(float(weight))
+        self._edge_index[key] = row
+        object.__setattr__(self, "_edge_dirty", True)
+        return row
+
+    def concept_edges(self, concept):
+        """The ``(symbol, weight)`` constituents of ``concept``, deterministically
+        ordered by symbol. Empty list when ``concept`` has no edges. The host-
+        side ``_edge_weight`` list is the source of truth here (the trained
+        pool, if materialized, is read at scatter time, not here)."""
+        self._edge_tables()
+        c = int(concept)
+        out = [(self._edge_symbol[r], self._edge_weight[r])
+               for r in range(len(self._edge_concept))
+               if self._edge_concept[r] == c]
+        return sorted(out, key=lambda sw: sw[0])
+
+    def _drop_concept_edges(self, concept):
+        """Remove every edge whose ``ConceptIndex == concept`` (lifecycle: a
+        retired concept's decomposition vanishes). Rebuilds the COO columns +
+        dedup index without them and sets ``_edge_dirty``. PURE NO-OP when the
+        edge store was never built => byte-identical at symbolicOrder=0."""
+        if getattr(self, "_edge_concept", None) is None:
+            return
+        c = int(concept)
+        keep = [r for r in range(len(self._edge_concept))
+                if self._edge_concept[r] != c]
+        if len(keep) == len(self._edge_concept):
+            return
+        new_concept = [self._edge_concept[r] for r in keep]
+        new_symbol = [self._edge_symbol[r] for r in keep]
+        new_weight = [self._edge_weight[r] for r in keep]
+        object.__setattr__(self, "_edge_concept", new_concept)
+        object.__setattr__(self, "_edge_symbol", new_symbol)
+        object.__setattr__(self, "_edge_weight", new_weight)
+        object.__setattr__(self, "_edge_index",
+                           {(new_concept[r], new_symbol[r]): r
+                            for r in range(len(new_concept))})
+        object.__setattr__(self, "_edge_dirty", True)
+
+    def _edge_device(self):
+        """The device the edge pools live on -- inherit from an existing
+        parameter (the codebooks), else CPU (bare host-side tests)."""
+        for p in self.parameters():
+            return p.device
+        return torch.device("cpu")
+
+    def _rebuild_edge_pools(self):
+        """Materialize the host-side COO columns into the long index tensors
+        + the learnable ``_edge_weight_pool`` Parameter, REBUILD-ON-DIRTY only
+        (cached otherwise; never call per-forward without the dirty guard).
+        Growth is TAIL-PRESERVING (like :meth:`grow_to`): rows that already
+        existed keep their -- possibly trained -- pool weight; only the
+        newly-appended tail takes its initial weight from the host
+        ``_edge_weight`` list. Returns ``(concept_idx, symbol_idx, weight)``
+        (long, long, Parameter)."""
+        self._edge_tables()
+        n = len(self._edge_concept)
+        pool = getattr(self, "_edge_weight_pool", None)
+        if (not self._edge_dirty and pool is not None
+                and int(pool.shape[0]) == n):
+            return (self._edge_concept_pool, self._edge_symbol_pool, pool)
+        dev = self._edge_device()
+        concept_idx = torch.tensor(self._edge_concept, dtype=torch.long,
+                                   device=dev)
+        symbol_idx = torch.tensor(self._edge_symbol, dtype=torch.long,
+                                  device=dev)
+        new_w = torch.tensor(self._edge_weight, dtype=torch.float32, device=dev)
+        if pool is not None:
+            keep = min(int(pool.shape[0]), n)
+            if keep > 0:
+                with torch.no_grad():
+                    new_w[:keep] = pool.detach()[:keep].to(dev)
+        # Register as a real Parameter (mirrors grow_to's self.W reassign): at
+        # symbolicOrder=0 the table is empty and this is never reached, so no
+        # Parameter is added and state_dict stays byte-identical.
+        self._edge_concept_pool = concept_idx
+        self._edge_symbol_pool = symbol_idx
+        self._edge_weight_pool = nn.Parameter(new_w)
+        object.__setattr__(self, "_edge_dirty", False)
+        return (concept_idx, symbol_idx, self._edge_weight_pool)
+
+    def scatter_concept_event(self, n_concepts, basis, *, normalize=True):
+        """The differentiable scatter-add SpMM that realizes each concept as a
+        sparse weighted combination over ``basis`` (the symbol / constituent
+        codebook rows, ``[V, D]``)::
+
+            concept[c] = sum_{e: ConceptIndex[e]=c} Weight[e] * basis[SymbolIndex[e]]
+
+        realized as ``index_add(index_select(basis, 0, sym) * w, concept)`` --
+        NO ``torch.sparse`` (MLX / executorch export safety). Differentiable in
+        BOTH ``Weight`` and ``basis``, so the concept code is forward-connected
+        by construction. With ``normalize=True`` the per-concept sum is divided
+        by its edge DEGREE (count), so uniform weights give the MEAN of the
+        constituents (uniform == mean). Returns ``[n_concepts, D]`` (expand to
+        ``[B, N, D]`` at the call site)."""
+        concept_idx, symbol_idx, weight = self._rebuild_edge_pools()
+        D = int(basis.shape[-1])
+        n_c = int(n_concepts)
+        out = basis.new_zeros((n_c, D))
+        if symbol_idx.numel() == 0:
+            return out
+        contrib = basis.index_select(0, symbol_idx) * weight.unsqueeze(-1)
+        out = out.index_add(0, concept_idx, contrib)
+        if normalize:
+            deg = out.new_zeros((n_c,)).index_add(
+                0, concept_idx, torch.ones_like(weight))
+            out = out / deg.clamp(min=1.0).unsqueeze(-1)
+        return out
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
@@ -13789,6 +13941,12 @@ class ConceptualSpace(Space):
             if n_p > kp:
                 codes = self.concept_parts(sym)
                 H = self.synthesize_higher_order(codes)   # σ: APPLIED
+                # H supersedes sym: it INHERITS the union of sym's sparse edges
+                # (the decomposition rides up to the higher-order symbol). No-op
+                # when the edge store was never built (byte-identical).
+                if getattr(self, "_edge_concept", None) is not None:
+                    for s_, w_ in self.concept_edges(sym):
+                        self.add_edge(H, s_, weight=w_)
                 requests.append({"sym": sym, "op": "synthesize",
                                  "codes": codes, "result": H})
             if n_w > kw:
