@@ -15187,93 +15187,17 @@ class ConceptualSpace(Space):
         return a.unsqueeze(-1) * rows[idx]
 
     @torch.compiler.disable
-    def _build_symbol_leg(self, ctx_sub):
-        """CS-mediated SS (symbol) bind leg -- replaces SymbolSpace.forward_symbol.
-
-        Reads the higher-order 'meta' codes order-raising minted into the
-        WholeSpace codebook (via ``_relation_store()``) and copies each, under
-        ``no_grad``, into its STABLE concept-indexed row of ``SS.subspace.what``
-        (1:1 concept<->symbol; ``_concept_ss_row`` maps each meta position to a
-        fixed row, first-seen), then builds the ``[B, N, D]`` symbol leg with
-        each symbol placed at its row (same frame as the PS/WS percept legs).
-        The leg is detached, so no gradient reaches the symbol codebook. Returns
-        None (-> the bind fills a zero leg) when there are no raised symbols /
-        empty ctx. Host-side dict iteration -> ``@torch.compiler.disable`` eager
-        island (tolerated under the symbol_tower fullgraph relax).
-
-        The symbol codebook is a reference to the concept codes, not a learned
-        copy; see doc/Architecture.md "Addressable attention" for why it stays a
-        reference and why its shaping is kept off the reconstruction path.
-        """
-        ws = self._relation_store()
-        if ws is None or ctx_sub is None or ctx_sub.is_empty():
-            return None
-        pos_kind = getattr(ws, '_pos_kind', None)
-        pos_to_row = getattr(ws, '_ws_pos_to_row', None)
-        ws_cb = getattr(getattr(ws, 'subspace', None), 'what', None)
-        W_ws = ws_cb.getW() if ws_cb is not None else None
-        if not pos_kind or not pos_to_row or W_ws is None:
-            return None
-        Vw = int(W_ws.shape[0])
-        metas = sorted(int(p) for p, k in pos_kind.items()
-                       if k == "meta" and p in pos_to_row
-                       and 0 <= int(pos_to_row[p]) < Vw)
-        if not metas:
-            return None
-        # Stable concept->symbol-row map: each meta position keeps a fixed row
-        # (first-seen allocation), so the symbol's (SPACE_SYMBOL, row) address is
-        # its identity across forwards. Rebuilt per run; the codebook rows
-        # persist as the Parameter, the map re-derives from the meta positions.
-        cmap = getattr(self, '_concept_ss_row', None)
-        if cmap is None:
-            cmap = {}
-            object.__setattr__(self, '_concept_ss_row', cmap)
-        for p in metas:
-            if p not in cmap:
-                cmap[p] = len(cmap)
-        ss = getattr(self, '_model_symbolSpace', None)
-        ss_cb = (getattr(getattr(ss, 'subspace', None), 'what', None)
-                 if ss is not None else None)
-        W_ss = ss_cb.getW() if (ss_cb is not None
-                                and hasattr(ss_cb, 'getW')) else None
-        sample = ctx_sub.materialize()
-        if sample is None or sample.dim() < 1:
-            return None
-        B = int(sample.shape[0])
-        dev, dt = sample.device, sample.dtype
-        N = int(ws.outputShape[0])
-        D = int(ws.subspace.muxedSize)
-        slab = torch.zeros(N, D, device=dev, dtype=dt)
-        if W_ss is not None:
-            need = max(cmap[p] for p in metas) + 1
-            if need > int(W_ss.shape[0]) and hasattr(ss_cb, 'grow_to'):
-                ss_cb.grow_to(need)
-                W_ss = ss_cb.getW()
-            cws = min(int(W_ws.shape[-1]), int(W_ss.shape[-1]))
-            with torch.no_grad():
-                for p in metas:
-                    r = cmap[p]
-                    if 0 <= r < int(W_ss.shape[0]):
-                        W_ss[r, :cws] = W_ws[int(pos_to_row[p]), :cws].to(
-                            W_ss.device, W_ss.dtype)
-            cw = min(int(W_ss.shape[-1]), D)
-            for p in metas:
-                r = cmap[p]
-                if 0 <= r < N:
-                    slab[r, :cw] = W_ss[r, :cw].detach().to(device=dev, dtype=dt)
-        else:
-            cw = min(int(W_ws.shape[-1]), D)
-            for p in metas:
-                r = cmap[p]
-                if 0 <= r < N:
-                    slab[r, :cw] = W_ws[int(pos_to_row[p]), :cw].detach().to(
-                        device=dev, dtype=dt)
-        event = slab.unsqueeze(0).expand(B, N, D).contiguous()
-        sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
-                       nInputDim=D, nOutputDim=D)
-        sub.copy_context(ctx_sub)
-        sub.set_event(event)
-        return sub
+    # ``_build_symbol_leg`` (the CS-mediated SS bind leg) was RETIRED with the
+    # sparse-coding CS work. It dereferenced a stashed ``_model_symbolSpace``
+    # pointer and sourced the symbol rows from the WholeSpace meta codebook --
+    # exactly the cross-space reach the dataflow rule forbids (a Space may
+    # gather only from the codebook it owns or a subspace passed through
+    # ``forward``). The symbol leg is now produced by
+    # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the concept arrives
+    # through ``forward``, and SymbolSpace builds the row-aligned symbol view
+    # from the concept's own codes (writing only the codebook it owns). The
+    # caller (the parallel body in ``Models._forward_body``) hands the leg to
+    # ``bind_streams`` as ``SS_sub``; ``bind_streams`` no longer builds it.
 
     def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None,
                      seed_payload=None):
@@ -15330,11 +15254,13 @@ class ConceptualSpace(Space):
         # it stays byte-identical.
         SS_t = None
         if int(getattr(combine, "n_streams", 2)) >= 3:
-            # CS-mediated: when the caller didn't hand in an SS leg, CS builds it
-            # itself from the order-raising codes synced onto SS.subspace.what
-            # (forward_symbol retired). None -> _bind_fit zero leg.
-            if SS_sub is None:
-                SS_sub = self._build_symbol_leg(CS_sub)
+            # The SS (symbol) leg is handed in by the caller via
+            # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
+            # ``.forward()``-mediated CS->SS transform (the dataflow rule:
+            # cross-space interaction goes ONLY through ``forward``). The
+            # ConceptualSpace-resident ``_build_symbol_leg`` reach into the
+            # WholeSpace meta codebook + the stashed ``_model_symbolSpace``
+            # pointer is RETIRED. ``SS_sub is None`` -> ``_bind_fit`` zero leg.
             ss_content = None
             if SS_sub is not None:
                 ss_content, _, _ = self._bind_demux(SS_sub, D)

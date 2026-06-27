@@ -12725,6 +12725,56 @@ class SymbolSpace(PerceptualSpace):
     def _generate_eager(self, snap):
         self.generate(snap)
 
+    # -- CS -> SS: the .forward()-mediated symbol leg --------------------------
+    def forward_concept_to_symbol(self, concept_sub):
+        """CS -> SS: the symbol (representation) leg of a concept -- the
+        reverse/decode direction of the row-aligned concept<->symbol
+        dictionary, in a sparse autoencoder ``PS/WS -(W)-> CS -> SS -(edges)->
+        percept``.
+
+        The concept arrives THROUGH THE ARGUMENT (the dataflow rule: Spaces are
+        operators; cross-space interaction goes only through ``forward``). The
+        symbol is the ROW-ALIGNED view of the concept -- symbol ``i`` is the
+        ``.what`` view of concept ``i`` -- so the leg is built from the
+        concept's OWN materialized codes, NEVER from the WholeSpace meta
+        codebook or a stashed ``_model_symbolSpace`` pointer (the reach the
+        retired ``ConceptualSpace._build_symbol_leg`` made). SymbolSpace syncs
+        the first ``N`` rows of the codebook IT OWNS (``subspace.what``) to the
+        concept codes (a space writing its own codebook -- allowed) under
+        ``no_grad``, so the decode / symbol-attention paths read the row-aligned
+        symbol view; the returned leg is detached, so no gradient reaches the
+        symbol codebook (the grad-bearing concept content is the scatter-add).
+        Returns the ``[B, N, D]`` symbol-leg SubSpace, or ``None`` for an
+        empty / degenerate concept (-> ``bind_streams`` fills a zero leg),
+        matching the old leg's ``None`` contract.
+        """
+        if concept_sub is None or concept_sub.is_empty():
+            return None
+        event = concept_sub.materialize()
+        if event is None or event.dim() < 2:
+            return None
+        sym_event = event.detach()
+        if sym_event.dim() == 2:
+            sym_event = sym_event.unsqueeze(0)
+        N = int(sym_event.shape[-2])
+        D = int(sym_event.shape[-1])
+        # Sync SS's OWN .what codebook (row-aligned, first-N rows) to the
+        # per-batch-mean concept codes. Self-write only -- no cross-space reach.
+        cb = getattr(getattr(self, "subspace", None), "what", None)
+        W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if W is not None and torch.is_tensor(W) and int(W.shape[0]) > 0:
+            rows = min(N, int(W.shape[0]))
+            cw = min(D, int(W.shape[-1]))
+            if rows > 0 and cw > 0:
+                with torch.no_grad():
+                    W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
+                        W.device, W.dtype)
+        sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
+                       nInputDim=D, nOutputDim=D)
+        sub.copy_context(concept_sub)
+        sub.set_event(sym_event)
+        return sub
+
 
 # The historical ``SymbolSpace = SymbolSubSpace`` alias (retired Phase G of
 # doc/specs/2026-05-21-wordsubspace-stm-layer-refactor.md) is now a REAL

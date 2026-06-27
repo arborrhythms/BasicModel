@@ -6668,14 +6668,22 @@ class BasicModel(BaseModel):
                     # Dark unless a scope or words-category attention is engaged
                     # -> the pass-back action is "noop" -> byte-identical.
                     ps_t = self._passback_scope_ps(t, PS_sub_stage0, prevCS_forSS)
-                # Slice C: the SS (symbol) bind leg is CS-MEDIATED -- when the
-                # combine is 3-stream (symbol_tower on), cs.bind_streams builds
-                # it itself from the order-raising codes synced onto
-                # SS.subspace.what (SymbolSpace.forward_symbol retired; SymbolSpace
-                # no longer reaches WholeSpace -- CS, which sees all three towers,
-                # does it). Off-path (2-stream) never enters -> byte-identical.
+                # Slice C: the SS (symbol) bind leg comes from
+                # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
+                # ``.forward()``-mediated CS->SS transform (the dataflow rule:
+                # cross-space interaction goes ONLY through ``forward``; the old
+                # CS-mediated ``_build_symbol_leg`` reach into WholeSpace +
+                # ``_model_symbolSpace`` is retired). Computed only under the
+                # symbol tower in parallel mode -- the leg the 3-stream bind
+                # consumes. Off-path (2-stream / symbol tower off) leaves it
+                # None, so ``bind_streams`` never enters the SS branch ->
+                # byte-identical.
+                SS_sub = (self.symbolSpace.forward_concept_to_symbol(CS_sub)
+                          if (self.symbol_tower and not self.serial
+                              and self.symbolSpace is not None)
+                          else None)
                 full_t = cs.bind_streams(
-                    ps_t, WS_sub, CS_sub,
+                    ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
                     seed_payload=(seed_payload if t == 0 else None))
                 if full_t is not None and t == 0:
                     # Snapshot the stage-0 bind so round-trip tests can
