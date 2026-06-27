@@ -342,14 +342,14 @@ def make_vector_spaces():
              "• SyntacticLayer: chunk-merge",
              "• Op: Prep (relocation), Has (part-whole)",
          ], 30, 58, 280, 480),
-        ("Conceptual Space", "[B × N/2ᵗ × D·2ᵗ]  semantic gist",
+        ("Conceptual Space", "[B × N × ConceptDim]  concept atoms",
          "#f5eef8", PURP, [
-             "• Cosine similarity = semantic nearness",
-             "• SigmaLayer: y = tanh(Wx + b)  (additive)",
-             "• Optional attention + VQ codebook",
-             "• Sigma-Pi loop: t = 0…T−1",
-             "• Op: Union (⊕), Intersection (⊙)",
-             "• TruthField: attractor/disperser regions",
+             "• Concept = ConceptDim atom (≠ PerceptDim)",
+             "• Per-order sparse weight matrix (torch.sparse)",
+             "• Encode: a = W_k @ [PS | WS | SS₀…SS_{k-1}]",
+             "• Decode: code = a · softplus(atom)  (signed a)",
+             "• Dyadic capacity by order: N/2, N/4, …",
+             "• Signed weights; strictly-positive atoms",
          ], 340, 58, 290, 480),
         ("Symbolic Space", "[B × K × symbol_dim]  discrete",
          "#fef9e7", ORG, [
@@ -392,9 +392,9 @@ def make_vector_spaces():
     for i, t in enumerate(["store: activation × DoT", "query by cosine sim", "field(): truth attractor map"]):
         parts.append(txt(680, 392 + i*24, "• " + t, anchor="start", fs=11, fill=GRN_DK))
 
-    # Sigma-Pi loop annotation
+    # Subsymbolic / ramsified-order loop annotation
     parts.append(rect(340, 540, 290, 28, PURP_L, stroke=PURP, sw=1, rx=6))
-    parts.append(txt(485, 558, "Sigma-Pi loop: t = 0, 1, …, T−1", fs=12, fill=PURP, italic=True))
+    parts.append(txt(485, 558, "ramsified order loop: k = 0, 1, …, S", fs=12, fill=PURP, italic=True))
 
     # Bottom caption
     parts.append(line(0, 590, W, 590, stroke="#ddd", sw=1))
