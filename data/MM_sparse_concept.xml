@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_sparse_concept: the sparse-coding Conceptual Space driver
+       (doc/plans/2026-06-27-sparse-coding-cs-plan.md).
+
+       A concept is a sparse, weighted linear combination over a basis of
+       symbols (symbols are concepts from the previous ramsified order) — a
+       three-column COO edge table (ConceptIndex, SymbolIndex, Weight) realized
+       as a differentiable scatter-add over the CS-owned similarity_codebook
+       inventory. The concept code is forward-connected by construction: the
+       gradient reaches the edge Weight and the basis through the transform.
+
+       Activation is by symbolicOrder (not a config gate): symbolicOrder>=1 with
+       <serial>false</serial> (the explicit override of the back-compat
+       serial = symbolicOrder>0 default) runs the PARALLEL symbolic loop, so the
+       edge population (at mint) and the scatter (in ConceptualSpace.forward)
+       fire together. <symbolTower>true</symbolTower> routes the CS->SS leg
+       through SymbolSpace.forward_concept_to_symbol. A sibling of
+       MM_symbol_tower.xml; runs on the xor smoke dataset. -->
+  <architecture>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
+    <serial>false</serial>
+    <symbolicOrder>1</symbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- mint the word/object/meta symbols whose decomposition populates the
+         COO edge table (decoupled from the scatter; gated only on the symbolic
+         order). -->
+    <mereologyRaise>true</mereologyRaise>
+    <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
+         forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
+    <symbolTower>true</symbolTower>
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>300</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.01</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+      <!-- the substitutability SITUATING signal on the grad-bearing concept
+           codes (the scatter-add output). -->
+      <conceptualSimilarityScale>0.1</conceptualSimilarityScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+    <synthesis>radix</synthesis>
+  </PartSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <WholeSpace>
+    <analysis>raw</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+    <invertible>true</invertible>
+    <codebook>quantize</codebook>
+  </WholeSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+</model>

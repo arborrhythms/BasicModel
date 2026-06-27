@@ -23,9 +23,20 @@ if _BIN not in sys.path:
 import torch
 
 import Spaces
+from Layers import WORD
 from test_basicmodel import _populate_test_config
 
 _D = 8
+
+
+def _cs_active(nS=64):
+    """A bare ConceptualSpace with the sparse transform GATED ON (symbolic
+    order > 0, parallel) -- the state the Models stamp installs for a
+    sparse-concept config."""
+    cs = _cs(nS)
+    object.__setattr__(cs, "_symbolic_order", 1)
+    object.__setattr__(cs, "_serial", False)
+    return cs
 
 
 def _cs(nS=64):
@@ -174,3 +185,57 @@ def test_scatter_uses_no_torch_sparse():
     code = head + rest.partition('"""')[2]
     assert "torch.sparse" not in code              # MLX/executorch safety
     assert "index_add" in code and "index_select" in code
+
+
+# -- Phase 5: edge population at mint (gated; byte-identical when inactive) ----
+
+def test_populate_inactive_is_noop():
+    cs = _cs()                                     # NOT sparse-active
+    v0 = int(cs.similarity_codebook.nVectors)
+    cs.create_word_object_meta([65, 66], WORD, key="cat")
+    assert getattr(cs, "_edge_concept", None) is None      # no edge table built
+    assert int(cs.similarity_codebook.nVectors) == v0      # codebook untouched
+
+
+def test_populate_active_decomposes_word_symbol():
+    cs = _cs_active()
+    A, B, C = cs.create_word_object_meta([65, 66], WORD, key="cat")
+    # A (word-symbol) decomposes into its word-parts + the word-whole.
+    a_row = cs._inventory_row(("c", A))
+    syms = [s for (s, _w) in cs.concept_edges(a_row)]
+    assert cs._inventory_row(("p", 65)) in syms
+    assert cs._inventory_row(("p", 66)) in syms
+    assert cs._inventory_row(("w", WORD)) in syms
+    # C (meta) decomposes into the A and B sub-symbols (>= 2 sym constituents).
+    c_row = cs._inventory_row(("c", C))
+    assert len(cs.concept_edges(c_row)) >= 2
+
+
+def test_populate_skips_unspecified_object_poles():
+    cs = _cs_active()
+    _, B, _ = cs.create_word_object_meta([65, 66], WORD, key="cat")
+    # B = ATOM <= UNIVERSE: the maximally-unspecified pole pair is a
+    # placeholder, not a decomposition -> no edges.
+    assert cs.concept_edges(cs._inventory_row(("c", B))) == []
+
+
+def test_min_support_one_constituent_not_eligible():
+    cs = _cs_active()
+    s = cs.new_concept()
+    cs.add_part(s, 42)                             # one constituent only
+    cs._populate_concept_edges(s)
+    assert cs.concept_edges(cs._inventory_row(("c", s))) == []
+
+
+def test_synthesize_higher_order_decomposes_when_active():
+    cs = _cs_active()
+    H = cs.synthesize_higher_order([10, 11, 12])   # 3 parts -> eligible
+    assert len(cs.concept_edges(cs._inventory_row(("c", H)))) == 3
+
+
+def test_inventory_row_stable_and_grows_codebook():
+    cs = _cs_active(nS=4)                           # tiny inventory
+    rows = [cs._inventory_row(("c", i)) for i in range(10)]
+    assert rows == list(range(10))                 # sequential, stable
+    assert cs._inventory_row(("c", 3)) == 3         # idempotent
+    assert int(cs.similarity_codebook.nVectors) >= 10   # grew to fit

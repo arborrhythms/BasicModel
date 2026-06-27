@@ -878,6 +878,12 @@ class BaseModel(Mereology, nn.Module):
         for _ss in (getattr(self, 'wholeSpaces', None) or []):
             object.__setattr__(_ss, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_ss, '_serial', self.serial)
+        # The ConceptualSpaces need the same stamp so the sparse-coding edge
+        # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
+        # activate together. A plain host-attribute stamp -- byte-identical.
+        for _cs in (getattr(self, 'conceptualSpaces', None) or []):
+            object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
+            object.__setattr__(_cs, '_serial', self.serial)
 
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors

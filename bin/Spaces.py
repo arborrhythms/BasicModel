@@ -13719,6 +13719,7 @@ class ConceptualSpace(Space):
             self.add_part(H, c)
         self._concept_raise_set().add(H)
         self._concept_relate_idx[key] = H
+        self._populate_concept_edges(H)            # sparse decomposition of H
         return H
 
     def conceptualize_chain(self, concept_ids):
@@ -13903,6 +13904,129 @@ class ConceptualSpace(Space):
             out = out / deg.clamp(min=1.0).unsqueeze(-1)
         return out
 
+    def _maybe_sparse_concept_content(self, folded):
+        """Phase 3: put the differentiable scatter-add concept codes into the
+        leading STM slots of ``folded`` for the populated (edged) concepts (D2:
+        the sparse code feeds the concept content). The basis is the CS-owned
+        ``similarity_codebook`` INVENTORY (D1) -- gathering from the codebook
+        this Space owns, never a cross-space reach. Forward-connected: the
+        returned content depends on the edge ``Weight`` and the basis, so the
+        backward reaches both (the structural goal -- the concept code is no
+        longer forward-disconnected). Returns ``folded`` UNCHANGED (byte-
+        identical) when the sparse transform is inactive, the edge table is
+        empty, or the shapes are unusable."""
+        if not self._sparse_active():
+            return folded
+        if getattr(self, "_edge_concept", None) is None or not self._edge_concept:
+            return folded
+        if not (torch.is_tensor(folded) and folded.dim() == 3):
+            return folded
+        cb = getattr(self, "similarity_codebook", None)
+        basis = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if basis is None or not torch.is_tensor(basis) or int(basis.shape[0]) == 0:
+            return folded
+        N = int(folded.shape[1])
+        D = int(folded.shape[2])
+        concept_idx, _, _ = self._rebuild_edge_pools()
+        V = int(basis.shape[0])
+        edged = torch.unique(concept_idx)
+        edged = edged[edged < V]                    # in-range inventory rows
+        if edged.numel() == 0:
+            return folded
+        sel = edged[:N]                             # leading concepts -> slots
+        codes = self.scatter_concept_event(V, basis, normalize=True)  # [V, Dc]
+        Dc = min(D, int(codes.shape[-1]))
+        rows = int(sel.numel())
+        new = folded.clone()
+        new[:, :rows, :Dc] = codes.index_select(0, sel)[:, :Dc].unsqueeze(0)
+        return new
+
+    # -- inventory row map + edge population at mint (Phase 5) -----------------
+    #
+    # The CS-owned ``similarity_codebook`` IS the row-aligned located-code
+    # INVENTORY (D1): the muxed concept view, and -- via its ``.what`` slice --
+    # the unmuxed symbol view. A COO edge's ``ConceptIndex`` / ``SymbolIndex``
+    # are both inventory rows. ``_inventory_row`` first-seen-allocates a row for
+    # a concept or a constituent token (growing the codebook when it outruns
+    # ``nVectors``), so the scatter basis is exactly ``similarity_codebook``.
+    #
+    # Population is DECOUPLED from ``<mereologyRaise>`` but GATED on the
+    # symbolic mode (``_symbolic_order > 0`` and parallel): at symbolicOrder=0
+    # it is a pure no-op (no rows allocated, no codebook growth, empty edge
+    # table) so every existing config stays byte-identical.
+
+    def _sparse_active(self):
+        """True iff the sparse-coding concept transform is active here: the
+        symbolic order is > 0 AND we are in parallel mode. Mirrors the forward
+        gate, so edge population and the scatter activate together; both are
+        no-ops (byte-identical) otherwise."""
+        return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
+                and not bool(getattr(self, "_serial", True)))
+
+    def _inventory_row(self, token):
+        """First-seen inventory (basis) row for ``token`` -- a concept ref
+        ``("c", id)``, a part code ``("p", code)``, a whole code ``("w", code)``
+        or a sub-symbol ``("sym", id)``. The ``similarity_codebook`` is the
+        row-aligned inventory; it is grown when the allocator outruns
+        ``nVectors`` (tail-preserving, like any codebook growth). Stable across
+        a run."""
+        self._edge_tables()
+        m = getattr(self, "_inventory_rows", None)
+        if m is None:
+            m = {}
+            object.__setattr__(self, "_inventory_rows", m)
+        r = m.get(token)
+        if r is None:
+            r = len(m)
+            m[token] = r
+            cb = getattr(self, "similarity_codebook", None)
+            if (cb is not None and hasattr(cb, "grow_to")
+                    and r >= int(getattr(cb, "nVectors", 0) or 0)):
+                cb.grow_to(r + 1)
+        return int(r)
+
+    def _populate_concept_edges(self, concept_id):
+        """Build the sparse COO decomposition of ``concept_id`` from its
+        relation-table Parts / Wholes (the mint-site hook, Phase 5). MIN-SUPPORT
+        invariant: a concept is eligible for the scatter only with >= 1 part AND
+        >= 1 whole, or >= 2 constituents total (a sparse combo needs >= 2 basis
+        vectors); else no edges and the forward falls back to the current
+        content. The maximally-unspecified pole pair (ATOM / UNIVERSE) is a
+        placeholder, not a decomposition -> skipped. Each constituent maps to an
+        inventory row via :meth:`_inventory_row`; the concept maps to its own
+        row; every ``SymbolIndex`` is asserted in range. Idempotent (``add_edge``
+        dedups). NO-OP unless the sparse transform is active -> byte-identical."""
+        if not self._sparse_active():
+            return
+        parts = self.concept_parts(concept_id)
+        wholes = self.concept_wholes(concept_id)
+
+        def _is_sym(x):
+            return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
+        raw_parts = [p for p in parts
+                     if not _is_sym(p) and p not in (_ATOM, _UNIVERSE)]
+        raw_wholes = [w for w in wholes
+                      if not _is_sym(w) and w not in (_ATOM, _UNIVERSE)]
+        sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
+        n_constituents = len(raw_parts) + len(raw_wholes) + len(sym_refs)
+        eligible = ((len(raw_parts) >= 1 and len(raw_wholes) >= 1)
+                    or n_constituents >= 2)
+        if not eligible:
+            return
+        c_row = self._inventory_row(("c", int(concept_id)))
+        cb = getattr(self, "similarity_codebook", None)
+        V = int(getattr(cb, "nVectors", 0) or 0) if cb is not None else 0
+        for p in raw_parts:
+            r = self._inventory_row(("p", int(p)))
+            assert V == 0 or r < int(self.similarity_codebook.nVectors)
+            self.add_edge(c_row, r)
+        for w in raw_wholes:
+            r = self._inventory_row(("w", int(w)))
+            self.add_edge(c_row, r)
+        for (_, sid) in sym_refs:
+            r = self._inventory_row(("c", int(sid)))
+            self.add_edge(c_row, r)
+
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
         towers (doc/specs/mereological-order-raising.md "Lifecycle"). First
@@ -13986,6 +14110,7 @@ class ConceptualSpace(Space):
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
+            self._populate_concept_edges(A)        # re-decompose A (parts grew)
             return A, B, C
         A = self.new_concept()                     # the WORD-symbol
         for p in word_parts:
@@ -13998,6 +14123,10 @@ class ConceptualSpace(Space):
         C = self.reify_concept(A, B)             # the word≡object META (A ≤ B)
         if key is not None:
             wom[key] = (A, B, C)
+        # Sparse decomposition of the word-symbol A (word-parts <- word-whole)
+        # and the META C (A, B). B is the unspecified pole pair -> not eligible.
+        self._populate_concept_edges(A)
+        self._populate_concept_edges(C)
         return A, B, C
 
     # ------------------------------------------------------------------
@@ -15442,6 +15571,18 @@ class ConceptualSpace(Space):
                 folded = sym
             else:
                 folded = primary
+        # Sparse-coding concept production (Phase 3): when the sparse transform
+        # is active (symbolicOrder > 0, parallel) AND the COO edge table is
+        # populated, the concept content for each edged concept is the
+        # differentiable scatter-add over the CS-owned ``similarity_codebook``
+        # INVENTORY (D1) -- ``concept = sum_e Weight[e] * basis[SymbolIndex[e]]``
+        # (D2: the sparse code feeds the concept content). This is the
+        # forward-connected transform: the gradient reaches the concept code AND
+        # the learnable edge ``Weight`` AND the basis through it (dissolving the
+        # old Stage-0 forward-disconnect). The edged concepts' codes land in the
+        # leading STM slots; non-edged slots keep the percept event. NO-OP (and
+        # byte-identical) when inactive or the edge table is empty.
+        folded = self._maybe_sparse_concept_content(folded)
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
         #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the
