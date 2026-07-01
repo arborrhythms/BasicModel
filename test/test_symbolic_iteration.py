@@ -126,7 +126,7 @@ def test_csleg_pi_bypassed_under_quantize():
     # not apply the pi transform -- the snap IS this iteration's
     # analysis. (The S-space_role syntactic dispatch is bypassed by the same
     # predicate; the fold is the directly patchable surface.)
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     fold = getattr(ws, "pi", None)
@@ -152,7 +152,7 @@ def test_csleg_one_symbol_apoha_emission():
     # and a CS event whose slot 5 carries row 20's code, the emission is
     # exactly that one slot carrying that one code; every other slot is
     # exactly zero, value AND copart.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     W = int(ws.nDim)
@@ -188,7 +188,7 @@ def test_csleg_virgin_fallback_stays_continuous():
     # Honest STE (the #13 lesson): with EVERY row virgin the iteration
     # must stay CONTINUOUS -- no codebook value substitution, no apoha
     # sparsity (a symbol that does not exist yet cannot be emitted).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     W = int(ws.nDim)
@@ -219,7 +219,7 @@ def test_csleg_adoption_writes_tags_and_is_idempotent():
     # (don-spyi: the concept-universal face -- distinct from the stage-0
     # analysis face, LF_COARSE), and a second pass is bit-stable.
     from Spaces import Codebook
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     basis = ws.subspace.what
@@ -259,7 +259,7 @@ def test_csleg_recon_gather_lands_on_winner_rows():
     # The recon gather retargets to THIS leg: gradient support is exactly
     # the winner rows -- the argmax blocks the encoder leg, the evidence
     # is detached, EMA stays off.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     W = int(ws.nDim)
@@ -293,7 +293,7 @@ def test_csleg_recon_gather_lands_on_winner_rows():
 def test_csleg_naming_indices_thread_full_frame():
     # The snap still NAMES every slot (indices thread for the narrow
     # output / downstream consumers) even though only one symbol emits.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     ws.stage_symbolic_virgin_rows()
@@ -324,7 +324,7 @@ def test_mm20m_second_order_reverse_keys_codebook():
     # representation -- "reconstruct by keying the codebook with
     # indices". Quantization is what allows CS to return ACTIVATION
     # VALUES ONLY -> second-order symbols.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     view = _cs_view(m)
     W = int(ws.nDim)

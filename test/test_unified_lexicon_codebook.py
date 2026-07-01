@@ -367,7 +367,7 @@ E.  ``data/*.xml``
           MM_grammar.xml: missing nInputDim / nOutputDim everywhere;
                           defaults fill in.  Audit needed: verify the
                           defaults yield the invariant.
-          MM_20M.xml: IS.nOutput=1024 * nDim=6 = 6144;
+          MM_20M_legacy.xml: IS.nOutput=1024 * nDim=6 = 6144;
                      PS.nInput=1024 * nDim=6 = 6144;
                      CS.nOutput=8 * nDim=1024 = 8192.  FAILS (6144 vs
                      8192).  This config is the progressive-bottleneck
@@ -555,7 +555,7 @@ XML files to update:
   MM_xor.xml             -- audit only (no edit expected -- already
                             satisfies the invariant).
   MM_xor_loopback.xml    -- audit only.
-  MM_20M.xml              -- OPEN: needs controller decision on invariant
+  MM_20M_legacy.xml              -- OPEN: needs controller decision on invariant
                             interpretation (per-slot vs flat slab) before
                             edit.
   MM_grammar.xml         -- audit; potentially add explicit
@@ -871,7 +871,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_xor_loopback.xml"))
 
     def test_mm_5m_satisfies_flat_slab(self):
-        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M.xml"))
+        self._load_and_validate(os.path.join(_DATA_DIR, "MM_20M_legacy.xml"))
 
     def test_mm_grammar_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_grammar.xml"))

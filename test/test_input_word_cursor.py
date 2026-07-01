@@ -397,7 +397,7 @@ def test_per_word_enabled_predicate_tracks_use_grammar():
     built in its own process; the grammar singleton forbids building
     two different configs in one interpreter)."""
     ug_g, flag_g = _probe_flag_in_subprocess(
-        "MM_20M.xml", dataset="'text'")
+        "MM_20M_legacy.xml", dataset="'text'")
     assert ug_g != "none", f"MM_20M must be grammar-enabled, got {ug_g!r}"
     assert flag_g is True, (
         "grammar-enabled config => _per_word_enabled True")

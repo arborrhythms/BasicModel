@@ -13519,6 +13519,9 @@ class ConceptualSpace(Space):
                         self.add_part(loc_sym, pid)
                 if loc_sym is not None:
                     self.add_whole(loc_sym, _WORD_CLASS)
+                    # Feed the ramsified sparse CS forward (gated dark
+                    # unless symbolicOrder>=1; byte-identical when off).
+                    self._populate_concept_weights(loc_sym)
 
     # ------------------------------------------------------------------
     # Relation-only CS symbol table + taxonomy (2026-06-17; doc/specs/
@@ -13927,6 +13930,10 @@ class ConceptualSpace(Space):
         coo = torch.sparse_coo_tensor(
             torch.stack([rows, scols]), vals,
             (int(n_concepts), int(n_sources))).coalesce()
+        # MPS has no COO->CSR kernel (aten::_to_sparse_csr, SparseMPS backend);
+        # torch.sparse.mm accepts COO directly (verified fwd+backward on MPS).
+        if dev.type == "mps":
+            return coo
         return coo.to_sparse_csr()
 
     def getParameters(self):
@@ -15497,7 +15504,6 @@ class ConceptualSpace(Space):
         idx, a = self.factor_percept(PS_t, rows)
         return a.unsqueeze(-1) * rows[idx]
 
-    @torch.compiler.disable
     # ``_build_symbol_leg`` (the CS-mediated SS bind leg) was RETIRED with the
     # sparse-coding CS work. It dereferenced a stashed ``_model_symbolSpace``
     # pointer and sourced the symbol rows from the WholeSpace meta codebook --
@@ -15509,6 +15515,9 @@ class ConceptualSpace(Space):
     # from the concept's own codes (writing only the codebook it owns). The
     # caller (the parallel body in ``Models._forward_body``) hands the leg to
     # ``bind_streams`` as ``SS_sub``; ``bind_streams`` no longer builds it.
+    # NOTE: ``_build_symbol_leg``'s ``@torch.compiler.disable`` (host-side dict
+    # iteration eager island) was retired WITH it -- ``bind_streams`` is pure
+    # tensor ops and MUST stay fullgraph-traceable (test_ir_fullgraph_compile).
 
     def bind_streams(self, PS_sub, WS_sub, CS_sub, SS_sub=None,
                      seed_payload=None):

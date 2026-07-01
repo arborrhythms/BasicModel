@@ -128,6 +128,81 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 > `<chartTau>`, `<chartTopK>`, `<chartNoiseEps>` XML knobs are retired;
 > `<symbolicOrder>` is now the symbolic / relational loop budget.
 
+## Symbolic weights, reconstruction, parse-time, attention (2026-06-30)
+
+A design pass clarifying four coupled pieces (PS = PartSpace, WS = WholeSpace,
+CS = ConceptualSpace, SS = SymbolSpace).
+
+### A. Symbolic weights (PS/WS $\to$ CS and SS $\to$ CS)
+
+These maps currently run through `torch.sparse` (COO $\to$ CSR) matrices
+(`ConceptualSpace.cs_sparse_encode`). They should instead be **`SigmaLayer`s**,
+which today are dense — so `SigmaLayer.__init__` needs a **sparse option** (a
+constructor switch on its inner layer; not a large change). Because CS and SS are
+**ramsified**, CS and SS exchange *views* of one another, so the per-order
+SigmaLayers are sized by the dyadic capacities $N/2, N/4, N/8, \ldots$
+(`ConceptualSpace.order_capacities`).
+
+### B. Reconstruction (parts $\to$ `.what`, wholes $\to$ `.where`)
+
+InputSpace maps two views of the *same* data, segmented differently: a
+**universal view** to WS (which it analyses) and an **atomic view** to PS (which
+it synthesises). WS yields **low-fidelity** information covering the **whole**
+space; PS yields **high-fidelity** information over a **smaller** area
+(`_paint_reconstruction`: the universal view paints the background, the atomic
+view is averaged in where it has support). For verbal reconstruction of text the
+**parts (PS) should reconstruct the `.what`** and the **wholes (WS) should
+reconstruct the `.where`** — approximately the inverse of what happens at parse
+time. The separate `what_scale` / `where_scale` / `when_scale` reconstruction
+channels already exist to carry this.
+
+For text, it would be foolish to insist on an *absolute* `.where` from WS: the
+parts already know each word's size, so under a perfect tiling the placement is
+just the running sum of part sizes (serial mode computes this as an AR1 increment
+over the previous `.where`; the for-loop is time). WS may still supply **type**
+information for the tiling — *word*, *space*, *word*, *punct*, … — even where it
+does not supply coordinates.
+
+### Tiling, subspace sizes, and consciousness
+
+Whether the parts/wholes **perfectly tile** the input (a partition — so order
+alone reconstructs, with no gaps between parts) is **NOT** entailed by
+parallel-vs-serial mode. It is entailed by the **relative sizes of the InputSpace
+subspace and the PS/WS subspaces**:
+
+- In **serial mode** they are *forced* to match — the for-loop traverses **all**
+  of input space — so the tiling is always perfect.
+- In **parallel mode**, if they do not match because InputSpace is *larger* than
+  PS/WS, that bounded mismatch is exactly where the two attentions **select what
+  is most relevant to consciousness**: PS/WS cannot hold all of InputSpace, so
+  attention picks the salient subset to surface. (When InputSpace $\le$ PS/WS — as
+  in the current test fixtures — the tiling is again a partition and order
+  suffices.)
+
+### C. Parse time (two attentions)
+
+At parse time CS receives the overcomplete input representations from the PS and
+WS mereological towers. Attention parses them two ways:
+
+- **Top-down attention is vertical** (w.r.t. the bottom-up / top-down towers): it
+  fixes the **Basic Level** of analysis — the size of parts and wholes. The
+  word-level isolates the regions that are type *word*, *punctuation*, and
+  *space*, forming a **complete tiling** (the WS$\to$PS `_passback_scope_where`
+  handoff; punctuation already tiles to its own span).
+- **Bottom-up attention is horizontal.** Top-down may fix the word boundary of
+  *wheelhouse*, but what makes *wheel* + *house* its building blocks rather than
+  the equally-segmentable *wheelhou* + *se*? **Greedy longest-match** is the
+  current easy approximation (`RadixLayer.longest_match`); bottom-up attention
+  should guide both parsing and reconstruction here.
+
+### D. Attention indexing (`.where` / `.when` / codebooks)
+
+The three addressing roles are disjoint: **`.where` indexes over the input
+buffer** (positional; period $=$ ½·InputSpace), **`.when` indexes over LTM**
+(to-build — LTM is content/parthood-addressed today), and the **codebooks are
+content-addressable** (identity is the row index; the cross-codebook `.where`
+slice registry was retired).
+
 ## Overview
 
 BasicModel is a bidirectional neural architecture organized as a pipeline of five

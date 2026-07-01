@@ -86,7 +86,7 @@ def _build(name):
 def _staged_input():
     """Build MM_20M, lex one batch, return (model, staged_tensor)."""
     import torch
-    m = _build("MM_20M.xml"); m.eval()
+    m = _build("MM_20M_legacy.xml"); m.eval()
     import Models; Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
@@ -115,7 +115,7 @@ def test_forward_core_matches_normal_forward():
     would NOT verify the core actually equals the forward it claims to be.)
     """
     import torch
-    m = _build("MM_20M.xml"); m.eval()
+    m = _build("MM_20M_legacy.xml"); m.eval()
     # Compare like with like: the NORMAL forward injects the random IR mask
     # (create_ir_mask's bernoulli hide-a-token) on EVERY call -- a training /
     # infer()-infill corruption that makes consecutive forwards differ by
@@ -180,7 +180,7 @@ def test_mlx_lower_writes_pte(tmp_path):
         "BASICMODEL_PYTHON",
         os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python"),
     )
-    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M.xml")
+    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M_legacy.xml")
 
     r = subprocess.run(
         [python, script, model_xml, str(pte)],
@@ -239,7 +239,7 @@ def test_pte_runtime_parity(tmp_path):
         "BASICMODEL_PYTHON",
         os.path.join(os.path.dirname(_BIN), ".venv", "bin", "python"),
     )
-    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M.xml")
+    model_xml = os.path.join(os.path.dirname(_BIN), "data", "MM_20M_legacy.xml")
 
     r = subprocess.run(
         [python, script, model_xml, str(pte)],

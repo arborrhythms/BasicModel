@@ -237,13 +237,13 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
 
     @unittest.expectedFailure
     def test_mm_5m_xml_loads_and_forwards(self):
-        """Task 11: MM_20M.xml can be loaded and runs one forward pass.
+        """Task 11: MM_20M_legacy.xml can be loaded and runs one forward pass.
 
         Forces ``autoload=false`` so a stale on-disk checkpoint
         (``data/MM_20M.ckpt``) doesn't block this smoke test -- we're
         verifying the XML loads and forward runs, not weight loading.
 
-        Currently expected-failure (MM_20M.xml architectural mismatch):
+        Currently expected-failure (MM_20M_legacy.xml architectural mismatch):
         PS percept_dim+nWhere+nWhen=12 vs CS concept_dim+nWhere+nWhen
         =1028. Stage 1.C retired the ``sigma_percept`` lift; the signal
         router replacement (Stage 3) is not yet wired.
@@ -252,7 +252,7 @@ class TestPerceptualSpaceBPE(unittest.TestCase):
         import xml.etree.ElementTree as ET
         from Models import BaseModel
 
-        cfg_path = os.path.join(_PROJECT, "data", "MM_20M.xml")
+        cfg_path = os.path.join(_PROJECT, "data", "MM_20M_legacy.xml")
         tree = ET.parse(cfg_path)
         root = tree.getroot()
         arch = root.find("architecture")

@@ -22,7 +22,7 @@ os.environ["BASIC_NUM_EPOCHS"] = "1"
 # Disable autoload so we don't pick up an old checkpoint.
 os.environ["BASIC_NO_COMPILE"] = "1"
 
-CONFIG_PATH = str(PROJECT / "data" / "MM_20M.xml")
+CONFIG_PATH = str(PROJECT / "data" / "MM_20M_legacy.xml")
 
 from util import init_config, ProjectPaths, TheXMLConfig
 from data import TheData

@@ -2981,7 +2981,7 @@ class BasicModel(BaseModel):
         # MPS compiles by default (2026-06-07): torch 2.12's inductor MPS
         # backend traces the per-batch forward fullgraph just like CPU/CUDA
         # (verified ``Model compiled (inductor, ..., fullgraph=True)`` on
-        # ``data/MM_20M.xml``). The old ``BASICMODEL_MPS_COMPILE`` opt-in gate
+        # ``data/MM_20M_legacy.xml``). The old ``BASICMODEL_MPS_COMPILE`` opt-in gate
         # (eager fallback on MPS, from when torch's MPS fake-tensor device
         # propagation was incomplete) is retired -- use ``MODEL_COMPILE=none``
         # (skip) or ``=eager`` (no inductor) to disable/relax compilation on
@@ -6318,7 +6318,15 @@ class BasicModel(BaseModel):
                 # combine.n_streams is what the bind keys on; the forward-time
                 # loop gate (self.symbol_tower) is set by the time forward runs.
                 n_streams=(3 if bool(TheXMLConfig.get(
-                    "architecture.symbolTower", default=False)) else 2))
+                    "architecture.symbolTower", default=False)) else 2),
+                # Concepts live on the unit ball: when ConceptualSpace
+                # <nonlinear> is set, the per-stage combine saturates the bound
+                # concept with tanh (forward) / atanh (reverse) -- the joint
+                # nonlinearity a non-separable readout (XOR) needs. Read the
+                # config directly (cs.nonlinear may not be live at per-stage
+                # build time, matching the symbolTower read above).
+                nonlinear=bool(TheXMLConfig.space(
+                    "ConceptualSpace", "nonlinear")))
             # Held by the ConceptualSpace: register for paramUpdate/set_sigma
             # (cs.layers) and optimisation (cs.params); expose as cs.combine
             # WITHOUT a second nn.Module registration (object.__setattr__,

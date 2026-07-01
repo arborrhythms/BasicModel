@@ -16,7 +16,7 @@
        per-word Word-symbol A + object-symbol B + meta C BEFORE syntax. Hard
        masking forgoes the word2vec-like contextual embedding (acknowledged).
 
-       NEVER mutate the shared MM_20M.xml. With <mereologyRaise> OFF this would
+       NEVER mutate the shared MM_20M_legacy.xml. With <mereologyRaise> OFF this would
        behave like a plain serial radix config; the gate is the behavioural
        delta. The serialObjectMeta per-word object/meta path (increments 2-4)
        is gated separately so it is dark until wired + signed off. -->

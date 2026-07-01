@@ -47,7 +47,7 @@ def main():
     init_device("cpu")
     cfg = str(_p / "data" / cfg_name)
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))
-    if cfg_name == "MM_20M.xml":
+    if cfg_name == "MM_20M_legacy.xml":
         # Bounded: break enumeration only needs one real batch through
         # every code path, not the full corpus.
         TheData.load("text", shard_dir=str(_p / "data" / "fineweb"),

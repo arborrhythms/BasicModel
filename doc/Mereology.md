@@ -299,6 +299,23 @@ containment is `A.start ≥ B.start ∧ A.end ≤ B.end`; **contiguity** (adjace
 between sibling parts is the same endpoint comparison. An instant snaps to zero
 extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.)
 
+**Design decision (2026-06-29, REVISIT) -- the `.where` support of percepts vs
+symbols.** Every PERCEPT (a part from PartSpace or a whole from WholeSpace) MUST
+carry a real `.where` (`nWhere > 0`): a definite `[start, end]` extent. A percept
+with no location is not admissible. A SYMBOL (a concept-level relation entry, or an
+SS reference) MAY instead either (a) carry `nWhere = 0` (no location of its own), or
+(b) carry a RECOMBINED `.where` equal to the bounding span of its constituents --
+`start` = the leftmost constituent's `start`, `end` = the rightmost constituent's
+`end` (the support of a symbol is the sum of the supports of its members). If the
+recombination is hard to implement, the fallback is to give every symbol a `.where`
+of "everywhere" (universal support). THE ANT-COLONY QUESTION: is the location of an
+ant colony IN each ant (distributed -- every ant keeps its own `.where`), or is
+there a SINGLE location that subsumes all the ants' locations (the bounding region)?
+The recombined bounding-span (b) takes the single-subsuming-extent view; "everywhere"
+is its degenerate limit. This choice determines whether a concept's `.where` is
+distributed over its parts or collapsed to one subsuming extent, and should be
+revisited.
+
 Word ↔ object cannot be linked this way (too unlike; no convex set is specific
 enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
 `.where`/`.when`**, fusing the word-code and object-code into the symbol used in
@@ -315,6 +332,23 @@ mean-collapse fix): *many parts → one whole* = under-analysed; *one part → o
 (σ, e.g. radix) or analysis (π, property tiling) within the problematic `.where`** —
 until words emerge as parts. MM_20M collapses because its byte chunker never climbs
 and its analyser never descends, so no word-granularity parts exist for XOR.
+
+**Design decision (2026-06-29, REVISIT) -- locking in the "basic level" of
+analysis.** The mereological analysis should converge on and STABILISE at Eleanor
+Rosch's BASIC LEVEL -- the granularity where the part-whole ratio is correct
+(neither many-parts-one-whole nor one-part-one-whole). The radix climb builds parts
+UPWARD (byte -> prefix -> word -> ...); left unbounded it over-climbs (a whole short
+sentence promotes to one percept). Two principled brakes hold it at the basic level:
+(a) the ``<basicLevelMinSize>`` / ``<basicLevelMaxSize>`` size bounds (for TEXT, a
+part is ``[0, 24]`` letters -- "size in `.what`" = letter count); and (b) the
+part-whole-ratio convergence signal above (request more synthesis/analysis until the
+ratio is right). The ideal is to LOCK IN whatever basic level the corpus implies. As
+a pragmatic HEDGE -- and because **word-level is essentially the basic level for a
+symbolic LLM** -- the analyser may simply cut on whitespace (PS observes/promotes per
+WHITESPACE-cut word so the parts top out at word size; see ``PartSpace._embed_radix``
+under ``_meronomy_words``). The size bound (24) is too loose to separate a short
+sentence from its words on its own, so the word cut is the operative brake today; the
+full ratio-driven basic-level convergence is the to-revisit principled version.
 
 ### Explicit concepts ⟷ implicit subsymbolic representations (dual-coded, 2026-06-21)
 

@@ -56,7 +56,7 @@ def _build_gate_model_cuda():
     from util import init_config, init_device
 
     init_device("cuda")
-    cfg = str(_root / "data" / "MM_20M.xml")
+    cfg = str(_root / "data" / "MM_20M_legacy.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)

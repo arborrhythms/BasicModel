@@ -423,7 +423,7 @@ def auto_compile_mode():
       (empty / unset)  -> "max-autotune".
 
     Default is ``max-autotune`` -- empirical winner on the GB10
-    training bench (basicmodel/bin/bench_compile.py, MM_20M.xml,
+    training bench (basicmodel/bin/bench_compile.py, MM_20M_legacy.xml,
     bf16 + trie BPE, training pass, --batches 8 each):
 
         eager                       mean=39.5s   min=22.5s  max=71.0s
@@ -640,7 +640,7 @@ def compile(model, verbose=True, fullgraph=False):
     # glue + slot-cascade kernels run past 10k generated Metal lines) can
     # then exceed Metal's hard 31-buffer binding limit and kernel
     # compilation fails with "no 'buffer' resource location available for
-    # 'error_buf'" — observed on ``MM_20M.xml`` (2026-06-11; reproduced
+    # 'error_buf'" — observed on ``MM_20M_legacy.xml`` (2026-06-11; reproduced
     # 2026-06-19). There are TWO emitters of that header in
     # ``torch/_inductor/codegen/mps.py``:
     #   1. ``check_bounds`` (indirect-LOAD bounds) -- gated by

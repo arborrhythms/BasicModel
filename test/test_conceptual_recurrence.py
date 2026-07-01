@@ -25,7 +25,7 @@ def test_reconstruct_enum_retired():
     # streams (reconstruction is unconditionally from concepts), so the model
     # carries NEITHER the ``reconstruct`` enum string NOR the derived
     # ``perfect_reconstruction`` bool.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     assert not hasattr(m, "reconstruct"), (
         "the <reconstruct> enum was retired (A1); the model must not carry a "
         "self.reconstruct attribute")
@@ -171,7 +171,7 @@ def test_mm5m_forward_finite_after_combine():
     # prediction is index [2] (index [0] is the input embedding, not the CS
     # carrier).
     import torch
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     import Models; Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
@@ -187,12 +187,12 @@ def test_mm5m_combine_carrier_roundtrip():
     # 2-stream bind round-trip (C-10, rev. 2026-06-09): each stage's
     # threaded carrier is the WHOLE bind ILL([PS_t || WS_t]); reverse is an
     # exact bijection with NOTHING threaded alongside (the augment machinery
-    # is retired). Builds from the STOCK MM_20M.xml with no injected knob.
+    # is retired). Builds from the STOCK MM_20M_legacy.xml with no injected knob.
     import os, warnings, torch
     import Models, Language
     from util import init_config
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    p = os.path.join(data_dir, "MM_20M.xml")
+    p = os.path.join(data_dir, "MM_20M_legacy.xml")
     init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
@@ -266,7 +266,7 @@ def test_mm5m_combine_carrier_roundtrip():
 
 
 def _write_mm5m_3ep_cfg():
-    """Write a 3-epoch copy of data/MM_20M.xml to /tmp and return its path.
+    """Write a 3-epoch copy of data/MM_20M_legacy.xml to /tmp and return its path.
 
     Three epochs over the (tiny) xor stream is enough to drive several
     runBatch forwards across sentence/document boundaries -- the regime
@@ -276,7 +276,7 @@ def _write_mm5m_3ep_cfg():
     """
     import re
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    with open(os.path.join(data_dir, "MM_20M.xml")) as fh:
+    with open(os.path.join(data_dir, "MM_20M_legacy.xml")) as fh:
         xml = fh.read()
     xml2 = re.sub(r"<numEpochs>\d+</numEpochs>",
                   "<numEpochs>3</numEpochs>", xml)
@@ -376,7 +376,7 @@ def test_bind_contained_in_conceptual_space():
     import Models, Language
     from util import init_config
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    p = os.path.join(data_dir, "MM_20M.xml")
+    p = os.path.join(data_dir, "MM_20M_legacy.xml")
     init_config(path=p, defaults_path=os.path.join(data_dir, "model.xml"))
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
@@ -431,7 +431,7 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
     ``<prediction>...</prediction>`` under ``<architecture>`` and
     ``<sentencePrediction>...</sentencePrediction>`` under ``<training>``.
 
-    MM_20M.xml ships with neither knob (so the discourse layer is absent and
+    MM_20M_legacy.xml ships with neither knob (so the discourse layer is absent and
     ``prediction_mode`` defaults to "none"). We inject under the SAME
     ``<architecture>`` anchor the rest of this module uses, so the build path
     is identical.
@@ -440,11 +440,11 @@ def _build_mm5m_with(prediction=None, sentence_prediction=True):
     import Models, Language
     from util import init_config
     data_dir = os.path.join(os.path.dirname(_BIN), "data")
-    src = os.path.join(data_dir, "MM_20M.xml")
+    src = os.path.join(data_dir, "MM_20M_legacy.xml")
     with open(src) as fh:
         xml = fh.read()
     assert "<prediction>" not in xml and "<sentencePrediction>" not in xml, (
-        "MM_20M.xml unexpectedly already sets prediction/sentencePrediction")
+        "MM_20M_legacy.xml unexpectedly already sets prediction/sentencePrediction")
     if prediction is not None:
         xml = xml.replace(
             "<architecture>",
@@ -575,7 +575,7 @@ def test_parallel_ps_called_once():
     # (nInput = 8192). The subsymbolic substrate is single-pass; PS.pi(IS) is
     # the canonical stage-0 contribution.
     import torch, Models
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
@@ -628,7 +628,7 @@ def test_widening_ps_pi_sized_at_embedded_percept_width():
     # nInputDim == nOutputDim, so ``_fold_width == nInputDim`` there (the
     # legacy sizing, unchanged). (The fold is ``ps.sigma`` post Pi/Sigma
     # swap, Phase 3.)
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ps = m.perceptualSpace
     assert int(ps._fold_width) == int(ps.nOutputDim) == 1024
     assert int(ps.butterflyN) == int(ps.outputShape[0]) * 1024

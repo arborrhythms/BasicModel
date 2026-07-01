@@ -12,8 +12,8 @@ Two modes:
 
 Usage:
     # In-process (no server running)
-    python bm.py --config ../data/MM_20M.xml
-    python bm.py --config ../data/MM_20M.xml "hello"
+    python bm.py --config ../data/MM_20M_legacy.xml
+    python bm.py --config ../data/MM_20M_legacy.xml "hello"
 
     # Talk to a running serve.py
     python bm.py --port 8003

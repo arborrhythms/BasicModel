@@ -29,7 +29,7 @@ def _build_gate_model():
     from Models import BaseModel
     from util import init_config, init_device
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M.xml")
+    cfg = str(_root / "data" / "MM_20M_legacy.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -38,7 +38,7 @@ def _build_gate_model():
 
 
 @pytest.mark.xfail(
-    reason="MM_20M.xml percept_dim / concept_dim mismatch (Stage 1.C "
+    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch (Stage 1.C "
            "retired sigma_percept; signal router replacement not wired).",
     strict=False,
 )
@@ -67,7 +67,7 @@ def test_false_gate_contribution_is_zero():
 
 
 @pytest.mark.xfail(
-    reason="MM_20M.xml percept_dim / concept_dim mismatch.",
+    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch.",
     strict=False,
 )
 def test_false_gate_preserves_stm_buffer():

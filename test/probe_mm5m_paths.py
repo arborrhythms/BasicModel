@@ -15,7 +15,7 @@ os.environ["BASICMODEL_DEVICE"] = "cpu"
 os.environ["BASIC_MAX_DOCS"] = "10"
 os.environ["BASIC_NUM_SHARDS"] = "1"
 
-CONFIG_PATH = str(PROJECT / "data" / "MM_20M.xml")
+CONFIG_PATH = str(PROJECT / "data" / "MM_20M_legacy.xml")
 
 from util import init_config, ProjectPaths, TheXMLConfig
 from data import TheData

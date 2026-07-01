@@ -22,7 +22,7 @@
 
        With readingAttention OFF this file behaves exactly like the analysis=word
        variant of MM_mereology; the producer is the only behavioural delta (and
-       it is dark when no consumer is wired). NEVER mutate the shared MM_20M.xml;
+       it is dark when no consumer is wired). NEVER mutate the shared MM_20M_legacy.xml;
        flip knobs HERE. -->
   <architecture>
     <!-- parallel mereology: per-stage forward, no serial grammar loop. -->

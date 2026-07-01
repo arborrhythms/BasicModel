@@ -75,34 +75,50 @@ def test_eos_triggers_reset_cascade():
         "ConceptualSpace.event should be cleared by Reset")
 
 
+def _best_loop_time(m, inp, *, trials=5, iters=5):
+    """Fastest wall-time over ``trials`` runs of an ``iters``-forward loop.
+
+    Wall-clock perf tests are inherently flaky: a single GC pause, page
+    fault, or scheduler preemption landing in one timed loop (each only a
+    few ms at N=4) skews an absolute measurement, and the serial/baseline
+    *ratio* below amplifies it. ``min`` over repeated trials is the
+    standard denoiser — transient slowdowns only ever ADD time, so the
+    fastest trial reflects the true unloaded latency. A real regression
+    slows EVERY trial and still trips the bound.
+    """
+    best = float("inf")
+    for _ in range(trials):
+        t0 = time.perf_counter()
+        for _ in range(iters):
+            m.forward(inp)
+        best = min(best, time.perf_counter() - t0)
+    return best
+
+
 def test_serial_mode_does_not_slow_short_streams():
-    """Smoke: serial_mode forward latency on 4 tokens is within 2x of baseline."""
+    """Smoke: serial_mode forward latency on 4 tokens is within 5x of baseline."""
     m_s = _build_model(serial_mode=True)
     m_b = _build_model(serial_mode=False)
     inp = _xor_input()
 
-    # Warmup.
+    # Warmup (first call pays lazy-init / allocator costs).
     m_s.forward(inp)
     m_b.forward(inp)
 
-    t0 = time.perf_counter()
-    for _ in range(5):
-        m_s.forward(inp)
-    t_serial = time.perf_counter() - t0
-
-    t0 = time.perf_counter()
-    for _ in range(5):
-        m_b.forward(inp)
-    t_baseline = time.perf_counter() - t0
+    # Best-of-N denoises transient pauses. Single-shot timing made this
+    # flake in the full suite (passed in isolation, occasionally read >5x
+    # mid-run when a GC pause hit one loop but not the other); the real
+    # ratio is ~1x at N=4.
+    t_serial = _best_loop_time(m_s, inp)
+    t_baseline = _best_loop_time(m_b, inp)
 
     # Loose bound: serial-mode overhead should not regress short-stream
     # timings by more than 5x. Real perf win appears at N >= 32.
     # 2026-05-29: bound raised from 2x to 5x — recent additions
     # (Embedding.normalize() after optimizer.step(), CS-side autobind
     # iteration over pid_2d, \x00 sentinel append) compound at short
-    # streams. Wall-clock tests are inherently flaky on shared
-    # machines; this remains a smoke test that catches order-of-
-    # magnitude regressions, not microbenchmarks.
+    # streams. This is a smoke test for order-of-magnitude regressions,
+    # not a microbenchmark.
     assert t_serial < 5.0 * t_baseline, (
         f"serial-mode latency regressed: serial={t_serial:.3f}s "
         f"baseline={t_baseline:.3f}s")

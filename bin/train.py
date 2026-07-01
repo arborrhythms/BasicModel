@@ -3,8 +3,8 @@
 
 Usage:
     python train.py                           # local, defaults
-    python train.py --model data/MM_20M.xml --compile-target gpu --batches 10
-    python train.py --model data/MM_20M.xml --compile-target mlx
+    python train.py --model data/MM_20M_legacy.xml --compile-target gpu --batches 10
+    python train.py --model data/MM_20M_legacy.xml --compile-target mlx
     python train.py --host example.org        # remote execution via SSH
 """
 

@@ -42,7 +42,7 @@
        IS slab=4096*6=24576, PS slab=1024*6=6144, CS slab=8*1024=8192;
        all three differed. Re-architected to a uniform 8*1024=8192
        (matching the CS terminal width), IS/PS share 1024 wide slots
-       at nDim=8 each; mirrors MM_20M.xml's re-architecture. -->
+       at nDim=8 each; mirrors MM_20M_legacy.xml's re-architecture. -->
   <InputSpace>
     <nInput>1024</nInput>
     <nDim>12</nDim>

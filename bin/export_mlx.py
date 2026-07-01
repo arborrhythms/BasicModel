@@ -2,7 +2,7 @@
 
 Usage
 -----
-    python bin/export_mlx.py data/MM_20M.xml out.pte
+    python bin/export_mlx.py data/MM_20M_legacy.xml out.pte
 
 The script has TWO clearly separated phases:
 
@@ -64,7 +64,7 @@ def _parse_args(argv=None):
     p = argparse.ArgumentParser(
         description="Export BasicModel tensor core to ExecuTorch .pte")
     p.add_argument("model_xml",
-                   help="Path to the model XML config (e.g. data/MM_20M.xml)")
+                   help="Path to the model XML config (e.g. data/MM_20M_legacy.xml)")
     p.add_argument("output_pte",
                    help="Destination path for the .pte binary")
     return p.parse_args(argv)

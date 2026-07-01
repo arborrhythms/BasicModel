@@ -67,7 +67,7 @@ Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL` | `data/MM_20M.xml` | XML config for training |
+| `MODEL` | `data/MM_20M_legacy.xml` | XML config for training |
 | `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
 | `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
 

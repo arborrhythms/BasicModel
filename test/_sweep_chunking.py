@@ -1,6 +1,6 @@
 """Sweep MM_20M PartSpace <synthesis> options to compare reconstruction.
 
-Builds temp configs from MM_20M.xml with a WORKING 1024-wide InputSpace
+Builds temp configs from MM_20M_legacy.xml with a WORKING 1024-wide InputSpace
 (the 5-wide narrowing crashes the event mux), varying only <synthesis>.
 Runs each end-to-end and reports the reconstruction lines. Not a pytest test.
 """
@@ -11,7 +11,7 @@ PY = sys.executable
 EPOCHS = int(os.environ.get("SWEEP_EPOCHS", "200"))
 CHUNKS = os.environ.get("SWEEP_CHUNKS", "none,radix,lexicon,bpe,mphf").split(",")
 
-with open(os.path.join(PROJECT, "data", "MM_20M.xml")) as f:
+with open(os.path.join(PROJECT, "data", "MM_20M_legacy.xml")) as f:
     base = f.read()
 
 # Restore a WORKING 1024-wide InputSpace + PS handoff (the 5-wide IS crashes).

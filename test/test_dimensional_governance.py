@@ -46,7 +46,7 @@ def _build(cfg_name):
 
 def test_mm_5m_builds_and_forwards():
     import torch, Models
-    m = _build("MM_20M.xml"); Models.TheData.load("xor")
+    m = _build("MM_20M_legacy.xml"); Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     inp_items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(inp_items)
@@ -63,7 +63,7 @@ def test_mm_5m_reconstructs():
     # butterfly round-trips, so the deep CS hub is recoverable from the
     # symbol distribution via pi.reverse.
     import torch, Models
-    m = _build("MM_20M.xml"); m.eval()
+    m = _build("MM_20M_legacy.xml"); m.eval()
     sig = m.wholeSpace.pi
     n = int(m.wholeSpace.inputShape[0])
     d = int(getattr(m.wholeSpace, "nOutputDim", 0) or m.wholeSpace.nDim)
@@ -154,7 +154,7 @@ def test_cs_ws_input_side_handoff_mismatch_raises():
     # CS.nOutputDim. validate_config must FAIL LOUD (the deep CS idea no longer
     # lines up with what SS claims to consume) rather than let the forward
     # reshape silently fit it.
-    src = _ref_text("MM_20M.xml")
+    src = _ref_text("MM_20M_legacy.xml")
     broken = src.replace(
         "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
         "    <nDim>1024</nDim>\n    <nOutput>1024</nOutput>",
@@ -174,7 +174,7 @@ def test_ws_os_flatten_handoff_mismatch_raises():
     # =8192. Force OS.nInput=7 so the OS slab (7*1024=7168) no longer equals the
     # SS flattened slab. validate_config must FAIL LOUD; the SS->OS flatten is
     # not a place to silently drop/pad a slot.
-    src = _ref_text("MM_20M.xml")
+    src = _ref_text("MM_20M_legacy.xml")
     broken = src.replace("<OutputSpace>\n    <nInput>8</nInput>",
                          "<OutputSpace>\n    <nInput>7</nInput>")
     assert broken != src, "fixture edit did not apply (OutputSpace block?)"
@@ -190,7 +190,7 @@ def test_reference_configs_still_build_no_false_positive():
     # configs. MM_20M exercises the LEGITIMATE deep->wide SS reshape (SS.nInputDim
     # 1024 == CS.nOutputDim, SS emits a wide [1024,8] symbol slab flattened to
     # the OS 8192). XOR_exact is the no-reshape all-14 case. Both must build.
-    for cfg in ("MM_20M.xml", "XOR_exact.xml"):
+    for cfg in ("MM_20M_legacy.xml", "XOR_exact.xml"):
         m = _build(cfg)
         assert m is not None, cfg
 

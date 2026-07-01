@@ -50,7 +50,7 @@ def _build_gate_model():
     from util import init_config, init_device
 
     init_device("cpu")
-    cfg = str(_root / "data" / "MM_20M.xml")
+    cfg = str(_root / "data" / "MM_20M_legacy.xml")
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -100,7 +100,7 @@ def _gate_for(isp, w, p=0):
 
 
 @pytest.mark.xfail(
-    reason="MM_20M.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
+    reason="MM_20M_legacy.xml: percept_dim+nWhere+nWhen=12 != concept_dim+nWhere+"
            "nWhen=1028. Stage 1.C retired sigma_percept (the percept-to-"
            "concept lift); the signal router replacement (Stage 3) is not "
            "yet wired, so STM bookkeeping receives an unlifted percept "
@@ -148,7 +148,7 @@ def test_per_word_step_is_extractable_as_a_standalone_callable():
 
 
 @pytest.mark.xfail(
-    reason="MM_20M.xml percept_dim / concept_dim mismatch (see "
+    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch (see "
            "test_per_word_step_runs_eagerly_end_to_end).",
     strict=False,
 )
@@ -190,7 +190,7 @@ def test_per_word_step_compiles_fullgraph_clean():
 
 
 @pytest.mark.xfail(
-    reason="MM_20M.xml percept_dim / concept_dim mismatch (see "
+    reason="MM_20M_legacy.xml percept_dim / concept_dim mismatch (see "
            "test_per_word_step_runs_eagerly_end_to_end).",
     strict=False,
 )

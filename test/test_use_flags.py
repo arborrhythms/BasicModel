@@ -30,7 +30,7 @@ def _load(cfg_name):
 # excluded; their loading failures are pre-existing issues tracked
 # separately:
 #   - model.xml         -- BasicModel template, not a BasicModel
-#   - MM_20M.xml         -- reconstruct=concepts fails validate_config
+#   - MM_20M_legacy.xml         -- reconstruct=concepts fails validate_config
 #   - MM_400M.xml       -- relied on butterfly N-halving (post 2026-05-12)
 #   - MM_shamatha.xml   -- ConceptualSpace nVectors!=nActive
 #   - MM_xor_step4.xml  -- ConceptualSpace nVectors!=nActive

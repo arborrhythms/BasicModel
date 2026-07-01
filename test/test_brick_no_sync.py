@@ -44,7 +44,7 @@ pytestmark = pytest.mark.skipif(
 _CONFIGS = [
     ("MM_xor.xml", "xor", {}),
     ("MM_grammar.xml", "xor", {}),
-    ("MM_20M.xml", "text", {
+    ("MM_20M_legacy.xml", "text", {
         "shard_dir": str(_project / "data" / "fineweb"),
         "num_shards": 1,
         "max_docs": 64,

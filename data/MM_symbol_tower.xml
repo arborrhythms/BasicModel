@@ -3,7 +3,7 @@
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_mereology: DEDICATED mereological order-raising experiment config
        (doc/specs/mereological-order-raising.md). NEVER mutate the shared
-       MM_20M.xml for mereology experiments (it is a reference config pinned by
+       MM_20M_legacy.xml for mereology experiments (it is a reference config pinned by
        ~19 test files); flip knobs HERE instead.
 
        A radix-synthesis sibling of MM_20M: PartSpace

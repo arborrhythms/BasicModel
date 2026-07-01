@@ -91,7 +91,7 @@ def run_space_gate(cls, method_name, candidate_fn, snapshot=default_snapshot,
                    max_batches=5, batch_size=8):
     """Drive a real frozen MM_20M runEpoch with the gate installed."""
     init_device("cpu")
-    cfg = str(_p / "data" / "MM_20M.xml")
+    cfg = str(_p / "data" / "MM_20M_legacy.xml")
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_p / "data" / "fineweb"),
                  num_shards=1, max_docs=64)

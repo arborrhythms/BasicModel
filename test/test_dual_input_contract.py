@@ -54,7 +54,7 @@ def _staged_batch(m):
 
 def test_inputspace_forward_returns_dual_view():
     # Phase 1 contract: InputSpace.forward emits BOTH views of one source.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     with torch.no_grad():
         percepts_in, concepts_in = m.inputSpace.forward(x)
@@ -82,7 +82,7 @@ def test_dual_views_share_values():
     # The two views are views of ONE presentation: same values, different
     # shape. (Analysis is non-altering; the unity view is the byte content
     # verbatim, not a transform of it.)
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     with torch.no_grad():
         percepts_in, concepts_in = m.inputSpace.forward(x)
@@ -99,7 +99,7 @@ def test_ws_stage0_consumes_unity():
     # standard SS output geometry. Different unities produce different
     # stage-0 symbols; the unity buffer itself is NEVER altered (analysis
     # is non-altering).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     seed = m._empty_seed_ss
     # None == legacy path: empty in, empty out (no evidence, no symbols).
@@ -127,7 +127,7 @@ def test_ws_rejects_concepts_with_nonempty_cs():
     # Phase 2 contract: input is read ONCE at stage 0. Supplying IS_concepts
     # alongside a live recurrent CS is the later repeated-injection knob and
     # must fail loudly (never a silent drop).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
     ws.forward(m._empty_seed_ss, IS_concepts=u)   # populates ws.subspace
@@ -144,7 +144,7 @@ def test_model_forward_passes_unity_at_stage0():
     # stage, so at subsymbolicOrder>1 (MM_20M ships sO=3, T=3) the capture
     # must hook EVERY stage's ws -- hooking only the terminal would miss the
     # stage-0 unity call entirely.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     stage_ws = list(m.wholeSpaces)
     reals = [w.forward for w in stage_ws]
@@ -174,7 +174,7 @@ def test_model_forward_passes_unity_at_stage0():
 def test_full_forward_green_with_dual_view():
     # The orchestration shim threads the tuple; the model forward is intact
     # and the unity view is parked for Phase 2 (staged, unused).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     with torch.no_grad():
         out = m.forward(x)[2]
@@ -193,7 +193,7 @@ def test_word_analysis_boundaries_shape_evidence():
     # remains the byte-mode default. The hand-checked means are
     # asserted on the threaded PRE-SNAP carrier (the evidence z_e
     # before the live SS codebook snap).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     # "hi ox" as byte codes, padded with the null sentinel.
     text = b"hi ox"
@@ -241,7 +241,7 @@ def test_parallel_ws_quantize_fires():
     # 2026-06-09): the SS codebook is LIVE in the parallel path --
     # Codebook.quantize() genuinely fires during a parallel forward
     # (it was a verified 0-call no-op before).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     # The stage-0 analysis snap fires on the STAGE-0 WholeSpace
     # (``m.wholeSpaces[0]``), not the terminal ``m.wholeSpace`` (= the last
@@ -281,7 +281,7 @@ def test_ws_vq_asymmetric_flags():
     # VIRGIN rows from the stage-0 evidence in the eager stem. After
     # adoption has named the rows, further training forwards must be
     # bit-stable (no EMA, no drift).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     ws = m.wholeSpace
     # Step 2: BOTH SS codebook families carry the asymmetric flags --
@@ -321,7 +321,7 @@ def test_ws_codebook_recon_gradient():
     # gradient lands on the SELECTED codebook rows only (the evidence is
     # detached; the argmin blocks the encoder leg). This is the EMA
     # replacement -- exact, not a running average.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     vq = ws.analysis_store.vq
     assert isinstance(vq.codebook, torch.nn.Parameter), (
@@ -355,7 +355,7 @@ def test_ws_recon_term_reaches_pipeline_errors():
     # The stage-0 recon term is threaded as an SS forward-local and lifted
     # onto the pipeline-chained error container by _forward_body, so the
     # training loss actually consumes it.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     m.train()
     try:
@@ -375,7 +375,7 @@ def test_descriptor_roles_lf_coarse_tagging():
     # selected rows LF-COARSE (analysis outputs are the coarse
     # characterizations).
     from Spaces import Codebook
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     basis = ws.analysis_store
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
@@ -401,7 +401,7 @@ def test_semantic_arrangement_mechanism():
     # ONLY on the activated rows (pode/antipode are detached). Semantic
     # PAYOFF is deliberately not asserted -- that is D's corpus gate
     # (asymmetric-vq sec.8: XOR cannot validate the semantic side).
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     ws = m.wholeSpace
     vq = ws.analysis_store.vq
     u = torch.randint(0, 256, (2, 1, 512), dtype=torch.int64)
@@ -442,7 +442,7 @@ def test_painting_reverse_blend():
     # halved). The concepts branch RIDES the SubSpace
     # (``_concepts_recon``) -- reverse stays single-arg per the
     # processing contract.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     with torch.no_grad():
         percepts_in, _ = m.inputSpace.forward(x)
@@ -482,7 +482,7 @@ def test_model_reverse_threads_concepts_branch():
     # the returned sub (SubSpace-carried), and the model reverse() carries
     # it across the PS handoff into InputSpace.reverse. End-to-end reverse
     # stays finite.
-    m = _build("MM_20M.xml")
+    m = _build("MM_20M_legacy.xml")
     x = _staged_batch(m)
     with torch.no_grad():
         m.forward(x)

@@ -1601,7 +1601,7 @@ class ConceptualCombine(Layer):
 
     def __init__(self, content_dim, n_vectors=1, naive=False,
                  sigma_pi_mode="full", hasBias=True, ergodic=False,
-                 n_streams=2):
+                 n_streams=2, nonlinear=False):
         """Build the per-stage square 2-stream slot bind.
 
         Args:
@@ -1640,6 +1640,12 @@ class ConceptualCombine(Layer):
         self.content_dim = D
         self.n_vectors = Nv
         self.n_streams = S
+        # nonlinear: saturate the bound concept onto the unit ball (+-1) with a
+        # tanh fold (forward) + atanh (reverse). The linear bind alone is a GLM
+        # over the per-stream inputs and cannot represent a non-separable
+        # function (e.g. XOR); the tanh at concept formation supplies the joint
+        # nonlinearity, and atanh keeps the map an exact bijection.
+        self.nonlinear = bool(nonlinear)
         self.combine_dim = N  # flattened S*N*D stack [stream0-slots ; stream1 ; ...]
 
         # Normalise the <sigmaPi> span the same way the spaces do; a lazy
@@ -1807,6 +1813,10 @@ class ConceptualCombine(Layer):
                 flat.shape[0], self.combine_padded - self.combine_dim)
             flat = torch.cat([flat, pad], dim=-1)  # [B', M]
         out = self.layer.forward(flat)             # [B', M]
+        if self.nonlinear:
+            # Concepts live on the unit ball (+-1): saturate the bind.
+            # ``reverse`` applies atanh so the map stays an exact bijection.
+            out = torch.tanh(out)
         # A5 fullgraph fix (kept from the 3-stream design): force a
         # materialised, non-aliasing output so no view of a padded
         # intermediate escapes the forward (AOT autograd's output-alias
@@ -1826,6 +1836,11 @@ class ConceptualCombine(Layer):
         construction, with NOTHING threaded: the carrier IS the whole bind.
         """
         flat, leading = self._flatten_leading(carrier)  # [B', M]
+        if self.nonlinear:
+            # Invert the forward tanh: atanh(tanh(z)) == z. Clamp just inside
+            # (-1, 1) so saturated coords don't map to +-inf (matches the
+            # forward tanh().clamp() contract used elsewhere).
+            flat = torch.atanh(flat.clamp(-1.0 + 1e-6, 1.0 - 1e-6))
         x = self.layer.reverse(flat)                    # [B', M]
         body = x[..., :self.combine_dim].reshape(
             *leading, self.n_streams * self.n_vectors, self.content_dim)

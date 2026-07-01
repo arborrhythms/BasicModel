@@ -105,7 +105,7 @@ def install_gate(model, candidate_fn, max_calls=None):
 
 def run_gate(candidate_fn, max_batches=3):
     init_device("cpu")
-    cfg = str(_p / "data" / "MM_20M.xml")
+    cfg = str(_p / "data" / "MM_20M_legacy.xml")
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_p / "data" / "fineweb"),
                  num_shards=1, max_docs=64)

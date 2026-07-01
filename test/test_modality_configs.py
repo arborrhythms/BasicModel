@@ -26,7 +26,7 @@ _DATA = str(Path(__file__).resolve().parent.parent / "data")
 _DEFAULTS = os.path.join(_DATA, "model.xml")
 
 # Pre-existing breakage (per test_use_flags.py), not modality regressions.
-_BROKEN = {"model.xml", "MM_20M.xml", "MM_400M.xml", "MM_shamatha.xml",
+_BROKEN = {"model.xml", "MM_20M_legacy.xml", "MM_400M.xml", "MM_shamatha.xml",
            "MM_xor_step4.xml",
            # MM_xor deliberately disables the PS codebook (2x2 LDU exact-XOR;
            # "SS owns the VQ"); forcing the now-mandatory PS codebook would

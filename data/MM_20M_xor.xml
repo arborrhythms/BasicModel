@@ -1,0 +1,127 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- MM_20M_xor: supervised XOR on the MM_20M meronomy pipeline.
+
+       A sibling of MM_20M_legacy.xml that does supervised XOR with
+       the MEREOLOGICAL analysis/synthesis pair:
+         - PartSpace  <synthesis>meronomy</synthesis>  (parts -> whole)
+         - WholeSpace <analysis>meronomy</analysis>     (whole -> parts, the 1-x
+           dual of the synthesizer)
+       lexer resolves to raw under meronomy analysis, so use_byte_cursor=False
+       and the supervised out_items (the {0,1} XOR labels) reach the head,
+       unlike the byte-cursor AR path in MM_20M_legacy.xml, which stubs the label to 0.
+
+       The OutputSpace trains at lrScale=0.5 (the two-timescale fix, mirrors
+       XOR_exact): without it the readout co-adapts with the moving upstream
+       features and settles at the data mean (~0.5), the documented MM_20M
+       mean-collapse. -->
+  <architecture>
+    <!-- symbolicOrder=1 + serial=false + symbolTower: activate the ramsified
+         sparse forward (cs_forward_content) so the minted word-concepts (their
+         per-order sparse weight edges) build the concept content fed to the head. -->
+    <symbolicOrder>0</symbolicOrder>
+    <serial>false</serial>
+    <symbolTower>true</symbolTower>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <!-- mereologyRaise: mint the order-0 word-whole binding so word-granularity
+         concepts (hello/world) exist as parts at their .where. Without this the
+         analyser stages word spans but no concepts are minted from them. -->
+    <mereologyRaise>true</mereologyRaise>
+    <basicLevelMinSize>0</basicLevelMinSize>
+    <basicLevelMaxSize>24</basicLevelMaxSize>
+
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>200</numEpochs>
+      <batchSize>12</batchSize>
+      <learningRate>0.005</learningRate>
+      <reconstructionScale>0.5</reconstructionScale>
+      <!-- JOINT: jointly train the word embeddings (every working XOR config
+           sets this; without it the embedding params are excluded from the
+           optimizer, Models.py:1126, so the word vectors stay frozen and the
+           readout cannot shape an XOR-separable representation). -->
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8192</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>1024</nDim>
+  </InputSpace>
+
+  <PartSpace>
+    <nInput>8192</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+    <synthesis>meronomy</synthesis>
+    <!-- Promote a recurring word to a SINGLE percept after 2 sightings (default
+         4) so PS climbs to word-size parts quickly: the "largest part" PS
+         supplies becomes the word, matching the WS word-whole .where. -->
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>65536</nVectors>
+    <nDim>1024</nDim>
+    <nOutput>1024</nOutput>
+    <nOutputDim>8</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+  </WholeSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>8</nVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>1024</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>1024</nOutputDim>
+
+    <invertible>true</invertible>
+    <butterfly>true</butterfly>
+    <!-- nonlinear=true: make the per-stage ConceptualCombine apply tanh(W@x+b)
+         AFTER the cross-word mixing. This is the joint nonlinearity XOR needs;
+         without it the only nonlinearity is the per-word tanh in PartSpace
+         (before mixing) and the head path is a GLM over per-word features. -->
+    <nonlinear>true</nonlinear>
+  </ConceptualSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>1024</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+    <!-- lrScale=0.5: train the readout at HALF the model LR so it is a slow,
+         stable target the faster-moving upstream features organise toward ->
+         crisp 0/1 instead of the data-mean collapse (mirrors XOR_exact). -->
+    <lrScale>0.5</lrScale>
+  </OutputSpace>
+
+  <!-- Explicit (no-op): SS is already constructed at model build regardless of
+       this tag; downwardGeneration=false matches model.xml's default. -->
+  <SymbolSpace>
+    <downwardGeneration>false</downwardGeneration>
+  </SymbolSpace>
+
+</model>
