@@ -43,7 +43,7 @@ from embed import (
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, RunStructureLayer  # Import custom layers from Model.py
 from Layers import PropertyTilingLayer, char_class_region, WORD as _WORD_CLASS  # char-class property tiling (S6/B1)
-from Layers import UNIVERSE as _UNIVERSE, ATOM as _ATOM  # relation-only lattice poles (word/object/meta)
+from Layers import EVERYTHING as _EVERYTHING, NOTHING as _NOTHING  # relation-only lattice poles (word/object/meta)
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 # NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
 # Layers lazy attrs -> Language -> Spaces, a cycle at module-load time).
@@ -4029,6 +4029,71 @@ class ProjectionBasis(Basis):
         x_summary = self._apply_inverse(signed)               # [B, D]
         v = max(int(V) if V is not None else 1, 1)
         return x_summary.unsqueeze(1).expand(-1, v, -1).contiguous()
+
+
+def _decode_where_offset(positions, batch_idx, vector_idx, subspace=None):
+    """Decode one token's byte offset from its WhereEncoding sin/cos band
+    (shared by the Embedding and radix render paths)."""
+    where_encoding = None if subspace is None else subspace.whereEncoding
+    if where_encoding is None:
+        return None
+    sin_val = positions[batch_idx, vector_idx, 0].item()
+    cos_val = positions[batch_idx, vector_idx, 1].item()
+    if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
+        return None
+    if math.isnan(sin_val) or math.isnan(cos_val):
+        return None
+    return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
+
+
+def _render_token_buffer(batch_tokens, buf_size=None):
+    """Stamp ``(word, offset)`` tokens into a character buffer (shared by the
+    Embedding and radix render paths); offset-free tokens join consecutively."""
+    has_positions = any(offset is not None for _, offset in batch_tokens)
+    if not has_positions:
+        text = []
+        for word, _ in batch_tokens:
+            if word != "":
+                text.append(word)
+            if word == "\x00":
+                break
+        return "".join(text)
+
+    terminator = None
+    max_end = 0
+    for word, offset in batch_tokens:
+        if offset is None or offset < 0:
+            continue
+        if word == "\x00":
+            terminator = offset if terminator is None else min(
+                terminator, offset)
+            continue
+        if word == "":
+            continue
+        max_end = max(max_end, offset + len(word.encode('utf-8')))
+
+    limit = (terminator + 1) if terminator is not None else max_end
+    if buf_size is not None:
+        limit = buf_size if limit <= 0 else min(limit, buf_size)
+    if limit <= 0:
+        return ""
+
+    buf = [' '] * limit
+    if terminator is not None and 0 <= terminator < limit:
+        buf[terminator] = "\x00"
+    for word, offset in batch_tokens:
+        if word in ("", "\x00") or offset is None:
+            continue
+        if offset < 0 or offset >= limit:
+            continue
+        for ci, ch in enumerate(word):
+            pos = offset + ci
+            if pos >= limit:
+                break
+            buf[pos] = ch
+    return "".join(buf)
+
+
 class Embedding(Basis):
     """Text-backed Basis using a differentiable nn.Embedding with online CBOW/SBOW training.
 
@@ -5004,69 +5069,13 @@ class Embedding(Basis):
         return y
 
     def _decode_offset(self, positions, batch_idx, vector_idx, subspace=None):
-        """Decode offset.
-        
-        See class docstring for the operation contract.
-        """
-        where_encoding = None if subspace is None else subspace.whereEncoding
-        if where_encoding is None:
-            return None
-        sin_val = positions[batch_idx, vector_idx, 0].item()
-        cos_val = positions[batch_idx, vector_idx, 1].item()
-        if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
-            return None
-        if math.isnan(sin_val) or math.isnan(cos_val):
-            return None
-        return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
+        """Decode offset (delegates to the shared module-level helper)."""
+        return _decode_where_offset(positions, batch_idx, vector_idx,
+                                    subspace=subspace)
 
     def _render_tokens(self, batch_tokens, buf_size=None):
-        """Render tokens.
-        
-        See class docstring for the operation contract.
-        """
-        has_positions = any(offset is not None for _, offset in batch_tokens)
-        if not has_positions:
-            text = []
-            for word, _ in batch_tokens:
-                if word != "":
-                    text.append(word)
-                if word == "\x00":
-                    break
-            return "".join(text)
-
-        terminator = None
-        max_end = 0
-        for word, offset in batch_tokens:
-            if offset is None or offset < 0:
-                continue
-            if word == "\x00":
-                terminator = offset if terminator is None else min(
-                    terminator, offset)
-                continue
-            if word == "":
-                continue
-            max_end = max(max_end, offset + len(word.encode('utf-8')))
-
-        limit = (terminator + 1) if terminator is not None else max_end
-        if buf_size is not None:
-            limit = buf_size if limit <= 0 else min(limit, buf_size)
-        if limit <= 0:
-            return ""
-
-        buf = [' '] * limit
-        if terminator is not None and 0 <= terminator < limit:
-            buf[terminator] = "\x00"
-        for word, offset in batch_tokens:
-            if word in ("", "\x00") or offset is None:
-                continue
-            if offset < 0 or offset >= limit:
-                continue
-            for ci, ch in enumerate(word):
-                pos = offset + ci
-                if pos >= limit:
-                    break
-                buf[pos] = ch
-        return "".join(buf)
+        """Render tokens (delegates to the shared module-level helper)."""
+        return _render_token_buffer(batch_tokens, buf_size=buf_size)
 
     @staticmethod
     def _decoded_tokens(decoded):
@@ -9676,15 +9685,42 @@ class PartSpace(PerceptualSpace):
         # configs (e.g. model.xml built without data) reach this fallback
         # instead of erroring as they did before the graceful path.
         _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
-        if _butterfly_built:
-            self.sigma = SigmaLayer(
-                percept_dim, percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-                butterfly=True, N=_butterfly_total,
-            )
-        elif _pi_mode == "full":
+
+        def _mint_sigma():
+            # ONE construction path shared by the base layer and the P4
+            # <subsymbolicStack> per-pass layers (identical modes/dims).
+            if _butterfly_built:
+                ly = SigmaLayer(
+                    percept_dim, percept_dim,
+                    naive=naive, ergodic=ergodic,
+                    invertible=bool(invertible), nonlinear=nonlinear,
+                    stable=True, monotonic=_mono,
+                    butterfly=True, N=_butterfly_total,
+                )
+            elif _pi_mode == "full":
+                ly = SigmaLayer(
+                    self.sigma_pi_slab, self.sigma_pi_slab,
+                    naive=naive, ergodic=ergodic,
+                    invertible=bool(invertible), nonlinear=nonlinear,
+                    stable=True, monotonic=_mono,
+                )
+            else:
+                ly = SigmaLayer(
+                    percept_dim, percept_dim,
+                    naive=naive, ergodic=ergodic,
+                    invertible=bool(invertible), nonlinear=nonlinear,
+                    stable=True, monotonic=_mono,
+                )
+            if meronomy_enabled():
+                from Layers import MeronymicFoldAdapter
+                ly = MeronymicFoldAdapter(
+                    'sigma', ly.nInput, ly.nOutput,
+                    stable=True, ergodic=ergodic, naive=naive,
+                    legacy_N=_butterfly_total,
+                    butterfly=_butterfly_built)
+            return ly
+
+        if _pi_mode == "full" and not _butterfly_built:
             # full: the dense flattened square Pi bridge of the flat-slab
             # invariant (doc/specs/2026-06-05-dimensional-governance.md
             # §2-3) -- ONE LDU over the whole [B, N*content] slab. The
@@ -9702,47 +9738,15 @@ class PartSpace(PerceptualSpace):
                     "PartSpace <sigmaPi>full</> requires percept_dim "
                     f"({percept_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-            self.sigma = SigmaLayer(
-                self.sigma_pi_slab, self.sigma_pi_slab,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-            )
-        else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
-            self.sigma = SigmaLayer(
-                percept_dim, percept_dim,
-                naive=naive, ergodic=ergodic,
-                invertible=bool(invertible), nonlinear=nonlinear,
-                stable=True, monotonic=_mono,
-            )
+        # Construction (all three modes + the Stage-9 MERONYMIC K3-wire
+        # adapter wrap -- the cutover correction keeps a butterfly-built
+        # slot's cascade re-chartered on memberships) lives in _mint_sigma,
+        # shared verbatim with the P4 stack so the base path's RNG draws
+        # are order-identical to the pre-stack construction.
+        self.sigma = _mint_sigma()
         self.sigma_pi_mode = _pi_mode
         self.butterfly_enabled = _butterfly_built
         self.butterflyN = _butterfly_total if _butterfly_built else None
-        if meronomy_enabled():
-            # Stage 9 cutover (MeronomyPlan; spec §2): the MERONYMIC
-            # slot binds the membership kernel through the K3-wire
-            # adapter (χ at the boundary, kernel on memberships;
-            # near-identity at init). Meronymic slots only — every
-            # non-meronymic consumer of the odds-kernel layers is
-            # untouched (plan §4 item 4). Dims read off the built
-            # layer so all three construction modes stay drop-in.
-            #
-            # Cutover correction (author, 2026-06-11): a butterfly-built
-            # slot KEEPS its cascade — re-chartered on memberships with
-            # the contractive order-preserving law per node — instead of
-            # collapsing to the per-slot fold. The order law constrains
-            # the kernel class, not the topology; dropping the cascade
-            # silently removed the slot's cross-position reach (the
-            # XOR_exact regression).
-            from Layers import MeronymicFoldAdapter
-            self.sigma = MeronymicFoldAdapter(
-                'sigma', self.sigma.nInput, self.sigma.nOutput,
-                stable=True, ergodic=ergodic, naive=naive,
-                legacy_N=_butterfly_total,
-                butterfly=_butterfly_built)
-            # butterflyN keeps recording the construction-time sizing
-            # (consumers read it as the flat-total contract).
-            self.butterfly_enabled = bool(_butterfly_built)
 
         # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
         # heat-retrieval.md §Handoff addendum): PartSpace no longer
@@ -9752,6 +9756,40 @@ class PartSpace(PerceptualSpace):
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.params += self.sigma.getParameters()
+        # P4 <subsymbolicStack>: DISTINCT per-pass sigmas (depth IS
+        # mereological order; the stack is the subsymbolic reasoning engine).
+        # Pass 0 IS ``self.sigma``; ``<subsymbolicNoop>`` slots are the
+        # IDENTITY (``None`` -- each still occupies its pass, so the pump
+        # always runs to subsymbolicOrder). RNG-NEUTRAL: fresh layers are
+        # constructed under save/restore (the similarity_codebook idiom) so
+        # gated-off configs keep their init streams byte-identical.
+        self.sigmas = None
+        if bool(TheXMLConfig.get("architecture.subsymbolicStack",
+                                 default=False)):
+            _T = max(1, int(TheXMLConfig.get(
+                "architecture.subsymbolicOrder", default=1) or 1))
+            _noop = _parse_pass_indices(TheXMLConfig.get(
+                "architecture.subsymbolicNoop", default=None))
+            _rng_state = torch.get_rng_state()
+            _stack = []
+            for _t in range(_T):
+                if _t in _noop:
+                    _stack.append(None)
+                elif _t == 0:
+                    _stack.append(self.sigma)
+                else:
+                    _ly = _mint_sigma()
+                    self.params += _ly.getParameters()
+                    _stack.append(_ly)
+            torch.set_rng_state(_rng_state)
+            self.sigmas = _stack
+            # Register the fresh t>=1 layers as SUBMODULES (state_dict /
+            # model-wide .to()); a plain list would silently drop them from
+            # checkpoints and leave them behind on the CPU->device move.
+            # NOT appended to self.layers: the Start/End/Reset cascade stays
+            # exactly the pre-stack set.
+            self._sigma_stack_modules = nn.ModuleList(
+                [ly for ly in _stack[1:] if ly is not None])
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -11645,6 +11683,55 @@ class PartSpace(PerceptualSpace):
             f"bpe|lexicon|byte|none|mphf|radix, got {mode!r} "
             f"(analyse moved to WholeSpace <analysis>, Phase 4b)")
 
+    def _sigma_for_pass(self, t=None):
+        """The pass-``t`` sigma (P4): the stack layer when
+        ``<subsymbolicStack>`` is on (``None`` = the identity no-op slot),
+        else the single reused ``self.sigma``. ``t`` defaults to the
+        model-stamped recurrent pass index."""
+        stack = getattr(self, "sigmas", None)
+        if stack is None:
+            return self.sigma
+        if t is None:
+            ss = getattr(self, 'symbolSpace', None)
+            t = (int(ss.recur_pass) if ss is not None
+                 else int(getattr(self, "_recurrent_pass_idx", 0) or 0))
+        return stack[min(max(0, int(t)), len(stack) - 1)]
+
+    def synthesize_feedback(self, sub, t):
+        """FURTHER σ SYNTHESIS on the C->P part-stream (P4, decisions 7+8):
+        apply the pass-``t`` stack sigma to the demuxed feedback event --
+        depth IS mereological order. Identity (the sub returned unchanged)
+        when the stack is off, the slot is a no-op, or the shapes don't fit
+        the fold (mirrors the WS parallel-fold shape tolerance)."""
+        stack = getattr(self, "sigmas", None)
+        if (stack is None or sub is None
+                or not hasattr(sub, "is_empty") or sub.is_empty()):
+            return sub
+        fold = stack[min(max(0, int(t)), len(stack) - 1)]
+        if fold is None:
+            return sub
+        ev = sub.materialize()
+        if ev is None or not torch.is_tensor(ev) or ev.dim() < 2:
+            return sub
+        _sd = int(fold.nInput)
+        _total = int(getattr(fold, "N", 0) or 0)
+        _actual = int(ev.shape[-1]) * (int(ev.shape[-2])
+                                       if ev.dim() >= 3 else 1)
+        if _total and _actual == _total:
+            out = fold.forward(ev)
+        elif ev.dim() >= 3 and int(ev.shape[-1]) > _sd:
+            out = torch.cat(
+                [fold.forward(ev[..., :_sd]), ev[..., _sd:]], dim=-1)
+        elif int(ev.shape[-1]) == _sd:
+            out = fold.forward(ev)
+        else:
+            return sub
+        fed = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
+                       nInputDim=1, nOutputDim=1)
+        fed.copy_context(sub)
+        fed.set_event(out)
+        return fed
+
     def forward(self, x_subspace):
         """Perception: map input to percepts via ``pi(x)``.
 
@@ -11767,7 +11854,10 @@ class PartSpace(PerceptualSpace):
         # ``tanh(pi_input(IS) + pi_concept(C_prev))`` shape gating is
         # also retired (no C-feedback path entering PS at this level).
         primary = self.forwardBegin(vspace, returnVectors=True)
-        x = self.sigma.forward(primary)
+        # P4: pass t selects stack layer t (identity when the slot is a
+        # no-op); the single reused ``self.sigma`` when the stack is off.
+        _sig = self._sigma_for_pass()
+        x = primary if _sig is None else _sig.forward(primary)
         if os.environ.get("XHEAD_PROBE"):
             with torch.no_grad():
                 for _nm, _v in (("raw-pre-fold", primary), ("post-fold", x)):
@@ -11883,6 +11973,16 @@ class PartSpace(PerceptualSpace):
                              normalize=True, reverse=True)
         y = self.reverseBegin(vspace, returnVectors=True)
         vspace = self.reverseEnd(y, returnVectors=True)
+        # Radix render staging (2026-07-02 plan C2/B2): the structural decode
+        # (RadixLayer.reverse -> inverse_table bytes) renders the recovered
+        # event; stage lazily like the Embedding path (report-only, detached).
+        from Layers import RadixLayer as _Radix
+        if isinstance(getattr(self, "vocabulary", None), _Radix):
+            ev = vspace.materialize()
+            if ev is not None and torch.is_tensor(ev):
+                self._recovered_input = None
+                self._recovered_input_thunk = (
+                    "radix", self.vocabulary, ev.detach(), self.subspace)
         vspace.normalize("input", target="what", normalize=True)
         return vspace
 
@@ -11977,17 +12077,71 @@ class PartSpace(PerceptualSpace):
         """
         if (self._recovered_input is None
                 and self._recovered_input_thunk is not None):
-            cb, inp, sub = self._recovered_input_thunk
-            self._recovered_input = cb.decode_reverse_meta(inp, subspace=sub)
+            thunk = self._recovered_input_thunk
+            if len(thunk) == 4 and thunk[0] == "radix":
+                _tag, radix, event, sub = thunk
+                self._recovered_input = self._decode_radix_meta(
+                    radix, event, sub)
+            else:
+                cb, inp, sub = thunk
+                self._recovered_input = cb.decode_reverse_meta(
+                    inp, subspace=sub)
             self._recovered_input_thunk = None
         return self._recovered_input
+
+    def _decode_radix_meta(self, radix, event, sub):
+        """Radix analogue of ``Embedding.decode_reverse_meta``: nearest radix
+        chunk per slot (``RadixLayer.reverse`` -> inverse-table bytes) plus
+        WhereEncoding offsets. Returns the same meta-dict shape the Embedding
+        render consumers use."""
+        if event is None or not torch.is_tensor(event):
+            return None
+        if event.dim() == 2:
+            event = event.unsqueeze(0)
+        if event.dim() != 3:
+            return None
+        embSize = int(event.shape[-1])
+        positions = None
+        w_enc = getattr(sub, "whereEncoding", None)
+        if w_enc is not None and w_enc.nDim > 0:
+            idx = w_enc.resolve(embSize)
+            if idx[0] >= 0 and idx[0] < embSize:
+                positions = event[:, :, idx]
+        Wd = (int(radix.codebook.shape[-1])
+              if radix.codebook is not None else 0)
+        content = event[..., :Wd] if 0 < Wd <= embSize else event
+        decoded = radix.reverse(content)             # List[List[bytes]]
+        B, N = int(event.shape[0]), int(event.shape[1])
+        tokens = [[] for _ in range(B)]
+        words = [[] for _ in range(B)]
+        offsets = [[] for _ in range(B)]
+        for b in range(B):
+            for n in range(N):
+                bs = decoded[b][n] if (decoded and b < len(decoded)
+                                       and n < len(decoded[b])) else b""
+                word = bs.decode("utf-8", errors="replace") if bs else ""
+                off = (_decode_where_offset(positions, b, n, subspace=sub)
+                       if positions is not None else None)
+                words[b].append(word)
+                offsets[b].append(off)
+                tokens[b].append((word, off))
+        return {"tokens": tokens, "words": words, "offsets": offsets,
+                "positions": positions, "times": None}
 
     def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on PartSpace."""
         self._materialize_recovered_input()
         if self._recovered_input is None:
             raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.subspace.what.reconstruct_data(self._recovered_input, text=text)
+        what = self.subspace.what
+        if hasattr(what, "reconstruct_data"):
+            return what.reconstruct_data(self._recovered_input, text=text)
+        # Radix path: `.what` is a Codebook (no Embedding render API) --
+        # render the staged meta directly with the shared helpers.
+        toks = self._recovered_input.get("tokens", [])
+        if text:
+            return [_render_token_buffer(t) for t in toks]
+        return [[w for (w, _o) in t if w not in ("", "\x00")] for t in toks]
 
     def reconstruct_to_buffer(self, buf_size=None):
         """Render the last recovered text buffer stored on PartSpace.
@@ -12015,16 +12169,27 @@ class PartSpace(PerceptualSpace):
                 f">= render buffer size ({buf_size}). Raise "
                 f"architecture.nObjects to at least {buf_size}."
             )
-        return self.subspace.what.reconstruct_to_buffer(
-            self._recovered_input, buf_size=buf_size)
+        what = self.subspace.what
+        if hasattr(what, "reconstruct_to_buffer"):
+            return what.reconstruct_to_buffer(
+                self._recovered_input, buf_size=buf_size)
+        # Radix path: render the staged meta with the shared stamper.
+        toks = self._recovered_input.get("tokens", [])
+        return [_render_token_buffer(t, buf_size=buf_size) for t in toks]
 
     def get_recovered_word(self, batch_idx, position):
         """Return one recovered token from the last PartSpace._reverse_text()."""
         self._materialize_recovered_input()
         if self._recovered_input is None:
             return None
-        return self.subspace.what.get_recovered_word(
-            self._recovered_input, batch_idx, position)
+        what = self.subspace.what
+        if hasattr(what, "get_recovered_word"):
+            return what.get_recovered_word(
+                self._recovered_input, batch_idx, position)
+        toks = self._recovered_input.get("tokens", [])
+        if batch_idx < len(toks) and position < len(toks[batch_idx]):
+            return toks[batch_idx][position][0]
+        return None
 
     def train_embeddings(self, words, method='CBOW'):
         """Run one CBOW/SBOW gradient step if words are available."""
@@ -12227,6 +12392,130 @@ class ModalSpace(Space):
             self.whereSpace.paramUpdate()
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
+
+
+class _ConceptRoleView:
+    """Dict-of-sets view over the consolidated per-order relation stores --
+    the back-compat surface of the retired ``_concept_parts`` /
+    ``_concept_wholes`` dicts (2026-07-02 consolidation P1). Reads
+    reconstruct sets from the layer records; writes replace one role's
+    records through the allocator."""
+    __slots__ = ("_host", "_role")
+
+    def __init__(self, host, role):
+        self._host = host
+        self._role = role
+
+    def _alloc(self):
+        return _concept_alloc_of(self._host)
+
+    def keys(self):
+        return list(self._alloc().placement)
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def __len__(self):
+        return len(self._alloc().placement)
+
+    def __contains__(self, cid):
+        return int(cid) in self._alloc().placement
+
+    def __bool__(self):
+        return bool(self._alloc().placement)
+
+    def __getitem__(self, cid):
+        alloc = self._alloc()
+        if int(cid) not in alloc.placement:
+            raise KeyError(cid)
+        return set(alloc.refs(cid, self._role))
+
+    def get(self, cid, default=None):
+        alloc = self._alloc()
+        if int(cid) not in alloc.placement:
+            return default
+        return set(alloc.refs(cid, self._role))
+
+    def items(self):
+        return [(c, set(self._alloc().refs(c, self._role)))
+                for c in self.keys()]
+
+    def values(self):
+        return [set(self._alloc().refs(c, self._role)) for c in self.keys()]
+
+    def __setitem__(self, cid, refs):
+        self._alloc().set_role(cid, self._role, refs)
+
+    def __repr__(self):
+        return repr(dict(self.items()))
+
+
+def _parse_pass_indices(raw):
+    """Parse a ``<subsymbolicNoop>`` value ("0,2", an int, or a list) into a
+    set of pump-pass indices. Empty/None/false-y -> the empty set."""
+    if raw is None or raw is False:
+        return set()
+    if isinstance(raw, (list, tuple, set)):
+        return {int(x) for x in raw}
+    s = str(raw).strip()
+    if not s or s.lower() in ("false", "none"):
+        return set()
+    return {int(tok) for tok in s.replace(";", ",").split(",")
+            if str(tok).strip() != ""}
+
+
+def _concept_rows_exist(host):
+    """True iff ANY of ``host``'s concepts holds an allocated tensor row (the
+    population ever ran) -- the cheap gate the row-dependent paths early-out
+    on. Module-level so duck-typed stubs need no extra bound methods."""
+    alloc = getattr(host, "_concept_allocator", None)
+    return (alloc is not None
+            and any(ly._tensor_rows for ly in alloc._layers.values()))
+
+
+def _concept_alloc_of(host):
+    """Lazy :class:`Layers.ConceptAllocator` + per-order stores for ``host``
+    (a ConceptualSpace or a duck-typed stub). Sizes each order's symbol-family
+    layer from the host's dyadic caps/stamps when available (host-only 1x1
+    record containers otherwise) and wires the back-compat instance views."""
+    alloc = getattr(host, "_concept_allocator", None)
+    if alloc is None:
+        from Layers import ConceptAllocator
+
+        def _sizer(order, _h=host):
+            # Symbolic-only role-split columns (P2): order k reads the stacked
+            # lower-order activations through a whole-role block and a
+            # part-role block (same n_ss width each) plus the 1-wide
+            # EVERYTHING bias block.
+            caps_fn = getattr(_h, "_order_caps", None)
+            if caps_fn is None:
+                return 1, 1, None, None
+            caps = caps_fn()
+            n_ss = sum(int(c) for c in caps[:int(order)])
+            dev = None
+            params = getattr(_h, "parameters", None)
+            if params is not None:
+                for p in params():
+                    dev = p.device
+                    break
+            roles = (("whole", n_ss), ("part", n_ss), ("bias", 1))
+            return 2 * n_ss + 1, int(caps[int(order)]), dev, roles
+
+        def _cap(_h=host):
+            caps_fn = getattr(_h, "_order_caps", None)
+            return 0 if caps_fn is None else len(caps_fn()) - 1
+
+        alloc = ConceptAllocator(layer_sizer=_sizer, order_cap=_cap)
+        object.__setattr__(host, "_concept_allocator", alloc)
+        object.__setattr__(host, "_concept_parts",
+                           _ConceptRoleView(host, "part"))
+        object.__setattr__(host, "_concept_wholes",
+                           _ConceptRoleView(host, "whole"))
+        object.__setattr__(host, "_word_obj_meta", alloc.word_obj_meta)
+        object.__setattr__(host, "_joint_concepts", alloc.joint)
+    return alloc
+
+
 class ConceptualSpace(Space):
     """STM bookkeeping (shift / push) + grammatical CPU on the C space_role.
 
@@ -13146,20 +13435,24 @@ class ConceptualSpace(Space):
                 and torch.is_tensor(seed_event)
                 and seed_event.dim() == 3
                 and seed_event.shape[:2] == pid_2d.shape):
-            # Percept `.where` rides on the PS ``subspace.where`` (filled in
-            # _embed_radix, gated); read it from the SubSpace, not a stash.
+            # Percept `.where` / `.when` ride on the PS SubSpace (filled in
+            # _embed_radix, gated); read them from the SubSpace, not a stash.
             _ps_sub = getattr(ps_peer, 'subspace', None)
             _ps_where = getattr(_ps_sub, 'where', None)
+            _ps_when = getattr(_ps_sub, 'when', None)
             percept_where = _ps_where.getW() if _ps_where is not None else None
+            percept_when = _ps_when.getW() if _ps_when is not None else None
             self._maybe_autobind_meta(
                 pid_2d, seed_event,
                 word_groups=ps_fwd.get('word_groups'),
                 tokens=ps_fwd.get('tokens'),
                 word_texts=ps_fwd.get('word_texts'),
-                percept_where=percept_where)
+                percept_where=percept_where,
+                percept_when=percept_when)
 
     def _maybe_autobind_meta(self, pid_2d, vec_tensor, word_groups=None,
-                             tokens=None, word_texts=None, percept_where=None):
+                             tokens=None, word_texts=None, percept_where=None,
+                             percept_when=None):
         """Auto-bind PS percepts to fresh WS symbols + META edges.
 
         Task G relocation: moved here from ``PartSpace`` so the
@@ -13225,19 +13518,35 @@ class ConceptualSpace(Space):
                 and tuple(word_groups.shape) == tuple(pid_2d.shape)):
             word_bindings = self._autobind_word_wholes(
                 pid_2d, vec_tensor, word_groups, tokens, ws, word_texts)
+            # CS-side relation-only symbols per word (Alec 2026-06-17): A =
+            # word-symbol (its word-parts with the word-whole), B = object-
+            # symbol (NOTHING/EVERYTHING poles -- successively refined), C =
+            # the META-concept: first-order, TWO sym-parts (word + object).
+            # Keyed by surface text so a word is one stable triple across
+            # presentations. Runs BEFORE the cross-tower knit so the per-span
+            # location concept reuses A (2026-07-02 A-merge). Additive, gated.
+            per_row = {}
+            for (b, w_parts, w_whole, w_key) in (word_bindings or ()):
+                A, _B, _C = self.create_word_object_meta(
+                    w_parts, w_whole, key=w_key)
+                per_row.setdefault(b, []).append((A, w_key))
+            # JOINT/sentence concept (P2 decision 6): the SYMBOLIC joint
+            # mixing -- the ordered bias-bounded CHAIN over the row's
+            # word-symbols, one stable head per sentence type (the
+            # subsymbolic mixing is the pump; the two phases run in series).
+            for _b, wl in per_row.items():
+                if len(wl) >= 2:
+                    self.create_joint_concept(
+                        [a for (a, _k) in wl],
+                        key=tuple(k for (_a, k) in wl))
             # Cross-tower `.where`-gated binding (A4): percept-TYPE ⊑ generic
             # word-TYPE when the percept `.where` (subspace.where) nests inside a
             # WS whole `.where` (the staged analysis spans). The LATTICE
             # (taxonomy_parents) retains this ALONGSIDE the per-text word edge
             # above. No-op when `.where` / spans are unavailable (byte analysis).
-            self._autobind_cross_tower(pid_2d, percept_where, ws)
-            # CS-side relation-only symbols per word (Alec 2026-06-17): A =
-            # word-symbol (its word-parts ⊑ word-whole), B = object-symbol
-            # (ATOM ⊑ UNIVERSE initially -- successively refined), C = the
-            # word≡object META = reify(A, B). Keyed by surface text so a word is
-            # one stable triple across presentations. Additive CS state, gated.
-            for (w_parts, w_whole, w_key) in (word_bindings or ()):
-                self.create_word_object_meta(w_parts, w_whole, key=w_key)
+            self._autobind_cross_tower(pid_2d, percept_where, ws,
+                                       percept_when=percept_when,
+                                       word_texts=word_texts)
             return
         bound = getattr(self, '_autobound_percept_ids', None)
         if bound is None:
@@ -13438,10 +13747,11 @@ class ConceptualSpace(Space):
                 # part subsuming them (idempotent per whole).
                 if last_meta is not None:
                     ws.maybe_raise_order(int(last_meta))
-                bindings.append((word_parts, int(whole_pos), key))
+                bindings.append((b, word_parts, int(whole_pos), key))
         return bindings
 
-    def _autobind_cross_tower(self, pid_2d, percept_where, ws):
+    def _autobind_cross_tower(self, pid_2d, percept_where, ws,
+                              percept_when=None, word_texts=None):
         """Live cross-tower ``.where``-gated meronomy (S6/A4; doc/specs/
         mereological-order-raising.md "How analysis/whole types integrate").
 
@@ -13469,7 +13779,9 @@ class ConceptualSpace(Space):
         # S2a: ALSO populate the relation-only CS symbol table (the new home).
         # Runs alongside the legacy WS taxonomy above; the CS table is the
         # migration target. Additive -- new CS state, the WS path is unchanged.
-        self._populate_cs_symbols(pid_2d, percept_where, spans)
+        self._populate_cs_symbols(pid_2d, percept_where, spans,
+                                  percept_when=percept_when,
+                                  word_texts=word_texts)
         # S2b: zero out the 1:1 mappings -- a location-symbol that resolved to a
         # single part + single whole is the id-of-indiscernibles identity tie and
         # needs no further processing; the N:1 / 1:N (large N) symbols remain in
@@ -13484,18 +13796,24 @@ class ConceptualSpace(Space):
         # are the convergence-loop signal (consumed further in a follow-up).
         self.refine_over_collected()
 
-    def _populate_cs_symbols(self, pid_2d, percept_where, spans):
+    def _populate_cs_symbols(self, pid_2d, percept_where, spans,
+                             percept_when=None, word_texts=None):
         """Populate the relation-only CS symbol table from the live `.where`
-        binding (S2a; doc/specs/mereological-order-raising.md "The CS symbol
+        binding (S2a; doc/old/mereological-order-raising.md "The CS symbol
         table"). For each analysis-span (a LOCATION), mint a symbol whose
         ``Parts`` are the percept-codes whose `.where` nests in the span and
         whose ``Whole`` is the word-type -- the per-location "knitting" of the
         parts covering a location to the wholes covering it. The location-symbol
         is transient (it later collapses to an identity tie or triggers
-        refinement + retires). No-op when `.where` / spans are unavailable."""
+        refinement + retires). No-op when `.where` / spans are unavailable.
+        When ``percept_when`` is available the tie condition includes `.when`:
+        the knit percepts must share ONE presentation moment (fail loud)."""
         if (percept_where is None or not torch.is_tensor(percept_where)
                 or spans is None or not torch.is_tensor(spans)):
             return
+        check_when = (percept_when is not None
+                      and torch.is_tensor(percept_when)
+                      and percept_when.dim() == 2)
         B = int(pid_2d.shape[0])
         N = int(pid_2d.shape[1])
         K = int(spans.shape[1]) if spans.dim() == 3 else 0
@@ -13507,17 +13825,41 @@ class ConceptualSpace(Space):
                 e = int(spans[b, k, 1])
                 if e <= s:
                     continue                      # pad span
+                # A-merge (2026-07-02): a span whose word text is known REUSES
+                # the word A-symbol as its location concept (one knit per word,
+                # not a duplicate per presentation).
                 loc_sym = None
+                if word_texts is not None and b < len(word_texts):
+                    wt = word_texts[b]
+                    key = (wt[k] if wt is not None and k < len(wt) else None)
+                    if key is not None:
+                        got = (getattr(self, "_word_obj_meta", None)
+                               or {}).get(key)
+                        loc_sym = got[0] if got else None
+                matched = False
+                span_when = None
                 for n in range(N):
                     pid = int(pid_2d[b, n])
                     if pid < 0:
                         continue
                     wp = int(percept_where[b, n])
                     if s <= wp < e:               # percept `.where` in the span
+                        if (check_when and b < int(percept_when.shape[0])
+                                and n < int(percept_when.shape[1])):
+                            w_n = int(percept_when[b, n])
+                            if span_when is None:
+                                span_when = w_n
+                            elif span_when != w_n:
+                                raise ValueError(
+                                    f"_populate_cs_symbols: .when mismatch in "
+                                    f"span ({span_when} vs {w_n}) -- percepts "
+                                    f"of different moments knit into one "
+                                    f"location-concept")
                         if loc_sym is None:
                             loc_sym = self.new_concept()
+                        matched = True
                         self.add_part(loc_sym, pid)
-                if loc_sym is not None:
+                if loc_sym is not None and matched:
                     self.add_whole(loc_sym, _WORD_CLASS)
                     # Feed the ramsified sparse CS forward (gated dark
                     # unless symbolicOrder>=1; byte-identical when off).
@@ -13540,62 +13882,50 @@ class ConceptualSpace(Space):
     # ------------------------------------------------------------------
 
     def _concept_tables(self):
-        """Lazy-init the relation-only symbol tables. Returns ``(parts,
-        wholes)``; also sets ``_concept_next`` (id allocator, 0 reserved) and
-        ``_concept_relate_idx`` ((part, whole) -> symbol idempotency cache)."""
-        parts = getattr(self, "_concept_parts", None)
-        if parts is None:
-            parts = {}
-            object.__setattr__(self, "_concept_parts", parts)
-            object.__setattr__(self, "_concept_wholes", {})
-            object.__setattr__(self, "_concept_next", 1)
-            object.__setattr__(self, "_concept_relate_idx", {})
+        """Lazy-init the CONSOLIDATED relation store (2026-07-02 P1): a shared
+        :class:`Layers.ConceptAllocator` plus per-order SparseLayer-owned
+        role-tagged records. Returns the ``(parts, wholes)`` back-compat
+        dict-of-sets VIEWS."""
+        _concept_alloc_of(self)
         return self._concept_parts, self._concept_wholes
 
     def new_concept(self):
         """Allocate a fresh relation-only symbol id (a stable handle, no
         vector). Parts(S) / Wholes(S) start empty."""
-        self._concept_tables()
-        sid = int(self._concept_next)
-        object.__setattr__(self, "_concept_next", sid + 1)
-        self._concept_parts[sid] = set()
-        self._concept_wholes[sid] = set()
-        return sid
+        return _concept_alloc_of(self).new_concept()
 
     def add_part(self, sym, part):
         """Add ``part`` (a part-code or a sub-symbol ref) to Parts(sym)."""
-        self._concept_tables()
-        self._concept_parts.setdefault(int(sym), set()).add(part)
+        _concept_alloc_of(self).add(sym, "part", part)
 
     def add_whole(self, sym, whole):
         """Add ``whole`` (a whole-code or a super-symbol ref) to Wholes(sym)."""
-        self._concept_tables()
-        self._concept_wholes.setdefault(int(sym), set()).add(whole)
+        _concept_alloc_of(self).add(sym, "whole", whole)
 
     def concept_parts(self, sym):
         """Parts(sym) as a deterministically-ordered list (may mix part-codes
         and ``('sym', id)`` sub-symbol refs)."""
-        self._concept_tables()
-        return sorted(self._concept_parts.get(int(sym), ()), key=repr)
+        return sorted(set(_concept_alloc_of(self).refs(sym, "part")), key=repr)
 
     def concept_wholes(self, sym):
         """Wholes(sym) as a deterministically-ordered list."""
-        self._concept_tables()
-        return sorted(self._concept_wholes.get(int(sym), ()), key=repr)
+        return sorted(set(_concept_alloc_of(self).refs(sym, "whole")),
+                      key=repr)
 
     def relate(self, part, whole):
         """The per-location symbol tying ``part`` to ``whole`` -- minted once
         (idempotent per ``(part, whole)``). The symbol accumulates more parts /
         wholes as it evolves (use :meth:`add_part` / :meth:`add_whole`)."""
-        self._concept_tables()
+        alloc = _concept_alloc_of(self)
         key = (part, whole)
-        existing = self._concept_relate_idx.get(key)
+        existing = alloc.relate_idx.get(key)
         if existing is not None:
             return int(existing)
-        sid = self.new_concept()
-        self._concept_parts[sid].add(part)
-        self._concept_wholes[sid].add(whole)
-        self._concept_relate_idx[key] = sid
+        sid = alloc.new_concept()
+        # sec-4c ordered pair, [whole, part] storage order (whole first).
+        alloc.store_of(sid).embed_pair(sid, whole_ref=whole, part_ref=part)
+        alloc.settle(sid)
+        alloc.relate_idx[key] = sid
         return sid
 
     def reify_concept(self, a_sym, b_sym):
@@ -13609,35 +13939,29 @@ class ConceptualSpace(Space):
         """True iff Parts(sym) and Wholes(sym) have each collapsed to exactly
         ONE element -- the id-of-indiscernibles identity tie (σ-up meets π-down
         at the object); the sets' role is then subsumed by the codebooks."""
-        self._concept_tables()
-        s = int(sym)
-        return (len(self._concept_parts.get(s, ())) == 1
-                and len(self._concept_wholes.get(s, ())) == 1)
+        alloc = _concept_alloc_of(self)
+        return alloc.store_of(sym).row_is_identity(sym)
 
     def concept_over_collected(self, sym, *, k_parts=None, k_wholes=None):
         """True iff ``sym`` has TOO MANY parts or wholes -- actionable, i.e. it
         should trigger refinement (more-parts-per-symbol via σ-synthesis;
         fewer-wholes-per-symbol via π-analysis / splitting an over-subscribed
         whole). Thresholds default to ``_concept_k_many`` (4)."""
-        self._concept_tables()
+        alloc = _concept_alloc_of(self)
         kp = int(k_parts if k_parts is not None
                  else getattr(self, "_concept_k_many", 4))
         kw = int(k_wholes if k_wholes is not None
                  else getattr(self, "_concept_k_many", 4))
-        s = int(sym)
-        return (len(self._concept_parts.get(s, ())) > kp
-                or len(self._concept_wholes.get(s, ())) > kw)
+        store = alloc.store_of(sym)
+        return (store.count_role(sym, "part") > kp
+                or store.count_role(sym, "whole") > kw)
 
     def retire_concept(self, sym):
         """Retire a TRANSIENT symbol that has triggered refinement -- the
         restructuring it signaled supersedes it. Idempotent; drops its
-        Parts / Wholes sets and any idempotency-cache entries pointing at it."""
-        self._concept_tables()
-        s = int(sym)
-        self._concept_parts.pop(s, None)
-        self._concept_wholes.pop(s, None)
-        for k in [k for k, v in self._concept_relate_idx.items() if int(v) == s]:
-            self._concept_relate_idx.pop(k, None)
+        Parts / Wholes records and any idempotency-cache entries pointing at
+        it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`)."""
+        _concept_alloc_of(self).drop(sym)
 
     def resolve_identities(self):
         """ZERO OUT the 1:1 mappings — the main over-collection deliverable
@@ -13650,36 +13974,46 @@ class ConceptualSpace(Space):
         active processing set. Returns the newly-resolved symbol ids. The
         per-code refinement of the still-active symbols is the existing
         subsymbolic loop's job (over ``subsymbolicOrder`` iterations)."""
-        parts, wholes = self._concept_tables()
-        ident = getattr(self, "_concept_identity", None)
-        if ident is None:
-            ident = {}
-            object.__setattr__(self, "_concept_identity", ident)
+        alloc = _concept_alloc_of(self)
+        ident = alloc.identity
         resolved = []
-        for sym in list(parts.keys()):
-            if len(parts.get(sym, ())) == 1 and len(wholes.get(sym, ())) == 1:
-                p = next(iter(parts[sym]))
-                w = next(iter(wholes[sym]))
-                # An UNSPECIFIED pole-pair (a freshly-minted OBJECT-symbol:
-                # ATOM as its part and/or UNIVERSE as its whole) has the SHAPE
-                # of a 1:1 tie but is the maximally-general placeholder awaiting
-                # refinement -- NOT a resolved identity. Leave it active so the
-                # lifecycle can specialize it (σ over the atoms; π over the
-                # universe). Only a tie between CONCRETE codes is an identity.
-                if p == _ATOM or w == _UNIVERSE:
-                    continue
-                ident[sym] = (p, w)
-                parts[sym] = set()        # sets vanish (subsumed by codebooks)
-                wholes[sym] = set()
-                resolved.append(sym)
+        for sym in list(alloc.placement):
+            store = alloc.store_of(sym)
+            pair = store.discretize_row(sym)         # exactly 1 whole + 1 part
+            if pair is None:
+                continue
+            w, p = pair
+            # An UNSPECIFIED pole-pair (a freshly-minted OBJECT-symbol:
+            # NOTHING as its part and/or EVERYTHING as its whole) has the SHAPE
+            # of a 1:1 tie but is the maximally-general placeholder awaiting
+            # refinement -- NOT a resolved identity. Leave it active so the
+            # lifecycle can specialize it (σ over the atoms; π over the
+            # universe). Only a tie between CONCRETE codes is an identity.
+            if p == _NOTHING or w == _EVERYTHING:
+                continue
+            # The SINGLETON principle (Alec 2026-07-02, resolving the flip's
+            # collapse hazard): a 1:1 tie between SYM refs is the UNIT-SET
+            # structure -- a whole containing exactly one symbolic part (the
+            # Lewis singleton), the constructive primitive behind if->then
+            # (whole IMPLIES part), the recursion vine (ordered chains), and
+            # the word/object meta. It is stored structure, never an
+            # id-of-indiscernibles codebook tie, so it persists. Only ties
+            # between CONCRETE raw codes resolve away.
+            if (isinstance(p, tuple) and len(p) == 2 and p[0] == "sym"
+                    and isinstance(w, tuple) and len(w) == 2
+                    and w[0] == "sym"):
+                continue
+            ident[sym] = (p, w)
+            alloc.clear(sym)          # records vanish (subsumed by codebooks)
+            resolved.append(sym)
         return resolved
 
     def symbol_identity(self, sym):
         """The ``(part, whole)`` identity a resolved 1:1 symbol established (via
         :meth:`resolve_identities`), or ``None`` if the symbol is not a resolved
         identity."""
-        ident = getattr(self, "_concept_identity", None)
-        return None if ident is None else ident.get(int(sym))
+        alloc = getattr(self, "_concept_allocator", None)
+        return None if alloc is None else alloc.identity.get(int(sym))
 
     def symbols_needing_processing(self):
         """The symbols that still need refinement: those with a non-empty Parts
@@ -13687,21 +14021,16 @@ class ConceptualSpace(Space):
         zeroed-out 1:1 identities are excluded — they are done; RAISED
         higher-order symbols are excluded too (their constituents are their
         definition, not a refinement backlog)."""
-        parts, wholes = self._concept_tables()
-        raised = getattr(self, "_concept_raised", None) or set()
-        return sorted(s for s in parts
-                      if (parts.get(s) or wholes.get(s)) and s not in raised)
+        alloc = _concept_alloc_of(self)
+        return sorted(s for s in alloc.placement
+                      if alloc.records(s) and s not in alloc.raised)
 
     def _concept_raise_set(self):
-        """Lazy set of HIGHER-ORDER symbols minted by σ-synthesis (idempotency:
+        """The set of HIGHER-ORDER symbols minted by σ-synthesis (idempotency:
         a raised symbol's many constituents are its DEFINITION, not over-
         collection, so it is never re-refined). Mirrors WholeSpace's
         ``_mereology_raised`` for the legacy raise."""
-        s = getattr(self, "_concept_raised", None)
-        if s is None:
-            s = set()
-            object.__setattr__(self, "_concept_raised", s)
-        return s
+        return _concept_alloc_of(self).raised
 
     def synthesize_higher_order(self, part_codes):
         """σ-SYNTHESIS at the relation level: mint a HIGHER-ORDER symbol H that
@@ -13711,34 +14040,33 @@ class ConceptualSpace(Space):
         (:meth:`SigmaLayer.synthesize_over_set`) is the deferred tower-codebook
         realization). H is tagged RAISED so the lifecycle never re-refines it.
         Returns H. Idempotent per identical ``part_codes`` set."""
+        alloc = _concept_alloc_of(self)
         key = ("raise", frozenset(part_codes))
-        self._concept_tables()
-        idx = self._concept_relate_idx.get(key)
+        idx = alloc.relate_idx.get(key)
         if idx is not None:
             return int(idx)
-        H = self.new_concept()
+        H = alloc.new_concept()
         for c in part_codes:
-            self.add_part(H, c)
-        self._concept_raise_set().add(H)
-        self._concept_relate_idx[key] = H
+            alloc.add(H, "part", c)
+        alloc.raised.add(H)
+        alloc.relate_idx[key] = H
         self._populate_concept_weights(H)          # per-order sparse decomposition
         return H
 
-    def conceptualize_chain(self, concept_ids):
+    def conceptualize_chain(self, concept_ids, bias_bounded=False):
         """Order-1 CHAIN (Gallistel "unitization of behavior", Alec 2026-06-21):
         a tail-recursive list over ``[whole, part]`` concept pairs for learning
         indefinitely long SEQUENCES. Each link conjoins ``[whole=current-concept,
         part=rest-of-list]`` -- built RIGHT-TO-LEFT so the rest-list is the part
-        of the head. Returns the head meta-concept id (or the lone id for a
-        singleton, None for empty). ORDERED + idempotent per ``tuple(concept_ids)``
-        (a different order is a different chain). Host-side (eager island)."""
+        of the head. ``bias_bounded`` adds the EVERYTHING whole to every link
+        and populates its sparse edges (the JOINT/sentence use). Returns the
+        head meta-concept id (or the lone id for a singleton, None for empty).
+        ORDERED + idempotent per ``tuple(concept_ids)`` (a different order is
+        a different chain). Host-side (eager island)."""
         if not concept_ids:
             return None
-        self._concept_tables()
-        chains = getattr(self, '_concept_chain_idx', None)
-        if chains is None:
-            chains = {}
-            object.__setattr__(self, '_concept_chain_idx', chains)
+        alloc = _concept_alloc_of(self)
+        chains = alloc.chain_idx
         ids = [int(c) for c in concept_ids]
         key = ("chain", tuple(ids))
         cached = chains.get(key)
@@ -13750,10 +14078,59 @@ class ConceptualSpace(Space):
         # Fold right-to-left: rest starts as the terminal concept, then each
         # earlier concept becomes the whole over the accumulated rest (the part).
         rest = ids[-1]
+        links = []
         for i in range(len(ids) - 2, -1, -1):
             rest = self.reify_concept(rest, ids[i])  # Parts={rest}, Wholes={ids[i]}
+            links.append(rest)
+        if bias_bounded:
+            # Bias-bounded links (P2 decision 6): each [whole=current,
+            # part=rest] link is bounded above by the EVERYTHING pole and
+            # enters the weighted embedding as a proper hidden unit.
+            for link in links:
+                self.add_whole(link, _EVERYTHING)
+                self._populate_concept_weights(link)
         chains[key] = int(rest)
         return int(rest)
+
+    def singleton_concept(self, sym):
+        """The SINGLETON (unit-set) of a symbol -- a whole containing exactly
+        ONE symbolic part (Alec 2026-07-02; the Lewis singleton, embraced):
+        ``Parts(S) = {('sym', x)}``, no whole. The constructive primitive of
+        the relation table: if->then is the whole=>part direction it
+        degenerates from (``{x} => x``), and recursion over it (the vine)
+        yields ORDER from nesting while each row stays set-like (the COO
+        reading). Idempotent per ``sym``; min-support exempt (the ONE
+        part-role edge IS its weighted reading). Returns S."""
+        alloc = _concept_alloc_of(self)
+        key = ("singleton", int(sym))
+        cached = alloc.relate_idx.get(key)
+        if cached is not None:
+            return int(cached)
+        S = alloc.new_concept()
+        alloc.add(S, "part", ("sym", int(sym)))
+        alloc.singletons.add(S)
+        alloc.relate_idx[key] = S
+        self._populate_concept_weights(S)
+        return S
+
+    def meta_word_object(self, cid):
+        """Typed INTERSECTION read-out of a word/object META (Alec
+        2026-07-02): recover ``(word_sym, object_sym)`` from the meta's sym
+        constituents by intersecting with the WORD-symbol class (the minted
+        A-symbols), NOT by trusting slot order -- the binary relation is
+        set-like; ordering is only needed where sequence matters (chains).
+        ``None`` when ``cid`` is not a two-sym meta or typing is ambiguous."""
+        alloc = _concept_alloc_of(self)
+        syms = [x[1] for (r, x) in alloc.records(cid)
+                if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"]
+        if len(set(syms)) != 2:
+            return None
+        word_class = {a for (a, _b, _c) in alloc.word_obj_meta.values()}
+        words = [s for s in set(syms) if s in word_class]
+        others = [s for s in set(syms) if s not in word_class]
+        if len(words) != 1 or len(others) != 1:
+            return None
+        return int(words[0]), int(others[0])
 
     def _sparse_active(self):
         """True iff the ramsified sparse concept transform is active here:
@@ -13771,11 +14148,12 @@ class ConceptualSpace(Space):
     # (ConceptDim). It is linked to its sources -- PS, WS, and the symbols
     # SS_0..SS_{k-1} of all LOWER ramsified orders -- by a sparse WEIGHT MATRIX
     # whose entries ``(concept, source, weight)`` give the signed contribution
-    # of each active source code to that concept's activation. The forward is an
-    # encoder + dictionary decoder:
+    # of each active source code to that concept's activation. Per order, TWO
+    # DISTINCT SparseLayers (percept: PS|WS presences; symbol: lower-order
+    # activations) sum pre-tanh; the forward is an encoder + dictionary decoder:
     #
-    #     concept_activation = W_order @ source_activation        (torch.sparse.mm)
-    #     concept_code[c]    = concept_activation[c] * what[c]    (dictionary atom)
+    #     a_order         = tanh(P @ [ps|ws] + S @ [a_0..a_{order-1}])
+    #     concept_code[c] = a_order[c] * what[c]           (dictionary atom)
     #
     # so percepts (PerceptDim) and concepts (ConceptDim) never share a vector
     # space -- the matrix lives in index/activation space, dimension-agnostic.
@@ -13831,134 +14209,95 @@ class ConceptualSpace(Space):
         start = sum(caps[:o])
         return start, start + caps[o]
 
-    def _csw_tables(self):
-        """Lazy-init the per-order sparse-weight COO store: a dict
-        ``order -> [rows, cols, vals]`` (concept-LOCAL row within the order
-        block, source-GLOBAL col within ``[PS|WS|SS_0..SS_{k-1}]``, weight) plus
-        a ``(order, concept, source) -> idx`` dedup map and the per-order
-        learnable values ``Parameter``s (``_csw_vals``, grown HOST-SIDE as edges
-        are added so the optimizer can pick them up). Mirrors the relation
-        tables; empty => the forward falls back."""
-        store = getattr(self, "_csw_store", None)
-        if store is None:
-            store = {}
-            object.__setattr__(self, "_csw_store", store)
-            object.__setattr__(self, "_csw_index", {})
-            object.__setattr__(self, "_csw_vals", {})       # order -> Parameter
-        return self._csw_store
-
-    def _csw_device(self):
-        for p in self.parameters():
-            return p.device
-        return torch.device("cpu")
-
-    def _grow_csw_values(self, order):
-        """Grow ramsified ``order``'s learnable values ``Parameter`` to match
-        its COO edge count, TAIL-PRESERVING (trained values kept for existing
-        edges; the new tail initialised from the host weight list). Host-side,
-        so the Parameter exists BEFORE the optimizer is (re)built."""
-        self._csw_tables()
+    def _sparse_families(self, order):
+        """The ``(percept, symbol)`` pair of ramsified ``order`` (lazy). The
+        percept family is RETIRED (P2, symbolic-only SparseLayer): ``a_0``
+        comes from the order-0 snap, so the slot is ``None`` (kept for the
+        pair shape). The symbol family maps the stacked lower-order
+        activations through role-split columns ``[whole | part | bias]``
+        (tensor edges at ``order >= 1``; every order's symbol layer also
+        hosts that order's relation records and, at order 0, the reserved
+        codebook-row map)."""
+        fams = getattr(self, "_sparse_fam", None)
+        if fams is None:
+            fams = {}
+            object.__setattr__(self, "_sparse_fam", fams)
         o = int(order)
-        cols = self._csw_store.get(o)
-        n = len(cols[0]) if cols else 0
-        if n == 0:
-            return
-        prev = self._csw_vals.get(o)
-        if prev is not None and int(prev.shape[0]) == n:
-            return
-        dev = self._csw_device()
-        new = torch.tensor(cols[2], dtype=torch.float32, device=dev)
-        if prev is not None:
-            keep = min(int(prev.shape[0]), n)
-            if keep > 0:
-                with torch.no_grad():
-                    new[:keep] = prev.detach()[:keep].to(dev)
-        self._csw_vals[o] = nn.Parameter(new)
+        got = fams.get(o)
+        if got is None:
+            got = (None, _concept_alloc_of(self).layer(o))
+            fams[o] = got
+        return got
 
-    def add_concept_weight(self, order, concept_local, source_global, weight=1.0):
-        """Append a sparse weight edge ``concept_local <- weight * source_global``
-        for ramsified ``order`` (``concept_local`` indexes within the order's
-        concept block; ``source_global`` indexes within
-        ``[PS|WS|SS_0..SS_{order-1}]``). IDEMPOTENT per
-        ``(order, concept_local, source_global)``; grows the learnable values
-        Parameter host-side. Returns the COO row index."""
-        self._csw_tables()
+    def add_concept_edge(self, order, concept_local, role, col, weight=1.0):
+        """Append a role-tagged sparse edge for ramsified ``order``:
+        ``concept_local <- weight * role_block[col]`` on the symbol family
+        (roles ``whole``/``part`` index the stacked lower-order activations
+        ``[SS_0..SS_{order-1}]``; ``bias`` col 0 is the EVERYTHING pole).
+        IDEMPOTENT per edge; grows the learnable values host-side."""
         o = int(order)
-        key = (o, int(concept_local), int(source_global))
-        existing = self._csw_index.get(key)
-        if existing is not None:
-            return int(existing)
-        cols = self._csw_store.setdefault(o, [[], [], []])
-        row = len(cols[0])
-        cols[0].append(int(concept_local))
-        cols[1].append(int(source_global))
-        cols[2].append(float(weight))
-        self._csw_index[key] = row
-        self._grow_csw_values(o)                  # grow the learnable Parameter
-        return row
+        if o == 0:
+            raise IndexError(
+                "add_concept_edge: order 0 composes NO sources -- order-0 "
+                "concepts are codebook rows (the snap), not edges")
+        _percept, symbol = self._sparse_families(o)
+        return symbol.add_edge(int(concept_local), int(col), weight=weight,
+                               role=role)
 
     def concept_weights(self, order, concept_local):
-        """The ``(source_global, weight)`` entries of ``concept_local`` at
-        ``order``, deterministically ordered by source. Empty when none."""
-        self._csw_tables()
-        cols = self._csw_store.get(int(order))
-        if not cols:
+        """The ``((role, col), weight)`` entries of ``concept_local`` at
+        ``order`` (role-block-local columns), deterministically ordered.
+        Empty when none."""
+        fams = getattr(self, "_sparse_fam", None) or {}
+        got = fams.get(int(order))
+        if got is None:
+            return []
+        _percept, symbol = got
+        if symbol is None or symbol.values is None:
             return []
         c = int(concept_local)
-        out = [(cols[1][i], cols[2][i]) for i in range(len(cols[0]))
-               if cols[0][i] == c]
-        return sorted(out, key=lambda sw: sw[0])
+        out = []
+        for (row, col), i in symbol._index.items():
+            if row != c:
+                continue
+            for (name, _w) in symbol.roles or ():
+                start, end = symbol.role_slice(name)
+                if start <= col < end:
+                    out.append(((name, col - start),
+                                float(symbol.values[i])))
+                    break
+        return sorted(out, key=lambda sw: repr(sw[0]))
 
-    def _build_csw(self, order, n_concepts, n_sources):
-        """Build ramsified ``order``'s ``torch.sparse_csr_tensor``
-        ``[n_concepts, n_sources]`` from the COO indices + the LIVE learnable
-        values ``Parameter`` -- rebuilt EVERY call so trained value updates are
-        reflected (the structure is sparse, so this is cheap). Returns the CSR
-        tensor, or ``None`` when the order has no weights."""
-        self._csw_tables()
-        o = int(order)
-        cols = self._csw_store.get(o)
-        if not cols or not cols[0]:
-            return None
-        vals = self._csw_vals.get(o)
-        if vals is None or int(vals.shape[0]) != len(cols[0]):
-            self._grow_csw_values(o)
-            vals = self._csw_vals[o]
-        dev = vals.device
-        rows = torch.tensor(cols[0], dtype=torch.long, device=dev)
-        scols = torch.tensor(cols[1], dtype=torch.long, device=dev)
-        coo = torch.sparse_coo_tensor(
-            torch.stack([rows, scols]), vals,
-            (int(n_concepts), int(n_sources))).coalesce()
-        # MPS has no COO->CSR kernel (aten::_to_sparse_csr, SparseMPS backend);
-        # torch.sparse.mm accepts COO directly (verified fwd+backward on MPS).
-        if dev.type == "mps":
-            return coo
-        return coo.to_sparse_csr()
+    def _sparse_family_nnz(self):
+        """Total edge count across the families of every order (the percept
+        slot is None post-P2)."""
+        return sum((p.nnz if p is not None else 0)
+                   + (s.nnz if s is not None else 0)
+                   for (p, s) in
+                   (getattr(self, "_sparse_fam", None) or {}).values())
 
     def getParameters(self):
         """Optimizable parameters: the inherited set PLUS the per-order sparse
-        weight values (created host-side as the per-order tables are populated,
-        so the optimizer trains them). With the sparse transform off (no weight
-        tables) this is exactly the inherited set -> byte-identical optimizer
-        state. (The model rebuilds its optimizer when new weights appear; see
-        :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
+        family values (created host-side as edges are added, so the optimizer
+        trains them). With no edges this is exactly the inherited set ->
+        byte-identical optimizer state. (The model rebuilds its optimizer when
+        new weights appear; see :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
         base = list(self.params)
-        csw = getattr(self, "_csw_vals", None)
-        if csw:
-            base = base + [v for v in csw.values() if v is not None]
+        for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
+            for ly in (p, s):
+                if ly is not None and ly.values is not None:
+                    base.append(ly.values)
         return base
 
     def _maybe_rebuild_optimizer_for_csw(self):
-        """Ask the model to rebuild its optimizer when new per-order sparse
-        weight Parameters have appeared, so they become trainable (mirrors the
-        codebook-growth rebuild). Debounced on the total weight count; a no-op
-        without a model back-ref / live optimizer."""
+        """Ask the model to rebuild its optimizer when the sparse edge count
+        changed, so fresh family values become trainable (mirrors the
+        codebook-growth rebuild). Debounced; a no-op without a model back-ref
+        / live optimizer."""
         model = getattr(self, "_model", None)
         if model is None or getattr(model, "_optimizer", None) is None:
             return
-        csw = getattr(self, "_csw_vals", None) or {}
-        n = sum(int(v.shape[0]) for v in csw.values() if v is not None)
+        n = self._sparse_family_nnz()
         if n != int(getattr(self, "_csw_registered_count", -1)):
             object.__setattr__(self, "_csw_registered_count", n)
             try:
@@ -13966,26 +14305,8 @@ class ConceptualSpace(Space):
             except Exception:
                 pass
 
-    def cs_sparse_encode(self, order, n_concepts, n_sources, activation):
-        """Encode the per-order concept ACTIVATIONS from the source
-        ``activation`` (``[n_sources, B]`` or ``[n_sources]``) via the sparse
-        weight matrix: ``concept_activation = W_order @ activation`` using
-        ``torch.sparse.mm`` (GPU-native SpMM; differentiable in both the
-        weights and the activation). Returns ``[n_concepts, B]`` (or
-        ``[n_concepts]``), or zeros when the order has no weights."""
-        W = self._build_csw(order, n_concepts, n_sources)
-        squeeze = False
-        if activation.dim() == 1:
-            activation = activation.unsqueeze(-1)
-            squeeze = True
-        if W is None:
-            out = activation.new_zeros((int(n_concepts), int(activation.shape[-1])))
-        else:
-            out = torch.sparse.mm(W, activation)
-        return out.squeeze(-1) if squeeze else out
-
     @staticmethod
-    def source_code_activation(event, codebook_W, nonneg=True):
+    def source_code_activation(event, codebook_W, nonneg=True, normalize=False):
         """Per-code PRESENCE activation of a source space from its materialized
         ``event`` (``[B, N, D]``) against its codebook rows ``codebook_W``
         (``[V, D]``): ``activation[v, b] = sum_n <event[b, n], W[v]>`` -- how
@@ -13996,8 +14317,17 @@ class ConceptualSpace(Space):
         present (>0) or absent (0), never negative -- the SIGN of the resulting
         concept activation comes from the signed weights (a negative weight =
         the feature's presence is anti-correlated with the concept), not from
-        the features. Returns ``[V, B]``. Widths are clipped to the common dim
-        so a muxed event (content+band) reads against a what-only codebook."""
+        the features. ``normalize=True`` reads the NORMALIZED SUM instead of
+        the raw dot-sum: the slot-MEAN of the event's projection onto the
+        UNIT code direction, in hypercube-diagonal units (``/ sqrt(D)``).
+        The code row's scale is removed but the EVENT magnitude is kept --
+        objects in the unit hypercube differentiate by magnitude (Alec
+        2026-07-02), so the events are NOT unit-normalized (no cosine).
+        Bounded by ``mean ||event|| / sqrt(D) <= 1`` inside the hypercube, so
+        consistently-aligned events cannot saturate every code to the same
+        constant (the sO=1 mean-collapse). Returns ``[V, B]``. Widths are
+        clipped to the common dim so a muxed event (content+band) reads
+        against a what-only codebook."""
         if event is None or codebook_W is None:
             return None
         if event.dim() == 2:
@@ -14005,8 +14335,11 @@ class ConceptualSpace(Space):
         D = min(int(event.shape[-1]), int(codebook_W.shape[-1]))
         ev = event[..., :D]                          # [B, N, D]
         W = codebook_W[:, :D]                        # [V, D]
+        if normalize:
+            W = F.normalize(W, dim=-1, eps=1e-8)
         sim = torch.matmul(ev, W.t())                # [B, N, V]
-        act = sim.sum(dim=1).t()                     # [V, B]
+        act = (sim.mean(dim=1) / math.sqrt(max(1, D)) if normalize
+               else sim.sum(dim=1)).t()
         return act.clamp(min=0.0) if nonneg else act
 
     def cs_decode(self, order, concept_activation, what_W):
@@ -14023,66 +14356,98 @@ class ConceptualSpace(Space):
         a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
         return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
 
-    def cs_source_layout(self, order, n_ps, n_ws):
-        """The source index layout for ramsified ``order``: the concatenation
-        ``[PS | WS | SS_0 | ... | SS_{order-1}]``. Returns ``(offsets, total)``
-        where ``offsets`` is ``{'ps': 0, 'ws': n_ps, 0: off_ss0, 1: off_ss1, ...}``
-        (integer keys are the SS sub-order offsets) and ``total`` is the source
-        count. The SS_i block size is the dyadic capacity of concept order ``i``
-        (symbols ARE concepts of the previous order)."""
+    def cs_source_layout(self, order):
+        """The stacked lower-order source layout of ramsified ``order``
+        (symbolic-only, P2): the whole-role and part-role blocks each read
+        ``[SS_0 | ... | SS_{order-1}]``. Returns ``(offsets, total)`` where
+        ``offsets[i]`` is sub-order ``i``'s start column WITHIN a role block
+        and ``total`` is the block width (``sum(caps[:order])``); the SS_i
+        block size is the dyadic capacity of concept order ``i`` (symbols ARE
+        concepts of the previous order)."""
         caps = self._order_caps()
-        offsets = {"ps": 0, "ws": int(n_ps)}
-        off = int(n_ps) + int(n_ws)
+        offsets = {}
+        off = 0
         for i in range(int(order)):
             offsets[i] = off
             off += int(caps[i])
         return offsets, off
 
-    def cs_forward_content(self, ps_act, ws_act, dictionary):
-        """Run the ramsified per-order sparse encode/decode and assemble the
-        stacked CS content event (the heart of the forward transform).
+    def cs_snap_order0(self, settled_event, ema=False):
+        """The LATE-CUTOVER SNAP (P2): read the settled mixed field against
+        the ORDER-0 block of the conceptual codebook. Read = differentiable
+        normalized-sum presence (slot-mean projection onto the unit atom
+        direction in hypercube-diagonal units -- magnitude-preserving, NOT
+        cosine), tanh-squashed: ``a_0[v, b]`` in ``[0, 1)``. With ``ema``
+        (training only) the winning order-0 rows EMA toward their slot
+        contents under ``no_grad`` -- the identity/position trace; codebooks
+        stay EMA-only. Returns ``a_0 [caps[0], B]`` or ``None`` when the
+        codebook is unavailable."""
+        cb = getattr(self, "similarity_codebook", None)
+        W_full = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
+        if (settled_event is None or W_full is None
+                or not torch.is_tensor(W_full)
+                or int(W_full.shape[0]) != int(self.nVectors)):
+            return None
+        ev = settled_event
+        if ev.dim() == 2:
+            ev = ev.unsqueeze(1)                     # [B, 1, D]
+        start, end = self.order_slice(0)
+        W0 = W_full[start:end]                       # [caps0, D_dict]
+        # CLONE for the differentiable read (grad still reaches the codebook
+        # through CloneBackward): the EMA write below mutates the same rows
+        # in-place, and a saved live VIEW would fail backward with a
+        # version-counter error (the SS-leg clone lesson).
+        a_0 = torch.tanh(self.source_code_activation(
+            ev, W0.clone(), nonneg=True, normalize=True))    # [caps0, B]
+        if ema and self.training:
+            with torch.no_grad():
+                D = min(int(ev.shape[-1]), int(W0.shape[-1]))
+                sim = torch.matmul(ev[..., :D], W0[:, :D].t())   # [B, N, V0]
+                win = sim.argmax(dim=-1)                          # [B, N]
+                one = F.one_hot(win, int(W0.shape[0])).to(ev.dtype)
+                cnt = one.sum(dim=(0, 1))                         # [V0]
+                tgt = torch.einsum("bnv,bnd->vd", one, ev[..., :D])
+                mask = cnt > 0
+                if bool(mask.any()):
+                    eta = float(getattr(self, "_snap_ema_rate", 0.1))
+                    mean_tgt = tgt[mask] / cnt[mask].unsqueeze(-1)
+                    rows = W_full[start:end]
+                    rows[mask, :D] = ((1.0 - eta) * rows[mask, :D]
+                                      + eta * mean_tgt.to(rows.dtype))
+        return a_0
 
-        ``ps_act`` / ``ws_act`` are the NON-NEGATIVE source PRESENCES
-        ``[V_ps, B]`` / ``[V_ws, B]``; ``dictionary`` is the concept-atom
-        codebook ``[nVectors, ConceptDim]`` -- positivity ("CS vectors map to
-        strictly positive mereological features") is enforced via ``softplus``.
-        For each ramsified order ``k`` the source vector is
-        ``[PS | WS | a_0 | ... | a_{k-1}]``: the lower orders' SIGNED concept
-        activations threaded up as the SS inputs (the symbolic space is 1-D, so
-        an SS source is just its signed scalar activation). The sparse weight
-        matrix produces the signed concept activation
-        ``a_k = W_k @ source_k`` (``torch.sparse.mm``); the concept code is that
-        activation scaling the positive atom (radial: magnitude = certainty,
-        sign = present vs anti-present). Returns
-        ``(content[B, N, ConceptDim], [a_0, ..., a_S])`` -- the stacked content
-        and the per-order signed activations (the SS feed / situate handle)."""
+    def cs_forward_content(self, a_0, dictionary):
+        """Run the SYMBOLIC phase's ramsified encode/decode and assemble the
+        stacked CS content event (v2, P2: symbolic-only).
+
+        ``a_0 [caps[0], B]`` is the order-0 snap presence
+        (:meth:`cs_snap_order0`); ``dictionary`` is the concept-atom codebook
+        ``[nVectors, ConceptDim]`` -- positivity ("CS vectors map to strictly
+        positive mereological features") is enforced via ``softplus``. Order
+        ``k >= 1`` composes LOWER-ORDER SYMBOL ACTIVATIONS ONLY (plus the
+        EVERYTHING bias): ``a_k = tanh(S_k @ [a_0..a_{k-1} | a_0..a_{k-1} |
+        1])`` through the role-split whole/part/bias columns, so the 0-D
+        symbol composes across orders and stays in ``(-1, 1)``. The concept
+        code is the activation scaling the positive atom (radial: magnitude =
+        certainty, sign = present vs anti-present). Returns
+        ``(content[B, N, ConceptDim], [a_0, ..., a_S])`` -- the stacked
+        content and the per-order signed activations (the SS feed); content
+        is consumed by losses/the SS leg ONLY (never substituted -- P3)."""
         caps = self._order_caps()
         atoms = F.softplus(dictionary)               # strictly-positive atoms
-        n_ps = int(ps_act.shape[0])
-        n_ws = int(ws_act.shape[0])
-        a_list = []
-        slabs = []
-        for k in range(len(caps)):
-            blocks = [ps_act, ws_act] + a_list[:k]   # PS, WS, then SS_0..SS_{k-1}
-            source = torch.cat(blocks, dim=0)        # [n_src_k, B]
-            a_k = self.cs_sparse_encode(
-                k, caps[k], int(source.shape[0]), source)   # [n_c_k, B] signed
+        a_list = [a_0]
+        slabs = [self.cs_decode(0, a_0, atoms)]
+        for k in range(1, len(caps)):
+            _percept, symbol = self._sparse_families(k)
+            stacked = torch.cat(a_list[:k], dim=0)   # [sum(caps[:k]), B]
+            if symbol is not None and symbol.nnz > 0:
+                a_k = torch.tanh(symbol.forward_linear_roles(stacked))
+            else:
+                a_k = a_0.new_zeros((int(caps[k]), int(a_0.shape[-1])))
             a_list.append(a_k)
             slabs.append(self.cs_decode(k, a_k, atoms))     # [B, n_c_k, CDim]
         content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
         return content, a_list
-
-    @staticmethod
-    def _align_rows(t, n):
-        """Pad/trim the first axis of ``[V, B]`` to exactly ``n`` rows (no-op
-        when ``n`` is 0/unset). Keeps the source-presence width fixed to the
-        configured block size so the forward layout matches the population."""
-        n = int(n or 0)
-        if n <= 0 or t is None or int(t.shape[0]) == n:
-            return t
-        if int(t.shape[0]) > n:
-            return t[:n]
-        return F.pad(t, (0, 0, 0, n - int(t.shape[0])))
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -14091,134 +14456,127 @@ class ConceptualSpace(Space):
         PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents,
         capped at the configured symbolic order. (Symbols ARE concepts of the
         previous order -- this is the ramsified recursion.) Cycle-guarded."""
-        cid = int(concept_id)
-        _seen = _seen if _seen is not None else set()
-        if cid in _seen:
-            return 0
-        _seen.add(cid)
-        S = len(self._order_caps()) - 1
-        sub_orders = []
-        for x in self.concept_parts(cid) + self.concept_wholes(cid):
-            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
-                sub_orders.append(self._concept_source_order(x[1], _seen))
-        return 0 if not sub_orders else min(S, 1 + max(sub_orders))
+        return _concept_alloc_of(self).order_of(concept_id, _seen)
+
+    @property
+    def _csw_rows(self):
+        """Read-only merged ``{(order, cid): local_row}`` view over the
+        per-order layers' tensor-row maps (back-compat; the physical maps are
+        layer-owned since the 2026-07-02 consolidation)."""
+        alloc = getattr(self, "_concept_allocator", None)
+        if alloc is None:
+            return {}
+        return {(o, cid): r for o, ly in alloc._layers.items()
+                for cid, r in ly._tensor_rows.items()}
 
     def _csw_concept_row(self, order, concept_id):
         """First-seen LOCAL row of ``concept_id`` within ramsified ``order``'s
         dyadic block (``0 .. caps[order]-1``). Returns ``None`` when the block
         is full (capacity overflow -- the concept gets no weights, falling back
         to the current content)."""
-        self._csw_tables()
-        rows = getattr(self, "_csw_rows", None)
-        if rows is None:
-            rows = {}
-            object.__setattr__(self, "_csw_rows", rows)
-            object.__setattr__(self, "_csw_row_next", {})
-        key = (int(order), int(concept_id))
-        r = rows.get(key)
-        if r is None:
-            nxt = self._csw_row_next.get(int(order), 0)
-            if nxt >= int(self._order_caps()[int(order)]):
-                return None
-            self._csw_row_next[int(order)] = nxt + 1
-            rows[key] = nxt
-            r = nxt
-        return int(r)
+        alloc = _concept_alloc_of(self)
+        return alloc.layer(order).assign_row(
+            concept_id, capacity=int(self._order_caps()[int(order)]))
 
     def _populate_concept_weights(self, concept_id):
-        """Decompose ``concept_id`` into per-order sparse weight edges
-        ``add_concept_weight(order, concept_local, source_global)``: PS parts
-        and WS wholes map to the ``[PS|WS]`` blocks; sub-symbol constituents map
-        to the SS block of their (lower) order. MIN-SUPPORT: >= 2 constituents
-        (the ATOM/UNIVERSE pole pair is skipped). Keyed by the ramsified order
-        (:meth:`_concept_source_order`). NO-OP unless the sparse transform is
-        active -> byte-identical."""
+        """Decompose ``concept_id`` into the symbolic-only sparse store (v2,
+        P2). Order-0 concepts write NO edges -- they RESERVE their order-0
+        codebook row (the snap reads them; their part/whole decomposition
+        lives in the PS/WS codebooks + the ordered reference store, sec 4c:
+        store by reference, never duplicate codes). Order ``k >= 1`` writes
+        role-tagged edges over the stacked lower-order activations: part-role
+        sym constituents into the part block, whole-role into the whole
+        block, plus the EVERYTHING bias (NOTHING = the zero vector: no edge).
+        MIN-SUPPORT: >= 2 constituents, poles included. NO-OP unless the
+        sparse transform is active -> byte-identical."""
         if not self._sparse_active():
             return
 
         def _is_sym(x):
             return isinstance(x, tuple) and len(x) == 2 and x[0] == "sym"
+        alloc = _concept_alloc_of(self)
         parts = self.concept_parts(concept_id)
         wholes = self.concept_wholes(concept_id)
-        raw_parts = [p for p in parts
-                     if not _is_sym(p) and p not in (_ATOM, _UNIVERSE)]
-        raw_wholes = [w for w in wholes
-                      if not _is_sym(w) and w not in (_ATOM, _UNIVERSE)]
         sym_refs = [x for x in (parts + wholes) if _is_sym(x)]
-        if len(raw_parts) + len(raw_wholes) + len(sym_refs) < 2:
+        n_raw = sum(1 for x in (parts + wholes)
+                    if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
+        n_poles = int(_NOTHING in parts) + int(_EVERYTHING in wholes)
+        # Min-support >= 2, EXCEPT minted singletons: the unit-set's single
+        # part-role edge IS its weighted reading (Alec 2026-07-02).
+        if (n_raw + len(sym_refs) + n_poles < 2
+                and int(concept_id) not in alloc.singletons):
             return
         order = self._concept_source_order(concept_id)
         c_local = self._csw_concept_row(order, concept_id)
         if c_local is None:
             return                                   # order block full
-        n_ps = int(getattr(self, "_n_ps_codes", 0) or 0)
-        n_ws = int(getattr(self, "_n_ws_codes", 0) or 0)
-        offsets, _total = self.cs_source_layout(order, n_ps, n_ws)
-        for p in raw_parts:
-            if 0 <= int(p) < (n_ps or (int(p) + 1)):
-                self.add_concept_weight(order, c_local, offsets["ps"] + int(p))
-        for w in raw_wholes:
-            if 0 <= int(w) < (n_ws or (int(w) + 1)):
-                self.add_concept_weight(order, c_local, offsets["ws"] + int(w))
-        for (_tag, sid) in sym_refs:
-            so = self._concept_source_order(sid)
-            if so < order and so in offsets:
-                sl = self._csw_concept_row(so, sid)
-                if sl is not None:
-                    self.add_concept_weight(order, c_local, offsets[so] + sl)
+        if order == 0:
+            return                                   # snap row reserved; no edges
+        offsets, _total = self.cs_source_layout(order)
+        for role in ("part", "whole"):
+            for x in alloc.refs(concept_id, role):
+                if not _is_sym(x):
+                    continue                         # raw refs: reference store
+                so = self._concept_source_order(x[1])
+                if so < order and so in offsets:
+                    sl = self._csw_concept_row(so, x[1])
+                    if sl is not None:
+                        self.add_concept_edge(order, c_local, role,
+                                              offsets[so] + sl)
+        if _EVERYTHING in wholes:
+            self.add_concept_edge(order, c_local, "bias", 0)
         # Make the freshly-grown sparse weights trainable (rebuilds the model
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
 
-    def _subspace_presence(self, sub):
-        """Non-negative per-code PRESENCE ``[V, B]`` of a passed-in source
-        subspace -- its materialized event read against its OWN ``.what``
-        codebook (both ride the subspace through ``forward``; no cross-space
-        reach -- the dataflow rule). ``None`` when unavailable."""
-        if sub is None or not hasattr(sub, "is_empty") or sub.is_empty():
+    def snap_settle_qe(self, event):
+        """Per-percept SETTLE SIGNAL (P4, report-only): each slot's residual
+        against its best ORDER-0 atom -- ``1 - max_v <slot, atom_v>/sqrt(D)``
+        in ``[0, 1]`` (0 = perfectly snapped). ``no_grad``; NO control flow
+        hangs off it (the later adaptive-exit work reads it). ``None`` when
+        inactive/unusable."""
+        if not self._sparse_active():
             return None
-        event = sub.materialize()
-        cb = getattr(sub, "what", None)
+        cb = getattr(self, "similarity_codebook", None)
         W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
-        if event is None or W is None or not torch.is_tensor(W):
+        if (W is None or not torch.is_tensor(W) or event is None
+                or not torch.is_tensor(event) or event.dim() != 3):
             return None
-        return self.source_code_activation(event, W, nonneg=True)
+        with torch.no_grad():
+            start, end = self.order_slice(0)
+            W0 = W[start:end]
+            D = min(int(event.shape[-1]), int(W0.shape[-1]))
+            Wn = F.normalize(W0[:, :D], dim=-1, eps=1e-8)
+            sim = torch.matmul(event[..., :D], Wn.t()) / math.sqrt(max(1, D))
+            return 1.0 - sim.amax(dim=-1).clamp(0.0, 1.0)      # [B, N]
 
-    def _sparse_concept_forward(self, folded, subspace, word_subspace):
-        """Live forward: replace the concept content with the ramsified
-        per-order sparse transform (:meth:`cs_forward_content`) when the sparse
-        transform is active and the weight tables are populated. PS/WS presences
-        are read ``.forward()``-safely from the passed-in subspaces; the concept
-        atoms are the CS-owned dictionary (``similarity_codebook``). Returns
-        ``folded`` UNCHANGED (byte-identical) when inactive, unpopulated, or the
+    def cs_symbolic_phase(self, settled):
+        """The POST-PUMP symbolic phase (P3, one LATE cutover): snap the
+        SETTLED mixed field to the ORDER-0 codebook block
+        (:meth:`cs_snap_order0`, EMA identity trace while training) and run
+        the ramsified role-split composition (:meth:`cs_forward_content`) --
+        quantization happens ONLY here, at the bandwidth seam, as late as
+        possible. Returns ``(content, activations)`` -- the stacked signed
+        activations ``[N, B]`` are the 0-D symbols (grad-bearing; the SS leg
+        is built from them); the content feeds the losses/SS leg ONLY and is
+        NEVER substituted back into the subsymbolic carrier (decision 10:
+        ``sparseReplace`` retired). ``(settled, None)`` when inactive or the
         shapes are unusable."""
         if not self._sparse_active():
-            return folded
-        if not getattr(self, "_csw_store", None):        # no weights -> fallback
-            return folded
-        if not (torch.is_tensor(folded) and folded.dim() == 3):
-            return folded
+            return settled, None
+        if not (torch.is_tensor(settled) and settled.dim() == 3):
+            return settled, None
         cb = getattr(self, "similarity_codebook", None)
         dict_W = cb.getW() if (cb is not None and hasattr(cb, "getW")) else None
         if (dict_W is None or not torch.is_tensor(dict_W)
                 or int(dict_W.shape[0]) != int(self.nVectors)):
-            return folded
-        ps_act = self._subspace_presence(subspace)
-        ws_act = self._subspace_presence(word_subspace)
-        if ps_act is None or ws_act is None:
-            return folded
-        # Align to the configured PS/WS block sizes so the forward source layout
-        # matches the population's offsets (codebook growth-stable).
-        ps_act = self._align_rows(ps_act, getattr(self, "_n_ps_codes", 0))
-        ws_act = self._align_rows(ws_act, getattr(self, "_n_ws_codes", 0))
-        content, _ = self.cs_forward_content(ps_act, ws_act, dict_W)
-        N, D = int(folded.shape[1]), int(folded.shape[2])
-        if int(content.shape[1]) != N:                   # slot/inventory mismatch
-            return folded
-        Dc = int(content.shape[2])
-        if Dc == D:
-            return content
-        return content[..., :D] if Dc > D else F.pad(content, (0, D - Dc))
+            return settled, None
+        a_0 = self.cs_snap_order0(settled, ema=True)
+        if a_0 is None:
+            return settled, None
+        content, a_list = self.cs_forward_content(a_0, dict_W)
+        acts = torch.cat(a_list, dim=0)          # [N, B] signed, grad-bearing
+        return content, acts
 
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
         """The over-collection lifecycle pass — RETIRE-ON-TRIGGER, driving BOTH
@@ -14241,18 +14599,19 @@ class ConceptualSpace(Space):
         ``{'sym', 'op', 'codes', ['result']}``. Idempotent. Thresholds default
         to ``_concept_k_many`` (4)."""
         self.resolve_identities()
-        parts, wholes = self._concept_tables()
-        raised = self._concept_raise_set()
+        alloc = _concept_alloc_of(self)
+        raised = alloc.raised
         kp = int(k_parts if k_parts is not None
                  else getattr(self, "_concept_k_many", 4))
         kw = int(k_wholes if k_wholes is not None
                  else getattr(self, "_concept_k_many", 4))
         requests = []
-        for sym in list(parts.keys()):
+        for sym in list(alloc.placement):
             if sym in raised:
                 continue                              # higher-order: not re-refined
-            n_p = len(parts.get(sym, ()))
-            n_w = len(wholes.get(sym, ()))
+            store = alloc.store_of(sym)
+            n_p = store.count_role(sym, "part")
+            n_w = store.count_role(sym, "whole")
             if n_p <= kp and n_w <= kw:
                 continue                              # not over-collected
             if n_p > kp:
@@ -14266,7 +14625,212 @@ class ConceptualSpace(Space):
                 requests.append({"sym": sym, "op": "analyse",
                                  "codes": self.concept_wholes(sym)})
             self.retire_concept(sym)                   # retire-on-trigger
+        # Periodic closest-links pruning: parts-of-parts / wholes-of-wholes
+        # accumulated at mint are dropped here, not enforced at runtime.
+        self.prune_concept_links()
         return requests
+
+    def _whole_ancestors(self, whole_pos):
+        """Within-tower taxonomy ancestors of a WS whole position (transitive,
+        cycle-guarded); empty when the relation store is unwired."""
+        out = set()
+        seen = set()
+        cur = int(whole_pos)
+        while cur not in seen:
+            seen.add(cur)
+            parent = self.taxonomy_parent(cur)
+            if parent is None:
+                break
+            cur = int(parent)
+            out.add(cur)
+        return out
+
+    def prune_concept_links(self):
+        """Closest-links pruning round (periodic; mint stays unconstrained):
+        keep the MAXIMAL part and the MINIMAL whole among each concept's
+        links. Within-tower comparisons only: (a) drop the generic
+        ``_WORD_CLASS`` when a specific whole is linked; (b) drop wholes that
+        are taxonomy ancestors of another linked whole; (c) drop raw parts
+        that are constituents of a linked raised symbol. Removes relation
+        records AND sparse edges. Returns ``(concept, side, code)`` triples."""
+        alloc = _concept_alloc_of(self)
+        raised = alloc.raised
+        dropped = []
+        for c in list(alloc.placement):
+            ws_all = {w for w in alloc.refs(c, "whole")
+                      if not isinstance(w, tuple)}
+            # EVERYTHING is the loosest whole of all: once ANY other whole is
+            # linked, the top pole (and its bias edge) retires.
+            if len(ws_all) > 1 and _EVERYTHING in ws_all:
+                self._drop_concept_edge(c, _EVERYTHING, side="everything")
+                alloc.remove(c, "whole", _EVERYTHING)
+                dropped.append((c, "whole", _EVERYTHING))
+            ws_links = ws_all - {_EVERYTHING}
+            drop_w = set()
+            if len(ws_links) > 1 and _WORD_CLASS in ws_links:
+                drop_w.add(_WORD_CLASS)              # generic; a tighter whole exists
+            for w in ws_links:
+                if w in drop_w:
+                    continue
+                drop_w |= (ws_links & self._whole_ancestors(w))
+            sym_parts = {x[1] for x in alloc.refs(c, "part")
+                         if isinstance(x, tuple) and len(x) == 2
+                         and x[0] == "sym" and x[1] in raised}
+            covered = set()
+            for h in sym_parts:
+                covered |= {p for p in self.concept_parts(h)
+                            if not isinstance(p, tuple)}
+            drop_p = {p for p in alloc.refs(c, "part")
+                      if not isinstance(p, tuple) and p in covered}
+            for w in drop_w:
+                self._drop_concept_edge(c, w, side="whole")
+                alloc.remove(c, "whole", w)
+                dropped.append((c, "whole", w))
+            for p in drop_p:
+                self._drop_concept_edge(c, p, side="part")
+                alloc.remove(c, "part", p)
+                dropped.append((c, "part", p))
+        return dropped
+
+    def _drop_concept_edge(self, concept_id, code, side):
+        """Remove ``concept_id``'s sparse edge for a dropped link (the pruning
+        counterpart of :meth:`_populate_concept_weights`); no-op when the
+        concept has no allocated row / no edge. Raw part/whole codes carry NO
+        edges post-P2 (reference-store only), so only the EVERYTHING bias
+        edge is physical here. Call BEFORE discarding the relation entry so
+        the concept's order is still derivable."""
+        if side != "everything":
+            return                                 # raw links: records only
+        if not _concept_rows_exist(self):
+            return                                 # never populated (inactive)
+        alloc = _concept_alloc_of(self)
+        order = self._concept_source_order(concept_id)
+        if order == 0:
+            return                                 # order 0: snap rows, no edges
+        c_local = alloc.layer(order).row_of(concept_id)
+        if c_local is None:
+            return
+        _percept, symbol = self._sparse_families(order)
+        start, _end = symbol.role_slice("bias")
+        symbol.remove_edges([(int(c_local), start)])
+
+    def _set_concept_edge_value(self, cid, code, side, value):
+        """Set the trained value of ``cid``'s edge for one sym constituent
+        (``side`` in sym_part/sym_whole). ``no_grad`` -- an assertion strength
+        is evidence, not a backprop target. No-op when the edge is absent
+        (raw codes carry no edges post-P2)."""
+        if side not in ("sym_part", "sym_whole"):
+            return                                 # raw refs: records only
+        if not _concept_rows_exist(self):
+            return
+        alloc = _concept_alloc_of(self)
+        order = self._concept_source_order(cid)
+        if order == 0:
+            return
+        c_local = alloc.layer(order).row_of(cid)
+        if c_local is None:
+            return
+        _percept, symbol = self._sparse_families(order)
+        so = self._concept_source_order(code)
+        offsets, _t = self.cs_source_layout(order)
+        if so not in offsets:
+            return
+        sl = self._csw_concept_row(so, code)
+        if sl is None:
+            return
+        role = "part" if side == "sym_part" else "whole"
+        start, _end = symbol.role_slice(role)
+        pos = symbol._index.get((int(c_local), start + offsets[so] + int(sl)))
+        if pos is not None and symbol.values is not None:
+            with torch.no_grad():
+                symbol.values[pos] = float(value)
+
+    def assert_concept_relation(self, cid, part=None, whole=None,
+                                sym_part=None, sym_whole=None, weight=1.0):
+        """Statement channel of the conceptual embedding: refine ``cid``'s
+        definition from an asserted relation ("a body has a leg" adds a part;
+        "cats are animals" adds a whole). Raw codes index PS/WS; ``sym_*``
+        reference other concepts. The FIRST concrete part replaces the
+        ``_NOTHING`` pole, the first concrete whole replaces ``_EVERYTHING`` (the
+        wide-open object narrows), then the sparse edges re-populate -- the
+        concept's position in conceptual space moves with its definition.
+        Host-side, at Reset."""
+        alloc = _concept_alloc_of(self)
+        c = alloc.touch(cid)
+        had_rows = _concept_rows_exist(self)
+        had_everything = _EVERYTHING in alloc.refs(c, "whole")
+        old_order = self._concept_source_order(c) if had_rows else None
+        asserted = []
+        if part is not None:
+            alloc.remove(c, "part", _NOTHING)
+            self.add_part(c, int(part))
+            asserted.append((int(part), "part"))
+        if sym_part is not None:
+            alloc.remove(c, "part", _NOTHING)
+            self.add_part(c, ("sym", int(sym_part)))
+            asserted.append((int(sym_part), "sym_part"))
+        if whole is not None:
+            alloc.remove(c, "whole", _EVERYTHING)
+            self.add_whole(c, int(whole))
+            asserted.append((int(whole), "whole"))
+        if sym_whole is not None:
+            alloc.remove(c, "whole", _EVERYTHING)
+            self.add_whole(c, ("sym", int(sym_whole)))
+            asserted.append((int(sym_whole), "sym_whole"))
+        self._populate_concept_weights(c)
+        # A concrete whole replaced the EVERYTHING pole: retire its bias edge
+        # (at the order the pole was populated at, pre-migration).
+        if (had_everything and old_order is not None and old_order > 0
+                and (whole is not None or sym_whole is not None)):
+            c_local = alloc.layer(old_order).row_of(c)
+            if c_local is not None:
+                _p, symbol = self._sparse_families(old_order)
+                bias_col, _e = symbol.role_slice("bias")
+                symbol.remove_edges([(int(c_local), bias_col)])
+        if weight != 1.0:
+            for (code, side) in asserted:
+                self._set_concept_edge_value(c, code, side, weight)
+        return c
+
+    def _hebbian_strengthen(self, cid, eta=0.1, cap=4.0):
+        """Bump ``cid``'s sparse edge values by ``eta`` (clamped to ``cap``):
+        fire-together wire-together on re-occurrence. ``no_grad`` (codebooks
+        and evidence weights update by their own law, not backprop). No-op
+        when ``cid`` holds no edges / the sparse transform is inactive."""
+        if not _concept_rows_exist(self):
+            return
+        alloc = _concept_alloc_of(self)
+        order = self._concept_source_order(cid)
+        c_local = alloc.layer(order).row_of(cid)
+        if c_local is None:
+            return
+        for fam in self._sparse_families(order):
+            if fam is not None:
+                fam.hebbian_strengthen_row(c_local, eta=eta, cap=cap)
+
+    def create_joint_concept(self, word_syms, key=None):
+        """JOINT/sentence concept (v2, P2 decision 6): the ordered Gallistel
+        CHAIN over the presentation's word-symbols -- the sequence IS the
+        vine, each link the ordered pair ``[whole=current-word, part=rest]``
+        bounded above by the EVERYTHING bias. Replaces the flat first-order
+        combination (2026-07-02 morning): sentence TYPES with the same words
+        in a different order are DIFFERENT chains. Each link is a proper
+        hidden unit ``tanh(w_w a_word + w_p a_rest + bias)``: the SYMBOLIC
+        joint mixing. Idempotent per ordered ``key`` (the surface word
+        tuple); a re-occurrence strengthens the head link Hebbianly. Returns
+        the head concept id."""
+        alloc = _concept_alloc_of(self)
+        cache = alloc.joint
+        k = tuple(key) if key is not None else None
+        if k is not None and k in cache:
+            J = cache[k]
+            self._hebbian_strengthen(J)          # fire-together re-occurrence
+            return J
+        J = self.conceptualize_chain([int(a) for a in word_syms],
+                                     bias_bounded=True)
+        if k is not None and J is not None:
+            cache[k] = J
+        return J
 
     def create_word_object_meta(self, word_parts, word_whole, key=None):
         """Create the per-word A / B / C symbols in the relation-only table
@@ -14277,44 +14841,60 @@ class ConceptualSpace(Space):
 
           A = WORD-symbol   — Parts(A) = the word-parts (PS codes), Wholes(A) =
                               the word-whole (WS code). The orthographic word.
-          B = OBJECT-symbol — Parts(B) = {ATOM}, Wholes(B) = {UNIVERSE},
+          B = OBJECT-symbol — Parts(B) = {NOTHING}, Wholes(B) = {EVERYTHING},
                               INITIALLY: the referent is maximally unspecified
                               and is SUCCESSIVELY REFINED (σ synthesizes the
                               atoms into higher-order parts; π splits the
                               universe into finer wholes — the lifecycle loop).
-          C = META          — ``reify_concept(A, B)``: Parts(C)={('sym',A)},
-                              Wholes(C)={('sym',B)}. The word≡object binding.
+          C = META-concept  — the sec-4c ORDERED PAIR (P2 convention flip):
+                              ``embed_pair [whole=('sym',A), part=('sym',B)]``
+                              — whole first (word => object, the storage
+                              order). Roles are POSITIONAL SLOTS of an
+                              ordered pair, not containment claims (Alec
+                              2026-07-02 — still a combination, not a
+                              subsumption; the pairing is also kept separately
+                              in references for serial-mode substitution).
 
         Relation-only: no vectors, no codebook rows — the parts/wholes are
         references into the EXISTING PartSpace / WholeSpace codebooks (plus the
-        ATOM / UNIVERSE poles). Idempotent per surface ``key`` (the same word
+        NOTHING / EVERYTHING poles). Idempotent per surface ``key`` (the same word
         reuses its A/B/C; A still ACCUMULATES any newly-presented word-parts);
         with ``key=None`` every call mints a fresh triple. Returns ``(A, B, C)``.
         """
-        wom = getattr(self, "_word_obj_meta", None)
-        if wom is None:
-            wom = {}
-            object.__setattr__(self, "_word_obj_meta", wom)
+        alloc = _concept_alloc_of(self)
+        wom = alloc.word_obj_meta
         if key is not None and key in wom:
             A, B, C = wom[key]
             for p in word_parts:                  # A keeps accruing word-parts
                 self.add_part(A, int(p))
             self._populate_concept_weights(A)      # re-decompose A (parts grew)
+            # Hebbian: word/object co-occurred again -> strengthen the META
+            # tie's edge values (no_grad; codebooks stay EMA-only). Weakening
+            # awaits a dis-occurrence signal (vacuous in a text-only learner).
+            self._hebbian_strengthen(C)
             return A, B, C
-        A = self.new_concept()                     # the WORD-symbol
+        A = alloc.new_concept()                    # the WORD-symbol
         for p in word_parts:
             self.add_part(A, int(p))
         if word_whole is not None:
             self.add_whole(A, int(word_whole))
-        B = self.new_concept()                     # the OBJECT-symbol
-        self.add_part(B, _ATOM)                   # bottom pole — to be refined
-        self.add_whole(B, _UNIVERSE)              # top pole — to be refined
-        C = self.reify_concept(A, B)             # the word≡object META (A ≤ B)
+        B = alloc.new_concept()                    # the OBJECT-symbol
+        self.add_part(B, _NOTHING)                   # bottom pole — to be refined
+        self.add_whole(B, _EVERYTHING)              # top pole — to be refined
+        # META-concept: the sec-4c ordered pair [whole=word, part=object]
+        # (P2 flip); a reified sym-sym pair persists as relation-table
+        # content (resolve_identities skips it -- stored structure).
+        C = alloc.new_concept()
+        alloc.store_of(C).embed_pair(C, whole_ref=("sym", A),
+                                     part_ref=("sym", B))
+        alloc.settle(C)
         if key is not None:
             wom[key] = (A, B, C)
-        # Sparse decomposition of the word-symbol A (word-parts <- word-whole)
-        # and the META C (A, B). B is the unspecified pole pair -> not eligible.
+        # Sparse decomposition (P2): A and B are order 0 -> each RESERVES its
+        # order-0 codebook row (the snap reads them; no edges); the META C
+        # writes the role-tagged pair edges [whole=A | part=B] at order 1.
         self._populate_concept_weights(A)
+        self._populate_concept_weights(B)
         self._populate_concept_weights(C)
         return A, B, C
 
@@ -15609,6 +16189,31 @@ class ConceptualSpace(Space):
         _own = getattr(self, "subspace", None)
         if _own is not None and _own is not CS_sub:
             object.__setattr__(_own, "_bind_carrier", full)
+        # Demux feedback (P3, decision 7): the C->P / C->S handoffs carry the
+        # per-tower WINDOWS of the MIXED carrier -- ``views`` (the slot-half
+        # windows of the stored mix, grad-connected) demuxes the part-stream
+        # (-> PS, further σ synthesis) and the whole-stream (-> WS, further π
+        # analysis). NOT ``combine.reverse``: the exact inverse returns each
+        # tower's OWN prior input (zero information transfer -- at t=0 the
+        # whole-stream would be the empty seed forever, freezing the pump;
+        # root-caused on the sO=1 XOR loss plateau). The MIX goes UP (the
+        # glued event on CS_sub, next stage's contribution); the un-mix goes
+        # DOWN. Residual (mix minus already-settled) is a later refinement.
+        # Sparse-active only -> symbolicOrder=0 stays byte-identical (the
+        # mixed-event handoffs written by cs.forward stand).
+        if self._sparse_active():
+            legs = combine.views(full)
+            if legs is not None and len(legs) >= 2:
+                part_stream, whole_stream = legs[0], legs[1]
+                self._subspaceForPS.set_event(part_stream)
+                ws_fb = getattr(self, "_subspaceForWSDemux", None)
+                if ws_fb is None:
+                    ws_fb = SubSpace(inputShape=(1, 1), outputShape=(1, 1),
+                                     nInputDim=1, nOutputDim=1)
+                    object.__setattr__(self, "_subspaceForWSDemux", ws_fb)
+                ws_fb.copy_context(CS_sub)
+                ws_fb.set_event(whole_stream)
+                object.__setattr__(self, "_subspaceForWS", ws_fb)
         return full
 
     def unbind(self, sub=None):
@@ -15762,17 +16367,12 @@ class ConceptualSpace(Space):
                 folded = sym
             else:
                 folded = primary
-        # Sparse-coding concept production: when the sparse transform is active
-        # (symbolicOrder > 0, parallel) AND the per-order weight tables are
-        # populated, the concept content is the ramsified per-order sparse
-        # transform -- an encoder (signed sparse weight matrices over the
-        # non-negative PS/WS presences + the lower orders' signed concept
-        # activations as the 1-D SS inputs, via torch.sparse.mm) plus a
-        # dictionary decoder (each concept activation scales its strictly-
-        # positive ConceptDim atom). Forward-connected: the gradient reaches the
-        # concept code, the learnable sparse weights, and the dictionary. NO-OP
-        # (byte-identical) when inactive or the tables are empty.
-        folded = self._sparse_concept_forward(folded, subspace, word_subspace)
+        # Two-phase forward (P3): the pump is PURELY SUBSYMBOLIC -- the
+        # ramsified symbolic transform no longer runs in-loop; it fires ONCE
+        # at the post-pump cutover (``cs_symbolic_phase`` on the settled
+        # field, driven by ``BasicModel._forward_body``). None clears any
+        # stale activation stamp from a prior pass on the same object.
+        object.__setattr__(subspace, "_concept_activations", None)
         # STM bookkeeping (2026-05-28 fix). Mode-dependent:
         #
         #   * PARALLEL (whole-slab, N > 1): ``folded[B, N, D]`` IS the
@@ -16382,14 +16982,45 @@ class WholeSpace(PerceptualSpace):
         _sigma_butterfly = (_sigma_mode == "butterfly")
         self.sigma_pi_slab = None  # set only for the "full" dense bridge
         _sigma_butterfly_total = int(inputShape[0]) * int(_sigma_dim)
-        if _sigma_butterfly and _sigma_butterfly_total >= 2:
-            self.pi = PiLayer(
-                _sigma_dim, _sigma_dim,
-                naive=_sigma_naive, ergodic=_sigma_ergodic,
-                invertible=True, nonlinear=nonlinear,
-                stable=True, monotonic=_sigma_monotonic,
-                butterfly=True, N=_sigma_butterfly_total,
-            )
+        _pi_butterfly_built = bool(_sigma_butterfly
+                                   and _sigma_butterfly_total >= 2)
+
+        def _mint_pi():
+            # ONE construction path shared by the base layer and the P4
+            # <subsymbolicStack> per-pass layers (identical modes/dims).
+            if _pi_butterfly_built:
+                ly = PiLayer(
+                    _sigma_dim, _sigma_dim,
+                    naive=_sigma_naive, ergodic=_sigma_ergodic,
+                    invertible=True, nonlinear=nonlinear,
+                    stable=True, monotonic=_sigma_monotonic,
+                    butterfly=True, N=_sigma_butterfly_total,
+                )
+            elif _sigma_mode == "full":
+                ly = PiLayer(
+                    self.sigma_pi_slab, self.sigma_pi_slab,
+                    naive=_sigma_naive, ergodic=_sigma_ergodic,
+                    invertible=True, nonlinear=nonlinear,
+                    stable=True, monotonic=_sigma_monotonic,
+                )
+            else:
+                ly = PiLayer(
+                    _sigma_dim, _sigma_dim,
+                    naive=_sigma_naive, ergodic=_sigma_ergodic,
+                    invertible=True, nonlinear=nonlinear,
+                    stable=True, monotonic=_sigma_monotonic,
+                )
+            if meronomy_enabled():
+                from Layers import MeronymicFoldAdapter
+                ly = MeronymicFoldAdapter(
+                    'pi', ly.nInput, ly.nOutput,
+                    stable=True, ergodic=_sigma_ergodic, naive=_sigma_naive,
+                    legacy_N=_sigma_butterfly_total,
+                    butterfly=_sigma_butterfly)
+            return ly
+
+        if _pi_butterfly_built:
+            pass
         elif _sigma_mode == "full":
             # full: the dense flattened square Sigma bridge of the flat-
             # slab invariant -- ONE invertible LDU over the whole
@@ -16411,41 +17042,44 @@ class WholeSpace(PerceptualSpace):
                     "WholeSpace <sigmaPi>full</> requires sigma_dim "
                     f"({_sigma_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-            self.pi = PiLayer(
-                self.sigma_pi_slab, self.sigma_pi_slab,
-                naive=_sigma_naive, ergodic=_sigma_ergodic,
-                invertible=True, nonlinear=nonlinear,
-                stable=True, monotonic=_sigma_monotonic,
-            )
-        else:  # "last", or "butterfly" with total < 2 (per-slot fallback)
-            self.pi = PiLayer(
-                _sigma_dim, _sigma_dim,
-                naive=_sigma_naive, ergodic=_sigma_ergodic,
-                invertible=True, nonlinear=nonlinear,
-                stable=True, monotonic=_sigma_monotonic,
-            )
+        # Construction (all three modes + the Stage-9 MERONYMIC K3-wire
+        # adapter wrap) lives in _mint_pi, shared verbatim with the P4 stack
+        # so the base path's RNG draws stay order-identical.
+        self.pi = _mint_pi()
         self.sigma_pi_mode = _sigma_mode
         self.butterfly_enabled = _sigma_butterfly
         self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
-        if meronomy_enabled():
-            # Stage 9 cutover (MeronomyPlan; spec §2): WS's meronymic
-            # slot binds PiLayer2 through the K3-wire adapter — the
-            # analysis fold computes on memberships; the wire stays K3.
-            # Meronymic slots only; see the PS slot note above.
-            # Cutover correction (author, 2026-06-11): butterfly-built
-            # slots keep their cascade, re-chartered on memberships —
-            # see the PS slot note above.
-            from Layers import MeronymicFoldAdapter
-            self.pi = MeronymicFoldAdapter(
-                'pi', self.pi.nInput, self.pi.nOutput,
-                stable=True, ergodic=_sigma_ergodic, naive=_sigma_naive,
-                legacy_N=_sigma_butterfly_total,
-                butterfly=_sigma_butterfly)
-            # butterflyN keeps recording the construction-time sizing;
-            # see the PS slot note above.
-            self.butterfly_enabled = bool(_sigma_butterfly)
         self.layers.append(self.pi)
         self.params += self.pi.getParameters()
+        # P4 <subsymbolicStack>: DISTINCT per-pass pis (depth IS mereological
+        # order). Pass 0 IS ``self.pi``; ``<subsymbolicNoop>`` slots are the
+        # IDENTITY (``None``). RNG-NEUTRAL construction (save/restore) so
+        # gated-off configs keep their init streams byte-identical.
+        self.pis = None
+        if bool(TheXMLConfig.get("architecture.subsymbolicStack",
+                                 default=False)):
+            _T = max(1, int(TheXMLConfig.get(
+                "architecture.subsymbolicOrder", default=1) or 1))
+            _noop = _parse_pass_indices(TheXMLConfig.get(
+                "architecture.subsymbolicNoop", default=None))
+            _rng_state = torch.get_rng_state()
+            _stack = []
+            for _t in range(_T):
+                if _t in _noop:
+                    _stack.append(None)
+                elif _t == 0:
+                    _stack.append(self.pi)
+                else:
+                    _ly = _mint_pi()
+                    self.params += _ly.getParameters()
+                    _stack.append(_ly)
+            torch.set_rng_state(_rng_state)
+            self.pis = _stack
+            # Register the fresh t>=1 layers as SUBMODULES (state_dict /
+            # model-wide .to()); see the PS stack note. Not on self.layers:
+            # the Start/End/Reset cascade stays the pre-stack set.
+            self._pi_stack_modules = nn.ModuleList(
+                [ly for ly in _stack[1:] if ly is not None])
 
         # Mereological run-structure measure (the part/whole ratio + the
         # A-isa-B containment test, doc/specs/mereological-order-raising.md).
@@ -20106,6 +20740,18 @@ class WholeSpace(PerceptualSpace):
         # / disjoint parts+wholes -> sigma/pi refine).
         return ("chunk", None) if hint == 1 else ("refine", None)
 
+    def _pi_for_pass(self, t=None):
+        """The pass-``t`` pi (P4): the stack layer when
+        ``<subsymbolicStack>`` is on (``None`` = the identity no-op slot),
+        else the single reused ``self.pi``. ``t`` defaults to the
+        pump-stamped pass index (``_pump_pass_idx``)."""
+        stack = getattr(self, "pis", None)
+        if stack is None:
+            return getattr(self, 'pi', None)
+        if t is None:
+            t = int(getattr(self, "_pump_pass_idx", 0) or 0)
+        return stack[min(max(0, int(t)), len(stack) - 1)]
+
     def forward(self, CS_subspaceForWS, IS_concepts=None):
         """Concept->symbol forward (symbolic recurrent loop leg).
 
@@ -20263,7 +20909,9 @@ class WholeSpace(PerceptualSpace):
             # .when dims. Apply the fold on the first ``fold.nInput``
             # columns only and pass the extra band through unchanged so the
             # shapes stay consistent without resizing the layer.
-            fold = getattr(self, 'pi', None)
+            # P4: pass t selects stack layer t (None = identity no-op slot);
+            # the single reused ``self.pi`` when the stack is off.
+            fold = self._pi_for_pass()
             if fold is None:
                 act = act_pre
             else:

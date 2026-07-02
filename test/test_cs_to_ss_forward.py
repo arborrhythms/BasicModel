@@ -106,3 +106,75 @@ def test_forward_concept_to_symbol_empty_is_none():
                             nInputDim=8, nOutputDim=8)
     assert ss.forward_concept_to_symbol(empty) is None
     assert ss.forward_concept_to_symbol(None) is None
+
+
+def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
+    """Sparse-active contract: with ``_concept_activations`` stamped (the 0-D
+    symbols from the sparse forward), the leg is activation x identity-row and
+    the GRADIENT flows through the activation (the old detach bug)."""
+    m = _build("MM_symbol_tower.xml")
+    ss = m.symbolSpace
+    W = ss.subspace.what.getW()
+    D = int(W.shape[-1])
+    B, N = 2, 3
+    ev = torch.randn(B, N, D)
+    sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
+                          nInputDim=D, nOutputDim=D)
+    sub.set_event(ev)
+    acts = torch.randn(N, B, requires_grad=True)     # [N, B] signed symbols
+    object.__setattr__(sub, "_concept_activations", acts)
+    leg = ss.forward_concept_to_symbol(sub)
+    assert leg is not None
+    out = leg.materialize()
+    assert out.shape == (B, N, D) and out.requires_grad
+    # leg == activation x (EMA-synced, detached) identity row.
+    rows = W[:N].detach()
+    want = acts.t().unsqueeze(-1) * rows.unsqueeze(0)
+    assert torch.allclose(out[..., :int(rows.shape[-1])], want, atol=1e-5)
+    out.sum().backward()
+    assert acts.grad is not None and torch.any(acts.grad != 0)
+    assert W.grad is None or torch.all(W.grad == 0)  # identity stays EMA-only
+
+
+def test_symbol_leg_survives_repeated_sync_backward():
+    """Regression (anomaly crash, 2026-07-02): each stage's leg build syncs
+    the SS codebook IN-PLACE before the next stage's product; backward
+    through an earlier stage's leg must survive the later syncs (the
+    identity rows are cloned, not a live view of the codebook)."""
+    m = _build("MM_symbol_tower.xml")
+    ss = m.symbolSpace
+    W = ss.subspace.what.getW()
+    D = int(W.shape[-1])
+    B, N = 1, 3
+
+    def _sub():
+        s = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
+                            nInputDim=D, nOutputDim=D)
+        s.set_event(torch.randn(B, N, D))
+        return s
+
+    sub0 = _sub()
+    acts0 = torch.randn(N, B, requires_grad=True)
+    object.__setattr__(sub0, "_concept_activations", acts0)
+    leg0 = ss.forward_concept_to_symbol(sub0)         # stage 0 (saved for bwd)
+    sub1 = _sub()
+    acts1 = torch.randn(N, B, requires_grad=True)
+    object.__setattr__(sub1, "_concept_activations", acts1)
+    ss.forward_concept_to_symbol(sub1)                # stage 1: re-syncs W
+    ss.forward_concept_to_symbol(sub1)                # stage 2: re-syncs W
+    leg0.materialize().sum().backward()               # must NOT raise
+    assert acts0.grad is not None and torch.any(acts0.grad != 0)
+
+
+def test_symbol_leg_fallback_without_activations_stays_detached():
+    """No stamp (sparse-inactive) -> the legacy detached-copy leg."""
+    m = _build("MM_symbol_tower.xml")
+    ss = m.symbolSpace
+    D = int(ss.subspace.what.getW().shape[-1])
+    B, N = 2, 3
+    sub = Spaces.SubSpace(inputShape=(N, D), outputShape=(N, D),
+                          nInputDim=D, nOutputDim=D)
+    sub.set_event(torch.randn(B, N, D))
+    assert getattr(sub, "_concept_activations", None) is None
+    leg = ss.forward_concept_to_symbol(sub)
+    assert leg is not None and not leg.materialize().requires_grad

@@ -12747,11 +12747,14 @@ class SymbolSpace(PerceptualSpace):
         the first ``N`` rows of the codebook IT OWNS (``subspace.what``) to the
         concept codes (a space writing its own codebook -- allowed) under
         ``no_grad``, so the decode / symbol-attention paths read the row-aligned
-        symbol view; the returned leg is detached, so no gradient reaches the
-        symbol codebook (the grad-bearing concept content is the scatter-add).
-        Returns the ``[B, N, D]`` symbol-leg SubSpace, or ``None`` for an
-        empty / degenerate concept (-> ``bind_streams`` fills a zero leg),
-        matching the old leg's ``None`` contract.
+        symbol view. When the concept carries ``_concept_activations`` (the
+        sparse forward's 0-D symbols), the leg is ``activation x identity-row``
+        -- gradient flows through the ACTIVATION (the symbol's value) while the
+        codebook rows stay EMA-only (the symbol's identity). Without
+        activations (sparse-inactive) the leg falls back to the detached
+        concept-content copy. Returns the ``[B, N, D]`` symbol-leg SubSpace, or
+        ``None`` for an empty / degenerate concept (-> ``bind_streams`` fills a
+        zero leg), matching the old leg's ``None`` contract.
         """
         if concept_sub is None or concept_sub.is_empty():
             return None
@@ -12774,6 +12777,20 @@ class SymbolSpace(PerceptualSpace):
                 with torch.no_grad():
                     W[:rows, :cw] = sym_event[:, :rows, :cw].mean(dim=0).to(
                         W.device, W.dtype)
+        acts = getattr(concept_sub, "_concept_activations", None)
+        if (acts is not None and torch.is_tensor(acts)
+                and int(acts.shape[0]) >= N and W is not None):
+            # 0-D symbol: the signed activation scales the row-aligned identity
+            # row; grad flows through the ACTIVATION, rows stay EMA-only.
+            # CLONE the rows: the next stage's no_grad codebook sync mutates W
+            # in-place, and a live detached VIEW saved by this product would
+            # fail backward with a version-counter error.
+            a_t = acts[:N].t().unsqueeze(-1)             # [B, N, 1]
+            rows_w = W[:N].detach().clone().to(a_t.device, a_t.dtype)
+            cw = min(D, int(rows_w.shape[-1]))
+            leg = a_t.new_zeros((int(a_t.shape[0]), N, D))
+            leg[..., :cw] = a_t * rows_w[:, :cw].unsqueeze(0)
+            sym_event = leg
         sub = SubSpace(inputShape=(N, D), outputShape=(N, D),
                        nInputDim=D, nOutputDim=D)
         sub.copy_context(concept_sub)

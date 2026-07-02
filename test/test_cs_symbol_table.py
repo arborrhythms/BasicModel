@@ -21,7 +21,7 @@ if _BIN not in sys.path:
 import torch
 
 import Spaces
-from Layers import WORD, UNIVERSE, ATOM
+from Layers import WORD, UNIVERSE, ATOM, NOTHING, EVERYTHING
 from test_basicmodel import _populate_test_config
 
 _D = 8
@@ -161,9 +161,64 @@ def test_create_word_object_meta_structure():
     # B = OBJECT-symbol: maximally unspecified -- ATOM <= UNIVERSE, to be refined.
     assert cs.concept_parts(B) == [ATOM]
     assert cs.concept_wholes(B) == [UNIVERSE]
-    # C = META: reify A <= B (the word≡object binding).
-    assert cs.concept_parts(C) == [("sym", A)]
-    assert cs.concept_wholes(C) == [("sym", B)]
+    # C = META-concept (P2 flip, sec 4c): the ORDERED PAIR
+    # [whole=word-symbol, part=object-symbol] -- roles are positional slots
+    # of an ordered pair, not containment claims.
+    assert cs.concept_parts(C) == [("sym", B)]
+    assert cs.concept_wholes(C) == [("sym", A)]
+
+
+def test_meta_pair_is_discretizable_and_persists_resolve():
+    """The META is the sec-4c ordered pair: its discrete reading is exact
+    ([whole=A, part=B]) and -- per the SINGLETON principle (a sym-sym 1:1
+    row is unit-set/pair STRUCTURE, not an id-of-indiscernibles tie) -- it
+    survives resolve_identities."""
+    cs = _cs()
+    A, B, C = cs.create_word_object_meta([65, 66], WORD)
+    alloc = cs._concept_allocator
+    assert alloc.store_of(C).discretize_row(C) == (("sym", A), ("sym", B))
+    resolved = cs.resolve_identities()
+    assert C not in resolved
+    assert cs.concept_parts(C) == [("sym", B)]       # pair persists
+    assert cs.concept_wholes(C) == [("sym", A)]
+
+
+def test_singleton_concept_is_idempotent_unit_set():
+    """The SINGLETON (Alec 2026-07-02): a whole containing exactly one
+    symbolic part -- the unit-set {x}, the constructive primitive behind
+    if->then ({x} => x) and the recursion vine. Idempotent per symbol;
+    persists the lifecycle (no whole -> never the 1:1 identity shape)."""
+    cs = _cs()
+    x = cs.relate(1, 2)
+    S = cs.singleton_concept(x)
+    assert cs.singleton_concept(x) == S              # idempotent
+    assert cs.concept_parts(S) == [("sym", x)]       # exactly one sym part
+    assert cs.concept_wholes(S) == []                # whole side disconnected
+    assert cs.singleton_concept(cs.relate(3, 4)) != S
+    cs.resolve_identities()
+    assert cs.concept_parts(S) == [("sym", x)]       # unit-set persists
+
+
+def test_singleton_populates_one_part_role_edge():
+    """Min-support exemption: the singleton's weighted reading is its ONE
+    part-role edge onto the constituent's activation."""
+    cs = _cs_sparse_active()
+    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
+    S = cs.singleton_concept(A)
+    assert cs._concept_source_order(S) == 1
+    row = cs._csw_rows[(1, S)]
+    got = cs.concept_weights(1, row)
+    assert got == [(("part", cs._csw_rows[(0, A)]), 1.0)]
+
+
+def test_meta_word_object_recovers_by_intersection():
+    """Typed intersection read-out (Alec 2026-07-02): (word, object) come
+    from intersecting the meta's sym constituents with the word-symbol
+    class, not from slot order."""
+    cs = _cs()
+    A, B, C = cs.create_word_object_meta([65, 66], WORD, key="w")
+    assert cs.meta_word_object(C) == (A, B)
+    assert cs.meta_word_object(A) is None            # not a two-sym meta
 
 
 def test_create_word_object_meta_idempotent_per_key():
@@ -305,3 +360,248 @@ def test_synthesize_higher_order_idempotent_per_part_set():
     assert cs.synthesize_higher_order([1, 2, 4]) != H1   # different set -> new
 
 
+def _cs_sparse_active(nS=64, order=1):
+    """A sparse-active bare CS: stamps mirror the Models.py build stamps
+    (P2: the _n_ps_codes/_n_ws_codes source-layout stamps retired with the
+    percept families)."""
+    cs = _cs(nS=nS)
+    object.__setattr__(cs, "_symbolic_order", order)
+    object.__setattr__(cs, "_serial", False)
+    return cs
+
+
+# -- .when consistency at the tie site (2026-07-02 plan, Task 7) ---------------
+
+def test_populate_cs_symbols_when_mismatch_raises():
+    cs = _cs()
+    pid = torch.tensor([[1, 2]])
+    where = torch.tensor([[0, 1]])
+    when = torch.tensor([[7, 8]])                    # DIFFERENT .when: invalid
+    spans = torch.tensor([[[0, 2]]])
+    try:
+        cs._populate_cs_symbols(pid, where, spans, percept_when=when)
+        assert False, "mismatched .when must fail loud"
+    except ValueError as e:
+        assert ".when" in str(e)
+
+
+def test_populate_cs_symbols_when_uniform_ok():
+    cs = _cs()
+    pid = torch.tensor([[1, 2]])
+    where = torch.tensor([[0, 1]])
+    when = torch.tensor([[3, 3]])                    # same .when: fine
+    spans = torch.tensor([[[0, 2]]])
+    cs._populate_cs_symbols(pid, where, spans, percept_when=when)
+    assert len(cs.symbols_needing_processing()) >= 1
+
+
+# -- closest-links pruning rounds (2026-07-02 plan, Task 8) --------------------
+
+def test_prune_drops_generic_word_class_when_specific_whole_linked():
+    cs = _cs()
+    c = cs.new_concept()
+    cs.add_part(c, 5)
+    cs.add_whole(c, WORD)                            # generic word-class
+    cs.add_whole(c, 42)                              # specific word-whole
+    dropped = cs.prune_concept_links()
+    assert (c, "whole", WORD) in dropped
+    assert set(cs.concept_wholes(c)) == {42}
+
+
+def test_prune_drops_constituents_of_linked_raised_symbol():
+    cs = _cs()
+    H = cs.synthesize_higher_order([7, 8])           # raised: Parts(H)={7,8}
+    c = cs.new_concept()
+    cs.add_part(c, 7)                                # constituent AND ...
+    cs.add_part(c, ("sym", H))                       # ... the raised H itself
+    cs.add_whole(c, 42)
+    dropped = cs.prune_concept_links()
+    assert (c, "part", 7) in dropped
+    assert ("sym", H) in cs.concept_parts(c) and 7 not in cs.concept_parts(c)
+
+
+def test_prune_removes_bias_edge_of_dropped_everything():
+    """Raw links are reference-store only post-P2 (no PS/WS edges); the ONE
+    physical edge pruning can retire is the EVERYTHING bias of an order>=1
+    concept once a tighter whole is linked."""
+    cs = _cs_sparse_active()
+    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # A: order-0 sym
+    c = cs.new_concept()
+    cs.add_part(c, ("sym", A))                       # order 1
+    cs.add_whole(c, EVERYTHING)
+    cs._populate_concept_weights(c)
+    _p, s1 = cs._sparse_families(1)
+    before = s1.nnz
+    row = cs._csw_rows[(1, c)]
+    assert (("bias", 0), 1.0) in cs.concept_weights(1, row)
+    cs.add_whole(c, 42)                              # a tighter whole arrives
+    cs.prune_concept_links()
+    assert s1.nnz == before - 1                      # the bias edge retired
+    assert ("bias", 0) not in [rc for (rc, _w) in cs.concept_weights(1, row)]
+
+
+def test_prune_drops_raw_links_records_only():
+    """Dropping a raw generic whole edits the RECORDS; no tensor edges are
+    involved (raw codes never had columns post-P2)."""
+    cs = _cs_sparse_active()
+    c = cs.new_concept()
+    cs.add_part(c, 1)
+    cs.add_whole(c, WORD)                            # generic word-class
+    cs.add_whole(c, 2)                               # specific whole
+    cs._populate_concept_weights(c)                  # order 0: row reserved
+    assert cs.concept_weights(0, cs._csw_rows[(0, c)]) == []
+    dropped = cs.prune_concept_links()
+    assert (c, "whole", WORD) in dropped
+    assert set(cs.concept_wholes(c)) == {2}
+
+
+def test_refine_over_collected_runs_pruning_round():
+    cs = _cs()
+    c = cs.new_concept()
+    cs.add_part(c, 5)
+    cs.add_whole(c, WORD)
+    cs.add_whole(c, 42)
+    cs.refine_over_collected()                       # hook at its tail
+    assert set(cs.concept_wholes(c)) == {42}
+
+
+# -- statement channel: assert_concept_relation (2026-07-02 plan, Task 10) -----
+
+def test_assert_relation_replaces_poles_and_enters_embedding():
+    cs = _cs_sparse_active()
+    A, B, C = cs.create_word_object_meta([1], 2, key="cat")
+    assert set(cs.concept_parts(B)) == {ATOM}
+    assert set(cs.concept_wholes(B)) == {UNIVERSE}
+    # "a cat has whiskers" (whiskers-object = another concept, id 9):
+    cs.assert_concept_relation(B, sym_part=9)
+    assert ATOM not in cs.concept_parts(B)           # pole replaced
+    # "cats are animals" (animal-object = concept 11):
+    cs.assert_concept_relation(B, sym_whole=11)
+    assert UNIVERSE not in cs.concept_wholes(B)
+    # B's definition now has content -> it holds sparse edges (min-support).
+    order = cs._concept_source_order(B)
+    row = cs._csw_rows[(order, B)]
+    assert cs.concept_weights(order, row) != []
+
+
+def test_assert_relation_raw_codes_reserve_snap_row_no_edges():
+    """Raw-code assertions land in the reference store (P2): the order-0
+    concept RESERVES its snap row; no PS/WS columns exist to weight."""
+    cs = _cs_sparse_active()
+    c = cs.new_concept()
+    cs.assert_concept_relation(c, part=3, whole=4, weight=0.5)
+    assert 3 in cs.concept_parts(c) and 4 in cs.concept_wholes(c)
+    row = cs._csw_rows[(0, c)]                       # snap row reserved
+    assert cs.concept_weights(0, row) == []          # no edges at order 0
+
+
+def test_assert_relation_sym_weight_lands_on_role_edge():
+    """A weighted SYM assertion sets the trained value of the role-tagged
+    edge (no_grad evidence, not a backprop target)."""
+    cs = _cs_sparse_active()
+    A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
+    c = cs.new_concept()
+    cs.assert_concept_relation(c, sym_part=A, whole=7, weight=0.5)
+    order = cs._concept_source_order(c)
+    assert order == 1
+    row = cs._csw_rows[(1, c)]
+    got = dict(cs.concept_weights(1, row))
+    a_row = cs._csw_rows[(0, A)]
+    assert got[("part", a_row)] == 0.5               # role edge carries it
+
+
+# -- the poles as presence-lattice vectors (Alec 2026-07-02) -------------------
+# nothing = [0,0,...] (a part contributing zero: NO edge); everything =
+# [1,1,...] (a whole = the 1-wide bias role block at order >= 1). Post-P2 a
+# fresh zeroth-order object-concept B = (NOTHING, EVERYTHING) RESERVES its
+# order-0 codebook row (the snap's maximally-general position; no edges).
+
+def test_pole_rename_aliases_hold():
+    from Layers import NOTHING, EVERYTHING
+    assert ATOM == NOTHING and UNIVERSE == EVERYTHING
+
+
+def test_fresh_object_concept_reserves_order0_row_no_edges():
+    cs = _cs_sparse_active()
+    A, B, C = cs.create_word_object_meta([1, 2], 3, key="cat")
+    order = cs._concept_source_order(B)
+    assert order == 0                                # newly minted: zeroth order
+    row = cs._csw_rows[(0, B)]                       # snap row reserved
+    assert cs.concept_weights(0, row) == []          # order 0: no edges
+    # A likewise reserves its own order-0 row (a distinct one).
+    assert cs._csw_rows[(0, A)] != row
+
+
+def test_assert_concrete_whole_retires_everything_bias_edge():
+    """An order>=1 concept holding the EVERYTHING bias loses that edge when
+    a concrete whole replaces the pole (the wide-open object narrows)."""
+    cs = _cs_sparse_active()
+    A, _B, _C = cs.create_word_object_meta([1, 2], 3, key="cat")
+    c = cs.new_concept()
+    cs.add_part(c, ("sym", A))                       # order 1
+    cs.add_whole(c, EVERYTHING)
+    cs._populate_concept_weights(c)
+    row = cs._csw_rows[(1, c)]
+    assert (("bias", 0), 1.0) in cs.concept_weights(1, row)
+    cs.assert_concept_relation(c, whole=5)           # concrete whole arrives
+    roles = [rc for (rc, _w) in cs.concept_weights(1, row)]
+    assert ("bias", 0) not in roles                  # bias edge retired
+    assert 5 in cs.concept_wholes(c)                 # the record landed
+
+
+def test_prune_drops_everything_when_other_whole_linked():
+    cs = _cs_sparse_active()
+    c = cs.new_concept()
+    cs.add_part(c, 1)
+    cs.add_whole(c, EVERYTHING)
+    cs.add_whole(c, 2)
+    cs._populate_concept_weights(c)
+    dropped = cs.prune_concept_links()
+    assert (c, "whole", EVERYTHING) in dropped
+    assert set(cs.concept_wholes(c)) == {2}
+
+
+# -- Hebbian word/object tie strengthening (2026-07-02 plan, Task 11) ----------
+
+def test_word_object_tie_strengthens_on_reoccurrence():
+    cs = _cs_sparse_active()
+    A, B, C = cs.create_word_object_meta([1, 2], 3, key="cat")
+    order = cs._concept_source_order(C)
+    row = cs._csw_rows[(order, C)]
+    before = dict(cs.concept_weights(order, row))
+    assert before                                    # C holds sym-ref edges
+    A2, B2, C2 = cs.create_word_object_meta([1, 2], 3, key="cat")  # re-mint
+    assert (A2, B2, C2) == (A, B, C)
+    after = dict(cs.concept_weights(order, row))
+    assert any(after[c] > before[c] for c in before)  # Hebbian bump
+    assert all(v <= 4.0 for v in after.values())      # clamped
+
+
+
+
+def test_joint_concept_is_bias_bounded_chain():
+    """The joint (P2 decision 6) is the ordered Gallistel CHAIN over the
+    word-symbols: each link the pair [whole=current, part=rest] bounded by
+    the EVERYTHING bias -- a proper hidden unit over role-tagged edges."""
+    cs = _cs_sparse_active()
+    A1, _B1, _C1 = cs.create_word_object_meta([1], 2, key="w1")
+    A2, _B2, _C2 = cs.create_word_object_meta([3], 4, key="w2")
+    J = cs.create_joint_concept([A1, A2], key=("w1", "w2"))
+    assert cs._concept_source_order(J) == 1
+    # The head link is the ordered pair [whole=A1 (current), part=A2 (rest)].
+    assert cs.concept_parts(J) == [("sym", A2)]
+    assert ("sym", A1) in cs.concept_wholes(J)
+    assert EVERYTHING in cs.concept_wholes(J)            # bias-bounded
+    row = cs._csw_rows[(1, J)]
+    got = dict(cs.concept_weights(1, row))
+    roles = list(got)
+    assert ("bias", 0) in roles                          # the bias edge
+    assert ("whole", cs._csw_rows[(0, A1)]) in roles     # whole = current word
+    assert ("part", cs._csw_rows[(0, A2)]) in roles      # part = the rest
+    # ORDERED: the reversed sentence is a DIFFERENT chain head.
+    assert cs.create_joint_concept([A2, A1], key=("w2", "w1")) != J
+    # Idempotent per key; re-occurrence strengthens Hebbianly.
+    before = dict(cs.concept_weights(1, row))
+    assert cs.create_joint_concept([A1, A2], key=("w1", "w2")) == J
+    after = dict(cs.concept_weights(1, row))
+    assert any(after[c] > before[c] for c in before)

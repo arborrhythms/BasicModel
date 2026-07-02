@@ -71,8 +71,13 @@ gated residual, so the output loss trains the retrieval.
 
 The symbol codebook is a **reference**, not a learned copy: it tracks the concept
 codes so the two cannot diverge or dissociate. Its training objective is kept
-separate from reconstruction (the source concepts are shaped by their own pass),
-which is why the symbol leg detaches.
+separate from reconstruction (the source concepts are shaped by their own pass):
+the symbol's IDENTITY (the codebook row) stays EMA-only/detached, while the
+symbol's VALUE (the signed 0-D activation from the symbolic phase) is
+grad-bearing. (Two-phase update, 2026-07-02: the activations' gradient path is
+the conceptual SBOW over the settled slab parked at the post-pump cutover --
+the once-built SS leg itself is a state-contract sync whose product no loss
+consumes; pre-P3 the in-loop leg carried the gradient.)
 
 These six stores are the substrate for the four foundations of mindfulness; the
 mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is in
@@ -133,15 +138,90 @@ mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is i
 A design pass clarifying four coupled pieces (PS = PartSpace, WS = WholeSpace,
 CS = ConceptualSpace, SS = SymbolSpace).
 
-### A. Symbolic weights (PS/WS $\to$ CS and SS $\to$ CS)
+### A. Symbolic weights (the two-phase forward; reworked 2026-07-02)
 
-These maps currently run through `torch.sparse` (COO $\to$ CSR) matrices
-(`ConceptualSpace.cs_sparse_encode`). They should instead be **`SigmaLayer`s**,
-which today are dense — so `SigmaLayer.__init__` needs a **sparse option** (a
-constructor switch on its inner layer; not a large change). Because CS and SS are
-**ramsified**, CS and SS exchange *views* of one another, so the per-order
-SigmaLayers are sized by the dyadic capacities $N/2, N/4, N/8, \ldots$
-(`ConceptualSpace.order_capacities`).
+**Implemented 2026-07-02** (doc/plans/2026-07-02-two-phase-loops-sparse-relation.md,
+superseding the forward-transform parts of
+2026-07-02-sparse-layer-conceptual-embedding.md) as a dedicated
+**`SparseLayer`** (`bin/Layers.py`), NOT a SigmaLayer option: SigmaLayer's
+atanh-entry contract expects logit-domain codes in $[-1, 1]$, while these
+maps consume *presences/activations* -- a different input domain deserves its
+own class. The substrate contract is the transpose autoencoder pair:
+forward $= \tanh(W x)$, reverse $= \tanh(W^T y)$; export-safe scatter-add
+kernel by default, `torch.sparse.mm` opt-in. Edges append host-side at mint
+(`add_edge`, idempotent, tail-preserving value growth) and are removed by
+pruning rounds (`remove_edges`; `ConceptualSpace.prune_concept_links` keeps
+the closest links using within-tower relations only).
+
+**The forward is TWO PHASES with one terminal cutover.** Phase A -- the
+purely continuous PS/WS$\leftrightarrow$CS pump: `subsymbolicOrder`
+iterations of the 2-stream bind (no symbol leg in the loop, no quantization
+inside the pump). The C$\to$P / C$\to$S handoffs carry the per-tower WINDOWS
+of the MIXED carrier (`combine.views`, the demux feedback): the part-stream
+returns to PS for further $\sigma$ synthesis, the whole-stream to WS for
+further $\pi$ analysis -- the mix goes UP (the next stage's contribution),
+the un-mix goes DOWN. Phase B -- ONE late cutover at the bandwidth seam
+(`cs_symbolic_phase`): the settled field is SNAPPED to the ORDER-0 block of
+the conceptual codebook (`cs_snap_order0`: differentiable normalized-sum
+presence -- slot-mean projection onto the unit atom direction in
+hypercube-diagonal $\sqrt{D}$ units, magnitude-preserving, NOT cosine --
+with an EMA identity trace of the winning rows while training), then the
+ramsified symbolic composition runs once and its outputs feed the SS leg,
+the head-side losses (conceptual SBOW on the settled slab), and the concept
+table -- they are NEVER substituted back into the subsymbolic carrier (the
+`<sparseReplace>` knob is retired; non-replacement is structural).
+Quantization sits exactly at the seam because 0-D symbols lack the bandwidth
+to carry subsymbolic content.
+
+**The SparseLayer is SYMBOLIC-ONLY and owns BOTH readings of concept
+structure.** The percept families ($[PS|WS]$ presence columns) retired with
+the rework: $a_0$ comes from the snap, and order $k \ge 1$ composes
+lower-order symbol activations only through role-split columns
+$[\text{whole} \mid \text{part} \mid \text{bias}]$,
+$a_k = \tanh(S_k[a_0..a_{k-1} \mid a_0..a_{k-1} \mid 1])$, sized by the
+dyadic capacities (`order_capacities`). Alongside this weighted COO reading,
+each per-order layer holds the DISCRETE relation table: ordered role-tagged
+constituent records (`embed_pair` stores the sec-4c ordered pair
+$[\text{whole}, \text{part}]$, whole first: whole $\Rightarrow$ part / if
+$\to$ then; `discretize_row` is exact on the binary-ordered subset). A thin
+shared `ConceptAllocator` owns global concept ids, order derivation, the
+raise/retire/singleton sets, and the idempotency caches; ConceptualSpace
+keeps orchestration only. The signed bounded activation $a$ IS the 0-D
+symbol: the once-built SS leg is $a \times$ the row-aligned identity row
+(codebook rows stay EMA-only; the leg syncs the SS state contract, while the
+activations' GRADIENT path is the conceptual SBOW over the settled slab
+parked at the cutover). Per-pass
+$\sigma$/$\pi$ stacks (`<subsymbolicStack>`, with `<subsymbolicNoop>`
+identity slots) give the pump DISTINCT layers per pass -- depth IS
+mereological order -- and the per-percept snap-residual (`snap_settle_qe`)
+is read as a report-only SETTLE SIGNAL for later adaptive work.
+
+The lattice poles are VECTORS of the presence domain: **NOTHING**
+$= [0,0,\ldots]$ (bottom; a part contributing $W \cdot 0 = 0$ -- no edge)
+and **EVERYTHING** $= [1,1,\ldots]$ (top; a whole realized as the 1-wide
+bias role block at order $\ge 1$). Order-0 concepts (word A-symbols, the
+span knit, fresh pole-pair objects) RESERVE their order-0 codebook row --
+the snap reads them; their part/whole decomposition lives in the PS/WS
+codebooks plus the ordered reference store (store by reference, never
+duplicate codes). The word$\equiv$object META is the sec-4c ORDERED PAIR
+$[\text{whole}=\text{word-symbol}, \text{part}=\text{object-symbol}]$ --
+roles are positional slots of an ordered pair, not containment claims; the
+typed read-out (`meta_word_object`) recovers (word, object) by INTERSECTING
+the pair with the word-symbol class rather than trusting slot order. The
+JOINT/sentence concept (`create_joint_concept`) is the ordered Gallistel
+CHAIN over the row's word-symbols -- each link the pair
+$[\text{whole}=\text{current}, \text{part}=\text{rest}]$, bias-bounded --
+one head per sentence TYPE, so word order distinguishes sentence types. A
+1:1 tie between SYM refs is the SINGLETON principle (Alec 2026-07-02): the
+unit-set $\{x\}$ -- a whole containing exactly one symbolic part
+(`singleton_concept`, min-support exempt) -- is the constructive primitive
+behind if$\to$then ($\{x\} \Rightarrow x$) and the recursion vine, and it is
+stored structure that `resolve_identities` never collapses (only ties
+between concrete raw codes resolve away). Sequencing depth under strict
+ramsification truncates the chain's weighted reading (same-order link
+references are dropped at the order cap) -- the successor design
+(doc/plans/2026-07-02-iterated-symbolic-loop.md, DRAFT) replaces
+stratification with iteration over one untyped square layer.
 
 ### B. Reconstruction (parts $\to$ `.what`, wholes $\to$ `.where`)
 
@@ -202,6 +282,95 @@ buffer** (positional; period $=$ ½·InputSpace), **`.when` indexes over LTM**
 (to-build — LTM is content/parthood-addressed today), and the **codebooks are
 content-addressable** (identity is the row index; the cross-codebook `.where`
 slice registry was retired).
+
+## Cognitive grounding: dense-perceptual vs sparse-symbolic (2026-07-02)
+
+The design splits representation into a **dense, invertible, subsymbolic**
+integrator (the corpus-callosum mixing matrix, which mixes part/whole *content*
+in high dimension) and a **sparse, symbolic** composer (the `SparseLayer`
+families, which compose *scalar activations* of named concepts). This is not an
+arbitrary engineering choice; the split, and specifically *why sparsity belongs
+only on the symbolic side*, tracks several convergent findings on human
+cognition.
+
+- **Complementary Learning Systems** (McClelland, McNaughton & O'Reilly 1995).
+  Neocortex uses slow, dense, *overlapping* distributed codes that extract
+  statistical structure across experiences; hippocampus uses fast, *sparse,
+  pattern-separated* codes to bind individuated episodes. The reason
+  hippocampal codes are sparse is **interference avoidance among individuated
+  bindings**, not compression: dense overlapping codes suffer catastrophic
+  interference when made to hold many discrete conjunctions. This is the
+  cognitive answer to "why sparse, and why only symbolically" — the perceptual
+  manifold wants the dense mixing; the binding of individuated things into
+  reusable conjunctions (the joint/sentence concept over word-symbols) wants
+  sparsity. A **symbol is a scalar handle on a grounded direction** (the atom),
+  which is precisely a hippocampal index into cortex; the transpose decode
+  ($\tanh(W^\top y)$) is pattern **reinstatement**. Caveat: this maps the
+  *sparse-symbolic vs dense-perceptual* axis onto hippocampus-vs-cortex — NOT
+  the ramsified *orders* (abstraction is a separate, graded
+  anterior-temporal / prefrontal axis).
+
+- **Dual-process cognition** (Sloman 1996; Kahneman). A fast, parallel,
+  similarity-driven associative system and a slow, serial, rule-based symbolic
+  one. The subsymbolic (parallel content-mixing) and symbolic (sparse
+  relational) loops instance this split. The sparsity and the serial
+  capacity-limit are the *same fact*: a sparse composer has low fan-in per
+  concept, the computational shadow of working-memory span (Miller's $7 \pm 2$;
+  the STM depth $\approx 8$ the model already carries).
+
+- **The neuro-symbolic interface / systematicity** (Fodor & Pylyshyn 1988). The
+  architecture is a concrete stance on the oldest fight in cognitive science:
+  **content stays connectionist** (dense, continuous, invertible mixing),
+  **structure becomes symbolic** (discrete, reusable, composable edges), and the
+  **interface is the activation readout** — the point where mixed content is
+  read out as a scalar activation of a named thing. The discrete edges buy the
+  compositionality/systematicity that pure distributed codes are accused of
+  lacking, while the dense mixing keeps perception continuous and
+  gradient-trainable.
+
+- **Grounded cognition** (Barsalou 1999; contra amodal symbol systems). Because
+  the *direction* lives in the concept's atom and only the *activation* is
+  abstracted to a scalar, the symbols are not amodal Fodorian tokens — they are
+  grounded pointers-with-magnitude, closer to perceptual-symbol "simulators."
+  Keeping magnitude (the normalized-*sum* presence readout, not cosine) is
+  cognitively load-bearing: graded activation *is* typicality / salience
+  (Rosch's graded membership), which a cosine would discard.
+
+- **Basic-level categories are perceptual, not content-free** (Rosch et al.
+  1976). "Subsymbolic" $\ne$ "category-free": the mixing output at order 0 is
+  already carved toward basic-level regions, because that is what perceptual
+  integration *for a categorizing organism* produces. This suggests the
+  EMA-snapped dictionary atoms are the **pre-linguistic Gärdenfors regions**
+  (prototype centers, basic-level, perceptual) and the sparse symbol graph is
+  the *post-linguistic* labelling-and-composition that points at them — three
+  cognitively distinct stages (integrated field $\to$ unnamed category region
+  $\to$ named composable symbol), not two layers with a bookkeeping detail
+  between.
+
+**Where the mechanism is deliberately cleaner than cognition.** (1) The order-0
+boundary is a *default flow*, not a wall: perception is concept-penetrated
+(top-down / predictive coding), and the model's attention/priming loop is what
+carries that penetration back down — the division must never become impermeable.
+(2) *Invertibility* is instrumental (reconstruction, gradient), not a biological
+claim; brains approximate and predict, they do not compute exact inverses. The
+extensional/intensional semantics this grounding implies for a **single**
+conceptual space is developed in
+[BasicModel.md](BasicModel.md) "Conceptual Space."
+
+**References.** McClelland, McNaughton & O'Reilly (1995), *Why there are
+complementary learning systems in the hippocampus and neocortex*, Psychological
+Review 102(3). Sloman (1996), *The empirical case for two systems of reasoning*,
+Psychological Bulletin 119(1); Kahneman (2011), *Thinking, Fast and Slow*.
+Miller (1956), *The magical number seven, plus or minus two*, Psychological
+Review 63(2). Fodor & Pylyshyn (1988), *Connectionism and cognitive
+architecture*, Cognition 28. Barsalou (1999), *Perceptual symbol systems*,
+Behavioral and Brain Sciences 22(4). Rosch, Mervis, Gray, Johnson &
+Boyes-Braem (1976), *Basic objects in natural categories*, Cognitive Psychology
+8(3). Gärdenfors (2000), *Conceptual Spaces: The Geometry of Thought*, MIT
+Press. Olshausen & Field (1996), *Emergence of simple-cell receptive field
+properties by learning a sparse code*, Nature 381 (sparse *activation* over a
+dense dictionary — the dictionary/atom side here — as distinct from the sparse
+*relational graph* of the symbol families).
 
 ## Overview
 
@@ -275,7 +444,7 @@ the principled fix for the MM_20M mean-collapse. Full design:
 |-------|------|------|-------|
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up SYNTHESIS branch (Pi/Sigma swap, rev. 2026-06-09): sigma fold + `<synthesis>` front ends + MPHF lookup | one `self.sigma` (SigmaLayer — the union fold), MPHF + index table | `forward(x_subspace)` takes one positional arg (the atom-view stem). Result = `sigma(x)` after the front end embeds. PS Lexicon (`self.vocabulary`) holds per-word vectors; MPHF maps surface → row. |
-| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) ramsified per-order sparse concept transform | STM (`ShortTermMemory`, depth ~8); per-order sparse concept-weight tables (`_csw_vals`) + concept dictionary (`similarity_codebook`) when sparse-active | `forward(subspace, word_subspace=None)`: when `_sparse_active()` (`symbolicOrder>0`, parallel), runs the per-order sparse encode/decode (`_sparse_concept_forward`) before the STM shift / push; otherwise STM bookkeeping only (`sigma_percept` fold retired). Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM container + main grammatical CPU + (when sparse-active) the POST-PUMP symbolic phase | STM (`ShortTermMemory`, depth ~8); per-order symbol-only `SparseLayer` families (`_sparse_fam`, percept slot retired) + concept dictionary (`similarity_codebook`) + the relation store (`ConceptAllocator` + per-order records) when sparse-active | `forward(subspace, word_subspace=None)`: STM bookkeeping only — the pump is purely subsymbolic (P3 two-phase); the symbolic transform fires ONCE post-pump (`cs_symbolic_phase`: snap + ramsified composition, driven by `_forward_body`'s cutover). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | Top-down ANALYSIS branch: pi fold + `<analysis>`/`<lexer>` knobs; unified word lexicon codebook owner; dispatch site for codebook-write ops | one `self.pi` (PiLayer — the intersection fold), unified codebook with paired (orth, semantic) rows | `forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view. `insert_paired_word(word, vec)` creates an orth row + random semantic row, parented via `Codebook.set_part_parent`. Lookup chain: surface → MPHF → orth row → semantic via parthood. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -284,8 +453,10 @@ The cross-space fold contract has changed:
 ```
 PS.forward(x):  return self.pi(x.materialize()) + self.sigma(x.materialize())
 CS.forward(subspace, word_subspace):
-    folded = _sparse_concept_forward(folded, subspace, word_subspace)   # when _sparse_active(): ramsified per-order sparse encode/decode
-    STM[0..6] = STM[1..7];  STM[7] = folded                             # then the STM shift/push (mode-dispatched)
+    STM[0..6] = STM[1..7];  STM[7] = folded          # STM shift/push only (mode-dispatched); the pump stays subsymbolic
+# POST-PUMP cutover (sparse-active, once per forward, in _forward_body):
+#   content, acts = cs.cs_symbolic_phase(last_cs.materialize())   # snap -> ramsified composition
+#   last_cs._concept_activations = acts;  SS leg built ONCE;  SBOW parks the settled slab
 SS:  no atomic forward operator; hosts insert_paired_word + write-required grammar ops
      (the CS->SS symbol bind leg is SymbolSpace.forward_concept_to_symbol, .forward()-mediated)
 ```
@@ -635,12 +806,12 @@ dispatches grammar ops over. Capacity defaults to 7 (Miller, ±2);
 `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` overrides.
 
 Post-substrate-refactor, `CS.forward(subspace, word_subspace=None)` is **STM
-bookkeeping** when the sparse transform is off — shift slots left, push the new
-idea onto slot 7. The legacy atomic forward fold (`sigma_percept`) is retired.
-(When the ramsified sparse transform is active — `symbolicOrder>0`, parallel —
-`forward` first runs `_sparse_concept_forward` to produce the concept content
-from the per-order sparse weight matrices + dictionary, then does the STM push;
-see Spaces.md → ConceptualSpace.) The mode dispatch:
+bookkeeping** — shift slots left, push the new idea onto slot 7. The legacy
+atomic forward fold (`sigma_percept`) is retired. (The ramsified symbolic
+transform no longer runs inside `forward` — P3 two-phase rework: the pump
+stays purely subsymbolic and `cs_symbolic_phase` fires ONCE at the post-pump
+cutover in `_forward_body`; its outputs feed the SS leg and the losses, never
+the STM content. See Architecture.md sec A.) The mode dispatch:
 
 - **SERIAL / GRAMMATICAL**: one idea pushed per word; STM shifts (oldest
   dropped from slot 0). Grammar ops dispatched per word or at sentence

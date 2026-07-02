@@ -41,6 +41,9 @@
     <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
          forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
     <symbolTower>true</symbolTower>
+    <!-- P4 two-phase plan: distinct per-pass sigma/pi layers, the
+         subsymbolic reasoning engine driving the pump's settle. -->
+    <subsymbolicStack>true</subsymbolicStack>
     <basicLevelMinSize>0</basicLevelMinSize>
     <basicLevelMaxSize>24</basicLevelMaxSize>
 
@@ -79,7 +82,11 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
-    <nVectors>8</nVectors>
+    <!-- P5 capacity sizing: the order blocks must hold the mint load (XOR:
+         4 words x (A word-sym + B object-sym) + metas + joint-chain links).
+         Post-P3 the inventory is decoupled from the 8-slot slab (content
+         never substitutes), so nVectors > nInput is safe: caps = [16, 16]. -->
+    <nVectors>32</nVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>1024</nDim>
     <nOutput>8</nOutput>

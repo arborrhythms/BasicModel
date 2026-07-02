@@ -129,6 +129,22 @@
            WholeSpace codebooks. Default false: no table allocated, no raising
            (byte-identical). -->
       <xs:element name="mereologyRaise" type="xs:boolean" minOccurs="0"/>
+      <!-- RETIRED (2026-07-02 P3 two-phase forward, decision 10): phase
+           separation makes non-replacement structural; the symbolic
+           phase's outputs feed the SS leg, the head-side losses, and the
+           concept table, never substituting the subsymbolic advance.
+           Parsed only to emit a DeprecationWarning. -->
+      <xs:element name="sparseReplace" type="xs:boolean" minOccurs="0"/>
+      <!-- P4 sigma/pi stacks (2026-07-02 two-phase plan): distinct per-pass
+           subsymbolic layers, PS sigmas[t] / WS pis[t], t in
+           0..subsymbolicOrder-1 (depth IS mereological order; the stack is
+           the subsymbolic reasoning engine). Default false: the single
+           reused sigma/pi, byte-identical (construction is RNG-neutral). -->
+      <xs:element name="subsymbolicStack" type="xs:boolean" minOccurs="0"/>
+      <!-- Pass indices whose stack layer is the IDENTITY pass-through, e.g.
+           "0,2"; the slot still occupies its pass so the pump always runs
+           to subsymbolicOrder. Consumed only when subsymbolicStack=true. -->
+      <xs:element name="subsymbolicNoop" type="xs:string" minOccurs="0"/>
       <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
            terminal ConceptualCombine is built with n_streams=3 and bind_streams
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default

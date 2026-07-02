@@ -87,6 +87,65 @@ after other parameters stop changing).
 
 A concept can be split into two percepts without loss.
 
+### Order, extension, and intension (2026-07-02)
+
+Concepts occupy a **ramsified order**. An **order-0 concept** is the output of
+mixing a part and a whole at the corpus callosum — it is defined
+**extensionally**, by its perceptual support (the percepts that fall under it),
+and it is **subsymbolic**: a conceptual-space citizen with no relational
+definition yet. It is grounded directly. A **higher-order concept** is defined
+in terms of other symbols (its sparse constituent edges) and so acquires an
+**intensional** definition (its *sense* — the relations that fix it), while
+still retaining extensional grounding, inherited transitively through its
+constituents down to order-0's support and refinable by direct experience.
+Ascending the orders is therefore a **graded extensional $\to$ intensional
+shift, never a hard switch**, and the grounding becomes increasingly *mediated*
+(reached through the definitional graph rather than directly from percepts) —
+which is why superordinate concepts feel more theoretical and less perceptual
+(Rosch et al. 1976; the basic $\to$ superordinate trajectory). This is the
+reconciliation of the prototype-vs-definition tension: a concept is *both* its
+region and its definition, because intension and extension are carried by two
+different structures over the same object. Concretely — **intension is the
+sparse edge-graph; extension is the atom's position** (Frege's sense /
+reference; Carnap's intension / extension, realized as graph-over-geometry).
+
+Because every concept, at any order, has an extensional footprint (a grounded
+atom), specific and general objects share **one conceptual space**: a single
+dictionary holds each concept as a *point*, and the relational graph is
+structure laid *over* that space, not a second space. The single-space claim is
+not a new assumption — it follows from grounding (symbols are a subtype of
+perceptual objects; see [Symbolic Space](#symbolic-space) below). One
+refinement matters: a concept's home in the space is its **point/atom**, *not*
+necessarily a convex region. Gärdenfors's convexity holds for *natural*
+concepts and is the **order-0 / extensional limit**, cleanest at the grounded
+base; **discontiguous, high-order** objects still live in the same space as
+points, but their extension is **graph-defined** (the things reachable through
+their definition), not a convex region — which is exactly why the
+word$\leftrightarrow$object bridge needs a MetaSymbol ("no convex set is
+specific enough," see [doc/Mereology.md](Mereology.md)). So: **one space of
+points plus a relational graph, with convexity as the basal/extensional
+reading.** The cognitive grounding for the dense-perceptual / sparse-symbolic
+split is in [doc/Architecture.md](Architecture.md) "Cognitive grounding."
+
+The 2026-07-02 two-phase rework makes the extensional/intensional seam
+OPERATIONAL: the forward is a purely continuous PS/WS$\leftrightarrow$CS pump
+(extension settling) followed by ONE late snap to the order-0 codebook block
+-- quantization exactly at the bandwidth seam -- and then the symbolic
+composition over the relational graph (intension). Order-0 concepts ARE
+codebook rows (extension = the atom's position, no edges); order $\ge 1$
+concepts are edge-defined (intension = the sparse graph). Three relational
+primitives carry the graph (Alec 2026-07-02): the sec-4c ORDERED PAIR
+$[whole, part]$ (whole $\Rightarrow$ part / if $\to$ then); the SINGLETON --
+a whole containing exactly one symbolic part, the unit-set $\{x\}$ Lewis
+resisted, here the constructive primitive; and the recursion VINE (ordered
+chains from nested pairs -- order from nesting, since each row is set-like).
+Where the relation does NOT need order (the word/object meta), the read-out
+is typed intersection, not slot order. See doc/Architecture.md sec A and
+doc/plans/2026-07-02-two-phase-loops-sparse-relation.md; the un-ramsified
+successor (iteration over one untyped square layer, with Kripke groundedness
+as the cycle diagnostic) is sketched in
+doc/plans/2026-07-02-iterated-symbolic-loop.md.
+
 ## Symbolic Space
 
 *Symbolic Spaces* are composed of percepts that reference concepts --- a

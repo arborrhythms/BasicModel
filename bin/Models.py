@@ -881,18 +881,28 @@ class BaseModel(Mereology, nn.Module):
         # The ConceptualSpaces need the same stamp so the sparse-coding edge
         # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
         # activate together. A plain host-attribute stamp -- byte-identical.
-        # PS/WS codebook sizes (configured max -- stable across codebook growth)
-        # so the sparse population and the forward agree on the source layout
-        # offsets [PS | WS | SS_0..]. Plain host-attribute stamp -- byte-identical.
-        _ps = getattr(self, 'perceptualSpace', None)
-        _ws_list = getattr(self, 'wholeSpaces', None) or []
-        _n_ps = int(getattr(_ps, 'nVectors', 0) or 0) if _ps is not None else 0
-        _n_ws = int(getattr(_ws_list[-1], 'nVectors', 0) or 0) if _ws_list else 0
+        # (P2 symbolic-only rework: the _n_ps_codes/_n_ws_codes source-layout
+        # stamps retired with the percept families -- a_0 comes from the
+        # order-0 snap, not PS/WS presence columns.)
+        # <sparseReplace> RETIRED (P3 two-phase forward, decision 10): phase
+        # separation makes non-replacement STRUCTURAL -- sparse content never
+        # substitutes subsymbolic content; the symbolic phase's outputs feed
+        # the SS leg, the head-side losses, and the concept table. The knob
+        # parses as an inert deprecation warning.
+        if TheXMLConfig.get("architecture.sparseReplace",
+                            default=None) is not None:
+            warnings.warn(
+                "<sparseReplace> is retired (two-phase forward): the "
+                "symbolic phase never substitutes the subsymbolic advance; "
+                "the knob is ignored.", DeprecationWarning)
+        # P4 <subsymbolicStack>: distinct per-pass sigma/pi layers (the
+        # spaces build them at construction; this flag gates the model-side
+        # consumers, e.g. the pump settle-signal readout).
+        self.subsymbolic_stack = bool(TheXMLConfig.get(
+            "architecture.subsymbolicStack", default=False))
         for _cs in (getattr(self, 'conceptualSpaces', None) or []):
             object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_cs, '_serial', self.serial)
-            object.__setattr__(_cs, '_n_ps_codes', _n_ps)
-            object.__setattr__(_cs, '_n_ws_codes', _n_ws)
             # Back-ref to the model so the CS can rebuild the optimizer when its
             # per-order sparse weight Parameters grow (mirrors codebook growth).
             object.__setattr__(_cs, '_model', self)
@@ -3336,19 +3346,27 @@ class BasicModel(BaseModel):
         rows as the per-concept located codes. Returns a scalar tensor, or
         ``None`` when the codebook / parked slab is unavailable or serial.
 
-        NOTE (2026-06-24): the ConceptualSpace has NO forward codebook -- its
-        ``.what`` is a *computed* Tensor from the percept binding, and
-        ``subspace.codebook()`` is ``None``.  So this similarity_codebook is
-        forward-disconnected: situating it cannot differentiate the (computed,
-        collinear) conceptual representation.  Real co-location needs the
-        percept->concept binding to differentiate upstream (or a commitment
-        loss training that binding), not a codebook to situate.  See
-        memory/conceptual-similarity-space.md.
+        NOTE (2026-06-24, HISTORICAL for the sparse path): the ConceptualSpace
+        has NO forward codebook -- its ``.what`` is a *computed* Tensor from
+        the percept binding -- so situating the codebook alone could not
+        differentiate the conceptual representation. RESOLVED 2026-07-02 (plan
+        C1) for sparse-active configs: the parked slab is the LIVE composed
+        code (grad-bearing through the SparseLayer families), and the SBOW
+        situates the CODES against the codebook pool -- the window is the
+        slab, not the snapped rows -- so co-location trains the
+        percept->concept binding upstream. The no-grad snap-gather below
+        remains the sparse-INACTIVE legacy path.
         """
         cs = getattr(self, "conceptualSpace", None)
         cb = getattr(cs, "similarity_codebook", None) if cs is not None else None
         slab = getattr(self, "_cs_parallel_slab", None)
+        cs_src = getattr(self, "_cs_parallel_slab_cs", None)
         object.__setattr__(self, "_cs_parallel_slab", None)  # consume-once
+        object.__setattr__(self, "_cs_parallel_slab_cs", None)
+        if cs_src is not None:
+            # Live sparse path: pool from the dictionary that composed the slab
+            # (the parked stage CS), not the terminal codebook.
+            cb = getattr(cs_src, "similarity_codebook", None) or cb
         if cb is None or slab is None or self.serial:
             return None
         if not torch.is_tensor(slab) or slab.dim() != 3 or slab.shape[1] < 2:
@@ -3360,13 +3378,46 @@ class BasicModel(BaseModel):
         D = min(int(slab.shape[-1]), int(rows.shape[-1]))
         slab = slab[..., :D]
         rows = rows[..., :D]
+        from embed import conceptual_sbow_loss_codes
+        if slab.requires_grad:
+            # Sparse-active live codes (plan C1): the window IS the composed
+            # code slab; situating it differentiates the sparse binding.
+            return conceptual_sbow_loss_codes(slab, pool=rows, scale=1.0)
         with torch.no_grad():
             s = slab / slab.norm(dim=-1, keepdim=True).clamp_min(eps)
             r = rows / rows.norm(dim=-1, keepdim=True).clamp_min(eps)
             assign = torch.einsum('bnd,vd->bnv', s, r).argmax(dim=-1)   # [B, N]
         window = rows[assign]                                           # [B, N, D]
-        from embed import conceptual_sbow_loss_codes
         return conceptual_sbow_loss_codes(window, pool=rows, scale=1.0)
+
+    def _reconstruction_seed(self):
+        """The terminal C-space event seeding the reconstruction reverse.
+
+        PARALLEL mode prefers the LIVE stage carrier (``_combine_last_cs_sub``)
+        over the detached STM snapshot: the reverse chain is
+        input-differentiable, so a live seed lets ``lossRev`` train the
+        forward representation to be reversible. With the detached snapshot
+        the loss was a CONSTANT -- no gradient anywhere -- the 2026-07-02
+        MM-20M "recon does not converge" root cause. The STM snapshot itself
+        stays detached (memory, not a gradient carrier); SERIAL keeps the
+        snapshot's reduced-single-idea convention. ``None`` when no usable
+        seed exists."""
+        serial = bool(getattr(self, 'serial', False))
+        if not serial:
+            live = getattr(self, "_combine_last_cs_sub", None)
+            ev = (live.materialize()
+                  if live is not None and hasattr(live, "materialize")
+                  else None)
+            if (ev is not None and torch.is_tensor(ev) and ev.dim() == 3
+                    and ev.shape[1] >= 1):
+                return ev
+        stm = (self.conceptualSpace.stm
+               if self.conceptualSpace is not None else None)
+        snap = stm.snapshot() if stm is not None else None
+        if (snap is not None and torch.is_tensor(snap)
+                and snap.dim() == 3 and snap.shape[1] >= 1):
+            return snap if not serial else snap[:, :1, :]
+        return None
 
     def accumulate_output_symbol_residual(self, outputTensor, outputDataPred):
         """Use supervised output targets to form a symbol-space residual.
@@ -4175,16 +4226,8 @@ class BasicModel(BaseModel):
                     # for a depth-1 reduced sentence slot -1 is empty) -> the
                     # reverse decoded an empty seed.
                     rev_sub = None
-                    stm = (self.conceptualSpace.stm
-                           if self.conceptualSpace is not None
-                           else None)
-                    snap = stm.snapshot() if stm is not None else None
-                    if (snap is not None and torch.is_tensor(snap)
-                            and snap.dim() == 3 and snap.shape[1] >= 1):
-                        if not bool(getattr(self, 'serial', False)):
-                            terminal_idea = snap         # [B, N, D]
-                        else:
-                            terminal_idea = snap[:, :1, :]   # slot 0 = single S
+                    terminal_idea = self._reconstruction_seed()
+                    if terminal_idea is not None:
                         cs = self.conceptualSpace
                         cs.subspace.set_event(terminal_idea)
                         rev_sub = self.reverse(
@@ -6556,6 +6599,8 @@ class BasicModel(BaseModel):
         # ``prediction_mode == "none"`` (default) and a cold ring both keep
         # ``payload`` None -> no addition (byte-identical empty seed).
         carriers = []            # per-stage exact bind output (the FULL mix)
+        prev_cs_stage = None     # P3: prior stage's cs (demux-feedback reads)
+        _pump_qe = []            # P4: per-stage per-percept settle signal
         _seed = self._consume_intersentence_seed()
         seed_payload = _seed[1] if _seed is not None else None
         # Verification handle (Task A6 test): the predicted CS_{-1} seed
@@ -6572,6 +6617,9 @@ class BasicModel(BaseModel):
                 self.symbolSpace.recur_pass = int(t)
             else:
                 self.perceptualSpace._recurrent_pass_idx = t
+            # P4 stack selection: WS reads the pump pass for its per-pass pi
+            # (plain host stamp -- byte-identical when the stack is off).
+            object.__setattr__(ws, "_pump_pass_idx", int(t))
             # Dual-input plan sec.2 (rev. 2026-06-09): stage 0 reads the
             # UNITY view (parked by _lex_embed_stem) as direct symbolic
             # evidence -- the top-down analysis branch's input. Later
@@ -6591,11 +6639,16 @@ class BasicModel(BaseModel):
             # nearest-row assignment, so a detached materialize suffices. Gated
             # on conceptualSimilarityScale > 0 so a config that does not train
             # the similarity codebook keeps a byte-identical forward.
-            if (t == 0 and not self.serial
+            if (t == 0 and not self.serial and not cs._sparse_active()
                     and float(getattr(getattr(self, "loss", None),
                                       "conceptual_similarity_scale", 0.0) or 0.0) > 0.0):
-                object.__setattr__(
-                    self, "_cs_parallel_slab", CS_sub.materialize().detach())
+                # Sparse-inactive legacy park: detached t=0 slab (terminal-
+                # codebook pool). Sparse-active parks LIVE at the POST-PUMP
+                # cutover instead (P3): the SBOW situates the SETTLED
+                # symbolic content, so the substitutability gradient reaches
+                # the sparse family values and the snap (2026-07-02 plan C1).
+                object.__setattr__(self, "_cs_parallel_slab",
+                                   CS_sub.materialize().detach())
             if t == 0:
                 # Asymmetric recon leg (input -> codebook): lift the
                 # stage-0 WS codebook reconstruction term -- threaded by
@@ -6694,6 +6747,21 @@ class BasicModel(BaseModel):
                     # Dark unless a scope or words-category attention is engaged
                     # -> the pass-back action is "noop" -> byte-identical.
                     ps_t = self._passback_scope_ps(t, PS_sub_stage0, prevCS_forSS)
+                if (t > 0 and cs._sparse_active()
+                        and ps_t is PS_sub_stage0
+                        and prev_cs_stage is not None):
+                    # P3 demux feedback (decision 7): the pump's PS bind leg
+                    # at t>0 is the prior stage's UNBOUND part-stream (the
+                    # C->P handoff carries the un-mix down for further σ
+                    # synthesis) -- not the stage-0 percept re-fed. Scope
+                    # attention, when it fired above, takes precedence.
+                    # P4: the pass-t stack sigma applies to the feedback
+                    # (identity when <subsymbolicStack> is off / no-op slot).
+                    _ps_fb = getattr(prev_cs_stage, "_subspaceForPS", None)
+                    if (_ps_fb is not None and hasattr(_ps_fb, "is_empty")
+                            and not _ps_fb.is_empty()):
+                        ps_t = self.perceptualSpace.synthesize_feedback(
+                            _ps_fb, t)
                 # Slice C: the SS (symbol) bind leg comes from
                 # ``SymbolSpace.forward_concept_to_symbol(CS_sub)`` -- the
                 # ``.forward()``-mediated CS->SS transform (the dataflow rule:
@@ -6703,11 +6771,15 @@ class BasicModel(BaseModel):
                 # symbol tower in parallel mode -- the leg the 3-stream bind
                 # consumes. Off-path (2-stream / symbol tower off) leaves it
                 # None, so ``bind_streams`` never enters the SS branch ->
-                # byte-identical.
+                # byte-identical. P3 two-phase forward: the SPARSE pump is
+                # 2-stream -- NO symbol leg inside the loop (quantization only
+                # at the post-pump cutover below); the symbolicOrder=0
+                # symbolTower scaffold path keeps its in-loop leg untouched.
                 SS_sub = (self.symbolSpace.forward_concept_to_symbol(CS_sub)
                           if (getattr(self, "symbol_tower", False)
                               and not self.serial
-                              and self.symbolSpace is not None)
+                              and self.symbolSpace is not None
+                              and not cs._sparse_active())
                           else None)
                 full_t = cs.bind_streams(
                     ps_t, WS_sub, CS_sub, SS_sub=SS_sub,
@@ -6718,6 +6790,15 @@ class BasicModel(BaseModel):
                     object.__setattr__(
                         self, "_combine_fwd_cs0", full_t.detach())
                 carriers.append(full_t)
+                # P4 settle signal (report-only, no control flow): each
+                # pump stage's per-percept residual against the order-0
+                # block -- the QE snap-error read as a SIGNAL for the later
+                # adaptive-exit work. Gated on the stack (its consumer).
+                if (getattr(self, "subsymbolic_stack", False)
+                        and cs._sparse_active()):
+                    _qe_t = cs.snap_settle_qe(CS_sub.materialize())
+                    if _qe_t is not None:
+                        _pump_qe.append(_qe_t)
             # Stage 1.F: ``_cs_cache[t] = CS_sub`` retired. The
             # terminal C-space_role idea lives on ``conceptualSpace.stm``
             # (the bookkeeping push happens inside cs.forward); the
@@ -6746,8 +6827,39 @@ class BasicModel(BaseModel):
             # ``ws.forward(...)``); ``symbol_cache`` resolves there.
             last_cs = CS_sub
             # Cascade: this stage's (symbolically generalized) output
-            # becomes the next stage's contribution.
+            # becomes the next stage's contribution -- the MIX goes UP
+            # (the demux feedback above sends the un-mix DOWN per tower).
             contribution = CS_sub
+            prev_cs_stage = cs
+        # P3 LATE CUTOVER (two-phase forward): the pump above stayed purely
+        # continuous/subsymbolic; NOW -- once, at the bandwidth seam -- snap
+        # the settled field to the order-0 codebook block and run the
+        # symbolic phase (``cs_symbolic_phase``). The activations stamp the
+        # terminal CS (the SS leg + head-side losses read them); the settled
+        # symbolic content feeds the conceptual SBOW (C1, live). The cutover
+        # cs is STAGE 0's (the relation store the autobind populates lives
+        # there); symbolicOrder=0 (incl. the symbolTower scaffold) never
+        # enters -- byte-identical.
+        _cut_cs = (self.body_stages[0]["cs"]
+                   if getattr(self, "body_stages", None) else None)
+        if (last_cs is not None and _cut_cs is not None
+                and _cut_cs._sparse_active()):
+            _settled = last_cs.materialize()
+            _content, _acts = _cut_cs.cs_symbolic_phase(_settled)
+            object.__setattr__(last_cs, "_concept_activations", _acts)
+            if _acts is not None:
+                # The SS leg, ONCE: syncs the SS codebook to the settled
+                # concept codes; the leg's gradient rides the activations.
+                if (getattr(self, "symbol_tower", False)
+                        and self.symbolSpace is not None):
+                    self.symbolSpace.forward_concept_to_symbol(last_cs)
+                # SBOW C1 on the SETTLED symbolic slab (grad-bearing; the
+                # pool is the SAME dictionary that composed it).
+                if float(getattr(getattr(self, "loss", None),
+                                 "conceptual_similarity_scale", 0.0)
+                         or 0.0) > 0.0:
+                    object.__setattr__(self, "_cs_parallel_slab", _content)
+                    object.__setattr__(self, "_cs_parallel_slab_cs", _cut_cs)
         # A4: thread the per-stage augments to the reverse as a transient
         # local on ``self`` that the SAME forward's reverse reads (the
         # design's accepted near-term threading; A5 makes per-batch data
@@ -6760,6 +6872,8 @@ class BasicModel(BaseModel):
         # IS the whole bind, so the reverse needs nothing alongside it.
         object.__setattr__(self, "_combine_carriers", carriers)
         object.__setattr__(self, "_combine_last_cs_sub", last_cs)
+        # P4 settle signal: per-stage per-percept residuals (report-only).
+        object.__setattr__(self, "_pump_settle_qe", _pump_qe)
         # Reset so standalone PartSpace.forward calls (and the
         # next forward's pass 0) see the AR-streaming serial warm path.
         if self.symbolSpace is not None:

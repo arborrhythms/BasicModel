@@ -3257,17 +3257,19 @@ LETTER, DIGIT, WHITESPACE, PUNCT = 0, 1, 2, 3
 # predicate): used as a property_class_whole key, never passed to
 # char_class_region (whose spans come from the whitespace analysis cut).
 WORD = 100
-# Key-only sentinels for the two POLES of the relation-only CS symbol lattice
-# (doc/specs/mereological-order-raising.md, the word/object/meta creation). A
-# freshly-minted OBJECT-symbol B starts maximally unspecified: its only WHOLE is
-# the UNIVERSE (the top -- the entire input extent, more general than a word)
-# and its only PART is the ATOM level (the bottom -- "made of some atoms",
-# unspecified). Successive refinement (σ synthesizes the atoms into higher-order
-# parts; π splits the universe into finer wholes -- the lifecycle loop) replaces
-# these poles with concrete part / whole codes. Like WORD, these are key-only
-# whole/part-code sentinels in the relation-only table, never tiling predicates.
-UNIVERSE = 101
-ATOM = 102
+# The two POLES of the relation-only CS symbol lattice (Alec 2026-07-02): in
+# presence space NOTHING = [0,0,...] (bottom; as a PART it contributes W @ 0 = 0
+# -- no edge needed) and EVERYTHING = [1,1,...] (top; as a WHOLE it contributes
+# the sum of its weights -- realized as the constant-1 "everything" column of
+# the percept SparseLayer, i.e. a learnable bias). A freshly-minted OBJECT
+# concept B starts maximally unspecified -- Parts(B)={NOTHING},
+# Wholes(B)={EVERYTHING} -- and successive refinement replaces the poles with
+# concrete codes (for text: letters below, the sentence above). The ids stay
+# key-only sentinels in the relation table, never tiling predicates.
+EVERYTHING = 101
+NOTHING = 102
+UNIVERSE = EVERYTHING   # back-compat alias (pre-2026-07-02 name)
+ATOM = NOTHING          # back-compat alias (pre-2026-07-02 name)
 _CHAR_CLASS_RANGES = {
     LETTER: [(65, 90), (97, 122)],          # A-Z, a-z
     DIGIT: [(48, 57)],                       # 0-9
@@ -4442,6 +4444,438 @@ class SigmaLayer2(Layer):
         (``Ops.disjunctionReverse``) as today.
         """
         return 1.0 - self.kernel.compose(1.0 - left, 1.0 - right, gate=gate)
+
+
+class SparseLayer(Layer):
+    """COO sparse linear substrate: forward tanh(W @ x), reverse tanh(W^T @ y).
+
+    The percept/symbol -> concept map of the ramsified conceptual space
+    (doc/plans/2026-07-02-sparse-layer-conceptual-embedding.md). Edges are
+    appended host-side as concepts mint (add_edge, idempotent) and removed by
+    pruning rounds (remove_edges); values are ONE learnable Parameter grown
+    tail-preserving so trained weights survive growth. No LDU inverse: the
+    reverse is the transpose (sparse autoencoder pair). No atanh entry: inputs
+    are presences [0,1) / activations (-1,1), not logit-domain codes.
+    Kernel "scatter" (index_select + index_add_) is export-safe (MLX /
+    executorch); "spmm" (torch.sparse.mm, COO kept on MPS) is the opt-in
+    fast path. Empty layer -> zeros (both directions).
+    """
+
+    def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
+                 device=None, roles=None):
+        super().__init__(nInput, nOutput)
+        if kernel not in ("scatter", "spmm"):
+            raise ValueError(f"SparseLayer: unknown kernel {kernel!r}")
+        self.nonlinear = nonlinear
+        self.kernel = kernel
+        self._target_device = device
+        self._rows = []            # host COO row (output) indices
+        self._cols = []            # host COO col (input) indices
+        self._init_vals = []       # host init weights (growth tail source)
+        self._index = {}           # (row, col) -> position in values
+        self.values = None         # nn.Parameter [nnz]
+        self._dev_cache = None     # (device, rows_t, cols_t), dirty on edit
+        # Role-tagged column blocks: ordered (name, width) pairs partitioning
+        # the input columns; the bias is its OWN trailing 1-wide block.
+        self.roles = tuple(roles) if roles else None
+        self._role_off = {}
+        if self.roles:
+            off = 0
+            for (name, width) in self.roles:
+                self._role_off[str(name)] = off
+                off += int(width)
+            if off != self.nInput:
+                raise ValueError(
+                    f"SparseLayer: role widths sum {off} != nInput "
+                    f"{self.nInput}")
+        # Discrete relation store (the layer's SECOND reading of concept
+        # structure): ordered role-tagged constituent records per row key
+        # (global concept id), plus the capacity-bounded tensor-row map.
+        self._constituents = {}    # key -> [(role, ref), ...] insertion order
+        self._tensor_rows = {}     # key -> local tensor row
+        self._row_next = 0         # next unallocated local tensor row
+
+    @property
+    def nnz(self):
+        return len(self._rows)
+
+    def _device(self):
+        if self.values is not None:
+            return self.values.device
+        return self._target_device or torch.device("cpu")
+
+    def _grow_values(self):
+        # Tail-preserving: keep trained prefix, init the new tail.
+        n = self.nnz
+        if n == 0:
+            return
+        prev = self.values
+        if prev is not None and int(prev.shape[0]) == n:
+            return
+        dev = self._device()
+        new = torch.tensor(self._init_vals, dtype=torch.float32, device=dev)
+        if prev is not None:
+            keep = min(int(prev.shape[0]), n)
+            if keep > 0:
+                with torch.no_grad():
+                    new[:keep] = prev.detach()[:keep].to(dev)
+        self.values = nn.Parameter(new)
+        self._dev_cache = None
+
+    def role_slice(self, name):
+        """The ``(start, end)`` input-column range of role block ``name``."""
+        off = self._role_off.get(str(name))
+        if off is None:
+            raise KeyError(f"SparseLayer: unknown role {name!r}")
+        width = dict((str(n), int(w)) for (n, w) in self.roles)[str(name)]
+        return off, off + width
+
+    def add_edge(self, row, col, weight=1.0, role=None):
+        """Append edge output[row] <- weight * input[col]; idempotent. With
+        ``role``, ``col`` is block-local and offsets into that role block."""
+        if role is not None:
+            start, end = self.role_slice(role)
+            c = int(col)
+            if not (0 <= c < end - start):
+                raise IndexError(
+                    f"SparseLayer.add_edge: col {c} beyond role "
+                    f"{role!r} width {end - start}")
+            col = start + c
+        r, c = int(row), int(col)
+        if not (0 <= r < self.nOutput and 0 <= c < self.nInput):
+            raise IndexError(
+                f"SparseLayer.add_edge out of range: ({r},{c}) for "
+                f"[{self.nOutput},{self.nInput}]")
+        pos = self._index.get((r, c))
+        if pos is not None:
+            return pos
+        pos = self.nnz
+        self._rows.append(r)
+        self._cols.append(c)
+        self._init_vals.append(float(weight))
+        self._index[(r, c)] = pos
+        self._grow_values()
+        return pos
+
+    def remove_edges(self, pairs):
+        """Drop (row, col) edges (pruning rounds); compact values, keep survivors."""
+        drop = {(int(r), int(c)) for (r, c) in pairs} & set(self._index)
+        if not drop:
+            return 0
+        keep = [i for i in range(self.nnz)
+                if (self._rows[i], self._cols[i]) not in drop]
+        old_vals = self.values
+        self._rows = [self._rows[i] for i in keep]
+        self._cols = [self._cols[i] for i in keep]
+        self._init_vals = [self._init_vals[i] for i in keep]
+        self._index = {(r, c): i
+                       for i, (r, c) in enumerate(zip(self._rows, self._cols))}
+        if not keep:
+            self.values = None
+        else:
+            with torch.no_grad():
+                kept = old_vals.detach()[torch.tensor(keep)].clone()
+            self.values = nn.Parameter(kept.to(old_vals.device))
+        self._dev_cache = None
+        return len(drop)
+
+    def _indices(self, device):
+        # Cached long index tensors per device; rebuilt when edited.
+        cache = self._dev_cache
+        if cache is not None and cache[0] == device:
+            return cache[1], cache[2]
+        rows_t = torch.tensor(self._rows, dtype=torch.long, device=device)
+        cols_t = torch.tensor(self._cols, dtype=torch.long, device=device)
+        self._dev_cache = (device, rows_t, cols_t)
+        return rows_t, cols_t
+
+    def _matmul(self, x, transpose=False):
+        # Sparse matmul core; x is [n_in, B]; returns [n_out, B].
+        n_from = self.nInput if not transpose else self.nOutput
+        n_to = self.nOutput if not transpose else self.nInput
+        if int(x.shape[0]) != n_from:
+            raise ValueError(
+                f"SparseLayer: input rows {int(x.shape[0])} != {n_from}")
+        if self.nnz == 0 or self.values is None:
+            return x.new_zeros((n_to, int(x.shape[-1])))
+        rows_t, cols_t = self._indices(x.device)
+        take, put = (cols_t, rows_t) if not transpose else (rows_t, cols_t)
+        vals = self.values.to(x.device)
+        if self.kernel == "spmm":
+            idx = torch.stack([put, take])
+            W = torch.sparse_coo_tensor(
+                idx, vals, (n_to, n_from)).coalesce()
+            if x.device.type != "mps":       # MPS has no COO->CSR kernel
+                W = W.to_sparse_csr()
+            return torch.sparse.mm(W, x)
+        contrib = x.index_select(0, take) * vals.unsqueeze(-1)
+        out = x.new_zeros((n_to, int(x.shape[-1])))
+        return out.index_add_(0, put, contrib)
+
+    def _apply_shape(self, x, transpose):
+        squeeze = x.dim() == 1
+        out = self._matmul(x.unsqueeze(-1) if squeeze else x, transpose)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward_linear(self, x):
+        """W @ x with NO nonlinearity (for pre-tanh summation of families)."""
+        squeeze = x.dim() == 1
+        out = self._matmul(x.unsqueeze(-1) if squeeze else x, False)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward_linear_roles(self, x):
+        """Role-tagged pre-tanh map ``W @ [x | x | 1]``: the whole-role and
+        part-role blocks both read the SAME lower-order activations ``x``
+        (``[n_ss, B]``) through their own learned weights; the trailing bias
+        block reads the constant 1 (the EVERYTHING pole). Requires roles
+        ``(whole, part, bias)`` with equal whole/part widths."""
+        if not self.roles:
+            raise ValueError("SparseLayer.forward_linear_roles: no roles")
+        squeeze = x.dim() == 1
+        xin = x.unsqueeze(-1) if squeeze else x
+        ones = xin.new_ones((1, int(xin.shape[-1])))
+        out = self._matmul(torch.cat([xin, xin, ones], dim=0), False)
+        return out.squeeze(-1) if squeeze else out
+
+    def forward(self, x):
+        return self._apply_shape(x, transpose=False)
+
+    def reverse(self, y):
+        """Transpose decode: tanh(W^T @ y) (the sparse autoencoder pair)."""
+        return self._apply_shape(y, transpose=True)
+
+    # -- discrete relation store (doc/plans/2026-07-02-two-phase-loops-
+    # sparse-relation.md P1): the layer owns BOTH readings of concept
+    # structure -- the weighted role-tagged COO above and the ordered
+    # relation records below. Row keys are GLOBAL concept ids; the local
+    # tensor row of a key is a separate capacity-bounded allocation. -------
+
+    def ensure_row_key(self, key):
+        """Register ``key`` in the record store (empty record list)."""
+        self._constituents.setdefault(int(key), [])
+
+    def pop_row_key(self, key):
+        """Remove ``key`` + its records (retire / cross-order migration)."""
+        return self._constituents.pop(int(key), None)
+
+    def put_row_key(self, key, records):
+        """Install ``records`` for ``key`` (cross-order migration target)."""
+        self._constituents[int(key)] = list(records or ())
+
+    def constituents(self, key):
+        """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
+        return list(self._constituents.get(int(key), ()))
+
+    def add_constituent(self, key, role, ref):
+        """Append a role-tagged constituent record; idempotent per record."""
+        recs = self._constituents.setdefault(int(key), [])
+        if (role, ref) not in recs:
+            recs.append((role, ref))
+
+    def remove_constituent(self, key, role, ref):
+        """Discard one role-tagged record (silent when absent)."""
+        recs = self._constituents.get(int(key))
+        if recs is not None and (role, ref) in recs:
+            recs.remove((role, ref))
+
+    def set_role_constituents(self, key, role, refs):
+        """Replace ALL of ``role``'s records for ``key`` (other roles kept)."""
+        recs = self._constituents.setdefault(int(key), [])
+        kept = [(r, x) for (r, x) in recs if r != role]
+        self._constituents[int(key)] = kept + [(role, x) for x in refs]
+
+    def clear_constituents(self, key):
+        """Empty ``key``'s records but KEEP the key registered."""
+        self._constituents[int(key)] = []
+
+    def count_role(self, key, role):
+        """Number of ``role``-tagged records on ``key``."""
+        return sum(1 for (r, _x) in self._constituents.get(int(key), ())
+                   if r == role)
+
+    def row_is_identity(self, key):
+        """Exactly one part-role + one whole-role record: the 1:1 tie."""
+        return (self.count_role(key, "part") == 1
+                and self.count_role(key, "whole") == 1)
+
+    def embed_pair(self, key, whole_ref, part_ref, weight=1.0):
+        """EXACT embedding of the ordered pair, sec-4c storage order
+        ``[whole, part]`` (whole first). Records the ordered constituents;
+        the weighted role-tagged COO edges are written by the population
+        pass (P2 wires them here once the symbol columns split by role)."""
+        self.ensure_row_key(key)
+        self.add_constituent(key, "whole", whole_ref)
+        self.add_constituent(key, "part", part_ref)
+        return int(key)
+
+    def discretize_row(self, key):
+        """The ``(whole_ref, part_ref)`` pair when ``key`` holds EXACTLY one
+        whole-role and one part-role record; ``None`` otherwise (the discrete
+        reading is defined only on the binary-ordered subset)."""
+        if not self.row_is_identity(key):
+            return None
+        recs = self._constituents.get(int(key), ())
+        whole = next(x for (r, x) in recs if r == "whole")
+        part = next(x for (r, x) in recs if r == "part")
+        return whole, part
+
+    def assign_row(self, key, capacity=None):
+        """First-seen local tensor row of ``key``; ``None`` when the block is
+        full. ``capacity`` bounds allocation (defaults to ``nOutput``)."""
+        k = int(key)
+        r = self._tensor_rows.get(k)
+        if r is None:
+            cap = int(self.nOutput if capacity is None else capacity)
+            if self._row_next >= cap:
+                return None
+            r = self._row_next
+            self._row_next = r + 1
+            self._tensor_rows[k] = r
+        return int(r)
+
+    def row_of(self, key):
+        """The local tensor row of ``key``, or ``None`` if unallocated."""
+        return self._tensor_rows.get(int(key))
+
+    def hebbian_strengthen_row(self, local_row, eta=0.1, cap=4.0):
+        """Bump every edge on ``local_row`` by ``eta`` (clamped to ``cap``);
+        ``no_grad`` -- evidence weights update by their own law."""
+        if self.values is None:
+            return
+        with torch.no_grad():
+            for (r, _c), i in self._index.items():
+                if r == int(local_row):
+                    self.values[i] = min(float(cap),
+                                         float(self.values[i]) + float(eta))
+
+
+class ConceptAllocator:
+    """Thin shared owner of GLOBAL concept structure for one ConceptualSpace
+    (2026-07-02 two-phase/consolidation plan P1): id allocation, ramsified
+    order derivation, raise/retire bookkeeping, the resolved-identity map,
+    and the global idempotency caches. The per-order role-tagged stores live
+    on per-order :class:`SparseLayer`s (``self.layer(order)``, the symbol
+    family); a concept's records live at its CURRENT derived order and
+    migrate when a constituent write changes that order."""
+
+    def __init__(self, layer_sizer=None, order_cap=None):
+        self.next_id = 1                 # 0 reserved
+        self.placement = {}              # cid -> order holding its records
+        self.raised = set()              # σ-raised: never re-refined
+        self.singletons = set()          # unit-set rows (min-support exempt)
+        self.retired = set()
+        self.identity = {}               # cid -> (part, whole) 1:1 ties
+        self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
+        self.chain_idx = {}              # ("chain", tuple) -> cid
+        self.word_obj_meta = {}          # surface key -> (A, B, C)
+        self.joint = {}                  # word-tuple key -> J
+        self._layers = {}                # order -> SparseLayer (symbol family)
+        self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
+        self._order_cap = order_cap      # () -> max ramsified order S
+
+    def layer(self, order):
+        """The symbol-family SparseLayer of ``order`` (lazy; host-sized 1x1
+        when the owner supplies no sizer, e.g. duck-typed test stubs)."""
+        o = int(order)
+        got = self._layers.get(o)
+        if got is None:
+            n_in, n_out, dev, roles = (self._layer_sizer(o)
+                                       if self._layer_sizer
+                                       else (1, 1, None, None))
+            got = SparseLayer(max(1, int(n_in)), max(1, int(n_out)),
+                              device=dev, roles=roles)
+            self._layers[o] = got
+        return got
+
+    def new_concept(self):
+        """Allocate a fresh global concept id (stable handle, no vector)."""
+        cid = int(self.next_id)
+        self.next_id = cid + 1
+        self.placement[cid] = 0
+        self.layer(0).ensure_row_key(cid)
+        return cid
+
+    def touch(self, cid):
+        """Register an externally-supplied cid (first-touch, order 0)."""
+        cid = int(cid)
+        if cid not in self.placement:
+            self.placement[cid] = 0
+            self.layer(0).ensure_row_key(cid)
+        return cid
+
+    def store_of(self, cid):
+        """The layer currently holding ``cid``'s records."""
+        return self.layer(self.placement.get(int(cid), 0))
+
+    def records(self, cid):
+        return self.store_of(cid).constituents(cid)
+
+    def refs(self, cid, role):
+        """``role``-tagged refs of ``cid`` in record (insertion) order."""
+        return [x for (r, x) in self.records(cid) if r == role]
+
+    def cap(self):
+        return int(self._order_cap()) if self._order_cap else 0
+
+    def order_of(self, cid, _seen=None):
+        """Ramsified order: 0 for all-raw constituents, else 1 + max order
+        of the sym-ref constituents, capped at S. Cycle-guarded."""
+        cid = int(cid)
+        _seen = _seen if _seen is not None else set()
+        if cid in _seen:
+            return 0
+        _seen.add(cid)
+        subs = []
+        for x in (sorted(self.refs(cid, "part"), key=repr)
+                  + sorted(self.refs(cid, "whole"), key=repr)):
+            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
+                subs.append(self.order_of(x[1], _seen))
+        return 0 if not subs else min(self.cap(), 1 + max(subs))
+
+    def settle(self, cid):
+        """Migrate ``cid``'s records to its (re-derived) order's layer."""
+        cid = self.touch(cid)
+        cur = self.placement.get(cid, 0)
+        new = self.order_of(cid)
+        if new != cur:
+            recs = self.layer(cur).pop_row_key(cid)
+            self.layer(new).put_row_key(cid, recs or [])
+            self.placement[cid] = new
+        return new
+
+    def add(self, cid, role, ref):
+        cid = self.touch(cid)
+        self.store_of(cid).add_constituent(cid, role, ref)
+        self.settle(cid)
+
+    def remove(self, cid, role, ref):
+        cid = self.touch(cid)
+        self.store_of(cid).remove_constituent(cid, role, ref)
+        self.settle(cid)
+
+    def set_role(self, cid, role, refs):
+        cid = self.touch(cid)
+        self.store_of(cid).set_role_constituents(cid, role, refs)
+        self.settle(cid)
+
+    def clear(self, cid):
+        cid = self.touch(cid)
+        self.store_of(cid).clear_constituents(cid)
+        self.settle(cid)
+
+    def drop(self, cid):
+        """Retire: remove records + registry entry (tensor rows persist --
+        per-order row history matches the pre-consolidation behavior) and
+        clear idempotency-cache entries pointing at ``cid``."""
+        cid = int(cid)
+        o = self.placement.pop(cid, None)
+        if o is not None:
+            self.layer(o).pop_row_key(cid)
+        self.retired.add(cid)
+        for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
+            self.relate_idx.pop(k, None)
 
 
 class MeronymicFoldAdapter(Layer):

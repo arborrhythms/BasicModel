@@ -64,7 +64,16 @@ def _cs_stub(ss):
                # create_word_object_meta now also decomposes the minted symbols
                # into the per-order sparse weight store; these short-circuit to a
                # no-op on the stub (not sparse-active -> no _symbolic_order).
-               "_populate_concept_weights", "_sparse_active"):
+               "_populate_concept_weights", "_sparse_active",
+               # the spans-staged S2c lifecycle (refine + pruning round).
+               "refine_over_collected", "retire_concept",
+               "prune_concept_links", "_whole_ancestors", "_drop_concept_edge",
+               "taxonomy_parent", "_relation_store", "_concept_raise_set",
+               "synthesize_higher_order", "symbols_needing_processing",
+               # re-mint Hebbian strengthening (no-op while sparse-inactive).
+               "_hebbian_strengthen",
+               # joint/sentence concept (P2: the ordered bias-bounded chain).
+               "create_joint_concept", "conceptualize_chain"):
         setattr(stub, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), stub))
     return stub
 
@@ -157,8 +166,12 @@ def test_gate_off_does_not_word_bind():
 
 def test_gate_on_creates_word_object_meta():
     """The orchestrator mints the per-word A/B/C relation-only symbols on CS
-    (Alec 2026-06-17): A = word-symbol (word-parts ⊑ word-whole), B =
-    object-symbol (ATOM ⊑ UNIVERSE, to be refined), C = reify(A, B)."""
+    (Alec 2026-06-17, meta reshaped 2026-07-02): A = word-symbol (word-parts
+    with the word-whole), B = object-symbol (NOTHING/EVERYTHING poles, to be
+    refined), C = META-concept = a FIRST-ORDER concept whose TWO PARTS are the
+    symbol for the word and the symbol for the object (a combination, not a
+    subsumption; the pairing is also available separately in references for
+    serial mode)."""
     ss = _whole_space()
     ss.subspace.what.enable_ramsification(2)
     ss._mereology_raise = True
@@ -175,9 +188,10 @@ def test_gate_on_creates_word_object_meta():
     assert stub.concept_wholes(A) == [ss._word_whole_ss["abc"]]
     # B = object-symbol: maximally unspecified poles, awaiting refinement.
     assert stub.concept_parts(B) == [ATOM] and stub.concept_wholes(B) == [UNIVERSE]
-    # C = META: reify A ⊑ B (word≡object).
-    assert stub.concept_parts(C) == [("sym", A)]
-    assert stub.concept_wholes(C) == [("sym", B)]
+    # C = META-concept (P2 flip): the sec-4c ordered pair
+    # [whole=word-symbol, part=object-symbol].
+    assert stub.concept_parts(C) == [("sym", B)]
+    assert stub.concept_wholes(C) == [("sym", A)]
 
 
 def test_meronomy_two_words_keyed_by_surface():
@@ -245,3 +259,54 @@ def test_cs_owns_relation_taxonomy_by_reference():
         setattr(bare, _m, types.MethodType(getattr(Spaces.ConceptualSpace, _m), bare))
     assert bare._relation_store() is None
     assert bare.taxonomy_children(0) == [] and bare.is_meta(0) is False
+
+
+def test_word_A_symbol_is_location_concept_no_duplicate_knit():
+    """A-merge (2026-07-02 plan, Task 9): the per-span location concept IS the
+    word A-symbol -- one knit per word, with the specific whole surviving the
+    pruning round (the generic word-class is dropped as the looser whole)."""
+    ss = _whole_space()
+    ss._mereology_raise = True
+    stub = _cs_stub(ss)
+    pid_2d, vec_tensor, word_groups, tokens = _one_word_inputs()
+    word_texts = [["abc"]]
+    percept_where = torch.tensor([[0, 1, 2, -1, -1, -1]], dtype=torch.long)
+    ss._staged_analysis_spans = torch.tensor([[[0, 3]]], dtype=torch.long)
+    stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+                              tokens=tokens, word_texts=word_texts,
+                              percept_where=percept_where)
+    A, B, C = stub._word_obj_meta["abc"]
+    # The span knit reused A (parts 10,11,12): no duplicate location concept.
+    owners = [s for s, ps in stub._concept_parts.items() if ps == {10, 11, 12}]
+    assert owners == [A]
+    # The pruning round kept the tightest whole: the specific word-whole,
+    # not the generic word-class sentinel.
+    whole = ss._word_whole_ss["abc"]
+    assert set(stub._concept_wholes[A]) == {int(whole)}
+
+
+def test_two_words_mint_the_joint_sentence_chain():
+    """The symbolic joint mixing (P2 decision 6): a presentation with two
+    words mints the ordered Gallistel CHAIN over their word-symbols -- the
+    head link is the pair [whole=first-word, part=rest], bias-bounded by
+    EVERYTHING, keyed by the word tuple."""
+    ss = _whole_space()
+    ss._mereology_raise = True
+    stub = _cs_stub(ss)
+    pid_2d = torch.tensor([[10, 11, 20, 21, 0, 0]], dtype=torch.long)
+    word_groups = torch.tensor([[0, 0, 1, 1, -1, -1]], dtype=torch.long)
+    vec_tensor = torch.randn(1, 6, _D)
+    tokens = [["ab", "cd"]]
+    stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+                              tokens=tokens)
+    A_ab, _, _ = stub._word_obj_meta["ab"]
+    A_cd, _, _ = stub._word_obj_meta["cd"]
+    J = stub._joint_concepts[("ab", "cd")]
+    from Layers import EVERYTHING
+    # head link: [whole=current word A_ab, part=rest (= A_cd)] + bias bound.
+    assert stub.concept_parts(J) == [("sym", A_cd)]
+    assert set(stub.concept_wholes(J)) == {("sym", A_ab), EVERYTHING}
+    # Idempotent: the same sentence type reuses the same joint chain.
+    stub._maybe_autobind_meta(pid_2d, vec_tensor, word_groups=word_groups,
+                              tokens=tokens)
+    assert stub._joint_concepts[("ab", "cd")] == J

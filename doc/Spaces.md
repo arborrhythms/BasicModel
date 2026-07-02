@@ -218,7 +218,7 @@ internal Sigma / Pi (no substrate-borrowing).
 | Space | Owns | Forward signature |
 |---|---|---|
 | **PartSpace** | one `self.sigma` (SigmaLayer — the synthesis fold), the `<synthesis>` front ends, MPHF + index table, the surface-keyed Lexicon (`self.vocabulary`) | `PS.forward(x_subspace)` — **single positional argument** (the atom-view stem). Body: `self.sigma(x.materialize())` after the synthesis front end embeds. |
-| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) per-order sparse concept-weight tables (`_csw_vals`) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — when `_sparse_active()`, applies the ramsified per-order sparse concept transform (`_sparse_concept_forward`) before the STM write; otherwise STM bookkeeping only (`sigma_percept` fold retired). Dispatches read-only grammar ops via the signal router. |
+| **ConceptualSpace** | STM (`ShortTermMemory`, depth ~8) + (when sparse-active) per-order symbol-only `SparseLayer` families + the relation store (`ConceptAllocator` + ordered records) + concept dictionary (`similarity_codebook`) | `CS.forward(subspace, word_subspace=None)` — STM bookkeeping only (`sigma_percept` fold retired); the ramsified symbolic transform fires ONCE post-pump at `_forward_body`'s cutover (`cs_symbolic_phase`), never in-loop (2026-07-02 two-phase rework). Dispatches read-only grammar ops via the signal router. |
 | **WholeSpace** | one `self.pi` (PiLayer — the analysis fold), the `<analysis>` + `<lexer>` knobs, the unified word lexicon codebook with paired (orth, semantic) rows; `insert_paired_word(word, vec)` API; hosts codebook-write-required grammar ops | `SS.forward(CS_subspaceForWS, IS_concepts=None)` — stage 0 reads the unity view (`IS_concepts`); later stages read the recurrent CS. Lookup chain: surface → MPHF → orth row → parented semantic row (via `Codebook.set_part_parent`). |
 
 **Composition (per-mode):**
@@ -765,17 +765,19 @@ direction.
 ## ConceptualSpace
 
 **Role.** Forms concepts from perceptual/symbolic *sources*. When the
-ramsified sparse transform is active (`symbolicOrder > 0` in parallel mode,
+ramsified transform is active (`symbolicOrder > 0` in parallel mode,
 `_sparse_active()`), a concept is a high-dimensional atom in **ConceptDim**
 (stored in the CS concept dictionary, the `similarity_codebook`) whose signed
-activation is produced by a **per-order sparse weight matrix** over its sources
-— `concept_activation = W_order @ source_activation` (`cs_sparse_encode`,
-`torch.sparse.mm`) — then scaled onto the atom (`cs_decode`). `PerceptDim` and
-`ConceptDim` are **decoupled** (the matrix lives in index/activation space); a
-concept is NOT an additive linear map over percept vectors and there are no
-"conceptual hyperplanes partitioning perceptual space." With the transform off
-the forward is STM bookkeeping only (byte-identical). See **Sparse-coding
-concept transform** below.
+activation is produced by the POST-PUMP SYMBOLIC PHASE (2026-07-02 two-phase
+rework): the settled field is snapped to the ORDER-0 codebook block
+(`cs_snap_order0`) and orders $\ge 1$ compose lower-order symbol activations
+through per-order symbol-only `SparseLayer`s, then each activation scales its
+atom (`cs_decode`). `PerceptDim` and `ConceptDim` are **decoupled** (the
+weights live in index/activation space); a concept is NOT an additive linear
+map over percept vectors and there are no "conceptual hyperplanes
+partitioning perceptual space." `CS.forward` itself is ALWAYS STM bookkeeping
+only (the transform fires once per forward at `_forward_body`'s cutover,
+never in-loop). See **The symbolic phase** below.
 
 **Geometry.** A concept code is `signed_activation × softplus(atom)`: the
 dictionary atom is a **strictly-positive** ConceptDim feature signature
@@ -837,32 +839,36 @@ the master plan, no per-stage caches. The sparse-coding reconstruction is
 referential — the per-order weight tables ARE the concept's decomposition —
 rather than an inverse fold.
 
-**Sparse-coding concept transform (ramsified per-order, torch.sparse).**
-When `_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`)
-and the per-order weight tables are populated, `forward` interposes
-`folded = self._sparse_concept_forward(folded, subspace, word_subspace)`
-*before* the STM write. A concept is a ConceptDim atom; it is linked to its
-sources by a sparse WEIGHT MATRIX — one `torch.sparse_csr` table per
-RAMSIFIED ORDER, order $k$'s sources being `[PS | WS | SS_0 … SS_{k-1}]`
-(symbols are concepts of the previous order). The forward is an encoder +
-dictionary decoder:
+**The symbolic phase (two-phase forward, 2026-07-02;
+doc/plans/2026-07-02-two-phase-loops-sparse-relation.md).** When
+`_sparse_active()` (i.e. `_symbolic_order > 0` and parallel/`serial=false`),
+`BasicModel._forward_body` runs the purely subsymbolic pump for
+`subsymbolicOrder` passes and then ONE cutover on the settled terminal field:
 
 ```
-concept_activation = W_order @ source_activation     # cs_sparse_encode (torch.sparse.mm)
-concept_code[c]    = concept_activation[c] * softplus(atom[c])   # cs_decode
+a_0     = cs_snap_order0(settled)      # tanh normalized-sum presence vs the
+                                       # ORDER-0 codebook block (+ EMA trace)
+a_k     = tanh(S_k [a_0..a_{k-1} | a_0..a_{k-1} | 1])   # role-split symbol-only
+code[c] = a[c] * softplus(atom[c])                        # cs_decode
 ```
 
-PS/WS source activations are non-negative **presences**
-(`source_code_activation(nonneg=True)`); SS sources are the lower orders'
-**signed** concept activations threaded up (the symbolic space is 1-D). The
-weights are **signed** and learnable (`_csw_vals`, grown host-side in
-`add_concept_weight`, exposed via `getParameters()` and registered into the
-optimizer via `_maybe_rebuild_optimizer_for_csw`). Capacity is **dyadic** by
-order ($N/2, N/4, …$, stacked; `order_capacities` / `order_slice`). Population
-is at mint, keyed by abstraction order (`_populate_concept_weights`,
-`_concept_source_order`). Forward-connected: the gradient reaches the sparse
-weights, the source activations, and the dictionary. Off-path
-(`symbolicOrder = 0`) → no weights → byte-identical.
+(`cs_symbolic_phase` = the snap + `cs_forward_content`.) The percept
+families are RETIRED: order-0 concepts RESERVE codebook rows (no edges;
+their decomposition lives in the reference store), and order $k \ge 1$
+composes lower-order symbol activations only, through role-split columns
+$[\text{whole}|\text{part}|\text{bias}]$ on ONE symbol-family `SparseLayer`
+per order. Weights are **signed** and learnable (`SparseLayer.values`, grown
+host-side by `add_concept_edge`, surfaced via `getParameters()` and
+registered into the optimizer by `_maybe_rebuild_optimizer_for_csw`); each
+per-order layer ALSO owns the DISCRETE relation records (ordered
+`[whole, part]` constituents; `ConceptAllocator` in bin/Layers.py holds the
+global ids/caches). Capacity is **dyadic** by order ($N/2, N/4, \ldots$,
+stacked; `order_capacities` / `order_slice`). Population is at mint, keyed by
+ramsified order (`_populate_concept_weights`, `_concept_source_order`). The
+phase outputs feed the SS leg, the head-side losses (conceptual SBOW on the
+settled slab), and the concept table — NEVER the subsymbolic carrier
+(`<sparseReplace>` retired). Off-path (`symbolicOrder = 0`) → no cutover →
+byte-identical.
 
 **Activation carrier.** `subspace.activation` is the scalar/presence
 activation used by the Space pipeline. Paired `[pos, neg]` tensors still
@@ -918,11 +924,10 @@ relaxes the strict gate to enumerate any remaining breaks;
 
 ConceptualSpace owns `self.stm` — a `ShortTermMemory` instance, a
 per-batch stack of unquantized CS "ideas." Post-substrate-refactor,
-this is the primary structure CS manages when the sparse transform is off —
-`CS.forward` is then STM bookkeeping (shift + push), with no atomic fold
-layer. (When the ramsified sparse transform is active, `forward` first runs
-`_sparse_concept_forward` to produce the concept content, then does the STM
-write — see **Sparse-coding concept transform**.)
+`CS.forward` is STM bookkeeping (shift + push), with no atomic fold layer.
+(Two-phase rework, 2026-07-02: the ramsified symbolic transform no longer
+runs inside `forward` at all — it fires once at the post-pump cutover and
+its outputs never enter the STM; see **The symbolic phase**.)
 
 | Property | Default | Configurable via |
 |---|---|---|

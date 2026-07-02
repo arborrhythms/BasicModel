@@ -1,5 +1,13 @@
 # Sparse-Coding Conceptual Space — implementation handoff
 
+> **STALE (2026-07-02):** the Phase-1/2 `_edge_*` COO store + `scatter_concept_event`
+> described below were RETIRED from `bin/Spaces.py`; the surviving design is the
+> per-order percept/symbol **`SparseLayer` families** (tanh forward, transpose
+> reverse, scatter-add kernel) of
+> [2026-07-02-sparse-layer-conceptual-embedding.md](2026-07-02-sparse-layer-conceptual-embedding.md),
+> which also landed the grad-preserving 0-D symbol leg this doc's CS$\to$SS section
+> anticipated. Read this doc for design rationale/history, not code anchors.
+
 **Date:** 2026-06-27
 **Supersedes/continues:** the approved plan `~/.claude/plans/that-sseems-coorect-please-sequential-corbato.md`
 and the original Part B handoff `doc/plans/2026-06-25-part-b-handoff.md`.

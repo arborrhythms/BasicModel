@@ -319,7 +319,14 @@ revisited.
 Word ↔ object cannot be linked this way (too unlike; no convex set is specific
 enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
 `.where`/`.when`**, fusing the word-code and object-code into the symbol used in
-serial communication (the MetaSymbol). Because symbols are outliers, the
+serial communication (the MetaSymbol). *(Language update 2026-07-02, revised
+same day by the two-phase rework: in the ramsified CS this is a FIRST-order
+META-concept -- the sec-4c ORDERED PAIR $[whole=word\text{-}symbol,
+part=object\text{-}symbol]$, roles as positional slots of an ordered pair
+rather than containment claims; the typed read-out recovers (word, object) by
+INTERSECTION with the word-symbol class (`meta_word_object`), and the
+reference-table pairing remains the serial-mode access path. See
+doc/Architecture.md sec A.)* Because symbols are outliers, the
 part↔whole **concepts** live in a **two-code LUT** and the symbolic taxonomy is
 **relations over symbol indices** — which are the TruthLayer's **absolute truths**
 (propositions) and **relative truths** (`RelativeTruthStore`), to be integrated.

@@ -1,75 +1,5 @@
 
-=============================== BINDING ALGORITHM (for review, 2026-07-01) ===============================
-
-How PS percepts + WS wholes mint the relation-only CS symbols (the "concepts"). Lives in bin/Spaces.py
-(ConceptualSpace); authoritative spec: doc/specs/mereological-order-raising.md. Called from
-cs.forward(PS_sub, WS_sub) -- the ONE layer that sees BOTH towers. Host-side, at Reset. The WHOLE thing
-is gated <mereologyRaise> (dark by default => byte-identical), and no-ops when .where / analysis spans
-are unavailable (byte-mode analysis stages no spans), so it stays inert until a config stages words.
-
-ENTRY -- _maybe_autobind_meta(pid_2d, vec_tensor, word_groups, tokens, word_texts, percept_where):
-    pid_2d        [B,N] int    promoted PS percept ids (-1 = unpromoted / pad), from _embed_radix
-    vec_tensor    [B,N,D]      matching event vectors (seed a fresh WS row on first sight of a pid)
-    percept_where [B,N] int    each percept's .where = RAW integer offset, read from PS subspace.where
-    ws._staged_analysis_spans  [B,K,2] = per-word (start,end) = the WS-side .where (the LOCATIONS)
-
-  When <mereologyRaise> + word_groups are present, THREE bindings run side-by-side (additive; the
-  taxonomy lattice keeps every edge, no single-parent conflict):
-    1. _autobind_word_wholes   -- per-TEXT sigma bind: a word's spell-out pids all bind to ONE shared
-       word-whole; the whole then holds >1 part so maybe_raise_order fires (legacy WS taxonomy).
-    2. _autobind_cross_tower   -- the .where-GATED meronomy: bind each PS percept-TYPE to the generic
-       WS word-TYPE (_WORD_CLASS) when the percept .where NESTS in a WS whole .where (span).
-       "Is letter A part of *word*? -- decided by the .where." (record_cross_tower_meronomy)
-    3. create_word_object_meta -- per word, mint A (word: parts ⊑ word-whole), B (object: ATOM ⊑
-       UNIVERSE, later refined), C = word≡object META = reify(A,B). Keyed by surface text (one
-       stable triple per word across presentations).
-
-CS SYMBOL TABLE (relation-only; the migration target / new home for the legacy WS meta-taxonomy):
-  A SYMBOL has NO vector, NO codebook row. It is TWO independent multi-valued sets -- Parts(S) and
-  Wholes(S) -- tying PS part-codes <-> WS whole-codes (read from their codebooks).
-
-  _populate_cs_symbols(pid_2d, percept_where, spans): for each analysis SPAN [s,e) (a LOCATION):
-      loc_sym = new_concept()
-      for each percept n with   s <= percept_where[n] < e:   add_part(loc_sym, pid)   # .where nests
-      add_whole(loc_sym, _WORD_CLASS)
-      _populate_concept_weights(loc_sym)          # <-- sparse-CS keeper (gated)
-  i.e. "knit the parts covering a location to the wholes covering it."
-
-SPARSE CS WEIGHTS (the CS matrix; gated dark unless _sparse_active() / symbolicOrder>=1, else byte-id):
-  _populate_concept_weights(concept_id) decomposes the symbol into per-order sparse weight EDGES
-  add_concept_weight(order, concept_local, source_global) over the [PS | WS | SS] source blocks:
-  raw PS parts -> PS block, raw WS wholes -> WS block, sub-symbol refs -> the SS block of their
-  (lower) order. MIN-SUPPORT >= 2 constituents (the ATOM/UNIVERSE pole-pair is skipped). Order from
-  the ramsified _concept_source_order; per-order caps are dyadic (N/2, N/4, N/8, ... order_capacities).
-
-LIFECYCLE (retire-on-trigger, drives BOTH towers; runs at the tail of _autobind_cross_tower):
-  resolve_identities():  a symbol with EXACTLY 1 part + 1 whole is the identity-of-indiscernibles tie
-      (sigma-up meets pi-down at the object) -- subsumed by the codebooks, so record (part,whole) on
-      _concept_identity, CLEAR both sets (they vanish), drop it from the active set. EXCEPTION: an
-      ATOM/UNIVERSE pole-pair is the maximally-general placeholder -> stays active for refinement.
-  refine_over_collected(k=4): for each still-active OVER-collected symbol:
-      too many PARTS  (>4) -> sigma-SYNTHESIS APPLIED: synthesize_higher_order(codes) groups the parts
-                              under a higher-order symbol H (H's constituents ARE its definition ->
-                              never re-refined).
-      too many WHOLES (>4) -> pi-ANALYSE REQUEST only (deferred: which finer wholes is underspecified).
-      then RETIRE the trigger symbol (transient -- the restructuring supersedes it).
-      returns send-back requests = the convergence-loop signal.
-
-INVARIANTS / NOTES:
-  - Tightest relation = LARGEST part <-> SMALLEST whole (impenetrability); .where nesting is the test.
-  - .where is CONTENT-addressed (QuadratureEncoding, period = 1/2 * InputSpace); PS .where = raw offset,
-    WS .where = the analysis span [start,end).
-  - Additive throughout: the legacy WS meta-vector taxonomy runs ALONGSIDE and migrates onto the CS
-    symbol table in a later stage.
-
-OPEN QUESTIONS TO REVIEW:
-  - Membership test is  s <= wp < e  -- ANY covering span. Should it instead pick the TIGHTEST whole
-    (smallest covering span) to honor the largest-part<->smallest-whole invariant stated above?
-  - MIN-SUPPORT >= 2 drops singleton concepts -- right for words, but does it starve order-0 atoms?
-  - k_many = 4 over-collection threshold: tuned, or placeholder?
-  - sigma-synthesis is APPLIED but pi-analyse is only REQUESTED -- the finer-whole split is still open.
-
-================================ 2026-07-01 (MM_20M_xor / XOR pipeline) ================================
+================================ 2026-07-01 (MM_20M_xor / XOR pipeline ================================
 
 * **Reverted to clean slate (2026-07-01):** the in-progress `.where`-minting + reconstruction-loss
   attempts for the three items below were reverted to HEAD (they broke 6 mereology tests and left
@@ -86,18 +16,67 @@ OPEN QUESTIONS TO REVIEW:
   dense butterfly path) solves XOR cleanly. The word concepts are minted but the joint/sentence concept binding
   BOTH words isn't formed. Likely needs SBOW (to avoid the mean-collapse) + butterfly=True in the joint mixing.
   See doc/Architecture.md "Symbolic weights".
+  STATUS 2026-07-02 (repro + fixes; doc/plans/2026-07-02-sparse-layer-conceptual-embedding.md
+  Continuation): (a) FIXED a backward crash on the live path (SS identity rows must be CLONED --
+  each stage's no_grad codebook sync bumped a saved view's version); (b) ROOT-CAUSED + FIXED presence
+  saturation: raw dot-SUM presences were the all-ones CONSTANT over all 65536 PS codes (std-over-batch
+  exactly 0 -- input-blind); per Alec the readout is the NORMALIZED SUM (slot-mean projection onto
+  the unit code direction / sqrt(D)) -- event MAGNITUDE preserved (objects in the unit hypercube
+  differentiate by magnitude), NOT a cosine; (c) the JOINT/sentence concept now MINTS
+  (`create_joint_concept`: first-order, parts = the row's word A-symbols, whole = EVERYTHING ->
+  the bias edge; keyed per sentence type; Hebbian on re-occurrence) -- the SYMBOLIC joint mixing;
+  (d) the SUBSYMBOLIC butterfly mixing is PRESERVED as an option: `<sparseReplace>false</sparseReplace>`
+  keeps the truly-invertible butterfly content advance while the sparse activations still feed the
+  symbolic loop (SS leg / concept table) -- the loops run side by side. OPEN: REPLACE mode on this
+  config is capacity/slot-coupled -- the sparse content substitutes only when CS nVectors == the
+  STM slot width, so an inventory bigger than the slab needs the SELECTION step (Architecture.md:
+  "attention picks the salient subset") before replace-mode XOR is testable end-to-end. SBOW
+  situates the LIVE codes when conceptualSimilarityScale > 0 -- this config leaves it unset.
+  STATUS 2026-07-02 EVENING (two-phase rework, doc/plans/2026-07-02-two-phase-loops-sparse-relation.md
+  P1-P5 executed): the forward is now TWO PHASES -- a purely subsymbolic pump (2-stream, demux
+  feedback via `combine.views`: the per-tower windows of the MIXED carrier, NOT `combine.reverse`,
+  whose exact inversion returns each tower's own input and froze the pump -- root-caused) and ONE
+  late cutover (snap -> ramsified composition -> SS leg once -> SBOW on the settled slab).
+  `sparseReplace` RETIRED (non-replacement structural). The 'h h' COLLAPSE IS GONE: sO=1 runs
+  clean end-to-end; XOR at sO=1 now plateaus UNDECIDED (~0.5 all rows, output loss flat at 0.175
+  over 300 epochs) while the SAME config at sO=0 solves XOR to 0.000. ROOT-CAUSED (probe scripts,
+  gradients + batch-variance): (a) early-stage combine grads are ~100x weaker at sO=1 (the
+  demux-fed recursion re-binds already-tanh'd carrier windows -- variance compression), so the
+  escape drift that frees sO=0 after ~50 epochs is ~100x slower; (b) the snap's slot-mean readout
+  is input-blind at init on the tiny 8-row CS (activation batch-std ~5e-6) until the EMA identity
+  trace differentiates the rows. Both belong to the deferred training-dynamics pass -- and both
+  are superseded by the ITERATED SINGLE-LAYER redesign (Alec, same evening:
+  doc/plans/2026-07-02-iterated-symbolic-loop.md, DRAFT -- untyped square SparseLayer, wave
+  activation, no self-edges, Kripke groundedness as the cycle diagnostic).
 
 * **Reconstruction @ symbolicOrder=0:** XOR output is correct but the input reconstruction renders blank/junk
   (`' '` / `'h h'`), not words. Only the LEXICON reverse-decode reconstructs (XOR_exact renders `'hello world'`);
   the bpe (MM_20M_legacy) and radix/meronomy (MM_20M_xor) decode paths both come back empty — the reverse-decode
   for those paths isn't wired to render. Fastest way in: diff XOR_exact's working lexicon decode vs the radix
   decode side-by-side. (600 epochs @ reconstructionScale=0.5 did NOT converge -> structural, not under-training.)
+  STATUS 2026-07-02 (two fixes landed, remainder root-caused; test_radix_recon_render.py): (a) the
+  RENDER is now WIRED -- PartSpace.reverse's numeric branch stages a radix thunk (RadixLayer.reverse
+  structural decode -> inverse_table bytes; shared token-stamper hoisted from Embedding); it used to
+  raise "called before reverse()" (staging was Embedding-branch-only). (b) the recon loss was
+  GRAD-DEAD (a constant): seeded from the DETACHED STM snapshot through an input-differentiable but
+  PARAMETER-detached reverse chain -- `_reconstruction_seed()` now prefers the LIVE terminal carrier
+  (`_combine_last_cs_sub`, per that stash's documented intent), gradient verified end-to-end; XOR
+  output now trains to ~0.000 loss alongside. (c) STILL blank -- the remaining structural gaps are
+  the reverted 2026-07-01 ground: recon loss magnitude ~5e-4 (both sides small-normed; no shaping
+  pressure), recovered `.where` band ~zero -> decodes to ~maxVal aliasing junk (61k-65k ~ nObjects)
+  -> every token out-of-range, content decodes to sentence-chunks not word chunks. Needs the
+  reverse-fidelity design pass (where-band supervision + content-recovery normalization), a design
+  decision, not a patch.
 
-* **SigmaLayer sparse=False option (NOT yet implemented, verified 2026-07-01):** the PS/WS -> CS and SS -> CS
-  symbolic weights currently map through raw `torch.sparse` COO matrices (`cs_sparse_encode`). Replace with a
-  SigmaLayer carrying a COO-sparse inner layer: add a `sparse=False` `__init__` option (default dense =
-  byte-identical). Because CS/SS are ramsified, per-order sizes follow the dyadic capacities N/2, N/4, N/8, ...
-  (`order_capacities`).
+* **DONE 2026-07-02 (as SparseLayer, superseding the SigmaLayer-option idea):** the PS/WS -> CS and
+  SS -> CS symbolic weights now map through a dedicated `SparseLayer` (bin/Layers.py) -- forward
+  tanh(W x), reverse tanh(W^T y) (transpose autoencoder; no LDU), export-safe scatter-add kernel,
+  edge add/remove for pruning rounds. Two DISTINCT per-order families (percept [PS|WS], symbol
+  [SS_<k]) summed pre-tanh, sized by the dyadic `order_capacities`. A SigmaLayer option was
+  deliberately rejected: SigmaLayer's atanh entry expects logit-domain codes, these maps consume
+  presences. Also landed: grad-preserving 0-D symbol leg, closest-links pruning rounds, .when tie
+  check, assert_concept_relation (B-pole refinement), Hebbian C-tie strengthening. See
+  doc/Architecture.md sec A + doc/plans/2026-07-02-sparse-layer-conceptual-embedding.md.
 
 * The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
 
