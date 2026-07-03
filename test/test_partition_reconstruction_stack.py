@@ -121,7 +121,7 @@ def test_sentence_prediction_uses_root_slot_only():
     [S | W] snapshot.
 
     Pre-2026-05-14 the contrastive layer flattened ``n_symbols * n_dim``
-    into the AttentionLayer predictor's input; the bin would blow past
+    into the QKVAttentionLayer predictor's input; the bin would blow past
     the allocator on MM_5M_bivector-scale configs (V_S * D > 100k).
     The ARMA(p, q) layer pools sentence rep to the **root cell** (the
     start-symbol reduction's slot) -- a single ``[n_dim]`` vector --

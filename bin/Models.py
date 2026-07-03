@@ -67,7 +67,7 @@ from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import ConceptualCombine
-from Layers import LinearLayer, AttentionLayer
+from Layers import LinearLayer, QKVAttentionLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 from Layers import TernaryTruthStore
@@ -10132,8 +10132,8 @@ class ModelFactory:
         TheXMLConfig._requirements.clear()
 
         # The old ``hasAttention``-vs-``nInputDim``/``flatten`` reshape guard
-        # (and its ``_has_reshape`` helper) was retired together with the QKV
-        # ``AttentionLayer`` enlistment in PartSpace/ConceptualSpace
+        # (and its ``_has_reshape`` helper) was retired together with the
+        # ``QKVAttentionLayer`` enlistment in PartSpace/ConceptualSpace
         # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It
         # only protected the constraint that transformer self-attention needs
         # 3D multi-vector input; ``<attention>`` is now a symbolic-retrieval

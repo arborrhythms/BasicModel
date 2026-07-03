@@ -9,12 +9,12 @@
 | Document | Description |
 |---|---|
 | [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
-| [Spaces](doc/Spaces.md) | All six spaces: Input $\rightarrow$ Perceptual $\rightarrow$ Conceptual $\rightarrow$ Symbolic $\rightarrow$ Syntactic $\rightarrow$ Output |
+| [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
-| [Params](doc/Params.md) | Complete XML configuration reference |
+| [Params](doc/Params.md) | XML configuration reference and migration notes |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
-| [Language](doc/Language.md) | Grammar, word encoding, symbolic and syntactic spaces |
+| [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
 | [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
 | [Philosophy](doc/Philosophy.md) | Kant's analysis/synthesis, Ramsey's theoretical roles, Buddhist epistemology (pramana, tetralemma) |
@@ -32,9 +32,9 @@ Model configurations are specified in XML. See [doc/Architecture.md](doc/Archite
 
 | File | Description |
 |------|-------------|
-| [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare` mode, HTML report |
+| [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare`, optional `--report` |
 | [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
-| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, Grammar |
+| [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ConceptualSpace, WholeSpace, OutputSpace, SymbolSpace |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
@@ -102,9 +102,12 @@ See [doc/Params.md](doc/Params.md) for the full parameter reference.
 
 ## Output
 
-Each run produces an HTML report (timestamped in `output/`) containing:
+Runs produce an HTML report only when `Models.py` is invoked with `--report`
+(the `make compare` target does this). Reports are timestamped under `output/`
+and may include:
 
 - **Error per Epoch** -- training and test loss curves
-- **Accuracy per Digit** -- per-class accuracy breakdown
+- **Accuracy per Digit** -- per-class breakdown for digit/classification configs
 
-In compare mode, additional overlay plots show combined loss and accuracy across models with color-coded legends.
+In compare mode, overlay plots show combined loss and accuracy across models
+when report generation is enabled.

@@ -1,16 +1,16 @@
 # The mereological algorithm
 
-> **The main algorithm.** A single **synthesizer** (parts → wholes) and a single
-> **analyzer** (wholes → parts), each monotone, together build a codebook whose
-> part/whole codes carry a **partial order by construction** — a *concept
-> lattice*. This is the canonical pair; the older `synthesis` modes
-> (`radix`/`lexicon`/`bpe`/…) and the `<lexer>`/`<analysis>` cuts are retired
-> into it. Selected by `<synthesis>mereological</synthesis>` and
-> `<analyzer>mereological</analyzer>`.
+> **The main algorithm.** A single **synthesizer** (parts $\to$ wholes) and a single
+> **analyzer** (wholes $\to$ parts), each monotone, together build a codebook whose
+> part/whole codes carry a **partial order by construction** -- a *concept
+> lattice*. The live XML spelling is `meronomy`: PartSpace owns bottom-up
+> `<synthesis>meronomy</synthesis>`, while WholeSpace owns top-down
+> `<analysis>meronomy</analysis>`. Other synthesis and analysis modes remain
+> available.
 
 ```
-<PartSpace><synthesis>mereological</synthesis></PartSpace>
-<WholeSpace><analyzer>mereological</analyzer></WholeSpace>     <!-- analyzer replaces lexer -->
+<PartSpace><synthesis>meronomy</synthesis></PartSpace>
+<WholeSpace><analysis>meronomy</analysis></WholeSpace>
 ```
 
 This doc states the algorithm. Companion docs: percept presence geometry
@@ -28,12 +28,12 @@ everything) sentinels the codebase already names ([bin/Layers.py](../bin/Layers.
 
 | | **synthesizer** | **analyzer** |
 |---|---|---|
-| direction | parts → whole | whole → parts |
+| direction | parts $\to$ whole | whole $\to$ parts |
 | pole / start | **⊥ = all-0** (nothing) | **⊤ = all-1** (everything) |
 | operation | **join** `0 ∨ p₁ ∨ p₂ ∨ …` | **meet** `1 ∧ c₁ ∧ c₂ ∧ …` |
 | produces | **dominating** wholes (suprema) | **subordinate** parts (infima) |
-| monotonicity | increasing — `whole ⊐ parts` | decreasing — `part ⊏ whole` |
-| config | `<synthesis>mereological</synthesis>` | `<analyzer>mereological</analyzer>` |
+| monotonicity | increasing -- `whole ⊐ parts` | decreasing -- `part ⊏ whole` |
+| config | `<synthesis>meronomy</synthesis>` | `<analysis>meronomy</analysis>` |
 
 They are **exact De Morgan duals under the `1−x` complement**:
 `analyzer = ¬ ∘ synthesizer ∘ ¬`. So there is **one** algorithm — the
@@ -98,7 +98,7 @@ construction, but may violate cross-boundary ones (`bc`). The **projection** (§
 repairs it.
 
 `whole = 0 ∨ Σ parts` is a soft-OR on `[0,1]` presence; on a **sparse grounding**
-(few coordinates active per base code) at **bounded depth** (characters → word,
+(few coordinates active per base code) at **bounded depth** (characters $\to$ word,
 not unbounded), it stays in the interior — off the `[1,1,…]` corner. The
 saturation worry is the *cross-order* monotone stack, which is **not** done here:
 abstraction (cross-order) is the separate butterfly σ/π, not this synthesizer.
@@ -108,7 +108,7 @@ abstraction (cross-order) is the separate butterfly σ/π, not this synthesizer.
 ## 5. Redistribution = isotonic projection onto the `.where` order
 
 "Redistribute codes when they violate the meronymic constraints" has a precise,
-convergent form. The constraint `code(W)_i ≥ code(P)_i` for every containment edge
+convergent form. The constraint `code(W)_i >= code(P)_i` for every containment edge
 is **isotonic** and **decouples per coordinate**, so:
 
 > **redistribution = per-coordinate isotonic regression on the `.where`
@@ -133,19 +133,19 @@ isotonic projection is the leaner realization.)
 
 ---
 
-## 6. Analyzer: the `1−x` mirror, and it replaces the lexer
+## 6. Analyzer: the `1−x` mirror
 
 The analyzer is the synthesizer reflected through `1−x`: **meet-from-⊤** producing
 subordinate parts. Concretely it cuts a whole into parts by boundary properties —
 the first approximation is the **word splitter = OR(space, punct)** (already live
-as the `word`/`analyse` cut; `char_class_region([WHITESPACE, PUNCT])`), which fixes
-the word level by fiat. The fuller analyzer grows by AND/OR of a **relational
-left/right-of-X** property basis (composable, factorable, monotone), and a
-newly-promoted whole is split until it reaches the word level.
+as the word-level analysis cut; `char_class_region([WHITESPACE, PUNCT])`), which
+fixes the word level by fiat. The fuller analyzer grows by AND/OR of a
+**relational left/right-of-X** property basis (composable, factorable, monotone),
+and a newly-promoted whole is split until it reaches the word level.
 
-`<analyzer>` **replaces `<lexer>`**: tokenization is analytic cutting, owned by the
-analysis side. `<analyzer>mereological</analyzer>` selects this algorithm;
-`<lexer>` is the deprecated spelling.
+The live configuration surface is WholeSpace `<analysis>`. Use
+`<analysis>meronomy</analysis>` for this algorithm; the old `<analyzer>` spelling
+is not the current interface.
 
 ---
 
@@ -161,21 +161,24 @@ as a first approximation.
 
 ---
 
-## 8. What it retires
+## 8. What it subsumes
 
-One synthesizer, one analyzer — the single Galois adjoint pair. Retired into it:
-the alternate `synthesis` modes (`radix`/`lexicon`/`bpe`/`mphf`) and the separate
-`<lexer>`/`<analysis>` cuts. SBOW stays strictly on the **conceptual** layer above
+One synthesizer, one analyzer -- the single Galois adjoint pair. Algorithmically,
+this pair can subsume alternate text front ends, but the current implementation
+still supports the existing `synthesis` modes (`radix`/`lexicon`/`bpe`/`mphf`/
+`byte`) and WholeSpace `<analysis>` cuts (`byte`/`word`/`raw`/`sentence`/
+`grammatical`/`meronomy`). SBOW stays strictly on the **conceptual** layer above
 (free relations), never on the mereological codes.
 
 ---
 
 ## 9. Status
 
-Building. **Item 0** (the load-bearing piece): the synthesizer produces whole codes
-that dominate their parts — `join-from-⊥ seed + isotonic `.where`-projection` —
-fully specified and demonstrated (§5). The analyzer's relational basis, AND, and
-factor (§6) and the convergence drive (§7) follow. The existing butterfly `σ/π`
+Building. The live routing uses `synthesis=meronomy` and `analysis=meronomy`.
+**Item 0** (the load-bearing piece): the synthesizer produces whole codes that
+dominate their parts -- `join-from-⊥ seed + isotonic .where projection` -- fully
+specified and demonstrated (§5). The analyzer's relational basis, AND, and factor
+(§6) and the convergence drive (§7) follow. The existing butterfly `σ/π`
 (abstractions) and the conceptual SBOW are unaffected.
 
 ---

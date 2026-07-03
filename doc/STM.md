@@ -32,7 +32,8 @@ sentence boundary. This chapter is the single reference for what the STM
 is, how it fills, what reads it, and how its end-states chain into
 long-term memory.
 
-Two cadences write the STM, selected by `<symbolicOrder>` (see
+Two cadences write the STM, selected by `<serial>` (legacy configs derive
+it from `symbolicOrder > 0`; see
 [Architecture.md](Architecture.md#modes-of-operation)):
 
 ```
@@ -71,13 +72,10 @@ ideas and the oldest falls off as new ones arrive.
 
 **Buffer.** The data is a single per-batch tensor
 `[B, cap, concept_dim]` plus a `[B]` long depth-pointer vector recording
-how many slots each row has filled (saturating at `cap`). The buffer is
-a plain registered buffer with `persistent=False`: STM contents are
-runtime working state, not learned weights, and never enter the
-checkpoint. `concept_dim` is the CS feature width $D$ — the `what`
-columns only; the positional / temporal (`where` / `when`) columns are
-trimmed at the PS$\to$CS boundary so the slab the grammar dispatch runs
-over is a clean concept-dim block (`_stm_payload_dim = concept_dim`).
+how many slots each row has filled (saturating at `cap`). STM contents are
+runtime working state, not learned weights. `concept_dim` is the full CS output
+width reserved for the event payload; positional/temporal columns are preserved
+when a config gives CS nonzero `nWhere` / `nWhen`.
 
 **SymbolicSubSpace as the data carrier.** After the 2026-05-21 STM-Layer
 refactor the `ShortTermMemory` object is itself data-free: its `_buffer`
@@ -101,8 +99,8 @@ the next sentence starts empty. Soft reset leaves the STM intact (see
 ## 2. Serial sequencing
 
 In SERIAL / GRAMMATICAL mode each word traverses a per-word path: MPHF
-surface lookup $\to$ `PartSpace.forward` ($\pi(x) + \sigma(x)$, no
-outer $\tanh$) $\to$ `ConceptualSpace.forward`, which does the STM
+surface lookup $\to$ `PartSpace.forward` (synthesis front end + `self.sigma`)
+$\to$ `ConceptualSpace.forward`, which does the STM
 bookkeeping. The whole pass is **predict-then-perceive per word**,
 implemented in `ConceptualSpace.forward`
 ([Spaces.py:14134](../bin/Spaces.py)):
@@ -476,7 +474,7 @@ absolute path stays **byte-identical** in every fall-through case.
 relation is gated by a content-aware **learn-score**
 (`_compute_learn_score`, [Spaces.py:13312](../bin/Spaces.py)):
 
-> **Terminology (2026-06-21 convention).** The CS part↔whole relation
+> **Terminology (2026-06-21 convention).** The CS part$\leftrightarrow$whole relation
 > table is the **Concept codebook** — each entry is a *concept* tying one
 > part-percept to one whole-percept by reference. Earlier text called this
 > the "symbol table"; the de-overloaded name is *concept* (a *symbol* is

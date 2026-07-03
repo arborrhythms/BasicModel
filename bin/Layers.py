@@ -92,69 +92,11 @@ def meronomy_d_max_stable():
 
 
 class Lexicon(nn.Embedding):
-    """nn.Embedding on the **projective unit ball** ``B^D / (x ~ -x)``.
+    """Embedding table with projective unit-ball lookup.
 
-    Default geometry is the **negation quotient** of the closed unit
-    ball, realized as real projective space ``RP^D``. Each vocabulary
-    row ``w_i`` lives in ``B^D = {x : ||x||_2 <= 1}`` and ``w_i`` is
-    identified with its negation ``-w_i`` -- there is no edge to the
-    embedding space; the boundary sphere wraps onto itself by the
-    ``+/-`` quotient. This preserves the pode / wrapped-pode pair
-    structure SBOW training depends on while giving an exact
-    matmul-form lookup.
-
-    Terminology pin (deliberate; see ``doc/Spaces.md``):
-
-      * **Pode** of ``(a, b)``: midpoint ``(a + b)/2``. Attractor for
-        SBOW positive-pair updates.
-      * **Wrapped pode**: midpoint via the negation of ``b``,
-        ``(a - b)/2``. Used to find the shorter arc.
-      * **Antipode** of a single point ``p``: the *furthest* point from
-        ``p`` in the manifold's topology -- SBOW's balancing repulsion
-        target. Unique on the flat torus (``wrap(p + 1)`` per axis);
-        on ``RP^D`` it is the orthogonal hyperplane ``{w : <p, w> =
-        0}``, *not* a unique point.
-
-    So ``-w`` is the **negation** of ``w`` (the quotient partner under
-    ``RP^D``), *not* the antipode of ``w``. The ``rp_closer_rep`` and
-    ``rp_wrapped_pode`` helpers operate on negation representatives;
-    they do not produce antipodes.
-
-    Distance:
-
-        d_RP^2(a, b) = min(||a - b||^2, ||a + b||^2)
-                     = ||a||^2 + ||b||^2 - 2 |<a, b>|.
-
-    Lookup score (one matmul + abs + bias subtract):
-
-        score(x, w_i) = |<x, w_i>| - 0.5 * ||w_i||^2.
-
-    Sorting by largest score is exactly equivalent to sorting by smallest
-    projective squared distance for fixed ``x``. See ``doc/Lexicon.md``
-    for the full derivation and SBOW gradient consequences.
-
-    Legacy: ``ball=False`` (or the deprecated ``torus=True`` alias)
-    selects the prior flat-n-torus geometry ``T^D = [-1, 1)^D`` with
-    wrapped-MSE distance. Kept for backward compatibility; the torus
-    primitives (``wrap``, ``delta``, ``distance_sq``, ``similarity``,
-    ``inner_distance``, ``outer_distance``, ``antipode``, ``random``)
-    remain on the class as static methods so call sites that still
-    operate in torus coordinates keep working unchanged. The
-    backward-compat property ``self.torus`` mirrors ``not self.ball``.
-
-    Geometry-aware methods that should be called from training and
-    lookup paths (geometry-dispatching where applicable):
-      - ``normalize()`` re-projects weights onto the active manifold
-        (projective unit ball or torus) after an optimizer step.
-      - ``project_unit_ball_()`` clips row norms to ``<= 1``.
-      - ``lookup_index()`` returns the ``(W_index, W_norm2)`` pair the
-        matmul lookup wants.
-      - ``rp_scores`` / ``topk_rp`` compute the projective matmul-form
-        lookup; ``l2_scores`` / ``topk_l2`` compute plain (non-projective)
-        L2 lookup for callers that genuinely want each row treated
-        independently.
-      - ``rp_distance_sq`` / ``rp_similarity`` are the pairwise primitives
-        SBOW negative-sampling can use directly.
+    Default rows are clipped to ``||w|| <= 1`` and scored by the
+    projective matmul form; ``ball=False`` keeps the legacy torus path.
+    Geometry details live in ``doc/Lexicon.md`` and ``doc/Spaces.md``.
     """
 
     def __init__(self, num_embeddings: int, embedding_dim: int,
@@ -4462,13 +4404,14 @@ class SparseLayer(Layer):
     """
 
     def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
-                 device=None, roles=None):
+                 device=None, roles=None, forbid_self_edges=False):
         super().__init__(nInput, nOutput)
         if kernel not in ("scatter", "spmm"):
             raise ValueError(f"SparseLayer: unknown kernel {kernel!r}")
         self.nonlinear = nonlinear
         self.kernel = kernel
         self._target_device = device
+        self._forbid_self_edges = bool(forbid_self_edges)
         self._rows = []            # host COO row (output) indices
         self._cols = []            # host COO col (input) indices
         self._init_vals = []       # host init weights (growth tail source)
@@ -4492,8 +4435,8 @@ class SparseLayer(Layer):
         # structure): ordered role-tagged constituent records per row key
         # (global concept id), plus the capacity-bounded tensor-row map.
         self._constituents = {}    # key -> [(role, ref), ...] insertion order
-        self._tensor_rows = {}     # key -> local tensor row
-        self._row_next = 0         # next unallocated local tensor row
+        self._tensor_rows = {}     # key -> GLOBAL tensor row
+        self._row_next = {}        # region base -> next unallocated local row
 
     @property
     def nnz(self):
@@ -4546,6 +4489,11 @@ class SparseLayer(Layer):
             raise IndexError(
                 f"SparseLayer.add_edge out of range: ({r},{c}) for "
                 f"[{self.nOutput},{self.nInput}]")
+        if self._forbid_self_edges and r == c:
+            raise ValueError(
+                f"SparseLayer: self-edge ({r}, {c}) forbidden -- "
+                f"x = {{x}} is the Quine atom (see "
+                f"doc/plans/2026-07-02-iterated-symbolic-loop.md)")
         pos = self._index.get((r, c))
         if pos is not None:
             return pos
@@ -4625,20 +4573,6 @@ class SparseLayer(Layer):
         out = self._matmul(x.unsqueeze(-1) if squeeze else x, False)
         return out.squeeze(-1) if squeeze else out
 
-    def forward_linear_roles(self, x):
-        """Role-tagged pre-tanh map ``W @ [x | x | 1]``: the whole-role and
-        part-role blocks both read the SAME lower-order activations ``x``
-        (``[n_ss, B]``) through their own learned weights; the trailing bias
-        block reads the constant 1 (the EVERYTHING pole). Requires roles
-        ``(whole, part, bias)`` with equal whole/part widths."""
-        if not self.roles:
-            raise ValueError("SparseLayer.forward_linear_roles: no roles")
-        squeeze = x.dim() == 1
-        xin = x.unsqueeze(-1) if squeeze else x
-        ones = xin.new_ones((1, int(xin.shape[-1])))
-        out = self._matmul(torch.cat([xin, xin, ones], dim=0), False)
-        return out.squeeze(-1) if squeeze else out
-
     def forward(self, x):
         return self._apply_shape(x, transpose=False)
 
@@ -4657,11 +4591,11 @@ class SparseLayer(Layer):
         self._constituents.setdefault(int(key), [])
 
     def pop_row_key(self, key):
-        """Remove ``key`` + its records (retire / cross-order migration)."""
+        """Remove ``key`` + its records (retire)."""
         return self._constituents.pop(int(key), None)
 
     def put_row_key(self, key, records):
-        """Install ``records`` for ``key`` (cross-order migration target)."""
+        """Install ``records`` for ``key`` wholesale."""
         self._constituents[int(key)] = list(records or ())
 
     def constituents(self, key):
@@ -4721,48 +4655,77 @@ class SparseLayer(Layer):
         part = next(x for (r, x) in recs if r == "part")
         return whole, part
 
-    def assign_row(self, key, capacity=None):
-        """First-seen local tensor row of ``key``; ``None`` when the block is
-        full. ``capacity`` bounds allocation (defaults to ``nOutput``)."""
-        k = int(key)
+    def assign_row(self, key, capacity=None, base=0):
+        """First-seen GLOBAL tensor row of ``key`` within the row region
+        starting at ``base``; ``None`` when that region is full. ``capacity``
+        bounds the region (defaults to the rows past ``base``). Namespaced
+        tuple keys pass through; plain keys coerce to int (back-compat)."""
+        k = key if isinstance(key, tuple) else int(key)
         r = self._tensor_rows.get(k)
         if r is None:
-            cap = int(self.nOutput if capacity is None else capacity)
-            if self._row_next >= cap:
+            b = int(base)
+            cap = int(self.nOutput - b if capacity is None else capacity)
+            nxt = int(self._row_next.get(b, 0))
+            if nxt >= cap:
                 return None
-            r = self._row_next
-            self._row_next = r + 1
+            r = b + nxt
+            self._row_next[b] = nxt + 1
             self._tensor_rows[k] = r
         return int(r)
 
     def row_of(self, key):
-        """The local tensor row of ``key``, or ``None`` if unallocated."""
-        return self._tensor_rows.get(int(key))
+        """The GLOBAL tensor row of ``key`` (plain or namespaced tuple), or
+        ``None`` if unallocated."""
+        k = key if isinstance(key, tuple) else int(key)
+        return self._tensor_rows.get(k)
 
-    def hebbian_strengthen_row(self, local_row, eta=0.1, cap=4.0):
-        """Bump every edge on ``local_row`` by ``eta`` (clamped to ``cap``);
+    def hebbian_strengthen_row(self, row, eta=0.1, cap=4.0):
+        """Bump every edge on ``row`` by ``eta`` (clamped to ``cap``);
         ``no_grad`` -- evidence weights update by their own law."""
         if self.values is None:
             return
         with torch.no_grad():
             for (r, _c), i in self._index.items():
-                if r == int(local_row):
+                if r == int(row):
                     self.values[i] = min(float(cap),
                                          float(self.values[i]) + float(eta))
 
 
+class AttentionLayer(SparseLayer):
+    """BOTTOM-UP ATTENTION over the concept inventory (the iterated
+    symbolic loop, doc/plans/2026-07-02-iterated-symbolic-loop.md): one
+    square untyped store [N x N+1] whose edges are fuzzy set-membership
+    degrees; the wave a^{i+1} = tanh(W [a^i | 1] + s) propagates perceptual
+    salience one membership-weighted hop per step (the horizontal channel
+    lifted into relation space -- doc/Architecture.md "Parse time" sec C).
+    Named for what it IS; SparseLayer is how it works. Self-edges are
+    forbidden (x = {x}, the Quine atom); longer cycles are deliberate."""
+
+    def __init__(self, n_concepts, device=None):
+        super().__init__(int(n_concepts) + 1, int(n_concepts),
+                         device=device, forbid_self_edges=True)
+
+    def wave_step(self, a, s, bias=1.0):
+        """One bottom-up-attention hop: tanh(W [a | 1] + s); a, s: [N, B];
+        bias scales the constant column (0 masks the EVERYTHING pole)."""
+        x = torch.cat([a, a.new_full((1, int(a.shape[-1])), float(bias))],
+                      dim=0)
+        return torch.tanh(self.forward_linear(x) + s)
+
+
 class ConceptAllocator:
     """Thin shared owner of GLOBAL concept structure for one ConceptualSpace
-    (2026-07-02 two-phase/consolidation plan P1): id allocation, ramsified
-    order derivation, raise/retire bookkeeping, the resolved-identity map,
-    and the global idempotency caches. The per-order role-tagged stores live
-    on per-order :class:`SparseLayer`s (``self.layer(order)``, the symbol
-    family); a concept's records live at its CURRENT derived order and
-    migrate when a constituent write changes that order."""
+    (2026-07-02 two-phase/consolidation plan P1; v3 single-layer collapse,
+    doc/plans/2026-07-02-iterated-symbolic-loop.md): id allocation, ramsified
+    order derivation (bookkeeping only), raise/retire bookkeeping, the
+    resolved-identity map, and the global idempotency caches. ALL concept
+    records and tensor rows live on ONE shared square store
+    (``self.layer()``, an :class:`AttentionLayer` when the owner supplies a
+    square sizer); rows are permanent -- nothing migrates by order."""
 
     def __init__(self, layer_sizer=None, order_cap=None):
         self.next_id = 1                 # 0 reserved
-        self.placement = {}              # cid -> order holding its records
+        self.placement = {}              # cid -> derived order (bookkeeping)
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
         self.retired = set()
@@ -4771,22 +4734,26 @@ class ConceptAllocator:
         self.chain_idx = {}              # ("chain", tuple) -> cid
         self.word_obj_meta = {}          # surface key -> (A, B, C)
         self.joint = {}                  # word-tuple key -> J
-        self._layers = {}                # order -> SparseLayer (symbol family)
+        self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
         self._order_cap = order_cap      # () -> max ramsified order S
 
-    def layer(self, order):
-        """The symbol-family SparseLayer of ``order`` (lazy; host-sized 1x1
-        when the owner supplies no sizer, e.g. duck-typed test stubs)."""
-        o = int(order)
-        got = self._layers.get(o)
+    def layer(self, order=0):
+        """THE shared square store (v3: ``order`` ignored, every order gets
+        the same object). A square sizer (roles=None, nInput==nOutput+1)
+        builds an :class:`AttentionLayer`; no sizer keeps the host-sized 1x1
+        duck-typed stub."""
+        got = self._layers.get(0)
         if got is None:
-            n_in, n_out, dev, roles = (self._layer_sizer(o)
+            n_in, n_out, dev, roles = (self._layer_sizer(0)
                                        if self._layer_sizer
                                        else (1, 1, None, None))
-            got = SparseLayer(max(1, int(n_in)), max(1, int(n_out)),
-                              device=dev, roles=roles)
-            self._layers[o] = got
+            if roles is None and int(n_in) == int(n_out) + 1:
+                got = AttentionLayer(int(n_out), device=dev)
+            else:
+                got = SparseLayer(max(1, int(n_in)), max(1, int(n_out)),
+                                  device=dev, roles=roles)
+            self._layers[0] = got
         return got
 
     def new_concept(self):
@@ -4835,14 +4802,11 @@ class ConceptAllocator:
         return 0 if not subs else min(self.cap(), 1 + max(subs))
 
     def settle(self, cid):
-        """Migrate ``cid``'s records to its (re-derived) order's layer."""
+        """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
+        are permanent in the single shared layer -- no migration)."""
         cid = self.touch(cid)
-        cur = self.placement.get(cid, 0)
         new = self.order_of(cid)
-        if new != cur:
-            recs = self.layer(cur).pop_row_key(cid)
-            self.layer(new).put_row_key(cid, recs or [])
-            self.placement[cid] = new
+        self.placement[cid] = new
         return new
 
     def add(self, cid, role, ref):
@@ -4867,8 +4831,8 @@ class ConceptAllocator:
 
     def drop(self, cid):
         """Retire: remove records + registry entry (tensor rows persist --
-        per-order row history matches the pre-consolidation behavior) and
-        clear idempotency-cache entries pointing at ``cid``."""
+        row assignments are permanent in the shared layer) and clear
+        idempotency-cache entries pointing at ``cid``."""
         cid = int(cid)
         o = self.placement.pop(cid, None)
         if o is not None:
@@ -5326,8 +5290,9 @@ class DecisionBoundaryLayer(Layer):
         plt.ylim(np.min(data_np[:, 1]) - 2, np.max(data_np[:, 1]) + 2)
         warnings.filterwarnings('ignore', message='.*line style')
         plt.show(block=False)
-class AttentionLayer(Layer):
-    """Unified attention layer with three modes.
+class QKVAttentionLayer(Layer):
+    """Unified attention layer with three modes. Retired from enlistment
+    (plan 2026-06-06-symbolic-heat-retrieval); kept for back-compat.
 
     type="symmetric"   -- Hopfield-like: scores = A^T @ A (positive semi-definite).
                          Attends across feature channels.
@@ -5339,11 +5304,11 @@ class AttentionLayer(Layer):
     All modes require 3D input [batch, nObj, dim].
     """
     def __init__(self, nInput, nOutput, nHidden=None, type="asymmetric", nHeads=1):
-        """Initialize AttentionLayer; allocate state for the class contract.
-        
+        """Initialize QKVAttentionLayer; allocate state for the class contract.
+
         See class docstring for invariants.
         """
-        super(AttentionLayer, self).__init__(nInput, nOutput)
+        super(QKVAttentionLayer, self).__init__(nInput, nOutput)
         self.nHidden = nOutput if not nHidden else nHidden
         self.type = type
         self.mask = None
@@ -5422,7 +5387,7 @@ class AttentionLayer(Layer):
         
         See class docstring for the operation this layer applies.
         """
-        assert x.ndim == 3, f"AttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
+        assert x.ndim == 3, f"QKVAttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
         if self.type == "transformer":
             return self._forward_transformer(x)
         elif self.type == "symmetric":
@@ -5498,12 +5463,12 @@ class AttentionLayer(Layer):
             kwargs = {"nInput": 8, "nOutput": 8, "type": atype}
             if atype == "transformer":
                 kwargs["nHeads"] = 2
-            layer = AttentionLayer(**kwargs)
+            layer = QKVAttentionLayer(**kwargs)
             x = torch.randn(4, 5, 8, device=TheDevice.get())
             y = layer(x)
             assert list(y.shape) == [4, 5, 8], f"type={atype}: expected [4,5,8], got {list(y.shape)}"
         # Test nInput != nOutput
-        layer = AttentionLayer(nInput=6, nOutput=3, nHidden=7, type="asymmetric")
+        layer = QKVAttentionLayer(nInput=6, nOutput=3, nHidden=7, type="asymmetric")
         x = torch.randn(4, 5, 6, device=TheDevice.get())
         y = layer(x)
         assert list(y.shape) == [4, 5, 3], f"asymmetric nIn!=nOut: expected [4,5,3], got {list(y.shape)}"
@@ -8039,7 +8004,7 @@ class InterSentenceLayer(Layer):
 
     Replaces the pre-2026-05-14 contrastive cosine machinery
     (``context_window`` recent buffer, ``centroid_history`` repulsive
-    ring, ``lam`` cosine push) and the AttentionLayer-based
+    ring, ``lam`` cosine push) and the QKVAttentionLayer-based
     predictive head.  See ``doc/Architecture.md`` §"Sentence-level
     AR (InterSentenceLayer)" for the design rationale.
     """
@@ -11630,16 +11595,7 @@ class SymbolLearningLayer(Layer):
 
 
 class _RuleScorer(nn.Module):
-    """Small MLP scoring rules from top-of-stack payloads.
-
-    Private to ``ShortTermMemory``; replaces the standalone
-    ``stm_driver.RuleScorer`` (2026-05-21 SymbolSubSpace/STM Layer
-    refactor). Input: top operand payload(s) — ``left`` (required) and
-    ``right`` (optional, ``None`` for unary REDUCE). Concatenates and
-    projects to a per-rule logit vector. Architecturally minimal -- one
-    hidden layer + linear head -- because admissibility masking does
-    the hard discrimination; the scorer just orders the survivors.
-    """
+    """Small MLP that ranks admissible rules from stack payloads."""
 
     def __init__(self, payload_dim, n_rules, hidden_dim=None):
         super().__init__()
@@ -11664,82 +11620,24 @@ class _RuleScorer(nn.Module):
 
 
 class ShortTermMemory(Layer):
-    """Short-term memory (STM) on ConceptualSpace.
+    """Runtime idea stack plus shift/reduce scorer for ConceptualSpace.
 
-    Carries two roles after the 2026-05-21 SymbolSubSpace/STM Layer refactor:
-
-    1. **Per-batch idea stack** (legacy chart consumer surface). A
-       ``[B, capacity, concept_dim]`` payload buffer that the chart's
-       CKY compose path pushes "ideas" (continuous compositions) onto.
-       Distinct from ``SymbolSpace._stm_fired`` (once-per-sentence
-       discourse-priming flag). Spec §"Removed Public Surfaces" calls
-       for ``ShortTermMemory`` to become data-free; the legacy push /
-       peek / snapshot surface is retained transitionally for the
-       chart's CKY consumers in ``Models.py`` and ``embed.py``.
-
-    2. **STM shift/reduce driver** (new in this refactor). Inlines the
-       former ``stm_driver.STMDriver`` + ``stm_driver.RuleScorer`` +
-       ``stm_trainer.train_step`` behavior as methods that take a
-       ``word_subspace`` argument (the typed-STM data carrier). The
-       lazy-initialised ``self.scorer`` is a small MLP that scores
-       admissible REDUCE actions; ``ConceptualSpace.attach_knowledge``
-       wires the rule signature list in.
-
-    Semantics of the idea stack:
-        * Each slot holds a ``[concept_dim]`` vector.
-        * Pushes are bottom-up: ``peek(b, 0)`` returns the most
-          recent idea; ``peek(b, n)`` returns the n-th most recent.
-        * Capacity is configurable via
-          ``<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>``.
-
-    Lifecycle:
-        * Built by ``ConceptualSpace.__init__`` at construction time
-          (capacity from XML; default 8).
-        * Cleared on hard ``Reset`` (sentence boundary): all rows set
-          to zero, depth pointers reset to 0.
-
-    Storage of the idea stack is a plain registered buffer
-    (``persistent=False``); STM contents are runtime working state,
-    not learned weights.
+    Newest ideas live at slot 0; capacity defaults to 8 and is configurable
+    via ``<ConceptualSpace><stmCapacity>``. See ``doc/STM.md``.
     """
 
     DEFAULT_CAPACITY = 8
 
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__(nInput=0, nOutput=0)
-        # Phase E completion of doc/specs/2026-05-21-wordsubspace-stm-
-        # layer-refactor.md: the Layer is data-free. ``_init_capacity``
-        # / ``_init_concept_dim`` are the constructor's record of the
-        # requested sizes — used only to seed SymbolSubSpace's
-        # ``_idea_buffer`` if a standalone (no-SymbolSubSpace) test
-        # constructs a ShortTermMemory directly. Once
-        # ``attach_word_subspace`` is called the data lives on
-        # SymbolSubSpace's ``_idea_*`` buffers and the proxy properties /
-        # methods below route there.
+        # Constructor sizes seed standalone tests; attached SymbolSubSpace
+        # owns the live buffers.
         self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
         self._init_concept_dim = int(concept_dim)
         self._init_batch = int(batch)
-        # Standalone fallback: when no SymbolSubSpace has been attached
-        # yet (e.g. test_conceptual_stm.py constructs ShortTermMemory
-        # bare), we allocate a local idea-stack so the legacy push /
-        # peek / snapshot surface keeps working. ``attach_word_subspace``
-        # later switches the proxy onto the SymbolSubSpace's buffers and
-        # drops the local allocation.
+        # Standalone fallback until attach_word_subspace routes to SymbolSubSpace.
         self._word_subspace = None
-        # A5 fullgraph fix (doc/plans/2026-06-06-parallel-conceptual-
-        # recurrence.md sec 2 & 4): the per-forward STM working buffer is a
-        # PLAIN attribute (stashed via ``object.__setattr__`` so it never
-        # lands in ``nn.Module._buffers`` / ``_parameters`` and is never
-        # captured as a torch.compile graph INPUT). ``begin_forward``
-        # re-creates it fresh INSIDE the traced forward each pass, so it is a
-        # graph INTERMEDIATE -- not a persisted, mutated, output-aliased
-        # input. The retired ``_fallback_buffer`` was a persistent tensor
-        # whose ``requires_grad`` oscillated across forwards (flipping a
-        # Dynamo guard -> recompile) and whose in-place mutation crashed AOT
-        # autograd's ``gen_alias_from_base`` once it was resized between
-        # calls. The standalone surface keeps working because the constructor
-        # seeds the live buffer eagerly (bare push/peek tests never call a
-        # compiled forward, so a plain in-Python tensor there is fine).
+        # Plain attributes keep STM state out of nn.Module buffers and traces.
         object.__setattr__(
             self, '_live_buffer',
             torch.zeros(self._init_batch, self._init_capacity,
@@ -11749,45 +11647,19 @@ class ShortTermMemory(Layer):
             torch.zeros(self._init_batch, dtype=torch.long))
         self._live_capacity = self._init_capacity
         self._live_max_depth_host = 0
-        # STM shift/reduce driver state. Initialised lazily on first
-        # ``shift`` / ``train_scorer_step`` call (or eagerly via
-        # ``init_scorer``); ``rule_signatures`` is a plain Python list
-        # of dicts, stashed via ``object.__setattr__`` to bypass
-        # nn.Module's child-type checks.
+        # Lazily initialized shift/reduce scorer state.
         self.scorer = None
         object.__setattr__(self, 'rule_signatures', None)
 
     def attach_word_subspace(self, word_subspace):
-        """Wire a ``SymbolSubSpace`` so the Layer's data-accessor methods
-        route to its ``_idea_*`` buffers. Stored via
-        ``object.__setattr__`` to bypass nn.Module's submodule
-        registration (the SymbolSubSpace owns the back-reference; this is
-        a non-owning routing pointer).
-
-        Called from ``SymbolSubSpace.__init__`` (Phase E completion of the
-        2026-05-21 refactor). Once attached, the local ``_fallback_*``
-        buffers are dropped.
-        """
+        """Route STM accessors to the owning ``SymbolSubSpace`` buffers."""
         object.__setattr__(self, '_word_subspace', word_subspace)
-        # If the SymbolSubSpace's idea-stack capacity is smaller than the
-        # one this ShortTermMemory was constructed for, grow it now so
-        # we honour the constructor's sizing contract.
+        # Grow the owner to the constructor-requested capacity if needed.
         if hasattr(word_subspace, 'idea_ensure_capacity'):
             word_subspace.idea_ensure_capacity(self._init_capacity)
 
-    # -- per-forward live working buffer (A5 fullgraph fix) ---------------
-    #
-    # The STM data lives on the PLAIN ``_live_*`` attributes (stashed via
-    # ``object.__setattr__`` so they stay out of ``nn.Module._buffers`` and
-    # are never captured as a torch.compile graph input). ``begin_forward``
-    # re-creates ``_live_buffer`` fresh inside the traced forward each pass,
-    # making it a graph intermediate -- so the in-place STM writes mutate the
-    # intermediate (legal) instead of a persisted, output-aliased input.
-    # When a SymbolSubSpace is attached the buffer is still data-free in the
-    # nn.Module sense (the live data is not a registered buffer); the
-    # ``capacity`` proxy honours ``ss._idea_capacity`` so a caller that grows
-    # the attached idea-stack capacity (e.g. test_bounded_stm_fold) still
-    # sizes the next forward's fresh buffer correctly.
+    # -- per-forward live working buffer ---------------------------------
+    # Fresh, plain-attribute tensors avoid torch.compile input mutation.
 
     @property
     def _buffer(self):
@@ -11828,43 +11700,11 @@ class ShortTermMemory(Layer):
         return ss._stm_payload_dim
 
     def begin_forward(self, batch, device=None, dtype=None):
-        """Seed a FRESH per-forward working buffer (A5 fullgraph fix).
-
-        doc/plans/2026-06-06-parallel-conceptual-recurrence.md sec 2 & 4
-        (the load-bearing principle): per-batch DATA threads THROUGH the
-        forward as tensors and is NEVER persisted as accumulated state on a
-        space/Layer across forwards. The idea buffer used to be a persistent
-        registered buffer (``ss._idea_buffer`` when attached, the standalone
-        ``_fallback_buffer`` otherwise) that the compiled forward mutated
-        IN PLACE. That made it a graph INPUT that was mutated and
-        output-aliased, so torch.compile/AOT autograd had to regenerate it
-        as an alias of its base every call -- which (a) flipped a Dynamo
-        ``requires_grad`` guard each batch (the buffer's grad status
-        oscillated False->True), forcing a recompile, and (b) crashed AOT's
-        ``gen_alias_from_base`` once the buffer was resized between calls.
-
-        Calling this at the TOP of the forward body REPLACES the buffer
-        attribute with a freshly-allocated ``torch.zeros`` created INSIDE the
-        traced region. A fresh in-trace allocation is a graph INTERMEDIATE,
-        not an input, so the subsequent in-place STM writes mutate the
-        intermediate (legal, no input-mutation alias) and the persisted
-        attribute is never read-as-input nor output-aliased. The STM starts
-        every forward empty -- which is exactly the existing sentence-
-        boundary semantics (parallel: a fresh sentence; serial: the prelude
-        ``clear()``), so this changes no behaviour, only the storage's graph
-        identity.
-
-        Routed through the ``_buffer`` / ``_depth`` setters so it works for
-        both the SymbolSubSpace-attached proxy and the standalone fallback.
-        """
+        """Allocate a fresh per-forward STM buffer on the requested device."""
         batch = int(batch)
         cap = int(self.capacity)
         dim = int(self.concept_dim)
-        # IMPORTANT: do NOT read ``self._buffer`` here -- reading the
-        # persisted buffer inside the traced forward would re-introduce it as
-        # a graph INPUT (the very thing we are trying to avoid). Resolve
-        # device/dtype from the explicit args only; default to float32 on the
-        # caller-supplied device.
+        # Do not read the old buffer here; that would make it a traced input.
         if dtype is None:
             dtype = torch.float32
         self._buffer = torch.zeros(
@@ -15212,7 +15052,7 @@ def test():
     SigmaLayer.test()
     PiLayer.test()
 
-    AttentionLayer.test()
+    QKVAttentionLayer.test()
     Mem.test()
     DecisionBoundaryLayer.test()
 

@@ -190,14 +190,13 @@ SymbolSpace.category_embedding: nn.Embedding
 
 ## STM Shift/Reduce
 
-The STM backend uses:
+The STM backend is hosted by `ConceptualSpace.stm` and the owning
+`SymbolSubSpace` buffers:
 
-- `ConceptualSpace.stm_typed`: a `TypedStack` carrying payload,
-  category, order, and ref id.
-- `STMDriver`: shift/reduce coordinator.
-- `RuleScorer`: MLP over top stack payloads.
-- `embed.admissibility_mask`: hard category/order mask over grammar
-  rule signatures.
+- `ShortTermMemory`: payload stack plus lazy rule scorer.
+- SymbolSubSpace typed buffers: category, order, and reference metadata.
+- `_RuleScorer`: MLP over top stack payloads.
+- admissibility masks: hard category/order masks over grammar rule signatures.
 
 SHIFT snaps each input vector to the nearest live reference, then pushes:
 
@@ -226,9 +225,8 @@ right: category VP, order 1
 
 `BasicModel.write_syntax_tree()` (in `bin/Models.py`) emits an XML
 syntax-tree dump per batch row when configured with a syntax output
-path. It reads the chart's per-row derivation trace and the symbolic
-codebook's per-atom category tags; see the function docstring for the
-exact format. SVO extraction is performed by the STM path on the
+path. It reads the current grammar/STM routing state and symbolic category
+metadata; see the function docstring for the exact format. SVO extraction is performed by the STM path on the
 canonical subject lift over a transitive verb-phrase derivation; the
 object role is the NP operand inside that verb-phrase derivation, not a
 separate semantic category.
@@ -314,7 +312,7 @@ perception, attached to the **MetaSymbol**, and threaded into the placement
 chooser as grammatical context.)*
 
 > **Terminology note** (per `doc/old/2026-06-21-terminology-percepts-concepts-symbols.md`):
-> the CS part↔whole relation table is the **Concept codebook** (concepts), not a
+> the CS part$\leftrightarrow$whole relation table is the **Concept codebook** (concepts), not a
 > "symbol table"; WholeSpace holds **whole-percepts**; only `SymbolSpace` / `MetaSymbol`
 > things are **symbols**. Code identifiers (e.g. `subspace.what`, `_sym_*`) are
 > unchanged here — that is a separate code pass.
@@ -341,9 +339,9 @@ only the candidate operator's own output. The design realizes this as a small
 perception:
 
 - **The MetaSymbol unifies word and object (it already exists, live).** The
-  Concept codebook stores `concept → code`; a **MetaSymbol** is the exception — one
+  Concept codebook stores `concept -> code`; a **MetaSymbol** is the exception — one
   symbol that holds *two* codes, the **word code and the object code**, a
-  deliberate equivalence class asserting *this word ≡ this object*. This is the
+  deliberate equivalence class asserting *this word $\equiv$ this object*. This is the
   live **META node** in the WholeSpace taxonomy: `WholeSpace.insert_meta`
   allocates one SS-codebook row tagged `"meta"` whose two taxonomy children are
   the PS object position and the SS word position, minted during **perception**
@@ -352,7 +350,7 @@ perception:
   signal learned from the *word's* role participation directly shapes the
   *object's* category, and vice versa.
 - **A small Category codebook, not a permanent per-word count table.** The VQ
-  lives directly in role-participation space: `K ≈ n_roles (~30)` initial
+  lives directly in role-participation space: $K \approx$ `n_roles` (~30) initial
   centroids, one seeded from each labelled role (`<op>_I<n>` inputs +
   `<op>_O1` outputs). Unlearned MetaSymbols have only a bounded temporary row in
   `MetaSymbolCategoryLearner`; learned MetaSymbols keep just
@@ -368,8 +366,8 @@ perception:
 - **Feeds the per-slot category to the chooser.** The chooser conditions each
   slot on the **role vector of the committed centroid**; while a word is still
   unsettled, the pending row supplies a temporary role context. The gather path
-  is `percept id → taxonomy parent (MetaSymbol) → committed category or pending
-  evidence → role vector`. `MLPTransformChooser` receives the vector as a
+  is `percept id $\to$ taxonomy parent (MetaSymbol) $\to$ committed category or pending
+  evidence $\to$ role vector`. `MLPTransformChooser` receives the vector as a
   feature block; anchor-dot/default routing uses the same vector as a
   labelled-role score prior.
 

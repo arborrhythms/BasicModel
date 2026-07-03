@@ -2,6 +2,13 @@
 
 Alec Rogers, September 24, 2025
 
+> **Implementation note.** This essay records the motivating theory and early
+> experiments. The current code's ergodic mechanism is documented in
+> [Ergodic.md](Ergodic.md): layers start with `bias=1`, `var=0`, update those
+> buffers from gradient energy, and do not use an Adam-trained global
+> temperature. Current invertible layers use the factorized implementation
+> described in [Architecture.md](Architecture.md), not the early SVD sketch.
+
 ## Abstract
 
 *Problem*
@@ -62,22 +69,19 @@ guarantees that time averages (training steps) equal ensemble averages
 See Rogers, A. (2026), *Local Freedom under Global Constraint*, Zenodo,
 doi: [10.5281/zenodo.18644302](https://doi.org/10.5281/zenodo.18644302).
 
-### Temperature and Annealing
+### Ergodic State
 
-A single per-layer *temperature* parameter, updated via ADAM, characterizes
-mean and variance:
-
-$$\mu = 1 - temp, \qquad \sigma = temp$$
-
-Temperature begins at 1 and decreases to 0.
+The historical temperature formulation has been replaced in code by explicit
+`bias` and `var` buffers. `bias` carries the deterministic path, `var` carries
+exploration noise, and the gradient-energy sensor shifts mass toward
+exploration only after a backward/update step.
 
 ### Advantages of Ergodic Weights
 
-1. **No learning rate required.** Biases find different weight-space
-   locations via randomness and converge as temperature decreases.
-2. **Zero initialization.** Weights can be initialized to zero --- annealing
-   bounces the model out of local minima more effectively than gradient
-   steps.
+1. **Exploration without an Adam temperature.** Bias/variance buffers react to
+   observed gradient energy rather than a separately optimized temperature.
+2. **Controlled startup.** Current layers start deterministic (`bias=1`,
+   `var=0`) and add exploration after the first update.
 3. **Theoretical convergence guarantee.** Simulated-annealing literature
    provides a guarantee of convergence to global optimum (given infinite
    iterations).
@@ -168,16 +172,16 @@ unit NN. Batch size 10, 9 epochs, 7 trials for error bars.
 
 Standard benchmark: ReLU, LR 0.01, ADAM, cross-entropy loss.
 
-Base ergodic: zero-init weights, single per-layer temperature, ADAM updates
-temperature, dropout (0.75) on middle layer.
+Historical base ergodic experiment: zero-init weights, single per-layer
+temperature, ADAM updates temperature, dropout (0.75) on middle layer.
 
 Five models evaluated: base + four ergodic variants (one plain ergodic, one
 with input normalization, two reversible --- one with separate forward/backward
-layers, one invertible). The invertible model represents $W$ in SVD form
-(rotation, eigenvalues, rotation) using Givens rotations and diagonal
-eigenvalues to avoid direct matrix inversion.
+layers, one invertible). That experiment used an SVD-form sketch; the current
+code uses the LDU-style factorized invertible layer documented in
+[Architecture.md](Architecture.md).
 
-Weight update equations for ergodic models avoid a learning rate. Compared
+The historical weight update equations avoided a learning rate. Compared
 to traditional gradient descent ($\bigtriangleup_{W} = \alpha(y -
 \widehat{y})\nabla_{F}x$):
 

@@ -1,10 +1,11 @@
 """SparseLayer: COO sparse linear substrate (tanh forward / transpose reverse)."""
 import os
 import sys
+import pytest
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
-from Layers import SparseLayer  # noqa: E402
+from Layers import SparseLayer, AttentionLayer  # noqa: E402
 
 
 def _dense(layer):
@@ -107,3 +108,50 @@ def test_spmm_kernel_parity():
     assert torch.allclose(a.forward(x), b.forward(x), atol=1e-6)
     assert torch.allclose(a.reverse(x[:4] * 0.5), b.reverse(x[:4] * 0.5),
                           atol=1e-6)
+
+
+def test_self_edge_forbidden_when_flagged():
+    ly = SparseLayer(5, 4, forbid_self_edges=True)
+    with pytest.raises(ValueError, match="self-edge"):
+        ly.add_edge(2, 2)
+    ly.add_edge(2, 3)                      # off-diagonal still fine
+    ly.add_edge(2, 4)                      # bias col (== nInput-1) fine
+
+
+def test_self_edge_allowed_by_default():
+    ly = SparseLayer(5, 4)
+    ly.add_edge(2, 2)                      # rectangular role layers unaffected
+
+
+def test_attention_layer_is_square_and_forbids_self_edges():
+    ly = AttentionLayer(8)                 # N=8 concepts -> [9 x 8], no roles
+    assert (ly.nInput, ly.nOutput) == (9, 8)
+    with pytest.raises(ValueError, match="self-edge"):
+        ly.add_edge(3, 3)
+
+
+def test_attention_layer_wave_step_matches_formula():
+    ly = AttentionLayer(4)
+    ly.add_edge(2, 0, weight=0.5)          # relation row 2 reads concept 0
+    a = torch.zeros(4, 1); a[0, 0] = 1.0
+    s = a.clone()
+    out = ly.wave_step(a, s)
+    assert torch.allclose(out[2], torch.tanh(torch.tensor([0.5])))
+    assert torch.allclose(out[0], torch.tanh(torch.tensor([1.0])))  # tanh(s)
+    ly.add_edge(3, 4, weight=0.25)         # bias col (== nInput-1) reads 1
+    out = ly.wave_step(a, s)
+    assert torch.allclose(out[3], torch.tanh(torch.tensor([0.25])))
+    # bias=0.0 masks the EVERYTHING pole: the bias-col edge contributes 0,
+    # every activation-driven edge is unchanged.
+    out0 = ly.wave_step(a, s, bias=0.0)
+    assert torch.allclose(out0[3], torch.tensor([0.0]))
+    assert torch.allclose(out0[2], out[2])
+    assert torch.allclose(ly.wave_step(a, s, bias=1.0), out)   # default == 1
+
+
+def test_attention_layer_wave_step_empty_layer_is_tanh_s():
+    ly = AttentionLayer(3)
+    assert torch.all(ly.wave_step(torch.rand(3, 2), torch.zeros(3, 2)) == 0)
+    s = torch.tensor([[0.5, -0.5], [0.0, 1.0], [-1.0, 0.25]])
+    out = ly.wave_step(torch.rand(3, 2), s)
+    assert torch.allclose(out, torch.tanh(s))

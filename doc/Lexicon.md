@@ -7,7 +7,7 @@
 >   surface-keyed); WholeSpace owns a separate VQ-quantized
 >   prototype Codebook (`SS.subspace.what`). The two are bound
 >   per-row via the META cross-codebook taxonomy
->   (`(ps_row, ss_row) → meta_row`), populated by
+>   (`(ps_row, ss_row) -> meta_row`), populated by
 >   `ConceptualSpace._maybe_autobind_meta` at stage 0.
 > - **LBG-style splitting on SS codebook (2026-05-29 Task C).** The
 >   SS Codebook is updated under Gray (1990) EMA with per-row
@@ -45,7 +45,7 @@ geometry discussion (PartSpace, ConceptualSpace, WholeSpace).
 > Embedding via its `perceptualSpace_ref` back-reference. The full
 > codebook-as-lexicon physical unification is a deferred follow-up.
 
-> **BPE as the option-flipped lexicon mode.** `<chunking>bpe</chunking>`
+> **BPE as the option-flipped lexicon mode.** `<synthesis>bpe</synthesis>`
 > on PartSpace makes the chunker produce byte-aligned BPE units
 > instead of whitespace-split words, reusing the same Embedding for
 > storage. The byte round-trip is fully invertible via the chunker's

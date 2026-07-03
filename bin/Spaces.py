@@ -52,7 +52,7 @@ from Layers import GrammarLayer
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
 # of use below to avoid the Layers <-> Language circular dependency during
 # Language.py's own module load.
-# AttentionLayer import removed: the QKV enlistment in PS/CS was retired
+# QKVAttentionLayer import removed: its enlistment in PS/CS was retired
 # (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum); the
 # class still lives in Layers.py.
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
@@ -9308,37 +9308,10 @@ class PerceptualSpace(Space):
 
 
 class PartSpace(PerceptualSpace):
-    """Transforms raw input vectors into percepts via its synthesis fold.
+    """InputSpace -> percepts via the configured synthesis front end and sigma fold.
 
-    In the forward data flow: InputSpace -> **PartSpace** -> ConceptualSpace.
-    Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-    PS owns ONLY a ``SigmaLayer`` (``self.sigma``) -- Sigma is synthesis,
-    the additive/union fold of the bottom-up perceptual branch over
-    atoms. (Stage 10 had PS owning the PiLayer; the corrected
-    orientation puts Pi -- analysis/intersection -- on WholeSpace.)
-    PS remains single-pass per the locked architectural decision.
-
-        * ``self.sigma`` -- additive union fold (synthesis);
-                            ``percept_dim → percept_dim``.
-
-    Forward body::
-
-        P = pi(x)
-
-    Each layer applies its own internal nonlinearity (tanh-bounded
-    contribution).
-
-    The earlier two-input ``tanh(pi_input(IS) + pi_concept(C_prev))``
-    contract (with CS-feedback entering PS directly) is retired: the
-    CS-feedback path no longer enters PS this way (it re-enters via
-    the chart / signal-router dispatch over STM in later stages).
-
-    Optionally followed by self-attention and VQ codebook quantization.
-
-    When ``reversible=True`` and ``invertible=True``, the reverse path
-    uses the configured inverse layer. With ``naive=False`` this uses the
-    LDU/triangular-solve path; the dense naive path exists only for
-    debugging and validation.
+    The broader analysis/synthesis orientation is documented in
+    ``doc/Architecture.md`` and ``doc/Spaces.md``.
     """
     name = "Percepts"
     config_section = "PartSpace"
@@ -9363,16 +9336,9 @@ class PartSpace(PerceptualSpace):
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
         self.ergodic = ergodic
-        # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
-        # QKV ``AttentionLayer`` (that enlistment was removed; see plan
-        # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It is kept
-        # only for backward-compat config/state parsing and is superseded by the
-        # ``<attention>`` symbolic-retrieval mode (``self.attention_mode``).
+        # Legacy alias: hasAttention is parsed but no longer builds QKV attention.
         self.hasAttention = hasAttention
-        # Symbolic-retrieval mode (plan 2026-06-06-symbolic-heat-retrieval
-        # §Handoff addendum). off|primer|second-order|low-rank. Default off
-        # preserves current reverse behavior. Consumed by the reverse-retrieval
-        # path, not here.
+        # Reverse-retrieval attention mode: off|primer|second-order|low-rank.
         _attn = str(TheXMLConfig.space(section, "attention", default="off"))
         if _attn not in _VALID_ATTENTION_MODES:
             raise ValueError(
@@ -9382,53 +9348,25 @@ class PartSpace(PerceptualSpace):
         self.invertible = invertible
         self.nonlinear = nonlinear
 
-        # Stash Embedding-construction inputs (read from config BEFORE super().__init__).
-        # Explicit `model_type=` argument wins over <data><dataType> so callers
-        # (mainly tests) can opt into "embedding" without rewriting the XML
-        # config. ``model_type`` holds the data space_role: "embedding" | "numeric".
+        # Explicit model_type lets tests select embedding/numeric data mode.
         self.model_type = model_type or TheXMLConfig.data_type()
         self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
         self.lexer = resolve_lexer()
-        # ``raw`` keeps the word-level codebook (unlike ``byte``); it only
-        # swaps the ANALYZE surface to the unanalyzed [B,1,N] byte buffer in
-        # ``_lex_batch`` so PartSpace's space-lexer owns tokenization
-        # without forcing a byte embedding (which breaks word-level training).
+        # raw lexing preserves the word codebook while exposing raw bytes.
         self.byte_mode = (self.lexer == "byte")
         self.min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
         self.neg_samples = int(TheXMLConfig.training("negSamples", 64))
         self.embedding_source = TheData.train_input if TheData.train_input else None
 
         super().__init__(inputShape, spaceShape, outputShape)
-        # C→P feedback is now an explicit ``forward`` argument
-        # (``CS_subspaceForPS``) supplied by the recurrent cell, not a
-        # post-construction sibling ref.
-        # Recurrent-pass index. The post-SentenceState design (2026-05-21)
-        # publishes this on ``SymbolSubSpace.recur_pass`` (written by
-        # ``_forward_body`` each pass, read in ``forward`` via the
-        # ``self.subspace.symbolSpace`` back-reference); this attribute
-        # remains as the eager fallback for standalone ``forward`` calls
-        # / unit tests where no symbolSpace is wired. The serial-mode
-        # warm path is an AR-streaming optimisation across forward
-        # *calls*; it must not fire on in-forward recurrent passes >0
-        # (those carry distinct C→P feedback and must do the full cold
-        # compute, not splice the prior pass's last slot).
+        # Standalone fallback when no SymbolSpace publishes recur_pass.
         self._recurrent_pass_idx = 0
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
 
-        # Phase 1A.1: make the PERCEPTUAL VQ codebook learnable by
-        # gradient and drop its in-call EMA Parameter mutation, so
-        # ``PartSpace.forward`` performs NO persistent-state
-        # mutation in-call and is idempotent (a CUDA-graph-capture
-        # prerequisite). ``VectorQuantize`` / ``Codebook`` are SHARED by
-        # the Conceptual and Symbolic codebooks too; this flag is set
-        # ONLY on the perceptual ``.event`` codebook's ``VectorQuantize``
-        # instance here, so the Conceptual/Symbolic EMA paths stay
-        # byte-identical (single-writer invariant). No-op when this
-        # space has no codebook configured (passthrough ``Tensor``
-        # subspace -> no ``.vq``).
+        # Perceptual VQ is gradient-learned and forward-idempotent when present.
         self._make_perceptual_codebook_learnable()
 
         lexical_basis = self.subspace.what
@@ -9451,9 +9389,7 @@ class PartSpace(PerceptualSpace):
         else:
             self.doc_spans = []
             self.doc_sources = []
-        # Phase 4a (analysis/synthesis dual-input plan, rev. 2026-06-09):
-        # the knob is <synthesis> (bottom-up union of atoms). The legacy
-        # <chunking> spelling is rejected LOUDLY -- no silent aliasing.
+        # <chunking> was renamed <synthesis>; fail loudly on old configs.
         try:
             _legacy_chunking = TheXMLConfig.space(section, "chunking")
         except KeyError:
@@ -9472,31 +9408,16 @@ class PartSpace(PerceptualSpace):
         except KeyError:
             self.synthesis_mode = "lexicon"
         if self.synthesis_mode == "byte":
-            # canonical spelling; ``none`` is the legacy alias the
-            # dispatch sites still use internally.
+            # Internally byte-direct mode is still named "none".
             self.synthesis_mode = "none"
-        # ``mereological`` (doc/mereological.md): the canonical synthesizer.
-        # It routes through the radix store for chunking; the ``_mereological``
-        # flag marks it for the dominating join-from-bottom seed + the
-        # substring/.where isotonic projection (the redistribution). Aliasing to
-        # ``radix`` keeps every existing radix dispatch site unchanged; the flag
-        # is the only behavioural difference, and it is off for plain radix.
-        # ``meronomy`` (doc/mereological.md): the canonical synthesizer. It
-        # combines parts into a DOMINATING whole (join-from-bottom + .where
-        # isotonic projection -- ``_mereological``, inert until wired) AND
-        # isolates words (``_meronomy_words``: _embed_radix tags each percept by
-        # its WORD via Meronomy.word_spans over the raw surface, so word_groups
-        # is one agreed WORD grid for PS/WS/CS). Capture the flag BEFORE the
-        # radix alias (else the second read would see ``radix``). Aliases to
-        # radix; the flags are the only behavioural difference, off for radix.
+        # meronomy reuses radix dispatch plus word-group bookkeeping.
         self._meronomy = (self.synthesis_mode == "meronomy")
         self._mereological = self._meronomy
         self._meronomy_words = self._meronomy
         if self._meronomy:
             self.synthesis_mode = "radix"
         if self.synthesis_mode == "analyse":
-            # Phase 4b hard cut (rev. 2026-06-09): the meronymic analyzer
-            # is top-down ANALYSIS and lives on WholeSpace.
+            # analyse moved to WholeSpace.analysis; PS only owns synthesis.
             raise ValueError(
                 "PartSpace <synthesis>analyse</synthesis> was removed "
                 "(Phase 4b): the meronymic analyzer is ANALYSIS and lives "
@@ -9509,11 +9430,7 @@ class PartSpace(PerceptualSpace):
                 f"PartSpace.synthesis must be "
                 f"bpe|lexicon|byte|none|mphf|radix, "
                 f"got {self.synthesis_mode!r}")
-        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): radix-mode promotion knobs. Defaults match the
-        # plan's defaults (threshold=4, min_length=2). When chunking !=
-        # 'radix' these are read but unused -- the PerceptStore isn't
-        # constructed for legacy paths.
+        # Radix promotion defaults; ignored unless radix/meronomy builds a store.
         try:
             self.chunk_promotion_threshold = int(
                 TheXMLConfig.space(section, "chunkPromotionThreshold")
@@ -9544,9 +9461,7 @@ class PartSpace(PerceptualSpace):
                     "PartSpace.chunking='bpe' requires "
                     "<dataType>embedding</dataType>")
         elif self.synthesis_mode == "mphf":
-            # MPHF is BPE+MPHF-fast-path: in-vocab whole words via MPHF
-            # gather, OOV fall back to _embed_bpe_trie. Inherits BPE's
-            # invariants (byte range seeding + Embedding dataType).
+            # MPHF fast-path for known words; OOV falls back to BPE trie.
             if self.nVectors < 256:
                 raise ValueError(
                     f"PartSpace.chunking='mphf' requires nVectors>=256 "
@@ -9556,14 +9471,7 @@ class PartSpace(PerceptualSpace):
                     "PartSpace.chunking='mphf' requires "
                     "<dataType>embedding</dataType>")
         elif self.synthesis_mode == "none":
-            # Byte-direct mode: each byte is its own perceptual atom,
-            # looked up via a 256-entry codebook (byte_value ==
-            # codebook_index for 0..255, seeded by the ``\x00``
-            # cold-start at Embedding cold-start; subsequent insert()
-            # calls are blocked downstream when synthesis_mode='none').
-            # No BPE walker, no Python trie, no graph break.  ``\0``
-            # (byte 0) doubles as the sentence-end / pad sentinel and
-            # lands at codebook index 0 by design.
+            # Byte-direct mode maps byte values 0..255 directly to rows.
             if self.nVectors < 256:
                 raise ValueError(
                     f"PartSpace.chunking='none' requires "
@@ -9574,116 +9482,31 @@ class PartSpace(PerceptualSpace):
                     "PartSpace.chunking='none' requires "
                     "<dataType>embedding</dataType>")
         self._recovered_input = None
-        # Deferred word-recovery decode (set by reverse(); see
-        # _materialize_recovered_input). reverse() stashes the refs
-        # here instead of decoding eagerly -- the decode is report-only
-        # and its per-word .item() is a cudaMemcpyDtoH that breaks the
-        # brick CUDA-graph-capture contract.
+        # Reverse stores a report-only decode thunk to avoid eager host reads.
         self._recovered_input_thunk = None
         self._embedded_input = None
 
-        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # PartSpace owns a single SigmaLayer (``self.sigma``) -- the
-        # bottom-up synthesis/union fold. (Stage 1.A/Stage 10 history: PS
-        # owned the PiLayer; the corrected orientation assigns Pi --
-        # analysis/intersection -- to WholeSpace.) The per-stage
-        # ``ConceptualSpace.sigma_in`` fold keeps its name for now (open
-        # decision, plan sec.3 -- do not rename blindly). The legacy
-        # per-order Ramsified
-        # ``pi_input`` / ``pi_concept`` ModuleLists are retired; the
-        # ``subsymbolicOrder`` knob's new role is driving the PARALLEL-
-        # mode forward iteration count over the per-stage CS pipeline,
-        # not selecting per-order PS weights.
-        #
-        # ``forward`` body is now pi-only::
-        #
-        #     P = pi(x)
-        #
-        # Each layer applies its own internal nonlinearity and returns
-        # a tanh-bounded contribution.
-        #
-        # Dim choice: ``percept_dim`` is the per-slot dim PartSpace's
-        # ``pi`` operates on INTERNALLY -- the EMBEDDED percept width (the
-        # event last-dim AFTER ``embed_stem`` / the ``_embed_*`` front end has
-        # mapped the raw ``nInputDim`` byte event onto the codebook/embedding
-        # output). That width is ``nOutputDim``. For every non-widening config
-        # ``nInputDim == nOutputDim``, so this equals the legacy
-        # ``getEncodedInputSize()`` sizing; only an explicitly-widening PS
-        # differs (today: MM_20M, 5-wide raw byte event -> 1024-wide percept).
-        # There the old ``nInputDim`` sizing reshaped the embedded [B,8,1024]
-        # slab to width 5 (8192 % 5 != 0 -> the ``[4,-1,5]`` reshape crash)
-        # and undersized the butterfly at 8*5 instead of the 8*1024 the
-        # sizing note below documents. (The widening is done by the PS-side
-        # chunking/embedding front ends (_embed_bpe/_embed_radix/...) --
-        # bottom-up SYNTHESIS machinery, which STAYS on PS under the
-        # corrected analysis/synthesis orientation (rev. 2026-06-09): PS =
-        # bottom-up synthesis/Sigma over atoms; WS = top-down analysis/Pi
-        # over the unity. The fold this width sizes IS ``self.sigma``
-        # (Pi/Sigma swap, Phase 3). See doc/plans/2026-06-08-analysis-
-        # synthesis-dual-input.md (Orientation, sec.3).)
+        # Size the sigma fold at the embedded percept width, not raw byte width.
         percept_dim = int(self.subspace.getEncodedInputSize())
         _nin = int(self.subspace._nInputDim)
         _nout = int(self.subspace._nOutputDim)
         if _nin != -1 and _nout != -1 and _nin != _nout:
             percept_dim = _nout
-        # ``forwardBegin`` must reshape the embedded event to the SAME width
-        # the fold consumes; expose it (absent on other Spaces, which keep
-        # the plain ``nInputDim`` reshape).
+        # forwardBegin reshapes embedded events to this fold width.
         self._fold_width = percept_dim
-        # Subsymbolic-loop folds honour the ``architecture.monotonic``
-        # knob (same source as BasicModel.monotonic). Monotone (W>=0)
-        # is order-preserving, which the parthood predicate
-        # (``Ops.part``) requires when symbols are mapped across orders
-        # through the PS<->CS loop. Default False -> unchanged behavior.
+        # Monotone folds preserve parthood order when requested.
         _mono = bool(TheXMLConfig.get("architecture.monotonic",
                                       default=False))
-        # Stage 5 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md;
-        # 2026-05-27 revision) + dimensional-governance (doc/specs/2026-06-05
-        # -dimensional-governance.md): the SPAN of ``self.sigma`` is selected by
-        # the per-space ``<sigmaPi>`` knob (last | butterfly | full); the
-        # legacy boolean ``<butterfly>`` is accepted as an alias
-        # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
-        #   last      = per-slot square fold (default; pre-butterfly behavior).
-        #   butterfly = O(N log N) cross-element cascade on the flattened
-        #               ``[B, N*D]`` view; ``N`` auto-computed from
-        #               ``nInput * nInputDim``, padded to the next power of
-        #               two, per-pair 2x2 LDU (the cross-slot mixer XOR needs).
-        #   full      = dense flattened square Pi bridge of the flat-slab
-        #               invariant (Task 3 of the dimensional-governance plan).
-        # Stage 10: this applies on PS.pi only (the sigma half migrated to
-        # ConceptualSpace.sigma_in per stage).
-        # A4 (2026-06-06 parallel-conceptual-recurrence): the span is driven
-        # by the ARCHITECTURE-level global ``<sigmaPi>`` (default butterfly),
-        # NOT a per-space knob. A1 removed the per-space ``<sigmaPi>`` from the
-        # configs; one global now drives PS.Pi, WS.Sigma, and the per-stage
-        # ConceptualCombine identically. (Legacy per-space ``<butterfly>`` is
-        # accepted only as a back-compat override when explicitly present.)
+        # Global <sigmaPi> selects per-slot, butterfly, or dense fold span.
         _pi_mode = Space.sigma_pi_mode(
             TheXMLConfig.space(section, "butterfly", default=None)
             if TheXMLConfig.space(section, "butterfly", default=None) is not None
             else TheXMLConfig.get("architecture.sigmaPi", default="butterfly"))
         _butterfly = (_pi_mode == "butterfly")
         self.sigma_pi_slab = None  # set only for the "full" dense bridge
-        # Auto-compute total element count from the Space's shape.
-        # The pi runs AFTER the chunker reduces the input to ``nOutput``
-        # word-slots, so the per-position count it actually mixes is
-        # ``outputShape[0]`` (= nOutput), NOT the pre-chunk ``inputShape[0]``
-        # (= nInput). Per-position dim (D) comes from ``getEncodedInputSize``
-        # (= percept_dim). Flattened total = nOutput * D.
-        # 2026-06-06 sizing fix: MM_20M has nInput=8192 (raw char buffer) but
-        # nOutput=8 (words); using inputShape[0] oversized the cascade to
-        # 8192*1024 = 8.4M -- a 23-stage cross-element mix over a 1024x
-        # zero-pad (~193M params, the whole forward+backward bottleneck) when
-        # the pi only ever processes 8*1024 = 8192. For non-reducing PS
-        # (nInput == nOutput) this is unchanged.
+        # Sigma mixes the post-synthesis word slots: flattened total = nOutput * D.
         _butterfly_total = int(outputShape[0]) * int(percept_dim)
-        # Butterfly needs >= 2 elements to form a 2x2-LDU cascade (a 0/1-element
-        # cascade is trivially identity). A degenerate / dataless PS
-        # (nOutput*percept_dim < 2) gracefully falls back to the per-slot "last"
-        # fold -- mirroring WholeSpace.pi's handling below. The global
-        # <sigmaPi> default is butterfly (A4), so unconfigured small/degenerate
-        # configs (e.g. model.xml built without data) reach this fallback
-        # instead of erroring as they did before the graceful path.
+        # Degenerate 0/1-element butterfly requests fall back to per-slot mode.
         _butterfly_built = bool(_butterfly and _butterfly_total >= 2)
 
         def _mint_sigma():
@@ -9721,16 +9544,7 @@ class PartSpace(PerceptualSpace):
             return ly
 
         if _pi_mode == "full" and not _butterfly_built:
-            # full: the dense flattened square Pi bridge of the flat-slab
-            # invariant (doc/specs/2026-06-05-dimensional-governance.md
-            # §2-3) -- ONE LDU over the whole [B, N*content] slab. The
-            # wide<->deep regrouping (PS [B, D, N] <-> CS [B, N, D]) is a
-            # pure reshape; this operator is the invertible map carried by
-            # the bridge matrix (the deep idea lives in the matrix, not in
-            # any single percept). ``content`` excludes the per-position
-            # .where/.when band (canonical_shape), which passes through.
-            # The [B,N,D] <-> [B, N*content] reshape routing around
-            # forward/reverse lives in the forward path (Task 5).
+            # Dense full-span mode excludes where/when columns from the bridge.
             _band = int(sum(canonical_shape(section)))
             _content = int(percept_dim) - _band
             if _content < 1:
@@ -9738,31 +9552,17 @@ class PartSpace(PerceptualSpace):
                     "PartSpace <sigmaPi>full</> requires percept_dim "
                     f"({percept_dim}) > band ({_band})")
             self.sigma_pi_slab = int(inputShape[0]) * _content
-        # Construction (all three modes + the Stage-9 MERONYMIC K3-wire
-        # adapter wrap -- the cutover correction keeps a butterfly-built
-        # slot's cascade re-chartered on memberships) lives in _mint_sigma,
-        # shared verbatim with the P4 stack so the base path's RNG draws
-        # are order-identical to the pre-stack construction.
+        # Shared constructor keeps base and stacked sigma layers aligned.
         self.sigma = _mint_sigma()
         self.sigma_pi_mode = _pi_mode
         self.butterfly_enabled = _butterfly_built
         self.butterflyN = _butterfly_total if _butterfly_built else None
 
-        # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
-        # heat-retrieval.md §Handoff addendum): PartSpace no longer
-        # constructs a pre-PiLayer transformer self-attention pass. ``<attention>``
-        # is now a symbolic-retrieval mode (``self.attention_mode``), not tensor
-        # self-attention; the legacy ``<hasAttention>`` flag is inert.
+        # <attention> is a reverse-retrieval mode; hasAttention is inert.
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.params += self.sigma.getParameters()
-        # P4 <subsymbolicStack>: DISTINCT per-pass sigmas (depth IS
-        # mereological order; the stack is the subsymbolic reasoning engine).
-        # Pass 0 IS ``self.sigma``; ``<subsymbolicNoop>`` slots are the
-        # IDENTITY (``None`` -- each still occupies its pass, so the pump
-        # always runs to subsymbolicOrder). RNG-NEUTRAL: fresh layers are
-        # constructed under save/restore (the similarity_codebook idiom) so
-        # gated-off configs keep their init streams byte-identical.
+        # Optional per-pass sigma stack; noop slots keep pass count stable.
         self.sigmas = None
         if bool(TheXMLConfig.get("architecture.subsymbolicStack",
                                  default=False)):
@@ -9797,21 +9597,10 @@ class PartSpace(PerceptualSpace):
             n_vectors=self.nVectors,
             word_learning=self.word_learning,
         )
-        # Stage 7 (doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-        # reentrancy.md): when ``<synthesis>radix</synthesis>`` is active,
-        # build a ``PerceptStore`` and expose it as ``self.percept_store``.
-        # The store is the authoritative surface-form codebook for the
-        # radix path: a radix trie + hash-map cache + inverse table +
-        # learned codebook + byte fallback + promotion. Legacy paths
-        # (lexicon|bpe|mphf|none) keep using ``self.chunk_layer`` and the
-        # Embedding-resident codebook.
+        # Radix/meronomy builds the authoritative surface-form PerceptStore.
         if self.synthesis_mode == "radix":
             from Layers import RadixLayer as _PerceptStore
-            # 2026-06-04: the RadixLayer uses the Codebook Basis on
-            # ``subspace.what`` (built by _build_what_basis in radix mode)
-            # for vector storage -- one shared percept codebook, no
-            # duplicate Parameter table, and the SubSpace owns the
-            # prototypes (enabling lazy .index materialization).
+            # RadixLayer stores vectors in the SubSpace-owned Codebook basis.
             self.subspace.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 1),
@@ -9821,24 +9610,7 @@ class PartSpace(PerceptualSpace):
             )
         elif self.synthesis_mode in ("bpe", "mphf"):
             from Layers import RadixLayer as _PerceptStore
-            # Task 4 (2026-06-09 build-batch plan): ONE shared
-            # byte/percept codebook across the chunking front ends.
-            # bpe/mphf keep the lexicon Embedding on ``subspace.what``
-            # (the word-synthesis surface), so the byte store owns a
-            # PRIVATE Codebook basis (the RadixLayer's standalone
-            # branch); its ``W`` is promoted to an nn.Parameter below --
-            # permanent and persisted via this Space's module tree --
-            # mirroring the radix branch's recipe in
-            # ``_build_what_basis``. The ChunkLayer's vocabulary MIRRORS
-            # into this store (``mirror_to_store``, wired after the BPE
-            # auto-load below): insertion in chunk-id order makes
-            # ``percept_id == chunk_id``, so a bpe/mphf chunk decodes
-            # through the SAME reverse surface (``bytes_for``) that
-            # radix uses; ``chunk_layer.id_to_bytes`` is demoted to the
-            # segmentation-side mirror. Capacity: the ChunkLayer caps
-            # its vocab at ``n_vectors`` (>= 256 asserted for bpe), so
-            # the store never grows past it -- id alignment is safe by
-            # construction.
+            # Mirror BPE/MPHF chunk ids into a private byte-level PerceptStore.
             self.subspace.percept_store = _PerceptStore(
                 self.nDim,
                 initial_cap=max(int(self.nVectors), 256),
@@ -11867,7 +11639,7 @@ class PartSpace(PerceptualSpace):
                         print(f"=XPI= {_nm} "
                               f"maxpairdist={torch.cdist(_f, _f).max().item():.4f}",
                               flush=True)
-        # The legacy QKV ``AttentionLayer`` pass was removed here (plan
+        # The legacy ``QKVAttentionLayer`` pass was removed here (plan
         # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum): the layer
         # was never enlisted in the live forward path, and ``<attention>`` now
         # selects a symbolic-retrieval mode (consumed on the reverse path), not
@@ -12474,32 +12246,28 @@ def _concept_rows_exist(host):
 
 
 def _concept_alloc_of(host):
-    """Lazy :class:`Layers.ConceptAllocator` + per-order stores for ``host``
-    (a ConceptualSpace or a duck-typed stub). Sizes each order's symbol-family
-    layer from the host's dyadic caps/stamps when available (host-only 1x1
-    record containers otherwise) and wires the back-compat instance views."""
+    """Lazy :class:`Layers.ConceptAllocator` + THE shared square store for
+    ``host`` (a ConceptualSpace or a duck-typed stub). Sizes the single
+    untyped [N x N+1] AttentionLayer from the host's two-block caps when
+    available (host-only 1x1 record container otherwise) and wires the
+    back-compat instance views."""
     alloc = getattr(host, "_concept_allocator", None)
     if alloc is None:
         from Layers import ConceptAllocator
 
         def _sizer(order, _h=host):
-            # Symbolic-only role-split columns (P2): order k reads the stacked
-            # lower-order activations through a whole-role block and a
-            # part-role block (same n_ss width each) plus the 1-wide
-            # EVERYTHING bias block.
+            # v3 square sizer: ONE untyped [N x N+1] layer, roles retired.
             caps_fn = getattr(_h, "_order_caps", None)
             if caps_fn is None:
                 return 1, 1, None, None
-            caps = caps_fn()
-            n_ss = sum(int(c) for c in caps[:int(order)])
+            N = sum(int(c) for c in caps_fn())
             dev = None
             params = getattr(_h, "parameters", None)
             if params is not None:
                 for p in params():
                     dev = p.device
                     break
-            roles = (("whole", n_ss), ("part", n_ss), ("bias", 1))
-            return 2 * n_ss + 1, int(caps[int(order)]), dev, roles
+            return N + 1, N, dev, None
 
         def _cap(_h=host):
             caps_fn = getattr(_h, "_order_caps", None)
@@ -12584,7 +12352,7 @@ class ConceptualSpace(Space):
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         # DEPRECATED inert legacy alias: ``hasAttention`` no longer constructs a
-        # QKV ``AttentionLayer`` (that enlistment was removed; see plan
+        # ``QKVAttentionLayer`` (that enlistment was removed; see plan
         # 2026-06-06-symbolic-heat-retrieval.md §Handoff addendum). It is kept
         # only for backward-compat config/state parsing and is superseded by the
         # ``<attention>`` symbolic-retrieval mode (``self.attention_mode``).
@@ -12630,13 +12398,13 @@ class ConceptualSpace(Space):
         # batch-broadcast-over-all-slots path. ``False`` keeps the existing
         # ``[D]`` / ``[1, D]`` / ``[B, D]`` behavior byte-identical.
         self._c_prior_slotwise = False
-        # QKV ``AttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
+        # ``QKVAttentionLayer`` enlistment removed (plan 2026-06-06-symbolic-
         # heat-retrieval.md §Handoff addendum): ConceptualSpace no longer
         # constructs a tensor self-attention pass when ``hasAttention`` is set.
         # ``<attention>`` now selects a symbolic-retrieval mode
         # (``self.attention_mode``), consumed on the reverse path; the legacy
         # ``<hasAttention>`` flag is inert.  The ``input`` / ``output``
-        # locals that fed the removed AttentionLayer call were dead after
+        # locals that fed the removed QKVAttentionLayer call were dead after
         # that removal and have been deleted here.
 
         # Stage 1.C of the two-loop pi/sigma substrate refactor
@@ -14142,63 +13910,34 @@ class ConceptualSpace(Space):
                 and not bool(getattr(self, "_serial", True)))
 
     # ====================================================================
-    # Ramsified per-order sparse weight tables (PS/WS/SS -> CS)
+    # The shared untyped square concept store (v3, iterated symbolic loop)
     #
     # A concept is a high-dimensional atom stored on ``CS.subspace.what``
-    # (ConceptDim). It is linked to its sources -- PS, WS, and the symbols
-    # SS_0..SS_{k-1} of all LOWER ramsified orders -- by a sparse WEIGHT MATRIX
-    # whose entries ``(concept, source, weight)`` give the signed contribution
-    # of each active source code to that concept's activation. Per order, TWO
-    # DISTINCT SparseLayers (percept: PS|WS presences; symbol: lower-order
-    # activations) sum pre-tanh; the forward is an encoder + dictionary decoder:
+    # (ConceptDim). Rows split two-block (_order_caps): the order-0 snap
+    # block [0, n_snap) reserves codebook rows (no in-edges); the relation
+    # pool [n_snap, N) holds every composition as UNTYPED edges on ONE
+    # shared square [N x N+1] AttentionLayer (col N = the EVERYTHING
+    # bias). The forward is the iterated wave + dictionary decoder:
     #
-    #     a_order         = tanh(P @ [ps|ws] + S @ [a_0..a_{order-1}])
-    #     concept_code[c] = a_order[c] * what[c]           (dictionary atom)
+    #     a^{i+1}         = tanh(W [a^i | 1] + s)     (s = padded snap a_0)
+    #     concept_code[c] = a^K[c] * softplus(what[c])    (dictionary atom)
     #
-    # so percepts (PerceptDim) and concepts (ConceptDim) never share a vector
-    # space -- the matrix lives in index/activation space, dimension-agnostic.
-    # One table PER ramsified ORDER (Delta 1): order k's sources are
-    # ``[PS | WS | SS_0 | ... | SS_{k-1}]``. Capacity is DYADIC by order (more
-    # low-level than high-level concepts): the N concept rows split
-    # N/2, N/4, ..., N/2^S, N/2^S (last two equal so the blocks sum to N),
-    # stacked contiguously; the same allocation is used for SS.
+    # so percepts (PerceptDim) and concepts (ConceptDim) never share a
+    # vector space -- the matrix lives in index/activation space.
+    # (doc/plans/2026-07-02-iterated-symbolic-loop.md)
     # ====================================================================
 
-    @staticmethod
-    def order_capacities(total, symbolic_order):
-        """Dyadic per-order capacities over ``total`` rows for orders
-        ``0..symbolic_order``: order ``o`` gets ``floor(total / 2^(o+1))`` and
-        the LAST order takes the remainder, so the blocks sum to EXACTLY
-        ``total`` (e.g. ``total=N, S=3 -> [N/2, N/4, N/8, N/8]``). With
-        ``symbolic_order=0`` it is ``[total]`` (one order). Always returns
-        ``symbolic_order + 1`` positive sizes (clamped to >=1 each when
-        ``total`` is small)."""
-        total = int(total)
-        S = max(0, int(symbolic_order))
-        if S == 0:
-            return [max(1, total)]
-        caps = []
-        remaining = total
-        for o in range(S):                       # orders 0 .. S-1
-            # leave at least 1 row for each of the remaining (S - o) orders.
-            c = max(1, total // (2 ** (o + 1)))
-            c = min(c, remaining - (S - o))
-            c = max(1, c)
-            caps.append(c)
-            remaining -= c
-        caps.append(max(1, remaining))           # order S = the remainder
-        return caps
-
     def _order_caps(self):
-        """Cached dyadic capacities for THIS CS's ``nVectors`` rows across
-        ``_symbolic_order + 1`` orders. Recomputed when either changes."""
+        """Cached (n_snap, n_pool) split of THIS CS's ``nVectors`` rows: the
+        order-0 snap block and the single untyped relation pool (v3 -- the
+        dyadic per-order split is retired with ramsification)."""
         N = int(self.nVectors)
-        S = int(getattr(self, "_symbolic_order", 0) or 0)
-        key = (N, S)
+        key = N
         cache = getattr(self, "_order_caps_cache", None)
         if cache is None or cache[0] != key:
-            caps = self.order_capacities(N, S)
-            object.__setattr__(self, "_order_caps_cache", (key, caps))
+            n_snap = max(1, N // 2)
+            object.__setattr__(self, "_order_caps_cache",
+                               (key, (n_snap, max(1, N - n_snap))))
         return self._order_caps_cache[1]
 
     def order_slice(self, order):
@@ -14210,14 +13949,13 @@ class ConceptualSpace(Space):
         return start, start + caps[o]
 
     def _sparse_families(self, order):
-        """The ``(percept, symbol)`` pair of ramsified ``order`` (lazy). The
-        percept family is RETIRED (P2, symbolic-only SparseLayer): ``a_0``
-        comes from the order-0 snap, so the slot is ``None`` (kept for the
-        pair shape). The symbol family maps the stacked lower-order
-        activations through role-split columns ``[whole | part | bias]``
-        (tensor edges at ``order >= 1``; every order's symbol layer also
-        hosts that order's relation records and, at order 0, the reserved
-        codebook-row map)."""
+        """Registration shim over THE shared untyped square store (v3):
+        every ``order`` returns the same ``(None, alloc.layer(0))`` -- the
+        percept family is RETIRED (P2; ``a_0`` comes from the order-0
+        snap) and the pair shape is kept for back-compat. LOAD-BEARING
+        side effect: registers the store in ``_sparse_fam`` so
+        ``getParameters`` / ``_sparse_family_nnz`` / the optimizer
+        rebuild see the learnable values."""
         fams = getattr(self, "_sparse_fam", None)
         if fams is None:
             fams = {}
@@ -14225,67 +13963,67 @@ class ConceptualSpace(Space):
         o = int(order)
         got = fams.get(o)
         if got is None:
-            got = (None, _concept_alloc_of(self).layer(o))
+            got = (None, _concept_alloc_of(self).layer(0))
             fams[o] = got
         return got
 
-    def add_concept_edge(self, order, concept_local, role, col, weight=1.0):
-        """Append a role-tagged sparse edge for ramsified ``order``:
-        ``concept_local <- weight * role_block[col]`` on the symbol family
-        (roles ``whole``/``part`` index the stacked lower-order activations
-        ``[SS_0..SS_{order-1}]``; ``bias`` col 0 is the EVERYTHING pole).
-        IDEMPOTENT per edge; grows the learnable values host-side."""
-        o = int(order)
-        if o == 0:
-            raise IndexError(
-                "add_concept_edge: order 0 composes NO sources -- order-0 "
-                "concepts are codebook rows (the snap), not edges")
-        _percept, symbol = self._sparse_families(o)
-        return symbol.add_edge(int(concept_local), int(col), weight=weight,
-                               role=role)
+    def add_concept_edge(self, row, col, weight=1.0):
+        """Append an UNTYPED sparse edge in GLOBAL coordinates (v3):
+        ``row <- weight * col`` on THE shared square store, where rows and
+        cols index the single stacked concept inventory and ``col ==
+        nVectors`` is the trailing bias column (the EVERYTHING pole). A
+        SNAP-region row accepts NO edges (order-0 concepts are codebook
+        rows, not compositions -- fail loud); a self-edge raises in the
+        layer (the Quine atom). IDEMPOTENT per edge; grows the learnable
+        values host-side."""
+        n_snap, _n_pool = self._order_caps()
+        r = int(row)
+        if r < n_snap:
+            raise ValueError(
+                f"add_concept_edge: snap row {r} accepts no edges -- "
+                f"order-0 concepts are codebook rows (the snap), not "
+                f"compositions")
+        # _sparse_families(0) registers the store in _sparse_fam (params/nnz)
+        _percept, ly = self._sparse_families(0)
+        return ly.add_edge(r, int(col), weight=weight)
 
-    def concept_weights(self, order, concept_local):
-        """The ``((role, col), weight)`` entries of ``concept_local`` at
-        ``order`` (role-block-local columns), deterministically ordered.
-        Empty when none."""
-        fams = getattr(self, "_sparse_fam", None) or {}
-        got = fams.get(int(order))
-        if got is None:
+    def concept_weights(self, row):
+        """The ``(col, weight)`` edges of GLOBAL concept ``row`` on the
+        shared untyped store (cols are global rows; ``nVectors`` is the
+        bias column), sorted by col. Empty when none."""
+        alloc = getattr(self, "_concept_allocator", None)
+        ly = None if alloc is None else alloc._layers.get(0)
+        if ly is None or ly.values is None:
             return []
-        _percept, symbol = got
-        if symbol is None or symbol.values is None:
-            return []
-        c = int(concept_local)
-        out = []
-        for (row, col), i in symbol._index.items():
-            if row != c:
-                continue
-            for (name, _w) in symbol.roles or ():
-                start, end = symbol.role_slice(name)
-                if start <= col < end:
-                    out.append(((name, col - start),
-                                float(symbol.values[i])))
-                    break
-        return sorted(out, key=lambda sw: repr(sw[0]))
+        r = int(row)
+        return sorted((int(c), float(ly.values[i]))
+                      for (rr, c), i in ly._index.items() if rr == r)
 
     def _sparse_family_nnz(self):
-        """Total edge count across the families of every order (the percept
-        slot is None post-P2)."""
-        return sum((p.nnz if p is not None else 0)
-                   + (s.nnz if s is not None else 0)
-                   for (p, s) in
-                   (getattr(self, "_sparse_fam", None) or {}).values())
-
-    def getParameters(self):
-        """Optimizable parameters: the inherited set PLUS the per-order sparse
-        family values (created host-side as edges are added, so the optimizer
-        trains them). With no edges this is exactly the inherited set ->
-        byte-identical optimizer state. (The model rebuilds its optimizer when
-        new weights appear; see :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
-        base = list(self.params)
+        """Total edge count over the DISTINCT family layers (v3: every order
+        shares ONE store, so dedup by identity before summing)."""
+        seen, total = set(), 0
         for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
             for ly in (p, s):
-                if ly is not None and ly.values is not None:
+                if ly is not None and id(ly) not in seen:
+                    seen.add(id(ly))
+                    total += ly.nnz
+        return total
+
+    def getParameters(self):
+        """Optimizable parameters: the inherited set PLUS the sparse family
+        values (created host-side as edges are added, so the optimizer
+        trains them; v3 dedups by identity -- every order shares ONE layer).
+        With no edges this is exactly the inherited set -> byte-identical
+        optimizer state. (The model rebuilds its optimizer when new weights
+        appear; see :meth:`_maybe_rebuild_optimizer_for_csw`.)"""
+        base = list(self.params)
+        seen = set()
+        for (p, s) in (getattr(self, "_sparse_fam", None) or {}).values():
+            for ly in (p, s):
+                if (ly is not None and ly.values is not None
+                        and id(ly.values) not in seen):
+                    seen.add(id(ly.values))
                     base.append(ly.values)
         return base
 
@@ -14350,27 +14088,14 @@ class ConceptualSpace(Space):
         concepts occupy the stacked slice ``order_slice(order)``. Returns the
         per-concept code slab ``[B, n_concepts_o, ConceptDim]`` -- concept
         ``c``'s row is ``activation[c] * what[slice_start + c]`` (so percepts in
-        PerceptDim and concepts in ConceptDim never share a vector space)."""
+        PerceptDim and concepts in ConceptDim never share a vector space).
+        Standalone/diagnostic helper: the live forward inlines this decode
+        over the full inventory with SOFTPLUS-rectified atoms
+        (:meth:`cs_forward_content`); this helper scales raw rows."""
         start, end = self.order_slice(order)
         atoms = what_W[start:end]                    # [n_concepts_o, ConceptDim]
         a = concept_activation.t().unsqueeze(-1)     # [B, n_concepts_o, 1]
         return a * atoms.unsqueeze(0)                # [B, n_concepts_o, ConceptDim]
-
-    def cs_source_layout(self, order):
-        """The stacked lower-order source layout of ramsified ``order``
-        (symbolic-only, P2): the whole-role and part-role blocks each read
-        ``[SS_0 | ... | SS_{order-1}]``. Returns ``(offsets, total)`` where
-        ``offsets[i]`` is sub-order ``i``'s start column WITHIN a role block
-        and ``total`` is the block width (``sum(caps[:order])``); the SS_i
-        block size is the dyadic capacity of concept order ``i`` (symbols ARE
-        concepts of the previous order)."""
-        caps = self._order_caps()
-        offsets = {}
-        off = 0
-        for i in range(int(order)):
-            offsets[i] = off
-            off += int(caps[i])
-        return offsets, off
 
     def cs_snap_order0(self, settled_event, ema=False):
         """The LATE-CUTOVER SNAP (P2): read the settled mixed field against
@@ -14417,37 +14142,72 @@ class ConceptualSpace(Space):
         return a_0
 
     def cs_forward_content(self, a_0, dictionary):
-        """Run the SYMBOLIC phase's ramsified encode/decode and assemble the
-        stacked CS content event (v2, P2: symbolic-only).
+        """Iterated clamped-SOURCE wave over the single untyped layer (v3):
+        a^{i+1} = tanh(W [a^i | 1] + s), i = 0..K-1, K = symbolicOrder (the
+        MAXIMUM POSSIBLE conceptual order; we are NOT forcing ramsification).
+        ``s`` is the order-0 snap presence padded to the inventory -- an
+        ADDITIVE source term each step (Alec 2026-07-03): snap rows carry no
+        in-edges, so they read tanh(a_0) per step. A depth-d vine completes
+        at iteration d (tail links first -- graded partial evidence before
+        that). Fixed-K unroll, no data-dependent control flow; the per-step
+        wave-QE settle statistic is recorded no_grad, report-only. Returns
+        ``(content [B, N, ConceptDim], a [N, B])`` -- the decoded content
+        (activation scaling the softplus-positive atom; consumed by
+        losses/the SS leg ONLY, never substituted -- P3) and the final
+        signed activations (the SS feed)."""
+        N = int(self.nVectors)
+        B = int(a_0.shape[-1])
+        n_snap, _n_pool = self._order_caps()
+        K = int(getattr(self, "_symbolic_order", 0) or 0)
+        ly = _concept_alloc_of(self).layer(0)
+        atoms = F.softplus(dictionary)               # [N, CDim] > 0
+        s = torch.cat([a_0, a_0.new_zeros((N - n_snap, B))], dim=0)
+        a = s                                        # a^0 = padded snap
+        qes = []
+        for _i in range(K):                          # K static: unrolls
+            a_next = ly.wave_step(a, s)              # tanh(W [a|1] + s)
+            with torch.no_grad():
+                qes.append((a_next - a).abs().mean())
+            a = a_next
+        object.__setattr__(self, "_cs_wave_qe",
+                           torch.stack(qes) if qes else a_0.new_zeros(0))
+        content = a.t().unsqueeze(-1) * atoms.unsqueeze(0)   # [B, N, CDim]
+        return content, a
 
-        ``a_0 [caps[0], B]`` is the order-0 snap presence
-        (:meth:`cs_snap_order0`); ``dictionary`` is the concept-atom codebook
-        ``[nVectors, ConceptDim]`` -- positivity ("CS vectors map to strictly
-        positive mereological features") is enforced via ``softplus``. Order
-        ``k >= 1`` composes LOWER-ORDER SYMBOL ACTIVATIONS ONLY (plus the
-        EVERYTHING bias): ``a_k = tanh(S_k @ [a_0..a_{k-1} | a_0..a_{k-1} |
-        1])`` through the role-split whole/part/bias columns, so the 0-D
-        symbol composes across orders and stays in ``(-1, 1)``. The concept
-        code is the activation scaling the positive atom (radial: magnitude =
-        certainty, sign = present vs anti-present). Returns
-        ``(content[B, N, ConceptDim], [a_0, ..., a_S])`` -- the stacked
-        content and the per-order signed activations (the SS feed); content
-        is consumed by losses/the SS leg ONLY (never substituted -- P3)."""
-        caps = self._order_caps()
-        atoms = F.softplus(dictionary)               # strictly-positive atoms
-        a_list = [a_0]
-        slabs = [self.cs_decode(0, a_0, atoms)]
-        for k in range(1, len(caps)):
-            _percept, symbol = self._sparse_families(k)
-            stacked = torch.cat(a_list[:k], dim=0)   # [sum(caps[:k]), B]
-            if symbol is not None and symbol.nnz > 0:
-                a_k = torch.tanh(symbol.forward_linear_roles(stacked))
-            else:
-                a_k = a_0.new_zeros((int(caps[k]), int(a_0.shape[-1])))
-            a_list.append(a_k)
-            slabs.append(self.cs_decode(k, a_k, atoms))     # [B, n_c_k, CDim]
-        content = torch.cat(slabs, dim=1)            # [B, N, ConceptDim]
-        return content, a_list
+    @torch.no_grad()
+    def cs_groundedness_probe(self, a_0, k=None, tol=1e-3):
+        """KRIPKE groundedness (host-side, eager, report-only). Run 1
+        iterates from a^0 = 0 WITH the source: what lights up is GROUNDED
+        (support traces to perception -- the least-fixed-point reading).
+        Run 2 continues from run 1's terminal state with the SOURCE RELEASED
+        (s = 0): rows persisting above ``tol`` are UNGROUNDED -- sustained by
+        a loop, answering to nothing outside it (rumination/addiction shape;
+        see the design doc's human-problems call-out). Returns
+        ``(grounded [N] bool, ungrounded [N] bool)`` or ``None`` inactive.
+        The EVERYTHING-bias column is MASKED in both runs (Alec 2026-07-03):
+        the pole is a standing axiom, not perception -- unmasked it lights
+        bias-bounded rows in run 1 and sustains them in run 2, polluting
+        both halves of the Kripke reading."""
+        if not self._sparse_active() or a_0 is None:
+            return None
+        N = int(self.nVectors)
+        B = int(a_0.shape[-1])
+        n_snap, _ = self._order_caps()
+        K = int(k) if k is not None else 2 * max(
+            1, int(getattr(self, "_symbolic_order", 0) or 0))
+        ly = _concept_alloc_of(self).layer(0)
+        s = torch.cat([a_0, a_0.new_zeros((N - n_snap, B))], dim=0)
+
+        def _iterate(a, source, steps):
+            for _ in range(steps):
+                a = ly.wave_step(a, source, bias=0.0)    # axiom pole masked
+            return a
+
+        lit = _iterate(torch.zeros_like(s), s, K)          # ground-up, source ON
+        grounded = lit.abs().amax(dim=-1) > tol
+        free = _iterate(lit, torch.zeros_like(s), K)       # source RELEASED
+        ungrounded = free.abs().amax(dim=-1) > tol
+        return grounded, ungrounded
 
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
@@ -14460,35 +14220,65 @@ class ConceptualSpace(Space):
 
     @property
     def _csw_rows(self):
-        """Read-only merged ``{(order, cid): local_row}`` view over the
-        per-order layers' tensor-row maps (back-compat; the physical maps are
-        layer-owned since the 2026-07-02 consolidation)."""
+        """Read-only ``{(order, cid): global_row}`` view over the shared
+        layer's namespaced tensor-row map (back-compat shape; ``order`` is
+        the allocator's bookkeeping placement, keys unwrap from
+        ``("snap"/"pool", cid)``)."""
         alloc = getattr(self, "_concept_allocator", None)
         if alloc is None:
             return {}
-        return {(o, cid): r for o, ly in alloc._layers.items()
-                for cid, r in ly._tensor_rows.items()}
+        out = {}
+        for ly in alloc._layers.values():
+            for k, r in ly._tensor_rows.items():
+                cid = k[1] if isinstance(k, tuple) and len(k) == 2 else k
+                out[(alloc.placement.get(cid, 0), cid)] = r
+        return out
 
     def _csw_concept_row(self, order, concept_id):
-        """First-seen LOCAL row of ``concept_id`` within ramsified ``order``'s
-        dyadic block (``0 .. caps[order]-1``). Returns ``None`` when the block
-        is full (capacity overflow -- the concept gets no weights, falling back
-        to the current content)."""
+        """First-seen GLOBAL row of ``concept_id``: order 0 allocates in the
+        snap block ``[0, n_snap)``, relations in the pool ``[n_snap, N)``.
+        ``None`` on overflow -- LOUDLY (decision 2: first-come + report)."""
         alloc = _concept_alloc_of(self)
-        return alloc.layer(order).assign_row(
-            concept_id, capacity=int(self._order_caps()[int(order)]))
+        n_snap, n_pool = self._order_caps()
+        ly = alloc.layer(0)
+        if int(order) == 0:
+            region, cap = "snap block", n_snap
+            row = ly.assign_row(("snap", int(concept_id)), capacity=n_snap,
+                                base=0)
+        else:
+            region, cap = "relation pool", n_pool
+            row = ly.assign_row(("pool", int(concept_id)), capacity=n_pool,
+                                base=n_snap)
+        if row is None:
+            n = int(getattr(self, "_csw_overflow_count", 0)) + 1
+            object.__setattr__(self, "_csw_overflow_count", n)
+            seen = getattr(self, "_csw_overflow_seen", None)
+            if seen is None:
+                seen = set()
+                object.__setattr__(self, "_csw_overflow_seen", seen)
+            # Warn once per (region, cid); the counter still counts every event.
+            if (region, int(concept_id)) not in seen:
+                seen.add((region, int(concept_id)))
+                warnings.warn(
+                    f"CS {region} exhausted ({cap} rows): concept "
+                    f"{int(concept_id)} gets records only, no weighted "
+                    f"reading (overflow #{n})", RuntimeWarning)
+        return row
 
     def _populate_concept_weights(self, concept_id):
-        """Decompose ``concept_id`` into the symbolic-only sparse store (v2,
-        P2). Order-0 concepts write NO edges -- they RESERVE their order-0
-        codebook row (the snap reads them; their part/whole decomposition
-        lives in the PS/WS codebooks + the ordered reference store, sec 4c:
-        store by reference, never duplicate codes). Order ``k >= 1`` writes
-        role-tagged edges over the stacked lower-order activations: part-role
-        sym constituents into the part block, whole-role into the whole
-        block, plus the EVERYTHING bias (NOTHING = the zero vector: no edge).
-        MIN-SUPPORT: >= 2 constituents, poles included. NO-OP unless the
-        sparse transform is active -> byte-identical."""
+        """Decompose ``concept_id`` into the UNTYPED square store (v3):
+        every sym constituent gets ONE edge (row = the relation's global
+        row, col = the constituent's global row); EVERYTHING -> the bias
+        column ``nVectors``; raw refs stay reference-store-only (sec 4c:
+        store by reference, never duplicate codes). Direction and order
+        live in the RECORD store and the NESTING (the vine), never in
+        typed columns -- so ``relate(x, x)`` merges its part- and
+        whole-legs into ONE edge (idempotent per (row, col)) while a
+        self-REFERENTIAL row would be a self-edge and raises in the layer
+        (the Quine atom). Order-0 concepts write NO edges -- they RESERVE
+        their snap codebook row. MIN-SUPPORT: >= 2 constituents, poles
+        included, EXCEPT minted singletons (v2 arithmetic kept). NO-OP
+        unless the sparse transform is active -> byte-identical."""
         if not self._sparse_active():
             return
 
@@ -14502,29 +14292,24 @@ class ConceptualSpace(Space):
                     if not _is_sym(x) and x not in (_NOTHING, _EVERYTHING))
         n_poles = int(_NOTHING in parts) + int(_EVERYTHING in wholes)
         # Min-support >= 2, EXCEPT minted singletons: the unit-set's single
-        # part-role edge IS its weighted reading (Alec 2026-07-02).
+        # sym edge IS its weighted reading (Alec 2026-07-02).
         if (n_raw + len(sym_refs) + n_poles < 2
                 and int(concept_id) not in alloc.singletons):
             return
-        order = self._concept_source_order(concept_id)
-        c_local = self._csw_concept_row(order, concept_id)
-        if c_local is None:
-            return                                   # order block full
+        order = self._concept_source_order(concept_id)   # bookkeeping only
+        c_row = self._csw_concept_row(order, concept_id)
+        if c_row is None:
+            return                                   # region full (loud above)
         if order == 0:
             return                                   # snap row reserved; no edges
-        offsets, _total = self.cs_source_layout(order)
-        for role in ("part", "whole"):
-            for x in alloc.refs(concept_id, role):
-                if not _is_sym(x):
-                    continue                         # raw refs: reference store
-                so = self._concept_source_order(x[1])
-                if so < order and so in offsets:
-                    sl = self._csw_concept_row(so, x[1])
-                    if sl is not None:
-                        self.add_concept_edge(order, c_local, role,
-                                              offsets[so] + sl)
+        for x in sym_refs:
+            so = self._concept_source_order(x[1])
+            s_row = self._csw_concept_row(so, int(x[1]))
+            if s_row is None:
+                continue
+            self.add_concept_edge(c_row, s_row)      # untyped; self-edge raises
         if _EVERYTHING in wholes:
-            self.add_concept_edge(order, c_local, "bias", 0)
+            self.add_concept_edge(c_row, int(self.nVectors))     # bias col
         # Make the freshly-grown sparse weights trainable (rebuilds the model
         # optimizer when the weight count changed; no-op pre-training).
         self._maybe_rebuild_optimizer_for_csw()
@@ -14554,9 +14339,9 @@ class ConceptualSpace(Space):
         """The POST-PUMP symbolic phase (P3, one LATE cutover): snap the
         SETTLED mixed field to the ORDER-0 codebook block
         (:meth:`cs_snap_order0`, EMA identity trace while training) and run
-        the ramsified role-split composition (:meth:`cs_forward_content`) --
+        the iterated wave composition (:meth:`cs_forward_content`) --
         quantization happens ONLY here, at the bandwidth seam, as late as
-        possible. Returns ``(content, activations)`` -- the stacked signed
+        possible. Returns ``(content, activations)`` -- the final signed
         activations ``[N, B]`` are the 0-D symbols (grad-bearing; the SS leg
         is built from them); the content feeds the losses/SS leg ONLY and is
         NEVER substituted back into the subsymbolic carrier (decision 10:
@@ -14574,8 +14359,7 @@ class ConceptualSpace(Space):
         a_0 = self.cs_snap_order0(settled, ema=True)
         if a_0 is None:
             return settled, None
-        content, a_list = self.cs_forward_content(a_0, dict_W)
-        acts = torch.cat(a_list, dim=0)          # [N, B] signed, grad-bearing
+        content, acts = self.cs_forward_content(a_0, dict_W)   # acts [N, B]
         return content, acts
 
     def refine_over_collected(self, *, k_parts=None, k_wholes=None):
@@ -14695,55 +14479,46 @@ class ConceptualSpace(Space):
     def _drop_concept_edge(self, concept_id, code, side):
         """Remove ``concept_id``'s sparse edge for a dropped link (the pruning
         counterpart of :meth:`_populate_concept_weights`); no-op when the
-        concept has no allocated row / no edge. Raw part/whole codes carry NO
-        edges post-P2 (reference-store only), so only the EVERYTHING bias
-        edge is physical here. Call BEFORE discarding the relation entry so
-        the concept's order is still derivable."""
+        concept has no allocated pool row / no edge. Raw part/whole codes
+        carry NO edges post-P2 (reference-store only), so only the
+        EVERYTHING bias edge -- global (row, nVectors) -- is physical here."""
         if side != "everything":
             return                                 # raw links: records only
         if not _concept_rows_exist(self):
             return                                 # never populated (inactive)
-        alloc = _concept_alloc_of(self)
-        order = self._concept_source_order(concept_id)
-        if order == 0:
-            return                                 # order 0: snap rows, no edges
-        c_local = alloc.layer(order).row_of(concept_id)
-        if c_local is None:
-            return
-        _percept, symbol = self._sparse_families(order)
-        start, _end = symbol.role_slice("bias")
-        symbol.remove_edges([(int(c_local), start)])
+        ly = _concept_alloc_of(self).layer(0)
+        c_row = ly.row_of(("pool", int(concept_id)))
+        if c_row is None:
+            return                                 # snap/unallocated: no edges
+        ly.remove_edges([(int(c_row), int(self.nVectors))])
 
     def _set_concept_edge_value(self, cid, code, side, value):
         """Set the trained value of ``cid``'s edge for one sym constituent
-        (``side`` in sym_part/sym_whole). ``no_grad`` -- an assertion strength
+        (``side`` in sym_part/sym_whole). The store is UNTYPED (v3), so for
+        ``relate(x, x)`` a part- and a whole-assertion address the SAME
+        merged edge ``(c_row, s_row)``. ``no_grad`` -- an assertion strength
         is evidence, not a backprop target. No-op when the edge is absent
-        (raw codes carry no edges post-P2)."""
+        (raw codes carry no edges post-P2). The constituent may hold BOTH
+        a snap and a pool row -- whichever namespace carries the live edge
+        wins."""
         if side not in ("sym_part", "sym_whole"):
             return                                 # raw refs: records only
         if not _concept_rows_exist(self):
             return
-        alloc = _concept_alloc_of(self)
-        order = self._concept_source_order(cid)
-        if order == 0:
+        ly = _concept_alloc_of(self).layer(0)
+        c_row = ly.row_of(("pool", int(cid)))
+        if c_row is None:
             return
-        c_local = alloc.layer(order).row_of(cid)
-        if c_local is None:
-            return
-        _percept, symbol = self._sparse_families(order)
-        so = self._concept_source_order(code)
-        offsets, _t = self.cs_source_layout(order)
-        if so not in offsets:
-            return
-        sl = self._csw_concept_row(so, code)
-        if sl is None:
-            return
-        role = "part" if side == "sym_part" else "whole"
-        start, _end = symbol.role_slice(role)
-        pos = symbol._index.get((int(c_local), start + offsets[so] + int(sl)))
-        if pos is not None and symbol.values is not None:
+        pos = None
+        for ns in ("snap", "pool"):
+            s_row = ly.row_of((ns, int(code)))
+            if s_row is not None:
+                pos = ly._index.get((int(c_row), int(s_row)))
+                if pos is not None:
+                    break
+        if pos is not None and ly.values is not None:
             with torch.no_grad():
-                symbol.values[pos] = float(value)
+                ly.values[pos] = float(value)
 
     def assert_concept_relation(self, cid, part=None, whole=None,
                                 sym_part=None, sym_whole=None, weight=1.0):
@@ -14759,7 +14534,6 @@ class ConceptualSpace(Space):
         c = alloc.touch(cid)
         had_rows = _concept_rows_exist(self)
         had_everything = _EVERYTHING in alloc.refs(c, "whole")
-        old_order = self._concept_source_order(c) if had_rows else None
         asserted = []
         if part is not None:
             alloc.remove(c, "part", _NOTHING)
@@ -14779,14 +14553,13 @@ class ConceptualSpace(Space):
             asserted.append((int(sym_whole), "sym_whole"))
         self._populate_concept_weights(c)
         # A concrete whole replaced the EVERYTHING pole: retire its bias edge
-        # (at the order the pole was populated at, pre-migration).
-        if (had_everything and old_order is not None and old_order > 0
+        # (global (row, nVectors) on the shared store -- v3).
+        if (had_everything and had_rows
                 and (whole is not None or sym_whole is not None)):
-            c_local = alloc.layer(old_order).row_of(c)
-            if c_local is not None:
-                _p, symbol = self._sparse_families(old_order)
-                bias_col, _e = symbol.role_slice("bias")
-                symbol.remove_edges([(int(c_local), bias_col)])
+            ly = alloc.layer(0)
+            row = ly.row_of(("pool", int(c)))
+            if row is not None:
+                ly.remove_edges([(int(row), int(self.nVectors))])
         if weight != 1.0:
             for (code, side) in asserted:
                 self._set_concept_edge_value(c, code, side, weight)
@@ -14794,19 +14567,17 @@ class ConceptualSpace(Space):
 
     def _hebbian_strengthen(self, cid, eta=0.1, cap=4.0):
         """Bump ``cid``'s sparse edge values by ``eta`` (clamped to ``cap``):
-        fire-together wire-together on re-occurrence. ``no_grad`` (codebooks
-        and evidence weights update by their own law, not backprop). No-op
-        when ``cid`` holds no edges / the sparse transform is inactive."""
+        fire-together wire-together on re-occurrence, over ``cid``'s GLOBAL
+        pool row on the shared store (v3). ``no_grad`` (codebooks and
+        evidence weights update by their own law, not backprop). No-op when
+        ``cid`` holds no edges / the sparse transform is inactive."""
         if not _concept_rows_exist(self):
             return
-        alloc = _concept_alloc_of(self)
-        order = self._concept_source_order(cid)
-        c_local = alloc.layer(order).row_of(cid)
-        if c_local is None:
-            return
-        for fam in self._sparse_families(order):
-            if fam is not None:
-                fam.hebbian_strengthen_row(c_local, eta=eta, cap=cap)
+        ly = _concept_alloc_of(self).layer(0)
+        c_row = ly.row_of(("pool", int(cid)))
+        if c_row is None:
+            return                                 # snap/unallocated: no edges
+        ly.hebbian_strengthen_row(c_row, eta=eta, cap=cap)
 
     def create_joint_concept(self, word_syms, key=None):
         """JOINT/sentence concept (v2, P2 decision 6): the ordered Gallistel
@@ -16579,103 +16350,17 @@ class ConceptualSpace(Space):
 
 
 class WholeSpace(PerceptualSpace):
-    """Codebook-backed symbol stack with swap operations.
+    """ConceptualSpace -> symbol prototypes, analysis spans, and truth stores.
 
-    In the forward data flow: ConceptualSpace -> **WholeSpace** -> OutputSpace.
-    The symbol stack (StackSpace) holds entries produced by ConceptualSpace's
-    shift/reduce loop. Each entry has what (codebook index), where (position),
-    and when (derivation order).
-
-    S-space_role operations (swap) operate on whereEncodings of node children.
-    The top-level `true()` evaluates the full stack activation -> scalar.
-
-    -----------------------------------------------------------------------
-    Codebook / activation lifecycle (post-2026-05 convergence)
-    -----------------------------------------------------------------------
-    WholeSpace inherits ``.what`` at the content width ``nWhat == nDim``.
-    The retired scheme overrode ``self.subspace.nWhat = 2`` to carry a
-    4-valued (catuskoti / tetralemma) bivector in ``.what``; that override AND
-    the ``_active_payload`` codebook shadow were retired (see
-    doc/plans/2026-05-21-active-payload-retirement.md). The signed
-    Degree-of-Truth ``aP - aN in [-1, +1]`` now lives as a single scalar on
-    ``subspace.activation`` ([B, N]); see doc/Philosophy.md for the
-    4-valued semantics.
-
-    With ``<codebook>quantize|project``, ``.what`` is a Codebook whose ``.W``
-    parameter holds ``[V_sym, nDim]`` learned symbol prototypes. The per-batch
-    selection lives in ``subspace._index`` (codebook row indices) and is read
-    by ``materialize()`` -- the codebook ``.W`` is read-only on that path.
-    Per the modality re-architecture (doc/plans/2026-06-03-modality-
-    architecture-design.md) WholeSpace carries NO ``.where`` / ``.when``
-    (canonical_shape WholeSpace == (0, 0)); the muxed where/when event tail
-    is demuxed away at the CS -> WS boundary.
-
-    Forward-pass lifecycle (clients should NOT need to walk this manually
-    -- subspace.materialize / subspace.resolve hide it):
-
-      1. ConceptualSpace's PiLayer produces ``act`` shape ``[B, N, sym_D]``.
-      2. ``self.subspace.set_event(act)`` populates ``.event`` (muxed view)
-         and demuxes the first ``nWhat`` columns into ``.what``; activation
-         is reset to default all-ones presence.
-      3. ``self.resolve(self.subspace)`` reads the bivector from ``.event``
-         (preferred) or ``.what`` (fallback), computes ``pos - neg`` (signed
-         Degree of Truth), and stores the [B, N] scalar directly via
-         ``.activation.setW`` (bypassing ``set_activation``'s bivector lift
-         so sign is preserved).
-      4. The codebook snap quantizes the resolved scalar to its nearest
-         symbol-prototype scalar; the result is committed via the public
-         ``set_activation()`` (which lifts the [B, N] scalar back to a
-         bivector for storage when ``activeEncoding.nDim == 2``).
-      5. Downstream readers call ``self.subspace.materialize(mode="activation")``
-         and see the post-snap, presence-reduced value.
-
-    forward(subspace) write contract:
-      Reads the incoming subspace's bivector / activation (set by the
-      ConceptualSpace stage), but writes ALL state mutations to
-      ``self.subspace``, never to the passed-in ``subspace``.  This is
-      because the receiving subspace may carry a Codebook on ``.what``
-      whose learned prototypes must not be overwritten with per-batch
-      tensor data.
-
-    .what / .activation are NOT the same field:
-      * ``.what`` holds the continuous, pre-snap bivector that the
-        codebook is queried against.
-      * ``.activation`` holds the post-resolve / post-snap scalar
-        (presence-reduced or signed depending on which writer last
-        committed to it).  After the codebook snap, the two values
-        intentionally diverge.
-
-    For other spaces' codebook layouts:
-      * PartSpace's ``.what`` holds a BPE / lexicon prototype
-        matrix; activation lives separately.
-      * ConceptualSpace is a pure-event subspace (``.what``, ``.where``,
-        ``.when`` empty); state is on ``.event`` via ``set_event()``.
-
-    Distinct from the SymbolSpace category embedding:
-      * ``SymbolSpace.category_embedding``: ``nn.Embedding[max(64,
-        |grammar.categories|), 4]`` learned embeddings keyed by grammar
-        nonterminal / POS name (S, NP, VP, N, V, ADJ, ...).  Used by
-        the chart's POS scorer.
-      * ``WholeSpace.subspace.what.W``: ``[V_sym, 2]`` learned
-        symbol-prototype bivectors.  Used by the codebook snap.
-      Independent codebooks, independent semantics.
+    ``forward`` writes to ``self.subspace`` rather than the incoming subspace;
+    codebook geometry and the truth interpretation are documented in
+    ``doc/Spaces.md``, ``doc/Logic.md``, and ``doc/Philosophy.md``.
     """
     name = "Symbols"
     config_section = "WholeSpace"
-    # Phase-1 mode gating: when set True (by Model in ``parallel``
-    # mode) ``forward`` zeroes the event tensor and skips resolve /
-    # lift / codebook / TruthLayer paths. Default False preserves
-    # legacy behaviour. See `2026-05-05-subsymbolic-knowing-handoff`.
+    # Parallel mode can hold WS at zero and skip symbolic side effects.
     held_at_zero = False
-    # NOTE: ``self.rule_codebook`` is built in ``__init__`` and registered
-    # as an nn.Module submodule (Phase 3 of the SubSpace.what STM
-    # refactor; see
-    # doc/plans/2026-05-20-subspace-what-stm-signalrouter-refactor.md).
-    # Holds grammar rule identity / .where location; NOT the source of
-    # parent vectors -- parent.what = SyntacticLayer.execute(rule_id,
-    # left, right). A class-level default would shadow the registered
-    # submodule (nn.Module routes Module values through ``_modules``
-    # rather than ``__dict__``), so we intentionally do NOT declare one.
+    # rule_codebook is instance-owned; a class default would shadow the submodule.
 
     def empty_state(self, batch=1):
         """Return a zero tensor shaped like this space's symbolic state.
@@ -16815,66 +16500,16 @@ class WholeSpace(PerceptualSpace):
         except (KeyError, TypeError, ValueError):
             self._lbg_epsilon = 0.1
         self.nonlinear = nonlinear
-        # Symbolic-retrieval mode (plan 2026-06-06-symbolic-heat-retrieval
-        # §Handoff addendum). off|primer|second-order|low-rank. Default off
-        # preserves current reverse behavior. Consumed by the reverse-retrieval
-        # path, not here. WholeSpace has no ``<hasAttention>`` legacy alias
-        # (it never constructed a QKV AttentionLayer).
+        # Reverse-retrieval attention mode; WholeSpace has no hasAttention alias.
         _attn = str(TheXMLConfig.space(section, "attention", default="off"))
         if _attn not in _VALID_ATTENTION_MODES:
             raise ValueError(
                 f"{section} <attention> got {_attn!r}; expected one of "
                 f"{sorted(_VALID_ATTENTION_MODES)} (plan 2026-06-06-symbolic-heat-retrieval).")
         self.attention_mode = _attn
-        # Post-2026-05-07 rollback: WholeSpace inherits the natural
-        # ``nWhat == self.nDim`` and ``muxedSize`` from
-        # ``Space.__init__`` -- no leading [pos, neg] bivector pinned
-        # into the codebook. The per-prototype catuskoti bivector
-        # ``[B, V_S, 2]`` lives on ``subspace.activation`` instead and
-        # is populated by ``Codebook.forward(input)`` --
-        # the intrinsic snap. See doc/Spaces.md for the post-rollback
-        # geometry and doc/Philosophy.md for the tetralemma.
+        # Catuskoti state lives on activation, not in the codebook row width.
         nSymbols = spaceShape[0]
-        # Pi/Sigma swap (analysis/synthesis plan Phase 3, rev. 2026-06-09):
-        # WholeSpace owns a SINGLE square invertible PiLayer --
-        # ``self.pi`` -- the top-down ANALYSIS (product/intersection)
-        # operator of the symbolic loop. (The 2026-06-04 refactor had WS
-        # owning the SigmaLayer; the corrected orientation puts Sigma --
-        # synthesis/union -- on PartSpace.) It is the ONLY
-        # parameterised fold WS owns. ``self.pi`` is used:
-        #   * in PARALLEL mode the per-subsymbolicOrder generalization now
-        #     lives IN the per-stage ``ConceptualCombine`` (held by the cs,
-        #     operating on the full muxed event); the WS event feeds that
-        #     combine as one of its three streams. (Before A4 this was a
-        #     separate content-only WS fold advance,
-        #     ``Models._symbolic_sigma_step``, removed in Action C.) The
-        #     standalone ``self.pi`` round-trip is still exercised
-        #     directly (test_cs_reentrancy);
-        #   * in SERIAL/grammar mode as the binding target for the default
-        #     ``S = sigma(S)`` rule -- ``_attach_per_space_syntactic_layer``
-        #     (Language.py) reads ``getattr(space, 'pi')`` and registers it
-        #     under BOTH the 'pi' rule name and the legacy 'sigma' alias
-        #     (the P/C-space_role alias idiom), so existing grammars keep
-        #     dispatching the WS fold. (History: when WS owned no fold this
-        #     hook silently bound nothing and the rule was a no-op -- the
-        #     root cause of the XOR_exact non-convergence.)
-        # It is SQUARE on the demux'd CONTENT width (``nOutputDim``), NOT
-        # the muxed event width: the fold analyzes symbolic content and
-        # must not double as a CS<->WS impedance adapter. The
-        # CS-effective-content == WS-content invariant guarantees the
-        # widths already agree. ``invertible=True`` so the reconstruction
-        # reverse path can apply ``pi.reverse`` exactly. (The ``_sigma_*``
-        # locals below keep their legacy names -- they size/select the
-        # fold via the shared <sigmaPi> machinery, not the ownership.)
-        # Phase 4b (analysis/synthesis dual-input plan sec.4, rev.
-        # 2026-06-09): the top-down ANALYSIS knob. byte = uniform
-        # contiguous regions (the Phase-2 default; no spans staged);
-        # word = whitespace-cut parts; analyse = the meronymic analyzer
-        # front end (its space-lexer cut today -- the bottom-up merge
-        # integration follows with the deeper WS analyzer work, Phases
-        # 5-6). Divisions are computed host-side in the eager stem
-        # (``stage_analysis_spans``) and parked on
-        # ``_staged_analysis_spans`` for the stage-0 unity consumption.
+        # WholeSpace owns one Pi fold; <analysis> selects top-down span cuts.
         try:
             self.analysis_mode = str(
                 TheXMLConfig.space(section, "analysis") or "byte")
@@ -16887,20 +16522,7 @@ class WholeSpace(PerceptualSpace):
                 f"byte|word|raw|sentence|grammatical|meronomy, "
                 f"got {self.analysis_mode!r}")
         self._staged_analysis_spans = None
-        # Step 2 (2026-06-10 symbolic-iteration plan): the ANALYSIS
-        # (meronymic/generality) store -- the stage-0 unity machinery's
-        # codebook (snap-as-annotation, descriptor roles, LF tagging,
-        # recon gather, adopt-on-first-sight) -- is its OWN basis object
-        # governed by <analysis>, present REGARDLESS of the <codebook>
-        # iteration-mode knob: `none` models still ANALYZE (analysis is
-        # non-altering annotation; the knob only chooses subsymbolic vs
-        # symbolic ITERATIONS on the CS leg, which keeps using
-        # ``subspace.what``). Two codebook families, kept separate.
-        #
-        # Construction is RNG-ISOLATED (dedicated seed; CPU generator
-        # state saved/restored) so the store's presence does not shift
-        # the init sequence of seeded runs -- its rows are
-        # data-initialised by adopt-on-first-sight anyway.
+        # Analysis store is separate from the symbolic iteration codebook.
         _rng_state = torch.get_rng_state()
         try:
             torch.manual_seed(0x57A6E0)
@@ -16948,33 +16570,7 @@ class WholeSpace(PerceptualSpace):
             _sigma_dim = int(self.nOutputDim)
         if _sigma_dim <= 0:
             _sigma_dim = int(self.nDim)
-        # Butterfly cascade on the symbolic sigma -- driven by the
-        # WholeSpace ``<butterfly>`` XML knob, mirroring the
-        # PartSpace.pi wiring (Spaces.py ~7853). When set, sigma gets
-        # cross-slot FFT-style reach over the flattened ``[B, N*D]`` content
-        # view (D == ``_sigma_dim``, N == ``inputShape[0]``) instead of a
-        # per-slot square fold. XOR (and any function that must COMBINE
-        # information across slot positions) needs this at the symbolic
-        # space_role exactly as PS.pi needs it at the percept space_role -- a square
-        # per-slot sigma cannot mix the two word slots. ``N`` is the total
-        # flattened element count; the cascade pads to the next power of
-        # two internally and the per-pair LDU keeps it exactly invertible
-        # (so ``sigma.reverse`` still round-trips the reconstruction path).
-        # dimensional-governance (doc/specs/2026-06-05-dimensional-
-        # governance.md): the SPAN of ``self.pi`` is selected by the
-        # WholeSpace ``<sigmaPi>`` knob (last | butterfly | full); the
-        # legacy boolean ``<butterfly>`` is accepted as an alias
-        # (true -> butterfly, false/absent -> last) via Space.sigma_pi_mode.
-        # last = per-slot square fold; butterfly = the cross-slot cascade
-        # (D == ``_sigma_dim``, N == ``inputShape[0]``; pads to the next
-        # power of two, per-pair LDU stays exactly invertible so
-        # ``sigma.reverse`` round-trips reconstruction); full = the dense
-        # flattened square Sigma bridge of the flat-slab invariant (Task 3).
-        # A4 (2026-06-06 parallel-conceptual-recurrence): driven by the
-        # ARCHITECTURE-level global ``<sigmaPi>`` (default butterfly), NOT a
-        # per-space knob (A1 retired the per-space ``<sigmaPi>``). One global
-        # drives PS.Pi, WS.Sigma, and the per-stage ConceptualCombine. Legacy
-        # per-space ``<butterfly>`` is accepted only as an explicit override.
+        # Global <sigmaPi> selects per-slot, butterfly, or dense Pi span.
         _sigma_mode = Space.sigma_pi_mode(
             TheXMLConfig.space(section, "butterfly", default=None)
             if TheXMLConfig.space(section, "butterfly", default=None) is not None

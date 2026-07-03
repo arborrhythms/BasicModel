@@ -8,7 +8,7 @@ Covers the parse/validate paths for the new ``<attention>`` enum
   * a space with no ``<attention>`` resolves to ``"off"`` (default);
   * ``validate_config`` NO LONGER raises when ``hasAttention=true`` is paired
     with a ``flatten``/``nInputDim`` reshape (the reshape-vs-QKV guard was
-    retired with the QKV ``AttentionLayer`` enlistment).
+    retired with the ``QKVAttentionLayer`` enlistment).
 
 These exercise the real ``XMLConfig`` / ``BasicModelFactory.validate_config``
 machinery directly (no full model build) so they stay fast and isolated.

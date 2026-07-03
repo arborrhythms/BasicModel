@@ -83,17 +83,17 @@ mnist : data/mnist.xml
 	$(MAKE) run XML1=$<
 
 SigmaPi : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SigmaPi.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SigmaPi.py
 
 SymPercept : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SymPercept.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SymPercept.py
 
 SPNN : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SPNN.py
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) etc/SPNN.py
 
 
 compare : $(VENV_STAMP)
-	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) BasicModel.py --compare $(XML1) $(XML2)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py --report --compare $(XML1) $(XML2)
 
 # `make test` runs the default (fast) suite; tests tagged slow (>30s wall) are
 # skipped via the RUN_SLOW gate (see test/*.py `_RUN_SLOW`). `make test_all`

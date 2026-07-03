@@ -156,7 +156,7 @@ class TestValidateConfig(unittest.TestCase):
     def test_attention_reshape_guard_retired(self):
         """RETIRED (plan 2026-06-06-symbolic-heat-retrieval.md §Handoff
         addendum): the old ``hasAttention``-vs-reshape guard was removed
-        with the QKV ``AttentionLayer`` enlistment. ``<attention>`` is now a
+        with the ``QKVAttentionLayer`` enlistment. ``<attention>`` is now a
         symbolic-retrieval mode (not tensor self-attention), so
         ``hasAttention=True`` together with a ``flatten``/``nInputDim`` reshape
         is now ACCEPTED (must NOT raise).

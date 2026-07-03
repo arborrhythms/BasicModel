@@ -14,9 +14,9 @@ Executable implementations of the subsymbolic and symbolic operators are the
 > **Terminology (2026-06-21; see
 > [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md)).**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
-> embedded, EXTENSIONAL; *part* = atom / bottom-up σ, *whole* = property/region
-> / top-down π are its two subtypes); **concept** = a ConceptualSpace relation
-> tying one part-percept ↔ one whole-percept (the Concept codebook,
+> embedded, EXTENSIONAL; *part* = atom / bottom-up $\sigma$, *whole* = property/region
+> / top-down $\pi$ are its two subtypes); **concept** = a ConceptualSpace relation
+> tying one part-percept $\leftrightarrow$ one whole-percept (the Concept codebook,
 > diachronic); **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
 > concept; the symbol codebook). The Section 2 scalar emission is the *symbol*
 > that migrates to SymbolSpace, while WholeSpace itself holds whole-percepts.
@@ -142,7 +142,7 @@ Cleanly separates representation (vectors) from logic (scalars).
 ## 5. Rationality
 
 Rationality is the propositional logic layer, built on SS grammar rules
-`part(S, S)` and `equals(S, S)`.
+`part(S, S)` and `isEqual(S, S)`.
 
 ### Truth Statements
 
@@ -187,11 +187,11 @@ it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
 > The absolute truth set (propositions, e.g. `cat <= [animal() & orange() &
 > object()]`) and the `RelativeTruthStore` (relations between two ideas, e.g.
 > `[cats] <= [furry]`) are **the same two structures** the corpus callosum needs for
-> the concept-relation meronomy: a two-code part↔whole LUT (absolute) plus relations
+> the concept-relation meronomy: a two-code part$\leftrightarrow$whole LUT (absolute) plus relations
 > over concept indices (relative) — both live in the Concept codebook. These are to
-> be **integrated** — the part↔whole LUT *is* the absolute table; the concept-taxonomy
+> be **integrated** — the part$\leftrightarrow$whole LUT *is* the absolute table; the concept-taxonomy
 > relations *are* the relative table. Taxonomy relations are also learned
-> **explicitly from trusted language** ("cats are furry" → the relation
+> **explicitly from trusted language** ("cats are furry" $\to$ the relation
 > `[cats] <= [furry]`, admitted when trusted).
 
 ### Truth Field
@@ -217,7 +217,7 @@ Both parthood and equality are SS operations over symbolic activations:
 
 - **`part(S, S)`** --- containment by clipped-cosine projection. Grammar
   applies it as `score * B`, scaling the whole by parthood degree.
-- **`equals(S, S)`** --- identity as mutual parthood; delegates to `Basis.equal`.
+- **`isEqual(S, S)`** --- identity as mutual parthood; delegates to `Basis.equal`.
 
 Together they define a partial order over symbolic activations.
 

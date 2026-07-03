@@ -1,12 +1,17 @@
-# Iterated Symbolic Loop — collapsing the SparseLayer families (DRAFT)
+# Iterated Symbolic Loop — collapsing the SparseLayer families
 
-> **STATUS: DRAFT 2026-07-02 (design direction confirmed by Alec in the
-> two-phase execution thread; NOT yet approved for execution).** Successor to
+> **STATUS: APPROVED 2026-07-03 (open questions resolved by Alec; execution
+> plan =
+> [2026-07-03-iterated-symbolic-loop-execution.md](2026-07-03-iterated-symbolic-loop-execution.md)).**
+> Successor to
 > [2026-07-02-two-phase-loops-sparse-relation.md](2026-07-02-two-phase-loops-sparse-relation.md)
 > (P1–P5 executed). Alec's confirmed points: (1) the collapsed layer carries
 > NO role-tags; (2) vine-as-wave iteration is the intended forward semantics;
 > (3) self-edges are forbidden, longer cycles deliberately allowed — with the
-> human-problems correspondence called out in the docs.
+> human-problems correspondence called out in the docs. Approval-pass
+> clarification: the source term is ADDITIVE, exactly as the formula reads —
+> snap rows carry no in-edges, so under iteration they read $\tanh(a^0)$
+> each step (accepted; no hard clamp).
 
 ## Motivation
 
@@ -123,6 +128,32 @@ policy:
   oscillation, Gupta–Belnap) or settles without ground. The QE settle
   signal reports the first; the groundedness probe reports the second.
 
+**What produces ungroundedness in the current codebase (execution finding,
+2026-07-03).** All AUTOMATIC minting paths are acyclic by construction:
+`singleton_concept`, `relate`/`reify_concept`, the metas, and the chain
+builder all create a FRESH node whose edges point at pre-existing rows — a
+cycle needs a back-edge into the new node, which cannot exist yet — and
+snap rows accept no edges at all. Structural cycles can therefore enter
+ONLY through the mutation channels: `assert_concept_relation` (the
+statement channel — "A has part B" asserted after "B has part A") and
+direct `add_part`/`add_whole` calls. Under ramsification the order gate
+silently dropped one direction's weighted edge, structurally excluding
+weighted cycles; the untyped layer deliberately admits them. A structural
+cycle is still NOT ungrounded by itself: persistence requires composed
+loop gain $> 1$ (the tanh linearization threshold; a symmetric 2-cycle
+sustains only for $w > 1$), and the default edge weight is exactly $1.0$ —
+marginal, so a freshly asserted cycle DECAYS (an echo). The only paths
+that push gain past the threshold are `_hebbian_strengthen`
+(fire-together bumps, cap $4.0$) and explicit assertion weights $> 1$. So
+in today's system, ungrounded = asserted mutual containment WORN IN by
+repetition — structure stated once, strengthened by re-occurrence until
+self-sustaining — which is precisely the rumination/habit correspondence
+the design intends. Relatedly, the EVERYTHING-bias column is a CONSTANT
+input (an axiom, not perception): unmasked it lights bias-bounded rows in
+run 1 of the groundedness probe and sustains them in run 2, so the probe
+MASKS the bias column in both runs (Alec 2026-07-03) — the production
+wave keeps it.
+
 **On weight positivity.** IF a run keeps weights non-negative, the update is
 monotone on the presence lattice and the classical theorems apply verbatim
 (Knaster–Tarski/Kleene least fixed point; Kripke's construction IS this
@@ -161,6 +192,36 @@ design:
   ungrounded cycles as first-class phenomena to study, not errors to
   suppress.
 
+### The attention reading (Alec, 2026-07-03) — and the layer's NAME
+
+The collapsed layer is named **`AttentionLayer`** — what it IS — subclassing
+the `SparseLayer` substrate — HOW it works. The reading (now also in
+`doc/Architecture.md` "Parse time" sec C):
+
+- **Bottom-up attention is horizontal** (which items, within a level) and
+  this layer is its relation-space rendering: the snap $a^0$ is the settled
+  perceptual salience at the bandwidth seam, and each wave iteration
+  propagates that salience one membership-weighted hop through the
+  taxonomy — a relation becomes salient exactly when its constituents are.
+  Kripke groundedness restates itself in attention vocabulary: grounded =
+  attention tracing back to perception; ungrounded = attention captured by
+  its own loop (the rumination shape). The symbolic/conceptual HEAT
+  (`<symbolicPriming>`, the `<attention>` retrieval modes) is the SAME
+  bottom-up channel at the symbol-retrieval site — driven by what has been
+  active, not by goals — and the two renderings want INTEGRATION (future
+  work, deliberately out of scope here): derive taxonomy heat from the
+  wave's terminal activations $a^K$ (bottom-up salience persisting as
+  retrieval priming), and optionally re-enter heat as a further additive
+  source term.
+- **Top-down attention is vertical**: mostly goal- or emotion-driven
+  attachment to PROPERTIES ("I am reading, I need to look for words" — what
+  serial mode institutionalizes), fixing the level of abstraction (Rosch's
+  Basic Level) and thereby which objects get chosen; the WS$\to$PS scope
+  handoff is its EFFECT ON PERCEPTION. Top-down does not currently enter
+  the wave — the ADDITIVE source decision keeps that seat open: a future
+  top-down term is just another summand,
+  $a^{i+1} = \tanh(W[a^i \mid 1] + s + h)$ with $h$ heat/goal-derived.
+
 ## Migration sketch (to be expanded into tasks on approval)
 
 1. Collapse `ConceptAllocator.layer(order)` to ONE square layer (no roles);
@@ -184,12 +245,27 @@ design:
 6. Experiments: the XOR driver configs rerun; the P4 gradient-attenuation and
    snap-blindness probes rerun against the iterated reading.
 
-## Open questions (for the approval pass)
+## Open questions — RESOLVED (Alec, 2026-07-03)
 
-- Capacity policy for the relation pool (mint-order first-come vs salience).
-- Whether the WEIGHTED reading should see the ordered pair at all (current
-  answer: no — set-membership only; revisit if direction-sensitive weighting
-  proves necessary for e.g. non-material implication strength).
-- Negative-cycle policy default (flag-only vs damped).
-- Whether `symbolicOrder` should be renamed (`symbolicIterations`?) at the
-  config surface or kept for continuity.
+- **Capacity policy: mint-order first-come + LOUD report.** Pool overflow
+  (today's silent `_csw_concept_row` $\to$ `None` fallback) becomes a
+  visible warning with a running count; the concept keeps its records but
+  gets no weighted reading. Salience/eviction deferred until data demands
+  it.
+- **The WEIGHTED reading does NOT see the ordered pair** (confirmed by
+  review: no consumer of weighted direction exists — `meta_word_object`
+  reads the discrete store by typed intersection, the SS leg consumes
+  activations). Set-membership only; revisit if direction-sensitive
+  weighting proves necessary. Documented wrinkle: `relate(x, x)` collapses
+  part- and whole-edges onto ONE merged untyped edge.
+- **Cycle policy: cycles are a documented FACT, not a fault.** We won't
+  know from inside that we are oscillating, and some loops may be
+  behaviorally advantageous — so loops within the machine mind are a fact
+  we document and invite a solution to (for both human and machine minds).
+  The wave-QE statistic and the groundedness probe are report-only
+  observability; damping remains an unused escalation dial, applied by
+  hand if ever.
+- **`symbolicOrder` keeps its name.** Note recorded in the XSD/docs: we
+  are NOT forcing ramsification — the value is the MAXIMUM POSSIBLE
+  conceptual order (the order reached if a novel concept were introduced
+  at every iteration), read operationally as the iteration count $K$.

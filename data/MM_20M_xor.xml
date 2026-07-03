@@ -17,9 +17,10 @@
        features and settles at the data mean (~0.5), the documented MM_20M
        mean-collapse. -->
   <architecture>
-    <!-- symbolicOrder=1 + serial=false + symbolTower: activate the ramsified
-         sparse forward (cs_forward_content) so the minted word-concepts (their
-         per-order sparse weight edges) build the concept content fed to the head. -->
+    <!-- symbolicOrder=0: the sO=0 CONTROL for the XOR experiments. The
+         symbolic wave phase is disabled (no snap, no AttentionLayer); the
+         head trains on the purely subsymbolic pipeline. The sO>=1 sibling
+         is MM_sparse_concept.xml. -->
     <symbolicOrder>0</symbolicOrder>
     <serial>false</serial>
     <symbolTower>true</symbolTower>

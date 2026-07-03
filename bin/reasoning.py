@@ -1,39 +1,7 @@
-"""Truth-grounded reasoning over the grammar's introspection query ops.
+"""Truth-grounded reasoning tools and differentiable policy losses.
 
-All queries reduce to two judgments over concept extensions -- ``isTrue(A)`` and
-``isPart(A, B)`` -- evaluated by the *hard* tools enumerated in the grammar's
-``<queries>`` section (data/complete.grammar). A small NeuralToolUser (later
-phases) sequences these tools as a soft policy while the judgments stay exact.
-
-Grammar ``<queries>`` op  ->  tool method here:
-
-    exist(X)        -> exist(X)        : X is an ultimate truth OR a single idea
-                                         with positive trust  (the isTrue leaf).
-    equal(X, Y)     -> equal(X, Y)     : isomorphic=True -> fraction of shared
-                                         parts & wholes; False -> norm of diff.
-    part(X, Y)      -> part(X, Y)      : graded parthood X ⊆ Y in [0, 1].
-    query(X[, Y])   -> query(X[, Y])   : an LTM lookup (the .where-typed read;
-                                         soft full-truth-space version = Phase 3).
-    quantize(X)     -> quantize(X)     : snap X onto the nearest real idea.
-    wholes(X)       -> wholes(X)       : the proximal containing wholes of X
-                                         (transitivity gives the rest).
-    parts(X)        -> parts(X)        : the proximal contained parts of X.
-    arma(X)         -> arma(X)         : the ARMA next-step prediction in
-                                         conceptual space (the statistical
-                                         discourse trajectory; the policy learns
-                                         when this momentum is the relevant
-                                         signal for the next idea).
-
-A chain of parthood reasoning is just repeated ``wholes()`` toward the goal --
-the same modus-ponens climb ``ConceptualSpace.reason`` performs, expressed via
-the canonical primitive. (``isomorphs`` was removed from the grammar; it is
-subsumed by ``equal(isomorphic=True)``.)
-
-Conceptual framing + phase map: doc/plans/2026-06-23-truth-grounded-reasoning.md.
-The reasoner reads the unified reasoning store (TernaryTruthStore under
-<ltmConsolidation>, else RelativeTruthStore) and the model's absolute
-TruthLayer; it mutates the store only via ``materialize``. Unused by the forward
-path until the <queryReasoning> consumer lands (Phase 5), so it is dark.
+The hard tools reduce query ops to truth/parthood/equality checks over stored
+ideas; the soft policy ranks candidate intervening ideas. See ``doc/Reasoning.md``.
 """
 
 from dataclasses import dataclass
@@ -71,13 +39,7 @@ BOTH = "BOTH"
 
 @dataclass
 class QuerySpec:
-    """A query reduced to one of the two atomic predicates over ideas.
-
-    ``left`` / ``right`` are idea vectors (the operands). ``variables`` names
-    any open slot for a binding query (e.g. ``("left",)`` for "what is part of
-    B?"). ``desired_polarity`` is the polarity asked about (False asks "is A NOT
-    part of B?").
-    """
+    """Normalized query operands plus predicate kind."""
 
     predicate: str                       # KIND_IS_TRUE | KIND_IS_PART | KIND_IS_EQUAL
     left: Any = None
@@ -124,15 +86,7 @@ _REL_PARTOF = TernaryTruthStore.REL_PARTOF
 # -- the reasoner ------------------------------------------------------------
 
 class TruthGroundedReasoner:
-    """The exact (non-differentiable) truth tools = the grammar query ops, plus
-    the ``isTrue`` / ``isPart`` reduction API built on them.
-
-    ``theta`` is the parthood coverage bar (a hop is real iff coverage ≥ theta);
-    ``tau_id`` is the idea-identity bar for matching a query operand to a stored
-    row; ``trust_threshold`` is the bar a scalar trust must clear to count as
-    positive support; ``materialize_floor`` is the bar a derived conclusion must
-    clear to be written back (guards lemma drift; cf. TruthLayer.compact).
-    """
+    """Exact truth/parthood/equality tools used by query reasoning."""
 
     def __init__(self, model=None, *, store=None,
                  theta: float = 0.7, tau_id: float = 0.7,
@@ -634,12 +588,7 @@ def answer_loss(predicted_signed, gold_label):
 
 @dataclass
 class ReasoningResult:
-    """The output of one reasoning run (doc/plans/2026-06-23-reasoning-live-
-    wiring.md). ``ideas`` are the N candidate intervening ideas surfaced across
-    the loop, ranked by subsymbolic relevance (the attention α) -- the material
-    the N-sentence decode (Phase D) realizes. ``chain`` is the ranked list of
-    candidate proof chains (best first). ``iterations`` is how many loop steps
-    actually ran (early-exit on reaching the goal)."""
+    """Structured result for one query-reasoning run."""
 
     posture: str
     confidence: float
@@ -652,24 +601,7 @@ class ReasoningResult:
 
 
 class NeuralToolUser:
-    """A policy that sequences the hard truth tools, driven by the soft
-    intervening-idea generator, to evaluate a ``QuerySpec`` and return a chain.
-
-    One step of the loop (§4.3a): the soft generator proposes a beam of
-    candidate intervening ideas (grounded reads over the typed truth-space,
-    ranked by the attention α = subsymbolic relevance); the hard
-    ``is_part_direct`` tool VERIFIES each candidate as a parthood hop; a verified
-    candidate that also reaches the goal closes a bridge, otherwise the
-    highest-relevance covered candidate advances the frontier. The soft read
-    recurs as ``prev_r`` so the next step queries a truth-space conditioned on
-    the last recalled idea. The deduction stays exact -- gradient (Phase C) only
-    rides the generator's query head + α; a verdict is never differentiated (§0).
-
-    Without a ``generator``/``ga``/``spaces`` the loop is inert and the result is
-    the stored-relation hard chain alone (``TruthGroundedReasoner.is_part``), so
-    the policy only ever ADDS candidate bridges -- it never changes a verdict the
-    hard tools would not also support.
-    """
+    """Soft-propose / hard-verify policy around ``TruthGroundedReasoner``."""
 
     def __init__(self, reasoner, *, generator=None, ga=None, spaces=None,
                  iterations: int = 10, beam: int = 8, top_k: int = 8,
@@ -881,17 +813,7 @@ def _fit_keys(block, d):
 
 def policy_answer_loss(generator, spaces, reasoner, examples, *,
                        max_keys: int = 512):
-    """The differentiable answer-policy loss (Phase C). For each ``(A, B, gold)``
-    the generator's query head produces a query whose cosine-softmax attention
-    ``α`` over the typed truth-space is gated by a DETACHED hard bridge mask (the
-    exact ``is_part_direct`` tool decides WHICH keys bridge ``A → key → B``); the
-    bridge-attention mass maps to a signed proof score that is NLL'd against
-    gold. The attention is computed HERE (not via ``GlobalAttention``, which
-    detaches the query for its forward-retrieval use) so the gradient flows
-    through the query head + ``α`` -- the keys and the mask (the deduction) are
-    detached (§0). Oversized spaces (a percept codebook with > ``max_keys`` rows)
-    are skipped so the mask stays tractable; reasoning ranges over idea-scale
-    spaces (LTM / codebooks / STM). Returns a scalar loss tensor, or ``None``."""
+    """Train the soft query head against detached hard bridge masks."""
     if generator is None or not spaces or not examples:
         return None
     D = int(generator.dim)

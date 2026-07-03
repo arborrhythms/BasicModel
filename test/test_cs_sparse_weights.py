@@ -1,12 +1,11 @@
-"""Ramsified per-order sparse weight tables (symbolic-only, P2) via SparseLayer.
+"""The shared untyped square concept store (v3) via AttentionLayer.
 
-A concept is a stored ConceptDim atom. Order 0 is the SNAP: concepts are
-codebook rows read by normalized-sum presence (no edges). Order k >= 1
-composes LOWER-ORDER SYMBOL ACTIVATIONS ONLY through role-split columns
-[whole | part | bias] on ONE symbol-family SparseLayer per order, summed
-pre-tanh so every activation is signed and bounded in (-1, 1). Capacity is
-dyadic by order, stacked in the single inventory.
-(doc/plans/2026-07-02-two-phase-loops-sparse-relation.md P2)
+A concept is a stored ConceptDim atom. The snap block [0, n_snap) holds
+order-0 concepts as codebook rows read by normalized-sum presence (no
+edges); the relation pool [n_snap, N) holds everything else on ONE shared
+untyped [N x N+1] store whose trailing column N is the EVERYTHING bias.
+Direction/order live in the record store and the nesting, never in typed
+columns. (doc/plans/2026-07-02-iterated-symbolic-loop.md)
 """
 import os
 import sys
@@ -41,82 +40,71 @@ def _cs(nS=64, order=3):
     return cs
 
 
-# -- dyadic capacity allocation -----------------------------------------------
-
-def test_order_capacities_dyadic_sums_to_total():
-    assert Spaces.ConceptualSpace.order_capacities(8, 3) == [4, 2, 1, 1]
-    assert Spaces.ConceptualSpace.order_capacities(16, 3) == [8, 4, 2, 2]
-    assert Spaces.ConceptualSpace.order_capacities(64, 3) == [32, 16, 8, 8]
-    for N, S in [(8, 3), (16, 3), (64, 3), (100, 2), (12, 1)]:
-        caps = Spaces.ConceptualSpace.order_capacities(N, S)
-        assert len(caps) == S + 1
-        assert sum(caps) == N                       # exact partition
-        assert all(c >= 1 for c in caps)
+def test_order_slice_two_block_contract():
+    cs = _cs(nS=64, order=3)                         # two-block [32 | 32]
+    assert cs.order_slice(0) == (0, 32)              # the snap block
+    assert cs.order_slice(1) == (32, 64)             # the relation pool
+    assert cs.order_slice(2) == cs.order_slice(1)    # every order >= 1: pool
+    assert cs.order_slice(3) == cs.order_slice(1)
 
 
-def test_order_capacities_order0_is_all():
-    assert Spaces.ConceptualSpace.order_capacities(64, 0) == [64]
-
-
-def test_order_slice_contiguous_stack():
-    cs = _cs(nS=64, order=3)                         # caps [32,16,8,8]
-    assert cs.order_slice(0) == (0, 32)
-    assert cs.order_slice(1) == (32, 48)
-    assert cs.order_slice(2) == (48, 56)
-    assert cs.order_slice(3) == (56, 64)
-
-
-# -- per-order role-split symbol store (P2: symbolic-only) ---------------------
+# -- the shared untyped square store (v3) --------------------------------------
 
 def test_add_concept_edge_dedup_and_query():
-    cs = _cs()
-    r1 = cs.add_concept_edge(1, 2, "part", 5, weight=1.5)
-    r2 = cs.add_concept_edge(1, 2, "part", 5, weight=9.0)   # repeat -> no-op
+    cs = _cs()                                       # n_snap = 32
+    r1 = cs.add_concept_edge(33, 5, weight=1.5)
+    r2 = cs.add_concept_edge(33, 5, weight=9.0)      # repeat -> no-op
     assert r1 == r2
-    cs.add_concept_edge(1, 2, "whole", 1, weight=0.5)
-    got = cs.concept_weights(1, 2)
-    assert (("part", 5), 1.5) in got and (("whole", 1), 0.5) in got
-    assert cs.concept_weights(1, 3) == []
-    assert cs.concept_weights(2, 2) == []            # different order
+    cs.add_concept_edge(33, 40, weight=0.5)
+    got = cs.concept_weights(33)
+    assert (5, 1.5) in got and (40, 0.5) in got
+    assert cs.concept_weights(34) == []              # different row
 
 
-def test_symbol_family_role_split_columns():
-    cs = _cs(nS=16, order=2)                         # caps [8, 4, 4]
+def test_shared_untyped_square_store():
+    """v3: every order shares ONE untyped [N x N+1] AttentionLayer -- no
+    role blocks; the bias is the trailing column N; self-edges raise (the
+    Quine atom); the learnable values register EXACTLY ONCE."""
+    cs = _cs(nS=16, order=2)                         # two-block [8 | 8]
     _p, s1 = cs._sparse_families(1)
     assert _p is None                                # percept family RETIRED
-    # order 1 reads a_0 (8 rows) through whole|part|bias role blocks.
-    assert s1.role_slice("whole") == (0, 8)
-    assert s1.role_slice("part") == (8, 16)
-    assert s1.role_slice("bias") == (16, 17)
-    cs.add_concept_edge(1, 0, "whole", 2)
-    cs.add_concept_edge(1, 0, "part", 3)
-    cs.add_concept_edge(1, 0, "bias", 0)
-    assert s1.nnz == 3
-    # The learnable values surface through getParameters (optimizer pickup).
-    ids = {id(t) for t in cs.getParameters()}
-    assert id(s1.values) in ids
+    assert s1 is cs._sparse_families(2)[1]           # ONE shared store
+    assert (s1.nOutput, s1.nInput) == (16, 17)       # square + bias col
+    assert s1.roles is None                          # untyped: no role blocks
+    cs.add_concept_edge(8, 2)                        # pool row <- snap col
+    cs.add_concept_edge(8, 16)                       # the bias col N
+    try:
+        cs.add_concept_edge(9, 9)
+        assert False, "self-edge must raise (the Quine atom)"
+    except ValueError:
+        pass
+    assert s1.nnz == 2
+    # The learnable values surface through getParameters ONCE (dedup: the
+    # same layer is registered under several family keys).
+    params = cs.getParameters()
+    assert len([p for p in params if p is s1.values]) == 1
 
 
-def test_any_edge_at_order0_fails_loud():
-    cs = _cs(nS=16, order=1)
-    for role, col in (("part", 0), ("whole", 0), ("bias", 0)):
+def test_any_edge_on_snap_row_fails_loud():
+    cs = _cs(nS=16, order=1)                         # n_snap = 8
+    for row in (0, 7):
         try:
-            cs.add_concept_edge(0, 0, role, col)
-            assert False, "order-0 edges must raise (snap rows, not edges)"
-        except IndexError:
+            cs.add_concept_edge(row, 9)
+            assert False, "snap-row edges must raise (codebook rows, not edges)"
+        except ValueError:
             pass
     _p, s0 = cs._sparse_families(0)
     assert s0.nnz == 0
 
 
 def test_family_values_grow_tail_preserving():
-    cs = _cs()
-    cs.add_concept_edge(1, 0, "part", 0)
-    cs.add_concept_edge(1, 0, "part", 1)
-    _p, s = cs._sparse_families(1)
+    cs = _cs()                                       # n_snap = 32
+    cs.add_concept_edge(32, 0)
+    cs.add_concept_edge(32, 1)
+    _p, s = cs._sparse_families(0)
     with torch.no_grad():
         s.values.copy_(torch.tensor([3.0, 4.0]))
-    cs.add_concept_edge(1, 0, "whole", 2, weight=9.0)        # grow
+    cs.add_concept_edge(33, 2, weight=9.0)           # grow
     assert torch.allclose(s.values.detach(), torch.tensor([3.0, 4.0, 9.0]))
 
 
@@ -198,10 +186,10 @@ def test_snap_order0_is_differentiable_in_event():
 
 
 def test_cs_decode_scales_dictionary_atoms():
-    cs = _cs(nS=64, order=3)                           # caps [32,16,8,8]
+    cs = _cs(nS=64, order=3)                           # two-block [32 | 32]
     what = torch.randn(64, _D)
-    # order 1 occupies rows [32:48); pick its first 2 concepts active
-    n_o = 16
+    # the relation pool occupies rows [32:64); pick its first 2 active
+    n_o = 32
     a = torch.zeros(n_o, 2)                            # [n_concepts_o, B]
     a[0, 0] = 2.0
     a[1, 1] = -1.0
@@ -215,104 +203,129 @@ def test_cs_decode_scales_dictionary_atoms():
     assert torch.allclose(code[0, 5], torch.zeros(_D), atol=1e-6)
 
 
-# -- ramsified per-order forward-content assembly (v2: from the snap) ----------
-
-def test_cs_source_layout_ss_blocks_only():
-    cs = _cs(nS=64, order=3)                            # caps [32,16,8,8]
-    off, total = cs.cs_source_layout(0)
-    assert off == {} and total == 0                     # order 0: no sources
-    off, total = cs.cs_source_layout(2)
-    # order 2 reads SS_0 (cap 32) then SS_1 (cap 16), role-block-local.
-    assert off == {0: 0, 1: 32} and total == 48
-
+# -- forward-content assembly (v3 iterated wave) -------------------------------
+# a^{i+1} = tanh(W [a^i | 1] + s), K = symbolicOrder steps; s is the snap
+# presence padded to the inventory (snap rows carry no in-edges -> tanh(a_0)).
 
 def test_forward_content_shape_and_stacking():
-    cs = _cs(nS=16, order=1)                            # caps [8, 8]
+    cs = _cs(nS=16, order=1)                           # two-block [8 | 8], K=1
     B = 2
     a_0 = torch.rand(8, B).tanh()                      # snap presences
     what = torch.randn(16, _D)
-    # order 1: concept 0 fires off a_0[0] through the whole-role block.
-    cs.add_concept_edge(1, 0, "whole", 0, weight=2.0)
+    # pool concept row 8 fires off a_0[0] (snap col 0).
+    cs.add_concept_edge(8, 0, weight=2.0)
     content, a = cs.cs_forward_content(a_0, what)
     assert content.shape == (B, 16, _D)                # stacked [B, N, CDim]
-    assert len(a) == 2 and a[0].shape == (8, B) and a[1].shape == (8, B)
-    assert torch.equal(a[0], a_0)                      # order 0 IS the snap
-    assert torch.allclose(a[1][0], torch.tanh(2.0 * a_0[0]), atol=1e-5)
+    assert a.shape == (16, B)                          # full-inventory acts
+    assert torch.allclose(a[:8], torch.tanh(a_0))      # snap rows read tanh(s)
+    assert torch.allclose(a[8], torch.tanh(2.0 * a_0[0]), atol=1e-5)
 
 
-def test_forward_content_whole_part_bias_sum_pre_tanh():
+def test_forward_content_legs_and_bias_sum_pre_tanh():
     cs = _cs(nS=16, order=1)
     B = 1
     a_0 = torch.zeros(8, B)
     a_0[3, 0] = 0.5
+    a_0[5, 0] = 0.25
     what = torch.randn(16, _D)
-    cs.add_concept_edge(1, 2, "whole", 3, weight=1.0)   # whole leg
-    cs.add_concept_edge(1, 2, "part", 3, weight=2.0)    # part leg (same source)
-    cs.add_concept_edge(1, 2, "bias", 0, weight=0.25)   # everything bias
+    cs.add_concept_edge(10, 3, weight=3.0)             # constituent leg 1
+    cs.add_concept_edge(10, 5, weight=-0.5)            # constituent leg 2
+    cs.add_concept_edge(10, 16, weight=0.25)           # everything bias (col N)
     _content, a = cs.cs_forward_content(a_0, what)
-    want = torch.tanh(torch.tensor(1.0 * 0.5 + 2.0 * 0.5 + 0.25))
-    assert abs(float(a[1][2, 0]) - float(want)) < 1e-5
+    # a^1[10] = tanh(w1*a0[3] + w2*a0[5] + w_bias*1 + s[10]), s[10] == 0.
+    want = torch.tanh(torch.tensor(3.0 * 0.5 + (-0.5) * 0.25 + 0.25))
+    assert abs(float(a[10, 0]) - float(want)) < 1e-5
 
 
 def test_forward_content_activation_is_bounded_tanh():
-    cs = _cs(nS=16, order=1)
-    cs.add_concept_edge(1, 0, "whole", 0, weight=3.0)   # big weight saturates
+    cs = _cs(nS=16, order=2)                           # K=2: iterate the wave
+    cs.add_concept_edge(8, 0, weight=3.0)              # big weight saturates
+    cs.add_concept_edge(9, 8, weight=4.0)              # second-hop pile-on
     a_0 = torch.tanh(torch.full((8, 2), 5.0))
     what = torch.randn(16, _D)
-    content, a_list = cs.cs_forward_content(a_0, what)
-    for a in a_list:
-        assert a.min() >= -1.0 and a.max() <= 1.0      # tanh-bounded
-    assert 0.9 < float(a_list[1][0, 0]) <= 1.0
+    content, a = cs.cs_forward_content(a_0, what)
+    assert a.min() >= -1.0 and a.max() <= 1.0          # tanh-bounded
+    assert 0.9 < float(a[8, 0]) <= 1.0
 
 
-def test_forward_content_empty_order_is_zero():
-    cs = _cs(nS=16, order=1)                            # order 1 stays empty
+def test_forward_content_empty_store_is_tanh_source():
+    cs = _cs(nS=16, order=1)                           # no edges anywhere
     a_0 = torch.rand(8, 2)
     content, a = cs.cs_forward_content(a_0, torch.randn(16, _D))
-    assert torch.equal(a[1], torch.zeros(8, 2))        # tanh(0) == 0
+    assert torch.allclose(a[:8], torch.tanh(a_0))      # snap: tanh(0 + s)
+    assert torch.equal(a[8:], torch.zeros(8, 2))       # pool: tanh(0) == 0
+
+
+def test_wave_depth2_vine_completes_at_k2():
+    """A depth-d vine completes at iteration d (tail links first): the
+    head link reads the REST link's activation only once the wave has
+    propagated one hop -- K=1 leaves it dark, K=2 lights it."""
+    a_0 = torch.zeros(8, 1)
+    a_0[0, 0] = 0.5
+    what = torch.randn(16, _D)
+    t = torch.tanh
+    tail1 = t(torch.tensor(2.0 * 0.5))                 # a^1[9] = tanh(2 s[0])
+    for order, want10 in ((1, torch.tensor(0.0)),      # K=1: head still dark
+                          (2, t(2.0 * tail1))):        # K=2: head reads a^1[9]
+        cs = _cs(nS=16, order=order)
+        cs.add_concept_edge(9, 0, weight=2.0)          # tail: pool <- snap
+        cs.add_concept_edge(10, 9, weight=2.0)         # head: pool <- pool
+        _c, a = cs.cs_forward_content(a_0, what)
+        # the tail rides the CURRENT source: a^K[9] = tanh(2 a^{K-1}[0]).
+        src = torch.tensor(0.5) if order == 1 else t(torch.tensor(0.5))
+        assert torch.allclose(a[9, 0], t(2.0 * src), atol=1e-5)
+        assert torch.allclose(a[10, 0], want10, atol=1e-5)
+
+
+def test_wave_qe_is_report_only():
+    cs = _cs(nS=16, order=2)
+    cs.add_concept_edge(8, 0, weight=1.0)
+    a_0 = torch.rand(8, 2, requires_grad=True)
+    cs.cs_forward_content(a_0, torch.randn(16, _D))
+    qe = cs._cs_wave_qe
+    assert qe.shape == (2,) and not qe.requires_grad   # K entries, no grad
+    assert torch.isfinite(qe).all()
 
 
 def test_forward_content_kernels_agree():
     cs = _cs(nS=16, order=1)
-    cs.add_concept_edge(1, 2, "whole", 0, weight=-0.4)
-    cs.add_concept_edge(1, 2, "part", 1, weight=0.7)
+    cs.add_concept_edge(10, 0, weight=-0.4)
+    cs.add_concept_edge(10, 1, weight=0.7)
     a_0 = torch.rand(8, 2).tanh()
     d = torch.randn(16, _D)
     c1, a1 = cs.cs_forward_content(a_0, d)
-    for (p, s) in cs._sparse_fam.values():             # flip kernels
-        for ly in (p, s):
-            if ly is not None:
-                ly.kernel = "spmm"
+    Spaces._concept_alloc_of(cs).layer(0).kernel = "spmm"   # flip kernel
     c2, a2 = cs.cs_forward_content(a_0, d)
     assert torch.allclose(c1, c2, atol=1e-6)
+    assert torch.allclose(a1, a2, atol=1e-6)
 
 
 def test_forward_content_positive_atoms_and_signed_activation():
     cs = _cs(nS=16, order=1)
     B = 1
-    a_0 = torch.rand(8, B)                             # snap presences >= 0
+    a_0 = torch.rand(8, B) + 0.1                       # snap presences > 0
     what = torch.randn(16, _D)                         # has negative entries
-    cs.add_concept_edge(1, 0, "whole", 0, weight=-1.0)  # NEGATIVE weight
+    cs.add_concept_edge(8, 0, weight=-1.0)             # NEGATIVE weight
     content, a = cs.cs_forward_content(a_0, what)
-    # order-1 concept 0 activation is negative (neg weight * pos presence)
-    assert a[1][0, 0] <= 0
-    # the atom used is softplus(what[order-1 row 0]) -> strictly positive
+    # pool row 8's activation is negative (neg weight * pos presence)
+    assert a[8, 0] < 0
+    # the atom used is softplus(what[8]) -> strictly positive
     import torch.nn.functional as F
-    start, _end = cs.order_slice(1)
-    atom = F.softplus(what[start])
+    atom = F.softplus(what[8])
     assert (atom > 0).all()
-    # code row = a_1 * positive_atom -> points opposite the atom (anti-present)
-    assert torch.allclose(content[0, start], a[1][0, 0] * atom, atol=1e-5)
+    # code row = a * positive_atom -> points opposite the atom (anti-present)
+    assert torch.allclose(content[0, 8], a[8, 0] * atom, atol=1e-5)
 
 
 def test_forward_content_differentiable():
-    cs = _cs(nS=16, order=1)
-    cs.add_concept_edge(1, 0, "whole", 0, weight=0.5)
+    cs = _cs(nS=16, order=2)                           # grads through K=2 steps
+    cs.add_concept_edge(8, 0, weight=0.5)
+    cs.add_concept_edge(9, 8, weight=0.5)
     a_0 = torch.rand(8, 2, requires_grad=True)
     what = torch.randn(16, _D, requires_grad=True)
     content, _ = cs.cs_forward_content(a_0, what)
     content.sum().backward()
     assert what.grad is not None and what.grad.abs().sum() > 0
     assert a_0.grad is not None and a_0.grad.abs().sum() > 0
-    _p1, s1 = cs._sparse_families(1)
-    assert s1.values.grad is not None and s1.values.grad.abs().sum() > 0
+    ly = Spaces._concept_alloc_of(cs).layer(0)
+    assert ly.values.grad is not None and ly.values.grad.abs().sum() > 0

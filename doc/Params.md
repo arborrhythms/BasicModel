@@ -4,6 +4,9 @@ Model configuration is specified in XML files (e.g. `data/XOR_exact.xml`).
 Default values are loaded from `data/model.xml` and overridden by
 model-specific configs. The schema is in `data/model.xsd`.
 
+This document is the human-facing reference for common knobs and migrations.
+`data/model.xsd` is authoritative for the complete accepted element set.
+
 Overlay merge order:
 `data/model.xml`  $\to$  `<config>.xml`  $\to$  runtime overrides.
 
@@ -40,21 +43,21 @@ sub-elements `<training>` and `<data>` (see below).
 | `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
-| `ergodic` | bool | `false` | Ergodic exploration: every Layer uses `W_eff = bias * W + temp * noise`. See [Ergodic.md](Ergodic.md). |
+| `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `serial` | bool | derived | Forward-dispatch mode. `true` = serial / grammatical (per-word `[B, 1, D]` body); `false` = parallel (whole-slab `[B, N, D]` body). If omitted, legacy configs derive it from `symbolicOrder > 0`; new configs should set it explicitly. |
-| `symbolicOrder` | int | `0` | Symbolic / relational loop budget: the RAMSIFIED DEPTH of the post-pump symbolic phase (2026-07-02 two-phase rework — the pump is purely subsymbolic; `cs_symbolic_phase` snaps the settled field to the order-0 codebook block and composes orders $1..S$ once, at the cutover). `0` = no symbolic phase (byte-identical legacy path); values > 1 partition the concept inventory dyadically by order; `serial` stays an independent knob. Default derives from the grammar for legacy configs (1 when `useGrammar != "none"`, else 0). See [Architecture.md sec A](Architecture.md) and [STM.md](STM.md#2-serial-sequencing). |
+| `symbolicOrder` | int | `0` | The symbolic ITERATION BUDGET $K$ of the conceptual wave (v3 iterated loop, 2026-07-03; the pump stays purely subsymbolic — `cs_symbolic_phase` snaps the settled field to the snap block, then the wave $a^{i+1} = \tanh(W[a^i \mid 1] + s)$ runs $K$ steps over the single untyped square `AttentionLayer` at the cutover). NOT forced ramsification: $K$ is the maximum possible conceptual order — the order reached if a novel concept were introduced at every iteration; a depth-$d$ vine completes at iteration $d$. `0` = no symbolic phase (byte-identical legacy path); `serial` stays an independent knob. Default derives from the grammar for legacy configs (1 when `useGrammar != "none"`, else 0). See [Architecture.md sec A](Architecture.md) and [STM.md](STM.md#2-serial-sequencing). |
 | `subsymbolicStack` | bool | `false` | P4 sigma/pi stacks: DISTINCT per-pass subsymbolic layers — PS `sigmas[t]` / WS `pis[t]`, `t` in `0..subsymbolicOrder-1` (depth IS mereological order; the stack is the subsymbolic reasoning engine). Pass 0 is the base `sigma`/`pi`; construction is RNG-neutral (save/restore), so `false` is byte-identical everywhere. The pump settle signal (`snap_settle_qe`, report-only) is gated on this knob. |
 | `subsymbolicNoop` | string | (empty) | Pass indices whose stack layer is the IDENTITY pass-through, e.g. `"0,2"` — the slot still occupies its pass so the pump always runs to `subsymbolicOrder`. Consumed only when `subsymbolicStack=true`. |
 | `sparseReplace` | — | — | RETIRED (2026-07-02 P3 two-phase forward): phase separation makes non-replacement structural — the symbolic phase's outputs feed the SS leg, the head-side losses, and the concept table, never substituting the subsymbolic advance. Parsed only to emit a `DeprecationWarning`. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
-| `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Default off → one ordinary forward (byte-identical). See [Language.md → Soft-superposition route](Language.md). |
+| `learning` | bool | `false` | Two-pass soft-superposition training for the grammar chooser. When true, each TRAINING batch runs twice as two trials: pass A at superposition temperature 0 (sharp, recorded) and pass B at `exploreTemperature` (flatter exploration, trimmed from the batch error). The chooser is in the gradient path directly. Default off $\to$ one ordinary forward (byte-identical). See [Language.md $\to$ Soft-superposition route](Language.md). |
 | `exploreTemperature` | decimal | `0.5` | Superposition temperature $t \in [0,1]$ for pass B of `learning`. `0` = the chooser's own (sharp) softmax, `1` = uniform (flat). Route scores are scaled by `1 - t`. |
-| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params → deliberate fresh-basin cutover). See [Language.md](Language.md). |
+| `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
 | `reconstructFromIdea` | bool | `false` | Reverse from the idea rather than replaying the forward parse. When true, `reverse()` clears the grammar/routing traces left by comprehension, then asks `SymbolSpace.generate()` to infer a fresh reverse rule path from the supplied idea snapshot. Default off keeps cached-derivation reverse. |
-| `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md → Participation Categories](Language.md). |
+| `categoryCodebook` | bool | `true` | MetaSymbol participation-category codebook for the role-collapsed grammar: a small role-space `VectorQuantize` initialized with one prototype per labelled grammar role (`op_I1`, `op_I2`, `op_O1`, ...). Unsettled MetaSymbols accumulate bounded temporary role evidence; once mass/confidence/margin/stability thresholds are met, the MetaSymbol commits to one category id and its pending row is discarded. Structured grammar layers use the role context for all `transformChooser` modes: as an input feature for `mlp`, and as a labelled-role score prior for anchordot/default routing. See [Language.md $\to$ Participation Categories](Language.md). |
 | `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
-| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off → no table, no raising (byte-identical). See [doc/old/mereological-order-raising.md](old/mereological-order-raising.md). |
+| `mereologyRaise` | bool | `false` | Mereological order-raising: perception's autobind hook builds a meronymic lattice over the two towers and raises a higher-order PART when a whole accumulates more than `K_many` parts (abstraction order tracked via the ramsification table; provenance in `part_chain`). Enables the table on the PartSpace + terminal WholeSpace codebooks at build; `subsymbolicOrder` sets the max order. Default off $\to$ no table, no raising (byte-identical). See [doc/old/mereological-order-raising.md](old/mereological-order-raising.md). |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
 | `weightsPath` | string | (empty) | Model weights checkpoint path. Empty falls back to `output/<name>.ckpt`. |
 | `maxResponseLength` | int | `4096` | Inference token budget (characters / bytes / tokens). Caps output alongside `InputSpace.nOutput`. |
@@ -246,12 +249,12 @@ multiplicative Pi fold moved to WholeSpace as top-down analysis).
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nVectors` | int | sentinel | Codebook size. When `> nOutput`, enables vector quantization with top-k selection of `nOutput` from `nVectors`. |
-| `invertible` | bool | `false` | `true`: one `PiLayer(invertible=True)` handles both directions; `false`: separate `pi1` (forward) and `pi2` (reverse). |
+| `invertible` | bool | `false` | `true`: the PartSpace `SigmaLayer` uses the invertible LDU path for forward/reverse. |
 | `hasAttention` | bool | `true` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
-| `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, Phase 4a — the legacy spelling is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its legacy alias), `radix`. `radix` routes the input lookup through `RadixLayer` (radix trie + inverse table + learned codebook + byte fallback; promotion `threshold=4, min_length=2` by default). `analyse` was REMOVED (Phase 4b): the meronymic analyzer is top-down ANALYSIS and lives on WholeSpace as `<analysis>analyse`. |
+| `synthesis` | string | `"lexicon"` | Bottom-up union strategy (renamed from `<chunking>`, which is rejected loudly): `lexicon`, `bpe`, `mphf`, `byte` (canonical; `none` is its internal alias), `radix`, `meronomy`. `radix` routes through `RadixLayer`; `meronomy` aliases the radix path with meronomy word-group bookkeeping. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. |
 | `butterfly` | bool | `false` | FFT-style element-pair butterfly cascade on the PS fold (`self.sigma` post-swap) for cross-element mixing on the flattened `[B, N*D]` view. Required for `MM_xor.xml` convergence. See [doc/old/2026-05-26-two-loop-pi-sigma-substrate.md](old/2026-05-26-two-loop-pi-sigma-substrate.md). |
-| `wordLearning` | int | `0` | Active lexicon-growth mode. `0` = frozen codebook (training default). `>=1` = on first sight of a new word, insert into the lexicon and tag as a part of "words" on the meronomy. Only `embed.py` sets this to `1` at lexicon-build time. (Was `chunkingFrequency` pre-2026-05-12.) |
+| `wordLearning` | int | `2` | Active lexicon-growth mode. `0` = frozen codebook; `>=1` = on first sight of a new word, insert into the lexicon and tag it on the meronomy. Several trained configs override this to `0` or `1`. |
 
 Sigma layer math: $y_j = \tanh(W x + b)$ (the additive/union fold). The
 PS `<codebook>` element was retired (the percept prototypes live on the
@@ -279,15 +282,9 @@ Transforms perceptual features into abstract concepts via Sigma layers
 Sigma layer math: $y_j = \tanh(W x + b)$. See [Architecture.md](Architecture.md).
 `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`.
 
-> 2026-05-29 (clean-stack STM): `ConceptualSpace.forward` no longer
-> applies `sigma_in` / `sigma_cs` on the forward path. The Stage-10
-> additive composition `sigma_in(combined) + sigma_cs(prev)` is
-> replaced with per-stage space-role attribution (`folded = primary` at
-> stage 0, `folded = sym` at k > 0). The sigma layers remain
-> allocated and are still invoked on the reverse path, but their
-> parameters get no gradient on forward — they're dead weight under
-> the current experiment. See
-> [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
+> `ConceptualSpace` is now a bookkeeping carrier for STM/event state. The
+> former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer
+> constructed on the live path; symbolic generalization lives outside CS.
 
 ### `<WholeSpace>`
 
@@ -304,7 +301,7 @@ perception and output, and (post the analysis/synthesis plan, rev.
 | `nDim` | int | `1` | Per-vector content dim. |
 | `nVectors` | int | sentinel | Codebook size. When `codebook=quantize`, equals the number of symbol prototypes. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Required for the full symbolic pipeline. **Pending removal** (backlog #13: SS `quantize` becomes hardwired) — deliberately deferred until the reverse decodes pre-snap $z$ (backlog #16 / the asymmetric recon gather), because `XOR_exact.xml` relies on `none` for its byte-exact chain. |
-| `analysis` | string | `"byte"` | Top-down division strategy over the unity view (Phase 4b): `byte` = uniform contiguous regions (stage-0 region-mean pooling); `word` = whitespace-cut parts (part $k$ → symbol slot $k$, per-part coarse means); `analyse` = the meronymic analyzer front end (space-lexer cut today; learned-merge integration follows with the deeper SS analyzer work). |
+| `analysis` | string | `"byte"` | Top-down division strategy over the unity view: `byte`, `word`, `raw`, `sentence`, `grammatical`, or `meronomy`. The old `analyse` spelling is not accepted by the schema. |
 | `lexer` | string | — | Intake granularity InputSpace executes (`word`, `sentence`, `byte`, `raw`). Moved here from `<InputSpace>` (Phase 4b: lexing is analytic cutting). |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
 | `sortNetwork` | bool | `false` | Bitonic-sort regularizer on the codebook ordering. |
@@ -339,7 +336,7 @@ Maps symbols to final predictions via linear layers.
 | `invertible` | bool | `false` | Rarely set on OutputSpace. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `nonlinear` | bool | `false` | OutputSpace is linear by default; rescales via `Data.denormalize`. |
-| *(readout — retired 2026-06-19)* | — | — | The OutputSpace regression head (backlog #11): with `nVectors == 1` (or no codebook) it is an unquantised linear `nInputDim → nOutputDim` plus a learned scalar intercept. The former `<readout>` enum (`identity` \| `sigmoid`) was retired — the head is always linear+bias (a binary $\{0,1\}$ target like XOR is regressed, not squashed; see `OutputSpace.lrScale` + `subsymbolicOrder=3`). Ignored by quantised heads. |
+| *(readout — retired 2026-06-19)* | — | — | The OutputSpace regression head (backlog #11): with `nVectors == 1` (or no codebook) it is an unquantised linear `nInputDim -> nOutputDim` plus a learned scalar intercept. The former `<readout>` enum (`identity` \| `sigmoid`) was retired — the head is always linear+bias (a binary $\{0,1\}$ target like XOR is regressed, not squashed; see `OutputSpace.lrScale` + `subsymbolicOrder=3`). Ignored by quantised heads. |
 
 `LinearLayer` with `(bias, temp)` support for ergodic mode.
 
@@ -432,7 +429,7 @@ factor-level noise injection.
     <nOutput>8</nOutput>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>quantize</codebook>
+    <synthesis>lexicon</synthesis>
   </PartSpace>
 
   <ConceptualSpace>
@@ -468,15 +465,13 @@ Everything not listed inherits from `data/model.xml`.
 ```xml
 <model>
   <architecture>
-    <data><dataType>embedding</dataType></data>
-    <weightsPath>BasicModel.ckpt</weightsPath>
-    <embeddingPath>BasicModel.kv</embeddingPath>
-
     <data>
+      <dataType>embedding</dataType>
       <shardDir>data/fineweb</shardDir>
       <minFrequency>0.00001</minFrequency>
     </data>
-
+    <weightsPath>BasicModel.ckpt</weightsPath>
+    <embeddingPath>BasicModel.kv</embeddingPath>
     <training>
       <numEpochs>2</numEpochs>
       <batchSize>128</batchSize>

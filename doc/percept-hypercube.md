@@ -73,8 +73,8 @@ conflated; they are not the same:
 
 | carrier | axes | redundant? | layer |
 |---|---|---|---|
-| **part / copart** `[x, 1-x]` | dependent (`copart = 1-part`) | **yes** → collapse to `[0,1]` | **percept** |
-| **catuskoti** `[TRUE, FALSE]` | independent (BOTH / NEITHER) | no → keep 2-D / signed | **concept / truth** |
+| **part / copart** `[x, 1-x]` | dependent (`copart = 1-part`) | **yes** $\to$ collapse to `[0,1]` | **percept** |
+| **catuskoti** `[TRUE, FALSE]` | independent (BOTH / NEITHER) | no $\to$ keep 2-D / signed | **concept / truth** |
 
 ### Complement and negation are the same reflection
 
@@ -120,7 +120,7 @@ Whether you may map one onto the other depends on a single modeling question —
 
 - **Percept level — absence is non-informative.** You learn only from what is
   present, so `0 = nothing = no evidence`. The **straight map**
-  `[0,1] presence → positive orthant` of the concept space is then justified:
+  `[0,1] presence -> positive orthant` of the concept space is then justified:
   the percept origin lands on the concept origin (uncertain), which is *correct*
   because percept-absence carries nothing to contradict it.
 - **Concept level — absence is informative.** "Certainly not a cat" is a real,
@@ -129,18 +129,19 @@ Whether you may map one onto the other depends on a single modeling question —
   The percept never emits a negative coordinate; the concept space develops its
   own negative half.
 
-Consequence for the architecture: the **percept→concept seam is presence-
+Consequence for the architecture: the **percept$\to$concept seam is presence-
 preserving and one-sided** — percept presences `a ∈ [0,+1]` (`factor_percept`)
 enter non-negative, and there is **no re-center at that seam**. NB: this is NOT
 a vector *injection* of percepts into the concept space. `PerceptDim` and
 `ConceptDim` are **decoupled** (a concept is a distinct-dimensional atom, never
-a sum/map of percept vectors). Concretely (the ramsified sparse CS transform,
-`cs_forward_content`), the non-negative PS/WS **presences** are the *input
-activations* to a per-order signed **sparse weight matrix** that produces the
+a sum/map of percept vectors). Concretely (the sparse CS wave,
+`cs_forward_content`), the non-negative settled-field **presences** enter
+through the order-0 snap (`cs_snap_order0`) as the *source term* of the
+iterated wave over the single signed untyped square store, which produces the
 concept activation; the concept's negative half is **grown by the signed
 weights** (a negative weight = a feature's presence anti-correlates with the
 concept) and signed activations, exactly the "negativity is a concept
-operation, not the percept map" principle above. The sanctioned signed↔membership
+operation, not the percept map" principle above. The sanctioned signed$\leftrightarrow$membership
 bridge — `χ(a) = (1+a)/2` and `χ⁻¹(m) = 2m-1` (`Ops.eval_chart` /
 `eval_chart_inv`, [bin/Layers.py](../bin/Layers.py)) — stays where it belongs:
 the **truth/catuskoti** boundary, not the percept seam.
@@ -159,7 +160,7 @@ the **truth/catuskoti** boundary, not the percept seam.
 | magnitude | *is* the presence, per axis (set by observation) | a separate scalar = certainty |
 | antipode is | a complement *operation* | a stored direction |
 
-> **Realization note (ramsified sparse CS).** In code the concept "direction"
+> **Realization note (sparse CS).** In code the concept "direction"
 > is a **strictly-positive** `ConceptDim` atom (`softplus(atom)` — a positive
 > mereological-feature signature, not a signed sphere vector), and the
 > **sign + magnitude** ("signed sphere / radius = certainty") live in the
@@ -193,7 +194,7 @@ distributional situating would fight:
    grounding).
 2. **The mereological encoding** — the σ/π part/whole composition and the
    `.where`/`.when` locality are carried in the percept tower. (Whether the
-   part↔whole *algebra* is guaranteed by construction — radix + invertible
+   part$\leftrightarrow$whole *algebra* is guaranteed by construction — radix + invertible
    folds + tower constraints — vs. only anchored is analyzed in §10; either
    way, the **grounding/identity** is position-dependent and SBOW would scramble
    it.)
@@ -213,9 +214,9 @@ fixed-point encoding that spends all its bits on the bounded range is more
 bit-efficient than a float that wastes most of its exponent on unused dynamic
 range:
 
-- **UNORM** (unsigned normalized int) → `[0,1]`, hardware-clamped = the
+- **UNORM** (unsigned normalized int) $\to$ `[0,1]`, hardware-clamped = the
   **percept** cube.
-- **SNORM** (signed normalized int) → `[-1,1]`, hardware-clamped = the
+- **SNORM** (signed normalized int) $\to$ `[-1,1]`, hardware-clamped = the
   **concept/symbol** sphere.
 - **Q-format fractional** (`_Sat _Fract`, Q15/Q31) with saturating arithmetic
   is the CPU/DSP equivalent.
@@ -223,12 +224,12 @@ range:
 These are **storage/quantization** formats. Training stays in `float32`/`bf16`,
 where there is no auto-`±1` dtype (IEEE overflows to `±∞`); the practical
 saturators are functions — **`tanh`** (soft; already the percept fold's
-`atanh → tanh`) or `clamp` (hard). Quantizing a codebook to SNORM/UNORM is
+`atanh -> tanh`) or `clamp` (hard). Quantizing a codebook to SNORM/UNORM is
 standard QAT: keep a float master, quantize in the forward, and backprop with a
 **straight-through estimator** (the VQ codebooks already use STE) or stochastic
 rounding for the coarse 8-bit case.
 
-A note on precision: over a bounded unit range, **SNORM16 ≥ bf16** almost
+A note on precision: over a bounded unit range, **SNORM16 $\ge$ bf16** almost
 everywhere (uniform `~3e-5` grid vs bf16's `~0.4%` relative, which is coarser
 than SNORM16 for `|x| > ~2⁻⁷`); SNORM8 only matches bf16 near the boundary and
 is a real loss off it.
@@ -241,7 +242,7 @@ Moving percepts to `[0,1]` is **percept-scoped** and **not byte-identical**
 (the default percept path reads sign as form content — see §9). Staged:
 
 **Done (this pass):**
-- **Input normalization → `[0,1]` for presence data (provenance-branched).**
+- **Input normalization $\to$ `[0,1]` for presence data (provenance-branched).**
   `TheData.normalize`/`denormalize` (`which="input"`) map measured features
   (tensor input; `input_presence=True`) to the `[0,1]` presence range — the
   `_compute_ranges` docstring's long-declared target — retiring the `* 2 - 1`
@@ -250,12 +251,12 @@ Moving percepts to `[0,1]` is **percept-scoped** and **not byte-identical**
   move (input `[0,1]` while the lexicon codebook is still the signed torus)
   breaks the invertible embedding **reconstruction** chain. The test-first
   probe caught exactly this as a **consistent (not flaky)** `XOR_exact`
-  reconstruction regression (`'hello world' → ''`, `'loving world' → 'hello'`;
+  reconstruction regression (`'hello world' -> ''`, `'loving world' -> 'hello'`;
   classification still correct), so the embedding case waits for the lexicon
   move (pending below). Output normalization is **unchanged** (`[-1,1]`).
   Verified: exact round-trip on both branches; the one test pinning the literal
   `[-1,1]` input target updated; full suite green.
-- **SBOW out-group → word2vec SGNS (§6).** `conceptual_sbow_loss_codes`'s
+- **SBOW out-group $\to$ word2vec SGNS (§6).** `conceptual_sbow_loss_codes`'s
   out-group is now pairwise repulsion from random negatives, replacing the
   `-pode` antipode (which collapsed concept codes onto the present/absent axis —
   a real bug, since concepts carry negation). The earlier percept-SBOW `center`
@@ -264,7 +265,7 @@ Moving percepts to `[0,1]` is **percept-scoped** and **not byte-identical**
   it is a geometric *operation*, not an SBOW force.)
 
 **Done (2026-06-25 — the `[0,1]` percept-cube lit up; note meronomy ships ON, see §9 correction):**
-1. **Torus codebook → `[0,1]`.** The radix percept Codebook reads `[0,1]` via a
+1. **Torus codebook $\to$ `[0,1]`.** The radix percept Codebook reads `[0,1]` via a
    UNORM straight-through clamp in `Codebook.getW` (`embed._unorm_ste`), gated on
    `meronomy_enabled() and is_percept_store` — a percept-store marker set ONLY on
    the radix Codebook (`PartSpace._build_what_basis` radix branch), never the
@@ -272,10 +273,10 @@ Moving percepts to `[0,1]` is **percept-scoped** and **not byte-identical**
    already run on `[0,1]` under meronomy; the decode (`_snap_content` /
    `_nearest_idx` / `codebookDistance`) uses `_presence_mse_score` (un-wrapped,
    complement-aware) on the percept store. Seed writes route to the master
-   parameter (`RadixLayer.insert` → `_basis.W`), not the clamped read view.
+   parameter (`RadixLayer.insert` $\to$ `_basis.W`), not the clamped read view.
 2. **No seam adapter needed.** The single `getW` chokepoint makes BOTH the
    forward gather and the reverse decode read `[0,1]`, so the round-trip is
-   coherent without a seam (verified: MM_mereology `'hello world' → 'hello world'`,
+   coherent without a seam (verified: MM_mereology `'hello world' -> 'hello world'`,
    reconstruction loss 0). `factor_crossing` is a no-op on no-CS-codebook configs
    and is not on the critical path.
 3. **STM — no edit.** Spied STM pushes read `[0,1]`/non-negative under
@@ -339,7 +340,7 @@ wouldn't. The encoding is **hybrid** (audit `wupf3e962`):
 **Guaranteed by construction (independent of vector positions):**
 - The mereological **structure** is **byte-positional**: the ordered split
   (`RadixLayer.spell_out` longest-prefix-match), part order (slot index `N`),
-  the exact pid↔bytes table, the `.where`/`.when` brackets (encoded from byte
+  the exact pid$\leftrightarrow$bytes table, the `.where`/`.when` brackets (encoded from byte
   offsets), and "`A` isa `B`" / run-containment (pure byte-interval containment,
   `RunStructureLayer`). None read a percept vector.
 - The σ/π fold **invertibility**: `compose(generate(y)) == y` for *arbitrary*
@@ -349,7 +350,7 @@ wouldn't. The encoding is **hybrid** (audit `wupf3e962`):
   configured*, not universally live).
 
 **Anchored by the perceptual metric (position-dependent):**
-- Every vector→token identity/decode is **nearest-neighbor in the torus
+- Every vector$\to$token identity/decode is **nearest-neighbor in the torus
   wrapped-MSE metric** (`_nearest_idx`, `_snap_content`, `decode_reverse_meta`,
   `RadixLayer.reverse`, `factor_percept`). **A percept's vector position *is* its
   identity.**

@@ -2,28 +2,29 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <!-- MM_sparse_concept: the sparse-coding Conceptual Space driver
-       (doc/plans/2026-06-27-sparse-coding-cs-plan.md).
+       (doc/plans/2026-06-27-sparse-coding-cs-plan.md; v3 iterated wave,
+       doc/plans/2026-07-02-iterated-symbolic-loop.md).
 
        A concept is a high-dimensional atom stored on CS.subspace.what
-       (ConceptDim), linked to its sources by a sparse WEIGHT MATRIX. There is
-       one table per RAMSIFIED ORDER: order k's sources are
-       [PS | WS | SS_0 ... SS_{k-1}] (symbols are concepts of the previous
-       order). The forward is an encoder + dictionary decoder:
-       concept_activation = W_order @ source_activation (torch.sparse.mm over
-       per-order torch.sparse_csr matrices), concept_code[c] =
-       concept_activation[c] * softplus(what[c]). PS/WS sources are non-negative
-       PRESENCES; SS sources are the lower orders' SIGNED activations threaded
-       up (the symbolic space is 1-D). Weights are SIGNED (a negative weight =
-       the feature's presence anti-correlates with the concept); the atoms are
-       strictly-positive mereological-feature signatures. Capacity is DYADIC by
-       order (N/2, N/4, ..., stacked). Forward-connected by construction: the
-       gradient reaches the sparse weights, the activations, and the dictionary.
+       (ConceptDim). Structure lives on ONE square untyped AttentionLayer
+       [N x N+1] (bottom-up attention over the concept inventory; a
+       SparseLayer subclass): a SNAP block of rows (order-0 concepts =
+       codebook rows, no in-edges) plus a RELATION POOL (minted relations);
+       edges are untyped fuzzy set-membership degrees, one per symbolic
+       constituent, plus the trailing EVERYTHING bias column. The forward is
+       the iterated wave a^{i+1} = tanh(W [a^i | 1] + s): s is the order-0
+       snap presence, an ADDITIVE source each step, and K = symbolicOrder is
+       the ITERATION BUDGET (a depth-d vine completes at iteration d; K=3
+       here). concept_code[c] = a[c] * softplus(what[c]). Weights are SIGNED
+       (a negative weight = the feature's presence anti-correlates with the
+       concept); the atoms are strictly-positive mereological-feature
+       signatures. Forward-connected: the gradient reaches the sparse
+       weights, the activations, and the dictionary.
 
-       Activation is by symbolicOrder (not a config gate): symbolicOrder>=1 with
-       <serial>false</serial> (the explicit override of the back-compat
-       serial = symbolicOrder>0 default) runs the PARALLEL symbolic loop, so the
-       per-order weight population (at mint, keyed by abstraction order) and the
-       forward transform (in ConceptualSpace.forward) fire together.
+       Activation is by symbolicOrder (not a config gate): symbolicOrder>=1
+       with <serial>false</serial> (the explicit override of the back-compat
+       serial = symbolicOrder>0 default) runs the PARALLEL symbolic loop;
+       symbolicOrder=0 is the byte-identical off-path (no snap, no wave).
        <symbolTower>true</symbolTower> routes the CS->SS leg through
        SymbolSpace.forward_concept_to_symbol. A sibling of MM_symbol_tower.xml;
        runs on the xor smoke dataset. -->
@@ -31,12 +32,14 @@
     <subsymbolicOrder>3</subsymbolicOrder>
     <!-- explicit override: parallel symbolic loop at symbolicOrder>=1. -->
     <serial>false</serial>
-    <symbolicOrder>1</symbolicOrder>
+    <!-- iteration budget K: a depth d vine completes at iteration d; K=3
+         covers the XOR presentations (K=1 would leave deep links dark). -->
+    <symbolicOrder>3</symbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
     <!-- mint the word/object/meta symbols whose decomposition populates the
-         per-order sparse weight tables (decoupled from the transform; gated
-         only on the symbolic order). -->
+         untyped edges on the shared square store (decoupled from the
+         transform; gated only on the symbolic order). -->
     <mereologyRaise>true</mereologyRaise>
     <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
          forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
@@ -82,10 +85,11 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>1024</nInputDim>
-    <!-- P5 capacity sizing: the order blocks must hold the mint load (XOR:
-         4 words x (A word-sym + B object-sym) + metas + joint-chain links).
-         Post-P3 the inventory is decoupled from the 8-slot slab (content
-         never substitutes), so nVectors > nInput is safe: caps = [16, 16]. -->
+    <!-- P5 capacity sizing: the snap/pool blocks must hold the mint load
+         (XOR: 4 words x (A word-sym + B object-sym) + metas + joint-chain
+         links). Post-P3 the inventory is decoupled from the 8-slot slab
+         (content never substitutes), so nVectors > nInput is safe:
+         snap 16 rows + pool 16 rows. -->
     <nVectors>32</nVectors>
     <stmCapacity>8</stmCapacity>
     <nDim>1024</nDim>

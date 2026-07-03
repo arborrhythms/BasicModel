@@ -45,7 +45,7 @@ and short-term-memory slots that carry addresses, types, and meronomic relations
 The firewall is therefore mostly a *naming and auditing* discipline over what is
 already built, plus a small set of identified gaps.
 
-## Invariant → code scorecard
+## Invariant $\to$ code scorecard
 
 | # | Invariant | Status | Anchor |
 |---|---|---|---|
@@ -83,11 +83,11 @@ choosers. Design: [Language.md](Language.md) "Participation Categories".
 A verb does not transform a noun phrase as an undifferentiated vector. It selects
 the NP substructure it touches and edits only that, preserving the complement
 (`x₂ = x₁ + p_class ⊙ δ_v`, in the atanh content domain). Crucially, **the mask
-`p_class` is not a free parameter**: a verb applies to a noun *class* ("jump" →
+`p_class` is not a free parameter**: a verb applies to a noun *class* ("jump" $\to$
 "things with legs"), and class membership is read from the NP's **own
 eigen-signature** — its activated eigenfeatures in the codebook geometry, the
 learned class identity it already carries. Where the NP lacks a feature (out of
-class) `p_class ≈ 0` and that feature is preserved. The only per-verb parameter
+class) `p_class` $\approx 0$ and that feature is preserved. The only per-verb parameter
 is a **sparse** eigenvalue edit `δ_v` over the shared lift operator's content
 eigenbasis (the LDU diagonal is the eigenvalue-like component,
 [Layers.py:1109](bin/Layers.py:1109)), made sparse by an in-forward

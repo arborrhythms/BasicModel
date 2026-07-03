@@ -63,7 +63,10 @@
            derives it from symbolicOrder > 0 for legacy configs. New configs
            should set it explicitly. -->
       <xs:element name="serial" type="xs:boolean" minOccurs="0"/>
-      <!-- symbolicOrder is the non-negative symbolic / relational loop budget.
+      <!-- symbolicOrder is the symbolic iteration budget K of the conceptual
+           wave. We are NOT forcing ramsification: the value is the maximum
+           possible conceptual order, i.e. the order reached if a novel concept
+           were introduced at every iteration. 0 disables the symbolic phase.
            It no longer serves as the primary mode selector; serial does. If
            omitted, the default still derives from the configured grammar for
            legacy configs: 1 when the XML enables a non-substrate rule, else 0. -->

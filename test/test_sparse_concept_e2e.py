@@ -1,8 +1,8 @@
-"""End-to-end: the ramsified per-order sparse concept transform.
+"""End-to-end: the shared untyped square concept store (v3).
 
-Population (at mint, keyed by ramsified order) builds per-order torch.sparse
-weight tables; the forward (gated on symbolicOrder>0 + parallel) replaces the
-concept content with the encoder + dictionary decoder. Byte-identical when off.
+Population (at mint) writes untyped edges onto ONE shared AttentionLayer;
+the forward (gated on symbolicOrder>0 + parallel) runs the iterated wave
+encoder + dictionary decoder. Byte-identical when off.
 """
 import os
 import sys
@@ -66,7 +66,7 @@ def test_word_symbol_reserves_order0_snap_row():
     assert cs._concept_source_order(A) == 0
     a_row = cs._csw_concept_row(0, A)
     assert a_row is not None
-    assert cs.concept_weights(0, a_row) == []       # no edges at order 0
+    assert cs.concept_weights(a_row) == []          # no edges at order 0
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
     assert cs.concept_wholes(A) == [int(WORD)]
 
@@ -74,14 +74,35 @@ def test_word_symbol_reserves_order0_snap_row():
 def test_meta_is_ordered_pair_over_subsymbols():
     cs = _cs_active()
     A, B, C = cs.create_word_object_meta([1, 2], WORD, key="cat")
-    # C (meta) is the sec-4c ordered pair [whole=A, part=B]: order 1, one
-    # whole-role edge to A's snap row + one part-role edge to B's.
+    # C (meta) is the sec-4c ordered pair [whole=A, part=B]: order 1, ONE
+    # untyped edge per sym constituent (v3: direction lives in the records).
     assert cs._concept_source_order(C) == 1
     c_row = cs._csw_concept_row(1, C)
-    got = dict(cs.concept_weights(1, c_row))
-    assert ("whole", cs._csw_concept_row(0, A)) in got
-    assert ("part", cs._csw_concept_row(0, B)) in got
+    got = dict(cs.concept_weights(c_row))
+    assert cs._csw_concept_row(0, A) in got
+    assert cs._csw_concept_row(0, B) in got
     assert len(got) == 2                            # no bias: pair only
+
+
+def test_chain_link_edge_to_rest_link_is_populated():
+    """v3 pin for the FIXED defect: v2's ``so < order`` stratification
+    silently dropped the head link's edge to the REST link whenever the
+    ramsified cap clamped both to the SAME order -- the vine's recursion
+    edge. The untyped square store keeps every sym-constituent edge."""
+    cs = _cs_active(order=1)                # cap clamps every link to order 1
+    A1, _, _ = cs.create_word_object_meta([1], 2, key="w1")
+    A2, _, _ = cs.create_word_object_meta([3], 4, key="w2")
+    A3, _, _ = cs.create_word_object_meta([5], 6, key="w3")
+    head = cs.create_joint_concept([A1, A2, A3], key=("w1", "w2", "w3"))
+    alloc = Spaces._concept_alloc_of(cs)
+    ly = alloc.layer(0)
+    head_row = ly.row_of(("pool", head))
+    rest = [x for (r, x) in alloc.records(head)
+            if r == "part" and isinstance(x, tuple) and x[0] == "sym"][0]
+    rest_row = ly.row_of(("pool", int(rest[1])))
+    assert head_row is not None and rest_row is not None
+    # the chain-link edge lives, via the public read-out
+    assert rest_row in dict(cs.concept_weights(head_row))
 
 
 def test_population_inactive_is_noop():
@@ -132,7 +153,8 @@ def test_symbolic_phase_inactive_is_noop():
 
 def test_sparse_concept_config_builds_and_stamps():
     m = _build("MM_sparse_concept.xml")
-    assert m.serial is False and m.symbolicOrder == 1 and m.symbol_tower is True
+    # symbolicOrder=3: the wave iteration budget K (task 8.3, K=1 leaves deep links dark)
+    assert m.serial is False and m.symbolicOrder == 3 and m.symbol_tower is True
     css = [cs for cs in m.conceptualSpaces if cs._sparse_active()]
     assert css
     cs = css[-1]
@@ -238,9 +260,9 @@ def test_conceptual_sbow_situates_live_sparse_codes():
 
 
 def test_csw_weights_update_under_optimizer_step():
-    cs = _cs_active(nS=16, order=1)
-    cs.add_concept_edge(1, 0, "whole", 0, weight=0.5)
-    cs.add_concept_edge(1, 1, "part", 2, weight=1.0)
+    cs = _cs_active(nS=16, order=1)                    # two-block [8 | 8]
+    cs.add_concept_edge(8, 0, weight=0.5)
+    cs.add_concept_edge(9, 2, weight=1.0)
     what = torch.randn(16, _D)
     a_0 = torch.rand(8, 2)
     vals = cs._sparse_families(1)[1].values

@@ -11,17 +11,17 @@
 > on multi-stage chart parses. See
 > [doc/old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md](old/2026-05-29-clean-stack-stm-basis-arg-radixlayer.md).
 
-Four methods on `BaseModel` for truth-aware inference, a bidirectional
-reasoning loop, and a grammar learning mode. Builds on the TruthLayer
-infrastructure ([Logic.md](Logic.md)) and grammar composition
-([Language.md](Language.md)).
+Truth-aware model methods plus the query-reasoning helpers in
+`bin/reasoning.py`: `QuerySpec`, `TruthGroundedReasoner`, `NeuralToolUser`,
+and `policy_answer_loss`. Builds on the TruthLayer infrastructure
+([Logic.md](Logic.md)) and grammar composition ([Language.md](Language.md)).
 
 ## Partitioned Symbol Space
 
 > **Terminology (percept / concept / symbol).** Throughout this doc
 > "symbol"/"symbolic" denotes the genuine SymbolSpace space-role — the 0-D,
 > non-dimensionally-embedded references emitted as `symbolSum` — not the
-> ConceptualSpace part↔whole relation table (those are *concepts*) and not
+> ConceptualSpace part$\leftrightarrow$whole relation table (those are *concepts*) and not
 > the dimensionally-embedded perceptual content of PartSpace/WholeSpace
 > (those are *percepts*: part-percepts and whole-percepts). See
 > [doc/old/2026-06-21-terminology-percepts-concepts-symbols.md](old/2026-06-21-terminology-percepts-concepts-symbols.md).
@@ -67,7 +67,7 @@ Positive = true, negative = false, zero = unknown. Delegates to `ground()`.
 ### `extrapolate(seed_indices, max_new, attenuation) -> dict`
 
 Generalizes `TruthLayer.derive()` to all two-argument grammar methods (union,
-intersection, equals, part). For each pair of stored truths, applies every
+intersection, `isEqual`, part). For each pair of stored truths, applies every
 eligible method and accepts results that preserve or increase luminosity.
 Accepted truths recorded at `attenuation * min(DoT_i, DoT_j)`. Returns
 `{'added': [indices], 'rejected': [(i, j, rule, delta_lum), ...]}`.
@@ -118,19 +118,23 @@ modulation (`totalLoss * (1 + lum_weight * (1 - luminosity))`).
 
 Luminosity non-decrease is the validity certificate.
 
-## Grammar Learning
+## Query Reasoning And Policy Loss
 
-`BasicModel.grammar_learning_step()` learns grammar weights from a symbolic
-reconstruction objective:
+There is no live `grammar_learning_step()` method. Query reasoning is routed
+through:
 
-1. Forward pass produces `symbolSum`.
-2. Reverse pass reconstructs input.
-3. Re-encode reconstruction to `symbolSum_hat`.
-4. Loss = `||symbolSum_hat - symbolSum||^2` (symbolic, not conceptual).
-5. Optional luminosity validity penalty for rules decreasing luminosity.
+1. `QuerySpec`, which normalizes query surfaces (`exist`, `isTrue`, `part`,
+   `isPart`, `equal`, `isEqual`, `queryPart`, `queryEqual`) to `isTrue`,
+   `isPart`, or `isEqual`.
+2. `TruthGroundedReasoner`, the exact hard-tool layer over stored truth,
+   parthood, equality, and derived chains.
+3. `NeuralToolUser`, the recurrent soft-propose / hard-verify loop for
+   intervening ideas.
+4. `policy_answer_loss`, which trains the soft query route while detaching the
+   hard proof mask.
 
-Paraphrase-invariance holds because semantically similar sentences snap to
-nearby codebook entries.
+`BasicModel.reason(...)` remains as the model-level bidirectional reasoning
+entry point. Inference query routing is enabled when `reasoningIterations > 0`.
 
 ## Parser And Conceptual Order
 
@@ -168,6 +172,8 @@ argument/return order.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` | 0.0 | Additive truth-loss weight |
 | `<subsymbolicOrder>` | `<architecture>` | 1 | Percept$\to$Concept$\to$Symbol iterations |
+| `<reasoningIterations>` | `<architecture>` | 1 | Query-reasoning chain depth. `0` restores the older off behavior. |
+| `<queryReasoning>` | `<architecture>` | false | Deprecated alias; `true` maps to depth 10 when `reasoningIterations` is unset. |
 | `<parserBackend>` | `<SymbolSpace>` | — | **RETIRED** (Stage 3, 2026-05-27): the chart and STM parsers are gone; the signal router (`LanguageLayer`) is the only parser. Setting this (or `routerKind` / `chartTau` / `chartTopK` / `chartNoiseEps`) raises a loud `ValueError` at config load. |
 | `truthCriterion` | `<architecture>` / `<ConceptualSpace>` / `<WholeSpace>` | 1.0 | Single continuous truth bar (0 $=$ all, 1 $=$ none; **default 1.0 $=$ off**, opt-in by lowering) governing BOTH WholeSpace truth **recording** (record a cell iff its clamped magnitude $\ge$ `truthCriterion`; fires in training + `store_truths` gold ingestion) AND learned relative-sentence **acceptance** (accept iff learn-score $\ge$ `truthCriterion`). Replaces the retired binary `<accumulateTruth>` / `<truthMinMagnitude>` switches. See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states). |
 | `intraLossWeight` | `<training>` | 0.1 | In-STM next-idea loss $\mathcal{L}_\text{intra}$ weight (`IntraSentenceLayer`). See [STM.md Section 6](STM.md#6-intrasentencelayer). |

@@ -17,7 +17,7 @@ fundamental operation, the five mereological relations, and the
 > Four reframings of this page's claims:
 >
 > 1. **`part()` is the graded retrieval surrogate, not *the* parthood
->    relation.** Exact dominance (`Ops.partOf` — elementwise `≤`
+>    relation.** Exact dominance (`Ops.partOf` — elementwise $\le$
 >    reduced with `all`) is the semantic ground truth; the clipped
 >    cosine below is its retrieval-time score. `part()` stays total
 >    and form-level over everything — including symbol codes and
@@ -27,7 +27,7 @@ fundamental operation, the five mereological relations, and the
 >    registration, answers "is", and is a different call. Reading one
 >    relation as the other is the category error.
 > 2. **Fusion = elementwise max stays as the order-theoretic join.**
->    The learned σ-fold satisfies `σ ≽ max` (MeronomySpec §10.1) —
+>    The learned $\sigma$-fold satisfies $\sigma \succeq \max$ (MeronomySpec §10.1) —
 >    join versus parametric whole-maker; the whole-maker can only
 >    over-cover the join, never under-cover it.
 > 3. **The region partition (incl. exact `equal == 0` underlap) is a
@@ -35,7 +35,7 @@ fundamental operation, the five mereological relations, and the
 >    (withdrawn, spec §9): no adjacency exists over witness
 >    dimensions, so disconnection is meaningless there.
 > 4. **Contiguity is sequential, never dimensional** (spec §2): it is
->    owned by `Mereology.Contiguous` on the derivational axis; σ
+>    owned by `Mereology.Contiguous` on the derivational axis; $\sigma$
 >    extents over witness dims are single lumps always.
 
 > **2026-05-29 delta — binary GrammarLayer reverses take Basis, not W.**
@@ -228,17 +228,16 @@ XML knobs (under WholeSpace):
 
 | Knob | Default | Meaning |
 |------|---------|---------|
-| `overlapWeight` | 0.1 | Weight of overlap $\times$ trust-diff penalty |
-| `varianceFloor` | 0.01 | Minimum per-dim std |
-| `fullPartThreshold` | 0.9 | $\tau$: part score above this is "full part" |
-| `disjointThreshold` | 0.1 | $\epsilon$: part score below this is "disjoint" |
-| `equalSuppression` | 4.0 | $k$: damping exponent near the equal corner |
+| `impenetrableOverlap` | 0.0 | Weight of overlap $\times$ trust-diff penalty |
+| `impenetrableVariance` | 0.0 | Minimum variance regularizer weight |
+| `impenetrableAntisymmetry` | 0.0 | Legacy antisymmetry weight, still accepted by schema |
+| `impenetrableTransitivity` | 0.0 | Legacy transitivity weight, still accepted by schema |
 
 ---
 
 ## Order-raising (building the meronymic lattice)
 
-Gated behind `<mereologyRaise>` (default off → byte-identical). Full design +
+Gated behind `<mereologyRaise>` (default off $\to$ byte-identical). Full design +
 code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising.md).
 
 > **Terminology note.** The cross-tower link that ties one part-percept to one
@@ -248,27 +247,27 @@ code map: [doc/old/mereological-order-raising.md](old/mereological-order-raising
 > code identifiers (`insert_meta`, `_sym_*`) are left as-is pending the
 > code-identifier pass.
 
-The two towers stay **in-kind** — `PartSpace` σ *composes parts → parts*,
-`WholeSpace` π *analyses wholes → wholes* — and the **concept (META node) is the
+The two towers stay **in-kind** — `PartSpace` $\sigma$ *composes parts $\to$ parts*,
+`WholeSpace` $\pi$ *analyses wholes $\to$ wholes* — and the **concept (META node) is the
 cross-tower link**, associated with both an overlapping part-percept and
 whole-percept (`insert_meta(ps_pos, ss_pos)`). An object's identity is
-**isomorphic**: σ-up meets π-down at the object. At init there are only **atoms**
+**isomorphic**: $\sigma$-up meets $\pi$-down at the object. At init there are only **atoms**
 (part-percepts in PartSpace) and the **universe** (the top whole-percept in
 WholeSpace); objects emerge from attention.
 
 Three balancing forces keep a single coherent lattice and converge it:
 
-1. **Link the tightest relation** — the largest part-percept ↔ the smallest
+1. **Link the tightest relation** — the largest part-percept $\leftrightarrow$ the smallest
    whole-percept (via `.where` extent); skip a link a bigger-part/smaller-whole
    already subsumes; drop useless concepts.
-2. **Too many parts → synthesize a higher-order part** (`maybe_raise_order`):
+2. **Too many parts $\to$ synthesize a higher-order part** (`maybe_raise_order`):
    when a whole accumulates more than `K_many` parts, mint a higher-order PART
    that subsumes them, with **abstraction order** one above its constituents
    (tracked via the ramsification table — order 0 = atom, 1 = basic category,
    …) and explicit `part_chain` provenance (a higher-order part is abstract, so
    its `.where`/`.when` are discontiguous and the meronymy is tracked, not read
    off `.where`). Idempotent per whole.
-3. **Only one part → Lewis' Singleton → analyse the whole** (π divides) or drop
+3. **Only one part $\to$ Lewis' Singleton $\to$ analyse the whole** ($\pi$ divides) or drop
    the spurious link.
 
 Link surgery: `delete_meta` / `unlink_child` (invert `insert_meta`'s
@@ -277,7 +276,7 @@ code is synthesized by `SigmaLayer.synthesize_over_set` (the M-way generalizatio
 of the binary atanh-sum fold) — or, in the "subsymbolic first" phase, the
 mean-combine of constituents, with `part_chain` as the source of truth. (First
 pass: the raise fires correctly when a whole has many parts; the live pid-keyed
-autobind binds 1 percept→1 concept, so similarity-based many-to-one binding + the
+autobind binds 1 percept$\to$1 concept, so similarity-based many-to-one binding + the
 prune-and-rebind of moot edges are noted follow-ups.)
 
 ### The corpus callosum links the towers (part `isa` whole)
@@ -295,7 +294,7 @@ when they dissociate — a **Hebbian** coupling between codebooks.
 Since the 2026-06-16 redesign `.where` (and `.when`) is an **endpoint-sum bracket**
 `[start, end]` (angle = span center, magnitude = extent), so this *part-of* test is
 a direct read: `WhereEncoding.decode_span` recovers each code's `(start, end)` and
-containment is `A.start ≥ B.start ∧ A.end ≤ B.end`; **contiguity** (adjacency / gap)
+containment is `A.start >= B.start && A.end <= B.end`; **contiguity** (adjacency / gap)
 between sibling parts is the same endpoint comparison. An instant snaps to zero
 extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.)
 
@@ -316,7 +315,7 @@ is its degenerate limit. This choice determines whether a concept's `.where` is
 distributed over its parts or collapsed to one subsuming extent, and should be
 revisited.
 
-Word ↔ object cannot be linked this way (too unlike; no convex set is specific
+Word $\leftrightarrow$ object cannot be linked this way (too unlike; no convex set is specific
 enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
 `.where`/`.when`**, fusing the word-code and object-code into the symbol used in
 serial communication (the MetaSymbol). *(Language update 2026-07-02, revised
@@ -327,16 +326,16 @@ rather than containment claims; the typed read-out recovers (word, object) by
 INTERSECTION with the word-symbol class (`meta_word_object`), and the
 reference-table pairing remains the serial-mode access path. See
 doc/Architecture.md sec A.)* Because symbols are outliers, the
-part↔whole **concepts** live in a **two-code LUT** and the symbolic taxonomy is
+part$\leftrightarrow$whole **concepts** live in a **two-code LUT** and the symbolic taxonomy is
 **relations over symbol indices** — which are the TruthLayer's **absolute truths**
 (propositions) and **relative truths** (`RelativeTruthStore`), to be integrated.
 Taxonomy relations are also learned **explicitly from trusted language** ("cats are
-furry" → `[cats] <= [furry]`).
+furry" $\to$ `[cats] <= [furry]`).
 
 **Granularity / the part-whole ratio** is the correctness signal (and the MM_20M
-mean-collapse fix): *many parts → one whole* = under-analysed; *one part → one whole*
+mean-collapse fix): *many parts $\to$ one whole* = under-analysed; *one part $\to$ one whole*
 = over-analysed. An incorrect ratio is the criterion to request **further synthesis
-(σ, e.g. radix) or analysis (π, property tiling) within the problematic `.where`** —
+($\sigma$, e.g. radix) or analysis ($\pi$, property tiling) within the problematic `.where`** —
 until words emerge as parts. MM_20M collapses because its byte chunker never climbs
 and its analyser never descends, so no word-granularity parts exist for XOR.
 
@@ -357,9 +356,9 @@ under ``_meronomy_words``). The size bound (24) is too loose to separate a short
 sentence from its words on its own, so the word cut is the operative brake today; the
 full ratio-driven basic-level convergence is the to-revisit principled version.
 
-### Explicit concepts ⟷ implicit subsymbolic representations (dual-coded, 2026-06-21)
+### Explicit concepts $\longleftrightarrow$ implicit subsymbolic representations (dual-coded, 2026-06-21)
 
-> **Terminology note.** This section formerly called the explicit part↔whole
+> **Terminology note.** This section formerly called the explicit part$\leftrightarrow$whole
 > relation entry a "symbol." Per the convention, that relation — one part-percept
 > tied to one whole-percept by reference, held in the `_sym_*` tables — is a
 > **concept** (the Concept codebook). The 0-D `SymbolSpace` **symbol** is a
@@ -383,30 +382,31 @@ the other.
   structure. (This refines the earlier `.where`/co-occurrence framing above: the
   *trigger* to abstract is **many constituents under a common concept**, not a shared
   `.where`.) These `_sym_*` relations are the INDEX side; the concept's subsymbolic
-  content (the `ConceptDim` atom + its per-order sparse weight decomposition,
+  content (the `ConceptDim` atom + its untyped sparse edge decomposition,
   populated at mint by `_populate_concept_weights`) is the representational side —
   see the next bullet.
 - **Implicit (subsymbolic).** Each concept has a corresponding **learned vector** —
   a strictly-positive `ConceptDim` **atom** (a feature signature) stored in the CS
   concept dictionary (`similarity_codebook`, softplus-rectified). For a higher-order
-  concept the *production* is no longer "σ then quantize"; it is the **ramsified
-  per-order sparse transform** (`cs_forward_content`, bin/Spaces.py): a per-order
-  signed **sparse weight matrix** maps the concept's source activations
-  `[PS | WS | SS_0..SS_{k-1}]` to a signed concept activation
-  `a_k = W_k @ source_k` (`torch.sparse.mm`), and the concept code is that activation
-  scaling its positive atom (`a_k · softplus(atom)`; radial: magnitude = certainty,
-  sign = present vs anti-present). The many→one abstraction is carried by the sparse
-  WEIGHTS (which sources contribute, with what sign), not by a σ-fold + VQ snap; the
+  concept the *production* is no longer "$\sigma$ then quantize"; it is the **iterated
+  sparse wave** (`cs_forward_content`, bin/Spaces.py): the single untyped square
+  `AttentionLayer` propagates the order-0 snap presences one
+  membership-weighted hop per step ($a^{i+1} = \tanh(W [a^i \mid 1] + s)$,
+  $K$ = `symbolicOrder` steps, the snap as additive source), and the concept
+  code is the final activation
+  scaling its positive atom ($a \cdot \mathrm{softplus}(atom)$; radial: magnitude = certainty,
+  sign = present vs anti-present). The many$\to$one abstraction is carried by the sparse
+  WEIGHTS (which sources contribute, with what sign), not by a $\sigma$-fold + VQ snap; the
   gradient reaches the weights, the source activations, and the dictionary
   (forward-connected). `PerceptDim` and `ConceptDim` are decoupled — a concept is in a
   different vector space than its percepts, never a sum of percept vectors.
 
 **Coordination.** Order-raising is the coupling between the two. When the explicit
 tower raises a higher-order part-percept/whole-percept (built directly, inserted on
-the **over-collected side** of the higher-order table — too-many-parts → higher-order
-part, too-many-wholes → higher-order whole), it **creates the corresponding implicit
-subsymbolic higher-order representation** via the per-order sparse transform above (a
-new order-`k` table over `[PS | WS | SS_0..SS_{k-1}]`). The explicit concept
+the **over-collected side** of the higher-order table — too-many-parts $\to$ higher-order
+part, too-many-wholes $\to$ higher-order whole), it **creates the corresponding implicit
+subsymbolic higher-order representation** via the sparse wave above (new untyped
+edges from the relation's row to its constituents on the shared square store). The explicit concept
 **indexes / names** the implicit vector; the implicit vector is the concept's
 **subsymbolic content**. The two co-evolve and must agree: a directly-built
 concept-index paired with a quantized vector that is a valid point in the higher-order
@@ -446,23 +446,24 @@ but the two coordinating.
 
 ---
 
-## Meronymic Analyzer (PartSpace)
+## Meronymic Synthesis / Analysis
 
-Parthood is not only the mereological relation over percepts of the
-previous sections; it is also how `PartSpace` *analyzes* a surface into
-structure. The
-default perceptual chunking mode is `analyse`
-(`<PartSpace><chunking>analyse</chunking>`), which routes the input
-through the meronymic analyzer rather than a fixed lexicon or BPE table.
+Parthood is not only the mereological relation over percepts of the previous
+sections; it is also used by the text front ends. The live knobs are:
 
-`InputSpace` hands the analyzer the unanalyzed surface --- with
-`<lexer>raw</lexer>` it passes the whole `[B, 1, N]` byte buffer and lets
-`PartSpace` own tokenization. The analyzer's default (and only
-enabled-by-default) operation is a *space-lexer*: a boundary detector
-that recognizes whitespace breaks, reproducing the current word-level
-behavior for verbal input. `raw` keeps the word-level codebook (unlike
-`byte`); it changes only the analyze surface, so the model is not
-switched to a byte embedding.
+```xml
+<PartSpace><synthesis>meronomy</synthesis></PartSpace>
+<WholeSpace><analysis>meronomy</analysis></WholeSpace>
+```
+
+PartSpace owns bottom-up synthesis. WholeSpace owns top-down analysis. The
+legacy `<chunking>` spelling and PartSpace `analyse` mode are rejected by code.
+
+`InputSpace` provides both the atomic part view and the unity whole view.
+`PartSpace` tokenization is controlled by `<synthesis>`; `WholeSpace` division
+is controlled by `<analysis>`. `analysis=raw` keeps the whole byte buffer as the
+analysis surface, while `analysis=word` uses the word-level boundary detector.
+`analysis=meronomy` routes the same top-down role through the meronymic path.
 
 `MeronymicRouter` (`bin/perceptual_analyzer.py`) scores candidate merges
 by signed-neighborhood cosine against the perceptual codebook and routes

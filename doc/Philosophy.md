@@ -130,7 +130,7 @@ The architecture realizes this distinction structurally
   evaluable by the luminosity/coverage criterion, rooted at the
   grammar's absolute-truth start state (``ABS_T``) — or a **relative
   truth** — a *relation between ideas* (causal implication, ``NP1 at
-  t₁ → VP → NP2 at t₂``, is the worked example), verified
+  t₁ -> VP -> NP2 at t₂``, is the worked example), verified
   relationally or by simulation through the serial reasoning loop,
   never by coverage. Only absolute truths feed the preattentive
   filter; relative truths are the conceptual overlay's own products

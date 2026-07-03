@@ -25,7 +25,7 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
-from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
+from Layers import LinearLayer, InvertibleLinearLayer, QKVAttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, RelativeTruthStore, TernaryTruthStore, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from util import parse
@@ -1927,45 +1927,18 @@ TheGrammar = Grammar()
 # =====================================================================
 
 class NotLayer(GrammarLayer):
-    """Parameter-free propositional negation on the bivalent symbol bivector.
-
-    Implements the grammar rule ``S = not(S)``. Operates on the
-    materialized muxed event tensor ``[B, V, nWhat + nWhere + nWhen]``;
-    the ``.what`` bivector ``[pos, neg]`` lives at ``[..., :2]``
-    (nWhat == 2 by convention) and any nWhere / nWhen channels follow.
-    Negation swaps the leading 2 dims of the last axis to ``[neg, pos]``
-    at every ``(B, V)`` position; nWhere / nWhen pass through unchanged.
-
-    Contradictions are preserved: a position with both ``pos`` and
-    ``neg`` high stays contradictory after the swap (new
-    ``pos = old neg`` and new ``neg = old pos`` are still both high).
-    Contrast with bitonic ``-x`` negation, which collapses
-    contradictions onto opposite-sign components.
-
-    The dispatcher hands NotLayer the materialized tensor (with the
-    ``.active`` mask applied) -- never the codebook ``W``. Forward
-    returns the muxed tensor with only the bivector channels swapped;
-    the dispatcher writes back via ``set_event``.
-
-    Shape-preserving and self-inverse.
-    """
+    """Self-inverse ``not(S)``: swap the leading ``[pos, neg]`` bivector."""
     rule_name  = "not"
     arity      = 1
     invertible = True
     space_role       = 'CS'
 
     def __init__(self):
-        """Initialize NotLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
+        """Initialize the parameter-free operator."""
         super().__init__(0, 0)
 
     def forward(self, x):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
-        """
+        """Swap the leading bivector channels."""
         self._check_bivector_shape(x)
         bivector = x[..., :2].flip(dims=(-1,))
         rest     = x[..., 2:]
@@ -1974,50 +1947,22 @@ class NotLayer(GrammarLayer):
         return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
-        """
+        """Apply the self-inverse swap."""
         return self.forward(y)
 
 class NonLayer(GrammarLayer):
-    """Non-affirming negation (indeterminacy) on a bivector.
-
-    For a ``[pos, neg]`` bivector at each axis, ``non`` returns
-    ``[1 - pos, 1 - neg]`` per pole independently. This is the
-    pole-wise complement: a position fully affirmed
-    (``pos = 1, neg = 0``) becomes ``[0, 1]`` (pure negation);
-    indeterminate (``pos = 0, neg = 0``) becomes ``[1, 1]`` (full
-    contradiction); contradictory (``pos = 1, neg = 1``) becomes
-    ``[0, 0]`` (full indeterminacy). The four corners of the
-    tetralemma exchange via this map:
-
-        affirm    [1,0] <-> [0,1] negate
-        unknown   [0,0] <-> [1,1] contradict
-
-    Self-inverse on each pole independently
-    (``non(non(x)) = 1 - (1 - x) = x``), shape-preserving. Operates
-    on the leading bivector slice ``[..., :2]`` of the muxed event;
-    nWhere / nWhen channels at ``[..., 2:]`` pass through unchanged
-    (same convention as ``NotLayer``).
-    """
+    """Self-inverse ``non(S)``: complement each leading bivector pole."""
     rule_name  = "non"
     arity      = 1
     invertible = True
     space_role       = 'CS'
 
     def __init__(self):
-        """Initialize NonLayer; allocate state for the class contract.
-        
-        See class docstring for invariants.
-        """
+        """Initialize the parameter-free operator."""
         super().__init__(0, 0)
 
     def forward(self, x):
-        """Forward pass.
-        
-        See class docstring for the operation this layer applies.
-        """
+        """Complement the leading bivector channels."""
         self._check_bivector_shape(x)
         bivector = 1.0 - x[..., :2]
         rest     = x[..., 2:]
@@ -2026,47 +1971,11 @@ class NonLayer(GrammarLayer):
         return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
-        """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
-        """
+        """Apply the self-inverse complement."""
         return self.forward(y)
 
 class IntersectionLayer(GrammarLayer):
-    """``intersection(C, C)`` -- per-pole "min toward zero" on
-    a bivector activation tensor.
-
-    Runtime ``space_role='CS'``: the operator is a lattice-min
-    primitive that binds at the conceptual space_role. The dispatcher
-    feeds it the bivector activation -- ``[B, V, 2]`` per position,
-    ``[pos, neg]`` poles -- via ``reads_activation = True``. The
-    operands' upstream space_role (CS vs SS codebook activation) is
-    determined by the chart binding, not by this layer.
-
-    Math via ``Ops.intersection`` (a public alias of
-    ``Ops._conjunction_kernel``):
-        monotonic=False (default) -> RadMin: same-sign min
-            magnitude, zero passthrough. The pole closer to
-            zero wins per channel.
-        monotonic=True            -> strict lattice min.
-
-    Lossy: min collapses dominated operands. ``decompose`` returns
-    ``(parent, parent)`` as the best-effort identity recovery
-    without auxiliary structure.
-
-    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-    butterfly cascade mode (``butterfly=True, N=N``) lifts the
-    binary fold to a cross-STM aggregator. At each cascade level
-    the per-pair op takes the packed ``[a, b]`` (each ``[B, M, D]``),
-    computes the intersection kernel element-wise across the two
-    halves (RadMin in radial mode, lattice min in monotonic mode),
-    broadcasts the result back into the packed ``2D`` form, and
-    applies the per-node weight. After ``log2(N)`` levels every
-    output position holds the cross-position intersection of all
-    inputs, weighted by the cascade's per-node parameters.
-    Identity-on-constant-input is preserved (min is idempotent on
-    the diagonal); general inputs lose information (lossy fold).
-    """
+    """Lossy ``intersection(C, C)`` over bivectors via ``Ops.intersection``."""
     rule_name        = "intersection"
     arity            = 2
     invertible       = False
@@ -2221,29 +2130,7 @@ class IntersectionLayer(GrammarLayer):
                             left_priming=left_priming, right_priming=right_priming)
 
 class UnionLayer(GrammarLayer):
-    """``union(C, C)`` -- per-pole "max toward zero" (max
-    magnitude, away from zero) on a bivector activation tensor.
-
-    Runtime ``space_role='CS'`` -- counterpart to ``IntersectionLayer``.
-    Same dispatch contract: feeds on bivector activation
-    ``[B, V, 2]`` via the ``reads_activation = True`` flag. The
-    operands' upstream space_role is determined by the chart binding,
-    not by this layer.
-
-    Math via ``Ops.union`` (a public alias of
-    ``Ops._disjunction_kernel``):
-        monotonic=False (default) -> RadMax: same-sign max
-            magnitude with zero passthrough.
-        monotonic=True            -> strict lattice max.
-
-    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
-
-    Stage 6 (doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-    butterfly cascade mode is the cross-STM dual of ``IntersectionLayer``
-    -- per-pair op computes the union kernel element-wise across
-    the two halves, broadcasts, and weights by the per-node matrix.
-    See ``IntersectionLayer`` for the cascade-shape contract.
-    """
+    """Lossy ``union(C, C)`` over bivectors via ``Ops.union``."""
     rule_name        = "union"
     arity            = 2
     invertible       = False
@@ -2253,12 +2140,7 @@ class UnionLayer(GrammarLayer):
 
     def __init__(self, monotonic=False, nInput=0, nOutput=0,
                  butterfly=False, N=None):
-        """Initialize UnionLayer; allocate state for the class contract.
-
-        See class docstring for invariants.
-
-        ``butterfly`` / ``N`` (Stage 6): see ``IntersectionLayer``.
-        """
+        """Initialize the union kernel and optional butterfly cascade."""
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         self.monotonic = bool(monotonic)
 
@@ -2502,55 +2384,10 @@ def _rotate_where(where, theta=0.6):
 
 
 class LiftLayer(GrammarLayer):
-    """``lift(idea_a, idea_b)`` -- binary CS-space_role grammar op (sigma-style
-    synthesis over a STM pair).
+    """Binary CS grammar op backed by an internal invertible ``SigmaLayer``.
 
-    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-    LiftLayer becomes a first-class binary ``GrammarLayer`` subclass
-    dispatched by the signal router over STM pairs. The previous
-    substrate-borrow pattern (reaching into a PartSpace-owned
-    sigma fold via a gating round-trip through the symbol codebook)
-    is retired -- LiftLayer owns its own internal SigmaLayer for the
-    pairwise math and is fully self-contained.
-
-    Math (sigma-style binary fold, additive log-domain):
-
-        s = atanh(idea_a) + atanh(idea_b)      (clamped)
-        y = tanh(W @ s + b)
-
-        # reverse / generate (balanced split):
-        s_hat = W^-1 @ atanh(y) - b            (LDU inverse)
-        half  = s_hat / 2
-        return tanh(half), tanh(half)
-
-    Inherits ``compose`` / ``generate`` semantics from ``SigmaLayer``'s
-    binary-tensor-op contract (``SigmaLayer.compose`` / ``.generate``)
-    -- the internal SigmaLayer carries the LDU-invertible
-    parameterisation.  ``reverse(parent)`` returns a ``(left, right)``
-    pair via the balanced split.
-
-    The construction is self-contained: no PartSpace /
-    ConceptualSpace / WholeSpace references.  Pass ``nInput`` /
-    ``nOutput`` to size the internal SigmaLayer; the back-compat
-    keyword arguments ``wholeSpace`` / ``perceptualSpace`` /
-    ``conceptualSpace`` are still accepted (for legacy call sites in
-    ``Language.SymbolSubSpace._attach_per_space_syntactic_layer``) but
-    only their codebook dimension is consulted to determine the
-    operand width when ``nInput`` is not provided.
-
-    Lexical mask (GrammarOpsPass §2, author sign-off 2026-06-11;
-    supersedes the 2026-06-10 "declared validity mask" note): the
-    masks are LEXICAL, not validity -- syntactic validity is the
-    grammar files' job (GrammarOpsPass §1), and ``lift`` stays total
-    over its grammar-licensed operands. The per-call ``gate`` low-rank
-    slicing (``_d_effective``) is lexical modulation of this SHARED
-    operator matrix: one verb operator, a per-word gate selecting its
-    slice -- walking vs running without a weight matrix per verb.
-    ``lexical_gate(code)`` is the producer: one learned projection per
-    operator from the word's code to the gate rank space (tanh-bounded
-    per the ``_d_effective`` convention), trained end-to-end with the
-    composition losses. ``gate=None`` (the default everywhere) is
-    byte-identical to the un-gated baseline.
+    ``gate`` optionally selects a lexical low-rank slice; grammar theory lives
+    in ``doc/Language.md``.
     """
     rule_name  = "lift"
     arity      = 2
@@ -2954,13 +2791,7 @@ class VerbLayer(LiftLayer):
 
 
 class AdverbLayer(LiftLayer):
-    """``adverb(vp, adv)`` -- sparse adverb eigenmodifier.
-
-    The operator applies :meth:`LiftLayer.apply_adverb` to a VP and an adverb
-    code. It forces the adverb edit projection on, independent of the legacy
-    ``<adverbEigEdit>`` helper flag. Zero-init means an untrained adverb is a
-    no-op.
-    """
+    """Lossy ``adverb(vp, adv)`` op using ``LiftLayer.apply_adverb``."""
     rule_name = "adverb"
     arity = 2
     invertible = False
@@ -2989,52 +2820,14 @@ class AdverbLayer(LiftLayer):
         return self.apply_adverb(left, right)
 
     def reverse(self, parent, basis=None, gate=None, **kwargs):
-        """Adverb editing is lossy (``invertible = False``) -- there is no
-        faithful inverse, so reverse RAISES rather than fabricating one (the
-        old ``(parent, parent)`` was a placeholder). The unreduce dispatcher
-        gates on ``reverse_dispatchable = False`` and must not invoke this.
-        """
+        """Raise because adverb editing has no faithful inverse."""
         raise NotImplementedError(
             "AdverbLayer is lossy (invertible=False); apply_adverb has no "
             "exact inverse, so reverse is unavailable.")
 
 
 class LowerLayer(GrammarLayer):
-    """``lower(idea_a, idea_b)`` -- binary CS-space_role grammar op (pi-style
-    lowering over a STM pair).
-
-    Stage 4 (2026-05-27, doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md):
-    LowerLayer becomes a first-class binary ``GrammarLayer`` subclass
-    dispatched by the signal router over STM pairs. The previous
-    substrate-borrow pattern (reaching into a ConceptualSpace-owned
-    pi fold via a gating round-trip through the symbol codebook) is
-    retired -- LowerLayer owns its own internal PiLayer for the
-    pairwise math and is fully self-contained.
-
-    Math (pi-style binary fold, multiplicative log-domain):
-
-        ell = log_mult(idea_a) + log_mult(idea_b)
-        y   = tanh((W @ ell + b) / 2)
-
-        # reverse / generate (balanced split):
-        ell_hat = W^-1 @ (atanh-style transform of y) - b
-        half    = ell_hat / 2
-        return from_mult(exp(half)), from_mult(exp(half))
-
-    Inherits ``compose`` / ``generate`` semantics from ``PiLayer``'s
-    binary-tensor-op contract (``PiLayer.compose`` / ``.generate``)
-    -- the internal PiLayer carries the LDU-invertible
-    parameterisation.
-
-    The construction is self-contained: no Space references.  See
-    ``LiftLayer`` for the keyword-arg compatibility shim.
-
-    Lexical mask (GrammarOpsPass §2; supersedes the 2026-06-10
-    "declared validity mask" note): see the ``LiftLayer`` docstring --
-    the same lexical-modulation contract applies to ``lower``
-    (``lexical_gate(code)`` producer; ``gate=`` threading to the
-    inner PiLayer; ``gate=None`` byte-identical to baseline).
-    """
+    """Binary CS grammar op backed by an internal invertible ``PiLayer``."""
     rule_name  = "lower"
     arity      = 2
     invertible = True
@@ -3189,22 +2982,7 @@ class LowerLayer(GrammarLayer):
         return self.reverse(parent, gate=gate)
 
 class PrepositionLayer(GrammarLayer):
-    """preposition(P, X) -- marker-headed phrase packaging (binary, CS-space_role).
-
-    Packages a learned surface marker P (that / to / in / because / when)
-    with a phrase X (NP / VP / S). Transparent to X's content: forward(P, X)
-    returns X unchanged so a downstream lift / intersection reads the
-    phrase. The marker is recorded through the base-class absorb / emit
-    machinery, NOT folded into content -- PREPOSITION does not decide the
-    final relation; that is learned from how the marker-headed phrase
-    participates downstream (spec "Operation 1: PREPOSITION").
-
-    Starts PERMISSIVE: any [B, N, D] content is accepted as X. Per-marker
-    argument gating (NP-only `in` vs S-only `that`) is a learned hook for
-    later (bound_markers participation), not built here. reverse is the
-    structural (X, X) split: the content side recovers the phrase exactly;
-    the marker side is realized by emit from the bound marker.
-    """
+    """Package a marker-headed phrase; content passes through with .where edit."""
     rule_name = "preposition"; arity = 2
     invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     event_aware = True          # operates on the muxed event (modifies .where)
@@ -3235,30 +3013,7 @@ class PrepositionLayer(GrammarLayer):
         return self.reverse(parent)
 
 class ContextualBindLayer(GrammarLayer):
-    """bind(BIND, VP) -- contextual missing-NP marker (binary, CS-space_role).
-
-    Surface LIFT(BIND, VP) is reinterpreted at parse time as
-    LIFT(resolved_ref, VP) (spec "Operation 2"). compose(BIND_marker, VP)
-    resolves an accessible participant already constructed in the current
-    parse and returns its vector, so the enclosing lift sees a real NP in
-    the left slot. Two context modes (stashed via set_bind_context before
-    dispatch; a plain attribute, not an nn.Module child):
-
-      * slab=[B, N, D]  -- the live constituent slab from the fold
-        (Task 2.4). Resolution is vectorized NEAREST-LEFT: for each adjacent
-        pair p the missing NP is constituent p-1 (the most recently built
-        phrase before the BIND operand). Position 0 has no left context ->
-        the marker passes through. This is the locality branch of
-        bind_resolver, expressed as a tensor roll so it runs inside the
-        parallel fold.
-      * participants=[Participant] + licensing -- the ranked path
-        (bind_resolver.resolve_bind): want=>subject-control,
-        persuade=>object-control + locality + learned participation. Used by
-        fixtures / unit tests and as the licensing refinement over locality.
-
-    No context, or no candidate => the marker passes through unchanged --
-    BIND never invents a binding.
-    """
+    """Resolve a contextual BIND marker to a prior participant when available."""
     rule_name = "bind"; arity = 2
     invertible = False; lossy = True; space_role = 'CS'; reads_activation = False
 
@@ -3310,15 +3065,7 @@ class _WhenOpMixin:
         return x[..., :-w], x[..., -w:]
 
 class TenseLayer(_WhenOpMixin, GrammarLayer):
-    """tense(X) -- move the event .when along TIME relative to ``now`` (unary,
-    CS-space_role; 2026-06-16 .when bracket redesign). Tense is the interval-vs-now
-    relation, NOT a magnitude: PRESENT is identity (event stays at its time);
-    PAST shifts the event-time CENTER -step ticks (toward the past); FUTURE shifts
-    it +step ticks (toward the future). The shift is an exact phase rotation that
-    PRESERVES the event duration (WhenRangeEncoding.shift_time), so an event at
-    ``now`` becomes ``now-step`` (past) / ``now+step`` (future). ``reverse``
-    applies the inverse shift (invertible round-trip, modulo the period wrap).
-    Selected per-instance via set_op before dispatch."""
+    """Unary CS op that shifts the event ``.when`` center by tense."""
     rule_name = "tense"; arity = 1
     invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
     # _DELTA is the TENSE step applied to the event-time CENTER (in clock ticks):
@@ -3345,17 +3092,7 @@ class TenseLayer(_WhenOpMixin, GrammarLayer):
     def generate(self, parent): return self.reverse(parent)
 
 class AspectLayer(_WhenOpMixin, GrammarLayer):
-    """aspect(X) -- a no-op (identity).
-
-    Under the 2026-06-16 .when bracket redesign the magnitude carries event
-    DURATION again, so an aspect that reshapes duration (PERFECT / PROGRESSIVE)
-    *could* return -- but that op is NOT redesigned here, so AspectLayer stays a
-    no-op: ``forward`` / ``compose`` / ``reverse`` / ``generate`` are all identity
-    (return the input unchanged). The class is KEPT (not deleted) so the grammar's
-    ``aspect`` rule dispatch stays intact; ``set_op`` still validates the kind for
-    back-compat callers (e.g. MorphologyLayer) but has no numerical effect. A
-    duration-reshaping aspect (operating on the bracket extent) is a documented
-    growth path."""
+    """Grammar-compatible aspect op; currently identity for all aspect kinds."""
     rule_name = "aspect"; arity = 1
     # No-op: nothing is lost (identity), so it is trivially invertible.
     invertible = True; lossy = False; space_role = 'CS'; reads_activation = False
@@ -3372,21 +3109,7 @@ class AspectLayer(_WhenOpMixin, GrammarLayer):
     def generate(self, parent): return self.reverse(parent)
 
 class MorphologyLayer(GrammarLayer):
-    """morphology(X) -- decompose a surface word form into a base lemma +
-    role-neutral morphological features, routing tense/aspect onto the event
-    .when (unary, CS-space_role).
-
-    Delegates ANALYSIS to ``surface_morphology.analyze`` and the tense/aspect
-    .when math to ``TenseLayer`` / ``AspectLayer`` (NOT re-derived here -- the
-    Phase-4 ops are reused). The surface token is supplied out-of-band via
-    ``set_token`` (mirroring ``TenseLayer.set_op``); with no token set, forward
-    is a pass-through.
-
-    Setting ``.what`` to the lemma's concept needs the lexicon (a model-level
-    resource) and is the documented growth path; this layer routes the
-    tense/aspect features the ``.when`` ops consume. No global POS inventory --
-    ``features`` are morphological annotations, not parts of speech.
-    """
+    """Apply surface_morphology features to the event via tense/aspect ops."""
     rule_name = "morphology"; arity = 1
     invertible = True; lossy = True; space_role = 'CS'; reads_activation = False
     event_aware = True          # routes the analyzed tense/aspect onto .when
@@ -3437,71 +3160,7 @@ class MorphologyLayer(GrammarLayer):
 
 
 class SymbolizeLayer(GrammarLayer):
-    """``symbolize(percept, symbol)`` -- binary CS-space_role grammar op that
-    binds a perceptual idea to a semantic idea, creating a META node in
-    the WS taxonomy.
-
-    Stage 9 (2026-05-27, doc/plans/2026-05-27-perceptstore-meta-taxonomy-
-    reentrancy.md): SymbolizeLayer is registered with the signal router
-    as a binary reduce op at space_role 'CS'. Enforced at sentence-parse
-    boundaries (the parser dispatches it for every word + object pairing
-    in a sentence's parse). Off-parse, it fires opportunistically when
-    CS state's quantization-to-symbol pairs with the next STM slot's
-    quantization.
-
-    Originally named ``MetaLayer``; renamed 2026-05-28 to better reflect
-    the operation ("symbolize a percept into a symbol") rather than the
-    artifact produced (a META node in the taxonomy). The META node
-    concept survives unchanged on the WholeSpace side (see
-    ``WholeSpace.insert_meta`` / ``taxonomy``).
-
-    Semantic contract (forward):
-
-        forward(left, right):
-          - left:  CS-space_role vector derived from a PS percept.
-          - right: CS-space_role vector derived from an WS symbol.
-          1. Identify the percept_id by nearest-row search in
-             ``PartSpace.percept_store.codebook``.
-          2. Identify the symbol_idx by nearest-row search in
-             ``WholeSpace.subspace.what.getW()``.
-          3. Call ``WholeSpace.insert_meta(ps_idx, ws_idx,
-             fused_vec=(left + right) / 2)``. The call is idempotent on
-             the pair: a fresh allocation on first sight, EMA-blend on
-             subsequent calls.
-          4. Return the META node's WS.codebook vector.
-
-    Semantic contract (reverse):
-
-        reverse(parent):
-          parent is a META vector.
-          1. Find the nearest WS row to ``parent``.
-          2. If the row is a META node, walk
-             ``WholeSpace.taxonomy_children`` to recover the
-             ``(ps_idx, ws_idx)`` children.
-          3. Return ``(PS.codebook[ps_row], WS.codebook[ws_row])`` as
-             the ``(left, right)`` recovery.
-          4. If the nearest row is not a META, fall back to the
-             balanced split ``(parent / 2, parent / 2)`` (analogous to
-             LiftLayer.reverse's split convention; the discrete
-             recovery is approximate when no META binding exists for
-             the parent's identity).
-
-    Fallback: when the wired ``PartSpace`` lacks a
-    ``percept_store`` (legacy lexicon mode), SymbolizeLayer cannot
-    identify the percept_id structurally; forward then returns the
-    no-op average ``(left + right) / 2`` without registering a META
-    node. This keeps the layer harmless when not in radix mode.
-
-    Numerical guard: ``NaN`` / ``Inf`` in ``left`` or ``right`` raises
-    immediately per the project's "fail loud on numerical divergence"
-    policy. Silent ``nan_to_num`` would let divergence propagate into
-    the WS codebook through the META row seed.
-
-    The construction back-references ``wholeSpace`` /
-    ``perceptualSpace`` via ``object.__setattr__`` to bypass nn.Module
-    submodule tracking (the Spaces are registered under the top-level
-    Model; reattaching them here would create a module-tree cycle).
-    """
+    """Bind a PS percept row and WS symbol row into an idempotent META node."""
     rule_name  = "symbolize"
     arity      = 2
     invertible = True
@@ -3511,22 +3170,7 @@ class SymbolizeLayer(GrammarLayer):
                  wholeSpace=None, perceptualSpace=None,
                  conceptualSpace=None,
                  butterfly=False, N=None):
-        """Initialize SymbolizeLayer.
-
-        ``nInput`` / ``nOutput`` size the layer's nominal input / output
-        widths; both default to the symbol codebook width when
-        ``wholeSpace`` is supplied. The layer is parameter-free
-        (all gradient flows through the WS / PS codebooks owned by
-        the wired Spaces); the GrammarLayer base allocates a butterfly
-        cascade if requested but the binary forward / reverse path
-        does not consult it.
-
-        Back-references kept for the discrete-identity lookups in
-        ``forward`` / ``reverse``: PS percept_id (nearest-row in
-        ``perceptualSpace.percept_store.codebook``), WS symbol_idx
-        (nearest-row in ``wholeSpace.subspace.what.getW()``), and
-        the META insert via ``wholeSpace.insert_meta``.
-        """
+        """Initialize a parameter-free META binding layer."""
         if nInput is None:
             if wholeSpace is not None:
                 nInput = int(wholeSpace.subspace.what.nDim)
@@ -3546,13 +3190,7 @@ class SymbolizeLayer(GrammarLayer):
 
     @staticmethod
     def _finite_or_raise(name, tensor):
-        """Fail loud on NaN / Inf in operand tensors.
-
-        Per the project's "fail loud" policy (MEMORY:
-        feedback_fail_loud_on_divergence): silent ``nan_to_num`` would
-        propagate divergence into the WS codebook row holding the META
-        seed. Raise immediately so the stack trace surfaces.
-        """
+        """Fail loud on NaN / Inf before touching codebook state."""
         if not torch.is_tensor(tensor):
             return
         if not torch.isfinite(tensor).all():
@@ -3565,11 +3203,7 @@ class SymbolizeLayer(GrammarLayer):
 
     @staticmethod
     def _nearest_row(codebook, query):
-        """Return the row idx of ``codebook`` nearest to ``query``.
-
-        ``codebook``: ``[V, D]``. ``query``: ``[D]`` (or shape that
-        squeezes to ``[D]``). Empty codebook returns ``None``.
-        """
+        """Return the nearest codebook row index, or ``None``."""
         if codebook is None:
             return None
         if codebook.dim() < 2 or codebook.shape[0] == 0:
@@ -3608,13 +3242,7 @@ class SymbolizeLayer(GrammarLayer):
     # ------------------------------------------------------------------
 
     def forward(self, left, right):
-        """Bind ``(left, right)`` into a META node and return its vector.
-
-        See the class docstring for the full contract. Returns the
-        META row's WS.codebook vector (post-insert / EMA-update).
-        Falls back to ``(left + right) / 2`` when no PerceptStore is
-        wired (legacy lexicon mode).
-        """
+        """Insert/update a META binding, or average when no store is wired."""
         # Fail loud on NaN/Inf in either operand before any
         # store access -- a divergent operand would silently seed a
         # divergent META row.
@@ -3679,15 +3307,7 @@ class SymbolizeLayer(GrammarLayer):
         return ws_W_current[meta_row]
 
     def reverse(self, parent):
-        """Recover the ``(left, right)`` pair from a META vector.
-
-        Walks WS.codebook nearest-match to find the META row, then
-        looks up the children via the taxonomy. Returns ``(ps_vec,
-        ws_vec)`` for the children's codebook rows. Falls back to the
-        balanced split ``(parent / 2, parent / 2)`` when the nearest
-        WS row is not a registered META node (no surface-bytes path
-        to recover).
-        """
+        """Recover META children by nearest WS row, else balanced split."""
         self._finite_or_raise('parent', parent)
         ws = getattr(self, 'wholeSpace', None)
         ps_store = self._ps_store()

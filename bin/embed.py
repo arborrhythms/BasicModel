@@ -1,26 +1,7 @@
-"""Word embedding pipeline: FineWeb-EDU -> parse -> CBOW -> BasicModel.kv
+"""Embedding and vocab-artifact tooling.
 
-Training phase that produces a static word embedding artifact. InputSpace
-loads this artifact at startup -- it does not train.
-
-Pipeline stages:
-  1. Stream text documents from FineWeb-EDU parquet shards
-  2. parse(text, lex='sentences') then parse(sent, lex='words'):
-     split into sentences, then word tokens
-  3. Build (target, context) training examples per sentence
-  4. Train CBOW embeddings: predict target from mean of context vectors
-  5. Save as WordVectors artifact (.kv, gensim-compatible KeyedVectors)
-
-Usage:
-    python bin/embed.py --output output/BasicModel.kv \
-        --num-shards 1 --max-docs 10000 --vector-size 100 --epochs 10
-
-This module also owns the unified ``.kv``/``.pt`` *vocab-artifact*
-schema used by both ``WordVectors`` (the Lexicon path) and
-``ChunkLayer`` (the BPE path). See ``save_artifact`` / ``load_artifact``
-below; they let a single artifact carry a Lexicon, a BPE codebook, or
-both side-by-side, distinguishable by the top-level ``kind`` field
-(and per-section ``section_kind`` markers).
+This module trains Lexicon/BPE/MPHF artifacts and owns the unified ``.kv``/``.pt``
+schema. Training theory belongs in ``doc/Training.md`` and ``doc/Lexicon.md``.
 """
 
 import os
@@ -44,30 +25,8 @@ from Optimizer import Adam
 from Layers import Lexicon
 
 
-# ---------------------------------------------------------------------------
-# Unified vocab-artifact schema
-#
-# Both ``WordVectors`` (word strings -> learned embedding vectors) and
-# ``ChunkLayer`` (byte-tuple merges -> integer chunk ids) need to save /
-# load a vocabulary so training can resume without rediscovering it from
-# scratch. This module gives both paths one schema:
-#
-#     {
-#         "format_version": 1,
-#         "kind": "lexicon" | "bpe" | "both",
-#         "lexicon": { ... },     # WordVectors section (when present)
-#         "bpe":     { ... },     # ChunkLayer section  (when present)
-#         "truth_data":   {... }, # optional LTM snapshot (legacy field)
-#         "metadata":     {... }, # creation timestamp, source corpus, etc.
-#     }
-#
-# Each section also carries a ``section_kind`` marker so a consumer that
-# was handed a section dict directly can still distinguish it.
-#
-# Backward compatibility: files saved by older ``WordVectors.save`` (no
-# ``format_version`` key) are recognised by ``load_artifact`` and lifted
-# into the unified shape transparently with ``kind="lexicon"``.
-# ---------------------------------------------------------------------------
+# Unified artifact schema: kind={lexicon,bpe,both,knowledge}; old WordVectors
+# files without format_version are lifted to kind="lexicon" by load_artifact().
 
 FORMAT_VERSION = 1
 KIND_LEXICON = "lexicon"

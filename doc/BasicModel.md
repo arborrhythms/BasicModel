@@ -26,9 +26,10 @@ see also [The Whole Part](https://thewholepart.com).
 
 ## Inputs and Outputs
 
-Inputs and outputs derive from a real space that is ineffable. Adaptable
-parameters initialize at zero (*tabula rosa*); learning is driven by random
-perturbations of the map relative to its territory at *temperature*.
+Inputs and outputs derive from a real space that is ineffable. The original
+theory framed learning as tabula-rasa perturbation at temperature; the current
+implementation expresses that as initialized weights plus ergodic `bias`/`var`
+buffers driven by gradient energy. See [Ergodic.md](Ergodic.md).
 
 Inputs scale to `[-1, 1]` via global data min/max. The signed range
 represents presence and absence symmetrically. Paraphrasing Augustine,
@@ -252,32 +253,12 @@ where $r$ is a random vector and $t$ is temperature.
 
 ## Transfer Functions
 
-Using rotation matrices with tunable $\Theta$ before and after a diagonal
-projection restricts the solution space to an eigendecomposition of the
-orthonormal basis (an SVD). For 2D:
-
-$$y = \begin{bmatrix}
-\cos\theta_{1} & - \sin\theta_{1} \\
-\sin\theta_{1} & \cos\theta_{1}
-\end{bmatrix}\begin{bmatrix}
-\Sigma_{1} & 0 \\
-0 & \Sigma_{2}
-\end{bmatrix}\begin{bmatrix}
-\cos\theta_{2} & - \sin\theta_{2} \\
-\sin\theta_{2} & \cos\theta_{2}
-\end{bmatrix}x$$
-
-With $f(x) = \sin(x)$ and $g(x) = \cos(x)$:
-
-$$\widehat{y} = \sin(\cos^{-1}(x) W)$$
-$$\widehat{x} = \cos(W^\top \sin^{-1}(y))$$
-$$\Delta W_{y} = \eta(\widehat{y} - y)\cos(W^\top \cdot \cos^{-1}(x)) \cos^{-1}(x)$$
-$$\Delta W_{x} = \eta(\widehat{x} - x)\sin(W \cdot \sin^{-1}(y)) \sin^{-1}(y)$$
-
-The reverse perception reconstruction and the forward perception gradient
-share common terms. Taking the product:
-
-$$\Delta W_{y}\Delta W_{x} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x))\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y) g^{-1}(x)$$
+Current invertible transfer functions use factorized linear maps rather than
+the earlier SVD-rotation sketch. `InvertibleLinearLayer` parameterizes the map
+with triangular factors and a diagonal scale so forward and reverse share the
+same learned transform without forming a dense inverse on every call. `SigmaLayer`
+and `PiLayer` wrap those maps for additive and multiplicative composition. See
+[Architecture.md](Architecture.md) for the implementation contract.
 
 [^1]: Perceptual space is known as "embedding space" in transformer literature.
 

@@ -371,34 +371,34 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
         self.assertEqual(x.shape, (2, 4))
 
 
-class TestAttentionLayer(unittest.TestCase):
+class TestQKVAttentionLayer(unittest.TestCase):
     def test_asymmetric_forward_shape(self):
-        layer = Layers.AttentionLayer(nInput=8, nOutput=4, type="asymmetric")
+        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, type="asymmetric")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_symmetric_forward_shape(self):
-        layer = Layers.AttentionLayer(nInput=8, nOutput=4, type="symmetric")
+        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, type="symmetric")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_forward_shape(self):
-        layer = Layers.AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
         x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_single_object(self):
         """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
-        layer = Layers.AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        layer = Layers.QKVAttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
         x = torch.randn(2, 1, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 1, 4))
 
     def test_inline(self):
-        Layers.AttentionLayer.test()
+        Layers.QKVAttentionLayer.test()
 
 
 class TestMemory(unittest.TestCase):

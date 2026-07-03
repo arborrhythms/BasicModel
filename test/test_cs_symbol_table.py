@@ -199,16 +199,15 @@ def test_singleton_concept_is_idempotent_unit_set():
     assert cs.concept_parts(S) == [("sym", x)]       # unit-set persists
 
 
-def test_singleton_populates_one_part_role_edge():
+def test_singleton_populates_one_untyped_edge():
     """Min-support exemption: the singleton's weighted reading is its ONE
-    part-role edge onto the constituent's activation."""
+    untyped edge onto the constituent's global row (v3)."""
     cs = _cs_sparse_active()
     A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
     S = cs.singleton_concept(A)
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
-    got = cs.concept_weights(1, row)
-    assert got == [(("part", cs._csw_rows[(0, A)]), 1.0)]
+    assert cs.concept_weights(row) == [(cs._csw_rows[(0, A)], 1.0)]
 
 
 def test_meta_word_object_recovers_by_intersection():
@@ -422,22 +421,23 @@ def test_prune_drops_constituents_of_linked_raised_symbol():
 
 def test_prune_removes_bias_edge_of_dropped_everything():
     """Raw links are reference-store only post-P2 (no PS/WS edges); the ONE
-    physical edge pruning can retire is the EVERYTHING bias of an order>=1
-    concept once a tighter whole is linked."""
+    physical edge pruning can retire is the EVERYTHING bias -- global
+    (row, nVectors) -- of a pool concept once a tighter whole is linked."""
     cs = _cs_sparse_active()
     A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # A: order-0 sym
     c = cs.new_concept()
     cs.add_part(c, ("sym", A))                       # order 1
     cs.add_whole(c, EVERYTHING)
     cs._populate_concept_weights(c)
-    _p, s1 = cs._sparse_families(1)
-    before = s1.nnz
+    _p, ly = cs._sparse_families(0)                  # THE shared store
+    before = ly.nnz
     row = cs._csw_rows[(1, c)]
-    assert (("bias", 0), 1.0) in cs.concept_weights(1, row)
+    bias = int(cs.nVectors)
+    assert (bias, 1.0) in cs.concept_weights(row)
     cs.add_whole(c, 42)                              # a tighter whole arrives
     cs.prune_concept_links()
-    assert s1.nnz == before - 1                      # the bias edge retired
-    assert ("bias", 0) not in [rc for (rc, _w) in cs.concept_weights(1, row)]
+    assert ly.nnz == before - 1                      # the bias edge retired
+    assert bias not in [col for (col, _w) in cs.concept_weights(row)]
 
 
 def test_prune_drops_raw_links_records_only():
@@ -449,7 +449,7 @@ def test_prune_drops_raw_links_records_only():
     cs.add_whole(c, WORD)                            # generic word-class
     cs.add_whole(c, 2)                               # specific whole
     cs._populate_concept_weights(c)                  # order 0: row reserved
-    assert cs.concept_weights(0, cs._csw_rows[(0, c)]) == []
+    assert cs.concept_weights(cs._csw_rows[(0, c)]) == []
     dropped = cs.prune_concept_links()
     assert (c, "whole", WORD) in dropped
     assert set(cs.concept_wholes(c)) == {2}
@@ -481,7 +481,7 @@ def test_assert_relation_replaces_poles_and_enters_embedding():
     # B's definition now has content -> it holds sparse edges (min-support).
     order = cs._concept_source_order(B)
     row = cs._csw_rows[(order, B)]
-    assert cs.concept_weights(order, row) != []
+    assert cs.concept_weights(row) != []
 
 
 def test_assert_relation_raw_codes_reserve_snap_row_no_edges():
@@ -492,12 +492,13 @@ def test_assert_relation_raw_codes_reserve_snap_row_no_edges():
     cs.assert_concept_relation(c, part=3, whole=4, weight=0.5)
     assert 3 in cs.concept_parts(c) and 4 in cs.concept_wholes(c)
     row = cs._csw_rows[(0, c)]                       # snap row reserved
-    assert cs.concept_weights(0, row) == []          # no edges at order 0
+    assert cs.concept_weights(row) == []             # no edges at order 0
 
 
-def test_assert_relation_sym_weight_lands_on_role_edge():
-    """A weighted SYM assertion sets the trained value of the role-tagged
-    edge (no_grad evidence, not a backprop target)."""
+def test_assert_relation_sym_weight_lands_on_edge():
+    """A weighted SYM assertion sets the trained value of the untyped edge
+    (relation_row, constituent_row) (no_grad evidence, not a backprop
+    target)."""
     cs = _cs_sparse_active()
     A, _B, _C = cs.create_word_object_meta([1], 2, key="w")   # order-0 sym
     c = cs.new_concept()
@@ -505,14 +506,14 @@ def test_assert_relation_sym_weight_lands_on_role_edge():
     order = cs._concept_source_order(c)
     assert order == 1
     row = cs._csw_rows[(1, c)]
-    got = dict(cs.concept_weights(1, row))
+    got = dict(cs.concept_weights(row))
     a_row = cs._csw_rows[(0, A)]
-    assert got[("part", a_row)] == 0.5               # role edge carries it
+    assert got[a_row] == 0.5                         # the edge carries it
 
 
 # -- the poles as presence-lattice vectors (Alec 2026-07-02) -------------------
 # nothing = [0,0,...] (a part contributing zero: NO edge); everything =
-# [1,1,...] (a whole = the 1-wide bias role block at order >= 1). Post-P2 a
+# [1,1,...] (a whole = the trailing bias column N at order >= 1). Post-P2 a
 # fresh zeroth-order object-concept B = (NOTHING, EVERYTHING) RESERVES its
 # order-0 codebook row (the snap's maximally-general position; no edges).
 
@@ -527,14 +528,15 @@ def test_fresh_object_concept_reserves_order0_row_no_edges():
     order = cs._concept_source_order(B)
     assert order == 0                                # newly minted: zeroth order
     row = cs._csw_rows[(0, B)]                       # snap row reserved
-    assert cs.concept_weights(0, row) == []          # order 0: no edges
+    assert cs.concept_weights(row) == []             # order 0: no edges
     # A likewise reserves its own order-0 row (a distinct one).
     assert cs._csw_rows[(0, A)] != row
 
 
 def test_assert_concrete_whole_retires_everything_bias_edge():
-    """An order>=1 concept holding the EVERYTHING bias loses that edge when
-    a concrete whole replaces the pole (the wide-open object narrows)."""
+    """A pool concept holding the EVERYTHING bias (col nVectors) loses that
+    edge when a concrete whole replaces the pole (the wide-open object
+    narrows)."""
     cs = _cs_sparse_active()
     A, _B, _C = cs.create_word_object_meta([1, 2], 3, key="cat")
     c = cs.new_concept()
@@ -542,10 +544,11 @@ def test_assert_concrete_whole_retires_everything_bias_edge():
     cs.add_whole(c, EVERYTHING)
     cs._populate_concept_weights(c)
     row = cs._csw_rows[(1, c)]
-    assert (("bias", 0), 1.0) in cs.concept_weights(1, row)
+    bias = int(cs.nVectors)
+    assert (bias, 1.0) in cs.concept_weights(row)
     cs.assert_concept_relation(c, whole=5)           # concrete whole arrives
-    roles = [rc for (rc, _w) in cs.concept_weights(1, row)]
-    assert ("bias", 0) not in roles                  # bias edge retired
+    cols = [col for (col, _w) in cs.concept_weights(row)]
+    assert bias not in cols                          # bias edge retired
     assert 5 in cs.concept_wholes(c)                 # the record landed
 
 
@@ -568,11 +571,11 @@ def test_word_object_tie_strengthens_on_reoccurrence():
     A, B, C = cs.create_word_object_meta([1, 2], 3, key="cat")
     order = cs._concept_source_order(C)
     row = cs._csw_rows[(order, C)]
-    before = dict(cs.concept_weights(order, row))
+    before = dict(cs.concept_weights(row))
     assert before                                    # C holds sym-ref edges
     A2, B2, C2 = cs.create_word_object_meta([1, 2], 3, key="cat")  # re-mint
     assert (A2, B2, C2) == (A, B, C)
-    after = dict(cs.concept_weights(order, row))
+    after = dict(cs.concept_weights(row))
     assert any(after[c] > before[c] for c in before)  # Hebbian bump
     assert all(v <= 4.0 for v in after.values())      # clamped
 
@@ -582,7 +585,8 @@ def test_word_object_tie_strengthens_on_reoccurrence():
 def test_joint_concept_is_bias_bounded_chain():
     """The joint (P2 decision 6) is the ordered Gallistel CHAIN over the
     word-symbols: each link the pair [whole=current, part=rest] bounded by
-    the EVERYTHING bias -- a proper hidden unit over role-tagged edges."""
+    the EVERYTHING bias -- a proper hidden unit over untyped edges (v3:
+    direction lives in the records/nesting, not in typed columns)."""
     cs = _cs_sparse_active()
     A1, _B1, _C1 = cs.create_word_object_meta([1], 2, key="w1")
     A2, _B2, _C2 = cs.create_word_object_meta([3], 4, key="w2")
@@ -593,15 +597,15 @@ def test_joint_concept_is_bias_bounded_chain():
     assert ("sym", A1) in cs.concept_wholes(J)
     assert EVERYTHING in cs.concept_wholes(J)            # bias-bounded
     row = cs._csw_rows[(1, J)]
-    got = dict(cs.concept_weights(1, row))
-    roles = list(got)
-    assert ("bias", 0) in roles                          # the bias edge
-    assert ("whole", cs._csw_rows[(0, A1)]) in roles     # whole = current word
-    assert ("part", cs._csw_rows[(0, A2)]) in roles      # part = the rest
+    got = dict(cs.concept_weights(row))
+    cols = list(got)
+    assert int(cs.nVectors) in cols                      # the bias edge
+    assert cs._csw_rows[(0, A1)] in cols                 # whole = current word
+    assert cs._csw_rows[(0, A2)] in cols                 # part = the rest
     # ORDERED: the reversed sentence is a DIFFERENT chain head.
     assert cs.create_joint_concept([A2, A1], key=("w2", "w1")) != J
     # Idempotent per key; re-occurrence strengthens Hebbianly.
-    before = dict(cs.concept_weights(1, row))
+    before = dict(cs.concept_weights(row))
     assert cs.create_joint_concept([A1, A2], key=("w1", "w2")) == J
-    after = dict(cs.concept_weights(1, row))
+    after = dict(cs.concept_weights(row))
     assert any(after[c] > before[c] for c in before)

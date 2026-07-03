@@ -57,9 +57,9 @@ curriculum.
 
 | stage | objective | trains | dominant rule | status |
 |---|---|---|---|---|
-| 1 | reconstruct, **keep syntax**, fill the missing **words** | the lexical/leaf inverse + the codebook (word↔slot) | EMA (System 1) | recon loss + codebook decode exist; masking + leaf fill to build. **Needs no new grammar inverses** (the kept parse tree drives the existing reverse). |
-| 2 | reconstruct with **no syntax / no words** (from the idea alone) | the full generative inverse (deliverable C) + abstraction | mixed | reverse path exists but is parse-tree-*dependent* → must be **decoupled** to drive from the primed symbolic space (attention) instead of `generate_rules`. |
-| 3 | predict the **next sentence** | the inter-sentence (discourse AR) predictor | EMA → gradient | exists (`<prediction>interSentence`). |
+| 1 | reconstruct, **keep syntax**, fill the missing **words** | the lexical/leaf inverse + the codebook (word$\leftrightarrow$slot) | EMA (System 1) | recon loss + codebook decode exist; masking + leaf fill to build. **Needs no new grammar inverses** (the kept parse tree drives the existing reverse). |
+| 2 | reconstruct with **no syntax / no words** (from the idea alone) | the full generative inverse (deliverable C) + abstraction | mixed | reverse path exists but is parse-tree-*dependent* $\to$ must be **decoupled** to drive from the primed symbolic space (attention) instead of `generate_rules`. |
+| 3 | predict the **next sentence** | the inter-sentence (discourse AR) predictor | EMA $\to$ gradient | exists (`<prediction>interSentence`). |
 | 4 | answer a question by **reasoning** (no search) | relations, modus ponens (`consequents()`), the catuṣkoṭi/trust | gradient (System 2) | the truth stores + `consequents` exist; the QA framing + consistency loss to build. |
 | 5 | answer a question by **LTM search** | global attention (the typed `.where`) + the soft-read fed back + the explorer | gradient (System 2) | global attention (B) built/dark; the consumer (feed the read back, train by the answer) + book paging are deferred. |
 
@@ -92,42 +92,22 @@ FineWeb-EDU parquet shards
 
 ### SBOW (Sentence Bag of Words)
 
-Sentence-level variant of CBOW. Given a sentence of $N$ words:
+The current streaming SBOW trainer uses a `Lexicon` embedding table only: no
+vocabulary projection head and no full softmax. Given a sentence of $N$ words,
+it builds a Gaussian-weighted leave-one-out in-group center (`pode`) for each
+word, samples a same-power random out-group, and trains two attractive terms:
 
-Leave-one-out centroid for word $i$:
+- the word vector is pulled toward its in-sentence pode;
+- random out-group vectors are pulled toward the pode's torus antipode.
 
-$$c_i = \frac{1}{N-1} \sum_{j \neq i} v_j$$
-
-Logits (unnormalised, for every word in vocabulary $V$):
-
-$$z_i = W_o \, c_i + b_o$$
-
-Softmax probability:
-
-$$P(w_i \mid c_i) = \frac{\exp(z_{i,w_i})}{\sum_{k=1}^{V} \exp(z_{i,k})}$$
-
-Loss (cross-entropy, averaged over all $N$ positions):
-
-$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \log P(w_i \mid c_i)$$
-
-Gradient of the loss has two terms:
-
-- **Attractive** (from position $i$ where $w_i$ is the target): pulls $v_i$
-  toward directions that increase its probability.
-- **Repulsive** (from positions $j \neq i$ where $v_i$ is part of the
-  centroid): pushes $v_i$ away from centroids whose targets are other words.
-
-The softmax partition function ensures all $V$ words compete: any word too
-close to a centroid it doesn't belong to increases the denominator and is
-pushed away with force proportional to its softmax probability. This
-adaptive repulsion distributes vectors across the embedding space.
+Implementation: `StreamingSBOWTrainer.train_sentence()` in `bin/embed.py`.
 
 ```python
-vecs = embedding(idx)                         # [N, dim]
-total = vecs.sum(dim=0)                       # [dim]
-centroids = (total - vecs) / (N - 1)          # [N, dim]  leave-one-out
-logits = linear(centroids)                    # [N, vocab] full softmax
-loss = cross_entropy(logits, idx)
+vecs = embeddings(idx)              # [N, D]
+pode = inner_kernel @ vecs           # [N, D], diagonal excluded
+antipode = Lexicon.antipode(pode)
+loss = -logsigmoid(sim(pode, vecs)).mean()
+loss -= logsigmoid(sim(antipode, out_vecs)).mean()
 ```
 
 ### CBOW (Continuous Bag of Words)
@@ -152,32 +132,31 @@ where $K$ is the number of negative samples and $w_k^-$ are sampled words.
 - **Pass 2 (training):** Stream documents again. Per sentence, run one SBOW
   step and discard examples. Multiple epochs re-stream the data.
 
-### Configuration (Makefile variables)
+### Configuration (train.py / environment overrides)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BASIC_SHARDS` | 1 | FineWeb-EDU parquet shards |
-| `BASIC_MAX_DOCS` | 10000 | Max documents to process |
-| `BASIC_VEC_SIZE` | 100 | Embedding dimensionality |
-| `BASIC_EPOCHS` | 10 | Training epochs |
-| `BASIC_MIN_COUNT` | 10 | Min word count for vocabulary inclusion |
-| `BASIC_BATCH_SIZE` | 8 | Batch size (unused by SBOW; per-sentence) |
+| `BASIC_DATASET` | XML default | Dataset/data source selector |
+| `BASIC_MAX_DOCS` | XML default | Max documents to process |
+| `BASIC_NUM_SHARDS` | XML default | FineWeb-EDU shard count |
+| `BASIC_NUM_EPOCHS` | XML default | Phase 2 epoch override |
+| `BASIC_MAX_TOKENS` | XML default | Token budget |
+| `BASIC_MAX_BATCHES` | XML default | Phase 2 batch cap |
+| `BASIC_RUN_TEST` | unset | Enable test passes; optional value caps test batches |
 
 ### Memory Considerations
 
-Dominant cost is the linear output head: `vocab_size * vector_size` parameters
-plus optimizer state. With 200K vocab and 100 dims:
+For SBOW, dominant cost is the `Lexicon` table plus optimizer state. With 200K
+vocab and 100 dims:
 
 - Embedding: 200K $\times$ 100 $\times$ 4 bytes = ~80MB
-- Linear head: 100 $\times$ 200K $\times$ 4 bytes = ~80MB
-- Adam optimizer: ~320MB total
+- Optimizer state depends on the chosen optimizer and device
 
-Full softmax computes `(N, vocab_size)` logits per sentence. Training runs on
-CPU by default (`BASICMODEL_DEVICE=cpu`) to avoid MPS/GPU memory limits.
+Streaming SBOW trains per sentence and normalizes the Lexicon after each step.
 
 ---
 
-## Phase 2: Network Training (`BasicModel.py`)
+## Phase 2: Network Training (`Models.py`)
 
 The network learns to predict and reconstruct sentences using pretrained
 embeddings.
@@ -305,15 +284,15 @@ For each B-wide batch:
 | Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked pos) |
 | Context | Other N-1 words | LOO centroid of N-1 | All unmasked (+ future truncation for AR) |
 | Positive updates | 1 per step | N per step | N per step |
-| Repulsive force | vocab-1 implicit via softmax | N $\times$ (vocab-1) | Implicit via MSE |
+| Repulsive force | vocab-1 implicit via softmax | random out-group to torus antipode | Implicit via MSE |
 | Signal density | Low | High | High |
-| Loss | Cross-entropy over vocab | Cross-entropy over vocab | MSE over embeddings |
+| Loss | Cross-entropy over vocab | two `-logsigmoid(sim(...))` terms | MSE over embeddings |
 | Updates embeddings | Yes (own optimizer) | Yes (own optimizer) | Only for `BACKPROP`/`BOTH`/`JOINT` |
 | Used in (`<trainEmbedding>`) | `CBOW` | `SBOW`, `BOTH`, `JOINT` | `BACKPROP`, `BOTH`, `JOINT` |
 
-SBOW provides richer signal --- every word acts as both context (for others)
-and target (predicted from others). The full softmax pushes vectors to
-distribute across the hypersphere.
+SBOW provides richer signal because every word acts as both context and target.
+The current implementation distributes vectors through pode/antipode geometry,
+not a full-softmax projection head.
 
 ---
 
@@ -334,22 +313,10 @@ Checkpoint excludes embedding parameters (`wv._vectors`). Enables:
 
 ## Embedding Space Geometry
 
-The full softmax provides a distributional guarantee that random negative
-sampling cannot match. For predicting $w_i$ from centroid $c_i$:
-
-$$\mathcal{L}_i = -\log \frac{\exp(z_{i,w_i})}{\sum_{j=1}^{V} \exp(z_{i,j})}$$
-
-The gradient with respect to the logit for any non-target word $k \neq w_i$:
-
-$$\frac{\partial \mathcal{L}_i}{\partial z_{i,k}} = P(k \mid c_i)$$
-
-Words with high softmax probability (too close to the centroid) receive the
-strongest repulsive gradient; words already far away contribute almost
-nothing. This naturally spreads vectors across the hypersphere.
-
-At equilibrium, no word can move closer to any centroid without increasing
-the loss. Random negatives, by contrast, mostly sample words already far away
-on a high-dimensional hypersphere and contribute little useful gradient.
+`Lexicon` defaults to projective unit-ball lookup in the model, while the
+streaming SBOW trainer still constructs its training table with `ball=False`
+for the legacy torus pode/antipode objective. See [Lexicon.md](Lexicon.md) for
+the current geometry and the migration note.
 
 ---
 

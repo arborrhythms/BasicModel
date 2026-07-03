@@ -12,8 +12,9 @@
 make install   # creates .venv with dependencies
 ```
 
-All Makefile targets invoke Python through `.venv/bin/python`, so no manual
-activation is required.
+Makefile targets invoke the project virtual environment (`.venv/bin/python` on
+Unix, `.venv/Scripts/python.exe` on Windows), so no manual activation is
+required.
 
 ---
 
@@ -36,8 +37,8 @@ activation is required.
 | `make ergodic` | `data/ergodic.xml` |
 | `make tomatoes` | `data/tomatoes.xml` |
 | `make mnist` | `data/mnist.xml` |
-| `make compare` | Side-by-side compare using `XML1` and `XML2` |
-| `make SigmaPi` / `SymPercept` / `SPNN` | Run respective scripts |
+| `make compare` | Side-by-side compare using `XML1` and `XML2`; writes an HTML report |
+| `make SigmaPi` / `SymPercept` / `SPNN` | Run the legacy demos under `bin/etc/` |
 
 ### Testing and Documentation
 
@@ -56,7 +57,7 @@ PDF chapters in order: `README.md`, `doc/Installation.md`, `doc/Architecture.md`
 
 | Target | Description |
 |---|---|
-| `make clean` | Remove generated files (`BasicModel.pdf`) |
+| `make clean` | Remove generated files (`BasicModel.pdf` and `output/*`) |
 | `make all` | Default; alias for `make xor` |
 
 ---
@@ -83,13 +84,20 @@ training).
 | Flag | Default | Description |
 |---|---|---|
 | `--model`, `-m` | `data/BasicModel.xml` | XML config |
+| `--data` | *(from XML)* | Override dataset/data source selector |
 | `--max-docs` | *(from XML)* | Override `maxDocs` |
 | `--num-shards` | *(from XML)* | Override `numShards` |
+| `--num-epochs` | *(from XML)* | Override training epochs |
+| `--max-tokens` | *(from XML)* | Override token budget |
+| `--batches` | *(from XML)* | Cap Phase 2 batches |
+| `--test [N]` | off | Run evaluation passes; optional `N` caps test batches |
 | `--compile-target` | `gpu` | `gpu` runs normal training with accelerator torch.compile defaults; `mlx` exports an ExecuTorch/MLX `.pte` and skips Phase 2 training |
 | `--compile-mode` | *(env/runtime default)* | Forwarded as `MODEL_COMPILE_MODE` |
 | `--mlx-output` | `output/mlx/<model>.pte` | Destination for `--compile-target mlx` |
 | `--random-shards` | off | Pick random shard indices |
 | `--force-embeddings` | off | Retrain embeddings even if file exists |
+| `--latent-vector-size` | *(model/vector size)* | Phase 1 SBOW latent size before optional projection |
+| `--embed-lr` | *(embed default)* | Phase 1 SBOW learning rate |
 | `--log [FILE]` | off | Capture stdout/stderr to `.log` in `output/logs/`. Omit filename for timestamped name |
 | `--profile` | off | Run Phase 2 under `cProfile`; writes `.prof` to `output/profiles/` |
 
@@ -108,8 +116,13 @@ training).
 
 | Variable | Description |
 |---|---|
+| `BASIC_DATASET` | Override dataset/data source selector |
 | `BASIC_MAX_DOCS` | Override `maxDocs` |
 | `BASIC_NUM_SHARDS` | Override `numShards` |
+| `BASIC_NUM_EPOCHS` | Override `numEpochs` |
+| `BASIC_MAX_TOKENS` | Override token budget |
+| `BASIC_MAX_BATCHES` | Cap Phase 2 batches |
+| `BASIC_RUN_TEST` | Request evaluation passes; optional value caps test batches |
 | `BASICMODEL_DEVICE` | Force device, e.g. `cpu`. Used by `make test` |
 | `BASICMODEL_PYTHON` | Python executable for train.py subprocesses; overrides the in-project `.venv` lookup |
 | `MODEL_COMPILE` | torch.compile backend selector (`auto`, `none`, `inductor`, `eager`, `aot_eager`) |
