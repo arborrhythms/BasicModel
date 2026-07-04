@@ -337,7 +337,7 @@ def make_vector_spaces():
     )
     parts = [defs]
 
-    parts.append(txt(W//2, 34, "BasicModel Space Hierarchy", fs=24, fill="#222222", bold=True,
+    parts.append(txt(W//2, 38, "BasicModel Space Hierarchy", fs=30, fill="#222222", bold=True,
                      ff="Helvetica, Arial, sans-serif"))
 
     def bullet_list(x, y, rows, fill=BLUE_DK, fs=9.4, step=17):
@@ -365,14 +365,13 @@ def make_vector_spaces():
     input_box = (620, 64, 200, 48)
     output_box = (620, 718, 200, 48)
     parts.append(rect(*input_box, BLUE_L, stroke=BLUE, sw=2, rx=10))
-    parts.append(txt(input_box[0] + input_box[2]//2, input_box[1] + 31, "InputSpace (IS)", fs=16, fill=BLUE_DK, bold=True))
+    parts.append(txt(input_box[0] + input_box[2]//2, input_box[1] + 31, "InputSpace (IS)", fs=18, fill=BLUE_DK, bold=True))
     parts.append(rect(*output_box, ORG_L, stroke=ORG, sw=2, rx=10))
-    parts.append(txt(output_box[0] + output_box[2]//2, output_box[1] + 31, "OutputSpace (OS)", fs=16, fill=ORG, bold=True))
+    parts.append(txt(output_box[0] + output_box[2]//2, output_box[1] + 31, "OutputSpace (OS)", fs=18, fill=ORG, bold=True))
 
     # Perceptual container with three horizontal internal spaces.
     pc_x, pc_y, pc_w, pc_h = 40, 150, 1360, 285
     parts.append(rect(pc_x, pc_y, pc_w, pc_h, "#eef6fb", stroke=BLUE, sw=2, rx=14))
-    parts.append(txt(pc_x + pc_w//2, pc_y + 30, "Perceptual Spaces", fs=18, fill=BLUE_DK, bold=True))
     child_y, child_h = 200, 210
     child_w, gap = 330, 145
     children = [
@@ -403,14 +402,14 @@ def make_vector_spaces():
     ]
     for code, label, rows, cx, fill, stroke_col in children:
         parts.append(rect(cx, child_y, child_w, child_h, fill, stroke=stroke_col, sw=1.8, rx=10))
-        parts.append(txt(cx + 22, child_y + 34, code, anchor="start", fs=24, fill=stroke_col, bold=True))
-        parts.append(txt(cx + 72, child_y + 34, label, anchor="start", fs=16, fill=BLUE_DK, bold=True))
-        parts.extend(bullet_list(cx + 18, child_y + 72, rows, fs=11.4, step=22))
+        parts.append(txt(cx + 22, child_y + 38, code, anchor="start", fs=30, fill=stroke_col, bold=True))
+        parts.append(txt(cx + 82, child_y + 38, label, anchor="start", fs=20, fill=BLUE_DK, bold=True))
+        parts.extend(bullet_list(cx + 18, child_y + 80, rows, fs=14.2, step=24))
 
     # Conceptual space receives perceptual and symbolic streams.
-    cs_x, cs_y, cs_w, cs_h = 190, 485, 1060, 176
+    cs_x, cs_y, cs_w, cs_h = 190, 485, 1060, 190
     parts.append(rect(cs_x, cs_y, cs_w, cs_h, "#f5eef8", stroke=PURP, sw=2, rx=14))
-    parts.append(txt(cs_x + 24, cs_y + 34, "Conceptual Space (CS)", anchor="start", fs=18, fill=PURP, bold=True))
+    parts.append(txt(cs_x + 24, cs_y + 38, "Conceptual Space (CS)", anchor="start", fs=22, fill=PURP, bold=True))
     cs_rows = [
         "STM plus concept relations",
         "ties part-percepts to whole-percepts",
@@ -419,7 +418,7 @@ def make_vector_spaces():
         "ConceptAllocator: ids, ordered records, relation pool",
         "Truth-gated acceptance and reasoning hooks",
     ]
-    parts.extend(bullet_list(cs_x + 24, cs_y + 66, cs_rows, fs=11.4, step=20))
+    parts.extend(bullet_list(cs_x + 24, cs_y + 72, cs_rows, fs=14.2, step=20))
 
     # Flow arrows.
     ps_mid = (pc_x + 40 + child_w//2, child_y + child_h)
@@ -428,15 +427,17 @@ def make_vector_spaces():
     cs_top = cs_y
     input_bottom = input_box[1] + input_box[3]
     input_join_y = pc_y + 20
+    ps_input_entry = (pc_x + 40 + 210, child_y)
+    ws_input_entry = (pc_x + 40 + child_w + gap + 125, child_y)
     parts.append(ortho_arrow(
         [(input_box[0] + 50, input_bottom), (input_box[0] + 50, input_join_y),
-         (ps_mid[0], input_join_y), (ps_mid[0], child_y)],
+         (ps_input_entry[0], input_join_y), ps_input_entry],
         color=BLUE,
         mid="arrb",
     ))
     parts.append(ortho_arrow(
         [(input_box[0] + 150, input_bottom), (input_box[0] + 150, input_join_y),
-         (ws_mid[0], input_join_y), (ws_mid[0], child_y)],
+         (ws_input_entry[0], input_join_y), ws_input_entry],
         color=GRN,
         mid="arrg",
     ))
@@ -463,26 +464,26 @@ def make_vector_spaces():
 
     # Recurrent paths from the CS output back into perceptual and symbolic entry points.
     cs_out_y = cs_y + cs_h
-    ps_entry = (pc_x + 40 + child_w//2, child_y)
-    ws_entry = (pc_x + 40 + child_w + gap + child_w//2, child_y)
+    ps_entry = (pc_x + 40 + 70, child_y)
+    ws_entry = (pc_x + 40 + child_w + gap + child_w - 45, child_y)
     ss_entry = (pc_x + 40 + 2*(child_w + gap) + child_w//2, child_y)
-    fork = (input_box[0] + input_box[2]//2, pc_y - 18)
     parts.append(feedback_path(
-        f"M {cs_x + 430} {cs_out_y} L {cs_x + 430} {output_box[1] - 18} "
-        f"L 20 {output_box[1] - 18} L 20 {fork[1]} L {fork[0]} {fork[1]}",
-        marker=False,
+        f"M {cs_x + 400} {cs_out_y} L {cs_x + 400} {output_box[1] - 18} "
+        f"L 20 {output_box[1] - 18} L 20 {pc_y - 18} "
+        f"L {ps_entry[0]} {pc_y - 18} L {ps_entry[0]} {ps_entry[1]}"
     ))
     parts.append(feedback_path(
-        f"M {fork[0]} {fork[1]} L {ps_entry[0]} {fork[1]} L {ps_entry[0]} {ps_entry[1]}"
+        f"M {cs_x + 640} {cs_out_y} L {cs_x + 640} {output_box[1] - 28} "
+        f"L {W - 52} {output_box[1] - 28} L {W - 52} {pc_y - 18} "
+        f"L {ws_entry[0]} {pc_y - 18} L {ws_entry[0]} {ws_entry[1]}"
     ))
     parts.append(feedback_path(
-        f"M {fork[0]} {fork[1]} L {ws_entry[0]} {fork[1]} L {ws_entry[0]} {ws_entry[1]}"
-    ))
-    parts.append(feedback_path(
-        f"M {cs_x + 630} {cs_out_y} L {cs_x + 630} {output_box[1] - 18} "
-        f"L {W - 20} {output_box[1] - 18} L {W - 20} {pc_y + 34} "
+        f"M {cs_x + 780} {cs_out_y} L {cs_x + 780} {output_box[1] - 10} "
+        f"L {W - 20} {output_box[1] - 10} L {W - 20} {pc_y + 34} "
         f"L {ss_entry[0]} {pc_y + 34} L {ss_entry[0]} {ss_entry[1]}"
     ))
+    parts.append(rect(pc_x + pc_w//2 - 180, pc_y + 14, 360, 34, "#eef6fb", rx=0))
+    parts.append(txt(pc_x + pc_w//2, pc_y + 38, "Perceptual Spaces", fs=22, fill=BLUE_DK, bold=True))
 
     return svg(W, H, "\n".join(parts))
 
