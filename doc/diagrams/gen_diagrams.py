@@ -325,82 +325,164 @@ def make_luminosity():
 # ══════════════════════════════════════════════════════════════════════════════
 
 def make_vector_spaces():
-    W, H = 960, 620
-    defs = "<defs>" + arrow_marker("arrd", BLUE_DK) + arrow_marker("arrg", GRN) + "</defs>"
+    W, H = 1440, 780
+    defs = (
+        "<defs>"
+        + arrow_marker("arrd", BLUE_DK)
+        + arrow_marker("arrb", BLUE)
+        + arrow_marker("arrg", GRN)
+        + arrow_marker("arro", ORG)
+        + arrow_marker("arrp", PURP)
+        + "</defs>"
+    )
     parts = [defs]
 
-    parts.append(rect(0, 0, W, 44, BLUE_DK, rx=0))
-    parts.append(txt(W//2, 29, "WikiOracle Space Hierarchy", fs=18, fill="white", bold=True))
+    parts.append(txt(W//2, 34, "BasicModel Space Hierarchy", fs=24, fill="#222222", bold=True,
+                     ff="Helvetica, Arial, sans-serif"))
 
-    spaces = [
-        # (label, subtitle, bg_col, border_col, items, x, y, w, h)
-        ("Perceptual Space", "[B × N × 4]  byte/word chunks",
-         "#eaf4fb", BLUE, [
-             "• Geometric: L2 distance = perceptual nearness",
-             "• RBF kernels over sensory features",
-             "• 5-dim structure: MP, VP, 3×NP",
-             "• SyntacticLayer: chunk-merge",
-             "• Op: Prep (relocation), Has (part-whole)",
-         ], 30, 58, 280, 480),
-        ("Conceptual Space", "[B × N × ConceptDim]  concept atoms",
-         "#f5eef8", PURP, [
-             "• Concept = ConceptDim atom (≠ PerceptDim)",
-             "• Per-order sparse weight matrix (torch.sparse)",
-             "• Encode: a = W_k @ [PS | WS | SS₀…SS_{k-1}]",
-             "• Decode: code = a · softplus(atom)  (signed a)",
-             "• Dyadic capacity by order: N/2, N/4, …",
-             "• Signed weights; strictly-positive atoms",
-         ], 340, 58, 290, 480),
-        ("Symbolic Space", "[B × K × symbol_dim]  discrete",
-         "#fef9e7", ORG, [
-             "• PiLayer: log-space multiplicative",
-             "• Codebook: snaps to nearest prototype",
-             "• DoT baked into sign × magnitude",
-             "• TruthLayer: record / query / field",
-             "• isConsistent / ground / isTrue",
-             "• extrapolate / reason()",
-             "• Op: Conjunction, Disjunction, Part",
-         ], 660, 58, 280, 480),
+    def bullet_list(x, y, rows, fill=BLUE_DK, fs=9.4, step=17):
+        out = []
+        for i, row in enumerate(rows):
+            out.append(txt(x, y + i*step, "• " + row, anchor="start", fs=fs, fill=fill))
+        return out
+
+    def feedback_path(d, marker=True):
+        marker_attr = " marker-end='url(#arrp)'" if marker else ""
+        return (
+            f"<path d='{d}' fill='none' stroke='{PURP}' stroke-width='2.3'"
+            f" stroke-dasharray='8,5'{marker_attr}/>"
+        )
+
+    def ortho_arrow(points, color=BLUE_DK, sw=1.8, mid="arrd", dash=""):
+        d = "M " + " L ".join(f"{x} {y}" for x, y in points)
+        da = f" stroke-dasharray='{dash}'" if dash else ""
+        return (
+            f"<path d='{d}' fill='none' stroke='{color}' stroke-width='{sw}'"
+            f"{da} marker-end='url(#{mid})'/>"
+        )
+
+    # Small boundary spaces sit above and below the main hierarchy.
+    input_box = (620, 64, 200, 48)
+    output_box = (620, 718, 200, 48)
+    parts.append(rect(*input_box, BLUE_L, stroke=BLUE, sw=2, rx=10))
+    parts.append(txt(input_box[0] + input_box[2]//2, input_box[1] + 31, "InputSpace (IS)", fs=16, fill=BLUE_DK, bold=True))
+    parts.append(rect(*output_box, ORG_L, stroke=ORG, sw=2, rx=10))
+    parts.append(txt(output_box[0] + output_box[2]//2, output_box[1] + 31, "OutputSpace (OS)", fs=16, fill=ORG, bold=True))
+
+    # Perceptual container with three horizontal internal spaces.
+    pc_x, pc_y, pc_w, pc_h = 40, 150, 1360, 285
+    parts.append(rect(pc_x, pc_y, pc_w, pc_h, "#eef6fb", stroke=BLUE, sw=2, rx=14))
+    parts.append(txt(pc_x + pc_w//2, pc_y + 30, "Perceptual Spaces", fs=18, fill=BLUE_DK, bold=True))
+    child_y, child_h = 200, 210
+    child_w, gap = 330, 145
+    children = [
+        ("PS", "Part Space", [
+            "synthesizes atoms into part-percepts",
+            "atom-view stem from InputSpace",
+            "Sigma synthesis fold",
+            "MPHF + index table",
+            "Lexicon: surface rows",
+            "part codebook: part-percepts",
+        ], pc_x + 40, BLUE_L, BLUE),
+        ("WS", "Whole Space", [
+            "analyzes properties, regions and wholes",
+            "unity / property view",
+            "Pi analysis fold",
+            "property basis: regions",
+            "whole-percept codebook",
+            "paired orth / semantic rows",
+        ], pc_x + 40 + child_w + gap, GRN_L, GRN),
+        ("SS", "Symbolic Space", [
+            "zero-dimensional references",
+            "symbol codebook",
+            "grammar / signal router",
+            "operators live in codebook",
+            "TruthLayer stores DoT propositions",
+            "TruthLayer: record / query / field",
+        ], pc_x + 40 + 2*(child_w + gap), ORG_L, ORG),
     ]
+    for code, label, rows, cx, fill, stroke_col in children:
+        parts.append(rect(cx, child_y, child_w, child_h, fill, stroke=stroke_col, sw=1.8, rx=10))
+        parts.append(txt(cx + 22, child_y + 34, code, anchor="start", fs=24, fill=stroke_col, bold=True))
+        parts.append(txt(cx + 72, child_y + 34, label, anchor="start", fs=16, fill=BLUE_DK, bold=True))
+        parts.extend(bullet_list(cx + 18, child_y + 72, rows, fs=11.4, step=22))
 
-    for (label, subtitle, bg, border, items, sx, sy, sw, sh) in spaces:
-        # Background
-        parts.append(rect(sx, sy, sw, sh, bg, stroke=border, sw=2, rx=10))
-        # Header bar
-        parts.append(rect(sx, sy, sw, 58, border, rx=10))
-        parts.append(rect(sx, sy + 32, sw, 26, border, rx=0))
-        parts.append(txt(sx + sw//2, sy + 23, label, fs=14, fill="white", bold=True))
-        parts.append(txt(sx + sw//2, sy + 48, subtitle, fs=11, fill="white"))
-        # Items
-        for i, item in enumerate(items):
-            parts.append(txt(sx + 10, sy + 75 + i*32, item, anchor="start", fs=12, fill=BLUE_DK))
+    # Conceptual space receives perceptual and symbolic streams.
+    cs_x, cs_y, cs_w, cs_h = 190, 485, 1060, 176
+    parts.append(rect(cs_x, cs_y, cs_w, cs_h, "#f5eef8", stroke=PURP, sw=2, rx=14))
+    parts.append(txt(cs_x + 24, cs_y + 34, "Conceptual Space (CS)", anchor="start", fs=18, fill=PURP, bold=True))
+    cs_rows = [
+        "STM plus concept relations",
+        "ties part-percepts to whole-percepts",
+        "Concept codebook: relation rows",
+        "AttentionLayer: symbolic wave over concept inventory",
+        "ConceptAllocator: ids, ordered records, relation pool",
+        "Truth-gated acceptance and reasoning hooks",
+    ]
+    parts.extend(bullet_list(cs_x + 24, cs_y + 66, cs_rows, fs=11.4, step=20))
 
-    # Arrows between spaces
-    arrow_y = 300
-    parts.append(arrow(310, arrow_y, 340, arrow_y, color=PURP, mid="arrd"))
-    parts.append(txt(325, arrow_y - 10, "Sigma", fs=11, fill=PURP, italic=True))
-    parts.append(arrow(630, arrow_y, 660, arrow_y, color=ORG, mid="arrd"))
-    parts.append(txt(645, arrow_y - 10, "Pi", fs=11, fill=ORG, italic=True))
+    # Flow arrows.
+    ps_mid = (pc_x + 40 + child_w//2, child_y + child_h)
+    ws_mid = (pc_x + 40 + child_w + gap + child_w//2, child_y + child_h)
+    ss_mid = (pc_x + 40 + 2*(child_w + gap) + child_w//2, child_y + child_h)
+    cs_top = cs_y
+    input_bottom = input_box[1] + input_box[3]
+    input_join_y = pc_y + 20
+    parts.append(ortho_arrow(
+        [(input_box[0] + 50, input_bottom), (input_box[0] + 50, input_join_y),
+         (ps_mid[0], input_join_y), (ps_mid[0], child_y)],
+        color=BLUE,
+        mid="arrb",
+    ))
+    parts.append(ortho_arrow(
+        [(input_box[0] + 150, input_bottom), (input_box[0] + 150, input_join_y),
+         (ws_mid[0], input_join_y), (ws_mid[0], child_y)],
+        color=GRN,
+        mid="arrg",
+    ))
+    parts.append(ortho_arrow(
+        [(ps_mid[0], ps_mid[1]), (ps_mid[0], cs_top - 20), (cs_x + 220, cs_top - 20), (cs_x + 220, cs_top)],
+        color=BLUE,
+        mid="arrb",
+    ))
+    parts.append(ortho_arrow(
+        [(ws_mid[0], ws_mid[1]), (ws_mid[0], cs_top)],
+        color=GRN,
+        mid="arrg",
+    ))
+    parts.append(ortho_arrow(
+        [(ss_mid[0], ss_mid[1]), (ss_mid[0], cs_top - 20), (cs_x + cs_w - 220, cs_top - 20), (cs_x + cs_w - 220, cs_top)],
+        color=ORG,
+        mid="arro",
+    ))
+    parts.append(ortho_arrow(
+        [(cs_x + cs_w//2, cs_y + cs_h), (cs_x + cs_w//2, output_box[1])],
+        color=ORG,
+        mid="arro",
+    ))
 
-    # Reverse arrows (dashed)
-    parts.append(line(340, arrow_y + 20, 310, arrow_y + 20, stroke=PURP, sw=1.5, dash="5,3"))
-    parts.append(line(660, arrow_y + 20, 630, arrow_y + 20, stroke=ORG, sw=1.5, dash="5,3"))
-
-    # TruthLayer sub-box inside symbolic space
-    parts.append(rect(670, 350, 260, 120, GRN_L, stroke=GRN, sw=1.5, rx=6))
-    parts.append(txt(800, 370, "TruthLayer", fs=13, fill=GRN_DK, bold=True))
-    for i, t in enumerate(["store: activation × DoT", "query by cosine sim", "field(): truth attractor map"]):
-        parts.append(txt(680, 392 + i*24, "• " + t, anchor="start", fs=11, fill=GRN_DK))
-
-    # Subsymbolic / ramsified-order loop annotation
-    parts.append(rect(340, 540, 290, 28, PURP_L, stroke=PURP, sw=1, rx=6))
-    parts.append(txt(485, 558, "ramsified order loop: k = 0, 1, …, S", fs=12, fill=PURP, italic=True))
-
-    # Bottom caption
-    parts.append(line(0, 590, W, 590, stroke="#ddd", sw=1))
-    parts.append(txt(W//2, 610,
-        "Forward: Input → Perceptual → Conceptual → Symbolic → Output     |     Reverse: Output → Symbolic → Conceptual → Perceptual",
-        fs=12, fill=GRY))
+    # Recurrent paths from the CS output back into perceptual and symbolic entry points.
+    cs_out_y = cs_y + cs_h
+    ps_entry = (pc_x + 40 + child_w//2, child_y)
+    ws_entry = (pc_x + 40 + child_w + gap + child_w//2, child_y)
+    ss_entry = (pc_x + 40 + 2*(child_w + gap) + child_w//2, child_y)
+    fork = (input_box[0] + input_box[2]//2, pc_y - 18)
+    parts.append(feedback_path(
+        f"M {cs_x + 430} {cs_out_y} L {cs_x + 430} {output_box[1] - 18} "
+        f"L 20 {output_box[1] - 18} L 20 {fork[1]} L {fork[0]} {fork[1]}",
+        marker=False,
+    ))
+    parts.append(feedback_path(
+        f"M {fork[0]} {fork[1]} L {ps_entry[0]} {fork[1]} L {ps_entry[0]} {ps_entry[1]}"
+    ))
+    parts.append(feedback_path(
+        f"M {fork[0]} {fork[1]} L {ws_entry[0]} {fork[1]} L {ws_entry[0]} {ws_entry[1]}"
+    ))
+    parts.append(feedback_path(
+        f"M {cs_x + 630} {cs_out_y} L {cs_x + 630} {output_box[1] - 18} "
+        f"L {W - 20} {output_box[1] - 18} L {W - 20} {pc_y + 34} "
+        f"L {ss_entry[0]} {pc_y + 34} L {ss_entry[0]} {ss_entry[1]}"
+    ))
 
     return svg(W, H, "\n".join(parts))
 

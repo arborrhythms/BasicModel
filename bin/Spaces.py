@@ -4039,7 +4039,9 @@ def _decode_where_offset(positions, batch_idx, vector_idx, subspace=None):
         return None
     sin_val = positions[batch_idx, vector_idx, 0].item()
     cos_val = positions[batch_idx, vector_idx, 1].item()
-    if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
+    # Noise floor 0.1: a real stamp has |(sin,cos)|=1.0; an UNWRITTEN band
+    # reconstructs ~1e-2 noise (probe 4.2) -- below-floor = no offset claim.
+    if (sin_val * sin_val + cos_val * cos_val) < 0.01:
         return None
     if math.isnan(sin_val) or math.isnan(cos_val):
         return None
@@ -8419,6 +8421,7 @@ class InputSpace(Space):
         host_slab = getattr(self, '_host_input_slab', None)
         if host_slab is not None:
             self._host_input_slab = None  # consume once
+            self._last_host_slab = host_slab  # retained for post-run decode alignment (mirrors _last_sentences)
             input = host_slab
 
         if input.dim() == 3:
@@ -9606,6 +9609,7 @@ class PartSpace(PerceptualSpace):
                 initial_cap=max(int(self.nVectors), 1),
                 promotion_threshold=self.chunk_promotion_threshold,
                 promotion_min_length=self.chunk_promotion_min_length,
+                word_bounded=self._meronomy_words,
                 basis=self.subspace.what,
             )
         elif self.synthesis_mode in ("bpe", "mphf"):
@@ -10265,7 +10269,25 @@ class PartSpace(PerceptualSpace):
         # Per-row word surfaces (meronomy word-isolation): word index -> string,
         # parked for the autobind META key; None per row off the flag.
         word_texts_2d: list = []
+        # Per-slot word-tile spans (5c type-tiling scaffold for the reverse).
+        span_2d: list = []
         for b, row in enumerate(batch_tokens):
+            # Word-isolation tiling cut ahead of Pass 1/2; see doc/Mereology.md. None off-flag.
+            _wspans = None
+            _tiles = None
+            _raw = None
+            if self._meronomy_words:
+                import Meronomy  # local: avoids the module-load import cycle
+                _raw = b"".join(
+                    (t.encode("utf-8") if isinstance(t, str) else bytes(t))
+                    for t in row if t is not None)
+                _wspans = Meronomy.word_spans(_raw)
+                _tiles = Meronomy.word_tiling(_raw)
+                # word surfaces (index -> string) for the autobind META key.
+                word_texts_2d.append(
+                    [_raw[s:e].decode("latin1") for (s, e) in _wspans])
+            else:
+                word_texts_2d.append(None)
             # Pass 1 -- frequency observation for EVERY chunk in the row,
             # independent of the nObj emission budget below. ``observe_chunk``
             # (promotion counting) must see every word: a word truncated
@@ -10274,36 +10296,28 @@ class PartSpace(PerceptualSpace):
             # this to the slot-limited emission loop silently starved any
             # word past the budget of promotion (the earlier words' spell-out
             # fills nObj slots and the loop breaks before reaching them).
-            for text in row:
-                if text is None:
-                    continue
-                chunk = (text.encode("utf-8") if isinstance(text, str)
-                         else bytes(text))
-                if chunk:
-                    ps.observe_chunk(chunk)
+            # Under meronomy the observed unit is the word-tiling SEGMENT,
+            # not the (whole-line) lexer token, so parts top out at word size.
+            if _tiles is not None:
+                for (_ts, _te) in _tiles:
+                    if _te > _ts:
+                        ps.observe_chunk(_raw[_ts:_te])
+            else:
+                for text in row:
+                    if text is None:
+                        continue
+                    chunk = (text.encode("utf-8") if isinstance(text, str)
+                             else bytes(text))
+                    if chunk:
+                        ps.observe_chunk(chunk)
             # Pass 2 -- spell-out emission, bounded by the nObj slot budget.
             # Promotions from Pass 1 already took effect, so a just-promoted
             # recurring word now spells out as ONE percept here.
             row_pids: list = []
             row_groups: list = []
             row_offsets: list = []
+            row_spans: list = []
             byte_off = 0
-            # Meronomy word-isolation: cut the raw row surface into words ONCE;
-            # each percept is then tagged by the word its byte-offset falls in
-            # (the single source of word identity for PS/WS/CS). None off-flag,
-            # so the legacy chunk-index tagging below stays byte-identical.
-            _wspans = None
-            if self._meronomy_words:
-                import Meronomy  # local: avoids the module-load import cycle
-                _raw = b"".join(
-                    (t.encode("utf-8") if isinstance(t, str) else bytes(t))
-                    for t in row if t is not None)
-                _wspans = Meronomy.word_spans(_raw)
-                # word surfaces (index -> string) for the autobind META key.
-                word_texts_2d.append(
-                    [_raw[s:e].decode("latin1") for (s, e) in _wspans])
-            else:
-                word_texts_2d.append(None)
             for n in range(len(row)):
                 text = row[n]
                 if text is None:
@@ -10314,36 +10328,55 @@ class PartSpace(PerceptualSpace):
                 byte_off += len(chunk)            # surface byte position
                 if len(chunk) == 0:
                     continue
-                # Under meronomy the group is the WORD index each percept's own
-                # byte offset falls in (-1 = separator) -- the token may span
-                # several words (the raw surface is one token), so advance the
-                # offset per pid by its byte length. Else the radix chunk idx n.
-                byte_pos = tok_start
-                for pid in ps.spell_out(chunk):
+                # Word-bounded spell-out (5e): cut the token at the tiling
+                # boundaries so longest-match cannot span a word boundary.
+                if _tiles is not None:
+                    pieces = []
+                    for (_ts, _te) in _tiles:
+                        _ps_ = max(_ts, tok_start)
+                        _pe_ = min(_te, tok_start + len(chunk))
+                        if _ps_ < _pe_:
+                            pieces.append(
+                                (chunk[_ps_ - tok_start:_pe_ - tok_start],
+                                 _ps_))
+                else:
+                    pieces = [(chunk, tok_start)]
+                # Group is the WORD index for the percept's byte offset; see doc/Mereology.md. Else the radix chunk idx n.
+                for piece, piece_start in pieces:
+                    byte_pos = piece_start
+                    for pid in ps.spell_out(piece):
+                        if len(row_pids) >= nObj:
+                            break
+                        if _wspans is not None:
+                            grp = -1
+                            for _wi, (_ws, _we) in enumerate(_wspans):
+                                if _ws <= byte_pos < _we:
+                                    grp = _wi
+                                    break
+                            _pb = ps.bytes_for(int(pid))
+                            byte_pos += len(_pb) if _pb else 1
+                        else:
+                            grp = int(n)
+                        row_pids.append(int(pid))
+                        row_groups.append(grp)    # word (meronomy) or token idx
+                        # .where: piece (word-tile) start; see doc/Mereology.md.
+                        row_offsets.append(int(piece_start))
+                        # Tile span per slot: the word-sized object's (start, end).
+                        row_spans.append((int(piece_start),
+                                          int(piece_start + len(piece))))
                     if len(row_pids) >= nObj:
                         break
-                    if _wspans is not None:
-                        grp = -1
-                        for _wi, (_ws, _we) in enumerate(_wspans):
-                            if _ws <= byte_pos < _we:
-                                grp = _wi
-                                break
-                        _pb = ps.bytes_for(int(pid))
-                        byte_pos += len(_pb) if _pb else 1
-                    else:
-                        grp = int(n)
-                    row_pids.append(int(pid))
-                    row_groups.append(grp)        # word (meronomy) or token idx
-                    row_offsets.append(int(tok_start))  # token-start .where
                 if len(row_pids) >= nObj:
                     break
             while len(row_pids) < nObj:
                 row_pids.append(int(null_pid))
                 row_groups.append(-1)             # pad slots: no token group
                 row_offsets.append(-1)
+                row_spans.append((-1, -1))
             pid_2d.append(row_pids[:nObj])
             group_2d.append(row_groups[:nObj])
             offset_2d.append(row_offsets[:nObj])
+            span_2d.append(row_spans[:nObj])
         if os.environ.get("XCHUNK_PROBE"):
             _nn = [sum(1 for p in r if p != null_pid) for r in pid_2d[:4]]
             print(f"=XCHUNK2= non-null-pids/row={_nn} pid_2d[0]={pid_2d[0]} "
@@ -10368,6 +10401,19 @@ class PartSpace(PerceptualSpace):
                 what_event.shape[0], what_event.shape[1], pad_width,
                 device=dev, dtype=what_event.dtype)
             what_event = torch.cat([what_event, pad], dim=-1)
+        # 5c encode (recon-fidelity plan): stamp each slot's word-tile start as a
+        # .where INSTANT (|.|=1) in the muxed where-band; pad slots (-1) carry no
+        # claim. Input-determined (byte positions), so eval forwards stay bit-identical.
+        _w_enc = self.subspace.whereEncoding
+        if self._meronomy_words and _w_enc.nDim > 0:
+            _w_idx = [int(i) for i in _w_enc.resolve(muxed_width)]
+            # Only stamp when the band lies past the percept content columns.
+            if _w_idx and W.shape[-1] <= _w_idx[0] < muxed_width:
+                _stamp = _w_enc.encode(
+                    word_offset_grid.clamp(min=0).to(torch.float32))
+                _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
+                    _stamp.dtype)
+                what_event[..., _w_idx] = _stamp
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(what_event)
         # The percept ``.where`` belongs on ``subspace.where`` -- the SubSpace
@@ -10386,6 +10432,8 @@ class PartSpace(PerceptualSpace):
             'tokens': batch_tokens, 'indices': pid_grid,
             'percept_store': ps, 'word_groups': word_group_grid,
             'word_texts': word_texts_2d,
+            # 5c: the analysis tiling record the reverse associates against.
+            'tile_spans': span_2d,
         }
         return self.subspace
 
@@ -11882,23 +11930,74 @@ class PartSpace(PerceptualSpace):
         Wd = (int(radix.codebook.shape[-1])
               if radix.codebook is not None else 0)
         content = event[..., :Wd] if 0 < Wd <= embSize else event
-        decoded = radix.reverse(content)             # List[List[bytes]]
         B, N = int(event.shape[0]), int(event.shape[1])
+        # Type-tiling scaffold: the SAME batch's analysis record (5e word-tile
+        # spans per slot) -- the "WS supplies TYPE tiling" carrier the reverse
+        # associates against (design contract, Alec 2026-07-03).
+        fwd = getattr(self, "_forward_input", None) or {}
+        spans_2d = fwd.get("tile_spans")
+        pid_grid = fwd.get("indices")
+        if (spans_2d is not None and pid_grid is not None
+                and tuple(pid_grid.shape[:2]) == (B, N)
+                and len(spans_2d) == B):
+            tile_spans = spans_2d
+        else:
+            tile_spans = None
+        decoded = None                       # legacy full decode, materialized lazily
         tokens = [[] for _ in range(B)]
         words = [[] for _ in range(B)]
         offsets = [[] for _ in range(B)]
+        where_abs = [[] for _ in range(B)]
         for b in range(B):
-            for n in range(N):
-                bs = decoded[b][n] if (decoded and b < len(decoded)
-                                       and n < len(decoded[b])) else b""
-                word = bs.decode("utf-8", errors="replace") if bs else ""
-                off = (_decode_where_offset(positions, b, n, subspace=sub)
-                       if positions is not None else None)
-                words[b].append(word)
-                offsets[b].append(off)
-                tokens[b].append((word, off))
+            # Per-slot .where claims (None below the noise floor -- unwritten band).
+            claims = [(_decode_where_offset(positions, b, n, subspace=sub)
+                       if positions is not None else None) for n in range(N)]
+            # 5d gate: the slots the forward actually populated (scaffold
+            # content slots); the .where claims are the self-contained
+            # fallback when no scaffold rode this batch.
+            if tile_spans is not None:
+                render_set = [n for n in range(N)
+                              if n < len(tile_spans[b])
+                              and tile_spans[b][n][0] >= 0]
+            else:
+                render_set = [n for n in range(N) if claims[n] is not None]
+            if render_set or tile_spans is not None:
+                # 5c: placement is the RUNNING SUM of emitted part sizes (the
+                # type-tiling reading); the absolute band claim (``where_abs``)
+                # CONFIRMS rather than dictates.
+                cum = 0
+                for n in render_set:
+                    span = (tile_spans[b][n]
+                            if tile_spans is not None and n < len(tile_spans[b])
+                            else None)
+                    size = (span[1] - span[0]
+                            if span is not None and span[0] >= 0 else None)
+                    # Arm (a): a maximal part covering exactly the span;
+                    # arm (b): parts-based fallback (unrestricted associate).
+                    pid = radix.associate_span(content[b, n], size=size)
+                    if pid is None and size is not None:
+                        pid = radix.associate_span(content[b, n], size=None)
+                    bs = radix.bytes_for(pid) if pid is not None else b""
+                    word = bs.decode("utf-8", errors="replace") if bs else ""
+                    words[b].append(word)
+                    offsets[b].append(cum)
+                    tokens[b].append((word, cum))
+                    where_abs[b].append(claims[n])
+                    cum += len(bs)
+            else:
+                # Legacy (no stamps anywhere in the row): decode every slot.
+                if decoded is None:
+                    decoded = radix.reverse(content)   # List[List[bytes]]
+                for n in range(N):
+                    bs = decoded[b][n] if (decoded and b < len(decoded)
+                                           and n < len(decoded[b])) else b""
+                    word = bs.decode("utf-8", errors="replace") if bs else ""
+                    words[b].append(word)
+                    offsets[b].append(claims[n])
+                    tokens[b].append((word, claims[n]))
+                    where_abs[b].append(claims[n])
         return {"tokens": tokens, "words": words, "offsets": offsets,
-                "positions": positions, "times": None}
+                "where_abs": where_abs, "positions": positions, "times": None}
 
     def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on PartSpace."""
@@ -15852,6 +15951,9 @@ class ConceptualSpace(Space):
         rows = rows.detach().to(PS_t.device, PS_t.dtype)
         if rows.shape[-1] != PS_t.shape[-1]:
             return PS_t
+        # Snap-read clone (SS-leg lesson): in-graph VQ-EMA writes would
+        # otherwise fail backward's version check on the saved matmul view.
+        rows = rows.clone()
         idx, a = self.factor_percept(PS_t, rows)
         return a.unsqueeze(-1) * rows[idx]
 

@@ -43,7 +43,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--resource-path=.:doc
 
 .PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc clean \
-         train train_micro
+         train train_micro bench_local bench_sync bench_remote bench_pull
 
 all : xor
 
@@ -107,6 +107,58 @@ test_all : $(VENV_STAMP)
 bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="
 	PYTHONPATH=bin $(VENV_PYTHON) test/bench_training.py
+
+# --- Recon fidelity/timing bench (bin/recon_bench.py; doc/plans/2026-07-03-reconstruction-fidelity-execution.md Task 2) ---
+# bench_local pins cpu+eager for reproducibility (MPS is seeded-nondeterministic; the iCloud path space breaks inductor).
+# bench_remote runs on ArborStudio's native path; REMOTE_COMPILE=auto is the compile experiment (Task 8).
+EPOCHS ?= 3
+REMOTE_COMPILE ?= auto
+BASICMODEL_DEVICE ?= cpu
+ARBOR_USER ?= arogers
+ARBOR_HOST ?= ArborStudio.local
+ARBOR_KEY ?= ~/.ssh/id_ed25519_arborstudio
+ARBOR_DEST ?= ~/WikiOracle/basicmodel
+# ARBOR_TUNNEL=1 routes off-LAN via the wikiOracle.org reverse tunnel (parent repo `make ssh`): jump through bitnami@wikiOracle.org to the tunnel listener at 127.0.0.1:2222.
+ARBOR_TUNNEL ?= 0
+ifeq ($(ARBOR_TUNNEL),1)
+ARBOR_HOST = 127.0.0.1
+ARBOR_KEY = /bits/cloud/bin/arssh.pem
+ARBOR_SSH_OPTS = -o ConnectTimeout=15 -i $(ARBOR_KEY) -o IdentitiesOnly=yes \
+	-o HostKeyAlias=ArborStudio-via-wikioracle -o StrictHostKeyChecking=accept-new \
+	-o 'ProxyCommand=ssh -i /bits/cloud/bin/wikiOracle.pem -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -W %h:%p bitnami@wikiOracle.org' \
+	-p 2222
+else
+ARBOR_SSH_OPTS = -o ConnectTimeout=10 -i $(ARBOR_KEY)
+endif
+ARBOR_SSH = ssh $(ARBOR_SSH_OPTS) $(ARBOR_USER)@$(ARBOR_HOST)
+# Excludes: venvs/caches/git plus large regenerable artifacts (fineweb 7.8G, embeddings 5.1G, MNIST 80M, ckpt/kv dumps).
+BENCH_EXCLUDES = --exclude .venv --exclude venv --exclude output --exclude .git \
+	--exclude .claude --exclude .worktrees --exclude __pycache__ --exclude '*.pyc' \
+	--exclude .DS_Store --exclude data/fineweb --exclude data/embeddings \
+	--exclude data/MNIST --exclude data/mnist_test.csv \
+	--exclude 'data/*.ckpt' --exclude 'data/*.kv'
+
+# bench_* default MODEL to the grammar config (train keeps its legacy default); command-line MODEL=... still wins.
+bench_local bench_remote : MODEL = data/MM_20M_grammar.xml
+
+bench_local : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu MODEL_COMPILE=eager $(PYTHON) bin/recon_bench.py $(MODEL) --epochs $(EPOCHS) --out output/
+
+bench_sync :
+	$(ARBOR_SSH) "mkdir -p $(ARBOR_DEST)"
+	rsync -av --progress $(BENCH_EXCLUDES) -e "ssh $(ARBOR_SSH_OPTS)" \
+		./ $(ARBOR_USER)@$(ARBOR_HOST):$(ARBOR_DEST)/
+
+# Non-interactive ssh PATH omits /opt/homebrew/bin (python3.12 venv bootstrap lives there), so prefix it remotely.
+bench_remote : bench_sync
+	$(ARBOR_SSH) "export PATH=/opt/homebrew/bin:\$$PATH && cd $(ARBOR_DEST) && ([ -x .venv/bin/python ] || make install) && \
+		BASICMODEL_DEVICE=$(BASICMODEL_DEVICE) MODEL_COMPILE=$(REMOTE_COMPILE) \
+		PYTHONPATH=bin .venv/bin/python bin/recon_bench.py $(MODEL) --epochs $(EPOCHS) --out output/"
+
+bench_pull :
+	rsync -av -e "ssh $(ARBOR_SSH_OPTS)" \
+		--include 'recon_*.json' --include '*.profile.txt' --exclude '*' \
+		$(ARBOR_USER)@$(ARBOR_HOST):$(ARBOR_DEST)/output/ output/
 
 clean :
 	rm -f BasicModel.pdf

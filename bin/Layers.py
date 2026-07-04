@@ -10292,6 +10292,7 @@ class RadixLayer(Layer):
         initial_cap: Optional[int] = None,
         promotion_threshold: int = 4,
         promotion_min_length: int = 2,
+        word_bounded: bool = False,
         basis=None,
     ) -> None:
         super().__init__(nInput=int(dim), nOutput=int(dim))
@@ -10301,6 +10302,8 @@ class RadixLayer(Layer):
         self.dim: int = int(dim)
         self.promotion_threshold: int = int(promotion_threshold)
         self.promotion_min_length: int = int(promotion_min_length)
+        # 5e word bound: promotion may not cross a word/space/punct boundary.
+        self.word_bounded: bool = bool(word_bounded)
         cap = int(initial_cap) if initial_cap is not None \
             else self.DEFAULT_INITIAL_CAP
         if cap <= 0:
@@ -10385,6 +10388,43 @@ class RadixLayer(Layer):
                 f"RadixLayer.vector_for: percept_id {pid} out of range "
                 f"[0, {self._size})")
         return self.codebook[pid]
+
+    def associate_span(self, vec, size=None):
+        """Nearest ACTIVE percept by cosine (scale-robust to the reverse-path
+        norm inflation), optionally RESTRICTED to percepts of byte-length
+        ``size`` -- the .where contract's arm (a): a maximal part covering
+        exactly the span. Returns a pid, or ``None`` when no candidate exists.
+        NaN/Inf fail loud (mirrors :meth:`reverse`)."""
+        if not torch.is_tensor(vec) or self.codebook is None or self._size <= 0:
+            return None
+        finite = torch.isfinite(vec.detach().cpu())
+        if not bool(finite.all()):
+            raise RuntimeError(
+                "RadixLayer.associate_span: input vector contains NaN/Inf. "
+                "Numerical divergence must surface, not be silently masked.")
+        W = self.codebook[:self._size].detach()
+        target = vec.detach().to(W.device, W.dtype).reshape(-1)
+        if target.shape[0] != W.shape[1]:
+            return None
+        if float(target.norm()) < 1e-12:
+            return None                      # zero vector = no symbol here
+        if size is not None:
+            # Size buckets over active rows; rebuilt when the store grows.
+            cache = getattr(self, "_size_buckets", None)
+            if cache is None or cache[0] != self._size:
+                buckets: dict = {}
+                for pid in range(self._size):
+                    buckets.setdefault(len(self.inverse_table[pid]), []).append(pid)
+                cache = (self._size, buckets)
+                object.__setattr__(self, "_size_buckets", cache)
+            cand = cache[1].get(int(size))
+            if not cand:
+                return None
+            W = W[cand]
+        sims = torch.nn.functional.normalize(W, dim=-1) @ \
+            torch.nn.functional.normalize(target, dim=0)
+        best = int(sims.argmax())
+        return int(cand[best]) if size is not None else best
 
     # ------------------------------------------------------------------
     # Mutation
@@ -10529,7 +10569,8 @@ class RadixLayer(Layer):
             self.byte_fallback.hit_counts[chunk_b] = full_hits + 1
             full_hits = full_hits + 1
         if (full_hits >= self.promotion_threshold
-                and len(chunk_b) >= self.promotion_min_length):
+                and len(chunk_b) >= self.promotion_min_length
+                and self._promotable(chunk_b)):
             new_pid = self.insert(chunk_b, init_vector=combined.detach())
             return combined, int(new_pid)
         return combined, None
@@ -10578,6 +10619,13 @@ class RadixLayer(Layer):
             i += 1
         return pids
 
+    def _promotable(self, chunk_b: bytes) -> bool:
+        """Word-bounded gate (5e): a promotable chunk is ONE word-tiling tile."""
+        if not self.word_bounded:
+            return True
+        import Meronomy  # local: Meronomy imports Layers at module load
+        return len(Meronomy.word_tiling(chunk_b)) <= 1
+
     def observe_chunk(self, chunk: bytes) -> Optional[int]:
         """Frequency-driven concatenation: count a full chunk's sightings
         and promote it to a SINGLE percept once it recurs
@@ -10586,12 +10634,15 @@ class RadixLayer(Layer):
         the mean of the chunk's current spell-out percepts so the new
         concatenated percept starts meaningful (a continuation of what was
         being spelled out). Returns the new percept id on promotion, else
-        ``None`` (already a percept, too short, or below threshold).
+        ``None`` (already a percept, too short, boundary-crossing under
+        ``word_bounded``, or below threshold).
         """
         chunk_b = bytes(chunk)
         if len(chunk_b) < self.promotion_min_length:
             return None
         if chunk_b in self.hash_map:
+            return None
+        if not self._promotable(chunk_b):
             return None
         self._chunk_hits[chunk_b] = self._chunk_hits.get(chunk_b, 0) + 1
         if self._chunk_hits[chunk_b] < self.promotion_threshold:
@@ -13546,11 +13597,14 @@ class ModelLoss(Loss):
         See class docstring for invariants.
         """
         super().__init__()
-        self.reconstruction_scale = float(reconstruction_scale or 0.5)
-        self.what_scale = float(what_scale or 0.7)
-        self.where_scale = float(where_scale or 0.2)
-        self.when_scale = float(when_scale or 0.1)
-        self.embedding_scale = float(embedding_scale or 0.1)
+        # None means unset (config default); an explicit 0.0 is honored (the old `or`-default coerced falsy 0.0 back to the default).
+        def _scale(v, default):
+            return default if v is None else float(v)
+        self.reconstruction_scale = _scale(reconstruction_scale, 0.5)
+        self.what_scale = _scale(what_scale, 0.7)
+        self.where_scale = _scale(where_scale, 0.2)
+        self.when_scale = _scale(when_scale, 0.1)
+        self.embedding_scale = _scale(embedding_scale, 0.1)
         # Loss operates on the OUTPUT space_role, which carries no where/when in the
         # converged modality architecture; source the what/where/when split
         # widths from canonical_shape("OutputSpace"). An explicit positive arg
@@ -13576,15 +13630,18 @@ class ModelLoss(Loss):
         """
         return self.output_criterion(pred, target)
 
-    def compute(self, pred, target):
+    def compute(self, pred, target, nWhere=None, nWhen=None):
         """Per-slot MSE with what/where/when weighting (legacy).
 
-        Used when nWhere == 0 (no positional encoding).  When nWhere > 0,
-        the training loop calls ``compute_piecewise`` instead.
+        The constructor band defaults to canonical_shape("OutputSpace")
+        == (0, 0) -- right for the lossOut call (output events carry no
+        band), wrong for event comparisons: call sites comparing muxed
+        ``[what|where|when]`` events pass their own layout's widths
+        (the 2026-07-04 nWhere=0 lossRev wiring fix).
         """
         embSize = pred.shape[-1]
-        nWhere = self.nWhere
-        nWhen = self.nWhen
+        nWhere = self.nWhere if nWhere is None else int(nWhere)
+        nWhen = self.nWhen if nWhen is None else int(nWhen)
         nWhat = embSize - nWhere - nWhen
 
         loss = pred.new_tensor(0.0)
@@ -13599,7 +13656,7 @@ class ModelLoss(Loss):
                 pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
         return loss
 
-    def compute_masked(self, pred, target, mask):
+    def compute_masked(self, pred, target, mask, nWhere=None, nWhen=None):
         """Sync-free equivalent of ``compute(pred[mask], target[mask])``.
 
         ``pred`` / ``target``: ``[B, K, *]``; ``mask``: ``[B, K]`` bool.
@@ -13614,13 +13671,15 @@ class ModelLoss(Loss):
         ``nan_to_num`` gate). Matches ``compute``'s ``embSize =
         pred.shape[-1]`` by first clipping to the shared last dim, as
         the call sites did via ``[:, :D]``. fp reduction order differs
-        from the gather form (ULP-level), not the value.
+        from the gather form (ULP-level), not the value. Like ``compute``,
+        per-call ``nWhere``/``nWhen`` override the constructor band
+        (the 2026-07-04 silent-band lossIn wiring fix); ``None`` keeps it.
         """
         D = min(pred.shape[-1], target.shape[-1])
         p = pred[..., :D]
         t = target[..., :D]
-        nWhere = self.nWhere
-        nWhen = self.nWhen
+        nWhere = self.nWhere if nWhere is None else int(nWhere)
+        nWhen = self.nWhen if nWhen is None else int(nWhen)
         nWhat = D - nWhere - nWhen
 
         se = (p - t) ** 2                          # [B, K, D]
@@ -13883,7 +13942,9 @@ class Error:
             }
         else:
             rec["value"] = rec["value"] + value
-            rec["count"] += 1
+            # count is telemetry-only; skip the in-trace int bump so dynamo mints no ``count == N`` recompile guard.
+            if not torch.compiler.is_compiling():
+                rec["count"] += 1
 
     def compute(self, name: str, pred, target, *,
                 weight: float = 1.0, method: str = "compute",

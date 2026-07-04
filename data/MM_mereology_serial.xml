@@ -33,12 +33,6 @@
          (sentenceProtocol, on by default in serial). -->
     <serialObjectMeta>true</serialObjectMeta>
 
-    <!-- Basic-level bounds for the overcomplete part-tiling (Eleanor Rosch's
-         "basic level"); "size in .what" for text = letter count, range 0..24
-         (len "disestablishmentarianism"). Read only under <mereologyRaise>. -->
-    <basicLevelMinSize>0</basicLevelMinSize>
-    <basicLevelMaxSize>24</basicLevelMaxSize>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>xor</dataset>

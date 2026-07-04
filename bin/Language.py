@@ -2358,11 +2358,12 @@ def _make_lex_gate(n_in, rank, seed, bias=1.4722):
     sigma fold until training shapes it.
     """
     lex = torch.nn.utils.skip_init(nn.Linear, int(n_in), int(rank))
-    gen = torch.Generator()
+    # Seeded draw on CPU (device-agnostic bytes); .copy_ moves it to lex.weight's device.
+    gen = torch.Generator(device="cpu")
     gen.manual_seed(int(seed))
     with torch.no_grad():
         lex.weight.copy_(
-            torch.randn(lex.weight.shape, generator=gen) * 0.05)
+            torch.randn(lex.weight.shape, generator=gen, device="cpu") * 0.05)
         lex.bias.fill_(float(bias))
     return lex
 

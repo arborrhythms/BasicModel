@@ -40,16 +40,6 @@
          SS leg. Default false everywhere else -> byte-identical 2-stream bind. -->
     <symbolTower>true</symbolTower>
 
-    <!-- Basic-level bounds for the overcomplete part-tiling (Eleanor Rosch's
-         "basic level"). "Size in .what" for a TEXT model = count of letters,
-         so a part ranges from 0 (the Universe / no committed letters) up to
-         the longest reasonable word: len("disestablishmentarianism") == 24.
-         Matches outside [0, 24] are too general or too specific to keep.
-         Refine these for non-text models (where size is the committed-property
-         count in the relevant basis). Read only under <mereologyRaise>. -->
-    <basicLevelMinSize>0</basicLevelMinSize>
-    <basicLevelMaxSize>24</basicLevelMaxSize>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>xor</dataset>

@@ -20,8 +20,12 @@ import warnings
 
 # Prevent OMP fork-safety crash on macOS when multiple libs load OpenMP
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
-# Force GPU for unit tests (must be set before BasicModel import)
-os.environ["BASICMODEL_DEVICE"] = "gpu"
+# gpu preference is applied at RUN time (see _prefer_gpu_device below), not
+# here: conftest.py's setdefault("cpu") always runs first (pytest loads
+# conftest before any test module), so a collection-time assignment here
+# used to unconditionally clobber both that default AND a real user
+# override -- the same collection-vs-runtime hazard test_pilayer_log_domain_
+# finite.py already works around for init_device().
 
 import numpy as np
 import torch
@@ -35,9 +39,29 @@ import Models
 import Spaces
 import Language
 import Layers
+from util import init_device, resolve_device
 
 
 _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _prefer_gpu_device():
+    """Prefer gpu for this module at RUN time, not import/collection time.
+
+    conftest's setdefault always sets BASICMODEL_DEVICE=cpu first, so by
+    the time this module's body runs the var is never "unset" -- it is
+    either the user's real export or conftest's cpu default, and those
+    are indistinguishable via plain os.environ.get. conftest also stashes
+    "_BASICMODEL_DEVICE_EXPLICIT" (captured before its own setdefault) so
+    this module can tell the two apart and yield to a real override.
+    init_device() re-resolves regardless of which module imported util
+    first; conftest's _restore_process_device fixture unwinds this when
+    the module's tests finish.
+    """
+    if os.environ.get("_BASICMODEL_DEVICE_EXPLICIT") != "1":
+        init_device(str(resolve_device("gpu")))
+    yield
 
 
 def _wrap_tensor(space, x):

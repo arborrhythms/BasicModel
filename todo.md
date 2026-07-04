@@ -1,46 +1,56 @@
 
+* Implement doc/plans/2026-07-04-where-when-encoding-*.md
 
-* RECONSTRUCTION FIDELITY (Task 10, deferred design work from
-doc/plans/2026-07-02-two-phase-loops-sparse-relation.md): the remaining issue is not rendering
-but quality — weak loss magnitude, near-zero .where recovery, and content decoding at the wrong
-granularity. Coupled 2026-07-03 findings (EXECUTION NOTES in
-doc/plans/2026-07-03-iterated-symbolic-loop-execution.md): the conceptual wave runs DARK on
-production XOR (the snap source rectifies to ~0 on the settled field, so the symbolic side never
-trains) and stage CS stores are sized from the stage output width instead of <nVectors> (N=8 at
-runtime vs 32 configured; snap block overflows from batch 1). Design pass needed (brainstorm
-before code): snap source magnitude, nVectors wiring, and decode granularity together.
+* Implement doc/plans/2026-07-04-serial-derivation-reconstruction-design.md
+
+* .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
+
+* The execution notes explicitly say residual mismatch is still slot alignment and pad-slot decode pollution, with .where stamp/decode untouched: [execution notes (line 696)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/plans/2026-07-03-reconstruction-fidelity-execution.md:696).
+
+* Wave brightness and Task 11 nVectors wiring are explicitly parked out of scope: [design scope (line 36)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/plans/2026-07-03-reconstruction-fidelity-design.md:36).
+
+* COMPILE/PERF residual (Task 8 census, doc/plans/2026-07-03-reconstruction-fidelity-execution.md). Two churns FIXED bit-identical: `len(out_slot)` guard -> pad-to-fixed-K (Models.py `_forward_body_per_word`); `vspace.errors['*']['count']` in-trace bump -> `is_compiling()` gate (Layers.py:13945). Inductor now amortizes ~2.6x vs eager (same host). REMAINING: the `p == N` per-word cursor guard (Models.py:7848 `out_slot[p]`, gaussian center Models.py:3020 `k=int(center_k)`) sits EXACTLY at `cache_size_limit=8` (reaches 8/7) — a longer sentence / larger config blows it. Principled fix = the NULL-word + power-of-two loop-bucket pathway captured in doc/plans/2026-07-04-serial-derivation-reconstruction-design.md; stopgap = small `recompile_limit` bump or tensorize the cursor int. Compile-default policy (Alec): DEBUG = none/eager (skip autotune); PRODUCTION = inductor past the amortization break-even.
+
+* GPU/CUDA PORTABILITY (Task 8 GPU rung; blocks the borrowed CUDA server; GPU-first policy = everything on GPU by default). CPU-Generator-vs-device bug class SWEPT and fixed across bin/ (Language.py:2366, References.py:58-62; all other generator sites classified clean). REMAINING blockers before a full non-CPU grammar epoch: (1) MPS OOM on the 65536-row PS codebook — codebook/device-memory sizing, MPS-specific; (2) `AttributeError: 'NoneType'.is_empty` at bin/Spaces.py:21315 (`outputSpace.forward`, a subspace returns None) on the non-CPU forward path — device-independent-looking, needs root-cause.
+
+* FULL-SUITE STATUS before relying on green: last `make test` was Gate 3 = 2971 passed / 0 failed, taken BEFORE the four post-Gate-3 fixes (len-churn pad, MPS/References generator sweep, count-churn gate). Each passed its targeted gate + the 24-test RUN_SLOW fidelity gate, but NOT a combined full-suite run — run a fresh `make test` on the committed tree to confirm the combined state (the Gate-4 close).
 
 * The "Codebook.property_basis" is a hack that needs to be removed. Please summarize the WholeSpace property mechanism. You said properties "are" WholeSpace.what. But that codebook currently holds the symbol/truth prototypes wired into the codebook-snap machinery; making properties the live .what semantics would rip that out and move the basin. So I built the property capability as opt-in/additive (Codebook.property_basis) alongside the existing symbol codebook, not as a wholesale replacement. If you intended the live cutover, that's a separate deliberate step.
+  * Codebook.property_basis = False still exists: [bin/Spaces.py (line 2599)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:2599)
+  * SubSpace.materialize(mode="property") only routes through property materialization when .what.property_basis is true: [bin/Spaces.py (line 6718)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/Spaces.py:6718)
+  * The docs explicitly describe it as “additive and opt-in”: [doc/Spaces.md (line 41)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/doc/Spaces.md:41)
 
-* Pelase make sure that the folllowing is wired into training: the model/train-level two-pass driver that runs the forward twice and applies two_pass_loss; the optional MLPTransformChooser; the soft-codebook option.
+* Implement user TruthSet-to-LTM integration.
+  * WikiOracle parses the user-supplied XML <truthSet> into the /chat/completions request body as truth entries; bin/serve.py passes those to BaseModel.store_truths(entries). Today store_truths() still clears and writes SymbolSpace.truth_layer, while STM-derived memory and config-time <architecture><truthSet> provisioning write to symbolSpace.ltm_store when <ltmConsolidation>true.
+  * Change store_truths(entries) so user-supplied truth entries append into the consolidated TernaryTruthStore LTM (symbolSpace.ltm_store) alongside STM-derived rows. Then make TruthLayer a compatibility/interface layer over the LTM tensor, or migrate its callers, so luminosity, falsity penalty, consistency, clarifications, and truth assessment read the same LTM-backed user truth data instead of a separate truth_layer.truths buffer.
+  * Acceptance criteria: user XML TruthSet rows and STM-derived rows coexist in one persistent LTM store; TruthLayer no longer owns a separate canonical user-truth store; existing server truth request handling continues to surface clarifications/truth assessment; LTM consolidation tests plus runtime TruthSet ingestion tests cover the new path.
 
-* The TruthLayer had been a container for user truth, and to some degree it has been replaced by the LTM.
-For simplicity, it would be better to add user Truth to the LTM, and have TruthLayer be an interface to that tensor.
 
-* Make sure the chart parser predicts masked words, so that we can train it predictions. To do so, it will be useful to consider the cateogry of the word and attention over all concepts.
+* Deliverable: create a dedicated masked semantic reconstruction training config.
+  * Add a new XML training file derived from the masked IR config, but with the parser-side semantic context enabled. It should train masked-word reconstruction/prediction, not plain byte reconstruction: set a nonzero training.maskRate, use reconstruction-heavy loss (reconstructionScale high enough to dominate), keep sentencePrediction enabled, and enable the symbolic/category machinery needed for the parser to use word category evidence during reconstruction.
+  * The config should also enable bottom-up concept attention: use the sparse conceptual loop path with symbolicOrder > 0, parallel symbolic execution, mereologyRaise, symbolTower, and the concept inventory sized so snap rows plus relation-pool rows cannot overflow. The goal is that a masked word is predicted from both its parser category/semantic-whole evidence and bottom-up attention over all active concepts.
+  * Acceptance criteria: running this config performs masked IR training; masked positions contribute reconstruction loss; parser/category evidence is visible in the reconstruction path; concept attention/wave is live, not dark; and a targeted smoke test confirms masked-word predictions change when category evidence or concept-attention state is disabled.
 
-* Learning a new concept is a parallel symbolic operation that may not be active at the same time as grammatical processing (serial mode). 
-Ensure that we spend enough tim learning the definitons of words (I think we do Subsymbolic before Symbolic order, can we do symbolic order in addition to serial processing?).
+* Make abstraction order canonical
+  * the ramsification record has to become part of the normal codebook contract, not an optional sidecar. Every PS/WS codebook row that can represent a percept, word, type, or higher-order definition should carry fold provenance: for each subsymbolicOrder pass, whether that row was produced through Sigma, Pi, or neither. The scalar “order” should remain a derived readout, abstraction_order(row) = count(non-NEITHER folds), not separately stored state.
+  * The main missing wiring is live stamping. Today the table exists and higher-order minting can stamp some rows, but the actual subsymbolic pump loop does not consistently call record_fold when a row is routed through PS synthesis or WS analysis. That needs to move into the canonical forward path: whenever a codebook row is created, selected, raised, or rewritten by a sigma/pi pass, the corresponding fold slot for that pass should be updated. This makes order provenance a normal consequence of processing rather than a special feature behind mereologyRaise.
+  * The opt-in flag can be removed once ramsification allocation is cheap and universal. Allocate the table for relevant codebooks at creation time using max_order = max(1, architecture.subsymbolicOrder), grow it with the codebook, and reset nothing on ordinary document boundaries. Keep it non-gradient metadata, but decide whether it should persist. If explicit-constraint retraining depends on it after reload, it should ride checkpoint metadata or a sidecar serialization path; leaving it out of state_dict is only safe while it is reconstructible from deterministic build/mint history.
+  * Explicit-constraint retraining should consume the fold provenance directly. A constraint should resolve the affected lexical/concept row, inspect its fold sequence, and route the update through the matching inverse path using invert_ramsified or an equivalent per-pass inversion. That lets “this word’s abstract definition changed” update the high-order semantic representation without clobbering the low-order perceptual form. It also lets constraints target the right layer: raw token identity, basic category, count/type noun, or higher-order definition.
+  * Finally, tests should enforce the canonical contract. Build a model without any mereologyRaise flag and assert PS/WS codebooks have ramsification tables. Run a multi-pass forward and assert selected or minted rows receive expected Sigma/Pi fold stamps. Verify abstraction_order is stable after codebook growth and reload, and add a small explicit-constraint training test showing that an abstract definition update changes the intended high-order row while preserving low-order reconstruction.
 
-* The "persisted episodic store of perceptual events" is an LTM store that corresponds to the words instead of the ideas composed of objects. Right now we treat words symbolically; that is their primary use case. However, the parser needs to extract word context to become a fluent symbol manipulator.
-So the encoding of the words themselves, qua words, is not being done except in the mereology of the partSpace and wholeSpace.
-So we need to store information about the context of words; that is where all of the power of word2vec comes from, which is a significant source of knowing that should not be ignored.
-How might we well-capture that in this architecture? There is no context learning happening above symbolic encoding; might we regard the conceptual taxonomy, currently storing pairwise associations, as a bit of a markoff chain? Is there a way to do that which maintains pairwise relations, but which allows a nonlinearity at each association to add information to higher network levels?
+* Turn on <subsymbolicStack>true</subsymbolicStack> and remove that parameter
 
-The gap, stated precisely. A word here currently has three encodings, all hard/structural: its symbolic identity (codebook index), its orthographic mereology (PartSpace bytes/radix → WholeSpace word-as-whole), and its grammatical/taxonomic relations (the pairwise edges). What's missing is the fourth, soft/distributional one — meaning-from-company — which is the whole of word2vec's contribution. And you're right that it's a major source of knowing: the taxonomy tells you men ⊑ mortal; the distributional geometry tells you king − man + woman ≈ queen — graded analogical structure that no pairwise edge-set encodes.
+* document the relation of this architecture to LLMs, Formal Concept Analysis, and DisCoCat
 
-* Formal Concept Analysis, DisCoCat
+* My understanding of the relation table is that there is one concept index associated with one symbol index per row. 
+* That is sufficient for a vine (ordering), since there is an order between the concept and the concept that symbol references.
+* That is sufficient for set definition, since the table may contain multiple concept indices, thus allowing a single concept to accumulate multiple symbols.
 
-* A code's basis is expressed at one of several orders, and therefore the codebooks must be ramsified. Please analyse this. 
+* Implement doc/plans/2026-07-04-attention-to-relation-promotion.md
+* Sentences create explicit knowledge if they pass a criterion:
+  learn_score = children_in_codebook * is_truth_obvious * resolves_contradiction
+  accept iff learn_score >= truth_criterion and truth_criterion < 1
 
-* The process of naming/identifying may require traversing multiple orders before a symbol can be matched with its meaning.
-
-* Full LLM expressivity requires multiple layers of DISTINCT Sigma/Pi matrices. Lets enable that. 
-
-* Ensure that we are store explicit Taxonymic knowledge when processing a definiton.
-This should only happen when some measure of sentence confidence is high.
-
-* Any improvement to machine cognition must accelerate kindness or altruism instead of simply increasing performance, otherwise the uncaring architecture that we currently have will become more dangerous. Further, it is necessary to increase that kind motivation (e.g. empathy in the cost function) since LLM performance is increasing all the time. In other words, ananda in the sense of love for all beings must be more important than chit for the cost function, whereas the current situation is implementing ananda by maximizing chit and then putting a few of Asimov's guardrails on the output, which is a famous failure mode in terms of it's loopholes. Prohibition of self-knowledge is a likely failure mode, in that it may prevent an enlightened view of self and force an egocentric view of self.
 
 ================================== April 24 ==================================
 

@@ -339,22 +339,36 @@ mean-collapse fix): *many parts $\to$ one whole* = under-analysed; *one part $\t
 until words emerge as parts. MM_20M collapses because its byte chunker never climbs
 and its analyser never descends, so no word-granularity parts exist for XOR.
 
-**Design decision (2026-06-29, REVISIT) -- locking in the "basic level" of
-analysis.** The mereological analysis should converge on and STABILISE at Eleanor
-Rosch's BASIC LEVEL -- the granularity where the part-whole ratio is correct
-(neither many-parts-one-whole nor one-part-one-whole). The radix climb builds parts
-UPWARD (byte -> prefix -> word -> ...); left unbounded it over-climbs (a whole short
-sentence promotes to one percept). Two principled brakes hold it at the basic level:
-(a) the ``<basicLevelMinSize>`` / ``<basicLevelMaxSize>`` size bounds (for TEXT, a
-part is ``[0, 24]`` letters -- "size in `.what`" = letter count); and (b) the
-part-whole-ratio convergence signal above (request more synthesis/analysis until the
-ratio is right). The ideal is to LOCK IN whatever basic level the corpus implies. As
-a pragmatic HEDGE -- and because **word-level is essentially the basic level for a
-symbolic LLM** -- the analyser may simply cut on whitespace (PS observes/promotes per
-WHITESPACE-cut word so the parts top out at word size; see ``PartSpace._embed_radix``
-under ``_meronomy_words``). The size bound (24) is too loose to separate a short
-sentence from its words on its own, so the word cut is the operative brake today; the
-full ratio-driven basic-level convergence is the to-revisit principled version.
+**Design decision (2026-06-29, REVISIT; brake updated 2026-07-03) -- locking in the
+"basic level" of analysis.** The mereological analysis should converge on and
+STABILISE at Eleanor Rosch's BASIC LEVEL -- the granularity where the part-whole
+ratio is correct (neither many-parts-one-whole nor one-part-one-whole). The radix
+climb builds parts UPWARD (byte -> prefix -> word -> ...); left unbounded it
+over-climbs (a whole short sentence promotes to one percept). Two principled brakes
+hold it at the basic level: (a) a STRUCTURAL bound -- word tiling: a chunk cannot
+cross a word boundary, where the cut is WHITESPACE AND PUNCTUATION (separator runs
+-- whitespace or punctuation -- are themselves maximal same-class tiles that get
+observed/promoted just like word tiles; see ``PartSpace._embed_radix`` under
+``_meronomy_words`` and ``RadixLayer``'s ``word_bounded`` promotion gate); and (b)
+the part-whole-ratio convergence signal above (request more synthesis/analysis
+until the ratio is right). The ideal is to LOCK IN whatever basic level the corpus
+implies. As a pragmatic HEDGE -- and because **word-level is essentially the basic
+level for a symbolic LLM** -- the analyser cuts on the word tiling (PS
+observes/promotes per tile so parts top out at word size), which is a hard
+structural bound rather than a size threshold: the earlier ``<basicLevelMinSize>``
+/ ``<basicLevelMaxSize>`` letter-count bounds were too loose to separate a short
+sentence from its words on their own, could not express "don't cross a boundary"
+at all, and are now REMOVED (dead config, never wired to anything -- the word
+tiling supersedes them); the full ratio-driven basic-level convergence remains the
+to-revisit principled version.
+
+**Design contract -- types from properties, word-sized `.where` (Alec, 2026-07-03).**
+The enabled analysis methods are a set of PROPERTIES identifying the TYPES we
+attend to, dividing the input (left of space, right of space, punctuation,
+numbers) into word-sized objects. Each object's `.where` then either (a)
+ASSOCIATES with a maximal part from PS -- a promoted percept covering exactly
+that span -- or (b) is SENT BACK to PS to produce a parts-based definition
+covering exactly that `.where` (spell-out bounded by the span).
 
 ### Explicit concepts $\longleftrightarrow$ implicit subsymbolic representations (dual-coded, 2026-06-21)
 

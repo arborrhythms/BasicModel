@@ -19,6 +19,7 @@ import sys
 # and order-independent. An explicit BASICMODEL_DEVICE in the
 # environment still overrides (setdefault); device-detection unit tests
 # (test_util_device) pop/restore the variable themselves.
+os.environ.setdefault("_BASICMODEL_DEVICE_EXPLICIT", "1" if "BASICMODEL_DEVICE" in os.environ else "0")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

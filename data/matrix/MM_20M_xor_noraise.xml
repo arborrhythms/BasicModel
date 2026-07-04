@@ -1,21 +1,14 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- MM_20M_xor: supervised XOR on the MM_20M meronomy pipeline.
-
-       A sibling of MM_20M_legacy.xml that does supervised XOR with
-       the MEREOLOGICAL analysis/synthesis pair:
-         - PartSpace  <synthesis>meronomy</synthesis>  (parts -> whole)
-         - WholeSpace <analysis>meronomy</analysis>     (whole -> parts, the 1-x
-           dual of the synthesizer)
-       lexer resolves to raw under meronomy analysis, so use_byte_cursor=False
-       and the supervised out_items (the {0,1} XOR labels) reach the head,
-       unlike the byte-cursor AR path in MM_20M_legacy.xml, which stubs the label to 0.
-
-       The OutputSpace trains at lrScale=0.5 (the two-timescale fix, mirrors
-       XOR_exact): without it the readout co-adapts with the moving upstream
-       features and settles at the data mean (~0.5), the documented MM_20M
-       mean-collapse. -->
+  <!-- MATRIX VARIANT of data/MM_20M_xor.xml (config-matrix Task 7, plan
+       doc/plans/2026-07-03-reconstruction-fidelity-execution.md). ONE FLAG
+       FLIPPED: mereologyRaise true (parent) to false (here). With raising off,
+       perception's autobind hook allocates no ramsification table and mints no
+       order-0 word-whole binding; the analyser still stages word spans but no
+       word-granularity concepts are minted from them. Smoke tier only (builds,
+       one capped epoch, finite losses, decode executes). Everything else is
+       verbatim from the parent. -->
   <architecture>
     <!-- symbolicOrder=0: the sO=0 CONTROL for the XOR experiments. The
          symbolic wave phase is disabled (no snap, no AttentionLayer); the
@@ -27,10 +20,10 @@
     <subsymbolicOrder>3</subsymbolicOrder>
     <l1Lambda>0.01</l1Lambda>
     <sigmaPi>butterfly</sigmaPi>
-    <!-- mereologyRaise: mint the order-0 word-whole binding so word-granularity
-         concepts (hello/world) exist as parts at their .where. Without this the
-         analyser stages word spans but no concepts are minted from them. -->
-    <mereologyRaise>true</mereologyRaise>
+    <!-- FLIPPED for this variant: mereologyRaise OFF (parent MM_20M_xor sets
+         true). Off means no meronymic lattice is built in perception and no
+         order-0 word-whole concepts are minted. -->
+    <mereologyRaise>false</mereologyRaise>
 
     <data>
       <dataType>embedding</dataType>

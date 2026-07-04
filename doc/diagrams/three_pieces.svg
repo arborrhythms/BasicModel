@@ -1,4 +1,4 @@
-<svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+<svg viewBox="0 0 960 680" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/>
@@ -6,117 +6,140 @@
     <marker id="arrP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b2d91"/>
     </marker>
+    <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9a6b00"/>
+    </marker>
   </defs>
+  <rect width="960" height="680" fill="#ffffff"/>
 
   <!-- Title -->
-  <text x="480" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#222">The three pieces: Mereology · Attention · Thought</text>
-  <text x="480" y="50" text-anchor="middle" font-size="12" fill="#666">parallel pass shapes percepts — serial pass shapes references (GrammarOpsPass §6d)</text>
+  <text x="480" y="30" text-anchor="middle" font-size="24" font-weight="bold" fill="#222">Comparison with the Transformer Architecture</text>
+  <text x="480" y="54" text-anchor="middle" font-size="14" fill="#666">Transformer weights hide structure; BasicModel exposes spaces, references, context and symbolic relations.</text>
+  <text x="480" y="74" text-anchor="middle" font-size="14" fill="#666">Objects, context and relation order are explicit rather than learned only in weights.</text>
 
+  <g transform="translate(0 40)">
   <!-- Column headers -->
-  <text x="330" y="84" text-anchor="middle" font-size="15" font-weight="bold" fill="#444">LLM</text>
-  <text x="725" y="84" text-anchor="middle" font-size="15" font-weight="bold" fill="#444">BasicModel</text>
+  <text x="330" y="82" text-anchor="middle" font-size="17" font-weight="bold" fill="#444">Transformer / LLM</text>
+  <text x="725" y="82" text-anchor="middle" font-size="17" font-weight="bold" fill="#444">BasicModel</text>
 
-  <!-- ============ Band 1: MEREOLOGY (parallel) ============ -->
-  <rect x="20" y="98" width="920" height="158" rx="8" fill="#eef4fb" stroke="#b8cfe8"/>
-  <!-- left gutter labels (x < 182 only) -->
-  <text x="28" y="122" font-size="13" font-weight="bold" fill="#2a5d9c">1 · MEREOLOGY</text>
-  <text x="28" y="138" font-size="11" fill="#2a5d9c">(+ symbol table)</text>
-  <text x="28" y="160" font-size="10" font-weight="bold" fill="#2a5d9c">PARALLEL</text>
-  <text x="28" y="174" font-size="9" fill="#2a5d9c">shaped by the parallel pass</text>
-  <text x="28" y="188" font-size="9" fill="#2a5d9c">percept-based · symbolic</text>
+  <!-- ============ Band 1: MEREOLOGY ============ -->
+  <rect x="20" y="94" width="920" height="122" rx="8" fill="#eef4fb" stroke="#b8cfe8"/>
+  <text x="28" y="118" font-size="15" font-weight="bold" fill="#2a5d9c">1 · MEREOLOGY</text>
+  <text x="28" y="136" font-size="12.5" fill="#2a5d9c">part / whole structure</text>
+  <text x="28" y="158" font-size="11.5" font-weight="bold" fill="#2a5d9c">PARALLEL</text>
+  <text x="28" y="174" font-size="10.5" fill="#2a5d9c">percept-based</text>
 
-  <!-- LLM mereology -->
-  <rect x="190" y="116" width="280" height="120" rx="6" fill="#fff" stroke="#999"/>
-  <text x="330" y="140" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">completely subsymbolic</text>
-  <text x="330" y="158" text-anchor="middle" font-size="11" fill="#555">implicit in the weights;</text>
-  <text x="330" y="173" text-anchor="middle" font-size="11" fill="#555">never surfaced as structure</text>
-  <text x="330" y="207" text-anchor="middle" font-size="22" fill="#aaa" letter-spacing="3">▦ ▦ ▦ ▦</text>
+  <rect x="190" y="108" width="280" height="88" rx="6" fill="#fff" stroke="#999"/>
+  <text x="330" y="132" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">mostly implicit</text>
+  <text x="330" y="151" text-anchor="middle" font-size="12.5" fill="#555">part-whole regularities are</text>
+  <text x="330" y="168" text-anchor="middle" font-size="12.5" fill="#555">distributed through weights</text>
+  <text x="330" y="188" text-anchor="middle" font-size="18" fill="#aaa" letter-spacing="3">▦ ▦ ▦ ▦</text>
 
-  <!-- BasicModel mereology: sigma tower | table | pi tower -->
-  <!-- sigma captions (outside, left of the triangle) -->
-  <text x="560" y="152" text-anchor="end" font-size="11" font-weight="bold" fill="#2a5d9c">σ tower</text>
-  <text x="560" y="166" text-anchor="end" font-size="9" fill="#2a5d9c">extents (PS)</text>
-  <text x="560" y="180" text-anchor="end" font-size="9" fill="#666">bottom-up</text>
-  <!-- sigma tower: apex up -->
-  <path d="M 570 230 L 640 230 L 605 140 Z" fill="#dbe9f7" stroke="#2a5d9c" stroke-width="1.5"/>
+  <text x="560" y="126" text-anchor="end" font-size="12.5" font-weight="bold" fill="#2a5d9c">σ tower</text>
+  <text x="560" y="142" text-anchor="end" font-size="10.5" fill="#2a5d9c">extents (PS)</text>
+  <path d="M 570 198 L 640 198 L 605 118 Z" fill="#dbe9f7" stroke="#2a5d9c" stroke-width="1.5"/>
 
-  <!-- symbol table -->
-  <text x="725" y="150" text-anchor="middle" font-size="10" font-weight="bold" fill="#b8860b">symbol table</text>
-  <rect x="685" y="158" width="80" height="56" rx="4" fill="#fff" stroke="#b8860b" stroke-width="1.5"/>
-  <line x1="685" y1="172" x2="765" y2="172" stroke="#b8860b"/>
-  <line x1="685" y1="186" x2="765" y2="186" stroke="#b8860b"/>
-  <line x1="685" y1="200" x2="765" y2="200" stroke="#b8860b"/>
-  <line x1="725" y1="158" x2="725" y2="214" stroke="#b8860b"/>
-  <text x="725" y="230" text-anchor="middle" font-size="9" fill="#b8860b">word ↔ object (references)</text>
-  <!-- connectors at the table's mid-height -->
-  <line x1="628" y1="186" x2="685" y2="186" stroke="#888" stroke-dasharray="3,2"/>
-  <line x1="765" y1="186" x2="827" y2="186" stroke="#888" stroke-dasharray="3,2"/>
+  <text x="725" y="124" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#b8860b">symbol table</text>
+  <rect x="685" y="132" width="80" height="52" rx="4" fill="#fff" stroke="#b8860b" stroke-width="1.5"/>
+  <line x1="685" y1="145" x2="765" y2="145" stroke="#b8860b"/>
+  <line x1="685" y1="158" x2="765" y2="158" stroke="#b8860b"/>
+  <line x1="685" y1="171" x2="765" y2="171" stroke="#b8860b"/>
+  <line x1="725" y1="132" x2="725" y2="184" stroke="#b8860b"/>
+  <text x="725" y="202" text-anchor="middle" font-size="10.5" fill="#b8860b">words point to objects</text>
+  <line x1="628" y1="158" x2="685" y2="158" stroke="#888" stroke-dasharray="3,2"/>
+  <line x1="765" y1="158" x2="827" y2="158" stroke="#888" stroke-dasharray="3,2"/>
 
-  <!-- pi tower: apex down -->
-  <path d="M 810 140 L 880 140 L 845 230 Z" fill="#e8ddf3" stroke="#6b3fa0" stroke-width="1.5"/>
-  <!-- pi captions (outside, right of the triangle) -->
-  <text x="890" y="152" text-anchor="start" font-size="11" font-weight="bold" fill="#6b3fa0">π tower</text>
-  <text x="890" y="166" text-anchor="start" font-size="9" fill="#6b3fa0">intents (SS)</text>
-  <text x="890" y="180" text-anchor="start" font-size="9" fill="#666">top-down</text>
+  <path d="M 810 118 L 880 118 L 845 198 Z" fill="#e8ddf3" stroke="#6b3fa0" stroke-width="1.5"/>
+  <text x="878" y="126" text-anchor="start" font-size="12.5" font-weight="bold" fill="#6b3fa0">π tower</text>
+  <text x="878" y="142" text-anchor="start" font-size="10.5" fill="#6b3fa0">intents (SS)</text>
 
-  <!-- ============ Band 2: ATTENTION (parallel) ============ -->
-  <rect x="20" y="268" width="920" height="112" rx="8" fill="#fdf6e9" stroke="#e6d3a8"/>
-  <text x="28" y="292" font-size="13" font-weight="bold" fill="#9a6b00">2 · ATTENTION</text>
-  <text x="28" y="312" font-size="10" font-weight="bold" fill="#9a6b00">PARALLEL</text>
+  <!-- ============ Band 2: REASONING ============ -->
+  <rect x="20" y="226" width="920" height="112" rx="8" fill="#f0ebf7" stroke="#cdb8e6"/>
+  <text x="28" y="250" font-size="15" font-weight="bold" fill="#5b2d91">2 · REASONING</text>
+  <text x="28" y="272" font-size="11.5" font-weight="bold" fill="#5b2d91">SERIAL</text>
+  <text x="28" y="290" font-size="10.5" fill="#5b2d91">shapes references</text>
 
-  <!-- LLM attention -->
-  <rect x="190" y="284" width="280" height="80" rx="6" fill="#fff" stroke="#999"/>
-  <text x="330" y="306" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">QKV per subsymbolic layer</text>
-  <text x="330" y="326" text-anchor="middle" font-size="11" fill="#555">pairwise (quadratic) over tokens,</text>
-  <text x="330" y="341" text-anchor="middle" font-size="11" fill="#555">repeated at every layer</text>
+  <rect x="190" y="244" width="280" height="76" rx="6" fill="#fff" stroke="#999"/>
+  <text x="330" y="266" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#333">priors for AR(1) word prediction</text>
+  <text x="330" y="285" text-anchor="middle" font-size="12.5" fill="#555">next-token distribution,</text>
+  <text x="330" y="302" text-anchor="middle" font-size="12.5" fill="#555">one token at a time</text>
+  <text x="330" y="318" text-anchor="middle" font-size="12.5" fill="#888">w_t → w_{t+1}</text>
 
-  <!-- BasicModel attention: star over the three structures -->
-  <text x="598" y="296" text-anchor="end" font-size="9" fill="#666">σ tower</text>
-  <text x="725" y="278" text-anchor="middle" font-size="9" fill="#666">table</text>
-  <text x="852" y="296" text-anchor="start" font-size="9" fill="#666">π tower</text>
-  <circle cx="725" cy="316" r="15" fill="#fff" stroke="#9a6b00" stroke-width="1.5"/>
-  <text x="725" y="320" text-anchor="middle" font-size="9" fill="#9a6b00">intent</text>
-  <line x1="712" y1="308" x2="612" y2="294" stroke="#9a6b00" stroke-width="1.2" marker-end="url(#arr)"/>
-  <line x1="738" y1="308" x2="838" y2="294" stroke="#9a6b00" stroke-width="1.2" marker-end="url(#arr)"/>
-  <line x1="725" y1="301" x2="725" y2="290" stroke="#9a6b00" stroke-width="1.2" marker-end="url(#arr)"/>
-  <text x="725" y="352" text-anchor="middle" font-size="11" fill="#555">quadratic over all three: towers + table</text>
-  <text x="725" y="367" text-anchor="middle" font-size="10" fill="#777">(priming: boost weights over rows — one intent)</text>
+  <line x1="725" y1="244" x2="683" y2="270" stroke="#5b2d91" stroke-width="1.5"/>
+  <line x1="725" y1="244" x2="767" y2="270" stroke="#5b2d91" stroke-width="1.5"/>
+  <line x1="683" y1="270" x2="659" y2="298" stroke="#5b2d91" stroke-width="1.5"/>
+  <line x1="683" y1="270" x2="707" y2="298" stroke="#5b2d91" stroke-width="1.5"/>
+  <line x1="767" y1="270" x2="743" y2="298" stroke="#5b2d91" stroke-width="1.5"/>
+  <line x1="767" y1="270" x2="791" y2="298" stroke="#5b2d91" stroke-width="1.5"/>
+  <circle cx="725" cy="244" r="5" fill="#5b2d91"/>
+  <circle cx="683" cy="270" r="4" fill="#5b2d91"/>
+  <circle cx="767" cy="270" r="4" fill="#5b2d91"/>
+  <circle cx="659" cy="298" r="3.5" fill="#fff" stroke="#5b2d91"/>
+  <circle cx="707" cy="298" r="3.5" fill="#fff" stroke="#5b2d91"/>
+  <circle cx="743" cy="298" r="3.5" fill="#fff" stroke="#5b2d91"/>
+  <circle cx="791" cy="298" r="3.5" fill="#fff" stroke="#5b2d91"/>
+  <text x="725" y="320" text-anchor="middle" font-size="12.5" fill="#555">serial AR(1) lookup over references in STM</text>
 
-  <!-- ============ Band 3: THOUGHT (serial) ============ -->
-  <rect x="20" y="392" width="920" height="126" rx="8" fill="#f0ebf7" stroke="#cdb8e6"/>
-  <text x="28" y="416" font-size="13" font-weight="bold" fill="#5b2d91">3 · THOUGHT</text>
-  <text x="28" y="436" font-size="10" font-weight="bold" fill="#5b2d91">SERIAL</text>
-  <text x="28" y="452" font-size="9" fill="#5b2d91">shapes the</text>
-  <text x="28" y="464" font-size="9" fill="#5b2d91">references</text>
+  <!-- ============ Band 3: ATTENTION ============ -->
+  <rect x="20" y="348" width="920" height="112" rx="8" fill="#fdf6e9" stroke="#e6d3a8"/>
+  <text x="28" y="372" font-size="15" font-weight="bold" fill="#9a6b00">3 · ATTENTION</text>
+  <text x="28" y="394" font-size="11.5" font-weight="bold" fill="#9a6b00">CONTEXT</text>
+  <text x="28" y="412" font-size="10.5" fill="#9a6b00">creates wholes</text>
 
-  <!-- LLM thought -->
-  <rect x="190" y="410" width="280" height="88" rx="6" fill="#fff" stroke="#999"/>
-  <text x="330" y="432" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">priors for AR word prediction</text>
-  <text x="330" y="450" text-anchor="middle" font-size="11" fill="#555">next-token distribution,</text>
-  <text x="330" y="465" text-anchor="middle" font-size="11" fill="#555">one token at a time</text>
-  <text x="330" y="487" text-anchor="middle" font-size="13" fill="#888">w₁ → w₂ → w₃ → …</text>
+  <rect x="190" y="366" width="280" height="76" rx="6" fill="#fff" stroke="#999"/>
+  <text x="330" y="388" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">QKV at every layer</text>
+  <text x="330" y="407" text-anchor="middle" font-size="12.5" fill="#555">pairwise attention over tokens,</text>
+  <text x="330" y="424" text-anchor="middle" font-size="12.5" fill="#555">repeated through depth</text>
 
-  <!-- BasicModel thought: binary tree (serial isolation of attention) -->
-  <line x1="725" y1="420" x2="683" y2="448" stroke="#5b2d91" stroke-width="1.5"/>
-  <line x1="725" y1="420" x2="767" y2="448" stroke="#5b2d91" stroke-width="1.5"/>
-  <line x1="683" y1="448" x2="659" y2="476" stroke="#5b2d91" stroke-width="1.5"/>
-  <line x1="683" y1="448" x2="707" y2="476" stroke="#5b2d91" stroke-width="1.5"/>
-  <line x1="767" y1="448" x2="743" y2="476" stroke="#5b2d91" stroke-width="1.5"/>
-  <line x1="767" y1="448" x2="791" y2="476" stroke="#5b2d91" stroke-width="1.5"/>
-  <circle cx="725" cy="420" r="5" fill="#5b2d91"/>
-  <circle cx="683" cy="448" r="4" fill="#5b2d91"/>
-  <circle cx="767" cy="448" r="4" fill="#5b2d91"/>
-  <circle cx="659" cy="476" r="3.5" fill="#fff" stroke="#5b2d91"/>
-  <circle cx="707" cy="476" r="3.5" fill="#fff" stroke="#5b2d91"/>
-  <circle cx="743" cy="476" r="3.5" fill="#fff" stroke="#5b2d91"/>
-  <circle cx="791" cy="476" r="3.5" fill="#fff" stroke="#5b2d91"/>
-  <text x="725" y="496" text-anchor="middle" font-size="11" fill="#555">serial isolation of attention over that space,</text>
-  <text x="725" y="510" text-anchor="middle" font-size="11" fill="#555">enabled by references — and so it shapes them</text>
+  <rect x="535" y="365" width="132" height="64" rx="6" fill="#fff" stroke="#9a6b00" stroke-width="1.5"/>
+  <text x="601" y="388" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#9a6b00">context code</text>
+  <text x="601" y="406" text-anchor="middle" font-size="11.5" fill="#555">STM + symbols</text>
+  <text x="601" y="422" text-anchor="middle" font-size="11.5" fill="#555">C_t</text>
+  <line x1="667" y1="397" x2="706" y2="397" stroke="#9a6b00" stroke-width="1.4" marker-end="url(#arrA)"/>
 
-  <!-- thought -> table return arrow, routed through the empty right
-       margin (x > 900), no text on its path -->
-  <path d="M 810 455 C 925 430 925 255 772 220" fill="none" stroke="#5b2d91" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arrP)"/>
+  <rect x="710" y="365" width="130" height="64" rx="6" fill="#fff" stroke="#9a6b00" stroke-width="1.5"/>
+  <text x="775" y="386" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#9a6b00">taxonymic space</text>
+  <text x="775" y="404" text-anchor="middle" font-size="11.5" fill="#555">select concept rows</text>
+  <text x="775" y="420" text-anchor="middle" font-size="11.5" fill="#555">and compose context</text>
+  <line x1="840" y1="397" x2="868" y2="397" stroke="#9a6b00" stroke-width="1.4" marker-end="url(#arrA)"/>
 
-  <!-- legend: the update law -->
-  <text x="480" y="544" text-anchor="middle" font-size="11" fill="#444">update law: parallel may not shape references · serial may not shape non-references · STE untouched in both</text>
+  <circle cx="894" cy="397" r="22" fill="#fff8e6" stroke="#9a6b00" stroke-width="1.5"/>
+  <text x="894" y="394" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#9a6b00">new</text>
+  <text x="894" y="408" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#9a6b00">whole</text>
+  <text x="725" y="447" text-anchor="middle" font-size="12" fill="#555">attention encodes context used to create new wholes in conceptual space</text>
+
+  <!-- ============ Band 4: TAXONOMY ============ -->
+  <rect x="20" y="470" width="920" height="124" rx="8" fill="#edf7f2" stroke="#b8dec9"/>
+  <text x="28" y="494" font-size="15" font-weight="bold" fill="#28784a">4 · TAXONOMY</text>
+  <text x="28" y="516" font-size="11.5" font-weight="bold" fill="#28784a">SYMBOLIC</text>
+  <text x="28" y="534" font-size="10.5" fill="#28784a">ordered relations</text>
+
+  <rect x="190" y="488" width="280" height="82" rx="6" fill="#fff" stroke="#999"/>
+  <text x="330" y="512" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#333">implicit sequence in activations</text>
+  <text x="330" y="531" text-anchor="middle" font-size="12.5" fill="#555">higher-order structure is</text>
+  <text x="330" y="548" text-anchor="middle" font-size="12.5" fill="#555">learned but not directly inspectable</text>
+  <text x="330" y="566" text-anchor="middle" font-size="12.5" fill="#888">a_t, a_{t+1}, ...</text>
+
+  <text x="706" y="490" text-anchor="middle" font-size="12" font-weight="bold" fill="#28784a">relation table: fuzzy sets with ordered rows</text>
+  <rect x="535" y="500" width="342" height="68" rx="4" fill="#fff" stroke="#28784a" stroke-width="1.5"/>
+  <line x1="535" y1="517" x2="877" y2="517" stroke="#28784a"/>
+  <line x1="590" y1="500" x2="590" y2="568" stroke="#28784a"/>
+  <line x1="735" y1="500" x2="735" y2="568" stroke="#28784a"/>
+  <text x="562" y="512" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#28784a">order</text>
+  <text x="662" y="512" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#28784a">symbol relation</text>
+  <text x="806" y="512" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#28784a">fuzzy membership</text>
+  <text x="562" y="532" text-anchor="middle" font-size="10" fill="#555">1</text>
+  <text x="662" y="532" text-anchor="middle" font-size="10" fill="#555">A part-of B</text>
+  <text x="806" y="532" text-anchor="middle" font-size="10" fill="#555">{A:.8, B:.6}</text>
+  <text x="562" y="549" text-anchor="middle" font-size="10" fill="#555">2</text>
+  <text x="662" y="549" text-anchor="middle" font-size="10" fill="#555">(A,B) implies C</text>
+  <text x="806" y="549" text-anchor="middle" font-size="10" fill="#555">{C:.7, seq:.9}</text>
+  <text x="562" y="566" text-anchor="middle" font-size="10" fill="#555">3</text>
+  <text x="662" y="566" text-anchor="middle" font-size="10" fill="#555">C refines whole</text>
+  <text x="806" y="566" text-anchor="middle" font-size="10" fill="#555">{whole:.8}</text>
+
+  <!-- reasoning can write relations that attention later reuses -->
+  <path d="M 808 302 C 920 330 918 470 878 506" fill="none" stroke="#5b2d91" stroke-width="1.3" stroke-dasharray="5,3" marker-end="url(#arrP)"/>
+
+  </g>
 </svg>

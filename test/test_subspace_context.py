@@ -75,6 +75,38 @@ def test_error_clear_empties_terms():
     assert e.terms() == []
 
 
+def test_error_count_not_bumped_while_compiling(monkeypatch):
+    """The telemetry ``count`` int must NOT be mutated inside a torch.compile
+    trace: dynamo would bake a ``count == N`` python-constant guard from
+    ``rec['count'] += 1`` and recompile every forward. Bumping is eager-only."""
+    e = Error()
+    e.add("symbol_l1", torch.tensor(1.0))            # first add: count == 1
+    monkeypatch.setattr(torch.compiler, "is_compiling", lambda: True)
+    e.add("symbol_l1", torch.tensor(1.0))            # in-trace: value sums, count frozen
+    rec = e._terms["symbol_l1"]
+    assert rec["count"] == 1, "count must stay frozen under is_compiling()"
+    assert float(rec["value"].detach()) == pytest.approx(2.0), \
+        "the loss VALUE must still accumulate in-trace (only count is skipped)"
+    monkeypatch.setattr(torch.compiler, "is_compiling", lambda: False)
+    e.add("symbol_l1", torch.tensor(1.0))            # eager: count resumes
+    assert rec["count"] == 2
+
+
+def test_error_count_does_not_grow_across_forward_cycles():
+    """Pipeline invariant: per-forward the shared registry is ``clear()``'d
+    after harvest, so a repeated (N-emit, clear) cycle leaves ``symbol_l1``'s
+    count EQUAL each forward, not monotonically 9, 18, 27, ... (the leak)."""
+    e = Error()
+    counts = []
+    for _ in range(3):                               # three forwards
+        for _ in range(9):                           # nine stage emissions
+            e.add("symbol_l1", torch.tensor(0.1))
+        counts.append(e._terms["symbol_l1"]["count"])
+        e.clear()                                    # runBatch's per-forward harvest reset
+    assert counts == [9, 9, 9], \
+        f"count must reset per forward (not accumulate), got {counts}"
+
+
 def test_error_terms_shape_is_five_tuples():
     e = Error()
     e.add("foo", torch.tensor(1.5), weight=2.0,

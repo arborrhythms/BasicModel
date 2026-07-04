@@ -55,10 +55,11 @@ def symbol_code(index: int, n_what: int, n_where: int = 2, n_when: int = 2,
     loop so symbol recall is an ordinary codebook matmul. Widths are
     per-model config (MM_20M: ``4+2+2``, total 8, matching its STM=8).
     """
-    g = torch.Generator().manual_seed(_SYMBOL_SEED_SALT + int(index))
-    what = torch.randn(int(n_what), generator=g, dtype=dtype)
+    # Seeded draw on CPU (device-agnostic bytes); wiring moves it to the model device.
+    g = torch.Generator(device="cpu").manual_seed(_SYMBOL_SEED_SALT + int(index))
+    what = torch.randn(int(n_what), generator=g, dtype=dtype, device="cpu")
     what = what / (what.norm() + 1e-12)
-    bands = torch.zeros(int(n_where) + int(n_when), dtype=dtype)
+    bands = torch.zeros(int(n_where) + int(n_when), dtype=dtype, device="cpu")
     return torch.cat([what, bands])
 
 

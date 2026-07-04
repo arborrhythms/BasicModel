@@ -219,23 +219,6 @@
            When true it enables reasoning at the default depth (10); prefer
            <reasoningIterations>. Default false. -->
       <xs:element name="queryReasoning" type="xs:boolean" minOccurs="0"/>
-      <!-- Basic-level bounds for the overcomplete part-tiling (doc/specs/
-           mereological-order-raising.md "Overcomplete tiling bounded by the
-           basic level"). When the part tower matches an input against its
-           .what codebook it returns MANY matching parts (an overcomplete
-           tiling, not a partition); these bound which matches are kept by
-           Eleanor Rosch's BASIC LEVEL = the size of a part in .what, i.e. the
-           count of COMMITTED (+/-1) properties (all-0 = the Universe/general;
-           all-committed = an atom/specific; the basic level is the mid band).
-           Only matches whose .what-size lies in [min, max] are kept; the rest
-           (too general / too specific) are dropped. For a TEXT model "size in
-           .what" is simply the COUNT OF LETTERS, so parts range from 0 to the
-           length of the longest reasonable word. Refine for non-text models
-           (where size is the committed-property count in the relevant basis).
-           Read only under <mereologyRaise>; default (unset) imposes no bound
-           (byte-identical). -->
-      <xs:element name="basicLevelMinSize" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="basicLevelMaxSize" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Serial word-at-a-time object/meta (doc/specs/mereological-order-
            raising.md "Serial-mode word-at-a-time loop"). When true (serial
            traversal only), the per-word body HARD-MASKS each step to

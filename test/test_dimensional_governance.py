@@ -79,10 +79,12 @@ def test_serial_relaxes_symbol_dim_passthrough():
     # SERIAL mode the bounded-STM grammar fold bridges CS<->SS, so SS content
     # may differ from CS content (the small symbol code). validate_config
     # must NOT impose symbol_dim == concept_dim for a serial config.
-    # MM_20M_grammar.xml has SS content 8 != CS content 1024, so from_config
-    # must not raise the symbol_dim==concept pass-through ValueError.
+    # The fixture (the pre-Task-6 MM_20M_grammar shape, see _DEEP_CS_SERIAL_XML
+    # below) has SS content 8 != CS content 1024, so from_config must not
+    # raise the symbol_dim==concept pass-through ValueError. (MM_20M_grammar
+    # itself moved to equal widths with the 2026-07-04 meronomy switch.)
     try:
-        _build("MM_20M_grammar.xml")
+        _build_from_text(_DEEP_CS_SERIAL_XML, "serial_relax")
     except ValueError as e:
         assert "symbol_dim" not in str(e), str(e)
 
@@ -199,7 +201,7 @@ def test_reference_configs_still_build_no_false_positive():
 # Task: the reconstruction REVERSE must round-trip a DEEP-CS config.
 # (doc/specs/2026-06-05-dimensional-governance.md sec.2/sec.5)
 #
-# MM_20M_grammar is a SERIAL deep-CS config: PartSpace event width = 12
+# The fixture is a SERIAL deep-CS shape: PartSpace event width = 12
 # (content 8 + band 4), ConceptualSpace event width = 1028 (content 1024 +
 # band 4). The FORWARD PS->CS handoff is the wide->deep flat-slab reshape
 # (ConceptualSpace.forward: content [B,1024,8] -> [B,8,1024], band re-padded;
@@ -215,11 +217,84 @@ def test_reference_configs_still_build_no_false_positive():
 # Untrained model -> structural assertion only (completes, finite, recovered
 # width is the PS/IS width 12, NOT the CS width 1028); no reconstruction VALUE
 # accuracy is asserted.
+#
+# Fixture note (Task 6, plan 2026-07-03-reconstruction-fidelity-execution.md):
+# this shape WAS data/MM_20M_grammar.xml verbatim until the 2026-07-04
+# meronomy/meronomy switch moved that config to equal PS/CS widths (the
+# regroup no-op case). The deep-CS premise lives on here as the test's own
+# inline fixture (the pre-switch grammar space blocks, byte analysis).
 # ---------------------------------------------------------------------------
+_DEEP_CS_SERIAL_XML = """<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <architecture>
+    <symbolicOrder>1</symbolicOrder>
+    <subsymbolicOrder>3</subsymbolicOrder>
+    <l1Lambda>0.01</l1Lambda>
+    <sigmaPi>butterfly</sigmaPi>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>xor</dataset>
+    </data>
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.0005</learningRate>
+      <reconstructionScale>0.1</reconstructionScale>
+    </training>
+  </architecture>
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>12</nDim>
+    <nVectors>256</nVectors>
+    <nOutput>1024</nOutput>
+  </InputSpace>
+  <PartSpace>
+    <nInput>1024</nInput>
+    <nVectors>8</nVectors>
+    <nDim>12</nDim>
+    <nOutput>1024</nOutput>
+    <invertible>true</invertible>
+  </PartSpace>
+  <ConceptualSpace>
+    <nInput>1024</nInput>
+    <nOutput>8</nOutput>
+    <nDim>1028</nDim>
+    <nVectors>8</nVectors>
+    <invertible>true</invertible>
+    <stmCapacity>8</stmCapacity>
+  </ConceptualSpace>
+  <WholeSpace>
+    <analysis>byte</analysis>
+    <butterfly>false</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>1028</nInputDim>
+    <nDim>8</nDim>
+    <nOutputDim>8</nOutputDim>
+    <nVectors>1000</nVectors>
+    <nOutput>8</nOutput>
+    <invertible>true</invertible>
+  </WholeSpace>
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+  <SymbolSpace>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>
+"""
+
+
 @pytest.mark.skipif(not _RUN_SLOW, reason="slow (~55s serial deep-CS reverse round-trip) -- set RUN_SLOW=1")
 def test_deep_cs_reverse_round_trips_to_ps_width():
     import torch, Models
-    m = _build("MM_20M_grammar.xml"); Models.TheData.load("xor")
+    m = _build_from_text(_DEEP_CS_SERIAL_XML, "deepcs_serial")
+    Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
     inp_items, _ = next(iter(loader))
     x = m.inputSpace.prepInput(inp_items)

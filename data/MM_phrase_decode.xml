@@ -23,9 +23,6 @@
     <symbolTower>true</symbolTower>
     <ideaDecode>true</ideaDecode>
 
-    <basicLevelMinSize>0</basicLevelMinSize>
-    <basicLevelMaxSize>24</basicLevelMaxSize>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>phrases</dataset>

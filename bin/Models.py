@@ -2656,6 +2656,8 @@ class BasicModel(BaseModel):
         all_tokens = last_meta.get('tokens') or [[]]
         tokens0 = all_tokens[0] if all_tokens else []
 
+        if not hasattr(codebook, 'wv'):
+            return []  # Codebook .what: token-infill readout is Embedding-only (5b keeps its mask for training)
         D = codebook.wv.vector_size
         K = pred_full.shape[1]
         indices = mask_pos[0, :K].nonzero(as_tuple=False).squeeze(-1).tolist()
@@ -2729,6 +2731,106 @@ class BasicModel(BaseModel):
             discourse.observe(self._current_discourse_s)
         return out
 
+    def _warn_zeroed_channel(self, site, detail):
+        """Warn-once per site+config when a loss channel degrades to zero (5b fail-loud)."""
+        try:
+            cfg = str((TheXMLConfig._sources or ["?"])[-1])
+        except Exception:
+            cfg = "?"
+        seen = getattr(self, "_zeroed_channel_warned", None)
+        if seen is None:
+            seen = set()
+            object.__setattr__(self, "_zeroed_channel_warned", seen)
+        key = (site, cfg)
+        if key not in seen:
+            seen.add(key)
+            warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+    def _align_output_pred(self, pred, tgt):
+        """Reduce the head pred onto the label shape; None (after warn-once) when irreconcilable."""
+        _pred = pred
+        while _pred.dim() > tgt.dim():
+            _pred = _pred.mean(dim=-1)
+        # Equal-dim/unequal-shape (e.g. head [B,4,4] vs labels [B,1,1]): mean-reduce pred over label-singleton axes.
+        if (_pred.shape != tgt.shape and _pred.dim() == tgt.dim()
+                and all(p == t or t == 1
+                        for p, t in zip(_pred.shape, tgt.shape))):
+            for d, t in enumerate(tgt.shape):
+                if t == 1 and _pred.shape[d] != 1:
+                    _pred = _pred.mean(dim=d, keepdim=True)
+        if _pred.shape == tgt.shape:
+            return _pred
+        self._warn_zeroed_channel(
+            "output_shape_gate",
+            f"head pred {tuple(pred.shape)} vs labels {tuple(tgt.shape)} "
+            "irreconcilable after reduction; supervised output loss zeroed")
+        return None
+
+    def _reverse_event_loss(self, rev_ev, fwd_ev):
+        """lossRev seam (nWhere=0 wiring fix, 2026-07-04): clip to the shared
+        [K, D] window, then weight with the INPUT event layout's where/when
+        band. ModelLoss's constructor band is canonical_shape("OutputSpace")
+        == (0, 0) -- right for lossOut, wrong here: the muxed input event's
+        2-dim where band was diluted ~512x inside the what-scaled mean-MSE.
+        Also serves the D3 serial-path reconstruction (its twin site): the
+        D3 compare is the same reverse-vs-input-event layout.
+        """
+        Kr = min(rev_ev.shape[1], fwd_ev.shape[1])
+        Dr = min(rev_ev.shape[-1], fwd_ev.shape[-1])
+        sub = getattr(getattr(self, "inputSpace", None), "subspace", None)
+        nw = getattr(sub, "nWhere", None)
+        nn_ = getattr(sub, "nWhen", None)
+        if nw is None or nn_ is None:
+            # Fail-loud (5b pattern): an unknowable band must announce itself, never silently take what_scale.
+            self._warn_zeroed_channel(
+                "lossrev_band_unknown",
+                "input event band widths unavailable (no inputSpace."
+                "subspace nWhere/nWhen); lossRev treats the whole event "
+                "as what")
+            nw, nn_ = 0, 0
+        elif Dr != rev_ev.shape[-1] or Dr != fwd_ev.shape[-1]:
+            # The width clip cuts/misaligns the trailing band; band scales cannot be applied honestly.
+            self._warn_zeroed_channel(
+                "lossrev_band_clipped",
+                f"lossRev width clip (rev {int(rev_ev.shape[-1])} vs fwd "
+                f"{int(fwd_ev.shape[-1])}) misaligns the trailing "
+                f"where/when band; the clipped event takes what_scale")
+            nw, nn_ = 0, 0
+        return self.loss.compute(rev_ev[:, :Kr, :Dr],
+                                 fwd_ev[:, :Kr, :Dr].detach(),
+                                 nWhere=int(nw), nWhen=int(nn_))
+
+    def _masked_event_loss(self, pred, target, mask):
+        """lossIn seam (silent-band wiring fix, 2026-07-04): the masked-LM
+        compares PERCEPTUAL events (muxed ``[what|where|when]``,
+        canonical_shape("PartSpace") == (2, 2)) -- weight the trailing band
+        with the live percept layout, not ModelLoss's constructor (0, 0)
+        (the where band was diluted ~512x inside the what-scaled mean).
+        """
+        K = min(pred.shape[1], target.shape[1], mask.shape[1])
+        sub = getattr(getattr(self, "perceptualSpace", None), "subspace", None)
+        nw = getattr(sub, "nWhere", None)
+        nn_ = getattr(sub, "nWhen", None)
+        if nw is None or nn_ is None:
+            # Fail-loud (5b pattern): an unknowable band must announce itself, never silently take what_scale.
+            self._warn_zeroed_channel(
+                "lossin_band_unknown",
+                "percept event band widths unavailable (no perceptualSpace."
+                "subspace nWhere/nWhen); masked lossIn treats the whole "
+                "event as what")
+            nw, nn_ = 0, 0
+        elif pred.shape[-1] != target.shape[-1]:
+            # compute_masked's internal width clip would cut/misalign the trailing band; band scales cannot apply honestly.
+            self._warn_zeroed_channel(
+                "lossin_band_clipped",
+                f"masked lossIn width clip (pred {int(pred.shape[-1])} vs "
+                f"target {int(target.shape[-1])}) misaligns the trailing "
+                f"where/when band; the clipped event takes what_scale")
+            nw, nn_ = 0, 0
+        return self.loss.compute_masked(pred[:, :K, :], target[:, :K, :],
+                                        mask[:, :K],
+                                        nWhere=int(nw), nWhen=int(nn_))
+
     def create_ir_mask(self, percept_subspace):
         """Whole-slab IR mask (BERT-style hide-a-token; UNCHANGED).
 
@@ -2743,7 +2845,10 @@ class BasicModel(BaseModel):
         THIS only on the per-word grammar path; the whole-slab path is
         untouched (the spec's "whole-slab byte-identical" invariant).
 
-        Replaces embeddings at random positions with NULL_PERCEPT.
+        Replaces embeddings at random positions with NULL_PERCEPT
+        (Embedding ``.what``: the learnable NULL row; Codebook ``.what``,
+        the radix/meronomy PS, has no NULL row -- the all-zeros MASK
+        vector is injected instead, per the Spaces.py MPHF-table note).
         Captures the pre-mask embedded event as the loss target and
         stashes it on ``self`` along with the per-position bool mask so
         the loss path can compute reconstruction error at masked
@@ -2771,8 +2876,12 @@ class BasicModel(BaseModel):
         if event is None or event.dim() != 3:
             return
         codebook = percept_subspace.what
-        if not hasattr(codebook, 'null_percept_idx'):
-            return  # numeric mode / non-Embedding codebook
+        cb_w = codebook.getW() if hasattr(codebook, 'getW') else None
+        if not torch.is_tensor(cb_w) or cb_w.dim() != 2:
+            return  # numeric / rowless .what: cannot stage a mask (runBatch warns on the zeroed channel)
+        if (not hasattr(codebook, 'null_percept_idx')
+                and not torch.is_grad_enabled()):
+            return  # 5b Codebook path is train-step-only: no_grad forwards stay inert (HEAD-parity determinism)
 
         B, K, D = event.shape
         dev = event.device
@@ -2805,13 +2914,17 @@ class BasicModel(BaseModel):
                 and active.shape[-1] >= 1):
             what_idx = active[:, :K, 0].long()
             if what_idx.shape == mask.shape:
-                nWhat_excl = int(codebook.getW().shape[-1])
+                nWhat_excl = int(cb_w.shape[-1])
                 content_mass = event[..., :nWhat_excl].abs().amax(dim=-1)
                 idx_informative = what_idx.amax() > 0      # 0-dim, on-device
                 keep = torch.where(idx_informative,
                                    what_idx != 0,
                                    content_mass > 0)
                 mask = mask & keep
+        elif not hasattr(codebook, 'null_percept_idx'):
+            # 5b Codebook path (no _index): exclude zero-content pad slots by content mass.
+            mask = mask & (
+                event[..., :int(cb_w.shape[-1])].abs().amax(dim=-1) > 0)
 
         # Snapshot pre-mask embedded event as the loss target.
         # Detach so backward through the loss target doesn't double up
@@ -2827,7 +2940,11 @@ class BasicModel(BaseModel):
         # data-dependent `bool(mask.any())` skip was a host sync (see
         # doc/BrickHostSyncStatus.md residual C; same shape as the
         # `_snap_content` fix).
-        null_vec = codebook.getW()[codebook.null_percept_idx]  # [nWhat]
+        if hasattr(codebook, 'null_percept_idx'):
+            null_vec = cb_w[codebook.null_percept_idx]  # [nWhat] learnable NULL row
+        else:
+            # 5b: Codebook (radix/meronomy PS) has no NULL row -- MASK is the all-zeros vector (Spaces.py MPHF note).
+            null_vec = cb_w.new_zeros(cb_w.shape[-1])
         nWhat = int(null_vec.shape[-1])
         # Replace the WHAT slice at masked positions; preserve WHERE/WHEN.
         # Dense `torch.where` instead of boolean-mask assignment
@@ -4100,22 +4217,20 @@ class BasicModel(BaseModel):
                         and outputDataPred is not None
                         and torch.is_tensor(outputDataPred)
                         and outputDataPred.numel() > 0):
-                    # Match shapes -- the head and the labels may differ
-                    # in trailing dim (label is scalar per row; pred may
-                    # be [B, K] or [B, K, D]). Reduce over trailing dims
-                    # on the pred side until shapes line up.
-                    _pred = outputDataPred
-                    _tgt = outputTensor
-                    while _pred.dim() > _tgt.dim():
-                        _pred = _pred.mean(dim=-1)
-                    if _pred.shape == _tgt.shape:
-                        lossOut = self.loss.compute(_pred, _tgt)
+                    # shape reconciliation lives in _align_output_pred; irreconcilable warns once and zeroes the term.
+                    _pred = self._align_output_pred(outputDataPred,
+                                                    outputTensor)
+                    if _pred is not None:
+                        lossOut = self.loss.compute(_pred, outputTensor)
                         output_weight = 1.0
-            except Exception:
-                # Supervised loss best-effort; never let a shape edge
-                # stop the training step.
+            except Exception as _out_exc:
+                # Best-effort degrade to zero, but never SILENTLY (5b fail-loud).
                 lossOut = torch.zeros((), device=TheDevice.get())
                 output_weight = 0.0
+                self._warn_zeroed_channel(
+                    "output_loss_exception",
+                    f"supervised output loss zeroed by "
+                    f"{type(_out_exc).__name__}: {_out_exc}")
             TheError.add(
                 "output", lossOut,
                 weight=output_weight,
@@ -4151,8 +4266,9 @@ class BasicModel(BaseModel):
             # (differentiable; the trainable per-word IR objective),
             # REPLACING the interim P-space_role ``compute_masked`` masked-LM.
             # The whole-slab / non-grammar (``_per_word_enabled=False``)
-            # path is UNCHANGED -- it keeps ``compute_masked`` exactly,
-            # byte-identical. ``_d3_active`` / ``_d3_word_metric`` are
+            # path keeps ``compute_masked``, band-aware via the
+            # ``_masked_event_loss`` seam (silent-band wiring fix,
+            # 2026-07-04). ``_d3_active`` / ``_d3_word_metric`` are
             # instrumentation read by the end-to-end objective probe
             # (which loss term is active + the reported 0/1 metric);
             # never on the training-critical path.
@@ -4172,13 +4288,24 @@ class BasicModel(BaseModel):
                 self._d3_word_metric = d3_metric
             elif (mask_pos is not None and pre_mask is not None
                     and pred_full is not None):
-                K = min(pred_full.shape[1], mask_pos.shape[1],
-                        pre_mask.shape[1])
-                lossIn = self.loss.compute_masked(
-                    pred_full[:, :K, :], pre_mask[:, :K, :],
-                    mask_pos[:, :K])
+                # Band-aware seam: percept-layout where/when scales (silent-band wiring fix, 2026-07-04).
+                lossIn = self._masked_event_loss(pred_full, pre_mask,
+                                                 mask_pos)
             else:
                 lossIn = torch.zeros((), device=TheDevice.get())
+                # 5b fail-loud: a dead reconstruction channel must announce itself (warn-once, names the gate).
+                _missing = ", ".join(
+                    n for n, v in (("mask", mask_pos), ("target", pre_mask),
+                                   ("pred", pred_full)) if v is None)
+                _cb = getattr(getattr(self.perceptualSpace, 'subspace',
+                                      None), 'what', None)
+                self._warn_zeroed_channel(
+                    "reconstruction_zeroed",
+                    f"reconstruction loss zeroed: no D3 (per_word="
+                    f"{bool(_per_word)}) and masked-LM inputs missing "
+                    f"({_missing}); percept .what={type(_cb).__name__}, "
+                    f"pred_full shape="
+                    f"{tuple(pred_full.shape) if torch.is_tensor(pred_full) else None}")
             TheError.add(
                 "reconstruction", lossIn,
                 weight=1.0,
@@ -4196,8 +4323,10 @@ class BasicModel(BaseModel):
             # degrades to a zero contribution rather than breaking the
             # step.
             lossRev = torch.zeros((), device=TheDevice.get())
+            # Dedupe: on D3 lossIn IS the reverse objective; train skips the double count (doc/plans/2026-07-03-reconstruction-fidelity-execution.md); eval totals still include the reverse term.
+            _rev_dedupe = bool(self._d3_active) and train
             try:
-                if forwardInput is not None:
+                if forwardInput is not None and not _rev_dedupe:
                     # C3 (spec sec 7): reconstruction is UNCONDITIONALLY
                     # from concepts. The ``<reconstruct>`` enum
                     # (none/symbols/concepts/both) was retired in A1, so
@@ -4245,22 +4374,20 @@ class BasicModel(BaseModel):
                     if (rev_ev is not None and fwd_ev is not None
                             and rev_ev.dim() == fwd_ev.dim()
                             and rev_ev.dim() == 3):
-                        Kr = min(rev_ev.shape[1], fwd_ev.shape[1])
-                        Dr = min(rev_ev.shape[-1], fwd_ev.shape[-1])
-                        lossRev = self.loss.compute(
-                            rev_ev[:, :Kr, :Dr],
-                            fwd_ev[:, :Kr, :Dr].detach())
+                        # Band-aware seam: the input event's where/when widths, not ModelLoss's (0,0) OutputSpace band.
+                        lossRev = self._reverse_event_loss(rev_ev, fwd_ev)
             except Exception:
                 # Reverse round-trip is approximate through averaged
                 # loops; never let a reconstruction edge case stop the
                 # training step.
                 lossRev = torch.zeros((), device=TheDevice.get())
-            TheError.add(
-                "reconstruction_reverse", lossRev,
-                weight=float(getattr(self.loss, 'reconstruction_scale', 0.0)
-                             or 0.0),
-                space="InputSpace", category="reconstruction",
-            )
+            if not _rev_dedupe:
+                TheError.add(
+                    "reconstruction_reverse", lossRev,
+                    weight=float(getattr(self.loss, 'reconstruction_scale',
+                                         0.0) or 0.0),
+                    space="InputSpace", category="reconstruction",
+                )
 
             # C3 (spec sec 7): the legacy forward-only C/S reconstruction
             # branch (gated on the retired ``<reconstruct>`` enum) was a
@@ -7431,12 +7558,15 @@ class BasicModel(BaseModel):
         N_static = int(self.inputSpace.outputShape[0])
         if self.symbolSpace is not None:
             self.symbolSpace._target_cursor_length = N_static
-        # ``_per_word_contributions`` accumulates the per-iteration
-        # ``[B, D_c]`` contributions (zero at inactive batch rows /
-        # padding columns) for ``torch.stack`` after the loop. Using a
-        # list + stack preserves autograd flow through the per-position
-        # concept outputs, where an in-place write into a non-grad
-        # buffer would silently detach.
+        # ``_per_word_contributions`` holds the per-position ``[B, D_c]``
+        # contributions (zero at inactive batch rows / padding columns) for
+        # ``torch.stack`` after the loop; a python list + stack preserves
+        # autograd flow through the per-position concept outputs (an in-place
+        # write into a non-grad buffer would silently detach). Seeded empty
+        # here; ``_forward_body_per_word`` reallocates it to a FIXED-LENGTH
+        # ``N_static`` list (index = word position) so the accumulator length
+        # no longer varies with the sentence word-count (a Dynamo recompile
+        # driver -- see the loop site).
         self._per_word_contributions: list = []
         return stm, N_target, word_carrier, in_event
 
@@ -7545,8 +7675,9 @@ class BasicModel(BaseModel):
           gate_b_1: ``[B, 1]`` bool active mask from
              ``inputSpace._word_active_mask[:, p:p+1]``. ``torch.where``
              gate for masked commits.
-          out_slot: preallocated ``[B, N, D_c]`` concept buffer; this
-             call writes column ``p``.
+          out_slot: fixed-length ``N_static`` python list (per-position
+             concept accumulator); this call writes slot ``p`` by its
+             python-constant index (``None`` in unwritten slots).
 
         Returns ``(CS_sub, idea_bd)`` — last_cs tracking and idea
         broadcast handle. Both are produced unconditionally (PS/WS/CS
@@ -7684,6 +7815,18 @@ class BasicModel(BaseModel):
                     # ``push_step_masked`` is gated on ``active_host``
                     # so padding iterations never index past depth and
                     # never trip a capacity OOB.
+                    #
+                    # Recompile-churn fix (doc/plans/2026-07-04): the loop now
+                    # runs the full static per-word slab width, so a SHORT
+                    # sentence's padding columns (``commit_b_1`` all-False)
+                    # reach here. ``push_step_masked`` is a masked rolling roll
+                    # -> a byte-identical no-op there, and the mirror
+                    # over-advance those columns cause is corrected by the
+                    # single post-loop re-pin in ``_forward_body_per_word``
+                    # (mirror only sizes ``snapshot()``; back-pressure stays
+                    # dormant below capacity, so a below-cap sentence's padding
+                    # never trips the reduce -- the pre-filled configs that DO
+                    # reach cap fill every column, i.e. have no padding).
                     if stm._max_depth_host >= stm.capacity:
                         self._stm_bounded_reduce_step()
                         stm._max_depth_host = stm.capacity - 1
@@ -7692,14 +7835,17 @@ class BasicModel(BaseModel):
                 # Masked contribution: at inactive batch rows / padding
                 # columns the contribution is zero so it doesn't push
                 # bogus state into downstream concept reads. ``out_slot``
-                # is the caller's per-iteration accumulator (a list);
-                # the caller is responsible for ``torch.stack``ing it
-                # back to ``[B, N, D_c]`` post-loop so autograd flows
+                # is the caller's FIXED-LENGTH per-position buffer (a list
+                # preallocated to ``N_static``); write column ``p`` by its
+                # python-constant index (was ``append`` -> a length that grew
+                # with the trip count, a Dynamo recompile driver). The caller
+                # ``torch.stack``s all columns post-loop so autograd flows
                 # through the per-position contributions.
                 contribution = torch.where(
                     gate_b_1, idea_bd, torch.zeros_like(idea_bd))
-                if out_slot is not None and isinstance(out_slot, list):
-                    out_slot.append(contribution)
+                if (out_slot is not None and isinstance(out_slot, list)
+                        and 0 <= p < len(out_slot)):
+                    out_slot[p] = contribution
         return CS_sub, idea_bd
 
     @staticmethod
@@ -7834,32 +7980,47 @@ class BasicModel(BaseModel):
         # first time) -- no per-iteration None branch.
 
         # Static per-word loop (replaces the data-dependent
-        # ``while next_word() is not None`` boundary). Trip count is the
-        # Python int constant ``N = InputSpace.outputShape[0]``, so
-        # Dynamo unrolls / specializes once and length variation no
-        # longer drives recompiles. The per-iteration gate
-        # ``inputSpace._word_active_mask[:, p:p+1]`` (a [B, 1] bool
-        # tensor, built tensor-only in InputSpace.forward) sourcing
-        # ``gate_b_1`` masks all per-iteration commits in
-        # ``_per_word_body_step``.
+        # ``while next_word() is not None`` boundary).
+        #
+        # Recompile-churn fix (doc/plans/2026-07-04): the trip count is the
+        # STATIC per-word SLAB WIDTH ``N_words`` (the padded ``_ar_embedded_N``
+        # column count == PartSpace.nOutput, a per-config constant), NOT the
+        # per-sentence ``min(N_static, K_host)`` the loop used before. That old
+        # bound == ``K_host`` (since ``InputSpace.outputShape[0]`` is the huge
+        # raw-byte width, e.g. 8192 >> the word count), so it varied with the
+        # sentence word-count (1..N_words) -> Dynamo unrolled a fresh graph per
+        # length and blew ``cache_size_limit``. ``out_slot`` is a FIXED-LENGTH
+        # ``N_words`` list written by python-constant index ``p`` (was
+        # ``append`` -> a length that grew with the trip count, a second
+        # recompile driver -- the ``len(out_slot) == k`` guard the census hit).
+        # Padding columns (``p >= K_host``) are byte-identical no-ops: the
+        # ``word_active`` gate zeroes their contribution and masks the STM push
+        # (``push_step_masked`` with an all-False gate leaves ``_buffer`` /
+        # ``_depth`` untouched); the CS/idea forwards fired anyway. ``K_host``
+        # now only reconstructs the host depth mirror post-loop -- it never
+        # enters the graph.
         # See doc/plans/2026-05-20-static-per-word-loop-impl.md §2.
-        N_static = int(self.inputSpace.outputShape[0])
+        _slab = self.inputSpace._ar_embedded_N
+        N_words = (int(_slab.shape[1]) if _slab is not None
+                   else (int(N_target) if N_target is not None
+                         else int(self.inputSpace.outputShape[0])))
         word_active = self.inputSpace._word_active_mask
-        out_slot = self._per_word_contributions
-        # ``K_host`` is the active prefix length (host int from the
-        # eager-computed ``_valid_len_host``). Run only the real sentence
-        # prefix; the stack/pad tail below restores ``N_target`` width for
-        # downstream reconstruction. Row-specific padding inside that prefix
-        # is still gated by ``word_active``.
         K_host = int(self.inputSpace._valid_len_host)
-        N_loop = min(N_static, K_host)
+        N_loop = min(N_words, K_host)
+        out_slot = [None] * N_words
+        self._per_word_contributions = out_slot
 
         last_cs = None
         _truth = self._get_truth_layer() if protocol_on else None
         _preempt_latched = False
-        for p in range(N_loop):
+        for p in range(N_words):
             w = self.inputSpace.word_at(p)
             if w is None:
+                # ``word_at`` returns None only past the padded slab width
+                # (``p >= _ar_embedded_N.shape[1] == N_words``); ``range(
+                # N_words)`` never reaches that, so this is a defensive
+                # fixed-bound guard, not a data-dependent (churning) break on
+                # the sentence length.
                 break
             if word_active is not None:
                 gate_b_1 = word_active[:, p:p + 1]
@@ -7889,8 +8050,31 @@ class BasicModel(BaseModel):
             # falls back to the legacy read between sentences).
             self._set_serial_pump(None)
         word_count = N_loop
-        # STM host mirror is advanced inside the body's ``active_host``
-        # branch per real push; no post-loop fixup needed.
+        # STM host depth mirror correction (2026-07-04 recompile-churn fix).
+        # The per-word body advances ``_max_depth_host`` once per iteration,
+        # and the loop now runs the full static per-word slab width
+        # ``N_words`` instead of the active prefix ``N_loop``. So a SHORT
+        # sentence's ``N_words - N_loop`` padding columns each added ONE
+        # spurious advance (their masked push is a state no-op, but the host
+        # ``+= 1`` still ran). SUBTRACT exactly that over-count to restore the
+        # value the varying-trip-count loop left. This is a pure host-int
+        # correction (never enters the graph). It must NOT clobber the mark to
+        # the per-word count: ``_max_depth_host`` is a high-water mark advanced
+        # by EVERY STM push site (e.g. ConceptualSpace.forward's
+        # ``_stm_shift_and_push`` also bumps it), so the true value can exceed
+        # ``N_loop`` (test_bounded_stm_fold measures N_total=24 >> the 8 words).
+        # Padding columns never trip the ``>= capacity`` back-pressure (a
+        # below-cap sentence's mirror stays < cap there; the configs that DO
+        # reach cap fill every column, so ``N_words == N_loop`` and the
+        # correction is zero), so the subtraction exactly undoes the padding
+        # advances. Pins: test_bounded_stm_fold::test_cap_equivalence (the
+        # high-water mark survives) + test_per_word_ss_padding_noop (the
+        # per-forward advance == active-prefix count, not N).
+        if stm is not None:
+            _pad_overcount = max(0, N_words - N_loop)
+            if _pad_overcount:
+                stm._max_depth_host = max(
+                    0, int(stm._max_depth_host) - _pad_overcount)
 
         # Restore the full whole-sentence event onto the InputSpace
         # subspace so post-body readers (``_forward_per_stage``'s
@@ -7918,9 +8102,24 @@ class BasicModel(BaseModel):
         # subspace keeps the pipeline symbolSpace/errors/stem-route
         # contract intact.
         # See doc/plans/2026-05-20-static-per-word-loop-impl.md §2.5.
+        # ``per_word_contribs`` is now the FIXED-LENGTH ``N_words`` list
+        # (index = word position). Non-``None`` slots are the ``[B, D_c]``
+        # per-position contributions the body wrote (padding columns and any
+        # empty-CS iteration are gate-masked zeros / left ``None``); a
+        # ``None`` slot is an iteration whose CS/idea never materialised --
+        # the same slots the old ``append`` path simply skipped. Fill those
+        # with a zero column so the stack is rectangular, then stack ALL
+        # ``N_words`` columns. Padding columns already carry zeros, so the
+        # stacked ``[B, N_words, D_c]`` equals the old
+        # ``stack(active-prefix) + zero-pad-to-N_target`` byte-for-byte when
+        # ``N_words == N_target`` (the serial-config invariant).
         per_word_contribs = self._per_word_contributions
-        if last_cs is not None and per_word_contribs:
-            stacked = torch.stack(per_word_contribs, dim=1)  # [B, n_w, D_c]
+        _real = next((c for c in per_word_contribs if c is not None), None)
+        if last_cs is not None and _real is not None:
+            _zc = torch.zeros_like(_real)                     # [B, D_c]
+            filled = [c if c is not None else _zc
+                      for c in per_word_contribs]
+            stacked = torch.stack(filled, dim=1)              # [B, N_words, D_c]
             Bc, n_w, Dc = stacked.shape
             if N_target is not None and n_w < N_target:
                 pad = torch.zeros(
@@ -9272,8 +9471,8 @@ class BasicModel(BaseModel):
 
         Returns ``(loss, metric)``:
           * ``loss`` -- the CONTINUOUS percept/concept-vector
-            reconstruction (differentiable, MSE-style via the existing
-            ``self.loss.compute``); this is the trainable signal that
+            reconstruction (differentiable, MSE-style via the band-aware
+            ``_reverse_event_loss`` seam); this is the trainable signal that
             goes into the ``reconstruction`` error slot, replacing
             ``compute_masked`` for this path. Per-word gaussian context
             washes out across this whole-sentence comparison.
@@ -9298,15 +9497,13 @@ class BasicModel(BaseModel):
         if recon is None or not torch.is_tensor(recon) or recon.dim() != 3:
             return None, None
         # Trainable signal: continuous reconstruction vs the complete
-        # unmasked input (differentiable MSE via the existing
-        # ``self.loss.compute``; the target is detached so backward
+        # unmasked input, through the band-aware ``_reverse_event_loss``
+        # seam (input-event layout; detaches the target so backward
         # flows through the prediction -- the per-word encoder / S /
         # the bounded reduce -- not the fixed input).
         Kr = min(recon.shape[1], target.shape[1])
         Dr = min(recon.shape[-1], target.shape[-1])
-        loss = self.loss.compute(
-            recon[:, :Kr, :Dr],
-            target[:, :Kr, :Dr].detach())
+        loss = self._reverse_event_loss(recon, target)
 
         # REPORTED-ONLY metric (NON-differentiable; never backpropped --
         # the lexer-discrete word-level distance is not the gradient

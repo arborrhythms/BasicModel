@@ -22,9 +22,6 @@
     <globalAttention>true</globalAttention>
     <globalAttentionConsume>true</globalAttentionConsume>
 
-    <basicLevelMinSize>0</basicLevelMinSize>
-    <basicLevelMaxSize>24</basicLevelMaxSize>
-
     <data>
       <dataType>embedding</dataType>
       <dataset>xor</dataset>

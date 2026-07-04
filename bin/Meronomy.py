@@ -312,6 +312,27 @@ def words(byte_seq, separators=_WORD_SEPARATORS):
             for (s, e) in word_spans(byte_seq, separators)]
 
 
+def word_tiling(byte_seq, separators=_WORD_SEPARATORS):
+    """COMPLETE word/space/punct tiling (doc/Architecture.md "Parse time" C):
+    the :func:`word_spans` word spans interleaved with the separator runs
+    (maximal same-class runs), covering every byte exactly once."""
+    bs = _as_bytes(byte_seq)
+    sep = set(separators)
+    spans = []
+    prev_word = False
+    for (c, s, e) in class_segments(bs):
+        if c in sep:
+            spans.append((s, e))
+            prev_word = False
+        elif prev_word:
+            # adjacent non-separator classes (letter|digit) merge into a word
+            spans[-1] = (spans[-1][0], e)
+        else:
+            spans.append((s, e))
+            prev_word = True
+    return spans
+
+
 def word_bounds(byte_seq, separators=_WORD_SEPARATORS):
     """Each word with its two bounding dichotomies: ``(span, left, right)``.
 
