@@ -48,7 +48,7 @@ from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 # NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
 # Layers lazy attrs -> Language -> Spaces, a cycle at module-load time).
 from Layers import GrammarLayer
-# NotLayer / NonLayer / IntersectionLayer / JoinLayer moved to Language.py
+# NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
 # of use below to avoid the Layers <-> Language circular dependency during
 # Language.py's own module load.
@@ -9718,7 +9718,7 @@ class PartSpace(PerceptualSpace):
 
         def _mint_sigma():
             # ONE construction path shared by the base layer and the P4
-            # <subsymbolicStack> per-pass layers (identical modes/dims).
+            # per-pass stack layers (identical modes/dims).
             if _butterfly_built:
                 ly = SigmaLayer(
                     percept_dim, percept_dim,
@@ -9769,34 +9769,38 @@ class PartSpace(PerceptualSpace):
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.params += self.sigma.getParameters()
-        # Optional per-pass sigma stack; noop slots keep pass count stable.
-        self.sigmas = None
-        if bool(TheXMLConfig.get("architecture.subsymbolicStack",
-                                 default=False)):
-            _T = max(1, int(TheXMLConfig.get(
-                "architecture.subsymbolicOrder", default=1) or 1))
-            _noop = _parse_pass_indices(TheXMLConfig.get(
-                "architecture.subsymbolicNoop", default=None))
-            _rng_state = torch.get_rng_state()
-            _stack = []
-            for _t in range(_T):
-                if _t in _noop:
-                    _stack.append(None)
-                elif _t == 0:
-                    _stack.append(self.sigma)
-                else:
-                    _ly = _mint_sigma()
-                    self.params += _ly.getParameters()
-                    _stack.append(_ly)
-            torch.set_rng_state(_rng_state)
-            self.sigmas = _stack
-            # Register the fresh t>=1 layers as SUBMODULES (state_dict /
-            # model-wide .to()); a plain list would silently drop them from
-            # checkpoints and leave them behind on the CPU->device move.
-            # NOT appended to self.layers: the Start/End/Reset cascade stays
-            # exactly the pre-stack set.
-            self._sigma_stack_modules = nn.ModuleList(
-                [ly for ly in _stack[1:] if ly is not None])
+        # Per-pass sigma stack (canonical): DISTINCT subsymbolic layers, one
+        # per pass -- depth IS mereological order, the stack is the
+        # subsymbolic reasoning engine. Pass 0 IS the base ``self.sigma``;
+        # ``<subsymbolicNoop>`` slots are the IDENTITY (``None``); noop slots
+        # keep the pass count stable. RNG-NEUTRAL construction (save/restore)
+        # so the t>=1 minting does not shift the init streams downstream --
+        # an order-1 config (the single ``[sigma]`` slot, no minting) is
+        # byte-identical to the pre-stack build.
+        _T = max(1, int(TheXMLConfig.get(
+            "architecture.subsymbolicOrder", default=1) or 1))
+        _noop = _parse_pass_indices(TheXMLConfig.get(
+            "architecture.subsymbolicNoop", default=None))
+        _rng_state = torch.get_rng_state()
+        _stack = []
+        for _t in range(_T):
+            if _t in _noop:
+                _stack.append(None)
+            elif _t == 0:
+                _stack.append(self.sigma)
+            else:
+                _ly = _mint_sigma()
+                self.params += _ly.getParameters()
+                _stack.append(_ly)
+        torch.set_rng_state(_rng_state)
+        self.sigmas = _stack
+        # Register the fresh t>=1 layers as SUBMODULES (state_dict /
+        # model-wide .to()); a plain list would silently drop them from
+        # checkpoints and leave them behind on the CPU->device move.
+        # NOT appended to self.layers: the Start/End/Reset cascade stays
+        # exactly the pre-stack set.
+        self._sigma_stack_modules = nn.ModuleList(
+            [ly for ly in _stack[1:] if ly is not None])
         self.layers = nn.ModuleList()
         self.chunk_layer = ChunkLayer(
             self.nDim,
@@ -11708,10 +11712,10 @@ class PartSpace(PerceptualSpace):
             f"(analyse moved to WholeSpace <analysis>, Phase 4b)")
 
     def _sigma_for_pass(self, t=None):
-        """The pass-``t`` sigma (P4): the stack layer when
-        ``<subsymbolicStack>`` is on (``None`` = the identity no-op slot),
-        else the single reused ``self.sigma``. ``t`` defaults to the
-        model-stamped recurrent pass index."""
+        """The pass-``t`` sigma: the per-pass stack layer (``None`` = the
+        identity no-op slot). ``t`` defaults to the model-stamped recurrent
+        pass index. Falls back to the single ``self.sigma`` if the stack was
+        not built (defensive)."""
         stack = getattr(self, "sigmas", None)
         if stack is None:
             return self.sigma
@@ -11725,8 +11729,8 @@ class PartSpace(PerceptualSpace):
         """FURTHER σ SYNTHESIS on the C->P part-stream (P4, decisions 7+8):
         apply the pass-``t`` stack sigma to the demuxed feedback event --
         depth IS mereological order. Identity (the sub returned unchanged)
-        when the stack is off, the slot is a no-op, or the shapes don't fit
-        the fold (mirrors the WS parallel-fold shape tolerance)."""
+        when the slot is a no-op, or the shapes don't fit the fold (mirrors
+        the WS parallel-fold shape tolerance)."""
         stack = getattr(self, "sigmas", None)
         if (stack is None or sub is None
                 or not hasattr(sub, "is_empty") or sub.is_empty()):
@@ -16929,7 +16933,7 @@ class WholeSpace(PerceptualSpace):
 
         def _mint_pi():
             # ONE construction path shared by the base layer and the P4
-            # <subsymbolicStack> per-pass layers (identical modes/dims).
+            # per-pass stack layers (identical modes/dims).
             if _pi_butterfly_built:
                 ly = PiLayer(
                     _sigma_dim, _sigma_dim,
@@ -16993,35 +16997,34 @@ class WholeSpace(PerceptualSpace):
         self.butterflyN = _sigma_butterfly_total if _sigma_butterfly else None
         self.layers.append(self.pi)
         self.params += self.pi.getParameters()
-        # P4 <subsymbolicStack>: DISTINCT per-pass pis (depth IS mereological
-        # order). Pass 0 IS ``self.pi``; ``<subsymbolicNoop>`` slots are the
-        # IDENTITY (``None``). RNG-NEUTRAL construction (save/restore) so
-        # gated-off configs keep their init streams byte-identical.
-        self.pis = None
-        if bool(TheXMLConfig.get("architecture.subsymbolicStack",
-                                 default=False)):
-            _T = max(1, int(TheXMLConfig.get(
-                "architecture.subsymbolicOrder", default=1) or 1))
-            _noop = _parse_pass_indices(TheXMLConfig.get(
-                "architecture.subsymbolicNoop", default=None))
-            _rng_state = torch.get_rng_state()
-            _stack = []
-            for _t in range(_T):
-                if _t in _noop:
-                    _stack.append(None)
-                elif _t == 0:
-                    _stack.append(self.pi)
-                else:
-                    _ly = _mint_pi()
-                    self.params += _ly.getParameters()
-                    _stack.append(_ly)
-            torch.set_rng_state(_rng_state)
-            self.pis = _stack
-            # Register the fresh t>=1 layers as SUBMODULES (state_dict /
-            # model-wide .to()); see the PS stack note. Not on self.layers:
-            # the Start/End/Reset cascade stays the pre-stack set.
-            self._pi_stack_modules = nn.ModuleList(
-                [ly for ly in _stack[1:] if ly is not None])
+        # Per-pass pis (canonical): DISTINCT per-pass folds -- depth IS
+        # mereological order. Pass 0 IS ``self.pi``; ``<subsymbolicNoop>``
+        # slots are the IDENTITY (``None``). RNG-NEUTRAL construction
+        # (save/restore) so the t>=1 minting does not shift the init streams
+        # downstream -- an order-1 config (the single ``[pi]`` slot) is
+        # byte-identical to the pre-stack build.
+        _T = max(1, int(TheXMLConfig.get(
+            "architecture.subsymbolicOrder", default=1) or 1))
+        _noop = _parse_pass_indices(TheXMLConfig.get(
+            "architecture.subsymbolicNoop", default=None))
+        _rng_state = torch.get_rng_state()
+        _stack = []
+        for _t in range(_T):
+            if _t in _noop:
+                _stack.append(None)
+            elif _t == 0:
+                _stack.append(self.pi)
+            else:
+                _ly = _mint_pi()
+                self.params += _ly.getParameters()
+                _stack.append(_ly)
+        torch.set_rng_state(_rng_state)
+        self.pis = _stack
+        # Register the fresh t>=1 layers as SUBMODULES (state_dict /
+        # model-wide .to()); see the PS stack note. Not on self.layers:
+        # the Start/End/Reset cascade stays the pre-stack set.
+        self._pi_stack_modules = nn.ModuleList(
+            [ly for ly in _stack[1:] if ly is not None])
 
         # Mereological run-structure measure (the part/whole ratio + the
         # A-isa-B containment test, doc/specs/mereological-order-raising.md).
@@ -20683,10 +20686,10 @@ class WholeSpace(PerceptualSpace):
         return ("chunk", None) if hint == 1 else ("refine", None)
 
     def _pi_for_pass(self, t=None):
-        """The pass-``t`` pi (P4): the stack layer when
-        ``<subsymbolicStack>`` is on (``None`` = the identity no-op slot),
-        else the single reused ``self.pi``. ``t`` defaults to the
-        pump-stamped pass index (``_pump_pass_idx``)."""
+        """The pass-``t`` pi: the per-pass stack layer (``None`` = the
+        identity no-op slot). ``t`` defaults to the pump-stamped pass index
+        (``_pump_pass_idx``). Falls back to the single ``self.pi`` if the
+        stack was not built (defensive)."""
         stack = getattr(self, "pis", None)
         if stack is None:
             return getattr(self, 'pi', None)

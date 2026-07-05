@@ -44,9 +44,6 @@
     <!-- the 3-stream peer bind (PS/WS percepts + the SS symbol leg, now
          forward-mediated via SymbolSpace.forward_concept_to_symbol). -->
     <symbolTower>true</symbolTower>
-    <!-- P4 two-phase plan: distinct per-pass sigma/pi layers, the
-         subsymbolic reasoning engine driving the pump's settle. -->
-    <subsymbolicStack>true</subsymbolicStack>
 
     <data>
       <dataType>embedding</dataType>

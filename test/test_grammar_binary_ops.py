@@ -28,7 +28,7 @@ from Layers import (
     NotLayer,
     PiLayer,
     SigmaLayer,
-    JoinLayer,
+    UnionLayer,
 )
 
 
@@ -147,7 +147,7 @@ class TestSigmaLayerBinary(unittest.TestCase):
 
 
 class TestIntersectionUnionBinary(unittest.TestCase):
-    """IntersectionLayer / JoinLayer are CS-space_role (conceptual) binary
+    """IntersectionLayer / UnionLayer are CS-space_role (conceptual) binary
     lattice min/max on bivector activation. They share kernels
     with ConjunctionLayer / DisjunctionLayer (SS-space_role counterparts
     on post-codebook scalar activation); the CS-vs-SS distinction is
@@ -162,7 +162,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         self.assertEqual(layer.space_role, 'CS')
 
     def test_union_layer_is_CS_space_role(self):
-        layer = JoinLayer()
+        layer = UnionLayer()
         self.assertEqual(layer.space_role, 'CS')
 
     def test_intersection_compose_is_min_kernel(self):
@@ -196,7 +196,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
 
     def test_union_compose_is_max_kernel(self):
         from Layers import Ops
-        layer = JoinLayer()
+        layer = UnionLayer()
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
@@ -212,7 +212,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
 
     def test_union_decompose_pseudo_inverse(self):
         # ADAPTED (2026-07-04 serial plan Task 1): stub revoked.
-        layer = JoinLayer()
+        layer = UnionLayer()
         parent = torch.rand(2, 5, 4) * 1.6 - 0.8
         with self.assertRaises(NotImplementedError):
             layer.decompose(parent)
@@ -236,7 +236,7 @@ class TestComposeGradients(unittest.TestCase):
         self.assertGreater(right.grad.abs().sum().item(), 0.0)
 
     def test_union_grad_flows_to_both_children(self):
-        layer = JoinLayer()
+        layer = UnionLayer()
         left = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         right = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         y = layer.compose(left, right)

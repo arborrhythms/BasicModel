@@ -38,14 +38,22 @@ def test_all_shipped_grammars_load_with_rules():
         G = _fresh(g)
         assert len(G.rules_upward) > 0, g
         assert len(G.rules_downward) > 0, g
-        assert len(G.ps_rules_upward) == 3, g      # stop/boundary/uniform
-        assert len(G.ps_rules_downward) == 3, g
+        # stop/boundary/uniform structural cover (>= 3); complete.grammar adds
+        # the additive 'chunk' (the ex-"union" PartSpace sum).
+        expected = 4 if g == 'complete.grammar' else 3
+        assert len(G.ps_rules_upward) == expected, g
+        assert len(G.ps_rules_downward) == expected, g
 
 
 def test_query_ops_from_top_level_queries():
     G = _fresh('complete.grammar')
-    assert {'exist(X)', 'equal(X, Y)', 'part(X, Y)', 'query(X, Y)',
-            'quantize(X)', 'wholes(X)', 'parts(X)', 'arma(X)'} == set(G.query_ops)
+    # The truth family are now is-prefixed BOOLEAN-PREDICATE queries (isTrue /
+    # isEqual / isPart / isWhole); the bare part/whole/equal are compositional
+    # RELATIONS in <compose>, not queries. The non-is queries return a value
+    # (parts/wholes retrieve, quantize/arma transform/predict, query dispatches).
+    assert {'isTrue(X)', 'isEqual(X, Y)', 'isPart(X, Y)', 'isWhole(X, Y)',
+            'query(X, Y)', 'quantize(X)', 'wholes(X)', 'parts(X)',
+            'arma(X)'} == set(G.query_ops)
     assert not any('isomorph' in q for q in G.query_ops)
 
 

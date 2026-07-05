@@ -108,12 +108,12 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     # rule method_names carry ``isPart`` where the transitional
     # ``complete.grammar`` carried ``assertPart`` + ``queryPart``.
     # ADAPTED 2026-07-05: the relation family (isEqual, isPart) relocated
-    # to <Queries>; lattice max renamed union -> join (the additive pair
-    # owns 'union').
+    # to <Queries>; the lattice max is named 'union' (dual to intersection);
+    # the additive left+right op moved to <PartSpace> as 'chunk'.
     REQUIRED_OPS = {
         'non', 'not',
         'conjunction', 'disjunction',
-        'intersection', 'join',
+        'intersection', 'union',
         'lift', 'lower',
         'exist',
     }

@@ -1,12 +1,12 @@
 """Task 7 canonical config-matrix SMOKE suite (plan
 doc/plans/2026-07-03-reconstruction-fidelity-execution.md).
 
-Eight configs span the reconstruction pipeline's control surface: the three
+Seven configs span the reconstruction pipeline's control surface: the three
 base paths (grammar meronomy/meronomy, xor parallel-mereology sO=0, legacy
-bpe/byte) plus four data/matrix/ variants that each flip ONE architecture
-flag off its parent (mereologyRaise off, subsymbolicStack on, readingAttention
-on, two-pass learning+exploreTemperature on), plus the sO=3 sparse-concept
-wave (smoke ONLY -- the wave is dark on prod xor). Each row is a fast SMOKE:
+bpe/byte) plus three data/matrix/ variants that each flip ONE architecture
+flag off its parent (mereologyRaise off, readingAttention on, two-pass
+learning+exploreTemperature on), plus the sO=3 sparse-concept wave (smoke
+ONLY -- the wave is dark on prod xor). Each row is a fast SMOKE:
 build the config, run one capped epoch, decode the reconstruction, and assert
 finite losses + a clean decode path (no decode_note degradation, the Task-1
 review caveat).
@@ -34,15 +34,15 @@ from recon_bench import DECODE_NOTE, run_config
 # is build-bound (see the _SLOW note below for the per-tier timing).
 SMOKE_BATCHES = 1
 
-# Each config is a fresh build; the whole 8-config matrix is dominated by
+# Each config is a fresh build; the whole config matrix is dominated by
 # build time (max_batches=1 makes the epoch itself ~one xor batch). Measured
-# cpu/eager seed 0 on ArborBook: the full 8 land ~89-97s wall (build-bound,
-# grammar variants ~11-12s each under load); the FAST tier (6 rows below)
-# lands ~70s so make test stays under its budget. The two heaviest grammar
-# variants (readingAttention, two-pass learning -- the double-forward) gate
-# behind RUN_SLOW: their serial-grammar variant BUILD is already smoked by
-# grammar_stack, and make test_all runs the full eight. See plan Task 7
-# EXECUTION NOTES for the per-config timing table.
+# cpu/eager seed 0 on ArborBook: build-bound (grammar variants ~11-12s each
+# under load); the FAST tier (5 rows below) stays under make test's budget.
+# The two heaviest grammar variants (readingAttention, two-pass learning --
+# the double-forward) gate behind RUN_SLOW: their serial-grammar variant
+# BUILD is already smoked by the base grammar row, and make test_all runs
+# the full matrix. See plan Task 7 EXECUTION NOTES for the per-config timing
+# table.
 _SLOW = pytest.mark.skipif(
     not os.environ.get("RUN_SLOW"),
     reason="heaviest grammar variant; make test_all (RUN_SLOW) runs it")
@@ -52,7 +52,6 @@ MATRIX = [
     pytest.param("data/MM_20M_xor.xml", id="xor"),                        # parallel mereology, sO=0
     pytest.param("data/MM_20M_legacy.xml", id="legacy"),                  # bpe/byte back-compat
     pytest.param("data/matrix/MM_20M_xor_noraise.xml", id="xor_noraise"),  # mereologyRaise off
-    pytest.param("data/matrix/MM_20M_grammar_stack.xml", id="grammar_stack"),  # subsymbolicStack on
     pytest.param("data/matrix/MM_20M_grammar_reading.xml", id="grammar_reading", marks=_SLOW),  # readingAttention on (RUN_SLOW)
     pytest.param("data/matrix/MM_20M_grammar_twopass.xml", id="grammar_twopass", marks=_SLOW),  # learning + exploreTemperature (RUN_SLOW)
     pytest.param("data/MM_sparse_concept.xml", id="sparse_concept"),      # sO=3 parallel (wave; smoke ONLY)

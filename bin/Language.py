@@ -35,7 +35,7 @@ from collections import namedtuple as _namedtuple
 # stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
 # FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /
 # IsaPartLayer also derive from it and stay). The grammar rule operator
-# classes (NotLayer, NonLayer, IntersectionLayer, JoinLayer, LiftLayer,
+# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, LiftLayer,
 # LowerLayer, SymbolizeLayer, ConjunctionLayer, DisjunctionLayer,
 # IsEqualLayer, PartLayer, QueryLayer) physically live in this module
 # below, after the Grammar singleton.
@@ -2132,12 +2132,14 @@ class IntersectionLayer(GrammarLayer):
                             left_rows=left_rows, right_rows=right_rows,
                             left_priming=left_priming, right_priming=right_priming)
 
-class JoinLayer(GrammarLayer):
-    """Lossy lattice JOIN ``join(C, C)`` (RadMax radial / lattice max) via
-    ``Ops.union``. RENAMED from ``union`` (2026-07-05, Alec): ``union`` is
-    the ADDITIVE residual-bearing concept op below; the saturating max-fold
-    is the lattice join (cf. ``Mereology.join_from_bottom``)."""
-    rule_name        = "join"
+class UnionLayer(GrammarLayer):
+    """Lossy lattice UNION ``union(C, C)`` (RadMax radial / lattice max) via
+    ``Ops.union`` — the saturating OR-fold, DUAL to ``intersection`` (RadMin /
+    lattice min). RENAMED from ``join`` (2026-07-05, Alec): the additive
+    ``left + right`` op that briefly held the ``union`` name moved to
+    ``<PartSpace>`` as ``chunk``, so ``union`` / ``intersection`` are the
+    lattice pair again (cf. ``Mereology.join_from_bottom``)."""
+    rule_name        = "union"
     arity            = 2
     invertible       = False
     lossy            = True
@@ -2259,16 +2261,17 @@ class JoinLayer(GrammarLayer):
                             left_priming=left_priming, right_priming=right_priming)
 
 
-class UnionLayer(GrammarLayer):
-    """``union(C, C) = left + right`` — the mereological sum on concepts.
+class ChunkLayer(GrammarLayer):
+    """``chunk(C, C) = left + right`` — the additive mereological sum.
 
-    The union/difference pair (Alec 2026-07-04; plan
-    doc/plans/2026-07-04-union-difference-concept-ops.md): the
-    RESIDUAL-BEARING class analogous to the symbol layer's saturating
-    conjunction/disjunction lattice (``join``/``intersection`` — the
-    lattice max vacated this name 2026-07-05, Alec: "union/difference is
-    best: fusion is a different operator"). No tanh, no clamp, no
-    normalize: ``difference(union(a, b), a) == b`` to float rounding
+    RENAMED from ``union`` (2026-07-05, Alec): there is no such GRAMMATICAL
+    operation, so ``chunk`` is a STRUCTURAL op that lives in ``<PartSpace>``
+    (it may someday replace the radix trie's token chunking). The saturating
+    lattice max took the ``union`` name (dual to ``intersection``); the
+    element-wise arithmetic sum is now the CS-concept op ``sum``.
+
+    RESIDUAL-BEARING: no tanh / clamp / normalize, so the additive residual
+    ``ChunkLayer.difference(chunk(a, b), a) == b`` to float rounding
     (bit-exact on integer-valued content).
 
     ``invertible=True`` means forward∘reverse == id EXACTLY: the bare
@@ -2277,7 +2280,7 @@ class UnionLayer(GrammarLayer):
     compose identity), NOT a partition-blind halving. Constituent recovery
     takes ``reverse(parent, basis=W)`` (the PEEL step: best store row,
     exact remainder) or :meth:`peel` (greedy matching pursuit)."""
-    rule_name        = "union"
+    rule_name        = "chunk"
     arity            = 2
     invertible       = True
     lossy            = False
@@ -2377,13 +2380,17 @@ class UnionLayer(GrammarLayer):
                             right_priming=right_priming)
 
 
-class DifferenceLayer(GrammarLayer):
-    """``difference(C, C) = left - right`` — union's exact residual as a
-    first-class, ORDER-DIRECTIONAL concept op (T3 fixity, like ``part``).
-    ``difference(union(a, b), a) == b`` to float rounding. Bare
-    ``reverse(parent)`` is the ∅-decomposition ``(parent, 0)``
-    (``parent - 0 == parent`` exactly)."""
-    rule_name        = "difference"
+class SumLayer(GrammarLayer):
+    """``sum(C, C) = left + right`` — the element-wise arithmetic SUM over two
+    concepts (CS-space_role). Added 2026-07-05 (Alec) as the additive half of
+    the arithmetic sum/product pair on concepts. ``difference`` is retired:
+    it is just ``sum`` of a negated operand (``sum(a, not b)``).
+
+    Distinct from ``chunk`` (same ``left + right`` math but a STRUCTURAL
+    <PartSpace> op) and from the saturating lattice ``union`` (RadMax).
+    ``invertible=True``: bare ``reverse(parent)`` is the ∅-decomposition
+    ``(parent, 0)`` (recomposes exactly)."""
+    rule_name        = "sum"
     arity            = 2
     invertible       = True
     lossy            = False
@@ -2391,53 +2398,71 @@ class DifferenceLayer(GrammarLayer):
     reads_activation = False
 
     def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
-        """Plain subtractive binary op; optional butterfly cascade parity."""
+        """Plain additive binary op."""
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
 
-    def _butterfly_pair_op(self, x_pair, W_node):
-        """Subtractive per-pair op (left minus right), packed form."""
-        D = self._butterfly_D
-        m = x_pair[..., :D] - x_pair[..., D:]
-        return torch.einsum('bmi,mij->bmj', torch.cat([m, m], dim=-1),
-                            W_node)
-
-    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
-        """∅-decomposition in packed form: (recovered value, zeros)."""
-        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
-        D = self._butterfly_D
-        m = 0.5 * (unweighted[..., :D] + unweighted[..., D:])
-        return torch.cat([m, torch.zeros_like(m)], dim=-1)
-
     def forward(self, left, right=None):
-        """Binary ``left - right``; butterfly mode runs the cascade."""
-        if self.butterfly:
-            return self._butterfly_forward(left)
-        return left - right
+        """Binary ``left + right``."""
+        return left + right
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        if self.butterfly:
-            return self._butterfly_forward(
-                torch.cat([left, right], dim=-2))
-        return left - right
+        return left + right
 
     def reverse(self, parent, basis=None,
                 left_rows=None, right_rows=None,
                 left_priming=None, right_priming=None):
         """∅-decomposition ``(parent, 0)``; recomposes exactly
-        (``parent - 0``). Kwargs accepted for sibling-signature parity."""
-        if self.butterfly:
-            return self._butterfly_reverse(parent)
+        (``parent + 0``). Kwargs accepted for sibling-signature parity."""
         return parent, torch.zeros_like(parent)
 
     def generate(self, parent, basis=None,
                  left_rows=None, right_rows=None,
                  left_priming=None, right_priming=None):
         """Generation dual: forwarded to ``reverse`` (same contract)."""
-        return self.reverse(parent, basis=basis,
-                            left_rows=left_rows, right_rows=right_rows,
-                            left_priming=left_priming,
-                            right_priming=right_priming)
+        return self.reverse(parent)
+
+
+class ProductLayer(GrammarLayer):
+    """``product(C, C) = left * right`` — the element-wise arithmetic PRODUCT
+    over two concepts (CS-space_role), the multiplicative dual of ``sum``
+    (added 2026-07-05, Alec; semantic validity over concepts is exploratory).
+
+    Lossy: the Hadamard product is many-to-one (a zero coordinate in either
+    operand annihilates its partner), so ``reverse`` is fail-loud unless a
+    caller supplies a basis recommender."""
+    rule_name        = "product"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain multiplicative binary op."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    def forward(self, left, right=None):
+        """Binary ``left * right`` (Hadamard)."""
+        return left * right
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        return left * right
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """The Hadamard product is many-to-one (zeros annihilate); no faithful
+        inverse. Fail-loud (2026-07-04 serial plan Task 1 contract)."""
+        self.raise_no_inverse("element-wise product is not invertible "
+                              "(a zero coordinate annihilates its partner)")
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent)
 
 
 # ===========================================================================
@@ -3711,7 +3736,7 @@ class DisjunctionLayer(GrammarLayer):
     which collapses to ``torch.max`` via
     ``_lift_kernel(kind='strict')``.
 
-    Distinct from ``JoinLayer`` (CS-space_role): JoinLayer operates on
+    Distinct from ``UnionLayer`` (CS-space_role): UnionLayer operates on
     a bivector ``[..., 2]`` activation and supports both RadMax
     and lattice-max; DisjunctionLayer operates on a scalar
     ``[B, V]`` post-codebook activation and is strictly monotonic.
@@ -3788,7 +3813,7 @@ class DisjunctionLayer(GrammarLayer):
         ``(x1, x2)`` with ``union(x1, x2) ~= parent`` from the codebook rows --
         EXACT on a discrete vocabulary (the XOR reconstruction path). The
         OR-fold is many-to-one, so ``basis is None`` falls back to the lossy
-        ``(parent, parent)`` pseudo-inverse. Mirrors ``JoinLayer.reverse``.
+        ``(parent, parent)`` pseudo-inverse. Mirrors ``UnionLayer.reverse``.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
@@ -4065,6 +4090,35 @@ class AssertPartLayer(PartLayer):
     rule_name = "assertPart"
 
 
+class WholeLayer(PartLayer):
+    """``S -> whole(S, S)`` -- the CONVERSE of ``part``.
+
+    ``whole(A, B)`` asserts "A is the whole that has part B" -- the same
+    mereological relation as ``part(B, A)`` with the arguments swapped. It
+    reuses :class:`PartLayer`'s codebook geometry (the codebook IS the
+    meronymic tree; no independent weights), differing only in which operand
+    is the encompassing whole: ``part`` returns ``right`` (whole = arg 2),
+    ``whole`` returns ``left`` (whole = arg 1). So the chart's CKY consumer
+    sees the whole as the single parent vector either way.
+
+    Lossy with the ``(parent, parent)`` pseudo-inverse on reverse (the
+    non-whole operand's identity is not preserved), same as ``part``.
+    """
+    rule_name = "whole"
+
+    def forward(self, left, right):
+        """Pass the encompassing whole ``left`` through to the CKY consumer
+        (the converse of ``part``, which passes ``right``)."""
+        return left
+
+    def reverse(self, parent):
+        """``whole(A, B)`` returns the whole ``A``; ``B``'s identity is not
+        preserved -- no faithful inverse (mirrors ``part``)."""
+        self.raise_no_inverse("whole forward returns the encompassing "
+                              "whole; the part operand's identity is not "
+                              "preserved")
+
+
 def _truth_bivector_like(score, template):
     """Broadcast a scalar truth score into the bivector shape of template."""
     pos = score.to(device=template.device, dtype=template.dtype)
@@ -4290,9 +4344,10 @@ GRAMMAR_LAYER_CLASSES = {
     'not':          NotLayer,
     'non':          NonLayer,
     'intersection': IntersectionLayer,
-    'join':         JoinLayer,
     'union':        UnionLayer,
-    'difference':   DifferenceLayer,
+    'chunk':        ChunkLayer,
+    'sum':          SumLayer,
+    'product':      ProductLayer,
     'lift':         LiftLayer,
     'verb':         VerbLayer,
     'adverb':       AdverbLayer,
@@ -4308,6 +4363,7 @@ GRAMMAR_LAYER_CLASSES = {
     'isPart':       IsPartLayer,
     'equal':        EqualLayer,
     'part':         PartLayer,
+    'whole':        WholeLayer,
     'assertPart':   AssertPartLayer,
     'true':         TrueLayer,
     'false':        FalseLayer,
@@ -4412,18 +4468,21 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'disjunction':  T2_BINARY_INFIX,
     'isEqual':      T2_BINARY_INFIX,
     'equal':        T2_BINARY_INFIX,
-    'join':         T2_BINARY_INFIX,
-    'intersection': T2_BINARY_INFIX,
-    # The additive concept pair (2026-07-04): union is order-free infix;
-    # difference co-varies with order (w - a != a - w), the part family.
+    # The lattice pair (order-free infix): union = RadMax, intersection = RadMin.
     'union':        T2_BINARY_INFIX,
-    'difference':   T3_BINARY_DIRECTIONAL,
+    'intersection': T2_BINARY_INFIX,
+    # The arithmetic concept pair (2026-07-05): sum = a+b, product = a*b, both
+    # commutative order-free infix. chunk is the structural <PartSpace> sum.
+    'sum':          T2_BINARY_INFIX,
+    'product':      T2_BINARY_INFIX,
+    'chunk':        T2_BINARY_INFIX,
     # Binary directional (T3): (position, marker) co-varies with a
     # recorded order bit -- the part / possessive family. ``isPart`` is
     # the role-collapsed relation name (query-dispatched) that supersedes
     # ``assertPart`` / ``queryPart``.
     'isPart':       T3_BINARY_DIRECTIONAL,
     'part':         T3_BINARY_DIRECTIONAL,
+    'whole':        T3_BINARY_DIRECTIONAL,
     'queryPart':    T3_BINARY_DIRECTIONAL,
     'assertPart':   T3_BINARY_DIRECTIONAL,
     # lift / lower / verb / adverb: T3/T4 -- modifier marker or bare; the
@@ -5532,7 +5591,7 @@ class LanguageLayer(Layer):
                 f"the rule from the grammar.")
 
         # 2026-05-29: pass the space_role-local Basis (codebook) as an
-        # explicit arg so binary reverses (JoinLayer /
+        # explicit arg so binary reverses (UnionLayer /
         # IntersectionLayer) can use the mereology-guided recommender
         # (``Ops.disjunctionReverse`` / ``Ops.conjunctionReverse``)
         # to recover an actual operand pair instead of returning the
@@ -5563,7 +5622,7 @@ class LanguageLayer(Layer):
         reverse_kwargs = {}
         ss = getattr(subspace, 'symbolSpace', None)
         if (ss is not None and arity == 2
-                and isinstance(layer, (IntersectionLayer, JoinLayer))):
+                and isinstance(layer, (IntersectionLayer, UnionLayer))):
             space_role = str(getattr(syntactic_layer, 'space_role', ''))
             space = (getattr(ss, 'wholeSpace', None) if space_role == 'SS'
                      else getattr(ss, 'conceptualSpace', None) if space_role == 'CS'
@@ -7832,7 +7891,7 @@ class SyntacticLayer(Layer):
         transform.
 
         When ``layer.reads_activation`` is True (e.g.
-        ``IntersectionLayer`` / ``JoinLayer``), the read source
+        ``IntersectionLayer`` / ``UnionLayer``), the read source
         switches to ``materialize(mode='activation')`` -- the
         ``[B, V, 2]`` bivector activation -- because those ops
         operate on the activation poles, not the muxed event.
@@ -7844,7 +7903,7 @@ class SyntacticLayer(Layer):
         """
         if subspace is None:
             return None
-        # Activation-reading ops (IntersectionLayer / JoinLayer at
+        # Activation-reading ops (IntersectionLayer / UnionLayer at
         # CS-space_role) read the bivector activation directly.
         if layer is not None and getattr(layer, 'reads_activation', False):
             if hasattr(subspace, 'materialize'):
@@ -7937,7 +7996,7 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
         try:
             host_layers[mn] = cls()
         except TypeError:
-            # Some GrammarLayer wrappers (IntersectionLayer / JoinLayer)
+            # Some GrammarLayer wrappers (IntersectionLayer / UnionLayer)
             # require a parametrized inner layer at construction. Without
             # one, the host space's existing instance should already be
             # in builtin_layers; if it isn't, skip rather than fail.
@@ -11547,7 +11606,7 @@ class SymbolSubSpace(SubSpace):
         attached layers so the binary reduction layer can do
         space_role-respecting position gating (plan \xa76).
 
-        Binary GrammarLayers (IntersectionLayer, JoinLayer, ...) expose
+        Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
         their pair-wise math via ``.compose(left, right)``; unary ones
         (NotLayer, NonLayer, ...) via ``.forward(x)``. The signal
         router's ``BinaryStructuredReductionLayer`` calls ``op(left,
