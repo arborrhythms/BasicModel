@@ -76,20 +76,30 @@
   </PartSpace>
 
   <Symbolic>
+    <!-- The dimensional start states, in operator-role form (no POS tokens):
+         absolute_truth = exist_O1, the EXISTS no-op output (a thing exists,
+         the minimal event); relative_truth = the relation family part / whole
+         / equal, each a Relation(RI_1, RI_2) output over two ideas. -->
     <start name="absolute_truth">exist_O1</start>
+    <start name="relative_truth">part_O1</start>
+    <start name="relative_truth">whole_O1</start>
+    <start name="relative_truth">equal_O1</start>
 
     <compose>
-      <!-- Relative truth: isEqual AND isPart MOVED to Queries (Alec
-           2026-07-05: "isPart, isEqual, and related operations are all
-           queries: they are tools the mind can use, but they do not have
-           a defined syntactic operation; I will think more about how to
-           integrate their operation"). equal(X, Y) / part(X, Y) are the
-           reasoner's forms; neither had a faithful inverse for the
-           derivation replay (Gate-S1 inventory, serial plan 2026-07-04).
-           queryPart / assertPart remain folded away (decision 6). -->
+      <!-- Relations R (the relation family): part / whole / equal are
+           COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
+           that head the relative-truth start. Their is-prefixed cousins
+           (isPart / isWhole / isEqual) are the boolean-predicate QUERIES in
+           <Queries>; whole is the converse of part (WholeLayer). queryPart /
+           assertPart remain folded away (decision 6). -->
+      <rule query="false">part_O1 = part.forward(part_I1, part_I2)</rule>
+      <rule query="false">whole_O1 = whole.forward(whole_I1, whole_I2)</rule>
+      <rule query="false">equal_O1 = equal.forward(equal_I1, equal_I2)</rule>
 
       <!-- Absolute truth. exist = "NP found in LTM and trusted" (an LTM query);
-           the predicate that roots a single idea. -->
+           EXISTS is the no-op verb (EO_1 = EXISTS(EI_1)): applied to a thing it
+           roots the minimal event, so no S = thing + EXISTS composition rule is
+           needed; the operator does it. -->
       <rule>exist_O1 = exist.forward(exist_I1)</rule>
 
       <!-- Negation: not = pole swap; non = non-affirming complement. -->
@@ -131,6 +141,10 @@
 
     <generate>
       <!-- Reverse rules: output -> inputs. -->
+      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="false">whole_I1, whole_I2 = whole.reverse(whole_O1)</rule>
+      <rule query="false">equal_I1, equal_I2 = equal.reverse(equal_O1)</rule>
+
       <rule>exist_I1 = exist.reverse(exist_O1)</rule>
 
       <rule>not_I1 = not.reverse(not_O1)</rule>
@@ -158,27 +172,25 @@
     <!-- INTROSPECTION / "thinking" ops: query the codebook / relations / LTM.
          NOP for a parse (they build no structure); listed so the model can
          reason over what it knows. The truth-grounded reasoner implements them
-         as exist / equal / part / query / quantize / wholes / parts / arma
-         (doc/plans/2026-06-23-truth-grounded-reasoning.md). -->
-    <query>exist(X)</query>
-    <!-- equal(X, Y) IS the isEqual relation (copula, "is" of definition)
-         and part(X, Y) IS the isPart relation: both relocated OUT of
-         compose (Alec 2026-07-05: the relation family are QUERIES, tools
-         the mind can use with no defined syntactic operation; their
-         operational integration is an OPEN design question). exist(X)
-         retains a compose form as the absolute-truth START (a structural
-         role); whether it follows the family out is flagged for the
-         same integration design. -->
-    <query>equal(X, Y)</query>
-    <query>part(X, Y)</query>
-    <query>query(X, Y)</query>
-    <query>quantize(X)</query>
-    <query>wholes(X)</query>
+         (doc/plans/2026-06-23-truth-grounded-reasoning.md).
+
+         Two kinds, by type signature:
+         * is* = BOOLEAN-PREDICATE queries (idea (x idea) -> truth). isTrue is
+           the check that the exist start asserts structurally; isEqual /
+           isPart / isWhole are the is-prefixed cousins of the compose
+           relations equal / part / whole. "is" marks a boolean predicate.
+         * non-is = VALUE-RETURNING queries (idea -> idea(s) / code / pred):
+           parts / wholes retrieve related items, quantize returns a code,
+           arma is the ARMA next-step prediction (InterSentenceLayer), query
+           is generic dispatch. -->
+    <query>isTrue(X)</query>
+    <query>isEqual(X, Y)</query>
+    <query>isPart(X, Y)</query>
+    <query>isWhole(X, Y)</query>
     <query>parts(X)</query>
-    <!-- arma(X): the ARMA next-step prediction in conceptual space, i.e. the
-         statistical discourse trajectory (InterSentenceLayer). A tool the
-         reasoner can call alongside the hard deduction; the policy LEARNS when
-         the trajectory momentum is the relevant signal for the next idea. -->
+    <query>wholes(X)</query>
+    <query>quantize(X)</query>
     <query>arma(X)</query>
+    <query>query(X, Y)</query>
   </Queries>
 </grammar>

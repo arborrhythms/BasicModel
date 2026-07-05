@@ -84,10 +84,13 @@ def test_symbolicspace_owns_its_starts():
     """WholeSpace owns the operator-output starts, split by name."""
     g = _load()
     ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
-    # The relation family left the starts with its relocation to <Queries>;
-    # exist keeps the absolute-truth structural start (integration TBD).
+    # ADAPTED 2026-07-05: the relation family (part / whole / equal) is back as
+    # COMPOSITIONAL operators heading the relative-truth start -- Relation(RI_1,
+    # RI_2) over two ideas -- while only their is-prefixed cousins (isPart /
+    # isWhole / isEqual) are queries. exist_O1 keeps the absolute-truth start
+    # (the EXISTS no-op).
     assert "exist_O1" in ws_syms, ws_syms
-    assert g.ws_relative_starts == frozenset()
+    assert g.ws_relative_starts == frozenset({"part_O1", "whole_O1", "equal_O1"})
     assert "exist_O1" in g.ws_absolute_starts
 
 
@@ -100,12 +103,18 @@ def test_no_top_level_start():
 
 
 def test_no_query_part_or_assert_part():
-    """``queryPart`` / ``assertPart`` are folded into ``isPart`` + query."""
+    """``queryPart`` / ``assertPart`` are folded into ``isPart`` + query.
+
+    ADAPTED 2026-07-05: ``part`` (and its converse ``whole`` / geometric
+    ``equal``) are now live COMPOSITIONAL relations heading the relative-truth
+    start, so ``part`` IS an expected method; only the retired dispatch aliases
+    ``queryPart`` / ``assertPart`` stay folded away.
+    """
     g = _load()
     methods = {r.method_name for r in g.rules if r.method_name}
     assert "queryPart" not in methods
     assert "assertPart" not in methods
-    assert "part" not in methods
+    assert "part" in methods
 
 
 def test_no_pos_or_category_state_names():
@@ -200,7 +209,7 @@ _ALL_GRAMMAR_FILES = sorted(
 _RETIRED_METHOD_NAMES = {"queryPart", "assertPart"}
 
 # Relation families whose rules must carry an explicit query attribute.
-_RELATION_DOTTED = ("isEqual.", "isPart.", "part.")
+_RELATION_DOTTED = ("isEqual.", "isPart.", "part.", "whole.", "equal.")
 
 
 def test_sweep_covers_data_grammars():
