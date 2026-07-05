@@ -90,7 +90,7 @@ class TestWordEncoding(unittest.TestCase):
         Language.TheGrammar._configured = False
         Language.TheGrammar.configure({'compose': {
             'S': ['not(S)', 'intersection(S, S)',
-                  'union(S, S)', 'lower(S, S)']
+                  'join(S, S)', 'lower(S, S)']
         }})
 
     def test_7tuple_encoding(self):

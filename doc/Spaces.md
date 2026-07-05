@@ -575,9 +575,25 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
   canonical positional identifier across IS / PS / SS taxonomies, recoverable via
   $\operatorname{atan2}(\sin, \cos)/\omega_0$); `decode_span` returns `(start, end)` for the
   mereology **contiguity / containment** test (instants snap to zero extent).
-  `.when` uses the **same bracket** over event TIME (center = event time,
-  magnitude = duration); tense is the interval-vs-`now` relation, not a
-  magnitude (see `WhenRangeEncoding`).
+  The period is config-derived: `<architecture><wherePeriod>` (default 8192
+  input bytes), decoupled from `nObjects`; the build seam raise-to-fits with
+  a warn-once for longer inputs (2026-07-04 encoding pass).
+- `nWhen` dims (4) --- the **2-rung start LADDER** (`WhenStartDurationEncoding`,
+  2026-07-04 encoding pass): $[\sin(s\,\omega_{lf}), \cos(s\,\omega_{lf}),
+  \sin(s\,\omega_{hf}), \cos(s\,\omega_{hf})]$ — two TRUE quadrature pairs
+  over ONE quantity, the event **onset** $s$, with $P_{lf}=$ `<whenPeriod>`
+  (default $10^6$ ticks) and $P_{hf} = P_{lf}/$`<whenRungRatio>` (default 32;
+  safe branch bound $\approx 35$ at the dense-support phase floor). Constant
+  norm $\sqrt 2$; decode = atan2 per pair + HF branch resolution by LF.
+  **Shared-HF caveat:** at the default short HF, start-fine is a LOCAL phase
+  fingerprint (sharp neighbor discrimination), absolute branch unresolved
+  band-only — **absolute addressing rides the exact long-int clock**
+  (`BasicModel.when_time`), the Option-C hybrid side-band. DURATION left the
+  band (it was write-only: `decode_span` had zero callers, tense rotates the
+  onset only, aspect is retired) — exact extents belong to the record store
+  when aspect is built. Tense is the onset-vs-`now` relation; `shift_time`
+  rotates BOTH pairs coherently, each at its own $\omega$. The endpoint-sum
+  bracket no longer serves `.when` (`WhereEncoding` keeps it).
 
 Result: `[nActive, nWhat + nWhere]` tensor.
 
@@ -599,9 +615,9 @@ scaled to `[-1, 1]` via the global data min/max.
 | `demuxed` | Store what/where/when independently |
 
 > 2026-05-28: per-Space `<nWhere>` / `<nWhen>` XML knobs are retired.
-> `model.xml` carries the per-Space defaults (`<nWhere>2</nWhere>` on
-> InputSpace / PartSpace / WholeSpace, `0` elsewhere). Per-file
-> configs no longer declare them. See
+> The band is architectural: `architecture.canonical_shape(section)` —
+> (nWhere=2, nWhen=4) on every interior space, (0, 0) on OutputSpace
+> (the 2026-07-04 encoding pass widened `.when` 2→4). See
 > [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 
 **Invertibility.** Always non-invertible; reverse is a separate reconstruction

@@ -1,7 +1,134 @@
+================== SESSION SUMMARY 2026-07-04 → 2026-07-05 ==================
 
-* Implement doc/plans/2026-07-04-where-when-encoding-*.md
+WHAT WE DID (all UNCOMMITTED in the working tree — Alec commits):
 
-* Implement doc/plans/2026-07-04-serial-derivation-reconstruction-design.md
+1. WHERE/WHEN ENCODING PASS (own plan, DONE through Gate B; Gate-B bar RED).
+   .where period config-derived (<wherePeriod> 8192, warn-once raise-to-fit,
+   decoupled from nObjects); .when v2 = 4-dim 2-rung start ladder
+   (WhenStartDurationEncoding; <whenPeriod> 1e6 / <whenRungRatio> 32;
+   duration left the band, exact long-int clock addresses LTM). Canonical
+   band (2,2)→(2,4) plumbed via one construction seam; +2 when-band config
+   ledger across model.xml + 8 configs; coordinated re-baseline (Gate A
+   green); blind decode + scaffold-masking curriculum (Gate B — mechanism
+   green, the E~80 full-model blind bar RED). 15 band-fixture tests adapted.
+
+2. BLIND-BAR CHARACTERIZATION → led to Alec's union/difference idea. The
+   lattice folds (join/intersection, join_from_bottom, conjunction/
+   disjunction) saturate and carry NO residual; the [0,1] presence cube
+   bunches cosine margins (xor store median 0.34, one positive cone) so
+   with one symbol per word an inverse cannot recover constituents.
+
+3. UNION/DIFFERENCE CONCEPT OPS (Alec's proposal; DONE).
+   UnionLayer (a+b; reverse=(parent,∅); basis-reverse=peel step) +
+   DifferenceLayer (w−a exact residual) + peel (matching pursuit) +
+   registry/fixity + grammar-config integration + THE CONTRAST TEST.
+   NAMING (Alec): pair = union/difference; the interim "fusion" was wrong
+   (a different retired op); the lattice max renamed union→join (JoinLayer,
+   matching Mereology.join_from_bottom) across 11 config grammars + 4
+   .grammar files + tests. test_union_difference_ops.py 10/10.
+
+4. SERIAL-DERIVATION PLAN Tasks 0–2 (Task 0 survey, Task 1 stubs→errors,
+   Task 2 Method-1 routing) DONE; the grammar round-trip bar is RED (the
+   single-S never expands — operand payloads not stored). Gate-S1 verdicts
+   resolved by Alec (relation family → Queries; see below).
+
+5. TOOLING: added pytest-xdist + `make testp` (opt-in parallel, ~3.6×;
+   canonical `make test` stays serial/deterministic). Suite last green at
+   3010 passed / 0 failed / 52 skipped (parallel).
+
+OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
+
+* [ALEC — DESIGN] Operational integration of the QUERY TOOLS (isEqual,
+  isPart, exist, and the reasoner's equal/part/query/quantize/wholes/parts/
+  arma). They are tools the mind uses but have NO defined syntactic
+  operation — how do they get invoked during parse/reason? This is the
+  gating design question for: (a) whether exist follows the family out of
+  <compose> (it currently keeps the absolute-truth START role); (b) whether
+  default.grammar/shamatha.grammar follow complete.grammar's relocation
+  (generalizing there broke the MM_grammar XOR convergence bar — reverted);
+  (c) reviving the NP-R-NP (3-concept) relative-sentence form, which now
+  has no grammar-level producer (4 integration tests skip at the finder).
+
+* [ALEC — KNOB] Gate-B blind round-trip bar is RED at E~80: full-model
+  .where band precision (~4–7 byte claim error) can't separate xor's
+  5-vs-6-byte tiles. Options: more where-band training pressure / longer
+  budgets / accept scaffold-fed. Recorded in the encoding plan's Gate-B
+  notes. (Mechanism is proven correct via synthetic-stamp tests.)
+
+* [NEXT BUILD — Serial S2] Operand PROVENANCE for Method-1 exactness: stash
+  the pre-reduce STM snapshot / per-step operand pairs on the forward
+  (the reducer already parks marginal_slab [B,2,D] = the last step's
+  operand pair on _stm_last_reduce_routing; multi-step needs per-step
+  accumulation, batch-scoped like _stm_single_S). Walk recorded rules
+  backward popping stored operands; dispatch real inverses (lower);
+  then Task 3 NULL-word pathway (emit side; union's additive identity is
+  the compose-identity), Task 4 Method-2 free-derivation bar, Task 5 docs.
+
+* [POSSIBLE — Alec's call] Signed-domain concept storage (the deferred
+  percept-cube signed-mixing decision): keep [0,1] presence as the symbolic
+  READ (containment/truth), store+transport the ADDITIVE domain underneath
+  where union/difference peel is exact — no nearest-neighbor guessing
+  against a bunched cone. Couples to the blind-bar content path AND the
+  serial peel decode (sigma.reverse's partition-blind split is the same
+  missing-difference defect).
+
+* [CLEANUP — deferred] Rename the space_role value pair to match: the
+  lattice op is now "join" but its partner is still "intersection" (not
+  "meet"); Alec did not ask for the meet sweep — left as-is.
+
+============================================================================
+
+* [DONE 2026-07-04 night; RENAMED 2026-07-05 per Alec] union/difference
+  concept ops (doc/plans/2026-07-04-union-difference-concept-ops.md):
+  UnionLayer (a+b; reverse = (parent, ∅); basis-reverse = peel step) +
+  DifferenceLayer (w−a exact residual) + peel (matching pursuit) +
+  registry/fixity + grammar-config integration + THE CONTRAST TEST
+  (lattice pair provably destroys the residual; union/difference
+  recovers) — test_union_difference_ops.py 10/10, suite green.
+  NAMING RESOLVED (Alec 2026-07-05): pair = union/difference; the
+  lattice max renamed join (11 config grammars swept union(→join().
+
+* Execute doc/plans/2026-07-04-serial-derivation-reconstruction-execution.md.
+  OVERNIGHT STATE (2026-07-04 night, notes in the plan): Task 0 DONE
+  (sub-agent survey: decode consumed the TENSOR arm — _reverse_from_S's
+  thunk was OVERWRITTEN; recorded rules {isEqual x3, lower, exist}; ZERO
+  per-op reverses fire on the router path; unreduce = dead code there).
+  Task 1 DONE (stub sanction revoked everywhere: raise_no_inverse
+  inventory errors; unreduce + SyntacticLayer.reverse + 9 per-op stubs;
+  exist invertible=True — identity forward; 2-D codebook guards on the
+  four recommenders; 6 contract tests + 11 consumers adapted; suite
+  3013/0). Task 2 ROUTING DONE, BAR RED: serial eval decode now consumes
+  the Method-1 replay ('hello world'→'world' — the single-S never
+  EXPANDS; rule names are stored but operand payloads are NOT);
+  test_mm20m_grammar_derivation_roundtrip added (RUN_SLOW, RED).
+  ⇒ NEXT (the real S2 build): operand PROVENANCE — stash the pre-reduce
+  STM snapshot / per-step operand pairs on the forward; walk recorded
+  rules backward popping stored operands; dispatch real inverses
+  (lower); NULL-word pads the expansion (Task 3 emit side). GATE S1
+  verdicts RESOLVED (Alec 2026-07-05): the relation family (isEqual,
+  isPart, related) are QUERIES — tools, no defined syntactic operation —
+  relocated to complete.grammar's <Queries> (equal/part forms); the
+  OPERATIONAL INTEGRATION of query tools is Alec's open design question.
+  exist KEPT its compose form (structural absolute-truth start; follows
+  the family only if the integration design says so). default/shamatha
+  keep relation parse rules (generalizing broke the MM_grammar XOR bar).
+  S2 worklist now: lower (real inverse) + exist (identity) + substrate
+  folds — no un-invertible rules recorded. NP-R-NP sentences have no
+  grammar producer until the integration design; 4 relative-sentence
+  integration tests skip at the finder (flagged). THEN Task 3 (NULL-word + padding
+  fork), Task 4 (Method-2 bar), Task 5 (docs + suite). COUPLING: the
+  union/difference pair is the residual substrate for the free
+  (Method-2) case; NULL-word = union's additive identity.
+
+* [DONE 2026-07-04] where/when encoding pass (doc/plans/2026-07-04-where-when-
+  encoding-*.md): .where period decoupled (<wherePeriod> 8192, warn-once
+  raise-to-fit); .when v2 = 4-dim 2-rung start ladder (<whenPeriod>/
+  <whenRungRatio>; duration left the band, exact clock addresses LTM); band
+  (2,2)→(2,4) plumbed + coordinated re-baseline (GATE A green); blind decode +
+  scaffold-masking curriculum (GATE B — mechanism green, the E~80 blind bar is
+  RED on full-model band precision, an OPEN Alec knob in the plan's Gate-B
+  notes). Config ledger +2 when-band across model.xml + 8 configs; 15 band-
+  fixture tests adapted.
 
 * .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
 

@@ -17,17 +17,23 @@ LiftingLayer). Older docs sometimes call `nOutput` / `nInput` `nActive`;
 treat that as the same thing as `nOutput`.
 
 > 2026-05-28: `<nWhere>` / `<nWhen>` are retired from per-file configs.
-> `data/model.xml` carries per-Space defaults (`<nWhere>2</nWhere>` on
-> InputSpace / PartSpace / WholeSpace, `0` elsewhere). The
+> The band is architectural (`canonical_shape`): (nWhere=2, nWhen=4) on
+> every interior space, (0, 0) on OutputSpace. The
 > `.where` field is the canonical positional identifier; see
 > [doc/old/2026-05-28-where-keyed-taxonomy.md](old/2026-05-28-where-keyed-taxonomy.md).
 >
-> 2026-06-16: `.where` and `.when` are now **endpoint-sum brackets** `[start,
+> 2026-06-16: `.where` is an **endpoint-sum bracket** `[start,
 > end]` (angle = span center, magnitude = extent), the invertible
 > `EndpointSumWhere` form. An instant (`start==end`) is byte-identical to the
-> prior single-quadrature point, so `whereScale` / `whenScale` are unchanged.
-> `.when` tense is the interval-vs-`now` relation (the magnitude-D tense scheme
-> is retired); see [doc/Spaces.md](Spaces.md).
+> prior single-quadrature point.
+>
+> 2026-07-04 (encoding pass): `.when` is the **4-dim 2-rung start ladder**
+> (`WhenStartDurationEncoding`; onset only — duration left the band; the
+> exact long-int clock addresses LTM, the Option-C hybrid). New
+> `<architecture>` knobs: `<wherePeriod>` (default 8192 input bytes;
+> `.where` period, decoupled from nObjects, warn-once raise-to-fit),
+> `<whenPeriod>` (default $10^6$ ticks), `<whenRungRatio>` (default 32).
+> Tense is the onset-vs-`now` relation; see [doc/Spaces.md](Spaces.md).
 
 ---
 
@@ -41,6 +47,9 @@ sub-elements `<training>` and `<data>` (see below).
 | `data/dataType` | string | `"numeric"` | The data space-role (was the retired architecture-level `modelType`), set under `<data>`: `embedding` (LM / chat with sequence processing — PartSpace owns the byte/word lexicon) or `numeric` (dense slab, e.g. MNIST pixels). The old `simple`+`passthrough` collapsed to `numeric`; `vq` was dropped (0 configs). |
 | `reconstruct` | — | — | RETIRED (A1, 2026-06-09): the `reconstructEnum` / `<reconstruct>` element no longer exists. The ConceptualCombine now unconditionally integrates all three streams (PS + SS + CS), so reconstruction is always concepts-seeded from the conceptual space-role — there is no longer a selectable mode (`none` / `symbols` / `both` are gone). |
 | `subsymbolicOrder` | int | `1` | Iteration depth of the P$\to$C$\to$S pipeline. `order > 1` partitions the symbolic codebook geometrically; the partition width is set by `conceptualWidth`. |
+| `wherePeriod` | int | `8192` | The `.where` quadrature period in input BYTES (2026-07-04 encoding pass; decoupled from the retired implicit $\Sigma$ nVectors period). The build seam raise-to-fits for longer inputs, warning once — never silent aliasing. |
+| `whenPeriod` | int | `1000000` | The `.when` v2 LF horizon in clock ticks (the LTM event-addressing range). The band is the SIMILARITY channel; absolute addressing rides the exact long-int clock (`when_time`). |
+| `whenRungRatio` | int | `32` | LF/HF period ratio of the `.when` 2-rung start ladder (safe branch bound $\approx 35$ at the dense-support floor). |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |

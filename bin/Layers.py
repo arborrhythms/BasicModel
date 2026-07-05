@@ -2140,7 +2140,7 @@ class GrammarLayer(Layer):
 
     Note (2026-04-30): ``PiLayer`` / ``SigmaLayer`` inherit directly
     from GrammarLayer so the parameterized fold layers ARE Grammar
-    layers, not wrapped by separate IntersectionLayer / UnionLayer
+    layers, not wrapped by separate IntersectionLayer / JoinLayer
     adapters. The wrappers remain for
     back-compat but are no longer the only path to attach a rule_name
     to a parameterized fold.
@@ -2177,6 +2177,19 @@ class GrammarLayer(Layer):
     lossy            = False
     space_role             = 'SS'
     reads_activation = False
+
+    def raise_no_inverse(self, why=""):
+        """Serial-derivation fail-loud contract (2026-07-04 plan, Task 1):
+        a rule with no faithful reverse RAISES instead of fabricating an
+        identity/pseudo split -- the error inventory is the Gate-S1
+        decision procedure (write a real reverse() or remove the rule)."""
+        detail = f" [{why}]" if why else ""
+        raise NotImplementedError(
+            f"{type(self).__name__} rule '{self.rule_name}' "
+            f"(arity {self.arity}, space_role {self.space_role}): no "
+            f"faithful reverse(){detail} -- write a real reverse() or "
+            f"remove the rule from the grammar "
+            f"(serial-derivation plan 2026-07-04, Gate S1 inventory).")
 
     # Surface-realization template (SurfaceSchema, above). T4 BINARY_
     # JUXTAPOSE is the default base schema -- bare concatenation, no
@@ -3321,7 +3334,8 @@ class NegationLayer(Layer):
 # IntersectionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
-# UnionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+# JoinLayer (ex-UnionLayer; lattice max) -- moved to Language.py (2026-05-29 §5;
+# renamed 2026-07-05: 'union' is now the additive concept op).
 # LiftLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
@@ -12739,7 +12753,7 @@ class Ops:
     @staticmethod
     def union(x, y, monotonic=False):
         """Set union on bivector activations -- the public kernel
-        ``UnionLayer`` calls.
+        ``JoinLayer`` calls.
 
         Per-axis, per-pole "max toward zero" (in the sense of
         max-magnitude, away from zero) on ``x`` and ``y``:
@@ -12749,7 +12763,7 @@ class Ops:
                 channel.
 
         Forwards to ``_disjunction_kernel``; bit-exact with the
-        pre-2026-05-04 UnionLayer body.
+        pre-2026-05-04 (lattice) JoinLayer body.
         """
         return Ops._disjunction_kernel(x, y, monotonic=monotonic)
 
@@ -15252,6 +15266,7 @@ _MOVED_TO_LANGUAGE = frozenset({
     'NonLayer',
     'IntersectionLayer',
     'UnionLayer',
+    'JoinLayer',
     'LiftLayer',
     'VerbLayer',
     'AdverbLayer',

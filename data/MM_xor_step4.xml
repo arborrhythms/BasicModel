@@ -33,7 +33,7 @@
         <S>sigma(S)</S>
         <S>not(S)</S>
         <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
+        <S>join(S, S)</S>
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
       </grammar>

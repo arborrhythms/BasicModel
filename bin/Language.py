@@ -35,7 +35,7 @@ from collections import namedtuple as _namedtuple
 # stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
 # FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /
 # IsaPartLayer also derive from it and stay). The grammar rule operator
-# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, LiftLayer,
+# classes (NotLayer, NonLayer, IntersectionLayer, JoinLayer, LiftLayer,
 # LowerLayer, SymbolizeLayer, ConjunctionLayer, DisjunctionLayer,
 # IsEqualLayer, PartLayer, QueryLayer) physically live in this module
 # below, after the Grammar singleton.
@@ -2091,12 +2091,15 @@ class IntersectionLayer(GrammarLayer):
             # Mereology recommender; falls back internally to
             # (parent, parent) when W is empty.
             W = basis.getW() if hasattr(basis, 'getW') else None
-            if W is not None:
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
                     left_priming=left_priming, right_priming=right_priming)
-        return parent, parent
+        # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
+        # is revoked -- the min-fold is many-to-one with no residual.
+        self.raise_no_inverse("AND-fold is many-to-one; supply a basis for "
+                              "the recommender")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -2129,9 +2132,12 @@ class IntersectionLayer(GrammarLayer):
                             left_rows=left_rows, right_rows=right_rows,
                             left_priming=left_priming, right_priming=right_priming)
 
-class UnionLayer(GrammarLayer):
-    """Lossy ``union(C, C)`` over bivectors via ``Ops.union``."""
-    rule_name        = "union"
+class JoinLayer(GrammarLayer):
+    """Lossy lattice JOIN ``join(C, C)`` (RadMax radial / lattice max) via
+    ``Ops.union``. RENAMED from ``union`` (2026-07-05, Alec): ``union`` is
+    the ADDITIVE residual-bearing concept op below; the saturating max-fold
+    is the lattice join (cf. ``Mereology.join_from_bottom``)."""
+    rule_name        = "join"
     arity            = 2
     invertible       = False
     lossy            = True
@@ -2219,12 +2225,15 @@ class UnionLayer(GrammarLayer):
             return self._butterfly_reverse(parent)
         if basis is not None:
             W = basis.getW() if hasattr(basis, 'getW') else None
-            if W is not None:
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=self.monotonic,
                     left_rows=left_rows, right_rows=right_rows,
                     left_priming=left_priming, right_priming=right_priming)
-        return parent, parent
+        # 2026-07-04 serial plan Task 1: the (parent, parent) pseudo-inverse
+        # is revoked -- the max-fold is many-to-one with no residual.
+        self.raise_no_inverse("OR-fold is many-to-one; supply a basis for "
+                              "the recommender")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -2248,6 +2257,187 @@ class UnionLayer(GrammarLayer):
         return self.reverse(parent, basis=basis,
                             left_rows=left_rows, right_rows=right_rows,
                             left_priming=left_priming, right_priming=right_priming)
+
+
+class UnionLayer(GrammarLayer):
+    """``union(C, C) = left + right`` — the mereological sum on concepts.
+
+    The union/difference pair (Alec 2026-07-04; plan
+    doc/plans/2026-07-04-union-difference-concept-ops.md): the
+    RESIDUAL-BEARING class analogous to the symbol layer's saturating
+    conjunction/disjunction lattice (``join``/``intersection`` — the
+    lattice max vacated this name 2026-07-05, Alec: "union/difference is
+    best: fusion is a different operator"). No tanh, no clamp, no
+    normalize: ``difference(union(a, b), a) == b`` to float rounding
+    (bit-exact on integer-valued content).
+
+    ``invertible=True`` means forward∘reverse == id EXACTLY: the bare
+    ``reverse(parent)`` is the ∅-decomposition ``(parent, 0)``
+    (``w = w ⊔ ∅`` — honest, recomposes exactly, and 0 is the NULL-word's
+    compose identity), NOT a partition-blind halving. Constituent recovery
+    takes ``reverse(parent, basis=W)`` (the PEEL step: best store row,
+    exact remainder) or :meth:`peel` (greedy matching pursuit)."""
+    rule_name        = "union"
+    arity            = 2
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain additive binary op; optional butterfly cascade parity."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    # -- Butterfly per-pair op (structural parity with the siblings) ---
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Additive per-pair op: broadcast ``a + b`` into the packed form."""
+        D = self._butterfly_D
+        m = x_pair[..., :D] + x_pair[..., D:]
+        return torch.einsum('bmi,mij->bmj', torch.cat([m, m], dim=-1),
+                            W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """∅-decomposition in packed form: (recovered sum, zeros)."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        m = 0.5 * (unweighted[..., :D] + unweighted[..., D:])
+        return torch.cat([m, torch.zeros_like(m)], dim=-1)
+
+    def forward(self, left, right=None):
+        """Binary ``left + right``; butterfly mode runs the cascade."""
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return left + right
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            return self._butterfly_forward(
+                torch.cat([left, right], dim=-2))
+        return left + right
+
+    @staticmethod
+    def difference(whole, part):
+        """The exact residual: ``whole - part`` (recovers the other
+        operand of ``union`` to float rounding)."""
+        return whole - part
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """∅-decomposition ``(parent, 0)`` by default; with ``basis`` the
+        PEEL step: pick the best-matching store row ``x1`` (max cosine),
+        return ``(x1, parent - x1)`` — exact recomposition by
+        construction. ``left_rows`` restricts the candidate rows;
+        the priming kwargs are accepted for sibling-signature parity."""
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        if basis is not None:
+            W = basis.getW() if hasattr(basis, 'getW') else basis
+            if W is not None and torch.is_tensor(W) and W.numel() > 0:
+                rows = W if left_rows is None else W[left_rows]
+                flat = parent.detach().reshape(-1).to(W.dtype)
+                if flat.shape[0] == rows.shape[-1]:
+                    sims = torch.nn.functional.normalize(rows, dim=-1) @ \
+                        torch.nn.functional.normalize(flat, dim=0)
+                    best = rows[int(sims.argmax())].reshape(parent.shape)
+                    return best, parent - best
+        return parent, torch.zeros_like(parent)
+
+    @classmethod
+    def peel(cls, whole, basis, max_parts=8, tol=1e-4):
+        """Greedy matching pursuit: repeatedly subtract the best-cosine
+        store row until the residual is ~0, no row matches (cos <= 0), or
+        ``max_parts``. Returns ``(row_indices, residual)``. Exact for
+        near-orthogonal (signed-domain) parts; the [0,1] cone is where it
+        degrades — the hypothesis's contrast case."""
+        W = basis.getW() if hasattr(basis, 'getW') else basis
+        residual = whole.detach().reshape(-1).to(W.dtype).clone()
+        floor = tol * (1.0 + float(whole.detach().norm()))
+        Wn = torch.nn.functional.normalize(W, dim=-1)
+        picked = []
+        for _ in range(int(max_parts)):
+            if float(residual.norm()) < floor:
+                break
+            sims = Wn @ torch.nn.functional.normalize(residual, dim=0)
+            best = int(sims.argmax())
+            if float(sims[best]) <= 0.0:
+                break
+            picked.append(best)
+            residual = residual - W[best]
+        return picked, residual.reshape(whole.shape)
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming,
+                            right_priming=right_priming)
+
+
+class DifferenceLayer(GrammarLayer):
+    """``difference(C, C) = left - right`` — union's exact residual as a
+    first-class, ORDER-DIRECTIONAL concept op (T3 fixity, like ``part``).
+    ``difference(union(a, b), a) == b`` to float rounding. Bare
+    ``reverse(parent)`` is the ∅-decomposition ``(parent, 0)``
+    (``parent - 0 == parent`` exactly)."""
+    rule_name        = "difference"
+    arity            = 2
+    invertible       = True
+    lossy            = False
+    space_role       = 'CS'
+    reads_activation = False
+
+    def __init__(self, nInput=0, nOutput=0, butterfly=False, N=None):
+        """Plain subtractive binary op; optional butterfly cascade parity."""
+        super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
+
+    def _butterfly_pair_op(self, x_pair, W_node):
+        """Subtractive per-pair op (left minus right), packed form."""
+        D = self._butterfly_D
+        m = x_pair[..., :D] - x_pair[..., D:]
+        return torch.einsum('bmi,mij->bmj', torch.cat([m, m], dim=-1),
+                            W_node)
+
+    def _butterfly_pair_op_reverse(self, y_pair, W_inv_node):
+        """∅-decomposition in packed form: (recovered value, zeros)."""
+        unweighted = torch.einsum('bmi,mij->bmj', y_pair, W_inv_node)
+        D = self._butterfly_D
+        m = 0.5 * (unweighted[..., :D] + unweighted[..., D:])
+        return torch.cat([m, torch.zeros_like(m)], dim=-1)
+
+    def forward(self, left, right=None):
+        """Binary ``left - right``; butterfly mode runs the cascade."""
+        if self.butterfly:
+            return self._butterfly_forward(left)
+        return left - right
+
+    def compose(self, left, right):
+        """Compose the input via this layer's parse contract."""
+        if self.butterfly:
+            return self._butterfly_forward(
+                torch.cat([left, right], dim=-2))
+        return left - right
+
+    def reverse(self, parent, basis=None,
+                left_rows=None, right_rows=None,
+                left_priming=None, right_priming=None):
+        """∅-decomposition ``(parent, 0)``; recomposes exactly
+        (``parent - 0``). Kwargs accepted for sibling-signature parity."""
+        if self.butterfly:
+            return self._butterfly_reverse(parent)
+        return parent, torch.zeros_like(parent)
+
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Generation dual: forwarded to ``reverse`` (same contract)."""
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming,
+                            right_priming=right_priming)
 
 
 # ===========================================================================
@@ -2291,11 +2481,12 @@ class UnionLayer(GrammarLayer):
 
 # --- Event modality helpers (modality re-architecture, Phase 3) ----------
 # CS-space_role grammar ops operate on the muxed event [what | where | when]
-# (architecture.canonical_shape("ConceptualSpace") == (2, 2)). These split /
-# reassemble the event and extend/retract the .when span. Content-only
-# operands (width == the op's .what content width) bypass these and take the
-# legacy content fold, so the WS-space_role route stays content-only.
-_EVENT_WHEN_WIDTH = 2
+# (architecture.canonical_shape("ConceptualSpace") == (2, 4), 2026-07-04
+# encoding pass: .when is the 4-dim start ladder). These split / reassemble
+# the event and shift the .when onset. Content-only operands (width == the
+# op's .what content width) bypass these and take the legacy content fold,
+# so the WS-space_role route stays content-only.
+_EVENT_WHEN_WIDTH = 4
 
 
 def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
@@ -2308,26 +2499,22 @@ def _split_event(x, content_width, when_width=_EVENT_WHEN_WIDTH):
 
 
 def _event_when_encoding(when_width=_EVENT_WHEN_WIDTH):
-    from Spaces import WhenRangeEncoding
-    return WhenRangeEncoding(n_when=when_width)      # default period (_WHEN_PERIOD)
+    # The ONE .when construction seam (config <whenPeriod>/<whenRungRatio>)
+    # so tense rotation and the Space stamps share one omega pair.
+    from Spaces import event_when_encoding
+    return event_when_encoding(when_width)
 
 
-def _when_extent(when, when_width=_EVENT_WHEN_WIDTH):
-    """The event DURATION (extent) decoded from a .when bracket tail (0 for an
-    instant). Under the 2026-06-16 bracket redesign the magnitude is duration,
-    not tense; tense is the interval-vs-now relation (see WhenRangeEncoding)."""
-    enc = _event_when_encoding(when_width)
-    _center, ext = enc.decode(when.detach())
-    fe = ext.reshape(-1)
-    return float(fe[0]) if fe.numel() else 0.0
+# _when_extent RETIRED (2026-07-04 encoding pass): duration left the band
+# (write-only in v1 -- zero callers); exact extents belong to the record
+# store when aspect is built.
 
 
 def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
     """Advance the event one tense step toward the FUTURE (the
-    verb-advances-future rule of spec Section 5), preserving the event duration.
-    Under the 2026-06-16 .when bracket redesign tense is the interval position
-    relative to now, so LIFT shifts the event-time CENTER by +_WHEN_TENSE_STEP
-    ticks (``shift_time``) rather than rescaling a magnitude."""
+    verb-advances-future rule of spec Section 5). Tense is the onset position
+    relative to now: LIFT shifts the onset by +_WHEN_TENSE_STEP ticks
+    (``shift_time`` rotates BOTH ladder pairs coherently)."""
     from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
     return enc.shift_time(when, +_WHEN_TENSE_STEP)
@@ -2335,7 +2522,7 @@ def _lift_when(when, when_width=_EVENT_WHEN_WIDTH):
 
 def _lower_when(when, when_width=_EVENT_WHEN_WIDTH):
     """Inverse of _lift_when: retreat the event one tense step toward the PAST
-    (-_WHEN_TENSE_STEP ticks), preserving the event duration."""
+    (-_WHEN_TENSE_STEP ticks)."""
     from Spaces import _WHEN_TENSE_STEP
     enc = _event_when_encoding(when_width)
     return enc.shift_time(when, -_WHEN_TENSE_STEP)
@@ -3041,7 +3228,8 @@ class ContextualBindLayer(GrammarLayer):
                 return vec.expand_as(left) if vec.shape != left.shape else vec
         return left
     def reverse(self, parent):
-        return parent, parent              # lossy: contextual binding is not recoverable
+        # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
+        self.raise_no_inverse("contextual binding is not recoverable")
     def compose(self, left, right):
         return self.forward(left, right)
     def generate(self, parent):
@@ -3050,14 +3238,14 @@ class ContextualBindLayer(GrammarLayer):
 class _WhenOpMixin:
     """Shared helpers for unary ops that rewrite the .when tail of a
     materialized muxed event [B, V, nWhat + nWhere + nWhen]. Modifies ONLY
-    the trailing nWhen (=2) columns; .what / .where pass through. Builds a
-    matching WhenRangeEncoding to interpret / rewrite the phasor. Tense
-    operates on the VP/event .when BEFORE the subject LIFT (spec note:
-    equivalent post-LIFT)."""
-    _WHEN_WIDTH = 2
+    the trailing nWhen (=4, the 2026-07-04 start ladder) columns; .what /
+    .where pass through. Builds the matching v2 encoding via the one
+    construction seam. Tense operates on the VP/event .when BEFORE the
+    subject LIFT (spec note: equivalent post-LIFT)."""
+    _WHEN_WIDTH = 4
     def _when_encoding(self):
-        from Spaces import WhenRangeEncoding
-        return WhenRangeEncoding(n_when=self._WHEN_WIDTH)   # default period (_WHEN_PERIOD)
+        from Spaces import event_when_encoding
+        return event_when_encoding(self._WHEN_WIDTH)
     def _split_when(self, x):
         w = self._WHEN_WIDTH
         if x.shape[-1] < w:
@@ -3484,12 +3672,14 @@ class ConjunctionLayer(GrammarLayer):
             return self._butterfly_reverse(parent)
         if basis is not None:
             W = basis.getW() if hasattr(basis, 'getW') else None
-            if W is not None:
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
                 return Ops.conjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
                     left_priming=left_priming, right_priming=right_priming)
-        return parent, parent
+        # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
+        self.raise_no_inverse("AND-fold is many-to-one; supply a basis for "
+                              "the recommender")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3498,9 +3688,15 @@ class ConjunctionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.intersection(left, right, monotonic=True)
 
-    def generate(self, parent):
-        """Drive the reverse / generation pass."""
-        return self.reverse(parent)
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Drive the reverse / generation pass (recommender kwargs
+        forwarded -- Union/Intersection signature parity)."""
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming,
+                            right_priming=right_priming)
 
 class DisjunctionLayer(GrammarLayer):
     """``S -> disjunction(S, S)`` -- monotonic max on the
@@ -3515,7 +3711,7 @@ class DisjunctionLayer(GrammarLayer):
     which collapses to ``torch.max`` via
     ``_lift_kernel(kind='strict')``.
 
-    Distinct from ``UnionLayer`` (CS-space_role): UnionLayer operates on
+    Distinct from ``JoinLayer`` (CS-space_role): JoinLayer operates on
     a bivector ``[..., 2]`` activation and supports both RadMax
     and lattice-max; DisjunctionLayer operates on a scalar
     ``[B, V]`` post-codebook activation and is strictly monotonic.
@@ -3592,18 +3788,20 @@ class DisjunctionLayer(GrammarLayer):
         ``(x1, x2)`` with ``union(x1, x2) ~= parent`` from the codebook rows --
         EXACT on a discrete vocabulary (the XOR reconstruction path). The
         OR-fold is many-to-one, so ``basis is None`` falls back to the lossy
-        ``(parent, parent)`` pseudo-inverse. Mirrors ``UnionLayer.reverse``.
+        ``(parent, parent)`` pseudo-inverse. Mirrors ``JoinLayer.reverse``.
         """
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
             W = basis.getW() if hasattr(basis, 'getW') else None
-            if W is not None:
+            if W is not None and torch.is_tensor(W) and W.dim() == 2:
                 return Ops.disjunctionReverse(
                     parent, parent, W, monotonic=True,
                     left_rows=left_rows, right_rows=right_rows,
                     left_priming=left_priming, right_priming=right_priming)
-        return parent, parent
+        # 2026-07-04 serial plan Task 1: stub revoked (fail loud).
+        self.raise_no_inverse("OR-fold is many-to-one; supply a basis for "
+                              "the recommender")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3612,9 +3810,15 @@ class DisjunctionLayer(GrammarLayer):
             return self._butterfly_forward(x)
         return Ops.union(left, right, monotonic=True)
 
-    def generate(self, parent):
-        """Drive the reverse / generation pass."""
-        return self.reverse(parent)
+    def generate(self, parent, basis=None,
+                 left_rows=None, right_rows=None,
+                 left_priming=None, right_priming=None):
+        """Drive the reverse / generation pass (recommender kwargs
+        forwarded -- Union/Intersection signature parity)."""
+        return self.reverse(parent, basis=basis,
+                            left_rows=left_rows, right_rows=right_rows,
+                            left_priming=left_priming,
+                            right_priming=right_priming)
 
 
 def _argmax_prototype(x):
@@ -3728,10 +3932,12 @@ class IsEqualLayer(GrammarLayer):
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
 
-        Lossy ``(parent, parent)`` pseudo-inverse -- the max-fold
-        is not bijective.
+        The max-fold is not bijective: no faithful inverse exists.
+        2026-07-04 serial plan Task 1: stub revoked (fail loud); the
+        Method-1 replay must recover operands from the STORED derivation,
+        not fabricate them here.
         """
-        return parent, parent
+        self.raise_no_inverse("max-fold (isEqual) is not bijective")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3776,9 +3982,11 @@ class IsPartLayer(GrammarLayer):
         return right
 
     def reverse(self, parent):
-        """Lossy ``(parent, parent)`` pseudo-inverse -- ``isPart(A, B)``
-        does not preserve A's identity in the parent vector."""
-        return parent, parent
+        """``isPart(A, B)`` does not preserve A's identity in the parent
+        vector -- no faithful inverse. 2026-07-04 serial plan Task 1:
+        stub revoked (fail loud)."""
+        self.raise_no_inverse("isPart forward returns the encompassing "
+                              "parent; A's identity is not preserved")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3836,10 +4044,12 @@ class PartLayer(GrammarLayer):
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
 
-        Lossy ``(parent, parent)`` pseudo-inverse -- ``part(A, B)``
-        does not preserve A's identity in the parent vector.
+        ``part(A, B)`` does not preserve A's identity in the parent
+        vector -- no faithful inverse. 2026-07-04 serial plan Task 1:
+        stub revoked (fail loud).
         """
-        return parent, parent
+        self.raise_no_inverse("part forward returns the encompassing "
+                              "parent; A's identity is not preserved")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3917,10 +4127,13 @@ class QueryLayer(GrammarLayer):
 
     def reverse(self, parent):
         """Reverse pass; inverse of ``forward``.
-        
-        See class docstring for the inversion contract.
+
+        The parthood query collapses two operands to a truth bivector --
+        no faithful inverse. 2026-07-04 serial plan Task 1: stub revoked
+        (fail loud).
         """
-        return parent, parent
+        self.raise_no_inverse("query truth-bivector collapse is not "
+                              "invertible")
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
@@ -3962,10 +4175,15 @@ def _dispatch_method_name_for_rule(rule):
 
 
 class ExistLayer(GrammarLayer):
-    """Existential truth wrapper for absolute-truth start forms."""
+    """Existential truth wrapper for absolute-truth start forms.
+
+    Tensor semantics are the identity, so the identity reverse IS the
+    faithful inverse -- invertible=True (2026-07-04 Gate-S1 inventory:
+    a WRITE verdict satisfied by the flag; the wrapper's truth role
+    carries no tensor transform to undo)."""
     rule_name        = "exist"
     arity            = 1
-    invertible       = False
+    invertible       = True
     lossy            = False
     space_role             = 'SS'
     reads_activation = False
@@ -4072,7 +4290,9 @@ GRAMMAR_LAYER_CLASSES = {
     'not':          NotLayer,
     'non':          NonLayer,
     'intersection': IntersectionLayer,
+    'join':         JoinLayer,
     'union':        UnionLayer,
+    'difference':   DifferenceLayer,
     'lift':         LiftLayer,
     'verb':         VerbLayer,
     'adverb':       AdverbLayer,
@@ -4192,8 +4412,12 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'disjunction':  T2_BINARY_INFIX,
     'isEqual':      T2_BINARY_INFIX,
     'equal':        T2_BINARY_INFIX,
-    'union':        T2_BINARY_INFIX,
+    'join':         T2_BINARY_INFIX,
     'intersection': T2_BINARY_INFIX,
+    # The additive concept pair (2026-07-04): union is order-free infix;
+    # difference co-varies with order (w - a != a - w), the part family.
+    'union':        T2_BINARY_INFIX,
+    'difference':   T3_BINARY_DIRECTIONAL,
     # Binary directional (T3): (position, marker) co-varies with a
     # recorded order bit -- the part / possessive family. ``isPart`` is
     # the role-collapsed relation name (query-dispatched) that supersedes
@@ -5202,12 +5426,12 @@ class LanguageLayer(Layer):
         layer's ``reverse`` on the parent payload to recover children
         and writes them back into the stack.
 
-        For lossy / non-bijective ops the layer's ``reverse`` is an
-        identity stub (e.g. ``ConjunctionLayer.reverse(parent) ->
-        (parent, parent)``). This is intentional per the plan:
-
-            "use rule-specific reverse/generate if implemented
-             otherwise identity/pass-through stub"
+        The identity/pass-through stub sanction is REVOKED (2026-07-04
+        serial-derivation plan, Task 1): a rule that cannot run a
+        FAITHFUL reverse raises ``NotImplementedError`` naming the rule
+        (the Gate-S1 inventory row) instead of fabricating
+        ``(parent, parent)`` children. Rules with real inverses (or the
+        basis recommender) are untouched.
 
         No-op when the top slot is empty or stamped as a terminal --
         terminals are leaves on this path; their reverse is the
@@ -5294,19 +5518,21 @@ class LanguageLayer(Layer):
 
         parent = what[arange_B, top_slot, :]                   # [B, D]
 
-        # Identity-stub fallback per plan §"Reverse And Reconstruction":
-        #   "use rule-specific reverse/generate if implemented
-        #    otherwise identity/pass-through stub"
-        # The base ``Layer.reverse`` is a shape-asserting identity (not
-        # a real inverse), so ``hasattr(layer, 'reverse')`` is True even
-        # when no semantic inverse exists. We invoke ``reverse``, then
-        # validate the return shape matches the rule's arity; on bad
-        # shape or any exception we fall back to (parent[, parent]).
-        def _identity_stub():
-            return parent if arity == 1 else (parent, parent)
+        # 2026-07-04 serial plan Task 1: the identity-stub fallback is
+        # REVOKED. A rule that cannot run a faithful reverse raises the
+        # Gate-S1 inventory error (write a real reverse or remove the
+        # rule); nothing on this path fabricates (parent[, parent]).
+        def _no_inverse(why):
+            raiser = getattr(layer, 'raise_no_inverse', None)
+            if raiser is not None:
+                raiser(why)
+            raise NotImplementedError(
+                f"unreduce: rule {method_name!r} has no faithful "
+                f"reverse [{why}] -- write a real reverse() or remove "
+                f"the rule from the grammar.")
 
         # 2026-05-29: pass the space_role-local Basis (codebook) as an
-        # explicit arg so binary reverses (UnionLayer /
+        # explicit arg so binary reverses (JoinLayer /
         # IntersectionLayer) can use the mereology-guided recommender
         # (``Ops.disjunctionReverse`` / ``Ops.conjunctionReverse``)
         # to recover an actual operand pair instead of returning the
@@ -5337,7 +5563,7 @@ class LanguageLayer(Layer):
         reverse_kwargs = {}
         ss = getattr(subspace, 'symbolSpace', None)
         if (ss is not None and arity == 2
-                and isinstance(layer, (IntersectionLayer, UnionLayer))):
+                and isinstance(layer, (IntersectionLayer, JoinLayer))):
             space_role = str(getattr(syntactic_layer, 'space_role', ''))
             space = (getattr(ss, 'wholeSpace', None) if space_role == 'SS'
                      else getattr(ss, 'conceptualSpace', None) if space_role == 'CS'
@@ -5469,40 +5695,29 @@ class LanguageLayer(Layer):
         # opts out: (1) it declares ``reverse_dispatchable = False`` because
         # no inverse exists at all (a lossy op, e.g. AdverbLayer); (2) it
         # declares ``reverse_required_kwargs`` naming operands the reverse
-        # path could not recover (VerbLayer needs ``verb_what``). In either
-        # case do NOT invoke reverse -- fabricating a split would corrupt the
-        # reconstruction. Fall back to the identity stub (the sanctioned
-        # "no inverse" pass-through; generation must never break).
+        # path could not recover (VerbLayer needs ``verb_what``). Either way
+        # the rule RAISES the inventory error (fabricating a split would
+        # corrupt the reconstruction -- and hiding that fact is worse).
         _required = getattr(layer, 'reverse_required_kwargs', ())
-        _can_reverse = (getattr(layer, 'reverse_dispatchable', True)
-                        and all(k in reverse_kwargs for k in _required))
-        if not _can_reverse:
-            child = _identity_stub()
-        else:
-            try:
-                child = layer.reverse(parent, basis=space_role_basis,
-                                      **reverse_kwargs)
-            except TypeError:
-                # Backward-compat for layer reverses that don't accept the
-                # basis kwarg yet (NotLayer, NonLayer, base GrammarLayer,
-                # ...). The retry call must also be guarded: subclasses of
-                # the base GrammarLayer that don't override .reverse inherit
-                # ``raise NotImplementedError`` from the Layer base (when
-                # ``self.butterfly`` is False), which must degrade to the
-                # identity stub, not propagate.
-                try:
-                    child = layer.reverse(parent)
-                except Exception:
-                    child = _identity_stub()
-            except Exception:
-                child = _identity_stub()
-            else:
-                if arity == 2 and (not isinstance(child, tuple)
-                                    or len(child) != 2):
-                    # Arity-2 rules must return (left, right); the base
-                    # Layer.reverse returns a single tensor -- treat as
-                    # identity-stub.
-                    child = _identity_stub()
+        _missing = [k for k in _required if k not in reverse_kwargs]
+        if not getattr(layer, 'reverse_dispatchable', True):
+            _no_inverse("reverse_dispatchable=False")
+        if _missing:
+            _no_inverse(f"reverse needs operands this path cannot "
+                        f"recover: {_missing}")
+        try:
+            child = layer.reverse(parent, basis=space_role_basis,
+                                  **reverse_kwargs)
+        except TypeError:
+            # Backward-compat for layer reverses that don't accept the
+            # basis kwarg (NotLayer, NonLayer, ...): a real inverse may
+            # still run bare; anything it raises propagates (fail loud).
+            child = layer.reverse(parent)
+        if arity == 2 and (not isinstance(child, tuple)
+                            or len(child) != 2):
+            _no_inverse(f"reverse returned "
+                        f"{type(child).__name__}, not the (left, right) "
+                        f"pair arity 2 demands")
 
         what_new = what.clone()
         where_new = where.clone()
@@ -7546,8 +7761,13 @@ class SyntacticLayer(Layer):
 
     def reverse(self, subspace):
         """Inverse of ``forward``: fire one fold-reverse step on the
-        subspace's space_role-appropriate field. No-op when the rule isn't
-        invertible.
+        subspace's space_role-appropriate field.
+
+        2026-07-04 serial plan Task 1: the silent skip for hosted
+        NON-INVERTIBLE rules is revoked -- it raises the Gate-S1
+        inventory error (the replay must not walk past a recorded rule
+        it cannot undo). Un-hosted rules (cross-space_role dispatch) and
+        binary rules still route elsewhere (chart generate).
 
         Stage 3 (chart retirement): on the signal-router path the
         router's ``generate`` handles inverse routing tensorially,
@@ -7563,8 +7783,19 @@ class SyntacticLayer(Layer):
         if rule_name is None:
             return subspace
         layer = self._by_name.get(rule_name)
-        if layer is None or not getattr(layer, 'invertible', False):
-            return subspace
+        if layer is None:
+            return subspace                 # cross-space_role routing skip
+        if not getattr(layer, 'invertible', False):
+            # Fail loud: a recorded rule with no faithful inverse
+            # (the fifth fail-loud application; Gate-S1 inventory).
+            raiser = getattr(layer, 'raise_no_inverse', None)
+            if raiser is not None:
+                raiser("recorded rule reached SyntacticLayer.reverse "
+                       "with invertible=False")
+            raise NotImplementedError(
+                f"SyntacticLayer.reverse: rule {rule_name!r} is not "
+                f"invertible -- write a real reverse() or remove the "
+                f"rule from the grammar.")
         # Binary rules' inverse is handled by the chart's generate via
         # host_layer.generate(parent); skip here.
         if int(getattr(layer, 'arity', 1)) != 1:
@@ -7601,7 +7832,7 @@ class SyntacticLayer(Layer):
         transform.
 
         When ``layer.reads_activation`` is True (e.g.
-        ``IntersectionLayer`` / ``UnionLayer``), the read source
+        ``IntersectionLayer`` / ``JoinLayer``), the read source
         switches to ``materialize(mode='activation')`` -- the
         ``[B, V, 2]`` bivector activation -- because those ops
         operate on the activation poles, not the muxed event.
@@ -7613,7 +7844,7 @@ class SyntacticLayer(Layer):
         """
         if subspace is None:
             return None
-        # Activation-reading ops (IntersectionLayer / UnionLayer at
+        # Activation-reading ops (IntersectionLayer / JoinLayer at
         # CS-space_role) read the bivector activation directly.
         if layer is not None and getattr(layer, 'reads_activation', False):
             if hasattr(subspace, 'materialize'):
@@ -7706,7 +7937,7 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
         try:
             host_layers[mn] = cls()
         except TypeError:
-            # Some GrammarLayer wrappers (IntersectionLayer / UnionLayer)
+            # Some GrammarLayer wrappers (IntersectionLayer / JoinLayer)
             # require a parametrized inner layer at construction. Without
             # one, the host space's existing instance should already be
             # in builtin_layers; if it isn't, skip rather than fail.
@@ -11316,7 +11547,7 @@ class SymbolSubSpace(SubSpace):
         attached layers so the binary reduction layer can do
         space_role-respecting position gating (plan \xa76).
 
-        Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
+        Binary GrammarLayers (IntersectionLayer, JoinLayer, ...) expose
         their pair-wise math via ``.compose(left, right)``; unary ones
         (NotLayer, NonLayer, ...) via ``.forward(x)``. The signal
         router's ``BinaryStructuredReductionLayer`` calls ``op(left,

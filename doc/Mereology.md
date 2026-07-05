@@ -291,12 +291,14 @@ activation) it forms the **concept `A isa B`** (token `isa` type; the type *name
 the token). Co-occurrence at the same `.where`/`.when` drives the link, weakening
 when they dissociate — a **Hebbian** coupling between codebooks.
 
-Since the 2026-06-16 redesign `.where` (and `.when`) is an **endpoint-sum bracket**
+Since the 2026-06-16 redesign `.where` is an **endpoint-sum bracket**
 `[start, end]` (angle = span center, magnitude = extent), so this *part-of* test is
 a direct read: `WhereEncoding.decode_span` recovers each code's `(start, end)` and
 containment is `A.start >= B.start && A.end <= B.end`; **contiguity** (adjacency / gap)
 between sibling parts is the same endpoint comparison. An instant snaps to zero
-extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.)
+extent, so atoms compare as points. (See `doc/Spaces.md` for the encoding.
+2026-07-04: `.when` left the bracket — it is the 4-dim start ladder; temporal
+extents ride the record store / exact clock, not the band.)
 
 **Design decision (2026-06-29, REVISIT) -- the `.where` support of percepts vs
 symbols.** Every PERCEPT (a part from PartSpace or a whole from WholeSpace) MUST

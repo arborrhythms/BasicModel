@@ -59,6 +59,21 @@
            sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
            currently the per-word loop uses the terminal CS). -->
       <xs:element name="subsymbolicOrder" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- wherePeriod (2026-07-04 encoding pass): the .where quadrature
+           period in input BYTES. Default 8192 (twice the 4096 inputLength
+           cap). Decoupled from architecture.nObjects (the retired implicit
+           period, Sigma nVectors). The build seam keeps raise-to-fit for
+           inputs longer than the period, warning once per build (never
+           silent aliasing). -->
+      <xs:element name="wherePeriod" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- whenPeriod (2026-07-04 encoding pass): the .when v2 LF horizon in
+           clock ticks (the LTM event-addressing range). Default 1000000.
+           The band is the SIMILARITY channel; absolute addressing rides the
+           exact long-int clock (BasicModel.when_time), the Option-C hybrid. -->
+      <xs:element name="whenPeriod" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- whenRungRatio: LF/HF period ratio of the .when v2 2-rung ladder.
+           Default 32 (safe branch bound ~35 at the dense-support floor). -->
+      <xs:element name="whenRungRatio" type="xs:positiveInteger" minOccurs="0"/>
       <!-- serial selects the per-word grammatical body. If omitted, code
            derives it from symbolicOrder > 0 for legacy configs. New configs
            should set it explicitly. -->

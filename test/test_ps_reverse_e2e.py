@@ -83,7 +83,21 @@ def test_e2e_round_trip_with_learned_marker():
     assert idea.shape == cat_vec.shape
 
     # 4. reverse (SS analysis) recovers operands; emit replays the marker.
-    _left_back, _right_back = conj.generate(idea)
+    # ADAPTED (2026-07-04 serial plan Task 1): the no-basis stub is
+    # revoked -- recovery runs the mereology recommender against the
+    # operand codebook and must RECOMPOSE faithfully.
+    class _Shim:
+        def __init__(self, W):
+            self._W = W
+
+        def getW(self):
+            return self._W
+
+    left_back, right_back = conj.generate(
+        idea, basis=_Shim(torch.stack([cat_vec, dog_vec])))
+    assert torch.equal(conj.compose(left_back, right_back),
+                       idea.expand_as(left_back)
+                       if left_back.shape != idea.shape else idea)
     assert conj.emit() == "and"
 
     # 5. PS meronymic synthesis reconstructs the surface from the

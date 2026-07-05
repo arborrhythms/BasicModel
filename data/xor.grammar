@@ -34,19 +34,19 @@
          operator's GrammarLayer subclass. -->
     <start name="connective">not_O1</start>
     <start name="connective">intersection_O1</start>
-    <start name="connective">union_O1</start>
+    <start name="connective">join_O1</start>
 
     <compose>
       <rule>not_O1 = not.forward(not_I1)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
-      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>join_O1 = join.forward(join_I1, join_I2)</rule>
     </compose>
 
     <generate>
       <!-- Mirror of compose: output role back to input roles. -->
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
-      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>join_I1, join_I2 = join.reverse(join_O1)</rule>
     </generate>
   </Symbolic>
 

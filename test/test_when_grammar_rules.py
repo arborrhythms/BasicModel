@@ -134,7 +134,7 @@ class TestMentalModelWhenEnabled(unittest.TestCase):
     suite; here we lock the structural enablement and the encoding type.
     """
 
-    def test_when_enabled_at_width_two_with_range_encoding(self):
+    def test_when_enabled_at_width_four_with_start_ladder(self):
         import os, warnings
         import Models, Language
         from util import init_config
@@ -152,13 +152,13 @@ class TestMentalModelWhenEnabled(unittest.TestCase):
         enabled = []
         for name, mod in carriers:
             we = mod.whenEncoding
-            # Phase 3's range encoding is the one in use everywhere.
-            self.assertEqual(type(we).__name__, "WhenRangeEncoding", name)
+            # 2026-07-04 encoding pass: the v2 start ladder is in use everywhere.
+            self.assertEqual(type(we).__name__, "WhenStartDurationEncoding", name)
             # nWhen and the encoding width agree (no hardcoded-width drift).
             self.assertEqual(mod.nWhen, we.nDim, f"{name}: nWhen != encoding nDim")
-            if mod.nWhen == 2:
+            if mod.nWhen == 4:
                 enabled.append(name)
-        # .when is genuinely ON at width 2 for the input + perceptual subspaces.
+        # .when is genuinely ON at width 4 for the input + perceptual subspaces.
         self.assertTrue(any("inputSpace.subspace" in n for n in enabled), enabled)
         self.assertTrue(any("perceptualSpace" in n for n in enabled), enabled)
 

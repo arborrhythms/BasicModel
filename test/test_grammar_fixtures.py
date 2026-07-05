@@ -86,18 +86,20 @@ def _intersect_np(a, b):
     return (a + b) / 2.0
 
 
-# --- event-tensor helpers (tense fixtures; 2026-06-16 .when bracket redesign) -
-# .when is the endpoint-sum bracket over event TIME: ANGLE = event-time center,
-# MAGNITUDE = event duration. Tense is the interval-vs-now relation -- PAST shifts
-# the center -step ticks, FUTURE +step, PRESENT = identity; aspect is a no-op. The
-# default present stamp is an INSTANT at time t (center=t, extent=0).
-_ENC = WhenRangeEncoding(_WHEN_PERIOD, 2)
-_T = _WHEN_PERIOD // 8                              # a non-aliasing absolute time
+# --- event-tensor helpers (tense fixtures; 2026-07-04 .when v2 ladder) ------
+# ADAPTED: .when is the 4-dim 2-rung start ladder over the event ONSET
+# (duration left the band; exact extents ride the record store). Tense is the
+# onset-vs-now relation -- PAST shifts the onset -step ticks, FUTURE +step,
+# PRESENT = identity; aspect stays a no-op. Built through the one construction
+# seam so the fixture and TenseLayer share omega pairs.
+from Spaces import event_when_encoding
+_ENC = event_when_encoding(4)
+_T = _ENC.maxVal // 8                               # a non-aliasing absolute time
 
 
 def present_event(B=1, V=1, nhead=6, t=_T):
-    """A materialized event [B, V, nhead+2] with a present .when tail
-    (an instant at absolute time ``t``)."""
+    """A materialized event [B, V, nhead+4] with a present .when tail
+    (onset at absolute time ``t``)."""
     _ENC.t = t
     head = torch.randn(B, V, nhead)
     when = _ENC.encode(t).expand(B, V, -1)
@@ -105,10 +107,11 @@ def present_event(B=1, V=1, nhead=6, t=_T):
 
 
 def when_of(event):
-    """Decode the trailing 2 .when columns to (center, extent): event-time center
-    (absolute time) and duration."""
-    c, ext = _ENC.decode(event[..., -2:])
-    return float(c.reshape(-1)[0]), float(ext.reshape(-1)[0])
+    """Decode the trailing 4 .when columns to (start, 0.0): the v2 band
+    carries the onset only (extent retired to the record store); the second
+    element stays 0 so the fixture assertions keep their shape."""
+    s, _res = _ENC.decode(event[..., -4:])
+    return float(s.reshape(-1)[0]), 0.0
 
 
 # ===========================================================================

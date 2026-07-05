@@ -66,7 +66,13 @@ def _forward_relative_rule_id():
         if (r.method_name in g._RELATIVE_OP_NAMES
                 and '.reverse' not in (r.canonical or '')):
             return rid
-    raise AssertionError("no forward relative rule found in the grammar")
+    # ADAPTED 2026-07-05: the relation family (isEqual/isPart) relocated to
+    # complete.grammar's <Queries> (Alec: query tools, no defined syntactic
+    # operation; integration design pending). The relative-sentence
+    # machinery keeps existing; without a grammar-level producer these
+    # integration tests SKIP until the integration design lands.
+    pytest.skip("no relative parse rule in the configured grammar -- the "
+                "relation family lives in <Queries> (integration pending)")
 
 
 def _forward_absolute_rule_id():

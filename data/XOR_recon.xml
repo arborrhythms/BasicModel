@@ -26,28 +26,28 @@
        IS/PS to 8*2=16 to preserve the bottleneck shape end-to-end. -->
   <InputSpace>
     <nVectors>3</nVectors>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>6</nOutputDim>
+    <nOutputDim>8</nOutputDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>8</nInput>
-    <nInputDim>6</nInputDim>
+    <nInputDim>8</nInputDim>
     <nVectors>1000</nVectors>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>6</nOutputDim>
+    <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
   </PartSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>6</nInputDim>
+    <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>6</nDim>
+    <nDim>8</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>6</nOutputDim>
+    <nOutputDim>8</nOutputDim>
     <invertible>true</invertible>
     <codebook>quantize</codebook>
   </ConceptualSpace>
@@ -59,11 +59,11 @@
          (nWhat + nWhere + nWhen). SS now carries (2, 2) like every other
          tier, so nDim/nInputDim/nOutputDim were bumped 2 -> 6 to preserve
          nWhat=2 (the binary truth state). -->
-    <nDim>6</nDim>
-    <nInputDim>6</nInputDim>
+    <nDim>8</nDim>
+    <nInputDim>8</nInputDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nOutputDim>6</nOutputDim>
+    <nOutputDim>8</nOutputDim>
   </WholeSpace>
 
   <OutputSpace>
@@ -71,7 +71,7 @@
     <!-- C2 (handoff migration): OS.nInputDim 2->6 to match the uniform-band
          widened SS event (SS slab nOutput*nOutputDim = 8*6 = 48); the band
          slots ride along as inert padding into the (0,0)-band OutputSpace. -->
-    <nInputDim>6</nInputDim>
+    <nInputDim>8</nInputDim>
     <nOutput>1</nOutput>
     <nVectors>1</nVectors>
   </OutputSpace>

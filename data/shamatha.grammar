@@ -28,7 +28,7 @@
     <start name="relative_truth">part_O1</start>
 
     <compose>
-      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>join_O1 = join.forward(join_I1, join_I2)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
       <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
       <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
@@ -44,17 +44,17 @@
     </compose>
 
     <generate>
-      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>join_I1, join_I2 = join.reverse(join_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>
       <rule>not_I1 = not.reverse(not_O1)</rule>
       <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
       <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
-      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
-      <rule query="true">part_I1, part_I2 = part.reverse(part_O1)</rule>
       <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
       <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
+      <rule query="false">part_I1, part_I2 = part.reverse(part_O1)</rule>
+      <rule query="true">part_I1, part_I2 = part.reverse(part_O1)</rule>
       <rule>query_I1 = query.reverse(query_O1)</rule>
     </generate>
   </Symbolic>

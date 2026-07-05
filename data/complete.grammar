@@ -34,7 +34,8 @@
     DET  = LOWER: count-noun REGION -> individual POINT (4->3).
     ADJ  = INTERSECTION (order-1 mask / Boolean meet on NP).
     ADV  = EIGENMODIFIER on the VP (1-D edit of the verb's eigenvalues).
-    copula ("is" of definition) = isEqual (query="false"): identity / equality.
+    copula ("is" of definition) = equal(X, Y) in <Queries> (was the isEqual
+    compose rule; relocated 2026-07-05: queries are not parse structure).
     and / or / not / non = conjunction / disjunction / negation / non-affirming.
     MODALITY (possibly / necessarily) = a SECOND lift adding a 5th modal
            dimension - PLANNED, NOT YET BUILT.
@@ -45,11 +46,13 @@
     area, luminosity, isaPart.
 
   Invertibility (measured, test/_faithfulness_*.py): exact -> lift, lower, not,
-    non, tense, exist-wrapper, sigma, pi, + intersection/conjunction/disjunction
-    WITH a codebook basis; greedy/approx -> union (additive residual, refinement
-    pending); content-exact / marker-lossy -> preposition; STUBS (to BUILD) ->
-    isEqual, isPart + the introspection query family; carrier-dep ->
-    morphology.
+    non, tense, exist-wrapper, sigma, pi, union/difference (the additive
+    concept pair, 2026-07-05: difference IS union's exact residual), +
+    intersection/conjunction/disjunction/join WITH a codebook basis
+    (recommender); content-exact / marker-lossy -> preposition; NO faithful
+    inverse (fail-loud, Gate-S1 inventory) -> the no-basis lattice
+    tails; carrier-dep -> morphology. isEqual AND isPart live in Queries
+    now (the relation family are queries, not parse structure).
 -->
 <grammar name="complete">
 
@@ -73,20 +76,17 @@
   </PartSpace>
 
   <Symbolic>
-    <start name="relative_truth">isEqual_O1</start>
-    <start name="relative_truth">isPart_O1</start>
     <start name="absolute_truth">exist_O1</start>
 
     <compose>
-      <!-- Relative truth (parse-contributing relation ASSERTIONS). isEqual
-           query="false" = the copula ("is" of definition); isPart = parthood.
-           query="false" = the assertive claim ("A is part of B"); query="true"
-           = the answer-producing query ("is A part of B?"). queryPart /
-           assertPart are FOLDED into isPart + query (decision 6). -->
-      <rule query="false">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
-      <rule query="true">isEqual_O1 = isEqual.forward(isEqual_I1, isEqual_I2)</rule>
-      <rule query="false">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
-      <rule query="true">isPart_O1 = isPart.forward(isPart_I1, isPart_I2)</rule>
+      <!-- Relative truth: isEqual AND isPart MOVED to Queries (Alec
+           2026-07-05: "isPart, isEqual, and related operations are all
+           queries: they are tools the mind can use, but they do not have
+           a defined syntactic operation; I will think more about how to
+           integrate their operation"). equal(X, Y) / part(X, Y) are the
+           reasoner's forms; neither had a faithful inverse for the
+           derivation replay (Gate-S1 inventory, serial plan 2026-07-04).
+           queryPart / assertPart remain folded away (decision 6). -->
 
       <!-- Absolute truth. exist = "NP found in LTM and trusted" (an LTM query);
            the predicate that roots a single idea. -->
@@ -97,14 +97,16 @@
       <rule>non_O1 = non.forward(non_I1)</rule>
 
       <!-- Boolean / set connectives. intersection = ADJ (mask/meet on NP) and
-           noun-noun intersection; union = OR-region; and/or = conjunction /
-           disjunction. The reverse uses the codebook recommender
-           (Ops._binary_op_recommend); union's additive residual is approximate
-           (refinement pending). -->
+           noun-noun intersection; join = OR-region (lattice max; ex-union,
+           renamed 2026-07-05); and/or = conjunction / disjunction. The
+           reverse uses the codebook recommender (Ops._binary_op_recommend).
+           The ADDITIVE union/difference pair (exact residual) is its own
+           CS op pair, available to grammars as union(C, C) /
+           difference(C, C). -->
       <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
       <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
-      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+      <rule>join_O1 = join.forward(join_I1, join_I2)</rule>
 
       <!-- Composition / projection. verb = VP spectral operator; adverb =
            VP eigenmodifier; lift remains the generic order-raising fold;
@@ -129,11 +131,6 @@
 
     <generate>
       <!-- Reverse rules: output -> inputs. -->
-      <rule query="false">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
-      <rule query="true">isEqual_I1, isEqual_I2 = isEqual.reverse(isEqual_O1)</rule>
-      <rule query="false">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
-      <rule query="true">isPart_I1, isPart_I2 = isPart.reverse(isPart_O1)</rule>
-
       <rule>exist_I1 = exist.reverse(exist_O1)</rule>
 
       <rule>not_I1 = not.reverse(not_O1)</rule>
@@ -142,7 +139,7 @@
       <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
       <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
-      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+      <rule>join_I1, join_I2 = join.reverse(join_O1)</rule>
 
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>
@@ -164,6 +161,14 @@
          as exist / equal / part / query / quantize / wholes / parts / arma
          (doc/plans/2026-06-23-truth-grounded-reasoning.md). -->
     <query>exist(X)</query>
+    <!-- equal(X, Y) IS the isEqual relation (copula, "is" of definition)
+         and part(X, Y) IS the isPart relation: both relocated OUT of
+         compose (Alec 2026-07-05: the relation family are QUERIES, tools
+         the mind can use with no defined syntactic operation; their
+         operational integration is an OPEN design question). exist(X)
+         retains a compose form as the absolute-truth START (a structural
+         role); whether it follows the family out is flagged for the
+         same integration design. -->
     <query>equal(X, Y)</query>
     <query>part(X, Y)</query>
     <query>query(X, Y)</query>

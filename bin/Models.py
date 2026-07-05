@@ -4355,16 +4355,32 @@ class BasicModel(BaseModel):
                     # for a depth-1 reduced sentence slot -1 is empty) -> the
                     # reverse decoded an empty seed.
                     rev_sub = None
-                    terminal_idea = self._reconstruction_seed()
-                    if terminal_idea is not None:
-                        cs = self.conceptualSpace
-                        cs.subspace.set_event(terminal_idea)
-                        rev_sub = self.reverse(
-                            cs.subspace)
-                    rev_ev = (rev_sub.materialize()
-                              if rev_sub is not None
-                              and hasattr(rev_sub, 'materialize')
-                              else None)
+                    rev_ev = None
+                    # 2026-07-04 serial plan Task 2 (Method-1 routing): at
+                    # EVAL the SERIAL decode consumes the STORED-derivation
+                    # replay (_reverse_from_S -- it stages the render thunk
+                    # via inputSpace.reverse), so reconstruct_data reads
+                    # the derivation surface, not the single-slot tensor
+                    # arm. The tensor arm stays as the explicit debug
+                    # fallback (serial_tensor_reverse_debug -- the
+                    # --scaffold analogue); TRAIN paths are untouched.
+                    if (not train and bool(getattr(self, 'serial', False))
+                            and not getattr(
+                                self, 'serial_tensor_reverse_debug', False)):
+                        _S = getattr(self, '_stm_single_S', None)
+                        if _S is not None:
+                            rev_ev = self._reverse_from_S(_S)
+                    if rev_ev is None:
+                        terminal_idea = self._reconstruction_seed()
+                        if terminal_idea is not None:
+                            cs = self.conceptualSpace
+                            cs.subspace.set_event(terminal_idea)
+                            rev_sub = self.reverse(
+                                cs.subspace)
+                        rev_ev = (rev_sub.materialize()
+                                  if rev_sub is not None
+                                  and hasattr(rev_sub, 'materialize')
+                                  else None)
                     if (not train and rev_ev is not None
                             and torch.is_tensor(rev_ev)):
                         inputDataPred = rev_ev.detach()
@@ -7037,7 +7053,7 @@ class BasicModel(BaseModel):
         grammar's S-space_role arity-2 reduce ops, each wrapped with the
         SAME ``_BinaryGrammarOpAdapter`` ``_wire_signal_router_grammar_ops``
         uses (so ``op(left,right)`` dispatches into the registered
-        host fold -- IntersectionLayer/UnionLayer/...). The layer's
+        host fold -- IntersectionLayer/JoinLayer/...). The layer's
         own forward computes ``chosen_reduced = Σ_op softmax(reduce_
         score)_op · op(left,right)`` over the fixed op axis (one
         weighted reduce, no shared in-place accumulator -- the proven

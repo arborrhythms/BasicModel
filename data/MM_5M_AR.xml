@@ -41,7 +41,7 @@
        uniform 8*1024=8192 slab; mirrors MM_5M_IR and MM_20M. -->
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
   </InputSpace>
@@ -49,7 +49,7 @@
   <PartSpace>
     <nInput>1024</nInput>
     <nVectors>1000000</nVectors>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nOutput>1024</nOutput>
     <wordLearning>1</wordLearning>
   </PartSpace>
@@ -58,15 +58,15 @@
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>1028</nDim>
+    <nDim>1030</nDim>
     <nVectors>512</nVectors>
     <codebook>quantize</codebook>
   </ConceptualSpace>
 
   <WholeSpace>
     <nInput>1024</nInput>
-    <nDim>1028</nDim>
-    <nInputDim>1028</nInputDim>
+    <nDim>1030</nDim>
+    <nInputDim>1030</nInputDim>
     <!-- Stage 1.B paired-row contract: doubled for orth + semantic. -->
     <nVectors>2000000</nVectors>
     <nOutput>1024</nOutput>
@@ -88,7 +88,7 @@
       <start>S</start>
       <grammar>
         <S>S = intersection(S, S)</S>
-        <S>S = union(S, S)</S>
+        <S>S = join(S, S)</S>
       </grammar>
     </language>
   </SymbolSpace>

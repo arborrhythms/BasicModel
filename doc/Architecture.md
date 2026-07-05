@@ -362,10 +362,21 @@ WS mereological towers. Attention parses them two ways:
 ### D. Attention indexing (`.where` / `.when` / codebooks)
 
 The three addressing roles are disjoint: **`.where` indexes over the input
-buffer** (positional; period $=$ ½·InputSpace), **`.when` indexes over LTM**
-(to-build — LTM is content/parthood-addressed today), and the **codebooks are
+buffer** (positional; period = config-derived `<wherePeriod>`, default 8192
+input bytes — the 2026-07-04 encoding pass corrected the earlier
+"½·InputSpace" claim here: the pre-change period was actually
+$\Sigma$ nVectors, raised-never-lowered at the build seam, and is now
+decoupled from `nObjects` entirely, with a warn-once raise-to-fit for
+longer inputs), **`.when` indexes over LTM** (the 4-dim start-ladder band
+is the SIMILARITY channel; ABSOLUTE addressing rides the exact long-int
+clock `BasicModel.when_time` — the Option-C hybrid; see
+[Spaces.md](Spaces.md) "Encodings"), and the **codebooks are
 content-addressable** (identity is the row index; the cross-codebook `.where`
-slice registry was retired).
+slice registry was retired). Reconstruction re-derives the input tiling
+from the `.where` band alone — the BLIND decode (Gate 2b,
+`test_blind_decode.py`; the forward scaffold survives as the explicit
+debug/regression path and the scaffold-masking curriculum bridges
+scaffold-fed to blind as training allows).
 
 ## Cognitive grounding: dense-perceptual vs sparse-symbolic (2026-07-02)
 
@@ -680,9 +691,11 @@ abstraction. Each maps to a knob (or, for the first, to the folds themselves):
    > routes integrate-vs-disintegrate ($\to$PartSpace $\sigma$ vs $\to$WholeSpace $\pi$). See
    > [doc/old/mereological-order-raising.md](old/mereological-order-raising.md)
    > "The three-aspect loop". As of 2026-06-16 the contiguity read has its
-   > substrate: `.where` / `.when` are **endpoint-sum brackets** `[start, end]`
+   > substrate: `.where` is an **endpoint-sum bracket** `[start, end]`
    > (`WhereEncoding.decode_span`), so extent and gaps are read directly off a
    > code (a zero-extent instant vs a span); see [doc/Spaces.md](Spaces.md).
+   > (2026-07-04: `.when` no longer carries the bracket — it is the 4-dim
+   > start ladder; exact times/extents ride the clock side-band.)
 
 3. **Symbolic order** (`<symbolicOrder>`) — the symbolic / relational loop
    budget. In serial mode (`<serial>true</serial>`), words are read **one at a

@@ -12,7 +12,8 @@ taxonomy.md:
     the per-codebook ``where_offset`` global key, and the dead ``recover``
     (.where -> int inverse). Codebook identity is the row index (the ``_index``
     selection); .where keeps its input-offset + positional/spatial-extent roles
-    (``WhereEncoding.forward``, period = architecture.nObjects). Consequence
+    (``WhereEncoding.forward``; period = <wherePeriod>, default 8192,
+    2026-07-04 encoding pass -- was architecture.nObjects). Consequence
     (accepted): CS->SS reverse is approximate (content match), not an exact
     .where inversion.
 """

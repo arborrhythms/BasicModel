@@ -19,10 +19,12 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
 from Language import LiftLayer, LowerLayer, PrepositionLayer
-from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import event_when_encoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
 
-_NWHAT, _NWHERE, _NWHEN = 4, 2, 2
-_ENC = WhenRangeEncoding(_WHEN_PERIOD, _NWHEN)
+# 2026-07-04 encoding pass: .when is the 4-dim start ladder; built through
+# the one construction seam so LiftLayer/tense share omega pairs.
+_NWHAT, _NWHERE, _NWHEN = 4, 2, 4
+_ENC = event_when_encoding(_NWHEN)
 
 
 def _event(what, where, when):
@@ -33,10 +35,10 @@ def _event(what, where, when):
 
 
 def _decode_when(ev):
-    """Decode the trailing 2 .when columns to (center, extent): event-time
-    center and duration (2026-06-16 .when bracket redesign)."""
-    c, ext = _ENC.decode(ev[..., -_NWHEN:].detach())
-    return float(c.reshape(-1)[0]), float(ext.reshape(-1)[0])
+    """Decode the trailing .when columns to (start, residue): the onset and
+    the ladder decode-health residue (~0 for a clean stamp)."""
+    s, res = _ENC.decode(ev[..., -_NWHEN:].detach())
+    return float(s.reshape(-1)[0]), float(res.reshape(-1)[0])
 
 
 def _what(ev):   return ev[..., :_NWHAT]

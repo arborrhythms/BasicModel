@@ -36,9 +36,13 @@ _FORBIDDEN_STATE_TOKENS = {
     "QLEFT_PART34",
 }
 
+# ADAPTED 2026-07-05: the relation family (isEqual, isPart, related ops)
+# RELOCATED to <Queries> (Alec: they are query TOOLS with no defined
+# syntactic operation; integration design pending); the lattice max renamed
+# union -> join (the additive union/difference pair owns 'union' now).
 _REQUIRED_OPS = {
-    "exist", "isEqual", "isPart", "not", "non",
-    "conjunction", "disjunction", "intersection", "union",
+    "exist", "not", "non",
+    "conjunction", "disjunction", "intersection", "join",
     "lift", "verb", "adverb", "lower",
     "preposition", "bind", "tense", "morphology",
 }
@@ -80,8 +84,10 @@ def test_symbolicspace_owns_its_starts():
     """WholeSpace owns the operator-output starts, split by name."""
     g = _load()
     ws_syms = {sym for pat in g.ws_start_patterns for sym in pat}
-    assert {"isEqual_O1", "isPart_O1", "exist_O1"} <= ws_syms, ws_syms
-    assert g.ws_relative_starts == frozenset({"isEqual_O1", "isPart_O1"})
+    # The relation family left the starts with its relocation to <Queries>;
+    # exist keeps the absolute-truth structural start (integration TBD).
+    assert "exist_O1" in ws_syms, ws_syms
+    assert g.ws_relative_starts == frozenset()
     assert "exist_O1" in g.ws_absolute_starts
 
 
@@ -122,14 +128,13 @@ def test_no_category_rename_projection_rules():
 
 
 def test_isequal_and_ispart_use_role_names():
-    """``isEqual`` / ``isPart`` operands are the collapsed I/O roles."""
+    """ADAPTED 2026-07-05: the relation family (isEqual, isPart) is fully
+    relocated to <Queries> -- complete.grammar must carry NO parse rule
+    for either (the relocation pin)."""
     g = _load()
     for op in ("isEqual", "isPart"):
-        fwd = [r for r in g.rules_upward if r.method_name == op]
-        assert fwd, f"no forward {op} rule"
-        r = fwd[0]
-        assert r.lhs == f"{op}_O1"
-        assert r.rhs_symbols == (f"{op}_I1", f"{op}_I2")
+        assert not [r for r in g.rules if r.method_name == op], (
+            f"{op} must not be a parse rule (relocated to <Queries>)")
 
 
 def test_every_relation_rule_carries_explicit_query():

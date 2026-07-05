@@ -3,7 +3,7 @@ shape. .where/.when are no longer config options: every space's spatial/
 temporal widths come from canonical_shape(section).
 
 Per the 2026-06-06 dim-convention unification: the INTERIOR space_roles all carry
-the SAME (nWhere=2, nWhen=2) band so the dimensional formula is uniform:
+the SAME band so the dimensional formula is uniform:
 ``nDim = nWhat + nWhere + nWhen``. The only difference between interior space_roles
 is whether the band slots are actively muxed (carry per-event where/when
 values) or ride along as inert padding — the bookkeeping is identical. This
@@ -12,24 +12,28 @@ demuxed at the CS->WS boundary (now a no-op identity reshape), which
 simplifies the constructor chain and makes ``space[i].nOutputDim ==
 space[i+1].nInputDim`` directly comparable for handoff validation.
 
+2026-07-04 encoding pass: the band is (nWhere=2, nWhen=4) — `.when` is the
+4-dim 2-rung start ladder (WhenStartDurationEncoding; slots [-4..-1]),
+`.where` keeps the 2-dim endpoint-sum bracket (slots [-6, -5]).
+
 The TWO principled exceptions stay ``(0, 0)``: there is no positional
 encoding BEFORE the input or AFTER the output. OutputSpace (the terminal
 prediction / answer) is one — a scalar/answer has no .where/.when to mux,
 and the loss would otherwise slice empty where/when segments and NaN."""
 
 _CANONICAL_SHAPE = {
-    "InputSpace":      (2, 2),
-    "PartSpace": (2, 2),
+    "InputSpace":      (2, 4),
+    "PartSpace": (2, 4),
     # ModalSpace is the demuxed perceptual-space_role composite (Spaces.ModalSpace):
     # it routes what/where/when through sub-PartSpaces and shares the
     # perceptual shape. No live config currently enables demuxed mode.
-    "ModalSpace":      (2, 2),
-    "ConceptualSpace": (2, 2),
-    "WholeSpace":   (2, 2),
+    "ModalSpace":      (2, 4),
+    "ConceptualSpace": (2, 4),
+    "WholeSpace":   (2, 4),
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "SymbolSpace":       (2, 2),
+    "SymbolSpace":       (2, 4),
 }
 # 2026-06-04: no space_role's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any space_role may resolve to

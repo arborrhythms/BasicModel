@@ -1071,10 +1071,10 @@ def test_unreduce_calls_layer_reverse_and_writes_children():
     """Plan acceptance: reverse uses .where to decode rule, then applies
     the layer's reverse method to split parent into children.
 
-    ConjunctionLayer.reverse returns ``(parent, parent)`` -- the
-    identity-stub the plan calls out -- so after reduce + unreduce the
-    two child slots both hold the parent (NOT the original children,
-    because the op is lossy)."""
+    ADAPTED (2026-07-04 serial plan Task 1): the identity stub is
+    REVOKED. The stack's ``.what`` is not a 2-D codebook, so the
+    recommender cannot run and unreduce must FAIL LOUD with the
+    Gate-S1 inventory row instead of writing (parent, parent)."""
     from Language import TheGrammar, RuleCodebook
     from Layers import ConjunctionLayer
 
@@ -1110,21 +1110,11 @@ def test_unreduce_calls_layer_reverse_and_writes_children():
             f"After reduce, top slot .where should decode to rule 0; got {(kind, rid)}"
         )
 
-        # Now unreduce -- the layer's reverse is the identity stub.
-        router.unreduce(sub, layer, rule_codebook=rc)
-        what_after = sub.materialize(mode="what")
-        occ_after = sub.materialize(mode="activation")
-
-        # Slot 0 holds left child = parent (identity-stub).
-        # Slot 1 holds right child = parent (identity-stub).
-        assert torch.allclose(what_after[0, 0, :], parent_after_reduce), (
-            "unreduce should write layer.reverse(parent)[0] into the top slot"
-        )
-        assert torch.allclose(what_after[0, 1, :], parent_after_reduce), (
-            "unreduce should write layer.reverse(parent)[1] into the new slot"
-        )
-        # Occupancy: two slots live again.
-        assert torch.equal(occ_after, torch.tensor([[1.0, 1.0, 0.0, 0.0]]))
+        # Now unreduce -- the stub sanction is revoked: fail loud.
+        import pytest
+        with pytest.raises(NotImplementedError, match="conjunction"):
+            router.unreduce(sub, layer, rule_codebook=rc)
+        assert parent_after_reduce is not None
     finally:
         TheGrammar.rules = saved_rules
         TheGrammar._configured = saved_configured
@@ -1236,10 +1226,10 @@ def test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub():
     Forward: shift A, shift B, shift C, reduce (top-2), reduce (top-2).
     Stack ends with 1 rule-stamped root.
 
-    Reverse: ONE unreduce undoes the outermost reduce; the new top
-    slot's .where is empty (cleared by unreduce), so reverse_stack
-    halts there. Full multi-level unwinding requires a provenance
-    trail (Phase 8+ work).
+    ADAPTED (2026-07-04 serial plan Task 1): conjunction has no faithful
+    inverse on this path (the stack .what is not a codebook), so the
+    reverse now FAILS LOUD; the unwinding contract is observable only
+    once a real inverse exists (the Gate-S1 inventory consequence).
     """
     from Language import TheGrammar, RuleCodebook
     from Layers import ConjunctionLayer
@@ -1277,28 +1267,20 @@ def test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub():
         assert kind == 'rule'
         root = sub.materialize(mode="what")[0, 0, :].clone()
 
-        # Reverse: unwind one level.
-        router.reverse_stack(sub, layer, rule_codebook=rc)
-        occ = sub.materialize(mode="activation")
-        # Outer reduce undone -> two live slots holding the (lossy)
-        # identity-stub children of the root.
-        assert torch.equal(occ, torch.tensor([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]])), (
-            f"reverse_stack should unwind one level, got occ={occ}"
-        )
-        what = sub.materialize(mode="what")
-        # ConjunctionLayer.reverse returns (parent, parent) -- both
-        # child slots equal the root payload.
-        assert torch.allclose(what[0, 0, :], root)
-        assert torch.allclose(what[0, 1, :], root)
-        # Both child .where rows are the empty sentinel (cleared by
-        # unreduce since the identity-stub has no provenance trail).
+        # Reverse: the stub sanction is revoked -- conjunction cannot
+        # run a faithful inverse here, so the unwind FAILS LOUD.
+        import pytest
+        with pytest.raises(NotImplementedError, match="conjunction"):
+            router.reverse_stack(sub, layer, rule_codebook=rc)
+        assert root is not None
+        # The raise fires BEFORE any child write-back: the root slot
+        # keeps its rule stamp (no partial mutation on failure).
         where = sub.materialize(mode="where")
-        for k in range(2):
-            kind, _ = TheGrammar.decode_where(where[0, k, 0])
-            assert kind == 'empty', (
-                f"child slot {k} should be empty-stamped after unreduce, "
-                f"got kind={kind}"
-            )
+        kind, _ = TheGrammar.decode_where(where[0, 0, 0])
+        assert kind == 'rule', (
+            f"failed unreduce must not partially mutate the stack; "
+            f"got kind={kind}"
+        )
     finally:
         TheGrammar.rules = saved_rules
         TheGrammar._configured = saved_configured
@@ -1306,14 +1288,11 @@ def test_reverse_stack_unwinds_outermost_rule_only_under_identity_stub():
 
 
 def test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable():
-    """Per plan §"Reverse And Reconstruction":
-        "otherwise identity/pass-through stub"
-
-    The base ``Layer.reverse`` is a shape-asserting identity (not a
-    real inverse), so layers without a hand-written reverse inherit
-    one whose return shape (single tensor) is wrong for an arity-2
-    parent. unreduce must detect this and fall back to (parent, parent)
-    rather than crashing.
+    """ADAPTED (2026-07-04 serial plan Task 1): the identity-stub
+    sanction is REVOKED. The base ``Layer.reverse`` single-tensor
+    identity is the wrong shape for an arity-2 parent; unreduce must
+    now FAIL LOUD (the Gate-S1 inventory row) instead of fabricating
+    (parent, parent) children.
     """
     from Language import TheGrammar, RuleCodebook
     from Layers import GrammarLayer
@@ -1369,13 +1348,12 @@ def test_unreduce_uses_identity_stub_when_layer_reverse_is_unsuitable():
         router.reduce(sub, layer, rule_id=0, rule_codebook=rc)
         parent = sub.materialize(mode="what")[0, 0, :].clone()
 
-        # Must not raise even though layer.reverse returns a single
-        # tensor (wrong shape for an arity-2 unreduce).
-        router.unreduce(sub, layer, rule_codebook=rc)
-        what_after = sub.materialize(mode="what")
-        # Identity-stub: both child slots equal the parent.
-        assert torch.allclose(what_after[0, 0, :], parent)
-        assert torch.allclose(what_after[0, 1, :], parent)
+        # The stub sanction is revoked: the wrong-shape reverse raises
+        # the inventory error (write a real reverse or remove the rule).
+        import pytest
+        with pytest.raises(NotImplementedError):
+            router.unreduce(sub, layer, rule_codebook=rc)
+        assert parent is not None
     finally:
         TheGrammar.rules = saved_rules
         TheGrammar._configured = saved_configured
@@ -1595,7 +1573,12 @@ def test_symbolic_space_reverse_dispatches_to_language_layer_reverse(_xor_model)
     try:
         ws.languageLayer.reverse = spy_reverse
         ws.use_stack_router = True
-        ws.reverse(in_sub)
+        # ADAPTED (2026-07-04 serial plan Task 1): the dispatched
+        # reverse now fails loud on the stub rule; the DISPATCH contract
+        # (exactly one languageLayer.reverse call) is unchanged.
+        import pytest
+        with pytest.raises(NotImplementedError):
+            ws.reverse(in_sub)
         assert calls['reverse'] == 1, (
             f"WholeSpace.reverse must call languageLayer.reverse exactly "
             f"once with the flag on; got {calls['reverse']}"
@@ -1664,7 +1647,13 @@ def test_symbolic_space_reverse_flag_on_does_not_touch_generate_rules(_xor_model
     saved_what = ws.subspace.what.getW()
     try:
         ws.use_stack_router = True
-        ws.reverse(in_sub)
+        # ADAPTED (2026-07-04 serial plan Task 1): the stub rule fails
+        # loud; generate_rules must STILL be untouched by the attempt.
+        import pytest
+        try:
+            ws.reverse(in_sub)
+        except NotImplementedError:
+            pass
         assert ss.generate_rules == sentinel, (
             f"generate_rules mutated under flag-on reverse path: "
             f"{ss.generate_rules}"

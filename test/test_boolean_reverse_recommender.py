@@ -4,7 +4,7 @@ AND/OR are many-to-one, so their reverse cannot invert in general -- but with a
 codebook ``basis`` the mereology recommender (Ops.conjunctionReverse /
 disjunctionReverse) recovers the operand pair whose intersection/union matches
 the parent (exact on a discrete vocabulary -- the XOR reconstruction path),
-mirroring IntersectionLayer/UnionLayer.reverse. Without a basis the lossy
+mirroring IntersectionLayer/JoinLayer.reverse. Without a basis the lossy
 ``(parent, parent)`` fallback is preserved (byte-identical to the prior stub).
 """
 
@@ -35,18 +35,23 @@ class _Basis:
 _V = 6
 
 
-def test_conjunction_reverse_no_basis_is_lossy_stub():
+def test_conjunction_reverse_no_basis_fails_loud():
+    # ADAPTED (2026-07-04 serial plan Task 1): the lossy stub is revoked;
+    # no-basis reverse raises the Gate-S1 inventory error.
+    import pytest
     lyr = ConjunctionLayer()
     parent = torch.rand(2, _V)
-    a, b = lyr.reverse(parent)
-    assert torch.equal(a, parent) and torch.equal(b, parent)
+    with pytest.raises(NotImplementedError, match="conjunction"):
+        lyr.reverse(parent)
 
 
-def test_disjunction_reverse_no_basis_is_lossy_stub():
+def test_disjunction_reverse_no_basis_fails_loud():
+    # ADAPTED (2026-07-04 serial plan Task 1): the lossy stub is revoked.
+    import pytest
     lyr = DisjunctionLayer()
     parent = torch.rand(2, _V)
-    a, b = lyr.reverse(parent)
-    assert torch.equal(a, parent) and torch.equal(b, parent)
+    with pytest.raises(NotImplementedError, match="disjunction"):
+        lyr.reverse(parent)
 
 
 def test_conjunction_reverse_with_basis_recovers_pair():

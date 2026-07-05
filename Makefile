@@ -42,7 +42,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc clean \
+.PHONY : all install xor tomatoes ergodic simple run compare test testp test_all bench doc clean \
          train train_micro bench_local bench_sync bench_remote bench_pull
 
 all : xor
@@ -100,6 +100,11 @@ compare : $(VENV_STAMP)
 # sets RUN_SLOW=1 to also run them.
 test : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
+
+# Parallel dev suite (pytest-xdist, one file per worker). Faster iteration;
+# the serial `make test` stays the canonical/deterministic gate.
+testp : $(VENV_STAMP)
+	TEST_JOBS=auto BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
 test_all : $(VENV_STAMP)
 	RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py

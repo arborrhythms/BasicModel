@@ -363,9 +363,9 @@
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- Per-vector EVENT width (it embraces the .where/.when band: content
-         nWhat = nDim - nWhere - nWhen). Muxed tier default 5 = 1 content + 2
+         nWhat = nDim - nWhere - nWhen). Muxed tier default 7 = 1 content + 2
          .where + 2 .when. -->
-    <nDim>5</nDim>
+    <nDim>7</nDim>
     <!-- Raw data dims; 0 = use the loader's native dim. -->
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
@@ -383,8 +383,8 @@
   <PartSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
-    <nDim>5</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 6. -->
+    <nDim>7</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -411,8 +411,8 @@
   <ModalSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
-    <nDim>5</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 6. -->
+    <nDim>7</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -427,8 +427,8 @@
   <ConceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 4. -->
-    <nDim>5</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 6. -->
+    <nDim>7</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>

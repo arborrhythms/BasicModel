@@ -173,21 +173,26 @@ def test_tense_layer_round_trips():
 
 
 def test_tense_layer_present_is_identity_and_past_future_shift_time():
+    # ADAPTED 2026-07-04 (encoding pass): TenseLayer now rewrites the 4-dim
+    # v2 start ladder (nWhen=4, <whenPeriod> default 1e6); the event and the
+    # decode use the same one-seam encoder the layer builds through.
     import Language
-    T = _WHEN_PERIOD // 8
-    enc = _enc(t=T)
+    from Spaces import event_when_encoding
+    enc = event_when_encoding(4)
+    T = enc.maxVal // 8
+    enc.t = T
     head = torch.randn(1, 1, 4)
     when = enc.encode(T).expand(1, 1, -1)
     x = torch.cat([head, when], dim=-1)
     pres = Language.TenseLayer(); pres.set_op("PRESENT")
     assert torch.allclose(pres.forward(x), x, atol=1e-6)
     past = Language.TenseLayer(); past.set_op("PAST")
-    center, _ext = enc.decode(past.forward(x)[..., -2:])
-    assert math.isclose(float(center.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
+    start, _res = enc.decode(past.forward(x)[..., -4:])
+    assert math.isclose(float(start.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
                         abs_tol=0.05)
     fut = Language.TenseLayer(); fut.set_op("FUTURE")
-    center, _ext = enc.decode(fut.forward(x)[..., -2:])
-    assert math.isclose(float(center.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
+    start, _res = enc.decode(fut.forward(x)[..., -4:])
+    assert math.isclose(float(start.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
                         abs_tol=0.05)
 
 

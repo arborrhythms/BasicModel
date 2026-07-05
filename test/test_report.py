@@ -73,11 +73,19 @@ def generate_report(test_dir=None):
 
     collector = ResultCollector()
 
+    # Optional parallel run (pytest-xdist): TEST_JOBS=auto (or an int) runs
+    # workers in separate processes. OPT-IN and off by default -- the model's
+    # module singletons (TheXMLConfig / TheData / TheGrammar) are per-process
+    # so workers are naturally isolated, but a few tests share fixed output/
+    # paths (checkpoints), so the canonical `make test` stays serial +
+    # deterministic. `make testp` / TEST_JOBS=auto is the fast dev path.
+    args = [test_dir, "-v", "--tb=short", f"--ignore={os.path.abspath(__file__)}"]
+    jobs = os.environ.get("TEST_JOBS")
+    if jobs:
+        args += ["-n", jobs, "--dist=loadfile"]  # loadfile: one file per worker (shared-module safety)
+
     # Run pytest programmatically, excluding this file to avoid recursion
-    exit_code = pytest.main(
-        [test_dir, "-v", "--tb=short", f"--ignore={os.path.abspath(__file__)}"],
-        plugins=[collector],
-    )
+    exit_code = pytest.main(args, plugins=[collector])
 
     # Build report
     report = Report()

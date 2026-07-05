@@ -1,7 +1,7 @@
 """Tests for MM_shamatha.xml's inline grammar wiring.
 
 The MM_shamatha.xml grammar block lists ``disjunction(S, S)``,
-``not(S)``, ``union(C, C)``, and ``intersection(C, C)``
+``not(S)``, ``join(C, C)``, and ``intersection(C, C)``
 (mirroring MM_boolean's DNF stack plus the post-codebook scalar-
 max fold that replaced the retired ``Contiguous(S)`` 2026-05-04).
 The presence of those rules drives downstream wiring:
@@ -43,7 +43,7 @@ def _fresh_model():
 class TestShamathaInlineGrammar(unittest.TestCase):
     def test_grammar_block_parses_disjunction(self):
         """The inline <grammar> block contains disjunction(S, S)
-        ahead of not(S), union(C, C), and intersection(C, C)."""
+        ahead of not(S), join(C, C), and intersection(C, C)."""
         _fresh_model()
         cfg = TheXMLConfig.get("SymbolSpace.language.grammar")
         self.assertIn("S", cfg)

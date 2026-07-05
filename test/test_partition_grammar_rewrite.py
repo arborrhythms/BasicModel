@@ -38,7 +38,7 @@ _POST_REWRITE_GRAMMAR = {
         'not(S)',
         'part(S, S)',
         'intersection(S, S)',
-        'union(S, S)',
+        'join(S, S)',
         'lower(S, S)',
         'lift(S, S)',
     ],
@@ -84,7 +84,7 @@ GOLDEN_CANONICALS = [
     'S -> not(S)',
     'S -> part(S, S)',
     'S -> intersection(S, S)',
-    'S -> union(S, S)',
+    'S -> join(S, S)',
     'S -> lower(S, S)',
     'S -> lift(S, S)',
 ]

@@ -48,7 +48,7 @@ from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 # NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
 # Layers lazy attrs -> Language -> Spaces, a cycle at module-load time).
 from Layers import GrammarLayer
-# NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
+# NotLayer / NonLayer / IntersectionLayer / JoinLayer moved to Language.py
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
 # of use below to avoid the Layers <-> Language circular dependency during
 # Language.py's own module load.
@@ -811,7 +811,9 @@ class ActiveEncoding(Encoding):
     nDim = 1
 
     def __init__(self, maxVal=1.0):
-        """Initialize ActiveEncoding at slot ``[-5]`` with scalar width."""
+        """Initialize the scalar activation carrier. Activation rides its own
+        SubSpace Basis (modality-sliced), NOT the muxed event tail -- the
+        index below is never resolved against events (vestigial)."""
         super().__init__([-5], maxVal)
 
     def encode(self, activation):
@@ -1039,6 +1041,10 @@ class WhereEncoding(QuadratureEncoding):
 # existing construction sites that import / pass it keep working.
 _WHEN_PERIOD = 65536
 _WHEN_MAXT = _WHEN_PERIOD
+# .where period default in input BYTES (2026-07-04 encoding pass): twice the
+# 4096 inputLength cap; config-derived via <architecture><wherePeriod>,
+# decoupled from architecture.nObjects (the retired implicit period).
+_WHERE_PERIOD_DEFAULT = 8192
 # ``_WHEN_TENSE_DEFAULT`` is RETAINED only as a back-compat constant for the many
 # construction sites that pass ``encode(t, D=_WHEN_TENSE_DEFAULT)``; the ``D``
 # kwarg is now ignored (tense is the interval-vs-now relation, not a magnitude).
@@ -1166,11 +1172,158 @@ class WhenRangeEncoding(QuadratureEncoding):
         print(f"present .when decodes to (center={float(c):.3f}, extent={float(ext):.3f})")
 
 
-# Back-compat alias: existing imports (bin/Models.py) / construction sites
-# resolve ``WhenEncoding`` to this single-scaled-quadrature-phasor encoding
-# (2026-06-07 redesign). The historical monotonic-counter WhenEncoding and the
-# intermediate endpoint-sum range encoding are both superseded.
-WhenEncoding = WhenRangeEncoding
+# .when v2 defaults (2026-07-04 encoding pass): LF horizon <whenPeriod> and
+# the LF/HF rung ratio <whenRungRatio> (safe branch bound ~pi/dphi ~ 35 at
+# the dense-support phase floor).
+_WHEN_PERIOD_V2 = 10 ** 6
+_WHEN_RUNG_RATIO = 32
+
+
+class WhenStartDurationEncoding(Encoding):
+    """4-dim `.when` v2: a 2-rung quadrature LADDER over ONE quantity, the
+    event ONSET ``s`` (design 2026-07-04, Alec FINAL):
+
+      ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
+
+    with ``w_lf = 2*pi/<whenPeriod>`` (default 1e6 ticks) and ``w_hf =
+    w_lf * <whenRungRatio>`` (default 32). Two TRUE pairs => constant norm
+    ``sqrt(2)`` (nothing to calibrate, no validity keying). ``decode`` =
+    atan2 per pair + HF branch resolution by LF (exact once the LF
+    estimate localizes within half an HF period). The band is the
+    SIMILARITY channel; ABSOLUTE addressing rides the exact long-int
+    clock (``BasicModel.when_time`` -> the synced ``self.t``), the Option-C
+    hybrid. DURATION is REMOVED from the band (write-only in v1:
+    ``decode_span`` had zero callers, tense rotates the center only,
+    aspect is retired) -- exact extents belong to the record store when
+    aspect is built. Endpoint-sum bracketing no longer serves `.when`
+    (``WhereEncoding`` keeps it). Tense (past/present/future) keys on the
+    LF pair vs ``self.t``. The class name keeps the plan's 4-value
+    lineage; the shipped band carries start only. nDim=4 enabled /
+    0 disabled.
+    """
+    index = []
+
+    def __init__(self, maxT=_WHEN_PERIOD_V2, n_when=0,
+                 rung_ratio=_WHEN_RUNG_RATIO):
+        if n_when > 0:
+            super().__init__([-4, -3, -2, -1], max(1, int(maxT)))
+            self.nDim = 4
+        else:
+            Encoding.__init__(self, [], 1)
+            self.nDim = 0
+        self.rung_ratio = int(rung_ratio)
+        self.div_lf = 2 * math.pi / max(1, int(maxT))
+        self.div_hf = self.div_lf * self.rung_ratio
+        # ``now`` -- synced once per batch from BasicModel.when_time
+        # (_advance_when_time); the encoding owns NO clock state.
+        self.t = 0
+
+    @property
+    def period_hf(self):
+        """The HF rung period in ticks (P_lf / rung_ratio)."""
+        return 2 * math.pi / self.div_hf
+
+    def encode(self, start):
+        """Encode onset(s) to the 4-dim two-pair ladder. ONE quantity --
+        no end/duration, no tense magnitude (both retired from the band).
+        Each pair folds the onset into ITS period before the angle multiply
+        so the sin/cos argument stays < 2*pi (float32 keeps tick-level
+        precision at any onset; unfolded, s=1e6 costs ~0.08 HF ticks)."""
+        if not isinstance(start, torch.Tensor):
+            start = torch.tensor(float(start), device=TheDevice.get())
+        start = start.to(torch.float32)
+        a_lf = torch.remainder(start, float(self.maxVal)) * self.div_lf
+        a_hf = torch.remainder(start, self.period_hf) * self.div_hf
+        return torch.stack((torch.sin(a_lf), torch.cos(a_lf),
+                            torch.sin(a_hf), torch.cos(a_hf)), dim=-1)
+
+    def decode(self, encoded):
+        """Recover ``(start, residue)`` from the ladder: LF localizes the
+        branch, HF supplies the fine position; ``residue`` = the LF-vs-
+        ladder disagreement in ticks (a decode-health diagnostic; |residue|
+        approaching P_hf/2 means the branch bound is at risk). Both
+        broadcast over ``encoded[..., :4]``. Onsets live in [0, P_lf)."""
+        if not isinstance(encoded, torch.Tensor):
+            encoded = torch.as_tensor(encoded, dtype=torch.float32)
+        two_pi = 2 * math.pi
+        a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
+        a_hf = torch.atan2(encoded[..., 2], encoded[..., 3]) % two_pi
+        s_lf = a_lf / self.div_lf
+        p_hf = self.period_hf
+        r = a_hf / self.div_hf              # onset residue in [0, P_hf)
+        k = torch.round((s_lf - r) / p_hf)  # branch from the LF estimate
+        start = k * p_hf + r
+        residue = s_lf - start
+        # Seam fold: phase noise puts an onset near 0 on either side of the
+        # 0/P seam; map [P-0.5, P) -> [-0.5, 0) so integer onsets round exact.
+        P = float(self.maxVal)
+        start = torch.remainder(start, P)
+        start = torch.where(start >= P - 0.5, start - P, start)
+        return start, residue
+
+    def shift_time(self, when, dt_ticks):
+        """Move the onset by ``dt_ticks``: exact phase rotation PER PAIR at
+        its own omega (no decode->re-encode); invertible via ``-dt_ticks``."""
+        out = []
+        for div, sl in ((self.div_lf, (0, 1)), (self.div_hf, (2, 3))):
+            phi = float(dt_ticks) * div
+            cos_p, sin_p = math.cos(phi), math.sin(phi)
+            w0, w1 = when[..., sl[0]], when[..., sl[1]]
+            out.append(w0 * cos_p + w1 * sin_p)
+            out.append(w1 * cos_p - w0 * sin_p)
+        return torch.stack(out, dim=-1)
+
+    def next(self, k=1):
+        """FUTURE handle: the present instant advanced ``k`` ticks (tense
+        keys on the LF pair vs ``self.t``)."""
+        return self.encode(self.t + _WHEN_TENSE_STEP * k)
+
+    def previous(self, k=1):
+        """PAST handle: the present instant retreated ``k`` ticks."""
+        return self.encode(self.t - _WHEN_TENSE_STEP * k)
+
+    def forward(self, x):
+        """Stamp the PRESENT instant ``encode(self.t)`` into the when slots
+        for every input event (the model clock advanced it pre-batch)."""
+        if self.nDim == 0:
+            return x
+        index = np.add([x.shape[-1]] * len(self.index), self.index)
+        key = self.encode(self.t)
+        y = x.clone()
+        y[:, :, index] = key.to(y.device).expand(x.shape[0], x.shape[1], -1)
+        return y
+
+    def increment(self, batch):
+        """No-op: the absolute clock lives on ``BasicModel.when_time``."""
+        return
+
+    @staticmethod
+    def test():
+        """Self-test: ladder round-trip of an integer onset."""
+        te = WhenStartDurationEncoding(n_when=4)
+        s, res = te.decode(te.encode(731257))
+        print(f".when v2 decodes 731257 -> {float(s):.1f} "
+              f"(residue {float(res):.4f})")
+
+
+def event_when_encoding(n_when):
+    """The ONE `.when` construction seam: build the v2 ladder from the config
+    knobs <whenPeriod> / <whenRungRatio> (defaults 1e6 / 32). Every event-tail
+    consumer (Space build, grammar tense ops) constructs through here so all
+    encoders share one omega pair -- shift_time on a mismatched period would
+    silently rotate wrong."""
+    return WhenStartDurationEncoding(
+        int(TheXMLConfig.get("architecture.whenPeriod", _WHEN_PERIOD_V2)),
+        n_when=n_when,
+        rung_ratio=int(TheXMLConfig.get("architecture.whenRungRatio",
+                                        _WHEN_RUNG_RATIO)))
+
+
+# ``WhenEncoding`` resolves to the v2 start ladder (2026-07-04 encoding
+# pass). The 2026-06-16 endpoint-sum bracket (WhenRangeEncoding) is retired
+# from the event tail: duration was write-only there (decode_span had zero
+# callers) and the exact clock owns absolute time (Option-C hybrid).
+WhenEncoding = WhenStartDurationEncoding
 class WordEncoding(Encoding):
     """Word encoding: each word is a (batch, vector, rule, order) 4-tuple.
 
@@ -4046,6 +4199,33 @@ def _decode_where_offset(positions, batch_idx, vector_idx, subspace=None):
     if math.isnan(sin_val) or math.isnan(cos_val):
         return None
     return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
+
+
+def _blind_active_slots(mags, ratio_guard=1.8, abs_floor=0.25):
+    """Gate 2b active-slot split from `.where` band magnitudes (one row).
+
+    The reverse transport shrinks the unit stamps (~0.35 measured at the
+    xor regime) while pad slots reconstruct noise (~0.15), so a fixed
+    real-stamp floor is dishonest. Split at the LARGEST GAP in the sorted
+    magnitudes; accept when the upper/lower mean ratio clears
+    ``ratio_guard`` (real rows measure ~2.3x), else fall back to the
+    absolute ``abs_floor`` (degenerate all-pad / all-real rows have no
+    gap to find). ``mags``: {slot: magnitude}. Returns the active set."""
+    items = sorted((m, n) for n, m in mags.items())
+    if not items:
+        return set()
+    vals = [m for m, _ in items]
+    if len(vals) == 1:
+        return {items[0][1]} if vals[0] >= abs_floor else set()
+    gaps = [(vals[i + 1] - vals[i], i) for i in range(len(vals) - 1)]
+    g, i = max(gaps)
+    lower = vals[:i + 1]
+    upper = vals[i + 1:]
+    lo = sum(lower) / len(lower)
+    hi = sum(upper) / len(upper)
+    if lo > 0 and hi / lo >= ratio_guard:
+        return {n for m, n in items[i + 1:]}
+    return {n for m, n in items if m >= abs_floor}
 
 
 def _render_token_buffer(batch_tokens, buf_size=None):
@@ -7377,8 +7557,12 @@ class Space(nn.Module):
         self.nWhat = objectEncoding.nWhat
         self.muxedSize = objectEncoding.muxedSize
         whatEncoding   = WhatEncoding(inputShape, outputShape)
-        whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
-        whenEncoding   = WhenRangeEncoding(_WHEN_PERIOD, _nWhen)
+        # Period is config-derived (<wherePeriod>, default 8192), NOT nObjects
+        # (2026-07-04 encoding pass; the seam below raise-to-fits with a warn).
+        whereEncoding  = WhereEncoding(
+            int(TheXMLConfig.get("architecture.wherePeriod",
+                                 _WHERE_PERIOD_DEFAULT)), _nWhere, _nWhen)
+        whenEncoding   = event_when_encoding(_nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
             nOutputDim=self.nOutputDim,
@@ -9376,22 +9560,34 @@ class PartSpace(PerceptualSpace):
         if isinstance(lexical_basis, Embedding):
             self.doc_spans = lexical_basis.doc_spans
             self.doc_sources = lexical_basis.doc_sources
-            data = TheData
-            if data.train_input and self.subspace.whereEncoding.nDim > 0:
-                if (isinstance(data.train_input, list) and data.train_input
-                        and isinstance(data.train_input[0], str)):
-                    actual_max = max(len(s.encode('utf-8'))
-                                     for s in data.train_input)
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               actual_max * 2)
-                else:
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               data.inputLength)
-                self.subspace.whereEncoding.maxVal = maxP
-                self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
         else:
             self.doc_spans = []
             self.doc_sources = []
+        # Raise-never-lower period seam -- ALL synthesis modes (2026-07-04:
+        # was Embedding-only, but the radix path stamps byte offsets too and
+        # would alias silently past the period).
+        data = TheData
+        if data.train_input and self.subspace.whereEncoding.nDim > 0:
+            period = self.subspace.whereEncoding.maxVal
+            if (isinstance(data.train_input, list) and data.train_input
+                    and isinstance(data.train_input[0], str)):
+                need = max(len(s.encode('utf-8'))
+                           for s in data.train_input)
+                maxP = max(period, need * 2)
+            else:
+                need = data.inputLength
+                maxP = max(period, need)
+            if need > period:
+                # Overflow warn (2026-07-04): raise-to-fit, never silent.
+                cfg = str((TheXMLConfig._sources or ["?"])[-1])
+                warnings.warn(
+                    f"PartSpace .where period overflow [config {cfg}]: "
+                    f"input length {need} bytes exceeds the configured "
+                    f"period {period}; raising the period to {maxP} -- "
+                    f"increase <wherePeriod> to at least {need} to "
+                    f"silence this.", RuntimeWarning)
+            self.subspace.whereEncoding.maxVal = maxP
+            self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
         # <chunking> was renamed <synthesis>; fail loudly on old configs.
         try:
             _legacy_chunking = TheXMLConfig.space(section, "chunking")
@@ -9488,6 +9684,14 @@ class PartSpace(PerceptualSpace):
         # Reverse stores a report-only decode thunk to avoid eager host reads.
         self._recovered_input_thunk = None
         self._embedded_input = None
+        # Blind-decode fraction (2026-07-04 encoding pass, Gate 2b): None/0.0
+        # = the scaffold path when the analysis record rode the batch (the
+        # 5c/5d content-identity pin); 1.0 = fully blind (tiling re-derived
+        # from the .where band); 0<r<1 = the scaffold-masking curriculum
+        # (that fraction of scaffold tiles decodes blind, deterministic
+        # index stride). Callers (recon_bench --blind, the free-run
+        # curriculum at the XML maskRate) set it explicitly.
+        self.decode_blind_rate = None
 
         # Size the sigma fold at the embedded percept width, not raw byte width.
         percept_dim = int(self.subspace.getEncodedInputSize())
@@ -11913,7 +12117,9 @@ class PartSpace(PerceptualSpace):
         """Radix analogue of ``Embedding.decode_reverse_meta``: nearest radix
         chunk per slot (``RadixLayer.reverse`` -> inverse-table bytes) plus
         WhereEncoding offsets. Returns the same meta-dict shape the Embedding
-        render consumers use."""
+        render consumers use. ``decode_blind_rate`` picks the tiling source
+        (Gate 2b): scaffold record (None/0.0, the debug/fallback path), the
+        `.where` band alone (1.0), or the masking curriculum between."""
         if event is None or not torch.is_tensor(event):
             return None
         if event.dim() == 2:
@@ -11944,6 +12150,12 @@ class PartSpace(PerceptualSpace):
         else:
             tile_spans = None
         decoded = None                       # legacy full decode, materialized lazily
+        # Gate 2b blind fraction: None/0.0 scaffold; 1.0 fully blind (band-
+        # derived tiling, the scaffold record never consulted); 0<r<1 the
+        # scaffold-masking curriculum (deterministic index stride).
+        rate = getattr(self, "decode_blind_rate", None)
+        rate = 0.0 if rate is None else float(rate)
+        fully_blind = rate >= 1.0
         tokens = [[] for _ in range(B)]
         words = [[] for _ in range(B)]
         offsets = [[] for _ in range(B)]
@@ -11953,25 +12165,57 @@ class PartSpace(PerceptualSpace):
             claims = [(_decode_where_offset(positions, b, n, subspace=sub)
                        if positions is not None else None) for n in range(N)]
             # 5d gate: the slots the forward actually populated (scaffold
-            # content slots); the .where claims are the self-contained
-            # fallback when no scaffold rode this batch.
-            if tile_spans is not None:
+            # content slots). Blind: the render set comes from the BAND
+            # alone -- max-gap magnitude split (pads reconstruct noise well
+            # above the claim floor; see _blind_active_slots).
+            if tile_spans is not None and not fully_blind:
                 render_set = [n for n in range(N)
                               if n < len(tile_spans[b])
                               and tile_spans[b][n][0] >= 0]
+            elif positions is not None:
+                mags = {n: float(torch.linalg.vector_norm(
+                            positions[b, n, :2].float()))
+                        for n in range(N) if claims[n] is not None}
+                active = _blind_active_slots(mags)
+                render_set = [n for n in range(N) if n in active]
             else:
                 render_set = [n for n in range(N) if claims[n] is not None]
-            if render_set or tile_spans is not None:
+            # Curriculum mask: this fraction of scaffold tiles decodes BLIND
+            # (size from claim diffs) while the rest keep their span sizes.
+            # Deterministic stride so pins reproduce; rate>=1 masks all.
+            if fully_blind:
+                masked = set(render_set)
+            elif rate > 0.0 and render_set:
+                stride = max(1, round(1.0 / rate))
+                masked = {n for i, n in enumerate(render_set)
+                          if i % stride == 0}
+            else:
+                masked = set()
+            # Blind tile-size hypotheses use the NEXT active claim against
+            # the RUNNING SUM (design 1.3 snap: running-sum consistency --
+            # emitted bytes re-anchor cum each step, so claim errors do not
+            # accumulate; the last active tile has no successor -> arm (b)).
+            claimed = [n for n in render_set if claims[n] is not None]
+            next_claim = {}
+            for i, n in enumerate(claimed[:-1]):
+                next_claim[n] = claims[claimed[i + 1]]
+            if render_set or (tile_spans is not None and not fully_blind):
                 # 5c: placement is the RUNNING SUM of emitted part sizes (the
                 # type-tiling reading); the absolute band claim (``where_abs``)
                 # CONFIRMS rather than dictates.
                 cum = 0
                 for n in render_set:
-                    span = (tile_spans[b][n]
-                            if tile_spans is not None and n < len(tile_spans[b])
-                            else None)
-                    size = (span[1] - span[0]
-                            if span is not None and span[0] >= 0 else None)
+                    if n in masked:
+                        # blind: size = next claim minus the running sum.
+                        nc = next_claim.get(n)
+                        size = (nc - cum) if nc is not None and nc > cum \
+                            else None
+                    else:
+                        span = (tile_spans[b][n]
+                                if tile_spans is not None
+                                and n < len(tile_spans[b]) else None)
+                        size = (span[1] - span[0]
+                                if span is not None and span[0] >= 0 else None)
                     # Arm (a): a maximal part covering exactly the span;
                     # arm (b): parts-based fallback (unrestricted associate).
                     pid = radix.associate_span(content[b, n], size=size)
@@ -12037,8 +12281,8 @@ class PartSpace(PerceptualSpace):
                 and where_enc.nDim > 0):
             assert where_enc.maxVal >= buf_size, (
                 f"WhereEncoding periodicity ({where_enc.maxVal}) must be "
-                f">= render buffer size ({buf_size}). Raise "
-                f"architecture.nObjects to at least {buf_size}."
+                f">= render buffer size ({buf_size}). Increase "
+                f"<wherePeriod> to at least {buf_size}."
             )
         what = self.subspace.what
         if hasattr(what, "reconstruct_to_buffer"):

@@ -28,7 +28,7 @@ from Layers import (
     NotLayer,
     PiLayer,
     SigmaLayer,
-    UnionLayer,
+    JoinLayer,
 )
 
 
@@ -147,7 +147,7 @@ class TestSigmaLayerBinary(unittest.TestCase):
 
 
 class TestIntersectionUnionBinary(unittest.TestCase):
-    """IntersectionLayer / UnionLayer are CS-space_role (conceptual) binary
+    """IntersectionLayer / JoinLayer are CS-space_role (conceptual) binary
     lattice min/max on bivector activation. They share kernels
     with ConjunctionLayer / DisjunctionLayer (SS-space_role counterparts
     on post-codebook scalar activation); the CS-vs-SS distinction is
@@ -162,7 +162,7 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         self.assertEqual(layer.space_role, 'CS')
 
     def test_union_layer_is_CS_space_role(self):
-        layer = UnionLayer()
+        layer = JoinLayer()
         self.assertEqual(layer.space_role, 'CS')
 
     def test_intersection_compose_is_min_kernel(self):
@@ -186,22 +186,17 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         self.assertTrue(torch.allclose(diag, left, atol=0.1))
 
     def test_intersection_decompose_pseudo_inverse(self):
+        # ADAPTED (2026-07-04 serial plan Task 1): the no-basis
+        # (parent, parent) pseudo-inverse is revoked -- decompose without
+        # a codebook fails loud with the Gate-S1 inventory row.
         layer = IntersectionLayer()
         parent = torch.rand(2, 5, 4) * 1.6 - 0.8
-        l_rec, r_rec = layer.decompose(parent)
-        # Lossy fold: pseudo-inverse returns parent for both children
-        # when no codebook W is supplied (the back-compat fallback).
-        self.assertTrue(torch.equal(l_rec, parent))
-        self.assertTrue(torch.equal(r_rec, parent))
-        # Recomposing the pseudo-inverse with itself is APPROXIMATELY
-        # idempotent under LSE smooth min (2026-05-29). Hard RadMin
-        # gave exact idempotency; LSE trades that for gradient flow.
-        self.assertTrue(torch.allclose(
-            layer.compose(l_rec, r_rec), parent, atol=0.1))
+        with self.assertRaises(NotImplementedError):
+            layer.decompose(parent)
 
     def test_union_compose_is_max_kernel(self):
         from Layers import Ops
-        layer = UnionLayer()
+        layer = JoinLayer()
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
@@ -216,11 +211,11 @@ class TestIntersectionUnionBinary(unittest.TestCase):
         self.assertTrue(torch.allclose(diag, left, atol=0.1))
 
     def test_union_decompose_pseudo_inverse(self):
-        layer = UnionLayer()
+        # ADAPTED (2026-07-04 serial plan Task 1): stub revoked.
+        layer = JoinLayer()
         parent = torch.rand(2, 5, 4) * 1.6 - 0.8
-        l_rec, r_rec = layer.decompose(parent)
-        self.assertTrue(torch.equal(l_rec, parent))
-        self.assertTrue(torch.equal(r_rec, parent))
+        with self.assertRaises(NotImplementedError):
+            layer.decompose(parent)
 
 
 class TestComposeGradients(unittest.TestCase):
@@ -241,7 +236,7 @@ class TestComposeGradients(unittest.TestCase):
         self.assertGreater(right.grad.abs().sum().item(), 0.0)
 
     def test_union_grad_flows_to_both_children(self):
-        layer = UnionLayer()
+        layer = JoinLayer()
         left = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         right = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         y = layer.compose(left, right)

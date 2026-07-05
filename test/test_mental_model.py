@@ -60,12 +60,13 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # Post-2026-05-29 grammar-file refactor: space_role comes from the
         # layer class (per ``_reassign_space_roles_from_layer_classes``), so
         # ``s_methods`` returns only methods whose layer declares
-        # ``space_role='SS'``. Assertive ``isEqual`` / ``conjunction`` /
+        # ``space_role='SS'``. Assertive ``conjunction`` /
         # ``disjunction`` / ``exist`` are SS-space_role; query and logical
         # answer operations live on CS-space_role per their GrammarLayer
-        # subclasses. Equality questions keep method_name='isEqual'
-        # with rule.query=True, but dispatch through the query layer.
-        self.assertIn('isEqual', Language.TheGrammar.s_methods)
+        # subclasses. ADAPTED 2026-07-05: isEqual RELOCATED to <Queries>
+        # (Alec: equality is a query, not parse structure) -- it must NOT
+        # appear as a parse method any more.
+        self.assertNotIn('isEqual', Language.TheGrammar.s_methods)
         self.assertIn('conjunction', Language.TheGrammar.s_methods)
         self.assertIn('disjunction', Language.TheGrammar.s_methods)
         self.assertIn('exist', Language.TheGrammar.s_methods)
@@ -106,12 +107,14 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     # for_rule`` maps ``isPart`` -> ``queryPart`` in a query context), so the
     # rule method_names carry ``isPart`` where the transitional
     # ``complete.grammar`` carried ``assertPart`` + ``queryPart``.
+    # ADAPTED 2026-07-05: the relation family (isEqual, isPart) relocated
+    # to <Queries>; lattice max renamed union -> join (the additive pair
+    # owns 'union').
     REQUIRED_OPS = {
         'non', 'not',
         'conjunction', 'disjunction',
-        'intersection', 'union',
+        'intersection', 'join',
         'lift', 'lower',
-        'isEqual', 'isPart',
         'exist',
     }
 

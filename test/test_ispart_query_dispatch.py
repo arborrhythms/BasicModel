@@ -64,15 +64,18 @@ def test_ispart_layer_registered():
 
 def test_ispart_assertive_forward_passes_parent():
     """Assertive ``isPart(A, B)`` yields the encompassing parent ``B`` (like
-    the CS-space_role ``part``), with the lossy ``(parent, parent)`` pseudo-inverse."""
+    the CS-space_role ``part``). ADAPTED (2026-07-04 serial plan Task 1):
+    the lossy ``(parent, parent)`` pseudo-inverse is revoked -- reverse
+    fails loud with the Gate-S1 inventory row."""
+    import pytest
     from Language import GRAMMAR_LAYER_CLASSES
     layer = GRAMMAR_LAYER_CLASSES["isPart"]()
     left = torch.randn(2, 4)
     right = torch.randn(2, 4)
     out = layer.forward(left, right)
     assert torch.equal(out, right)
-    lo, ro = layer.reverse(out)
-    assert torch.equal(lo, out) and torch.equal(ro, out)
+    with pytest.raises(NotImplementedError, match="isPart"):
+        layer.reverse(out)
 
 
 def test_ispart_query_false_dispatches_assertive(monkeypatch, tmp_path):

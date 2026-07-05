@@ -622,54 +622,47 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 
 
 class TestWhenEncodingRoundTrip(unittest.TestCase):
-    """WhenRangeEncoding: the endpoint-sum BRACKET .when round-trips (2026-06-16
-    redesign). ``.when = 0.5*[sin(s*ω)+sin(e*ω), cos(s*ω)+cos(e*ω)]``: the ANGLE
-    decodes the event-time CENTER, the MAGNITUDE the DURATION (extent); an INSTANT
-    is the present stamp (magnitude 1). Full contract in
-    test/test_when_range_encoding.py. Constructed here with n_when=2 (enabled);
-    the bare Models.WhenEncoding(maxT) default is disabled (nDim=0), so .when
-    forward/reverse are no-ops until a space turns it on.
+    """WhenEncoding (the alias) is the v2 start LADDER (2026-07-04 encoding
+    pass): 4 dims ``[sin(s*w_lf), cos(s*w_lf), sin(s*w_hf), cos(s*w_hf)]``
+    over ONE quantity, the onset s; decode returns (start, residue).
+    Full codec contract in test/test_when_encoding_v2.py; this is the
+    alias-resolves smoke. The bare default (n_when=0) is disabled (nDim=0)
+    so .when forward/reverse are no-ops until a space turns it on.
     """
 
     def test_forward_stamps_present_and_reverse_recovers_it(self):
-        te = Models.WhenEncoding(64, 2)               # enabled 2-dim bracket
+        te = Models.WhenEncoding(65536, 4)            # enabled 4-dim ladder
         te.t = 0
-        x = torch.zeros(5, 2, 10, device=Models.TheDevice.get())
-        y = te.forward(x)                             # stamps the present instant [0, 1]
-        _, decoded = te.reverse(y)                    # decoded == (center, extent), each [B, V]
-        c_dec, ext_dec = decoded
+        x = torch.zeros(5, 2, 12, device=Models.TheDevice.get())
+        y = te.forward(x)                             # stamps the present onset
+        _, decoded = te.reverse(y)                    # (start, residue), each [B, V]
+        s_dec, res_dec = decoded
         for b in range(5):
             for v in range(2):
-                self.assertAlmostEqual(float(c_dec[b, v]), 0.0, places=3,
-                    msg=f"present center not recovered at batch={b}, vec={v}")
-                self.assertAlmostEqual(float(ext_dec[b, v]), 0.0, places=3,
-                    msg=f"present (zero) extent not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(s_dec[b, v]), 0.0, places=3,
+                    msg=f"present onset not recovered at batch={b}, vec={v}")
+                self.assertAlmostEqual(float(res_dec[b, v]), 0.0, places=3,
+                    msg=f"present residue not ~0 at batch={b}, vec={v}")
 
-    def test_time_and_duration_round_trip(self):
-        """Event-time center (angle) and duration (magnitude) round-trip through
-        encode/decode: instants for the center sweep, a span for the duration."""
-        from Spaces import _WHEN_PERIOD
-        te = Models.WhenEncoding(_WHEN_PERIOD, 2)
-        # Center (instant) sweep across the non-aliasing window.
-        for t in (0.0, 1.0, float(_WHEN_PERIOD // 8), -float(_WHEN_PERIOD // 8)):
-            c, ext = te.decode(te.encode(t))
-            self.assertAlmostEqual(float(c), t, delta=0.05, msg=f"center {t}")
-            self.assertAlmostEqual(float(ext), 0.0, delta=1e-3, msg=f"instant extent (t={t})")
-        # Duration (above the resolution floor) round-trips.
-        for s, e in ((1000, 1100), (3000, 3500)):
-            c, ext = te.decode(te.encode(s, e))
-            self.assertAlmostEqual(float(c), (s + e) / 2.0, delta=0.1, msg=f"center ({s},{e})")
-            self.assertAlmostEqual(float(ext), float(e - s), delta=0.5, msg=f"duration ({s},{e})")
+    def test_onset_round_trip(self):
+        """The onset round-trips through encode/decode across the horizon
+        (the ladder decode is exact after rounding; residue ~0)."""
+        from Spaces import _WHEN_PERIOD_V2
+        te = Models.WhenEncoding(_WHEN_PERIOD_V2, 4)
+        for t in (0.0, 1.0, float(_WHEN_PERIOD_V2 // 8), 731257.0):
+            s, res = te.decode(te.encode(t))
+            self.assertEqual(round(float(s)), int(t), msg=f"onset {t}")
+            self.assertAlmostEqual(float(res), 0.0, delta=1.0, msg=f"residue (t={t})")
 
     def test_content_preserved(self):
         """Content dimensions (non-encoding slots) survive the round-trip."""
-        te = Models.WhenEncoding(64, 2)               # enabled, so [-2, -1] are actually stamped
-        x = torch.randn(2, 3, 10, device=Models.TheDevice.get())
+        te = Models.WhenEncoding(65536, 4)            # enabled, [-4..-1] stamped
+        x = torch.randn(2, 3, 12, device=Models.TheDevice.get())
         original = x.clone()
         y = te.forward(x)
         cleaned, _ = te.reverse(y)
-        mask = torch.ones(10, dtype=torch.bool)
-        mask[[-2, -1]] = False
+        mask = torch.ones(12, dtype=torch.bool)
+        mask[[-4, -3, -2, -1]] = False
         torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
 
 
@@ -760,7 +753,7 @@ class TestSubSpaceConstruction(unittest.TestCase):
         self.assertIsInstance(ws.event, Models.Tensor)
         self.assertIs(ws.event.W, t)
         self.assertEqual(ws.nWhere, 2)
-        self.assertEqual(ws.nWhen, 2)
+        self.assertEqual(ws.nWhen, 4)  # 2026-07-04 encoding pass: .when 4-dim
         self.assertEqual(ws.muxedSize, 6)
         self.assertEqual(ws.inputShape, [3, 6])
 
@@ -1372,10 +1365,10 @@ class TestSymbolDimZero(unittest.TestCase):
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
                               outputDim=1)
         self.assertEqual(Models.TheXMLConfig.space("WholeSpace", "nDim"), 0)
-        # Uniform (2,2) convention (2026-06): WholeSpace carries the same
-        # (nWhere=2, nWhen=2) band as every interior space_role -- the retired
-        # SS=(0,0) special case is gone.
-        self.assertEqual(canonical_shape("WholeSpace"), (2, 2))
+        # Uniform-band convention (2026-06): WholeSpace carries the same
+        # (nWhere, nWhen) band as every interior space_role -- the retired
+        # SS=(0,0) special case is gone. 2026-07-04 encoding pass: (2, 4).
+        self.assertEqual(canonical_shape("WholeSpace"), (2, 4))
 
     def test_objectencoding_adds_canonical_overhead(self):
         """ObjectEncoding adds the canonical .where/.when overhead (objectSize)
@@ -2056,11 +2049,11 @@ class TestModelTypeVariants(unittest.TestCase):
         ``subsymbolicOrder`` literally drives the per-stage iteration.
         """
         # symbolDim is the SS EVENT nDim (not band-adjusted by the fixture);
-        # under the uniform (2,2) band SS content = symbolDim - 4, which must
+        # under the uniform (2,4) band SS content = symbolDim - 6, which must
         # be >= 0 AND match CS.nWhat (conceptDim=1 -> CS content 1). So
-        # symbolDim=5 -> SS content 1 == CS.nWhat. (Was 1, which made content
-        # -3 under the retired SS=(0,0) assumption.)
-        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=5,
+        # symbolDim=7 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass:
+        # the band widened (2,2)->(2,4), so symbolDim 5 -> 7.)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=7,
                               wordDim=1, outputDim=1,
                               nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                               perceptPassThrough=True, symbolPassThrough=False,
@@ -2766,7 +2759,7 @@ class TestGrammar(unittest.TestCase):
     def _make_grammar(self):
         g = Language.Grammar()
         g.configure({
-            "S": ["swap(S, S)", "not(S)", "union(S, S)"],
+            "S": ["swap(S, S)", "not(S)", "join(S, S)"],
         })
         return g
 
@@ -2778,7 +2771,7 @@ class TestGrammar(unittest.TestCase):
         g = self._make_grammar()
         self.assertEqual(g[0], "S -> swap(S, S)")
         self.assertEqual(g[1], "S -> not(S)")
-        self.assertEqual(g[2], "S -> union(S, S)")
+        self.assertEqual(g[2], "S -> join(S, S)")
 
     def test_arity(self):
         g = self._make_grammar()
@@ -2793,7 +2786,7 @@ class TestGrammar(unittest.TestCase):
     def test_configure_from_dict(self):
         g = Language.Grammar()
         g.configure({
-            "S": ["swap(S, S)", "equals(S, S)", "union(S, S)"],
+            "S": ["swap(S, S)", "equals(S, S)", "join(S, S)"],
         })
         self.assertEqual(g.symbolic(), [0, 1, 2])
 
@@ -3480,7 +3473,8 @@ class TestInputSpaceDemuxed(unittest.TestCase):
         self.assertTrue(result.is_demuxed)
         self.assertEqual(list(result.what.getW().shape), [2, nInput, _idim])
         self.assertEqual(list(result.where.getW().shape), [2, nInput, 2])
-        self.assertEqual(list(result.when.getW().shape), [2, nInput, 2])
+        # 2026-07-04 encoding pass: .when is the 4-dim start ladder.
+        self.assertEqual(list(result.when.getW().shape), [2, nInput, 4])
 
     def test_materialize_produces_muxed(self):
         """InputSpace(demuxed=True).materialize() produces concat([what, where, when])."""

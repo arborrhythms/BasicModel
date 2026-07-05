@@ -57,7 +57,7 @@ def test_start_symbol_parsed_from_inline_xml(reset_grammar):
               <start>S</start>
               <grammar>
                 <S>not(S)</S>
-                <S>union(S, S)</S>
+                <S>join(S, S)</S>
               </grammar>
             </language>
           </SymbolSpace>

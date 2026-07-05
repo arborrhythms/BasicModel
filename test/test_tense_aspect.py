@@ -31,13 +31,14 @@ def test_will_run():       assert normalize_surface(["will", "run"]) == ("FUTURE
 # a magnitude. PAST shifts the event-time CENTER -step ticks, FUTURE +step,
 # PRESENT = identity; the event duration is preserved. AspectLayer is a no-op.
 from Language import TenseLayer, AspectLayer
-from Spaces import WhenRangeEncoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
+from Spaces import event_when_encoding, _WHEN_TENSE_STEP, _WHEN_PERIOD
 
 
-def _event_with_present_when(B=2, V=3, nhead=6, t=0):  # nhead = nWhat+nWhere; +2 for .when
-    enc = WhenRangeEncoding(_WHEN_PERIOD, 2); enc.t = t
+def _event_with_present_when(B=2, V=3, nhead=6, t=0):  # nhead = nWhat+nWhere; +4 for .when
+    # 2026-07-04 encoding pass: .when is the 4-dim start ladder (one seam).
+    enc = event_when_encoding(4); enc.t = t
     head = torch.randn(B, V, nhead)
-    when = enc.encode(t).expand(B, V, -1)  # present instant at time t
+    when = enc.encode(t).expand(B, V, -1)  # present-onset instant at time t
     return torch.cat([head, when], dim=-1), head, enc
 
 
@@ -52,21 +53,21 @@ def test_past_moves_event_time_back():
     t = TenseLayer(); t.set_op("PAST")
     x, _head, enc = _event_with_present_when(t=T)
     y = t.forward(x)
-    center, ext = enc.decode(y[..., -2:])
-    # PAST: center T -> T-step (toward past); the (zero) duration is unchanged.
-    assert math.isclose(float(center.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
+    start, res = enc.decode(y[..., -4:])
+    # PAST: onset T -> T-step (toward past); the decode residue stays ~0.
+    assert math.isclose(float(start.reshape(-1)[0]), float(T) - _WHEN_TENSE_STEP,
                         abs_tol=0.05)
-    assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
+    assert math.isclose(float(res.reshape(-1)[0]), 0.0, abs_tol=1e-3)
 
 
 def test_future_moves_event_time_forward():
     T = _WHEN_PERIOD // 8
     t = TenseLayer(); t.set_op("FUTURE")
     x, _head, enc = _event_with_present_when(t=T)
-    center, ext = enc.decode(t.forward(x)[..., -2:])
-    assert math.isclose(float(center.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
+    start, res = enc.decode(t.forward(x)[..., -4:])
+    assert math.isclose(float(start.reshape(-1)[0]), float(T) + _WHEN_TENSE_STEP,
                         abs_tol=0.05)
-    assert math.isclose(float(ext.reshape(-1)[0]), 0.0, abs_tol=1e-3)
+    assert math.isclose(float(res.reshape(-1)[0]), 0.0, abs_tol=1e-3)
 
 
 def test_present_is_identity():

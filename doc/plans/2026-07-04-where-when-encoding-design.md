@@ -201,6 +201,11 @@ Can start/end pairs combine to beat either alone?
   deterministic per-slot bias at the trained floor). **Pre-implementation
   micro-probe:** stamp two pairs into one event, measure inter-band error
   correlation; if high, durations are near-free of the common noise.
+  **MEASURED (Task 0.2, 2026-07-04):** inter-band phase-error correlation
+  $= 1.000$ (two per-slot pairs, one event, trained MM_20M_xor
+  forward+reverse) — the transport noise IS common-mode; the duration/
+  difference channel inherits the differencing bonus. No design change
+  (informational for decode weighting).
 - **Same quantity at two periods: yes** — the fine pair's resolution over
   the coarse pair's range (range-resolution product multiplies). Family:
   LADDER (ratio $< \pi/\Delta\phi$ — $\sim$35 at the dense floor,

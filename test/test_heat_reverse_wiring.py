@@ -14,7 +14,7 @@ The CAPSTONE adds a GATED restriction: when the owning space's
 them into the recommender call so the heat steers the operand pick.
 
 Two assertions, exercising the REAL ``unreduce`` path with the REAL
-``UnionLayer`` + REAL ``SymbolSubSpace.retrieval_candidates_for_slot`` + REAL
+``JoinLayer`` + REAL ``SymbolSubSpace.retrieval_candidates_for_slot`` + REAL
 ``Grammar._rule_order_signature``:
 
   * ON  (``attention_mode='primer'``): with a specific ADMISSIBLE row primed
@@ -44,7 +44,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Language import (  # noqa: E402
-    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, SymbolSubSpace,
+    Grammar, LanguageLayer, IntersectionLayer, JoinLayer, SymbolSubSpace,
     Taxonomy,
 )
 
@@ -133,14 +133,14 @@ class _StackSubSpace:
 
 
 def _grammar_with_union():
-    """Real Grammar holding exactly one binary rule ``LP = union(NP3, VP1)``.
+    """Real Grammar holding exactly one binary rule ``LP = join(NP3, VP1)``.
 
     ``_rule_order_signature`` then yields rhs_categories=('NP','VP'),
     orders (3, 1). ``symbol_vocab_size`` is set so the ``.where`` rule
     encoding ``where_id_for_rule(0) = symbol_vocab_size + 1 + 0`` decodes
     back to ('rule', 0)."""
     g = Grammar()
-    g.rules = [g._parse_rule("LP", "union(NP3, VP1)", space_role='CS')]
+    g.rules = [g._parse_rule("LP", "join(NP3, VP1)", space_role='CS')]
     g.rule_table = {0: g.rules[0].canonical}
     g.symbol_vocab_size = 4          # arbitrary; only the offset matters
     g._configured = True
@@ -200,9 +200,9 @@ def _build_subspace(W, parent, view, *, attention_mode, hot_ref=None,
 
 def _register_union_syntactic_layer():
     """Duck-typed SyntacticLayer: space_role 'CS' (so the gate reads
-    ``conceptualSpace.attention_mode``) with the REAL UnionLayer bound to the
+    ``conceptualSpace.attention_mode``) with the REAL JoinLayer bound to the
     decoded ``method_name`` ('union')."""
-    return SimpleNamespace(space_role='CS', _by_name={'union': UnionLayer()})
+    return SimpleNamespace(space_role='CS', _by_name={'join': JoinLayer()})
 
 
 # ---------------------------------------------------------------------------

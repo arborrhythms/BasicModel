@@ -28,12 +28,12 @@
 
   <InputSpace>
     <nOutput>256</nOutput>
-    <nDim>5</nDim> <!-- 1 byte + 2 where + 2 when -->
+    <nDim>7</nDim> <!-- 1 byte + 2 where + 4 when -->
   </InputSpace>
 
   <PartSpace>
     <nInput>256</nInput>
-    <nInputDim>5</nInputDim>
+    <nInputDim>7</nInputDim>
     <nVectors>2048</nVectors>
     <nDim>32</nDim>
     <nOutput>8</nOutput>

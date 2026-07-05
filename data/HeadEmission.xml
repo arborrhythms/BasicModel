@@ -40,27 +40,27 @@
          raised to 32 when §8g of the brick-vectorization handoff
          replaced the truncation with an assert. -->
     <nOutput>32</nOutput>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PartSpace>
     <nOutput>32</nOutput>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>32</nOutput>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <WholeSpace>
     <nOutput>32</nOutput>
-    <nDim>12</nDim>
+    <nDim>14</nDim>
     <nVectors>8</nVectors>
   </WholeSpace>
 

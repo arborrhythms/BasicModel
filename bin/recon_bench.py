@@ -1,6 +1,8 @@
 """Shared fidelity+timing harness (2026-07-03 recon plan): every debug run
 is a benchmark sample. CLI: recon_bench.py <config.xml> [--epochs N]
-[--seed S] [--out output/] [--profile] [--compiled-step]."""
+[--seed S] [--out output/] [--profile] [--compiled-step]
+[--blind | --scaffold] (Gate 2b: blind band-derived decode is the
+default; --scaffold keeps the forward-scaffold debug path)."""
 import argparse
 import dataclasses
 import json
@@ -159,11 +161,15 @@ def _decode_texts(model):
 
 
 def run_config(config, epochs, seed, out_dir, profile=False,
-               max_batches=None, compiled_step=False):
+               max_batches=None, compiled_step=False, blind=True):
     """Run `epochs` timed training epochs on `config`; write a JSON record.
 
     The `seed` argument deliberately overrides BASIC_SEED / the XML
     <training><seed>: harness records must be reproducible standalone.
+
+    ``blind`` (Gate 2b, default True): the decode pass re-derives the
+    tiling from the `.where` band (scaffold OFF); ``blind=False`` keeps
+    the forward-scaffold debug/fallback path (the 5c/5d pins run there).
     """
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     random.seed(seed)
@@ -211,7 +217,14 @@ def run_config(config, epochs, seed, out_dir, profile=False,
         model.runEpoch(batchSize=max(1, min(n, _MAX_EVAL_BATCH)),
                        split="test", max_batches=max_batches)
 
+    # Gate 2b: blind (band-derived tiling) is the harness default; the
+    # scaffold path stays reachable as the explicit debug/regression mode.
+    psp = getattr(model, "perceptualSpace", None)
+    if psp is not None and hasattr(psp, "decode_blind_rate"):
+        psp.decode_blind_rate = 1.0 if blind else 0.0
+
     notes = {}
+    notes["decode_mode"] = "blind" if blind else "scaffold"
     where_recovery = -1.0
     try:
         targets, decoded = _decode_texts(model)
@@ -294,11 +307,18 @@ def main(argv=None):
     ap.add_argument("--compiled-step", action="store_true",
                     help="route runBatch through the torch.compiled step "
                          "(production parity; MODEL_COMPILE picks backend)")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--blind", dest="blind", action="store_true",
+                      default=True,
+                      help="decode with band-derived tiling (default)")
+    mode.add_argument("--scaffold", dest="blind", action="store_false",
+                      help="decode via the forward scaffold (debug/"
+                           "regression path)")
     args = ap.parse_args(argv)
     rec = run_config(args.config, epochs=args.epochs, seed=args.seed,
                      out_dir=args.out, profile=args.profile,
                      max_batches=args.max_batches,
-                     compiled_step=args.compiled_step)
+                     compiled_step=args.compiled_step, blind=args.blind)
     print(json.dumps(dataclasses.asdict(rec), indent=2))
     print(f"[recon_bench] wrote {os.path.join(args.out, rec.filename)}")
 
