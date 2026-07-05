@@ -4065,6 +4065,35 @@ class AssertPartLayer(PartLayer):
     rule_name = "assertPart"
 
 
+class WholeLayer(PartLayer):
+    """``S -> whole(S, S)`` -- the CONVERSE of ``part``.
+
+    ``whole(A, B)`` asserts "A is the whole that has part B" -- the same
+    mereological relation as ``part(B, A)`` with the arguments swapped. It
+    reuses :class:`PartLayer`'s codebook geometry (the codebook IS the
+    meronymic tree; no independent weights), differing only in which operand
+    is the encompassing whole: ``part`` returns ``right`` (whole = arg 2),
+    ``whole`` returns ``left`` (whole = arg 1). So the chart's CKY consumer
+    sees the whole as the single parent vector either way.
+
+    Lossy with the ``(parent, parent)`` pseudo-inverse on reverse (the
+    non-whole operand's identity is not preserved), same as ``part``.
+    """
+    rule_name = "whole"
+
+    def forward(self, left, right):
+        """Pass the encompassing whole ``left`` through to the CKY consumer
+        (the converse of ``part``, which passes ``right``)."""
+        return left
+
+    def reverse(self, parent):
+        """``whole(A, B)`` returns the whole ``A``; ``B``'s identity is not
+        preserved -- no faithful inverse (mirrors ``part``)."""
+        self.raise_no_inverse("whole forward returns the encompassing "
+                              "whole; the part operand's identity is not "
+                              "preserved")
+
+
 def _truth_bivector_like(score, template):
     """Broadcast a scalar truth score into the bivector shape of template."""
     pos = score.to(device=template.device, dtype=template.dtype)
@@ -4308,6 +4337,7 @@ GRAMMAR_LAYER_CLASSES = {
     'isPart':       IsPartLayer,
     'equal':        EqualLayer,
     'part':         PartLayer,
+    'whole':        WholeLayer,
     'assertPart':   AssertPartLayer,
     'true':         TrueLayer,
     'false':        FalseLayer,
@@ -4424,6 +4454,7 @@ _OPERATOR_SURFACE_SCHEMAS = {
     # ``assertPart`` / ``queryPart``.
     'isPart':       T3_BINARY_DIRECTIONAL,
     'part':         T3_BINARY_DIRECTIONAL,
+    'whole':        T3_BINARY_DIRECTIONAL,
     'queryPart':    T3_BINARY_DIRECTIONAL,
     'assertPart':   T3_BINARY_DIRECTIONAL,
     # lift / lower / verb / adverb: T3/T4 -- modifier marker or bare; the
