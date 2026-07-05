@@ -1,41 +1,3 @@
-================== SESSION SUMMARY 2026-07-04 → 2026-07-05 ==================
-
-WHAT WE DID (all UNCOMMITTED in the working tree — Alec commits):
-
-1. WHERE/WHEN ENCODING PASS (own plan, DONE through Gate B; Gate-B bar RED).
-   .where period config-derived (<wherePeriod> 8192, warn-once raise-to-fit,
-   decoupled from nObjects); .when v2 = 4-dim 2-rung start ladder
-   (WhenStartDurationEncoding; <whenPeriod> 1e6 / <whenRungRatio> 32;
-   duration left the band, exact long-int clock addresses LTM). Canonical
-   band (2,2)→(2,4) plumbed via one construction seam; +2 when-band config
-   ledger across model.xml + 8 configs; coordinated re-baseline (Gate A
-   green); blind decode + scaffold-masking curriculum (Gate B — mechanism
-   green, the E~80 full-model blind bar RED). 15 band-fixture tests adapted.
-
-2. BLIND-BAR CHARACTERIZATION → led to Alec's union/difference idea. The
-   lattice folds (join/intersection, join_from_bottom, conjunction/
-   disjunction) saturate and carry NO residual; the [0,1] presence cube
-   bunches cosine margins (xor store median 0.34, one positive cone) so
-   with one symbol per word an inverse cannot recover constituents.
-
-3. UNION/DIFFERENCE CONCEPT OPS (Alec's proposal; DONE).
-   UnionLayer (a+b; reverse=(parent,∅); basis-reverse=peel step) +
-   DifferenceLayer (w−a exact residual) + peel (matching pursuit) +
-   registry/fixity + grammar-config integration + THE CONTRAST TEST.
-   NAMING (Alec): pair = union/difference; the interim "fusion" was wrong
-   (a different retired op); the lattice max renamed union→join (JoinLayer,
-   matching Mereology.join_from_bottom) across 11 config grammars + 4
-   .grammar files + tests. test_union_difference_ops.py 10/10.
-
-4. SERIAL-DERIVATION PLAN Tasks 0–2 (Task 0 survey, Task 1 stubs→errors,
-   Task 2 Method-1 routing) DONE; the grammar round-trip bar is RED (the
-   single-S never expands — operand payloads not stored). Gate-S1 verdicts
-   resolved by Alec (relation family → Queries; see below).
-
-5. TOOLING: added pytest-xdist + `make testp` (opt-in parallel, ~3.6×;
-   canonical `make test` stays serial/deterministic). Suite last green at
-   3010 passed / 0 failed / 52 skipped (parallel).
-
 OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
 
 * [ALEC — DESIGN] Operational integration of the QUERY TOOLS (isEqual,
@@ -61,32 +23,18 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   operand pair on _stm_last_reduce_routing; multi-step needs per-step
   accumulation, batch-scoped like _stm_single_S). Walk recorded rules
   backward popping stored operands; dispatch real inverses (lower);
-  then Task 3 NULL-word pathway (emit side; union's additive identity is
+  then Task 3 NULL-word pathway (emit side; the additive chunk identity is
   the compose-identity), Task 4 Method-2 free-derivation bar, Task 5 docs.
 
 * [POSSIBLE — Alec's call] Signed-domain concept storage (the deferred
   percept-cube signed-mixing decision): keep [0,1] presence as the symbolic
   READ (containment/truth), store+transport the ADDITIVE domain underneath
-  where union/difference peel is exact — no nearest-neighbor guessing
+  where the additive chunk peel is exact — no nearest-neighbor guessing
   against a bunched cone. Couples to the blind-bar content path AND the
   serial peel decode (sigma.reverse's partition-blind split is the same
-  missing-difference defect).
-
-* [CLEANUP — deferred] Rename the space_role value pair to match: the
-  lattice op is now "join" but its partner is still "intersection" (not
-  "meet"); Alec did not ask for the meet sweep — left as-is.
+  missing-residual defect).
 
 ============================================================================
-
-* [DONE 2026-07-04 night; RENAMED 2026-07-05 per Alec] union/difference
-  concept ops (doc/plans/2026-07-04-union-difference-concept-ops.md):
-  UnionLayer (a+b; reverse = (parent, ∅); basis-reverse = peel step) +
-  DifferenceLayer (w−a exact residual) + peel (matching pursuit) +
-  registry/fixity + grammar-config integration + THE CONTRAST TEST
-  (lattice pair provably destroys the residual; union/difference
-  recovers) — test_union_difference_ops.py 10/10, suite green.
-  NAMING RESOLVED (Alec 2026-07-05): pair = union/difference; the
-  lattice max renamed join (11 config grammars swept union(→join().
 
 * Execute doc/plans/2026-07-04-serial-derivation-reconstruction-execution.md.
   OVERNIGHT STATE (2026-07-04 night, notes in the plan): Task 0 DONE
@@ -117,18 +65,8 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   grammar producer until the integration design; 4 relative-sentence
   integration tests skip at the finder (flagged). THEN Task 3 (NULL-word + padding
   fork), Task 4 (Method-2 bar), Task 5 (docs + suite). COUPLING: the
-  union/difference pair is the residual substrate for the free
-  (Method-2) case; NULL-word = union's additive identity.
-
-* [DONE 2026-07-04] where/when encoding pass (doc/plans/2026-07-04-where-when-
-  encoding-*.md): .where period decoupled (<wherePeriod> 8192, warn-once
-  raise-to-fit); .when v2 = 4-dim 2-rung start ladder (<whenPeriod>/
-  <whenRungRatio>; duration left the band, exact clock addresses LTM); band
-  (2,2)→(2,4) plumbed + coordinated re-baseline (GATE A green); blind decode +
-  scaffold-masking curriculum (GATE B — mechanism green, the E~80 blind bar is
-  RED on full-model band precision, an OPEN Alec knob in the plan's Gate-B
-  notes). Config ledger +2 when-band across model.xml + 8 configs; 15 band-
-  fixture tests adapted.
+  additive chunk pair is the residual substrate for the free
+  (Method-2) case; NULL-word = the additive compose-identity.
 
 * .where recovery is still a placeholder in [bin/recon_bench.py (line 206)](/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/bin/recon_bench.py:206).
 
@@ -165,8 +103,6 @@ OPEN QUESTIONS / FUTURE WORK (Alec's calls + next builds):
   * Explicit-constraint retraining should consume the fold provenance directly. A constraint should resolve the affected lexical/concept row, inspect its fold sequence, and route the update through the matching inverse path using invert_ramsified or an equivalent per-pass inversion. That lets “this word’s abstract definition changed” update the high-order semantic representation without clobbering the low-order perceptual form. It also lets constraints target the right layer: raw token identity, basic category, count/type noun, or higher-order definition.
   * Finally, tests should enforce the canonical contract. Build a model without any mereologyRaise flag and assert PS/WS codebooks have ramsification tables. Run a multi-pass forward and assert selected or minted rows receive expected Sigma/Pi fold stamps. Verify abstraction_order is stable after codebook growth and reload, and add a small explicit-constraint training test showing that an abstract definition update changes the intended high-order row while preserving low-order reconstruction.
 
-* Turn on <subsymbolicStack>true</subsymbolicStack> and remove that parameter
-
 * document the relation of this architecture to LLMs, Formal Concept Analysis, and DisCoCat
 
 * My understanding of the relation table is that there is one concept index associated with one symbol index per row. 
@@ -195,4 +131,3 @@ with specifically-characterized information (concrete details)
 
 ### Send email proposal to Apertus 
 * First develop boilerplate on WikiOracle that references wikipedia, eff, and solid
-
