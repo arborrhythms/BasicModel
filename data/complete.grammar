@@ -46,13 +46,13 @@
     area, luminosity, isaPart.
 
   Invertibility (measured, test/_faithfulness_*.py): exact -> lift, lower, not,
-    non, tense, exist-wrapper, sigma, pi, union/difference (the additive
-    concept pair, 2026-07-05: difference IS union's exact residual), +
-    intersection/conjunction/disjunction/join WITH a codebook basis
-    (recommender); content-exact / marker-lossy -> preposition; NO faithful
-    inverse (fail-loud, Gate-S1 inventory) -> the no-basis lattice
-    tails; carrier-dep -> morphology. isEqual AND isPart live in Queries
-    now (the relation family are queries, not parse structure).
+    non, tense, exist-wrapper, sigma, pi, sum (the additive concept op; product
+    is its lossy multiplicative dual), chunk (the structural PartSpace sum,
+    2026-07-05: exact residual), + intersection/union/conjunction/disjunction
+    WITH a codebook basis (recommender); content-exact / marker-lossy ->
+    preposition; NO faithful inverse (fail-loud, Gate-S1 inventory) -> the
+    no-basis lattice tails; carrier-dep -> morphology. isEqual AND isPart live
+    in Queries now (the relation family are queries, not parse structure).
 -->
 <grammar name="complete">
 
@@ -67,11 +67,16 @@
       <rule>U = stop.forward(U)</rule>
       <rule>U = boundary.forward(U, U)</rule>
       <rule>U = uniform.forward(U, U)</rule>
+      <!-- chunk = additive left+right (ex-"union", not a grammatical op);
+           the residual-bearing structural sum that may someday replace the
+           radix trie's token chunking. -->
+      <rule>U = chunk.forward(U, U)</rule>
     </Synthesize>
     <Analyze>
       <rule>U = stop.reverse(U)</rule>
       <rule>U, U = boundary.reverse(U)</rule>
       <rule>U, U = uniform.reverse(U)</rule>
+      <rule>U, U = chunk.reverse(U)</rule>
     </Analyze>
   </PartSpace>
 
@@ -106,17 +111,22 @@
       <rule>not_O1 = not.forward(not_I1)</rule>
       <rule>non_O1 = non.forward(non_I1)</rule>
 
-      <!-- Boolean / set connectives. intersection = ADJ (mask/meet on NP) and
-           noun-noun intersection; join = OR-region (lattice max; ex-union,
-           renamed 2026-07-05); and/or = conjunction / disjunction. The
-           reverse uses the codebook recommender (Ops._binary_op_recommend).
-           The ADDITIVE union/difference pair (exact residual) is its own
-           CS op pair, available to grammars as union(C, C) /
-           difference(C, C). -->
+      <!-- Boolean / lattice connectives. The lattice pair on the bivector
+           cone: intersection = RadMin / lattice-min (ADJ mask / meet on NP,
+           noun-noun intersection); union = RadMax / lattice-max (OR-region),
+           its dual (renamed from "join" 2026-07-05). and/or = conjunction /
+           disjunction (the SS scalar-activation lattice). The reverse uses the
+           codebook recommender (Ops._binary_op_recommend). -->
       <rule>conjunction_O1 = conjunction.forward(conjunction_I1, conjunction_I2)</rule>
       <rule>disjunction_O1 = disjunction.forward(disjunction_I1, disjunction_I2)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
-      <rule>join_O1 = join.forward(join_I1, join_I2)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
+
+      <!-- Arithmetic concept ops (2026-07-05): element-wise sum (a+b) and
+           product (a*b) over two concepts. product is the multiplicative dual
+           of sum; difference is retired (it is sum of a negated operand). -->
+      <rule>sum_O1 = sum.forward(sum_I1, sum_I2)</rule>
+      <rule>product_O1 = product.forward(product_I1, product_I2)</rule>
 
       <!-- Composition / projection. verb = VP spectral operator; adverb =
            VP eigenmodifier; lift remains the generic order-raising fold;
@@ -153,7 +163,10 @@
       <rule>conjunction_I1, conjunction_I2 = conjunction.reverse(conjunction_O1)</rule>
       <rule>disjunction_I1, disjunction_I2 = disjunction.reverse(disjunction_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
-      <rule>join_I1, join_I2 = join.reverse(join_O1)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
+
+      <rule>sum_I1, sum_I2 = sum.reverse(sum_O1)</rule>
+      <rule>product_I1, product_I2 = product.reverse(product_O1)</rule>
 
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>verb_I1, verb_I2 = verb.reverse(verb_O1)</rule>

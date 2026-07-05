@@ -14,7 +14,7 @@ The CAPSTONE adds a GATED restriction: when the owning space's
 them into the recommender call so the heat steers the operand pick.
 
 Two assertions, exercising the REAL ``unreduce`` path with the REAL
-``JoinLayer`` + REAL ``SymbolSubSpace.retrieval_candidates_for_slot`` + REAL
+``UnionLayer`` + REAL ``SymbolSubSpace.retrieval_candidates_for_slot`` + REAL
 ``Grammar._rule_order_signature``:
 
   * ON  (``attention_mode='primer'``): with a specific ADMISSIBLE row primed
@@ -44,7 +44,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from Language import (  # noqa: E402
-    Grammar, LanguageLayer, IntersectionLayer, JoinLayer, SymbolSubSpace,
+    Grammar, LanguageLayer, IntersectionLayer, UnionLayer, SymbolSubSpace,
     Taxonomy,
 )
 
@@ -200,9 +200,9 @@ def _build_subspace(W, parent, view, *, attention_mode, hot_ref=None,
 
 def _register_union_syntactic_layer():
     """Duck-typed SyntacticLayer: space_role 'CS' (so the gate reads
-    ``conceptualSpace.attention_mode``) with the REAL JoinLayer bound to the
+    ``conceptualSpace.attention_mode``) with the REAL UnionLayer bound to the
     decoded ``method_name`` ('union')."""
-    return SimpleNamespace(space_role='CS', _by_name={'join': JoinLayer()})
+    return SimpleNamespace(space_role='CS', _by_name={'join': UnionLayer()})
 
 
 # ---------------------------------------------------------------------------

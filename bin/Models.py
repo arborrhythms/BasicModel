@@ -7048,7 +7048,7 @@ class BasicModel(BaseModel):
         grammar's S-space_role arity-2 reduce ops, each wrapped with the
         SAME ``_BinaryGrammarOpAdapter`` ``_wire_signal_router_grammar_ops``
         uses (so ``op(left,right)`` dispatches into the registered
-        host fold -- IntersectionLayer/JoinLayer/...). The layer's
+        host fold -- IntersectionLayer/UnionLayer/...). The layer's
         own forward computes ``chosen_reduced = Σ_op softmax(reduce_
         score)_op · op(left,right)`` over the fixed op axis (one
         weighted reduce, no shared in-place accumulator -- the proven

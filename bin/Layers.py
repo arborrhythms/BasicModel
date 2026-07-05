@@ -2140,7 +2140,7 @@ class GrammarLayer(Layer):
 
     Note (2026-04-30): ``PiLayer`` / ``SigmaLayer`` inherit directly
     from GrammarLayer so the parameterized fold layers ARE Grammar
-    layers, not wrapped by separate IntersectionLayer / JoinLayer
+    layers, not wrapped by separate IntersectionLayer / UnionLayer
     adapters. The wrappers remain for
     back-compat but are no longer the only path to attach a rule_name
     to a parameterized fold.
@@ -3334,7 +3334,7 @@ class NegationLayer(Layer):
 # IntersectionLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
-# JoinLayer (ex-UnionLayer; lattice max) -- moved to Language.py (2026-05-29 §5;
+# UnionLayer (ex-UnionLayer; lattice max) -- moved to Language.py (2026-05-29 §5;
 # renamed 2026-07-05: 'union' is now the additive concept op).
 # LiftLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
@@ -12753,7 +12753,7 @@ class Ops:
     @staticmethod
     def union(x, y, monotonic=False):
         """Set union on bivector activations -- the public kernel
-        ``JoinLayer`` calls.
+        ``UnionLayer`` calls.
 
         Per-axis, per-pole "max toward zero" (in the sense of
         max-magnitude, away from zero) on ``x`` and ``y``:
@@ -12763,7 +12763,7 @@ class Ops:
                 channel.
 
         Forwards to ``_disjunction_kernel``; bit-exact with the
-        pre-2026-05-04 (lattice) JoinLayer body.
+        pre-2026-05-04 (lattice) UnionLayer body.
         """
         return Ops._disjunction_kernel(x, y, monotonic=monotonic)
 
@@ -15266,7 +15266,9 @@ _MOVED_TO_LANGUAGE = frozenset({
     'NonLayer',
     'IntersectionLayer',
     'UnionLayer',
-    'JoinLayer',
+    'ChunkLayer',
+    'SumLayer',
+    'ProductLayer',
     'LiftLayer',
     'VerbLayer',
     'AdverbLayer',

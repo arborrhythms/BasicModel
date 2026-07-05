@@ -4,7 +4,7 @@ AND/OR are many-to-one, so their reverse cannot invert in general -- but with a
 codebook ``basis`` the mereology recommender (Ops.conjunctionReverse /
 disjunctionReverse) recovers the operand pair whose intersection/union matches
 the parent (exact on a discrete vocabulary -- the XOR reconstruction path),
-mirroring IntersectionLayer/JoinLayer.reverse. Without a basis the lossy
+mirroring IntersectionLayer/UnionLayer.reverse. Without a basis the lossy
 ``(parent, parent)`` fallback is preserved (byte-identical to the prior stub).
 """
 

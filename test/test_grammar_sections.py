@@ -38,8 +38,11 @@ def test_all_shipped_grammars_load_with_rules():
         G = _fresh(g)
         assert len(G.rules_upward) > 0, g
         assert len(G.rules_downward) > 0, g
-        assert len(G.ps_rules_upward) == 3, g      # stop/boundary/uniform
-        assert len(G.ps_rules_downward) == 3, g
+        # stop/boundary/uniform structural cover (>= 3); complete.grammar adds
+        # the additive 'chunk' (the ex-"union" PartSpace sum).
+        expected = 4 if g == 'complete.grammar' else 3
+        assert len(G.ps_rules_upward) == expected, g
+        assert len(G.ps_rules_downward) == expected, g
 
 
 def test_query_ops_from_top_level_queries():

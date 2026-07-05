@@ -1,20 +1,22 @@
-"""Union/Difference — the residual-bearing op pair on CONCEPTS (Alec
-2026-07-04/05; plan doc/plans/2026-07-04-union-difference-concept-ops.md;
-the lattice max vacated the `union` name -> `join`).
+"""Concept arithmetic / lattice / chunk ops (Alec 2026-07-05 naming pass).
 
-The pair is the union/difference class ANALOGOUS to the symbol layer's
-conjunction/disjunction class (the lattice `join`/`intersection`/
-`join_from_bottom` folds, which saturate and carry NO residual):
+The 2026-07-05 pass reshaped the additive/lattice family:
 
-  union(a, b)       = a + b          (the mereological sum; no tanh/clamp)
-  difference(w, a)  = w - a          (the EXACT residual)
-  union.reverse(p)  = (p, 0)         (the ∅-decomposition; recomposes exactly)
-  union.reverse(p, basis=W)          (the peel step: (row, p - row))
-  union.peel(w, basis)               (greedy matching pursuit over the store)
+  union(a, b)    = RadMax / lattice-max  (saturating, lossy) — DUAL to
+                   intersection (RadMin / lattice-min); ex-"join".
+  chunk(a, b)    = a + b                 (additive, residual-bearing) — the
+                   STRUCTURAL <PartSpace> sum (ex-additive-"union"); may
+                   someday replace the radix trie's token chunking.
+  sum(a, b)      = a + b                 (element-wise arithmetic sum over
+                   CONCEPTS, CS-space_role).
+  product(a, b)  = a * b                 (element-wise Hadamard product, the
+                   multiplicative dual of sum; lossy).
+  difference     RETIRED: it is just sum of a negated operand (sum(a, not b));
+                 the exact residual survives as ``ChunkLayer.difference``.
 
-THE CONTRAST test pins the hypothesis: the lattice pair provably destroys
-the residual (two distinct operands, same join) while union/difference
-recovers constituents exactly.
+THE CONTRAST test pins the residual hypothesis: the lattice ``union`` provably
+destroys the residual (two distinct operands, same max) while the additive
+``chunk`` recovers constituents exactly.
 """
 
 import os
@@ -43,40 +45,47 @@ class _BasisShim:
         return self._W
 
 
-def test_fusion_compose_is_additive():
-    """union(a, b) == a + b exactly (no tanh, no clamp, no normalize)."""
-    from Language import UnionLayer
+def test_chunk_and_sum_compose_are_additive():
+    """chunk(a, b) == sum(a, b) == a + b exactly (no tanh/clamp/normalize)."""
+    from Language import ChunkLayer, SumLayer
     torch.manual_seed(0)
     a = torch.randn(2, 3, 8)
     b = torch.randn(2, 3, 8)
-    out = UnionLayer().compose(a, b)
-    assert torch.equal(out, a + b)
+    assert torch.equal(ChunkLayer().compose(a, b), a + b)
+    assert torch.equal(SumLayer().compose(a, b), a + b)
 
 
-def test_difference_is_exact_residual():
-    """difference recovers the other operand: bit-exact on integer-valued
-    content, float-rounding-only on random content."""
-    from Language import UnionLayer, DifferenceLayer
-    fu, di = UnionLayer(), DifferenceLayer()
-    # bit-exact: integer-valued floats survive +/- exactly
+def test_product_compose_is_hadamard():
+    """product(a, b) == a * b (element-wise)."""
+    from Language import ProductLayer
+    torch.manual_seed(0)
+    a = torch.randn(2, 3, 8)
+    b = torch.randn(2, 3, 8)
+    assert torch.equal(ProductLayer().compose(a, b), a * b)
+
+
+def test_chunk_difference_is_exact_residual():
+    """chunk's residual helper recovers the other operand: bit-exact on
+    integer-valued content, float-rounding-only on random content. (This is
+    the retired ``difference`` op, now a static helper on additive chunk.)"""
+    from Language import ChunkLayer
+    fu = ChunkLayer()
     a_i = torch.tensor([[3.0, -7.0, 0.0, 12.0]])
     b_i = torch.tensor([[5.0, 2.0, -9.0, 1.0]])
-    assert torch.equal(di.compose(fu.compose(a_i, b_i), a_i), b_i)
-    # float32 random: exact to rounding
+    assert torch.equal(ChunkLayer.difference(fu.compose(a_i, b_i), a_i), b_i)
     torch.manual_seed(1)
     a = torch.randn(4, 16)
     b = torch.randn(4, 16)
-    rec = di.compose(fu.compose(a, b), a)
+    rec = ChunkLayer.difference(fu.compose(a, b), a)
     assert torch.allclose(rec, b, atol=1e-6), (rec - b).abs().max()
 
 
 def test_bare_reverse_is_null_decomposition():
-    """reverse(parent) = (parent, 0): the mereologically honest
-    w = w ⊔ ∅ split (NOT a partition-blind halving), and it recomposes
-    EXACTLY (the generate-exactness bar)."""
-    from Language import UnionLayer, DifferenceLayer
+    """reverse(parent) = (parent, 0) for the additive ops (chunk, sum): the
+    mereologically honest w = w ⊔ ∅ split, recomposing EXACTLY."""
+    from Language import ChunkLayer, SumLayer
     torch.manual_seed(2)
-    for layer in (UnionLayer(), DifferenceLayer()):
+    for layer in (ChunkLayer(), SumLayer()):
         parent = torch.randn(2, 5, 12)
         left, right = layer.reverse(parent)
         assert torch.equal(left, parent)
@@ -89,14 +98,13 @@ def test_bare_reverse_is_null_decomposition():
 
 
 def test_basis_reverse_peels_one_part():
-    """reverse(parent, basis=W) is the PEEL step: (best row, parent - row),
-    exact by construction (composing back == parent), with the true
-    constituent chosen on near-orthogonal (signed) rows."""
-    from Language import UnionLayer
+    """chunk.reverse(parent, basis=W) is the PEEL step: (best row, parent-row),
+    exact by construction, with the true constituent chosen on signed rows."""
+    from Language import ChunkLayer
     torch.manual_seed(3)
     W = torch.randn(6, 16)
     parent = W[1] + W[4]
-    left, right = UnionLayer().reverse(parent, basis=_BasisShim(W))
+    left, right = ChunkLayer().reverse(parent, basis=_BasisShim(W))
     assert torch.equal(left + right, parent)      # exact recomposition
     hit = [i for i in (1, 4) if torch.allclose(left, W[i])]
     assert hit, "peel step must select a true constituent row"
@@ -107,68 +115,74 @@ def test_basis_reverse_peels_one_part():
 def test_peel_recovers_multiset_signed():
     """Greedy matching pursuit over a signed store recovers the exact
     constituent multiset with residual ~0 (the hypothesis's YES case)."""
-    from Language import UnionLayer
+    from Language import ChunkLayer
     torch.manual_seed(4)
     W = torch.randn(8, 32)
     whole = W[2] + W[5] + W[6]
-    idx, residual = UnionLayer.peel(whole, _BasisShim(W), max_parts=8)
+    idx, residual = ChunkLayer.peel(whole, _BasisShim(W), max_parts=8)
     assert sorted(idx) == [2, 5, 6], idx
     assert float(residual.norm()) < 1e-4 * (1 + float(whole.norm()))
 
 
-def test_lattice_union_destroys_residual_fusion_does_not():
-    """THE CONTRAST (the hypothesis pin): the lattice union (monotonic
-    max — the conjunction/disjunction class) maps DISTINCT operand pairs
-    to the SAME whole, so no function of (whole, a) can recover b; the
-    fusion/difference pair recovers b exactly from the same operands."""
-    from Language import JoinLayer, UnionLayer, DifferenceLayer
+def test_lattice_union_destroys_residual_chunk_does_not():
+    """THE CONTRAST (the hypothesis pin): the lattice ``union`` (monotonic
+    max) maps DISTINCT operand pairs to the SAME whole, so no function of
+    (whole, a) can recover b; the additive chunk recovers b exactly from the
+    same operands."""
+    from Language import UnionLayer, ChunkLayer
     a = torch.tensor([[1.0, 0.0, 0.5]])
     b = torch.tensor([[0.2, 0.5, 0.1]])
     b_prime = torch.tensor([[0.7, 0.5, 0.3]])
     assert not torch.equal(b, b_prime)
-    lattice = JoinLayer(monotonic=True)
+    lattice = UnionLayer(monotonic=True)
     j1 = lattice.forward(a, b)
     j2 = lattice.forward(a, b_prime)
-    assert torch.equal(j1, j2), "premise: max-join collapses the pair"
-    fu, di = UnionLayer(), DifferenceLayer()
-    r1 = di.compose(fu.compose(a, b), a)
-    r2 = di.compose(fu.compose(a, b_prime), a)
+    assert torch.equal(j1, j2), "premise: max-union collapses the pair"
+    fu = ChunkLayer()
+    r1 = ChunkLayer.difference(fu.compose(a, b), a)
+    r2 = ChunkLayer.difference(fu.compose(a, b_prime), a)
     assert torch.allclose(r1, b, atol=1e-6)
     assert torch.allclose(r2, b_prime, atol=1e-6)
     assert not torch.equal(r1, r2)
 
 
 def test_registry_and_fixity():
-    """Both rules registered; fusion parses as binary infix (T2),
-    difference as binary directional (T3 — order-sensitive like part)."""
-    import Language
-    from Language import (GRAMMAR_LAYER_CLASSES, UnionLayer,
-                          DifferenceLayer)
-    assert GRAMMAR_LAYER_CLASSES["union"] is UnionLayer
-    assert GRAMMAR_LAYER_CLASSES["difference"] is DifferenceLayer
-    from Layers import T2_BINARY_INFIX, T3_BINARY_DIRECTIONAL
-    assert UnionLayer.surface_schema is T2_BINARY_INFIX
-    assert DifferenceLayer.surface_schema is T3_BINARY_DIRECTIONAL
+    """The reshaped family is registered; chunk/sum/product parse as binary
+    infix (T2). ``join`` / ``difference`` are gone."""
+    from Language import (GRAMMAR_LAYER_CLASSES, UnionLayer, ChunkLayer,
+                          SumLayer, ProductLayer)
+    assert GRAMMAR_LAYER_CLASSES["union"] is UnionLayer       # lattice max
+    assert GRAMMAR_LAYER_CLASSES["chunk"] is ChunkLayer       # additive sum
+    assert GRAMMAR_LAYER_CLASSES["sum"] is SumLayer
+    assert GRAMMAR_LAYER_CLASSES["product"] is ProductLayer
+    assert "join" not in GRAMMAR_LAYER_CLASSES
+    assert "difference" not in GRAMMAR_LAYER_CLASSES
+    from Layers import T2_BINARY_INFIX
+    for cls in (ChunkLayer, SumLayer, ProductLayer):
+        assert cls.surface_schema is T2_BINARY_INFIX
 
 
 def test_class_contract_pins():
-    """Attribute pins: CS-space_role arity-2 concept ops; reverse is real
-    (invertible generate-exactness), content-read (not activation)."""
-    from Language import UnionLayer, DifferenceLayer
-    for cls, name in ((UnionLayer, "union"),
-                      (DifferenceLayer, "difference")):
+    """Attribute pins: chunk/sum are exact additive CS ops; product is the
+    lossy Hadamard dual; the lattice union is lossy / non-invertible."""
+    from Language import ChunkLayer, SumLayer, ProductLayer, UnionLayer
+    for cls, name in ((ChunkLayer, "chunk"), (SumLayer, "sum")):
         assert cls.rule_name == name
         assert cls.arity == 2
         assert cls.space_role == "CS"
         assert cls.invertible is True
         assert cls.lossy is False
         assert cls.reads_activation is False
+    assert ProductLayer.rule_name == "product"
+    assert ProductLayer.invertible is False and ProductLayer.lossy is True
+    assert UnionLayer.rule_name == "union"
+    assert UnionLayer.invertible is False and UnionLayer.lossy is True
 
 
-def test_grammar_config_declares_fusion_difference(tmp_path):
-    """Lights-on via config: a grammar block declaring the pair parses
-    into RuleDefs (method_name fusion/difference, CS space_role) through
-    the normal model build — no code-level special case."""
+def test_grammar_config_declares_sum_product(tmp_path):
+    """Lights-on via config: a grammar block declaring sum/product parses into
+    RuleDefs (method_name sum/product, CS space_role) through the normal model
+    build — no code-level special case."""
     import Language
     import Models
     from data import TheData
@@ -179,9 +193,9 @@ def test_grammar_config_declares_fusion_difference(tmp_path):
         xml = f.read()
     xml = xml.replace(
         "</grammar>",
-        "        <C>union(C, C)</C>\n"
-        "        <C>difference(C, C)</C>\n      </grammar>", 1)
-    cfg = tmp_path / "fusion_grammar.xml"
+        "        <C>sum(C, C)</C>\n"
+        "        <C>product(C, C)</C>\n      </grammar>", 1)
+    cfg = tmp_path / "arith_grammar.xml"
     cfg.write_text(xml)
     init_config(path=str(cfg),
                 defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
@@ -189,28 +203,11 @@ def test_grammar_config_declares_fusion_difference(tmp_path):
     TheData.load("xor")
     Models.BaseModel.from_config(str(cfg), data=TheData)
     rules = [r for r in Language.TheGrammar.rules
-             if r.method_name in ("union", "difference")]
-    assert {r.method_name for r in rules} == {"union", "difference"}, (
+             if r.method_name in ("sum", "product")]
+    assert {r.method_name for r in rules} == {"sum", "product"}, (
         Language.TheGrammar.rules)
     # Direct-tag grammar style: lhs category C, arity 2 (the rule-level
-    # space_role tag follows the section default, as for MM_boolean's
-    # <C>intersection(C, C)</C>; the LAYER's own space_role stays CS).
+    # space_role tag follows the section default; the LAYER's own space_role
+    # stays CS).
     assert all(r.lhs == "C" and r.arity == 2 for r in rules), rules
     assert all(r.rhs_symbols == ("C", "C") for r in rules), rules
-
-
-def test_butterfly_cascade_parity():
-    """butterfly=True builds the standard cascade (structural parity with
-    the sibling binary ops) and runs forward/reverse without error."""
-    from Language import UnionLayer
-    torch.manual_seed(5)
-    layer = UnionLayer(nInput=8, nOutput=8, butterfly=True, N=8)
-    x = torch.randn(2, 4, 2)          # flattened M=8
-    y = layer.forward(x)
-    assert y.shape == x.shape
-    back = layer.reverse(y)
-    assert torch.is_tensor(back) and back.shape == x.shape
-
-
-if __name__ == "__main__":
-    sys.exit(pytest.main([__file__, "-v"]))

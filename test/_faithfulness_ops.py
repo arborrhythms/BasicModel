@@ -72,7 +72,7 @@ inter = L.IntersectionLayer(monotonic=True); inter.eval()
 run_lossy("intersection", inter, lambda a, b: Ops.intersection(a, b, monotonic=True), True)
 
 print(); print("="*70); print("UNION (ADV)"); print("="*70)
-uni = L.JoinLayer(monotonic=True); uni.eval()
+uni = L.UnionLayer(monotonic=True); uni.eval()
 run_lossy("union", uni, lambda a, b: Ops.union(a, b, monotonic=True), True)
 
 print(); print("="*70); print("CONJUNCTION (and) — monotonic min"); print("="*70)

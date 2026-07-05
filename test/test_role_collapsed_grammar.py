@@ -42,7 +42,7 @@ _FORBIDDEN_STATE_TOKENS = {
 # union -> join (the additive union/difference pair owns 'union' now).
 _REQUIRED_OPS = {
     "exist", "not", "non",
-    "conjunction", "disjunction", "intersection", "join",
+    "conjunction", "disjunction", "intersection", "union",
     "lift", "verb", "adverb", "lower",
     "preposition", "bind", "tense", "morphology",
 }

@@ -28,7 +28,7 @@
     <start name="relative_truth">part_O1</start>
 
     <compose>
-      <rule>join_O1 = join.forward(join_I1, join_I2)</rule>
+      <rule>union_O1 = union.forward(union_I1, union_I2)</rule>
       <rule>intersection_O1 = intersection.forward(intersection_I1, intersection_I2)</rule>
       <rule>lift_O1 = lift.forward(lift_I1, lift_I2)</rule>
       <rule>lower_O1 = lower.forward(lower_I1, lower_I2)</rule>
@@ -44,7 +44,7 @@
     </compose>
 
     <generate>
-      <rule>join_I1, join_I2 = join.reverse(join_O1)</rule>
+      <rule>union_I1, union_I2 = union.reverse(union_O1)</rule>
       <rule>intersection_I1, intersection_I2 = intersection.reverse(intersection_O1)</rule>
       <rule>lift_I1, lift_I2 = lift.reverse(lift_O1)</rule>
       <rule>lower_I1, lower_I2 = lower.reverse(lower_O1)</rule>

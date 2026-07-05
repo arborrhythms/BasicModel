@@ -48,7 +48,7 @@ from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 # NB: ``Meronomy`` is imported lazily inside _embed_radix (it pulls Mereology ->
 # Layers lazy attrs -> Language -> Spaces, a cycle at module-load time).
 from Layers import GrammarLayer
-# NotLayer / NonLayer / IntersectionLayer / JoinLayer moved to Language.py
+# NotLayer / NonLayer / IntersectionLayer / UnionLayer moved to Language.py
 # (2026-05-29 grammar-file-refactor §5). They are imported lazily at point
 # of use below to avoid the Layers <-> Language circular dependency during
 # Language.py's own module load.

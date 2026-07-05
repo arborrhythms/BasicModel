@@ -47,12 +47,12 @@ def test_non_invertible_rule_reverse_raises_with_inventory_row():
 def test_all_converted_stubs_raise():
     """The full converted set fails loud (no fabricated splits left)."""
     from Language import (IsPartLayer, PartLayer, QueryPartLayer,
-                          ContextualBindLayer, JoinLayer,
+                          ContextualBindLayer, UnionLayer,
                           IntersectionLayer, ConjunctionLayer,
                           DisjunctionLayer)
     parent = torch.rand(1, 2, 6)
     for layer in (IsPartLayer(), PartLayer(), ContextualBindLayer(),
-                  JoinLayer(), IntersectionLayer(),
+                  UnionLayer(), IntersectionLayer(),
                   ConjunctionLayer(), DisjunctionLayer()):
         with pytest.raises(NotImplementedError):
             layer.reverse(parent)
@@ -61,7 +61,7 @@ def test_all_converted_stubs_raise():
 def test_recommender_path_still_runs_with_basis():
     """Union/Intersection WITH a codebook basis keep the mereology
     recommender (a real attempt, not a stub): no raise, real pair."""
-    from Language import JoinLayer, IntersectionLayer
+    from Language import UnionLayer, IntersectionLayer
 
     class _Shim:
         def __init__(self, W):
@@ -73,7 +73,7 @@ def test_recommender_path_still_runs_with_basis():
     torch.manual_seed(0)
     W = torch.rand(6, 6)
     parent = torch.rand(1, 1, 6)
-    for layer in (JoinLayer(monotonic=True),
+    for layer in (UnionLayer(monotonic=True),
                   IntersectionLayer(monotonic=True)):
         out = layer.reverse(parent, basis=_Shim(W))
         assert isinstance(out, tuple) and len(out) == 2
@@ -81,14 +81,14 @@ def test_recommender_path_still_runs_with_basis():
 
 def test_real_inverses_untouched():
     """(b): rules with faithful reverses keep working."""
-    from Language import TenseLayer, UnionLayer, ExistLayer
+    from Language import TenseLayer, ChunkLayer, ExistLayer
     from Spaces import event_when_encoding
     enc = event_when_encoding(4)
     head = torch.randn(1, 1, 4)
     x = torch.cat([head, enc.encode(1000).expand(1, 1, -1)], dim=-1)
     t = TenseLayer(); t.set_op("PAST")
     assert torch.allclose(t.reverse(t.forward(x)), x, atol=1e-5)
-    fu = UnionLayer()
+    fu = ChunkLayer()
     p = torch.randn(2, 3, 8)
     left, right = fu.reverse(p)
     assert torch.equal(fu.compose(left, right), p)
