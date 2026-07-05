@@ -232,7 +232,7 @@ symbol: the once-built SS leg is $a \times$ the row-aligned identity row
 (codebook rows stay EMA-only; the leg syncs the SS state contract, while the
 activations' GRADIENT path is the conceptual SBOW over the settled slab
 parked at the cutover). Per-pass
-$\sigma$/$\pi$ stacks (`<subsymbolicStack>`, with `<subsymbolicNoop>`
+$\sigma$/$\pi$ stacks (canonical, always built; `<subsymbolicNoop>` marks
 identity slots) give the pump DISTINCT layers per pass -- depth IS
 mereological order -- and the per-percept snap-residual (`snap_settle_qe`)
 is read as a report-only SETTLE SIGNAL for later adaptive work.

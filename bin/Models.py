@@ -895,11 +895,6 @@ class BaseModel(Mereology, nn.Module):
                 "<sparseReplace> is retired (two-phase forward): the "
                 "symbolic phase never substitutes the subsymbolic advance; "
                 "the knob is ignored.", DeprecationWarning)
-        # P4 <subsymbolicStack>: distinct per-pass sigma/pi layers (the
-        # spaces build them at construction; this flag gates the model-side
-        # consumers, e.g. the pump settle-signal readout).
-        self.subsymbolic_stack = bool(TheXMLConfig.get(
-            "architecture.subsymbolicStack", default=False))
         for _cs in (getattr(self, 'conceptualSpaces', None) or []):
             object.__setattr__(_cs, '_symbolic_order', self.symbolicOrder)
             object.__setattr__(_cs, '_serial', self.serial)
@@ -6899,7 +6894,7 @@ class BasicModel(BaseModel):
                     # synthesis) -- not the stage-0 percept re-fed. Scope
                     # attention, when it fired above, takes precedence.
                     # P4: the pass-t stack sigma applies to the feedback
-                    # (identity when <subsymbolicStack> is off / no-op slot).
+                    # (identity at a no-op slot).
                     _ps_fb = getattr(prev_cs_stage, "_subspaceForPS", None)
                     if (_ps_fb is not None and hasattr(_ps_fb, "is_empty")
                             and not _ps_fb.is_empty()):
@@ -6936,9 +6931,9 @@ class BasicModel(BaseModel):
                 # P4 settle signal (report-only, no control flow): each
                 # pump stage's per-percept residual against the order-0
                 # block -- the QE snap-error read as a SIGNAL for the later
-                # adaptive-exit work. Gated on the stack (its consumer).
-                if (getattr(self, "subsymbolic_stack", False)
-                        and cs._sparse_active()):
+                # adaptive-exit work. Runs whenever the sparse pump is live
+                # (the per-pass stack is now canonical).
+                if cs._sparse_active():
                     _qe_t = cs.snap_settle_qe(CS_sub.materialize())
                     if _qe_t is not None:
                         _pump_qe.append(_qe_t)

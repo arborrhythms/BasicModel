@@ -153,15 +153,17 @@
            concept table, never substituting the subsymbolic advance.
            Parsed only to emit a DeprecationWarning. -->
       <xs:element name="sparseReplace" type="xs:boolean" minOccurs="0"/>
-      <!-- P4 sigma/pi stacks (2026-07-02 two-phase plan): distinct per-pass
-           subsymbolic layers, PS sigmas[t] / WS pis[t], t in
-           0..subsymbolicOrder-1 (depth IS mereological order; the stack is
-           the subsymbolic reasoning engine). Default false: the single
-           reused sigma/pi, byte-identical (construction is RNG-neutral). -->
-      <xs:element name="subsymbolicStack" type="xs:boolean" minOccurs="0"/>
+      <!-- P4 sigma/pi stacks (2026-07-02 two-phase plan; now CANONICAL,
+           always built): distinct per-pass subsymbolic layers, PS sigmas[t]
+           / WS pis[t], t in 0..subsymbolicOrder-1 (depth IS mereological
+           order; the stack is the subsymbolic reasoning engine). Pass 0 is
+           the base sigma/pi; an order-1 config is the single reused fold,
+           byte-identical (construction is RNG-neutral). The old
+           subsymbolicStack boolean toggle is retired; the stack is no
+           longer opt-in. -->
       <!-- Pass indices whose stack layer is the IDENTITY pass-through, e.g.
            "0,2"; the slot still occupies its pass so the pump always runs
-           to subsymbolicOrder. Consumed only when subsymbolicStack=true. -->
+           to subsymbolicOrder. -->
       <xs:element name="subsymbolicNoop" type="xs:string" minOccurs="0"/>
       <!-- SymbolSpace 3-stream peer bind (2026-06-21, Slice B). When true, the
            terminal ConceptualCombine is built with n_streams=3 and bind_streams
