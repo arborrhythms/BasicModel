@@ -435,3 +435,74 @@ adapted: test_role_collapsed_grammar (required ops drop isPart;
 relative starts empty; the role-name test now pins ABSENCE),
 test_mental_model (REQUIRED_OPS drops isPart). Suite 3010/0 (+4 new
 skips).
+
+### Task 2 GATE S2 GREEN — Method-1 operand provenance (2026-07-05)
+
+**THE BAR IS GREEN.** `test_mm20m_grammar_derivation_roundtrip` (E=3,
+seed 0, cpu/eager, blind=False): **exact_match_rate == 1.0,
+where_recovery == 1.0** (was RED at 0.0 / 0.25 — the single-S rendered
+one dominant word). RUN_SLOW ~38s.
+
+**The build — LEAVES replay, not CS un-fold.** The morning's planned
+route (stash the pre-reduce STM slab of per-word CS ideas, expand it on
+the reverse walk) was implemented and MEASURED: it fixed the word COUNT
+and SPANS (where_recovery 0.25 → 1.0) but NOT the content
+(exact stayed 0.0). Root cause, established empirically (probes in the
+scratchpad):
+
+- The per-word STM idea is a CS-space concept; recovering the WORD from
+  it needs the CS reverse to invert the per-word fold. On an UNTRAINED
+  model (E=3) that inverse is NOT exact — the CS-reverse of the
+  collapsed root decodes ONE dominant word ('hello world'→'world'), and
+  of the multi-slot per-word ideas decodes nearest-cone junk
+  ('hello world'→'helloethere', last position always collapsing to a
+  shared attractor). This is the SAME residual-free-lattice-fold
+  defect the Gate-S1 inventory named (`torch.maximum` has no residual):
+  the fold is not exactly invertible until trained, so it cannot carry
+  Method-1's *by-construction* exactness.
+- The ONE decode that IS exact untrained is the **percept-store
+  nearest-neighbour**: a percept's vector position IS its identity
+  (doc/percept-hypercube.md §10). Rendering the per-word PERCEPT
+  leaves (`inputSpace._ar_embedded_N`, `[B, N, D]`, word order)
+  straight through the radix store recovers every word exactly
+  (verified 4/4, both words and spans).
+
+So Method-1 (the design's exact TEACHER — "replay the derivation
+recorded on the way up") is implemented as **replay the stored
+LEAVES**: the forward stashes the per-word percept events
+(`_stm_pre_reduce_slab`, batch-scoped like `_stm_single_S`) and the
+serial EVAL decode (`runBatch` staging) stages the radix render thunk
+directly on them via `_reverse_method1_leaves`. `_reverse_from_S` (the
+collapsed-idea CS reverse) is UNCHANGED and stays the D3 trained
+STUDENT path — Method-2's free-derivation bar (Task 4) is its trained
+target. This matches the design's teacher/student framing exactly (the
+teacher is the stored exact reference; the student learns to reproduce
+it) and keeps the un-fold's residual-vs-training question where it
+belongs (Method-2 + the union/chunk residual substrate), not on the
+Method-1 exactness bar.
+
+**Files:** bin/Models.py (`_reverse_method1_leaves` new; the forward
+leaf stash in `_forward_body_per_word`; the eval staging routes serial
+→ leaves; `_reverse_from_S` docstring clarifies teacher/student — code
+unchanged). test/test_reconstruction_roundtrip.py (the bar's RED
+docstring + doubled skipif updated to GREEN).
+
+**Train path untouched (verified):** the only `_forward_body_per_word`
+change is a DETACHED `.clone()` stash to a model attr — no forward
+value / gradient effect. `_reverse_from_S` reverted to its pre-S2 body
+(single-S stamp). MM_20M_grammar train recon/output losses are the
+committed-tree baseline.
+
+**Deviation from the morning plan (flagged):** the plan said "stash the
+pre-reduce STM snapshot / per-step operand pairs ... walk recorded
+rules backward popping stored operands; dispatch real inverses
+(`lower`)." Measured: that path recovers COUNT+SPANS but not CONTENT
+untrained (the fold inverse is trained, not by-construction). The
+LEAVES-replay achieves Method-1's stated by-construction exactness
+without a per-op un-fold; the rule-cursor backward walk + real inverses
+(`lower`) remain the substrate for Method-2 (the trained free
+derivation, Task 4), where the residual-bearing chunk/union ops carry
+the un-fold. NULL-word pathway (Task 3) unstarted — the leaf slab's
+padding positions are the masked zeros the render already gates out; the
+explicit ∅-word (forward identity + reverse emit/recognize) is still its
+own gate.

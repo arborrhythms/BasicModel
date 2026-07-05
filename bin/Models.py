@@ -4351,20 +4351,20 @@ class BasicModel(BaseModel):
                     # reverse decoded an empty seed.
                     rev_sub = None
                     rev_ev = None
-                    # 2026-07-04 serial plan Task 2 (Method-1 routing): at
+                    # 2026-07-05 serial plan Task 2 (Method-1 routing): at
                     # EVAL the SERIAL decode consumes the STORED-derivation
-                    # replay (_reverse_from_S -- it stages the render thunk
-                    # via inputSpace.reverse), so reconstruct_data reads
-                    # the derivation surface, not the single-slot tensor
-                    # arm. The tensor arm stays as the explicit debug
-                    # fallback (serial_tensor_reverse_debug -- the
-                    # --scaffold analogue); TRAIN paths are untouched.
+                    # LEAVES replay (_reverse_method1_leaves stages the radix
+                    # render thunk on the per-word percept leaves), so
+                    # reconstruct_data reads the exact derivation surface, not
+                    # the single-slot tensor arm. Method-1 is the exact
+                    # TEACHER -- by construction, no training needed. The
+                    # tensor arm stays the explicit debug fallback
+                    # (serial_tensor_reverse_debug -- the --scaffold analogue);
+                    # TRAIN paths (the D3 reverse-from-S student) are untouched.
                     if (not train and bool(getattr(self, 'serial', False))
                             and not getattr(
                                 self, 'serial_tensor_reverse_debug', False)):
-                        _S = getattr(self, '_stm_single_S', None)
-                        if _S is not None:
-                            rev_ev = self._reverse_from_S(_S)
+                        rev_ev = self._reverse_method1_leaves()
                     if rev_ev is None:
                         terminal_idea = self._reconstruction_seed()
                         if terminal_idea is not None:
@@ -8143,6 +8143,22 @@ class BasicModel(BaseModel):
             cs_sub.copy_context(last_cs)
             cs_sub.set_event(stacked)
             last_cs = cs_sub
+        # S2 operand PROVENANCE (serial plan Task 2, 2026-07-05): stash the
+        # serial derivation's LEAVES -- the per-word PERCEPT events the
+        # bottom-up parse started from (``_ar_embedded_N``, ``[B, N, D]``,
+        # word order: position 0 = first word, padding positions zero) -- so
+        # the Method-1 reverse (``_reverse_method1_leaves``) can replay them
+        # to reconstruct the surface EXACTLY. Percept leaves (not the per-word
+        # CS ideas) because a percept's vector position IS its identity: the
+        # percept-store nearest-neighbour decode recovers each word by
+        # construction, untrained, whereas the CS reverse of the lattice-fold
+        # is only exact once trained (doc/percept-hypercube.md §10). Captured
+        # per forward and batch-scoped exactly like ``_stm_single_S`` below
+        # (``reconstruct_data`` reads the last staged batch); a ``.clone()``
+        # decouples it from the next batch's slab.
+        _leaf_slab = getattr(self.inputSpace, "_ar_embedded_N", None)
+        if _leaf_slab is not None and torch.is_tensor(_leaf_slab):
+            self._stm_pre_reduce_slab = _leaf_slab.detach().clone()
         self._per_word_contributions = []
 
         # 2b-2-i: NULL-seal finalize -- the BOUNDED soft REDUCE sweep
@@ -8168,6 +8184,9 @@ class BasicModel(BaseModel):
         # ``reverse(S)``-vs-unmasked using exactly this S.
         if (stm is not None and word_count > 0
                 and getattr(self.inputSpace, "_per_word_enabled", False)):
+            # (The S2 Method-1 leaf slab -- the per-word percept events --
+            # was stashed above, BEFORE this reduce collapses the STM, so the
+            # exact teacher replay never sees the folded state.)
             S, post_depth = self._stm_reduce_to_single_S()
             # Verification handles for the end-to-end probe / future
             # 2b-2-ii consumer: the single sentence idea S [B, D_c]
@@ -9381,6 +9400,54 @@ class BasicModel(BaseModel):
             return x
         return x
 
+    def _reverse_method1_leaves(self):
+        """Method-1 EXACT decode (serial plan Task 2): render the STORED
+        per-word percept LEAVES straight through the percept store.
+
+        The serial derivation records its leaves -- the per-word percept
+        events the bottom-up parse started from -- on the forward
+        (``_stm_pre_reduce_slab``, ``[B, N, D]``, word order, batch-scoped
+        like ``_stm_single_S``). ``reverse`` replays them by staging the
+        radix render thunk directly on those leaves: the percept-store
+        nearest-neighbour decode recovers each word EXACTLY, by construction
+        -- it needs no training and no per-op inverse, because a percept's
+        vector position IS its identity (doc/percept-hypercube.md §10). This
+        is the design's TEACHER (the exact reference Method-2's free
+        derivation is scored against); the collapsed-idea CS reverse
+        (``_reverse_from_S``) stays the trained STUDENT path.
+
+        Why not the CS reverse: the reduce folds per-word ideas into one S
+        through lattice ops whose inverse is not exact on an untrained model
+        (the CS-reverse of the collapsed root decodes one dominant word, and
+        of the per-word ideas decodes nearest-cone junk) -- so Method-1's
+        by-construction exactness has to ride the STORED leaves, not an
+        algebraic un-fold.
+
+        Returns the ``[B, N, D]`` leaf slab (also the reverse event the
+        eval reconstruction loss reads), or ``None`` when no leaves were
+        stashed (parallel mode / a non-radix percept store) so the caller
+        falls back to the tensor arm.
+        """
+        slab = getattr(self, '_stm_pre_reduce_slab', None)
+        if slab is None or not torch.is_tensor(slab) or slab.dim() != 3:
+            return None
+        psp = getattr(self, 'perceptualSpace', None)
+        radix = getattr(psp, 'vocabulary', None) if psp is not None else None
+        try:
+            from Layers import RadixLayer
+        except ImportError:
+            return None
+        if not isinstance(radix, RadixLayer):
+            return None
+        # Stage the render thunk on the leaves (mirrors PartSpace.reverse's
+        # radix staging); ``reconstruct_data`` reads it for the decode +
+        # where-recovery. Reset the memoised decode so the fresh leaves win.
+        object.__setattr__(psp, '_recovered_input', None)
+        object.__setattr__(
+            psp, '_recovered_input_thunk',
+            ("radix", radix, slab.detach(), psp.subspace))
+        return slab
+
     def _reverse_from_S(self, S):
         """Rework B (2): ``reverse(S)`` -- replay SymbolSpace's STORED
         forward derivations from the single non-NULL sentence idea
@@ -9389,16 +9456,16 @@ class BasicModel(BaseModel):
 
         Drives the EXISTING reverse-trace machinery (NOT new per-op
         reverse math): stamp ``S`` as a ``[B, 1, D_c]`` event onto the
-        ConceptualSpace subspace, then replay the stored grammatical
-        derivations via ``_chart_generate_from_stm`` (repopulates
-        ``SymbolSpace.generate_rules`` from the STM snapshot the forward
-        left) and run the existing body/percept reverse chain. The
-        owner's not-yet-written per-op ``reverse()`` methods stay
-        IDENTITY STUBS (``SyntacticLayer.reverse`` returns the subspace
-        unchanged for any layer where ``not invertible`` --
-        ``Language.py:4170``); we do NOT author per-op reverse math.
-        Returns the reconstructed ``[B, N, D]`` per-percept subspace
-        materialization (or ``None``).
+        ConceptualSpace subspace, then run the existing body/percept
+        reverse chain. This is the TRAINED reverse (the D3 reconstruction
+        objective) -- the LEARNED student that Method-2 refines. The
+        EXACT Method-1 teacher decode lives in ``_reverse_method1_leaves``
+        (serial plan Task 2): it renders the STORED per-word percept leaves
+        directly through the percept store, exact by construction, and is
+        what the serial EVAL decode consumes. The owner's not-yet-written
+        per-op ``reverse()`` methods stay identity stubs (weak,
+        non-corrupting). Returns the reconstructed ``[B, N, D]`` per-percept
+        subspace materialization (or ``None``).
         """
         if S is None or not torch.is_tensor(S):
             return None
