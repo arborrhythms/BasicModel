@@ -2,10 +2,12 @@
 
 > **STATUS: PLAN 2026-07-06 — the single consolidated plan for this line of
 > work (framework + snap contract + execution), to be executed in a separate
-> thread.** The mechanical/measurement tasks (§4 T1 terminology rename, T2 WS
-> initScale) are ready now; the taxonomic-build tasks (§4 T3+) are gated on
-> Alec's two representation calls in §5 (regularizer form + dead-zone ε). No
-> taxonomic-build code before those calls. Framework: Alec (2026-07-05/06
+> thread.** T1 (terminology rename) and T2 (WS initScale) are ready now. The
+> representation calls that gated the taxonomic build are now RESOLVED — the
+> sign carrier (symbol), the sparsity regularizer (rank-ordered soft-then-
+> hard $L_0$, §5), and the storage domain (small init) — leaving only a
+> minor read-time $\varepsilon$ and the empirical $\lambda$, so T3+ are
+> design-unblocked pending Alec's final go. Framework: Alec (2026-07-05/06
 > session); terminology from *The Whole Part* (Alec). Companions:
 > [percept-hypercube.md](../percept-hypercube.md) (percept geometry),
 > [2026-07-04-serial-derivation-reconstruction-design.md](2026-07-04-serial-derivation-reconstruction-design.md)
@@ -308,7 +310,8 @@ fidelity leg, §3.2).
   folds (the contrast test); a new radial-spread probe (composites separate
   by depth, don't saturate). Bars: §3.
 
-**T3 — Signed peel (un-discard + coefficient)** — GATE §5.2 (ε).
+**T3 — Signed peel (un-discard + coefficient)** — needs ε (§5 open 1) as
+the peel-stop / support threshold (minor; default a small constant).
 - `ChunkLayer.peel` (Language.py:2351): drop `if sims[best] <= 0.0: break`
   (2367); keep `sims[best]` as the row's signed COEFFICIENT (= the symbol,
   §1.5) — `residual - coeff·W[best]`; emit `(symbol_row, coeff)` pairs.
@@ -319,12 +322,19 @@ fidelity leg, §3.2).
   operand is recovered; multiset recovery with a negative row) + the S2
   round-trip stays green.
 
-**T4 — Symbol sparsity + regularizer** — GATE §5.1 (regularizer form).
-- Sparsify the symbol/activation layer with the growth-preventing shrinkage
-  on the concept→symbol weights (§1.4); the ε dead-zone (§2.1) is the
-  support gate. Concept atoms stay dense-positive (untouched).
+**T4 — Symbol sparsity + regularizer** (regularizer RESOLVED §5; only
+$\lambda$ to tune).
+- Add the RANK-ORDERED soft-then-hard $L_0$ penalty on definition size
+  (§5): sort each concept→symbol row by $|w|$, exempt the top
+  `definitionFreeSize` (=2), apply $p(n)=\lambda(n-2)$ to ranks $\ge 3$;
+  hard cap at `stmCapacity` (the decode peel stops there). Concept atoms
+  stay dense-positive (untouched); the ε dead-zone (§2.1) is the read-time
+  support cleanup only.
+- Where: the CS activation/definition path (`cs_forward_content`,
+  Spaces.py:14491+); a new loss term; `definitionFreeSize` config knob.
 - Verify: pairwise-cosine spread of the inventory ↑ (the cone dissolves);
-  terminal residual → 0 on expressed ideas; the achieved sparsity level.
+  definition sizes concentrate at ≤2 with a tail to 8; terminal residual
+  → 0 on expressed ideas. Sweep $\lambda$ against these bars.
 
 **T5 — Order-$k$ membership unfold** — GATE the existing "make abstraction
 order canonical" todo (ramsification live stamping).
@@ -362,20 +372,40 @@ regularizer, answering the former "what grows it"); and the ACCUMULATOR is
 two-sided (§1.6 — evidence tracks $+$/$-$ independently; only the emitted
 symbol collapses to one scalar).
 
+RESOLVED — the REGULARIZER (Alec, 2026-07-06): an $L_0$-semantics
+(count-of-symbols, NOT lasso/$L_1$ — $L_1$'s magnitude shrinkage would
+understate the $\pm1$ presence) **soft-then-hard schedule** on definition
+size $n$:
+
+- $n \le$ `definitionFreeSize` (=2): **free**. (The genus + differentia
+  minimal definition — one superordinate concept + one distinguishing
+  feature = 2 — carries no penalty.)
+- `definitionFreeSize` $< n <$ `stmCapacity`: **soft**, rising —
+  $p(n) = \lambda\,(n - 2)$ (or $(n-2)^2$ steeper); the pressure ramps per
+  extra symbol.
+- $n =$ `stmCapacity` (=8): **hard** — the structural STM ceiling; a
+  definition cannot exceed what STM holds (enforced by the decode peel
+  stopping at `stmCapacity`, not by penalty).
+
+**Realization — RANK-ORDERED penalty** (avoids the $L_1$ shrinkage trap):
+sort a definition's symbols by $|w|$, EXEMPT the top-2, apply the rising
+penalty only to ranks $\ge 3$. Shrinkage then lands only on the marginal
+symbols (the ones to drop), while the core two stay at full $\pm1$,
+unpenalized — a differentiable soft-$L_0$ without hard-concrete gates
+(gates remain an option for a true stochastic expected-$L_0$). Knobs:
+`definitionFreeSize`, `stmCapacity` (already named), $\lambda$ (steepness —
+the one empirical tune).
+
 Still open:
 
-1. **Regularizer form** (§1.4): the concrete shrinkage on the concept→symbol
-   weights — $L_1$ / $L_0$ / a learned dead-zone gate / explicit top-k — and
-   its strength. This is now the only representation-side call gating the
-   taxonomic build.
-2. **Dead-zone $\varepsilon$**: fixed constant, per-space, or learned — the
-   threshold separating support from don't-care (§2.1), the same gate as (1)
-   if the dead-zone route is chosen.
-3. **Rename sweep** per §0 — RESOLVED to GO (Alec, 2026-07-06):
-   `insert_symbol` → `insert_whole` (whole-inserting sites, disambiguated);
-   `nObj` → `nIdeas`; the "concepts/symbols" doc phrasing → §0 terms.
-   Executed in T1 (no open call remains here — it's a task, not a question).
-4. **Symbols and the `[0,1]` lexicon move**: orthogonal to everything above
+1. **Dead-zone $\varepsilon$** (§2.1) — now DECOUPLED from sparsity (the
+   count-penalty above does the sparsifying): $\varepsilon$ is just the
+   read-time support threshold ($|a| \le \varepsilon \Rightarrow$
+   don't-care). Fixed constant / per-space / learned — a minor cleanup
+   knob, no longer a gating representation call.
+2. **$\lambda$ steepness** — the soft-penalty weight; tuned empirically at
+   T4 against the fidelity bars (§3), not decided up front.
+3. **Symbols and the `[0,1]` lexicon move**: orthogonal to everything above
    — does the percept-hood of symbols eventually argue the lexicon onto the
    presence cube, or does "sign is form content" keep the torus? Note the
    tension with §1.5: a symbol's *value* is signed ($\pm$ presence), so if
