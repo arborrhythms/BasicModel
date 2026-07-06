@@ -84,12 +84,23 @@ is these two axes stacked: 1–3 are mereological (grounding), 4–5 taxonomic
    includes some things and excludes others. This is the **taxonomic** axis
    — signed; the $\pm$ presence/absence of prior concepts is exactly the
    signed coefficient the snap of §2 must carry.
-5. **An idea is a signed sparse combination.** An idea (an STM entry; the
-   reduced sentence root $S$) is represented over concepts/symbols in
-   $[-1,+1]$ where **0 = don't-care** (outside the support), $+$ = include,
-   $-$ = exclude. A scalar coordinate expresses TRUE / FALSE / NEITHER;
-   the BOTH (conflict) state stays on the 2-axis catuskoti carrier — the
-   concept code is the *decided* view.
+5. **Sign lives on the SYMBOLS; an idea is a sparse signed symbol vector.**
+   (Alec, 2026-07-06 — resolves the "concepts vs symbols" carrier question.)
+   A **symbol** is a scalar $\in [-1,+1]$ = the absence/presence of its
+   corresponding **concept**: $+$ present, $-$ absent, **0 = don't-care**,
+   bound to that concept by the relation table (one concept index ↔ one
+   symbol index). The concept is the *region/meaning* (the positive
+   mereological signature); the symbol is the *signed presence scalar* on
+   it. An idea (an STM entry; the reduced root $S$) is the sparse signed
+   vector of these symbol scalars — WHICH concepts, at WHAT $\pm$ presence.
+   This maps directly onto the code's factored form:
+   `concept_code = a · softplus(atom)` (Spaces.py:14510-14521) already
+   splits the **concept** (the dense positive atom / region) from the
+   **symbol** (the signed activation $a$, the presence scalar) — so "sign on
+   symbols" IS the signed activation, and sparsity is 0-valued symbols. A
+   symbol scalar expresses present / absent / don't-care = TRUE / FALSE /
+   NEITHER; the BOTH (conflict) state stays on the 2-axis catuskoti carrier
+   — the symbol is the *decided* view.
 
 ## 2. The snap contract (decoding an idea)
 
@@ -143,7 +154,10 @@ idea vector $x$:
    $\pm1$ to the real magnitude) instead of the fixed unit subtraction
    `residual - W[best]` → `residual - coeff · W[best]`; (iii) emit
    `(row, coeff)` pairs, not bare indices. This makes the peel a genuine
-   signed matching pursuit / OMP step.
+   signed matching pursuit / OMP step. **The `coeff` IS the symbol** (§1.5)
+   — the signed presence scalar on that concept — so the peel's output is
+   literally the idea's sparse symbol vector; the coefficient attaches to
+   the SS symbol (via the relation table), not the CS concept row.
 3. **ORDER-$k$ MEMBERSHIP — unfold before probing.** A linear probe
    against a stored prototype sees only the order-0 shadow of a
    discontiguous order-$k$ region. Membership at order $k$ applies the
@@ -183,14 +197,13 @@ against it.
   sign there (Language.py:2367; Spaces.py:16161-16162; the order-0
   `nonneg=True` at 14428), plus add the coefficient slot (§2.2). Where the
   meronomy gate is off for a config, that idiom also has to be turned on.
-- **Sparse signed codes with real don't-cares** — the concept code is
-  already signed on output, but its STORAGE is one-sided: the atom
-  dictionary is dense softplus-positive
-  (`concept_code = a \cdot \mathrm{softplus}(\mathrm{what})`,
-  Spaces.py:14510-14521) with sign living only in the activation $a$. The
-  don't-care structure this contract needs (a stored code that is 0 on
-  most coordinates) is therefore a representation change — where sparsity
-  lands (signed-sparse atoms vs sparse activations) is an open question.
+- **Sparse signed SYMBOLS** — with sign resolved to the symbol (§1.5), both
+  sign and sparsity live on the **symbol scalars** — the signed activation
+  $a$ — while the **concept** atoms stay dense positive (they are the
+  regions, not the presence). So the representation change is narrow: make
+  the symbol vector SPARSE (most $a = 0$ = don't-care), with a genuine 0
+  state, rather than the dense activation every concept gets today. The
+  concept dictionary is untouched; only the presence layer sparsifies.
 
 ## 3. The fidelity program (three legs, one goal)
 
@@ -255,13 +268,29 @@ order instead of saturating); peel-termination margin; terminal residual
 
 ## 5. Open questions (Alec)
 
-1. **Rename sweep verdicts** per §0: `insert_symbol` → `insert_whole`?
+RESOLVED this session: the storage DOMAIN (small-magnitude init, not the
+unbounded dual-rays; Boolean limits kept — §3.2); WHERE sign lives
+(taxonomic, not mereological — §1); and the sign CARRIER (the **symbol**,
+a scalar $\in[-1,1]$ = signed presence of its concept — §1.5), which also
+collapses the old "signed-sparse atoms vs sparse activations" fork: sign
+and sparsity both ride the symbol/activation, concepts stay dense positive.
+
+Still open:
+
+1. **Sparsity pressure**: what makes the symbol vector go sparse (most
+   $a = 0$)? An $L_0/L_1$-style prior on $a$, the $\varepsilon$ dead-zone as
+   a straight-through gate that self-sparsifies, or an explicit top-k? This
+   is now the ONLY representation-side design call gating the taxonomic
+   build.
+2. **Dead-zone $\varepsilon$**: fixed constant, per-space, or learned — the
+   threshold separating support from don't-care (§2.1), which doubles as
+   the sparsity gate if that route is chosen.
+3. **Rename sweep verdicts** per §0: `insert_symbol` → `insert_whole`?
    the "concepts/symbols" doc phrasing; the `nObj` "object" overload.
-2. **Sparsity mechanism**: signed-sparse atoms vs sparse activations;
-   what training pressure grows don't-cares (an $L_0/L_1$-style prior,
-   or the dead-zone itself as a straight-through gate)?
-3. **Dead-zone $\varepsilon$**: fixed constant, per-space, or learned.
-4. **Symbols and the `[0,1]` lexicon move**: orthogonal to the epistemic
-   ladder (§0) — does the percept-hood of symbols eventually argue the
-   lexicon onto the presence cube, or does "sign is form content" keep
-   the torus?
+   (Low-risk, per-site.)
+4. **Symbols and the `[0,1]` lexicon move**: orthogonal to everything above
+   — does the percept-hood of symbols eventually argue the lexicon onto the
+   presence cube, or does "sign is form content" keep the torus? Note the
+   tension with §1.5: a symbol's *value* is signed ($\pm$ presence), so if
+   the lexicon stores symbol *identities* the sign is a separate scalar, not
+   a coordinate of the stored row — worth reconciling.
